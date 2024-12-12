@@ -863,6 +863,7 @@
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		adc2: adc@40022100 {
@@ -879,6 +880,7 @@
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		/* dual mode: adc1 and adc2 coupled */
@@ -896,6 +898,7 @@
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		adc3: adc@58026000 {
@@ -912,6 +915,7 @@
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		dac1: dac@40007400 {
