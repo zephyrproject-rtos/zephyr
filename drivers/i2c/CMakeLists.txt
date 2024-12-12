@@ -93,6 +93,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_ENE_KB1200	i2c_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_I2C_SWITCH	gpio_i2c_switch.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NUMAKER		i2c_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MAX32		i2c_max32.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIS	i2c_nrfx_twis.c)
 
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1
 	i2c_ll_stm32_v1.c
