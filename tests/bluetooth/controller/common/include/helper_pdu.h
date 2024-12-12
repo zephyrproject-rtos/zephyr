@@ -199,6 +199,8 @@ enum helper_pdu_opcode {
 	LL_CIS_IND,
 	LL_CIS_TERMINATE_IND,
 	LL_PERIODIC_SYNC_IND,
+	LL_FSU_REQ,
+	LL_FSU_RSP,
 	LL_ZERO,
 };
 
