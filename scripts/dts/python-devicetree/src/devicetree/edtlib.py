@@ -221,6 +221,19 @@ class Binding:
         else:
             self.child_binding = None
 
+        self.child_nodes: Dict[str, 'Binding'] = {}
+        if "child-nodes" in raw:
+            #breakpoint()
+            if not (isinstance(raw["child-nodes"], list) and \
+                    all(isinstance(child_node, dict) for child_node in raw["child-nodes"])):
+                _err(f"malformed 'child-nodes:' in {self.path}, "
+                     "expected a sequence of bindings (list of dictionaries)")
+            for child_node in raw["child-nodes"]:
+                self.child_nodes[child_node["name"]]: Optional['Binding'] = Binding(
+                        path, fname2path, child_node,
+                        require_compatible=False, require_description=False)
+
+
         # Make sure this is a well defined object.
         self._check(require_compatible, require_description)
 
@@ -378,7 +391,7 @@ class Binding:
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
         ok_top = {"description", "compatible", "bus", "on-bus",
-                  "properties", "child-binding"}
+                  "properties", "child-binding", "child-nodes", "name"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -1371,6 +1384,9 @@ class Node:
         pbinding = self.parent._binding
         if not pbinding:
             return None
+
+        if pbinding.child_nodes and self.name in pbinding.child_nodes:
+            return pbinding.child_nodes[self.name]
 
         if pbinding.child_binding:
             return pbinding.child_binding
