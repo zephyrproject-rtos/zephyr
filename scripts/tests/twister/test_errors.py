@@ -10,9 +10,10 @@ import os
 import pytest
 
 from pathlib import Path
-from twisterlib.error import StatusAttributeError
-from twisterlib.error import ConfigurationError
-from twisterlib.harness import Test
+
+from pylib.twister.twisterlib.error import StatusAttributeError
+from pylib.twister.twisterlib.error import ConfigurationError
+from pylib.twister.twisterlib.harness import Test
 
 
 def test_configurationerror():

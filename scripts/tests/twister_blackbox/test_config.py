@@ -7,15 +7,14 @@ Blackbox tests for twister's command line functions related to test configuratio
 """
 
 import importlib
+import json
 import mock
 import os
 import pytest
 import sys
-import json
 
-# pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
-from twisterlib.testplan import TestPlan
+from .conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+from pylib.twister.twisterlib.testplan import TestPlan
 
 
 class TestConfig:

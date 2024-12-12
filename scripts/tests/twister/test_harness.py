@@ -6,19 +6,14 @@
 """
 This test file contains testsuites for the Harness classes of twister
 """
+
 import mock
-import sys
 import os
 import pytest
 import re
 import logging as logger
 
-# ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-from conftest import ZEPHYR_BASE
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-
-from twisterlib.harness import (
+from pylib.twister.twisterlib.harness import (
     Bsim,
     Console,
     Gtest,
@@ -29,9 +24,9 @@ from twisterlib.harness import (
     Robot,
     Test,
 )
-from twisterlib.statuses import TwisterStatus
-from twisterlib.testsuite import TestSuite
-from twisterlib.testinstance import TestInstance
+from pylib.twister.twisterlib.statuses import TwisterStatus
+from pylib.twister.twisterlib.testinstance import TestInstance
+from pylib.twister.twisterlib.testsuite import TestSuite
 
 GTEST_START_STATE = " RUN      "
 GTEST_PASS_STATE = "       OK "

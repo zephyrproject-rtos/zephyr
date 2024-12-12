@@ -6,23 +6,23 @@
 '''
 This test file contains testsuites for testsuite.py module of twister
 '''
-import sys
-import os
+
 import mock
+import os
 import pytest
+import sys
 
 from contextlib import nullcontext
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from twisterlib.statuses import TwisterStatus
-from twisterlib.testplan import TestPlan, change_skip_to_error_if_integration
-from twisterlib.testinstance import TestInstance
-from twisterlib.testsuite import TestSuite
-from twisterlib.platform import Platform
-from twisterlib.quarantine import Quarantine
-from twisterlib.error import TwisterRuntimeError
+from pylib.twister.twisterlib.error import TwisterRuntimeError
+from pylib.twister.twisterlib.platform import Platform
+from pylib.twister.twisterlib.quarantine import Quarantine
+from pylib.twister.twisterlib.statuses import TwisterStatus
+from pylib.twister.twisterlib.testinstance import TestInstance
+from pylib.twister.twisterlib.testplan import TestPlan, change_skip_to_error_if_integration
+from pylib.twister.twisterlib.testsuite import TestSuite
 
 
 def test_testplan_add_testsuites_short(class_testplan):
@@ -777,8 +777,8 @@ def test_testplan_load(
     testplan.generate_subset = mock.Mock()
     testplan.apply_filters = mock.Mock()
 
-    with mock.patch('twisterlib.testinstance.TestInstance.create_overlay', mock.Mock()), \
-         mock.patch('twisterlib.testinstance.TestInstance.check_runnable', return_value=True), \
+    with mock.patch('pylib.twister.twisterlib.testinstance.TestInstance.create_overlay', mock.Mock()), \
+         mock.patch('pylib.twister.twisterlib.testinstance.TestInstance.check_runnable', return_value=True), \
          pytest.raises(exception) if exception else nullcontext():
         testplan.load()
 
@@ -855,7 +855,7 @@ def test_testplan_handle_modules():
     modules = [mock.Mock(meta={'name': 'name1'}),
                mock.Mock(meta={'name': 'name2'})]
 
-    with mock.patch('twisterlib.testplan.parse_modules', return_value=modules):
+    with mock.patch('pylib.twister.twisterlib.testplan.parse_modules', return_value=modules):
         testplan.handle_modules()
 
     assert testplan.modules == ['name1', 'name2']
@@ -1136,7 +1136,7 @@ def test_testplan_add_configurations(
             type(platform).name = mock.PropertyMock(return_value=platform.aliases[0])
             yield platform
 
-    with mock.patch('twisterlib.testplan.generate_platforms', mock_gen_plat):
+    with mock.patch('pylib.twister.twisterlib.testplan.generate_platforms', mock_gen_plat):
         testplan.add_configurations()
 
     if expected_defaults is not None:
@@ -1500,8 +1500,8 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     check_runnable_mock = mock.Mock(return_value=True)
 
     with mock.patch('builtins.open', mock.mock_open(read_data=testplan_data)), \
-         mock.patch('twisterlib.testinstance.TestInstance.check_runnable', check_runnable_mock), \
-         mock.patch('twisterlib.testinstance.TestInstance.create_overlay', mock.Mock()):
+         mock.patch('pylib.twister.twisterlib.testinstance.TestInstance.check_runnable', check_runnable_mock), \
+         mock.patch('pylib.twister.twisterlib.testinstance.TestInstance.create_overlay', mock.Mock()):
         testplan.load_from_file('dummy.yaml', filter_platform)
 
     expected_instances = {

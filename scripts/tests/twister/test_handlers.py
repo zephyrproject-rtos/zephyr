@@ -21,20 +21,20 @@ from serial import SerialException
 from subprocess import CalledProcessError, TimeoutExpired
 from types import SimpleNamespace
 
-import twisterlib.harness
+import pylib.twister.twisterlib.harness
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 
-from twisterlib.error import TwisterException
-from twisterlib.statuses import TwisterStatus
-from twisterlib.handlers import (
+from pylib.twister.twisterlib.error import TwisterException
+from pylib.twister.twisterlib.statuses import TwisterStatus
+from pylib.twister.twisterlib.handlers import (
     Handler,
     BinaryHandler,
     DeviceHandler,
     QEMUHandler,
     SimulationHandler
 )
-from twisterlib.hardwaremap import (
+from pylib.twister.twisterlib.hardwaremap import (
     DUT
 )
 
@@ -117,7 +117,7 @@ def test_imports(
          mock.patch.dict('sys.modules', modules_mock, clear=True), \
          mock.patch('sys.meta_path', meta_path_mock), \
          pytest.raises(expected_error) if expected_error else nullcontext():
-        reload(twisterlib.handlers)
+        reload(pylib.twister.twisterlib.handlers)
 
     out, _ = capfd.readouterr()
     assert all([expected_out in out for expected_out in expected_outs])
@@ -130,7 +130,7 @@ def test_handler_final_handle_actions(mocked_instance):
     handler = Handler(mocked_instance, 'build', mock.Mock())
     handler.suite_name_check = True
 
-    harness = twisterlib.harness.Test()
+    harness = pylib.twister.twisterlib.harness.Test()
     harness.status = TwisterStatus.NONE
     harness.detected_suite_names = mock.Mock()
     harness.matched_run_id = False
@@ -1273,7 +1273,7 @@ def test_devicehandler_create_serial_connection(
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
     missing_mock = mock.Mock()
     handler.instance.add_missing_case_status = missing_mock
-    twisterlib.handlers.terminate_process = mock.Mock()
+    pylib.twister.twisterlib.handlers.terminate_process = mock.Mock()
 
     dut = DUT()
     dut.available = 0
@@ -1303,7 +1303,7 @@ def test_devicehandler_create_serial_connection(
         missing_mock.assert_called_once_with('blocked', 'Serial Device Error')
 
     if terminate_ser_pty_process:
-        twisterlib.handlers.terminate_process.assert_called_once()
+        pylib.twister.twisterlib.handlers.terminate_process.assert_called_once()
         ser_pty_process.communicate.assert_called_once()
 
 
@@ -1461,7 +1461,7 @@ def test_devicehandler_handle(
     handler._update_instance_info = mock.Mock()
     handler._final_handle_actions = mock.Mock()
     handler.make_dut_available = mock.Mock()
-    twisterlib.handlers.terminate_process = mock.Mock()
+    pylib.twister.twisterlib.handlers.terminate_process = mock.Mock()
     handler.instance.platform.name = 'IPName'
 
     harness = mock.Mock()
@@ -1578,7 +1578,7 @@ def test_qemuhandler_get_default_domain_build_dir(
     handler.instance.sysbuild = self_sysbuild
     handler.build_dir = self_build_dir
 
-    with mock.patch('domains.Domains.from_file', from_file_mock):
+    with mock.patch('pylib.build_helpers.domains.Domains.from_file', from_file_mock):
         result = handler.get_default_domain_build_dir()
 
     assert result == expected
@@ -1931,11 +1931,11 @@ def test_qemuhandler_thread(
          mock.patch('os.unlink', mock.Mock()), \
          mock.patch('os.mkfifo', mock.Mock()), \
          mock.patch('os.kill', mock.Mock()), \
-         mock.patch('twisterlib.handlers.QEMUHandler._get_cpu_time',
+         mock.patch('pylib.twister.twisterlib.handlers.QEMUHandler._get_cpu_time',
                     mock_cputime), \
-         mock.patch('twisterlib.handlers.QEMUHandler._thread_get_fifo_names',
+         mock.patch('pylib.twister.twisterlib.handlers.QEMUHandler._thread_get_fifo_names',
                     mock_thread_get_fifo_names), \
-         mock.patch('twisterlib.handlers.QEMUHandler.' \
+         mock.patch('pylib.twister.twisterlib.handlers.QEMUHandler.' \
                     '_thread_update_instance_info',
                     mock_thread_update_instance_info):
         QEMUHandler._thread(

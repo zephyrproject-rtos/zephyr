@@ -11,10 +11,8 @@ import os
 import pytest
 import sys
 
-from conftest import ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
-from twisterlib.testplan import TestPlan
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/twisterlib"))
+from .conftest import ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
+from pylib.twister.twisterlib.testplan import TestPlan
 
 @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
 class TestHardwaremap:

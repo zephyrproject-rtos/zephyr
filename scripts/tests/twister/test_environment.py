@@ -14,7 +14,7 @@ import shutil
 
 from contextlib import nullcontext
 
-import twisterlib.environment
+import pylib.twister.twisterlib.environment
 
 
 TESTDATA_1 = [
@@ -167,7 +167,7 @@ def test_parse_arguments_errors(
             return f'dummy/path/{name}'
 
     with mock.patch('sys.argv', ['twister'] + args):
-        parser = twisterlib.environment.add_parse_arguments()
+        parser = pylib.twister.twisterlib.environment.add_parse_arguments()
 
     if which_dict:
         which_dict['path'] = {name: shutil.which(name) \
@@ -178,11 +178,11 @@ def test_parse_arguments_errors(
             if os_name is not None else nullcontext(), \
          mock.patch('shutil.which', which_mock) \
             if which_dict else nullcontext(), \
-         mock.patch('twisterlib.environment' \
+         mock.patch('pylib.twister.twisterlib.environment' \
                     '.PYTEST_PLUGIN_INSTALLED', pytest_plugin) \
             if pytest_plugin is not None else nullcontext():
         with pytest.raises(SystemExit) as exit_info:
-            twisterlib.environment.parse_arguments(parser, args)
+            pylib.twister.twisterlib.environment.parse_arguments(parser, args)
 
     assert exit_info.value.code == 1
     assert expected_error in ' '.join(caplog.text.split())
@@ -194,7 +194,7 @@ def test_parse_arguments_errors_size():
     args = ['--size', 'dummy.elf']
 
     with mock.patch('sys.argv', ['twister'] + args):
-        parser = twisterlib.environment.add_parse_arguments()
+        parser = pylib.twister.twisterlib.environment.add_parse_arguments()
 
     mock_calc_parent = mock.Mock()
     mock_calc_parent.child = mock.Mock(return_value=mock.Mock())
@@ -204,7 +204,7 @@ def test_parse_arguments_errors_size():
 
     with mock.patch('twisterlib.size_calc.SizeCalculator', mock_calc):
         with pytest.raises(SystemExit) as exit_info:
-            twisterlib.environment.parse_arguments(parser, args)
+            pylib.twister.twisterlib.environment.parse_arguments(parser, args)
 
     assert exit_info.value.code == 0
 
@@ -216,10 +216,10 @@ def test_parse_arguments_warnings(caplog):
     args = ['--allow-installed-plugin']
 
     with mock.patch('sys.argv', ['twister'] + args):
-        parser = twisterlib.environment.add_parse_arguments()
+        parser = pylib.twister.twisterlib.environment.add_parse_arguments()
 
-    with mock.patch('twisterlib.environment.PYTEST_PLUGIN_INSTALLED', True):
-        twisterlib.environment.parse_arguments(parser, args)
+    with mock.patch('pylib.twister.twisterlib.environment.PYTEST_PLUGIN_INSTALLED', True):
+        pylib.twister.twisterlib.environment.parse_arguments(parser, args)
 
     assert 'You work with installed version of' \
            ' pytest-twister-harness plugin.' in ' '.join(caplog.text.split())
@@ -241,9 +241,9 @@ def test_parse_arguments(zephyr_base, additional_args):
            additional_args + ['--', 'dummy_extra_1', 'dummy_extra_2']
 
     with mock.patch('sys.argv', ['twister'] + args):
-        parser = twisterlib.environment.add_parse_arguments()
+        parser = pylib.twister.twisterlib.environment.add_parse_arguments()
 
-    options = twisterlib.environment.parse_arguments(parser, args)
+    options = pylib.twister.twisterlib.environment.parse_arguments(parser, args)
 
     assert os.path.join(zephyr_base, 'tests') in options.testsuite_root
     assert os.path.join(zephyr_base, 'samples') in options.testsuite_root
@@ -323,7 +323,7 @@ def test_twisterenv_init(options, expected_env):
             return original_abspath(path)
 
     with mock.patch('os.path.abspath', side_effect=mocked_abspath):
-        twister_env = twisterlib.environment.TwisterEnv(options=options)
+        twister_env = pylib.twister.twisterlib.environment.TwisterEnv(options=options)
 
     assert twister_env.generator_cmd == expected_env.generator_cmd
     assert twister_env.generator == expected_env.generator
@@ -350,7 +350,7 @@ def test_twisterenv_discover():
             return original_abspath(path)
 
     with mock.patch('os.path.abspath', side_effect=mocked_abspath):
-        twister_env = twisterlib.environment.TwisterEnv(options=options)
+        twister_env = pylib.twister.twisterlib.environment.TwisterEnv(options=options)
 
     mock_datetime = mock.Mock(
         now=mock.Mock(
@@ -361,14 +361,14 @@ def test_twisterenv_discover():
     )
 
     with mock.patch.object(
-            twisterlib.environment.TwisterEnv,
+            pylib.twister.twisterlib.environment.TwisterEnv,
             'check_zephyr_version',
             mock.Mock()) as mock_czv, \
          mock.patch.object(
-            twisterlib.environment.TwisterEnv,
+            pylib.twister.twisterlib.environment.TwisterEnv,
             'get_toolchain',
             mock.Mock()) as mock_gt, \
-         mock.patch('twisterlib.environment.datetime', mock_datetime):
+         mock.patch('pylib.twister.twisterlib.environment.datetime', mock_datetime):
         twister_env.discover()
 
     mock_czv.assert_called_once()
@@ -454,7 +454,7 @@ def test_twisterenv_check_zephyr_version(
             return original_abspath(path)
 
     with mock.patch('os.path.abspath', side_effect=mocked_abspath):
-        twister_env = twisterlib.environment.TwisterEnv(options=options)
+        twister_env = pylib.twister.twisterlib.environment.TwisterEnv(options=options)
 
     with mock.patch('subprocess.run', mock.Mock(side_effect=mock_run)):
         twister_env.check_zephyr_version()
@@ -532,7 +532,7 @@ def test_twisterenv_run_cmake_script(
          mock.patch('subprocess.Popen', mock.Mock(side_effect=mock_popen)), \
          pytest.raises(Exception) \
             if not find_cmake else nullcontext() as exception:
-        results = twisterlib.environment.TwisterEnv.run_cmake_script(args)
+        results = pylib.twister.twisterlib.environment.TwisterEnv.run_cmake_script(args)
 
     assert 'Running cmake script dummy/script/path' in caplog.text
 
@@ -582,10 +582,10 @@ def test_get_toolchain(caplog, script_result, exit_value, expected_log):
             return original_abspath(path)
 
     with mock.patch('os.path.abspath', side_effect=mocked_abspath):
-        twister_env = twisterlib.environment.TwisterEnv(options=options)
+        twister_env = pylib.twister.twisterlib.environment.TwisterEnv(options=options)
 
     with mock.patch.object(
-            twisterlib.environment.TwisterEnv,
+            pylib.twister.twisterlib.environment.TwisterEnv,
             'run_cmake_script',
             mock.Mock(return_value=script_result)), \
          pytest.raises(SystemExit) \

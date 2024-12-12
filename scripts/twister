@@ -200,11 +200,12 @@ if not ZEPHYR_BASE:
 
     print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
 
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
-
-from twisterlib.environment import add_parse_arguments, parse_arguments, python_version_guard
-from twisterlib.twister_main import main
+from pylib.twister.twisterlib.environment import (
+  add_parse_arguments,
+  parse_arguments,
+  python_version_guard
+)
+from pylib.twister.twisterlib.twister_main import main
 
 
 if __name__ == "__main__":

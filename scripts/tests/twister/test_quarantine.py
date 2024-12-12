@@ -11,9 +11,11 @@ import os
 import pytest
 import textwrap
 
-from twisterlib.quarantine import QuarantineException, \
-                                  QuarantineElement, \
-                                  QuarantineData
+from pylib.twister.twisterlib.quarantine import (
+    QuarantineException,
+    QuarantineElement,
+    QuarantineData
+)
 
 
 TESTDATA_1 = [

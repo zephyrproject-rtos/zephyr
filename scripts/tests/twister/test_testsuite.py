@@ -10,15 +10,13 @@ import mmap
 import mock
 import os
 import pytest
-import sys
 
 from contextlib import nullcontext
 
 ZEPHYR_BASE = os.getenv('ZEPHYR_BASE')
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'twister'))
 
-from twisterlib.statuses import TwisterStatus
-from twisterlib.testsuite import (
+from pylib.twister.twisterlib.statuses import TwisterStatus
+from pylib.twister.twisterlib.testsuite import (
     _find_src_dir_path,
     _get_search_area_boundary,
     find_c_files_in,
@@ -28,7 +26,7 @@ from twisterlib.testsuite import (
     TestCase,
     TestSuite
 )
-from twisterlib.error import TwisterException, TwisterRuntimeError
+from pylib.twister.twisterlib.error import TwisterException, TwisterRuntimeError
 
 
 TESTDATA_1 = [
@@ -655,9 +653,9 @@ def test_scan_testsuite_path(
 
         return result
 
-    with mock.patch('twisterlib.testsuite._find_src_dir_path', mock_fsdp), \
-         mock.patch('twisterlib.testsuite.find_c_files_in', mock_find), \
-         mock.patch('twisterlib.testsuite.scan_file', mock_sf), \
+    with mock.patch('pylib.twister.twisterlib.testsuite._find_src_dir_path', mock_fsdp), \
+         mock.patch('pylib.twister.twisterlib.testsuite.find_c_files_in', mock_find), \
+         mock.patch('pylib.twister.twisterlib.testsuite.scan_file', mock_sf), \
          mock.patch('os.stat', mock_stat), \
          pytest.raises(type(expected_exception)) if \
           expected_exception else nullcontext() as exception:

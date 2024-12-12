@@ -12,15 +12,15 @@ import time
 
 import colorama
 from colorama import Fore
-from twisterlib.coverage import run_coverage
-from twisterlib.environment import TwisterEnv
-from twisterlib.hardwaremap import HardwareMap
-from twisterlib.log_helper import setup_logging
-from twisterlib.package import Artifacts
-from twisterlib.reports import Reporting
-from twisterlib.runner import TwisterRunner
-from twisterlib.statuses import TwisterStatus
-from twisterlib.testplan import TestPlan
+from pylib.twister.twisterlib.coverage import run_coverage
+from pylib.twister.twisterlib.environment import TwisterEnv
+from pylib.twister.twisterlib.hardwaremap import HardwareMap
+from pylib.twister.twisterlib.log_helper import setup_logging
+from pylib.twister.twisterlib.package import Artifacts
+from pylib.twister.twisterlib.reports import Reporting
+from pylib.twister.twisterlib.runner import TwisterRunner
+from pylib.twister.twisterlib.statuses import TwisterStatus
+from pylib.twister.twisterlib.testplan import TestPlan
 
 logger = logging.getLogger("twister")
 logger.setLevel(logging.DEBUG)
