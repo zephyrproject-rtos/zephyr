@@ -110,7 +110,6 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_ANY_LOW_POWER 1
 #endif
 
-BUILD_ASSERT(NRF_GPD_FAST_ACTIVE1 == 0);
 /* Macro must resolve to literal 0 or 1 */
 #define INSTANCE_IS_FAST(unused, prefix, idx, _)					\
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(idx)),				\
