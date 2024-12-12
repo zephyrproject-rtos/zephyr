@@ -643,6 +643,18 @@ harness_config: <harness configuration options>
         Only one fixture can be defined per test scenario and the fixture name has to
         be unique across all tests in the test suite.
 
+    suite_repeat: <int> (default 1)
+        This parameter specifies the number of times the entire test suite should be repeated.
+
+    test_repeat: <int> (default 1)
+        This parameter specifies the number of times each individual test within the test suite
+        should be repeated.
+
+    test_shuffle: <True|False> (default False)
+        This parameter indicates whether the order of the tests within the test suite should
+        be shuffled. When set to ``true``, the tests will be executed in a random order.
+
+
 .. _pytest_root:
 
     pytest_root: <list of pytest testpaths> (default pytest)

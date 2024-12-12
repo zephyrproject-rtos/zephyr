@@ -651,3 +651,38 @@ def test_testinstance_get_buildlog_file(tmp_path, testinstance, create_build_log
 
     if expected_error is None:
         assert res == str(build_log)
+
+
+TESTDATA_9 = [
+    (
+        {'ztest_suite_repeat': 5, 'ztest_test_repeat': 10, 'ztest_test_shuffle': True},
+        '\nCONFIG_ZTEST_REPEAT=y\nCONFIG_ZTEST_SUITE_REPEAT_COUNT=5\nCONFIG_ZTEST_TEST_REPEAT_COUNT=10\nCONFIG_ZTEST_SHUFFLE=y'
+    ),
+    (
+        {'ztest_suite_repeat': 3},
+        '\nCONFIG_ZTEST_REPEAT=y\nCONFIG_ZTEST_SUITE_REPEAT_COUNT=3'
+    ),
+    (
+        {'ztest_test_repeat': 7},
+        '\nCONFIG_ZTEST_REPEAT=y\nCONFIG_ZTEST_TEST_REPEAT_COUNT=7'
+    ),
+    (
+        {'ztest_test_shuffle': True},
+        '\nCONFIG_ZTEST_REPEAT=y\nCONFIG_ZTEST_SHUFFLE=y'
+    ),
+    (
+        {},
+        ''
+    ),
+]
+
+@pytest.mark.parametrize('harness_config, expected_content', TESTDATA_9)
+def test_create_overlay_with_harness_config(class_testplan, all_testsuites_dict, platforms_list, harness_config, expected_content):
+    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    class_testplan.testsuites = all_testsuites_dict
+    testsuite = class_testplan.testsuites.get(testsuite_path)
+    testsuite.harness_config = harness_config
+    class_testplan.platforms = platforms_list
+    platform = class_testplan.get_platform("demo_board_2")
+    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
+    assert testinstance.create_overlay(platform) == expected_content
