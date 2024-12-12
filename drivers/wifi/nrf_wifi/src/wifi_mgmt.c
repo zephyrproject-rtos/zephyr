@@ -620,8 +620,8 @@ void nrf_wifi_event_proc_twt_setup_zep(void *vif_ctx,
 				       unsigned int event_len)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	struct wifi_twt_params twt_params;
-	struct twt_interval_float twt_interval_fp;
+	struct wifi_twt_params twt_params = { 0 };
+	struct twt_interval_float twt_interval_fp = { 0 };
 
 	if (!vif_ctx || !twt_setup_info) {
 		return;
