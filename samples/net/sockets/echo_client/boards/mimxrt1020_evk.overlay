@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2024 DENX Software Engineering GmbH
+ *               Lukasz Majewski <lukma@denx.de>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * imxrt1020_evk -> HOST
+ * nRF21540-DK   -> RCP (nrf/samples/openthread/coprocessor)
+ * LPUART2 used for communication:
+ *         nRF21540 (P6) P0.08 RXD -> IMXRT1020-EVK (J17) D1 (GPIO B1 08) (TXD)
+ *         nRF21540 (P6) P0.07 CTS -> IMXRT1020-EVK (J19) D8 (GPIO B1 07) (RTS)
+ *         nRF21540 (P6) P0.06 TXD -> IMXRT1020-EVK (J17) D0 (GPIO B1 09) (RXD)
+ *         nRF21540 (P6) P0.05 RTS -> IMXRT1020-EVK (J17) D7 (GPIO B1 06) (CTS)
+ */
+
+/**
+ * Overlay to enable support for OpenThread's RCP UART communication
+ * on the imxrt1020_evk board.
+ */
+
+/ {
+	chosen {
+		zephyr,hdlc-rcp-if = &hdlc_rcp_if;
+		zephyr,ot-uart = &lpuart2;
+	};
+
+	hdlc_rcp_if: hdlc_rcp_if {
+		     compatible = "uart,hdlc-rcp-if";
+	};
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <1000000>;
+	pinctrl-0 = <&pinmux_lpuart2_flowcontrol>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+};
+
+/*
+ * The lpuart2's CTS pin is mapped to PHY's int-gpio or to SDRAM EMC 20.
+ * As SPINEL UART's implementation required CTS/RTS flow control -
+ * the PHY's mdio interrupt needs to be disabled.
+ */
+&phy {
+	/delete-property/ int-gpios;
+};
+
+&pinctrl {
+	pinmux_lpuart2_flowcontrol: pinmux_lpuart2_flowcontrol {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_09_lpuart2_rx>,
+				<&iomuxc_gpio_ad_b1_08_lpuart2_tx>,
+				<&iomuxc_gpio_ad_b1_06_lpuart2_cts_b>,
+				<&iomuxc_gpio_ad_b1_07_lpuart2_rts_b>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+};
+
+/delete-node/ &{/soc/iomuxc@401f8000/pinctrl/pinmux_enet_mdio/group1};
