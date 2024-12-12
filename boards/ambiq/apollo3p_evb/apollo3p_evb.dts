@@ -2,6 +2,7 @@
 #include <ambiq/ambiq_apollo3p_blue.dtsi>
 
 #include "apollo3p_evb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Ambiq Apollo3 Blue Plus evaluation board";
@@ -25,6 +26,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		rtc = &rtc0;
 	};
 
 	leds {
@@ -56,14 +58,17 @@
 		button0: button_0 {
 			gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
 			label = "BTN0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
 			label = "BTN1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button2: button_2 {
 			gpios = <&gpio0_31 19 GPIO_ACTIVE_LOW>;
 			label = "BTN2";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
 };
@@ -161,6 +166,11 @@
 
 &counter7 {
 	status = "okay";
+};
+
+&rtc0 {
+	status = "okay";
+	clock = "XTAL";
 };
 
 &adc0 {
