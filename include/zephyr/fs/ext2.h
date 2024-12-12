@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#include <zephyr/sys/uuid.h>
+
 /** @brief Configuration used to format ext2 file system.
  *
  * If a field is set to 0 then default value is used.
@@ -27,7 +29,7 @@ struct ext2_cfg {
 	uint32_t block_size;
 	uint32_t fs_size; /* Number of blocks that we want to take. */
 	uint32_t bytes_per_inode;
-	uint8_t uuid[16];
+	struct uuid uuid;
 	uint8_t volume_name[17]; /* If first byte is 0 then name ext2" is given. */
 	bool set_uuid;
 };
