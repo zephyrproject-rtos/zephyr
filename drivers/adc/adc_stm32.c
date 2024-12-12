@@ -793,10 +793,13 @@ static void dma_callback(const struct device *dev, void *user_data,
 
 	if (channel == data->dma.channel) {
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
-		if (LL_ADC_IsActiveFlag_OVR(adc) || (status >= 0)) {
-#else
-		if (status >= 0) {
+		if (LL_ADC_IsActiveFlag_OVR(adc)) {
+			LL_ADC_ClearFlag_OVR(adc);
+			LOG_ERR("ADC overrun error occurred. Reduce clock source frequency, "
+				"increase prescaler value or increase sampling times.");
+		}
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+		if (status >= 0) {
 			data->samples_count = data->channel_count;
 			data->buffer += data->channel_count;
 			/* Stop the DMA engine, only to start it again when the callback returns
@@ -805,9 +808,6 @@ static void dma_callback(const struct device *dev, void *user_data,
 			 * within adc_context_start_sampling
 			 */
 			dma_stop(data->dma.dma_dev, data->dma.channel);
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
-			LL_ADC_ClearFlag_OVR(adc);
-#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 			/* No need to invalidate the cache because it's assumed that
 			 * the address is in a non-cacheable SRAM region.
 			 */
@@ -1117,6 +1117,14 @@ static void adc_stm32_isr(const struct device *dev)
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
+
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	if (LL_ADC_IsActiveFlag_OVR(adc)) {
+		LL_ADC_ClearFlag_OVR(adc);
+		LOG_ERR("ADC overrun error occurred. Use DMA, reduce clock source frequency, "
+			"increase prescaler value or increase sampling times.");
+	}
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	if (LL_ADC_IsActiveFlag_EOS(adc) == 1) {
