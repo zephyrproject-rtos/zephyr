@@ -799,7 +799,7 @@ static bool dma_mcux_edma_channel_filter(const struct device *dev,
 	return true;
 }
 
-static const struct dma_driver_api dma_mcux_edma_api = {
+static DEVICE_API(dma, dma_mcux_edma_api) = {
 	.reload = dma_mcux_edma_reload,
 	.config = dma_mcux_edma_configure,
 	.start = dma_mcux_edma_start,

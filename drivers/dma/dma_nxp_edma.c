@@ -592,7 +592,7 @@ static bool edma_channel_filter(const struct device *dev, int chan_id, void *par
 	return false;
 }
 
-static const struct dma_driver_api edma_api = {
+static DEVICE_API(dma, edma_api) = {
 	.reload = edma_reload,
 	.config = edma_config,
 	.start = edma_start,

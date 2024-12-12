@@ -909,7 +909,7 @@ static bool dma_smartbond_chan_filter(const struct device *dev, int channel, voi
 	return false;
 }
 
-static struct dma_driver_api dma_smartbond_driver_api = {
+static DEVICE_API(dma, dma_smartbond_driver_api) = {
 	.config = dma_smartbond_config,
 	.reload = dma_smartbond_reload,
 	.start = dma_smartbond_start,

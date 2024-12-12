@@ -644,7 +644,7 @@ static bool dma_xec_chan_filter(const struct device *dev, int ch, void *filter_p
 }
 
 /* API - HW does not stupport suspend/resume */
-static const struct dma_driver_api dma_xec_api = {
+static DEVICE_API(dma, dma_xec_api) = {
 	.config = dma_xec_configure,
 	.reload = dma_xec_reload,
 	.start = dma_xec_start,
