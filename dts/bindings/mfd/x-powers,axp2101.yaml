@@ -1,0 +1,14 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: X-Powers AXP2101
+
+compatible: "x-powers,axp2101"
+
+include: i2c-device.yaml
+
+bus: axp2101
+
+properties:
+  reg:
+    required: true
