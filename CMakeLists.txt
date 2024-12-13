@@ -138,6 +138,7 @@ foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
 endforeach()
 
 zephyr_compile_definitions(
+  ZPP
   KERNEL
   __ZEPHYR__=1
 )
