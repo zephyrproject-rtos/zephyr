@@ -181,31 +181,6 @@ static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
 	i2c->CR1 &= ~flags;
 }
 
-static void stm32_i2c_master_mode_end(const struct device *dev)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-
-	stm32_i2c_disable_transfer_interrupts(dev);
-
-	if (LL_I2C_IsEnabledReloadMode(i2c)) {
-		LL_I2C_DisableReloadMode(i2c);
-	}
-
-#if defined(CONFIG_I2C_TARGET)
-	data->master_active = false;
-	if (!data->slave_attached && !data->smbalert_active) {
-		LL_I2C_Disable(i2c);
-	}
-#else
-	if (!data->smbalert_active) {
-		LL_I2C_Disable(i2c);
-	}
-#endif
-	k_sem_give(&data->device_sync_sem);
-}
-
 #if defined(CONFIG_I2C_TARGET)
 static void stm32_i2c_slave_event(const struct device *dev)
 {
@@ -571,11 +546,14 @@ static int stm32_i2c_error(const struct device *dev)
 		data->current.is_arlo = 1U;
 		goto end;
 	}
-
+	/* Don't end transaction on bus error in master mode
+	 * as errata sheet says that spurious false detections
+	 * of BERR can happened which shall be ignored
+	 * If a real Bus Error occurs, transaction will time out
+	 * */
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
 		data->current.is_err = 1U;
-		goto end;
 	}
 
 #if defined(CONFIG_SMBUS_STM32_SMBALERT)
@@ -590,7 +568,9 @@ static int stm32_i2c_error(const struct device *dev)
 
 	return 0;
 end:
-	stm32_i2c_master_mode_end(dev);
+	stm32_i2c_disable_transfer_interrupts(dev);
+	/* Wakeup thread */
+	k_sem_give(&data->device_sync_sem);
 	return -EIO;
 }
 
