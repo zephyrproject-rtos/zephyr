@@ -251,6 +251,7 @@ static void enable_mpu(void)
  * dram clear and also set buf[0] to 0 manually (as it isn't affected
  * by device reset).
  */
+#ifndef CONFIG_WINSTREAM_CONSOLE
 int arch_printk_char_out(int c)
 {
 	char volatile * const buf = (void *)LOG_BASE;
@@ -263,6 +264,10 @@ int arch_printk_char_out(int c)
 	}
 	return 0;
 }
+#endif
+
+/* Define this here as a simple uncached array, no special linkage requirements */
+__nocache char _winstream_console_buf[CONFIG_WINSTREAM_CONSOLE_STATIC_SIZE];
 
 void c_boot(void)
 {
