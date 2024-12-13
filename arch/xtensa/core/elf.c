@@ -33,15 +33,18 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #define R_XTENSA_SLOT0_OP	20
 
 static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
-				const elf_rela_t *rel, uint8_t *text, uintptr_t addr,
+				const elf_rela_t *rel, uintptr_t addr,
 				uint8_t *loc, int type, uint32_t stb)
 {
 	elf_word *got_entry = (elf_word *)loc;
 
 	switch (type) {
 	case R_XTENSA_RELATIVE:
+		;
 		/* Relocate a local symbol: Xtensa specific. Seems to only be used with PIC */
-		*got_entry += (uintptr_t)text - addr;
+		uintptr_t text = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
+
+		*got_entry += text - addr;
 		break;
 	case R_XTENSA_GLOB_DAT:
 	case R_XTENSA_JMP_SLOT:
@@ -113,11 +116,9 @@ static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
  * @brief Architecture specific function for STB_LOCAL ELF relocations
  */
 void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
-			     const elf_sym_t *sym, size_t got_offset,
+			     const elf_sym_t *sym, uint8_t *rel_addr,
 			     const struct llext_load_param *ldr_parm)
 {
-	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
-	uint8_t *loc = text + got_offset;
 	int type = ELF32_R_TYPE(rel->r_info);
 	uintptr_t sh_addr;
 
@@ -133,24 +134,22 @@ void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const 
 		sh_addr = ldr->sects[LLEXT_MEM_TEXT].sh_addr;
 	}
 
-	xtensa_elf_relocate(ldr, ext, rel, text, sh_addr, loc, type, ELF_ST_BIND(sym->st_info));
+	xtensa_elf_relocate(ldr, ext, rel, sh_addr, rel_addr, type, ELF_ST_BIND(sym->st_info));
 }
 
 /**
  * @brief Architecture specific function for STB_GLOBAL ELF relocations
  */
 void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
-			      const elf_sym_t *sym, size_t got_offset, const void *link_addr)
+			      const elf_sym_t *sym, uint8_t *rel_addr, const void *link_addr)
 {
-	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
-	elf_word *got_entry = (elf_word *)(text + got_offset);
 	int type = ELF32_R_TYPE(rel->r_info);
 
 	/* For global relocations we expect the initial value for R_XTENSA_RELATIVE to be zero */
-	if (type == R_XTENSA_RELATIVE && *got_entry) {
-		LOG_WRN("global: non-zero relative value %#x", *got_entry);
+	if (type == R_XTENSA_RELATIVE && *(elf_word *)rel_addr) {
+		LOG_WRN("global: non-zero relative value %#x", *(elf_word *)rel_addr);
 	}
 
-	xtensa_elf_relocate(ldr, ext, rel, text, (uintptr_t)link_addr, (uint8_t *)got_entry, type,
+	xtensa_elf_relocate(ldr, ext, rel, (uintptr_t)link_addr, rel_addr, type,
 			    ELF_ST_BIND(sym->st_info));
 }
