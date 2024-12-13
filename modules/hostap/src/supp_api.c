@@ -2304,7 +2304,9 @@ int hapd_config_network(struct hostapd_iface *iface,
 			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
 				goto out;
 			}
-		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
+			   params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
+			   params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
 			if (!hostapd_cli_cmd_v("set wpa 2")) {
 				goto out;
 			}
@@ -2319,8 +2321,14 @@ int hapd_config_network(struct hostapd_iface *iface,
 			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
 				goto out;
 			}
-			if (!hostapd_cli_cmd_v("set sae_pwe 2")) {
-				goto out;
+			if (params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
+			    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+				if (!hostapd_cli_cmd_v("set sae_pwe %d",
+					(params->security == WIFI_SECURITY_TYPE_SAE_H2E)
+						? 1
+						: 2)) {
+					goto out;
+				}
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
 			if (!hostapd_cli_cmd_v("set wpa 2")) {
