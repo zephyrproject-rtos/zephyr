@@ -513,7 +513,6 @@ static struct net_buf *hid_buf_alloc_ext(const struct hid_device_config *const d
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	return buf;
@@ -531,7 +530,6 @@ static struct net_buf *hid_buf_alloc(const struct hid_device_config *const dcfg,
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	return buf;
