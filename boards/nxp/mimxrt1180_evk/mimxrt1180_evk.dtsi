@@ -44,6 +44,30 @@
 	pinctrl-names = "default";
 	status = "okay";
 
+	phy0: phy@2 {
+		compatible = "ethernet-phy";
+		reg = <0x2>;
+		status = "okay";
+	};
+
+	phy1: phy@5 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x5>;
+		status = "okay";
+	};
+
+	phy2: phy@4 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x4>;
+		status = "okay";
+	};
+
+	phy3: phy@7 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x7>;
+		status = "okay";
+	};
+
 	phy4: phy@3 {
 		compatible = "ethernet-phy";
 		reg = <0x3>;
@@ -56,6 +80,58 @@
 	pinctrl-0 = <&eth4_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy4>;
+	status = "okay";
+};
+
+/* Internal port */
+&enetc_psi1 {
+	local-mac-address = [00 00 00 01 03 00];
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&switch_port0 {
+	local-mac-address = [00 00 00 01 04 00];
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "rmii";
+	status = "okay";
+};
+
+&switch_port1 {
+	local-mac-address = [00 00 00 01 05 00];
+	pinctrl-0 = <&eth1_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy1>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&switch_port2 {
+	local-mac-address = [00 00 00 01 06 00];
+	pinctrl-0 = <&eth2_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy2>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&switch_port3 {
+	local-mac-address = [00 00 00 01 07 00];
+	pinctrl-0 = <&eth3_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy3>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+/* Internal port */
+&switch_port4 {
+	local-mac-address = [00 00 00 01 06 00];
 	status = "okay";
 };
 
