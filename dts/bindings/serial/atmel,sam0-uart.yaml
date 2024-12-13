@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
 description: Atmel SAM0 SERCOM UART driver
 
 compatible: "atmel,sam0-uart"
@@ -17,6 +20,12 @@ properties:
     required: true
 
   clock-names:
+    required: true
+
+  assigned-clocks:
+    required: true
+
+  assigned-clock-names:
     required: true
 
   rxpo:
