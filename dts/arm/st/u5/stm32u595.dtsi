@@ -74,8 +74,8 @@
 				       STM32_ADC_RES(10, 0x02)
 				       STM32_ADC_RES(8, 0x03)>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
@@ -95,8 +95,8 @@
 				       STM32_ADC_RES(10, 0x02)
 				       STM32_ADC_RES(8, 0x03)>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 

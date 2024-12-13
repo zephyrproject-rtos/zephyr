@@ -132,7 +132,7 @@
 		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	pinctrl-0 = <&adc1_inp0_pa0>; /* Arduino A0 */
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <8>;
 	status = "okay";
 };
