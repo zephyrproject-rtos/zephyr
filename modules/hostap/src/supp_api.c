@@ -362,7 +362,7 @@ static inline enum wifi_frequency_bands wpas_band_to_zephyr(enum wpa_radio_work_
 	}
 }
 
-static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int proto)
+static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int proto, int pwe)
 {
 	switch (key_mgmt) {
 	case WPA_KEY_MGMT_IEEE8021X:
@@ -380,7 +380,13 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int 
 	case WPA_KEY_MGMT_PSK_SHA256:
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
 	case WPA_KEY_MGMT_SAE:
-		return WIFI_SECURITY_TYPE_SAE;
+		if (pwe == 1) {
+			return WIFI_SECURITY_TYPE_SAE_H2E;
+		} else if (pwe == 2) {
+			return WIFI_SECURITY_TYPE_SAE_AUTO;
+		} else {
+			return WIFI_SECURITY_TYPE_SAE_HNP;
+		}
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK:
 		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 	case WPA_KEY_MGMT_FT_PSK:
@@ -1520,22 +1526,21 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		u8 *_ssid = ssid->ssid;
 		size_t ssid_len = ssid->ssid_len;
 		struct status_resp cli_status;
-		bool is_ap;
 		int proto;
 		int key_mgmt;
+		int sae_pwe;
 
 		if (!ssid) {
 			wpa_printf(MSG_ERROR, "Failed to get current ssid");
 			goto out;
 		}
 
-		is_ap = ssid->mode == WPAS_MODE_AP;
-		/* For AP its always the configured one */
-		proto = is_ap ? ssid->proto : wpa_s->wpa_proto;
-		key_mgmt = is_ap ? ssid->key_mgmt : wpa_s->key_mgmt;
+		proto = ssid->proto;
+		key_mgmt = ssid->key_mgmt;
+		sae_pwe = wpa_s->conf->sae_pwe;
 		os_memcpy(status->bssid, wpa_s->bssid, WIFI_MAC_ADDR_LEN);
 		status->band = wpas_band_to_zephyr(wpas_freq_to_band(wpa_s->assoc_freq));
-		status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
+		status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto, sae_pwe);
 		status->mfp = get_mfp(ssid->ieee80211w);
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;
@@ -2483,6 +2488,7 @@ int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *sta
 	struct hostapd_hw_modes *hw_mode;
 	int proto;    /* Wi-Fi secure protocol */
 	int key_mgmt; /*  Wi-Fi key management */
+	int sae_pwe;
 
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 
@@ -2522,7 +2528,8 @@ int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *sta
 	status->band = wpas_band_to_zephyr(wpas_freq_to_band(iface->freq));
 	key_mgmt = bss->wpa_key_mgmt;
 	proto = bss->wpa;
-	status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
+	sae_pwe = bss->sae_pwe;
+	status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto, sae_pwe);
 	status->mfp = get_mfp(bss->ieee80211w);
 	status->channel = conf->channel;
 	os_memcpy(status->ssid, ssid->ssid, ssid->ssid_len);
