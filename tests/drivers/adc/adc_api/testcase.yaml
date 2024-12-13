@@ -14,6 +14,12 @@ tests:
       - DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
     platform_allow:
       - b_u585i_iot02a
+  drivers.adc.nucleo_f103rb_dma:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nucleo_f103rb_dma.overlay"
+      - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
+    platform_allow:
+      - nucleo_f103rb
   drivers.adc.dma_st_stm32:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
