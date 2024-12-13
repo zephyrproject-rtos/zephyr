@@ -179,7 +179,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&adc1_in10_pc0 &adc1_in11_pc1
 		     &adc1_in12_pc2 &adc1_in13_pc3>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <2>;
 	status = "okay";
 };

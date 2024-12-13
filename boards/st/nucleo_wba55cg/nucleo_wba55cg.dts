@@ -147,7 +147,7 @@
 &adc4 {
 	pinctrl-0 = <&adc4_in8_pa1 &adc4_in9_pa0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
