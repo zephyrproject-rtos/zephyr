@@ -238,38 +238,16 @@ struct adc_stm32_cfg {
 static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 {
 	/* Allow ADC to create DMA request and set to one-shot mode as implemented in HAL drivers */
-
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-
-#if defined(STM32H72X_ADC)
-	if (adc == ADC3) {
-		LL_ADC_REG_SetDMATransferMode(adc, LL_ADC3_REG_DMA_TRANSFER_LIMITED);
-	} else {
-		LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
-	}
-#elif defined(STM32H74X_ADC)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_UNLIMITED);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+	/* H72x ADC3 and U5 ADC4 are different from the rest, but this call works also for them,
+	 * so no need to call their specific function
+	 */
 	LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
 #else
-#error "Unsupported ADC version"
-#endif
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) /* defined(CONFIG_SOC_SERIES_STM32H7X) */
-
-#error "The STM32F1 ADC + DMA is not yet supported"
-
-#elif defined(CONFIG_SOC_SERIES_STM32U5X) /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
-
-	if (adc == ADC4) {
-		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED_ADC4);
-	} else {
-		LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
-	}
-
-#else /* defined(CONFIG_SOC_SERIES_STM32U5X) */
-
 	/* Default mechanism for other MCUs */
 	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
-
 #endif
 }
 
@@ -794,8 +772,10 @@ static void dma_callback(const struct device *dev, void *user_data,
 {
 	/* user_data directly holds the adc device */
 	struct adc_stm32_data *data = user_data;
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) /* Avoid unused variables */
 	const struct adc_stm32_cfg *config = data->dev->config;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
 	LOG_DBG("dma callback");
 
@@ -829,7 +809,7 @@ static void dma_callback(const struct device *dev, void *user_data,
 		} else if (status < 0) {
 			LOG_ERR("DMA sampling complete, but DMA reported error %d", status);
 			data->dma_error = status;
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 			LL_ADC_REG_StopConversion(adc);
 #endif
 			dma_stop(data->dma.dma_dev, data->dma.channel);
