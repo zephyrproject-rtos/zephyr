@@ -33,13 +33,13 @@ __weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
 }
 
 __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
-				    const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset,
+				    const elf_rela_t *rel, const elf_sym_t *sym, uint8_t *rel_addr,
 				    const struct llext_load_param *ldr_parm)
 {
 }
 
 __weak void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext,
-				     const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset,
+				     const elf_rela_t *rel, const elf_sym_t *sym, uint8_t *rel_addr,
 				     const void *link_addr)
 {
 }
@@ -216,14 +216,15 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 		 * This is valid only when CONFIG_LLEXT_STORAGE_WRITABLE=y
 		 * and peek() is usable on the source ELF file.
 		 */
-		size_t got_offset;
+		uint8_t *rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
+			ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 
 		if (tgt) {
-			got_offset = rela.r_offset + tgt->sh_offset -
-				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+			/* Relocatable / partially linked ELF. */
+			rel_addr += rela.r_offset + tgt->sh_offset;
 		} else {
-			got_offset = llext_file_offset(ldr, rela.r_offset) -
-				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+			/* Shared / dynamically linked ELF */
+			rel_addr += llext_file_offset(ldr, rela.r_offset);
 		}
 
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
@@ -256,14 +257,14 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			}
 
 			/* Resolve the symbol */
-			arch_elf_relocate_global(ldr, ext, &rela, &sym, got_offset, link_addr);
+			arch_elf_relocate_global(ldr, ext, &rela, &sym, rel_addr, link_addr);
 			break;
 		case STB_LOCAL:
-			arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset, ldr_parm);
+			arch_elf_relocate_local(ldr, ext, &rela, &sym, rel_addr, ldr_parm);
 		}
 
-		LOG_DBG("symbol %s offset %#zx r-offset %#zx .text offset %#zx stb %u",
-			name, got_offset,
+		LOG_DBG("symbol %s relocation @%p r-offset %#zx .text offset %#zx stb %u",
+			name, (void *)rel_addr,
 			(size_t)rela.r_offset, (size_t)ldr->sects[LLEXT_MEM_TEXT].sh_offset, stb);
 	}
 }
