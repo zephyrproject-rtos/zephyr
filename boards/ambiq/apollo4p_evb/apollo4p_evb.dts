@@ -76,7 +76,7 @@
 };
 
 &adc0 {
-compatible = "ambiq,adc";
+	compatible = "ambiq,adc";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 	status = "okay";
