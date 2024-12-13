@@ -110,6 +110,11 @@ SECTIONS {
   _end = .;
   _mtk_adsp_dram_end = .;
 
+  .nocache (NOLOAD) : {
+    . = ALIGN(4096);
+    *(.nocache .nocache.*)
+  } > dram
+
   /* Non-runtime-loaded sections below */
 
 #include <zephyr/linker/debug-sections.ld>
