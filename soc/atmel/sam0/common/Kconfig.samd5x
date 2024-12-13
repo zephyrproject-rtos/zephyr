@@ -10,6 +10,14 @@ config SOC_ATMEL_SAMD5X_XOSC32K
 	  startup.  This can then be selected as the main clock source
 	  for the SOC.
 
+config SOC_ATMEL_SAMD5X_XOSC32K_STARTUP
+	depends on SOC_ATMEL_SAMD5X_XOSC32K
+	hex "Startup time external 32 kHz crystal oscillator"
+	range 0x0 0x6
+	default 0x1
+	help
+	  Selects the startup time for the external 32 kHz crystal oscillator.
+
 choice
 	prompt "Main clock source"
 	default SOC_ATMEL_SAMD5X_DEFAULT_AS_MAIN
