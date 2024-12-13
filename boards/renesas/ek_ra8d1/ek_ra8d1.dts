@@ -229,3 +229,5 @@
 	interrupts = <89 12>;
 	status = "okay";
 };
+
+pmod_sd_shield: &sdhc1 {};
