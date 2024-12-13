@@ -25,8 +25,8 @@
  */
 #define ITERATIONS 2
 
-int init_central(uint8_t iterations);
-int init_peripheral(uint8_t iterations);
+int init_central(uint8_t max_conn, uint8_t iterations);
+int init_peripheral(uint8_t max_conn, uint8_t iterations);
 
 #define FAIL(...)					\
 	do {						\
@@ -46,7 +46,7 @@ static void test_central_main(void)
 {
 	int err;
 
-	err = init_central(ITERATIONS);
+	err = init_central(CONFIG_BT_MAX_CONN, ITERATIONS);
 	if (err) {
 		goto exit;
 	}
@@ -70,7 +70,7 @@ static void test_peripheral_main(void)
 {
 	int err;
 
-	err = init_peripheral(ITERATIONS);
+	err = init_peripheral(CONFIG_BT_MAX_CONN, ITERATIONS);
 	if (err) {
 		goto exit;
 	}
