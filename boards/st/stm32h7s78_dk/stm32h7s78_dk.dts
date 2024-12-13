@@ -148,7 +148,7 @@
 &adc1 {
 	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A3 */
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
@@ -156,7 +156,7 @@
 &adc2 {
 	pinctrl-0 = <&adc2_inp2_pf13>; /* Arduino A4 */
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
