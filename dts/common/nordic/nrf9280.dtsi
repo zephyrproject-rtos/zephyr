@@ -92,6 +92,13 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
 		};
+
+		hsfll120: hsfll120 {
+			compatible = "fixed-clock";
+			clocks = <&fll16m>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(320)>;
+		};
 	};
 
 	soc {
@@ -265,7 +272,7 @@
 				cc-num = <8>;
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
+				clocks = <&hfxo>;
 				prescaler = <0>;
 			};
 
@@ -276,7 +283,7 @@
 				cc-num = <8>;
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
+				clocks = <&hfxo>;
 				prescaler = <0>;
 			};
 
@@ -287,7 +294,7 @@
 				cc-num = <8>;
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
+				clocks = <&hfxo>;
 				prescaler = <0>;
 			};
 
@@ -467,7 +474,7 @@
 				cc-num = <6>;
 				interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
+				clocks = <&hsfll120>;
 				prescaler = <0>;
 			};
 
@@ -478,7 +485,7 @@
 				cc-num = <6>;
 				interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
+				clocks = <&hsfll120>;
 				prescaler = <0>;
 			};
 
