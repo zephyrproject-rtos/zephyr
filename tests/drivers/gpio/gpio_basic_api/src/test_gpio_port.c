@@ -116,6 +116,10 @@ static int setup(void)
 
 	/* Test output high */
 	rc = gpio_pin_configure(dev_out, PIN_OUT, GPIO_OUTPUT_HIGH | GPIO_PULL_UP);
+	if (rc == -ENOTSUP) {
+		TC_PRINT("NOTE: pull-up not supported; trying as output high\n");
+		rc = gpio_pin_configure(dev_out, PIN_OUT, GPIO_OUTPUT_HIGH);
+	}
 	zassert_equal(rc, 0,
 		      "pin config output high failed");
 
