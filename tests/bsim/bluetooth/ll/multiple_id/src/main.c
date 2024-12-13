@@ -126,6 +126,45 @@ exit:
 	bs_trace_silent_exit(0);
 }
 
+static void test_central_single_main(void)
+{
+	int err;
+
+	err = init_central(1U, ITERATIONS);
+	if (err) {
+		goto exit;
+	}
+
+	PASS("Central tests passed\n");
+
+	return;
+
+exit:
+	FAIL("Central tests failed (%d)\n", err);
+	bs_trace_silent_exit(0);
+}
+
+static void test_peripheral_multilink_main(void)
+{
+	int err;
+
+	err = init_peripheral(20U, ITERATIONS);
+	if (err) {
+		goto exit;
+	}
+
+	k_sleep(K_SECONDS(3));
+
+	PASS("Peripheral tests passed\n");
+	bs_trace_silent_exit(0);
+
+	return;
+
+exit:
+	FAIL("Peripheral tests failed (%d)\n", err);
+	bs_trace_silent_exit(0);
+}
+
 static void test_multiple_init(void)
 {
 	bst_ticker_set_next_tick_absolute(1500e6);
@@ -166,6 +205,20 @@ static const struct bst_test_instance test_def[] = {
 		.test_pre_init_f = test_multiple_init,
 		.test_tick_f = test_multiple_tick,
 		.test_main_f = test_peripheral_single_main
+	},
+	{
+		.test_id = "central_single",
+		.test_descr = "Single Central device",
+		.test_pre_init_f = test_multiple_init,
+		.test_tick_f = test_multiple_tick,
+		.test_main_f = test_central_single_main
+	},
+	{
+		.test_id = "peripheral_multilink",
+		.test_descr = "Peripheral multilink device",
+		.test_pre_init_f = test_multiple_init,
+		.test_tick_f = test_multiple_tick,
+		.test_main_f = test_peripheral_multilink_main
 	},
 	BSTEST_END_MARKER
 };
