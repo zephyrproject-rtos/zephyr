@@ -164,16 +164,12 @@ static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
-
-	LL_I2C_DisableIT_TX(i2c);
-	LL_I2C_DisableIT_RX(i2c);
-	LL_I2C_DisableIT_STOP(i2c);
-	LL_I2C_DisableIT_NACK(i2c);
-	LL_I2C_DisableIT_TC(i2c);
-
+	uint32_t flags =
+		I2C_CR1_TXIE | I2C_CR1_RXIE | I2C_CR1_STOPIE | I2C_CR1_NACKIE | I2C_CR1_TCIE;
 	if (!data->smbalert_active) {
-		LL_I2C_DisableIT_ERR(i2c);
+		flags |= I2C_CR1_ERRIE;
 	}
+	i2c->CR1 &= ~flags;
 }
 
 static void stm32_i2c_enable_transfer_interrupts(const struct device *dev)
