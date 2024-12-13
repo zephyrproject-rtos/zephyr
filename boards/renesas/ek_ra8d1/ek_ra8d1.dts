@@ -298,3 +298,5 @@ zephyr_lcdif: &lcdif {
 zephyr_mipi_dsi: &mipi_dsi {};
 
 renesas_mipi_i2c: &iic1{};
+
+pmod_sd_shield: &sdhc1 {};
