@@ -599,6 +599,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"key2-pwd", required_argument, 0, 'K'},
 		{"wpa3-enterprise", required_argument, 0, 'S'},
 		{"TLS-cipher", required_argument, 0, 'T'},
+		{"verify-peer-cert", required_argument, 0, 'A'},
 		{"eap-version", required_argument, 0, 'V'},
 		{"eap-id1", required_argument, 0, 'I'},
 		{"eap-id2", required_argument, 0, 'I'},
@@ -644,8 +645,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->eap_ver = 1;
 	params->ignore_broadcast_ssid = 0;
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
+	params->verify_peer_cert = false;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:V:I:P:i:Rh",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:i:Rh",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -806,6 +808,11 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'T':
 			params->TLS_cipher = atoi(state->optarg);
+			break;
+		case 'A':
+			if (iface_mode == WIFI_MODE_INFRA) {
+				params->verify_peer_cert = !!atoi(state->optarg);
+			}
 			break;
 		case 'V':
 			params->eap_ver = atoi(state->optarg);
@@ -3693,6 +3700,8 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		  "Default 0: Not WPA3 enterprise mode.\n"
 		  "1:Suite-b mode, 2:Suite-b-192-bit mode, 3:WPA3-enterprise-only mode.\n"
 		  "[-T, --TLS-cipher]: 0:TLS-NONE, 1:TLS-ECC-P384, 2:TLS-RSA-3K.\n"
+		  "[-A, --verify-peer-cert]: apply for EAP-PEAP-MSCHAPv2 and EAP-TTLS-MSCHAPv2\n"
+		  "Default 0. 0:not use CA to verify peer, 1:use CA to verify peer.\n"
 		  "[-V, --eap-version]: 0 or 1. Default 1: eap version 1.\n"
 		  "[-I, --eap-id1]: Client Identity. Default no eap identity.\n"
 		  "[-P, --eap-pwd1]: Client Password.\n"
