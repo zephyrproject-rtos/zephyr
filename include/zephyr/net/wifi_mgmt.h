@@ -569,6 +569,8 @@ struct wifi_connect_req_params {
 	const uint8_t *eap_password;
 	/** eap passwd length, max 128 */
 	uint8_t eap_passwd_length;
+	/** Whether verify peer with CA or not: false-not verify, true-verify. */
+	bool verify_peer_cert;
 	/** Fast BSS Transition used */
 	bool ft_used;
 	/** Number of EAP users */
