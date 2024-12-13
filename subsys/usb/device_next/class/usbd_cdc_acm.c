@@ -132,7 +132,6 @@ struct net_buf *cdc_acm_buf_alloc(const uint8_t ep)
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	return buf;
