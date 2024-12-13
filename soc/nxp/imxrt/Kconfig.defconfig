@@ -81,9 +81,6 @@ choice SEGGER_SYSVIEW_SECTION
 	depends on SEGGER_SYSTEMVIEW
 endchoice
 
-config MBEDTLS
-	default y if CSPRNG_AVAILABLE
-
 if MBEDTLS
 #
 # MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
