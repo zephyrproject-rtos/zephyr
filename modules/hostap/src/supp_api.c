@@ -1233,15 +1233,19 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
-					   enterprise_creds.ca_cert,
-					   enterprise_creds.ca_cert_len)) {
-				goto out;
-			}
+			if (false == ((params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+			    params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2) &&
+			    (!params->verify_peer_cert))) {
+				if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
+						   enterprise_creds.ca_cert,
+						   enterprise_creds.ca_cert_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d ca_cert \"blob://ca_cert\"",
-					   resp.network_id)) {
-				goto out;
+				if (!wpa_cli_cmd_v("set_network %d ca_cert \"blob://ca_cert\"",
+						   resp.network_id)) {
+					goto out;
+				}
 			}
 
 			if (wpas_config_process_blob(wpa_s->conf, "client_cert",
