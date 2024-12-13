@@ -93,9 +93,9 @@ LOG_MODULE_REGISTER(adc_stm32);
 					   0, value) 0)
 
 #define ANY_ADC_SEQUENCER_TYPE_IS(value) \
-	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_PROP_OR, \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
 					   st_adc_sequencer,\
-					   0, value) 0)
+					   value) 0)
 
 #define ANY_ADC_OVERSAMPLER_TYPE_IS(value) \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
@@ -1735,7 +1735,7 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 #endif
 
 /* st_prescaler property requires 2 elements : clock ASYNC/SYNC and DIV */
-#define ADC_STM32_CLOCK(x)	DT_INST_PROP(x, st_adc_clock_source)
+#define ADC_STM32_CLOCK(x)	DT_INST_STRING_UPPER_TOKEN(x, st_adc_clock_source)
 #define ADC_STM32_DIV(x)	DT_INST_PROP(x, st_adc_prescaler)
 
 /* Macro to set the prefix depending on the 1st element: check if it is SYNC or ASYNC */
@@ -1914,7 +1914,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
 	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.sequencer_type = DT_INST_PROP(index, st_adc_sequencer),	\
+	.sequencer_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer),	\
 	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),	\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\
 	.num_sampling_time_common_channels =				\
