@@ -890,12 +890,14 @@ choice
 	  will occur at build time.
 
 config STACK_CANARIES
-	bool "Maximum protection available"
+	bool "Default protection"
 	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
 	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
 	select REQUIRES_STACK_CANARIES
 	help
-	  This option enables compiler stack canaries for all functions.
+	  This option enables compiler stack canaries in functions that have
+	  vulnerable objects. Generally this means function that call alloca or
+	  have buffers larger than 8 bytes.
 
 config STACK_CANARIES_STRONG
 	bool "Strong protection"
@@ -906,6 +908,14 @@ config STACK_CANARIES_STRONG
 	  This option enables compiler stack canaries in functions that call alloca,
 	  functions that have local array definitiion or have references to local
 	  frame addresses.
+
+config STACK_CANARIES_ALL
+	bool "Maximum protection available"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries for all functions.
 
 config STACK_CANARIES_EXPLICIT
 	bool "Explicit protection"
