@@ -510,7 +510,7 @@ prevent you from implementing a hardware-clone firmware. Instead, if possible,
 the host driver implementation should be fixed to use values from the interface
 and endpoint descriptor.
 
-Testing over USPIP in native_sim
+Testing over USBIP in native_sim
 ********************************
 
 A virtual USB controller implemented through USBIP might be used to test the USB
