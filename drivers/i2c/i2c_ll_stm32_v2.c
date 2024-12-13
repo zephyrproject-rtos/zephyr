@@ -27,99 +27,101 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 
 #include "i2c-priv.h"
 
-#define STM32_I2C_TRANSFER_TIMEOUT_MSEC  500
+#define STM32_I2C_TRANSFER_TIMEOUT_MSEC 500
 
 #ifdef CONFIG_I2C_STM32_V2_TIMING
 /* Use the algorithm to calcuate the I2C timing */
 #ifndef STM32_I2C_VALID_TIMING_NBR
-#define STM32_I2C_VALID_TIMING_NBR                 128U
+#define STM32_I2C_VALID_TIMING_NBR 128U
 #endif
-#define STM32_I2C_SPEED_FREQ_STANDARD                0U    /* 100 kHz */
-#define STM32_I2C_SPEED_FREQ_FAST                    1U    /* 400 kHz */
-#define STM32_I2C_SPEED_FREQ_FAST_PLUS               2U    /* 1 MHz */
-#define STM32_I2C_ANALOG_FILTER_DELAY_MIN            50U   /* ns */
-#define STM32_I2C_ANALOG_FILTER_DELAY_MAX            260U  /* ns */
-#define STM32_I2C_USE_ANALOG_FILTER                  1U
-#define STM32_I2C_DIGITAL_FILTER_COEF                0U
-#define STM32_I2C_PRESC_MAX                          16U
-#define STM32_I2C_SCLDEL_MAX                         16U
-#define STM32_I2C_SDADEL_MAX                         16U
-#define STM32_I2C_SCLH_MAX                           256U
-#define STM32_I2C_SCLL_MAX                           256U
+#define STM32_I2C_SPEED_FREQ_STANDARD     0U   /* 100 kHz */
+#define STM32_I2C_SPEED_FREQ_FAST         1U   /* 400 kHz */
+#define STM32_I2C_SPEED_FREQ_FAST_PLUS    2U   /* 1 MHz */
+#define STM32_I2C_ANALOG_FILTER_DELAY_MIN 50U  /* ns */
+#define STM32_I2C_ANALOG_FILTER_DELAY_MAX 260U /* ns */
+#define STM32_I2C_USE_ANALOG_FILTER       1U
+#define STM32_I2C_DIGITAL_FILTER_COEF     0U
+#define STM32_I2C_PRESC_MAX               16U
+#define STM32_I2C_SCLDEL_MAX              16U
+#define STM32_I2C_SDADEL_MAX              16U
+#define STM32_I2C_SCLH_MAX                256U
+#define STM32_I2C_SCLL_MAX                256U
 
 /* I2C_DEVICE_Private_Types */
 struct stm32_i2c_charac_t {
-	uint32_t freq;       /* Frequency in Hz */
-	uint32_t freq_min;   /* Minimum frequency in Hz */
-	uint32_t freq_max;   /* Maximum frequency in Hz */
-	uint32_t hddat_min;  /* Minimum data hold time in ns */
-	uint32_t vddat_max;  /* Maximum data valid time in ns */
-	uint32_t sudat_min;  /* Minimum data setup time in ns */
-	uint32_t lscl_min;   /* Minimum low period of the SCL clock in ns */
-	uint32_t hscl_min;   /* Minimum high period of SCL clock in ns */
-	uint32_t trise;      /* Rise time in ns */
-	uint32_t tfall;      /* Fall time in ns */
-	uint32_t dnf;        /* Digital noise filter coefficient */
+	uint32_t freq;      /* Frequency in Hz */
+	uint32_t freq_min;  /* Minimum frequency in Hz */
+	uint32_t freq_max;  /* Maximum frequency in Hz */
+	uint32_t hddat_min; /* Minimum data hold time in ns */
+	uint32_t vddat_max; /* Maximum data valid time in ns */
+	uint32_t sudat_min; /* Minimum data setup time in ns */
+	uint32_t lscl_min;  /* Minimum low period of the SCL clock in ns */
+	uint32_t hscl_min;  /* Minimum high period of SCL clock in ns */
+	uint32_t trise;     /* Rise time in ns */
+	uint32_t tfall;     /* Fall time in ns */
+	uint32_t dnf;       /* Digital noise filter coefficient */
 };
 
 struct stm32_i2c_timings_t {
-	uint32_t presc;      /* Timing prescaler */
-	uint32_t tscldel;    /* SCL delay */
-	uint32_t tsdadel;    /* SDA delay */
-	uint32_t sclh;       /* SCL high period */
-	uint32_t scll;       /* SCL low period */
+	uint32_t presc;   /* Timing prescaler */
+	uint32_t tscldel; /* SCL delay */
+	uint32_t tsdadel; /* SDA delay */
+	uint32_t sclh;    /* SCL high period */
+	uint32_t scll;    /* SCL low period */
 };
 
 /* I2C_DEVICE Private Constants */
 static const struct stm32_i2c_charac_t stm32_i2c_charac[] = {
-	[STM32_I2C_SPEED_FREQ_STANDARD] = {
-		.freq = 100000,
-		.freq_min = 80000,
-		.freq_max = 120000,
-		.hddat_min = 0,
-		.vddat_max = 3450,
-		.sudat_min = 250,
-		.lscl_min = 4700,
-		.hscl_min = 4000,
-		.trise = 640,
-		.tfall = 20,
-		.dnf = STM32_I2C_DIGITAL_FILTER_COEF,
-	},
-	[STM32_I2C_SPEED_FREQ_FAST] = {
-		.freq = 400000,
-		.freq_min = 320000,
-		.freq_max = 480000,
-		.hddat_min = 0,
-		.vddat_max = 900,
-		.sudat_min = 100,
-		.lscl_min = 1300,
-		.hscl_min = 600,
-		.trise = 250,
-		.tfall = 100,
-		.dnf = STM32_I2C_DIGITAL_FILTER_COEF,
-	},
-	[STM32_I2C_SPEED_FREQ_FAST_PLUS] = {
-		.freq = 1000000,
-		.freq_min = 800000,
-		.freq_max = 1200000,
-		.hddat_min = 0,
-		.vddat_max = 450,
-		.sudat_min = 50,
-		.lscl_min = 500,
-		.hscl_min = 260,
-		.trise = 60,
-		.tfall = 100,
-		.dnf = STM32_I2C_DIGITAL_FILTER_COEF,
-	},
+	[STM32_I2C_SPEED_FREQ_STANDARD] =
+		{
+			.freq = 100000,
+			.freq_min = 80000,
+			.freq_max = 120000,
+			.hddat_min = 0,
+			.vddat_max = 3450,
+			.sudat_min = 250,
+			.lscl_min = 4700,
+			.hscl_min = 4000,
+			.trise = 640,
+			.tfall = 20,
+			.dnf = STM32_I2C_DIGITAL_FILTER_COEF,
+		},
+	[STM32_I2C_SPEED_FREQ_FAST] =
+		{
+			.freq = 400000,
+			.freq_min = 320000,
+			.freq_max = 480000,
+			.hddat_min = 0,
+			.vddat_max = 900,
+			.sudat_min = 100,
+			.lscl_min = 1300,
+			.hscl_min = 600,
+			.trise = 250,
+			.tfall = 100,
+			.dnf = STM32_I2C_DIGITAL_FILTER_COEF,
+		},
+	[STM32_I2C_SPEED_FREQ_FAST_PLUS] =
+		{
+			.freq = 1000000,
+			.freq_min = 800000,
+			.freq_max = 1200000,
+			.hddat_min = 0,
+			.vddat_max = 450,
+			.sudat_min = 50,
+			.lscl_min = 500,
+			.hscl_min = 260,
+			.trise = 60,
+			.tfall = 100,
+			.dnf = STM32_I2C_DIGITAL_FILTER_COEF,
+		},
 };
 
 static struct stm32_i2c_timings_t i2c_valid_timing[STM32_I2C_VALID_TIMING_NBR];
 static uint32_t i2c_valid_timing_nbr;
 #endif /* CONFIG_I2C_STM32_V2_TIMING */
 
-static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
-			    uint8_t *next_msg_flags, uint16_t slave,
-			    uint32_t transfer)
+static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8_t *next_msg_flags,
+			    uint16_t slave, uint32_t transfer)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -129,13 +131,11 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 		LL_I2C_SetTransferSize(i2c, msg->len);
 	} else {
 		if (I2C_ADDR_10_BITS & data->dev_config) {
-			LL_I2C_SetMasterAddressingMode(i2c,
-					LL_I2C_ADDRESSING_MODE_10BIT);
-			LL_I2C_SetSlaveAddr(i2c, (uint32_t) slave);
+			LL_I2C_SetMasterAddressingMode(i2c, LL_I2C_ADDRESSING_MODE_10BIT);
+			LL_I2C_SetSlaveAddr(i2c, (uint32_t)slave);
 		} else {
-			LL_I2C_SetMasterAddressingMode(i2c,
-				LL_I2C_ADDRESSING_MODE_7BIT);
-			LL_I2C_SetSlaveAddr(i2c, (uint32_t) slave << 1);
+			LL_I2C_SetMasterAddressingMode(i2c, LL_I2C_ADDRESSING_MODE_7BIT);
+			LL_I2C_SetSlaveAddr(i2c, (uint32_t)slave << 1);
 		}
 
 		if (!(msg->flags & I2C_MSG_STOP) && next_msg_flags &&
@@ -226,11 +226,9 @@ static void stm32_i2c_slave_event(const struct device *dev)
 
 		/* Choose the right slave from the address match code */
 		slave_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
-		if (data->slave_cfg != NULL &&
-				slave_address == data->slave_cfg->address) {
+		if (data->slave_cfg != NULL && slave_address == data->slave_cfg->address) {
 			slave_cfg = data->slave_cfg;
-		} else if (data->slave2_cfg != NULL &&
-				slave_address == data->slave2_cfg->address) {
+		} else if (data->slave2_cfg != NULL && slave_address == data->slave2_cfg->address) {
 			slave_cfg = data->slave2_cfg;
 		} else {
 			__ASSERT_NO_MSG(0);
@@ -317,8 +315,7 @@ static void stm32_i2c_slave_event(const struct device *dev)
 }
 
 /* Attach and start I2C as target */
-int i2c_stm32_target_register(const struct device *dev,
-			     struct i2c_target_config *config)
+int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config *config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -360,7 +357,7 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	if (!data->slave_cfg) {
 		data->slave_cfg = config;
-		if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			LL_I2C_SetOwnAddress1(i2c, config->address, LL_I2C_OWNADDRESS1_10BIT);
 			LOG_DBG("i2c: target #1 registered with 10-bit address");
 		} else {
@@ -374,11 +371,10 @@ int i2c_stm32_target_register(const struct device *dev,
 	} else {
 		data->slave2_cfg = config;
 
-		if (data->slave2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if (data->slave2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			return -EINVAL;
 		}
-		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
-				      LL_I2C_OWNADDRESS2_NOMASK);
+		LL_I2C_SetOwnAddress2(i2c, config->address << 1U, LL_I2C_OWNADDRESS2_NOMASK);
 		LL_I2C_EnableOwnAddress2(i2c);
 		LOG_DBG("i2c: target #2 registered");
 	}
@@ -390,8 +386,7 @@ int i2c_stm32_target_register(const struct device *dev,
 	return 0;
 }
 
-int i2c_stm32_target_unregister(const struct device *dev,
-			       struct i2c_target_config *config)
+int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_config *config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -421,7 +416,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 	/* Return if there is a slave remaining */
 	if (data->slave_cfg || data->slave2_cfg) {
-		LOG_DBG("i2c: target#%c still registered", data->slave_cfg?'1':'2');
+		LOG_DBG("i2c: target#%c still registered", data->slave_cfg ? '1' : '2');
 		return 0;
 	}
 
@@ -501,8 +496,7 @@ static void stm32_i2c_event(const struct device *dev)
 	}
 
 	/* Transfer Complete or Transfer Complete Reload */
-	if (LL_I2C_IsActiveFlag_TC(i2c) ||
-	    LL_I2C_IsActiveFlag_TCR(i2c)) {
+	if (LL_I2C_IsActiveFlag_TC(i2c) || LL_I2C_IsActiveFlag_TCR(i2c)) {
 		/* Issue stop condition if necessary */
 		if (data->current.msg->flags & I2C_MSG_STOP) {
 			LL_I2C_GenerateStopCondition(i2c);
@@ -561,7 +555,7 @@ end:
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
 void stm32_i2c_combined_isr(void *arg)
 {
-	const struct device *dev = (const struct device *) arg;
+	const struct device *dev = (const struct device *)arg;
 
 	if (stm32_i2c_error(dev)) {
 		return;
@@ -572,21 +566,21 @@ void stm32_i2c_combined_isr(void *arg)
 
 void stm32_i2c_event_isr(void *arg)
 {
-	const struct device *dev = (const struct device *) arg;
+	const struct device *dev = (const struct device *)arg;
 
 	stm32_i2c_event(dev);
 }
 
 void stm32_i2c_error_isr(void *arg)
 {
-	const struct device *dev = (const struct device *) arg;
+	const struct device *dev = (const struct device *)arg;
 
 	stm32_i2c_error(dev);
 }
 #endif
 
 static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
-			uint8_t *next_msg_flags, uint16_t slave)
+			       uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -605,23 +599,20 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_TX(i2c);
 
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+	if (k_sem_take(&data->device_sync_sem, K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
 		stm32_i2c_master_mode_end(dev);
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
 
-	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo || is_timeout) {
+	if (data->current.is_nack || data->current.is_err || data->current.is_arlo || is_timeout) {
 		goto error;
 	}
 
 	return 0;
 error:
 	if (data->current.is_arlo) {
-		LOG_DBG("%s: ARLO %d", __func__,
-				    data->current.is_arlo);
+		LOG_DBG("%s: ARLO %d", __func__, data->current.is_arlo);
 		data->current.is_arlo = 0U;
 	}
 
@@ -631,8 +622,7 @@ error:
 	}
 
 	if (data->current.is_err) {
-		LOG_DBG("%s: ERR %d", __func__,
-				    data->current.is_err);
+		LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
 		data->current.is_err = 0U;
 	}
 
@@ -644,7 +634,7 @@ error:
 }
 
 static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
-		       uint8_t *next_msg_flags, uint16_t slave)
+			      uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -664,23 +654,20 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
 
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+	if (k_sem_take(&data->device_sync_sem, K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
 		stm32_i2c_master_mode_end(dev);
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
 
-	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo || is_timeout) {
+	if (data->current.is_nack || data->current.is_err || data->current.is_arlo || is_timeout) {
 		goto error;
 	}
 
 	return 0;
 error:
 	if (data->current.is_arlo) {
-		LOG_DBG("%s: ARLO %d", __func__,
-				    data->current.is_arlo);
+		LOG_DBG("%s: ARLO %d", __func__, data->current.is_arlo);
 		data->current.is_arlo = 0U;
 	}
 
@@ -690,8 +677,7 @@ error:
 	}
 
 	if (data->current.is_err) {
-		LOG_DBG("%s: ERR %d", __func__,
-				    data->current.is_err);
+		LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
 		data->current.is_err = 0U;
 	}
 
@@ -740,8 +726,7 @@ error:
 	return -EIO;
 }
 
-static inline int msg_done(const struct device *dev,
-			   unsigned int current_msg_flags)
+static inline int msg_done(const struct device *dev, unsigned int current_msg_flags)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -766,7 +751,7 @@ static inline int msg_done(const struct device *dev,
 }
 
 static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
-			uint8_t *next_msg_flags, uint16_t slave)
+			       uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -796,7 +781,7 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 }
 
 static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
-		       uint8_t *next_msg_flags, uint16_t slave)
+			      uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -828,24 +813,23 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
  * "DEEP_INDENTATION: Too many leading tabs - consider code refactoring
  * in the i2c_compute_scll_sclh() function below
  */
-#define I2C_LOOP_SCLH();						\
-	if ((tscl >= clk_min) &&					\
-		(tscl <= clk_max) &&					\
-		(tscl_h >= stm32_i2c_charac[i2c_speed].hscl_min) &&	\
-		(ti2cclk < tscl_h)) {					\
-									\
-		int32_t error = (int32_t)tscl - (int32_t)ti2cspeed;	\
-									\
-		if (error < 0) {					\
-			error = -error;					\
-		}							\
-									\
-		if ((uint32_t)error < prev_error) {			\
-			prev_error = (uint32_t)error;			\
-			i2c_valid_timing[count].scll = scll;		\
-			i2c_valid_timing[count].sclh = sclh;		\
-			ret = count;					\
-		}							\
+#define I2C_LOOP_SCLH()                                                                            \
+	;                                                                                          \
+	if ((tscl >= clk_min) && (tscl <= clk_max) &&                                              \
+	    (tscl_h >= stm32_i2c_charac[i2c_speed].hscl_min) && (ti2cclk < tscl_h)) {              \
+                                                                                                   \
+		int32_t error = (int32_t)tscl - (int32_t)ti2cspeed;                                \
+                                                                                                   \
+		if (error < 0) {                                                                   \
+			error = -error;                                                            \
+		}                                                                                  \
+                                                                                                   \
+		if ((uint32_t)error < prev_error) {                                                \
+			prev_error = (uint32_t)error;                                              \
+			i2c_valid_timing[count].scll = scll;                                       \
+			i2c_valid_timing[count].sclh = sclh;                                       \
+			ret = count;                                                               \
+		}                                                                                  \
 	}
 
 /*
@@ -867,11 +851,9 @@ uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
 
 	ti2cclk = (NSEC_PER_SEC + (clock_src_freq / 2U)) / clock_src_freq;
 	ti2cspeed = (NSEC_PER_SEC + (stm32_i2c_charac[i2c_speed].freq / 2U)) /
-		stm32_i2c_charac[i2c_speed].freq;
+		    stm32_i2c_charac[i2c_speed].freq;
 
-	tafdel_min = (STM32_I2C_USE_ANALOG_FILTER == 1U) ?
-		STM32_I2C_ANALOG_FILTER_DELAY_MIN :
-		0U;
+	tafdel_min = (STM32_I2C_USE_ANALOG_FILTER == 1U) ? STM32_I2C_ANALOG_FILTER_DELAY_MIN : 0U;
 
 	/* tDNF = DNF x tI2CCLK */
 	dnf_delay = stm32_i2c_charac[i2c_speed].dnf * ti2cclk;
@@ -887,27 +869,27 @@ uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
 
 		for (scll = 0; scll < STM32_I2C_SCLL_MAX; scll++) {
 			/* tLOW(min) <= tAF(min) + tDNF + 2 x tI2CCLK + [(SCLL+1) x tPRESC ] */
-			uint32_t tscl_l = tafdel_min + dnf_delay +
-				(2U * ti2cclk) + ((scll + 1U) * tpresc);
+			uint32_t tscl_l =
+				tafdel_min + dnf_delay + (2U * ti2cclk) + ((scll + 1U) * tpresc);
 
 			/*
 			 * The I2CCLK period tI2CCLK must respect the following conditions:
 			 * tI2CCLK < (tLOW - tfilters) / 4 and tI2CCLK < tHIGH
 			 */
 			if ((tscl_l > stm32_i2c_charac[i2c_speed].lscl_min) &&
-				(ti2cclk < ((tscl_l - tafdel_min - dnf_delay) / 4U))) {
+			    (ti2cclk < ((tscl_l - tafdel_min - dnf_delay) / 4U))) {
 				for (sclh = 0; sclh < STM32_I2C_SCLH_MAX; sclh++) {
 					/*
 					 * tHIGH(min) <= tAF(min) + tDNF +
 					 * 2 x tI2CCLK + [(SCLH+1) x tPRESC]
 					 */
-					uint32_t tscl_h = tafdel_min + dnf_delay +
-						(2U * ti2cclk) + ((sclh + 1U) * tpresc);
+					uint32_t tscl_h = tafdel_min + dnf_delay + (2U * ti2cclk) +
+							  ((sclh + 1U) * tpresc);
 
 					/* tSCL = tf + tLOW + tr + tHIGH */
-					uint32_t tscl = tscl_l +
-						tscl_h + stm32_i2c_charac[i2c_speed].trise +
-					stm32_i2c_charac[i2c_speed].tfall;
+					uint32_t tscl = tscl_l + tscl_h +
+							stm32_i2c_charac[i2c_speed].trise +
+							stm32_i2c_charac[i2c_speed].tfall;
 
 					/* get timings with the lowest clock error */
 					I2C_LOOP_SCLH();
@@ -924,21 +906,21 @@ uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
  * "DEEP_INDENTATION: Too many leading tabs - consider code refactoring
  * in the i2c_compute_presc_scldel_sdadel() function below
  */
-#define I2C_LOOP_SDADEL();								\
-											\
-	if ((tsdadel >= (uint32_t)tsdadel_min) &&					\
-		(tsdadel <= (uint32_t)tsdadel_max)) {					\
-		if (presc != prev_presc) {						\
-			i2c_valid_timing[i2c_valid_timing_nbr].presc = presc;		\
-			i2c_valid_timing[i2c_valid_timing_nbr].tscldel = scldel;	\
-			i2c_valid_timing[i2c_valid_timing_nbr].tsdadel = sdadel;	\
-			prev_presc = presc;						\
-			i2c_valid_timing_nbr++;						\
-											\
-			if (i2c_valid_timing_nbr >= STM32_I2C_VALID_TIMING_NBR) {	\
-				break;							\
-			}								\
-		}									\
+#define I2C_LOOP_SDADEL()                                                                          \
+	;                                                                                          \
+                                                                                                   \
+	if ((tsdadel >= (uint32_t)tsdadel_min) && (tsdadel <= (uint32_t)tsdadel_max)) {            \
+		if (presc != prev_presc) {                                                         \
+			i2c_valid_timing[i2c_valid_timing_nbr].presc = presc;                      \
+			i2c_valid_timing[i2c_valid_timing_nbr].tscldel = scldel;                   \
+			i2c_valid_timing[i2c_valid_timing_nbr].tsdadel = sdadel;                   \
+			prev_presc = presc;                                                        \
+			i2c_valid_timing_nbr++;                                                    \
+                                                                                                   \
+			if (i2c_valid_timing_nbr >= STM32_I2C_VALID_TIMING_NBR) {                  \
+				break;                                                             \
+			}                                                                          \
+		}                                                                                  \
 	}
 
 /*
@@ -951,17 +933,15 @@ void i2c_compute_presc_scldel_sdadel(uint32_t clock_src_freq, uint32_t i2c_speed
 {
 	uint32_t prev_presc = STM32_I2C_PRESC_MAX;
 	uint32_t ti2cclk;
-	int32_t  tsdadel_min, tsdadel_max;
-	int32_t  tscldel_min;
+	int32_t tsdadel_min, tsdadel_max;
+	int32_t tscldel_min;
 	uint32_t presc, scldel, sdadel;
 	uint32_t tafdel_min, tafdel_max;
 
-	ti2cclk   = (NSEC_PER_SEC + (clock_src_freq / 2U)) / clock_src_freq;
+	ti2cclk = (NSEC_PER_SEC + (clock_src_freq / 2U)) / clock_src_freq;
 
-	tafdel_min = (STM32_I2C_USE_ANALOG_FILTER == 1U) ?
-		STM32_I2C_ANALOG_FILTER_DELAY_MIN : 0U;
-	tafdel_max = (STM32_I2C_USE_ANALOG_FILTER == 1U) ?
-		STM32_I2C_ANALOG_FILTER_DELAY_MAX : 0U;
+	tafdel_min = (STM32_I2C_USE_ANALOG_FILTER == 1U) ? STM32_I2C_ANALOG_FILTER_DELAY_MIN : 0U;
+	tafdel_max = (STM32_I2C_USE_ANALOG_FILTER == 1U) ? STM32_I2C_ANALOG_FILTER_DELAY_MAX : 0U;
 	/*
 	 * tDNF = DNF x tI2CCLK
 	 * tPRESC = (PRESC+1) x tI2CCLK
@@ -969,20 +949,16 @@ void i2c_compute_presc_scldel_sdadel(uint32_t clock_src_freq, uint32_t i2c_speed
 	 * SDADEL <= {tVD;DAT(max) - tr - tAF(max) - tDNF- [4 x tI2CCLK]} / {tPRESC}
 	 */
 	tsdadel_min = (int32_t)stm32_i2c_charac[i2c_speed].tfall +
-		(int32_t)stm32_i2c_charac[i2c_speed].hddat_min -
-		(int32_t)tafdel_min -
-		(int32_t)(((int32_t)stm32_i2c_charac[i2c_speed].dnf + 3) *
-		(int32_t)ti2cclk);
+		      (int32_t)stm32_i2c_charac[i2c_speed].hddat_min - (int32_t)tafdel_min -
+		      (int32_t)(((int32_t)stm32_i2c_charac[i2c_speed].dnf + 3) * (int32_t)ti2cclk);
 
 	tsdadel_max = (int32_t)stm32_i2c_charac[i2c_speed].vddat_max -
-		(int32_t)stm32_i2c_charac[i2c_speed].trise -
-		(int32_t)tafdel_max -
-		(int32_t)(((int32_t)stm32_i2c_charac[i2c_speed].dnf + 4) *
-		(int32_t)ti2cclk);
+		      (int32_t)stm32_i2c_charac[i2c_speed].trise - (int32_t)tafdel_max -
+		      (int32_t)(((int32_t)stm32_i2c_charac[i2c_speed].dnf + 4) * (int32_t)ti2cclk);
 
 	/* {[tr+ tSU;DAT(min)] / [tPRESC]} - 1 <= SCLDEL */
 	tscldel_min = (int32_t)stm32_i2c_charac[i2c_speed].trise +
-		(int32_t)stm32_i2c_charac[i2c_speed].sudat_min;
+		      (int32_t)stm32_i2c_charac[i2c_speed].sudat_min;
 
 	if (tsdadel_min <= 0) {
 		tsdadel_min = 0;
@@ -1027,18 +1003,17 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 	i2c_valid_timing_nbr = 0;
 
 	if ((clock != 0U) && (i2c_freq != 0U)) {
-		for (speed = 0 ; speed <= (uint32_t)STM32_I2C_SPEED_FREQ_FAST_PLUS ; speed++) {
+		for (speed = 0; speed <= (uint32_t)STM32_I2C_SPEED_FREQ_FAST_PLUS; speed++) {
 			if ((i2c_freq >= stm32_i2c_charac[speed].freq_min) &&
-				(i2c_freq <= stm32_i2c_charac[speed].freq_max)) {
+			    (i2c_freq <= stm32_i2c_charac[speed].freq_max)) {
 				i2c_compute_presc_scldel_sdadel(clock, speed);
 				idx = i2c_compute_scll_sclh(clock, speed);
 				if (idx < STM32_I2C_VALID_TIMING_NBR) {
-					timing = ((i2c_valid_timing[idx].presc  &
-						0x0FU) << 28) |
-					((i2c_valid_timing[idx].tscldel & 0x0FU) << 20) |
-					((i2c_valid_timing[idx].tsdadel & 0x0FU) << 16) |
-					((i2c_valid_timing[idx].sclh & 0xFFU) << 8) |
-					((i2c_valid_timing[idx].scll & 0xFFU) << 0);
+					timing = ((i2c_valid_timing[idx].presc & 0x0FU) << 28) |
+						 ((i2c_valid_timing[idx].tscldel & 0x0FU) << 20) |
+						 ((i2c_valid_timing[idx].tsdadel & 0x0FU) << 16) |
+						 ((i2c_valid_timing[idx].sclh & 0xFFU) << 8) |
+						 ((i2c_valid_timing[idx].scll & 0xFFU) << 0);
 				}
 				break;
 			}
@@ -1054,7 +1029,7 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 
 	return 0;
 }
-#else/* CONFIG_I2C_STM32_V2_TIMING */
+#else  /* CONFIG_I2C_STM32_V2_TIMING */
 
 int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 {
@@ -1071,8 +1046,8 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 		const struct i2c_config_timing *preset = &cfg->timings[i];
 		uint32_t speed = i2c_map_dt_bitrate(preset->i2c_speed);
 
-		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config))
-		   && (preset->periph_clock == clock)) {
+		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config)) &&
+		    (preset->periph_clock == clock)) {
 			/*  Found a matching periph clock and i2c speed */
 			LL_I2C_SetTiming(i2c, preset->timing_setting);
 			return 0;
@@ -1095,7 +1070,7 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 		break;
 	default:
 		LOG_ERR("i2c: speed above \"fast\" requires manual timing configuration, "
-				"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
+			"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
 		return -EINVAL;
 	}
 
@@ -1108,7 +1083,7 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 		uint32_t sdadel = i2c_hold_time_min / ns_presc;
 		uint32_t scldel = i2c_setup_time_min / ns_presc;
 
-		if ((sclh - 1) > 255 ||  (scll - 1) > 255) {
+		if ((sclh - 1) > 255 || (scll - 1) > 255) {
 			++presc;
 			continue;
 		}
@@ -1118,8 +1093,8 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 			continue;
 		}
 
-		timing = __LL_I2C_CONVERT_TIMINGS(presc - 1,
-					scldel - 1, sdadel, sclh - 1, scll - 1);
+		timing =
+			__LL_I2C_CONVERT_TIMINGS(presc - 1, scldel - 1, sdadel, sclh - 1, scll - 1);
 		break;
 	} while (presc < 16);
 
@@ -1135,9 +1110,8 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 }
 #endif /* CONFIG_I2C_STM32_V2_TIMING */
 
-int stm32_i2c_transaction(const struct device *dev,
-						  struct i2c_msg msg, uint8_t *next_msg_flags,
-						  uint16_t periph)
+int stm32_i2c_transaction(const struct device *dev, struct i2c_msg msg, uint8_t *next_msg_flags,
+			  uint16_t periph)
 {
 	/*
 	 * Perform a I2C transaction, while taking into account the STM32 I2C V2
@@ -1153,8 +1127,7 @@ int stm32_i2c_transaction(const struct device *dev,
 	 */
 	const uint32_t i2c_stm32_maxchunk = 255U;
 	const uint8_t saved_flags = msg.flags;
-	uint8_t combine_flags =
-		saved_flags & ~(I2C_MSG_STOP | I2C_MSG_RESTART);
+	uint8_t combine_flags = saved_flags & ~(I2C_MSG_STOP | I2C_MSG_RESTART);
 	uint8_t *flagsp = NULL;
 	uint32_t rest = msg.len;
 	int ret = 0;
