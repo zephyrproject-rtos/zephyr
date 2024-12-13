@@ -67,7 +67,7 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			fsec = <0xff>;
+			fsec = <0xfe>;
 			fopt = <0x3d>;
 			config-field-offset = <0x400>;
 
