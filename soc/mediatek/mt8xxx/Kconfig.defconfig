@@ -31,6 +31,9 @@ config IRQ_OFFLOAD_NESTED
 	default n if SOC_SERIES_MT818X
 	default y
 
+config NOCACHE_MEMORY
+	default y
+
 config MTK_ADSP_TIMER
 	default y
 config XTENSA_TIMER
