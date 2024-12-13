@@ -33,7 +33,7 @@ config XIP
 config FLASH
 	default y
 
-config FLASH_HAS_NO_EXPLICIT_ERASE
+config FLASH_HAS_EXPLICIT_ERASE
 	default y
 
 config STACK_SENTINEL

@@ -24,6 +24,10 @@ config FLASH_LOAD_OFFSET
 
 if MCUBOOT
 
+config IMG_ERASE_PROGRESSIVELY
+	bool
+	default y
+
 config MCUBOOT_ACTION_HOOKS
 	bool
 	default y

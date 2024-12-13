@@ -43,7 +43,7 @@ config FLASH
 	bool
 	default y
 
-config FLASH_HAS_NO_EXPLICIT_ERASE
+config FLASH_HAS_EXPLICIT_ERASE
 	bool
 	default y
 
