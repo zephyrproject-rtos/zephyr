@@ -1,6 +1,6 @@
 # Analog Devices MAX32xxx MCU family
 
-# Copyright (c) 2023-2024 Analog Devices, Inc.
+# Copyright (c) 2023-2025 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MAX32
@@ -35,6 +35,9 @@ config SOC_MAX32680
 	select CPU_CORTEX_M4
 
 config SOC_MAX32690
+	select CPU_CORTEX_M4
+
+config SOC_MAX78000_M4
 	select CPU_CORTEX_M4
 
 config SOC_MAX78002_M4
