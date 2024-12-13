@@ -186,12 +186,25 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 		goto deinit;
 	}
 
-	sl_btctrl_init_adv();
-	sl_btctrl_init_scan();
-	sl_btctrl_init_conn();
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+		sl_btctrl_init_adv();
+	}
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) || IS_ENABLED(CONFIG_BT_OBSERVER)) {
+		sl_btctrl_init_scan();
+	}
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		sl_btctrl_init_conn();
+	}
 	sl_btctrl_init_phy();
-	sl_btctrl_init_adv_ext();
-	sl_btctrl_init_scan_ext();
+
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+			sl_btctrl_init_adv_ext();
+		}
+		if (IS_ENABLED(CONFIG_BT_CENTRAL) || IS_ENABLED(CONFIG_BT_OBSERVER)) {
+			sl_btctrl_init_scan_ext();
+		}
+	}
 
 	ret = sl_btctrl_init_basic(SL_BT_CONFIG_MAX_CONNECTIONS,
 			SL_BT_CONFIG_USER_ADVERTISERS,
@@ -207,8 +220,12 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 
 	sl_bthci_init_upper();
 	sl_btctrl_hci_parser_init_default();
-	sl_btctrl_hci_parser_init_conn();
-	sl_btctrl_hci_parser_init_adv();
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		sl_btctrl_hci_parser_init_conn();
+	}
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+		sl_btctrl_hci_parser_init_adv();
+	}
 	sl_btctrl_hci_parser_init_phy();
 
 #ifdef CONFIG_PM
