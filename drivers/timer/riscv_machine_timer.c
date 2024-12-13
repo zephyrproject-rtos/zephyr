@@ -71,10 +71,22 @@
 #define MTIME_REG	(DT_INST_REG_ADDR_U64(0) + 8)
 #define MTIMECMP_REG	(DT_INST_REG_ADDR_U64(0) + 16)
 #define TIMER_IRQN	DT_INST_IRQN(0)
+/* thead,machine-timer */
+#elif DT_HAS_COMPAT_STATUS_OKAY(thead_machine_timer)
+#define DT_DRV_COMPAT thead_machine_timer
+#define MTIMER_REQUIRES_32BIT_ACCESS
+#define MTIMER_READ_TIME_CSR
+
+#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 0x4000U)
+#define TIMER_IRQN	DT_INST_IRQN(0)
 #endif
 
 #define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() \
 				/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+#if defined(CONFIG_64BIT) && !defined(MTIMER_REQUIRES_32BIT_ACCESS)
+#define MTIMER_64BIT
+#endif
 
 /* the unsigned long cast limits divisions to native CPU register width */
 #define cycle_diff_t unsigned long
@@ -121,7 +133,7 @@ static uintptr_t get_hart_mtimecmp(void)
 
 static void set_mtimecmp(uint64_t time)
 {
-#ifdef CONFIG_64BIT
+#ifdef MTIMER_64BIT
 	*(volatile uint64_t *)get_hart_mtimecmp() = time;
 #else
 	volatile uint32_t *r = (uint32_t *)get_hart_mtimecmp();
@@ -148,7 +160,9 @@ static void set_divider(void)
 
 static uint64_t mtime(void)
 {
-#ifdef CONFIG_64BIT
+#if defined(MTIMER_READ_TIME_CSR)
+	return csr_read(time);
+#elif defined(MTIMER_64BIT)
 	return *(volatile uint64_t *)MTIME_REG;
 #else
 	volatile uint32_t *r = (uint32_t *)MTIME_REG;

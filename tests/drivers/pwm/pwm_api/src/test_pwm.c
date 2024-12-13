@@ -91,6 +91,10 @@
 #elif defined(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS) ||                                    \
 	defined(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0)
 #define DEFAULT_PWM_PORT 2 /* D2 on Arduino connector P18 */
+#elif defined(CONFIG_BOARD_MILKV_DUO) || defined(CONFIG_BOARD_MILKV_DUO256M)
+#define DEFAULT_PWM_PORT 1
+#elif defined CONFIG_BOARD_MILKV_DUOS
+#define DEFAULT_PWM_PORT 3
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
 /* Default port should be adapted per board to fit the channel
  * associated to the PWM pin. For intsance, for following device,

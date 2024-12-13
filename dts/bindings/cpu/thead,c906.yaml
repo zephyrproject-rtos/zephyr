@@ -1,0 +1,8 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: T-Head C906 RISC-V CPU
+
+compatible: "thead,c906"
+
+include: riscv,cpus.yaml

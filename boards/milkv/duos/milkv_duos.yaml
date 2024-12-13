@@ -1,0 +1,14 @@
+identifier: milkv_duos
+name: Milk-V Duo S
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - clock
+  - gpio
+  - interrupt-controller
+  - mailbox
+  - pinctrl
+  - pwm
+  - serial
