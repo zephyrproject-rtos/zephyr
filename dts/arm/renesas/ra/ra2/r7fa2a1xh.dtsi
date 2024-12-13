@@ -173,8 +173,13 @@
 				status = "disabled";
 			};
 
-
 			sdadcclk: sdadcclk {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			uclk: uclk {
 				compatible = "renesas,ra-cgc-pclk";
 				#clock-cells = <2>;
 				status = "disabled";
