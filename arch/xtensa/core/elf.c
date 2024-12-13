@@ -123,8 +123,7 @@ void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const 
 	uintptr_t sh_addr;
 
 	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
-		elf_shdr_t *shdr = llext_peek(ldr, ldr->hdr.e_shoff +
-					      sym->st_shndx * ldr->hdr.e_shentsize);
+		elf_shdr_t *shdr = ext->sect_hdrs + sym->st_shndx;
 
 		/* shdr->sh_addr is NULL when not built for a specific address */
 		sh_addr = shdr->sh_addr &&
