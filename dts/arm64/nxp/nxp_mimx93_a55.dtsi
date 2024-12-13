@@ -8,7 +8,6 @@
 #include <freq.h>
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
-#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
