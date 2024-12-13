@@ -377,11 +377,11 @@ int llext_get_section_header(struct llext_loader *loader, struct llext *ext,
  * @param[in] ext Extension to call function in
  * @param[in] rel Relocation data provided by elf
  * @param[in] sym Corresponding symbol table entry
- * @param[in] got_offset Offset within a relocation table or in the code
+ * @param[in] rel_addr Address where relocation should be performed
  * @param[in] ldr_parm Loader parameters
  */
 void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
-			     const elf_sym_t *sym, size_t got_offset,
+			     const elf_sym_t *sym, uint8_t *rel_addr,
 			     const struct llext_load_param *ldr_parm);
 
 /**
@@ -391,11 +391,11 @@ void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext, con
  * @param[in] ext Extension to call function in
  * @param[in] rel Relocation data provided by elf
  * @param[in] sym Corresponding symbol table entry
- * @param[in] got_offset Offset within a relocation table or in the code
+ * @param[in] rel_addr Address where relocation should be performed
  * @param[in] link_addr target address for table-based relocations
  */
 void arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
-			      const elf_sym_t *sym, size_t got_offset, const void *link_addr);
+			      const elf_sym_t *sym, uint8_t *rel_addr, const void *link_addr);
 
 /**
  * @}
