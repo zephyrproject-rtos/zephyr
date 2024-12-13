@@ -107,7 +107,7 @@ jobs:
 
   prep_push:
     if: github.repository_owner == 'zephyrproject-rtos' && (github.event_name == 'push' || github.event_name == 'schedule')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}

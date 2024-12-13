@@ -9,7 +9,7 @@ on:
 jobs:
   record_merged:
     if: github.event.pull_request.merged == true && github.repository == 'zephyrproject-rtos/zephyr'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: checkout
         uses: actions/checkout@v4

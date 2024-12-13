@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13']
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
     steps:
     - name: checkout
       uses: actions/checkout@v4

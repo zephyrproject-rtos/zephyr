@@ -10,7 +10,7 @@ on:
 jobs:
   backport:
     name: Backport
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # Only react to merged PRs for security reasons.
     # See https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target.
     if: >
