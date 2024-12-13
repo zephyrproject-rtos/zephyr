@@ -267,6 +267,7 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
 	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
 	uart_hal_rxfifo_rst(&data->hal);
+	uart_hal_txfifo_rst(&data->hal);
 
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
