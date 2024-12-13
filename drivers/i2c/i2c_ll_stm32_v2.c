@@ -27,7 +27,14 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 
 #include "i2c-priv.h"
 
-#define STM32_I2C_TRANSFER_TIMEOUT_MSEC 500
+/* Temporary macro to log any unexpected conditions during test
+ * Remove this before merge
+ */
+#define stm32_i2c_assert(x)                                                  \
+	do {                                                                     \
+		if (!(x))                                                            \
+			LOG_ERR("%s: assert failure in line: %d\n", __func__, __LINE__); \
+	} while (0)
 
 #ifdef CONFIG_I2C_STM32_V2_TIMING
 /* Use the algorithm to calcuate the I2C timing */
@@ -120,6 +127,7 @@ static struct stm32_i2c_timings_t i2c_valid_timing[STM32_I2C_VALID_TIMING_NBR];
 static uint32_t i2c_valid_timing_nbr;
 #endif /* CONFIG_I2C_STM32_V2_TIMING */
 
+#if !defined(CONFIG_I2C_STM32_INTERRUPT)
 static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8_t *next_msg_flags,
 			    uint16_t slave, uint32_t transfer)
 {
@@ -156,6 +164,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8
 		LL_I2C_GenerateStartCondition(i2c);
 	}
 }
+#endif /* defined (CONFIG_I2C_STM32_INTERRUPT)*/
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 
@@ -170,17 +179,6 @@ static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
 		flags |= I2C_CR1_ERRIE;
 	}
 	i2c->CR1 &= ~flags;
-}
-
-static void stm32_i2c_enable_transfer_interrupts(const struct device *dev)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	I2C_TypeDef *i2c = cfg->i2c;
-
-	LL_I2C_EnableIT_STOP(i2c);
-	LL_I2C_EnableIT_NACK(i2c);
-	LL_I2C_EnableIT_TC(i2c);
-	LL_I2C_EnableIT_ERR(i2c);
 }
 
 static void stm32_i2c_master_mode_end(const struct device *dev)
@@ -305,8 +303,11 @@ static void stm32_i2c_slave_event(const struct device *dev)
 				LL_I2C_EnableIT_TX(i2c);
 			}
 		}
-
-		stm32_i2c_enable_transfer_interrupts(dev);
+		/* Disable transfer interrupts */
+		LL_I2C_EnableIT_STOP(i2c);
+		LL_I2C_EnableIT_NACK(i2c);
+		LL_I2C_EnableIT_TC(i2c);
+		LL_I2C_EnableIT_ERR(i2c);
 	}
 }
 
@@ -449,7 +450,8 @@ static void stm32_i2c_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
+	I2C_TypeDef *reg = cfg->i2c;
+	uint32_t isr = reg->ISR;
 
 #if defined(CONFIG_I2C_TARGET)
 	if (data->slave_attached && !data->master_active) {
@@ -457,54 +459,98 @@ static void stm32_i2c_event(const struct device *dev)
 		return;
 	}
 #endif
-	if (data->current.len) {
-		/* Send next byte */
-		if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
-			LL_I2C_TransmitData8(i2c, *data->current.buf);
-		}
-
-		/* Receive next byte */
-		if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
-			*data->current.buf = LL_I2C_ReceiveData8(i2c);
-		}
-
-		data->current.buf++;
-		data->current.len--;
-	}
-
-	/* NACK received */
-	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
-		LL_I2C_ClearFlag_NACK(i2c);
+	/* NACK received, a STOP will automatically be sent */
+	if (isr & I2C_ISR_NACKF) {
+		reg->ICR = I2C_ICR_NACKCF;
 		data->current.is_nack = 1U;
+
+	} else if (isr & I2C_ISR_STOPF) {
 		/*
-		 * AutoEndMode is always disabled in master mode,
-		 * so send a stop condition manually
+		 * STOP detected, either caused by automatic STOP after NACK or
+		 * by request below in transfer complete
 		 */
-		LL_I2C_GenerateStopCondition(i2c);
-		return;
-	}
+		/* Acknowledge stop condition */
+		reg->ICR = I2C_ICR_STOPCF;
+		/* Flush I2C controller TX buffer */
+		reg->ISR = I2C_ISR_TXE;
+		goto irq_done;
 
-	/* STOP received */
-	if (LL_I2C_IsActiveFlag_STOP(i2c)) {
-		LL_I2C_ClearFlag_STOP(i2c);
-		LL_I2C_DisableReloadMode(i2c);
-		goto end;
-	}
+	} else if (isr & I2C_ISR_RXNE) {
+		stm32_i2c_assert(data->current.len > 0);
+		*data->current.buf = reg->RXDR;
+		data->current.len--;
+		data->current.buf++;
 
-	/* Transfer Complete or Transfer Complete Reload */
-	if (LL_I2C_IsActiveFlag_TC(i2c) || LL_I2C_IsActiveFlag_TCR(i2c)) {
-		/* Issue stop condition if necessary */
-		if (data->current.msg->flags & I2C_MSG_STOP) {
-			LL_I2C_GenerateStopCondition(i2c);
+	} else if (isr & I2C_ISR_TCR) {
+		/*
+		 * Transfer complete with reload flag set means more data shall be transferred
+		 * in same direction (No RESTART or STOP)
+		 */
+		uint32_t cr2 = reg->CR2;
+
+		stm32_i2c_assert((isr & I2C_ISR_TC) == 0);
+		if (data->current.len == 0) {
+			/* In this state all data from current message is transferred
+			 * and that reload was used indicates that next message will
+			 * contain more data in the same direction
+			 * So keep reload turned on and let thread continue with next message
+			 */
+			goto irq_done;
+		} else if (data->current.len > 255) {
+			/* More data exceeding I2C controller maximum single transfer length
+			 * remaining in current message
+			 * Keep RELOAD mode and set NBYTES to 255 again
+			 */
+			reg->CR2 = cr2;
 		} else {
-			stm32_i2c_disable_transfer_interrupts(dev);
-			k_sem_give(&data->device_sync_sem);
+			/*
+			 * Data for a single transfer remains in buffer, set its length and
+			 * - If more messages follow and transfer direction for next message is
+			 *   same, keep reload on
+			 * - If direction change or current message is the last,
+			 *   end reload mode and wait for TC
+			 */
+			cr2 &= ~I2C_CR2_NBYTES_Msk;
+			cr2 |= (data->current.len << I2C_CR2_NBYTES_Pos);
+			/* If no more message data remains to be sent in current direction */
+			if (data->current.continue_in_next == 0) {
+				/* Disable reload mode, expect I2C_ISR_TC next */
+				cr2 &= ~I2C_CR2_RELOAD;
+			}
+			/*
+			 * If reload was not disabled above, expect to arrive in this if/else
+			 * statement with data->current.len == 0
+			 */
+			reg->CR2 = cr2;
+		}
+		/* Request for transmit data */
+	} else if (isr & I2C_ISR_TXIS) {
+		stm32_i2c_assert(data->current.len > 0);
+		reg->TXDR = *data->current.buf;
+		data->current.len--;
+		data->current.buf++;
+
+		/* Transfer Complete, no reload this time so either do stop now or restart
+		 * in thread
+		 */
+	} else if (isr & I2C_ISR_TC) {
+
+		/* Send stop if flag set in message */
+		if (data->current.msg->flags & I2C_MSG_STOP) {
+			/* Setting STOP here will clear TC, expect I2C_ICR_STOPCF next */
+			LL_I2C_GenerateStopCondition(reg);
+		} else {
+			/* Keep TC set and handover to thread for restart */
+			goto irq_done;
 		}
 	}
-
 	return;
-end:
-	stm32_i2c_master_mode_end(dev);
+
+irq_done:
+	/* Disable IRQ:s involved in data transfer */
+	stm32_i2c_disable_transfer_interrupts(dev);
+	/* Wakeup thread */
+	k_sem_give(&data->device_sync_sem);
 }
 
 static int stm32_i2c_error(const struct device *dev)
@@ -575,89 +621,137 @@ void stm32_i2c_error_isr(void *arg)
 }
 #endif
 
-static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
-			       uint8_t *next_msg_flags, uint16_t slave)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-	bool is_timeout = false;
-
-	data->current.len = msg->len;
-	data->current.buf = msg->buf;
-	data->current.is_write = 1U;
-	data->current.is_nack = 0U;
-	data->current.is_err = 0U;
-	data->current.msg = msg;
-
-	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
-
-	stm32_i2c_enable_transfer_interrupts(dev);
-	LL_I2C_EnableIT_TX(i2c);
-
-	if (k_sem_take(&data->device_sync_sem, K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		stm32_i2c_master_mode_end(dev);
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
-		is_timeout = true;
-	}
-
-	if (data->current.is_nack || data->current.is_err || data->current.is_arlo || is_timeout) {
-		goto error;
-	}
-
-	return 0;
-error:
-	if (data->current.is_arlo) {
-		LOG_DBG("%s: ARLO %d", __func__, data->current.is_arlo);
-		data->current.is_arlo = 0U;
-	}
-
-	if (data->current.is_nack) {
-		LOG_DBG("%s: NACK", __func__);
-		data->current.is_nack = 0U;
-	}
-
-	if (data->current.is_err) {
-		LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
-		data->current.is_err = 0U;
-	}
-
-	if (is_timeout) {
-		LOG_DBG("%s: TIMEOUT", __func__);
-	}
-
-	return -EIO;
-}
-
-static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
+static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
+	I2C_TypeDef *reg = cfg->i2c;
 	bool is_timeout = false;
 
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
-	data->current.is_write = 0U;
 	data->current.is_arlo = 0U;
-	data->current.is_err = 0U;
 	data->current.is_nack = 0U;
+	data->current.is_err = 0U;
 	data->current.msg = msg;
 
-	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_READ);
+#if defined(CONFIG_I2C_TARGET)
+	data->master_active = true;
+#endif
+	/* Flush TX register */
+	reg->ISR = I2C_ISR_TXE;
 
-	stm32_i2c_enable_transfer_interrupts(dev);
-	LL_I2C_EnableIT_RX(i2c);
+	/* Enable I2C peripheral if not already done */
+	reg->CR1 |= I2C_CR1_PE;
 
-	if (k_sem_take(&data->device_sync_sem, K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		stm32_i2c_master_mode_end(dev);
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
-		is_timeout = true;
+	uint32_t cr2 = reg->CR2;
+	uint32_t isr = reg->ISR;
+
+	stm32_i2c_assert((isr & I2C_ISR_RXNE) == 0);
+	stm32_i2c_assert((isr & I2C_ISR_STOPF) == 0);
+	stm32_i2c_assert((isr & I2C_ISR_TXIS) == 0);
+
+	/* Clear fields in CR2 which will be filled in later in function */
+	cr2 &= ~(I2C_CR2_RELOAD | I2C_CR2_AUTOEND | I2C_CR2_NBYTES_Msk | I2C_CR2_SADD_Msk);
+
+	if (I2C_ADDR_10_BITS & data->dev_config) {
+		cr2 |= (uint32_t)slave | I2C_CR2_ADD10;
+	} else {
+		cr2 |= (uint32_t)slave << 1;
 	}
 
-	if (data->current.is_nack || data->current.is_err || data->current.is_arlo || is_timeout) {
+	/*
+	 * If this is not a stop message and more messages follow without change of direction,
+	 * reload mode must be used during this transaction
+	 * also a helper variable is set to inform IRQ handler about that it should
+	 * keep reload mode turned on ready for next message
+	 */
+	if (!(msg->flags & I2C_MSG_STOP) && next_msg_flags &&
+	    !(*next_msg_flags & I2C_MSG_RESTART)) {
+		cr2 |= I2C_CR2_RELOAD;
+		data->current.continue_in_next = 1;
+	} else {
+		data->current.continue_in_next = 0;
+	}
+
+	/*
+	 * For messages larger than 255 bytes, transactions must be split i chunks
+	 * Use reload mode and let IRQ handler take care of jumping to next chunk
+	 */
+	if (msg->len > 255) {
+		cr2 |= (255ul << I2C_CR2_NBYTES_Pos) | I2C_CR2_RELOAD;
+	} else {
+		/* Whole message can be sent in one I2C HW transaction */
+		cr2 |= msg->len << I2C_CR2_NBYTES_Pos;
+	}
+
+	/*
+	 * If reload mode transfer is pending since last message
+	 * transfer will start right after writing new length to CR2
+	 */
+	if (isr & I2C_ISR_TCR) {
+		/* Transfer complete should not be set */
+		stm32_i2c_assert((isr & I2C_ISR_TC) == 0);
+		/* Set new length and continue transfer */
+		reg->CR2 = cr2;
+
+		/*
+		 * A start condition shall be sent if
+		 * - msg->flags contains I2C_MSG_RESTART (for first start) or
+		 * - TC in ISR register is set, happens when IRQ handler
+		 *   has finalized its transfer and is waiting for restart
+		 */
+	} else if ((isr & I2C_ISR_TC) || (msg->flags & I2C_MSG_RESTART)) {
+
+		if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+			cr2 &= ~I2C_CR2_RD_WRN;
+			/* Prepare first byte in TX buffer before transfer start as a
+			 * workaround for errata: "Transmission stalled after first byte transfer"
+			 */
+			stm32_i2c_assert(data->current.len > 0);
+			stm32_i2c_assert(isr & I2C_ISR_TXE);
+			reg->TXDR = *data->current.buf;
+			data->current.len--;
+			data->current.buf++;
+
+		} else {
+			cr2 |= I2C_CR2_RD_WRN;
+		}
+		/* Issue start condition */
+		cr2 |= I2C_CR2_START;
+	}
+	/* Commit to I2C controller */
+	reg->CR2 = cr2;
+
+	/* Enable interrupts */
+	reg->CR1 |= I2C_CR1_TXIE | I2C_CR1_RXIE | I2C_CR1_ERRIE | I2C_CR1_STOPIE | I2C_CR1_TCIE |
+		    I2C_CR1_NACKIE;
+
+	/* Wait for IRQ to complete or timeout
+	 * Timeout scales with one millisecond for each byte to
+	 * transfer so that slave can do some clock stretching
+	 */
+	if (k_sem_take(&data->device_sync_sem, K_MSEC(msg->len + 10)) != 0) {
+		is_timeout = true;
+	}
+	/* Check for transfer errors or timeout */
+	if (data->current.is_nack || data->current.is_arlo || is_timeout) {
+		LL_I2C_Disable(reg);
 		goto error;
+
+	} else if (msg->flags & I2C_MSG_STOP) {
+		/* Disable I2C if this was last message and SMBus alert is not active */
+#if defined(CONFIG_I2C_TARGET)
+		data->master_active = false;
+		if (!data->slave_attached && !data->smbalert_active) {
+			LL_I2C_Disable(reg);
+		}
+#else
+		if (!data->smbalert_active) {
+			LL_I2C_Disable(reg);
+		}
+#endif
 	}
 
 	return 0;
@@ -1109,6 +1203,10 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 int stm32_i2c_transaction(const struct device *dev, struct i2c_msg msg, uint8_t *next_msg_flags,
 			  uint16_t periph)
 {
+	int ret;
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+	ret = stm32_i2c_irq_xfer(dev, &msg, next_msg_flags, periph);
+#else
 	/*
 	 * Perform a I2C transaction, while taking into account the STM32 I2C V2
 	 * peripheral has a limited maximum chunk size. Take appropriate action
@@ -1126,7 +1224,6 @@ int stm32_i2c_transaction(const struct device *dev, struct i2c_msg msg, uint8_t 
 	uint8_t combine_flags = saved_flags & ~(I2C_MSG_STOP | I2C_MSG_RESTART);
 	uint8_t *flagsp = NULL;
 	uint32_t rest = msg.len;
-	int ret = 0;
 
 	do { /* do ... while to allow zero-length transactions */
 		if (msg.len > i2c_stm32_maxchunk) {
@@ -1149,6 +1246,6 @@ int stm32_i2c_transaction(const struct device *dev, struct i2c_msg msg, uint8_t 
 		msg.buf += msg.len;
 		msg.len = rest;
 	} while (rest > 0U);
-
+#endif
 	return ret;
 }

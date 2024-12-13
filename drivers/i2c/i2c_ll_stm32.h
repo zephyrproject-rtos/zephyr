@@ -68,6 +68,7 @@ struct i2c_stm32_data {
 		unsigned int is_restart;
 		unsigned int flags;
 #endif
+		bool continue_in_next;
 		unsigned int is_write;
 		unsigned int is_arlo;
 		unsigned int is_nack;
