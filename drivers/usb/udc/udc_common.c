@@ -665,7 +665,6 @@ struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 	LOG_DBG("Allocate net_buf, ep 0x%02x, size %zd", ep, size);
 

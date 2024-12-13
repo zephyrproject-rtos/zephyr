@@ -231,7 +231,6 @@ uac2_buf_alloc(const uint8_t ep, void *data, uint16_t size)
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
@@ -378,7 +377,6 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	fb_value = ctx->ops->feedback_cb(dev, terminal, ctx->user_data);
