@@ -14,12 +14,28 @@
 
 /* clang-format off */
 
-/* Helper macro to get MCLK register address for corresponding
- * that has corresponding clock enable bit.
+#define ATMEL_SAM0_DT_INST_CELL_REG_ADDR_OFFSET(n, cell)		\
+	(volatile uint32_t *)						\
+	(DT_REG_ADDR(DT_INST_PHANDLE_BY_NAME(n, clocks, cell)) +	\
+	 DT_INST_CLOCKS_CELL_BY_NAME(n, cell, offset))
+
+#define ATMEL_SAM0_DT_INST_CELL_PERIPH_MASK(n, name, cell)		\
+	BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, name, cell))
+
+/* Helper macro to get register address that control peripheral clock
+ * enable bit.
  */
-#define MCLK_MASK_DT_INT_REG_ADDR(n) \
-	(DT_REG_ADDR(DT_INST_PHANDLE_BY_NAME(n, clocks, mclk)) + \
-	 DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, offset))
+#define ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n)			\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mclk)),	\
+		(ATMEL_SAM0_DT_INST_CELL_REG_ADDR_OFFSET(n, mclk)),	\
+		(ATMEL_SAM0_DT_INST_CELL_REG_ADDR_OFFSET(n, pm)))
+
+/* Helper macro to get peripheral clock bit mask.
+ */
+#define ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, cell)			\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mclk)),	\
+		(ATMEL_SAM0_DT_INST_CELL_PERIPH_MASK(n, mclk, cell)),	\
+		(ATMEL_SAM0_DT_INST_CELL_PERIPH_MASK(n, pm, cell)))
 
 /* Helper macros for use with ATMEL SAM0 DMAC controller
  * return 0xff as default value if there is no 'dmas' property
