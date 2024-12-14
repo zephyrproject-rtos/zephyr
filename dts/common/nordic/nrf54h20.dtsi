@@ -656,6 +656,7 @@
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				easydma-maxcnt-bits = <15>;
 				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
 				max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -682,6 +683,7 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <231 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
