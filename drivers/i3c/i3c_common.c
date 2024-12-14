@@ -453,36 +453,34 @@ err:
 int i3c_device_basic_info_get(struct i3c_device_desc *target)
 {
 	int ret;
-	uint8_t tmp_bcr;
-
 	struct i3c_ccc_getbcr bcr = {0};
 	struct i3c_ccc_getdcr dcr = {0};
-	struct i3c_ccc_mrl mrl = {0};
-	struct i3c_ccc_mwl mwl = {0};
-	union i3c_ccc_getcaps caps = {0};
-	union i3c_ccc_getmxds mxds = {0};
-
-	/*
-	 * Since some CCC functions requires BCR to function
-	 * correctly, we save the BCR here and update the BCR
-	 * in the descriptor. If any following operations fails,
-	 * we can restore the BCR.
-	 */
-	tmp_bcr = target->bcr;
 
 	/* GETBCR */
 	ret = i3c_ccc_do_getbcr(target, &bcr);
 	if (ret != 0) {
-		goto out;
+		return ret;
 	}
-
-	target->bcr = bcr.bcr;
 
 	/* GETDCR */
 	ret = i3c_ccc_do_getdcr(target, &dcr);
 	if (ret != 0) {
-		goto out;
+		return ret;
 	}
+
+	target->bcr = bcr.bcr;
+	target->dcr = dcr.dcr;
+
+	return 0;
+}
+
+int i3c_device_adv_info_get(struct i3c_device_desc *target)
+{
+	struct i3c_ccc_mrl mrl = {0};
+	struct i3c_ccc_mwl mwl = {0};
+	union i3c_ccc_getcaps caps = {0};
+	union i3c_ccc_getmxds mxds = {0};
+	int ret;
 
 	/* GETMRL */
 	if (i3c_ccc_do_getmrl(target, &mrl) != 0) {
@@ -505,10 +503,8 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target)
 	 * set, then it is expected for GETCAPS to always be supported. Otherwise, then it's a I3C
 	 * v1.0 device without any HDR modes so do not treat as an error if no valid response.
 	 */
-	if (ret == 0) {
-		memcpy(&target->getcaps, &caps, sizeof(target->getcaps));
-	} else if ((ret != 0) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) {
-		goto out;
+	if ((ret != 0) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) {
+		return ret;
 	} else {
 		ret = 0;
 	}
@@ -517,24 +513,21 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target)
 	if (target->bcr & I3C_BCR_MAX_DATA_SPEED_LIMIT) {
 		ret = i3c_ccc_do_getmxds_fmt2(target, &mxds);
 		if (ret != 0) {
-			goto out;
+			return ret;
 		}
-
-		target->data_speed.maxrd = mxds.fmt2.maxrd;
-		target->data_speed.maxwr = mxds.fmt2.maxwr;
-		target->data_speed.max_read_turnaround = sys_get_le24(mxds.fmt2.maxrdturn);
 	}
 
-	target->dcr = dcr.dcr;
+	/* Some values may not have been read, but set them back to 0 */
+	memcpy(&target->getcaps, &caps, sizeof(target->getcaps));
+
+	target->data_speed.maxrd = mxds.fmt2.maxrd;
+	target->data_speed.maxwr = mxds.fmt2.maxwr;
+	target->data_speed.max_read_turnaround = sys_get_le24(mxds.fmt2.maxrdturn);
+
 	target->data_length.mrl = mrl.len;
 	target->data_length.mwl = mwl.len;
 	target->data_length.max_ibi = mrl.ibi_len;
 
-out:
-	if (ret != 0) {
-		/* Restore BCR is any CCC fails. */
-		target->bcr = tmp_bcr;
-	}
 	return ret;
 }
 
@@ -824,9 +817,14 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 			continue;
 		}
 
-		ret = i3c_device_basic_info_get(desc);
+		/*
+		 * If static address is 0, then it is assumed that BCR
+		 * and DCR were already read through ENTDAA
+		 */
+		ret = (desc->static_addr == 0) ? i3c_device_adv_info_get(desc)
+					       : i3c_device_info_get(desc);
 		if (ret != 0) {
-			LOG_ERR("Error getting basic device info for 0x%02x",
+			LOG_ERR("Error getting device info for 0x%02x",
 				desc->static_addr);
 		} else {
 			LOG_DBG("Target 0x%02x, BCR 0x%02x, DCR 0x%02x, MRL %d, MWL %d, IBI %d",
