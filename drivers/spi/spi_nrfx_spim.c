@@ -9,6 +9,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <soc.h>
@@ -42,6 +43,16 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPI_BUFFER_IN_RAM 1
 #endif
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL) && \
+	(defined(CONFIG_HAS_HW_NRF_SPIM120) || \
+	 defined(CONFIG_HAS_HW_NRF_SPIM121))
+#define SPIM_REQUESTS_CLOCK(idx) UTIL_OR(IS_EQ(idx, 120), \
+					 IS_EQ(idx, 121))
+#define USE_CLOCK_REQUESTS 1
+#else
+#define SPIM_REQUESTS_CLOCK(idx) 0
+#endif
+
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -56,6 +67,9 @@ struct spi_nrfx_data {
 	bool    anomaly_58_workaround_active;
 	uint8_t ppi_ch;
 	uint8_t gpiote_ch;
+#endif
+#ifdef USE_CLOCK_REQUESTS
+	bool clock_requested;
 #endif
 };
 
@@ -74,9 +88,58 @@ struct spi_nrfx_config {
 #ifdef CONFIG_DCACHE
 	uint32_t mem_attr;
 #endif
+#ifdef USE_CLOCK_REQUESTS
+	const struct device *clk_dev;
+	struct nrf_clock_spec clk_spec;
+#endif
 };
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
+
+static inline int request_clock(const struct device *dev)
+{
+#ifdef USE_CLOCK_REQUESTS
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
+	int error;
+
+	if (!dev_config->clk_dev) {
+		return 0;
+	}
+
+	error = nrf_clock_control_request_sync(
+			dev_config->clk_dev, &dev_config->clk_spec,
+			K_MSEC(CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE));
+	if (error < 0) {
+		LOG_ERR("Failed to request clock: %d", error);
+		return error;
+	}
+
+	dev_data->clock_requested = true;
+#else
+	ARG_UNUSED(dev);
+#endif
+
+	return 0;
+}
+
+static inline void release_clock(const struct device *dev)
+{
+#ifdef USE_CLOCK_REQUESTS
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
+
+	if (!dev_data->clock_requested) {
+		return;
+	}
+
+	dev_data->clock_requested = false;
+
+	nrf_clock_control_release(dev_config->clk_dev, &dev_config->clk_spec);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
 
 static inline void finalize_spi_transaction(const struct device *dev, bool deactivate_cs)
 {
@@ -90,6 +153,10 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 
 	if (NRF_SPIM_IS_320MHZ_SPIM(reg) && !(dev_data->ctx.config->operation & SPI_HOLD_ON_CS)) {
 		nrfy_spim_disable(reg);
+	}
+
+	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		release_clock(dev);
 	}
 
 	pm_device_runtime_put_async(dev, K_NO_WAIT);
@@ -467,6 +534,11 @@ static int transceive(const struct device *dev,
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	error = configure(dev, spi_cfg);
+
+	if (error == 0 && !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		error = request_clock(dev);
+	}
+
 	if (error == 0) {
 		dev_data->busy = true;
 
@@ -518,6 +590,8 @@ static int transceive(const struct device *dev,
 		} else if (error) {
 			finalize_spi_transaction(dev, true);
 		}
+	} else {
+		pm_device_runtime_put(dev);
 	}
 
 	spi_context_release(&dev_data->ctx, error);
@@ -575,7 +649,7 @@ static DEVICE_API(spi, spi_nrfx_driver_api) = {
 	.release = spi_nrfx_release,
 };
 
-static void spim_resume(const struct device *dev)
+static int spim_resume(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
 
@@ -587,6 +661,8 @@ static void spim_resume(const struct device *dev)
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(dev_config->pcfg, false);
 #endif
+
+	return IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) ? request_clock(dev) : 0;
 }
 
 static void spim_suspend(const struct device *dev)
@@ -599,6 +675,10 @@ static void spim_suspend(const struct device *dev)
 		dev_data->initialized = false;
 	}
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		release_clock(dev);
+	}
+
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(dev_config->pcfg, true);
 #endif
@@ -609,7 +689,7 @@ static void spim_suspend(const struct device *dev)
 static int spim_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	if (action == PM_DEVICE_ACTION_RESUME) {
-		spim_resume(dev);
+		return spim_resume(dev);
 	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
 		spim_suspend(dev);
 	} else {
@@ -685,6 +765,21 @@ static int spi_nrfx_init(const struct device *dev)
 			(0))),								 \
 		(0))
 
+/* Fast instances depend on the global HSFLL clock controller (as they need
+ * to request the highest frequency from it to operate correctly), so they
+ * must be initialized after that controller driver, hence the default SPI
+ * initialization priority may be too early for them.
+ */
+#if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY) && \
+	CONFIG_SPI_INIT_PRIORITY < CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY
+#define SPIM_INIT_PRIORITY(idx) \
+	COND_CODE_1(SPIM_REQUESTS_CLOCK(idx), \
+		(UTIL_INC(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY)), \
+		(CONFIG_SPI_INIT_PRIORITY))
+#else
+#define SPIM_INIT_PRIORITY(idx) CONFIG_SPI_INIT_PRIORITY
+#endif
+
 #define SPI_NRFX_SPIM_DEFINE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(SPIM(idx));			       \
 	static void irq_connect##idx(void)				       \
@@ -735,6 +830,13 @@ static int spi_nrfx_init(const struct device *dev)
 		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPIM(idx)),		       \
 		IF_ENABLED(CONFIG_DCACHE,				       \
 			(.mem_attr = SPIM_GET_MEM_ATTR(idx),))		       \
+		IF_ENABLED(USE_CLOCK_REQUESTS,			       \
+			(.clk_dev = SPIM_REQUESTS_CLOCK(idx)		       \
+				  ? DEVICE_DT_GET(DT_CLOCKS_CTLR(SPIM(idx)))   \
+				  : NULL,				       \
+			 .clk_spec = {					       \
+				.frequency = NRF_CLOCK_CONTROL_FREQUENCY_MAX,  \
+			 },))						       \
 	};								       \
 	BUILD_ASSERT(!SPIM_HAS_PROP(idx, wake_gpios) ||			       \
 		     !(DT_GPIO_FLAGS(SPIM(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
@@ -745,7 +847,7 @@ static int spi_nrfx_init(const struct device *dev)
 		      PM_DEVICE_DT_GET(SPIM(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
-		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
+		      POST_KERNEL, SPIM_INIT_PRIORITY(idx),		       \
 		      &spi_nrfx_driver_api)
 
 #define SPIM_MEMORY_SECTION(idx)					       \
