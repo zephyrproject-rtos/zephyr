@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
 description: Specialization of Bosch m_can CAN FD controller for Atmel SAM0
 
 compatible: "atmel,sam0-can"
@@ -20,6 +23,12 @@ properties:
     required: true
 
   clock-names:
+    required: true
+
+  assigned-clocks:
+    required: true
+
+  assigned-clock-names:
     required: true
 
   divider:
