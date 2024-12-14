@@ -9,6 +9,10 @@
 / {
 	aliases {
 		tc-6 = &tc6;
+
+		tcc-0 = &tcc0;
+		tcc-1 = &tcc1;
+		tcc-2 = &tcc2;
 	};
 
 	soc {

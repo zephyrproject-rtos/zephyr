@@ -13,6 +13,21 @@
 
 / {
 	aliases {
+		adc-0 = &adc0;
+
+		port-a = &porta;
+		port-b = &portb;
+		port-c = &portc;
+
+		sercom-0 = &sercom0;
+		sercom-1 = &sercom1;
+		sercom-2 = &sercom2;
+		sercom-3 = &sercom3;
+
+		tcc-0 = &tcc0;
+		tcc-1 = &tcc1;
+		tcc-2 = &tcc2;
+
 		watchdog0 = &wdog;
 	};
 
@@ -42,21 +57,6 @@
 			<0x0080A040 0x4>,
 			<0x0080A044 0x4>,
 			<0x0080A048 0x4>;
-	};
-
-	aliases {
-		port-a = &porta;
-		port-b = &portb;
-		port-c = &portc;
-
-		sercom-0 = &sercom0;
-		sercom-1 = &sercom1;
-		sercom-2 = &sercom2;
-		sercom-3 = &sercom3;
-
-		tcc-0 = &tcc0;
-		tcc-1 = &tcc1;
-		tcc-2 = &tcc2;
 	};
 
 	soc {

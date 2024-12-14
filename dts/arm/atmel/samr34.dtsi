@@ -13,6 +13,8 @@
 
 / {
 	aliases {
+		port-c = &portc;
+
 		lora0 = &lora;
 	};
 
