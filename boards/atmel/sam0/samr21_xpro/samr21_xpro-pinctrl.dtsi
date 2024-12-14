@@ -1,11 +1,17 @@
 /*
- * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2022-2024, Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <dt-bindings/pinctrl/samr21g-pinctrl.h>
 
 &pinctrl {
+	adc_default: adc_default {
+		group1 {
+			pinmux = <PA6B_ADC_AIN6>;
+		};
+	};
+
 	pwm_default: pwm_default {
 		group1 {
 			pinmux = <PA19F_TCC0_WO3>;

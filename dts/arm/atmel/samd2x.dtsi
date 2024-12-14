@@ -196,6 +196,7 @@
 		adc: adc@42004000 {
 			compatible = "atmel,sam0-adc";
 			reg = <0x42004000 0x2B>;
+			status = "disabled";
 
 			#io-channel-cells = <1>;
 

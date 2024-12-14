@@ -54,6 +54,7 @@
 			interrupts = <15 0>;
 			clocks = <&gclk 26>, <&pm 0x20 8>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
@@ -65,6 +66,7 @@
 			interrupts = <16 0>;
 			clocks = <&gclk 26>, <&pm 0x20 9>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 
 			channels = <2>;
 			counter-size = <24>;
@@ -76,6 +78,7 @@
 			interrupts = <17 0>;
 			clocks = <&gclk 27>, <&pm 0x20 10>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;

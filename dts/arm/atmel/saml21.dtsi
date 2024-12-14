@@ -21,6 +21,7 @@
 			compatible = "atmel,sam0-dmac";
 			reg = <0x44000400 0x50>;
 			interrupts = <5 0>;
+			status = "disabled";
 
 			#dma-cells = <2>;
 		};
@@ -31,6 +32,7 @@
 			interrupts = <14 0>;
 			clocks = <&gclk 25>, <&mclk 0x1c 5>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
@@ -42,6 +44,7 @@
 			interrupts = <15 0>;
 			clocks = <&gclk 25>, <&mclk 0x1c 6>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
@@ -53,6 +56,7 @@
 			interrupts = <16 0>;
 			clocks = <&gclk 26>, <&mclk 0x1c 7>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;
