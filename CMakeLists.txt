@@ -681,6 +681,7 @@ set(ZEPHYR_CURRENT_CMAKE_DIR)
 get_property(LIBC_LINK_LIBRARIES TARGET zephyr_interface PROPERTY LIBC_LINK_LIBRARIES)
 zephyr_link_libraries(${LIBC_LINK_LIBRARIES})
 
+set(annotations_json ${CMAKE_BINARY_DIR}/zephyr/annotations.json)
 set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/zephyr/syscall_list.h)
 set(edk_syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/edk/include/generated/zephyr/syscall_list.h)
 set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
@@ -912,13 +913,14 @@ add_custom_command(
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
     --alignment ${CONFIG_LINKER_ITERABLE_SUBALIGN}
-    --input ${struct_tags_json}
+    --input ${annotations_json}
     --tag __subsystem
     --ld-output ${DEVICE_API_LD_SECTIONS}
     --cmake-output ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+    --cmake-prefix "DEVICE_API"
   DEPENDS
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
-    ${struct_tags_json}
+    ${annotations_json}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
