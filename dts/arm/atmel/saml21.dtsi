@@ -15,15 +15,6 @@
 	};
 
 	soc {
-		usb0: usb@41000000 {
-			compatible = "atmel,sam0-usb";
-			reg = <0x41000000 0x1000>;
-			interrupts = <6 0>;
-			status = "disabled";
-
-			num-bidir-endpoints = <8>;
-		};
-
 		tcc0: tcc@42001400 {
 			compatible = "atmel,sam0-tcc";
 			reg = <0x42001400 0x80>;
