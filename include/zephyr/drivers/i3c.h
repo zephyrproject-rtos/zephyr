@@ -2106,8 +2106,6 @@ int i3c_bus_init(const struct device *dev,
  * This retrieves some basic information:
  *   * Bus Characteristics Register (GETBCR)
  *   * Device Characteristics Register (GETDCR)
- *   * Max Read Length (GETMRL)
- *   * Max Write Length (GETMWL)
  * from the device and update the corresponding fields of the device
  * descriptor.
  *
@@ -2120,6 +2118,63 @@ int i3c_bus_init(const struct device *dev,
  * @retval -EIO General Input/Output error.
  */
 int i3c_device_basic_info_get(struct i3c_device_desc *target);
+
+/**
+ * @brief Get advanced information from device and update device descriptor.
+ *
+ * This retrieves some information:
+ *   * Max Read Length (GETMRL)
+ *   * Max Write Length (GETMWL)
+ *   * Get Capabilities (GETCAPS)
+ *   * Max Device Speed (GETMXDS) (if applicable)
+ * from the device and update the corresponding fields of the device
+ * descriptor.
+ *
+ * This only updates the field(s) in device descriptor
+ * only if CCC operations succeed.
+ *
+ * @note This should only be called after i3c_device_basic_info_get() or
+ * if the BCR was already obtained through ENTDAA, DEFTGTS, or GETBCR.
+ *
+ * @param[in,out] target I3C target device descriptor.
+ *
+ * @retval 0 if successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_device_adv_info_get(struct i3c_device_desc *target);
+
+/**
+ * @brief Get all information from device and update device descriptor.
+ *
+ * This retrieves all information:
+ *   * Bus Characteristics Register (GETBCR)
+ *   * Device Characteristics Register (GETDCR)
+ *   * Max Read Length (GETMRL)
+ *   * Max Write Length (GETMWL)
+ *   * Get Capabilities (GETCAPS)
+ *   * Max Device Speed (GETMXDS) (if applicable)
+ * from the device and update the corresponding fields of the device
+ * descriptor.
+ *
+ * This only updates the field(s) in device descriptor
+ * only if CCC operations succeed.
+ *
+ * @param[in,out] target I3C target device descriptor.
+ *
+ * @retval 0 if successful.
+ * @retval -EIO General Input/Output error.
+ */
+static inline int i3c_device_info_get(struct i3c_device_desc *target)
+{
+	int rc;
+
+	rc = i3c_device_basic_info_get(target);
+	if (rc != 0) {
+		return rc;
+	}
+
+	return i3c_device_adv_info_get(target);
+}
 
 /**
  * @brief Check if the bus has a secondary controller.
