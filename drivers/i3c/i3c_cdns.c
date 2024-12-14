@@ -1020,6 +1020,19 @@ static void cdns_i3c_program_controller_retaining_reg(const struct device *dev)
 }
 
 #ifdef CONFIG_I3C_USE_IBI
+static int cdns_i3c_ibi_hj_response(const struct device *dev, bool ack)
+{
+	const struct cdns_i3c_config *config = dev->config;
+
+	if (ack) {
+		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);
+	} else {
+		sys_write32(~CTRL_HJ_ACK & sys_read32(config->base + CTRL), config->base + CTRL);
+	}
+
+	return 0;
+}
+
 static int cdns_i3c_controller_ibi_enable(const struct device *dev, struct i3c_device_desc *target)
 {
 	uint32_t sir_map;
@@ -3309,6 +3322,7 @@ static DEVICE_API(i3c, api) = {
 	.target_unregister = cdns_i3c_target_unregister,
 
 #ifdef CONFIG_I3C_USE_IBI
+	.ibi_hj_response = cdns_i3c_ibi_hj_response,
 	.ibi_enable = cdns_i3c_controller_ibi_enable,
 	.ibi_disable = cdns_i3c_controller_ibi_disable,
 	.ibi_raise = cdns_i3c_target_ibi_raise,
