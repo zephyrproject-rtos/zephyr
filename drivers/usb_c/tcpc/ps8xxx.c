@@ -67,18 +67,12 @@ struct ps8xxx_cfg {
 static int tcpci_init_alert_mask(const struct device *dev)
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
-	int ret;
 
 	uint16_t mask = TCPC_REG_ALERT_TX_COMPLETE | TCPC_REG_ALERT_RX_STATUS |
 			TCPC_REG_ALERT_RX_HARD_RST | TCPC_REG_ALERT_CC_STATUS |
 			TCPC_REG_ALERT_FAULT | TCPC_REG_ALERT_POWER_STATUS;
 
-	ret = tcpci_write_reg16(&cfg->bus, TCPC_REG_ALERT_MASK, mask);
-	if (ret != 0) {
-		return ret;
-	}
-
-	return 0;
+	return tcpci_tcpm_mask_status_register(&cfg->bus, TCPC_ALERT_STATUS, mask);
 }
 
 static int ps8xxx_tcpc_init(const struct device *dev)
@@ -136,20 +130,14 @@ int ps8xxx_tcpc_select_rp_value(const struct device *dev, enum tc_rp_value rp)
 
 	data->cc_changed = true;
 
-	return tcpci_update_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_RP_MASK,
-				 TCPC_REG_ROLE_CTRL_SET(0, rp, 0, 0));
+	return tcpci_tcpm_select_rp_value(&cfg->bus, rp);
 }
 
 int ps8xxx_tcpc_get_rp_value(const struct device *dev, enum tc_rp_value *rp)
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
-	uint8_t reg_value = 0;
-	int ret;
 
-	ret = tcpci_read_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL, &reg_value);
-	*rp = TCPC_REG_ROLE_CTRL_RP(reg_value);
-
-	return ret;
+	return tcpci_tcpm_get_rp_value(&cfg->bus, rp);
 }
 
 int ps8xxx_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
@@ -163,9 +151,7 @@ int ps8xxx_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 
 	data->cc_changed = true;
 
-	return tcpci_update_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL,
-				 TCPC_REG_ROLE_CTRL_CC1_MASK | TCPC_REG_ROLE_CTRL_CC2_MASK,
-				 TCPC_REG_ROLE_CTRL_SET(0, 0, pull, pull));
+	return tcpci_tcpm_set_cc(&cfg->bus, pull);
 }
 
 void ps8xxx_tcpc_set_vconn_discharge_cb(const struct device *dev, tcpc_vconn_discharge_cb_t cb)
@@ -202,8 +188,7 @@ int ps8xxx_tcpc_set_vconn(const struct device *dev, bool enable)
 	}
 
 	data->cc_changed = true;
-	ret = tcpci_update_reg8(&cfg->bus, TCPC_REG_POWER_CTRL, TCPC_REG_POWER_CTRL_VCONN_EN,
-				enable ? TCPC_REG_POWER_CTRL_VCONN_EN : 0);
+	ret = tcpci_tcpm_set_vconn(&cfg->bus, enable);
 
 	if (ret != 0) {
 		return ret;
@@ -221,8 +206,7 @@ int ps8xxx_tcpc_set_roles(const struct device *dev, enum tc_power_role power_rol
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
 
-	return tcpci_update_reg8(&cfg->bus, TCPC_REG_MSG_HDR_INFO, TCPC_REG_MSG_HDR_INFO_ROLES_MASK,
-				 TCPC_REG_MSG_HDR_INFO_SET(PD_REV30, data_role, power_role));
+	return tcpci_tcpm_set_roles(&cfg->bus, PD_REV30, power_role, data_role);
 }
 
 int ps8xxx_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
@@ -302,7 +286,7 @@ int ps8xxx_tcpc_set_rx_enable(const struct device *dev, bool enable)
 	const struct ps8xxx_cfg *cfg = dev->config;
 	int detect_sop_en = enable ? TCPC_REG_RX_DETECT_SOP_HRST_MASK : 0;
 
-	return tcpci_write_reg8(&cfg->bus, TCPC_REG_RX_DETECT, detect_sop_en);
+	return tcpci_tcpm_set_rx_type(&cfg->bus, detect_sop_en);
 }
 
 int ps8xxx_tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_polarity polarity)
@@ -315,9 +299,7 @@ int ps8xxx_tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_polarity po
 		return -EIO;
 	}
 
-	ret = tcpci_update_reg8(
-		&cfg->bus, TCPC_REG_TCPC_CTRL, TCPC_REG_TCPC_CTRL_PLUG_ORIENTATION,
-		(polarity == TC_POLARITY_CC1) ? 0 : TCPC_REG_TCPC_CTRL_PLUG_ORIENTATION);
+	ret = tcpci_tcpm_set_cc_polarity(&cfg->bus, polarity);
 
 	if (ret != 0) {
 		return ret;
@@ -332,90 +314,16 @@ int ps8xxx_tcpc_transmit_data(const struct device *dev, struct pd_msg *msg)
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
 
-	int reg = TCPC_REG_TX_BUFFER;
-	int rv;
-	int cnt = 4 * msg->header.number_of_data_objects;
-
-	/* If not SOP* transmission, just write to the transmit register */
-	if (msg->header.message_type >= NUM_SOP_STAR_TYPES) {
-		/*
-		 * Per TCPCI spec, do not specify retry (although the TCPC
-		 * should ignore retry field for these 3 types).
-		 */
-		return tcpci_write_reg8(
-			&cfg->bus, TCPC_REG_TRANSMIT,
-			TCPC_REG_TRANSMIT_SET_WITHOUT_RETRY(msg->header.message_type));
-	}
-
-	if (cnt > 0) {
-		reg = TCPC_REG_TX_BUFFER;
-		/* TX_BYTE_CNT includes extra bytes for message header */
-		cnt += sizeof(msg->header.raw_value);
-
-		struct i2c_msg buf[3];
-
-		uint8_t tmp[2] = {TCPC_REG_TX_BUFFER, cnt};
-
-		buf[0].buf = tmp;
-		buf[0].len = 2;
-		buf[0].flags = I2C_MSG_WRITE;
-
-		buf[1].buf = (uint8_t *)&msg->header.raw_value;
-		buf[1].len = sizeof(msg->header.raw_value);
-		buf[1].flags = I2C_MSG_WRITE;
-
-		buf[2].buf = (uint8_t *)msg->data;
-		buf[2].len = msg->len;
-		buf[2].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
-
-		if (cnt > sizeof(msg->header.raw_value)) {
-			rv = i2c_transfer(cfg->bus.bus, buf, 3, cfg->bus.addr);
-		} else {
-			buf[1].flags |= I2C_MSG_STOP;
-			rv = i2c_transfer(cfg->bus.bus, buf, 2, cfg->bus.addr);
-		}
-
-		/* If tcpc write fails, return error */
-		if (rv) {
-			return rv;
-		}
-	}
-
-	/*
-	 * We always retry in TCPC hardware since the TCPM is too slow to
-	 * respond within tRetry (~195 usec).
-	 *
-	 * The retry count used is dependent on the maximum PD revision
-	 * supported at build time.
-	 */
-	rv = tcpci_write_reg8(&cfg->bus, TCPC_REG_TRANSMIT,
-			      TCPC_REG_TRANSMIT_SET_WITH_RETRY(cfg->transmit_retries, msg->type));
-
-	return rv;
+	return tcpci_tcpm_transmit_data(&cfg->bus, msg, cfg->transmit_retries);
 }
 
 int ps8xxx_tcpc_dump_std_reg(const struct device *dev)
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
-	uint16_t value;
 
 	LOG_INF("TCPC %s:%s registers:", cfg->bus.bus->name, dev->name);
-	for (unsigned int a = 0; a < TCPCI_STD_REGS_SIZE; a++) {
-		switch (tcpci_std_regs[a].size) {
-		case 1:
-			tcpci_read_reg8(&cfg->bus, tcpci_std_regs[a].addr, (uint8_t *)&value);
-			LOG_INF("- %-30s(0x%02x) =   0x%02x", tcpci_std_regs[a].name,
-				tcpci_std_regs[a].addr, (uint8_t)value);
-			break;
-		case 2:
-			tcpci_read_reg16(&cfg->bus, tcpci_std_regs[a].addr, &value);
-			LOG_INF("- %-30s(0x%02x) = 0x%04x", tcpci_std_regs[a].name,
-				tcpci_std_regs[a].addr, value);
-			break;
-		}
-	}
 
-	return 0;
+	return tcpci_tcpm_dump_std_reg(&cfg->bus);
 }
 
 void ps8xxx_tcpc_alert_handler_cb(const struct device *dev, void *data, enum tcpc_alert alert)
@@ -490,9 +398,7 @@ int ps8xxx_tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_info *c
 		return -EIO;
 	}
 
-	ret |= tcpci_read_reg16(&cfg->bus, TCPC_REG_VENDOR_ID, &chip_info->vendor_id);
-	ret |= tcpci_read_reg16(&cfg->bus, TCPC_REG_PRODUCT_ID, &chip_info->product_id);
-	ret |= tcpci_read_reg16(&cfg->bus, TCPC_REG_BCD_DEV, &chip_info->device_id);
+	ret = tcpci_tcpm_get_chip_info(&cfg->bus, chip_info);
 
 	/* Vendor specific register for PS8815 model only */
 	if (chip_info->product_id == PS8815_PRODUCT_ID) {
@@ -596,7 +502,7 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 		return;
 	}
 
-	tcpci_read_reg16(&cfg->bus, TCPC_REG_ALERT, &alert_reg);
+	tcpci_tcpm_get_status_register(&cfg->bus, TCPC_ALERT_STATUS, &alert_reg);
 
 	while (alert_reg != 0) {
 		enum tcpc_alert alert_type = tcpci_alert_reg_to_enum(alert_reg);
@@ -608,30 +514,38 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 		} else if (alert_type == TCPC_ALERT_FAULT_STATUS) {
 			uint8_t fault;
 
-			tcpci_read_reg8(&cfg->bus, TCPC_REG_FAULT_STATUS, &fault);
-			tcpci_write_reg8(&cfg->bus, TCPC_REG_FAULT_STATUS, fault);
+			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_FAULT_STATUS,
+						       (uint16_t *)&fault);
+			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_FAULT_STATUS,
+							 (uint16_t)fault);
 
 			LOG_DBG("PS8xxx fault: %02x", fault);
 		} else if (alert_type == TCPC_ALERT_EXTENDED_STATUS) {
 			uint8_t ext_status;
 
-			tcpci_read_reg8(&cfg->bus, TCPC_REG_EXT_STATUS, &ext_status);
-			tcpci_write_reg8(&cfg->bus, TCPC_REG_EXT_STATUS, ext_status);
+			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_EXTENDED_STATUS,
+						       (uint16_t *)&ext_status);
+			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_EXTENDED_STATUS,
+							 (uint16_t)ext_status);
 
 			data->cc_changed = true;
 			LOG_DBG("PS8xxx ext status: %02x", ext_status);
 		} else if (alert_type == TCPC_ALERT_POWER_STATUS) {
 			uint8_t pwr_status;
 
-			tcpci_read_reg8(&cfg->bus, TCPC_REG_POWER_STATUS, &pwr_status);
-			tcpci_write_reg8(&cfg->bus, TCPC_REG_POWER_STATUS, pwr_status);
+			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_POWER_STATUS,
+						       (uint16_t *)&pwr_status);
+			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_POWER_STATUS,
+							 (uint16_t)pwr_status);
 
 			LOG_DBG("PS8xxx power status: %02x", pwr_status);
 		} else if (alert_type == TCPC_ALERT_EXTENDED) {
 			uint8_t alert_status;
 
-			tcpci_read_reg8(&cfg->bus, TCPC_REG_ALERT_EXT, &alert_status);
-			tcpci_write_reg8(&cfg->bus, TCPC_REG_ALERT_EXT, alert_status);
+			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_EXTENDED_ALERT_STATUS,
+						       (uint16_t *)&alert_status);
+			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_EXTENDED_ALERT_STATUS,
+							 (uint16_t)alert_status);
 
 			LOG_DBG("PS8xxx ext alert: %02x", alert_status);
 		} else if (alert_type == TCPC_ALERT_MSG_STATUS) {
@@ -641,16 +555,16 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 		}
 
 		if (data->alert_handler != NULL) {
-			data->alert_handler(data->dev, data->alert_handler_data, alert_type);
+			data->alert_handler(dev, data->alert_handler_data, alert_type);
 		}
 
 		clear_flags |= BIT(alert_type);
 		alert_reg &= ~BIT(alert_type);
 	}
 
-	tcpci_write_reg16(&cfg->bus, TCPC_REG_ALERT, clear_flags);
+	tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_ALERT_STATUS, clear_flags);
+	tcpci_tcpm_get_status_register(&cfg->bus, TCPC_ALERT_STATUS, &alert_reg);
 
-	tcpci_read_reg16(&cfg->bus, TCPC_REG_ALERT, &alert_reg);
 	if (alert_reg != 0) {
 		k_work_submit(work);
 	}
@@ -663,14 +577,12 @@ void ps8xxx_init_work_cb(struct k_work *work)
 
 	const struct ps8xxx_cfg *cfg = data->dev->config;
 	uint8_t power_reg = 0;
-	uint16_t idVendor = 0;
-	uint16_t idProduct = 0;
-	uint16_t idDevice = 0;
-	int res;
+	struct tcpc_chip_info chip_info;
+	int ret;
 
 	LOG_INF("Initializing PS8xxx chip: %s", data->dev->name);
-	res = tcpci_read_reg8(&cfg->bus, TCPC_REG_POWER_STATUS, &power_reg);
-	if (res != 0 || (power_reg & TCPC_REG_POWER_STATUS_UNINIT)) {
+	ret = tcpci_tcpm_get_status_register(&cfg->bus, TCPC_POWER_STATUS, (uint16_t *)&power_reg);
+	if (ret != 0 || (power_reg & TCPC_REG_POWER_STATUS_UNINIT)) {
 		data->init_retries++;
 
 		if (data->init_retries > CONFIG_USBC_TCPC_PS8XXX_INIT_RETRIES) {
@@ -679,16 +591,14 @@ void ps8xxx_init_work_cb(struct k_work *work)
 		}
 
 		LOG_DBG("Postpone chip initialization %d", data->init_retries);
-		k_work_schedule_for_queue(&k_sys_work_q, &data->init_dwork,
-					  K_MSEC(CONFIG_USBC_TCPC_PS8XXX_INIT_DELAY));
+		k_work_schedule(&data->init_dwork, K_MSEC(CONFIG_USBC_TCPC_PS8XXX_INIT_DELAY));
 
 		return;
 	}
 
-	tcpci_read_reg16(&cfg->bus, TCPC_REG_VENDOR_ID, &idVendor);
-	tcpci_read_reg16(&cfg->bus, TCPC_REG_PRODUCT_ID, &idProduct);
-	tcpci_read_reg16(&cfg->bus, TCPC_REG_BCD_DEV, &idDevice);
-	LOG_INF("Initialized chip is: %04x:%04x:%04x", idVendor, idProduct, idDevice);
+	ps8xxx_tcpc_get_chip_info(data->dev, &chip_info);
+	LOG_INF("Initialized chip is: %04x:%04x:%04x", chip_info.vendor_id, chip_info.product_id,
+		chip_info.device_id);
 
 	/* Initialize alert interrupt */
 	gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
@@ -718,8 +628,7 @@ static int ps8xxx_dev_init(const struct device *dev)
 	}
 
 	k_work_init_delayable(&data->init_dwork, ps8xxx_init_work_cb);
-	k_work_schedule_for_queue(&k_sys_work_q, &data->init_dwork,
-				  K_MSEC(CONFIG_USBC_TCPC_PS8XXX_INIT_DELAY));
+	k_work_schedule(&data->init_dwork, K_MSEC(CONFIG_USBC_TCPC_PS8XXX_INIT_DELAY));
 
 	k_work_init(&data->alert_work, ps8xxx_alert_work_cb);
 
