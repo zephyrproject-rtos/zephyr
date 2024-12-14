@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Argentum Systems Ltd.
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -228,6 +229,15 @@
 			compatible = "atmel,sam-trng";
 			reg = <0x42003800 0x24>;
 			interrupts = <27 0>;
+		};
+
+		usb0: usb@41000000 {
+			compatible = "atmel,sam0-usb";
+			reg = <0x41000000 0x1000>;
+			interrupts = <6 0>;
+			status = "disabled";
+
+			num-bidir-endpoints = <8>;
 		};
 	};
 };
