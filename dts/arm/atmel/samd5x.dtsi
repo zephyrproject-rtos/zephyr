@@ -125,6 +125,7 @@
 			compatible = "atmel,sam0-dmac";
 			reg = <0x4100A000 0x50>;
 			interrupts = <31 0>, <32 0>, <33 0>, <34 0>, <35 0>;
+			status = "disabled";
 
 			#dma-cells = <2>;
 		};
@@ -315,6 +316,7 @@
 			interrupt-names = "overrun", "resrdy";
 			clocks = <&gclk 40>, <&mclk 0x20 7>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			#io-channel-cells = <1>;
 
@@ -336,6 +338,7 @@
 			interrupt-names = "overrun", "resrdy";
 			clocks = <&gclk 41>, <&mclk 0x20 8>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			#io-channel-cells = <1>;
 
@@ -356,6 +359,7 @@
 			interrupts = <107 0>;
 			clocks = <&gclk 9>, <&mclk 0x14 14>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 		};
 
 		tc2: tc@4101a000 {
@@ -364,6 +368,7 @@
 			interrupts = <109 0>;
 			clocks = <&gclk 26>, <&mclk 0x18 13>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 		};
 
 		tc4: tc@42001400 {
@@ -372,6 +377,7 @@
 			interrupts = <111 0>;
 			clocks = <&gclk 30>, <&mclk 0x1c 5>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 		};
 
 		tc6: tc@43001400 {
@@ -380,6 +386,7 @@
 			interrupts = <113 0>;
 			clocks = <&gclk 39>, <&mclk 0x20 5>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 		};
 
 		tcc0: tcc@41016000 {
@@ -389,6 +396,7 @@
 				     <90 0>, <91 0>;
 			clocks = <&gclk 25>, <&mclk 0x18 11>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <6>;
 			counter-size = <24>;
@@ -400,6 +408,7 @@
 			interrupts = <92 0>, <93 0>, <94 0>, <95 0>, <96 0>;
 			clocks = <&gclk 25>, <&mclk 0x18 12>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
@@ -411,6 +420,7 @@
 			interrupts = <97 0>, <98 0>, <99 0>, <100 0>;
 			clocks = <&gclk 29>, <&mclk 0x1c 3>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <3>;
 			counter-size = <16>;
@@ -422,6 +432,7 @@
 			interrupts = <101 0>, <102 0>, <103 0>;
 			clocks = <&gclk 29>, <&mclk 0x1c 4>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;
@@ -433,6 +444,7 @@
 			interrupts = <104 0>, <105 0>, <106 0>;
 			clocks = <&gclk 38>, <&mclk 0x20 4>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;
