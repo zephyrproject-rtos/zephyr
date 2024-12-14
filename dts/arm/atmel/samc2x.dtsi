@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Kamil Serwus
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,7 +65,6 @@
 			compatible = "atmel,sam0-nvmctrl";
 			reg = <0x41004000 0x22>;
 			interrupts = <6 0>;
-
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -78,17 +78,25 @@
 		};
 
 		mclk: mclk@40000800 {
-			compatible = "atmel,samc2x-mclk";
+			compatible = "atmel,sam0-mclk";
 			reg = <0x40000800 0x400>;
 
 			#clock-cells = <2>;
 		};
 
+		osc32kctrl: osc32kctrl@40001400 {
+			compatible = "atmel,sam0-osc32kctrl";
+			reg = <0x40001400 0x400>;
+			#clock-cells = <0>;
+			#atmel,assigned-clock-cells = <1>;
+		};
+
 		gclk: gclk@40001c00 {
-			compatible = "atmel,samc2x-gclk";
+			compatible = "atmel,sam0-gclk";
 			reg = <0x40001c00 0x400>;
 
 			#clock-cells = <1>;
+			#atmel,assigned-clock-cells = <1>;
 		};
 
 		eic: eic@40002800 {
@@ -124,11 +132,12 @@
 			interrupt-names = "resrdy";
 			clocks = <&gclk 33>, <&mclk 0x1c 17>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			#io-channel-cells = <1>;
 
-			gclk = <0>;
 			prescaler = <4>;
 		};
 
@@ -138,6 +147,8 @@
 			interrupts = <9 0>;
 			clocks = <&gclk 19>, <&mclk 0x1c 1>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -147,6 +158,8 @@
 			interrupts = <10 0>;
 			clocks = <&gclk 20>, <&mclk 0x1c 2>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -156,6 +169,8 @@
 			interrupts = <11 0>;
 			clocks = <&gclk 21>, <&mclk 0x1c 3>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -165,6 +180,8 @@
 			interrupts = <12 0>;
 			clocks = <&gclk 22>, <&mclk 0x1c 4>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -174,6 +191,8 @@
 			interrupts = <17 0>;
 			clocks = <&gclk 28>, <&mclk 0x1c 9>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <4>;
@@ -186,6 +205,8 @@
 			interrupts = <18 0>;
 			clocks = <&gclk 28>, <&mclk 0x1c 10>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <4>;
@@ -198,6 +219,8 @@
 			interrupts = <19 0>;
 			clocks = <&gclk 29>, <&mclk 0x1c 11>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <2>;
@@ -244,11 +267,13 @@
 
 		rtc: rtc@40002400 {
 			compatible = "atmel,sam0-rtc";
-			reg = <0x40002400 0x1C>;
-			interrupts = <3 0>;
+			reg = <0x40002400 0x24>;
+			interrupts = <2 0>;
+			clocks = <&osc32kctrl>, <&mclk 0x14 9>;
+			clock-names = "OSC32KCTRL", "MCLK";
+			atmel,assigned-clocks = <&osc32kctrl 0>;
+			atmel,assigned-clock-names = "OSC32KCTRL";
 			status = "disabled";
-
-			clock-generator = <0>;
 		};
 	};
 };
