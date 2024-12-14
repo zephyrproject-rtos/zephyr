@@ -537,6 +537,7 @@ struct cdns_i3c_cmd {
 	uint32_t *num_xfer;
 	void *buf;
 	uint32_t error;
+	enum i3c_sdr_controller_error_types *sdr_err;
 	enum i3c_data_rate hdr;
 };
 
@@ -1451,10 +1452,11 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 			}
 			cmd->hdr = I3C_DATA_RATE_SDR;
 			/*
-			 * write the address of num_xfer which is to be updated upon message
-			 * completion
+			 * write the address of num_xfer and err which is to be updated upon
+			 * message completion
 			 */
 			cmd->num_xfer = &(payload->targets.payloads[i].num_xfer);
+			cmd->sdr_err = &(payload->targets.payloads[i].err);
 		}
 	} else {
 		cmd = &data->xfer.cmds[0];
@@ -1477,6 +1479,7 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 			cmd->len = 0;
 			cmd->num_xfer = NULL;
 		}
+		cmd->sdr_err = &(payload->ccc.err);
 	}
 
 	data->xfer.ret = -ETIMEDOUT;
@@ -1753,6 +1756,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 	for (int i = 0; i < data->xfer.num_cmds; i++) {
 		switch (data->xfer.cmds[i].error) {
 		case CMDR_NO_ERROR:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_NONE;
+			}
 			break;
 
 		case CMDR_MST_ABORT:
@@ -1774,6 +1780,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 				LOG_DBG("%s: Controller Abort due to buffer length excedded with "
 					"no EoD from target",
 					dev->name);
+			}
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_NONE;
 			}
 			break;
 
@@ -1806,27 +1815,50 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 					ret = -EIO;
 				}
 			} else {
+				if (data->xfer.cmds[i].sdr_err) {
+					*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE0;
+				}
 				ret = -EIO;
 			}
 			break;
 		}
 
+		case CMDR_M1_ERROR:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE1;
+			}
+			ret = -EIO;
+			break;
+		case CMDR_M2_ERROR:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE2;
+			}
+			ret = -EIO;
+			break;
+
 		case CMDR_DDR_PREAMBLE_ERROR:
 		case CMDR_DDR_PARITY_ERROR:
-		case CMDR_M1_ERROR:
-		case CMDR_M2_ERROR:
 		case CMDR_NACK_RESP:
 		case CMDR_DDR_DROPPED:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_UNKNOWN;
+			}
 			ret = -EIO;
 			break;
 
 		case CMDR_DDR_RX_FIFO_OVF:
 		case CMDR_DDR_TX_FIFO_UNF:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_UNKNOWN;
+			}
 			ret = -ENOSPC;
 			break;
 
 		case CMDR_INVALID_DA:
 		default:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_UNKNOWN;
+			}
 			ret = -EINVAL;
 			break;
 		}
@@ -1923,8 +1955,9 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 			cmd->cmd0 |= CMD0_FIFO_RNW;
 		}
 
-		/* i2c transfers are a don't care for num_xfer */
+		/* i2c transfers are a don't care for num_xfer and sdr error */
 		cmd->num_xfer = NULL;
+		cmd->sdr_err = NULL;
 	}
 
 	data->xfer.ret = -ETIMEDOUT;
@@ -2250,6 +2283,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 			 * completion
 			 */
 			cmd->num_xfer = &(msgs[i].num_xfer);
+			cmd->sdr_err = &(msgs[i].err);
 			cmd->hdr = I3C_DATA_RATE_SDR;
 		} else if ((data->common.ctrl_config.supported_hdr & I3C_MSG_HDR_DDR) &&
 			   (msgs[i].hdr_mode == I3C_MSG_HDR_DDR) && (msgs[i].flags & I3C_MSG_HDR)) {
@@ -2303,6 +2337,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 			 * completion
 			 */
 			cmd->num_xfer = &(msgs[i].num_xfer);
+			cmd->sdr_err = &(msgs[i].err);
 			cmd->hdr = I3C_DATA_RATE_HDR_DDR;
 		} else {
 			LOG_ERR("%s: Unsupported HDR Mode %d", dev->name, msgs[i].hdr_mode);
