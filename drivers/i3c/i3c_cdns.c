@@ -1804,9 +1804,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 				 * time which will be returned.
 				 */
 				if ((*data->xfer.cmds[i].num_xfer !=
-				     sizeof(((union i3c_ccc_getmxds *)0)->fmt1)) &&
+				     SIZEOF_FIELD(union i3c_ccc_getmxds, fmt1)) &&
 				    (*data->xfer.cmds[i].num_xfer !=
-				     sizeof(((union i3c_ccc_getmxds *)0)->fmt2))) {
+				     SIZEOF_FIELD(union i3c_ccc_getmxds, fmt2))) {
 					ret = -EIO;
 				}
 			} else if (ccc == I3C_CCC_GETCAPS) {
