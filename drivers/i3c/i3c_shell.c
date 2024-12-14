@@ -1929,6 +1929,39 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 }
 
 #ifdef CONFIG_I3C_USE_IBI
+/* i3c ibi hj_response <device> <"ack"/"nack"> */
+static int cmd_i3c_ibi_hj_response(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	bool ack;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	if (strcmp(argv[2], "ack") == 0) {
+		ack = true;
+	} else if (strcmp(argv[2], "nack") == 0) {
+		ack = false;
+	} else {
+		shell_error(sh, "I3C: invalid parameter");
+		return -EINVAL;
+	}
+
+	ret = i3c_ibi_hj_response(dev, ack);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Unable to set IBI HJ Response");
+		return ret;
+	}
+
+	shell_print(sh, "I3C: Set IBI HJ Response");
+
+	return 0;
+}
+
 /* i3c ibi hj <device> */
 static int cmd_i3c_ibi_hj(const struct shell *sh, size_t argc, char **argv)
 {
@@ -2108,6 +2141,10 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_i3c_device_name, i3c_device_name_get);
 /* L2 I3C IBI Shell Commands*/
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_i3c_ibi_cmds,
+	SHELL_CMD_ARG(hj_response, &dsub_i3c_device_name,
+		      "Set IBI HJ Response\n"
+		      "Usage: ibi hj_response <device> <\"ack\"/\"nack\">",
+		      cmd_i3c_ibi_hj_response, 3, 0),
 	SHELL_CMD_ARG(hj, &dsub_i3c_device_name,
 		      "Send IBI HJ\n"
 		      "Usage: ibi hj <device>",
