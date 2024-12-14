@@ -8,6 +8,8 @@
 
 / {
 	aliases {
+		adc-1 = &adc1;
+
 		sercom-4 = &sercom4;
 		sercom-5 = &sercom5;
 	};

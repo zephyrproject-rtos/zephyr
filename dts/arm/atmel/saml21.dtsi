@@ -7,6 +7,12 @@
 #include <atmel/saml2x.dtsi>
 
 / {
+	aliases {
+		tcc-0 = &tcc0;
+		tcc-1 = &tcc1;
+		tcc-2 = &tcc2;
+	};
+
 	soc {
 		usb0: usb@41000000 {
 			compatible = "atmel,sam0-usb";
