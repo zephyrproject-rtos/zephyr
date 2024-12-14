@@ -770,6 +770,19 @@ __subsystem struct i3c_driver_api {
 						   const struct i3c_device_id *id);
 
 	/**
+	 * ACK or NACK IBI HJ Requests
+	 *
+	 * @see ibi_hj_response()
+	 *
+	 * @param dev Pointer to controller device driver instance.
+	 * @param ack True to ack, False to nack
+	 *
+	 * @return See ibi_hj_response()
+	 */
+	int (*ibi_hj_response)(const struct device *dev,
+			       bool ack);
+
+	/**
 	 * Raise In-Band Interrupt (IBI).
 	 *
 	 * Target device only API.
@@ -1674,6 +1687,31 @@ struct i3c_device_desc *i3c_device_find(const struct device *dev,
  * @addtogroup i3c_ibi
  * @{
  */
+
+/**
+ * @brief ACK or NACK IBI HJ Requests
+ *
+ * This tells the controller to Acknowledge or Not Acknowledge
+ * In-Band Interrupt Hot-Join Requests.
+ *
+ * @param dev Pointer to controller device driver instance.
+ * @param ack True to ack, False to nack
+ *
+ * @retval 0 if operation is successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i3c_ibi_hj_response(const struct device *dev,
+				      bool ack)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)dev->api;
+
+	if (api->ibi_hj_response == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->ibi_hj_response(dev, ack);
+}
 
 /**
  * @brief Raise an In-Band Interrupt (IBI).
