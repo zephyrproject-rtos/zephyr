@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Argentum Systems Ltd.
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,15 +22,6 @@
 			status = "disabled";
 
 			num-bidir-endpoints = <8>;
-		};
-
-		dmac: dmac@44000400 {
-			compatible = "atmel,sam0-dmac";
-			reg = <0x44000400 0x50>;
-			interrupts = <5 0>;
-			status = "disabled";
-
-			#dma-cells = <2>;
 		};
 
 		tcc0: tcc@42001400 {
