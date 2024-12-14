@@ -14,9 +14,10 @@
 	soc {
 		usb0: usb@41005000 {
 			compatible = "atmel,sam0-usb";
-			status = "disabled";
 			reg = <0x41005000 0x1000>;
 			interrupts = <7 0>;
+			status = "disabled";
+
 			num-bidir-endpoints = <8>;
 		};
 
@@ -24,6 +25,7 @@
 			compatible = "atmel,sam0-dmac";
 			reg = <0x41004800 0x50>;
 			interrupts = <6 0>;
+
 			#dma-cells = <2>;
 		};
 
@@ -33,9 +35,11 @@
 			portc: gpio@41004500 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41004500 0x80>;
-				gpio-controller;
-				#gpio-cells = <2>;
+
 				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+
+				gpio-controller;
 			};
 		};
 
