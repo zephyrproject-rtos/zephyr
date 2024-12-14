@@ -37,23 +37,15 @@ static uint32_t full_irq_lock(void)
 {
 	uint32_t mcu_critical_state;
 
-	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
-		mcu_critical_state = __get_PRIMASK();
-		__disable_irq();
-	} else {
-		mcu_critical_state = irq_lock();
-	}
+	mcu_critical_state = __get_PRIMASK();
+	__disable_irq();
 
 	return mcu_critical_state;
 }
 
 static void full_irq_unlock(uint32_t mcu_critical_state)
 {
-	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
-		__set_PRIMASK(mcu_critical_state);
-	} else {
-		irq_unlock(mcu_critical_state);
-	}
+	__set_PRIMASK(mcu_critical_state);
 }
 #endif /* CONFIG_ZERO_LATENCY_IRQS */
 
