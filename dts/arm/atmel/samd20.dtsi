@@ -20,6 +20,7 @@
 			interrupts = <13 0>;
 			clocks = <&gclk 0x13>, <&pm 0x20 8>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 		};
 
 		tc2: tc@42002800 {
@@ -28,6 +29,7 @@
 			interrupts = <15 0>;
 			clocks = <&gclk 0x14>, <&pm 0x20 10>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 		};
 
 		tc6: tc@42003800 {
@@ -36,6 +38,7 @@
 			interrupts = <19 0>;
 			clocks = <&gclk 0x16>, <&pm 0x20 14>;
 			clock-names = "GCLK", "PM";
+			status = "disabled";
 		};
 	};
 };
