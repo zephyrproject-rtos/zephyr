@@ -198,6 +198,7 @@ int nrf_clock_control_request_sync(const struct device *dev,
 
 	err = k_sem_take(&req.sem, timeout);
 	if (err < 0) {
+		nrf_clock_control_cancel_or_release(dev, spec, &req.cli);
 		return err;
 	}
 
