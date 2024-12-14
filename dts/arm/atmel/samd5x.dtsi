@@ -11,30 +11,6 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
-	chosen {
-		zephyr,flash-controller = &nvmctrl;
-	};
-
-	cpus {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		cpu0: cpu@0 {
-			compatible = "arm,cortex-m4f";
-			reg = <0>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			device_type = "cpu";
-
-			mpu: mpu@e000ed90 {
-				compatible = "arm,armv7m-mpu";
-				reg = <0xe000ed90 0x40>;
-			};
-		};
-	};
-
 	aliases {
 		adc-0 = &adc0;
 		adc-1 = &adc1;
@@ -69,6 +45,27 @@
 
 	chosen {
 		zephyr,entropy = &trng;
+		zephyr,flash-controller = &nvmctrl;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			device_type = "cpu";
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
 	};
 
 	soc {
