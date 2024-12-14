@@ -281,6 +281,27 @@ static struct bt_conn_cb conn_callbacks = {
 #endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
 };
 
+static void remote_info(struct bt_conn *conn, void *data)
+{
+	struct bt_conn_remote_info remote_info;
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Get remote info %s...\n", addr);
+	err = bt_conn_get_remote_info(conn, &remote_info);
+	if (err) {
+		printk("Failed remote info %s.\n", addr);
+		return;
+	}
+	printk("success.\n");
+
+	uint8_t *actual_count = (void *)data;
+
+	(*actual_count)++;
+}
+
 static void disconnect(struct bt_conn *conn, void *data)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -321,6 +342,18 @@ int init_central(uint8_t max_conn, uint8_t iterations)
 		}
 
 		is_disconnecting = true;
+
+		/* Let us perform version exchange on all connections to ensure
+		 * there is actual communication.
+		 */
+		uint8_t actual_count = 0U;
+
+		bt_conn_foreach(BT_CONN_TYPE_LE, remote_info, &actual_count);
+		if (actual_count < conn_count_max) {
+			k_sleep(K_MSEC(10));
+
+			continue;
+		}
 
 		/* Lets wait sufficiently to ensure a stable connection
 		 * before starting to disconnect for next iteration.
