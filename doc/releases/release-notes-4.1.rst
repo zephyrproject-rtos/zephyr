@@ -126,6 +126,8 @@ Build system and Infrastructure
     as well as for ``--sub-test`` command line parameters (:github:`80088`).
   * The ``--no-detailed-test-id`` command line option also shortens Ztest Test Case names excluding
     its Test Scenario name prefix which is the same as the parent Test Suite id (:github:`82302`).
+    Twister XML reports have full testsuite name as ``testcase.classname property`` resolving
+    possible duplicate testcase elements in ``twister_report.xml`` testsuite container.
 
 Drivers and Sensors
 *******************
