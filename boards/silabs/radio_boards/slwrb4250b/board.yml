@@ -1,5 +1,6 @@
-boards:
-  - name: slwrb4250b
-    full_name: EFR32FG1 2400/868 MHz 13 dBm Dual Band (SLWRB4250B)
-    socs:
-      - name: efr32fg1p133f256gm48
+board:
+  name: slwrb4250b
+  full_name: EFR32FG1 2400/868 MHz 13 dBm Dual Band (SLWRB4250B)
+  vendor: silabs
+  socs:
+    - name: efr32fg1p133f256gm48
