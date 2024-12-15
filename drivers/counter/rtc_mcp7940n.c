@@ -712,7 +712,7 @@ static int mcp7940n_init(const struct device *dev)
 		gpio_init_callback(&data->int_callback, mcp7940n_init_cb,
 				   BIT(cfg->int_gpios.pin));
 
-		gpio_add_callback(cfg->int_gpios.port, &data->int_callback);
+		(void)gpio_add_callback(cfg->int_gpios.port, &data->int_callback);
 
 		/* Configure interrupt polarity */
 		if ((cfg->int_gpios.dt_flags & GPIO_ACTIVE_LOW) == GPIO_ACTIVE_LOW) {
