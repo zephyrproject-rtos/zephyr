@@ -163,7 +163,7 @@ static void rv8263c8_interrupt_worker(struct k_work *p_work)
 	struct rv8263c8_data *data = CONTAINER_OF(p_work, struct rv8263c8_data, interrupt_work);
 	const struct rv8263c8_config *config = data->dev->config;
 
-	i2c_reg_read_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, &reg);
+	(void)i2c_reg_read_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, &reg);
 
 #if CONFIG_RTC_ALARM
 	/* An alarm interrupt occurs. Clear the timer flag, */
