@@ -105,6 +105,7 @@ source "drivers/timer/Kconfig.xtensa"
 source "drivers/timer/Kconfig.mtk_adsp"
 source "drivers/timer/Kconfig.sy1xx_sys_timer"
 source "drivers/timer/Kconfig.renesas_ra_ulpt"
+source "drivers/timer/Kconfig.renesas_rz"
 source "drivers/timer/Kconfig.renesas_rza2m"
 source "drivers/timer/Kconfig.ifx_cat1_lp"
 
