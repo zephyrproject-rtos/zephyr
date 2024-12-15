@@ -191,6 +191,7 @@ class Reporting:
             eleTestsuite.attrib['skipped'] = f"{skips}"
             eleTestsuite.attrib['tests'] = f"{total}"
 
+        ET.indent(eleTestsuites, space="\t", level=0)
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)
@@ -280,6 +281,7 @@ class Reporting:
             eleTestsuite.attrib['skipped'] = f"{skips}"
             eleTestsuite.attrib['tests'] = f"{total}"
 
+        ET.indent(eleTestsuites, space="\t", level=0)
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)
