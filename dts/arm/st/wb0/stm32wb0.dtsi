@@ -259,6 +259,18 @@
 			dma-requests= <25>;
 			status = "disabled";
 		};
+
+		/* Properties common to RNG of all STM32WB0x MCUs.
+		 * Note that the STM32WB09 TRNG differs heavily from the
+		 * RNG in other MCUs of the series, and has a different
+		 * "compatible" - this is handled in `stm32wb09.dtsi`.
+		 */
+		rng: rng@48600000 {
+			compatible = "st,stm32-rng";
+			reg = <0x48600000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 18)>;
+			status = "disabled";
+		};
 	};
 
 	bt_hci_wb0: bt_hci_wb0 {
