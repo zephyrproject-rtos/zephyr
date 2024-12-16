@@ -15,8 +15,17 @@ config SOC_CC2340R5
 	help
 	  CC2340R5
 
+config SOC_CC2340R53
+	bool
+	select SOC_SERIES_CC23X0
+	help
+	  CC2340R53
+
 config SOC_SERIES
 	default "cc23x0" if SOC_SERIES_CC23X0
 
 config SOC
 	default "cc2340r5" if SOC_CC2340R5
+
+config SOC
+	default "cc2340r53" if SOC_CC2340R53

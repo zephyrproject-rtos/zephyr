@@ -2,7 +2,7 @@ identifier: lp_em_cc2340r5
 name: TI SimpleLink CC2340R5 LaunchPad
 type: mcu
 arch: arm
-ram: 80
+ram: 36
 flash: 512
 toolchain:
   - zephyr
