@@ -180,6 +180,9 @@
 /* Indicates this is a network socket object */
 #define __net_socket __zpp(struct("__net_socket"))
 
+/* Indicates a struct iterable section should be added in ROM */
+#define __iterable_section_rom __zpp(struct("__iterable_section_rom"))
+
 #ifndef BUILD_ASSERT
 /* Compile-time assertion that makes the build to fail.
  * Common implementation swallows the message.
