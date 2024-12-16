@@ -1195,6 +1195,9 @@ static int cmd_wifi_ap_status(const struct shell *sh, size_t argc, char *argv[])
 	case WIFI_SAP_IFACE_DFS:
 		PR("State: %s\n", "DFS");
 		break;
+	case WIFI_SAP_IFACE_NO_IR:
+		PR("State: %s\n", "NO_IR");
+		break;
 	case WIFI_SAP_IFACE_ENABLED:
 		PR("State: %s\n", "ENABLED");
 		break;
