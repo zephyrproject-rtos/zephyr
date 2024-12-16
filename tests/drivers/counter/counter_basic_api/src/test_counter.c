@@ -126,6 +126,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPTMR
 	DEVS_FOR_DT_COMPAT(nxp_lptmr)
 #endif
+#ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
+	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -1099,6 +1102,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	}
 #endif
 #ifdef CONFIG_COUNTER_MCUX_RTC
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}
