@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_RENESAS_RZ_RIIC
+	bool "Renesas RZ I2C RIIC Master"
+	default y
+	depends on DT_HAS_RENESAS_RZ_RIIC_ENABLED
+	select USE_RZ_FSP_RIIC_MASTER
+	help
+	  Enable Renesas RZ I2C RIIC Driver.
