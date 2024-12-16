@@ -120,6 +120,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | I3C       | on-chip    | i3c                                 |
 +-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1180_evk/mimxrt1180_evk_mimxrt1189_cm33_defconfig`
