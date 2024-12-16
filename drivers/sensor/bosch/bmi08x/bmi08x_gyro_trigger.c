@@ -20,15 +20,6 @@ static void bmi08x_handle_drdy_gyr(const struct device *dev)
 {
 	struct bmi08x_gyro_data *data = dev->data;
 
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return;
-	}
-#endif
-
 	if (data->handler_drdy_gyr) {
 		data->handler_drdy_gyr(dev, data->drdy_trig_gyr);
 	}
