@@ -15,39 +15,39 @@
 #include <ethernet/eth_stats.h>
 #include "oa_tc6.h"
 
-#define LAN865X_SPI_MAX_FREQUENCY		25000000U
-#define LAN865X_HW_BOOT_DELAY_MS                7
-#define LAN8650_DEVID                           0x8650
-#define LAN8651_DEVID                           0x8651
-#define LAN865X_REV_MASK                        GENMASK(3, 0)
-#define LAN865X_RESET_TIMEOUT                   10
+#define LAN865X_SPI_MAX_FREQUENCY 25000000U
+#define LAN865X_HW_BOOT_DELAY_MS  7
+#define LAN8650_DEVID             0x8650
+#define LAN8651_DEVID             0x8651
+#define LAN865X_REV_MASK          GENMASK(3, 0)
+#define LAN865X_RESET_TIMEOUT     10
 
 /* Memory Map Sector (MMS) 1 (0x1) */
-#define LAN865x_MAC_NCR		        MMS_REG(0x1, 0x000)
-#define LAN865x_MAC_NCR_TXEN		BIT(3)
-#define LAN865x_MAC_NCR_RXEN		BIT(2)
-#define LAN865x_MAC_NCFGR		MMS_REG(0x1, 0x001)
-#define LAN865x_MAC_NCFGR_CAF		BIT(4)
-#define LAN865x_MAC_NCFGR_MTIHEN	BIT(6)
-#define LAN865x_MAC_HRB		MMS_REG(0x1, 0x020)
-#define LAN865x_MAC_HRT		MMS_REG(0x1, 0x021)
-#define LAN865x_MAC_SAB1		MMS_REG(0x1, 0x022)
-#define LAN865x_MAC_SAB2		MMS_REG(0x1, 0x024)
-#define LAN865x_MAC_SAT2		MMS_REG(0x1, 0x025)
+#define LAN865x_MAC_NCR          MMS_REG(0x1, 0x000)
+#define LAN865x_MAC_NCR_TXEN     BIT(3)
+#define LAN865x_MAC_NCR_RXEN     BIT(2)
+#define LAN865x_MAC_NCFGR        MMS_REG(0x1, 0x001)
+#define LAN865x_MAC_NCFGR_CAF    BIT(4)
+#define LAN865x_MAC_NCFGR_MTIHEN BIT(6)
+#define LAN865x_MAC_HRB          MMS_REG(0x1, 0x020)
+#define LAN865x_MAC_HRT          MMS_REG(0x1, 0x021)
+#define LAN865x_MAC_SAB1         MMS_REG(0x1, 0x022)
+#define LAN865x_MAC_SAB2         MMS_REG(0x1, 0x024)
+#define LAN865x_MAC_SAT2         MMS_REG(0x1, 0x025)
 
-#define LAN865x_MAC_TXRX_ON             1
-#define LAN865x_MAC_TXRX_OFF            0
+#define LAN865x_MAC_TXRX_ON  1
+#define LAN865x_MAC_TXRX_OFF 0
 
 /* Memory Map Sector (MMS) 10 (0xA) */
 #define LAN865x_DEVID MMS_REG(0xA, 0x094)
 
 struct lan865x_config_plca {
-	bool enable : 1; /* 1 - PLCA enable, 0 - CSMA/CD enable */
-	uint8_t node_id  /* PLCA node id range: 0 to 254 */;
+	bool enable: 1; /* 1 - PLCA enable, 0 - CSMA/CD enable */
+	uint8_t node_id /* PLCA node id range: 0 to 254 */;
 	uint8_t node_count;  /* PLCA node count range: 1 to 255 */
-	uint8_t burst_count;  /* PLCA burst count range: 0x0 to 0xFF */
-	uint8_t burst_timer;  /* PLCA burst timer */
-	uint8_t to_timer;  /* PLCA TO value */
+	uint8_t burst_count; /* PLCA burst count range: 0x0 to 0xFF */
+	uint8_t burst_timer; /* PLCA burst timer */
+	uint8_t to_timer;    /* PLCA TO value */
 };
 
 struct lan865x_config {
