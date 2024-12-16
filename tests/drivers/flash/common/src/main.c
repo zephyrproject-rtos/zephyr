@@ -327,7 +327,14 @@ static bool flash_callback(const struct flash_pages_info *info, void *data)
 
 ZTEST(flash_driver, test_get_size)
 {
-#if CONFIG_TEST_DRIVER_FLASH_SIZE != -1
+#if CONFIG_TEST_DRIVER_FLASH_SIZE == 1
+	/* Speical case for all the stm32 targets */
+	uint64_t size;
+
+	zassert_ok(flash_get_size(flash_dev, &size));
+	/* CONFIG_FLASH_SIZE is int "Flash Size in kB" and API returns size in Bytes */
+	zassert_equal(size, (CONFIG_FLASH_SIZE * 1024), "Unexpected size");
+#elif CONFIG_TEST_DRIVER_FLASH_SIZE != -1
 	uint64_t size;
 
 	zassert_ok(flash_get_size(flash_dev, &size));

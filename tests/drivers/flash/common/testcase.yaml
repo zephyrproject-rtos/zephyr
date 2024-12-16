@@ -40,6 +40,16 @@ tests:
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk
+  drivers.flash.common.default.stm32:
+    filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
+      and CONFIG_SOC_FAMILY_STM32
+      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=1
+    integration_platforms:
+      - nucleo_g474re
+    platform_exclude:
+      - nucleo_wb55rg
   drivers.flash.common.no_explicit_erase:
     platform_allow:
       - nrf54l15dk/nrf54l05/cpuapp
