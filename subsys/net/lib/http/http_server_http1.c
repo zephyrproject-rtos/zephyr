@@ -254,8 +254,8 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 	return 0;
 }
 
-static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
-			   struct http_client_ctx *client)
+static int dynamic_get_del_req(struct http_resource_detail_dynamic *dynamic_detail,
+			       struct http_client_ctx *client)
 {
 	int ret, len;
 	char *ptr;
@@ -298,8 +298,8 @@ static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 	return 0;
 }
 
-static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
-			    struct http_client_ctx *client)
+static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_detail,
+				struct http_client_ctx *client)
 {
 	int ret;
 	char *ptr = client->cursor;
@@ -526,18 +526,21 @@ static int handle_http1_dynamic_resource(
 		}
 
 	case HTTP_GET:
-		/* For GET request, we do not pass any data to the app but let the app
-		 * send data to the peer.
+	case HTTP_DELETE:
+		/* For GET/DELETE request, we do not pass any data to the app
+		 * but let the app send data to the peer.
 		 */
-		if (user_method & BIT(HTTP_GET)) {
-			return dynamic_get_req(dynamic_detail, client);
+		if (user_method & BIT(client->method)) {
+			return dynamic_get_del_req(dynamic_detail, client);
 		}
 
 		goto not_supported;
 
 	case HTTP_POST:
-		if (user_method & BIT(HTTP_POST)) {
-			return dynamic_post_req(dynamic_detail, client);
+	case HTTP_PUT:
+	case HTTP_PATCH:
+		if (user_method & BIT(client->method)) {
+			return dynamic_post_put_req(dynamic_detail, client);
 		}
 
 		goto not_supported;
