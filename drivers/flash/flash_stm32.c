@@ -19,6 +19,7 @@
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
+#include <stm32_ll_utils.h>
 #include <zephyr/logging/log.h>
 
 #include "flash_stm32.h"
@@ -354,6 +355,16 @@ flash_stm32_get_parameters(const struct device *dev)
 	return &flash_stm32_parameters;
 }
 
+/* Gives the total logical device size in bytes and return 0. */
+static int flash_stm32_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = (uint64_t)LL_GetFlashSize() * 1024U;
+
+	return 0;
+}
+
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
 	/* Getting clocks information from device tree description depending
@@ -372,6 +383,7 @@ static DEVICE_API(flash, flash_stm32_api) = {
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
 	.get_parameters = flash_stm32_get_parameters,
+	.get_size = flash_stm32_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif
