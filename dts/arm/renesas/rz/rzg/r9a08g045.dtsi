@@ -31,7 +31,161 @@
 		};
 	};
 
+	clocks {
+		iclk: iclk {
+			compatible = "fixed-clock";
+			clock-frequency = <1100000000>;
+			#clock-cells = <0>;
+		};
+
+		p0clk: p0clk {
+			compatible = "fixed-clock";
+			clock-frequency = <100000000>;
+			#clock-cells = <0>;
+		};
+
+		p4clk: p4clk {
+			compatible = "fixed-clock";
+			clock-frequency = <160000000>;
+			#clock-cells = <0>;
+		};
+
+		p5clk: p5clk {
+			compatible = "fixed-clock";
+			clock-frequency = <200000000>;
+			#clock-cells = <0>;
+		};
+
+		tsuclk: tsuclk {
+			compatible = "fixed-clock";
+			clock-frequency = <100000000>;
+			#clock-cells = <0>;
+		};
+
+		sd0clk: sd0clk {
+			compatible = "fixed-clock";
+			clock-frequency = <133333333>;
+			#clock-cells = <0>;
+		};
+
+		sd1clk: sd1clk {
+			compatible = "fixed-clock";
+			clock-frequency = <133333333>;
+			#clock-cells = <0>;
+		};
+
+		sd2clk: sd2clk {
+			compatible = "fixed-clock";
+			clock-frequency = <133333333>;
+			#clock-cells = <0>;
+		};
+
+		m0clk: m0clk {
+			compatible = "fixed-clock";
+			clock-frequency = <200000000>;
+			#clock-cells = <0>;
+		};
+
+		p1clk: p1clk {
+			compatible = "fixed-clock";
+			clock-frequency = <200000000>;
+			#clock-cells = <0>;
+		};
+
+		p2clk: p2clk {
+			compatible = "fixed-clock";
+			clock-frequency = <100000000>;
+			#clock-cells = <0>;
+		};
+
+		p3clk: p3clk {
+			compatible = "fixed-clock";
+			clock-frequency = <200000000>;
+			#clock-cells = <0>;
+		};
+
+		atclk: atclk {
+			compatible = "fixed-clock";
+			clock-frequency = <400000000>;
+			#clock-cells = <0>;
+		};
+
+		ztclk: ztclk {
+			compatible = "fixed-clock";
+			clock-frequency = <100000000>;
+			#clock-cells = <0>;
+		};
+
+		oc0clk: oc0clk {
+			compatible = "fixed-clock";
+			clock-frequency = <33333333>;
+			#clock-cells = <0>;
+		};
+
+		oc1clk: oc1clk {
+			compatible = "fixed-clock";
+			clock-frequency = <16666666>;
+			#clock-cells = <0>;
+		};
+
+		spi0clk: spi0clk {
+			compatible = "fixed-clock";
+			clock-frequency = <33333333>;
+			#clock-cells = <0>;
+		};
+
+		spi1clk: spi1clk {
+			compatible = "fixed-clock";
+			clock-frequency = <16666666>;
+			#clock-cells = <0>;
+		};
+
+		s0clk: s0clk {
+			compatible = "fixed-clock";
+			clock-frequency = <400000000>;
+			#clock-cells = <0>;
+		};
+
+		i2clk: i2clk {
+			compatible = "fixed-clock";
+			clock-frequency = <250000000>;
+			#clock-cells = <0>;
+		};
+
+		i3clk: i3clk {
+			compatible = "fixed-clock";
+			clock-frequency = <250000000>;
+			#clock-cells = <0>;
+		};
+
+		hpclk: hpclk {
+			compatible = "fixed-clock";
+			clock-frequency = <250000000>;
+			#clock-cells = <0>;
+		};
+
+		oscclk: oscclk {
+			compatible = "fixed-clock";
+			clock-frequency = <24000000>;
+			#clock-cells = <0>;
+		};
+
+		osc2clk: osc2clk {
+			compatible = "fixed-clock";
+			clock-frequency = <8000000>;
+			#clock-cells = <0>;
+		};
+
+	};
+
 	soc {
+		cpg: clock-controller@41010000 {
+			compatible = "renesas,rz-cpg";
+			reg = <0x41010000 0x10000>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
 		pinctrl: pin-controller@41030000 {
 			compatible = "renesas,rzg-pinctrl";
 			reg = <0x41030000 DT_SIZE_K(64)>;
