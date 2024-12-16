@@ -3,6 +3,8 @@
 
 config OPENTHREAD
 	bool "OpenThread Support"
+	select CSRNG
+	select RNG
 	help
 	  This option enables the OpenThread library
 
