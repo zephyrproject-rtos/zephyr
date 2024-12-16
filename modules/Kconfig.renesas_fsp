@@ -158,6 +158,11 @@ endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
 
+config USE_RZ_FSP_ADC
+	bool
+	help
+	  Enable RZ FSP ADC driver
+
 config USE_RZ_FSP_IOPORT
 	bool
 	help
