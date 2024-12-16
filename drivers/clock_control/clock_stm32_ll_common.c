@@ -569,7 +569,11 @@ static void set_up_plls(void)
 		stm32_clock_switch_to_hsi();
 		LL_RCC_SetAHBPrescaler(ahb_prescaler(1));
 	}
+	/* Disable PLL */
 	LL_RCC_PLL_Disable();
+	while (LL_RCC_PLL_IsReady() != 0U) {
+		/* Wait for PLL to be disabled */
+	}
 
 #endif
 
@@ -580,6 +584,9 @@ static void set_up_plls(void)
 	 * since PLL source can be PLL2.
 	 */
 	LL_RCC_PLL2_Disable();
+	while (LL_RCC_PLL2_IsReady() != 0U) {
+		/* Wait for PLL2 to be disabled */
+	}
 
 	config_pll2();
 
