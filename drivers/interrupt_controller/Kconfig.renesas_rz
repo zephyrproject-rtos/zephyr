@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RZ_EXT_IRQ
+	bool "Renesas RZ external interrupt controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_EXT_IRQ_ENABLED
+	select USE_RZ_FSP_EXT_IRQ
+	select PINCTRL
+	help
+	  Renesas RZ external interrupt controller driver
