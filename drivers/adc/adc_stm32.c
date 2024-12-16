@@ -120,78 +120,26 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define STM32_ADC_VREF_MV DT_INST_PROP(0, vref_mv)
 
 #if ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE)
-#define RANK(n)		LL_ADC_REG_RANK_##n
-static const uint32_t table_rank[] = {
-	RANK(1),
-	RANK(2),
-	RANK(3),
-	RANK(4),
-	RANK(5),
-	RANK(6),
-	RANK(7),
-	RANK(8),
-	RANK(9),
-	RANK(10),
-	RANK(11),
-	RANK(12),
-	RANK(13),
-	RANK(14),
-	RANK(15),
-	RANK(16),
-#if defined(LL_ADC_REG_RANK_17)
-	RANK(17),
-	RANK(18),
-	RANK(19),
-	RANK(20),
-	RANK(21),
-	RANK(22),
-	RANK(23),
-	RANK(24),
-	RANK(25),
-	RANK(26),
-	RANK(27),
-#if defined(LL_ADC_REG_RANK_28)
-	RANK(28),
-#endif /* LL_ADC_REG_RANK_28 */
-#endif /* LL_ADC_REG_RANK_17 */
-};
 
-#define SEQ_LEN(n)	LL_ADC_REG_SEQ_SCAN_ENABLE_##n##RANKS
+#if defined(LL_ADC_REG_RANK_28)
+#define MAX_RANK	28
+#elif defined(LL_ADC_REG_RANK_27)
+#define MAX_RANK	27
+#else
+#define MAX_RANK	16
+#endif
+
+#define RANK(i, _)	_CONCAT_1(LL_ADC_REG_RANK_, UTIL_INC(i))
+static const uint32_t table_rank[] = {
+	LISTIFY(MAX_RANK, RANK, (,))};
+
+#define SEQ_LEN(i, _)	_CONCAT_2(LL_ADC_REG_SEQ_SCAN_ENABLE_, UTIL_INC(UTIL_INC(i)), RANKS)
 /* Length of this array signifies the maximum sequence length */
 static const uint32_t table_seq_len[] = {
 	LL_ADC_REG_SEQ_SCAN_DISABLE,
-	SEQ_LEN(2),
-	SEQ_LEN(3),
-	SEQ_LEN(4),
-	SEQ_LEN(5),
-	SEQ_LEN(6),
-	SEQ_LEN(7),
-	SEQ_LEN(8),
-	SEQ_LEN(9),
-	SEQ_LEN(10),
-	SEQ_LEN(11),
-	SEQ_LEN(12),
-	SEQ_LEN(13),
-	SEQ_LEN(14),
-	SEQ_LEN(15),
-	SEQ_LEN(16),
-#if defined(LL_ADC_REG_SEQ_SCAN_ENABLE_17RANKS)
-	SEQ_LEN(17),
-	SEQ_LEN(18),
-	SEQ_LEN(19),
-	SEQ_LEN(20),
-	SEQ_LEN(21),
-	SEQ_LEN(22),
-	SEQ_LEN(23),
-	SEQ_LEN(24),
-	SEQ_LEN(25),
-	SEQ_LEN(26),
-	SEQ_LEN(27),
-#if defined(LL_ADC_REG_SEQ_SCAN_ENABLE_28RANKS)
-	SEQ_LEN(28),
-#endif /* LL_ADC_REG_SEQ_SCAN_ENABLE_28RANKS */
-#endif /* LL_ADC_REG_SEQ_SCAN_ENABLE_17RANKS */
+	LISTIFY(UTIL_DEC(MAX_RANK), SEQ_LEN, (,))
 };
+
 #endif /* ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE) */
 
 /* Number of different sampling time values */
@@ -659,21 +607,16 @@ static int adc_stm32_calibrate(const struct device *dev)
 
 #define HAS_OVERSAMPLING
 
-#define OVS_SHIFT(n)		LL_ADC_OVS_SHIFT_RIGHT_##n
+#if defined(LL_ADC_OVS_SHIFT_RIGHT_10)
+#define MAX_OVS_SHIFT	10
+#else
+#define MAX_OVS_SHIFT	8
+#endif
+
+#define OVS_SHIFT(i, _)	_CONCAT_1(LL_ADC_OVS_SHIFT_RIGHT_, UTIL_INC(i))
 static const uint32_t table_oversampling_shift[] = {
 	LL_ADC_OVS_SHIFT_NONE,
-	OVS_SHIFT(1),
-	OVS_SHIFT(2),
-	OVS_SHIFT(3),
-	OVS_SHIFT(4),
-	OVS_SHIFT(5),
-	OVS_SHIFT(6),
-	OVS_SHIFT(7),
-	OVS_SHIFT(8),
-#if defined(LL_ADC_OVS_SHIFT_RIGHT_9)
-	OVS_SHIFT(9),
-	OVS_SHIFT(10),
-#endif
+	LISTIFY(MAX_OVS_SHIFT, OVS_SHIFT, (,))
 };
 
 #if ANY_ADC_OVERSAMPLER_TYPE_IS(OVERSAMPLER_MINIMAL)
