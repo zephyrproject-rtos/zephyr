@@ -10,13 +10,6 @@ menuconfig STEPPER_ADI_TMC
 
 if STEPPER_ADI_TMC
 
-config STEPPER_ADI_TMC_RAMP_GEN
-	bool "Use Trinamic Stepper Controller with Ramp Generator"
-	depends on STEPPER_ADI_TMC
-	default y
-	help
-	  Enable ramp generator for trinamic stepper controller
-
 config STEPPER_ADI_TMC_SPI
 	bool "Use Trinamic Stepper Controller with SPI"
 	depends on STEPPER_ADI_TMC
