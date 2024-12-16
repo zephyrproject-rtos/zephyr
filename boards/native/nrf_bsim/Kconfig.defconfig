@@ -54,19 +54,6 @@ config BT_HCI_IPC
 
 endif # BOARD_NRF5340BSIM_NRF5340_CPUAPP
 
-if BOARD_NRF5340BSIM_NRF5340_CPUAPP || BOARD_NRF52_BSIM
-
-# BT relies on PSA Crypto API to perform crypto operations. On this platform
-# this is implemented by Mbed TLS which requires a (possibly true) random
-# number generator to initialize properly. We enable ENTROPY_GENERATOR here
-# instead of manually adding it to all samples/tests configuration files because
-# it looks more compact and easier to maintain.
-config ENTROPY_GENERATOR
-	bool
-	default y if BT
-
-endif # BOARD_NRF5340BSIM_NRF5340_CPUAPP || BOARD_NRF52_BSIM
-
 # The 15.4 driver Tx encryption is currently not functional with this
 # simulated board => we disable it by default. With this Openthread will normally
 # default to encrypt packets on its own.
