@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/net/mdio.h>
 #include "oa_tc6.h"
 
 #include <zephyr/logging/log.h>
@@ -156,6 +157,69 @@ int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg, uint32_t mask, uint32
 	}
 
 	return oa_tc6_reg_write(tc6, reg, tmp);
+}
+
+int oa_tc6_mdio_read(struct oa_tc6 *tc6, uint8_t prtad, uint8_t regad, uint16_t *data)
+{
+	return oa_tc6_reg_read(
+		tc6, OA_TC6_PHY_STD_REG_ADDR_BASE | (regad & OA_TC6_PHY_STD_REG_ADDR_MASK),
+		(uint32_t *)data);
+}
+
+int oa_tc6_mdio_write(struct oa_tc6 *tc6, uint8_t prtad, uint8_t regad, uint16_t data)
+{
+	return oa_tc6_reg_write(
+		tc6, OA_TC6_PHY_STD_REG_ADDR_BASE | (regad & OA_TC6_PHY_STD_REG_ADDR_MASK), data);
+}
+
+static int oa_tc6_get_phy_c45_mms(int devad)
+{
+	switch (devad) {
+	case MDIO_MMD_PCS:
+		return OA_TC6_PHY_C45_PCS_MMS2;
+	case MDIO_MMD_PMAPMD:
+		return OA_TC6_PHY_C45_PMA_PMD_MMS3;
+	case MDIO_MMD_VENDOR_SPECIFIC2:
+		return OA_TC6_PHY_C45_VS_PLCA_MMS4;
+	case MDIO_MMD_AN:
+		return OA_TC6_PHY_C45_AUTO_NEG_MMS5;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+int oa_tc6_mdio_read_c45(struct oa_tc6 *tc6, uint8_t prtad, uint8_t devad, uint16_t regad,
+			 uint16_t *data)
+{
+	uint32_t tmp;
+	int ret;
+
+	ret = oa_tc6_get_phy_c45_mms(devad);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = oa_tc6_reg_read(tc6, (ret << 16) | regad, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*data = (uint16_t)tmp;
+
+	return 0;
+}
+
+int oa_tc6_mdio_write_c45(struct oa_tc6 *tc6, uint8_t prtad, uint8_t devad, uint16_t regad,
+			  uint16_t data)
+{
+	int ret;
+
+	ret = oa_tc6_get_phy_c45_mms(devad);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return oa_tc6_reg_write(tc6, (ret << 16) | regad, (uint32_t)data);
 }
 
 int oa_tc6_set_protected_ctrl(struct oa_tc6 *tc6, bool prote)
