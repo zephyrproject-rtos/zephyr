@@ -49,7 +49,7 @@ struct tmc5041_stepper_config {
 	const uint32_t sg_threshold_velocity;
 	/* parent controller required for bus communication */
 	const struct device *controller;
-#ifdef CONFIG_STEPPER_ADI_TMC_RAMP_GEN
+#ifdef CONFIG_STEPPER_ADI_TMC5041_RAMP_GEN
 	const struct tmc_ramp_generator_data default_ramp_config;
 #endif
 };
@@ -537,7 +537,7 @@ static int tmc5041_stepper_run(const struct device *dev, const enum stepper_dire
 	return 0;
 }
 
-#ifdef CONFIG_STEPPER_ADI_TMC_RAMP_GEN
+#ifdef CONFIG_STEPPER_ADI_TMC5041_RAMP_GEN
 
 int tmc5041_stepper_set_ramp(const struct device *dev,
 			     const struct tmc_ramp_generator_data *ramp_data)
@@ -676,7 +676,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 		}
 	}
 
-#ifdef CONFIG_STEPPER_ADI_TMC_RAMP_GEN
+#ifdef CONFIG_STEPPER_ADI_TMC5041_RAMP_GEN
 	err = tmc5041_stepper_set_ramp(dev, &stepper_config->default_ramp_config);
 	if (err != 0) {
 		return -EIO;
@@ -702,7 +702,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 	COND_CODE_1(DT_PROP_EXISTS(child, stallguard_threshold_velocity),			\
 	BUILD_ASSERT(DT_PROP(child, stallguard_threshold_velocity),				\
 		     "stallguard threshold velocity must be a positive value"), ());		\
-	IF_ENABLED(CONFIG_STEPPER_ADI_TMC_RAMP_GEN, (CHECK_RAMP_DT_DATA(child)));		\
+	IF_ENABLED(CONFIG_STEPPER_ADI_TMC5041_RAMP_GEN, (CHECK_RAMP_DT_DATA(child)));		\
 	static const struct tmc5041_stepper_config tmc5041_stepper_config_##child = {		\
 		.controller = DEVICE_DT_GET(DT_PARENT(child)),					\
 		.default_micro_step_res = DT_PROP(child, micro_step_res),			\
@@ -712,7 +712,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 		.sg_velocity_check_interval_ms = DT_PROP(child,					\
 						stallguard_velocity_check_interval_ms),		\
 		.is_sg_enabled = DT_PROP(child, activate_stallguard2),				\
-		IF_ENABLED(CONFIG_STEPPER_ADI_TMC_RAMP_GEN,					\
+		IF_ENABLED(CONFIG_STEPPER_ADI_TMC5041_RAMP_GEN,					\
 		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET(child))) };
 
 #define TMC5041_STEPPER_DATA_DEFINE(child)							\
