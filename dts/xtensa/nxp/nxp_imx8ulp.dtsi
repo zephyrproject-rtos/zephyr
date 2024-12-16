@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,16 +17,16 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <0>;
-		};
 
-		#address-cells = <1>;
-		#size-cells = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-		clic: interrupt-controller@0 {
-			compatible = "cdns,xtensa-core-intc";
-			reg = <0>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
+			clic: interrupt-controller@0 {
+				compatible = "cdns,xtensa-core-intc";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <3>;
+			};
 		};
 	};
 
