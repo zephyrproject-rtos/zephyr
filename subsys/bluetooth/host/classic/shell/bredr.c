@@ -37,18 +37,16 @@
 static struct bt_conn *pairing_conn;
 #endif /* CONFIG_BT_CONN */
 
-#define DATA_BREDR_MTU		48
+#define DATA_BREDR_MTU 48
 
 NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_BREDR_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_BREDR_MTU, 8, NULL);
 
-#define SDP_CLIENT_USER_BUF_LEN		512
-NET_BUF_POOL_FIXED_DEFINE(sdp_client_pool, CONFIG_BT_MAX_CONN,
-			  SDP_CLIENT_USER_BUF_LEN, 8, NULL);
+#define SDP_CLIENT_USER_BUF_LEN 512
+NET_BUF_POOL_FIXED_DEFINE(sdp_client_pool, CONFIG_BT_MAX_CONN, SDP_CLIENT_USER_BUF_LEN, 8, NULL);
 
-static int cmd_auth_pincode(const struct shell *sh,
-			    size_t argc, char *argv[])
+static int cmd_auth_pincode(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_conn *conn;
 	uint8_t max = 16U;
@@ -67,8 +65,7 @@ static int cmd_auth_pincode(const struct shell *sh,
 	}
 
 	if (strlen(argv[1]) > max) {
-		shell_print(sh, "PIN code value invalid - enter max %u "
-			    "digits", max);
+		shell_print(sh, "PIN code value invalid - enter max %u digits", max);
 		return -ENOEXEC;
 	}
 
@@ -105,8 +102,8 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static void br_device_found(const bt_addr_t *addr, int8_t rssi,
-				  const uint8_t cod[3], const uint8_t eir[240])
+static void br_device_found(const bt_addr_t *addr, int8_t rssi, const uint8_t cod[3],
+			    const uint8_t eir[240])
 {
 	char br_addr[BT_ADDR_STR_LEN];
 	char name[239];
@@ -154,16 +151,14 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi,
 
 static struct bt_br_discovery_result br_discovery_results[5];
 
-static void br_discovery_complete(const struct bt_br_discovery_result *results,
-				  size_t count)
+static void br_discovery_complete(const struct bt_br_discovery_result *results, size_t count)
 {
 	size_t i;
 
 	bt_shell_print("BR/EDR discovery complete");
 
 	for (i = 0; i < count; i++) {
-		br_device_found(&results[i].addr, results[i].rssi,
-				results[i].cod, results[i].eir);
+		br_device_found(&results[i].addr, results[i].rssi, results[i].cod, results[i].eir);
 	}
 }
 
@@ -317,10 +312,10 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 }
 
 static const struct bt_l2cap_chan_ops l2cap_ops = {
-	.alloc_buf	= l2cap_alloc_buf,
-	.recv		= l2cap_recv,
-	.connected	= l2cap_connected,
-	.disconnected	= l2cap_disconnected,
+	.alloc_buf = l2cap_alloc_buf,
+	.recv = l2cap_recv,
+	.connected = l2cap_connected,
+	.disconnected = l2cap_disconnected,
 };
 
 #define BT_L2CAP_BR_SERVER_OPT_RET           BIT(0)
@@ -450,8 +445,8 @@ static int cmd_l2cap_register(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if ((l2cap_server.options & BT_L2CAP_BR_SERVER_OPT_EXT_WIN_SIZE) &&
-	    (!(l2cap_server.options & (BT_L2CAP_BR_SERVER_OPT_ERET |
-	    BT_L2CAP_BR_SERVER_OPT_STREAM)))) {
+	    (!(l2cap_server.options &
+	       (BT_L2CAP_BR_SERVER_OPT_ERET | BT_L2CAP_BR_SERVER_OPT_STREAM)))) {
 		shell_error(sh, "[extended_control] only supports mode eret and stream");
 		l2cap_server.server.psm = 0U;
 		return -ENOEXEC;
@@ -532,7 +527,7 @@ static int cmd_l2cap_connect(const struct shell *sh, size_t argc, char *argv[])
 
 	if ((l2cap_chan.chan.rx.extended_control) &&
 	    ((l2cap_chan.chan.rx.mode != BT_L2CAP_BR_LINK_MODE_ERET) &&
-	    (l2cap_chan.chan.rx.mode != BT_L2CAP_BR_LINK_MODE_STREAM))) {
+	     (l2cap_chan.chan.rx.mode != BT_L2CAP_BR_LINK_MODE_STREAM))) {
 		shell_error(sh, "[extended_control] only supports mode eret and stream");
 		return -ENOEXEC;
 	}
@@ -547,8 +542,7 @@ static int cmd_l2cap_connect(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan.chan.chan, psm);
 	if (err < 0) {
-		shell_error(sh, "Unable to connect to psm %u (err %d)", psm,
-			    err);
+		shell_error(sh, "Unable to connect to psm %u (err %d)", psm, err);
 	} else {
 		shell_print(sh, "L2CAP connection pending");
 	}
@@ -636,8 +630,7 @@ static int cmd_l2cap_credits(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
-static int cmd_discoverable(const struct shell *sh,
-			    size_t argc, char *argv[])
+static int cmd_discoverable(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
 	bool enable;
@@ -655,8 +648,7 @@ static int cmd_discoverable(const struct shell *sh,
 
 	err = bt_br_set_discoverable(enable, limited);
 	if (err) {
-		shell_print(sh, "BR/EDR set/reset discoverable failed "
-			    "(err %d)", err);
+		shell_print(sh, "BR/EDR set/reset discoverable failed (err %d)", err);
 		return -ENOEXEC;
 	}
 
@@ -665,8 +657,7 @@ static int cmd_discoverable(const struct shell *sh,
 	return 0;
 }
 
-static int cmd_connectable(const struct shell *sh,
-			   size_t argc, char *argv[])
+static int cmd_connectable(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	const char *action;
@@ -683,8 +674,7 @@ static int cmd_connectable(const struct shell *sh,
 	}
 
 	if (err) {
-		shell_print(sh, "BR/EDR set/rest connectable failed "
-			    "(err %d)", err);
+		shell_print(sh, "BR/EDR set/rest connectable failed (err %d)", err);
 		return -ENOEXEC;
 	}
 
@@ -712,8 +702,7 @@ static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
-			       struct bt_sdp_client_result *result,
+static uint8_t sdp_hfp_ag_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			       const struct bt_sdp_discover_params *params)
 {
 	char addr[BT_ADDR_STR_LEN];
@@ -724,25 +713,22 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 	conn_addr_str(conn, addr, sizeof(addr));
 
 	if (result && result->resp_buf) {
-		bt_shell_print("SDP HFPAG data@%p (len %u) hint %u from"
-			       " remote %s", result->resp_buf,
-			       result->resp_buf->len, result->next_record_hint,
+		bt_shell_print("SDP HFPAG data@%p (len %u) hint %u from remote %s",
+			       result->resp_buf, result->resp_buf->len, result->next_record_hint,
 			       addr);
 
 		/*
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
 		 * get HFPAG Server Channel Number operating on RFCOMM protocol.
 		 */
-		err = bt_sdp_get_proto_param(result->resp_buf,
-					     BT_SDP_PROTO_RFCOMM, &param);
+		err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_RFCOMM, &param);
 		if (err < 0) {
 			bt_shell_error("Error getting Server CN, err %d", err);
 			goto done;
 		}
 		bt_shell_print("HFPAG Server CN param 0x%04x", param);
 
-		err = bt_sdp_get_profile_version(result->resp_buf,
-						 BT_SDP_HANDSFREE_SVCLASS,
+		err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_HANDSFREE_SVCLASS,
 						 &version);
 		if (err < 0) {
 			bt_shell_error("Error getting profile version, err %d", err);
@@ -767,8 +753,7 @@ done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
 }
 
-static uint8_t sdp_a2src_user(struct bt_conn *conn,
-			      struct bt_sdp_client_result *result,
+static uint8_t sdp_a2src_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			      const struct bt_sdp_discover_params *params)
 {
 	char addr[BT_ADDR_STR_LEN];
@@ -779,17 +764,15 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 	conn_addr_str(conn, addr, sizeof(addr));
 
 	if (result && result->resp_buf) {
-		bt_shell_print("SDP A2SRC data@%p (len %u) hint %u from"
-			       " remote %s", result->resp_buf,
-			       result->resp_buf->len, result->next_record_hint,
+		bt_shell_print("SDP A2SRC data@%p (len %u) hint %u from remote %s",
+			       result->resp_buf, result->resp_buf->len, result->next_record_hint,
 			       addr);
 
 		/*
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
 		 * get A2SRC Server PSM Number.
 		 */
-		err = bt_sdp_get_proto_param(result->resp_buf,
-					     BT_SDP_PROTO_L2CAP, &param);
+		err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_L2CAP, &param);
 		if (err < 0) {
 			bt_shell_error("A2SRC PSM Number not found, err %d", err);
 			goto done;
@@ -801,8 +784,7 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_PROFILE_DESC_LIST attribute item to
 		 * get profile version number.
 		 */
-		err = bt_sdp_get_profile_version(result->resp_buf,
-						 BT_SDP_ADVANCED_AUDIO_SVCLASS,
+		err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_ADVANCED_AUDIO_SVCLASS,
 						 &version);
 		if (err < 0) {
 			bt_shell_error("A2SRC version not found, err %d", err);
@@ -843,8 +825,7 @@ static struct bt_sdp_discover_params discov_a2src = {
 
 static struct bt_sdp_discover_params discov;
 
-static int cmd_sdp_find_record(const struct shell *sh,
-			       size_t argc, char *argv[])
+static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	const char *action;
@@ -920,8 +901,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(auth-pincode, NULL, "<pincode>", cmd_auth_pincode, 2, 0),
 	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
-	SHELL_CMD_ARG(discovery, NULL,
-		      "<value: on, off> [length: 1-48] [mode: limited]",
+	SHELL_CMD_ARG(discovery, NULL, "<value: on, off> [length: 1-48] [mode: limited]",
 		      cmd_discovery, 2, 2),
 	SHELL_CMD_ARG(iscan, NULL, "<value: on, off> [mode: limited]",
 		      cmd_discoverable, 2, 1),
@@ -932,5 +912,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(br, &br_cmds, "Bluetooth BR/EDR shell commands",
-		       cmd_default_handler, 1, 1);
+SHELL_CMD_ARG_REGISTER(br, &br_cmds, "Bluetooth BR/EDR shell commands", cmd_default_handler, 1, 1);
