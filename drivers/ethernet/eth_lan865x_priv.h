@@ -34,6 +34,9 @@
 #define LAN865x_MAC_SAB1         MMS_REG(0x1, 0x022)
 #define LAN865x_MAC_SAB2         MMS_REG(0x1, 0x024)
 #define LAN865x_MAC_SAT2         MMS_REG(0x1, 0x025)
+/* LAN8650/1 configuration fixup from AN1760 */
+#define LAN865X_FIXUP_REG        MMS_REG(0x1, 0x077)
+#define LAN865X_FIXUP_VALUE      0x0028
 
 #define LAN865x_MAC_TXRX_ON  1
 #define LAN865x_MAC_TXRX_OFF 0
@@ -80,15 +83,5 @@ struct lan865x_data {
 	struct k_thread thread;
 	k_tid_t tid_int;
 };
-
-static inline void lan865x_update_dev_cfg_array(oa_mem_map_t *cfg, uint8_t size,
-						uint32_t addr, uint16_t val)
-{
-	for (uint8_t i = 0; i < size; i++) {
-		if (cfg[i].address == addr) {
-			cfg[i].value = val;
-		}
-	}
-}
 
 #endif /* ETH_LAN865X_PRIV_H__ */
