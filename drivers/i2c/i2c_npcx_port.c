@@ -36,7 +36,7 @@
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2c_npcx_port, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(i2c_npcx_port, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c_npcx_controller.h"
 #include "i2c-priv.h"
