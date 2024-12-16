@@ -163,4 +163,8 @@ config USE_RZ_FSP_SCIF_UART
 	help
 	  Enable RZ FSP SCIF UART driver
 
+config USE_RZ_FSP_RIIC_MASTER
+	bool
+	help
+	  Enable RZ FSP RIIC MASTER driver
 endif
