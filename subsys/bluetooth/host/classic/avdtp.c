@@ -231,6 +231,11 @@ static void avdtp_discover_handler(struct bt_avdtp *session,
 			DISCOVER_REQ(session->req)->status = 0;
 			DISCOVER_REQ(session->req)->buf = buf;
 		} else if (msg_type == BT_AVDTP_REJECT) {
+			if (buf->len < 1) {
+				LOG_WRN("Invalid RSP frame");
+				return;
+			}
+
 			DISCOVER_REQ(session->req)->status = net_buf_pull_u8(buf);
 		} else if (msg_type == BT_AVDTP_GEN_REJECT) {
 			DISCOVER_REQ(session->req)->status = BT_AVDTP_NOT_SUPPORTED_COMMAND;
@@ -265,6 +270,11 @@ static void avdtp_get_capabilities_handler(struct bt_avdtp *session,
 		struct net_buf *rsp_buf;
 		struct bt_avdtp_sep *sep;
 		uint8_t error_code = 0;
+
+		if (buf->len < 1) {
+			LOG_WRN("Invalid ACP SEID");
+			return;
+		}
 
 		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
 		if ((sep == NULL) || (session->ops->get_capabilities_ind == NULL)) {
@@ -320,6 +330,11 @@ static void avdtp_get_capabilities_handler(struct bt_avdtp *session,
 				GET_CAP_REQ(session->req)->buf = buf;
 			}
 		} else if (msg_type == BT_AVDTP_REJECT) {
+			if (buf->len < 1) {
+				LOG_WRN("Invalid RSP frame");
+				return;
+			}
+
 			GET_CAP_REQ(session->req)->status = net_buf_pull_u8(buf);
 		} else if (msg_type == BT_AVDTP_GEN_REJECT) {
 			GET_CAP_REQ(session->req)->status = BT_AVDTP_NOT_SUPPORTED_COMMAND;
@@ -342,6 +357,11 @@ static void avdtp_process_configuration(struct bt_avdtp *session,
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
+		if (buf->len < 1) {
+			LOG_WRN("Invalid ACP SEID");
+			return;
+		}
+
 		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
 		if ((sep == NULL) || (session->ops->set_configuration_ind == NULL)) {
 			err = -ENOTSUP;
@@ -351,6 +371,11 @@ static void avdtp_process_configuration(struct bt_avdtp *session,
 				error_code = BT_AVDTP_BAD_STATE;
 			} else {
 				uint8_t int_seid;
+
+				if (buf->len < 1) {
+					LOG_WRN("Invalid INT SEID");
+					return;
+				}
 
 				/* INT Stream Endpoint ID */
 				int_seid = net_buf_pull_u8(buf);
@@ -399,6 +424,11 @@ static void avdtp_process_configuration(struct bt_avdtp *session,
 			SET_CONF_REQ(req)->status = 0;
 			SET_CONF_REQ(req)->sep->state = AVDTP_CONFIGURED;
 		} else if (msg_type == BT_AVDTP_REJECT) {
+			if (buf->len < 2) {
+				LOG_WRN("Invalid RSP frame");
+				return;
+			}
+
 			/* Service Category */
 			net_buf_pull_u8(buf);
 			SET_CONF_REQ(req)->status = net_buf_pull_u8(buf);
@@ -458,6 +488,11 @@ static void avdtp_open_handler(struct bt_avdtp *session,
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
+		if (buf->len < 1) {
+			LOG_WRN("Invalid ACP SEID");
+			return;
+		}
+
 		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
 		if ((sep == NULL) || (session->ops->open_ind == NULL)) {
 			err = -ENOTSUP;
@@ -510,6 +545,11 @@ static void avdtp_open_handler(struct bt_avdtp *session,
 				return;
 			}
 		} else if (msg_type == BT_AVDTP_REJECT) {
+			if (buf->len < 1) {
+				LOG_WRN("Invalid RSP frame");
+				return;
+			}
+
 			OPEN_REQ(req)->status = net_buf_pull_u8(buf);
 		} else if (msg_type == BT_AVDTP_GEN_REJECT) {
 			OPEN_REQ(req)->status = BT_AVDTP_NOT_SUPPORTED_COMMAND;
@@ -534,6 +574,11 @@ static void avdtp_start_handler(struct bt_avdtp *session,
 		struct bt_avdtp_sep *sep;
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
+
+		if (buf->len < 1) {
+			LOG_WRN("Invalid ACP SEID");
+			return;
+		}
 
 		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
 		if ((sep == NULL) || (session->ops->start_ind == NULL)) {
@@ -584,6 +629,11 @@ static void avdtp_start_handler(struct bt_avdtp *session,
 		} else if (msg_type == BT_AVDTP_REJECT) {
 			uint8_t acp_seid;
 
+			if (buf->len < 2) {
+				LOG_WRN("Invalid RSP frame");
+				return;
+			}
+
 			acp_seid = net_buf_pull_u8(buf);
 			if (acp_seid != START_REQ(req)->acp_stream_ep_id) {
 				return;
@@ -610,6 +660,11 @@ static void avdtp_close_handler(struct bt_avdtp *session,
 		struct bt_avdtp_sep *sep;
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
+
+		if (buf->len < 1) {
+			LOG_WRN("Invalid ACP SEID");
+			return;
+		}
 
 		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
 		if ((sep == NULL) || (session->ops->close_ind == NULL)) {
@@ -660,6 +715,11 @@ static void avdtp_suspend_handler(struct bt_avdtp *session,
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
+		if (buf->len < 1) {
+			LOG_WRN("Invalid ACP SEID");
+			return;
+		}
+
 		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
 		if ((sep == NULL) || (session->ops->suspend_ind == NULL)) {
 			err = -ENOTSUP;
@@ -707,6 +767,11 @@ static void avdtp_abort_handler(struct bt_avdtp *session,
 		struct bt_avdtp_sep *sep;
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
+
+		if (buf->len < 1) {
+			LOG_WRN("Invalid ACP SEID");
+			return;
+		}
 
 		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
 		if ((sep == NULL) || (session->ops->abort_ind == NULL)) {
@@ -1201,19 +1266,32 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf,
 		case BT_AVDTP_SERVICE_HEADER_COMPRESSION:
 		case BT_AVDTP_SERVICE_MULTIPLEXING:
 		case BT_AVDTP_SERVICE_DELAY_REPORTING:
+			if (buf->len < 1) {
+				return -EINVAL;
+			}
+
 			length = net_buf_pull_u8(buf);
+			if (buf->len < length) {
+				return -EINVAL;
+			}
+
 			if (length > 0) {
 				net_buf_pull_mem(buf, length);
 			}
 			break;
 
 		case BT_AVDTP_SERVICE_MEDIA_CODEC:
+			if (buf->len < 1) {
+				return -EINVAL;
+			}
+
 			length = net_buf_pull_u8(buf);
+			if (buf->len < length) {
+				return -EINVAL;
+			}
+
 			if (length > 3) {
 				data = net_buf_pull_u8(buf);
-				if (net_buf_tailroom(buf) < (length - 1)) {
-					return -EINVAL;
-				}
 				if (data == BT_AVDTP_AUDIO) {
 					data = net_buf_pull_u8(buf);
 					*codec_type = data;
