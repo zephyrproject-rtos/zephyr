@@ -13,17 +13,26 @@ description: |
 
   Here is an example to define a display interface:
 
-  &spi2 {
-    gc9a01a_lcd: gc9a01a_lcd@0 {
-      compatible = "galaxycore,gc9x01x";
-      reg = <0>;
-      spi-max-frequency = <100000000>;
-      cmd-data-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
-      reset-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
-      pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
-      width = <240>;
-      height = <240>;
-    };
+  / {
+      my_mipi_dbi {
+          compatible = "zephyr,mipi-dbi-spi";
+          status = "okay";
+          #address-cells = <1>;
+          #size-cells = <0>;
+          spi-dev = <&spi2>;
+          dc-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+          reset-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+
+          gc9x01x_lcd: gc9x01x_lcd@0 {
+              compatible = "galaxycore,gc9x01x";
+              reg = <0>;
+              mipi-max-frequency = <DT_FREQ_M(100)>;
+              pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+              width = <240>;
+              height = <240>;
+              display-inversion;
+          };
+      };
   };
 
 
