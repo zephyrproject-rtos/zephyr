@@ -80,6 +80,18 @@
 #define OA_TC6_FTR_RCA_MAX       GENMASK(4, 0)
 #define OA_TC6_FTR_TXC_MAX       GENMASK(4, 0)
 
+/* PHY Clause 22 registers base address and mask */
+#define OA_TC6_PHY_STD_REG_ADDR_BASE 0xFF00
+#define OA_TC6_PHY_STD_REG_ADDR_MASK 0x1F
+
+/* PHY – Clause 45 registers memory map selector (MMS) as per table 6 in the
+ * OPEN Alliance specification.
+ */
+#define OA_TC6_PHY_C45_PCS_MMS2      2 /* MMD 3 */
+#define OA_TC6_PHY_C45_PMA_PMD_MMS3  3 /* MMD 1 */
+#define OA_TC6_PHY_C45_VS_PLCA_MMS4  4 /* MMD 31 */
+#define OA_TC6_PHY_C45_AUTO_NEG_MMS5 5 /* MMD 7 */
+
 /**
  * @brief OA TC6 data.
  */
@@ -243,4 +255,68 @@ int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg, uint32_t mask, uint32
  * @return 0 if successful, <0 otherwise.
  */
 int oa_tc6_check_status(struct oa_tc6 *tc6);
+
+/**
+ * @brief      Read C22 registers using MDIO Bus
+ *
+ * This routine provides an interface to perform a C22 register read on the
+ * MAC-PHY MDIO bus.
+ *
+ * @param[in]  tc6         Pointer to the tc6 structure for the MAC-PHY
+ * @param[in]  prtad       Port address
+ * @param[in]  regad       Register address
+ * @param      data        Pointer to receive read data
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_mdio_read(struct oa_tc6 *tc6, uint8_t prtad, uint8_t regad, uint16_t *data);
+
+/**
+ * @brief      Write C22 registers using MDIO Bus
+ *
+ * This routine provides an interface to perform a C22 register write on the
+ * MAC-PHY MDIO bus.
+ *
+ * @param[in]  tc6         Pointer to the tc6 structure for the MAC-PHY
+ * @param[in]  prtad       Port address
+ * @param[in]  regad       Register address
+ * @param[in]  data        Write data
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_mdio_write(struct oa_tc6 *tc6, uint8_t prtad, uint8_t regad, uint16_t data);
+
+/**
+ * @brief      Read C45 registers using MDIO Bus
+ *
+ * This routine provides an interface to perform a C45 register read on the
+ * MAC-PHY MDIO bus.
+ *
+ * @param[in]  tc6         Pointer to the tc6 structure for the MAC-PHY
+ * @param[in]  prtad       Port address
+ * @param[in]  devad       MMD device address
+ * @param[in]  regad       Register address
+ * @param      data        Pointer to receive read data
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_mdio_read_c45(struct oa_tc6 *tc6, uint8_t prtad, uint8_t devad, uint16_t regad,
+			 uint16_t *data);
+
+/**
+ * @brief      Write C45 registers using MDIO Bus
+ *
+ * This routine provides an interface to perform a C45 register write on the
+ * MAC-PHY MDIO bus.
+ *
+ * @param[in]  tc6         Pointer to the tc6 structure for the MAC-PHY
+ * @param[in]  prtad       Port address
+ * @param[in]  devad       MMD device address
+ * @param[in]  regad       Register address
+ * @param[in]  data        Write data
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_mdio_write_c45(struct oa_tc6 *tc6, uint8_t prtad, uint8_t devad, uint16_t regad,
+			  uint16_t data);
 #endif /* OA_TC6_CFG_H__ */
