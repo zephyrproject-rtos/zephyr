@@ -409,7 +409,7 @@ static int gpio_rz_int_init(const struct device *dev)
 }
 #endif
 
-static const struct gpio_driver_api gpio_rz_driver_api = {
+static DEVICE_API(gpio, gpio_rz_driver_api) = {
 	.pin_configure = gpio_rz_pin_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_rz_pin_get_config,
