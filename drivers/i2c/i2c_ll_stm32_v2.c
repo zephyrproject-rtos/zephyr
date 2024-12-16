@@ -19,12 +19,12 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include "i2c_ll_stm32.h"
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 
+#include "i2c_ll_stm32.h"
 #include "i2c-priv.h"
 
 #define STM32_I2C_TRANSFER_TIMEOUT_MSEC  500
@@ -454,7 +454,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 #endif /* defined(CONFIG_I2C_TARGET) */
 
-static void stm32_i2c_event(const struct device *dev)
+void i2c_stm32_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -517,7 +517,7 @@ end:
 	stm32_i2c_master_mode_end(dev);
 }
 
-static int stm32_i2c_error(const struct device *dev)
+int i2c_stm32_error(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -557,33 +557,6 @@ end:
 	stm32_i2c_master_mode_end(dev);
 	return -EIO;
 }
-
-#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-void stm32_i2c_combined_isr(void *arg)
-{
-	const struct device *dev = (const struct device *) arg;
-
-	if (stm32_i2c_error(dev)) {
-		return;
-	}
-	stm32_i2c_event(dev);
-}
-#else
-
-void stm32_i2c_event_isr(void *arg)
-{
-	const struct device *dev = (const struct device *) arg;
-
-	stm32_i2c_event(dev);
-}
-
-void stm32_i2c_error_isr(void *arg)
-{
-	const struct device *dev = (const struct device *) arg;
-
-	stm32_i2c_error(dev);
-}
-#endif
 
 static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			uint8_t *next_msg_flags, uint16_t slave)
