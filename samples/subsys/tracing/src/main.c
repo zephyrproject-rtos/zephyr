@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/usb/usb_device.h>
+#include <sample_usbd.h>
 #include <zephyr/tracing/tracing.h>
 
 /*
@@ -93,15 +93,19 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
 
-#if defined(CONFIG_USB_DEVICE_STACK)
-	int ret;
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	struct usbd_context *sample_usbd = sample_usbd_init_device(NULL);
 
-	ret = usb_enable(NULL);
-	if (ret) {
+	if (sample_usbd == NULL) {
+		printk("Failed to initialize USB device");
+		return;
+	}
+
+	if (usbd_enable(sample_usbd)) {
 		printk("usb backend enable failed");
 		return;
 	}
-#endif /* CONFIG_USB_DEVICE_STACK */
+#endif /* CONFIG_USB_DEVICE_STACK_NEXT */
 
 	/* spawn threadB */
 	k_tid_t tid = k_thread_create(&threadB_data, threadB_stack_area,
