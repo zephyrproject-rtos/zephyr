@@ -127,7 +127,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-LOG_MODULE_REGISTER(host_sub_npcx, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(host_sub_npcx, CONFIG_ESPI_LOG_LEVEL);
 
 struct host_sub_npcx_config {
 	/* host module instances */
@@ -897,9 +897,9 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 			return -ENOTSUP;
 		}
 		if (data) {
-			LOG_INF("%s: op 0x%x data %x", __func__, op, *data);
+			LOG_DBG("op 0x%x data %x", op, *data);
 		} else {
-			LOG_INF("%s: op 0x%x only", __func__, op);
+			LOG_DBG("op 0x%x only", op);
 		}
 
 		switch (op) {
