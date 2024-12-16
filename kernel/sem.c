@@ -85,8 +85,7 @@ int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 static inline bool handle_poll_events(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL
-	z_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
-	return true;
+	return z_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
 #else
 	ARG_UNUSED(sem);
 	return false;
@@ -180,7 +179,7 @@ void z_impl_k_sem_reset(struct k_sem *sem)
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_sem, reset, sem);
 
-	handle_poll_events(sem);
+	(void)handle_poll_events(sem);
 
 	z_reschedule(&lock, key);
 }
