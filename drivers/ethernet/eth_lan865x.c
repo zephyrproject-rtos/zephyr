@@ -66,10 +66,36 @@ static int lan865x_mac_rxtx_control(const struct device *dev, bool en)
 	return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCR, ctl);
 }
 
+static int lan865x_enable_sync(const struct device *dev)
+{
+	struct lan865x_data *ctx = dev->data;
+	uint32_t val;
+	int ret;
+
+	ret = oa_tc6_reg_read(ctx->tc6, OA_CONFIG0, &val);
+	if (ret) {
+		return ret;
+	}
+	val |= OA_CONFIG0_SYNC | OA_CONFIG0_RFA_ZARFE;
+	ret = oa_tc6_reg_write(ctx->tc6, OA_CONFIG0, val);
+	if (ret) {
+		return ret;
+	}
+
+	return lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
+}
+
 static void lan865x_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct lan865x_data *ctx = dev->data;
+	int ret;
+
+	ret = lan865x_enable_sync(dev);
+	if (ret) {
+		LOG_ERR("LAN865x sync enable failed: %d\n", ret);
+		return;
+	}
 
 	net_if_set_link_addr(iface, ctx->mac_address, sizeof(ctx->mac_address), NET_LINK_ETHERNET);
 
@@ -96,7 +122,7 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 {
 	const struct lan865x_config *cfg = dev->config;
 	struct lan865x_data *ctx = dev->data;
-	int ret = -ENOTSUP;
+	struct phy_plca_cfg plca_cfg;
 
 	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
 		return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_CAF);
@@ -112,25 +138,19 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
-		ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_OFF);
-		if (ret) {
-			return ret;
-		}
-
 		if (config->t1s_param.type == ETHERNET_T1S_PARAM_TYPE_PLCA_CONFIG) {
-			cfg->plca->enable = config->t1s_param.plca.enable;
-			cfg->plca->node_id = config->t1s_param.plca.node_id;
-			cfg->plca->node_count = config->t1s_param.plca.node_count;
-			cfg->plca->burst_count = config->t1s_param.plca.burst_count;
-			cfg->plca->burst_timer = config->t1s_param.plca.burst_timer;
-			cfg->plca->to_timer = config->t1s_param.plca.to_timer;
-		}
+			plca_cfg.enable = config->t1s_param.plca.enable;
+			plca_cfg.node_id = config->t1s_param.plca.node_id;
+			plca_cfg.node_count = config->t1s_param.plca.node_count;
+			plca_cfg.burst_count = config->t1s_param.plca.burst_count;
+			plca_cfg.burst_timer = config->t1s_param.plca.burst_timer;
+			plca_cfg.to_timer = config->t1s_param.plca.to_timer;
 
-		/* Reset is required to re-program PLCA new configuration */
-		lan865x_gpio_reset(dev);
+			return phy_set_plca_cfg(cfg->phy, &plca_cfg);
+		}
 	}
 
-	return ret;
+	return -ENOTSUP;
 }
 
 static int lan865x_wait_for_reset(const struct device *dev)
@@ -301,7 +321,7 @@ static void lan865x_int_thread(const struct device *dev)
 {
 	struct lan865x_data *ctx = dev->data;
 	struct oa_tc6 *tc6 = ctx->tc6;
-	uint32_t sts, val, ftr;
+	uint32_t sts, ftr;
 	int ret;
 
 	while (true) {
@@ -310,11 +330,8 @@ static void lan865x_int_thread(const struct device *dev)
 			oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
 			if (sts & OA_STATUS0_RESETC) {
 				oa_tc6_reg_write(tc6, OA_STATUS0, sts);
+
 				lan865x_default_config(dev);
-				oa_tc6_reg_read(tc6, OA_CONFIG0, &val);
-				val |= OA_CONFIG0_SYNC | OA_CONFIG0_RFA_ZARFE;
-				oa_tc6_reg_write(tc6, OA_CONFIG0, val);
-				lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 
 				ctx->reset = true;
 				/*
@@ -449,6 +466,8 @@ static const struct ethernet_api lan865x_api_func = {
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.reset = GPIO_DT_SPEC_INST_GET(inst, rst_gpios),                                   \
 		.timeout = CONFIG_ETH_LAN865X_TIMEOUT,                                             \
+		.phy = DEVICE_DT_GET(                                                              \
+			DT_CHILD(DT_INST_CHILD(inst, lan865x_mdio), ethernet_phy_##inst))};        \
                                                                                                    \
 	struct oa_tc6 oa_tc6_##inst = {                                                            \
 		.cps = 64, .protected = 0, .spi = &lan865x_config_##inst.spi};                     \
