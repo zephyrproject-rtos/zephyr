@@ -303,6 +303,14 @@ config LINKER_LAST_SECTION_ID
 	  last section identifier may cause rom region overflow.
 	  In such cases this setting should be disabled.
 
+config LINKER_USE_STACK_SECTION
+	bool "Place stacks in special section"
+	depends on !KERNEL_COHERENCE && !USERSPACE
+	help
+	  When enabled, stack memory declared with either __stackmem
+	  or __kstackmem will be placed in a special ".stacks" section
+	  for the platform linker to treat specially.
+
 config LINKER_LAST_SECTION_ID_PATTERN
 	hex "Last section identifier pattern"
 	default "0xE015E015"

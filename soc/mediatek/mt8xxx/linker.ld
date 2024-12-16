@@ -38,6 +38,10 @@ SECTIONS {
     *(.literal.iram .iram.*)
   } > sram
 
+  .stacks : {
+    *(.stacks .stacks.*)
+  } > sram
+
   _mtk_adsp_sram_end = .;
 
   .text : {

@@ -36,6 +36,9 @@ config MTK_ADSP_TIMER
 config XTENSA_TIMER
 	default n
 
+config LINKER_USE_STACK_SECTION
+	default y
+
 config XTENSA_CCOUNT_HZ
 	default 720000000 if SOC_MT8195
 	default 400000000 if SOC_MT8186
