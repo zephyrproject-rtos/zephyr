@@ -29,12 +29,16 @@
 static struct k_obj_type obj_type_msgq;
 #endif /* CONFIG_OBJ_CORE_MSGQ */
 
-#ifdef CONFIG_POLL
-static inline void handle_poll_events(struct k_msgq *msgq, uint32_t state)
+static inline bool handle_poll_events(struct k_msgq *msgq)
 {
-	z_handle_obj_poll_events(&msgq->poll_events, state);
-}
+#ifdef CONFIG_POLL
+	return z_handle_obj_poll_events(&msgq->poll_events,
+					K_POLL_STATE_MSGQ_DATA_AVAILABLE);
+#else
+	ARG_UNUSED(msgq);
+	return false;
 #endif /* CONFIG_POLL */
+}
 
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs)
@@ -157,9 +161,7 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 				msgq->write_ptr = msgq->buffer_start;
 			}
 			msgq->used_msgs++;
-#ifdef CONFIG_POLL
-			handle_poll_events(msgq, K_POLL_STATE_MSGQ_DATA_AVAILABLE);
-#endif /* CONFIG_POLL */
+			(void)handle_poll_events(msgq);
 		}
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
