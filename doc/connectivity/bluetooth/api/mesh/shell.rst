@@ -1071,12 +1071,13 @@ The :ref:`bluetooth_mesh_blob_cli` can be added to the mesh shell by enabling th
 	* ``Addr``: Unicast address of the Target node's BLOB Transfer Server model.
 
 
-``mesh models blob cli bounds [<Group>]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models blob cli caps [<Group> [<TimeoutBase>]]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	Get the total boundary parameters of all Target nodes.
+	Retrieve transfer capabilities for Target nodes.
 
 	* ``Group``: Optional group address to use when communicating with Target nodes. If omitted, the BLOB Transfer Client will address each Target node individually.
+	* ``TimeoutBase``: Optional time to wait for responses from Target nodes, in 10-second increments.
 
 
 ``mesh models blob cli tx <Id> <Size> <BlockSizeLog> <ChunkSize> [<Group> [<Mode(push, pull)>]]``
