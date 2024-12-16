@@ -13,6 +13,9 @@ menuconfig IEEE802154
 
 if IEEE802154
 
+config RNG
+	default y
+
 config IEEE802154_NET_IF_NO_AUTO_START
 	bool "IEEE 802.15.4 interface without auto-start"
 	help

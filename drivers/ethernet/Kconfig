@@ -11,6 +11,9 @@ menuconfig ETH_DRIVER
 
 if ETH_DRIVER
 
+config RNG
+	default y
+
 config ETH_DRIVER_RAW_MODE
 	bool "Ethernet driver without the MAC stack"
 	select NET_RAW_MODE

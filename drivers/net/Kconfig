@@ -15,6 +15,7 @@ menuconfig NET_PPP
 	depends on NET_NATIVE
 	select RING_BUFFER
 	select CRC
+	select RNG
 
 if NET_PPP
 
@@ -146,6 +147,7 @@ menuconfig SLIP
 	depends on NET_NATIVE
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
+	select RNG
 
 if SLIP
 

@@ -9,7 +9,8 @@ config ENTROPY_BT_HCI
 	depends on BT_HCI_HOST
 	select ENTROPY_HAS_DRIVER
 	help
-	  Enable Random Number Generator from a Bluetooth HCI device.
+	  Enable Random Number Generator from a Bluetooth HCI device for
+	  entropy source.
 
 # Don't use use Bluetooth HCI as a random source since it will be slow.
 # Instead, use the software implemented xoshiro RNG.
