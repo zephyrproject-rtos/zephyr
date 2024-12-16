@@ -24,7 +24,7 @@ jobs:
           args: spdx -o zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
 
       - name: upload-results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         continue-on-error: True
         with:
           name: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
