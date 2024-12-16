@@ -12,9 +12,9 @@
 #include <zephyr/sys/iterable_sections.h>
 #include "l2cap_br_interface.h"
 
-#define BT_L2CAP_CID_BR_SIG             0x0001
-#define BT_L2CAP_CID_BR_SMP             0x0007
-#define BT_L2CAP_PSM_RFCOMM             0x0003
+#define BT_L2CAP_CID_BR_SIG 0x0001
+#define BT_L2CAP_CID_BR_SMP 0x0007
+#define BT_L2CAP_PSM_RFCOMM 0x0003
 
 struct bt_l2cap_hdr {
 	uint16_t len;
@@ -22,19 +22,19 @@ struct bt_l2cap_hdr {
 } __packed;
 
 struct bt_l2cap_sig_hdr {
-	uint8_t  code;
-	uint8_t  ident;
+	uint8_t code;
+	uint8_t ident;
 	uint16_t len;
 } __packed;
 
-#define BT_L2CAP_REJ_NOT_UNDERSTOOD     0x0000
-#define BT_L2CAP_REJ_MTU_EXCEEDED       0x0001
-#define BT_L2CAP_REJ_INVALID_CID        0x0002
+#define BT_L2CAP_REJ_NOT_UNDERSTOOD 0x0000
+#define BT_L2CAP_REJ_MTU_EXCEEDED   0x0001
+#define BT_L2CAP_REJ_INVALID_CID    0x0002
 
-#define BT_L2CAP_CMD_REJECT             0x01
+#define BT_L2CAP_CMD_REJECT 0x01
 struct bt_l2cap_cmd_reject {
 	uint16_t reason;
-	uint8_t  data[0];
+	uint8_t data[0];
 } __packed;
 
 struct bt_l2cap_cmd_reject_cid_data {
@@ -42,26 +42,26 @@ struct bt_l2cap_cmd_reject_cid_data {
 	uint16_t dcid;
 } __packed;
 
-#define BT_L2CAP_CONN_REQ               0x02
+#define BT_L2CAP_CONN_REQ 0x02
 struct bt_l2cap_conn_req {
 	uint16_t psm;
 	uint16_t scid;
 } __packed;
 
 /* command statuses in response */
-#define BT_L2CAP_CS_NO_INFO             0x0000
-#define BT_L2CAP_CS_AUTHEN_PEND         0x0001
+#define BT_L2CAP_CS_NO_INFO     0x0000
+#define BT_L2CAP_CS_AUTHEN_PEND 0x0001
 
 /* valid results in conn response on BR/EDR */
-#define BT_L2CAP_BR_SUCCESS             0x0000
-#define BT_L2CAP_BR_PENDING             0x0001
-#define BT_L2CAP_BR_ERR_PSM_NOT_SUPP    0x0002
-#define BT_L2CAP_BR_ERR_SEC_BLOCK       0x0003
-#define BT_L2CAP_BR_ERR_NO_RESOURCES    0x0004
-#define BT_L2CAP_BR_ERR_INVALID_SCID    0x0006
-#define BT_L2CAP_BR_ERR_SCID_IN_USE     0x0007
+#define BT_L2CAP_BR_SUCCESS          0x0000
+#define BT_L2CAP_BR_PENDING          0x0001
+#define BT_L2CAP_BR_ERR_PSM_NOT_SUPP 0x0002
+#define BT_L2CAP_BR_ERR_SEC_BLOCK    0x0003
+#define BT_L2CAP_BR_ERR_NO_RESOURCES 0x0004
+#define BT_L2CAP_BR_ERR_INVALID_SCID 0x0006
+#define BT_L2CAP_BR_ERR_SCID_IN_USE  0x0007
 
-#define BT_L2CAP_CONN_RSP               0x03
+#define BT_L2CAP_CONN_RSP 0x03
 struct bt_l2cap_conn_rsp {
 	uint16_t dcid;
 	uint16_t scid;
@@ -69,29 +69,29 @@ struct bt_l2cap_conn_rsp {
 	uint16_t status;
 } __packed;
 
-#define BT_L2CAP_CONF_SUCCESS           0x0000
-#define BT_L2CAP_CONF_UNACCEPT          0x0001
-#define BT_L2CAP_CONF_REJECT            0x0002
-#define BT_L2CAP_CONF_UNKNOWN_OPT       0x0003
-#define BT_L2CAP_CONF_PENDING           0x0004
-#define BT_L2CAP_CONF_FLOW_SPEC_REJECT  0x0005
+#define BT_L2CAP_CONF_SUCCESS          0x0000
+#define BT_L2CAP_CONF_UNACCEPT         0x0001
+#define BT_L2CAP_CONF_REJECT           0x0002
+#define BT_L2CAP_CONF_UNKNOWN_OPT      0x0003
+#define BT_L2CAP_CONF_PENDING          0x0004
+#define BT_L2CAP_CONF_FLOW_SPEC_REJECT 0x0005
 
-#define BT_L2CAP_CONF_FLAGS_C           BIT(0)
-#define BT_L2CAP_CONF_FLAGS_MASK        BT_L2CAP_CONF_FLAGS_C
+#define BT_L2CAP_CONF_FLAGS_C    BIT(0)
+#define BT_L2CAP_CONF_FLAGS_MASK BT_L2CAP_CONF_FLAGS_C
 
-#define BT_L2CAP_CONF_REQ               0x04
+#define BT_L2CAP_CONF_REQ 0x04
 struct bt_l2cap_conf_req {
 	uint16_t dcid;
 	uint16_t flags;
-	uint8_t  data[0];
+	uint8_t data[0];
 } __packed;
 
-#define BT_L2CAP_CONF_RSP               0x05
+#define BT_L2CAP_CONF_RSP 0x05
 struct bt_l2cap_conf_rsp {
 	uint16_t scid;
 	uint16_t flags;
 	uint16_t result;
-	uint8_t  data[0];
+	uint8_t data[0];
 } __packed;
 
 /* Option type used by MTU config request data */
@@ -104,8 +104,8 @@ struct bt_l2cap_conf_rsp {
 #define BT_L2CAP_CONF_OPT_EXT_WIN_SIZE  0x07
 
 /* Options bits selecting most significant bit (hint) in type field */
-#define BT_L2CAP_CONF_HINT              0x80
-#define BT_L2CAP_CONF_MASK              0x7f
+#define BT_L2CAP_CONF_HINT 0x80
+#define BT_L2CAP_CONF_MASK 0x7f
 
 struct bt_l2cap_conf_opt {
 	uint8_t type;
@@ -121,9 +121,9 @@ struct bt_l2cap_conf_opt_flush_timeout {
 	uint16_t timeout;
 } __packed;
 
-#define BT_L2CAP_QOS_TYPE_NO_TRAFFIC    0x00
-#define BT_L2CAP_QOS_TYPE_BEST_EFFORT   0x01
-#define BT_L2CAP_QOS_TYPE_GUARANTEED    0x02
+#define BT_L2CAP_QOS_TYPE_NO_TRAFFIC  0x00
+#define BT_L2CAP_QOS_TYPE_BEST_EFFORT 0x01
+#define BT_L2CAP_QOS_TYPE_GUARANTEED  0x02
 struct bt_l2cap_conf_opt_qos {
 	uint8_t flags;
 	uint8_t service_type;
@@ -143,8 +143,8 @@ struct bt_l2cap_conf_opt_ret_fc {
 	uint16_t mps;
 } __packed;
 
-#define BT_L2CAP_FCS_TYPE_NO         0x00
-#define BT_L2CAP_FCS_TYPE_16BIT      0x01
+#define BT_L2CAP_FCS_TYPE_NO    0x00
+#define BT_L2CAP_FCS_TYPE_16BIT 0x01
 struct bt_l2cap_conf_opt_fcs {
 	uint8_t type;
 } __packed;
@@ -162,35 +162,35 @@ struct bt_l2cap_conf_opt_ext_win_size {
 	uint16_t max_windows_size;
 } __packed;
 
-#define BT_L2CAP_DISCONN_REQ            0x06
+#define BT_L2CAP_DISCONN_REQ 0x06
 struct bt_l2cap_disconn_req {
 	uint16_t dcid;
 	uint16_t scid;
 } __packed;
 
-#define BT_L2CAP_DISCONN_RSP            0x07
+#define BT_L2CAP_DISCONN_RSP 0x07
 struct bt_l2cap_disconn_rsp {
 	uint16_t dcid;
 	uint16_t scid;
 } __packed;
 
-#define BT_L2CAP_INFO_FEAT_MASK         0x0002
-#define BT_L2CAP_INFO_FIXED_CHAN        0x0003
+#define BT_L2CAP_INFO_FEAT_MASK  0x0002
+#define BT_L2CAP_INFO_FIXED_CHAN 0x0003
 
-#define BT_L2CAP_INFO_REQ               0x0a
+#define BT_L2CAP_INFO_REQ 0x0a
 struct bt_l2cap_info_req {
 	uint16_t type;
 } __packed;
 
 /* info result */
-#define BT_L2CAP_INFO_SUCCESS           0x0000
-#define BT_L2CAP_INFO_NOTSUPP           0x0001
+#define BT_L2CAP_INFO_SUCCESS 0x0000
+#define BT_L2CAP_INFO_NOTSUPP 0x0001
 
-#define BT_L2CAP_INFO_RSP               0x0b
+#define BT_L2CAP_INFO_RSP 0x0b
 struct bt_l2cap_info_rsp {
 	uint16_t type;
 	uint16_t result;
-	uint8_t  data[0];
+	uint8_t data[0];
 } __packed;
 
 /* I Frame Standard Control Field Format definition */
@@ -200,7 +200,7 @@ struct bt_l2cap_info_rsp {
 #define BT_L2CAP_I_FRAME_STD_CONTROL_GET_REQ_SEQ(control) (((control) >> 0x08) & 0x3f)
 #define BT_L2CAP_I_FRAME_STD_CONTROL_GET_SAR(control)     (((control) >> 0x0e) & 0x03)
 
-#define BT_L2CAP_I_FRAME_STD_CONTROL_SET(tx_seq, r, req_seq, sar)                              \
+#define BT_L2CAP_I_FRAME_STD_CONTROL_SET(tx_seq, r, req_seq, sar)                                  \
 	((((tx_seq) & 0x3f) << 0x01) | (((r) & 0x01) << 0x07) | (((req_seq) & 0x3f) << 0x08) |     \
 	 (((sar) & 0x03) << 0x0e))
 
@@ -211,7 +211,7 @@ struct bt_l2cap_info_rsp {
 #define BT_L2CAP_I_FRAME_ENH_CONTROL_GET_REQ_SEQ(control) (((control) >> 0x08) & 0x3f)
 #define BT_L2CAP_I_FRAME_ENH_CONTROL_GET_SAR(control)     (((control) >> 0x0e) & 0x03)
 
-#define BT_L2CAP_I_FRAME_ENH_CONTROL_SET(tx_seq, f, req_seq, sar)                              \
+#define BT_L2CAP_I_FRAME_ENH_CONTROL_SET(tx_seq, f, req_seq, sar)                                  \
 	((((tx_seq) & 0x3f) << 0x01) | (((f) & 0x01) << 0x07) | (((req_seq) & 0x3f) << 0x08) |     \
 	 (((sar) & 0x03) << 0x0e))
 
@@ -222,7 +222,7 @@ struct bt_l2cap_info_rsp {
 #define BT_L2CAP_I_FRAME_EXT_CONTROL_GET_SAR(control)     (((control) >> 0x10) & 0x03)
 #define BT_L2CAP_I_FRAME_EXT_CONTROL_GET_TX_SEQ(control)  (((control) >> 0x12) & 0x3fff)
 
-#define BT_L2CAP_I_FRAME_EXT_CONTROL_SET(f, tx_seq, sar, req_seq)                              \
+#define BT_L2CAP_I_FRAME_EXT_CONTROL_SET(f, tx_seq, sar, req_seq)                                  \
 	((((f) & 0x01) << 0x01) | (((req_seq) & 0x3fff) << 0x02) | (((sar) & 0x03) << 0x10) |      \
 	 (((tx_seq) & 0x3fff) << 0x12))
 
@@ -232,7 +232,7 @@ struct bt_l2cap_info_rsp {
 #define BT_L2CAP_S_FRAME_STD_CONTROL_GET_R(control)       (((control) >> 0x07) & 0x01)
 #define BT_L2CAP_S_FRAME_STD_CONTROL_GET_REQ_SEQ(control) (((control) >> 0x08) & 0x3f)
 
-#define BT_L2CAP_S_FRAME_STD_CONTROL_SET(s, r, req_seq)                                        \
+#define BT_L2CAP_S_FRAME_STD_CONTROL_SET(s, r, req_seq)                                            \
 	(((1) & 0x01) | (((s) & 0x03) << 0x02) | (((r) & 0x01) << 0x07) |                          \
 	 (((req_seq) & 0x3f) << 0x08))
 
@@ -243,7 +243,7 @@ struct bt_l2cap_info_rsp {
 #define BT_L2CAP_S_FRAME_ENH_CONTROL_GET_F(control)       (((control) >> 0x07) & 0x01)
 #define BT_L2CAP_S_FRAME_ENH_CONTROL_GET_REQ_SEQ(control) (((control) >> 0x08) & 0x3f)
 
-#define BT_L2CAP_S_FRAME_ENH_CONTROL_SET(s, p, f, req_seq)                                     \
+#define BT_L2CAP_S_FRAME_ENH_CONTROL_SET(s, p, f, req_seq)                                         \
 	(((1) & 0x01) | (((s) & 0x03) << 0x02) | (((p) & 0x01) << 0x04) | (((f) & 0x01) << 0x07) | \
 	 (((req_seq) & 0x3f) << 0x08))
 
@@ -254,7 +254,7 @@ struct bt_l2cap_info_rsp {
 #define BT_L2CAP_S_FRAME_EXT_CONTROL_GET_S(control)       (((control) >> 0x10) & 0x03)
 #define BT_L2CAP_S_FRAME_EXT_CONTROL_GET_P(control)       (((control) >> 0x12) & 0x01)
 
-#define BT_L2CAP_S_FRAME_EXT_CONTROL_SET(f, req_seq, s, p)                                     \
+#define BT_L2CAP_S_FRAME_EXT_CONTROL_SET(f, req_seq, s, p)                                         \
 	(((1) & 0x01) | (((f) & 0x01) << 0x01) | (((req_seq) & 0x3fff) << 0x02) |                  \
 	 (((s) & 0x03) << 0x10) | (((p) & 0x01) << 0x12))
 
@@ -273,7 +273,6 @@ struct bt_l2cap_info_rsp {
 #define BT_L2CAP_CONTROL_S_REJ  0x01
 #define BT_L2CAP_CONTROL_S_RNR  0x02
 #define BT_L2CAP_CONTROL_S_SREJ 0x03
-
 
 #define BT_L2CAP_RT_FC_SDU_LEN_SIZE 2
 
@@ -349,8 +348,8 @@ static inline size_t bt_l2cap_br_get_ret_fc_tail_size(struct bt_l2cap_br_chan *c
  *
  *  @return Needed buffer size to match the requested L2CAP SDU MTU.
  */
-#define BT_L2CAP_RT_FC_SDU_BUF_SIZE(chan, mtu)                              \
-	(BT_L2CAP_BUF_SIZE(BT_L2CAP_RT_FC_SDU_HDR_SIZE((chan)) + (mtu) +        \
+#define BT_L2CAP_RT_FC_SDU_BUF_SIZE(chan, mtu)                                                     \
+	(BT_L2CAP_BUF_SIZE(BT_L2CAP_RT_FC_SDU_HDR_SIZE((chan)) + (mtu) +                           \
 			   BT_L2CAP_RT_FC_SDU_TAIL_SIZE((chan))))
 
 /**
@@ -362,8 +361,8 @@ static inline size_t bt_l2cap_br_get_ret_fc_tail_size(struct bt_l2cap_br_chan *c
  *
  *  @return Needed buffer size to match the requested L2CAP SDU MTU.
  */
-#define BT_L2CAP_RT_FC_MAX_SDU_BUF_SIZE(mtu)                                              \
-	BT_L2CAP_BUF_SIZE((mtu) + BT_L2CAP_EXT_CONTROL_SIZE + BT_L2CAP_RT_FC_SDU_LEN_SIZE +   \
+#define BT_L2CAP_RT_FC_MAX_SDU_BUF_SIZE(mtu)                                                       \
+	BT_L2CAP_BUF_SIZE((mtu) + BT_L2CAP_EXT_CONTROL_SIZE + BT_L2CAP_RT_FC_SDU_LEN_SIZE +        \
 			  BT_L2CAP_FCS_SIZE)
 
 /**
@@ -391,20 +390,16 @@ void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan);
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state);
 
 #if defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
-void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan,
-				   bt_l2cap_chan_state_t state,
-				   const char *func, int line);
-#define bt_l2cap_br_chan_set_state(_chan, _state) \
+void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_t state,
+				      const char *func, int line);
+#define bt_l2cap_br_chan_set_state(_chan, _state)                                                  \
 	bt_l2cap_br_chan_set_state_debug(_chan, _state, __func__, __LINE__)
 #else
-void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan,
-			     bt_l2cap_chan_state_t state);
+void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_t state);
 #endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
 
 /* Prepare an L2CAP PDU to be sent over a connection */
-struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
-					    size_t reserve,
+struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool, size_t reserve,
 					    k_timeout_t timeout);
 
-#define bt_l2cap_create_pdu(_pool, _reserve) \
-	bt_l2cap_create_pdu_timeout(_pool, _reserve, K_FOREVER)
+#define bt_l2cap_create_pdu(_pool, _reserve) bt_l2cap_create_pdu_timeout(_pool, _reserve, K_FOREVER)

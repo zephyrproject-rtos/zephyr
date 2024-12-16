@@ -31,7 +31,7 @@ extern "C" {
 #endif
 
 /** L2CAP PDU header size, used for buffer size calculations */
-#define BT_L2CAP_HDR_SIZE               4
+#define BT_L2CAP_HDR_SIZE 4
 
 /** Maximum Transmission Unit (MTU) for an outgoing L2CAP PDU. */
 #define BT_L2CAP_TX_MTU (CONFIG_BT_L2CAP_TX_MTU)
@@ -49,7 +49,7 @@ extern "C" {
 #define BT_L2CAP_BUF_SIZE(mtu) BT_BUF_ACL_SIZE(BT_L2CAP_HDR_SIZE + (mtu))
 
 /** L2CAP SDU header size, used for buffer size calculations */
-#define BT_L2CAP_SDU_HDR_SIZE           2
+#define BT_L2CAP_SDU_HDR_SIZE 2
 
 /** @brief Maximum Transmission Unit for an unsegmented outgoing L2CAP SDU.
  *
@@ -177,11 +177,11 @@ typedef enum bt_l2cap_chan_status {
 /** @brief L2CAP Channel structure. */
 struct bt_l2cap_chan {
 	/** Channel connection reference */
-	struct bt_conn			*conn;
+	struct bt_conn *conn;
 	/** Channel operations reference */
-	const struct bt_l2cap_chan_ops	*ops;
-	sys_snode_t			node;
-	bt_l2cap_chan_destroy_t		destroy;
+	const struct bt_l2cap_chan_ops *ops;
+	sys_snode_t node;
+	bt_l2cap_chan_destroy_t destroy;
 
 	ATOMIC_DEFINE(status, BT_L2CAP_NUM_STATUS);
 };
@@ -189,19 +189,19 @@ struct bt_l2cap_chan {
 /** @brief LE L2CAP Endpoint structure. */
 struct bt_l2cap_le_endpoint {
 	/** Endpoint Channel Identifier (CID) */
-	uint16_t				cid;
+	uint16_t cid;
 	/** Endpoint Maximum Transmission Unit */
-	uint16_t				mtu;
+	uint16_t mtu;
 	/** Endpoint Maximum PDU payload Size */
-	uint16_t				mps;
+	uint16_t mps;
 	/** Endpoint credits */
-	atomic_t			credits;
+	atomic_t credits;
 };
 
 /** @brief LE L2CAP Channel structure. */
 struct bt_l2cap_le_chan {
 	/** Common L2CAP channel reference object */
-	struct bt_l2cap_chan		chan;
+	struct bt_l2cap_chan chan;
 	/** @brief Channel Receiving Endpoint.
 	 *
 	 *  If the application has set an alloc_buf channel callback for the
@@ -214,7 +214,7 @@ struct bt_l2cap_le_chan {
 	 *  L2CAP_LE_CREDIT_BASED_CONNECTION_REQ/RSP and
 	 *  L2CAP_CONFIGURATION_REQ.
 	 */
-	struct bt_l2cap_le_endpoint	rx;
+	struct bt_l2cap_le_endpoint rx;
 
 	/** Pending RX MTU on ECFC reconfigure, used internally by stack */
 	uint16_t pending_rx_mtu;
@@ -226,38 +226,38 @@ struct bt_l2cap_le_chan {
 	 * The MTU and MPS is controlled by the remote by
 	 * L2CAP_LE_CREDIT_BASED_CONNECTION_REQ/RSP or L2CAP_CONFIGURATION_REQ.
 	 */
-	struct bt_l2cap_le_endpoint	tx;
+	struct bt_l2cap_le_endpoint tx;
 	/** Channel Transmission queue (for SDUs) */
-	struct k_fifo                   tx_queue;
+	struct k_fifo tx_queue;
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/** Segment SDU packet from upper layer */
-	struct net_buf			*_sdu;
-	uint16_t			_sdu_len;
+	struct net_buf *_sdu;
+	uint16_t _sdu_len;
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
-	uint16_t			_sdu_len_done;
+	uint16_t _sdu_len_done;
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
 
-	struct k_work			rx_work;
-	struct k_fifo			rx_queue;
+	struct k_work rx_work;
+	struct k_fifo rx_queue;
 
-	bt_l2cap_chan_state_t		state;
+	bt_l2cap_chan_state_t state;
 	/** Remote PSM to be connected */
-	uint16_t			psm;
+	uint16_t psm;
 	/** Helps match request context during CoC */
-	uint8_t				ident;
-	bt_security_t			required_sec_level;
+	uint8_t ident;
+	bt_security_t required_sec_level;
 
 	/* Response Timeout eXpired (RTX) timer */
-	struct k_work_delayable		rtx_work;
-	struct k_work_sync		rtx_sync;
+	struct k_work_delayable rtx_work;
+	struct k_work_sync rtx_sync;
 #endif
 
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
-	sys_snode_t			_pdu_ready;
+	sys_snode_t _pdu_ready;
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
-	atomic_t			_pdu_ready_lock;
+	atomic_t _pdu_ready_lock;
 	/** @internal Holds the length of the current PDU/segment */
-	size_t				_pdu_remaining;
+	size_t _pdu_remaining;
 };
 
 /**
@@ -283,21 +283,21 @@ struct bt_l2cap_le_chan {
 #define BT_L2CAP_BR_LINK_MODE_STREAM 0x04
 
 /** Frame Check Sequence type. No FCS. */
-#define BT_L2CAP_BR_FCS_NO           0x00
+#define BT_L2CAP_BR_FCS_NO    0x00
 /** Frame Check Sequence type. 16-bit FCS. */
-#define BT_L2CAP_BR_FCS_16BIT        0x01
+#define BT_L2CAP_BR_FCS_16BIT 0x01
 
 /** @brief BREDR L2CAP Endpoint structure. */
 struct bt_l2cap_br_endpoint {
 	/** Endpoint Channel Identifier (CID) */
-	uint16_t                                cid;
+	uint16_t cid;
 	/** Endpoint Maximum Transmission Unit */
-	uint16_t                                mtu;
+	uint16_t mtu;
 #if defined(CONFIG_BT_L2CAP_RET_FC) || defined(__DOXYGEN__)
 	/** Endpoint Link Mode.
 	 *  The value is defined as BT_L2CAP_BR_LINK_MODE_*
 	 */
-	uint8_t                                 mode;
+	uint8_t mode;
 	/** Whether Endpoint Link Mode is optional
 	 * If the `optional` is true, the `mode` could be
 	 * changed according to the extended feature and
@@ -307,7 +307,7 @@ struct bt_l2cap_br_endpoint {
 	 * does not meet the set mode, the L2CAP channel
 	 * will be disconnected.
 	 */
-	bool                                    optional;
+	bool optional;
 	/** Endpoint Maximum Transmit
 	 * The field is used to set the max retransmission
 	 * count.
@@ -315,27 +315,27 @@ struct bt_l2cap_br_endpoint {
 	 * less 1.
 	 * For `STREAM`, it should be 0.
 	 */
-	uint8_t                                 transmit;
+	uint8_t transmit;
 	/** Endpoint Retransmission Timeout
 	 * The field is configured by
 	 * `@kconfig{BT_L2CAP_BR_RET_TIMEOUT}`
 	 * The field should be no more than the field
 	 * `monitor_timeout`.
 	 */
-	uint16_t                                ret_timeout;
+	uint16_t ret_timeout;
 	/** Endpoint Monitor Timeout
 	 * The field is configured by
 	 * `@kconfig{BT_L2CAP_BR_MONITOR_TIMEOUT}`
 	 */
-	uint16_t                                monitor_timeout;
+	uint16_t monitor_timeout;
 	/** Endpoint Maximum PDU payload Size */
-	uint16_t                                mps;
+	uint16_t mps;
 	/** Endpoint Maximum Window Size
 	 * MAX supported window size is configured by
 	 * `@kconfig{BT_L2CAP_MAX_WINDOW_SIZE}`. The field
 	 * should be no more then `CONFIG_BT_L2CAP_MAX_WINDOW_SIZE`.
 	 */
-	uint16_t                                window;
+	uint16_t window;
 	/** Endpoint FCS Type
 	 * The value is defined as BT_L2CAP_BR_FCS_*
 	 * The default setting should be BT_L2CAP_BR_FCS_16BIT.
@@ -346,14 +346,14 @@ struct bt_l2cap_br_endpoint {
 	 * FCS option in configuration request packet if both side
 	 * support `FCS Option`.
 	 */
-	uint8_t                                 fcs;
+	uint8_t fcs;
 	/** Endpoint Extended Control.
 	 * If this field is true, and both side support
 	 * `Extended Window size feature`, the local will
 	 * include `extended window size` option in configuration
 	 * request packet.
 	 */
-	bool                                    extended_control;
+	bool extended_control;
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 };
 
@@ -384,62 +384,61 @@ struct bt_l2cap_br_window {
 /** @brief BREDR L2CAP Channel structure. */
 struct bt_l2cap_br_chan {
 	/** Common L2CAP channel reference object */
-	struct bt_l2cap_chan            chan;
+	struct bt_l2cap_chan chan;
 	/** Channel Receiving Endpoint */
-	struct bt_l2cap_br_endpoint     rx;
+	struct bt_l2cap_br_endpoint rx;
 	/** Channel Transmission Endpoint */
-	struct bt_l2cap_br_endpoint     tx;
+	struct bt_l2cap_br_endpoint tx;
 	/* For internal use only */
-	atomic_t                        flags[1];
+	atomic_t flags[1];
 
-	bt_l2cap_chan_state_t           state;
+	bt_l2cap_chan_state_t state;
 	/** Remote PSM to be connected */
-	uint16_t                        psm;
+	uint16_t psm;
 	/** Helps match request context during CoC */
-	uint8_t                         ident;
-	bt_security_t                   required_sec_level;
+	uint8_t ident;
+	bt_security_t required_sec_level;
 
 	/* Response Timeout eXpired (RTX) timer */
-	struct k_work_delayable	        rtx_work;
-	struct k_work_sync              rtx_sync;
+	struct k_work_delayable rtx_work;
+	struct k_work_sync rtx_sync;
 
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
-	sys_snode_t                     _pdu_ready;
+	sys_snode_t _pdu_ready;
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
-	atomic_t                        _pdu_ready_lock;
+	atomic_t _pdu_ready_lock;
 	/** @internal List of net bufs not yet sent to lower layer */
-	sys_slist_t                     _pdu_tx_queue;
+	sys_slist_t _pdu_tx_queue;
 
 #if defined(CONFIG_BT_L2CAP_RET_FC) || defined(__DOXYGEN__)
 	/** @internal Total length of TX SDU */
-	uint16_t                        _sdu_total_len;
+	uint16_t _sdu_total_len;
 
 	/** @internal Holds the remaining length of current sending buffer */
-	size_t                          _pdu_remaining;
+	size_t _pdu_remaining;
 
 	/** @internal Holds the sending buffer. */
-	struct net_buf                  *_pdu_buf;
+	struct net_buf *_pdu_buf;
 
 	/** @internal TX windows for outstanding frame */
-	sys_slist_t                     _pdu_outstanding;
+	sys_slist_t _pdu_outstanding;
 
 	/** @internal PDU restore state */
-	struct net_buf_simple_state     _pdu_state;
+	struct net_buf_simple_state _pdu_state;
 
 	/** @internal Free TX windows */
-	struct k_fifo                   _free_tx_win;
+	struct k_fifo _free_tx_win;
 
 	/** @internal TX windows */
-	struct bt_l2cap_br_window       tx_win[CONFIG_BT_L2CAP_MAX_WINDOW_SIZE];
+	struct bt_l2cap_br_window tx_win[CONFIG_BT_L2CAP_MAX_WINDOW_SIZE];
 
 	/** Segment SDU packet from upper layer */
-	struct net_buf                  *_sdu;
+	struct net_buf *_sdu;
 	/** @internal RX SDU */
-	uint16_t                        _sdu_len;
+	uint16_t _sdu_len;
 #if defined(CONFIG_BT_L2CAP_SEG_RECV) || defined(__DOXYGEN__)
-	uint16_t                        _sdu_len_done;
+	uint16_t _sdu_len_done;
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
-
 
 	/** @internal variables and sequence numbers */
 	/** @internal The sending peer uses the following variables and sequence
@@ -448,15 +447,15 @@ struct bt_l2cap_br_chan {
 	/** @internal The send sequence number used to sequentially number each
 	 * new I-frame transmitted.
 	 */
-	uint16_t                        tx_seq;
+	uint16_t tx_seq;
 	/** @internal The sequence number to be used in the next new I-frame
 	 * transmitted.
 	 */
-	uint16_t                        next_tx_seq;
+	uint16_t next_tx_seq;
 	/** @internal The sequence number of the next I-frame expected to be
 	 * acknowledged by the receiving peer.
 	 */
-	uint16_t                        expected_ack_seq;
+	uint16_t expected_ack_seq;
 	/** @internal The receiving peer uses the following variables and sequence
 	 * numbers.
 	 */
@@ -464,27 +463,27 @@ struct bt_l2cap_br_chan {
 	 * request transmission of I-frame with TxSeq = ReqSeq and acknowledge
 	 * receipt of I-frames up to and including (ReqSeq-1).
 	 */
-	uint16_t                        req_seq;
+	uint16_t req_seq;
 	/** @internal The value of TxSeq expected in the next I-frame.
 	 */
-	uint16_t                        expected_tx_seq;
+	uint16_t expected_tx_seq;
 	/** @internal When segmented I-frames are buffered this is used to delay
 	 * acknowledgment of received I-frame so that new I-frame transmissions do
 	 * not cause buffer overflow.
 	 */
-	uint16_t                        buffer_seq;
+	uint16_t buffer_seq;
 
 	/** @internal States of Enhanced Retransmission Mode */
 	/** @internal Holds the number of times an S-frame operation is retried
 	 */
-	uint16_t                        retry_count;
+	uint16_t retry_count;
 	/** @internal save the ReqSeq of a SREJ frame */
-	uint16_t                        srej_save_req_seq;
+	uint16_t srej_save_req_seq;
 
 	/** @internal Retransmission Timer */
-	struct k_work_delayable         ret_work;
+	struct k_work_delayable ret_work;
 	/** @internal Monitor Timer */
-	struct k_work_delayable         monitor_work;
+	struct k_work_delayable monitor_work;
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 };
 
@@ -650,8 +649,8 @@ struct bt_l2cap_chan_ops {
 	 *  @param seg_offset The byte offset of this segment in the SDU.
 	 *  @param seg The segment payload.
 	 */
-	void (*seg_recv)(struct bt_l2cap_chan *chan, size_t sdu_len,
-			 off_t seg_offset, struct net_buf_simple *seg);
+	void (*seg_recv)(struct bt_l2cap_chan *chan, size_t sdu_len, off_t seg_offset,
+			 struct net_buf_simple *seg);
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
 };
 
@@ -680,10 +679,10 @@ struct bt_l2cap_server {
 	 *                  recommended however), or auto-allocated by the
 	 *                  stack if the app gave 0 as the value.
 	 */
-	uint16_t			psm;
+	uint16_t psm;
 
 	/** Required minimum security level */
-	bt_security_t		sec_level;
+	bt_security_t sec_level;
 
 	/** @brief Server accept callback
 	 *
@@ -756,8 +755,7 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
-				struct bt_l2cap_chan **chans, uint16_t psm);
+int bt_l2cap_ecred_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan **chans, uint16_t psm);
 
 /** @brief Reconfigure Enhanced Credit Based L2CAP channels
  *
@@ -840,8 +838,7 @@ int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
-			  uint16_t psm);
+int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, uint16_t psm);
 
 /** @brief Disconnect L2CAP channel
  *
@@ -937,8 +934,7 @@ int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_c
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan,
-				struct net_buf *buf);
+int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
 #ifdef __cplusplus
 }
