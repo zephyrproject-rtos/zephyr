@@ -7,7 +7,6 @@
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
 
 #define TEST_GPIO DT_NODELABEL(test_gpio_0)
 #define TEST_I2C DT_NODELABEL(test_i2c)
