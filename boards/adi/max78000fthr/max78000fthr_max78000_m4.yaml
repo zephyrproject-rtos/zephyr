@@ -1,0 +1,24 @@
+identifier: max78000fthr/max78000/m4
+name: max78000fthr m4
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - counter
+  - dma
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - serial
+  - spi
+  - trng
+  - w1
+  - watchdog
+ram: 128
+flash: 512
