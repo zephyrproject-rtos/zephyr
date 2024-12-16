@@ -7,6 +7,7 @@
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "renesas,r9a08g045";
@@ -189,6 +190,17 @@
 				clock-frequency = <DT_FREQ_M(8)>;
 				#clock-cells = <0>;
 			};
+		};
+
+		adc: adc@40058000 {
+			compatible = "renesas,rz-adc";
+			reg = <0x40058000 0x80>;
+			interrupts = <312 3>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channels-count = <9>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@41030000 {
