@@ -42,6 +42,24 @@ SECTIONS {
     *(.stacks .stacks.*)
   } > sram
 
+  .data : {
+    __data_start = .;
+    *(.data .data.*)
+    _trace_ctx_start = ABSOLUTE(.);
+    *(.trace_ctx)
+    _trace_ctx_end = ABSOLUTE(.);
+    __data_end = .;
+  } > sram
+
+  .bss (NOLOAD) :
+  {
+    _bss_start = .;
+    *(.bss .bss.*)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
+    _bss_end = .;
+  } > sram
+
   _mtk_adsp_sram_end = .;
 
   .text : {
@@ -74,30 +92,9 @@ SECTIONS {
 
   __rodata_region_end = .;
 
-    . = ALIGN(4096); /* Switching MPU permissions, align by 4k */
-
-  _image_ram_start = .;
-
-  .data : {
-    __data_start = .;
-    *(.data .data.*)
-    _trace_ctx_start = ABSOLUTE(.);
-    *(.trace_ctx)
-    _trace_ctx_end = ABSOLUTE(.);
-    __data_end = .;
-  } > dram
+  . = ALIGN(4096); /* Switching MPU permissions, align by 4k */
 
 #include <zephyr/linker/common-ram.ld>
-
-  .bss (NOLOAD) :
-  {
-    _bss_start = .;
-    *(.bss .bss.*)
-    *(.gnu.linkonce.b.*)
-    *(COMMON)
-    _bss_end = .;
-  } > dram
-
 #include <zephyr/linker/common-noinit.ld>
 #include <snippets-sections.ld>
 
