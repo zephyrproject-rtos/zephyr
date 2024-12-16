@@ -444,7 +444,8 @@ struct stm32_pclken {
 #define STM32_CLOCK_INFO(clk_index, node_id)				\
 	{								\
 	.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
-	.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) & 0xff,	\
+	.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) &         \
+		GENMASK(STM32_CLOCK_DIV_SHIFT - 1, 0),                   \
 	.div = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) >>	\
 		STM32_CLOCK_DIV_SHIFT,					\
 	}
