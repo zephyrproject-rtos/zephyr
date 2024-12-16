@@ -183,4 +183,9 @@ config USE_RZ_FSP_EXT_IRQ
 	help
 	  Enable RZ FSP External IRQ driver
 
+config USE_RZ_FSP_CPG
+	bool
+	help
+	  Enable RZ FSP CLOCK CONTROL driver
+
 endif
