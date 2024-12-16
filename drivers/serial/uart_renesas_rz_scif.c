@@ -197,7 +197,7 @@ static int uart_rz_scif_config_get(const struct device *dev, struct uart_config 
 
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-static const struct uart_driver_api uart_rz_scif_driver_api = {
+static DEVICE_API(uart, uart_rz_scif_driver_api) = {
 	.poll_in = uart_rz_scif_poll_in,
 	.poll_out = uart_rz_scif_poll_out,
 	.err_check = uart_rz_scif_err_check,
