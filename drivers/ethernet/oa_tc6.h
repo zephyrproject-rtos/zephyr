@@ -112,12 +112,6 @@ struct oa_tc6 {
 	struct net_buf *concat_buf;
 };
 
-typedef struct {
-	uint8_t mms;
-	uint8_t address;
-	uint16_t value;
-} oa_mem_map_t;
-
 /**
  * @brief Calculate parity bit from data
  *
