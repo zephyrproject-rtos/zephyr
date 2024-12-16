@@ -9,20 +9,6 @@ config STEPPER_ADI_TMC5041
 	help
 	  Stepper driver for TMC5041.
 
-config STEPPER_ADI_TMC5041_RAMPSTAT_POLL
-	bool "TMC5041 poll ramp status"
-	depends on STEPPER_ADI_TMC5041
-	default y
-	help
-	  When enabled, the ramp status will be polled on TMC5041, to check for events:
-	  - TMC5041_POS_REACHED_EVENT
-	  - TMC5041_STOP_SG_EVENT
-	  - TMC5041_STOP_LEFT_EVENT
-	  - TMC5041_STOP_RIGHT_EVENT
-
-config STEPPER_ADI_TMC5041_RAMPSTAT_POLL_INTERVAL_IN_MSEC
-	int "TMC5041 poll ramp status interval in ms"
-	depends on STEPPER_ADI_TMC5041_RAMPSTAT_POLL
-	default 100
-	help
-	  The interval in ms to poll the ramp status on TMC5041.
+module = TMC5041
+module-str = tmc5041
+rsource "Kconfig.tmc_rampgen_template"
