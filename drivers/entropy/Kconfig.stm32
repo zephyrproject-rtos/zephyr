@@ -3,10 +3,11 @@
 # Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig ENTROPY_STM32_RNG
+config ENTROPY_STM32_RNG
 	bool "STM32 RNG driver"
 	default y
 	depends on DT_HAS_ST_STM32_RNG_ENABLED
+	depends on !SOC_SERIES_STM32WB0X	# STM32WB05/06/07 RNG not supported yet
 	select ENTROPY_HAS_DRIVER
 	select USE_STM32_LL_RNG
 	help
@@ -15,7 +16,15 @@ menuconfig ENTROPY_STM32_RNG
 	  a entropy 32-bit value to the host when read. It is available for
 	  F4 (except STM32F401 & STM32F411), L4, F7, H7 and G4 series.
 
-if ENTROPY_STM32_RNG
+config ENTROPY_STM32WB09_RNG
+	bool "STM32WB09 TRNG driver"
+	default y
+	depends on DT_HAS_ST_STM32WB09_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the STM32WB09-specific driver for TRNG.
+
+if ENTROPY_STM32_RNG || ENTROPY_STM32WB09_RNG
 
 config ENTROPY_STM32_THR_POOL_SIZE
 	int "Thread-mode random number pool size"
@@ -55,6 +64,7 @@ config ENTROPY_STM32_ISR_THRESHOLD
 
 config ENTROPY_STM32_CLK_CHECK
 	bool "Runtime clock configuration check"
+	depends on !SOC_STM32WB09XX	# No clock error detection on STM32WB09
 	default y
 	help
 	  Enables a check on RNG clock configuration. Correct clock
@@ -64,4 +74,4 @@ config ENTROPY_STM32_CLK_CHECK
 	  available, CED is enabeld by default). Disable this check if CED is
 	  disabled.
 
-endif # ENTROPY_STM32_RNG
+endif # ENTROPY_STM32_RNG || ENTROPY_STM32WB09_RNG
