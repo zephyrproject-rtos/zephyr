@@ -8,7 +8,6 @@
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
 
 #include <zephyr/linker/devicetree_regions.h>
 
