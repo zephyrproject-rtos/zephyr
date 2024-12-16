@@ -67,7 +67,7 @@ struct net_socket_service_event {
  * User should create needed sockets and then setup the poll struct and
  * then register the sockets to be monitored at runtime.
  */
-struct net_socket_service_desc {
+__iterable_section_rom struct net_socket_service_desc {
 #if CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG
 	/**
 	 * Owner name. This can be used in debugging to see who has

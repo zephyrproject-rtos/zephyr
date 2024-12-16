@@ -64,7 +64,7 @@ struct http_resource_desc {
 
 /** @cond INTERNAL_HIDDEN */
 
-struct http_service_desc {
+__iterable_section_rom struct http_service_desc {
 	const char *host;
 	uint16_t *port;
 	int *fd;

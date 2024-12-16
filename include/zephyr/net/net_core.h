@@ -162,7 +162,7 @@ int net_send_data(struct net_pkt *pkt);
  *        based LLDP, gPTP are more in the layer 2.5 but we consider them
  *        as L3 here for simplicity.
  */
-struct net_l3_register {
+__iterable_section_rom struct net_l3_register {
 	/** Store also the name of the L3 type in order to be able to
 	 * print it later.
 	 */

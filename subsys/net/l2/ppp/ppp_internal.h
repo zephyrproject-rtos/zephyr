@@ -36,7 +36,7 @@ struct ppp_packet {
 #define PPP_BUF_ALLOC_TIMEOUT	K_MSEC(100)
 
 /** Protocol handler information. */
-struct ppp_protocol_handler {
+__iterable_section_rom struct ppp_protocol_handler {
 	/** Protocol init function */
 	void (*init)(struct ppp_context *ctx);
 

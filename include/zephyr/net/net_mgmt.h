@@ -204,7 +204,7 @@ typedef void (*net_mgmt_event_static_handler_t)(uint32_t mgmt_event,
 /** @cond INTERNAL_HIDDEN */
 
 /* Structure for event handler registered at compile time */
-struct net_mgmt_event_static_handler {
+__iterable_section_rom struct net_mgmt_event_static_handler {
 	uint32_t event_mask;
 	net_mgmt_event_static_handler_t handler;
 	void *user_data;
