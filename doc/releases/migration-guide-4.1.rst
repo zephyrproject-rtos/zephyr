@@ -206,6 +206,8 @@ Stepper
   * Renamed the ``stepper_enable_constant_velocity_mode`` function to :c:func:`stepper_run`.
   * Renamed the ``stepper_move`` function to :c:func:`stepper_move_by`.
   * Renamed the ``stepper_set_target_position`` function to :c:func:`stepper_move_to`.
+  * The :kconfig:option:`STEPPER_ADI_TMC_RAMP_GEN` is now deprecated and is replaced with the new
+    :kconfig:option:`STEPPER_ADI_TMC5041_RAMP_GEN` option.
 
 SPI
 ===
