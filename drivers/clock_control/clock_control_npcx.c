@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/clock/npcx_clock.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(clock_control_npcx, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(clock_control_npcx, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 /* Driver config */
 struct npcx_pcc_config {
