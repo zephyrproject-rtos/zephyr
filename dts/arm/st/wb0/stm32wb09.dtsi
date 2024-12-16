@@ -14,5 +14,17 @@
 / {
 	soc {
 		compatible = "st,stm32wb09", "st,stm32wb0", "simple-bus";
+
+		rng: rng@48600000 {
+			/**
+			 * STM32WB09 TRNG has an interrupt line.
+			 * Switch to proper compatible, delete property
+			 * that doesn't apply to it, and add the interrupt
+			 * line as property.
+			 */
+			/delete-property/ generation-delay-ns;
+			compatible = "st,stm32-rng";
+			interrupts = <28 0>;
+		};
 	};
 };
