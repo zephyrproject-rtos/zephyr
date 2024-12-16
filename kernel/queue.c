@@ -84,13 +84,15 @@ static void prepare_thread_to_run(struct k_thread *thread, void *data)
 	z_ready_thread(thread);
 }
 
-static inline void handle_poll_events(struct k_queue *queue, uint32_t state)
+static inline bool handle_poll_events(struct k_queue *queue, uint32_t state)
 {
 #ifdef CONFIG_POLL
-	z_handle_obj_poll_events(&queue->poll_events, state);
+	return z_handle_obj_poll_events(&queue->poll_events, state);
 #else
 	ARG_UNUSED(queue);
 	ARG_UNUSED(state);
+
+	return false;
 #endif /* CONFIG_POLL */
 }
 
@@ -107,7 +109,7 @@ void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 		prepare_thread_to_run(first_pending_thread, NULL);
 	}
 
-	handle_poll_events(queue, K_POLL_STATE_CANCELLED);
+	(void)handle_poll_events(queue, K_POLL_STATE_CANCELLED);
 	z_reschedule(&queue->lock, key);
 }
 
@@ -167,7 +169,7 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, queue_insert, queue, alloc, K_FOREVER);
 
 	sys_sflist_insert(&queue->data_q, prev, data);
-	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
+	(void)handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 	z_reschedule(&queue->lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, queue_insert, queue, alloc, 0);
@@ -274,7 +276,7 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append_list, queue, 0);
 
-	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
+	(void)handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 	z_reschedule(&queue->lock, key);
 	return 0;
 }
