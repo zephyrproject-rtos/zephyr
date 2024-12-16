@@ -1159,7 +1159,7 @@ void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 {
 	if (raw_scan_result->frame_length > CONFIG_WIFI_MGMT_RAW_SCAN_RESULT_LENGTH) {
 		LOG_INF("raw scan result frame length = %d too big,"
-			"saving upto max raw scan length = %d",
+			"saving up to max raw scan length = %d",
 			raw_scan_result->frame_length, CONFIG_WIFI_MGMT_RAW_SCAN_RESULT_LENGTH);
 	}
 
