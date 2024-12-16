@@ -527,14 +527,14 @@ void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, 
 
 	if (sscanf(buf,
 		   "%" STRINGIFY(MAX_EVENT_STR_LEN) "s "
-					      "bssid=%" STRINGIFY(WIFI_SSID_MAX_LEN) "s "
-									 "info=%" STRINGIFY(WIFI_SSID_MAX_LEN) "s "
-												    "op_class=%d chan=%d phy_type=%d",
-										 event, bssid,
-										 bssid_info,
-										 &op_class,
-										 &channel,
-										 &phy_type) == 6) {
+		   "bssid=%" STRINGIFY(WIFI_SSID_MAX_LEN) "s "
+		   "info=%" STRINGIFY(WIFI_SSID_MAX_LEN) "s "
+		   "op_class=%d chan=%d phy_type=%d",
+		   event, bssid,
+		   bssid_info,
+		   &op_class,
+		   &channel,
+		   &phy_type) == 6) {
 		int i;
 		int match = 0;
 		size_t len = 0;
