@@ -175,10 +175,16 @@
  */
 
 /* Indicates this is a driver subsystem */
-#define __subsystem __zpp(struct("__subsystem"))
+#define __subsystem __zpp(struct("__subsystem", "iterable", "ROM"))
 
 /* Indicates this is a network socket object */
 #define __net_socket __zpp(struct("__net_socket"))
+
+/* Indicates a struct iterable section should be added in ROM */
+#define __iterable_section_rom __zpp(struct("iterable", "ROM"))
+
+/* Indicates a struct iterable section should be added in RAM */
+#define __iterable_section_ram __zpp(struct("iterable", "RAM"))
 
 #ifndef BUILD_ASSERT
 /* Compile-time assertion that makes the build to fail.
