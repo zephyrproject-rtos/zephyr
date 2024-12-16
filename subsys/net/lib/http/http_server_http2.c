@@ -556,8 +556,8 @@ static int http2_dynamic_response(struct http_client_ctx *client, struct http2_f
 	return 0;
 }
 
-static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
-			      struct http_client_ctx *client)
+static int dynamic_get_del_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
+				  struct http_client_ctx *client)
 {
 	int ret, len;
 	char *ptr;
@@ -608,8 +608,8 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 	return ret;
 }
 
-static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
-			       struct http_client_ctx *client, bool headers_only)
+static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
+				   struct http_client_ctx *client, bool headers_only)
 {
 	int ret = 0;
 	char *ptr = client->cursor;
@@ -735,17 +735,20 @@ static int handle_http2_dynamic_resource(
 
 	switch (client->method) {
 	case HTTP_GET:
-		if (user_method & BIT(HTTP_GET)) {
-			return dynamic_get_req_v2(dynamic_detail, client);
+	case HTTP_DELETE:
+		if (user_method & BIT(client->method)) {
+			return dynamic_get_del_req_v2(dynamic_detail, client);
 		}
 
 		goto not_supported;
 
 	case HTTP_POST:
+	case HTTP_PUT:
+	case HTTP_PATCH:
 		/* The data will come in DATA frames. Remember the detail ptr
 		 * which needs to be known when passing data to application.
 		 */
-		if (user_method & BIT(HTTP_POST)) {
+		if (user_method & BIT(client->method)) {
 			client->current_stream->current_detail =
 				(struct http_resource_detail *)dynamic_detail;
 
@@ -754,7 +757,7 @@ static int handle_http2_dynamic_resource(
 			 * re-use for any other concurrent streams
 			 */
 			if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
-				ret = dynamic_post_req_v2(dynamic_detail, client, true);
+				ret = dynamic_post_put_req_v2(dynamic_detail, client, true);
 				if (ret < 0) {
 					return ret;
 				}
@@ -1051,8 +1054,10 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 				goto error;
 			}
 
-			if (client->method == HTTP_POST) {
-				ret = dynamic_post_req_v2(
+			if (client->method == HTTP_POST ||
+			    client->method == HTTP_PUT ||
+			    client->method == HTTP_PATCH) {
+				ret = dynamic_post_put_req_v2(
 					(struct http_resource_detail_dynamic *)detail, client,
 					false);
 				if (ret < 0) {
@@ -1160,7 +1165,7 @@ int handle_http_frame_data(struct http_client_ctx *client)
 		}
 	}
 
-	ret = dynamic_post_req_v2(
+	ret = dynamic_post_put_req_v2(
 		(struct http_resource_detail_dynamic *)client->current_stream->current_detail,
 		client, false);
 	if (ret < 0 && ret == -ENOENT) {
@@ -1263,17 +1268,23 @@ static int process_header(struct http_client_ctx *client,
 
 	if (header->name_len == (sizeof(":method") - 1) &&
 	    memcmp(header->name, ":method", header->name_len) == 0) {
-		/* TODO Improve string to method conversion */
-		if (header->value_len == (sizeof("GET") - 1) &&
-			memcmp(header->value, "GET", header->value_len) == 0) {
-			client->method = HTTP_GET;
-		} else if (header->value_len == (sizeof("POST") - 1) &&
-				memcmp(header->value, "POST", header->value_len) == 0) {
-			client->method = HTTP_POST;
-		} else {
-			/* Unknown method */
-			return -EBADMSG;
+		const enum http_method supported_methods[] = {
+			HTTP_GET, HTTP_DELETE, HTTP_POST, HTTP_PUT, HTTP_PATCH
+		};
+
+		for (int i = 0; i < ARRAY_SIZE(supported_methods); i++) {
+			if ((header->value_len ==
+			     strlen(http_method_str(supported_methods[i]))) &&
+			    (memcmp(header->value,
+				    http_method_str(supported_methods[i]),
+				    header->value_len) == 0)) {
+				client->method = supported_methods[i];
+				goto out;
+			}
 		}
+
+		/* Unknown method */
+		return -EBADMSG;
 	} else if (header->name_len == (sizeof(":path") - 1) &&
 		   memcmp(header->name, ":path", header->name_len) == 0) {
 		if (header->value_len > sizeof(client->url_buffer) - 1) {
@@ -1312,6 +1323,7 @@ static int process_header(struct http_client_ctx *client,
 		LOG_DBG("Ignoring field %.*s", (int)header->name_len, header->name);
 	}
 
+out:
 	return 0;
 }
 
