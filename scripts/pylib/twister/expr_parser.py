@@ -273,6 +273,14 @@ def ast_expr(ast, env, edt):
         if node and node.status == "okay":
             return True
         return False
+    elif ast[0] == "dt_node_prop_enabled":
+        label = ast[1][0]
+        node = edt.label2node.get(label)
+        prop = ast[1][1]
+        if node and prop in node.props and node.props[prop].val:
+            return True
+        return False
+
 
 mutex = threading.Lock()
 
