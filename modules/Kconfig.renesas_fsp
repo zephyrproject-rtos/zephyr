@@ -173,4 +173,9 @@ config USE_RZ_FSP_GPT
 	help
 	  Enable RZ FSP GPT driver
 
+config USE_RZ_FSP_EXT_IRQ
+	bool
+	help
+	  Enable RZ FSP External IRQ driver
+
 endif
