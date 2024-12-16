@@ -132,7 +132,7 @@ static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_
 #endif
 	uint32_t max_precision_n = clock_freq/channel->freq;
 
-	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDTH - 1; i++) {
+	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDTH; i++) {
 		max_precision_n /= 2;
 		if (!max_precision_n) {
 			channel->resolution =  i;
@@ -186,7 +186,7 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 * so select the slow clock source (1MHz) with highest counter resolution.
 	 * this can be handled on the func 'pwm_led_esp32_timer_set' with 'prescaler'.
 	 */
-	channel->resolution = SOC_LEDC_TIMER_BIT_WIDTH - 1;
+	channel->resolution = SOC_LEDC_TIMER_BIT_WIDTH;
 	return 0;
 }
 
@@ -240,9 +240,6 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
 		ledc_hal_ls_timer_update(&data->hal, channel->timer_num);
 	}
-
-	/* reset low speed timer */
-	ledc_hal_timer_rst(&data->hal, channel->timer_num);
 
 	return 0;
 }
@@ -303,6 +300,17 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 	return 0;
 }
 
+static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data, struct pwm_ledc_esp32_channel_config *channel, bool idle_level)
+{
+	ledc_hal_set_idle_level(&data->hal, channel->timer_num, idle_level);
+	ledc_hal_set_sig_out_en(&data->hal, channel->timer_num, false);
+	ledc_hal_set_duty_start(&data->hal, channel->timer_num, false);
+
+	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
+		ledc_hal_ls_channel_update(&data->hal, channel->timer_num);
+	}
+}
+
 static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_idx,
 				    uint32_t period_cycles,
 				    uint32_t pulse_cycles, pwm_flags_t flags)
@@ -317,6 +325,12 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 
 	if (flags & PWM_POLARITY_INVERTED) {
 		pulse_cycles = period_cycles - pulse_cycles;
+	}
+
+	if ((pulse_cycles >= period_cycles) || (pulse_cycles == 0)) {
+		/* For duty 0% and 100% stop PWM, set output level and return */
+		pwm_led_esp32_stop(data, channel, (pulse_cycles >= period_cycles));
+		return 0;
 	}
 
 	k_sem_take(&data->cmd_sem, K_FOREVER);
@@ -342,7 +356,6 @@ sem_give:
 	return ret;
 }
 
-
 int pwm_led_esp32_init(const struct device *dev)
 {
 	const struct pwm_ledc_esp32_config *config = dev->config;
@@ -364,6 +377,7 @@ int pwm_led_esp32_init(const struct device *dev)
 		channel = &config->channel_config[i];
 		pwm_led_esp32_bind_channel_timer(dev, channel);
 		ledc_hal_set_idle_level(&data->hal, channel->channel_num, channel->inverted);
+		ledc_hal_timer_rst(&data->hal, channel->timer_num);
 	}
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
