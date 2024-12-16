@@ -202,6 +202,29 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 #define TEST_HTTP2_RST_STREAM_STREAM_1 \
 	0x00, 0x00, 0x04, 0x03, 0x00, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0xaa, 0xaa, 0xaa, 0xaa
+#define TEST_HTTP2_HEADERS_PUT_DYNAMIC_STREAM_1 \
+	0x00, 0x00, 0x34, 0x01, 0x04, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x42, 0x03, 0x50, 0x55, 0x54, 0x86, 0x41, 0x87, 0x0b, 0xe2, 0x5c, 0x0b, \
+	0x89, 0x70, 0xff, 0x04, 0x86, 0x62, 0x4f, 0x55, 0x0e, 0x93, 0x13, 0x7a, \
+	0x88, 0x25, 0xb6, 0x50, 0xc3, 0xcb, 0xbc, 0xb8, 0x3f, 0x53, 0x03, 0x2a, \
+	0x2f, 0x2a, 0x5f, 0x87, 0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, 0xaa, 0x0f, \
+	0x0d, 0x02, 0x31, 0x37
+#define TEST_HTTP2_HEADERS_PATCH_DYNAMIC_STREAM_1 \
+	0x00, 0x00, 0x36, 0x01, 0x04, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x42, 0x05, 0x50, 0x41, 0x54, 0x43, 0x48, 0x86, 0x41, 0x87, 0x0b, 0xe2, \
+	0x5c, 0x0b, 0x89, 0x70, 0xff, 0x04, 0x86, 0x62, 0x4f, 0x55, 0x0e, 0x93, \
+	0x13, 0x7a, 0x88, 0x25, 0xb6, 0x50, 0xc3, 0xcb, 0xbc, 0xb8, 0x3f, 0x53, \
+	0x03, 0x2a, 0x2f, 0x2a, 0x5f, 0x87, 0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, \
+	0xaa, 0x0f, 0x0d, 0x02, 0x31, 0x37
+#define TEST_HTTP2_DATA_PUT_DYNAMIC_STREAM_1 TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1
+#define TEST_HTTP2_DATA_PATCH_DYNAMIC_STREAM_1 TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1
+#define TEST_HTTP2_HEADERS_DELETE_DYNAMIC_STREAM_1 \
+	0x00, 0x00, 0x32, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x42, 0x06, 0x44, 0x45, 0x4c, 0x45, 0x54, 0x45, 0x86, 0x41, 0x87, 0x0b, \
+	0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xff, 0x04, 0x86, 0x62, 0x4f, 0x55, 0x0e, \
+	0x93, 0x13, 0x7a, 0x88, 0x25, 0xb6, 0x50, 0xc3, 0xcb, 0xbc, 0xb8, 0x3f, \
+	0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x5f, 0x87, 0x49, 0x7c, 0xa5, 0x8a, 0xe8, \
+	0x19, 0xaa
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
@@ -240,7 +263,14 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_data_status stat
 		response_ctx->body_len = dynamic_payload_len;
 		response_ctx->final_chunk = true;
 		break;
+	case HTTP_DELETE:
+		response_ctx->body = NULL;
+		response_ctx->body_len = 0;
+		response_ctx->final_chunk = true;
+		break;
 	case HTTP_POST:
+	case HTTP_PUT:
+	case HTTP_PATCH:
 		if (request_ctx->data_len + offset > sizeof(dynamic_payload)) {
 			return -ENOMEM;
 		}
@@ -268,7 +298,8 @@ struct http_resource_detail_dynamic dynamic_detail = {
 	.common = {
 		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
 		.bitmask_of_supported_http_methods =
-			BIT(HTTP_GET) | BIT(HTTP_POST),
+			BIT(HTTP_GET) | BIT(HTTP_DELETE) | BIT(HTTP_POST) |
+			BIT(HTTP_PUT) | BIT(HTTP_PATCH),
 		.content_type = "text/plain",
 	},
 	.cb = dynamic_cb,
@@ -785,6 +816,7 @@ ZTEST(server_function_tests, test_http1_static_get)
 			  "Received data doesn't match expected response");
 }
 
+/* Common code to verify POST/PUT/PATCH */
 static void common_verify_http2_dynamic_post_request(const uint8_t *request,
 						     size_t request_len)
 {
@@ -822,10 +854,11 @@ ZTEST(server_function_tests, test_http2_dynamic_post)
 						 sizeof(request_post_dynamic));
 }
 
-ZTEST(server_function_tests, test_http1_dynamic_upgrade_post)
+/* Common code to verify POST/PUT/PATCH */
+static void common_verify_http1_dynamic_upgrade_post(const uint8_t *method)
 {
 	static const char http1_request[] =
-		"POST /dynamic HTTP/1.1\r\n"
+		" /dynamic HTTP/1.1\r\n"
 		"Host: 127.0.0.1:8080\r\n"
 		"User-Agent: curl/7.68.0\r\n"
 		"Accept: */*\r\n"
@@ -837,6 +870,9 @@ ZTEST(server_function_tests, test_http1_dynamic_upgrade_post)
 		TEST_DYNAMIC_POST_PAYLOAD;
 	size_t offset = 0;
 	int ret;
+
+	ret = zsock_send(client_fd, method, strlen(method), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
 	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
 	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
@@ -857,10 +893,16 @@ ZTEST(server_function_tests, test_http1_dynamic_upgrade_post)
 			  dynamic_payload_len, "Wrong dynamic resource data");
 }
 
-ZTEST(server_function_tests, test_http1_dynamic_post)
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_post)
+{
+	common_verify_http1_dynamic_upgrade_post("POST");
+}
+
+/* Common code to verify POST/PUT/PATCH */
+static void common_verify_http1_dynamic_post(const uint8_t *method)
 {
 	static const char http1_request[] =
-		"POST /dynamic HTTP/1.1\r\n"
+		" /dynamic HTTP/1.1\r\n"
 		"Host: 127.0.0.1:8080\r\n"
 		"User-Agent: curl/7.68.0\r\n"
 		"Accept: */*\r\n"
@@ -875,6 +917,9 @@ ZTEST(server_function_tests, test_http1_dynamic_post)
 	size_t offset = 0;
 	int ret;
 
+	ret = zsock_send(client_fd, method, strlen(method), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
 	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
 	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
@@ -888,6 +933,11 @@ ZTEST(server_function_tests, test_http1_dynamic_post)
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post)
+{
+	common_verify_http1_dynamic_post("POST");
 }
 
 static void common_verify_http2_dynamic_get_request(const uint8_t *request,
@@ -978,6 +1028,134 @@ ZTEST(server_function_tests, test_http1_dynamic_get)
 
 	dynamic_payload_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
 	memcpy(dynamic_payload, TEST_DYNAMIC_GET_PAYLOAD, dynamic_payload_len);
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_put)
+{
+	static const uint8_t request_put_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_PUT_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_PUT_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_request(request_put_dynamic,
+						 sizeof(request_put_dynamic));
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_put)
+{
+	common_verify_http1_dynamic_upgrade_post("PUT");
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_put)
+{
+	common_verify_http1_dynamic_post("PUT");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_patch)
+{
+	static const uint8_t request_patch_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_PATCH_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_PATCH_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_request(request_patch_dynamic,
+						 sizeof(request_patch_dynamic));
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_patch)
+{
+	common_verify_http1_dynamic_upgrade_post("PATCH");
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_patch)
+{
+	common_verify_http1_dynamic_post("PATCH");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_delete)
+{
+	static const uint8_t request_delete_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_DELETE_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_delete_dynamic,
+			 sizeof(request_delete_dynamic), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM,
+				   NULL, 0);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_delete)
+{
+	static const char http1_request[] =
+		"DELETE /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n";
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	/* Verify HTTP1 switching protocols response. */
+	expect_http1_switching_protocols(&offset);
+
+	/* Verify HTTP2 frames. */
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM,
+				   NULL, 0);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_delete)
+{
+	static const char http1_request[] =
+		"DELETE /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"\r\n";
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"0\r\n\r\n";
+	size_t offset = 0;
+	int ret;
 
 	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
 	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
