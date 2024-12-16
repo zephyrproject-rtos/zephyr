@@ -98,4 +98,14 @@
 		dai-index = <6>;
 		status = "disabled";
 	};
+
+	mu3: mbox@2da20000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x2da20000 DT_SIZE_K(64)>;
+		interrupt-parent = <&clic>;
+		interrupts = <15 0 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
 };
