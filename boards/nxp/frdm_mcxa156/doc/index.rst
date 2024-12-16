@@ -56,6 +56,8 @@ The FRDM-MCXA156 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| CTIMER    | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 | DAC       | on-chip    | dac                                 |
 +-----------+------------+-------------------------------------+
 | LPCMP     | on-chip    | sensor(comparator)                  |
