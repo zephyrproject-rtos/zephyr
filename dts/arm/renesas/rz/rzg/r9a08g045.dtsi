@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "renesas,r9a08g045";
@@ -271,6 +272,17 @@
 			reg = <0x4004e000 0x18>;
 			interrupts = <345 1>, <346 1>, <347 1>, <348 1>, <349 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		adc: adc@40058000 {
+			compatible = "renesas,rz-adc";
+			reg = <0x40058000 0x80>;
+			interrupts = <312 3>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channels-count = <9>;
 			status = "disabled";
 		};
 	};
