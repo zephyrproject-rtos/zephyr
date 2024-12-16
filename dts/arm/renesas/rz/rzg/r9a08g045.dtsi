@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
+#include <freq.h>
 
 / {
 	compatible = "renesas,r9a08g045";
@@ -31,7 +32,165 @@
 		};
 	};
 
+	osc: osc {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(24)>;
+		#clock-cells = <0>;
+	};
+
 	soc {
+		cpg: clock-controller@41010000 {
+			compatible = "renesas,rz-cpg";
+			reg = <0x41010000 0x10000>;
+			clocks = <&osc>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(1100)>;
+				#clock-cells = <0>;
+			};
+
+			p0clk: p0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			p4clk: p4clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(160)>;
+				#clock-cells = <0>;
+			};
+
+			p5clk: p5clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			tsuclk: tsuclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			sd0clk: sd0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <133333333>;
+				#clock-cells = <0>;
+			};
+
+			sd1clk: sd1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <133333333>;
+				#clock-cells = <0>;
+			};
+
+			sd2clk: sd2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <133333333>;
+				#clock-cells = <0>;
+			};
+
+			m0clk: m0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			p1clk: p1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			p2clk: p2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			p3clk: p3clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			atclk: atclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(400)>;
+				#clock-cells = <0>;
+			};
+
+			ztclk: ztclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			oc0clk: oc0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <33333333>;
+				#clock-cells = <0>;
+			};
+
+			oc1clk: oc1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <16666666>;
+				#clock-cells = <0>;
+			};
+
+			spi0clk: spi0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <33333333>;
+				#clock-cells = <0>;
+			};
+
+			spi1clk: spi1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <16666666>;
+				#clock-cells = <0>;
+			};
+
+			s0clk: s0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(400)>;
+				#clock-cells = <0>;
+			};
+
+			i2clk: i2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(250)>;
+				#clock-cells = <0>;
+			};
+
+			i3clk: i3clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(250)>;
+				#clock-cells = <0>;
+			};
+
+			hpclk: hpclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(250)>;
+				#clock-cells = <0>;
+			};
+
+			oscclk: oscclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(24)>;
+				#clock-cells = <0>;
+			};
+
+			osc2clk: osc2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(8)>;
+				#clock-cells = <0>;
+			};
+		};
+
 		pinctrl: pin-controller@41030000 {
 			compatible = "renesas,rzg-pinctrl";
 			reg = <0x41030000 DT_SIZE_K(64)>;
