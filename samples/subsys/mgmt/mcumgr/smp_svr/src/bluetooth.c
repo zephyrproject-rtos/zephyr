@@ -43,11 +43,10 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		LOG_ERR("Connection failed, err 0x%02x %s", err, bt_hci_err_to_str(err));
+		k_work_submit(&advertise_work);
 	} else {
 		LOG_INF("Connected");
 	}
-
-	k_work_submit(&advertise_work);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
