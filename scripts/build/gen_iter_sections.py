@@ -16,15 +16,17 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 from zpp import Annotation, AnnotationType
 
 
-def get_tagged_items(filepath: str, tag: str) -> list:
+def get_tagged_items(filepath: str, tags: list[str]) -> list[str]:
     with open(filepath) as fp:
         annotations = [Annotation(**a) for a in json.load(fp)]
 
-    return [
+    result = [
         a.data.get("name")
         for a in annotations
-        if a.attr == AnnotationType.STRUCT and len(a.args) > 0 and a.args[0] == tag
+        if a.attr == AnnotationType.STRUCT and len(a.args) > 0 and a.args[0] in tags
     ]
+    # Remove empty strings or annotations missing a name
+    return [i for i in result if i]
 
 
 def gen_ld(filepath: str, items: list, alignment: int):
@@ -62,7 +64,14 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("-i", "--input", required=True, help="Path to input list of tags")
     parser.add_argument("-a", "--alignment", required=True, help="Iterable section alignment")
-    parser.add_argument("-t", "--tag", required=True, help="Tag to generate iterable sections for")
+    parser.add_argument(
+        "-t",
+        "--tag",
+        required=True,
+        dest="tags",
+        action="append",
+        help="Tag(s) to generate iterable sections for",
+    )
     parser.add_argument("-l", "--ld-output", required=True, help="Path to output linker file")
     parser.add_argument(
         "-c", "--cmake-output", required=True, help="Path to CMake linker script inclusion file"
@@ -75,7 +84,7 @@ def parse_args() -> argparse.Namespace:
 def main():
     args = parse_args()
 
-    items = get_tagged_items(args.input, args.tag)
+    items = get_tagged_items(args.input, args.tags)
 
     gen_ld(args.ld_output, items, args.alignment)
     gen_cmake(args.cmake_output, items, args.alignment, args.cmake_prefix)
