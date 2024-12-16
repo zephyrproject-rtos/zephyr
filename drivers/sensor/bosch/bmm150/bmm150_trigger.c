@@ -85,15 +85,6 @@ int bmm150_trigger_set(
 	struct bmm150_data *data = dev->data;
 	const struct bmm150_config *cfg = dev->config;
 
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
-
 	if (trig->type != SENSOR_TRIG_DATA_READY) {
 		return -ENOTSUP;
 	}

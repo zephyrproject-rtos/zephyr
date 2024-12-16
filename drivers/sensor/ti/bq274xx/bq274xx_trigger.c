@@ -112,15 +112,6 @@ int bq274xx_trigger_set(const struct device *dev,
 	struct bq274xx_data *data = dev->data;
 	int ret;
 
-#ifdef CONFIG_BQ274XX_PM
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
-
 	if (trig->type != SENSOR_TRIG_DATA_READY) {
 		return -ENOTSUP;
 	}

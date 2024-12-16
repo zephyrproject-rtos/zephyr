@@ -37,8 +37,6 @@
 #include <zephyr/drivers/i3c.h>
 #endif /* LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c) */
 
-bool lsm6dsv16x_is_active(const struct device *dev);
-
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 #define ON_I3C_BUS(cfg)  (cfg->i3c.bus != NULL)
 #define I3C_INT_PIN(cfg) (cfg->int_en_i3c)
