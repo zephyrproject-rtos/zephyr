@@ -11,7 +11,7 @@ import string
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from enum import Enum
-from pathlib import PosixPath
+from pathlib import Path, PosixPath
 
 from colorama import Fore
 from twisterlib.statuses import TwisterStatus
@@ -171,7 +171,7 @@ class Reporting:
             runnable = suite.get('runnable', 0)
             duration += float(handler_time)
             ts_status = TwisterStatus(suite.get('status'))
-            classname = PosixPath(suite.get("name","")).name
+            classname = Path(suite.get("name","")).name
             for tc in suite.get("testcases", []):
                 status = TwisterStatus(tc.get('status'))
                 reason = tc.get('reason', suite.get('reason', 'Unknown'))
@@ -253,7 +253,7 @@ class Reporting:
                 ):
                     continue
                 if full_report:
-                    classname = PosixPath(ts.get("name","")).name
+                    classname = Path(ts.get("name","")).name
                     for tc in ts.get("testcases", []):
                         status = TwisterStatus(tc.get('status'))
                         reason = tc.get('reason', ts.get('reason', 'Unknown'))
