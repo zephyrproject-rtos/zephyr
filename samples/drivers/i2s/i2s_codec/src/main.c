@@ -8,7 +8,6 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/audio/dmic.h>
 #include <zephyr/drivers/i2s.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/audio/codec.h>
 #include <string.h>
 

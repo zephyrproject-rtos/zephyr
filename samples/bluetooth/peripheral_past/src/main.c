@@ -6,7 +6,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
