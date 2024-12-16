@@ -85,8 +85,11 @@ static __unused int write_optb(const struct device *dev, uint32_t mask,
 	}
 
 	regs->OPTCR = (regs->OPTCR & ~mask) | value;
+#ifdef CONFIG_SOC_SERIES_STM32H7RSX
+	regs->OPTCR |= FLASH_OPTCR_PG_OPT;
+#else
 	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
-
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 	/* Make sure previous write is completed. */
 	barrier_dsync_fence_full();
 
@@ -121,8 +124,13 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 	if (enable) {
 		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
 	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
+#ifdef CONFIG_SOC_SERIES_STM32H7RSX
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+#else
 		regs->OPTKEYR = FLASH_OPT_KEY1;
 		regs->OPTKEYR = FLASH_OPT_KEY2;
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 	}
 
 	if (enable) {
