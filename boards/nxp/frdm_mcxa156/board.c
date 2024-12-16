@@ -116,6 +116,31 @@ static int frdm_mcxa156_init(void)
 	CLOCK_AttachClk(kFRO12M_to_LPUART0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER1, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER2, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER2);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer3))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER3, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER3);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer4))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER4, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_CTIMER4);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac0))
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
 	CLOCK_SetClockDiv(kCLOCK_DivDAC0, 1u);
