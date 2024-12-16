@@ -28,7 +28,7 @@ extern "C" {
  *
  * @param dev_id Network device id.
  */
-#define CONNECTIVITY_WIFI_MGMT_BIND(dev_id)				  \
+#define CONNECTIVITY_WIFI_MGMT_BIND(dev_id)                                                        \
 	IF_ENABLED(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT,  \
 		   (CONN_MGR_CONN_DECLARE_PUBLIC(CONNECTIVITY_WIFI_MGMT); \
 		    CONN_MGR_BIND_CONN(dev_id, CONNECTIVITY_WIFI_MGMT)))

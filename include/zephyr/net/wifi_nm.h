@@ -66,11 +66,9 @@ struct wifi_nm_instance {
 
 #define WIFI_NM_NAME(name) wifi_nm_##name
 
-#define DEFINE_WIFI_NM_INSTANCE(_name, _ops)		\
-	static STRUCT_SECTION_ITERABLE(wifi_nm_instance, WIFI_NM_NAME(_name)) = { \
-		.name = STRINGIFY(_name),		\
-		.ops = _ops,				\
-		.mgd_ifaces = {},		\
+#define DEFINE_WIFI_NM_INSTANCE(_name, _ops)                                                       \
+	static STRUCT_SECTION_ITERABLE(wifi_nm_instance, WIFI_NM_NAME(_name)) = {                  \
+		.name = STRINGIFY(_name), .ops = _ops, .mgd_ifaces = {},                           \
 	}
 
 /** @endcond */
@@ -144,8 +142,8 @@ int wifi_nm_register_mgd_iface(struct wifi_nm_instance *nm, struct net_if *iface
  * @retval -ENOTSUP If the interface is not a Wi-Fi interface.
  * @retval -ENOMEM If the maximum number of managed interfaces has been reached.
  */
-int wifi_nm_register_mgd_type_iface(struct wifi_nm_instance *nm,
-		enum wifi_nm_iface_type type, struct net_if *iface);
+int wifi_nm_register_mgd_type_iface(struct wifi_nm_instance *nm, enum wifi_nm_iface_type type,
+				    struct net_if *iface);
 
 /**
  * @brief Unregister managed interface

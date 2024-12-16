@@ -58,7 +58,6 @@ extern "C" {
  */
 int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map);
 
-
 /**
  * @brief Append a string containing an SSID to an array of SSID strings.
  *
@@ -69,10 +68,7 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map);
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
-int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
-				const char *ssids[],
-				uint8_t num_ssids);
-
+int wifi_utils_parse_scan_ssids(char *scan_ssids_str, const char *ssids[], uint8_t num_ssids);
 
 /**
  * @brief Convert a string containing a specification of scan channels to an array.
@@ -102,10 +98,8 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
-int wifi_utils_parse_scan_chan(char *scan_chan_str,
-			       struct wifi_band_channel *chan,
+int wifi_utils_parse_scan_chan(char *scan_chan_str, struct wifi_band_channel *chan,
 			       uint8_t max_channels);
-
 
 /**
  * @brief Validate a channel against a band.
@@ -116,8 +110,7 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
  * @retval true if the channel is valid for the band.
  * @retval false if the channel is not valid for the band.
  */
-bool wifi_utils_validate_chan(uint8_t band,
-			      uint16_t chan);
+bool wifi_utils_validate_chan(uint8_t band, uint16_t chan);
 
 /**
  * @brief Validate a channel against the 2.4 GHz band.

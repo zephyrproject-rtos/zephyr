@@ -22,7 +22,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_H_
 
-#include <zephyr/sys/util.h>  /* for ARRAY_SIZE */
+#include <zephyr/sys/util.h> /* for ARRAY_SIZE */
 
 /** Length of the country code string */
 #define WIFI_COUNTRY_CODE_LEN 2
@@ -200,11 +200,11 @@ enum wifi_mfp_options {
 	/** MFP required. */
 	WIFI_MFP_REQUIRED,
 
-/** @cond INTERNAL_HIDDEN */
+	/** @cond INTERNAL_HIDDEN */
 	__WIFI_MFP_AFTER_LAST,
 	WIFI_MFP_MAX = __WIFI_MFP_AFTER_LAST - 1,
 	WIFI_MFP_UNKNOWN
-/** @endcond */
+	/** @endcond */
 };
 
 /** Helper function to get user-friendly MFP name.*/
@@ -254,19 +254,19 @@ enum wifi_frequency_bandwidths {
 const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 
 /** Max SSID length */
-#define WIFI_SSID_MAX_LEN 32
+#define WIFI_SSID_MAX_LEN         32
 /** Minimum PSK length */
-#define WIFI_PSK_MIN_LEN 8
+#define WIFI_PSK_MIN_LEN          8
 /** Maximum PSK length */
-#define WIFI_PSK_MAX_LEN 64
+#define WIFI_PSK_MAX_LEN          64
 /** Max SAW password length */
-#define WIFI_SAE_PSWD_MAX_LEN 128
+#define WIFI_SAE_PSWD_MAX_LEN     128
 /** MAC address length */
-#define WIFI_MAC_ADDR_LEN 6
+#define WIFI_MAC_ADDR_LEN         6
 /** Max enterprise identity length */
 #define WIFI_ENT_IDENTITY_MAX_LEN 64
 /** Max enterprise password length */
-#define WIFI_ENT_PSWD_MAX_LEN 128
+#define WIFI_ENT_PSWD_MAX_LEN     128
 
 /** Minimum channel number */
 #define WIFI_CHANNEL_MIN 1
@@ -301,11 +301,11 @@ enum wifi_iface_state {
 	/** All authentication completed, ready to pass data. */
 	WIFI_STATE_COMPLETED,
 
-/** @cond INTERNAL_HIDDEN */
+	/** @cond INTERNAL_HIDDEN */
 	__WIFI_STATE_AFTER_LAST,
 	WIFI_STATE_MAX = __WIFI_STATE_AFTER_LAST - 1,
 	WIFI_STATE_UNKNOWN
-/** @endcond */
+	/** @endcond */
 };
 
 /* We rely on the strict order of the enum values, so, let's check it */
@@ -318,7 +318,6 @@ BUILD_ASSERT(WIFI_STATE_DISCONNECTED < WIFI_STATE_INTERFACE_DISABLED &&
 	     WIFI_STATE_ASSOCIATED < WIFI_STATE_4WAY_HANDSHAKE &&
 	     WIFI_STATE_4WAY_HANDSHAKE < WIFI_STATE_GROUP_HANDSHAKE &&
 	     WIFI_STATE_GROUP_HANDSHAKE < WIFI_STATE_COMPLETED);
-
 
 /** Helper function to get user-friendly interface state name. */
 const char *wifi_state_txt(enum wifi_iface_state state);
@@ -341,11 +340,11 @@ enum wifi_iface_mode {
 	/** 802.11s Mesh mode. */
 	WIFI_MODE_MESH = 5,
 
-/** @cond INTERNAL_HIDDEN */
+	/** @cond INTERNAL_HIDDEN */
 	__WIFI_MODE_AFTER_LAST,
 	WIFI_MODE_MAX = __WIFI_MODE_AFTER_LAST - 1,
 	WIFI_MODE_UNKNOWN
-/** @endcond */
+	/** @endcond */
 };
 
 /** Helper function to get user-friendly interface mode name. */
@@ -375,11 +374,11 @@ enum wifi_link_mode {
 	/** 802.11be. */
 	WIFI_7,
 
-/** @cond INTERNAL_HIDDEN */
+	/** @cond INTERNAL_HIDDEN */
 	__WIFI_LINK_MODE_AFTER_LAST,
 	WIFI_LINK_MODE_MAX = __WIFI_LINK_MODE_AFTER_LAST - 1,
 	WIFI_LINK_MODE_UNKNOWN
-/** @endcond */
+	/** @endcond */
 };
 
 /** Helper function to get user-friendly link mode name. */
@@ -541,25 +540,18 @@ enum wifi_twt_teardown_status {
 };
 
 /** @cond INTERNAL_HIDDEN */
-static const char * const wifi_twt_err_code_tbl[] = {
+static const char *const wifi_twt_err_code_tbl[] = {
 	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_TWT_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
-	[WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED] =
-		"Operation not supported",
-	[WIFI_TWT_FAIL_UNABLE_TO_GET_IFACE_STATUS] =
-		"Unable to get iface status",
-	[WIFI_TWT_FAIL_DEVICE_NOT_CONNECTED] =
-		"Device not connected",
+	[WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED] = "Operation not supported",
+	[WIFI_TWT_FAIL_UNABLE_TO_GET_IFACE_STATUS] = "Unable to get iface status",
+	[WIFI_TWT_FAIL_DEVICE_NOT_CONNECTED] = "Device not connected",
 	[WIFI_TWT_FAIL_PEER_NOT_HE_CAPAB] = "Peer not HE capable",
 	[WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB] = "Peer not TWT capable",
-	[WIFI_TWT_FAIL_OPERATION_IN_PROGRESS] =
-		"Operation already in progress",
-	[WIFI_TWT_FAIL_INVALID_FLOW_ID] =
-		"Invalid negotiated flow id",
-	[WIFI_TWT_FAIL_IP_NOT_ASSIGNED] =
-		"IP address not assigned",
-	[WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS] =
-		"Flow already exists",
+	[WIFI_TWT_FAIL_OPERATION_IN_PROGRESS] = "Operation already in progress",
+	[WIFI_TWT_FAIL_INVALID_FLOW_ID] = "Invalid negotiated flow id",
+	[WIFI_TWT_FAIL_IP_NOT_ASSIGNED] = "IP address not assigned",
+	[WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS] = "Flow already exists",
 };
 /** @endcond */
 
@@ -609,10 +601,10 @@ enum wifi_ps_exit_strategy {
 	/** QoS NULL frame based */
 	WIFI_PS_EXIT_EVERY_TIM,
 
-/** @cond INTERNAL_HIDDEN */
+	/** @cond INTERNAL_HIDDEN */
 	WIFI_PS_EXIT_LAST,
 	WIFI_PS_EXIT_MAX = WIFI_PS_EXIT_LAST - 1,
-/** @endcond */
+	/** @endcond */
 };
 
 /** Helper function to get user-friendly ps exit strategy name. */
@@ -639,19 +631,15 @@ enum wifi_config_ps_param_fail_reason {
 };
 
 /** @cond INTERNAL_HIDDEN */
-static const char * const wifi_ps_param_config_err_code_tbl[] = {
+static const char *const wifi_ps_param_config_err_code_tbl[] = {
 	[WIFI_PS_PARAM_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
-	[WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED] =
-		"Operation not supported",
-	[WIFI_PS_PARAM_FAIL_UNABLE_TO_GET_IFACE_STATUS] =
-		"Unable to get iface status",
+	[WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED] = "Operation not supported",
+	[WIFI_PS_PARAM_FAIL_UNABLE_TO_GET_IFACE_STATUS] = "Unable to get iface status",
 	[WIFI_PS_PARAM_FAIL_DEVICE_NOT_CONNECTED] =
 		"Cannot set parameters while device not connected",
-	[WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED] =
-		"Cannot set parameters while device connected",
-	[WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID] =
-		"Parameter out of range",
+	[WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED] = "Cannot set parameters while device connected",
+	[WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID] = "Parameter out of range",
 };
 /** @endcond */
 

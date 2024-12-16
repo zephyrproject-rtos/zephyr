@@ -32,12 +32,11 @@ extern "C" {
 
 /** @cond INTERNAL_HIDDEN */
 
-#define _NET_WIFI_LAYER	NET_MGMT_LAYER_L2
-#define _NET_WIFI_CODE	0x156
-#define _NET_WIFI_BASE	(NET_MGMT_IFACE_BIT |			\
-			 NET_MGMT_LAYER(_NET_WIFI_LAYER) |	\
-			 NET_MGMT_LAYER_CODE(_NET_WIFI_CODE))
-#define _NET_WIFI_EVENT	(_NET_WIFI_BASE | NET_MGMT_EVENT_BIT)
+#define _NET_WIFI_LAYER NET_MGMT_LAYER_L2
+#define _NET_WIFI_CODE  0x156
+#define _NET_WIFI_BASE                                                                             \
+	(NET_MGMT_IFACE_BIT | NET_MGMT_LAYER(_NET_WIFI_LAYER) | NET_MGMT_LAYER_CODE(_NET_WIFI_CODE))
+#define _NET_WIFI_EVENT (_NET_WIFI_BASE | NET_MGMT_EVENT_BIT)
 
 #ifdef CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX
 #define WIFI_MGMT_SCAN_SSID_FILT_MAX CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX
@@ -58,7 +57,7 @@ extern "C" {
 #endif /* CONFIG_WIFI_ENT_IDENTITY_MAX_USERS */
 
 #define WIFI_MGMT_BAND_STR_SIZE_MAX 8
-#define WIFI_MGMT_SCAN_MAX_BSS_CNT 65535
+#define WIFI_MGMT_SCAN_MAX_BSS_CNT  65535
 
 #define WIFI_MGMT_SKIP_INACTIVITY_POLL IS_ENABLED(CONFIG_WIFI_MGMT_AP_STA_SKIP_INACTIVITY_POLL)
 /** @endcond */
@@ -139,132 +138,111 @@ enum net_request_wifi_cmd {
 };
 
 /** Request a Wi-Fi scan */
-#define NET_REQUEST_WIFI_SCAN					\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_SCAN)
+#define NET_REQUEST_WIFI_SCAN (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_SCAN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN);
 
 /** Request a Wi-Fi connect */
-#define NET_REQUEST_WIFI_CONNECT				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONNECT)
+#define NET_REQUEST_WIFI_CONNECT (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONNECT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT);
 
 /** Request a Wi-Fi disconnect */
-#define NET_REQUEST_WIFI_DISCONNECT				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DISCONNECT)
+#define NET_REQUEST_WIFI_DISCONNECT (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DISCONNECT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DISCONNECT);
 
 /** Request a Wi-Fi access point enable */
-#define NET_REQUEST_WIFI_AP_ENABLE				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_ENABLE)
+#define NET_REQUEST_WIFI_AP_ENABLE (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_ENABLE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE);
 
 /** Request a Wi-Fi access point disable */
-#define NET_REQUEST_WIFI_AP_DISABLE				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_DISABLE)
+#define NET_REQUEST_WIFI_AP_DISABLE (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_DISABLE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE);
 
 /** Request a Wi-Fi network interface status */
-#define NET_REQUEST_WIFI_IFACE_STATUS				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_IFACE_STATUS)
+#define NET_REQUEST_WIFI_IFACE_STATUS (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_IFACE_STATUS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
 
-#define NET_REQUEST_WIFI_11K_CONFIG				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_CONFIG)
+#define NET_REQUEST_WIFI_11K_CONFIG (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_CONFIG)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_CONFIG);
 
-#define NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST			\
+#define NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST                                                      \
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_NEIGHBOR_REQUEST)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST);
 
 /** Request a Wi-Fi power save */
-#define NET_REQUEST_WIFI_PS					\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS)
+#define NET_REQUEST_WIFI_PS (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS);
 
 /** Request a Wi-Fi TWT */
-#define NET_REQUEST_WIFI_TWT					\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_TWT)
+#define NET_REQUEST_WIFI_TWT (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_TWT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_TWT);
 
-#define NET_REQUEST_WIFI_BTWT			\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTWT)
+#define NET_REQUEST_WIFI_BTWT (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTWT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTWT);
 
 /** Request a Wi-Fi power save configuration */
-#define NET_REQUEST_WIFI_PS_CONFIG				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_CONFIG)
+#define NET_REQUEST_WIFI_PS_CONFIG (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_CONFIG)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_CONFIG);
 
 /** Request a Wi-Fi regulatory domain */
-#define NET_REQUEST_WIFI_REG_DOMAIN				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_REG_DOMAIN)
+#define NET_REQUEST_WIFI_REG_DOMAIN (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_REG_DOMAIN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN);
 
 /** Request current Wi-Fi mode */
-#define NET_REQUEST_WIFI_MODE					\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_MODE)
+#define NET_REQUEST_WIFI_MODE (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_MODE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_MODE);
 
 /** Request Wi-Fi packet filter */
-#define NET_REQUEST_WIFI_PACKET_FILTER				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PACKET_FILTER)
+#define NET_REQUEST_WIFI_PACKET_FILTER (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PACKET_FILTER)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PACKET_FILTER);
 
 /** Request a Wi-Fi channel */
-#define NET_REQUEST_WIFI_CHANNEL				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CHANNEL)
+#define NET_REQUEST_WIFI_CHANNEL (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CHANNEL)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CHANNEL);
 
 /** Request a Wi-Fi access point to disconnect a station */
-#define NET_REQUEST_WIFI_AP_STA_DISCONNECT			\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_STA_DISCONNECT)
+#define NET_REQUEST_WIFI_AP_STA_DISCONNECT (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_STA_DISCONNECT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT);
 
 /** Request a Wi-Fi version */
-#define NET_REQUEST_WIFI_VERSION				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_VERSION)
+#define NET_REQUEST_WIFI_VERSION (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_VERSION)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION);
 
 /** Request a Wi-Fi connection parameters */
-#define NET_REQUEST_WIFI_CONN_PARAMS                           \
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONN_PARAMS)
+#define NET_REQUEST_WIFI_CONN_PARAMS (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONN_PARAMS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONN_PARAMS);
 
 /** Request a Wi-Fi RTS threshold */
-#define NET_REQUEST_WIFI_RTS_THRESHOLD				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RTS_THRESHOLD)
+#define NET_REQUEST_WIFI_RTS_THRESHOLD (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RTS_THRESHOLD)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD);
 
 /** Request a Wi-Fi AP parameters configuration */
-#define NET_REQUEST_WIFI_AP_CONFIG_PARAM         \
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM)
+#define NET_REQUEST_WIFI_AP_CONFIG_PARAM (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 /** Request a Wi-Fi DPP operation */
-#define NET_REQUEST_WIFI_DPP			\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DPP)
+#define NET_REQUEST_WIFI_DPP (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DPP)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
@@ -277,19 +255,17 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
 #endif
 
 /** Request a Wi-Fi PMKSA cache entries flush */
-#define NET_REQUEST_WIFI_PMKSA_FLUSH                           \
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_FLUSH)
+#define NET_REQUEST_WIFI_PMKSA_FLUSH (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_FLUSH)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH);
 
 /** Set Wi-Fi enterprise mode CA/client Cert and key */
-#define NET_REQUEST_WIFI_ENTERPRISE_CREDS                               \
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS)
+#define NET_REQUEST_WIFI_ENTERPRISE_CREDS (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS);
 
 /** Request a Wi-Fi RTS threshold configuration */
-#define NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG				\
+#define NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG                                                      \
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG);
@@ -303,12 +279,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT_STORED);
 #endif
 
-#define NET_REQUEST_WIFI_START_ROAMING				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_START_ROAMING)
+#define NET_REQUEST_WIFI_START_ROAMING (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_START_ROAMING)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING);
 
-#define NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE			\
+#define NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE                                                     \
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE);
@@ -354,63 +329,51 @@ enum net_event_wifi_cmd {
 };
 
 /** Event emitted for Wi-Fi scan result */
-#define NET_EVENT_WIFI_SCAN_RESULT				\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_SCAN_RESULT)
+#define NET_EVENT_WIFI_SCAN_RESULT (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_SCAN_RESULT)
 
 /** Event emitted when Wi-Fi scan is done */
-#define NET_EVENT_WIFI_SCAN_DONE				\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_SCAN_DONE)
+#define NET_EVENT_WIFI_SCAN_DONE (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_SCAN_DONE)
 
 /** Event emitted for Wi-Fi connect result */
-#define NET_EVENT_WIFI_CONNECT_RESULT				\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_CONNECT_RESULT)
+#define NET_EVENT_WIFI_CONNECT_RESULT (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_CONNECT_RESULT)
 
 /** Event emitted for Wi-Fi disconnect result */
-#define NET_EVENT_WIFI_DISCONNECT_RESULT			\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_RESULT)
+#define NET_EVENT_WIFI_DISCONNECT_RESULT (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_RESULT)
 
 /** Event emitted for Wi-Fi network interface status */
-#define NET_EVENT_WIFI_IFACE_STATUS				\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_IFACE_STATUS)
+#define NET_EVENT_WIFI_IFACE_STATUS (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_IFACE_STATUS)
 
 /** Event emitted for Wi-Fi TWT information */
-#define NET_EVENT_WIFI_TWT					\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT)
+#define NET_EVENT_WIFI_TWT (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT)
 
 /** Event emitted for Wi-Fi TWT sleep state */
-#define NET_EVENT_WIFI_TWT_SLEEP_STATE				\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE)
+#define NET_EVENT_WIFI_TWT_SLEEP_STATE (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE)
 
 /** Event emitted for Wi-Fi raw scan result */
-#define NET_EVENT_WIFI_RAW_SCAN_RESULT                          \
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT)
+#define NET_EVENT_WIFI_RAW_SCAN_RESULT (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT)
 
 /** Event emitted Wi-Fi disconnect is completed */
-#define NET_EVENT_WIFI_DISCONNECT_COMPLETE			\
+#define NET_EVENT_WIFI_DISCONNECT_COMPLETE                                                         \
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE)
 
 /** Event signal change of connected AP */
-#define NET_EVENT_WIFI_SIGNAL_CHANGE				\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_SIGNAL_CHANGE)
+#define NET_EVENT_WIFI_SIGNAL_CHANGE (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_SIGNAL_CHANGE)
 
 /** Event Neighbor Report Completed */
-#define NET_EVENT_WIFI_NEIGHBOR_REP_COMP			\
+#define NET_EVENT_WIFI_NEIGHBOR_REP_COMP                                                           \
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE)
 
 /** Event emitted for Wi-Fi access point enable result */
-#define NET_EVENT_WIFI_AP_ENABLE_RESULT				\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT)
+#define NET_EVENT_WIFI_AP_ENABLE_RESULT (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT)
 
 /** Event emitted for Wi-Fi access point disable result */
-#define NET_EVENT_WIFI_AP_DISABLE_RESULT			\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT)
+#define NET_EVENT_WIFI_AP_DISABLE_RESULT (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT)
 
 /** Event emitted when Wi-Fi station is connected in AP mode */
-#define NET_EVENT_WIFI_AP_STA_CONNECTED				\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_STA_CONNECTED)
+#define NET_EVENT_WIFI_AP_STA_CONNECTED (_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_STA_CONNECTED)
 
 /** Event emitted Wi-Fi station is disconnected from AP */
-#define NET_EVENT_WIFI_AP_STA_DISCONNECTED			\
+#define NET_EVENT_WIFI_AP_STA_DISCONNECTED                                                         \
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED)
 
 /** @brief Wi-Fi version */
@@ -793,19 +756,19 @@ struct wifi_twt_params {
 /** @cond INTERNAL_HIDDEN */
 
 /* Flow ID is only 3 bits */
-#define WIFI_MAX_TWT_FLOWS 8
-#define WIFI_MAX_TWT_INTERVAL_US (LONG_MAX - 1)
+#define WIFI_MAX_TWT_FLOWS                  8
+#define WIFI_MAX_TWT_INTERVAL_US            (LONG_MAX - 1)
 /* 256 (u8) * 1TU */
-#define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
+#define WIFI_MAX_TWT_WAKE_INTERVAL_US       262144
 #define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US (LONG_MAX - 1)
-#define WIFI_MAX_TWT_EXPONENT 31
+#define WIFI_MAX_TWT_EXPONENT               31
 
 /** @endcond */
 
 /** @brief Wi-Fi TWT flow information */
 struct wifi_twt_flow_info {
 	/** Interval = Wake up time + Sleeping time */
-	uint64_t  twt_interval;
+	uint64_t twt_interval;
 	/** Dialog token, used to map requests to responses */
 	uint8_t dialog_token;
 	/** Flow ID, used to map setup with teardown */
@@ -895,20 +858,20 @@ struct wifi_11k_params {
 };
 
 /** Max regulatory channel number */
-#define MAX_REG_CHAN_NUM  42
+#define MAX_REG_CHAN_NUM 42
 
 /** @brief Per-channel regulatory attributes */
 struct wifi_reg_chan_info {
 	/** Center frequency in MHz */
 	unsigned short center_frequency;
 	/** Maximum transmission power (in dBm) */
-	unsigned short max_power:8;
+	unsigned short max_power: 8;
 	/** Is channel supported or not */
-	unsigned short supported:1;
+	unsigned short supported: 1;
 	/** Passive transmissions only */
-	unsigned short passive_only:1;
+	unsigned short passive_only: 1;
 	/** Is a DFS channel */
-	unsigned short dfs:1;
+	unsigned short dfs: 1;
 } __packed;
 
 /** @brief Regulatory domain information or configuration */
@@ -1010,7 +973,7 @@ struct wifi_channel_info {
 };
 
 /** @cond INTERNAL_HIDDEN */
-#define WIFI_AP_STA_MAX_INACTIVITY (LONG_MAX - 1)
+#define WIFI_AP_STA_MAX_INACTIVITY       (LONG_MAX - 1)
 #define WIFI_AP_IEEE_80211_CAPAB_MAX_LEN 64
 /** @endcond */
 
@@ -1269,8 +1232,7 @@ enum wifi_sap_iface_state {
  * @param status Scan result status
  * @param entry Scan result entry
  */
-typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
-				 struct wifi_scan_result *entry);
+typedef void (*scan_result_cb_t)(struct net_if *iface, int status, struct wifi_scan_result *entry);
 
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 /** Raw scan result callback
@@ -1296,9 +1258,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*scan)(const struct device *dev,
-		    struct wifi_scan_params *params,
-		    scan_result_cb_t cb);
+	int (*scan)(const struct device *dev, struct wifi_scan_params *params, scan_result_cb_t cb);
 	/** Connect to a Wi-Fi network
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1306,8 +1266,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*connect)(const struct device *dev,
-		       struct wifi_connect_req_params *params);
+	int (*connect)(const struct device *dev, struct wifi_connect_req_params *params);
 	/** Disconnect from a Wi-Fi network
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1322,8 +1281,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*ap_enable)(const struct device *dev,
-			 struct wifi_connect_req_params *params);
+	int (*ap_enable)(const struct device *dev, struct wifi_connect_req_params *params);
 	/** Disable AP mode
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1518,7 +1476,7 @@ struct wifi_mgmt_ops {
 	 */
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	int (*enterprise_creds)(const struct device *dev,
-			struct wifi_enterprise_creds_params *creds);
+				struct wifi_enterprise_creds_params *creds);
 #endif
 	/** Get RTS threshold value
 	 *
@@ -1608,15 +1566,14 @@ void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
  * @param iface_status Interface status
  */
 void wifi_mgmt_raise_iface_status_event(struct net_if *iface,
-		struct wifi_iface_status *iface_status);
+					struct wifi_iface_status *iface_status);
 
 /** Wi-Fi management TWT event
  *
  * @param iface Network interface
  * @param twt_params TWT parameters
  */
-void wifi_mgmt_raise_twt_event(struct net_if *iface,
-		struct wifi_twt_params *twt_params);
+void wifi_mgmt_raise_twt_event(struct net_if *iface, struct wifi_twt_params *twt_params);
 
 /** Wi-Fi management TWT sleep state event
  *
@@ -1632,7 +1589,7 @@ void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface, int twt_sleep_state);
  * @param raw_scan_info Raw scan result
  */
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
-		struct wifi_raw_scan_result *raw_scan_info);
+					   struct wifi_raw_scan_result *raw_scan_info);
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 
 /** Wi-Fi management disconnect complete event
@@ -1649,8 +1606,7 @@ void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface, int status)
  * @param inbuf Input buffer of neighbor reports
  * @param buf_len Lenghth of input buffer
  */
-void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface,
-					     char *inbuf, size_t buf_len);
+void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, size_t buf_len);
 #endif
 
 /** Wi-Fi management AP mode enable result event
@@ -1673,14 +1629,14 @@ void wifi_mgmt_raise_ap_disable_result_event(struct net_if *iface, enum wifi_ap_
  * @param sta_info STA information
  */
 void wifi_mgmt_raise_ap_sta_connected_event(struct net_if *iface,
-		struct wifi_ap_sta_info *sta_info);
+					    struct wifi_ap_sta_info *sta_info);
 
 /** Wi-Fi management AP mode STA disconnected event
  * @param iface Network interface
  * @param sta_info STA information
  */
 void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
-		struct wifi_ap_sta_info *sta_info);
+					       struct wifi_ap_sta_info *sta_info);
 
 /**
  * @}
