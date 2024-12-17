@@ -6,7 +6,7 @@
 menuconfig ENTROPY_STM32_RNG
 	bool "STM32 RNG driver"
 	default y
-	depends on DT_HAS_ST_STM32_RNG_ENABLED
+	depends on DT_HAS_ST_STM32_RNG_ENABLED || DT_HAS_ST_STM32_RNG_NOIRQ_ENABLED
 	select ENTROPY_HAS_DRIVER
 	select USE_STM32_LL_RNG
 	help
@@ -55,6 +55,7 @@ config ENTROPY_STM32_ISR_THRESHOLD
 
 config ENTROPY_STM32_CLK_CHECK
 	bool "Runtime clock configuration check"
+	depends on !SOC_SERIES_STM32WB0X
 	default y
 	help
 	  Enables a check on RNG clock configuration. Correct clock
