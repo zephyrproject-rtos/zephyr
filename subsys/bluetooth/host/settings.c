@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
+#include <common/bt_settings_commit.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -281,7 +282,8 @@ static int commit_settings(void)
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt, "bt", NULL, set_setting, commit_settings, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(bt, "bt", NULL, set_setting, commit_settings, NULL,
+					  BT_SETTINGS_CPRIO_0);
 
 int bt_settings_init(void)
 {
