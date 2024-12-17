@@ -12,6 +12,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		pwm-led0 = &green_pwm_led;
+		sdhc0 = &usdhc1;
 	};
 
 	leds {
@@ -44,6 +45,12 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart3 {
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
@@ -143,4 +150,26 @@
 &tpm5 {
 	pinctrl-0 = <&pinmux_tpm5>;
 	pinctrl-names = "default";
+};
+
+&lpspi3 {
+	dmas = <&edma4 1 13>, <&edma4 2 12>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi3>;
+	pinctrl-names = "default";
+};
+
+&usdhc1 {
+	status = "okay";
+	detect-dat3;
+	no-1-8-v;
+	pwr-gpios = <&gpio4 14 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "nopull";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
