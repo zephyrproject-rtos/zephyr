@@ -219,6 +219,30 @@ version.
    :goals: build flash
    :compact:
 
+Troubleshooting
+===============
+
+Linux and Zephyr application should not share SoC HW resources otherwise it will cause HW corruption and unpredictable behavior.
+Therefore, HW resources assigned to Zephyr application must be disabled in Linux.
+
+The below patch shows how to prevent Linux from configuring SCIF1 which is used by Zephyr.
+
+.. code-block:: diff
+
+    diff --git a/arch/arm64/boot/dts/renesas/rzg3s-smarc.dtsi b/arch/arm64/boot/dts/renesas/rzg3s-smarc.dtsi
+    index f01801b18e8a..d9f9a0a2bb08 100644
+    --- a/arch/arm64/boot/dts/renesas/rzg3s-smarc.dtsi
+    +++ b/arch/arm64/boot/dts/renesas/rzg3s-smarc.dtsi
+    @@ -347,7 +347,7 @@ &scif1 {
+            pinctrl-0 = <&scif1_pins>;
+            pinctrl-names = "default";
+            uart-has-rtscts;
+    -       status = "okay";
+    +       status = "disabled";
+    };
+    #elif SPDIF_SEL == SW_ON
+    &spdif {
+
 References
 **********
 
