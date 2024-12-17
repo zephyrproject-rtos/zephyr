@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX I2C Master controller
+
+compatible: "renesas,rx-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    required: true
+    type: int
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
