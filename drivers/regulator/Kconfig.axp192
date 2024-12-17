@@ -1,23 +1,23 @@
 # Copyright (c) 2023 Martin Kiepfer
 # SPDX-License-Identifier: Apache-2.0
 
-config REGULATOR_AXP192
-	bool "X-Power AXP192 PMIC regulator driver"
+config REGULATOR_AXP192_AXP2101
+	bool "X-Powers AXP192/AXP2101 PMIC regulator driver"
 	default y
-	depends on DT_HAS_X_POWERS_AXP192_REGULATOR_ENABLED
-	depends on DT_HAS_X_POWERS_AXP192_ENABLED
+	depends on DT_HAS_X_POWERS_AXP192_REGULATOR_ENABLED || DT_HAS_X_POWERS_AXP2101_REGULATOR_ENABLED
+	depends on DT_HAS_X_POWERS_AXP192_ENABLED || DT_HAS_X_POWERS_AXP2101_ENABLED
 	select I2C
 	select MFD
 	help
 	  Enable the AXP PMIC regulator driver
 
-if REGULATOR_AXP192
+if REGULATOR_AXP192_AXP2101
 
-config REGULATOR_AXP192_INIT_PRIORITY
-	int "AXP192 regulator driver init priority"
+config REGULATOR_AXP192_AXP2101_INIT_PRIORITY
+	int "AXP192/AXP2101 regulator driver init priority"
 	default 86
 	help
-	  Init priority for the axp192 regulator driver. It must be
+	  Init priority for the axp192/axp2101 regulator driver. It must be
 	  greater than MFD_INIT_PRIORITY.
 
 endif
