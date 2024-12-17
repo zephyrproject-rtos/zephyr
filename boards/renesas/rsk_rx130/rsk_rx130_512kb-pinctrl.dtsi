@@ -5,10 +5,16 @@
  */
 
 &pinctrl {
-    sci1_default: sci1_default {
+	sci1_default: sci1_default {
 		group1 {
 			psels = <RX_PSEL(RX_PSEL_SCI_1, 2, 6)>, /* TX */
 				<RX_PSEL(RX_PSEL_SCI_1, 3, 0)>; /* RX */
+		};
+	};
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <RX_PSEL(RX_PSEL_P1nPFS_SDA, 1, 3)>, /* SDA P13*/
+				<RX_PSEL(RX_PSEL_P1nPFS_SCL, 1, 2)>; /* SCL P12*/
 		};
 	};
 };
