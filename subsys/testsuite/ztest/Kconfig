@@ -144,7 +144,7 @@ config ZTEST_COVERAGE_RESET_BEFORE_TESTS
 
 config ZTEST_SHUFFLE
 	bool "Shuffle the order of tests and suites"
-	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
+	select TEST_RANDOM_GENERATOR if !ENTROPY_AVAILABLE
 	help
 	  This rule will shuffle the order of tests and test suites.
 
@@ -238,7 +238,7 @@ config ZTRESS
 	bool "Stress test framework"
 	select THREAD_RUNTIME_STATS
 	select THREAD_MONITOR
-	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
+	select TEST_RANDOM_GENERATOR if !ENTROPY_AVAILABLE
 	depends on !USERSPACE
 
 if ZTRESS

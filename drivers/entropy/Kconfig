@@ -46,3 +46,8 @@ config ENTROPY_HAS_DRIVER
 	  to signal that there is a true entropy driver.
 
 endif
+
+DT_CHOSEN_Z_ENTROPY := zephyr,entropy
+config ENTROPY_AVAILABLE
+       bool
+       default y if $(dt_chosen_enabled,$(DT_CHOSEN_Z_ENTROPY))
