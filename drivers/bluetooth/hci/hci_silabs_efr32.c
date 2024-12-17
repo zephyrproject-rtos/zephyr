@@ -21,16 +21,19 @@ struct hci_data {
 	bt_hci_recv_t recv;
 };
 
-#define SL_BT_CONFIG_ACCEPT_LIST_SIZE				1
-#define SL_BT_CONFIG_MAX_CONNECTIONS				1
-#define SL_BT_CONFIG_USER_ADVERTISERS				1
-#define SL_BT_CONTROLLER_BUFFER_MEMORY				CONFIG_BT_SILABS_EFR32_BUFFER_MEMORY
-#define SL_BT_CONTROLLER_LE_BUFFER_SIZE_MAX			CONFIG_BT_BUF_ACL_TX_COUNT
-#define SL_BT_CONTROLLER_COMPLETED_PACKETS_THRESHOLD		1
-#define SL_BT_CONTROLLER_COMPLETED_PACKETS_EVENTS_TIMEOUT	3
-#define SL_BT_SILABS_LL_STACK_SIZE				1024
+#if defined(CONFIG_BT_MAX_CONN)
+#define MAX_CONN CONFIG_BT_MAX_CONN
+#else
+#define MAX_CONN 0
+#endif
 
-static K_KERNEL_STACK_DEFINE(slz_ll_stack, SL_BT_SILABS_LL_STACK_SIZE);
+#if defined(CONFIG_BT_CTLR_RL_SIZE)
+#define CTLR_RL_SIZE CONFIG_BT_CTLR_RL_SIZE
+#else
+#define CTLR_RL_SIZE 0
+#endif
+
+static K_KERNEL_STACK_DEFINE(slz_ll_stack, CONFIG_BT_SILABS_EFR32_ACCEPT_LINK_LAYER_STACK_SIZE);
 static struct k_thread slz_ll_thread;
 
 /* Semaphore for Link Layer */
@@ -172,13 +175,18 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	sl_btctrl_disable_coded_phy();
 
 	/* sl_btctrl_init_mem returns the number of memory buffers allocated */
-	ret = sl_btctrl_init_mem(SL_BT_CONTROLLER_BUFFER_MEMORY);
+	ret = sl_btctrl_init_mem(CONFIG_BT_SILABS_EFR32_BUFFER_MEMORY);
 	if (!ret) {
 		LOG_ERR("Failed to allocate memory %d", ret);
 		return -ENOMEM;
 	}
 
-	sl_btctrl_configure_le_buffer_size(SL_BT_CONTROLLER_LE_BUFFER_SIZE_MAX);
+	sl_btctrl_configure_le_buffer_size(CONFIG_BT_BUF_ACL_TX_COUNT);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+		sl_btctrl_allocate_resolving_list_memory(CTLR_RL_SIZE);
+		sl_btctrl_init_privacy();
+	}
 
 	ret = sl_btctrl_init_ll();
 	if (ret) {
@@ -206,17 +214,18 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 		}
 	}
 
-	ret = sl_btctrl_init_basic(SL_BT_CONFIG_MAX_CONNECTIONS,
-			SL_BT_CONFIG_USER_ADVERTISERS,
-			SL_BT_CONFIG_ACCEPT_LIST_SIZE);
+	ret = sl_btctrl_init_basic(MAX_CONN, CONFIG_BT_SILABS_EFR32_USER_ADVERTISERS,
+				   CONFIG_BT_SILABS_EFR32_ACCEPT_LIST_SIZE);
 	if (ret) {
 		LOG_ERR("Failed to initialize the controller %d", ret);
 		goto deinit;
 	}
 
-	sl_btctrl_configure_completed_packets_reporting(
-		SL_BT_CONTROLLER_COMPLETED_PACKETS_THRESHOLD,
-		SL_BT_CONTROLLER_COMPLETED_PACKETS_EVENTS_TIMEOUT);
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		sl_btctrl_configure_completed_packets_reporting(
+			CONFIG_BT_SILABS_EFR32_COMPLETED_PACKETS_THRESHOLD,
+			CONFIG_BT_SILABS_EFR32_COMPLETED_PACKETS_TIMEOUT);
+	}
 
 	sl_bthci_init_upper();
 	sl_btctrl_hci_parser_init_default();
@@ -228,8 +237,7 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	}
 	sl_btctrl_hci_parser_init_phy();
 
-#ifdef CONFIG_PM
-	{
+	if (IS_ENABLED(CONFIG_PM)) {
 		RAIL_ConfigSleep(BTLE_LL_GetRadioHandle(), RAIL_SLEEP_CONFIG_TIMERSYNC_ENABLED);
 		RAIL_Status_t status = RAIL_InitPowerManager();
 
@@ -240,7 +248,6 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 			goto deinit;
 		}
 	}
-#endif
 
 	hci->recv = recv;
 
