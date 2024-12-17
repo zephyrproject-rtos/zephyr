@@ -406,7 +406,7 @@ bool otPlatBleSupportsMultiRadio(otInstance *aInstance)
 {
 	OT_UNUSED_VARIABLE(aInstance);
 
-	return false;
+	return IS_ENABLED(CONFIG_OPENTHREAD_TCAT_MULTIRADIO_CAPABILITIES);
 }
 
 otError otPlatBleGetAdvertisementBuffer(otInstance *aInstance, uint8_t **aAdvertisementBuffer)
