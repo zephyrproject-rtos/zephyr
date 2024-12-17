@@ -1936,6 +1936,7 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 	struct ssp_intel_ext_ctl *ext;
 #if SSP_IP_VER >= SSP_IP_VER_1_5
 	struct ssp_intel_link_ctl *link;
+	struct dai_intel_ssp_plat_data *ssp = dai_get_plat_data(dp);
 #endif
 
 	for (i = 0; i < aux_len; i += hop) {
@@ -1989,6 +1990,7 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 				    I2CLCTL_MLCS(link->clock_source), dai_ip_base(dp) +
 				    I2SLCTL_OFFSET);
 #elif SSP_IP_VER > SSP_IP_VER_1_5
+			ssp->link_clock = link->clock_source;
 			sys_write32((sys_read32(dai_i2svss_base(dp) + I2SLCTL_OFFSET) &
 				    ~I2CLCTL_MLCS(0x7)) |
 				    I2CLCTL_MLCS(link->clock_source),
@@ -2551,6 +2553,14 @@ static void ssp_acquire_ip(struct dai_intel_ssp *dp)
 
 		/* Disable dynamic clock gating before touching any register */
 		dai_ssp_pm_runtime_dis_ssp_clk_gating(dp, ssp->ssp_index);
+
+#if SSP_IP_VER >= SSP_IP_VER_2_0
+		/* Switch to selected clock source */
+		sys_write32((sys_read32(dai_i2svss_base(dp) + I2SLCTL_OFFSET) &
+			    ~I2CLCTL_MLCS(0x7)) |
+			    I2CLCTL_MLCS(ssp->link_clock),
+			    dai_i2svss_base(dp) + I2SLCTL_OFFSET);
+#endif
 	}
 }
 
@@ -2575,6 +2585,14 @@ static void ssp_release_ip(struct dai_intel_ssp *dp)
 		}
 
 		dai_ssp_post_stop(dp);
+
+#if SSP_IP_VER >= SSP_IP_VER_2_0
+		/* Restore default XTAL clock source */
+		sys_write32((sys_read32(dai_i2svss_base(dp) + I2SLCTL_OFFSET) &
+			    ~I2CLCTL_MLCS(0x7)) |
+			    I2CLCTL_MLCS(DAI_INTEL_SSP_CLOCK_XTAL_OSCILLATOR),
+			    dai_i2svss_base(dp) + I2SLCTL_OFFSET);
+#endif
 
 		dai_ssp_pm_runtime_en_ssp_clk_gating(dp, ssp->ssp_index);
 
