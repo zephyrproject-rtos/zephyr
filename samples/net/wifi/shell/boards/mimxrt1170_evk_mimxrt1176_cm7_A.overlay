@@ -1,0 +1,25 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usdhc1 {
+    #address-cells = <1>;
+    #size-cells = <0>;
+    status = "okay";
+    pinctrl-0 = <&pinmux_usdhc1>;
+    pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;
+    pinctrl-names = "default", "nopull";
+    pwr-gpios = <&gpio10 2 GPIO_ACTIVE_LOW>;
+    power-delay-ms = <100>;
+
+    wifi: nxp_wifi@0 {
+        compatible = "nxp,wifi";
+        reg = <0>;
+        status = "okay";
+
+        pdn-gpios = <&gpio9 30 GPIO_ACTIVE_HIGH>;
+        wl_rst-gpios = <&gpio9 15 GPIO_ACTIVE_HIGH>;
+    };
+};
