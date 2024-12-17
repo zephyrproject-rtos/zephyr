@@ -4,19 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/logging/log.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/mdio.h>
 #include "oa_tc6.h"
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(oa_tc6, CONFIG_ETHERNET_LOG_LEVEL);
-
-/*
- * When IPv6 support enabled - the minimal size of network buffer
- * shall be at least 128 bytes (i.e. default value).
- */
-#if defined(CONFIG_NET_IPV6) && (CONFIG_NET_BUF_DATA_SIZE < 128)
-#error IPv6 requires at least 128 bytes of continuous data to handle headers!
-#endif
 
 int oa_tc6_reg_read(struct oa_tc6 *tc6, const uint32_t reg, uint32_t *val)
 {
@@ -227,59 +221,6 @@ int oa_tc6_set_protected_ctrl(struct oa_tc6 *tc6, bool prote)
 	return 0;
 }
 
-int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
-{
-	uint16_t len = net_pkt_get_len(pkt);
-	uint8_t oa_tx[tc6->cps];
-	uint32_t hdr, ftr;
-	uint8_t chunks, i;
-	int ret;
-
-	if (len == 0) {
-		return -ENODATA;
-	}
-
-	chunks = len / tc6->cps;
-	if (len % tc6->cps) {
-		chunks++;
-	}
-
-	/* Check if LAN865x has any free internal buffer space */
-	if (chunks > tc6->txc) {
-		return -EIO;
-	}
-
-	/* Transform struct net_pkt content into chunks */
-	for (i = 1; i <= chunks; i++) {
-		hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 1) |
-		      FIELD_PREP(OA_DATA_HDR_NORX, 1) | FIELD_PREP(OA_DATA_HDR_SWO, 0);
-
-		if (i == 1) {
-			hdr |= FIELD_PREP(OA_DATA_HDR_SV, 1);
-		}
-
-		if (i == chunks) {
-			hdr |= FIELD_PREP(OA_DATA_HDR_EBO, len - 1) | FIELD_PREP(OA_DATA_HDR_EV, 1);
-		}
-
-		hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
-
-		ret = net_pkt_read(pkt, oa_tx, len > tc6->cps ? tc6->cps : len);
-		if (ret < 0) {
-			return ret;
-		}
-
-		ret = oa_tc6_chunk_spi_transfer(tc6, NULL, oa_tx, hdr, &ftr);
-		if (ret < 0) {
-			return ret;
-		}
-
-		len -= tc6->cps;
-	}
-
-	return 0;
-}
-
 int oa_tc6_check_status(struct oa_tc6 *tc6)
 {
 	uint32_t sts;
@@ -298,202 +239,473 @@ int oa_tc6_check_status(struct oa_tc6 *tc6)
 		oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
 		if (sts != 0) {
 			oa_tc6_reg_write(tc6, OA_STATUS0, sts);
-			LOG_WRN("EXST: OA_STATUS0: 0x%x", sts);
+			if (FIELD_GET(STATUS0_RX_BUFFER_OVERFLOW, sts)) {
+				tc6->rx_buf_overflow = true;
+				if (tc6->rx_pkt) {
+					net_pkt_unref(tc6->rx_pkt);
+					tc6->rx_pkt = NULL;
+				}
+				eth_stats_update_errors_rx(tc6->iface);
+				return -EAGAIN;
+			}
 		}
-
 		oa_tc6_reg_read(tc6, OA_STATUS1, &sts);
 		if (sts != 0) {
 			oa_tc6_reg_write(tc6, OA_STATUS1, sts);
-			LOG_WRN("EXST: OA_STATUS1: 0x%x", sts);
+			eth_stats_update_errors_rx(tc6->iface);
 		}
 	}
 
 	return 0;
 }
 
-static int oa_tc6_update_status(struct oa_tc6 *tc6, uint32_t ftr)
+static int oa_tc6_submit_rx_pkt(struct oa_tc6 *tc6)
 {
-	if (oa_tc6_get_parity(ftr)) {
-		LOG_DBG("OA Status Update: Footer parity error!");
-		return -EIO;
-	}
+	int ret;
 
-	tc6->exst = FIELD_GET(OA_DATA_FTR_EXST, ftr);
-	tc6->sync = FIELD_GET(OA_DATA_FTR_SYNC, ftr);
-	tc6->rca = FIELD_GET(OA_DATA_FTR_RCA, ftr);
-	tc6->txc = FIELD_GET(OA_DATA_FTR_TXC, ftr);
+	ret = net_recv_data(tc6->iface, tc6->rx_pkt);
+	if (ret < 0) {
+		eth_stats_update_errors_rx(tc6->iface);
+		net_pkt_unref(tc6->rx_pkt);
+		return ret;
+	}
+	eth_stats_update_pkts_rx(tc6->iface);
 
 	return 0;
 }
 
-int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_tx, uint32_t hdr,
-			      uint32_t *ftr)
+static int oa_tc6_update_rx_pkt(struct oa_tc6 *tc6, uint8_t *payload, uint8_t length)
 {
-	struct spi_buf tx_buf[2];
-	struct spi_buf rx_buf[2];
-	struct spi_buf_set tx;
-	struct spi_buf_set rx;
 	int ret;
 
-	hdr = sys_cpu_to_be32(hdr);
-	tx_buf[0].buf = &hdr;
-	tx_buf[0].len = sizeof(hdr);
+	ret = net_pkt_write(tc6->rx_pkt, payload, length);
+	if (ret < 0) {
+		net_pkt_unref(tc6->rx_pkt);
+		eth_stats_update_errors_rx(tc6->iface);
+		return ret;
+	}
+	eth_stats_update_bytes_rx(tc6->iface, length);
 
-	tx_buf[1].buf = buf_tx;
-	tx_buf[1].len = tc6->cps;
+	return 0;
+}
 
-	tx.buffers = tx_buf;
-	tx.count = ARRAY_SIZE(tx_buf);
+static int oa_tc6_allocate_rx_pkt(struct oa_tc6 *tc6)
+{
+	tc6->rx_pkt = net_pkt_rx_alloc_with_buffer(tc6->iface, OA_TC6_ETH_BUFFER_SIZE, AF_UNSPEC, 0,
+						   K_MSEC(100));
+	if (!tc6->rx_pkt) {
+		eth_stats_update_errors_rx(tc6->iface);
+		return -ENOMEM;
+	}
 
-	rx_buf[0].buf = buf_rx;
-	rx_buf[0].len = tc6->cps;
+	return 0;
+}
 
-	rx_buf[1].buf = ftr;
-	rx_buf[1].len = sizeof(*ftr);
+static int oa_tc6_prcs_complete_rx_frame(struct oa_tc6 *tc6, uint8_t *payload, uint16_t size)
+{
+	int ret;
 
-	rx.buffers = rx_buf;
-	rx.count = ARRAY_SIZE(rx_buf);
+	ret = oa_tc6_allocate_rx_pkt(tc6);
+	if (ret) {
+		return ret;
+	}
 
-	ret = spi_transceive_dt(tc6->spi, &tx, &rx);
+	ret = oa_tc6_update_rx_pkt(tc6, payload, size);
+	if (ret) {
+		return ret;
+	}
+
+	return oa_tc6_submit_rx_pkt(tc6);
+}
+
+static int oa_tc6_prcs_rx_frame_start(struct oa_tc6 *tc6, uint8_t *payload, uint16_t size)
+{
+	int ret;
+
+	ret = oa_tc6_allocate_rx_pkt(tc6);
+	if (ret) {
+		return ret;
+	}
+
+	return oa_tc6_update_rx_pkt(tc6, payload, size);
+}
+
+static int oa_tc6_prcs_rx_frame_end(struct oa_tc6 *tc6, uint8_t *payload, uint16_t size)
+{
+	int ret;
+
+	ret = oa_tc6_update_rx_pkt(tc6, payload, size);
+	if (ret) {
+		return ret;
+	}
+
+	return oa_tc6_submit_rx_pkt(tc6);
+}
+
+static int oa_tc6_prcs_ongoing_rx_frame(struct oa_tc6 *tc6, uint8_t *payload)
+{
+	return oa_tc6_update_rx_pkt(tc6, payload, tc6->cps);
+}
+
+static int oa_tc6_prcs_rx_chunk_payload(struct oa_tc6 *tc6, uint8_t *payload, uint32_t ftr)
+{
+	uint8_t start_byte_offset = FIELD_GET(OA_DATA_FTR_SWO, ftr) * sizeof(uint32_t);
+	uint8_t end_byte_offset = FIELD_GET(OA_DATA_FTR_EBO, ftr);
+	bool start_valid = FIELD_GET(OA_DATA_FTR_SV, ftr);
+	bool end_valid = FIELD_GET(OA_DATA_FTR_EV, ftr);
+	uint16_t size;
+	int ret;
+
+	/* Restart the new rx frame after receiving rx buffer overflow error */
+	if (start_valid && tc6->rx_buf_overflow) {
+		tc6->rx_buf_overflow = false;
+	}
+
+	if (tc6->rx_buf_overflow) {
+		return 0;
+	}
+
+	/* Process the chunk with complete rx frame */
+	if (start_valid && end_valid && start_byte_offset < end_byte_offset) {
+		size = (end_byte_offset + 1) - start_byte_offset;
+		return oa_tc6_prcs_complete_rx_frame(tc6, &payload[start_byte_offset], size);
+	}
+
+	/* Process the chunk with only rx frame start */
+	if (start_valid && !end_valid) {
+		size = tc6->cps - start_byte_offset;
+		return oa_tc6_prcs_rx_frame_start(tc6, &payload[start_byte_offset], size);
+	}
+
+	/* Process the chunk with only rx frame end */
+	if (end_valid && !start_valid) {
+		size = end_byte_offset + 1;
+		return oa_tc6_prcs_rx_frame_end(tc6, payload, size);
+	}
+
+	/* Process the chunk with previous rx frame end and next rx frame start */
+	if (start_valid && end_valid && start_byte_offset > end_byte_offset) {
+		/* After rx buffer overflow error received, there might be a
+		 * possibility of getting an end valid of a previously
+		 * incomplete rx frame along with the new rx frame start valid.
+		 */
+		if (tc6->rx_pkt) {
+			size = end_byte_offset + 1;
+			ret = oa_tc6_prcs_rx_frame_end(tc6, payload, size);
+			if (ret) {
+				return ret;
+			}
+		}
+		size = tc6->cps - start_byte_offset;
+		return oa_tc6_prcs_rx_frame_start(tc6, &payload[start_byte_offset], size);
+	}
+
+	/* Process the chunk with ongoing rx frame data */
+	return oa_tc6_prcs_ongoing_rx_frame(tc6, payload);
+}
+
+static void oa_tc6_update_last_ftr_info(struct oa_tc6 *tc6)
+{
+	uint16_t rx_chunks = tc6->spi_length / tc6->chunk_size;
+	uint16_t rx_offset = 0;
+	uint32_t ftr;
+	uint32_t *ftr_pos;
+
+	rx_offset = ((rx_chunks - 1) * tc6->chunk_size) + tc6->cps;
+	ftr_pos = (uint32_t *)(tc6->spi_rx_buf + rx_offset);
+	ftr = *ftr_pos;
+	ftr = sys_be32_to_cpu(ftr);
+
+	tc6->rca = FIELD_GET(OA_DATA_FTR_RCA, ftr);
+	tc6->txc = FIELD_GET(OA_DATA_FTR_TXC, ftr);
+	tc6->exst = FIELD_GET(OA_DATA_FTR_EXST, ftr);
+	tc6->sync = FIELD_GET(OA_DATA_FTR_SYNC, ftr);
+}
+
+static int oa_tc6_process_spi_rx_buf(struct oa_tc6 *tc6)
+{
+	uint16_t rx_chunks = tc6->spi_length / tc6->chunk_size;
+	uint16_t rx_offset = 0;
+	uint32_t ftr;
+	uint32_t *ftr_pos;
+	uint8_t i;
+	int ret;
+
+	for (i = 0; i < rx_chunks; i++) {
+		rx_offset = (i * tc6->chunk_size) + tc6->cps;
+		ftr_pos = (uint32_t *)(tc6->spi_rx_buf + rx_offset);
+		ftr = *ftr_pos;
+		ftr = sys_be32_to_cpu(ftr);
+
+		tc6->rca = FIELD_GET(OA_DATA_FTR_RCA, ftr);
+		tc6->txc = FIELD_GET(OA_DATA_FTR_TXC, ftr);
+		tc6->exst = FIELD_GET(OA_DATA_FTR_EXST, ftr);
+		tc6->sync = FIELD_GET(OA_DATA_FTR_SYNC, ftr);
+
+		ret = oa_tc6_check_status(tc6);
+		if (ret) {
+			oa_tc6_update_last_ftr_info(tc6);
+			return ret;
+		}
+
+		if (FIELD_GET(OA_DATA_FTR_DV, ftr)) {
+			uint8_t *payload = tc6->spi_rx_buf + (rx_offset - tc6->cps);
+
+			ret = oa_tc6_prcs_rx_chunk_payload(tc6, payload, ftr);
+			if (ret) {
+				return ret;
+			}
+		}
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_SPI_ASYNC
+static void spi_async_callback(const struct device *dev, int result, void *data)
+{
+	struct oa_tc6 *tc6 = data;
+
+	tc6->spi_tx_status = result;
+
+	k_sem_give(&tc6->spi_async_sem);
+}
+#endif
+
+static int oa_tc6_perform_spi(struct oa_tc6 *tc6)
+{
+	struct spi_buf spi_tx_buf;
+	struct spi_buf spi_rx_buf;
+	struct spi_buf_set tx;
+	struct spi_buf_set rx;
+
+	spi_tx_buf.buf = tc6->spi_tx_buf;
+	spi_tx_buf.len = tc6->spi_length;
+	tx.buffers = &spi_tx_buf;
+	tx.count = 1;
+
+	spi_rx_buf.buf = tc6->spi_rx_buf;
+	spi_rx_buf.len = tc6->spi_length;
+	rx.buffers = &spi_rx_buf;
+	rx.count = 1;
+
+#ifdef CONFIG_SPI_ASYNC
+	int ret;
+
+	ret = spi_transceive_cb(tc6->spi->bus, &tc6->spi->config, &tx, &rx, spi_async_callback,
+				tc6);
 	if (ret < 0) {
 		return ret;
 	}
-	*ftr = sys_be32_to_cpu(*ftr);
+	k_sem_take(&tc6->spi_async_sem, K_FOREVER);
 
-	return oa_tc6_update_status(tc6, *ftr);
+	return tc6->spi_tx_status;
+#else
+	return spi_transceive_dt(tc6->spi, &tx, &rx);
+#endif
 }
 
-int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
+static uint16_t oa_tc6_prepare_spi_tx_buf_from_tx_desc(struct oa_tc6 *tc6)
 {
+	uint8_t used_txc;
 	uint32_t hdr;
-
-	hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 0) |
-	      FIELD_PREP(OA_DATA_HDR_NORX, 1);
-	hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
-
-	return oa_tc6_chunk_spi_transfer(tc6, NULL, NULL, hdr, ftr);
-}
-
-int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
-{
-	const uint16_t buf_rx_size = CONFIG_NET_BUF_DATA_SIZE;
-	struct net_buf *buf_rx = NULL;
-	uint32_t buf_rx_used = 0;
-	uint32_t hdr, ftr;
-	uint8_t sbo, ebo;
+	uint16_t tx_offset = 0;
+	uint8_t tx_len;
+	uint32_t *hdr_pos;
+	uint8_t no_of_chunks;
+	uint8_t payload_len;
 	int ret;
 
-	/*
-	 * Special case - append already received data (extracted from previous
-	 * chunk) to new packet.
-	 *
-	 * This code is NOT used when OA_CONFIG0 RFA [13:12] is set to 01
-	 * (ZAREFE) - so received ethernet frames will always start on the
-	 * beginning of new chunks.
-	 */
-	if (tc6->concat_buf) {
-		net_pkt_append_buffer(pkt, tc6->concat_buf);
-		tc6->concat_buf = NULL;
+	for (used_txc = 0; used_txc < tc6->txc; used_txc++) {
+
+		hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 1) |
+		      FIELD_PREP(OA_DATA_HDR_SWO, 0);
+
+		if (!tc6->tx_desc) {
+			tc6->tx_desc = k_fifo_get(&tc6->tx_ready_fifo, K_FOREVER);
+			net_pkt_cursor_init(tc6->tx_desc->pkt);
+			tc6->tx_eth_len =
+				tc6->tx_desc->hdr->len + net_pkt_get_len(tc6->tx_desc->pkt);
+			hdr |= FIELD_PREP(OA_DATA_HDR_SV, 1);
+			memcpy(&tc6->spi_tx_buf[OA_TC6_HDR_SIZE], tc6->tx_desc->hdr->data,
+			       tc6->tx_desc->hdr->len);
+			tc6->tx_eth_frame_start = true;
+		}
+
+		no_of_chunks = tc6->tx_eth_len / tc6->cps;
+		if (tc6->tx_eth_len % tc6->cps) {
+			no_of_chunks++;
+		}
+
+		if (no_of_chunks == 1) {
+			hdr |= FIELD_PREP(OA_DATA_HDR_EBO, tc6->tx_eth_len - 1) |
+			       FIELD_PREP(OA_DATA_HDR_EV, 1);
+			tc6->tx_eth_frame_end = true;
+		}
+
+		hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
+		hdr = sys_cpu_to_be32(hdr);
+		hdr_pos = (uint32_t *)(tc6->spi_tx_buf + tx_offset);
+		*hdr_pos = hdr;
+		tx_offset += OA_TC6_HDR_SIZE;
+
+		if (tc6->tx_eth_frame_start) {
+			tx_offset += tc6->tx_desc->hdr->len;
+			payload_len = tc6->cps - tc6->tx_desc->hdr->len;
+			tc6->tx_eth_len -= tc6->tx_desc->hdr->len;
+			net_pkt_frag_unref(tc6->tx_desc->hdr);
+			tc6->tx_eth_frame_start = false;
+		} else {
+			payload_len = tc6->cps;
+		}
+
+		tx_len = tc6->tx_eth_len > payload_len ? payload_len : tc6->tx_eth_len;
+		ret = net_pkt_read(tc6->tx_desc->pkt, &tc6->spi_tx_buf[tx_offset], tx_len);
+		if (ret < 0) {
+			eth_stats_update_errors_tx(tc6->iface);
+			net_pkt_unref(tc6->tx_desc->pkt);
+			k_fifo_put(&tc6->tx_free_fifo, tc6->tx_desc);
+			tc6->tx_desc = NULL;
+			k_sem_give(&tc6->tx_enq_sem);
+			return 0;
+		}
+		tx_offset += payload_len;
+		tc6->tx_eth_len -= tx_len;
+		eth_stats_update_bytes_tx(tc6->iface, tx_len);
+		if (tc6->tx_eth_frame_end) {
+			net_pkt_unref(tc6->tx_desc->pkt);
+			k_fifo_put(&tc6->tx_free_fifo, tc6->tx_desc);
+			tc6->tx_desc = NULL;
+			k_sem_give(&tc6->tx_enq_sem);
+			break;
+		}
+	}
+	return tx_offset;
+}
+
+static void oa_tc6_add_tx_empty_chunks(struct oa_tc6 *tc6, uint8_t empty_chunks)
+{
+	uint32_t hdr;
+	uint32_t *spi_tx_buf;
+
+	hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 0);
+	hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
+	hdr = sys_cpu_to_be32(hdr);
+
+	while (empty_chunks--) {
+		spi_tx_buf = (uint32_t *)(tc6->spi_tx_buf + tc6->spi_length);
+		*spi_tx_buf = hdr;
+		tc6->spi_length += tc6->chunk_size;
+	}
+}
+
+int oa_tc6_spi_thread(struct oa_tc6 *tc6)
+{
+	uint8_t needed_tx_empty_chunks;
+	uint8_t tx_chunks;
+	int ret;
+
+	k_sem_take(&tc6->spi_sem, K_FOREVER);
+
+	if (tc6->tx_desc || !k_fifo_is_empty(&tc6->tx_ready_fifo)) {
+		tc6->spi_length = oa_tc6_prepare_spi_tx_buf_from_tx_desc(tc6);
 	}
 
-	do {
-		if (!buf_rx) {
-			buf_rx = net_pkt_get_frag(pkt, buf_rx_size, OA_TC6_BUF_ALLOC_TIMEOUT);
-			if (!buf_rx) {
-				LOG_ERR("OA RX: Can't allocate RX buffer fordata!");
-				return -ENOMEM;
+	tx_chunks = tc6->spi_length / tc6->chunk_size;
+	if (tx_chunks < tc6->rca) {
+		needed_tx_empty_chunks = tc6->rca - tx_chunks;
+		oa_tc6_add_tx_empty_chunks(tc6, needed_tx_empty_chunks);
+	}
+
+	if (tc6->int_flag) {
+		tc6->int_flag = false;
+		if (tc6->spi_length == 0) {
+			oa_tc6_add_tx_empty_chunks(tc6, 1);
+		}
+	}
+
+	if (tc6->spi_length == 0) {
+		return 0;
+	}
+
+	ret = oa_tc6_perform_spi(tc6);
+	if (ret) {
+		LOG_ERR("SPI transfer failed: %d\n", ret);
+		return ret;
+	}
+
+	ret = oa_tc6_process_spi_rx_buf(tc6);
+	if (ret) {
+		if (ret == -EAGAIN) {
+			if (tc6->rca) {
+				k_sem_give(&tc6->spi_sem);
 			}
+			return 0;
 		}
+		LOG_ERR("Device error: %d\n", ret);
+		return ret;
+	}
 
-		hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1);
-		hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
+	if (tc6->tx_eth_frame_end) {
+		eth_stats_update_pkts_tx(tc6->iface);
+		tc6->tx_eth_frame_end = false;
+	}
+	tc6->spi_length = 0;
 
-		ret = oa_tc6_chunk_spi_transfer(tc6, buf_rx->data + buf_rx_used, NULL, hdr, &ftr);
-		if (ret < 0) {
-			LOG_ERR("OA RX: transmission error: %d!", ret);
-			goto unref_buf;
-		}
-
-		ret = -EIO;
-		if (oa_tc6_get_parity(ftr)) {
-			LOG_ERR("OA RX: Footer parity error!");
-			goto unref_buf;
-		}
-
-		if (!FIELD_GET(OA_DATA_FTR_SYNC, ftr)) {
-			LOG_ERR("OA RX: Configuration not SYNC'ed!");
-			goto unref_buf;
-		}
-
-		if (!FIELD_GET(OA_DATA_FTR_DV, ftr)) {
-			LOG_DBG("OA RX: Data chunk not valid, skip!");
-			goto unref_buf;
-		}
-
-		sbo = FIELD_GET(OA_DATA_FTR_SWO, ftr) * sizeof(uint32_t);
-		ebo = FIELD_GET(OA_DATA_FTR_EBO, ftr) + 1;
-
-		if (FIELD_GET(OA_DATA_FTR_SV, ftr)) {
-			/*
-			 * Adjust beginning of the buffer with SWO only when
-			 * we DO NOT have two frames concatenated together
-			 * in one chunk.
-			 */
-			if (!(FIELD_GET(OA_DATA_FTR_EV, ftr) && (ebo <= sbo))) {
-				if (sbo) {
-					net_buf_pull(buf_rx, sbo);
-				}
-			}
-		}
-
-		if (FIELD_GET(OA_DATA_FTR_EV, ftr)) {
-			/*
-			 * Check if received frame shall be dropped - i.e. MAC has
-			 * detected error condition, which shall result in frame drop
-			 * by the SPI host.
-			 */
-			if (FIELD_GET(OA_DATA_FTR_FD, ftr)) {
-				ret = -EIO;
-				goto unref_buf;
-			}
-
-			/*
-			 * Concatenation of frames in a single chunk - one frame ends
-			 * and second one starts just afterwards (ebo == sbo).
-			 */
-			if (FIELD_GET(OA_DATA_FTR_SV, ftr) && (ebo <= sbo)) {
-				tc6->concat_buf = net_buf_clone(buf_rx, OA_TC6_BUF_ALLOC_TIMEOUT);
-				if (!tc6->concat_buf) {
-					LOG_ERR("OA RX: Can't allocate RX buffer for data!");
-					ret = -ENOMEM;
-					goto unref_buf;
-				}
-				net_buf_pull(tc6->concat_buf, sbo);
-			}
-
-			/* Set final size of the buffer */
-			buf_rx_used += ebo;
-			buf_rx->len = buf_rx_used;
-			net_pkt_append_buffer(pkt, buf_rx);
-			/*
-			 * Exit when complete packet is read and added to
-			 * struct net_pkt
-			 */
-			break;
-		} else {
-			buf_rx_used += tc6->cps;
-			if ((buf_rx_size - buf_rx_used) < tc6->cps) {
-				net_pkt_append_buffer(pkt, buf_rx);
-				buf_rx->len = buf_rx_used;
-				buf_rx_used = 0;
-				buf_rx = NULL;
-			}
-		}
-	} while (tc6->rca > 0);
+	if ((tc6->tx_desc && tc6->txc) || (!k_fifo_is_empty(&tc6->tx_ready_fifo) && tc6->txc) ||
+	    (tc6->rca > 0)) {
+		k_sem_give(&tc6->spi_sem);
+	}
 
 	return 0;
+}
 
-unref_buf:
-	net_buf_unref(buf_rx);
-	return ret;
+int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
+{
+	struct tx_eth_desc *tx_desc;
+
+	/* Check for free tx desc in tx_free_fifo to enqueue the net_pkt */
+	if (k_fifo_is_empty(&tc6->tx_free_fifo)) {
+		/* Wait for free tx descriptor */
+		k_sem_take(&tc6->tx_enq_sem, K_FOREVER);
+	}
+
+	net_pkt_ref(pkt);
+
+	/* Ethernet header must be saved as it is removed from the pkt when this
+	 * function returns.
+	 */
+	net_pkt_frag_ref(pkt->frags);
+
+	/* Prepare tx desc from the net pkt and store it in tx_ready_fifo */
+	tx_desc = k_fifo_get(&tc6->tx_free_fifo, K_FOREVER);
+	tx_desc->pkt = pkt;
+	tx_desc->hdr = pkt->frags;
+	k_fifo_put(&tc6->tx_ready_fifo, tx_desc);
+
+	/* Trigger spi thread to prepare tx chunks and perform spi transfer */
+	k_sem_give(&tc6->spi_sem);
+
+	return 0;
+}
+
+void oa_tc6_init(struct oa_tc6 *tc6)
+{
+	uint8_t i;
+
+	k_sem_init(&tc6->spi_sem, 0, 1);
+	k_sem_init(&tc6->tx_enq_sem, 0, 1);
+#ifdef CONFIG_SPI_ASYNC
+	k_sem_init(&tc6->spi_async_sem, 0, 1);
+#endif
+
+	k_fifo_init(&tc6->tx_free_fifo);
+	k_fifo_init(&tc6->tx_ready_fifo);
+
+	tc6->chunk_size = tc6->cps + OA_TC6_HDR_SIZE;
+
+	/* Initially put all the tx descs into tx_free_fifo */
+	for (i = 0; i < ARRAY_SIZE(tc6->tx_descs); i++) {
+		k_fifo_put(&tc6->tx_free_fifo, &tc6->tx_descs[i]);
+	}
 }
