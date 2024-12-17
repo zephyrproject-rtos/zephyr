@@ -1,0 +1,16 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP NBU interruption information
+
+include: base.yaml
+
+compatible: "nxp,nbu"
+
+properties:
+  interrupts:
+    required: true
+  nbu-name:
+    default: "NBU NXP"
+    type: string
+    description: Name of the Narrow Band Unit interruption initialization
