@@ -57,4 +57,10 @@ config UTF8
 	  Enable the utf8 API. The API implements functions to specifically
 	  handle UTF-8 encoded strings.
 
+config COBS
+	bool "Consistent overhead byte stuffing"
+	select NET_BUF
+	help
+	  Enable consistent overhead byte stuffing
+
 endmenu
