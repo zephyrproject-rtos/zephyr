@@ -802,4 +802,9 @@ config NRF70_PASSIVE_SCAN_ONLY
 	help
 	  Enable this configuration to force passive scan on all channels.
 	  This will override application-specified scan type.
+
+config NRF_WIFI_DISABLE_PRIORITY_WINDOW_FOR_SCAN
+	bool "Forced to disable priority window for scan"
+	help
+	  Enable this configuration to disable priority window for scan.
 endif # WIFI_NRF70
