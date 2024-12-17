@@ -81,6 +81,9 @@
 		accel0 = &lsm303agr_accel;
 		mcuboot-button0 = &user_button;
 		mcuboot-led0 = &orange_led_3;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -192,4 +195,21 @@ zephyr_udc0: &usbotg_fs {
 			reg = <0x00060000 DT_SIZE_K(128)>;
 		};
 	};
+};
+
+&adc1 {
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };
