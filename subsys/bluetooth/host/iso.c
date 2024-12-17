@@ -1096,12 +1096,80 @@ void bt_iso_cleanup_acl(struct bt_conn *iso)
 	}
 }
 
-static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt,
-			   struct bt_iso_info *info)
+static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt, struct bt_conn *iso)
 {
+	struct bt_conn_iso *iso_conn = &iso->iso;
+	struct bt_iso_info *info = &iso_conn->info;
 	struct bt_iso_unicast_info *unicast_info = &info->unicast;
-	struct bt_iso_unicast_tx_info *central = &unicast_info->central;
 	struct bt_iso_unicast_tx_info *peripheral = &unicast_info->peripheral;
+	struct bt_iso_unicast_tx_info *central = &unicast_info->central;
+	const uint8_t c_phy = bt_get_phy(evt->c_phy);
+	const uint8_t p_phy = bt_get_phy(evt->p_phy);
+	struct bt_iso_chan_io_qos *tx;
+	struct bt_iso_chan_io_qos *rx;
+	struct bt_iso_chan *chan;
+
+	iso_conn = &iso->iso;
+	chan = iso_conn->chan;
+	rx = chan->qos->rx;
+	tx = chan->qos->tx;
+
+	LOG_DBG("iso_chan %p tx %p rx %p", chan, tx, rx);
+
+	if (iso->role == BT_HCI_ROLE_PERIPHERAL) {
+		/* As of BT Core 6.0, we can only get the SDU size if the controller
+		 * supports bt_hci_evt_le_cis_established_v2. Since this is not guaranteeds,
+		 * we fallback to using the PDU size as the SDU size.
+		 */
+		if (rx != NULL) {
+			rx->phy = c_phy;
+			rx->sdu = sys_le16_to_cpu(evt->c_max_pdu);
+		}
+
+		if (tx != NULL) {
+			tx->phy = p_phy;
+			tx->sdu = sys_le16_to_cpu(evt->p_max_pdu);
+		}
+
+		iso_conn->info.type = BT_ISO_CHAN_TYPE_CONNECTED;
+	} else {
+		/* values are already set for central - Verify */
+		if (tx != NULL && tx->phy != c_phy) {
+			LOG_WRN("Unexpected C to P PHY: %u != %u", c_phy, tx->phy);
+			/* We assume that tx->phy has become invalid, and will use the event from
+			 * the controller as the truth
+			 */
+			tx->phy = c_phy;
+		}
+
+		if (rx != NULL && rx->phy != p_phy) {
+			LOG_WRN("Unexpected P to C max SDU: %u != %u", p_phy, rx->phy);
+			/* We assume that rx->phy has become invalid, and will use the event from
+			 * the controller as the truth
+			 */
+			rx->phy = p_phy;
+		}
+	}
+
+	/* Verify if device can send */
+	iso_conn->info.can_send = false;
+	if (tx != NULL) {
+		if (iso->role == BT_HCI_ROLE_PERIPHERAL && evt->p_bn > 0) {
+			iso_conn->info.can_send = true;
+		} else if (iso->role == BT_HCI_ROLE_CENTRAL && evt->c_bn > 0) {
+			iso_conn->info.can_send = true;
+		}
+	}
+
+	/* Verify if device can recv */
+	iso_conn->info.can_recv = false;
+	if (rx != NULL) {
+		if (iso->role == BT_HCI_ROLE_PERIPHERAL && evt->c_bn > 0) {
+			iso_conn->info.can_recv = true;
+		} else if (iso->role == BT_HCI_ROLE_CENTRAL && evt->p_bn > 0) {
+			iso_conn->info.can_recv = true;
+		}
+	}
 
 	info->iso_interval = sys_le16_to_cpu(evt->interval);
 	info->max_subevent = evt->nse;
@@ -1122,6 +1190,88 @@ static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt,
 	peripheral->max_pdu = sys_le16_to_cpu(evt->p_max_pdu);
 	/* Transform to n * 1.25ms */
 	peripheral->flush_timeout = info->iso_interval * evt->p_ft;
+
+	/* The following values are only available with bt_hci_evt_le_cis_established_v2 so
+	 * initialize them to the "unknown" values
+	 */
+	unicast_info->subinterval = BT_ISO_SUBINTERVAL_UNKNOWN;
+
+	if (iso->role == BT_HCI_ROLE_PERIPHERAL) {
+		central->max_sdu = central->max_pdu;
+		central->sdu_interval = BT_ISO_SDU_INTERVAL_UNKNOWN;
+
+		peripheral->max_sdu = peripheral->max_pdu;
+		peripheral->sdu_interval = BT_ISO_SDU_INTERVAL_UNKNOWN;
+	} else {
+		central->max_sdu = tx == NULL ? 0 : tx->sdu;
+		central->sdu_interval = BT_ISO_SDU_INTERVAL_UNKNOWN;
+
+		peripheral->max_sdu = rx == NULL ? 0 : rx->sdu;
+		peripheral->sdu_interval = BT_ISO_SDU_INTERVAL_UNKNOWN;
+	}
+}
+
+/** Only store information that is not stored by store_cis_info
+ * Assumes that store_cis_info has been called first
+ */
+static void store_cis_info_v2(const struct bt_hci_evt_le_cis_established_v2 *evt,
+			      struct bt_conn *iso)
+{
+	struct bt_conn_iso *iso_conn = &iso->iso;
+	struct bt_iso_info *info = &iso_conn->info;
+	struct bt_iso_unicast_info *unicast_info = &info->unicast;
+	struct bt_iso_unicast_tx_info *peripheral = &unicast_info->peripheral;
+	struct bt_iso_unicast_tx_info *central = &unicast_info->central;
+	const uint16_t c_max_sdu = sys_le16_to_cpu(evt->c_max_sdu);
+	const uint16_t p_max_sdu = sys_le16_to_cpu(evt->p_max_sdu);
+	struct bt_iso_chan_io_qos *tx;
+	struct bt_iso_chan_io_qos *rx;
+	struct bt_iso_chan *chan;
+
+	/* The v1 version of the event is a subset of the v2 version - We can thus use the
+	 * store_cis_info function for the majority of the info
+	 */
+	store_cis_info((const struct bt_hci_evt_le_cis_established *)evt, iso);
+
+	chan = iso_conn->chan;
+	rx = chan->qos->rx;
+	tx = chan->qos->tx;
+
+	if (iso->role == BT_HCI_ROLE_PERIPHERAL) {
+		/* Update the SDU sizes in the IO QoS fields stored by store_cis_info */
+		if (rx != NULL) {
+			rx->sdu = c_max_sdu;
+		}
+
+		if (tx != NULL) {
+			tx->sdu = p_max_sdu;
+		}
+	} else {
+		/* values are already set for central - Verify */
+		if (tx != NULL && tx->sdu != c_max_sdu) {
+			LOG_WRN("Unexpected C to P max SDU: %u != %u", c_max_sdu, tx->sdu);
+			/* We assume that tx->sdu has become invalid, and will use the event from
+			 * the controller as the truth
+			 */
+			tx->sdu = c_max_sdu;
+		}
+
+		if (rx != NULL && rx->sdu != p_max_sdu) {
+			LOG_WRN("Unexpected P to C max SDU: %u != %u", p_max_sdu, rx->sdu);
+			/* We assume that rx->sdu has become invalid, and will use the event from
+			 * the controller as the truth
+			 */
+			rx->sdu = p_max_sdu;
+		}
+	}
+
+	unicast_info->subinterval = sys_get_le24(evt->sub_interval);
+
+	central->max_sdu = sys_le16_to_cpu(evt->c_max_sdu);
+	central->sdu_interval = sys_get_le24(evt->c_sdu_interval);
+
+	peripheral->max_sdu = sys_le16_to_cpu(evt->p_max_sdu);
+	peripheral->sdu_interval = sys_get_le24(evt->p_sdu_interval);
 }
 
 void hci_le_cis_established(struct net_buf *buf)
@@ -1146,69 +1296,43 @@ void hci_le_cis_established(struct net_buf *buf)
 		return;
 	}
 
-	if (!evt->status) {
-		struct bt_iso_chan_io_qos *tx;
-		struct bt_iso_chan_io_qos *rx;
-		struct bt_conn_iso *iso_conn;
-		struct bt_iso_chan *chan;
-
-		iso_conn = &iso->iso;
-		chan = iso_conn->chan;
-
-		__ASSERT(chan != NULL && chan->qos != NULL, "Invalid ISO chan");
-
-		tx = chan->qos->tx;
-		rx = chan->qos->rx;
-
-		LOG_DBG("iso_chan %p tx %p rx %p", chan, tx, rx);
-
-		if (iso->role == BT_HCI_ROLE_PERIPHERAL) {
-			rx = chan->qos->rx;
-			tx = chan->qos->tx;
-
-			/* As of BT Core 5.4, there is no way for the peripheral to get the actual
-			 * SDU size or SDU interval without the use of higher layer profiles such as
-			 * the Basic Audio Profile (BAP). The best we can do is use the PDU size
-			 * until https://bluetooth.atlassian.net/browse/ES-18552 has been resolved
-			 * and incorporated
-			 */
-			if (rx != NULL) {
-				rx->phy = bt_get_phy(evt->c_phy);
-				rx->sdu = sys_le16_to_cpu(evt->c_max_pdu);
-			}
-
-			if (tx != NULL) {
-				tx->phy = bt_get_phy(evt->p_phy);
-				tx->sdu = sys_le16_to_cpu(evt->p_max_pdu);
-			}
-
-			iso_conn->info.type = BT_ISO_CHAN_TYPE_CONNECTED;
-		} /* values are already set for central */
-
-		/* Verify if device can send */
-		iso_conn->info.can_send = false;
-		if (tx != NULL) {
-			if (iso->role == BT_HCI_ROLE_PERIPHERAL && evt->p_bn > 0) {
-				iso_conn->info.can_send = true;
-			} else if (iso->role == BT_HCI_ROLE_CENTRAL && evt->c_bn > 0) {
-				iso_conn->info.can_send = true;
-			}
-		}
-
-		/* Verify if device can recv */
-		iso_conn->info.can_recv = false;
-		if (rx != NULL) {
-			if (iso->role == BT_HCI_ROLE_PERIPHERAL && evt->c_bn > 0) {
-				iso_conn->info.can_recv = true;
-			} else if (iso->role == BT_HCI_ROLE_CENTRAL && evt->p_bn > 0) {
-				iso_conn->info.can_recv = true;
-			}
-		}
-
-		store_cis_info(evt, &iso_conn->info);
+	if (evt->status == BT_HCI_ERR_SUCCESS) {
+		store_cis_info(evt, iso);
 		bt_conn_set_state(iso, BT_CONN_CONNECTED);
-		bt_conn_unref(iso);
+	} else if (iso->role == BT_HCI_ROLE_PERIPHERAL ||
+		   evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
+		iso->err = evt->status;
+		bt_iso_disconnected(iso);
+	} /* else we wait for disconnect event */
+
+	bt_conn_unref(iso);
+}
+
+void hci_le_cis_established_v2(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_cis_established_v2 *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->conn_handle);
+	struct bt_conn *iso;
+
+	LOG_DBG("status 0x%02x %s handle %u", evt->status, bt_hci_err_to_str(evt->status), handle);
+
+	/* ISO connection handles are already assigned at this point */
+	iso = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ISO);
+	if (!iso) {
+		/* If it is a local disconnect, then we may have received the disconnect complete
+		 * event before this event, and in which case we do not expect to find the CIS
+		 * object
+		 */
+		if (evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
+			LOG_ERR("No connection found for handle %u", handle);
+		}
+
 		return;
+	}
+
+	if (evt->status == BT_HCI_ERR_SUCCESS) {
+		store_cis_info_v2(evt, iso);
+		bt_conn_set_state(iso, BT_CONN_CONNECTED);
 	} else if (iso->role == BT_HCI_ROLE_PERIPHERAL ||
 		   evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
 		iso->err = evt->status;
