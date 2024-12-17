@@ -4,6 +4,12 @@
  */
 
 / {
+	aliases {
+		stepper =  &motor_1;
+	};
+};
+
+/ {
 	motor_1: motor_1 {
 		compatible = "zephyr,gpio-stepper";
 		status = "okay";
