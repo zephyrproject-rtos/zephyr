@@ -11,6 +11,8 @@ zephyr_library_sources(
   stdio.c
   )
 
+zephyr_library_compile_options(-fno-lto)
+
 # define __LINUX_ERRNO_EXTENSIONS__ so we get errno defines like -ESHUTDOWN
 # used by the network stack
 zephyr_compile_definitions(__LINUX_ERRNO_EXTENSIONS__)
