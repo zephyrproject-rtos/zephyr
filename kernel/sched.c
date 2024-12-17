@@ -1164,21 +1164,13 @@ void z_impl_k_wakeup(k_tid_t thread)
 
 	k_spinlock_key_t  key = k_spin_lock(&_sched_spinlock);
 
-	z_abort_thread_timeout(thread);
-
-	if (!z_is_thread_sleeping(thread)) {
-		k_spin_unlock(&_sched_spinlock, key);
-		return;
-	}
-
-	z_mark_thread_as_not_sleeping(thread);
-
-	ready_thread(thread);
-
-	if (arch_is_in_isr()) {
-		k_spin_unlock(&_sched_spinlock, key);
-	} else {
+	if (z_is_thread_sleeping(thread)) {
+		z_abort_thread_timeout(thread);
+		z_mark_thread_as_not_sleeping(thread);
+		ready_thread(thread);
 		z_reschedule(&_sched_spinlock, key);
+	} else {
+		k_spin_unlock(&_sched_spinlock, key);
 	}
 }
 
