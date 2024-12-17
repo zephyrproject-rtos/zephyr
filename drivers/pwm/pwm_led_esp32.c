@@ -1,13 +1,12 @@
 /*
  * Copyright (c) 2017 Vitor Massaru Iha <vitor@massaru.org>
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT espressif_esp32_ledc
 
-/* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <hal/ledc_hal.h>
 #include <hal/ledc_types.h>
 
@@ -75,23 +74,25 @@ static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct dev
 	return NULL;
 }
 
-static void pwm_led_esp32_low_speed_update(const struct device *dev, int speed_mode, int channel)
+static void pwm_led_esp32_start(struct pwm_ledc_esp32_data *data, struct pwm_ledc_esp32_channel_config *channel)
 {
-	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
+	ledc_hal_set_sig_out_en(&data->hal, channel->channel_num, true);
+	ledc_hal_set_duty_start(&data->hal, channel->channel_num, true);
 
-	if (speed_mode == LEDC_LOW_SPEED_MODE) {
-		ledc_hal_ls_channel_update(&data->hal, channel);
+	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
+		ledc_hal_ls_channel_update(&data->hal, channel->channel_num);
 	}
 }
 
-static void pwm_led_esp32_update_duty(const struct device *dev, int speed_mode, int channel)
+static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data, struct pwm_ledc_esp32_channel_config *channel, bool idle_level)
 {
-	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
+	ledc_hal_set_idle_level(&data->hal, channel->channel_num, idle_level);
+	ledc_hal_set_sig_out_en(&data->hal, channel->channel_num, false);
+	ledc_hal_set_duty_start(&data->hal, channel->channel_num, false);
 
-	ledc_hal_set_sig_out_en(&data->hal, channel, true);
-	ledc_hal_set_duty_start(&data->hal, channel, true);
-
-	pwm_led_esp32_low_speed_update(dev, speed_mode, channel);
+	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
+		ledc_hal_ls_channel_update(&data->hal, channel->channel_num);
+	}
 }
 
 static void pwm_led_esp32_duty_set(const struct device *dev,
@@ -105,18 +106,6 @@ static void pwm_led_esp32_duty_set(const struct device *dev,
 	ledc_hal_set_duty_num(&data->hal, channel->channel_num, 1);
 	ledc_hal_set_duty_cycle(&data->hal, channel->channel_num, 1);
 	ledc_hal_set_duty_scale(&data->hal, channel->channel_num, 0);
-	pwm_led_esp32_low_speed_update(dev, channel->speed_mode, channel->channel_num);
-	pwm_led_esp32_update_duty(dev, channel->speed_mode, channel->channel_num);
-}
-
-static void pwm_led_esp32_bind_channel_timer(const struct device *dev,
-	struct pwm_ledc_esp32_channel_config *channel)
-{
-	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
-
-	ledc_hal_bind_channel_timer(&data->hal, channel->channel_num, channel->timer_num);
-
-	pwm_led_esp32_low_speed_update(dev, channel->speed_mode, channel->channel_num);
 }
 
 static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_config *channel)
@@ -284,7 +273,7 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 	}
 
 	if (channel->freq == current_freq) {
-		/* skip timer reconfig to prevent phase shifts */
+		/* no need to reconfigure timer */
 		return 0;
 	}
 
@@ -300,42 +289,35 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 	return 0;
 }
 
-static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data, struct pwm_ledc_esp32_channel_config *channel, bool idle_level)
-{
-	ledc_hal_set_idle_level(&data->hal, channel->timer_num, idle_level);
-	ledc_hal_set_sig_out_en(&data->hal, channel->timer_num, false);
-	ledc_hal_set_duty_start(&data->hal, channel->timer_num, false);
-
-	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
-		ledc_hal_ls_channel_update(&data->hal, channel->timer_num);
-	}
-}
-
 static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_idx,
 				    uint32_t period_cycles,
 				    uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
 	struct pwm_ledc_esp32_channel_config *channel = get_channel_config(dev, channel_idx);
+	int ret = 0;
 
 	if (!channel) {
 		LOG_ERR("Error getting channel %d", channel_idx);
 		return -EINVAL;
 	}
 
-	if (flags & PWM_POLARITY_INVERTED) {
-		pulse_cycles = period_cycles - pulse_cycles;
-	}
-
-	if ((pulse_cycles >= period_cycles) || (pulse_cycles == 0)) {
-		/* For duty 0% and 100% stop PWM, set output level and return */
-		pwm_led_esp32_stop(data, channel, (pulse_cycles >= period_cycles));
-		return 0;
-	}
-
 	k_sem_take(&data->cmd_sem, K_FOREVER);
 
-	int ret = pwm_led_esp32_channel_update_frequency(dev, channel, period_cycles);
+	if (flags & PWM_POLARITY_INVERTED) {
+		pulse_cycles = period_cycles - pulse_cycles;
+		channel->inverted = true;
+	} else {
+		channel->inverted = false;
+	}
+
+	if ((pulse_cycles == period_cycles) || (pulse_cycles == 0)) {
+		/* For duty 0% and 100% stop PWM, set output level and return */
+		pwm_led_esp32_stop(data, channel, (pulse_cycles == period_cycles));
+		goto sem_give;
+	}
+
+	ret = pwm_led_esp32_channel_update_frequency(dev, channel, period_cycles);
 
 	if (ret < 0) {
 		LOG_ERR("Error updating frequency of channel %d", channel_idx);
@@ -349,6 +331,8 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 	channel->duty_val = (uint32_t)((double)(1 << channel->resolution) * duty_cycle);
 
 	pwm_led_esp32_duty_set(dev, channel);
+
+	pwm_led_esp32_start(data, channel);
 
 sem_give:
 	k_sem_give(&data->cmd_sem);
@@ -375,12 +359,19 @@ int pwm_led_esp32_init(const struct device *dev)
 
 	for (int i = 0; i < config->channel_len; ++i) {
 		channel = &config->channel_config[i];
-		pwm_led_esp32_bind_channel_timer(dev, channel);
-		ledc_hal_set_idle_level(&data->hal, channel->channel_num, channel->inverted);
+
+		if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
+			ledc_hal_set_slow_clk_sel(&data->hal, channel->clock_src);
+		}
+		ledc_hal_set_clock_source(&data->hal, channel->timer_num, channel->clock_src);
+
+		ledc_hal_bind_channel_timer(&data->hal, channel->channel_num, channel->timer_num);
+		pwm_led_esp32_stop(data, channel, channel->inverted);
 		ledc_hal_timer_rst(&data->hal, channel->timer_num);
 	}
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+
 	if (ret < 0) {
 		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
 		return ret;
