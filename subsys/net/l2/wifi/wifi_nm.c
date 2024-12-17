@@ -102,8 +102,8 @@ int wifi_nm_register_mgd_iface(struct wifi_nm_instance *nm, struct net_if *iface
 	return -ENOMEM;
 }
 
-int wifi_nm_register_mgd_type_iface(struct wifi_nm_instance *nm,
-		enum wifi_nm_iface_type type, struct net_if *iface)
+int wifi_nm_register_mgd_type_iface(struct wifi_nm_instance *nm, enum wifi_nm_iface_type type,
+				    struct net_if *iface)
 {
 	if (!nm || !iface) {
 		return -EINVAL;
