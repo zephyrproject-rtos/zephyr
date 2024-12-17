@@ -67,6 +67,8 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| GTM       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
