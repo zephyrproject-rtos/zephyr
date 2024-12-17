@@ -536,12 +536,28 @@ reference manuals, etc.
 Coding Style
 ============
 
+.. note::
+   Coding style is enforced on any new or modified code, but contributors are
+   not expected to correct the style on existing code that they are not
+   modifying.
+
+.. note::
+   For style aspects where the guidelines don't offer explicit guidance or
+   permit multiple valid ways to express something, new code should try to follow
+   the style of existing code in the tree, with higher importance given to
+   "nearby" code (first look at the function, then the same file, then
+   subsystem, etc).
+
 .. _Linux kernel coding style:
    https://kernel.org/doc/html/latest/process/coding-style.html
 
-In general, follow the `Linux kernel coding style`_, with the following
-exceptions:
+.. _snake case:
+   https://en.wikipedia.org/wiki/Snake_case
 
+In general, follow the `Linux kernel coding style`_, with the following
+exceptions and clarifications:
+
+* Use `snake case`_ for code and variables.
 * The line length is 100 columns or fewer. In the documentation, longer lines
   for URL references are an allowed exception.
 * Add braces to every ``if``, ``else``, ``do``, ``while``, ``for`` and
@@ -554,6 +570,31 @@ exceptions:
 * Avoid using binary literals (constants starting with ``0b``).
 * Avoid using non-ASCII symbols in code, unless it significantly improves
   clarity, avoid emojis in any case.
+* Use proper capitalization of nouns in code comments (e.g. ``UART`` and not
+  ``uart``, ``CMake`` and not ``cmake``).
+
+Beyond C code, the following coding style rules apply to other types of files:
+
+* CMake
+
+  * Indent with spaces, indentation is two spaces.
+  * No space between commands (e.g. ``if``) and the corresponding opening
+    bracket (e.g. ``(``).
+
+* Devicetree
+
+  * Indent with tabs.
+  * No empty lines before a dedenting ``};``.
+  * Single empty line separating nodes at the same hierarchy level.
+
+* Kconfig
+
+  * Line length of 100 columns or fewer.
+  * Indent with tabs, except for ``help`` entry text which should be placed at
+    one tab plus two extra spaces.
+  * Leave a single empty line between option declarations.
+  * Statements like ``select`` must be used carefully, see
+    :ref:`kconfig_tips_and_tricks` for more information.
 
 Use these coding guidelines to ensure that your development complies with the
 project's style and naming conventions.
