@@ -2490,18 +2490,6 @@ int supplicant_ap_wps_config(const struct device *dev, struct wifi_wps_config_pa
 }
 #endif
 
-int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_params *params)
-{
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
-
-	if (!wifi_mgmt_api || !wifi_mgmt_api->ap_bandwidth) {
-		wpa_printf(MSG_ERROR, "ap_bandwidth not supported");
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->ap_bandwidth(dev, params);
-}
-
 int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	int ret = 0;
