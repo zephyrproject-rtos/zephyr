@@ -137,3 +137,8 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&nbu {
+	status = "okay";
+	wakeup-source;
+};
