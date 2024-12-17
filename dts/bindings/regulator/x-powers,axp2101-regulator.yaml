@@ -1,0 +1,91 @@
+# Copyright (c), 2021 NXP
+# Copyright (c), 2024 Lothar Felten <lothar.felten@gmail.com>
+# SPDX -License-Identifier: Apache-2.0
+
+description: |
+  AXP2101 PMIC
+
+  The PMIC has five DCDC converters and nine LDOs.
+  All need to be defined as children nodes.
+  For example:
+
+  i2c {
+    axp2101@34 {
+      compatible = "x-powers,axp2101";
+      reg = <0x34>;
+      ...
+      regulators {
+        compatible = "x-powers,axp2101-regulator";
+
+        DCDC1 {
+          /* all properties for DCDC1 */
+        };
+        DCDC2 {
+          /* all properties for DCDC2 */
+        };
+        DCDC3 {
+          /* all properties for DCDC3 */
+        };
+        DCDC4 {
+          /* all properties for DCDC4 */
+        };
+        DCDC5 {
+          /* all properties for DCDC5 */
+        };
+        LDOA1 {
+          /* all properties for LDOA1 */
+        };
+        LDOA2 {
+          /* all properties for LDOA2 */
+        };
+        LDOA3 {
+          /* all properties for LDOA3 */
+        };
+        LDOA4 {
+          /* all properties for LDOA4 */
+        };
+        LDOB1 {
+          /* all properties for LDOB1 */
+        };
+        LDOB2 {
+          /* all properties for LDOB2 */
+        };
+        LDOC {
+          /* all properties for LDOC */
+        };
+        LDOD1 {
+          /* all properties for LDOD1 */
+        };
+        LDOD2 {
+          /* all properties for LDOD2 */
+        };
+      };
+    };
+  };
+
+compatible: "x-powers,axp2101-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-boot-off
+        - regulator-initial-mode
+        - regulator-allowed-modes
+
+  properties:
+    regulator-initial-mode:
+      type: int
+      default: 0
+      enum: [0, 1]
+      description: |
+        Initial operating mode. AXP2101 supports 2 different power modes:
+        AXP2101_DCDC_MODE_AUTO: Auto (0, default)
+        AXP2101_DCDC_MODE_PWM:  PWM
