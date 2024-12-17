@@ -700,6 +700,8 @@ Cross-referencing C documentation
 Visual Elements
 ***************
 
+.. _doc_images:
+
 Images
 ======
 
