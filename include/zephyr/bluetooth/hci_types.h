@@ -3456,6 +3456,32 @@ struct bt_hci_evt_le_subrate_change {
 	uint16_t supervision_timeout;
 } __packed;
 
+#define BT_HCI_EVT_LE_CIS_ESTABLISHED_V2 0x2a
+struct bt_hci_evt_le_cis_established_v2 {
+	uint8_t  status;
+	uint16_t conn_handle;
+	uint8_t  cig_sync_delay[3];
+	uint8_t  cis_sync_delay[3];
+	uint8_t  c_latency[3];
+	uint8_t  p_latency[3];
+	uint8_t  c_phy;
+	uint8_t  p_phy;
+	uint8_t  nse;
+	uint8_t  c_bn;
+	uint8_t  p_bn;
+	uint8_t  c_ft;
+	uint8_t  p_ft;
+	uint16_t c_max_pdu;
+	uint16_t p_max_pdu;
+	uint16_t interval;
+	uint8_t  sub_interval[3];
+	uint16_t c_max_sdu;
+	uint16_t p_max_sdu;
+	uint8_t  c_sdu_interval[3];
+	uint8_t  p_sdu_interval[3];
+	uint8_t  framing;
+} __packed;
+
 #define BT_HCI_LE_CS_INITIATOR_ROLE_MASK BIT(0)
 #define BT_HCI_LE_CS_REFLECTOR_ROLE_MASK BIT(1)
 
@@ -3926,6 +3952,7 @@ struct bt_hci_evt_le_cs_procedure_enable_complete {
 #define BT_EVT_MASK_LE_PER_ADV_SUBEVENT_DATA_REQ   BT_EVT_BIT(38)
 #define BT_EVT_MASK_LE_PER_ADV_RESPONSE_REPORT     BT_EVT_BIT(39)
 #define BT_EVT_MASK_LE_ENH_CONN_COMPLETE_V2        BT_EVT_BIT(40)
+#define BT_EVT_MASK_LE_CIS_ESTABLISHED_V2          BT_EVT_BIT(41)
 
 #define BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE BT_EVT_BIT(43)
 #define BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE              BT_EVT_BIT(44)
