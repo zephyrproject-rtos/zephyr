@@ -4,7 +4,7 @@
 config MFD_AXP192
 	bool "AXP192 PMIC multi-function device driver"
 	default y
-	depends on DT_HAS_X_POWERS_AXP192_ENABLED
+	depends on DT_HAS_X_POWERS_AXP192_ENABLED || DT_HAS_X_POWERS_AXP2101_ENABLED
 	select I2C
 	help
 	  Enable the X-Powers AXP192 PMIC multi-function device driver
