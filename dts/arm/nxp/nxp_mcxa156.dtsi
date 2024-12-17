@@ -440,6 +440,26 @@
 			status = "disabled";
 		};
 
+		lpspi0: spi@4009c000 {
+			compatible = "nxp,lpspi";
+			reg = <0x4009c000 0x1000>;
+			interrupts = <28 0>;
+			clocks = <&syscon MCUX_LPSPI0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi1: spi@4009d000 {
+			compatible = "nxp,lpspi";
+			reg = <0x4009d000 0x1000>;
+			interrupts = <29 0>;
+			clocks = <&syscon MCUX_LPSPI1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		lptmr0: lptmr@400ab000 {
 			compatible = "nxp,lptmr";
 			reg = <0x400ab000 0x1000>;
