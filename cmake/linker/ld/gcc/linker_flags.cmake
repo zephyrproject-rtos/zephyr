@@ -11,6 +11,7 @@ check_set_linker_property(TARGET linker APPEND PROPERTY gprof -pg)
 
 # GCC 11 by default emits DWARF version 5 which cannot be parsed by
 # pyelftools. Can be removed once pyelftools supports v5.
+# pyelftools 0.31 still is not able to parse the version 5 output.
 add_link_options(-gdwarf-4)
 
 # Extra warnings options for twister run

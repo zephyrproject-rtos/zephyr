@@ -207,6 +207,7 @@ set_compiler_property(PROPERTY no_track_macro_expansion -ftrack-macro-expansion=
 
 # GCC 11 by default emits DWARF version 5 which cannot be parsed by
 # pyelftools. Can be removed once pyelftools supports v5.
+# pyelftools 0.31 still is not able to parse the version 5 output.
 check_set_compiler_property(APPEND PROPERTY debug -gdwarf-4)
 
 set_compiler_property(PROPERTY no_common -fno-common)
