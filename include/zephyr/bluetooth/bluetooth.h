@@ -1278,6 +1278,13 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 int bt_le_adv_stop(void);
 
 /**
+ * @brief Check if advertising is active.
+ * 
+ * @return True if advertising is active, false otherwise.
+ */
+bool bt_le_is_advertising();
+
+/**
  * @brief Create advertising set.
  *
  * Create a new advertising set and set advertising parameters.

@@ -1458,6 +1458,12 @@ int bt_le_adv_stop(void)
 	return 0;
 }
 
+bool bt_le_is_advertising()
+{
+	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
+	return adv && atomic_test_bit(adv->flags, BT_ADV_ENABLED);
+}
+
 #if defined(CONFIG_BT_PERIPHERAL)
 static uint32_t adv_get_options(const struct bt_le_ext_adv *adv)
 {
