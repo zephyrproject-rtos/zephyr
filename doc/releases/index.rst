@@ -83,6 +83,11 @@ Changes that require the user to modify their own application to support the new
 release may be mentioned in the release notes, but the details regarding *what*
 needs to be changed are to be detailed in the release's migration guide.
 
+Updates to the release notes post release cycle is permitted but limited to
+style, typographical fixes and to upmerge the notes from maintenance release
+branches with the sole purpose of keeping the latest documentation consistent
+with the changes in the project.
+
 .. toctree::
    :maxdepth: 1
    :glob:
