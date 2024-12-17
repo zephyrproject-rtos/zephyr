@@ -6,9 +6,9 @@
  #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	 zephyr,user {
-		 stepper-motors = <&motor_1 0>;
-	 };
+	aliases {
+		stepper =  &motor_1;
+	};
 };
 
 / {
@@ -25,11 +25,6 @@
 		 m0-gpios = <&arduino_header 16 0>;
 		 m1-gpios = <&arduino_header 17 0>;
 		 counter = <&counter2>;
-
-		 #address-cells = <1>;
-		 #size-cells = <0>;
-		 #stepper-motor-cells = <0>;
-
 	 };
 };
 

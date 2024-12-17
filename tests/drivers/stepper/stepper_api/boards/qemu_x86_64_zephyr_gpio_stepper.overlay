@@ -1,0 +1,54 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		stepper =  &zephyr_gpio_stepper;
+	};
+};
+
+/ {
+	gpio1: gpio1 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+
+	gpio2: gpio2 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+
+	gpio3: gpio3 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+
+	gpio4: gpio4 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+};
+
+/ {
+	zephyr_gpio_stepper: zephyr_gpio_stepper {
+		compatible = "zephyr,gpio-stepper";
+		status = "okay";
+		micro-step-res = <2>;
+		gpios = <&gpio1 0 0>,
+				<&gpio2 0 0>,
+				<&gpio3 0 0>,
+				<&gpio4 0 0>;
+	};
+};
