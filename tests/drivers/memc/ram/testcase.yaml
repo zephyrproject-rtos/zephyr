@@ -27,3 +27,10 @@ tests:
       - drivers
       - memc
     platform_allow: hifive_unmatched/fu740/s7
+  drivers.memc.renesas_ra_sdram:
+    tags:
+      - drivers
+      - memc
+    depends_on: memc
+    filter: dt_compat_enabled("renesas,ra-sdram")
+    platform_allow: ek_ra8d1
