@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 
 #include <can.h>
+#include <wrap_max32_can.h>
 
 LOG_MODULE_REGISTER(can_max32, CONFIG_CAN_LOG_LEVEL);
 
@@ -639,10 +640,10 @@ static int can_max32_init(const struct device *dev)
 
 	dev_list[dev_cfg->can_id] = dev;
 
-	ret = MXC_CAN_Init(dev_cfg->can_id, MXC_CAN_OBJ_CFG_TXRX, unit_event_callback,
-			   object_event_callback);
+	ret = Wrap_MXC_CAN_Init(dev_cfg->can_id, MXC_CAN_OBJ_CFG_TXRX, unit_event_callback,
+				object_event_callback);
 	if (ret < 0) {
-		LOG_ERR("MXC_CAN_Init() failed:%d", ret);
+		LOG_ERR("Wrap_MXC_CAN_Init() failed:%d", ret);
 		return ret;
 	}
 
@@ -700,8 +701,8 @@ static const struct can_driver_api can_max32_api = {
 	.timing_min = {
 		.sjw = 1,
 		.prop_seg = 0,
-		.phase_seg1 = 3,
-		.phase_seg2 = 2,
+		.phase_seg1 = 1,
+		.phase_seg2 = 1,
 		.prescaler = 1,
 	},
 	.timing_max = {
