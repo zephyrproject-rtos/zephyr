@@ -467,6 +467,17 @@
 			};
 		};
 
+		i2c0: i2c@88300 {
+			compatible = "renesas,rx-i2c";
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			reg = <0x88300 0x20>;
+			channel = <0>;
+			interrupts = <246 1>, <247 1>, <248 1>, <249 1>;
+			interrupt-names = "eei", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
 		cmt: timer@88000 {
 			compatible = "renesas,rx-timer-cmt-start-control";
 			#address-cells = <1>;
