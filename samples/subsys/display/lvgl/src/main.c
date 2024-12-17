@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(app);
 
 static uint32_t count;
 
-#ifdef CONFIG_GPIO
+#ifdef CONFIG_RESET_COUNTER_SW0
 static struct gpio_dt_spec button_gpio = GPIO_DT_SPEC_GET_OR(
 		DT_ALIAS(sw0), gpios, {0});
 static struct gpio_callback button_callback;
@@ -35,7 +35,7 @@ static void button_isr_callback(const struct device *port,
 
 	count = 0;
 }
-#endif /* CONFIG_GPIO */
+#endif /* CONFIG_RESET_COUNTER_SW0 */
 
 #ifdef CONFIG_LV_Z_ENCODER_INPUT
 static const struct device *lvgl_encoder =
@@ -67,7 +67,7 @@ int main(void)
 		return 0;
 	}
 
-#ifdef CONFIG_GPIO
+#ifdef CONFIG_RESET_COUNTER_SW0
 	if (gpio_is_ready_dt(&button_gpio)) {
 		int err;
 
@@ -93,7 +93,7 @@ int main(void)
 			return 0;
 		}
 	}
-#endif /* CONFIG_GPIO */
+#endif /* CONFIG_RESET_COUNTER_SW0 */
 
 #ifdef CONFIG_LV_Z_ENCODER_INPUT
 	lv_obj_t *arc;
