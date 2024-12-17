@@ -501,6 +501,18 @@
 			};
 		};
 
+		rspi0: spi@88380 {
+			compatible = "renesas,rx-rspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00088380 0x100>;
+			channel = <0>;
+			clocks = <&pclkb MSTPB 17>;
+			interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
+			interrupt-names = "spei", "spri", "spti", "spii";
+			status = "disabled";
+		};
+
 		ofsm: ofsm@ffffff80 {
 			compatible = "zephyr,memory-region";
 			reg = <0xFFFFFF80 0x0F>;
