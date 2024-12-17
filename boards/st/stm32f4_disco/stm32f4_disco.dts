@@ -77,6 +77,9 @@
 		led2 = &red_led_5;
 		led3 = &blue_led_6;
 		sw0 = &user_button;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -165,5 +168,22 @@ zephyr_udc0: &usbotg_fs {
 &can2 {
 	pinctrl-0 = <&can2_rx_pb5 &can2_tx_pb13>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc1 {
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };
