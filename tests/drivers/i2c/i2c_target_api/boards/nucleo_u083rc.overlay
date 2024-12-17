@@ -22,6 +22,10 @@
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa7 &i2c2_sda_pa6>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
