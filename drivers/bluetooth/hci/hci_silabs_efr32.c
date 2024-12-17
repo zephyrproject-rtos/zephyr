@@ -24,6 +24,9 @@ struct hci_data {
 #if !defined(CONFIG_BT_MAX_CONN)
 #define CONFIG_BT_MAX_CONN 0
 #endif
+#if !defined(CONFIG_BT_CTLR_RL_SIZE)
+#define CONFIG_BT_CTLR_RL_SIZE 0
+#endif
 
 static K_KERNEL_STACK_DEFINE(slz_ll_stack, CONFIG_BT_SILABS_EFR32_ACCEPT_LINK_LAYER_STACK_SIZE);
 static struct k_thread slz_ll_thread;
@@ -175,6 +178,11 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 
 	sl_btctrl_configure_le_buffer_size(CONFIG_BT_BUF_ACL_TX_COUNT);
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+		sl_btctrl_allocate_resolving_list_memory(CONFIG_BT_CTLR_RL_SIZE);
+		sl_btctrl_init_privacy();
+	}
+
 	ret = sl_btctrl_init_ll();
 	if (ret) {
 		LOG_ERR("Bluetooth link layer init failed %d", ret);
@@ -234,6 +242,10 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 			ret = -EIO;
 			goto deinit;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+		sl_btctrl_hci_parser_init_privacy();
 	}
 
 	hci->recv = recv;
