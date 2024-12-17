@@ -31,30 +31,24 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-There are two USB ports, the one farthest from the DWM3001C is connected to the
-J-Link debugger and the closer one is connected to the nRF52833, though you need
-to use CDC ACM USB to get output over it
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-Here is an example for the :zephyr:code-sample:`usb-cdc-acm` application.
-
-Connect to the bottom USB port, and flash the sample
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/subsys/usb/console
-   :board: decawave_dwm3001cdk
-   :goals: build flash
-
-
-Then, connect the top USB port and open run your favorite terminal program to
-listen for output.
+Connect to the bottom micro-USB port labeled as J-Link and run your favorite
+terminal program to listen for console output.
 
 .. code-block:: console
 
    $ minicom -D <tty_device> -b 115200
 
-Replace :code:`<tty_device>` with the port where the board nRF52 DK
-can be found. For example, under Linux, :code:`/dev/ttyACM0`.
+Replace :code:`<tty_device>` with the port where the DWM3001CDK board can be
+found. For example, under Linux, :code:`/dev/ttyACM0`.
 
+Then build and flash the application in the usual way.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: decawave_dwm3001cdk
+   :goals: build flash
 
 References
 **********

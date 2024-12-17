@@ -14,11 +14,11 @@
 	compatible = "decawave,dwm3001";
 
 	chosen {
-		zephyr,console = &cdc_acm_uart0;
-		zephyr,shell-uart = &cdc_acm_uart0;
-		zephyr,uart-mcumgr = &cdc_acm_uart0;
-		zephyr,bt-mon-uart = &cdc_acm_uart0;
-		zephyr,bt-c2h-uart = &cdc_acm_uart0;
+		zephyr,console        = &uart0;
+		zephyr,shell-uart     = &uart0;
+		zephyr,uart-mcumgr    = &uart0;
+		zephyr,bt-mon-uart    = &uart0;
+		zephyr,bt-c2h-uart    = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -84,6 +84,15 @@
 	status = "okay";
 };
 
+&uart0 {
+	status = "okay";
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &gpio1 {
 	status = "okay";
 };
@@ -145,10 +154,6 @@
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
-
-	cdc_acm_uart0: cdc_acm_uart0 {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
 
 &reg1 {
