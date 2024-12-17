@@ -36,9 +36,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_gatt);
 
-#define PROXY_SVC_INIT_TIMEOUT K_MSEC(10)
-#define PROXY_SVC_REG_ATTEMPTS 5
-
 /* Interval to update random value in (10 minutes).
  *
  * Defined in the Bluetooth Mesh Specification v1.1, Section 7.2.2.2.4.
@@ -957,34 +954,6 @@ static struct bt_gatt_attr proxy_attrs[] = {
 };
 
 static struct bt_gatt_service proxy_svc = BT_GATT_SERVICE(proxy_attrs);
-static void svc_reg_work_handler(struct k_work *work);
-static struct k_work_delayable svc_reg_work = Z_WORK_DELAYABLE_INITIALIZER(svc_reg_work_handler);
-static uint32_t svc_reg_attempts;
-
-static void svc_reg_work_handler(struct k_work *work)
-{
-	int err;
-
-	err = bt_gatt_service_register(&proxy_svc);
-	if ((err == -EINVAL) && ((--svc_reg_attempts) > 0)) {
-		/* settings_load() didn't finish yet. Try again. */
-		(void)k_work_schedule(&svc_reg_work, PROXY_SVC_INIT_TIMEOUT);
-		return;
-	} else if (err) {
-		LOG_ERR("Unable to register Mesh Proxy Service (err %d)", err);
-		return;
-	}
-
-	service_registered = true;
-
-	for (int i = 0; i < ARRAY_SIZE(clients); i++) {
-		if (clients[i].cli) {
-			clients[i].filter_type = ACCEPT;
-		}
-	}
-
-	bt_mesh_adv_gatt_update();
-}
 
 int bt_mesh_proxy_gatt_enable(void)
 {
@@ -1000,11 +969,18 @@ int bt_mesh_proxy_gatt_enable(void)
 		return -EBUSY;
 	}
 
-	svc_reg_attempts = PROXY_SVC_REG_ATTEMPTS;
-	err = k_work_schedule(&svc_reg_work, PROXY_SVC_INIT_TIMEOUT);
-	if (err < 0) {
-		LOG_ERR("Enabling GATT proxy failed (err %d)", err);
+	err = bt_gatt_service_register(&proxy_svc);
+	if (err) {
+		LOG_ERR("Unable to register Mesh Proxy Service (err %d)", err);
 		return err;
+	}
+
+	service_registered = true;
+
+	for (int i = 0; i < ARRAY_SIZE(clients); i++) {
+		if (clients[i].cli) {
+			clients[i].filter_type = ACCEPT;
+		}
 	}
 
 	return 0;
