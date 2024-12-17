@@ -11,9 +11,17 @@ tests:
   secure_storage.psa.its.secure_storage.zms:
     # DT-based filtering is not possible for this test scenario.
     # Platforms with a storage_partition must be manually added here.
-    platform_allow: native_sim mps2/an385 qemu_x86/atom qemu_x86_64/atom
-      nrf54l15dk/nrf54l15/cpuapp nrf5340dk/nrf5340/cpuapp nrf52840dk/nrf52840
-      nrf9151dk/nrf9151 nrf9160dk/nrf9160 nrf9161dk/nrf9161
+    platform_allow:
+      - native_sim
+      - mps2/an385
+      - qemu_x86/atom
+      - qemu_x86_64/atom
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf52840dk/nrf52840
+      - nrf9151dk/nrf9151
+      - nrf9160dk/nrf9160
+      - nrf9161dk/nrf9161
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=zms.overlay
       - EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-transform_default.conf
