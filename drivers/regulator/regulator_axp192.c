@@ -1,10 +1,9 @@
 /*
  * Copyright (c) 2021 NXP
  * Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+ * Copyright (c) 2024 Lothar Felten <lothar.felten@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define DT_DRV_COMPAT x_powers_axp192_regulator
 
 #include <errno.h>
 
@@ -20,7 +19,7 @@
 
 LOG_MODULE_REGISTER(regulator_axp192, CONFIG_REGULATOR_LOG_LEVEL);
 
-/* Output control registers */
+/* AXP192 register defines */
 #define AXP192_REG_EXTEN_DCDC2_CONTROL   0x10U
 #define AXP192_REG_DCDC123_LDO23_CONTROL 0x12U
 #define AXP192_REG_DCDC2_VOLTAGE         0x23U
@@ -31,6 +30,39 @@ LOG_MODULE_REGISTER(regulator_axp192, CONFIG_REGULATOR_LOG_LEVEL);
 #define AXP192_REG_DCDC123_WORKMODE      0x80U
 #define AXP192_REG_GPIO0_CONTROL         0x90U
 #define AXP192_REG_LDOIO0_VOLTAGE        0x91U
+
+/* AXP2101 register defines */
+#define AXP2101_REG_CHGLED            0x69U
+#define AXP2101_REG_DCDC12345_CONTROL 0x80U
+#define AXP2101_REG_DCDCS_PWM_CONTROL 0x81U
+#define AXP2101_REG_DCDC1_VOLTAGE     0x82U
+#define AXP2101_REG_DCDC2_VOLTAGE     0x83U
+#define AXP2101_REG_DCDC3_VOLTAGE     0x84U
+#define AXP2101_REG_DCDC4_VOLTAGE     0x85U
+#define AXP2101_REG_DCDC5_VOLTAGE     0x86U
+#define AXP2101_REG_LDOGRP1_CONTROL   0x90U
+#define AXP2101_REG_LDOGRP2_CONTROL   0x91U
+#define AXP2101_REG_ALDO1_VOLTAGE     0x92U
+#define AXP2101_REG_ALDO2_VOLTAGE     0x93U
+#define AXP2101_REG_ALDO3_VOLTAGE     0x94U
+#define AXP2101_REG_ALDO4_VOLTAGE     0x95U
+#define AXP2101_REG_BLDO1_VOLTAGE     0x96U
+#define AXP2101_REG_BLDO2_VOLTAGE     0x97U
+#define AXP2101_REG_CPUSLDO_VOLTAGE   0x98U
+#define AXP2101_REG_DLDO1_VOLTAGE     0x99U
+#define AXP2101_REG_DLDO2_VOLTAGE     0x9AU
+
+#define AXP2101_CHGLED_CTRL_MASK   0x3
+#define AXP2101_CHGLED_CTRL_OFFSET 1
+
+#define AXP2101_VBUS_CFG_REG                0
+#define AXP2101_VBUS_CFG_VAL_VBUSEN_DISABLE 0
+
+#define AXP_NODE_HAS_CHILD(node, child) DT_NODE_HAS_STATUS_OKAY(DT_CHILD(node, child)) |
+#define AXP192_ANY_HAS_CHILD(child)                                                                \
+	(DT_FOREACH_STATUS_OKAY_VARGS(x_powers_axp192_regulator, AXP_NODE_HAS_CHILD, child) 0)
+#define AXP2101_ANY_HAS_CHILD(child)                                                               \
+	(DT_FOREACH_STATUS_OKAY_VARGS(x_powers_axp2101_regulator, AXP_NODE_HAS_CHILD, child) 0)
 
 struct regulator_axp192_desc {
 	const uint8_t enable_reg;
@@ -56,15 +88,13 @@ struct regulator_axp192_config {
 	const struct regulator_axp192_desc *desc;
 	const struct device *mfd;
 	const struct i2c_dt_spec i2c;
-
-	LOG_INSTANCE_PTR_DECLARE(log);
 };
 
-static const struct linear_range dcdc1_ranges[] = {
+static const struct linear_range axp192_dcdc1_ranges[] = {
 	LINEAR_RANGE_INIT(700000U, 25000U, 0x00U, 0x7FU),
 };
 
-__maybe_unused static const struct regulator_axp192_desc dcdc1_desc = {
+__maybe_unused static const struct regulator_axp192_desc axp192_dcdc1_desc = {
 	.enable_reg = AXP192_REG_DCDC123_LDO23_CONTROL,
 	.enable_mask = 0x01U,
 	.enable_val = 0x01U,
@@ -75,15 +105,15 @@ __maybe_unused static const struct regulator_axp192_desc dcdc1_desc = {
 	.workmode_reg = AXP192_REG_DCDC123_WORKMODE,
 	.workmode_mask = 0x08U,
 	.workmode_pwm_val = 0x08U,
-	.ranges = dcdc1_ranges,
-	.num_ranges = ARRAY_SIZE(dcdc1_ranges),
+	.ranges = axp192_dcdc1_ranges,
+	.num_ranges = ARRAY_SIZE(axp192_dcdc1_ranges),
 };
 
-static const struct linear_range dcdc2_ranges[] = {
+static const struct linear_range axp192_dcdc2_ranges[] = {
 	LINEAR_RANGE_INIT(700000U, 25000U, 0x00U, 0x3FU),
 };
 
-__maybe_unused static const struct regulator_axp192_desc dcdc2_desc = {
+__maybe_unused static const struct regulator_axp192_desc axp192_dcdc2_desc = {
 	.enable_reg = AXP192_REG_EXTEN_DCDC2_CONTROL,
 	.enable_mask = 0x01U,
 	.enable_val = 0x01U,
@@ -94,15 +124,15 @@ __maybe_unused static const struct regulator_axp192_desc dcdc2_desc = {
 	.workmode_reg = AXP192_REG_DCDC123_WORKMODE,
 	.workmode_mask = 0x04U,
 	.workmode_pwm_val = 0x04U,
-	.ranges = dcdc2_ranges,
-	.num_ranges = ARRAY_SIZE(dcdc2_ranges),
+	.ranges = axp192_dcdc2_ranges,
+	.num_ranges = ARRAY_SIZE(axp192_dcdc2_ranges),
 };
 
-static const struct linear_range dcdc3_ranges[] = {
+static const struct linear_range axp192_dcdc3_ranges[] = {
 	LINEAR_RANGE_INIT(700000U, 25000U, 0x00U, 0x7FU),
 };
 
-__maybe_unused static const struct regulator_axp192_desc dcdc3_desc = {
+__maybe_unused static const struct regulator_axp192_desc axp192_dcdc3_desc = {
 	.enable_reg = AXP192_REG_DCDC123_LDO23_CONTROL,
 	.enable_mask = 0x02U,
 	.enable_val = 0x02U,
@@ -113,15 +143,15 @@ __maybe_unused static const struct regulator_axp192_desc dcdc3_desc = {
 	.workmode_reg = AXP192_REG_DCDC123_WORKMODE,
 	.workmode_mask = 0x02U,
 	.workmode_pwm_val = 0x02U,
-	.ranges = dcdc3_ranges,
-	.num_ranges = ARRAY_SIZE(dcdc3_ranges),
+	.ranges = axp192_dcdc3_ranges,
+	.num_ranges = ARRAY_SIZE(axp192_dcdc3_ranges),
 };
 
-static const struct linear_range ldoio0_ranges[] = {
+static const struct linear_range axp192_ldoio0_ranges[] = {
 	LINEAR_RANGE_INIT(1800000u, 100000u, 0x00u, 0x0Fu),
 };
 
-__maybe_unused static const struct regulator_axp192_desc ldoio0_desc = {
+__maybe_unused static const struct regulator_axp192_desc axp192_ldoio0_desc = {
 	.enable_reg = AXP192_REG_GPIO0_CONTROL,
 	.enable_mask = 0x07u,
 	.enable_val = 0x03u,
@@ -131,15 +161,15 @@ __maybe_unused static const struct regulator_axp192_desc ldoio0_desc = {
 	.max_ua = 50000u,
 	.workmode_reg = 0u,
 	.workmode_mask = 0u,
-	.ranges = ldoio0_ranges,
-	.num_ranges = ARRAY_SIZE(ldoio0_ranges),
+	.ranges = axp192_ldoio0_ranges,
+	.num_ranges = ARRAY_SIZE(axp192_ldoio0_ranges),
 };
 
-static const struct linear_range ldo2_ranges[] = {
+static const struct linear_range axp192_ldo2_ranges[] = {
 	LINEAR_RANGE_INIT(1800000U, 100000U, 0x00U, 0x0FU),
 };
 
-__maybe_unused static const struct regulator_axp192_desc ldo2_desc = {
+__maybe_unused static const struct regulator_axp192_desc axp192_ldo2_desc = {
 	.enable_reg = AXP192_REG_DCDC123_LDO23_CONTROL,
 	.enable_mask = 0x04U,
 	.enable_val = 0x04U,
@@ -149,15 +179,15 @@ __maybe_unused static const struct regulator_axp192_desc ldo2_desc = {
 	.max_ua = 200000U,
 	.workmode_reg = 0U,
 	.workmode_mask = 0U,
-	.ranges = ldo2_ranges,
-	.num_ranges = ARRAY_SIZE(ldo2_ranges),
+	.ranges = axp192_ldo2_ranges,
+	.num_ranges = ARRAY_SIZE(axp192_ldo2_ranges),
 };
 
-static const struct linear_range ldo3_ranges[] = {
+static const struct linear_range axp192_ldo3_ranges[] = {
 	LINEAR_RANGE_INIT(1800000U, 100000U, 0x00U, 0x0FU),
 };
 
-__maybe_unused static const struct regulator_axp192_desc ldo3_desc = {
+__maybe_unused static const struct regulator_axp192_desc axp192_ldo3_desc = {
 	.enable_reg = AXP192_REG_DCDC123_LDO23_CONTROL,
 	.enable_mask = 0x08U,
 	.enable_val = 0x08U,
@@ -167,8 +197,238 @@ __maybe_unused static const struct regulator_axp192_desc ldo3_desc = {
 	.max_ua = 200000U,
 	.workmode_reg = 0U,
 	.workmode_mask = 0U,
-	.ranges = ldo3_ranges,
-	.num_ranges = ARRAY_SIZE(ldo3_ranges),
+	.ranges = axp192_ldo3_ranges,
+	.num_ranges = ARRAY_SIZE(axp192_ldo3_ranges),
+};
+
+static const struct linear_range axp2101_dcdc1_ranges[] = {
+	LINEAR_RANGE_INIT(1500000U, 100000U, 0U, 19U),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_dcdc1_desc = {
+	.enable_reg = AXP2101_REG_DCDC12345_CONTROL,
+	.enable_mask = 0x01U,
+	.enable_val = 0x01U,
+	.vsel_reg = AXP2101_REG_DCDC1_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 2000000U,
+	.ranges = axp2101_dcdc1_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_dcdc1_ranges),
+	.workmode_reg = AXP2101_REG_DCDCS_PWM_CONTROL,
+	.workmode_mask = BIT(2),
+	.workmode_pwm_val = BIT(2),
+};
+
+static const struct linear_range axp2101_dcdc2_ranges[] = {
+	LINEAR_RANGE_INIT(500000U, 10000U, 0U, 70U),
+	LINEAR_RANGE_INIT(1220000U, 20000U, 71U, 87U),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_dcdc2_desc = {
+	.enable_reg = AXP2101_REG_DCDC12345_CONTROL,
+	.enable_mask = 0x02U,
+	.enable_val = 0x02U,
+	.vsel_reg = AXP2101_REG_DCDC2_VOLTAGE,
+	.vsel_mask = 0x7FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 2000000U,
+	.ranges = axp2101_dcdc2_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_dcdc2_ranges),
+	.workmode_reg = AXP2101_REG_DCDCS_PWM_CONTROL,
+	.workmode_mask = BIT(3),
+	.workmode_pwm_val = BIT(3),
+};
+
+static const struct linear_range axp2101_dcdc3_ranges[] = {
+	LINEAR_RANGE_INIT(500000U, 10000U, 0U, 70U),
+	LINEAR_RANGE_INIT(1220000U, 20000U, 71U, 87U),
+	LINEAR_RANGE_INIT(1600000U, 100000U, 88U, 106U),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_dcdc3_desc = {
+	.enable_reg = AXP2101_REG_DCDC12345_CONTROL,
+	.enable_mask = 0x04U,
+	.enable_val = 0x04U,
+	.vsel_reg = AXP2101_REG_DCDC3_VOLTAGE,
+	.vsel_mask = 0x7FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 2000000U,
+	.ranges = axp2101_dcdc3_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_dcdc3_ranges),
+	.workmode_reg = AXP2101_REG_DCDCS_PWM_CONTROL,
+	.workmode_mask = BIT(4),
+	.workmode_pwm_val = BIT(4),
+};
+
+static const struct linear_range axp2101_dcdc4_ranges[] = {
+	LINEAR_RANGE_INIT(500000U, 10000U, 0U, 70U),
+	LINEAR_RANGE_INIT(1220000U, 20000U, 71U, 102U),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_dcdc4_desc = {
+	.enable_reg = AXP2101_REG_DCDC12345_CONTROL,
+	.enable_mask = 0x08U,
+	.enable_val = 0x08U,
+	.vsel_reg = AXP2101_REG_DCDC4_VOLTAGE,
+	.vsel_mask = 0x7FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 1500000U,
+	.ranges = axp2101_dcdc4_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_dcdc4_ranges),
+	.workmode_reg = AXP2101_REG_DCDCS_PWM_CONTROL,
+	.workmode_mask = BIT(5),
+	.workmode_pwm_val = BIT(5),
+};
+
+static const struct linear_range axp2101_dcdc5_ranges[] = {
+	LINEAR_RANGE_INIT(1400000U, 100000U, 0U, 23U),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_dcdc5_desc = {
+	.enable_reg = AXP2101_REG_DCDC12345_CONTROL,
+	.enable_mask = 0x10U,
+	.enable_val = 0x10U,
+	.vsel_reg = AXP2101_REG_DCDC5_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 1000000U,
+	.ranges = axp2101_dcdc5_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_dcdc5_ranges),
+};
+
+static const struct linear_range axp2101_abldox_ranges[] = {
+	LINEAR_RANGE_INIT(500000U, 100000U, 0U, 30U),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_aldo1_desc = {
+	.enable_reg = AXP2101_REG_LDOGRP1_CONTROL,
+	.enable_mask = 0x01U,
+	.enable_val = 0x01U,
+	.vsel_reg = AXP2101_REG_ALDO1_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 300000U,
+	.ranges = axp2101_abldox_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_abldox_ranges),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_aldo2_desc = {
+	.enable_reg = AXP2101_REG_LDOGRP1_CONTROL,
+	.enable_mask = 0x02U,
+	.enable_val = 0x02U,
+	.vsel_reg = AXP2101_REG_ALDO2_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 300000U,
+	.ranges = axp2101_abldox_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_abldox_ranges),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_aldo3_desc = {
+	.enable_reg = AXP2101_REG_LDOGRP1_CONTROL,
+	.enable_mask = 0x04U,
+	.enable_val = 0x04U,
+	.vsel_reg = AXP2101_REG_ALDO3_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 300000U,
+	.ranges = axp2101_abldox_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_abldox_ranges),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_aldo4_desc = {
+	.enable_reg = AXP2101_REG_LDOGRP1_CONTROL,
+	.enable_mask = 0x08U,
+	.enable_val = 0x08U,
+	.vsel_reg = AXP2101_REG_ALDO4_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 300000U,
+	.ranges = axp2101_abldox_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_abldox_ranges),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_bldo1_desc = {
+	.enable_reg = AXP2101_REG_LDOGRP1_CONTROL,
+	.enable_mask = 0x10U,
+	.enable_val = 0x10U,
+	.vsel_reg = AXP2101_REG_BLDO1_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 300000U,
+	.ranges = axp2101_abldox_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_abldox_ranges),
+	.workmode_reg = 0U,
+	.workmode_mask = 0U,
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_bldo2_desc = {
+	.enable_reg = AXP2101_REG_LDOGRP1_CONTROL,
+	.enable_mask = 0x20U,
+	.enable_val = 0x20U,
+	.vsel_reg = AXP2101_REG_BLDO2_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 300000U,
+	.ranges = axp2101_abldox_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_abldox_ranges),
+	.workmode_reg = 0U,
+	.workmode_mask = 0U,
+};
+
+static const struct linear_range axp2101_cpusldo_ranges[] = {
+	LINEAR_RANGE_INIT(500000U, 50000U, 0U, 19U),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_cpusldo_desc = {
+	.enable_reg = AXP2101_REG_LDOGRP1_CONTROL,
+	.enable_mask = 0x40U,
+	.enable_val = 0x40U,
+	.vsel_reg = AXP2101_REG_CPUSLDO_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 30000U,
+	.ranges = axp2101_cpusldo_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_cpusldo_ranges),
+	.workmode_reg = 0U,
+	.workmode_mask = 0U,
+};
+
+static const struct linear_range axp2101_dldo1_ranges[] = {
+	LINEAR_RANGE_INIT(500000U, 100000U, 0U, 28U),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_dldo1_desc = {
+	.enable_reg = AXP2101_REG_LDOGRP1_CONTROL,
+	.enable_mask = 0x80U,
+	.enable_val = 0x80U,
+	.vsel_reg = AXP2101_REG_DLDO1_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 300000U,
+	.ranges = axp2101_dldo1_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_dldo1_ranges),
+	.workmode_reg = 0U,
+	.workmode_mask = 0U,
+};
+
+static const struct linear_range axp2101_dldo2_ranges[] = {
+	LINEAR_RANGE_INIT(500000U, 50000U, 0U, 19U),
+};
+
+__maybe_unused static const struct regulator_axp192_desc axp2101_dldo2_desc = {
+	.enable_reg = AXP2101_REG_LDOGRP2_CONTROL,
+	.enable_mask = 0x01U,
+	.enable_val = 0x01U,
+	.vsel_reg = AXP2101_REG_DLDO2_VOLTAGE,
+	.vsel_mask = 0x1FU,
+	.vsel_bitpos = 0U,
+	.max_ua = 300000U,
+	.ranges = axp2101_dldo2_ranges,
+	.num_ranges = ARRAY_SIZE(axp2101_dldo2_ranges),
+	.workmode_reg = 0U,
+	.workmode_mask = 0U,
 };
 
 static int axp192_enable(const struct device *dev)
@@ -176,20 +436,24 @@ static int axp192_enable(const struct device *dev)
 	const struct regulator_axp192_config *config = dev->config;
 	int ret;
 
-	LOG_INST_DBG(config->log, "Enabling regulator");
-	LOG_INST_DBG(config->log, "[0x%02x]=0x%02x mask=0x%02x", config->desc->enable_reg,
+	LOG_DBG("Enabling regulator");
+	LOG_DBG("[0x%02x]=0x%02x mask=0x%02x", config->desc->enable_reg,
 		     config->desc->enable_val, config->desc->enable_mask);
 
+#if AXP192_ANY_HAS_CHILD(ldoio0)
 	/* special case for LDOIO0, which is multiplexed with GPIO0 */
 	if (config->desc->enable_reg == AXP192_REG_GPIO0_CONTROL) {
 		ret = mfd_axp192_gpio_func_ctrl(config->mfd, dev, 0, AXP192_GPIO_FUNC_LDO);
 	} else {
+#endif
 		ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->enable_reg,
 					     config->desc->enable_mask, config->desc->enable_val);
+#if AXP192_ANY_HAS_CHILD(ldoio0)
 	}
+#endif
 
 	if (ret != 0) {
-		LOG_INST_ERR(config->log, "Failed to enable regulator");
+		LOG_ERR("Failed to enable regulator");
 	}
 
 	return ret;
@@ -200,19 +464,24 @@ static int axp192_disable(const struct device *dev)
 	const struct regulator_axp192_config *config = dev->config;
 	int ret;
 
-	LOG_INST_DBG(config->log, "Disabling regulator");
-	LOG_INST_DBG(config->log, "[0x%02x]=0 mask=0x%x", config->desc->enable_reg,
+	LOG_DBG("Disabling regulator");
+	LOG_DBG("[0x%02x]=0 mask=0x%x", config->desc->enable_reg,
 		     config->desc->enable_mask);
 
+#if AXP192_ANY_HAS_CHILD(ldoio0)
 	/* special case for LDOIO0, which is multiplexed with GPIO0 */
 	if (config->desc->enable_reg == AXP192_REG_GPIO0_CONTROL) {
 		ret = mfd_axp192_gpio_func_ctrl(config->mfd, dev, 0, AXP192_GPIO_FUNC_OUTPUT_LOW);
 	} else {
+#endif
 		ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->enable_reg,
 					     config->desc->enable_mask, 0u);
+#if AXP192_ANY_HAS_CHILD(ldoio0)
 	}
+#endif
+
 	if (ret != 0) {
-		LOG_INST_ERR(config->log, "Failed to disable regulator");
+		LOG_ERR("Failed to disable regulator");
 	}
 
 	return ret;
@@ -239,24 +508,24 @@ static int axp192_set_voltage(const struct device *dev, int32_t min_uv, int32_t 
 	uint16_t idx;
 	int ret;
 
-	LOG_INST_DBG(config->log, "voltage = [min=%d, max=%d]", min_uv, max_uv);
+	LOG_DBG("voltage = [min=%d, max=%d]", min_uv, max_uv);
 
 	/* set voltage */
 	ret = linear_range_group_get_win_index(config->desc->ranges, config->desc->num_ranges,
 					       min_uv, max_uv, &idx);
 	if (ret != 0) {
-		LOG_INST_ERR(config->log, "No voltage range window could be detected");
+		LOG_ERR("No voltage range window could be detected");
 		return ret;
 	}
 
 	idx <<= config->desc->vsel_bitpos;
 
-	LOG_INST_DBG(config->log, "[0x%x]=0x%x mask=0x%x", config->desc->vsel_reg, idx,
+	LOG_DBG("[0x%x]=0x%x mask=0x%x", config->desc->vsel_reg, idx,
 		     config->desc->vsel_mask);
 	ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->vsel_reg, config->desc->vsel_mask,
 				     (uint8_t)idx);
 	if (ret != 0) {
-		LOG_INST_ERR(config->log, "Failed to set regulator voltage");
+		LOG_ERR("Failed to set regulator voltage");
 	}
 
 	return ret;
@@ -291,7 +560,7 @@ static int axp192_set_mode(const struct device *dev, regulator_mode_t mode)
 	if ((mode == AXP192_DCDC_MODE_PWM) && (config->desc->workmode_reg != 0)) {
 
 		/* configure PWM mode */
-		LOG_INST_DBG(config->log, "PWM mode enabled");
+		LOG_DBG("PWM mode enabled");
 		ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->workmode_reg,
 					     config->desc->workmode_mask,
 					     config->desc->workmode_pwm_val);
@@ -313,7 +582,7 @@ static int axp192_set_mode(const struct device *dev, regulator_mode_t mode)
 			return 0;
 		}
 	} else {
-		LOG_INST_ERR(config->log, "Setting DCDC workmode failed");
+		LOG_ERR("Setting DCDC workmode failed");
 		return -ENOTSUP;
 	}
 
@@ -350,44 +619,63 @@ static int regulator_axp192_init(const struct device *dev)
 	regulator_common_data_init(dev);
 
 	if (!device_is_ready(config->mfd)) {
-		LOG_INST_ERR(config->log, "Parent instance not ready!");
+		LOG_ERR("Parent instance not ready!");
 		return -ENODEV;
 	}
 
 	/* read regulator state */
 	ret = i2c_reg_read_byte_dt(&config->i2c, config->desc->enable_reg, &enabled_val);
 	if (ret != 0) {
-		LOG_INST_ERR(config->log, "Reading enable status failed!");
+		LOG_ERR("Reading enable status failed!");
 		return ret;
 	}
 	is_enabled = ((enabled_val & config->desc->enable_mask) == config->desc->enable_val);
-	LOG_INST_DBG(config->log, "is_enabled: %d", is_enabled);
+	LOG_DBG("is_enabled: %d", is_enabled);
 
 	return regulator_common_init(dev, is_enabled);
 }
 
 #define REGULATOR_AXP192_DEFINE(node_id, id, name)                                                 \
 	static struct regulator_axp192_data data_##id;                                             \
-	LOG_INSTANCE_REGISTER(name, node_id, CONFIG_REGULATOR_LOG_LEVEL);                          \
 	static const struct regulator_axp192_config config_##id = {                                \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.desc = &name##_desc,                                                              \
+		.desc = &id##_desc,                                                                \
 		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
-		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                                       \
-		LOG_INSTANCE_PTR_INIT(log, name, node_id)};                                        \
+		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id))};                                      \
 	DEVICE_DT_DEFINE(node_id, regulator_axp192_init, NULL, &data_##id, &config_##id,           \
-			 POST_KERNEL, CONFIG_REGULATOR_AXP192_INIT_PRIORITY, &api);
+			 POST_KERNEL, CONFIG_REGULATOR_AXP192_AXP2101_INIT_PRIORITY, &api);
 
-#define REGULATOR_AXP192_DEFINE_COND(inst, child)                                                  \
-	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \
-		    (REGULATOR_AXP192_DEFINE(DT_INST_CHILD(inst, child), child##inst, child)), ())
+#define REGULATOR_AXP192_DEFINE_COND(node, child)                                                  \
+	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(node, child)),                                         \
+		    (REGULATOR_AXP192_DEFINE(DT_CHILD(node, child), axp192_##child, child)), ())
 
-#define REGULATOR_AXP192_DEFINE_ALL(inst)                                                          \
-	REGULATOR_AXP192_DEFINE_COND(inst, dcdc1)                                                  \
-	REGULATOR_AXP192_DEFINE_COND(inst, dcdc2)                                                  \
-	REGULATOR_AXP192_DEFINE_COND(inst, dcdc3)                                                  \
-	REGULATOR_AXP192_DEFINE_COND(inst, ldoio0)                                                 \
-	REGULATOR_AXP192_DEFINE_COND(inst, ldo2)                                                   \
-	REGULATOR_AXP192_DEFINE_COND(inst, ldo3)
+#define REGULATOR_AXP2101_DEFINE_COND(node, child)                                                 \
+	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(node, child)),                                         \
+		    (REGULATOR_AXP192_DEFINE(DT_CHILD(node, child), axp2101_##child, child)), ())
 
-DT_INST_FOREACH_STATUS_OKAY(REGULATOR_AXP192_DEFINE_ALL)
+#define REGULATOR_AXP192_DEFINE_ALL(node)                                                          \
+	REGULATOR_AXP192_DEFINE_COND(node, dcdc1)                                                  \
+	REGULATOR_AXP192_DEFINE_COND(node, dcdc2)                                                  \
+	REGULATOR_AXP192_DEFINE_COND(node, dcdc3)                                                  \
+	REGULATOR_AXP192_DEFINE_COND(node, ldoio0)                                                 \
+	REGULATOR_AXP192_DEFINE_COND(node, ldo2)                                                   \
+	REGULATOR_AXP192_DEFINE_COND(node, ldo3)
+
+#define REGULATOR_AXP2101_DEFINE_ALL(node)                                                         \
+	REGULATOR_AXP2101_DEFINE_COND(node, dcdc1)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, dcdc2)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, dcdc3)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, dcdc4)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, dcdc5)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, aldo1)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, aldo2)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, aldo3)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, aldo4)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, bldo1)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, bldo2)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, cpusldo)                                               \
+	REGULATOR_AXP2101_DEFINE_COND(node, dldo1)                                                 \
+	REGULATOR_AXP2101_DEFINE_COND(node, dldo2)
+
+DT_FOREACH_STATUS_OKAY(x_powers_axp192_regulator, REGULATOR_AXP192_DEFINE_ALL)
+DT_FOREACH_STATUS_OKAY(x_powers_axp2101_regulator, REGULATOR_AXP2101_DEFINE_ALL)
