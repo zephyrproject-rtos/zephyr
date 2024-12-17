@@ -16,11 +16,8 @@
 
 #endif /* !_ASMLANGUAGE */
 
-#define ble_hci_handler         BLE_MCI_WAKEUP0_DriverIRQHandler
-#define ble_wakeup_done_handler BLE_MCI_WAKEUP_DONE0_DriverIRQHandler
-
-#define hdlc_rcp_if_handler             BLE_MCI_WAKEUP0_DriverIRQHandler
-#define hdlc_rcp_if_wakeup_done_handler BLE_MCI_WAKEUP_DONE0_DriverIRQHandler
+#define nbu_handler             BLE_MCI_WAKEUP0_DriverIRQHandler
+#define nbu_wakeup_done_handler BLE_MCI_WAKEUP_DONE0_DriverIRQHandler
 
 /* Wrapper Function to deal with SDK differences in power API */
 static inline void EnableDeepSleepIRQ(IRQn_Type irq)

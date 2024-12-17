@@ -294,12 +294,12 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 	status = "disabled";
 };
 
-&hci {
-	status = "okay";
-	wakeup-source;
-};
-
 &pin1 {
 	status = "okay";
 	wakeup-level = "low";
+};
+
+&nbu {
+	status = "okay";
+	wakeup-source;
 };

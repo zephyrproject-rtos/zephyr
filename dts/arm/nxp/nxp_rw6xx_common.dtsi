@@ -16,6 +16,7 @@
 / {
 	chosen {
 		zephyr,entropy = &trng;
+		zephyr,nbu = &nbu;
 		zephyr,bt-hci = &hci;
 		zephyr,hdlc-rcp-if = &hdlc_rcp_if;
 	};
@@ -515,17 +516,18 @@
 		status = "disabled";
 	};
 
+	nbu: nbu {
+		compatible = "nxp,nbu";
+		interrupts = <90 2>, <82 2>;
+		interrupt-names = "nbu_rx_int", "wakeup_int";
+	};
+
 	hci: hci_ble {
 		compatible = "nxp,hci-ble";
-		/* first index is the hci interrupt, the second is the wake up done interrupt */
-		interrupts = <90 2>, <82 2>;
-		interrupt-names = "hci_int", "wakeup_int";
 	};
 
 	hdlc_rcp_if: hdlc_rcp_if {
 		compatible = "nxp,hdlc-rcp-if";
-		/* first index is the hdlc_rcp_if interrupt */
-		/* the second is the wake up done interrupt */
 		interrupts = <90 2>, <82 2>;
 		interrupt-names = "hdlc_rcp_if_int", "wakeup_int";
 	};

@@ -52,5 +52,6 @@ config IMAGE_VECTOR_TABLE_OFFSET
 endif # NXP_RW6XX_BOOT_HEADER
 
 rsource "../common/Kconfig.flexspi_xip"
+rsource "../common/Kconfig.nbu"
 
 endif # SOC_SERIES_RW6XX
