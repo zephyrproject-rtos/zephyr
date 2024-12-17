@@ -463,6 +463,7 @@ static void test_rx_proxy_mixin(void)
 	/* Scan adv data. */
 	xmit_param.retr = 5;
 	xmit_param.interval = 20;
+
 	ASSERT_OK(bt_mesh_test_wait_for_packet(xmit_scan_cb, &observer_sem, 20));
 
 	/* Scan proxy beacons again. */
