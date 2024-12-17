@@ -80,7 +80,7 @@ int main(void)
 		}
 
 		LOG_INF("LoRa RX RSSI: %d dBm, SNR: %d dB", rssi, snr);
-		LOG_HEXDUMP_INF(data, size, "LoRa RX payload");
+		LOG_HEXDUMP_INF(data, len, "LoRa RX payload");
 	}
 
 	/* Enable asynchronous reception */
