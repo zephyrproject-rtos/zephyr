@@ -1,0 +1,24 @@
+# Renesas RX Family
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_RENESAS_RX_RIIC
+	bool "Renesas RX I2C Master"
+	default y
+	depends on DT_HAS_RENESAS_RX_I2C_ENABLED
+	select USE_RX_RDP_I2C
+	select PINCTRL
+	help
+	  Enable Renesas RX I2C Driver.
+
+if I2C_RENESAS_RX_RIIC
+
+config I2C_RENESAS_RX_CALLBACK
+	bool "Renesas RX I2C Callback Support"
+	depends on I2C_CALLBACK
+	default y
+	help
+	  Enable Callback support for the I2C Driver
+
+endif # I2C_RENESAS_RX_RIIC
