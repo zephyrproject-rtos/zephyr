@@ -11,3 +11,30 @@ tests:
       - nucleo_g071rb
       - nucleo_f767zi
       - qemu_x86_64
+  drivers.stepper.stepper_api.adi_tmc2209:
+    tags:
+      - drivers
+      - stepper
+      - api
+    extra_args: DTC_OVERLAY_FILE="boards/native_sim_adi_tmc2209.overlay" CONFIG_GPIO=y
+                CONFIG_COUNTER=y CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+    platform_allow:
+      - native_sim
+  drivers.stepper.stepper_api.ti_drv8424:
+    tags:
+      - drivers
+      - stepper
+      - api
+    extra_args: DTC_OVERLAY_FILE="boards/native_sim_ti_drv8424.overlay" CONFIG_GPIO=y
+                CONFIG_COUNTER=y CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+    platform_allow:
+      - native_sim
+  drivers.stepper.stepper_api.zephyr_gpio_stepper:
+    tags:
+      - drivers
+      - stepper
+      - api
+    extra_args: DTC_OVERLAY_FILE="boards/native_sim_zephyr_gpio_stepper.overlay"
+                CONFIG_GPIO=y
+    platform_allow:
+      - native_sim

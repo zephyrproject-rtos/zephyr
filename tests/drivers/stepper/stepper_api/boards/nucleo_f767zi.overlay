@@ -6,9 +6,9 @@
  #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	 zephyr,user {
-		 stepper-motors = <&motor_1 0>;
-	 };
+	aliases {
+		stepper =  &motor_1;
+	};
 };
 
 / {
