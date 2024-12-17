@@ -593,7 +593,7 @@
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3300>;
-		io-channels = <&adc1 18>;
+		io-channels = <&adc1 16>;
 		status = "disabled";
 	};
 
