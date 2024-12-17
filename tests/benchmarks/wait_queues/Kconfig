@@ -23,7 +23,7 @@ config BENCHMARK_NUM_THREADS
 
 config BENCHMARK_VERBOSE
 	bool "Display detailed results"
-	default y
+	default n
 	help
 	  This option displays the average time of all the iterations done for
 	  each thread in the tests. This generates large amounts of output. To
