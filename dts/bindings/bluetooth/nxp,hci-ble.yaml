@@ -8,8 +8,6 @@ compatible: "nxp,hci-ble"
 include: bt-hci.yaml
 
 properties:
-  interrupts:
-    required: true
   bt-hci-name:
     default: "BT NXP"
   bt-hci-bus:
