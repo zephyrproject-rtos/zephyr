@@ -292,8 +292,6 @@ struct rtio_sqe {
 
 	uint32_t iodev_flags; /**< Op iodev flags */
 
-	uint16_t _resv0;
-
 	const struct rtio_iodev *iodev; /**< Device to operation on */
 
 	/**
