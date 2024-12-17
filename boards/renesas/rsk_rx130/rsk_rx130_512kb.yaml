@@ -12,5 +12,6 @@ supported:
   - serial
   - timer
   - spi
+  - i2c
 ram: 48
 flash: 512
