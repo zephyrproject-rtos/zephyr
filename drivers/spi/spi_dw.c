@@ -41,6 +41,14 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
+#ifdef CONFIG_HAS_NRFX
+#include <nrfx.h>
+#endif
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+#endif
+
 static inline bool spi_dw_is_slave(struct spi_dw_data *spi)
 {
 	return (IS_ENABLED(CONFIG_SPI_SLAVE) &&
@@ -258,6 +266,7 @@ static int spi_dw_configure(const struct device *dev,
 		/* Baud rate and Slave select, for master only */
 		write_baudr(dev, SPI_DW_CLK_DIVIDER(info->clock_frequency,
 						    config->frequency));
+		write_ser(dev, BIT(config->slave));
 	}
 
 	if (spi_dw_is_slave(spi)) {
@@ -512,6 +521,10 @@ void spi_dw_isr(const struct device *dev)
 	uint32_t int_status;
 	int error;
 
+#ifdef CONFIG_HAS_NRFX
+	NRF_EXMIF->EVENTS_CORE = 0;
+#endif
+
 	int_status = read_isr(dev);
 
 	LOG_DBG("SPI %p int_status 0x%x - (tx: %d, rx: %d)", dev, int_status,
@@ -560,6 +573,18 @@ int spi_dw_init(const struct device *dev)
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
+#ifdef CONFIG_HAS_NRFX
+	NRF_EXMIF->INTENSET = BIT(0);
+	NRF_EXMIF->TASKS_START = 1;
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	err = nrf_gpd_request(NRF_GPD_FAST_ACTIVE1);
+	if (err < 0) {
+		return err;
+	}
+#endif
+#endif
+
 	info->config_func();
 
 	/* Masking interrupt and making sure controller is disabled */
@@ -583,6 +608,11 @@ int spi_dw_init(const struct device *dev)
 
 	return 0;
 }
+
+#define REG_ADDR(inst) \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), nordic_nrf_exmif_spi), \
+		    (Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(core, DT_DRV_INST(inst))), \
+		    (DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst))))
 
 #define SPI_CFG_IRQS_SINGLE_ERR_LINE(inst)					\
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq),		\
@@ -656,7 +686,7 @@ COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)                     \
 	};                                                                                  \
 	static const struct spi_dw_config spi_dw_config_##inst = {                          \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                    \
+		REG_ADDR(inst),                                                             \
 		.clock_frequency = COND_CODE_1(                                             \
 			DT_NODE_HAS_PROP(DT_INST_PHANDLE(inst, clocks), clock_frequency),   \
 			(DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency)),           \
