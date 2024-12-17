@@ -17,6 +17,18 @@
 extern "C" {
 #endif
 
+/* Regulator output control registers */
+#define AXP192_REG_EXTEN_DCDC2_CONTROL   0x10U
+#define AXP192_REG_DCDC123_LDO23_CONTROL 0x12U
+#define AXP192_REG_DCDC2_VOLTAGE         0x23U
+#define AXP192_REG_DCDC2_SLOPE           0x25U
+#define AXP192_REG_DCDC1_VOLTAGE         0x26U
+#define AXP192_REG_DCDC3_VOLTAGE         0x27U
+#define AXP192_REG_LDO23_VOLTAGE         0x28U
+#define AXP192_REG_DCDC123_WORKMODE      0x80U
+#define AXP192_REG_GPIO0_CONTROL         0x90U
+#define AXP192_REG_LDOIO0_VOLTAGE        0x91U
+
 /**
  * @brief GPIO function type. Only one function can be configured per GPIO.
  */
