@@ -8,3 +8,4 @@ toolchain:
 supported:
   - uart
   - gpio
+  - counter
