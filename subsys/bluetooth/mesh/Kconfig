@@ -1491,6 +1491,7 @@ config BT_MESH_USES_MBEDTLS_PSA
 	select PSA_WANT_ALG_SHA_256
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ECC_SECP_R1_256
+	select SECURE_STORAGE if BT_SETTINGS
 	help
 	  Use Mbed TLS as PSA Crypto API provider. This is useful on platforms
 	  that do not support TF-M.

@@ -2,8 +2,16 @@ common:
   tags:
     - psa.secure_storage
 tests:
-  secure_storage.psa.crypto.secure_storage:
-    filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
+  secure_storage.psa.crypto.secure_storage.settings:
+    filter: CONFIG_SECURE_STORAGE and CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+            and CONFIG_FLASH_HAS_DRIVER_ENABLED
+    extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-settings.conf
+    integration_platforms:
+      - native_sim
+      - nrf54l15dk/nrf54l15/cpuapp
+  secure_storage.psa.crypto.secure_storage.custom:
+    filter: CONFIG_SECURE_STORAGE and CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
+            and CONFIG_FLASH_HAS_DRIVER_ENABLED
     extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf
     integration_platforms:
       - native_sim
