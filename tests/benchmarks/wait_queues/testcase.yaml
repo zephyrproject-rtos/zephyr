@@ -13,6 +13,11 @@ common:
     type: one_line
     regex:
       - "PROJECT EXECUTION SUCCESSFUL"
+    record:
+      regex:
+        "REC: (?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+  extra_configs:
+    - CONFIG_BENCHMARK_RECORDING=y
 
 tests:
   benchmark.wait_queues.dumb:
