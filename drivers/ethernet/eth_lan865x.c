@@ -97,6 +97,9 @@ static void lan865x_iface_init(struct net_if *iface)
 		return;
 	}
 
+	ctx->tc6->int_flag = true;
+	k_sem_give(&ctx->tc6->spi_sem);
+
 	net_if_set_link_addr(iface, ctx->mac_address, sizeof(ctx->mac_address), NET_LINK_ETHERNET);
 
 	if (ctx->iface == NULL) {
@@ -120,22 +123,39 @@ static void lan865x_write_macaddress(const struct device *dev);
 static int lan865x_set_config(const struct device *dev, enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
-	const struct lan865x_config *cfg = dev->config;
 	struct lan865x_data *ctx = dev->data;
+	const struct lan865x_config *cfg = dev->config;
 	struct phy_plca_cfg plca_cfg;
 	int ret = -ENOTSUP;
 
 	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
-		return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_CAF);
+		ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_OFF);
+		if (ret) {
+			return ret;
+		}
+
+		ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_CAF);
+		if (ret) {
+			return ret;
+		}
+
+		return lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
+		ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_OFF);
+		if (ret) {
+			return ret;
+		}
+
 		memcpy(ctx->mac_address, config->mac_address.addr, sizeof(ctx->mac_address));
 
 		lan865x_write_macaddress(dev);
 
-		return net_if_set_link_addr(ctx->iface, ctx->mac_address, sizeof(ctx->mac_address),
-					    NET_LINK_ETHERNET);
+		net_if_set_link_addr(ctx->iface, ctx->mac_address, sizeof(ctx->mac_address),
+				     NET_LINK_ETHERNET);
+
+		return lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
@@ -292,52 +312,25 @@ static void lan865x_int_callback(const struct device *dev, struct gpio_callback 
 	ARG_UNUSED(pins);
 
 	struct lan865x_data *ctx = CONTAINER_OF(cb, struct lan865x_data, gpio_int_callback);
-
-	k_sem_give(&ctx->int_sem);
-}
-
-static void lan865x_read_chunks(const struct device *dev)
-{
-	const struct lan865x_config *cfg = dev->config;
-	struct lan865x_data *ctx = dev->data;
 	struct oa_tc6 *tc6 = ctx->tc6;
-	struct net_pkt *pkt;
-	int ret;
 
-	pkt = net_pkt_rx_alloc(K_MSEC(cfg->timeout));
-	if (!pkt) {
-		LOG_ERR("OA RX: Could not allocate packet!");
-		return;
+	if (!ctx->reset) {
+		k_sem_give(&ctx->int_sem);
+	} else {
+		tc6->int_flag = true;
+		k_sem_give(&tc6->spi_sem);
 	}
-
-	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
-	ret = oa_tc6_read_chunks(tc6, pkt);
-	if (ret < 0) {
-		eth_stats_update_errors_rx(ctx->iface);
-		net_pkt_unref(pkt);
-		k_sem_give(&ctx->tx_rx_sem);
-		return;
-	}
-
-	/* Feed buffer frame to IP stack */
-	ret = net_recv_data(ctx->iface, pkt);
-	if (ret < 0) {
-		LOG_ERR("OA RX: Could not process packet (%d)!", ret);
-		net_pkt_unref(pkt);
-	}
-	k_sem_give(&ctx->tx_rx_sem);
 }
 
 static void lan865x_int_thread(const struct device *dev)
 {
 	struct lan865x_data *ctx = dev->data;
 	struct oa_tc6 *tc6 = ctx->tc6;
-	uint32_t sts, ftr;
-	int ret;
+	uint32_t sts;
 
 	while (true) {
-		k_sem_take(&ctx->int_sem, K_FOREVER);
 		if (!ctx->reset) {
+			k_sem_take(&ctx->int_sem, K_FOREVER);
 			oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
 			if (sts & OA_STATUS0_RESETC) {
 				oa_tc6_reg_write(tc6, OA_STATUS0, sts);
@@ -345,29 +338,12 @@ static void lan865x_int_thread(const struct device *dev)
 				lan865x_default_config(dev);
 
 				ctx->reset = true;
-				/*
-				 * According to OA T1S standard - it is mandatory to
-				 * read chunk of data to get the IRQ_N negated (deasserted).
-				 */
-				oa_tc6_read_status(tc6, &ftr);
-				continue;
 			}
-		}
-
-		/*
-		 * The IRQ_N is asserted when RCA becomes > 0. As described in
-		 * OPEN Alliance 10BASE-T1x standard it is deasserted when first
-		 * data header is received by LAN865x.
-		 *
-		 * Hence, it is mandatory to ALWAYS read at least one data chunk!
-		 */
-		do {
-			lan865x_read_chunks(dev);
-		} while (tc6->rca > 0);
-
-		ret = oa_tc6_check_status(tc6);
-		if (ret == -EIO) {
-			lan865x_gpio_reset(dev);
+		} else {
+			if (oa_tc6_spi_thread(tc6)) {
+				LOG_ERR("Non recoverable error\n");
+				break;
+			}
 		}
 	}
 }
@@ -376,6 +352,7 @@ static int lan865x_init(const struct device *dev)
 {
 	const struct lan865x_config *cfg = dev->config;
 	struct lan865x_data *ctx = dev->data;
+	struct oa_tc6 *tc6 = ctx->tc6;
 	int ret;
 
 	__ASSERT(cfg->spi.config.frequency <= LAN865X_SPI_MAX_FREQUENCY,
@@ -437,6 +414,8 @@ static int lan865x_init(const struct device *dev)
 		return ret;
 	}
 
+	oa_tc6_init(tc6);
+
 	return lan865x_gpio_reset(dev);
 }
 
@@ -444,24 +423,9 @@ static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct lan865x_data *ctx = dev->data;
 	struct oa_tc6 *tc6 = ctx->tc6;
-	int ret;
 
-	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
-	ret = oa_tc6_send_chunks(tc6, pkt);
-
-	/* Check if rca > 0 during half-duplex TX transmission */
-	if (tc6->rca > 0) {
-		k_sem_give(&ctx->int_sem);
-	}
-
-	k_sem_give(&ctx->tx_rx_sem);
-	if (ret < 0) {
-		LOG_ERR("TX transmission error, %d", ret);
-		eth_stats_update_errors_tx(net_pkt_iface(pkt));
-		return ret;
-	}
-
-	return 0;
+	tc6->iface = ctx->iface;
+	return oa_tc6_send_chunks(tc6, pkt);
 }
 
 static const struct ethernet_api lan865x_api_func = {

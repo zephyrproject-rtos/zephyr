@@ -12,32 +12,34 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/net/net_pkt.h>
+#include <ethernet/eth_stats.h>
 
-#define MMS_REG(m, r)        ((((m) & GENMASK(3, 0)) << 16) | ((r) & GENMASK(15, 0)))
+#define MMS_REG(m, r)              ((((m) & GENMASK(3, 0)) << 16) | ((r) & GENMASK(15, 0)))
 /* Memory Map Sector (MMS) 0 */
-#define OA_ID                MMS_REG(0x0, 0x000) /* expect 0x11 */
-#define OA_PHYID             MMS_REG(0x0, 0x001)
-#define OA_RESET             MMS_REG(0x0, 0x003)
-#define OA_RESET_SWRESET     BIT(0)
-#define OA_CONFIG0           MMS_REG(0x0, 0x004)
-#define OA_CONFIG0_SYNC      BIT(15)
-#define OA_CONFIG0_RFA_ZARFE BIT(12)
-#define OA_CONFIG0_PROTE     BIT(5)
-#define OA_STATUS0           MMS_REG(0x0, 0x008)
-#define OA_STATUS0_RESETC    BIT(6)
-#define OA_STATUS1           MMS_REG(0x0, 0x009)
-#define OA_BUFSTS            MMS_REG(0x0, 0x00B)
-#define OA_BUFSTS_TXC        GENMASK(15, 8)
-#define OA_BUFSTS_RCA        GENMASK(7, 0)
-#define OA_IMASK0            MMS_REG(0x0, 0x00C)
-#define OA_IMASK0_TXPEM      BIT(0)
-#define OA_IMASK0_TXBOEM     BIT(1)
-#define OA_IMASK0_TXBUEM     BIT(2)
-#define OA_IMASK0_RXBOEM     BIT(3)
-#define OA_IMASK0_LOFEM      BIT(4)
-#define OA_IMASK0_HDREM      BIT(5)
-#define OA_IMASK1            MMS_REG(0x0, 0x00D)
-#define OA_IMASK0_UV18M      BIT(19)
+#define OA_ID                      MMS_REG(0x0, 0x000) /* expect 0x11 */
+#define OA_PHYID                   MMS_REG(0x0, 0x001)
+#define OA_RESET                   MMS_REG(0x0, 0x003)
+#define OA_RESET_SWRESET           BIT(0)
+#define OA_CONFIG0                 MMS_REG(0x0, 0x004)
+#define OA_CONFIG0_SYNC            BIT(15)
+#define OA_CONFIG0_RFA_ZARFE       BIT(12)
+#define OA_CONFIG0_PROTE           BIT(5)
+#define OA_STATUS0                 MMS_REG(0x0, 0x008)
+#define OA_STATUS0_RESETC          BIT(6)
+#define STATUS0_RX_BUFFER_OVERFLOW BIT(3)
+#define OA_STATUS1                 MMS_REG(0x0, 0x009)
+#define OA_BUFSTS                  MMS_REG(0x0, 0x00B)
+#define OA_BUFSTS_TXC              GENMASK(15, 8)
+#define OA_BUFSTS_RCA              GENMASK(7, 0)
+#define OA_IMASK0                  MMS_REG(0x0, 0x00C)
+#define OA_IMASK0_TXPEM            BIT(0)
+#define OA_IMASK0_TXBOEM           BIT(1)
+#define OA_IMASK0_TXBUEM           BIT(2)
+#define OA_IMASK0_RXBOEM           BIT(3)
+#define OA_IMASK0_LOFEM            BIT(4)
+#define OA_IMASK0_HDREM            BIT(5)
+#define OA_IMASK1                  MMS_REG(0x0, 0x00D)
+#define OA_IMASK0_UV18M            BIT(19)
 
 /* OA Control header */
 #define OA_CTRL_HDR_DNC  BIT(31)
@@ -80,6 +82,10 @@
 #define OA_TC6_FTR_RCA_MAX       GENMASK(4, 0)
 #define OA_TC6_FTR_TXC_MAX       GENMASK(4, 0)
 
+#define OA_TC6_ETH_BUFFER_SIZE       1524
+#define OA_TC6_SPI_THREAD_STACK_SIZE 4096
+#define OA_TC6_SPI_THREAD_PRIO       2
+
 /* PHY Clause 22 registers base address and mask */
 #define OA_TC6_PHY_STD_REG_ADDR_BASE 0xFF00
 #define OA_TC6_PHY_STD_REG_ADDR_MASK 0x1F
@@ -91,6 +97,18 @@
 #define OA_TC6_PHY_C45_PMA_PMD_MMS3  3 /* MMD 1 */
 #define OA_TC6_PHY_C45_VS_PLCA_MMS4  4 /* MMD 31 */
 #define OA_TC6_PHY_C45_AUTO_NEG_MMS5 5 /* MMD 7 */
+
+enum spi_buf_status {
+	AVAILABLE,
+	READY,
+	INPROGRESS,
+};
+
+struct tx_eth_desc {
+	void *fifo_reserved; /* 1st word reserved for use by FIFO */
+	struct net_buf *hdr; /* Holds Ethernet frame header */
+	struct net_pkt *pkt; /* Holds Ethernet frame payload */
+};
 
 /**
  * @brief OA TC6 data.
@@ -122,6 +140,31 @@ struct oa_tc6 {
 
 	/** Pointer to network buffer concatenated from received chunk */
 	struct net_buf *concat_buf;
+
+	struct k_sem spi_sem;
+	struct k_sem tx_enq_sem;
+#ifdef CONFIG_SPI_ASYNC
+	struct k_sem spi_async_sem;
+	int spi_tx_status;
+#endif
+
+	K_KERNEL_STACK_MEMBER(spi_thread_stack, OA_TC6_SPI_THREAD_STACK_SIZE);
+	struct k_thread spi_thread;
+	uint8_t spi_tx_buf[2108];
+	uint8_t spi_rx_buf[2108];
+	uint16_t spi_length;
+	uint8_t chunk_size;
+	struct net_if *iface;
+	bool rx_buf_overflow;
+	struct net_pkt *rx_pkt;
+	bool tx_eth_frame_start;
+	bool tx_eth_frame_end;
+	bool int_flag;
+	uint16_t tx_eth_len;
+	struct tx_eth_desc tx_descs[2];
+	struct tx_eth_desc *tx_desc;
+	struct k_fifo tx_free_fifo;
+	struct k_fifo tx_ready_fifo;
 };
 
 /**
@@ -143,6 +186,13 @@ static inline bool oa_tc6_get_parity(const uint32_t x)
 
 	return !(y & 1);
 }
+
+/**
+ * @brief Init OA TC6 handle
+ *
+ * @param tc6 OA TC6 specific data
+ */
+void oa_tc6_init(struct oa_tc6 *tc6);
 
 /**
  * @brief Read OA TC6 compliant device single register
@@ -255,6 +305,15 @@ int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg, uint32_t mask, uint32
  * @return 0 if successful, <0 otherwise.
  */
 int oa_tc6_check_status(struct oa_tc6 *tc6);
+
+/**
+ * @brief Thread for SPI transfer
+ *
+ * @param tc6 OA TC6 specific data
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_spi_thread(struct oa_tc6 *tc6);
 
 /**
  * @brief      Read C22 registers using MDIO Bus
