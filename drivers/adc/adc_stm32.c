@@ -211,7 +211,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 			       void *buffer, size_t channel_count)
 {
 	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 	struct adc_stm32_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
 	int ret;
@@ -368,7 +368,7 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 static void adc_stm32_start_conversion(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 
 	LOG_DBG("Starting conversion");
 
@@ -685,7 +685,7 @@ static void adc_stm32_oversampling_ratioshift(ADC_TypeDef *adc, uint32_t ratio, 
 static int adc_stm32_oversampling(const struct device *dev, uint8_t ratio)
 {
 	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 
 	if (ratio == 0) {
 		adc_stm32_oversampling_scope(adc, LL_ADC_OVS_DISABLE);
@@ -725,7 +725,7 @@ static void dma_callback(const struct device *dev, void *user_data,
 	struct adc_stm32_data *data = user_data;
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) /* Avoid unused variables */
 	const struct adc_stm32_cfg *config = data->dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
 	LOG_DBG("dma callback");
@@ -774,7 +774,7 @@ static uint8_t get_reg_value(const struct device *dev, uint32_t reg,
 			     uint32_t shift, uint32_t mask)
 {
 	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 
 	uintptr_t addr = (uintptr_t)adc + reg;
 
@@ -785,7 +785,7 @@ static void set_reg_value(const struct device *dev, uint32_t reg,
 			  uint32_t shift, uint32_t mask, uint32_t value)
 {
 	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 
 	uintptr_t addr = (uintptr_t)adc + reg;
 
@@ -796,7 +796,7 @@ static int set_resolution(const struct device *dev,
 			  const struct adc_sequence *sequence)
 {
 	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 	uint8_t res_reg_addr = 0xFF;
 	uint8_t res_shift = 0;
 	uint8_t res_mask = 0;
@@ -848,7 +848,7 @@ static int set_sequencer(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
 	struct adc_stm32_data *data = dev->data;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 
 	uint8_t channel_id;
 	uint8_t channel_index = 0;
@@ -913,7 +913,7 @@ static int start_read(const struct device *dev,
 {
 	const struct adc_stm32_cfg *config = dev->config;
 	struct adc_stm32_data *data = dev->data;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 	int err;
 
 	data->buffer = sequence->buffer;
@@ -1021,7 +1021,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
 	const struct device *dev = data->dev;
 	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 
 	/* Remove warning for some series */
 	ARG_UNUSED(adc);
@@ -1095,7 +1095,7 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	struct adc_stm32_data *data =
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
 	const struct adc_stm32_cfg *config = data->dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 
 	ARG_UNUSED(status);
 
@@ -1432,7 +1432,7 @@ static int adc_stm32_set_clock(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 	int ret = 0;
 
 	ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
@@ -1479,7 +1479,7 @@ static int adc_stm32_init(const struct device *dev)
 	struct adc_stm32_data *data = dev->data;
 	const struct adc_stm32_cfg *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 	int err;
 
 	ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
@@ -1595,7 +1595,7 @@ static int adc_stm32_init(const struct device *dev)
 static int adc_stm32_suspend_setup(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	ADC_TypeDef *adc = config->base;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
 
