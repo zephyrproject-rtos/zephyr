@@ -196,6 +196,8 @@ config NRF70_SR_COEX
 
 config NRF70_SR_COEX_RF_SWITCH
 	bool "GPIO configuration to control SR side RF switch position"
+	depends on $(dt_node_has_prop,nrf70, srrf-switch-gpios)
+	depends on NRF70_SR_COEX
 	help
 	  Select this option to enable GPIO configuration to control SR side RF switch position.
 	  If this GPIO is asserted (1), the SR side RF switch is connected to the Wi-Fi side (shared antenna).
