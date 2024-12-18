@@ -65,8 +65,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}
     - name: install pytest
       run: |
-        pip3 install wheel
-        pip3 install pytest west pyelftools canopen natsort progress mypy intelhex psutil ply pyserial anytree
+        pip install pytest west pyelftools canopen natsort progress mypy intelhex psutil ply pyserial anytree
     - name: run pytest-win
       if: runner.os == 'Windows'
       run: |
