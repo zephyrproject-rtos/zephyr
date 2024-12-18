@@ -179,6 +179,8 @@ int main(void)
 		printk("BIG create complete chan %u.\n", chan);
 	}
 
+	uint32_t skip = 3U;
+
 	while (true) {
 		struct bt_iso_tx_info tx_info;
 
@@ -186,6 +188,12 @@ int main(void)
 			struct net_buf *buf;
 			uint16_t sn;
 			int ret;
+
+			if (skip && (chan == 0U)) {
+				skip--;
+
+				continue;
+			}
 
 			buf = net_buf_alloc(&bis_tx_pool, K_USEC(BUF_ALLOC_TIMEOUT_US));
 			if (!buf) {
@@ -266,6 +274,9 @@ int main(void)
 				 *       be used to synchronize the clock with the Controller.
 				 */
 			}
+
+			printk("Tx chan %u: seq num %u -> %u ts %u -> %u offset %u\n", chan,
+			       seq_num, tx_info.seq_num, ts, tx_info.ts, tx_info.offset);
 
 			/* Permit a reasonable clock jitter (at least Bluetooth active clock
 			 * jitter), in the verification of timestamp.
