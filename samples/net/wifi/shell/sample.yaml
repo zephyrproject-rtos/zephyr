@@ -80,3 +80,4 @@ tests:
     platform_allow:
       - frdm_rw612
       - rd_rw612_bga
+      - mimxrt1170_evk/mimxrt1176/cm7

@@ -8,3 +8,35 @@ description: |
 compatible: "nxp,wifi"
 
 include: [sd-device.yaml, pinctrl-device.yaml]
+
+properties:
+
+    pdn-gpios:
+        type: phandle-array
+        required: false
+        description: |
+            Power Down control GPIO pin.
+            
+            Signal states:
+            - High: Module enabled and internally powered
+            - Low:  Module disabled and powered down
+
+    wl_rst-gpios:
+        type: phandle-array
+        required: false
+        description: |
+            WiFi SDIO reset control GPIO pin.
+            
+            Signal states:
+            - High: Normal operation mode
+            - Low:  Module held in reset state
+
+    bt_rst-gpios:
+        type: phandle-array
+        required: false
+        description: |
+            Bluetooth reset control GPIO pin.
+            
+            Signal states:
+            - High: Normal operation mode  
+            - Low:  Bluetooth held in reset state
