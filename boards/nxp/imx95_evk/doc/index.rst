@@ -92,6 +92,8 @@ The Zephyr ``imx95_evk/mimx9596/m7`` board target supports the following hardwar
 +-----------+------------+-------------------------------------+
 | TPM       | on-chip    | tpm                                 |
 +-----------+------------+-------------------------------------+
+| NETC      | on-chip    | ethernet, mdio                      |
++-----------+------------+-------------------------------------+
 
 The Zephyr ``imx95_evk/mimx9596/a55`` and ``imx95_evk/mimx9596/a55/smp`` board targets support
 the following hardware features:
@@ -130,6 +132,12 @@ Two channels are enabled on TPM2 for PWM for M7. Signals can be observerd with
 oscilloscope.
 Channel 2 signal routed to resistance R881.
 Channel 3 signal routed to resistance R882.
+
+Ethernet
+--------
+
+NETC driver supports to manage the Physical Station Interface (PSI).
+The first ENET1 port is enabled for M7.
 
 
 Programming and Debugging (A55)
