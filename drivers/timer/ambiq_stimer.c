@@ -35,12 +35,13 @@
 
 #define COMPARE_INTERRUPT (AM_HAL_STIMER_INT_COMPAREA | AM_HAL_STIMER_INT_COMPAREB)
 
-#define TIMER_IRQ (DT_INST_IRQN(0))
+#define COMPAREA_IRQ (DT_INST_IRQN(0))
+#define COMPAREB_IRQ (COMPAREA_IRQ + 1)
 
 #define TIMER_CLKSRC (DT_INST_PROP(0, clk_source))
 
 #if defined(CONFIG_TEST)
-const int32_t z_sys_timer_irq_for_test = TIMER_IRQ;
+const int32_t z_sys_timer_irq_for_test = COMPAREA_IRQ;
 #endif
 
 /* Elapsed ticks since the previous kernel tick was announced, It will get accumulated every time
@@ -207,9 +208,15 @@ static int stimer_init(void)
 #endif
 	g_last_time_stamp = am_hal_stimer_counter_get();
 
-	NVIC_ClearPendingIRQ(TIMER_IRQ);
-	IRQ_CONNECT(TIMER_IRQ, 0, stimer_isr, 0, 0);
-	irq_enable(TIMER_IRQ);
+	/* A Possible clock glitch could rarely cause the Stimer interrupt to be lost.
+	 * Set up a backup comparator to handle this case
+	 */
+	NVIC_ClearPendingIRQ(COMPAREA_IRQ);
+	NVIC_ClearPendingIRQ(COMPAREB_IRQ);
+	IRQ_CONNECT(COMPAREA_IRQ, 0, stimer_isr, 0, 0);
+	IRQ_CONNECT(COMPAREB_IRQ, 0, stimer_isr, 0, 0);
+	irq_enable(COMPAREA_IRQ);
+	irq_enable(COMPAREB_IRQ);
 
 	am_hal_stimer_int_enable(COMPARE_INTERRUPT);
 	/* Start timer with period CYC_PER_TICK if tickless is not enabled */
