@@ -51,8 +51,6 @@ be easily compared the default.
 +-----------------------------+------------------------------------+
 | prj.objcore.conf            | Enable object cores and statistics |
 +-----------------------------+------------------------------------+
-| prj.timeslicing.conf        | Enable timeslicing                 |
-+-----------------------------+------------------------------------+
 | prj.userspace.conf          | Enable userspace support           |
 +-----------------------------+------------------------------------+
 
