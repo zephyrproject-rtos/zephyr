@@ -50,6 +50,7 @@ static void *stepper_setup(void)
 			  &stepper_signal);
 	user_data_received = NULL;
 	zassert_not_null(fixture.dev);
+	(void)stepper_enable(fixture.dev, true);
 	return &fixture;
 }
 
