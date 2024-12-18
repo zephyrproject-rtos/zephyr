@@ -82,6 +82,14 @@ LOG_MODULE_REGISTER(adc_stm32);
  * compat st_stm32f4_adc -> STM32F2, F4, F7, L1
  */
 
+/* Clock source values */
+#define SYNC			1
+#define ASYNC			2
+
+/* Sequencer type */
+#define NOT_FULLY_CONFIGURABLE	0
+#define FULLY_CONFIGURABLE	1
+
 /* Oversampler type */
 #define OVERSAMPLER_NONE	0
 #define OVERSAMPLER_MINIMAL	1
