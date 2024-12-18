@@ -34,6 +34,16 @@
 #define Z_UDC_BUF_GRANULARITY	sizeof(void *)
 #endif
 
+
+#if defined(CONFIG_UDC_BUF_FORCE_NOCACHE)
+/*
+ * The usb transfer buffer needs to be in __nocache section
+ */
+#define Z_UDC_BUF_SECTION	__nocache
+#else
+#define Z_UDC_BUF_SECTION
+#endif
+
 /**
  * @brief Buffer macros and definitions used in USB device support
  * @defgroup udc_buf Buffer macros and definitions used in USB device support
@@ -59,7 +69,8 @@
  * @param size Buffer size
  */
 #define UDC_STATIC_BUF_DEFINE(name, size)					\
-	static uint8_t __aligned(UDC_BUF_ALIGN) name[ROUND_UP(size, UDC_BUF_GRANULARITY)];
+	static uint8_t Z_UDC_BUF_SECTION __aligned(UDC_BUF_ALIGN)		\
+	name[ROUND_UP(size, UDC_BUF_GRANULARITY)];
 
 /**
  * @brief Verify that the buffer is aligned as required by the UDC driver
@@ -136,7 +147,7 @@ extern const struct net_buf_data_cb net_buf_dma_cb;
 	_NET_BUF_ARRAY_DEFINE(pname, count, ud_size);				\
 	BUILD_ASSERT((UDC_BUF_GRANULARITY) % (UDC_BUF_ALIGN) == 0,		\
 		     "Code assumes granurality is multiple of alignment");	\
-	static uint8_t __nocache __aligned(UDC_BUF_ALIGN)			\
+	static uint8_t Z_UDC_BUF_SECTION __aligned(UDC_BUF_ALIGN)		\
 		net_buf_data_##pname[count][ROUND_UP(size, UDC_BUF_GRANULARITY)];\
 	static const struct net_buf_pool_fixed net_buf_fixed_##pname = {	\
 		.data_pool = (uint8_t *)net_buf_data_##pname,			\
