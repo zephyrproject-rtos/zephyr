@@ -949,17 +949,39 @@ static void test_common(void)
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_audio_received);
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
+}
+
+static void test_main(void)
+{
+	test_common();
+
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
+
+	/* The order of PA sync lost and BIG Sync lost is irrelevant
+	 * and depend on timeout parameters. We just wait for PA first, but
+	 * either way will work.
+	 */
+	printk("Waiting for PA disconnected\n");
+	WAIT_FOR_FLAG(flag_pa_sync_lost);
+
+	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
+		k_sem_take(&sem_stream_stopped, K_FOREVER);
+	}
+	WAIT_FOR_UNSET_FLAG(flag_sink_started);
+
+	PASS("Broadcast sink passed\n");
+}
+
+static void test_main_update(void)
+{
+	test_common();
 
 	/* Ensure that we also see the metadata update */
 	printk("Waiting for metadata update\n");
 	WAIT_FOR_FLAG(flag_base_metadata_updated)
 
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
-}
-
-static void test_main(void)
-{
-	test_common();
 
 	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
 
@@ -1214,6 +1236,12 @@ static const struct bst_test_instance test_broadcast_sink[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "broadcast_sink_update",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_update,
 	},
 	{
 		.test_id = "broadcast_sink_disconnect",
