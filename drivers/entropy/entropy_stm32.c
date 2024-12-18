@@ -110,6 +110,15 @@ BUILD_ASSERT((CONFIG_ENTROPY_STM32_THR_POOL_SIZE &
 	      (CONFIG_ENTROPY_STM32_THR_POOL_SIZE - 1)) == 0,
 	     "The CONFIG_ENTROPY_STM32_THR_POOL_SIZE must be a power of 2!");
 
+/**
+ * RM0505 §14.4 "TRNG functional description":
+ *  To use the TRNG peripheral the system clock frequency must be
+ *  at least 32 MHz. See also: §6.2.2 "Peripheral clock details".
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_STM32WB09XX) ||
+		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= (32 * 1000 * 1000),
+	"STM32WB09: TRNG requires system clock frequency >= 32MHz");
+
 struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken *pclken;
 };
@@ -143,7 +152,10 @@ static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 /* Cross-series LL compatibility wrappers */
 static inline void ll_rng_EnableIT(RNG_TypeDef *RNGx)
 {
-#if defined(TRNG_HAS_IRQ_LINE)
+#if defined(CONFIG_SOC_STM32WB09XX)
+	LL_RNG_EnableEnErrorIrq(RNGx);
+	LL_RNG_EnableEnFfFullIrq(RNGx);
+#elif defined(TRNG_HAS_IRQ_LINE)
 	LL_RNG_EnableIT(RNGx);
 #else
 	/* No IRQ line in hardware: do nothing */
@@ -154,8 +166,12 @@ static inline void ll_rng_EnableIT(RNG_TypeDef *RNGx)
 static inline uint32_t ll_rng_IsActiveFlag_SEIS(RNG_TypeDef *RNGx)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WB0X)
-	return LL_RNG_IsActiveFlag_FAULT(RNGx);
-#else
+#	if defined(CONFIG_SOC_STM32WB09XX)
+		return LL_RNG_IsActiveFlag_ENTROPY_ERR(RNGx);
+#	else
+		return LL_RNG_IsActiveFlag_FAULT(RNGx);
+#	endif
+#else /* CONFIG_SOC_SERIES_STM32WB0X */
 	return LL_RNG_IsActiveFlag_SEIS(RNGx);
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }
@@ -163,8 +179,12 @@ static inline uint32_t ll_rng_IsActiveFlag_SEIS(RNG_TypeDef *RNGx)
 static inline void ll_rng_ClearFlag_SEIS(RNG_TypeDef *RNGx)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WB0X)
-	LL_RNG_ClearFlag_FAULT(RNGx);
-#else
+#	if defined(CONFIG_SOC_STM32WB09XX)
+		LL_RNG_SetResetHealthErrorFlags(RNGx, 1);
+#	else
+		LL_RNG_ClearFlag_FAULT(RNGx);
+#	endif
+#else /* CONFIG_SOC_SERIES_STM32WB0X */
 	LL_RNG_ClearFlag_SEIS(RNGx);
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }
@@ -186,8 +206,12 @@ static inline uint32_t ll_rng_IsActiveFlag_SECS(RNG_TypeDef *RNGx)
 static inline uint32_t ll_rng_IsActiveFlag_DRDY(RNG_TypeDef *RNGx)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WB0X)
-	return LL_RNG_IsActiveFlag_RNGRDY(RNGx);
-#else
+#	if defined(CONFIG_SOC_STM32WB09XX)
+		return LL_RNG_IsActiveFlag_VAL_READY(RNGx);
+#	else
+		return LL_RNG_IsActiveFlag_RNGRDY(RNGx);
+#	endif
+#else /* CONFIG_SOC_SERIES_STM32WB0X */
 	return LL_RNG_IsActiveFlag_DRDY(RNGx);
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }
@@ -195,8 +219,12 @@ static inline uint32_t ll_rng_IsActiveFlag_DRDY(RNG_TypeDef *RNGx)
 static inline uint16_t ll_rng_ReadRandData(RNG_TypeDef *RNGx)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WB0X)
-	return LL_RNG_ReadRandData16(RNGx);
-#else
+#	if defined(CONFIG_SOC_STM32WB09XX)
+		return (uint16_t)LL_RNG_GetRndVal(RNGx);
+#	else
+		return LL_RNG_ReadRandData16(RNGx);
+#	endif
+#else /* CONFIG_SOC_SERIES_STM32WB0X */
 	return (uint16_t)LL_RNG_ReadRandData32(RNGx);
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }
@@ -214,6 +242,14 @@ static int entropy_stm32_suspend(void)
 	_lock_rng_hsem();
 
 	LL_RNG_Disable(rng);
+#if defined(CONFIG_SOC_STM32WB09XX)
+	/* RM0505 Rev.2 §14.4:
+	 * "After the TRNG IP is disabled by setting CR.DISABLE, in order to
+	 * properly restart the TRNG IP, the AES_RESET bit must be set to 1
+	 * (that is, resetting the AES core and restarting all health tests)."
+	 */
+	LL_RNG_SetAesReset(rng, 1);
+#endif /* CONFIG_SOC_STM32WB09XX */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
