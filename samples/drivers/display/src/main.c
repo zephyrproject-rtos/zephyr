@@ -231,6 +231,10 @@ int main(void)
 		grey_scale_sleep = 100;
 	}
 
+	if (capabilities.screen_info & SCREEN_INFO_X_ALIGNMENT_WIDTH) {
+		rect_w = capabilities.x_resolution;
+	}
+
 	buf_size = rect_w * rect_h;
 
 	if (buf_size < (capabilities.x_resolution * h_step)) {
