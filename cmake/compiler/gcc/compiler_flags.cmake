@@ -266,3 +266,9 @@ set_compiler_property(PROPERTY include_file -include)
 set_compiler_property(PROPERTY cmse -mcmse)
 
 set_property(TARGET asm PROPERTY cmse -mcmse)
+
+# Compiler flag for not placing functions in their own sections:
+set_compiler_property(PROPERTY no_function_sections "-fno-function-sections")
+
+# Compiler flag for not placing variables in their own sections:
+set_compiler_property(PROPERTY no_data_sections "-fno-data-sections")
