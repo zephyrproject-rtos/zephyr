@@ -598,17 +598,9 @@ static void test_main(void)
 		return;
 	}
 
-	test_broadcast_source_reconfig(source);
-
 	test_broadcast_source_start(source, adv);
 
-	/* Wait for other devices to have received what they wanted */
-	backchannel_sync_wait_any();
-
-	/* Update metadata while streaming */
-	test_broadcast_source_update_metadata(source, adv);
-
-	/* Wait for other devices to have received what they wanted */
+	/* Wait for other devices to have received data */
 	backchannel_sync_wait_any();
 
 	/* Wait for other devices to let us know when we can stop the source */
@@ -637,6 +629,57 @@ static void test_main(void)
 	printk("Deleting broadcast source\n");
 	test_broadcast_source_delete(source);
 	source = NULL;
+
+	PASS("Broadcast source passed\n");
+}
+
+static void test_main_update(void)
+{
+	struct bt_bap_broadcast_source *source;
+	struct bt_le_ext_adv *adv;
+	int err;
+
+	init();
+
+	err = setup_broadcast_source(&source, false);
+	if (err != 0) {
+		FAIL("Unable to setup broadcast source: %d\n", err);
+		return;
+	}
+
+	err = setup_extended_adv(source, &adv);
+	if (err != 0) {
+		FAIL("Failed to setup extended advertising: %d\n", err);
+		return;
+	}
+
+	test_broadcast_source_reconfig(source);
+
+	test_broadcast_source_start(source, adv);
+
+	/* Wait for other devices to have received data */
+	backchannel_sync_wait_any();
+
+	/* Update metadata while streaming */
+	test_broadcast_source_update_metadata(source, adv);
+
+	/* Wait for other devices to have received metadata update */
+	backchannel_sync_wait_any();
+
+	/* Wait for other devices to let us know when we can stop the source */
+	backchannel_sync_wait_any();
+
+	test_broadcast_source_stop(source);
+
+	test_broadcast_source_delete(source);
+	source = NULL;
+
+	err = stop_extended_adv(adv);
+	if (err != 0) {
+		FAIL("Unable to stop extended advertising: %d\n", err);
+		return;
+	}
+	adv = NULL;
 
 	PASS("Broadcast source passed\n");
 }
@@ -718,6 +761,13 @@ static const struct bst_test_instance test_broadcast_source[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "broadcast_source_update",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_update,
 		.test_args_f = test_args,
 	},
 	{
