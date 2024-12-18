@@ -898,7 +898,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
 	struct gpio_pca_series_data *data = dev->data;
-	uint32_t reg_value;
+	uint32_t reg_value = 0;
 	int ret = 0;
 
 	if ((flags & GPIO_INPUT) && (flags & GPIO_OUTPUT)) {
@@ -1474,9 +1474,9 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 {
 	struct gpio_pca_series_data *data = dev->data;
 	int ret = 0;
-	uint32_t input_old, int_rise, int_fall;
-	uint32_t input;
-	uint32_t transitioned_pins;
+	uint32_t input_old = 0, int_rise = 0, int_fall = 0;
+	uint32_t input = 0;
+	uint32_t transitioned_pins = 0;
 	uint32_t int_status = 0;
 
 	k_sem_take(&data->lock, K_FOREVER);
