@@ -1010,7 +1010,7 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	if (dds->n_ports > CONFIG_PTP_NUM_PORTS) {
+	if (dds->n_ports >= CONFIG_PTP_NUM_PORTS) {
 		LOG_WRN("Exceeded number of PTP Ports.");
 		return;
 	}
