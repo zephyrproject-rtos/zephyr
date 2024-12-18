@@ -196,6 +196,10 @@ config NRF70_SR_COEX
 
 config NRF70_SR_COEX_RF_SWITCH
 	bool "GPIO configuration to control SR side RF switch position"
+	help
+	  Select this option to enable GPIO configuration to control SR side RF switch position.
+	  If this GPIO is asserted (1), the SR side RF switch is connected to the Wi-Fi side (shared antenna).
+	  If this GPIO is de-asserted (0), the SR side RF switch is connected to the SR side (separate antenna).
 
 config NRF70_WORKQ_STACK_SIZE
 	int "Stack size for workqueue"
