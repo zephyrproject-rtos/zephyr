@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	aliases {
-		pwm-0 = &ioex_it8801_pwm7;
-	};
-};
-
 it8801_i2c: &i2c4 {
 	status = "okay";
 };
@@ -18,8 +12,4 @@ it8801_i2c: &i2c4 {
 
 &it8801_mfd {
 	irq-gpios = <&gpioa 1 0>;
-
-	ioex_it8801_pwm7: it8801_pwm@90 {
-		status = "okay";
-	};
 };
