@@ -2075,8 +2075,6 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 	struct dai_intel_ssp_plat_data *ssp_plat_data = dai_get_plat_data(dp);
 	const struct dai_intel_ipc4_ssp_config_ver_3_0 *regs = spec_config;
 	uint32_t sscr1 = 0;
-	uint32_t sstsa = 0;
-	uint32_t ssrsa = 0;
 	uint32_t ssc0 = regs->ssc0;
 	sscr1 = regs->ssc1 & ~(SSCR1_RSVD21);
 
