@@ -15,6 +15,17 @@ grey changes from black through to white. If the grey looks too green or red
 at any point or the order of the corners is not as described above then the LCD
 may be endian swapped.
 
+On displays with the :c:enumerator:`SCREEN_INFO_X_ALIGNMENT_WIDTH` capability,
+such as those using the :dtcompatible:`sharp,ls0xx` driver, it is only possible
+to draw full lines at a time. On these displays, the rectangles described above
+will be replaced with bars that take up the entire width of the display. Only
+the green and grey bar will be visible.
+
+On monochrome displays, the rectangles (or bars) will all be some shade of grey.
+
+On displays with 1 bit per pixel, the greyscale animation of the bottom
+rectangle (or bar) will appear as flickering between black and white.
+
 Building and Running
 ********************
 
