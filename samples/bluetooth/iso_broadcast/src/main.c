@@ -27,13 +27,10 @@ static K_SEM_DEFINE(sem_iso_data, CONFIG_BT_ISO_TX_BUF_COUNT,
 
 #define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
-static uint16_t seq_num;
-
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
 
-	seq_num = 0U;
 	k_sem_give(&sem_big_cmplt);
 }
 
@@ -174,6 +171,7 @@ int main(void)
 		printk("BIG create complete chan %u.\n", chan);
 	}
 
+	uint16_t seq_num[BIS_ISO_CHAN_COUNT];
 	bool is_first_iso_data_send = true;
 	uint32_t ts_ctlr = 0U;
 	uint32_t ts_app = 0U;
@@ -209,9 +207,10 @@ int main(void)
 			 * any stream.
 			 */
 			if (!is_first_iso_data_send) {
-				ret = bt_iso_chan_send_ts(&bis_iso_chan[chan], buf, seq_num,
+				ret = bt_iso_chan_send_ts(&bis_iso_chan[chan], buf, seq_num[chan],
 							  ts_ctlr);
 			} else {
+				seq_num[chan] = 0U;
 				ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, 0U);
 			}
 
@@ -258,14 +257,16 @@ int main(void)
 			 * Ignore checking first ISO data sent.
 			 */
 			if (!is_first_iso_data_send &&
-			    (((seq_num + delta_sn) != tx_info.seq_num) ||
+			    (((seq_num[chan] + delta_sn) != tx_info.seq_num) ||
 			     !IN_RANGE(tx_info.ts, (ts_app + delta_ts - jitter_us),
 				       (ts_app + delta_ts + jitter_us)))) {
 				printk("Mismatch in tx sync timestamp! (%u, %llu != %u, %u)\n",
-				       (seq_num + delta_sn), (ts_app + delta_ts),
+				       (seq_num[chan] + delta_sn), (ts_app + delta_ts),
 				       tx_info.seq_num, tx_info.ts);
 				return 0;
 			}
+
+			seq_num[chan]++;
 		}
 
 		is_first_iso_data_send = false;
@@ -275,7 +276,6 @@ int main(void)
 		}
 
 		iso_send_count++;
-		seq_num++;
 		ts_ctlr += BIG_SDU_INTERVAL_US;
 		ts_app += BIG_SDU_INTERVAL_US;
 
