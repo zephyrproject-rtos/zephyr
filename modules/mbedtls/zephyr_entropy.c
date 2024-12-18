@@ -14,12 +14,12 @@ static int get_random_data(uint8_t *output, size_t output_size, bool allow_non_c
 {
 	int ret = MBEDTLS_ERR_ENTROPY_NO_SOURCES_DEFINED;
 
-#if defined(CONFIG_CSPRNG_ENABLED)
+#if defined(CONFIG_CSRNG)
 	ret = sys_csrand_get(output, output_size);
 	if (ret == 0) {
 		return 0;
 	}
-#endif /* CONFIG_CSPRNG_ENABLED */
+#endif /* CONFIG_CSRNG */
 
 	if (allow_non_cs) {
 		sys_rand_get(output, output_size);

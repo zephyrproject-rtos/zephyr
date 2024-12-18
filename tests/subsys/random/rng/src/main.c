@@ -86,7 +86,7 @@ ZTEST(rng_common, test_rand32)
 		"random numbers returned same value with high probability");
 	}
 
-#if defined(CONFIG_CSPRNG_ENABLED)
+#if defined(CONFIG_CSRNG)
 
 	printk("Generating bulk fill cryptographically secure random numbers\n");
 
@@ -118,7 +118,7 @@ ZTEST(rng_common, test_rand32)
 
 	zassert_true(err == 0, "sys_csrand_get returned an error");
 
-#endif /* CONFIG_CSPRNG_ENABLED */
+#endif /* CONFIG_CSRNG */
 }
 
 ZTEST_SUITE(rng_common, NULL, NULL, NULL, NULL, NULL);

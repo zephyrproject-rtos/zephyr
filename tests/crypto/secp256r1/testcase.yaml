@@ -1,6 +1,6 @@
 common:
   filter: dt_chosen_enabled("zephyr,entropy") and
-          CONFIG_CSPRNG_ENABLED and
+          CONFIG_CSRNG and
           CONFIG_HARDWARE_DEVICE_CS_GENERATOR and
           not CONFIG_BUILD_WITH_TFM and
           not (CONFIG_MBEDTLS and CONFIG_TINYCRYPT)

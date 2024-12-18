@@ -76,6 +76,7 @@ config AWS_EXPONENTIAL_BACKOFF
 	bool "enable exponential backoff"
 	default n if AWS_TEST_SUITE_DQP || AWS_TEST_SUITE_RECV_QOS1
 	default y
+	select RNG
 	help
 	  Enable AWS exponential backoff for reconnecting to AWS MQTT broker.
 

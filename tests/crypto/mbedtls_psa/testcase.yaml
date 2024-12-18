@@ -21,14 +21,14 @@ common:
     - psa
 tests:
   crypto.mbedtls_psa.with_entropy_driver:
-    filter: CONFIG_CSPRNG_ENABLED
+    filter: CONFIG_CSRNG
     # Pick a platform which has an entropy driver and enable it.
     integration_platforms:
       - native_sim/native/64
     extra_configs:
       - CONFIG_ENTROPY_GENERATOR=y
   crypto.mbedtls_psa.without_entropy_driver:
-    filter: not CONFIG_CSPRNG_ENABLED
+    filter: not CONFIG_CSRNG
     # Pick a platform which does not have an entropy driver. In this case we
     # enable the timer random generator because it's always available on all
     # platforms.

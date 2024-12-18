@@ -5,6 +5,30 @@
 
 menu "Random Number Generators"
 
+config RNG
+	bool "Enable inclusion of RNG functions"
+	default y
+	depends on ENTROPY_AVAILABLE || TEST_RANDOM_GENERATOR
+	imply ENTROPY_GENERATOR
+	help
+	  Subsystems and applications that need to use the sys_rand_get() set
+	  of APIs will set this config.
+
+	  ENTROPY_AVAILABLE is true if the DT is enabled.
+
+config CSRNG
+	bool "Enable inclusion of Cryptographically Secure RNG functions"
+	# For Cryptographically Secure RNG functions you need a valid entropy
+	# source. But for testing reasons, a TEST_RANDOM_GENERATOR can be
+	# used with the appropriate warning message at build.
+	depends on ENTROPY_AVAILABLE || TEST_RANDOM_GENERATOR
+	imply ENTROPY_GENERATOR
+	help
+	  Subsystems and applications that need to use the sys_csrand_get() API
+	  will set this config.
+
+	  ENTROPY_AVAILABLE is true if the DT is enabled.
+
 config TEST_RANDOM_GENERATOR
 	bool "Allow non-random number generator"
 	help
@@ -74,16 +98,6 @@ config XOSHIRO_RANDOM_GENERATOR
 	  non-cryptographically secure random number generator.
 
 endchoice # RNG_GENERATOR_CHOICE
-
-#
-# Implied dependency on a cryptographically secure entropy source when
-# enabling CS generators. ENTROPY_HAS_DRIVER is the flag indicating the
-# CS entropy source.
-#
-config CSPRNG_ENABLED
-	bool
-	default y
-	depends on ENTROPY_HAS_DRIVER
 
 choice CSPRNG_GENERATOR_CHOICE
 	prompt "Cryptographically secure random generator"

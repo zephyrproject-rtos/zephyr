@@ -7,6 +7,7 @@ menuconfig MODEM_WNCM14A2A
 	bool "Wistron LTE-M modem driver"
 	select MODEM_RECEIVER
 	select NET_OFFLOAD
+	select RNG
 	imply GPIO
 	help
 	  Choose this setting to enable Wistron WNC-M14A2A LTE-M modem driver.
