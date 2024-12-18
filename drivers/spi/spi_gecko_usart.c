@@ -153,11 +153,6 @@ static int spi_config(const struct device *dev,
 		sys_clear_bit(ctrl_reg, _USART_CTRL_CSINV_SHIFT);
 	}
 
-	if (config->operation & SPI_LOCK_ON) {
-		LOG_ERR("Lock On not supported");
-		return -ENOTSUP;
-	}
-
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Only supports single mode");
@@ -375,6 +370,8 @@ static int spi_gecko_init(const struct device *dev)
 	/* Enable the peripheral */
 	config->base->CMD = (uint32_t) usartEnable;
 
+	spi_context_unlock_unconditionally(&data->ctx);
+
 	return 0;
 }
 
@@ -387,13 +384,19 @@ static int spi_gecko_transceive(const struct device *dev,
 	uint16_t control = 0;
 	int ret;
 
+	spi_context_lock(&data->ctx, false, NULL, NULL, config);
+
 	ret = spi_config(dev, config, &control);
 	if (ret < 0) {
+		spi_context_release(&data->ctx, ret);
 		return ret;
 	}
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 	spi_gecko_xfer(dev, config);
+
+	spi_context_release(&data->ctx, ret);
+
 	return 0;
 }
 
@@ -411,11 +414,10 @@ static int spi_gecko_transceive_async(const struct device *dev,
 static int spi_gecko_release(const struct device *dev,
 			     const struct spi_config *config)
 {
-	const struct spi_gecko_config *gecko_config = dev->config;
+	struct spi_gecko_data *data = dev->data;
 
-	if (!(gecko_config->base->STATUS & USART_STATUS_TXIDLE)) {
-		return -EBUSY;
-	}
+	spi_context_unlock_unconditionally(&data->ctx);
+
 	return 0;
 }
 
