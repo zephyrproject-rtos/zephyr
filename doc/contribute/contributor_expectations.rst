@@ -368,10 +368,27 @@ Reviewer Expectations
   they address all non-blocking comments. PR authors should acknowledge every
   review comment in some way, even if it's just with an emoticon.
 
-- Reviewers shall be *clear* and *concise* what changes they are requesting when the
+- Style changes that the reviewer disagrees with but that are not documented as
+  part of the project can be pointed out as non-blocking, but cannot constitute
+  a reason for a request for changes. The reviewer can optionally correct any
+  potential inconsistencies in the tree, document the new guidelines or rules,
+  and then enforce them as part of the review.
+
+- Whenever requesting style related changes, reviewers should be able to point
+  out the corresponding guideline, rule or rationale in the project's
+  documentation.  This does not apply to certain types of requests for changes,
+  notably those specific to the changes being submitted (e.g. the use of a
+  particular data structure or the choice of locking primitives).
+
+- Reviewers shall be *clear* about what changes they are requesting when the
   "Request Changes" option is used. Requested changes shall be in the scope of
   the PR in question and following the contribution and style guidelines of the
-  project.
+  project. Furthermore, reviewers must be able to point back to the exact issues
+  in the PR that triggered a request for changes.
+
+- Reviewers should not request changes for issues which are automatically
+  caught by CI, as this causes the pull request to remain blocked even after CI
+  failures have been addressed and may unnecessarily delay it from being merged.
 
 - Reviewers shall not close a PR due to technical or structural disagreement.
   If requested changes cannot be resolved within the review process, the
