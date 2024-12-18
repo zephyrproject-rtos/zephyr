@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024 - 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,13 @@
 		      <0x0087510 0x01>,
 		      <0x0087514 0x01>;
 		reg-names = "IR", "IER", "IPR", "FIR","IRQCR","IRQFLTE","IRQFLTC0";
+	};
+
+	dtc: rx-dtc@82400 {
+		compatible = "renesas,rx-dtc";
+		reg = <0x00082400 0x01>;
+		clocks = <&iclk MSTPA 28>;
+		status = "okay";
 	};
 
 	soc {
