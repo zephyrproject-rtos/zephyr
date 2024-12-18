@@ -1493,9 +1493,9 @@ commands, a Firmware Distribution Server must be instantiated by the application
 DFU metadata
 ------------
 
-The DFU metadata commands allow generating metadata that can be used by a Target node to check the
-firmware before accepting it. The commands are enabled through the
-:kconfig:option:`CONFIG_BT_MESH_DFU_METADATA` configuration option.
+The DFU metadata shell commands allow generating metadata that can be used by a Target node to
+check the firmware before accepting it. The commands are enabled through the
+:kconfig:option:`CONFIG_BT_MESH_SHELL_DFU_METADATA` configuration option.
 
 ``mesh models dfu metadata comp-clear``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
