@@ -210,3 +210,9 @@ set_compiler_property(PROPERTY warning_shadow_variables)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
+
+# Compiler flag for placing functions in their own sections:
+set_compiler_property(PROPERTY no_function_sections "-fno-function-sections")
+
+# Compiler flag for placing variables in their own sections:
+set_compiler_property(PROPERTY no_data_sections "-fno-data-sections")
