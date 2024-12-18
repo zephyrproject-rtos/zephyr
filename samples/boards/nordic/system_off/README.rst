@@ -13,10 +13,10 @@ deep sleep on Nordic platforms.
 RAM Retention
 =============
 
-This sample can also can demonstrate RAM retention. By selecting
-``CONFIG_APP_USE_NRF_RETENTION=y`` or ``CONFIG_APP_USE_RETAINED_MEM=y``
-state related to number of boots, number of times system off was entered,
-and total uptime since initial power-on are retained in a checksummed data structure.
+This sample can also demonstrate RAM retention.
+By selecting ``CONFIG_APP_USE_RETAINED_MEM=y`` state related to number of boots,
+number of times system off was entered, and total uptime since initial power-on
+are retained in a checksummed data structure.
 RAM is configured to keep the containing section powered while in system-off mode.
 
 Requirements
