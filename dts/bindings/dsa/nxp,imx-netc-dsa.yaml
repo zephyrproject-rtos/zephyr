@@ -1,0 +1,39 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX NETC ethernet switch
+
+compatible: "nxp,imx-netc-dsa"
+
+properties:
+  dsa-master-port:
+    type: phandle
+    description: Phandle to master port.
+
+child-binding:
+  description: Properties of slave port
+  include: [pinctrl-device.yaml]
+  properties:
+    local-mac-address:
+      type: uint8-array
+      description: Specifies the MAC address that was assigned to the network device
+
+    reg:
+      type: array
+      description: Specifies the switch port index.
+
+    phy-handle:
+      type: phandle
+      description: |
+        Specifies a reference to a node representing a PHY device.
+
+    phy-connection-type:
+      type: string
+      description: |
+        Specifies the interface connection type between ethernet MAC and PHY.
+      enum:
+        - "mii"
+        - "rmii"
+        - "gmii"
+        - "rgmii"
+        - "internal"
