@@ -17,6 +17,8 @@ K_HEAP_DEFINE(k_heap_test, HEAP_SIZE);
 #define ALLOC_SIZE_1 1024
 #define ALLOC_SIZE_2 1536
 #define ALLOC_SIZE_3 2049
+#define CALLOC_NUM   256
+#define CALLOC_SIZE  sizeof(uint32_t)
 
 static void tIsr_kheap_alloc_nowait(void *data)
 {
@@ -262,6 +264,30 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
 	k_heap_free(&k_heap_test, q);
 
 	k_thread_join(tid, K_FOREVER);
+
+	k_heap_free(&k_heap_test, p);
+}
+
+/**
+ * @brief Test to demonstrate k_heap_calloc() and k_heap_free() API usage
+ *
+ * @ingroup kernel_kheap_api_tests
+ *
+ * @details The test allocates 256 unsigned integers of 4 bytes for a
+ * total of 1024 bytes from the 2048 byte heap. It checks if allocation
+ * and initialization are successful or not
+ *
+ * @see k_heap_calloc(), k_heap_free()
+ */
+ZTEST(k_heap_api, test_k_heap_calloc)
+{
+	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
+	uint32_t *p = (uint32_t *)k_heap_calloc(&k_heap_test, CALLOC_NUM, CALLOC_SIZE, timeout);
+
+	zassert_not_null(p, "k_heap_calloc operation failed");
+	for (int i = 0; i < CALLOC_NUM; i++) {
+		zassert_equal(p[i], 0U);
+	}
 
 	k_heap_free(&k_heap_test, p);
 }
