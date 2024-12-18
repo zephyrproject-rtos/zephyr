@@ -381,6 +381,119 @@ function(test_setting_empty_list)
   endforeach()
 endfunction()
 
+function(test_setting_genexes)
+  set(file ${CMAKE_BINARY_DIR}/test_setting_genexes.yaml)
+  yaml_create(FILE ${file}
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set(new_value "string before changes")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-string
+           VALUE ${new_value}
+  )
+
+  set_property(TARGET app PROPERTY expanding_str "expanded genex")
+  set(new_value "$<TARGET_PROPERTY:app,expanding_str>")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-string-genex
+           GENEX VALUE ${new_value}
+  )
+
+  # create the list by appending in several steps to test conversion
+  # from JSON list to genex stringified list
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           LIST "A"
+  )
+  set_property(TARGET app PROPERTY expanding_list "temporary" "list")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           APPEND GENEX LIST "$<TARGET_PROPERTY:app,expanding_list>" "of"
+  )
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           APPEND LIST "strings"
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml immediately and verify the genex values are NOT present
+  # (genexes are expanded at generation time)
+  yaml_load(FILE ${file}
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-string)
+  set(expected "string before changes")
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+              COMMENT "yaml key value does not match expectation."
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+  set(expected cmake-test-set-key-list-string-genex-NOTFOUND)
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+              COMMENT "Expected -NOTFOUND, but something was found."
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-string-genex)
+  set(expected cmake-test-set-key-string-genex-NOTFOUND)
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+              COMMENT "Expected -NOTFOUND, but something was found."
+  )
+
+  # modify the expanding_list property and the string, then save the file once
+  # more to check the final values are used in the output yaml file
+  set_property(TARGET app PROPERTY expanding_list "new" "list")
+  set(new_value "string after changes")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-string
+           VALUE ${new_value}
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+endfunction()
+
+function(test_verify_genexes)
+  set(file ${CMAKE_BINARY_DIR}/test_setting_genexes.yaml)
+  yaml_load(FILE ${file}
+      NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-string)
+  set(expected "string after changes")
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+              COMMENT "yaml key value does not match expectation."
+  )
+
+  set(expected "expanded genex")
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-string-genex)
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+        COMMENT "new yaml value does not match readback value."
+  )
+
+  set(expected "A" "new" "list" "of" "strings")
+  list(LENGTH expected exp_len)
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+  yaml_length(act_len NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+
+  test_assert(TEST ${exp_len} EQUAL ${act_len}
+              COMMENT "yaml list length does not match expectation."
+  )
+
+  foreach(a e IN ZIP_LISTS readback expected)
+    test_assert(TEST "${e}" STREQUAL "${a}"
+                COMMENT "list values mismatch."
+    )
+  endforeach()
+endfunction()
+
 function(test_set_remove_int)
   yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
               NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
@@ -465,9 +578,20 @@ test_set_remove_int()
 
 test_fail_missing_filename()
 
+# Generator expressions cannot be tested immediately, since they are expanded
+# at project generation time. The script mode re-run is delayed until after
+# the associated target has been built, and the verification is performed at
+# that time.
 if(NOT CMAKE_SCRIPT_MODE_FILE)
+  # create a file containing genexes
+  test_setting_genexes()
+
   # Spawn a new CMake instance to re-run the whole test suite in script mode
-  execute_process(
+  # and verify the genex values once the associated target is built.
+  add_custom_command(TARGET app POST_BUILD
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_FILE}
   )
+else()
+  # verify the contents of the created genex file
+  test_verify_genexes()
 endif()
