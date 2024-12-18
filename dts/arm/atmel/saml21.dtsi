@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Argentum Systems Ltd.
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,28 +8,20 @@
 #include <atmel/saml2x.dtsi>
 
 / {
+	aliases {
+		tcc-0 = &tcc0;
+		tcc-1 = &tcc1;
+		tcc-2 = &tcc2;
+	};
+
 	soc {
-		usb0: usb@41000000 {
-			compatible = "atmel,sam0-usb";
-			status = "disabled";
-			reg = <0x41000000 0x1000>;
-			interrupts = <6 0>;
-			num-bidir-endpoints = <8>;
-		};
-
-		dmac: dmac@44000400 {
-			compatible = "atmel,sam0-dmac";
-			reg = <0x44000400 0x50>;
-			interrupts = <5 0>;
-			#dma-cells = <2>;
-		};
-
 		tcc0: tcc@42001400 {
 			compatible = "atmel,sam0-tcc";
 			reg = <0x42001400 0x80>;
 			interrupts = <14 0>;
 			clocks = <&gclk 25>, <&mclk 0x1c 5>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
@@ -40,6 +33,7 @@
 			interrupts = <15 0>;
 			clocks = <&gclk 25>, <&mclk 0x1c 6>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
@@ -51,6 +45,7 @@
 			interrupts = <16 0>;
 			clocks = <&gclk 26>, <&mclk 0x1c 7>;
 			clock-names = "GCLK", "MCLK";
+			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;
