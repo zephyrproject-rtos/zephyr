@@ -58,7 +58,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-venv
-          sudo pip3 install -U setuptools wheel pip gitpython
+          pip install -U gitpython
 
       - name: checkout
         uses: actions/checkout@v4
@@ -94,7 +94,7 @@ jobs:
         run: |
           python3 -m venv .venv
           . .venv/bin/activate
-          pip3 install awscli
+          pip install awscli
           aws s3 sync  --quiet footprint_data/ s3://testing.zephyrproject.org/footprint_data/
 
       - name: Transform Footprint data to Twister JSON reports
@@ -113,7 +113,7 @@ jobs:
           ELASTICSEARCH_INDEX: ${{ vars.FOOTPRINT_TRACKING_INDEX }}
         run: |
           shopt -s globstar
-          pip3 install -U elasticsearch
+          pip install -U elasticsearch
           run_date=`date --iso-8601=minutes`
           python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
             --flatten footprint \
