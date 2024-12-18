@@ -119,6 +119,7 @@ static int spi_config(const struct device *dev,
 {
 	const struct spi_gecko_config *gecko_config = dev->config;
 	struct spi_gecko_data *data = dev->data;
+	mem_addr_t ctrl_reg = (mem_addr_t)&gecko_config->base->CTRL;
 	uint32_t spi_frequency;
 
 #ifdef CONFIG_CLOCK_CONTROL
@@ -147,8 +148,9 @@ static int spi_config(const struct device *dev,
 	}
 
 	if (config->operation & SPI_CS_ACTIVE_HIGH) {
-		LOG_ERR("CS active high not supported");
-		return -ENOTSUP;
+		sys_set_bit(ctrl_reg, _USART_CTRL_CSINV_SHIFT);
+	} else {
+		sys_clear_bit(ctrl_reg, _USART_CTRL_CSINV_SHIFT);
 	}
 
 	if (config->operation & SPI_LOCK_ON) {
@@ -163,8 +165,9 @@ static int spi_config(const struct device *dev,
 	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
-		return -ENOTSUP;
+		sys_clear_bit(ctrl_reg, _USART_CTRL_MSBF_SHIFT);
+	} else {
+		sys_set_bit(ctrl_reg, _USART_CTRL_MSBF_SHIFT);
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
