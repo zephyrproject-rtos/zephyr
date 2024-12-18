@@ -263,7 +263,7 @@ int ps8xxx_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
 	buf[1].len = 1;
 	buf[1].flags = I2C_MSG_RESTART | I2C_MSG_READ;
 
-	buf[2].buf = &msg->type;
+	buf[2].buf = (uint8_t *)&msg->type;
 	buf[2].len = 1;
 	buf[2].flags = I2C_MSG_RESTART | I2C_MSG_READ;
 
