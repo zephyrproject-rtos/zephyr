@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.stepper.drv8424.emul:
+    tags:
+      - drivers
+      - stepper
+      - drv8424
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

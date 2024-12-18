@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_GENERATOR
+	depends on ZTEST_SHUFFLE
+	bool "Shuffle the order of tests and suites"
+	default y
+
+source "Kconfig.zephyr"
