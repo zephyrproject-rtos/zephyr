@@ -17,7 +17,6 @@ LOG_MODULE_REGISTER(dac_mcp4725, CONFIG_DAC_LOG_LEVEL);
  */
 
 /* Defines for field values in MCP4725 DAC register */
-#define MCP4725_DAC_MAX_VAL			0xFFF
 
 #define MCP4725_FAST_MODE_POWER_DOWN_POS	4U
 #define MCP4725_FAST_MODE_DAC_UPPER_VAL_POS	8U
@@ -94,18 +93,12 @@ static int mcp4725_write_value(const struct device *dev, uint8_t channel,
 		return -EINVAL;
 	}
 
-	/* Check value isn't over 12 bits */
-	if (value > MCP4725_DAC_MAX_VAL) {
-		return -ENOTSUP;
-	}
-
 	/* WRITE_MODE_FAST message format (2 bytes):
 	 *
 	 * ||     15 14     |        13 12        |    11 10 9 8    || 7 6 5 4 3 2 1 0 ||
 	 * || Fast mode (0) | Power-down bits (0) | DAC value[11:8] || DAC value[7:0]  ||
 	 */
-	tx_data[0] = ((value >> MCP4725_FAST_MODE_DAC_UPPER_VAL_POS) &
-		MCP4725_FAST_MODE_DAC_UPPER_VAL_MASK);
+	tx_data[0] = (value >> MCP4725_FAST_MODE_DAC_UPPER_VAL_POS);
 	tx_data[1] = (value & MCP4725_FAST_MODE_DAC_LOWER_VAL_MASK);
 	ret = i2c_write_dt(&config->i2c, tx_data, sizeof(tx_data));
 
