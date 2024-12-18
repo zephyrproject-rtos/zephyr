@@ -52,5 +52,4 @@ tests:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
   wifi.build.dpp:
     extra_configs:
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP=y
