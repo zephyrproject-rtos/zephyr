@@ -369,6 +369,13 @@ MCUmgr
 Modem
 =====
 
+LoRa
+====
+
+* The function :c:func:`lora_recv_async` and callback ``lora_recv_cb`` now include an
+  additional ``user_data`` parameter, which is a void pointer. This parameter can be used to reference
+  any user-defined data structure. To maintain the current behavior, set this parameter to ``NULL``.
+
 Architectures
 *************
 
