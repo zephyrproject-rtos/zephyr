@@ -23,3 +23,16 @@ test_tmc2209: tmc2209_motor {
 	step-gpios = <&test_gpio 0 0>;
 	dir-gpios = <&test_gpio 0 0>;
 };
+
+drv8424: drv8424 {
+	status = "okay";
+	compatible = "ti,drv8424";
+
+	dir-gpios = <&test_gpio 0 0>;
+	step-gpios = <&test_gpio 0 0>;
+	sleep-gpios = <&test_gpio 0 0>;
+	en-gpios  = <&test_gpio 0 0>;
+	m0-gpios = <&test_gpio 0 0>;
+	m1-gpios = <&test_gpio 0 0>;
+	counter = <&counter0>;
+};
