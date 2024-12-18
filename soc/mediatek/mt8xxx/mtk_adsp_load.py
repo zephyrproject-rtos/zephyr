@@ -276,7 +276,7 @@ class Winstream:
 def find_winstream(maps):
     magic = b'\x74\x5f\x6a\xd0\x79\xe2\x4f\x00\xcd\xb8\xbd\xf9'
     for m in maps:
-        if "ram" in m:
+        if "dram" in m:
             magoff = maps[m].find(magic)
             if magoff >= 0:
                 addr = le4(maps[m][magoff + 12 : magoff + 16])
