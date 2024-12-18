@@ -34,7 +34,6 @@ static void iso_connected(struct bt_iso_chan *chan)
 	printk("ISO Channel %p connected\n", chan);
 
 	seq_num = 0U;
-
 	k_sem_give(&sem_big_cmplt);
 }
 
@@ -175,7 +174,13 @@ int main(void)
 		printk("BIG create complete chan %u.\n", chan);
 	}
 
+	bool is_first_iso_data_send = true;
+	int64_t delta = 0;
+	uint32_t ts = 0U;
+
 	while (true) {
+		struct bt_iso_tx_info tx_info;
+
 		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
 			struct net_buf *buf;
 			int ret;
@@ -197,7 +202,16 @@ int main(void)
 			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 			sys_put_le32(iso_send_count, iso_data);
 			net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-			ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, seq_num);
+
+			/* Send ISO data with timestamp, use sequence number 0 for first ISO data on
+			 * any stream.
+			 */
+			if (!is_first_iso_data_send) {
+				ret = bt_iso_chan_send_ts(&bis_iso_chan[chan], buf, seq_num, ts);
+			} else {
+				ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, 0U);
+			}
+
 			if (ret < 0) {
 				printk("Unable to broadcast data on channel %u"
 				       " : %d", chan, ret);
@@ -205,7 +219,42 @@ int main(void)
 				return 0;
 			}
 
+			/* Get Tx Sync, to verify that all streams have their ISO data at the same
+			 * timestamp.
+			 */
+			ret = bt_iso_chan_get_tx_sync(&bis_iso_chan[chan], &tx_info);
+			if (ret) {
+				printk("Failed to get tx sync after send (%d)\n", ret);
+				return 0;
+			}
+
+			/* Timestamp delta with the Controller */
+			if (!delta) {
+				delta = (int64_t)tx_info.ts - ts;
+			} else {
+				/* NOTE: Change in delta (drift) for a duration of SDU intervals can
+				 *       be used to synchronize the clock with the Controller.
+				 */
+			}
+
+			/* Permit a reasonable clock jitter (at least Bluetooth active clock
+			 * jitter), in the verification of timestamp.
+			 */
+			uint32_t jitter_us = 2U;
+
+			/* Validate ISO data being enqueued at the required timestamp.
+			 * Ignore checking first ISO data sent.
+			 */
+			if (!is_first_iso_data_send &&
+			    !IN_RANGE(tx_info.ts, (ts + delta - jitter_us),
+				      (ts + delta + jitter_us))) {
+				printk("Mismatch in tx sync timestamp! (%llu != %u)\n",
+				       (ts + delta), tx_info.ts);
+				return 0;
+			}
 		}
+
+		is_first_iso_data_send = false;
 
 		if ((iso_send_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
 			printk("Sending value %u\n", iso_send_count);
@@ -213,6 +262,7 @@ int main(void)
 
 		iso_send_count++;
 		seq_num++;
+		ts += BIG_SDU_INTERVAL_US;
 
 		timeout_counter--;
 		if (!timeout_counter) {
@@ -258,6 +308,11 @@ int main(void)
 				}
 				printk("BIG create complete chan %u.\n", chan);
 			}
+
+			/* Reset as we start over with new BIG created */
+			ts = 0U;
+			delta = 0U;
+			is_first_iso_data_send = true;
 		}
 	}
 }
