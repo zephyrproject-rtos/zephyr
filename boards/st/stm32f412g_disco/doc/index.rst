@@ -41,7 +41,7 @@ More information about the board can be found at the `32F412GDISCOVERY website`_
 Hardware
 ********
 
-STM32F469I-DISCO Discovery kit provides the following hardware components:
+STM32F412G-DISCO Discovery kit provides the following hardware components:
 
 - STM32F412ZGT6 in LQFP144 package
 - ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
