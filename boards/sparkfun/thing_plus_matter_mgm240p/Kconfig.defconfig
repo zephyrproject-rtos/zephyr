@@ -12,10 +12,6 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
-config FLASH_BASE_ADDRESS
-	hex
-	default 0x08000000
-
 if SOC_GECKO_USE_RAIL
 
 config FPU
