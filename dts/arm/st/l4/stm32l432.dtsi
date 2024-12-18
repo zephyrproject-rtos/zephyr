@@ -96,3 +96,9 @@
 		#phy-cells = <0>;
 	};
 };
+
+&pwr {
+	/delete-node/ wkup-pin@2;
+	/delete-node/ wkup-pin@3;
+	/delete-node/ wkup-pin@5;
+};
