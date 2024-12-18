@@ -101,7 +101,7 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
-          pip3 install gcovr==6.0
+          pip install gcovr==6.0
           ./scripts/twister -E ${{matrix.normalized}}-testplan.json
           ls -la
           ./scripts/twister \
@@ -182,7 +182,7 @@ jobs:
       - name: Merge coverage files
         run: |
           pushd ./coverage/reports
-          pip3 install gcovr==6.0
+          pip install gcovr==6.0
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
           popd

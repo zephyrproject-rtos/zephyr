@@ -53,10 +53,8 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        pip3 install setuptools
-        pip3 install wheel
-        pip3 install -r scripts/requirements-compliance.txt
-        pip3 install west
+        pip install -r scripts/requirements-compliance.txt
+        pip install west
 
     - name: west setup
       run: |
