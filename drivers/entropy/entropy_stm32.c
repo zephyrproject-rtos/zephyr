@@ -77,6 +77,15 @@ BUILD_ASSERT((CONFIG_ENTROPY_STM32_THR_POOL_SIZE &
 	      (CONFIG_ENTROPY_STM32_THR_POOL_SIZE - 1)) == 0,
 	     "The CONFIG_ENTROPY_STM32_THR_POOL_SIZE must be a power of 2!");
 
+/**
+ * RM0505 §14.4 "TRNG functional description":
+ *  To use the TRNG peripheral the system clock frequency must be
+ *  at least 32 MHz. See also: §6.2.2 "Peripheral clock details".
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_STM32WB09XX) ||
+		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= (32 * 1000 * 1000),
+	"STM32WB09: TRNG requires system clock frequency >= 32MHz");
+
 struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken *pclken;
 };
@@ -120,6 +129,14 @@ static int entropy_stm32_suspend(void)
 	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 	LL_RNG_Disable(rng);
+#if defined(CONFIG_SOC_STM32WB09XX)
+	/* RM0505 Rev.2 §14.4:
+	 * "After the TRNG IP is disabled by setting CR.DISABLE, in order to
+	 * properly restart the TRNG IP, the AES_RESET bit must be set to 1
+	 * (that is, resetting the AES core and restarting all health tests)."
+	 */
+	LL_RNG_SetAesReset(rng, 1);
+#endif /* CONFIG_SOC_STM32WB09XX */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
