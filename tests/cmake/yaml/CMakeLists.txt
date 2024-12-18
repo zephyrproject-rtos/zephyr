@@ -2,9 +2,19 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(zephyr_yaml_test)
-target_sources(app PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+if(NOT CMAKE_SCRIPT_MODE_FILE)
+  # Project mode initialization (main CMake invocation)
+  find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+  project(zephyr_yaml_test)
+  target_sources(app PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+  message(STATUS "Run 1 -------------\n  CMake PROJECT mode\n----------------------")
+else()
+  # Script mode initialization (re-run)
+  set(ZEPHYR_BASE ${CMAKE_CURRENT_LIST_DIR}/../../../)
+  list(APPEND CMAKE_MODULE_PATH "${ZEPHYR_BASE}/cmake/modules")
+  include(yaml)
+  message(STATUS "Run 2 ------------\n  CMake SCRIPT mode\n---------------------")
+endif()
 
 set_property(GLOBAL PROPERTY EXPECTED_ERROR 0)
 
@@ -455,4 +465,9 @@ test_set_remove_int()
 
 test_fail_missing_filename()
 
-target_sources(app PRIVATE src/main.c)
+if(NOT CMAKE_SCRIPT_MODE_FILE)
+  # Spawn a new CMake instance to re-run the whole test suite in script mode
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_FILE}
+  )
+endif()
