@@ -255,3 +255,9 @@ set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
 set_compiler_property(PROPERTY specs -specs=)
 
 set_compiler_property(PROPERTY include_file -include)
+
+# Compiler flag for placing functions in their own sections:
+set_compiler_property(PROPERTY no_function_sections "-fno-function-sections")
+
+# Compiler flag for placing variables in their own sections:
+set_compiler_property(PROPERTY no_data_sections "-fno-data-sections")
