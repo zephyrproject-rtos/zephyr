@@ -30,6 +30,12 @@
 				charging-mode = "BC12_TYPE_NONE";
 				intb-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_p8xxx: p8xxx@1 {
+				compatible = "parade,ps8xxx";
+				reg = <1>;
+				irq-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
