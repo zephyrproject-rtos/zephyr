@@ -171,9 +171,8 @@ if BT_BAP_BROADCAST_SINK
 
 config BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT
 	int "Basic Audio Profile Broadcast Sink subgroup count"
-	default 1
-	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
-	range 1 31
+	default BT_BAP_BASS_MAX_SUBGROUPS
+	range 1 BT_BAP_BASS_MAX_SUBGROUPS
 	help
 	  This option sets the maximum number of subgroups per broadcast sink
 	  to support.
