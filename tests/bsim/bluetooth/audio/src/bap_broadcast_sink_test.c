@@ -51,6 +51,7 @@ CREATE_FLAG(flag_big_sync_mic_failure);
 CREATE_FLAG(flag_sink_started);
 
 static struct bt_bap_broadcast_sink *g_sink;
+static size_t stream_sync_cnt;
 static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
 static struct bt_le_per_adv_sync *pa_sync;
@@ -759,6 +760,8 @@ static void test_broadcast_sync(const uint8_t broadcast_code[BT_ISO_BROADCAST_CO
 		FAIL("Unable to sync the sink: %d\n", err);
 		return;
 	}
+
+	stream_sync_cnt = POPCOUNT(bis_index_bitfield);
 }
 
 static void test_broadcast_sync_inval(void)
@@ -833,8 +836,8 @@ static void test_broadcast_stop(void)
 		return;
 	}
 
-	printk("Waiting for %zu streams to be stopped\n", ARRAY_SIZE(streams));
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		k_sem_take(&sem_stream_stopped, K_FOREVER);
 	}
 
@@ -938,8 +941,8 @@ static void test_common(void)
 	WAIT_FOR_FLAG(flag_sink_started);
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", ARRAY_SIZE(streams));
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
 
@@ -967,8 +970,8 @@ static void test_main(void)
 	printk("Waiting for PA disconnected\n");
 	WAIT_FOR_FLAG(flag_pa_sync_lost);
 
-	printk("Waiting for %zu streams to be stopped\n", ARRAY_SIZE(streams));
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		k_sem_take(&sem_stream_stopped, K_FOREVER);
 	}
 	WAIT_FOR_UNSET_FLAG(flag_sink_started);
@@ -989,8 +992,8 @@ static void test_sink_disconnect(void)
 	WAIT_FOR_FLAG(flag_sink_started);
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", ARRAY_SIZE(streams));
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
 
@@ -1030,8 +1033,8 @@ static void test_sink_encrypted(void)
 	WAIT_FOR_FLAG(flag_sink_started);
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", ARRAY_SIZE(streams));
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
 
@@ -1049,8 +1052,8 @@ static void test_sink_encrypted(void)
 	printk("Waiting for PA disconnected\n");
 	WAIT_FOR_FLAG(flag_pa_sync_lost);
 
-	printk("Waiting for %zu streams to be stopped\n", ARRAY_SIZE(streams));
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		k_sem_take(&sem_stream_stopped, K_FOREVER);
 	}
 
@@ -1133,8 +1136,8 @@ static void broadcast_sink_with_assistant(void)
 	WAIT_FOR_FLAG(flag_sink_started);
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", ARRAY_SIZE(streams));
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
 
