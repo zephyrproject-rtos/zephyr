@@ -27,13 +27,10 @@ static K_SEM_DEFINE(sem_iso_data, CONFIG_BT_ISO_TX_BUF_COUNT,
 
 #define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
-static uint16_t seq_num;
-
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
 
-	seq_num = 0U;
 	k_sem_give(&sem_big_cmplt);
 }
 
@@ -174,6 +171,7 @@ int main(void)
 		printk("BIG create complete chan %u.\n", chan);
 	}
 
+	uint16_t seq_num[BIS_ISO_CHAN_COUNT];
 	bool is_first_iso_data_send = true;
 	int64_t delta = 0;
 	uint32_t ts = 0U;
@@ -207,8 +205,10 @@ int main(void)
 			 * any stream.
 			 */
 			if (!is_first_iso_data_send) {
-				ret = bt_iso_chan_send_ts(&bis_iso_chan[chan], buf, seq_num, ts);
+				ret = bt_iso_chan_send_ts(&bis_iso_chan[chan], buf, seq_num[chan],
+							  ts);
 			} else {
+				seq_num[chan] = 0U;
 				ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, 0U);
 			}
 
@@ -252,6 +252,8 @@ int main(void)
 				       (ts + delta), tx_info.ts);
 				return 0;
 			}
+
+			seq_num[chan]++;
 		}
 
 		is_first_iso_data_send = false;
@@ -261,7 +263,6 @@ int main(void)
 		}
 
 		iso_send_count++;
-		seq_num++;
 		ts += BIG_SDU_INTERVAL_US;
 
 		timeout_counter--;
