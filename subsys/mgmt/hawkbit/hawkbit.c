@@ -28,6 +28,8 @@
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/reboot.h>
 
+#include "bootutil/bootutil_public.h"
+
 #include "hawkbit_device.h"
 #include "hawkbit_firmware.h"
 #include "hawkbit_priv.h"
@@ -834,7 +836,7 @@ int hawkbit_init(void)
 		}
 
 		LOG_DBG("Marked current image as OK");
-		ret = boot_erase_img_bank(FIXED_PARTITION_ID(SLOT1_LABEL));
+		ret = boot_erase_img_bank(flash_img_get_upload_slot());
 		if (ret < 0) {
 			LOG_ERR("Failed to erase second slot: %d", ret);
 			return ret;
@@ -1244,6 +1246,7 @@ enum hawkbit_response hawkbit_probe(void)
 	int ret;
 	int32_t file_size = 0;
 	struct flash_img_check fic;
+	const struct flash_area *flash_area_ptr;
 	char device_id[DEVICE_ID_HEX_MAX_SIZE] = { 0 },
 	     cancel_base[CANCEL_BASE_SIZE] = { 0 },
 	     download_http[DOWNLOAD_HTTP_SIZE] = { 0 },
@@ -1428,6 +1431,11 @@ enum hawkbit_response hawkbit_probe(void)
 
 	flash_img_init(&hb_context.flash_ctx);
 
+	/* The flash_area pointer has to be copied before the download starts
+	 * because the flash_area will be set to NULL after the download has finished.
+	 */
+	flash_area_ptr = hb_context.flash_ctx.flash_area;
+
 	if (!send_request(HTTP_GET, HAWKBIT_DOWNLOAD, HAWKBIT_STATUS_FINISHED_NONE,
 			 HAWKBIT_STATUS_EXEC_NONE)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_DOWNLOAD");
@@ -1449,14 +1457,14 @@ enum hawkbit_response hawkbit_probe(void)
 	/* Verify the hash of the stored firmware */
 	fic.match = hb_context.dl.file_hash;
 	fic.clen = hb_context.dl.downloaded_size;
-	if (flash_img_check(&hb_context.flash_ctx, &fic, FIXED_PARTITION_ID(SLOT1_LABEL))) {
+	if (flash_img_check(&hb_context.flash_ctx, &fic, flash_area_ptr->fa_id)) {
 		LOG_ERR("Failed to validate stored firmware");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		goto cleanup;
 	}
 
 	/* Request mcuboot to upgrade */
-	if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
+	if (boot_set_next(flash_area_ptr, false, false)) {
 		LOG_ERR("Failed to mark the image in slot 1 as pending");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		goto cleanup;
