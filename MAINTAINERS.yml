@@ -4027,6 +4027,7 @@ STM32 Platforms:
     - GeorgeCGV
     - marwaiehm-st
     - mathieuchopstm
+    - djiatsaf-st
   files:
     - boards/st/
     - drivers/*/*stm32*.c
