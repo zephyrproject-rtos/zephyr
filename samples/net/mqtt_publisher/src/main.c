@@ -475,7 +475,7 @@ static int publisher(void)
 		r = 0;
 	}
 
-	rc = mqtt_disconnect(&client_ctx);
+	rc = mqtt_disconnect(&client_ctx, NULL);
 	PRINT_RESULT("mqtt_disconnect", rc);
 
 	LOG_INF("Bye!");

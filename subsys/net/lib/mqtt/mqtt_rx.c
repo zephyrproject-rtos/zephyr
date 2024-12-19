@@ -139,6 +139,24 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 		evt.type = MQTT_EVT_PINGRESP;
 		break;
 
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	case MQTT_PKT_TYPE_DISCONNECT:
+		evt.type = MQTT_EVT_DISCONNECT;
+		err_code = disconnect_decode(client, buf, &evt.param.disconnect);
+		if (err_code == 0) {
+			evt.result = evt.param.disconnect.reason_code;
+			/* Don't notify yet, the code below will handle this. */
+			mqtt_client_disconnect(client, evt.result, false);
+		} else {
+			/* Again, don't notify yet, error handling code will
+			 * disconnect and report error.
+			 */
+			notify_event = false;
+		}
+
+		break;
+#endif
+
 	default:
 		/* Nothing to notify. */
 		notify_event = false;

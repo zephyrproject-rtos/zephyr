@@ -197,6 +197,16 @@ void event_notify(struct mqtt_client *client, const struct mqtt_evt *evt);
  */
 int mqtt_handle_rx(struct mqtt_client *client);
 
+/**@brief Disconnect MQTT client.
+ *
+ * @param[in] client Identifies the client which disconnects.
+ * @param[in] result Disconnect reason.
+ * @param[in] notify Whether to notify the app or not.
+
+ * @return 0 if the procedure is successful, an error code otherwise.
+ */
+void mqtt_client_disconnect(struct mqtt_client *client, int result, bool notify);
+
 /**@brief Constructs/encodes Connect packet.
  *
  * @param[in] client Identifies the client for which the procedure is requested.
@@ -293,7 +303,9 @@ int publish_complete_encode(const struct mqtt_client *client,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int disconnect_encode(struct buf_ctx *buf);
+int disconnect_encode(const struct mqtt_client *client,
+		      const struct mqtt_disconnect_param *param,
+		      struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Subscribe packet.
  *
@@ -444,6 +456,20 @@ int subscribe_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
  */
 int unsubscribe_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			   struct mqtt_unsuback_param *param);
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+/**@brief Decode MQTT Disconnect packet.
+ *
+ * @param[in] MQTT client for which packet is decoded.
+ * @param[inout] buf A pointer to the buf_ctx structure containing current
+ *                   buffer position.
+ * @param[out] param Pointer to buffer for decoded Disconnect parameters.
+ *
+ * @return 0 if the procedure is successful, an error code otherwise.
+ */
+int disconnect_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+		      struct mqtt_disconnect_param *param);
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 
 /**
  * @brief Unpacks variable length integer from the buffer from the offset
