@@ -853,14 +853,6 @@ static int bmi160_sample_fetch(const struct device *dev,
 	uint8_t status;
 	size_t i;
 	int ret = 0;
-	enum pm_device_state pm_state;
-
-	(void)pm_device_state_get(dev, &pm_state);
-	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
-		LOG_DBG("Device is suspended, fetch is unavailable");
-		ret = -EIO;
-		goto out;
-	}
 
 	if (chan == SENSOR_CHAN_DIE_TEMP) {
 		/* Die temperature is only valid when at least one measurement is active */
