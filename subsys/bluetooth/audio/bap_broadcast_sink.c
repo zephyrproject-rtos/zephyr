@@ -43,6 +43,7 @@
 #include "audio_internal.h"
 #include "bap_iso.h"
 #include "bap_endpoint.h"
+#include "pacs_internal.h"
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVEL);
 
@@ -553,19 +554,6 @@ static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 	}
 }
 
-static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
-{
-	struct codec_cap_lookup_id_data *data = user_data;
-
-	if (cap->codec_cap->id == data->id) {
-		data->codec_cap = cap->codec_cap;
-
-		return false;
-	}
-
-	return true;
-}
-
 struct store_base_info_data {
 	struct bt_bap_broadcast_sink_bis bis[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	struct bt_bap_broadcast_sink_subgroup subgroups[CONFIG_BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT];
@@ -662,9 +650,10 @@ static bool base_subgroup_bis_index_cb(const struct bt_bap_base_subgroup_bis *bi
 static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
 	struct bt_bap_broadcast_sink_subgroup *sink_subgroup;
-	struct codec_cap_lookup_id_data lookup_data = {0};
 	struct store_base_info_data *data = user_data;
+	const struct bt_audio_codec_cap *codec_cap;
 	struct bt_audio_codec_cfg codec_cfg;
+	struct bt_pac_codec codec_id;
 	int ret;
 
 	if (data->subgroup_count == ARRAY_SIZE(data->subgroups)) {
@@ -682,14 +671,18 @@ static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *
 	}
 
 	/* Lookup and assign path_id based on capabilities */
-	lookup_data.id = codec_cfg.id;
+	codec_id.id = codec_cfg.id;
+	codec_id.cid = codec_cfg.cid;
+	codec_id.vid = codec_cfg.vid;
 
-	bt_pacs_cap_foreach(BT_AUDIO_DIR_SINK, codec_lookup_id, &lookup_data);
-	if (lookup_data.codec_cap == NULL) {
-		LOG_DBG("Codec with id %u is not supported by our capabilities", lookup_data.id);
+	codec_cap = bt_pacs_get_codec_cap(BT_AUDIO_DIR_SINK, &codec_id);
+	if (codec_cap == NULL) {
+		LOG_DBG("Codec with id 0x%02x cid 0x%04x and vid 0x%04x is not supported by our "
+			"capabilities",
+			codec_id.id, codec_id.cid, codec_id.vid);
 	} else {
-		codec_cfg.path_id = lookup_data.codec_cap->path_id;
-		codec_cfg.ctlr_transcode = lookup_data.codec_cap->ctlr_transcode;
+		codec_cfg.path_id = codec_cap->path_id;
+		codec_cfg.ctlr_transcode = codec_cap->ctlr_transcode;
 
 		data->subgroup_codec_cfg = &codec_cfg;
 
