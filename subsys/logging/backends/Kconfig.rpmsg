@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_RPMSG
+	bool "RPMSG backend with RAM console fallback"
+	depends on OPENAMP
+	depends on LOG_PROCESS_THREAD_STACK_SIZE>=2048
+	select LOG_OUTPUT
+
+if LOG_BACKEND_RPMSG
+
+backend = RPMSG
+backend-str = rpmsg
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_RPMSG

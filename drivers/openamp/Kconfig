@@ -1,0 +1,37 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config RPMSG_VDEV
+	bool "Support for RPMSG VirtualIO Device"
+	depends on OPENAMP
+
+if OPENAMP
+
+module = OPENAMP_DRIVER
+module-str = OPENAMP_DRIVER
+source "subsys/logging/Kconfig.template.log_config"
+
+config RPMSG_VDEV_INIT_PRIORITY
+	int "RPMSG VirtualIO Device initialization priority"
+	default 70
+	help
+	  Set the priority for RPMSG VirtualIO Device init
+
+config RPMSG_VDEV_THREAD_PRIORITY
+	int "Thread priority"
+	default 10
+	help
+	  Priority of the RPMSG VirtualIO Device |
+	  thread used to process vrings.
+
+config RPMSG_VDEV_THREAD_STACK_SIZE
+	int "Thread stack size"
+	default 1024
+	help
+	  Stack size of RPMSG VirtualIO Device thread.
+
+config OPENAMP_RESOURCE_TABLE
+	bool "Support for OpenaAMP Resource Table"
+
+
+endif # RPMSG_VDEV
