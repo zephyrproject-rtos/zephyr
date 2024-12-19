@@ -79,6 +79,9 @@ enum mqtt_evt_type {
 
 	/** Ping Response from server. */
 	MQTT_EVT_PINGRESP,
+
+	/** Authentication packet received from server. MQTT 5.0 only. */
+	MQTT_EVT_AUTH,
 };
 
 /** @brief MQTT version protocol level. */
@@ -206,6 +209,13 @@ enum mqtt_disconnect_reason_code {
 	MQTT_DISCONNECT_MAX_CONNECT_TIME = 160,
 	MQTT_DISCONNECT_SUB_ID_NOT_SUPPORTED = 161,
 	MQTT_DISCONNECT_WILDCARD_SUB_NOT_SUPPORTED = 162,
+};
+
+/** @brief MQTT Authenticate reason codes (MQTT 5.0, chapter 3.15.2.1). */
+enum mqtt_auth_reason_code {
+	MQTT_AUTH_SUCCESS = 0,
+	MQTT_AUTH_CONTINUE_AUTHENTICATION = 24,
+	MQTT_AUTH_RE_AUTHENTICATE = 25,
 };
 
 /** @brief Abstracts UTF-8 encoded strings. */
@@ -602,6 +612,39 @@ struct mqtt_disconnect_param {
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
+#if defined(CONFIG_MQTT_VERSION_5_0)
+struct mqtt_auth_param {
+	/* MQTT 5.0, chapter 3.15.2.1 Authenticate Reason Code */
+	enum mqtt_auth_reason_code reason_code;
+
+	struct {
+		/** MQTT 5.0, chapter 3.15.2.2.5 User Property. */
+		struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
+
+		/** MQTT 5.0, chapter 3.15.2.2.2 Authentication Method. */
+		struct mqtt_utf8 auth_method;
+
+		/** MQTT 5.0, chapter 3.15.2.2.3 Authentication Data. */
+		struct mqtt_binstr auth_data;
+
+		/** MQTT 5.0, chapter 3.15.2.2.4 Reason String. */
+		struct mqtt_utf8 reason_string;
+
+		/** Flags indicating whether given property was present in received packet. */
+		struct {
+			/** Authentication Method property was present. */
+			bool has_auth_method;
+			/** Authentication Data property was present. */
+			bool has_auth_data;
+			/** Reason String property was present. */
+			bool has_reason_string;
+			/** User Property property was present. */
+			bool has_user_prop;
+		} rx;
+	} prop;
+};
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
 /**
  * @brief Defines event parameters notified along with asynchronous events
  *        to the application.
@@ -639,6 +682,9 @@ union mqtt_evt_param {
 #if defined(CONFIG_MQTT_VERSION_5_0)
 	/** Parameters accompanying MQTT_EVT_DISCONNECT event. */
 	struct mqtt_disconnect_param disconnect;
+
+	/** Parameters accompanying MQTT_EVT_AUTH event. */
+	struct mqtt_auth_param auth;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
@@ -1116,6 +1162,20 @@ int mqtt_ping(struct mqtt_client *client);
  */
 int mqtt_disconnect(struct mqtt_client *client,
 		    const struct mqtt_disconnect_param *param);
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+/**
+ * @brief API to send an authentication packet to the server.
+ *
+ * @param[in] client Client instance for which the procedure is requested.
+ *                   Shall not be NULL.
+ * @param[in] param Parameters to be used for the auth message.
+ *                  Shall not be NULL.
+ *
+ * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ */
+int mqtt_auth(struct mqtt_client *client, const struct mqtt_auth_param *param);
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 
 /**
  * @brief API to abort MQTT connection. This will close the corresponding

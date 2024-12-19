@@ -1480,3 +1480,109 @@ int ping_request_encode(struct buf_ctx *buf)
 
 	return 0;
 }
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static uint32_t auth_properties_length(const struct mqtt_auth_param *param)
+{
+	return string_property_length(&param->prop.auth_method) +
+	       binary_property_length(&param->prop.auth_data) +
+	       string_property_length(&param->prop.reason_string) +
+	       user_properties_length(param->prop.user_prop);
+}
+
+static int auth_properties_encode(const struct mqtt_auth_param *param,
+				  struct buf_ctx *buf)
+{
+	uint32_t properties_len;
+	int err;
+
+	/* Precalculate total properties length */
+	properties_len = auth_properties_length(param);
+	if (properties_len == 0) {
+		return 0;
+	}
+
+	err = pack_variable_int(properties_len, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_string_property(MQTT_PROP_AUTHENTICATION_METHOD,
+				     &param->prop.auth_method, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_binary_property(MQTT_PROP_AUTHENTICATION_DATA,
+				     &param->prop.auth_data, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_string_property(MQTT_PROP_REASON_STRING,
+				     &param->prop.reason_string, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_user_properties(param->prop.user_prop, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
+}
+
+static int empty_auth_encode(struct buf_ctx *buf)
+{
+	const uint8_t empty_auth_packet[] = {
+		MQTT_PKT_TYPE_AUTH,
+		0x00
+	};
+	uint8_t *cur = buf->cur;
+	uint8_t *end = buf->end;
+
+	if ((end - cur) < sizeof(empty_auth_packet)) {
+		return -ENOMEM;
+	}
+
+	memcpy(cur, empty_auth_packet, sizeof(empty_auth_packet));
+	buf->end = (cur + sizeof(empty_auth_packet));
+
+	return 0;
+}
+
+int auth_encode(const struct mqtt_auth_param *param, struct buf_ctx *buf)
+{
+	const uint8_t message_type =
+		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_AUTH, 0, 0, 0);
+	uint8_t *start;
+	int err;
+
+	/* Reserve space for fixed header. */
+	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
+	start = buf->cur;
+
+	if ((param->reason_code == MQTT_AUTH_SUCCESS) &&
+	    (auth_properties_length(param) == 0U)) {
+		return empty_auth_encode(buf);
+	}
+
+	err = pack_uint8(param->reason_code, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = auth_properties_encode(param, buf);
+	if (err != 0) {
+		return err;
+	}
+
+	err = mqtt_encode_fixed_header(message_type, start, buf);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
