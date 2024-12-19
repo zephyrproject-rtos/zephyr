@@ -14,31 +14,31 @@
  * Register address calculation macros
  * Register address offsets: comp. Zynq-7000 TRM, ug585, chap. B.19
  */
-#define GPIO_XLNX_PS_BANK_MASK_DATA_LSW_REG (dev_conf->base_addr\
+#define GPIO_XLNX_PS_BANK_MASK_DATA_LSW_REG (dev_data->base\
 	+ ((uint32_t)dev_conf->bank_index * 0x8))
-#define GPIO_XLNX_PS_BANK_MASK_DATA_MSW_REG ((dev_conf->base_addr + 0x04)\
+#define GPIO_XLNX_PS_BANK_MASK_DATA_MSW_REG ((dev_data->base + 0x04)\
 	+ ((uint32_t)dev_conf->bank_index * 0x8))
-#define GPIO_XLNX_PS_BANK_DATA_REG          ((dev_conf->base_addr + 0x40)\
+#define GPIO_XLNX_PS_BANK_DATA_REG          ((dev_data->base + 0x40)\
 	+ ((uint32_t)dev_conf->bank_index * 0x4))
-#define GPIO_XLNX_PS_BANK_DATA_RO_REG       ((dev_conf->base_addr + 0x60)\
+#define GPIO_XLNX_PS_BANK_DATA_RO_REG       ((dev_data->base + 0x60)\
 	+ ((uint32_t)dev_conf->bank_index * 0x4))
-#define GPIO_XLNX_PS_BANK_DIRM_REG          ((dev_conf->base_addr + 0x204)\
+#define GPIO_XLNX_PS_BANK_DIRM_REG          ((dev_data->base + 0x204)\
 	+ ((uint32_t)dev_conf->bank_index * 0x40))
-#define GPIO_XLNX_PS_BANK_OEN_REG           ((dev_conf->base_addr + 0x208)\
+#define GPIO_XLNX_PS_BANK_OEN_REG           ((dev_data->base + 0x208)\
 	+ ((uint32_t)dev_conf->bank_index * 0x40))
-#define GPIO_XLNX_PS_BANK_INT_MASK_REG      ((dev_conf->base_addr + 0x20C)\
+#define GPIO_XLNX_PS_BANK_INT_MASK_REG      ((dev_data->base + 0x20C)\
 	+ ((uint32_t)dev_conf->bank_index * 0x40))
-#define GPIO_XLNX_PS_BANK_INT_EN_REG        ((dev_conf->base_addr + 0x210)\
+#define GPIO_XLNX_PS_BANK_INT_EN_REG        ((dev_data->base + 0x210)\
 	+ ((uint32_t)dev_conf->bank_index * 0x40))
-#define GPIO_XLNX_PS_BANK_INT_DIS_REG       ((dev_conf->base_addr + 0x214)\
+#define GPIO_XLNX_PS_BANK_INT_DIS_REG       ((dev_data->base + 0x214)\
 	+ ((uint32_t)dev_conf->bank_index * 0x40))
-#define GPIO_XLNX_PS_BANK_INT_STAT_REG      ((dev_conf->base_addr + 0x218)\
+#define GPIO_XLNX_PS_BANK_INT_STAT_REG      ((dev_data->base + 0x218)\
 	+ ((uint32_t)dev_conf->bank_index * 0x40))
-#define GPIO_XLNX_PS_BANK_INT_TYPE_REG      ((dev_conf->base_addr + 0x21C)\
+#define GPIO_XLNX_PS_BANK_INT_TYPE_REG      ((dev_data->base + 0x21C)\
 	+ ((uint32_t)dev_conf->bank_index * 0x40))
-#define GPIO_XLNX_PS_BANK_INT_POLARITY_REG  ((dev_conf->base_addr + 0x220)\
+#define GPIO_XLNX_PS_BANK_INT_POLARITY_REG  ((dev_data->base + 0x220)\
 	+ ((uint32_t)dev_conf->bank_index * 0x40))
-#define GPIO_XLNX_PS_BANK_INT_ANY_REG       ((dev_conf->base_addr + 0x224)\
+#define GPIO_XLNX_PS_BANK_INT_ANY_REG       ((dev_data->base + 0x224)\
 	+ ((uint32_t)dev_conf->bank_index * 0x40))
 
 /**
@@ -51,6 +51,7 @@
  */
 struct gpio_xlnx_ps_bank_dev_data {
 	struct gpio_driver_data common;
+	mem_addr_t base;
 	sys_slist_t callbacks;
 };
 
@@ -64,8 +65,6 @@ struct gpio_xlnx_ps_bank_dev_data {
  */
 struct gpio_xlnx_ps_bank_dev_cfg {
 	struct gpio_driver_config common;
-
-	uint32_t base_addr;
 	uint8_t bank_index;
 };
 
