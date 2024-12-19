@@ -10,7 +10,6 @@ common:
     - EDF
   integration_platforms:
     - native_sim
-  harness: console
 tests:
   sample.subsys.basic.cbs:
     tags:
