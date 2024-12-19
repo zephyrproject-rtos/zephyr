@@ -230,7 +230,7 @@ static DEVICE_API(led_strip, ws2812_i2s_api) = {
 		DT_INST_PROP(idx, color_mapping);                                                  \
                                                                                                    \
 	static const struct ws2812_i2s_cfg ws2812_i2s_##idx##_cfg = {                              \
-		.dev = DEVICE_DT_GET(DT_INST_PROP(idx, i2s_dev)),                                  \
+		.dev = DEVICE_DT_GET(DT_INST_BUS(idx)),                                            \
 		.tx_buf_bytes = WS2812_I2S_BUFSIZE(idx),                                           \
 		.mem_slab = &ws2812_i2s_##idx##_slab,                                              \
 		.num_colors = WS2812_NUM_COLORS(idx),                                              \
