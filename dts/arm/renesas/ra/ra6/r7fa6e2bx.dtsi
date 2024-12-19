@@ -13,6 +13,7 @@
 /delete-node/ &agt3;
 /delete-node/ &agt4;
 /delete-node/ &agt5;
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
 /delete-node/ &adc1;
 
@@ -63,6 +64,26 @@
 				clock-names = "dllclk";
 				status = "disabled";
 			};
+		};
+
+		pwm0: pwm0@40169000 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_0>;
+			clocks = <&pclkd MSTPE 31>;
+			reg = <0x40169000 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm3@40169300 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_3>;
+			clocks = <&pclkd MSTPE 28>;
+			reg = <0x40169300 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 	};
 

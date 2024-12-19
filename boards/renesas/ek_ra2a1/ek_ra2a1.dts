@@ -69,3 +69,11 @@
 &ioport1 {
 	status = "okay";
 };
+
+&pwm0 {
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+	interrupts = <28 1>, <29 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
