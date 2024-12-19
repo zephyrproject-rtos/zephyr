@@ -82,6 +82,21 @@
 			   <20 0 &gpio2 17 0>,	/* D14 */
 			   <21 0 &gpio2 18 0>;	/* D15 */
 	};
+
+	pmod_header: pmod-header {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 0 0>,	/* IO1/CS */
+			   <1 0 &gpio1 1 0>,	/* IO2/MOSI */
+			   <2 0 &gpio1 2 0>,	/* IO3/MISO */
+			   <3 0 &gpio1 3 0>,	/* IO4/SCK */
+			   <4 0 &gpio2 21 0>,	/* IO5/INT */
+			   <5 0 &gpio1 6 0>,	/* IO6/RESET */
+			   <6 0 &gpio1 4 0>,	/* IO5/CS2 */
+			   <7 0 &gpio1 5 0>;	/* IO6/CS3 */
+	};
 };
 
 &clk_ipo {
