@@ -1,6 +1,0 @@
-family:
-- name: rpi_pico
-  series:
-  - name: rp2xxx
-    socs:
-    - name: rp2040
