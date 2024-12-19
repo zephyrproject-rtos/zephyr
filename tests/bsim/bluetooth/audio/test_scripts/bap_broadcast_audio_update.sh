@@ -11,17 +11,15 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
-printf "\n\n======== Broadcaster test =========\n\n"
-
-SIMULATION_ID="bap_broadcast_audio"
+SIMULATION_ID="bap_broadcast_audio_update"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source_update \
   -RealEncryption=1 -rs=23 -D=2
 
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=broadcast_sink \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=broadcast_sink_update \
   -RealEncryption=1 -rs=27 -D=2
 
 # Simulation time should be larger than the WAIT_TIME in common.h
