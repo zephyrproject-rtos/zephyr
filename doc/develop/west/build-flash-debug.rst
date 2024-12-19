@@ -698,6 +698,10 @@ determined by the imported subclasses of ``ZephyrBinaryRunner``.
 runner implementations are in other submodules, such as ``runners.nrfjprog``,
 ``runners.openocd``, etc.
 
+:ref:`Zephyr modules <modules>` can have external runners discovered by adding python
+files in their :ref:`module.yml <modules-runners>`. Create an external runner class by
+inheriting from ``ZephyrBinaryRunner`` and implement all abstract methods.
+
 Running Robot Framework tests: ``west robot``
 *********************************************
 
