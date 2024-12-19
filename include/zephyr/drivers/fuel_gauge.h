@@ -296,7 +296,7 @@ static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
 {
 	const struct fuel_gauge_driver_api *api = dev->api;
 
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		int ret = api->get_property(dev, props[i], vals + i);
 
 		if (ret) {
@@ -349,7 +349,7 @@ static inline int z_impl_fuel_gauge_set_props(const struct device *dev,
 					      fuel_gauge_prop_t *props,
 					      union fuel_gauge_prop_val *vals, size_t len)
 {
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		int ret = fuel_gauge_set_prop(dev, props[i], vals[i]);
 
 		if (ret) {
