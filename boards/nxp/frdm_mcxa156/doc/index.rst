@@ -64,6 +64,8 @@ The FRDM-MCXA156 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | LPCMP     | on-chip    | sensor(comparator)                  |
 +-----------+------------+-------------------------------------+
+| LPSPI     | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | LPTMR     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
