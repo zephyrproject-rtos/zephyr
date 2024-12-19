@@ -94,6 +94,11 @@ Bluetooth
 
 * HCI Drivers
 
+* Mesh
+
+  * Introduced a :c:member:`bt_mesh_health_cli::update` callback which is used to update the message
+    published periodically.
+
 Boards & SoC Support
 ********************
 
