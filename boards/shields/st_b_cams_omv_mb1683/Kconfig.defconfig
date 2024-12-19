@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ST_B_CAMS_OMV_MB1683
+
+# Enable the STM32 DCMI driver as the camera interface requires it.
+config VIDEO_STM32_DCMI
+	default y
+
+endif # SHIELD_ST_B_CAMS_OMV_MB1683
