@@ -224,7 +224,9 @@ int connect_request_encode(const struct mqtt_client *client,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_encode(const struct mqtt_publish_param *param, struct buf_ctx *buf);
+int publish_encode(const struct mqtt_client *client,
+		   const struct mqtt_publish_param *param,
+		   struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Publish Ack packet.
  *
@@ -352,6 +354,7 @@ int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 
 /**@brief Decode MQTT Publish packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[in] flags Byte containing message type and flags.
  * @param[in] var_length Length of the variable part of the message.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
@@ -360,7 +363,8 @@ int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_decode(uint8_t flags, uint32_t var_length, struct buf_ctx *buf,
+int publish_decode(const struct mqtt_client *client, uint8_t flags,
+		   uint32_t var_length, struct buf_ctx *buf,
 		   struct mqtt_publish_param *param);
 
 /**@brief Decode MQTT Publish Ack packet.
@@ -427,6 +431,20 @@ int subscribe_ack_decode(struct buf_ctx *buf,
  */
 int unsubscribe_ack_decode(struct buf_ctx *buf,
 			   struct mqtt_unsuback_param *param);
+
+/**
+ * @brief Unpacks variable length integer from the buffer from the offset
+ *        requested.
+ *
+ * @param[inout] buf A pointer to the buf_ctx structure containing current
+ *                   buffer position.
+ * @param[out] val Memory where the value is to be unpacked.
+ *
+ * @retval Number of bytes parsed if the procedure is successful.
+ * @retval -EINVAL if the length decoding would use more that 4 bytes.
+ * @retval -EAGAIN if the buffer would be exceeded during the read.
+ */
+int unpack_variable_int(struct buf_ctx *buf, uint32_t *val);
 
 #ifdef __cplusplus
 }

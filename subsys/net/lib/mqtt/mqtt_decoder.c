@@ -155,19 +155,7 @@ static int unpack_raw_data(uint32_t length, struct buf_ctx *buf,
 	return 0;
 }
 
-/**
- * @brief Unpacks variable length integer from the buffer from the offset
- *        requested.
- *
- * @param[inout] buf A pointer to the buf_ctx structure containing current
- *                   buffer position.
- * @param[out] val Memory where the value is to be unpacked.
- *
- * @retval Number of bytes parsed if the procedure is successful.
- * @retval -EINVAL if the length decoding would use more that 4 bytes.
- * @retval -EAGAIN if the buffer would be exceeded during the read.
- */
-static int unpack_variable_int(struct buf_ctx *buf, uint32_t *val)
+int unpack_variable_int(struct buf_ctx *buf, uint32_t *val)
 {
 	uint8_t shift = 0U;
 	int bytes = 0;
@@ -435,6 +423,43 @@ int decode_user_property(struct property_decoder *prop,
 	return 0;
 }
 
+int decode_sub_id_property(struct property_decoder *prop,
+			   uint32_t *remaining_len,
+			   struct buf_ctx *buf)
+{
+	uint32_t *sub_id_array = prop->data;
+	uint32_t *chosen = NULL;
+	uint32_t value;
+	int bytes;
+
+	bytes = unpack_variable_int(buf, &value);
+	if (bytes < 0) {
+		return -EINVAL;
+	}
+
+	if (*remaining_len < bytes) {
+		return -EINVAL;
+	}
+
+	*remaining_len -= bytes;
+	*prop->found = true;
+
+	for (int i = 0; i < CONFIG_MQTT_SUBSCRIPTION_ID_PROPERTIES_MAX; i++) {
+		if (sub_id_array[i] == 0) {
+			chosen = &sub_id_array[i];
+			break;
+		}
+	}
+
+	if (chosen == NULL) {
+		NET_DBG("Cannot parse all subscription id properties, ignore excess");
+	} else {
+		*chosen = value;
+	}
+
+	return 0;
+}
+
 static int properties_decode(struct property_decoder *prop, uint8_t cnt,
 			     struct buf_ctx *buf)
 {
@@ -479,12 +504,14 @@ static int properties_decode(struct property_decoder *prop, uint8_t cnt,
 		switch (type) {
 		case MQTT_PROP_SESSION_EXPIRY_INTERVAL:
 		case MQTT_PROP_MAXIMUM_PACKET_SIZE:
+		case MQTT_PROP_MESSAGE_EXPIRY_INTERVAL:
 			err = decode_uint32_property(current_prop,
 						     &properties_len, buf);
 			break;
 		case MQTT_PROP_RECEIVE_MAXIMUM:
 		case MQTT_PROP_TOPIC_ALIAS_MAXIMUM:
 		case MQTT_PROP_SERVER_KEEP_ALIVE:
+		case MQTT_PROP_TOPIC_ALIAS:
 			err = decode_uint16_property(current_prop,
 						     &properties_len, buf);
 			break;
@@ -493,6 +520,7 @@ static int properties_decode(struct property_decoder *prop, uint8_t cnt,
 		case MQTT_PROP_WILDCARD_SUBSCRIPTION_AVAILABLE:
 		case MQTT_PROP_SUBSCRIPTION_IDENTIFIER_AVAILABLE:
 		case MQTT_PROP_SHARED_SUBSCRIPTION_AVAILABLE:
+		case MQTT_PROP_PAYLOAD_FORMAT_INDICATOR:
 			err = decode_uint8_property(current_prop,
 						    &properties_len, buf);
 			break;
@@ -501,6 +529,8 @@ static int properties_decode(struct property_decoder *prop, uint8_t cnt,
 		case MQTT_PROP_RESPONSE_INFORMATION:
 		case MQTT_PROP_SERVER_REFERENCE:
 		case MQTT_PROP_AUTHENTICATION_METHOD:
+		case MQTT_PROP_RESPONSE_TOPIC:
+		case MQTT_PROP_CONTENT_TYPE:
 			err = decode_string_property(current_prop,
 						     &properties_len, buf);
 			break;
@@ -509,7 +539,12 @@ static int properties_decode(struct property_decoder *prop, uint8_t cnt,
 						   &properties_len, buf);
 			break;
 		case MQTT_PROP_AUTHENTICATION_DATA:
+		case MQTT_PROP_CORRELATION_DATA:
 			err = decode_binary_property(current_prop,
+						     &properties_len, buf);
+			break;
+		case MQTT_PROP_SUBSCRIPTION_IDENTIFIER:
+			err = decode_sub_id_property(current_prop,
 						     &properties_len, buf);
 			break;
 		default:
@@ -665,7 +700,68 @@ out:
 	return 0;
 }
 
-int publish_decode(uint8_t flags, uint32_t var_length, struct buf_ctx *buf,
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static int publish_properties_decode(struct buf_ctx *buf,
+				     struct mqtt_publish_param *param)
+{
+	struct property_decoder prop[] = {
+		{
+			&param->prop.payload_format_indicator,
+			&param->prop.rx.has_payload_format_indicator,
+			MQTT_PROP_PAYLOAD_FORMAT_INDICATOR
+		},
+		{
+			&param->prop.message_expiry_interval,
+			&param->prop.rx.has_message_expiry_interval,
+			MQTT_PROP_MESSAGE_EXPIRY_INTERVAL
+		},
+		{
+			&param->prop.topic_alias,
+			&param->prop.rx.has_topic_alias,
+			MQTT_PROP_TOPIC_ALIAS
+		},
+		{
+			&param->prop.response_topic,
+			&param->prop.rx.has_response_topic,
+			MQTT_PROP_RESPONSE_TOPIC
+		},
+		{
+			&param->prop.correlation_data,
+			&param->prop.rx.has_correlation_data,
+			MQTT_PROP_CORRELATION_DATA
+		},
+		{
+			&param->prop.user_prop,
+			&param->prop.rx.has_user_prop,
+			MQTT_PROP_USER_PROPERTY
+		},
+		{
+			&param->prop.subscription_identifier,
+			&param->prop.rx.has_subscription_identifier,
+			MQTT_PROP_SUBSCRIPTION_IDENTIFIER
+		},
+		{
+			&param->prop.content_type,
+			&param->prop.rx.has_content_type,
+			MQTT_PROP_CONTENT_TYPE
+		}
+	};
+
+	return properties_decode(prop, ARRAY_SIZE(prop), buf);
+}
+#else
+static int publish_properties_decode(struct buf_ctx *buf,
+				     struct mqtt_publish_param *param)
+{
+	ARG_UNUSED(param);
+	ARG_UNUSED(buf);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+int publish_decode(const struct mqtt_client *client, uint8_t flags,
+		   uint32_t var_length, struct buf_ctx *buf,
 		   struct mqtt_publish_param *param)
 {
 	int err_code;
@@ -689,6 +785,16 @@ int publish_decode(uint8_t flags, uint32_t var_length, struct buf_ctx *buf,
 		}
 
 		var_header_length += sizeof(uint16_t);
+	}
+
+	if (mqtt_is_version_5_0(client)) {
+		err_code = publish_properties_decode(buf, param);
+		if (err_code < 0) {
+			return err_code;
+		}
+
+		/* Add parsed properties length */
+		var_header_length += err_code;
 	}
 
 	if (var_length < var_header_length) {
