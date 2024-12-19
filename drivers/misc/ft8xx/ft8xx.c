@@ -15,15 +15,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include <zephyr/drivers/misc/ft8xx/ft8xx_copro.h>
 #include <zephyr/drivers/misc/ft8xx/ft8xx_common.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_copro.h>
 #include <zephyr/drivers/misc/ft8xx/ft8xx_dl.h>
 #include <zephyr/drivers/misc/ft8xx/ft8xx_memory.h>
 
 #include "ft8xx_drv.h"
 #include "ft8xx_host_commands.h"
 
-LOG_MODULE_REGISTER(ft8xx, CONFIG_DISPLAY_LOG_LEVEL);
+LOG_MODULE_REGISTER(ft8xx, CONFIG_FT800_LOG_LEVEL);
 
 #define FT8XX_DLSWAP_FRAME 0x02
 
@@ -176,6 +176,11 @@ int ft8xx_get_touch_tag(void)
 	(void)ft8xx_rd8(FT800_REG_INT_FLAGS);
 
 	return (int)ft8xx_rd8(FT800_REG_TOUCH_TAG);
+}
+
+uint32_t ft8xx_get_tracker_value(void)
+{
+	return ft8xx_rd32(FT800_REG_TRACKER);
 }
 
 void ft8xx_drv_irq_triggered(const struct device *dev, struct gpio_callback *cb,
