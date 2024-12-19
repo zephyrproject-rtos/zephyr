@@ -846,7 +846,7 @@ static int eval_msg_subscribe(struct mqtt_test *mqtt_test)
 	buf.cur = client.tx_buf;
 	buf.end = client.tx_buf + client.tx_buf_size;
 
-	rc = subscribe_encode(param, &buf);
+	rc = subscribe_encode(&client, param, &buf);
 
 	/**TESTPOINT: Check subscribe_encode function*/
 	zassert_false(rc, "subscribe_encode failed");

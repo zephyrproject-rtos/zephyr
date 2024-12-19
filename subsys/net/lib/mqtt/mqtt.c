@@ -495,7 +495,7 @@ int mqtt_subscribe(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = subscribe_encode(param, &packet);
+	err_code = subscribe_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -529,7 +529,7 @@ int mqtt_unsubscribe(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = unsubscribe_encode(param, &packet);
+	err_code = unsubscribe_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
