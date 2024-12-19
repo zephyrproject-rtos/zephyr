@@ -1707,6 +1707,21 @@
 #define sys_port_trace_k_heap_alloc_exit(h, timeout, ret)
 
 /**
+ * @brief Trace Heap calloc enter
+ * @param h Heap object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_heap_calloc_enter(h, timeout)
+
+/**
+ * @brief Trace Heap calloc exit
+ * @param h Heap object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_calloc_exit(h, timeout, ret)
+
+/**
  * @brief Trace Heap free
  * @param h Heap object
  */
