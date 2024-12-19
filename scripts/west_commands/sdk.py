@@ -4,6 +4,7 @@
 
 import argparse
 import hashlib
+import inspect
 import os
 import patoolib
 import platform
@@ -288,6 +289,24 @@ class Sdk(WestCommand):
 
         return minimal_sdk_asset["browser_download_url"]
 
+    def print_progressbar(self, value, amount):
+        bar_max_len = shutil.get_terminal_size().columns - 15
+        if bar_max_len < 0:
+            bar_max_len = 0
+
+        bar = '=' * (int(bar_max_len * (value / amount)) - 1) + '>'
+        spaces = ' ' * (bar_max_len - len(bar))
+        progress = int((value * 10000.) / amount) / 100.
+
+        signature = inspect.signature(self.inf)
+
+        # If the version of inf() accepts an `end` parameter,
+        # use the escape sequence to draw the progress bar.
+        if 'end' in signature.parameters:
+            self.inf('\r[' + bar + spaces + '] %.2f%%' % progress, end='')
+        else:
+            self.inf('[' + bar + spaces + '] %.2f%%' % progress)
+
     def download_and_extract(self, base_dir, dir_name, target_release, req_headers):
         self.inf("Fetching sha256...")
         sha256_url = self.sha256_sum_url(target_release)
@@ -316,7 +335,8 @@ class Sdk(WestCommand):
                 for chunk in resp.iter_content(chunk_size=8192):
                     file.write(chunk)
                     count = count + len(chunk)
-                    self.inf(f"\r {count}/{total_length}", end="")
+                    self.print_progressbar(count, total_length)
+
                 self.inf()
                 self.inf(f"Downloaded: {file.name}")
                 file.close()
