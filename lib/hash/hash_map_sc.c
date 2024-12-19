@@ -124,7 +124,7 @@ static struct sys_hashmap_sc_entry *sys_hashmap_sc_find(const struct sys_hashmap
 	bucket = &buckets[hash % map->data->n_buckets];
 
 	SYS_DLIST_FOR_EACH_CONTAINER(bucket, entry, node) {
-		if (entry->key == key) {
+		if (map->eq_func(entry->key, key)) {
 			return entry;
 		}
 	}
@@ -152,7 +152,7 @@ static void sys_hashmap_sc_iter_next(struct sys_hashmap_iterator *it)
 	for (bucket = it->state; bucket < &buckets[map->data->n_buckets]; ++bucket) {
 		SYS_DLIST_FOR_EACH_CONTAINER(bucket, entry, node) {
 			if (!found_previous_key) {
-				if (entry->key == it->key) {
+				if (map->eq_func(entry->key, it->key)) {
 					found_previous_key = true;
 				}
 
@@ -218,7 +218,7 @@ static void sys_hashmap_sc_clear(struct sys_hashmap *map, sys_hashmap_callback_t
 }
 
 static int sys_hashmap_sc_insert(struct sys_hashmap *map, uint64_t key, uint64_t value,
-				 uint64_t *old_value)
+				 uint64_t *old_value, uint64_t *old_key)
 {
 	int ret;
 	struct sys_hashmap_sc_entry *entry;
@@ -228,7 +228,11 @@ static int sys_hashmap_sc_insert(struct sys_hashmap *map, uint64_t key, uint64_t
 		if (old_value != NULL) {
 			*old_value = entry->value;
 		}
+		if (old_key != NULL) {
+			*old_key = entry->key;
+		}
 
+		entry->key = key;
 		entry->value = value;
 
 		return 0;
@@ -250,7 +254,8 @@ static int sys_hashmap_sc_insert(struct sys_hashmap *map, uint64_t key, uint64_t
 	return 1;
 }
 
-static bool sys_hashmap_sc_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value)
+static bool sys_hashmap_sc_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value,
+				  uint64_t *old_key)
 {
 	__unused int ret;
 	struct sys_hashmap_sc_entry *entry;
@@ -262,6 +267,9 @@ static bool sys_hashmap_sc_remove(struct sys_hashmap *map, uint64_t key, uint64_
 
 	if (value != NULL) {
 		*value = entry->value;
+	}
+	if (old_key != NULL) {
+		*old_key = entry->key;
 	}
 
 	sys_dlist_remove(&entry->node);
