@@ -12,6 +12,14 @@ menuconfig STREAM_FLASH
 
 if STREAM_FLASH
 
+config STREAM_FLASH_POST_WRITE_CALLBACK
+	bool "Write complete callback"
+	default y
+	help
+	  Enable callback that will be invoked once data is synchronized from
+	  stream to device. When callback is not used, disabling the option
+	  allows to save some code storage and RAM.
+
 config STREAM_FLASH_ERASE
 	bool "Perform erase operations"
 	depends on FLASH_HAS_EXPLICIT_ERASE
