@@ -96,6 +96,17 @@ __syscall void log_panic(void);
 __syscall bool log_process(void);
 
 /**
+ * @brief Process all pending log messages
+ */
+#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
+void log_flush(void);
+#else
+static inline log_flush(void)
+{
+}
+#endif
+
+/**
  * @brief Return number of buffered log messages.
  *
  * @return Number of currently buffered log messages.
