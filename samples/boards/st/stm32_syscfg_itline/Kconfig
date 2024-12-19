@@ -1,0 +1,38 @@
+# Private config options for STM32 SYSCFG itline sample app
+
+# Copyright (c) 2024 Etienne Raquin
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "STM32 SYSCFG itline sample application"
+
+config NUM_IRQS
+	default 44
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 4
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 3
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 21
+
+config 2ND_LVL_INTR_01_OFFSET
+	default 22
+
+config 2ND_LVL_INTR_02_OFFSET
+	default 24
+
+config 2ND_LVL_INTR_03_OFFSET
+	default 26
+
+config SYSCFG_STM32
+	default y
+
+config SHARED_INTERRUPTS
+	default n
+
+source "Kconfig.zephyr"

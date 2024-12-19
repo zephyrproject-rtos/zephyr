@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2024 Etienne Raquin
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&itline21_mux {
+	status = "okay";
+};
+
+&itline22_mux {
+	status = "okay";
+};
+
+&itline24_mux {
+	status = "okay";
+};
+
+&itline26_mux {
+	status = "okay";
+};
+
+&fdcan1 {
+	interrupts-extended = <&itline21_mux 1 0>, <&itline22_mux 1 0>;
+};
+
+&fdcan2 {
+	interrupts-extended = <&itline21_mux 2 0>, <&itline22_mux 2 0>;
+};
+
+&i2c2 {
+	interrupt-parent = <&itline24_mux>;
+	interrupts = <0 0>;
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pc0 &i2c3_sda_pc1>;
+	pinctrl-names = "default";
+	interrupt-parent = <&itline24_mux>;
+	interrupts = <1 0>;
+	status = "okay";
+};
+
+&spi2 {
+	interrupt-parent = <&itline26_mux>;
+	interrupts = <0 0>;
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
+	interrupt-parent = <&itline26_mux>;
+	interrupts = <1 0>;
+	status = "okay";
+};
