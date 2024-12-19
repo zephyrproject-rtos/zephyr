@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <errno.h>
@@ -294,6 +296,28 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan);
 struct net_buf *bt_att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op);
 
 static void bt_att_sent(struct bt_l2cap_chan *ch);
+
+static void att_disconnect(struct bt_att_chan *chan)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	/* In rare circumstances we are "forced" to disconnect the ATT bearer and the ACL.
+	 * Examples of when this is right course of action is when there is an ATT timeout, we
+	 * receive an unexpected response from the server, or the response from the server is
+	 * invalid
+	 */
+
+	bt_addr_le_to_str(bt_conn_get_dst(chan->att->conn), addr, sizeof(addr));
+	LOG_DBG("ATT disconnecting device %s", addr);
+
+	bt_att_disconnected(&chan->chan.chan);
+
+	err = bt_conn_disconnect(chan->chan.chan.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err) {
+		LOG_ERR("Disconnecting failed (err %d)", err);
+	}
+}
 
 static void att_sent(void *user_data)
 {
@@ -930,7 +954,8 @@ static uint8_t att_handle_rsp(struct bt_att_chan *chan, void *pdu, uint16_t len,
 
 	if (!chan->req) {
 		LOG_WRN("No pending ATT request");
-		goto process;
+		att_disconnect(chan);
+		return 0; /* Returning a non-0 value would attempt to send an error response */
 	}
 
 	/* Check if request has been cancelled */
@@ -3139,9 +3164,7 @@ static void att_timeout(struct k_work *work)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct bt_att_chan *chan = CONTAINER_OF(dwork, struct bt_att_chan,
-						timeout_work);
-	int err;
+	struct bt_att_chan *chan = CONTAINER_OF(dwork, struct bt_att_chan, timeout_work);
 
 	bt_addr_le_to_str(bt_conn_get_dst(chan->att->conn), addr, sizeof(addr));
 	LOG_ERR("ATT Timeout for device %s. Disconnecting...", addr);
@@ -3154,17 +3177,13 @@ static void att_timeout(struct k_work *work)
 	 * requests, commands, indications or notifications shall be sent to the
 	 * target device on this ATT Bearer.
 	 */
-	bt_att_disconnected(&chan->chan.chan);
 
 	/* The timeout state is local and can block new ATT operations, but does not affect the
 	 * remote side. Disconnecting the GATT connection upon ATT timeout simplifies error handling
 	 * for developers. This reduces rare failure conditions to a common one, allowing developers
 	 * to handle unexpected disconnections without needing special cases for ATT timeouts.
 	 */
-	err = bt_conn_disconnect(chan->chan.chan.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	if (err) {
-		LOG_ERR("Disconnecting failed (err %d)", err);
-	}
+	att_disconnect(chan);
 }
 
 static struct bt_att_chan *att_get_fixed_chan(struct bt_conn *conn)
