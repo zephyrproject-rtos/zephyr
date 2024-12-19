@@ -215,6 +215,8 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
+
 	return pkt;
 }
 
@@ -264,6 +266,8 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	net_ipv4_addr_copy_raw(hdr->dst_ipaddr, req_hdr->dst_ipaddr);
 
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
 
 	return pkt;
 }
@@ -373,6 +377,8 @@ ZTEST(arp_fn_tests, test_arp)
 	net_ipv4_addr_copy_raw(ipv4->src, (uint8_t *)&src);
 	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst);
 
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
 	memcpy(net_buf_add(pkt->buffer, len), app_data, len);
 
 	pkt2 = net_arp_prepare(pkt, &dst, NULL);
@@ -380,6 +386,9 @@ ZTEST(arp_fn_tests, test_arp)
 	/* pkt2 is the ARP packet and pkt is the IPv4 packet and it was
 	 * stored in ARP table.
 	 */
+
+	zassert_equal(net_pkt_ll_proto_type(pkt2), NET_ETH_PTYPE_ARP,
+		      "ARP packet type is wrong");
 
 	/**TESTPOINTS: Check packets*/
 	zassert_not_equal((void *)(pkt2), (void *)(pkt),
@@ -530,6 +539,8 @@ ZTEST(arp_fn_tests, test_arp)
 	net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&dst);
 	net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&src);
 
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
+
 	pkt2 = prepare_arp_reply(iface, pkt, &eth_hwaddr, &eth_hdr);
 
 	zassert_not_null(pkt2, "ARP reply generation failed.");
@@ -554,6 +565,9 @@ ZTEST(arp_fn_tests, test_arp)
 
 	net_pkt_unref(pkt);
 
+	/* Clear the ARP cache so that old entries do not confuse the tests */
+	net_arp_clear_cache(iface);
+
 	/* Then feed in ARP request */
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_eth_hdr) +
 					sizeof(struct net_arp_hdr),
@@ -570,6 +584,8 @@ ZTEST(arp_fn_tests, test_arp)
 
 	net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&src);
 	net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&dst);
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
 
 	pkt2 = prepare_arp_request(iface, pkt, &eth_hwaddr, &eth_hdr);
 
@@ -632,6 +648,8 @@ ZTEST(arp_fn_tests, test_arp)
 		net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&dst);
 
 		net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
+
+		net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
 
 		verdict = net_arp_input(pkt, eth_hdr);
 		zassert_not_equal(verdict, NET_DROP, "Gratuitous ARP failed");
