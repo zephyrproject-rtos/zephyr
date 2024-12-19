@@ -411,16 +411,32 @@ struct mqtt_pubcomp_param {
 struct mqtt_suback_param {
 	/** Message id of the SUBSCRIBE message being acknowledged */
 	uint16_t message_id;
-	/** Return codes indicating maximum QoS level granted for each topic
-	 *  in the subscription list.
+
+	/** MQTT 3.1 - Return codes indicating maximum QoS level granted for
+	 *  each topic in the subscription list.
+	 *  MQTT 5.0 - Reason codes corresponding to each topic in the
+	 *  subscription list.
 	 */
 	struct mqtt_binstr return_codes;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** MQTT 5.0 properties. */
+	struct mqtt_common_ack_properties prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Parameters for MQTT unsubscribe acknowledgment (UNSUBACK). */
 struct mqtt_unsuback_param {
 	/** Message id of the UNSUBSCRIBE message being acknowledged */
 	uint16_t message_id;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** Reason codes corresponding to each topic in the unsubscription list. */
+	struct mqtt_binstr reason_codes;
+
+	/** MQTT 5.0 properties. */
+	struct mqtt_common_ack_properties prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Parameters for a publish message (PUBLISH). */

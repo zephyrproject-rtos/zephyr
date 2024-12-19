@@ -423,24 +423,26 @@ int publish_complete_decode(const struct mqtt_client *client, struct buf_ctx *bu
 
 /**@brief Decode MQTT Subscribe packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Subscribe parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int subscribe_ack_decode(struct buf_ctx *buf,
+int subscribe_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			 struct mqtt_suback_param *param);
 
 /**@brief Decode MQTT Unsubscribe packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Unsubscribe parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int unsubscribe_ack_decode(struct buf_ctx *buf,
+int unsubscribe_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			   struct mqtt_unsuback_param *param);
 
 /**

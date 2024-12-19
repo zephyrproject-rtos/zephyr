@@ -935,10 +935,28 @@ int publish_complete_decode(const struct mqtt_client *client, struct buf_ctx *bu
 	}
 #endif
 
-	return common_ack_decode(buf, &param->message_id, reason_code, prop);
+	return common_pub_ack_decode(buf, &param->message_id, reason_code, prop);
 }
 
-int subscribe_ack_decode(struct buf_ctx *buf, struct mqtt_suback_param *param)
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static int suback_properties_decode(struct buf_ctx *buf,
+				    struct mqtt_suback_param *param)
+{
+	return common_ack_properties_decode(buf, &param->prop);
+}
+#else
+static int suback_properties_decode(struct buf_ctx *buf,
+				    struct mqtt_suback_param *param)
+{
+	ARG_UNUSED(param);
+	ARG_UNUSED(buf);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+int subscribe_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+			 struct mqtt_suback_param *param)
 {
 	int err_code;
 
@@ -947,11 +965,53 @@ int subscribe_ack_decode(struct buf_ctx *buf, struct mqtt_suback_param *param)
 		return err_code;
 	}
 
+	if (mqtt_is_version_5_0(client)) {
+		err_code = suback_properties_decode(buf, param);
+		if (err_code < 0) {
+			return err_code;
+		}
+	}
+
 	return unpack_raw_data(buf->end - buf->cur, buf, &param->return_codes);
 }
 
-int unsubscribe_ack_decode(struct buf_ctx *buf,
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static int unsuback_5_0_decode(struct buf_ctx *buf,
+			       struct mqtt_unsuback_param *param)
+{
+	int err;
+
+	err = common_ack_properties_decode(buf, &param->prop);
+	if (err < 0) {
+		return err;
+	}
+
+	return unpack_raw_data(buf->end - buf->cur, buf, &param->reason_codes);
+}
+#else
+static int unsuback_5_0_decode(struct buf_ctx *buf,
+			       struct mqtt_unsuback_param *param)
+{
+	ARG_UNUSED(param);
+	ARG_UNUSED(buf);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+int unsubscribe_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			   struct mqtt_unsuback_param *param)
 {
-	return unpack_uint16(buf, &param->message_id);
+	int err;
+
+	err = unpack_uint16(buf, &param->message_id);
+	if (err < 0) {
+		return 0;
+	}
+
+	if (mqtt_is_version_5_0(client)) {
+		return unsuback_5_0_decode(buf, param);
+	}
+
+	return 0;
 }
