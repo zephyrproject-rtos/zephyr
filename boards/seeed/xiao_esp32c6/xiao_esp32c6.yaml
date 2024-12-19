@@ -13,6 +13,5 @@ supported:
   - entropy
 testing:
   ignore_tags:
-    - bluetooth
     - tracing
 vendor: seeed
