@@ -12,6 +12,7 @@
 #include <zephyr/llext/llext_internal.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
+#include <zephyr/arch/riscv/elf.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
@@ -140,6 +141,198 @@ static const void *llext_find_extension_sym(const char *sym_name, struct llext *
 	}
 
 	return se.addr;
+}
+
+/**
+ * @brief Determine address of a symbol.
+ *
+ * @param ext llext extension
+ * @param ldr llext loader
+ * @param link_addr (output) resolved address
+ * @param rel relocation entry
+ * @param sym symbol entry
+ * @param name symbol name
+ * @param shdr section header
+ *
+ * @return 0 for OK, negative for error
+ */
+static int llext_lookup_symbol(struct llext *ext, struct llext_loader *ldr, uintptr_t *link_addr,
+			       const elf_rela_t *rel, const elf_sym_t *sym, const char *name,
+			       const elf_shdr_t *shdr)
+{
+	if (ELF_R_SYM(rel->r_info) == 0) {
+		/*
+		 * no symbol
+		 * example:  R_ARM_V4BX relocation, R_ARM_RELATIVE
+		 */
+		*link_addr = 0;
+	} else if (sym->st_shndx == SHN_UNDEF) {
+		/* If symbol is undefined, then we need to look it up */
+		*link_addr = (uintptr_t)llext_find_sym(NULL, SYM_NAME_OR_SLID(name, sym->st_value));
+
+		if (*link_addr == 0) {
+			/* Try loaded tables */
+			struct llext *dep;
+
+			*link_addr = (uintptr_t)llext_find_extension_sym(name, &dep);
+			if (*link_addr) {
+				llext_dependency_add(ext, dep);
+			}
+		}
+
+		if (*link_addr == 0) {
+			LOG_ERR("Undefined symbol with no entry in "
+				"symbol table %s, offset %zd, link section %d",
+				name, (size_t)rel->r_offset, shdr->sh_link);
+			return -ENODATA;
+		}
+
+		LOG_INF("found symbol %s at 0x%lx", name, *link_addr);
+	} else if (sym->st_shndx == SHN_ABS) {
+		/* Absolute symbol */
+		*link_addr = sym->st_value;
+	} else if ((sym->st_shndx < ldr->hdr.e_shnum) &&
+		   !IN_RANGE(sym->st_shndx, SHN_LORESERVE, SHN_HIRESERVE)) {
+		/* This check rejects all relocations whose target symbol has a section index higher
+		 * than the maximum possible in this ELF file, or belongs in the reserved range:
+		 * they will be caught by the `else` below and cause an error to be returned. This
+		 * aborts the LLEXT's loading and prevents execution of improperly relocated code,
+		 * which is dangerous.
+		 *
+		 * Note that the unsupported SHN_COMMON section is rejected as part of this check.
+		 * Also note that SHN_ABS would be rejected as well, but we want to handle it
+		 * properly: for this reason, this check must come AFTER handling the case where the
+		 * symbol's section index is SHN_ABS!
+		 *
+		 *
+		 * For regular symbols, the link address is obtained by adding st_value to the start
+		 * address of the section in which the target symbol resides.
+		 */
+		*link_addr =
+			(uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx) + sym->st_value;
+	} else {
+		LOG_ERR("cannot apply relocation: "
+			"target symbol has unexpected section index %d (0x%X)",
+			sym->st_shndx, sym->st_shndx);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief On RISC-V, PC-relative relocations (PCREL_LO12_I, PCREL_LO12_S) do not refer to
+ * the actual symbol. Instead, they refer to the location of a different instruction in the
+ * same section, which has a PCREL_HI20 relocation. The relocation offset is then computed based
+ * on the location and symbol from the HI20 relocation. 20 bits from the offset go into the
+ * instruction that has the HI20 relocation, and 12 bits go into the PCREL_LO12 instruction.
+ *
+ * @param ext current extension
+ * @param ldr llext loader
+ * @param pcrel_lo12 the elf relocation structure for the PCREL_LO12I/S relocation.
+ * @param shdr ELF section header for the relocation
+ * @param sym ELF symbol for PCREL_LO12I
+ * @param link_addr_out computed link address
+ * @param last_rel_idx index of last relocation entry processed in search
+ *
+ */
+static inline int llext_riscv_find_sym_pcrel(struct llext *ext, struct llext_loader *ldr,
+					     const elf_rela_t *pcrel_lo12, const elf_shdr_t *shdr,
+					     const elf_sym_t *sym, uintptr_t *link_addr_out,
+					     int *last_rel_idx)
+{
+	int ret;
+	elf_rela_t candidate;
+	uintptr_t candidate_loc;
+	elf_word reloc_type;
+	elf_sym_t candidate_sym;
+	uintptr_t link_addr;
+	const char *symbol_name;
+	int iteration_start = *last_rel_idx;
+	bool is_first = true;
+	const elf_word rel_cnt = shdr->sh_size / shdr->sh_entsize;
+	const uintptr_t sect_base = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
+
+	reloc_type = ELF32_R_TYPE(pcrel_lo12->r_info);
+
+	if (reloc_type != R_RISCV_PCREL_LO12_I && reloc_type != R_RISCV_PCREL_LO12_S) {
+		/* this function does not apply - the symbol is already correct */
+		return 0;
+	}
+
+	for (int i = iteration_start; i != iteration_start || is_first; i++) {
+
+		is_first = false;
+
+		/* get each relocation entry */
+		ret = llext_seek(ldr, shdr->sh_offset + i * shdr->sh_entsize);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = llext_read(ldr, &candidate, shdr->sh_entsize);
+		if (ret != 0) {
+			return ret;
+		}
+
+		/* FIXME currently, RISC-V relocations all fit in ELF_32_R_TYPE */
+		reloc_type = ELF32_R_TYPE(candidate.r_info);
+
+		candidate_loc = sect_base + candidate.r_offset;
+
+		/*
+		 * RISC-V ELF specification: "value" of the symbol for the PCREL_LO12 relocation
+		 * is actually the offset of the PCREL_HI20 relocation instruction from section
+		 * start
+		 */
+		if (!(candidate.r_offset == sym->st_value && reloc_type == R_RISCV_PCREL_HI20)) {
+
+			if (i + 1 >= rel_cnt) {
+				/* wrap around and search in previously processed indices as well */
+				i = -1;
+			}
+
+			continue;
+		}
+		/* we found a match - need to compute the relocation for this instruction */
+		/* lower 12 bits go to the PCREL_LO12 relocation */
+
+		/* get corresponding / "actual" symbol */
+		ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset +
+					      ELF_R_SYM(candidate.r_info) * sizeof(elf_sym_t));
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = llext_read(ldr, &candidate_sym, sizeof(elf_sym_t));
+		if (ret != 0) {
+			return ret;
+		}
+
+		symbol_name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, candidate_sym.st_name);
+
+		ret = llext_lookup_symbol(ext, ldr, &link_addr, &candidate, &candidate_sym,
+					  symbol_name, shdr);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		*link_addr_out = link_addr + candidate.r_addend - candidate_loc; /* S + A - P */
+
+		/*
+		 * start here in next iteration
+		 * it is fairly likely (albeit not guaranteed) that we require PCREL_HI20
+		 * relocations in order
+		 */
+		*last_rel_idx = i;
+
+		/* found the matching entry */
+		return 0;
+	}
+
+	LOG_ERR("Could not find R_RISCV_PCREL_HI20 relocation for R_RISCV_PCREL_LO12 relocation!");
+	return -ENOEXEC;
 }
 
 static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_t *shdr,
@@ -280,6 +473,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 	for (i = 0; i < ext->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
+		int last_rel_idx = 0;
 
 		/* find proper relocation sections */
 		switch (shdr->sh_type) {
@@ -394,64 +588,29 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 			op_loc = sect_base + rel.r_offset;
 
-			if (ELF_R_SYM(rel.r_info) == 0) {
-				/* no symbol ex: R_ARM_V4BX relocation, R_ARM_RELATIVE  */
-				link_addr = 0;
-			} else if (sym.st_shndx == SHN_UNDEF) {
-				/* If symbol is undefined, then we need to look it up */
-				link_addr = (uintptr_t)llext_find_sym(NULL,
-					SYM_NAME_OR_SLID(name, sym.st_value));
+			ret = llext_lookup_symbol(ext, ldr, &link_addr, &rel, &sym, name, shdr);
 
-				if (link_addr == 0) {
-					/* Try loaded tables */
-					struct llext *dep;
+			if (ret != 0) {
+				LOG_ERR("Failed to lookup symbol in rela section %d entry %d!", i,
+					j);
+				return ret;
+			}
 
-					link_addr = (uintptr_t)llext_find_extension_sym(name, &dep);
-					if (link_addr) {
-						llext_dependency_add(ext, dep);
-					}
-				}
-
-				if (link_addr == 0) {
-					LOG_ERR("Undefined symbol with no entry in "
-						"symbol table %s, offset %zd, link section %d",
-						name, (size_t)rel.r_offset, shdr->sh_link);
-					return -ENODATA;
-				}
-
-				LOG_INF("found symbol %s at 0x%lx", name, link_addr);
-			} else if (sym.st_shndx == SHN_ABS) {
-				/* Absolute symbol */
-				link_addr = sym.st_value;
-			} else if ((sym.st_shndx < ldr->hdr.e_shnum) &&
-				!IN_RANGE(sym.st_shndx, SHN_LORESERVE, SHN_HIRESERVE)) {
-				/* This check rejects all relocations whose target symbol
-				 * has a section index higher than the maximum possible
-				 * in this ELF file, or belongs in the reserved range:
-				 * they will be caught by the `else` below and cause an
-				 * error to be returned. This aborts the LLEXT's loading
-				 * and prevents execution of improperly relocated code,
-				 * which is dangerous.
-				 *
-				 * Note that the unsupported SHN_COMMON section is rejected
-				 * as part of this check. Also note that SHN_ABS would be
-				 * rejected as well, but we want to handle it properly:
-				 * for this reason, this check must come AFTER handling
-				 * the case where the symbol's section index is SHN_ABS!
-				 *
-				 *
-				 * For regular symbols, the link address is obtained by
-				 * adding st_value to the start address of the section
-				 * in which the target symbol resides.
+			if (IS_ENABLED(CONFIG_RISCV)) {
+				/*
+				 * on RISC-V, for certain relocations, the arch_elf_relocate
+				 * function expects a value that depends on other relocations; we
+				 * resolve this in a helper function
 				 */
-				link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext,
-									     sym.st_shndx)
-					    + sym.st_value;
-			} else {
-				LOG_ERR("rela section %d, entry %d: cannot apply relocation: "
-					"target symbol has unexpected section index %d (0x%X)",
-					i, j, sym.st_shndx, sym.st_shndx);
-				return -ENOEXEC;
+				ret = llext_riscv_find_sym_pcrel(ext, ldr, &rel, shdr, &sym,
+								 &link_addr, &last_rel_idx);
+
+				if (ret != 0) {
+					LOG_ERR("Failed to resolve RISC-V PCREL relocation in "
+						"rela section %d entry %d!",
+						i, j);
+					return ret;
+				}
 			}
 
 			LOG_INF("writing relocation symbol %s type %zd sym %zd at addr 0x%lx "
