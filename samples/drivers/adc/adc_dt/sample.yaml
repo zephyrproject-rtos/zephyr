@@ -34,6 +34,7 @@ tests:
       - rd_rw612_bga
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_mcxc242
+      - frdm_mcxc444
       - ucans32k1sic
     integration_platforms:
       - nucleo_l073rz
