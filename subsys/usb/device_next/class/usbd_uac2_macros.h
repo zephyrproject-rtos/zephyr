@@ -67,6 +67,8 @@
 #define CS_STRING		0x23
 #define CS_INTERFACE		0x24
 #define CS_ENDPOINT		0x25
+/* USB MIDI 2.0: A.1 MS Class-Specific Interface Descriptor Types */
+#define CS_GR_TRM_BLOCK		0x26
 
 /* A.9 Audio Class-Specific AC Interface Descriptor Subtypes */
 #define AC_DESCRIPTOR_UNDEFINED			0x00
