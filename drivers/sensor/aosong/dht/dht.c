@@ -82,8 +82,6 @@ static int dht_sample_fetch(const struct device *dev,
 
 	k_busy_wait(DHT_START_SIGNAL_DURATION);
 
-	gpio_pin_set_dt(&cfg->dio_gpio, false);
-
 	/* switch to DIR_IN to read sensor signals */
 	gpio_pin_configure_dt(&cfg->dio_gpio, GPIO_INPUT);
 
