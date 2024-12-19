@@ -16,12 +16,21 @@ check_set_linker_property(TARGET linker PROPERTY baremetal
                           -Hnocrt
 )
 
-# There are two options:
-# - We have full MWDT libc support and we link MWDT libc - this is default
-#   behavior and we don't need to do something for that.
-# - We use minimal libc provided by Zephyr itself. In that case we must not
-#   link MWDT libc, but we still need to link libmw
-if(CONFIG_MINIMAL_LIBC)
+# There are three options:
+# - We have full MWDT libc support in the toolchain and we link MWDT libc
+# - We have full Picolibc support in the toolchain and we link Picolibc
+# - We use some libc provided by Zephyr itself (minimal or Picolibc).
+#   In that case we must not link our MWDT libc or Picolibc,
+#   but we still need to link libmw
+if(CONFIG_ARCMWDT_LIBC)
+  check_set_linker_property(TARGET linker APPEND PROPERTY baremetal
+                            -Hlibc=mw
+  )
+elseif(CONFIG_PICOLIBC_USE_TOOLCHAIN)
+  check_set_linker_property(TARGET linker APPEND PROPERTY baremetal
+                            -Hlibc=pico
+  )
+else()
   check_set_linker_property(TARGET linker APPEND PROPERTY baremetal
                             -Hnolib
                             -Hldopt=-lmw
