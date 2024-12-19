@@ -567,6 +567,7 @@ def test_testplan_discover(
         test='ts1',
         quarantine_list=[tmp_path / qf for qf in ql],
         quarantine_verify=qv,
+        scripting_list=[],
     )
     testplan.testsuites = {
         'ts1': mock.Mock(id=1),
