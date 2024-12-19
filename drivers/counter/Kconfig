@@ -104,4 +104,6 @@ source "drivers/counter/Kconfig.nxp_mrt"
 
 source "drivers/counter/Kconfig.renesas_ra"
 
+source "drivers/counter/Kconfig.renesas_rz"
+
 endif # COUNTER
