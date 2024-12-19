@@ -387,7 +387,7 @@ static int i2c_stm32_init(const struct device *dev)
 	int ret;
 	struct i2c_stm32_data *data = dev->data;
 #ifdef CONFIG_I2C_STM32_INTERRUPT
-	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
+	k_sem_init(&data->device_sync_sem, 0, 1);
 	cfg->irq_config_func(dev);
 #endif
 
