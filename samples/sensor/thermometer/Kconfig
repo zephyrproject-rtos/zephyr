@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLES_SENSOR_THERMOMETER_ALERT
+	bool "Enable alert mode"
+	default y
+	help
+	  Thermoter sensors generally has alarm pin too, incase of there is not or
+	  you have not implemented it for your driver disable this flag
+	  in your overlay file to discard alarm code from sample.
+
+source "Kconfig.zephyr"
