@@ -32,6 +32,14 @@ config ESP_HEAP_RUNTIME
 	  ending at the last memory location that can be safely accessed (depending on a boot mode).
 	  This is a memory pool used in runtime to create a new heap memory.
 
+config ESP_HEAP_RUNTIME_MIN_SIZE
+	int
+	default 0
+	help
+	  Ask for reserved space at the end of DRAM. Not having this minimal size could pottentionaly
+	  lead to statically allocate all of available DRAM, not having enough for the subsystems
+	  which depends on ESP_HEAP_RUNTIME (such as WiFi or BT).
+
 config ESP32_TIMER_TASK_STACK_SIZE
 	int "Stack size of the high resolution ESP Timer"
 	default 4096
