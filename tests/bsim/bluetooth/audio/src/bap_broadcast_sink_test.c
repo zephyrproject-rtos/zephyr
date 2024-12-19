@@ -109,6 +109,10 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 		return false;
 	}
 
+	if (codec_cfg.id == BT_HCI_CODING_FORMAT_VS) {
+		return memcmp(&codec_cfg, &vs_codec_cfg, sizeof(codec_cfg)) == 0;
+	}
+
 	ret = bt_audio_codec_cfg_get_freq(&codec_cfg);
 	if (ret >= 0) {
 		const int freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
@@ -366,10 +370,6 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 	.term = bap_pa_sync_terminated_cb,
 };
 
-static struct bt_pacs_cap cap = {
-	.codec_cap = &codec_cap,
-};
-
 static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
@@ -453,6 +453,11 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	uint16_t octets_per_frame;
 	uint8_t chan_cnt;
 	int ret;
+
+	if (codec_cfg->id != BT_HCI_CODING_FORMAT_LC3) {
+		/* We can only validate LC3 codecs */
+		return;
+	}
 
 	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
 	if (ret >= 0) {
@@ -606,6 +611,12 @@ static struct bt_bap_stream_ops stream_ops = {
 
 static int init(void)
 {
+	static struct bt_pacs_cap cap = {
+		.codec_cap = &codec_cap,
+	};
+	static struct bt_pacs_cap vs_cap = {
+		.codec_cap = &vs_codec_cap,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -619,6 +630,12 @@ static int init(void)
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err) {
 		FAIL("Capability register failed (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &vs_cap);
+	if (err) {
+		FAIL("VS capability register failed (err %d)\n", err);
 		return err;
 	}
 
@@ -1165,11 +1182,6 @@ static void broadcast_sink_with_assistant(void)
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_audio_received);
-	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
-
-	/* Ensure that we also see the metadata update */
-	printk("Waiting for metadata update\n");
-	WAIT_FOR_FLAG(flag_base_metadata_updated)
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
 	printk("Waiting for BIG sync terminate request\n");
