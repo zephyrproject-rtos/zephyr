@@ -278,6 +278,34 @@ static inline enum wifi_mfp_options drv_to_wifi_mgmt_mfp(unsigned char mfp_flag)
 
 	return WIFI_MFP_UNKNOWN;
 }
+
+static inline enum wifi_cipher_suite_b drv_to_wifi_mgmt_suiteb(int drv_security_type)
+{
+	switch (drv_security_type) {
+	case NRF_WIFI_OPEN:
+	case NRF_WIFI_WEP:
+	case NRF_WIFI_WPA:
+	case NRF_WIFI_WPA2:
+	case NRF_WIFI_WPA2_256:
+	case NRF_WIFI_WPA3:
+	case NRF_WIFI_WAPI:
+	case NRF_WIFI_FT_EAP_SHA384:
+	case NRF_WIFI_FT_PSK_SHA384:
+	case NRF_WIFI_PSK_SHA384:
+		return WIFI_CIPHER_SUITE_B_NA;
+	case NRF_WIFI_EAP:
+	case NRF_WIFI_EAP_TLS_SHA256:
+	case NRF_WIFI_FT_EAP:
+		return WIFI_CIPHER_SUITE_B_NONE;
+	case NRF_WIFI_EAP_SUITEB_SHA256:
+		return WIFI_CIPHER_SUITE_B;
+	case NRF_WIFI_EAP_SUITEB_SHA384:
+		return WIFI_CIPHER_SUITE_B_192;
+	default:
+		return WIFI_CIPHER_SUITE_B_NA;
+	}
+}
+
 static inline enum wifi_security_type drv_to_wifi_mgmt(int drv_security_type)
 {
 	switch (drv_security_type) {
@@ -297,6 +325,20 @@ static inline enum wifi_security_type drv_to_wifi_mgmt(int drv_security_type)
 		return WIFI_SECURITY_TYPE_WAPI;
 	case NRF_WIFI_EAP:
 		return WIFI_SECURITY_TYPE_EAP;
+	case NRF_WIFI_EAP_TLS_SHA256:
+		return WIFI_SECURITY_TYPE_EAP_TLS_SHA256;
+	case NRF_WIFI_FT_EAP:
+		return WIFI_SECURITY_TYPE_FT_EAP;
+	case NRF_WIFI_EAP_SUITEB_SHA256:
+		return WIFI_SECURITY_TYPE_EAP;
+	case NRF_WIFI_EAP_SUITEB_SHA384:
+		return WIFI_SECURITY_TYPE_EAP;
+	case NRF_WIFI_FT_EAP_SHA384:
+		return WIFI_SECURITY_TYPE_FT_EAP_SHA384;
+	case NRF_WIFI_FT_PSK_SHA384:
+		return WIFI_SECURITY_TYPE_FT_PSK;
+	case NRF_WIFI_PSK_SHA384:
+		return WIFI_SECURITY_TYPE_PSK_SHA384;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
@@ -344,6 +386,8 @@ void nrf_wifi_event_proc_disp_scan_res_zep(void *vif_ctx,
 		res.channel = r->nwk_channel;
 
 		res.security = drv_to_wifi_mgmt(r->security_type);
+
+		res.suite_b_type = drv_to_wifi_mgmt_suiteb(r->security_type);
 
 		res.mfp = drv_to_wifi_mgmt_mfp(r->mfp_flag);
 
