@@ -13,7 +13,4 @@ supported:
   - spi
   - uart
   - watchdog
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: olimex
