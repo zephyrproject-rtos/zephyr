@@ -6,12 +6,15 @@
 menuconfig LIS2DUX12
 	bool "LIS2DUX12 I2C/SPI accelerometer sensor driver"
 	default y
-	depends on DT_HAS_ST_LIS2DUX12_ENABLED
+	depends on DT_HAS_ST_LIS2DUX12_ENABLED || DT_HAS_ST_LIS2DUXS12_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
-	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUX12),i2c)
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUX12),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUX12),i2c) || \
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUXS12),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUX12),spi) || \
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUXS12),spi)
 	select HAS_STMEMSC
-	select USE_STDC_LIS2DUX12
+	select USE_STDC_LIS2DUX12 if DT_HAS_ST_LIS2DUX12_ENABLED
+	select USE_STDC_LIS2DUXS12 if DT_HAS_ST_LIS2DUXS12_ENABLED
 	help
 	  Enable driver for LIS2DUX12 accelerometer sensor driver
 
