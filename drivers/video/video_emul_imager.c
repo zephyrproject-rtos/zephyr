@@ -157,7 +157,7 @@ static const struct video_format_cap fmts[] = {
 /* Emulated I2C register interface, to replace with actual I2C calls for real hardware */
 static int emul_imager_read_reg(const struct device *const dev, uint8_t reg_addr, uint8_t *value)
 {
-	LOG_DBG("%s placeholder for I2C read from 0x%02x", dev->name, reg_addr);
+	LOG_DBG("Placeholder for I2C read from 0x%02x", reg_addr);
 	switch (reg_addr) {
 	case EMUL_IMAGER_REG_SENSOR_ID:
 		*value = EMUL_IMAGER_SENSOR_ID;
@@ -182,7 +182,7 @@ static int emul_imager_read_int(const struct device *const dev, uint8_t reg_addr
 /* Some sensors will need reg8 or reg16 variants. */
 static int emul_imager_write_reg(const struct device *const dev, uint8_t reg_addr, uint8_t value)
 {
-	LOG_DBG("%s placeholder for I2C write 0x%08x to 0x%02x", dev->name, value, reg_addr);
+	LOG_DBG("Placeholder for I2C write 0x%08x to 0x%02x", value, reg_addr);
 	emul_imager_fake_regs[reg_addr] = value;
 	return 0;
 }
@@ -257,7 +257,7 @@ static int emul_imager_set_mode(const struct device *dev, const struct emul_imag
 	data->mode = mode;
 	return 0;
 err:
-	LOG_ERR("Could not apply %s mode %p (%u FPS)", dev->name, mode, mode->fps);
+	LOG_ERR("Could not apply mode %p (%u FPS)", mode, mode->fps);
 	return ret;
 }
 
@@ -372,8 +372,7 @@ static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoi
 
 	ret = video_format_caps_index(fmts, fmt, &fmt_id);
 	if (ret < 0) {
-		LOG_ERR("Format %x %ux%u not found for %s", fmt->pixelformat, fmt->width,
-			fmt->height, dev->name);
+		LOG_ERR("Format %x %ux%u not found", fmt->pixelformat, fmt->width, fmt->height);
 		return ret;
 	}
 
@@ -444,13 +443,13 @@ int emul_imager_init(const struct device *dev)
 
 	ret = emul_imager_read_reg(dev, EMUL_IMAGER_REG_SENSOR_ID, &sensor_id);
 	if (ret < 0 || sensor_id != EMUL_IMAGER_SENSOR_ID) {
-		LOG_ERR("Failed to get %s correct sensor ID (0x%x", dev->name, sensor_id);
+		LOG_ERR("Failed to get a correct sensor ID 0x%x",  sensor_id);
 		return ret;
 	}
 
 	ret = emul_imager_write_multi(dev, emul_imager_init_regs);
 	if (ret < 0) {
-		LOG_ERR("Could not set %s initial registers", dev->name);
+		LOG_ERR("Could not set initial registers");
 		return ret;
 	}
 
@@ -461,8 +460,8 @@ int emul_imager_init(const struct device *dev)
 
 	ret = emul_imager_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret < 0) {
-		LOG_ERR("Failed to set %s to default format %x %ux%u", dev->name, fmt.pixelformat,
-			fmt.width, fmt.height);
+		LOG_ERR("Failed to set to default format %x %ux%u",
+			fmt.pixelformat, fmt.width, fmt.height);
 	}
 
 	return 0;
