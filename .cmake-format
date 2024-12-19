@@ -3,17 +3,850 @@ parse:
   _help_additional_commands:
   - Specify structure for custom cmake functions
   additional_commands:
-    foo:
-      flags:
-      - BAR
-      - BAZ
+    zephyr_sources:
+      pargs:
+        nargs: 0
+    zephyr_include_directories:
+      pargs:
+        nargs: 0
+    zephyr_system_include_directories:
+      pargs:
+        nargs: 0
+    zephyr_compile_definitions:
+      pargs:
+        nargs: 0
+    zephyr_compile_options:
+      pargs:
+        nargs: 0
+    zephyr_link_libraries:
+      pargs:
+        nargs: 0
+    zephyr_libc_link_libraries:
+      pargs:
+        nargs: 0
+    zephyr_cc_option:
+      pargs:
+        nargs: 0
+    zephyr_cc_option_fallback:
+      pargs:
+        nargs: 2
+    zephyr_ld_options:
+      pargs:
+        nargs: 0
+    zephyr_get_include_directories_for_lang_as_string:
+      pargs:
+        nargs: 2
+    zephyr_get_system_include_directories_for_lang_as_string:
+      pargs:
+        nargs: 2
+    zephyr_get_compile_definitions_for_lang_as_string:
+      pargs:
+        nargs: 2
+    zephyr_get_compile_options_for_lang_as_string:
+      pargs:
+        nargs: 2
+    zephyr_get_include_directories_for_lang:
+      pargs:
+        nargs: 2
+    zephyr_get_system_include_directories_for_lang:
+      pargs:
+        nargs: 2
+    zephyr_get_compile_definitions_for_lang:
+      pargs:
+        nargs: 2
+    zephyr_get_compile_options_for_lang:
+      pargs:
+        nargs: 2
+    zephyr_get_parse_args:
+      pargs:
+        nargs: 1
+    process_flags:
+      pargs:
+        nargs: 3
+    convert_list_of_flags_to_string_of_flags:
+      pargs:
+        nargs: 2
+    get_property_and_add_prefix:
+      pargs:
+        nargs: 4
+    zephyr_library:
+      pargs:
+        nargs: 0
+    zephyr_library_get_current_dir_lib_name:
+      pargs:
+        nargs: 2
+    zephyr_library_named:
+      pargs:
+        nargs: 1
+    zephyr_library_amend:
+      pargs:
+        nargs: 0
+    zephyr_link_interface:
+      pargs:
+        nargs: 1
+    zephyr_library_sources:
+      pargs:
+        nargs: 1
+    zephyr_library_include_directories:
+      pargs:
+        nargs: 0
+    zephyr_library_link_libraries:
+      pargs:
+        nargs: 1
+    zephyr_library_compile_definitions:
+      pargs:
+        nargs: 1
+    zephyr_library_compile_options:
+      pargs:
+        nargs: 1
+    zephyr_library_cc_option:
+      pargs:
+        nargs: 0
+    zephyr_library_add_dependencies:
+      pargs:
+        nargs: 0
+    zephyr_append_cmake_library:
+      pargs:
+        nargs: 1
+    zephyr_library_import:
+      pargs:
+        nargs: 2
+    zephyr_library_app_memory:
+      pargs:
+        nargs: 1
+    zephyr_library_property:
+      pargs:
+        nargs: '*'
+        flags: []
       kwargs:
-        HEADERS: '*'
-        SOURCES: '*'
-        DEPENDS: '*'
+        ALLOW_EMPTY: 1
+    zephyr_interface_library_named:
+      pargs:
+        nargs: 1
+    generate_inc_file:
+      pargs:
+        nargs: 2
+    generate_inc_file_for_gen_target:
+      pargs:
+        nargs: 4
+    generate_inc_file_for_target:
+      pargs:
+        nargs: 3
+    board_set_runner:
+      pargs:
+        nargs: 2
+    board_set_runner_ifnset:
+      pargs:
+        nargs: 2
+    board_set_flasher:
+      pargs:
+        nargs: 1
+    board_set_debugger:
+      pargs:
+        nargs: 1
+    board_set_flasher_ifnset:
+      pargs:
+        nargs: 1
+    board_set_debugger_ifnset:
+      pargs:
+        nargs: 1
+    board_set_robot_runner_ifnset:
+      pargs:
+        nargs: 1
+    board_set_sim_runner_ifnset:
+      pargs:
+        nargs: 1
+    board_runner_args:
+      pargs:
+        nargs: 1
+    board_finalize_runner_args:
+      pargs:
+        nargs: 1
+    board_set_rimage_target:
+      pargs:
+        nargs: 1
+    board_emu_args:
+      pargs:
+        nargs: 1
+    board_finalize_emu_args:
+      pargs:
+        nargs: 1
+    board_check_revision:
+      pargs:
+        nargs: '*'
+        flags:
+        - OPTIONAL
+        - EXACT
+      kwargs:
+        FORMAT: 1
+        DEFAULT_REVISION: 1
+        HIGHEST_REVISION: 1
+        VALID_REVISIONS: +
+    zephyr_check_compiler_flag:
+      pargs:
+        nargs: 3
+    zephyr_check_compiler_flag_hardcoded:
+      pargs:
+        nargs: 4
+    zephyr_linker_sources:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        SORT_KEY: 1
+    zephyr_code_relocate_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_code_relocate:
+      pargs:
+        nargs: '*'
+        flags:
+        - NOCOPY
+        - NOKEEP
+      kwargs:
+        LIBRARY: 1
+        LOCATION: 1
+        PHDR: 1
+        FILES: +
+    check_dtc_flag:
+      pargs:
+        nargs: 2
+    pow2round:
+      pargs:
+        nargs: 1
+    zephyr_build_string:
+      pargs:
+        nargs: 1+
+        flags:
+        - MERGE
+        - REVERSE
+      kwargs:
+        BOARD: 1
+        BOARD_QUALIFIERS: 1
+        BOARD_REVISION: 1
+        BUILD: 1
+        SHORT: 1
+    zephyr_syscall_include_directories:
+      pargs:
+        nargs: 0
+    zephyr_syscall_header:
+      pargs:
+        nargs: 0
+    zephyr_syscall_header_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_blobs_verify:
+      pargs:
+        nargs: '*'
+        flags:
+        - REQUIRED
+      kwargs:
+        MODULE: 1
+        FILES: +
+    import_kconfig:
+      pargs:
+        nargs: 2+
+        flags: []
+      kwargs:
+        TARGET: 1
+    add_subdirectory_ifdef:
+      pargs:
+        nargs: 2
+    target_sources_ifdef:
+      pargs:
+        nargs: 4
+    target_compile_definitions_ifdef:
+      pargs:
+        nargs: 4
+    target_include_directories_ifdef:
+      pargs:
+        nargs: 4
+    target_link_libraries_ifdef:
+      pargs:
+        nargs: 3
+    add_compile_option_ifdef:
+      pargs:
+        nargs: 2
+    target_compile_option_ifdef:
+      pargs:
+        nargs: 4
+    target_cc_option_ifdef:
+      pargs:
+        nargs: 4
+    zephyr_library_sources_ifdef:
+      pargs:
+        nargs: 2
+    zephyr_sources_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_cc_option_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_ld_option_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_link_libraries_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_compile_options_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_compile_definitions_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_include_directories_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_library_compile_definitions_ifdef:
+      pargs:
+        nargs: 2
+    zephyr_library_include_directories_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_library_compile_options_ifdef:
+      pargs:
+        nargs: 2
+    zephyr_link_interface_ifdef:
+      pargs:
+        nargs: 2
+    zephyr_library_link_libraries_ifdef:
+      pargs:
+        nargs: 2
+    zephyr_linker_sources_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_library_add_dependencies_ifdef:
+      pargs:
+        nargs: 1
+    list_append_ifdef:
+      pargs:
+        nargs: 2
+    set_ifndef:
+      pargs:
+        nargs: 2
+    add_subdirectory_ifndef:
+      pargs:
+        nargs: 2
+    target_sources_ifndef:
+      pargs:
+        nargs: 4
+    target_compile_definitions_ifndef:
+      pargs:
+        nargs: 4
+    target_include_directories_ifndef:
+      pargs:
+        nargs: 4
+    target_link_libraries_ifndef:
+      pargs:
+        nargs: 3
+    add_compile_option_ifndef:
+      pargs:
+        nargs: 2
+    target_compile_option_ifndef:
+      pargs:
+        nargs: 4
+    target_cc_option_ifndef:
+      pargs:
+        nargs: 4
+    zephyr_library_sources_ifndef:
+      pargs:
+        nargs: 2
+    zephyr_sources_ifndef:
+      pargs:
+        nargs: 1
+    zephyr_cc_option_ifndef:
+      pargs:
+        nargs: 1
+    zephyr_ld_option_ifndef:
+      pargs:
+        nargs: 1
+    zephyr_link_libraries_ifndef:
+      pargs:
+        nargs: 1
+    zephyr_compile_options_ifndef:
+      pargs:
+        nargs: 1
+    zephyr_compile_definitions_ifndef:
+      pargs:
+        nargs: 1
+    zephyr_include_directories_ifndef:
+      pargs:
+        nargs: 1
+    zephyr_library_compile_definitions_ifndef:
+      pargs:
+        nargs: 2
+    zephyr_library_include_directories_ifndef:
+      pargs:
+        nargs: 1
+    zephyr_library_compile_options_ifndef:
+      pargs:
+        nargs: 2
+    zephyr_link_interface_ifndef:
+      pargs:
+        nargs: 2
+    zephyr_library_link_libraries_ifndef:
+      pargs:
+        nargs: 2
+    zephyr_linker_sources_ifndef:
+      pargs:
+        nargs: 1
+    zephyr_library_add_dependencies_ifndef:
+      pargs:
+        nargs: 1
+    list_append_ifndef:
+      pargs:
+        nargs: 2
+    check_compiler_flag:
+      pargs:
+        nargs: 3
+    target_cc_option:
+      pargs:
+        nargs: 3
+    target_cc_option_fallback:
+      pargs:
+        nargs: 4
+    target_ld_options:
+      pargs:
+        nargs: 2
+    toolchain_parse_make_rule:
+      pargs:
+        nargs: 2
+    set_linker_property:
+      pargs:
+        nargs: '*'
+        flags:
+        - APPEND
+        - NO_CREATE
+      kwargs:
+        TARGET: 1
+        PROPERTY: +
+    check_set_linker_property:
+      pargs:
+        nargs: '*'
+        flags:
+        - APPEND
+      kwargs:
+        TARGET: 1
+        PROPERTY: +
+    set_compiler_property:
+      pargs:
+        nargs: '*'
+        flags:
+        - APPEND
+      kwargs:
+        PROPERTY: +
+    check_set_compiler_property:
+      pargs:
+        nargs: '*'
+        flags:
+        - APPEND
+      kwargs:
+        PROPERTY: +
+    print:
+      pargs:
+        nargs: 1
+    assert:
+      pargs:
+        nargs: 2
+    assert_not:
+      pargs:
+        nargs: 2
+    assert_exists:
+      pargs:
+        nargs: 1
+    generate_unique_target_name_from_filename:
+      pargs:
+        nargs: 2
+    zephyr_file:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs: {}
+    zephyr_file_copy:
+      pargs:
+        nargs: 2+
+        flags:
+        - ONLY_IF_DIFFERENT
+      kwargs: {}
+    zephyr_file_suffix:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        SUFFIX: 1
+    zephyr_string:
+      pargs:
+        nargs: '*'
+        flags:
+        - SANITIZE
+        - TOUPPER
+      kwargs: {}
+    zephyr_list:
+      pargs:
+        nargs: 3+
+        flags: []
+      kwargs:
+        OUTPUT_VARIABLE: 1
+    zephyr_var_name:
+      pargs:
+        nargs: 3
+    zephyr_get:
+      pargs:
+        nargs: 1+
+        flags:
+        - MERGE
+        - REVERSE
+      kwargs:
+        SYSBUILD: 1
+        VAR: +
+    zephyr_create_scope:
+      pargs:
+        nargs: 1
+    zephyr_set:
+      pargs:
+        nargs: 1
+    zephyr_check_cache:
+      pargs:
+        nargs: 1+
+        flags:
+        - REQUIRED
+        - WATCH
+      kwargs: {}
+    zephyr_boilerplate_watch:
+      pargs:
+        nargs: 1
+    zephyr_variable_set_too_late:
+      pargs:
+        nargs: 4
+    zephyr_get_targets:
+      pargs:
+        nargs: 3
+    test_sysbuild:
+      pargs:
+        nargs: '*'
+        flags:
+        - REQUIRED
+      kwargs: {}
+    target_byproducts:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        TARGET: 1
+        BYPRODUCTS: +
+    topological_sort:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        RESULT: 1
+        PROPERTY_NAME: 1
+        TARGETS: +
+    build_info:
+      pargs:
+        nargs: 0
+    dt_nodelabel:
+      pargs:
+        nargs: 1+
+        flags:
+        - REQUIRED
+      kwargs:
+        NODELABEL: 1
+    dt_alias:
+      pargs:
+        nargs: 1+
+        flags:
+        - REQUIRED
+      kwargs:
+        PROPERTY: 1
+    dt_node_exists:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        PATH: 1
+    dt_node_has_status:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        PATH: 1
+        STATUS: 1
+    dt_prop:
+      pargs:
+        nargs: 1+
+        flags:
+        - REQUIRED
+      kwargs:
+        PATH: 1
+        PROPERTY: 1
+        INDEX: 1
+    dt_comp_path:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        COMPATIBLE: 1
+        INDEX: 1
+    dt_num_regs:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        PATH: 1
+    dt_reg_addr:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        PATH: 1
+        INDEX: 1
+        NAME: 1
+    dt_reg_size:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        PATH: 1
+        INDEX: 1
+        NAME: 1
+    dt_reg_index_private:
+      pargs:
+        nargs: 3
+    dt_has_chosen:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        PROPERTY: 1
+    dt_chosen:
+      pargs:
+        nargs: 1+
+        flags: []
+      kwargs:
+        PROPERTY: 1
+    dt_path_internal:
+      pargs:
+        nargs: 2
+    dt_path_internal_exists:
+      pargs:
+        nargs: 2
+    target_sources_if_dt_node:
+      pargs:
+        nargs: 4
+    zephyr_dt_preprocess:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        OUT_FILE: 1
+        DEPS_FILE: 1
+        WORKING_DIRECTORY: 1
+        CPP: +
+        SOURCE_FILES: +
+        EXTRA_CPPFLAGS: +
+        INCLUDE_DIRECTORIES: +
+    zephyr_linker:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        ENTRY: 1
+        FORMAT: 1
+    zephyr_linker_memory:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        NAME: 1
+        SIZE: 1
+        START: 1
+        FLAGS: 1
+    zephyr_linker_memory_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_linker_dts_section:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        PATH: 1
+    zephyr_linker_dts_memory:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        CHOSEN: 1
+        PATH: 1
+        NODELABEL: 1
+    zephyr_linker_group:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        NAME: 1
+        GROUP: 1
+        LMA: 1
+        SYMBOL: 1
+        VMA: 1
+    zephyr_linker_section:
+      pargs:
+        nargs: '*'
+        flags:
+        - ALIGN_WITH_INPUT
+        - HIDDEN
+        - NOINIT
+        - NOINPUT
+      kwargs:
+        ADDRESS: 1
+        ALIGN: 1
+        ENDALIGN: 1
+        GROUP: 1
+        KVMA: 1
+        LMA: 1
+        NAME: 1
+        SUBALIGN: 1
+        TYPE: 1
+        VMA: 1
+        PASS: +
+    zephyr_linker_section_ifdef:
+      pargs:
+        nargs: 1
+    zephyr_iterable_section:
+      pargs:
+        nargs: '*'
+        flags:
+        - ALIGN_WITH_INPUT
+        - NUMERIC
+      kwargs:
+        GROUP: 1
+        LMA: 1
+        NAME: 1
+        SUBALIGN: 1
+        VMA: 1
+    zephyr_linker_section_obj_level:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        SECTION: 1
+        LEVEL: 1
+    zephyr_linker_section_configure:
+      pargs:
+        nargs: '*'
+        flags:
+        - ANY
+        - FIRST
+        - KEEP
+      kwargs:
+        ALIGN: 1
+        OFFSET: 1
+        PRIO: 1
+        SECTION: 1
+        SORT: 1
+        FLAGS: +
+        INPUT: +
+        PASS: +
+        SYMBOLS: +
+    zephyr_linker_symbol:
+      pargs:
+        nargs: '*'
+        flags: []
+      kwargs:
+        EXPR: 1
+        SYMBOL: 1
+    zephyr_linker_arg_val_list:
+      pargs:
+        nargs: 2
+    zephyr_check_arguments_required:
+      pargs:
+        nargs: 2
+    zephyr_check_arguments_required_allow_empty:
+      pargs:
+        nargs: 2
+    zephyr_check_flags_required:
+      pargs:
+        nargs: 2
+    zephyr_check_arguments_required_all:
+      pargs:
+        nargs: 2
+    zephyr_check_arguments_exclusive:
+      pargs:
+        nargs: 2
+    zephyr_check_flags_exclusive:
+      pargs:
+        nargs: 2
+    llext_compile_definitions:
+      pargs:
+        nargs: 1
+    llext_compile_features:
+      pargs:
+        nargs: 1
+    llext_compile_options:
+      pargs:
+        nargs: 1
+    llext_include_directories:
+      pargs:
+        nargs: 1
+    llext_link_options:
+      pargs:
+        nargs: 1
+    add_llext_target:
+      pargs:
+        nargs: 1+
+        flags:
+        - '1'
+      kwargs:
+        LLEXT: 1
+    add_llext_command:
+      pargs:
+        nargs: '*'
+        flags:
+        - '0'
+      kwargs:
+        LLEXT: 1
+        PRE_BUILD: +
+        POST_BUILD: +
+        POST_PKG: +
+    llext_filter_zephyr_flags:
+      pargs:
+        nargs: 3
+    add_custom_target:
+      pargs:
+        nargs: 0
+    set_target_properties:
+      pargs:
+        nargs: 0
+    find_package:
+      always_wrap: 1
+      flags:
+      - QUIET
+      - NO_POLICY_SCOPE
+      - NO_CMAKE_PATH
+      - NO_CMAKE_ENVIRONMENT_PATH
+      - NO_SYSTEM_ENVIRONMENT_PATH
+      - NO_CMAKE_PACKAGE_REGISTRY
+      - NO_CMAKE_SYSTEM_PATH
+      - NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+      kwargs:
+        NAMES: '*'
+        PATHS: '*'
   _help_override_spec:
   - Override configurations per-command where available
   override_spec: {}
+#    '.find_package':
+#      flags:
+#      - QUIET
+#      - NO_POLICY_SCOPE
+#      - NO_CMAKE_PATH
+#      - NO_CMAKE_ENVIRONMENT_PATH
+#      - NO_SYSTEM_ENVIRONMENT_PATH
+#      - NO_CMAKE_PACKAGE_REGISTRY
+#      - NO_CMAKE_SYSTEM_PATH
+#      - NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+#      kwargs:
+#        NAMES: '*'
+#        PATHS: '*'
   _help_vartags:
   - Specify variable tags.
   vartags: []
@@ -122,7 +955,27 @@ format:
   _help_layout_passes:
   - A dictionary mapping layout nodes to a list of wrap
   - decisions. See the documentation for more information.
-  layout_passes: {}
+  layout_passes:
+    StatementNode:
+    - !!python/tuple
+      - 0
+      - false
+    ArgGroupNode:
+    - !!python/tuple
+      - 0
+      - false
+    KWargGroupNode:
+    - !!python/tuple
+      - 0
+      - false
+    PargGroupNode:
+    - !!python/tuple
+      - 0
+      - false
+    ParenGroupNode:
+    - !!python/tuple
+      - 0
+      - false
 _help_markup: Options affecting comment reflow and formatting.
 markup:
   _help_bullet_char:
@@ -172,14 +1025,21 @@ markup:
 _help_lint: Options affecting the linter
 lint:
   _help_disabled_codes:
-  - a list of lint codes to disable
-  disabled_codes: []
+  - a list of lint codes to disable fuck
+  disabled_codes:
+    - C0113
+    - C0111
+    - R0912
+    - R0915
+    - W0106
+    - E1126
+    - E1120
   _help_function_pattern:
   - regular expression pattern describing valid function names
   function_pattern: '[0-9a-z_]+'
   _help_macro_pattern:
   - regular expression pattern describing valid macro names
-  macro_pattern: '[0-9A-Z_]+'
+  macro_pattern: '[0-9a-z_]+'
   _help_global_var_pattern:
   - regular expression pattern describing valid names for
   - variables with global (cache) scope
