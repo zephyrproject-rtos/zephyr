@@ -6,7 +6,6 @@ simulation:
 arch: x86
 toolchain:
   - zephyr
-  - xtools
   - llvm
 testing:
   default: true
