@@ -334,28 +334,77 @@ struct mqtt_connack_param {
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
+/** @brief Common MQTT 5.0 properties shared across all ack-type messages. */
+struct mqtt_common_ack_properties {
+	/** MQTT 5.0, chapter 3.4.2.2.3 User Property. */
+	struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
+
+	/** MQTT 5.0, chapter 3.4.2.2.2 Reason String. */
+	struct mqtt_utf8 reason_string;
+
+	/** Flags indicating whether given property was present in received packet. */
+	struct {
+		/** Reason String property was present. */
+		bool has_reason_string;
+		/** User Property property was present. */
+		bool has_user_prop;
+	} rx;
+};
+
 /** @brief Parameters for MQTT publish acknowledgment (PUBACK). */
 struct mqtt_puback_param {
 	/** Message id of the PUBLISH message being acknowledged */
 	uint16_t message_id;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** MQTT 5.0 reason code. */
+	uint8_t reason_code;
+
+	/** MQTT 5.0 properties. */
+	struct mqtt_common_ack_properties prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Parameters for MQTT publish receive (PUBREC). */
 struct mqtt_pubrec_param {
 	/** Message id of the PUBLISH message being acknowledged */
 	uint16_t message_id;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** MQTT 5.0 reason code. */
+	uint8_t reason_code;
+
+	/** MQTT 5.0 properties. */
+	struct mqtt_common_ack_properties prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Parameters for MQTT publish release (PUBREL). */
 struct mqtt_pubrel_param {
 	/** Message id of the PUBREC message being acknowledged */
 	uint16_t message_id;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** MQTT 5.0 reason code. */
+	uint8_t reason_code;
+
+	/** MQTT 5.0 properties. */
+	struct mqtt_common_ack_properties prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Parameters for MQTT publish complete (PUBCOMP). */
 struct mqtt_pubcomp_param {
 	/** Message id of the PUBREL message being acknowledged */
 	uint16_t message_id;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** MQTT 5.0 reason code. */
+	uint8_t reason_code;
+
+	/** MQTT 5.0 properties. */
+	struct mqtt_common_ack_properties prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Parameters for MQTT subscription acknowledgment (SUBACK). */

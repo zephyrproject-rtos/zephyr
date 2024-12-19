@@ -242,40 +242,6 @@ static int zero_len_str_encode(struct buf_ctx *buf)
 	return pack_uint16(0x0000, buf);
 }
 
-/**
- * @brief Encodes and sends messages that contain only message id in
- *        the variable header.
- *
- * @param[in] message_type Message type and reserved bit fields.
- * @param[in] message_id Message id to be encoded in the variable header.
- * @param[inout] buf_ctx Pointer to the buffer context structure,
- *                       containing buffer for the encoded message.
- *
- * @retval 0 or an error code indicating a reason for failure.
- */
-static int mqtt_message_id_only_enc(uint8_t message_type, uint16_t message_id,
-				    struct buf_ctx *buf)
-{
-	int err_code;
-	uint8_t *start;
-
-	/* Message id zero is not permitted by spec. */
-	if (message_id == 0U) {
-		return -EINVAL;
-	}
-
-	/* Reserve space for fixed header. */
-	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
-	start = buf->cur;
-
-	err_code = pack_uint16(message_id, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
-
-	return mqtt_encode_fixed_header(message_type, start, buf);
-}
-
 #if defined(CONFIG_MQTT_VERSION_5_0)
 /**
  * @brief Packs unsigned 32 bit value to the buffer at the offset requested.
@@ -998,40 +964,189 @@ int publish_encode(const struct mqtt_client *client,
 	return 0;
 }
 
-int publish_ack_encode(const struct mqtt_puback_param *param,
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static uint32_t common_ack_properties_length(
+	const struct mqtt_common_ack_properties *prop)
+{
+	return user_properties_length(prop->user_prop) +
+	       string_property_length(&prop->reason_string);
+}
+
+static int common_ack_properties_encode(
+	const struct mqtt_common_ack_properties *prop,
+	struct buf_ctx *buf)
+{
+	uint32_t properties_len;
+	int err;
+
+	/* Precalculate total properties length */
+	properties_len = common_ack_properties_length(prop);
+	/* Properties length can be omitted if equal to 0. */
+	if (properties_len == 0) {
+		return 0;
+	}
+
+	err = pack_variable_int(properties_len, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_user_properties(prop->user_prop, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_string_property(MQTT_PROP_REASON_STRING,
+				     &prop->reason_string, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
+}
+#else /* CONFIG_MQTT_VERSION_5_0 */
+static uint32_t common_ack_properties_length(
+	const struct mqtt_common_ack_properties *prop)
+{
+	return 0;
+}
+
+static int common_ack_properties_encode(
+	const struct mqtt_common_ack_properties *prop,
+	struct buf_ctx *buf)
+{
+	ARG_UNUSED(prop);
+	ARG_UNUSED(buf);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+static int common_ack_encode(
+	uint8_t message_type, uint16_t message_id,  uint8_t reason_code,
+	const struct mqtt_common_ack_properties *prop,
+	struct buf_ctx *buf)
+{
+	int err_code;
+	uint8_t *start;
+
+	/* Message id zero is not permitted by spec. */
+	if (message_id == 0U) {
+		return -EINVAL;
+	}
+
+	/* Reserve space for fixed header. */
+	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
+	start = buf->cur;
+
+	err_code = pack_uint16(message_id, buf);
+	if (err_code != 0) {
+		return err_code;
+	}
+
+	/* For MQTT < 5.0 properties are NULL. */
+	if (prop != NULL) {
+		/* The Reason Code and Property Length can be omitted if the
+		 * Reason Code is 0x00 (Success) and there are no Properties.
+		 */
+		if (common_ack_properties_length(prop) == 0 &&
+		    reason_code == 0) {
+			goto out;
+		}
+
+		err_code = pack_uint8(reason_code, buf);
+		if (err_code != 0) {
+			return err_code;
+		}
+
+		err_code = common_ack_properties_encode(prop, buf);
+		if (err_code != 0) {
+			return err_code;
+		}
+	}
+
+out:
+	return mqtt_encode_fixed_header(message_type, start, buf);
+}
+
+int publish_ack_encode(const struct mqtt_client *client,
+		       const struct mqtt_puback_param *param,
 		       struct buf_ctx *buf)
 {
 	const uint8_t message_type =
 		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBACK, 0, 0, 0);
+	const struct mqtt_common_ack_properties *prop = NULL;
+	uint8_t reason_code = 0;
 
-	return mqtt_message_id_only_enc(message_type, param->message_id, buf);
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (mqtt_is_version_5_0(client)) {
+		prop = &param->prop;
+		reason_code = param->reason_code;
+	}
+#endif
+
+	return common_ack_encode(message_type, param->message_id,
+				 reason_code, prop, buf);
 }
 
-int publish_receive_encode(const struct mqtt_pubrec_param *param,
+int publish_receive_encode(const struct mqtt_client *client,
+			   const struct mqtt_pubrec_param *param,
 			   struct buf_ctx *buf)
 {
 	const uint8_t message_type =
 		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBREC, 0, 0, 0);
+	const struct mqtt_common_ack_properties *prop = NULL;
+	uint8_t reason_code = 0;
 
-	return mqtt_message_id_only_enc(message_type, param->message_id, buf);
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (mqtt_is_version_5_0(client)) {
+		prop = &param->prop;
+		reason_code = param->reason_code;
+	}
+#endif
+
+	return common_ack_encode(message_type, param->message_id,
+				 reason_code, prop, buf);
 }
 
-int publish_release_encode(const struct mqtt_pubrel_param *param,
+int publish_release_encode(const struct mqtt_client *client,
+			   const struct mqtt_pubrel_param *param,
 			   struct buf_ctx *buf)
 {
 	const uint8_t message_type =
 		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBREL, 0, 1, 0);
+	const struct mqtt_common_ack_properties *prop = NULL;
+	uint8_t reason_code = 0;
 
-	return mqtt_message_id_only_enc(message_type, param->message_id, buf);
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (mqtt_is_version_5_0(client)) {
+		prop = &param->prop;
+		reason_code = param->reason_code;
+	}
+#endif
+
+	return common_ack_encode(message_type, param->message_id,
+				 reason_code, prop, buf);
 }
 
-int publish_complete_encode(const struct mqtt_pubcomp_param *param,
+int publish_complete_encode(const struct mqtt_client *client,
+			    const struct mqtt_pubcomp_param *param,
 			    struct buf_ctx *buf)
 {
 	const uint8_t message_type =
 		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBCOMP, 0, 0, 0);
+	const struct mqtt_common_ack_properties *prop = NULL;
+	uint8_t reason_code = 0;
 
-	return mqtt_message_id_only_enc(message_type, param->message_id, buf);
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (mqtt_is_version_5_0(client)) {
+		prop = &param->prop;
+		reason_code = param->reason_code;
+	}
+#endif
+
+	return common_ack_encode(message_type, param->message_id,
+				 reason_code, prop, buf);
 }
 
 int disconnect_encode(struct buf_ctx *buf)
