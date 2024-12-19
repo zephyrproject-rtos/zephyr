@@ -13,17 +13,14 @@
 #define CUSTOM_LOAD_FACTOR 42
 
 extern struct sys_hashmap map;
-extern struct sys_hashmap custom_load_factor_map;
 
-#if defined(CONFIG_TEST_USE_CUSTOM_EQ_FUNC)
-/* public utility functions */
 bool string_map_contains_key(const struct sys_hashmap *map, const char *key);
 char *alloc_string_from_index(size_t i);
 bool string_map_remove(struct sys_hashmap *map, const char *key, uint64_t *value, char **old_key);
 int string_map_insert(struct sys_hashmap *map, const char *key, uint64_t value, uint64_t *old_value,
 		      char **old_key);
 bool string_map_get(const struct sys_hashmap *map, const char *key, uint64_t *value);
+
 void string_map_free_callback(uint64_t key, uint64_t value, void *cookie);
-#endif
 
 #endif
