@@ -87,26 +87,36 @@ Changes which require an RFC proposal include:
 Maintainers have the discretion to request that contributors create an RFC for
 PRs that are too large or complicated.
 
+.. _pr_requirements:
+
 PR Requirements
 ***************
 
 - Each commit in the PR must provide a commit message following the
   :ref:`commit-guidelines`.
 
+- No fixup or merge commits are allowed, see :ref:`Contribution workflow` for
+  more information.
+
 - The PR description must include a summary of the changes and their rationales.
 
 - All files in the PR must comply with :ref:`Licensing
   Requirements<licensing_requirements>`.
 
-- Follow the Zephyr :ref:`coding_style` and :ref:`coding_guidelines`.
+- The code must follow the Zephyr :ref:`coding_style` and :ref:`coding_guidelines`.
 
-- PRs must pass all CI checks. This is a requirement to merge the PR.
+- The PR must pass all CI checks, as described in :ref:`merge_criteria`.
   Contributors may mark a PR as draft and explicitly request reviewers to
   provide early feedback, even with failing CI checks.
 
 - When breaking a PR into multiple commits, each commit must build cleanly. The
   CI system does not enforce this policy, so it is the PR author's
   responsibility to verify.
+
+- When breaking up a PR into multiple commits, the sequence of commits must
+  follow a logical order as per the changes introduced, and not reflect the
+  order in which the changes were developed or modified. This includes not
+  renaming or rewriting files that were introduced in the PR itself.
 
 - When major new functionality is added, tests for the new functionality shall
   be added to the automated test suite. All API functions should have test cases
@@ -132,6 +142,13 @@ PR Requirements
 
 - Changes to APIs must increment the API version number according to the API
   version rules.
+
+- Documentation must be added and/or updated to reflect the changes in the code
+  introduced by the PR. The documentation changes must use the proper
+  terminology as present in the existing pages, and must be written in American
+  English. If you include images as part of the documentation, those must follow
+  the rules in :ref:`doc_images`. Please refer to :ref:`doc_guidelines` for
+  additional information.
 
 - PRs must also satisfy all :ref:`merge_criteria` before a member of the release
   engineering team merges the PR into the zephyr tree.
