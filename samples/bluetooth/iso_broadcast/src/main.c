@@ -28,12 +28,16 @@ static K_SEM_DEFINE(sem_iso_data, CONFIG_BT_ISO_TX_BUF_COUNT,
 #define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
 static uint16_t seq_num;
+static uint32_t ts;
+static int32_t  delta;
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
 
 	seq_num = 0U;
+	ts = 0U;
+	delta = 0;
 
 	k_sem_give(&sem_big_cmplt);
 }
@@ -175,10 +179,21 @@ int main(void)
 		printk("BIG create complete chan %u.\n", chan);
 	}
 
+	uint32_t skip = 3U;
+
 	while (true) {
+		struct bt_iso_tx_info tx_info;
+
 		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
 			struct net_buf *buf;
+			uint16_t sn;
 			int ret;
+
+			if (skip && (chan == 0U)) {
+				skip--;
+
+				continue;
+			}
 
 			buf = net_buf_alloc(&bis_tx_pool, K_USEC(BUF_ALLOC_TIMEOUT_US));
 			if (!buf) {
@@ -197,7 +212,34 @@ int main(void)
 			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 			sys_put_le32(iso_send_count, iso_data);
 			net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-			ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, seq_num);
+
+			/* Ensure that first ISO data on all streams are given with sequence number
+			 * 0, so that the (Zephyr) Controller uses the same payload counter for
+			 * a given sequence number on all streams at an SDU interval.
+			 * Read Tx Sync interface returns error if no ISO data was given previously.
+			 */
+			ret = bt_iso_chan_get_tx_sync(&bis_iso_chan[chan], &tx_info);
+			if (ret) {
+				printk("Failed to get tx sync before send (%d)\n", ret);
+
+				/* Use sequence number 0, to synchronize current stream with the
+				 * current payload counter in the ISO group of streams.
+				 */
+				sn = 0U;
+
+			} else {
+				sn = seq_num;
+			}
+
+			/* Send ISO data with timestamp, use sequence number 0 for first ISO data on
+			 * any stream.
+			 */
+			if (sn) {
+				ret = bt_iso_chan_send_ts(&bis_iso_chan[chan], buf, sn, ts);
+			} else {
+				ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, sn);
+			}
+
 			if (ret < 0) {
 				printk("Unable to broadcast data on channel %u"
 				       " : %d", chan, ret);
@@ -205,6 +247,52 @@ int main(void)
 				return 0;
 			}
 
+			/* Get Tx Sync, to verify that all streams have their ISO data at the same
+			 * timestamp.
+			 */
+			ret = bt_iso_chan_get_tx_sync(&bis_iso_chan[chan], &tx_info);
+			if (ret) {
+				printk("Failed to get tx sync after send (%d)\n", ret);
+				return 0;
+			}
+
+			/* Timestamp delta with the Controller */
+			if (!delta) {
+				delta = tx_info.ts - ts;
+			} else {
+				int32_t drift = ((delta - tx_info.ts + ts) / BIG_SDU_INTERVAL_US) /
+						1000000U;
+
+				/* NOTE: As the `ts` is just a increase in software in this sample,
+				 *       we will not see any drift.
+				 */
+				if (drift) {
+					printk("Drift: %d ppm.\n", drift);
+				}
+
+				/* NOTE: Change in delta (drift) for a duration of SDU intervals can
+				 *       be used to synchronize the clock with the Controller.
+				 */
+			}
+
+			printk("Tx chan %u: seq num %u -> %u ts %u -> %u offset %u\n", chan,
+			       seq_num, tx_info.seq_num, ts, tx_info.ts, tx_info.offset);
+
+			/* Permit a reasonable clock jitter (at least Bluetooth active clock
+			 * jitter), in the verification of timestamp.
+			 */
+			uint32_t jitter_us = 2U;
+
+			/* Validate ISO data being enqueued at the required timestamp.
+			 * Ignore checking first ISO data sent.
+			 */
+			if (ts && sn &&
+			    !IN_RANGE((ts + delta), (tx_info.ts - jitter_us),
+				      (tx_info.ts + jitter_us))) {
+				printk("Mismatch in tx sync timestamp! (%u != %u)\n", ts,
+				       tx_info.ts);
+				return 0;
+			}
 		}
 
 		if ((iso_send_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
@@ -213,6 +301,7 @@ int main(void)
 
 		iso_send_count++;
 		seq_num++;
+		ts += BIG_SDU_INTERVAL_US;
 
 		timeout_counter--;
 		if (!timeout_counter) {
