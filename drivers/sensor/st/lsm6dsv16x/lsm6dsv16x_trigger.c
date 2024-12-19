@@ -177,7 +177,11 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 	int ret;
 
 	while (1) {
-		if (IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
+		/* When using I3C IBI interrupt the status register is already automatically
+		 * read (clearing the interrupt condition), so we can skip the extra bus
+		 * transaction for FIFO stream case.
+		 */
+		if (ON_I3C_BUS(cfg) && !I3C_INT_PIN(cfg) && IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
 			break;
 		}
 
@@ -186,7 +190,8 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 			return;
 		}
 
-		if ((status.drdy_xl == 0) && (status.drdy_gy == 0)) {
+		if (((status.drdy_xl == 0) && (status.drdy_gy == 0)) ||
+		    IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
 			break;
 		}
 
