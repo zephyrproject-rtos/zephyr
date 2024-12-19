@@ -710,6 +710,7 @@
 			interrupts = <67 0>;
 			interrupt-names = "otgfs";
 			num-bidir-endpoints = <6>;
+			num-host-channels = <12>;
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
@@ -724,6 +725,7 @@
 			interrupts = <77 0>, <74 0>, <75 0>;
 			interrupt-names = "otghs", "ep1_out", "ep1_in";
 			num-bidir-endpoints = <9>;
+			num-host-channels = <16>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
 			clocks = <&rcc STM32_CLOCK(AHB1, 29U)>,
