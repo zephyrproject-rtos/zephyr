@@ -305,7 +305,8 @@ int disconnect_encode(struct buf_ctx *buf);
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int subscribe_encode(const struct mqtt_subscription_list *param,
+int subscribe_encode(const struct mqtt_client *client,
+		     const struct mqtt_subscription_list *param,
 		     struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Unsubscribe packet.
@@ -318,7 +319,8 @@ int subscribe_encode(const struct mqtt_subscription_list *param,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int unsubscribe_encode(const struct mqtt_subscription_list *param,
+int unsubscribe_encode(const struct mqtt_client *client,
+		       const struct mqtt_subscription_list *param,
 		       struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Ping Request packet.

@@ -493,7 +493,7 @@ struct mqtt_publish_param {
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
-/** @brief List of topics in a subscription request. */
+/** @brief Parameters for subscribe/unsubscribe message. */
 struct mqtt_subscription_list {
 	/** Array containing topics along with QoS for each. */
 	struct mqtt_topic *list;
@@ -503,6 +503,19 @@ struct mqtt_subscription_list {
 
 	/** Message id used to identify subscription request. */
 	uint16_t message_id;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** MQTT 5.0 properties. */
+	struct {
+		/** MQTT 5.0, chapter 3.8.2.1.3 / 3.10.2.1.2 User Property. */
+		struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
+
+		/** MQTT 5.0, chapter 3.8.2.1.2 Subscription Identifier.
+		 *  Ignored for UNSUBSCRIBE requests.
+		 */
+		uint32_t subscription_identifier;
+	} prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /**
