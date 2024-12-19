@@ -15,3 +15,5 @@ config SOC_SERIES_MCXW
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
 	select CLOCK_CONTROL
+
+	rsource "../../common/Kconfig.nbu"

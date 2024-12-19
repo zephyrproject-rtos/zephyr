@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, NXP
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,11 +34,6 @@
 #define LOG_LEVEL       CONFIG_HDLC_RCP_IF_DRIVER_LOG_LEVEL
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#define HDLC_RCP_IF_IRQ_N        DT_INST_IRQ_BY_NAME(0, hdlc_rcp_if_int, irq)
-#define HDLC_RCP_IF_IRQ_P        DT_INST_IRQ_BY_NAME(0, hdlc_rcp_if_int, priority)
-#define HDLC_RCP_IF_WAKEUP_IRQ_N DT_INST_IRQ_BY_NAME(0, wakeup_int, irq)
-#define HDLC_RCP_IF_WAKEUP_IRQ_P DT_INST_IRQ_BY_NAME(0, wakeup_int, priority)
-
 struct ot_hdlc_rcp_context {
 	struct net_if *iface;
 	struct openthread_context *ot_context;
@@ -47,8 +42,6 @@ struct ot_hdlc_rcp_context {
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
-extern int32_t hdlc_rcp_if_handler(void);
-extern int32_t hdlc_rcp_if_wakeup_done_handler(void);
 
 /* -------------------------------------------------------------------------- */
 /*                             Private functions                              */
@@ -58,15 +51,6 @@ static void hdlc_iface_init(struct net_if *iface)
 {
 	struct ot_hdlc_rcp_context *ctx = net_if_get_device(iface)->data;
 	otExtAddress eui64;
-
-	/* HDLC RCP interface Interrupt */
-	IRQ_CONNECT(HDLC_RCP_IF_IRQ_N, HDLC_RCP_IF_IRQ_P, hdlc_rcp_if_handler, 0, 0);
-	irq_enable(HDLC_RCP_IF_IRQ_N);
-
-	/* Wake up done interrupt */
-	IRQ_CONNECT(HDLC_RCP_IF_WAKEUP_IRQ_N, HDLC_RCP_IF_WAKEUP_IRQ_P,
-		    hdlc_rcp_if_wakeup_done_handler, 0, 0);
-	irq_enable(HDLC_RCP_IF_WAKEUP_IRQ_N);
 
 	ctx->iface = iface;
 

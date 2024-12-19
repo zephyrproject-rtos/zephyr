@@ -39,12 +39,6 @@ struct hci_data {
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 LOG_MODULE_REGISTER(bt_driver);
 
-#define HCI_IRQ_N        DT_INST_IRQ_BY_NAME(0, hci_int, irq)
-#define HCI_IRQ_P        DT_INST_IRQ_BY_NAME(0, hci_int, priority)
-#if DT_INST_IRQ_HAS_NAME(0, wakeup_int)
-#define HCI_WAKEUP_IRQ_N DT_INST_IRQ_BY_NAME(0, wakeup_int, irq)
-#define HCI_WAKEUP_IRQ_P DT_INST_IRQ_BY_NAME(0, wakeup_int, priority)
-#endif
 /* Vendor specific commands */
 #define HCI_CMD_STORE_BT_CAL_DATA_OCF                   0x61U
 #define HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH          32U
@@ -80,9 +74,6 @@ LOG_MODULE_REGISTER(bt_driver);
 /* -------------------------------------------------------------------------- */
 /*                              Public prototypes                             */
 /* -------------------------------------------------------------------------- */
-
-extern int32_t ble_hci_handler(void);
-extern int32_t ble_wakeup_done_handler(void);
 
 /* -------------------------------------------------------------------------- */
 /*                             Private functions                              */
@@ -545,18 +536,6 @@ static int bt_nxp_init(const struct device *dev)
 	int ret = 0;
 
 	ARG_UNUSED(dev);
-
-	/* HCI Interrupt */
-	IRQ_CONNECT(HCI_IRQ_N, HCI_IRQ_P, ble_hci_handler, 0, 0);
-	irq_enable(HCI_IRQ_N);
-#if DT_INST_IRQ_HAS_NAME(0, wakeup_int)
-	/* Wake up done interrupt */
-	IRQ_CONNECT(HCI_WAKEUP_IRQ_N, HCI_WAKEUP_IRQ_P, ble_wakeup_done_handler, 0, 0);
-	irq_enable(HCI_WAKEUP_IRQ_N);
-#endif
-#if (DT_INST_PROP(0, wakeup_source)) && CONFIG_PM
-	EnableDeepSleepIRQ(HCI_IRQ_N);
-#endif
 
 	do {
 		status = PLATFORM_InitBle();
