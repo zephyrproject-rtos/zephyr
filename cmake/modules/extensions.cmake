@@ -3251,8 +3251,9 @@ function(zephyr_get variable)
       set(sysbuild_global_${var})
     endif()
 
-    if(TARGET snippets_scope)
-      get_property(snippets_${var} TARGET snippets_scope PROPERTY ${var})
+    zephyr_scope_exists(scope_defined snippets)
+    if(scope_defined)
+      get_property(snippets_${var} GLOBAL PROPERTY snippets_scope:${var})
     endif()
   endforeach()
 
@@ -3317,11 +3318,30 @@ endfunction(zephyr_get variable)
 # <scope>: Name of new scope.
 #
 function(zephyr_create_scope scope)
-  if(TARGET ${scope}_scope)
+  zephyr_scope_exists(scope_defined ${scope})
+  if(scope_defined)
     message(FATAL_ERROR "zephyr_create_scope(${scope}) already exists.")
   endif()
 
-  add_custom_target(${scope}_scope)
+  set_property(GLOBAL PROPERTY scope:${scope} TRUE)
+endfunction()
+
+# Usage:
+#   zephyr_scope_exists(<result> <scope>)
+#
+# Check if <scope> exists.
+#
+# <result>: Variable to set with result.
+#           TRUE if scope exists, FALSE otherwise.
+# <scope> : Name of scope.
+#
+function(zephyr_scope_exists result scope)
+  get_property(scope_defined GLOBAL PROPERTY scope:${scope})
+  if(scope_defined)
+    set(${result} TRUE PARENT_SCOPE)
+  else()
+    set(${result} FALSE PARENT_SCOPE)
+  endif()
 endfunction()
 
 # Usage:
@@ -3342,7 +3362,8 @@ function(zephyr_set variable)
 
   zephyr_check_arguments_required_all(zephyr_set SET_VAR SCOPE)
 
-  if(NOT TARGET ${SET_VAR_SCOPE}_scope)
+  zephyr_scope_exists(scope_defined ${ARG_YAML_NAME})
+  if(NOT scope_defined)
     message(FATAL_ERROR "zephyr_set(... SCOPE ${SET_VAR_SCOPE}) doesn't exists.")
   endif()
 
@@ -3350,8 +3371,8 @@ function(zephyr_set variable)
     set(property_args APPEND)
   endif()
 
-  set_property(TARGET ${SET_VAR_SCOPE}_scope ${property_args}
-               PROPERTY ${variable} ${SET_VAR_UNPARSED_ARGUMENTS}
+  set_property(GLOBAL PROPERTY ${property_args}
+               ${SET_VAR_SCOPE}_scope:${variable} ${SET_VAR_UNPARSED_ARGUMENTS}
   )
 endfunction()
 
@@ -5884,18 +5905,5 @@ if(CMAKE_SCRIPT_MODE_FILE)
 
   function(set_target_properties)
     # This silence the error: 'set_target_properties command is not scriptable'
-  endfunction()
-
-  function(zephyr_set variable)
-    # This silence the error: zephyr_set(...  SCOPE <scope>) doesn't exists.
-  endfunction()
-
-  # Build info creates a custom target for handling of build info.
-  # build_info is not needed in script mode but still called by Zephyr CMake
-  # modules. Therefore disable build_info(...) in when including
-  # extensions.cmake in script mode.
-  function(build_info)
-    # This silence the error: 'YAML context 'build_info' does not exist.'
-    #                         'Remember to create a YAML context'
   endfunction()
 endif()
