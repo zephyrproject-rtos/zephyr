@@ -1,0 +1,28 @@
+# Copyright (c) 2021-2024 ATL Electronics
+# Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_BL60X
+
+# On SiFive e24, mtime is a fixed 1 000 000 per second rate.
+# riscv_machine_timer uses mtime as if it was mcycle and expects
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config NUM_IRQS
+	default 80
+
+config ARCH_SW_ISR_TABLE_ALIGN
+	default 64
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0x3FF
+
+config RISCV_GP
+	default y
+
+endif   # SOC_SERIES_BL60X
