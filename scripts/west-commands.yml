@@ -89,3 +89,8 @@ west-commands:
       - name: packages
         class: Packages
         help: manage packages for Zephyr
+  - file: scripts/west_commands/patch.py
+    commands:
+      - name: patch
+        class: Patch
+        help: manage patches for Zephyr modules
