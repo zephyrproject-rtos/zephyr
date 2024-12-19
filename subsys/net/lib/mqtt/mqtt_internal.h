@@ -54,6 +54,7 @@ extern "C" {
 #define MQTT_PKT_TYPE_PINGREQ     0xC0
 #define MQTT_PKT_TYPE_PINGRSP     0xD0
 #define MQTT_PKT_TYPE_DISCONNECT  0xE0
+#define MQTT_PKT_TYPE_AUTH        0xF0
 
 /**@brief MQTT Property Types. */
 #define MQTT_PROP_PAYLOAD_FORMAT_INDICATOR          0x01
@@ -346,6 +347,20 @@ int unsubscribe_encode(const struct mqtt_client *client,
  */
 int ping_request_encode(struct buf_ctx *buf);
 
+#if defined(CONFIG_MQTT_VERSION_5_0)
+/**@brief Constructs/encodes Authenticate packet.
+ *
+ * @param[in] param Authenticate message parameters.
+ * @param[inout] buf_ctx Pointer to the buffer context structure,
+ *                       containing buffer for the encoded message.
+ *                       As output points to the beginning and end of
+ *                       the frame.
+ *
+ * @return 0 if the procedure is successful, an error code otherwise.
+ */
+int auth_encode(const struct mqtt_auth_param *param, struct buf_ctx *buf);
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
 /**@brief Decode MQTT Packet Type and Length in the MQTT fixed header.
  *
  * @param[inout] buf A pointer to the buf_ctx structure containing current
@@ -469,6 +484,18 @@ int unsubscribe_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf
  */
 int disconnect_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 		      struct mqtt_disconnect_param *param);
+
+/**@brief Decode MQTT Auth packet.
+ *
+ * @param[in] MQTT client for which packet is decoded.
+ * @param[inout] buf A pointer to the buf_ctx structure containing current
+ *                   buffer position.
+ * @param[out] param Pointer to buffer for decoded Auth parameters.
+ *
+ * @return 0 if the procedure is successful, an error code otherwise.
+ */
+int auth_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+		struct mqtt_auth_param *param);
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 
 /**
