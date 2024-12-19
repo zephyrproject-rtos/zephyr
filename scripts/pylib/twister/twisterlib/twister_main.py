@@ -20,6 +20,7 @@ from twisterlib.reports import Reporting
 from twisterlib.runner import TwisterRunner
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
+from twisterlib.twister_path import TPath
 
 logger = logging.getLogger("twister")
 logger.setLevel(logging.DEBUG)
@@ -30,7 +31,7 @@ def setup_logging(outdir, log_file, log_level, timestamps):
     if log_file:
         fh = logging.FileHandler(log_file)
     else:
-        fh = logging.FileHandler(os.path.join(outdir, "twister.log"))
+        fh = logging.FileHandler(outdir / "twister.log")
 
     fh.setLevel(logging.DEBUG)
 
@@ -79,7 +80,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif options.last_metrics:
-        ls = os.path.join(options.outdir, "twister.json")
+        ls = options.outdir / "twister.json"
         if os.path.exists(ls):
             with open(ls) as fp:
                 previous_results = fp.read()
@@ -91,7 +92,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
             shutil.rmtree(options.outdir)
         else:
             for i in range(1, 100):
-                new_out = options.outdir + f".{i}"
+                new_out = TPath(str(options.outdir) + f".{i}")
                 if not os.path.exists(new_out):
                     print(f"Renaming output directory to {new_out}")
                     shutil.move(options.outdir, new_out)
@@ -103,7 +104,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
     previous_results_file = None
     os.makedirs(options.outdir, exist_ok=True)
     if options.last_metrics and previous_results:
-        previous_results_file = os.path.join(options.outdir, "baseline.json")
+        previous_results_file = options.outdir / "baseline.json"
         with open(previous_results_file, "w") as fp:
             fp.write(previous_results)
 
@@ -151,7 +152,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
                 )
 
     report = Reporting(tplan, env)
-    plan_file = os.path.join(options.outdir, "testplan.json")
+    plan_file = options.outdir / "testplan.json"
     if not os.path.exists(plan_file):
         report.json_report(plan_file, env.version)
 
