@@ -68,6 +68,8 @@ extern "C" {
 /** Value to set the ISO data path over HCi. */
 #define BT_ISO_DATA_PATH_HCI        0x00
 
+/** Unknown SDU interval */
+#define BT_ISO_SDU_INTERVAL_UNKNOWN 0x000000U
 /** Minimum interval value in microseconds */
 #define BT_ISO_SDU_INTERVAL_MIN     0x0000FFU
 /** Maximum interval value in microseconds */
@@ -140,6 +142,10 @@ extern "C" {
 #define BT_ISO_PTO_MIN              0x00U
 /** Maximum pre-transmission offset */
 #define BT_ISO_PTO_MAX              0x0FU
+/** No subinterval */
+#define BT_ISO_SUBINTERVAL_NONE         0x00000000U
+/** Unknown subinterval */
+#define BT_ISO_SUBINTERVAL_UNKNOWN      0xFFFFFFFFU
 
 /**
  * @brief Check if ISO BIS bitfield is valid (BT_ISO_BIS_INDEX_BIT(1)|..|BT_ISO_BIS_INDEX_BIT(31))
@@ -967,6 +973,18 @@ struct bt_iso_unicast_tx_info {
 
 	/** The burst number */
 	uint8_t  bn;
+
+	/** The maximum SDU size in octets
+	 *
+	 * May be set to @ref bt_iso_unicast_tx_info.max_pdu for peripherals if unknown
+	 */
+	uint16_t max_sdu;
+
+	/** The SDU interval in microseconds
+	 *
+	 * May be set to  @ref BT_ISO_SDU_INTERVAL_UNKNOWN for if unknown.
+	 */
+	uint32_t sdu_interval;
 };
 
 /** @brief ISO Unicast Info Structure */
@@ -976,6 +994,14 @@ struct bt_iso_unicast_info {
 
 	/** The maximum time in us for all PDUs of this CIS in a CIG event */
 	uint32_t cis_sync_delay;
+
+	/**
+	 * @brief The subinterval in microseconds
+	 *
+	 * Will be @ref BT_ISO_SUBINTERVAL_NONE if there is no subinterval (NSE = 1).
+	 * Will be @ref BT_ISO_SUBINTERVAL_UNKNOWN if unknown.
+	 */
+	uint32_t subinterval;
 
 	/** @brief TX information for the central to peripheral data path */
 	struct bt_iso_unicast_tx_info central;

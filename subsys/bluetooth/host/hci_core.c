@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <stdio.h>
@@ -2794,6 +2795,8 @@ static const struct event_handler meta_events[] = {
 #if defined(CONFIG_BT_ISO_UNICAST)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_ESTABLISHED, hci_le_cis_established,
 		      sizeof(struct bt_hci_evt_le_cis_established)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_ESTABLISHED_V2, hci_le_cis_established_v2,
+		      sizeof(struct bt_hci_evt_le_cis_established_v2)),
 #if defined(CONFIG_BT_ISO_PERIPHERAL)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_REQ, hci_le_cis_req,
 		      sizeof(struct bt_hci_evt_le_cis_req)),
@@ -3417,6 +3420,7 @@ static int le_set_event_mask(void)
 	if (IS_ENABLED(CONFIG_BT_ISO) &&
 	    BT_FEAT_LE_CIS(bt_dev.le.features)) {
 		mask |= BT_EVT_MASK_LE_CIS_ESTABLISHED;
+		mask |= BT_EVT_MASK_LE_CIS_ESTABLISHED_V2;
 		if (BT_FEAT_LE_CIS_PERIPHERAL(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_CIS_REQ;
 		}

@@ -99,6 +99,7 @@ void bt_iso_buf_rx_freed_cb_set(bt_iso_buf_rx_freed_cb_t cb);
 
 /* Process CIS Established event */
 void hci_le_cis_established(struct net_buf *buf);
+void hci_le_cis_established_v2(struct net_buf *buf);
 
 /* Process CIS Request event */
 void hci_le_cis_req(struct net_buf *buf);
