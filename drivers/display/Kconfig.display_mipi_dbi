@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_MIPI_DBI
+	bool "MIPI DBI display driver"
+	default n
+	select MIPI_DBI
+	help
+	  Enable driver for MIPI DBI display driver.
