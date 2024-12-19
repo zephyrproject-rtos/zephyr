@@ -423,24 +423,24 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,
 
 # ==========================================================================
 #
-# cmake -DW=... settings
+# cmake -DW=... or COMPILER_WARNINGS_GROUP Kconfig options
 #
 # W=1 - warnings that may be relevant and does not occur too often
 # W=2 - warnings that occur quite often but may still be relevant
 # W=3 - the more obscure warnings, can most likely be ignored
 # ==========================================================================
-# @Intent: Add cmake -DW toolchain supported warnings, if any
-if(W MATCHES "1")
+# @Intent: Add cmake -DW or Kconfig toolchain supported warnings, if any
+if(W MATCHES "1" OR CONFIG_COMPILER_WARNINGS_GROUP1)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_dw_1>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_dw_1>>)
 endif()
 
-if(W MATCHES "2")
+if(W MATCHES "2" OR CONFIG_COMPILER_WARNINGS_GROUP2)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_dw_2>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_dw_2>>)
 endif()
 
-if(W MATCHES "3")
+if(W MATCHES "3" OR CONFIG_COMPILER_WARNINGS_GROUP3)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_dw_3>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_dw_3>>)
 endif()
