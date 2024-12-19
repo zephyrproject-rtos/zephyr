@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
+
+/ {
+	pwm_to_gpio_loopback: pwm_to_gpio_loopback {
+		compatible = "test-pwm-to-gpio-loopback";
+		pwms = <&pwm130 0 0 PWM_POLARITY_NORMAL>;
+		gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 0)>;
+		};
+	};
+	pwm_sleep: pwm_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 0)>;
+			low-power-enable;
+		};
+	};
+};
+
+&pwm130 {
+	status = "okay";
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-1 = <&pwm_sleep>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&cpuapp_dma_region>;
+};
