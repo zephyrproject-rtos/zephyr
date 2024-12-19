@@ -63,4 +63,16 @@
 			drive-strength = "x6";
 		};
 	};
+
+	pinmux_i2c3: pinmux_i2c3 {
+		group0 {
+			pinmux = <&iomuxc_i2c3_scl_i2c_scl_i2c3_scl>,
+				<&iomuxc_i2c3_sda_i2c_sda_i2c3_sda>;
+			bias-pull-up;
+			input-schmitt-enable;
+			slew-rate = "slow";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
 };
