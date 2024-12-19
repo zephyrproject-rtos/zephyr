@@ -25,12 +25,13 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for bossac.'''
 
     def __init__(self, cfg, bossac='bossac', port=DEFAULT_BOSSAC_PORT,
-                 speed=DEFAULT_BOSSAC_SPEED, boot_delay=0):
+                 speed=DEFAULT_BOSSAC_SPEED, boot_delay=0, erase=False):
         super().__init__(cfg)
         self.bossac = bossac
         self.port = port
         self.speed = speed
         self.boot_delay = boot_delay
+        self.erase = erase
 
     @classmethod
     def name(cls):
@@ -38,7 +39,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'})
+        return RunnerCaps(commands={'flash'}, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -60,7 +61,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
     def do_create(cls, cfg, args):
         return BossacBinaryRunner(cfg, bossac=args.bossac,
                                   port=args.bossac_port, speed=args.speed,
-                                  boot_delay=args.delay)
+                                  boot_delay=args.delay, erase=args.erase)
 
     def read_help(self):
         """Run bossac --help and return the output as a list of lines"""
@@ -180,8 +181,11 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
     def make_bossac_cmd(self):
         self.ensure_output('bin')
-        cmd_flash = [self.bossac, '-p', self.port, '-R', '-e', '-w', '-v',
+        cmd_flash = [self.bossac, '-p', self.port, '-R', '-w', '-v',
                      '-b', self.cfg.bin_file]
+
+        if self.erase:
+            cmd_flash += ['-e']
 
         dt_chosen_code_partition_nd = self.get_chosen_code_partition_node()
 
