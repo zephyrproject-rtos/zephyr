@@ -345,6 +345,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		 * code and data accessed must reside in ram.
 		 */
 		key = irq_lock();
+		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
 	while (len) {
@@ -355,6 +356,13 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		i = MIN(SPI_NOR_PAGE_SIZE - (offset % SPI_NOR_PAGE_SIZE), len);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 		memcpy(nor_write_buf, src, i);
+
+		/* As memcpy could cause an XIP access,
+		 * we need to wait for XIP prefetch to be finished again
+		 */
+		if (memc_flexspi_is_running_xip(&data->controller)) {
+			memc_flexspi_wait_bus_idle(&data->controller);
+		}
 #endif
 		flash_flexspi_nor_write_enable(data);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
@@ -412,6 +420,7 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		 * code and data accessed must reside in ram.
 		 */
 		key = irq_lock();
+		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
 	if ((offset == 0) && (size == data->config.flashSize * KB(1))) {
