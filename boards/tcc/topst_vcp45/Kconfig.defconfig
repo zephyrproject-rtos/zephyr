@@ -1,0 +1,88 @@
+# Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TOPST_VCP45
+
+config ARM_CUSTOM_INTERRUPT_CONTROLLER
+	default y
+
+config THREAD_MONITOR
+	default y
+
+config THREAD_STACK_INFO
+	default y
+
+config INIT_STACKS
+	default y
+
+config TRACING
+	default y
+
+config TRACING_OBJECT_TRACKING
+	default y
+
+config TRACING_SYSCALL
+	default y
+
+config TRACING_THREAD
+	default y
+
+config TRACING_WORK
+	default y
+
+config TRACING_ISR
+	default y
+
+config TRACING_SEMAPHORE
+	default y
+
+config TRACING_MUTEX
+	default y
+
+config TRACING_CONDVAR
+	default y
+
+config TRACING_QUEUE
+	default y
+
+config TRACING_FIFO
+	default y
+
+config TRACING_LIFO
+	default y
+
+config TRACING_STACK
+	default y
+
+config TRACING_MESSAGE_QUEUE
+	default y
+
+config TRACING_MAILBOX
+	default y
+
+config TRACING_PIPE
+	default y
+
+config TRACING_HEAP
+	default y
+
+config TRACING_MEMORY_SLAB
+	default y
+
+config TRACING_TIMER
+	default n
+
+config TRACING_EVENT
+	default y
+
+config BUILD_OUTPUT_BIN
+	default y
+
+if USERSPACE
+
+config COMPILER_ISA_THUMB2
+	default n
+
+endif
+
+endif # BOARD_TOPST_VCP45
