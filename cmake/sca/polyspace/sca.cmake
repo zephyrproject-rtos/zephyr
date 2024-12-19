@@ -107,8 +107,7 @@ add_custom_target(polyspace-analyze ALL
     ${POLYSPACE_OPTIONS_ZEPHYR}
     ${POLYSPACE_OPTIONS_FILE}
     ${POLYSPACE_OPTIONS}
-    #    || ${CMAKE_COMMAND} -E true # allow to continue processing results
-    #VERBATIM
+      || ${CMAKE_COMMAND} -E true # allow to continue processing results
   DEPENDS ${POLYSPACE_OPTIONS_FILE_BASE}
   USES_TERMINAL
   COMMAND_EXPAND_LISTS
@@ -141,5 +140,3 @@ add_custom_command(TARGET polyspace-results POST_BUILD
   VERBATIM
   USES_TERMINAL
 )
-
-# EOF

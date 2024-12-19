@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 """
-Example script to illustrate the usage of the Polyspace Python tools
+Print Polyspace results on terminal, for easy review.
 Copyright (C) 2020-2024 The MathWorks, Inc.
 """
+
+# SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import os
