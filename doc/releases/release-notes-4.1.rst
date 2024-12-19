@@ -230,7 +230,8 @@ Drivers and Sensors
 
 * Stepper
 
-  * Added driver for ADI TMC2209. :dtcompatible:`adi,tmc2209`
+  * Added driver for ADI TMC2209. :dtcompatible:`adi,tmc2209`.
+  * Added driver for TI DRV8424. :dtcompatible:`ti,drv8424`.
   * Added :kconfig:option:`CONFIG_STEP_DIR_STEPPER` to enable common functions for step/dir steppers.
 
 * USB
