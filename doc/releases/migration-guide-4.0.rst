@@ -404,6 +404,10 @@ Bluetooth Audio
 Bluetooth Host
 ==============
 
+* :c:func:`bt_gatt_subscribe` behavior has changed to if a different user/application has already
+  subscribed to the same handle, then the callback will contain the values aggregated of all the
+  users/applications.
+
 Automatic advertiser resumption is deprecated
 ---------------------------------------------
 
