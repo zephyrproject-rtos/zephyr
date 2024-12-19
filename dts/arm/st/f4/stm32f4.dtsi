@@ -363,6 +363,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-cells = <1>;
 			};
 
 			qdec {
@@ -391,6 +392,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-cells = <1>;
 			};
 
 			qdec {
@@ -419,6 +421,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-cells = <1>;
 			};
 
 			qdec {
@@ -447,6 +450,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-cells = <1>;
 			};
 
 			qdec {
@@ -475,6 +479,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-cells = <1>;
 			};
 		};
 
@@ -497,6 +502,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-cells = <1>;
 			};
 		};
 
@@ -519,6 +525,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-cells = <1>;
 			};
 		};
 
