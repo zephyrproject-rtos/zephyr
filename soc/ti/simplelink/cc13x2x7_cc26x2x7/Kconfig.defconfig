@@ -16,7 +16,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 config NUM_IRQS
 	default 38
 
-if IEEE802154
+if IEEE802154 || CONFIG_CC13X2_CC26X2_BASIC_IEEE802154
 
 config IEEE802154_CC13XX_CC26XX
 	# required for linking with PowerCC26X2_config in

@@ -69,3 +69,10 @@ config CC13X2_CC26X2_XOSC_CAPARRAY_DELTA
 	  Enable a specific cap array tunning delta.
 
 endmenu
+
+config CC13X2_CC26X2_BASIC_IEEE802154
+	bool "Baremetal ieee802154 support"
+	depends on SOC_CC1352P7
+	help
+	  Enable IEEE802154 support for the CC13X2 and CC26X2 series of MCUs
+	  using the TI driverlib without the Zephyr or TI IEEE802154 stack.
