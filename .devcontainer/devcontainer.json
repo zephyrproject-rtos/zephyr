@@ -1,0 +1,21 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/zephyrproject/zephyr,type=bind",
+  "workspaceFolder": "/home/vscode/zephyrproject/zephyr",
+  "onCreateCommand": "bash -i /home/vscode/zephyrproject/zephyr/.devcontainer/setup.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "C_Cpp.default.compileCommands": "/home/vscode/zephyrproject/zephyr/build/compile_commands.json",
+        "devicetree.zephyr": "/home/vscode/zephyrproject/zephyr",
+        "extensions.ignoreRecommendations": true
+      },
+      "extensions": [
+        "ms-vscode.cpptools",
+        "nordic-semiconductor.nrf-devicetree",
+        "nordic-semiconductor.nrf-kconfig",
+        "editorconfig.editorconfig"
+      ]
+    }
+  }
+}
