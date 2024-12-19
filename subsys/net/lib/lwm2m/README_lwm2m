@@ -16,6 +16,7 @@ details please see the chapter 11 - CDDL.
 To generate the encoder and decoder:
 
 ```console
+pip install --upgrade zcbor
 sh lwm2m_senml_cbor_regenerate.sh
 ```
 
