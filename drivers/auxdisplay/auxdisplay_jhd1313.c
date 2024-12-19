@@ -205,7 +205,7 @@ static int auxdisplay_jhd1313_backlight_set(const struct device *dev, uint8_t co
 	const struct auxdisplay_jhd1313_config *config = dev->config;
 	struct auxdisplay_jhd1313_data *data = dev->data;
 
-	if (colour > ARRAY_SIZE(colour_define)) {
+	if (colour >= ARRAY_SIZE(colour_define)) {
 		LOG_WRN("Selected colour is too high a value");
 		return -EINVAL;
 	}
