@@ -44,6 +44,7 @@ properties:
 
   display-inversion:
     type: boolean
+    default: false
     description: |
       Display inversion mode. Every bit is inverted from the frame memory to
       the display.
