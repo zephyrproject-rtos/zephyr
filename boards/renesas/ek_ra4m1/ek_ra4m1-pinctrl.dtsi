@@ -21,4 +21,12 @@
 			<RA_PSEL(RA_PSEL_SPI, 2, 5)>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 0)>;
+			renesas,analog-enable;
+		};
+	};
 };
