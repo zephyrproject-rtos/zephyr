@@ -1,0 +1,6 @@
+board:
+  name: linkw
+  full_name: WCH LinkW
+  vendor: wch
+  socs:
+    - name: ch32v208
