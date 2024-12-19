@@ -33,6 +33,7 @@ static struct sx12xx_data {
 	const struct device *dev;
 	struct k_poll_signal *operation_done;
 	lora_recv_cb async_rx_cb;
+	void *async_user_data;
 	RadioEvents_t events;
 	struct lora_modem_config tx_cfg;
 	atomic_t modem_usage;
@@ -106,7 +107,8 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 		/* Start receiving again */
 		Radio.Rx(0);
 		/* Run the callback */
-		dev_data.async_rx_cb(dev_data.dev, payload, size, rssi, snr);
+		dev_data.async_rx_cb(dev_data.dev, payload, size, rssi, snr,
+				   dev_data.async_user_data);
 		/* Don't run the synchronous code */
 		return;
 	}
@@ -305,7 +307,7 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	return size;
 }
 
-int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb)
+int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 {
 	/* Cancel ongoing reception */
 	if (cb == NULL) {
@@ -323,6 +325,7 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb)
 
 	/* Store parameters */
 	dev_data.async_rx_cb = cb;
+	dev_data.async_user_data = user_data;
 
 	/* Start reception */
 	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
