@@ -103,6 +103,10 @@ typedef void (*phy_callback_t)(const struct device *dev,
  * public documentation.
  */
 __subsystem struct ethphy_driver_api {
+	/** Get MAC address */
+	int (*get_mac_address)(const struct device *dev, uint8_t port,
+			       uint64_t *mac);
+
 	/** Get link state */
 	int (*get_link)(const struct device *dev,
 			struct phy_link_state *state);
@@ -126,6 +130,26 @@ __subsystem struct ethphy_driver_api {
 /**
  * @endcond
  */
+
+/**
+ * @brief      Get the MAC address of the Ethernet device given as a
+ *             port number parameter.
+ *
+ * @param[in]  dev     PHY device structure
+ * @param[in]  port    Ethernet port
+ * @param      mac     Buffer to store the read MAC address
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+static inline int phy_get_mac_address(const struct device *dev, uint8_t port,
+				      uint64_t *mac)
+{
+	const struct ethphy_driver_api *api =
+		(const struct ethphy_driver_api *)dev->api;
+
+	return api->get_mac_address(dev, port, mac);
+}
 
 /**
  * @brief      Configure PHY link
