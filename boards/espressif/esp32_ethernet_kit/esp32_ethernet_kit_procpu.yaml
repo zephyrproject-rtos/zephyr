@@ -10,4 +10,5 @@ supported:
   - uart
   - nvs
   - pwm
+  - i2s
 vendor: espressif

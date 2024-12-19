@@ -8,6 +8,7 @@ supported:
   - gpio
   - watchdog
   - uart
+  - i2s
 testing:
   ignore_tags:
     - bluetooth

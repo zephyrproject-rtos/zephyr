@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +81,18 @@ uext_spi: &spi2 {};
 	scl-gpios = <&gpio0 13 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i2s1 {
+	pinctrl-0 = <&i2s1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &spi2 {

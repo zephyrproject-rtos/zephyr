@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,4 +65,19 @@
 		};
 	};
 
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_MCLK_GPIO4>,
+				 <I2S0_O_WS_GPIO5>,
+				 <I2S0_O_BCK_GPIO6>,
+				 <I2S0_O_SD_GPIO7>,
+				 <I2S0_I_WS_GPIO15>,
+				 <I2S0_I_BCK_GPIO16>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <I2S0_I_SD_GPIO17>;
+			input-enable;
+		};
+	};
 };
