@@ -59,8 +59,8 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(niosv_machine_timer)
 #define DT_DRV_COMPAT niosv_machine_timer
 
-#define MTIMECMP_REG	DT_INST_REG_ADDR(0)
-#define MTIME_REG	(DT_INST_REG_ADDR(0) + 8)
+#define MTIME_REG	DT_INST_REG_ADDR(0)
+#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
 #define TIMER_IRQN	DT_INST_IRQN(0)
 /* scr,machine-timer*/
 #elif DT_HAS_COMPAT_STATUS_OKAY(scr_machine_timer)
