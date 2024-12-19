@@ -26,7 +26,8 @@ static inline int z_vrfy_fuel_gauge_get_prop(const struct device *dev, fuel_gaug
 
 #include <zephyr/syscalls/fuel_gauge_get_prop_mrsh.c>
 
-static inline int z_vrfy_fuel_gauge_get_props(const struct device *dev, fuel_gauge_prop_t *props,
+static inline int z_vrfy_fuel_gauge_get_props(const struct device *dev,
+					      const fuel_gauge_prop_t *props,
 					      union fuel_gauge_prop_val *vals, size_t len)
 {
 	union fuel_gauge_prop_val k_vals[len];
@@ -58,8 +59,9 @@ static inline int z_vrfy_fuel_gauge_set_prop(const struct device *dev, fuel_gaug
 
 #include <zephyr/syscalls/fuel_gauge_set_prop_mrsh.c>
 
-static inline int z_vrfy_fuel_gauge_set_props(const struct device *dev, fuel_gauge_prop_t *props,
-					      union fuel_gauge_prop_val *vals, size_t len)
+static inline int z_vrfy_fuel_gauge_set_props(const struct device *dev,
+					      const fuel_gauge_prop_t *props,
+					      const union fuel_gauge_prop_val *vals, size_t len)
 {
 	union fuel_gauge_prop_val k_vals[len];
 	fuel_gauge_prop_t k_props[len];
