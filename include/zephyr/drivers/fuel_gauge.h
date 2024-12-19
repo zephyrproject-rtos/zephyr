@@ -294,7 +294,7 @@ static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
 					      fuel_gauge_prop_t *props,
 					      union fuel_gauge_prop_val *vals, size_t len)
 {
-	const struct fuel_gauge_driver_api *api = dev->api;
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
 	for (size_t i = 0; i < len; i++) {
 		int ret = api->get_property(dev, props[i], vals + i);
@@ -322,7 +322,7 @@ __syscall int fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t pr
 static inline int z_impl_fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 					     union fuel_gauge_prop_val val)
 {
-	const struct fuel_gauge_driver_api *api = dev->api;
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
 	if (api->set_property == NULL) {
 		return -ENOSYS;
