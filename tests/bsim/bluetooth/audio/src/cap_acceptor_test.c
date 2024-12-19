@@ -40,17 +40,6 @@
 #include "bap_common.h"
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR)
-/* Zephyr Controller works best while Extended Advertising interval to be a multiple
- * of the ISO Interval minus 10 ms (max. advertising random delay). This is
- * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
- * Broadcast ISO radio events.
- */
-#define BT_LE_EXT_ADV_CONN_CUSTOM \
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN, \
-				BT_GAP_MS_TO_ADV_INTERVAL(140), \
-				BT_GAP_MS_TO_ADV_INTERVAL(140), \
-				NULL)
-
 extern enum bst_result_t bst_result;
 
 #define SINK_CONTEXT                                                                               \
@@ -636,11 +625,20 @@ static int set_supported_contexts(void)
 
 void test_start_adv(void)
 {
-	int err;
+	struct bt_le_adv_param ext_adv_param = *BT_BAP_ADV_PARAM_CONN_REDUCED;
 	struct bt_le_ext_adv *ext_adv;
+	int err;
+
+	/* Zephyr Controller works best while Extended Advertising interval is a multiple
+	 * of the ISO Interval minus 10 ms (max. advertising random delay). This is
+	 * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
+	 * Broadcast ISO radio events.
+	 */
+	ext_adv_param.interval_min -= BT_GAP_MS_TO_ADV_INTERVAL(10U);
+	ext_adv_param.interval_max -= BT_GAP_MS_TO_ADV_INTERVAL(10U);
 
 	/* Create a connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_CUSTOM, NULL, &ext_adv);
+	err = bt_le_ext_adv_create(&ext_adv_param, NULL, &ext_adv);
 	if (err != 0) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
 
