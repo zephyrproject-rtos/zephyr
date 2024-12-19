@@ -56,7 +56,7 @@ struct adc_xec_regs {
 	uint32_t single_reg;
 	uint32_t repeat_reg;
 	uint32_t channel_read_reg[XEC_ADC_CFG_CHANNELS];
-	uint32_t unused[10 + (MCHP_ADC_MAX_CHAN - XEC_ADC_CFG_CHANNELS)];
+	uint32_t unused[26 - XEC_ADC_CFG_CHANNELS)];
 	uint32_t config_reg;
 	uint32_t vref_channel_reg;
 	uint32_t vref_control_reg;
