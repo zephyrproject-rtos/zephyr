@@ -176,7 +176,8 @@ void mqtt_client_init(struct mqtt_client *client)
 	MQTT_STATE_INIT(client);
 	mqtt_mutex_init(client);
 
-	client->protocol_version = MQTT_VERSION_3_1_1;
+	client->protocol_version = IS_ENABLED(CONFIG_MQTT_VERSION_5_0) ?
+				   MQTT_VERSION_5_0 : MQTT_VERSION_3_1_1;
 	client->clean_session = MQTT_CLEAN_SESSION;
 	client->keepalive = MQTT_KEEPALIVE;
 }
