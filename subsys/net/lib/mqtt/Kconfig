@@ -17,6 +17,29 @@ module-str=Log level for MQTT
 module-help=Enables mqtt debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+choice MQTT_VERSION_SUPPORT
+	prompt "Maximum MQTT protocol version supported"
+	default MQTT_VERSION_3_1_1
+	help
+	  Maximum MQTT protocol version supported by the library.
+
+config MQTT_VERSION_3_1_1
+	bool "Support up to version 3.1.1 of the MQTT protocol"
+	help
+	  The MQTT version 3.1.1 will be the default library choice. Applications
+	  will still be able to choose to use an older MQTT protocol version
+	  with respective runtime MQTT client configuration.
+
+config MQTT_VERSION_5_0
+	bool "Support up to version 5.0 of the MQTT protocol [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  The MQTT version 5.0 will be the default library choice. Applications
+	  will still be able to choose to use an older MQTT protocol version
+	  with respective runtime MQTT client configuration.
+
+endchoice
+
 config MQTT_KEEPALIVE
 	int "Maximum number of clients Keep alive time for MQTT (in seconds)"
 	default 60
