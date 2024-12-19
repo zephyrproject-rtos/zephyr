@@ -946,6 +946,26 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
 #endif
 
+/**
+ * @brief Invoke the scheduler
+ *
+ * This routine invokes the scheduler to force a schedule point on the current
+ * CPU. If invoked from within a thread, the scheduler will be invoked
+ * immediately (provided interrupts were not locked when invoked). If invoked
+ * from within an ISR, the scheduler will be invoked upon exiting the ISR.
+ *
+ * Invoking the scheduler allows the kernel to make an immediate determination
+ * as to what the next thread to execute should be. Unlike yielding, this
+ * routine is not guaranteed to switch to a thread of equal or higher priority
+ * if any are available. For example, if the current thread is cooperative and
+ * there is a still higher priority cooperative thread that is ready, then
+ * yielding will switch to that higher priority thread whereas this routine
+ * will not.
+ *
+ * Most applications will never use this routine.
+ */
+__syscall void k_reschedule(void);
+
 #ifdef CONFIG_SCHED_CPU_MASK
 /**
  * @brief Sets all CPU enable masks to zero
