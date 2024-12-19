@@ -773,7 +773,7 @@ static int eval_msg_publish(struct mqtt_test *mqtt_test)
 	buf.cur = client.tx_buf;
 	buf.end = client.tx_buf + client.tx_buf_size;
 
-	rc = publish_encode(param, &buf);
+	rc = publish_encode(&client, param, &buf);
 
 	/* Payload is not copied, copy it manually just after the header.*/
 	memcpy(buf.end, param->message.payload.data,
@@ -791,7 +791,7 @@ static int eval_msg_publish(struct mqtt_test *mqtt_test)
 
 	zassert_false(rc, "fixed_header_decode failed");
 
-	rc = publish_decode(type_and_flags, length, &buf, &dec_param);
+	rc = publish_decode(&client, type_and_flags, length, &buf, &dec_param);
 
 	/**TESTPOINT: Check publish_decode function*/
 	zassert_false(rc, "publish_decode failed");
@@ -830,7 +830,7 @@ static int eval_msg_corrupted_publish(struct mqtt_test *mqtt_test)
 	rc = fixed_header_decode(buf, &type_and_flags, &length);
 	zassert_equal(rc, 0, "fixed_header_decode failed");
 
-	rc = publish_decode(type_and_flags, length, buf, &dec_param);
+	rc = publish_decode(&client, type_and_flags, length, buf, &dec_param);
 	zassert_equal(rc, -EINVAL, "publish_decode should fail");
 
 	return TC_PASS;
