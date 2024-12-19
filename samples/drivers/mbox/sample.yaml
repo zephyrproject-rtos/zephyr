@@ -13,6 +13,7 @@ tests:
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1160_evk/mimxrt1166/cm7
       - lpcxpresso55s69/lpc55s69/cpu0
+      - frdm_mcxn947/mcxn947/cpu0
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
     harness: console
