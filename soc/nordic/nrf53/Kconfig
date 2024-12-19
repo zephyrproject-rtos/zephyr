@@ -165,6 +165,7 @@ config NRF_SPU_RAM_REGION_SIZE
 config SOC_NRF_GPIO_FORWARDER_FOR_NRF5340
 	bool "Forward GPIO pins to network core"
 	depends on NRF_SOC_SECURE_SUPPORTED
+	depends on SOC_NRF53_CPUNET_ENABLE
 	default y if $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIO_FORWARDER))
 	help
 	  Will forward configured pins with the forwarder compatible to the network core for usage.
