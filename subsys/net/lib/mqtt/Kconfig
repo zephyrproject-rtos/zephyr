@@ -91,6 +91,14 @@ config MQTT_USER_PROPERTIES_MAX
 	  Maximum number of user properties that the client can include in a
 	  packet or parse on input.
 
+config MQTT_SUBSCRIPTION_ID_PROPERTIES_MAX
+	int "Maximum number of Subscription ID properties in a Publish packet"
+	default 1
+	range 1 32
+	help
+	  Maximum number of Subscription ID properties that the client can
+	  parse when processing Publish message.
+
 config MQTT_TOPIC_ALIAS_MAX
 	int "Maximum number of supported topic aliases"
 	default 5

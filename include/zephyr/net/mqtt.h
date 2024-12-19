@@ -376,6 +376,47 @@ struct mqtt_publish_param {
 	 *  by the broker.
 	 */
 	uint8_t retain_flag : 1;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** MQTT 5.0 properties. */
+	struct {
+		/** MQTT 5.0, ch. 3.3.2.3.7 User Property. */
+		struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
+
+		/** MQTT 5.0, ch. 3.3.2.3.5 Response Topic. */
+		struct mqtt_utf8 response_topic;
+
+		/** MQTT 5.0, ch. 3.3.2.3.6 Correlation Data. */
+		struct mqtt_binstr correlation_data;
+
+		/** MQTT 5.0, ch. 3.3.2.3.9 Content Type. */
+		struct mqtt_utf8 content_type;
+
+		/** MQTT 5.0, ch. 3.3.2.3.8 Subscription Identifier. */
+		uint32_t subscription_identifier[CONFIG_MQTT_SUBSCRIPTION_ID_PROPERTIES_MAX];
+
+		/** MQTT 5.0, ch. 3.3.2.3.3 Message Expiry Interval. */
+		uint32_t message_expiry_interval;
+
+		/** MQTT 5.0, ch. 3.3.2.3.4 Topic Alias. */
+		uint16_t topic_alias;
+
+		/** MQTT 5.0, ch. 3.3.2.3.2 Payload Format Indicator. */
+		uint8_t payload_format_indicator;
+
+		/** Flags indicating whether given property was present in received packet. */
+		struct {
+			bool has_payload_format_indicator;
+			bool has_message_expiry_interval;
+			bool has_topic_alias;
+			bool has_response_topic;
+			bool has_correlation_data;
+			bool has_user_prop;
+			bool has_subscription_identifier;
+			bool has_content_type;
+		} rx;
+	} prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief List of topics in a subscription request. */

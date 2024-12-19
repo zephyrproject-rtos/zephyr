@@ -862,7 +862,92 @@ int connect_request_encode(const struct mqtt_client *client,
 	return mqtt_encode_fixed_header(message_type, start, buf);
 }
 
-int publish_encode(const struct mqtt_publish_param *param, struct buf_ctx *buf)
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static uint32_t publish_properties_length(const struct mqtt_publish_param *param)
+{
+	return uint8_property_length(MQTT_PROP_PAYLOAD_FORMAT_INDICATOR,
+				     param->prop.payload_format_indicator) +
+	       uint32_property_length(param->prop.message_expiry_interval) +
+	       uint16_property_length(param->prop.topic_alias) +
+	       string_property_length(&param->prop.response_topic) +
+	       binary_property_length(&param->prop.correlation_data) +
+	       user_properties_length(param->prop.user_prop) +
+	       /* Client does not include Subscription Identifier in any case. */
+	       string_property_length(&param->prop.content_type);
+}
+
+static int publish_properties_encode(const struct mqtt_publish_param *param,
+				     struct buf_ctx *buf)
+{
+	uint32_t properties_len;
+	int err;
+
+	/* Precalculate total properties length */
+	properties_len = publish_properties_length(param);
+	err = pack_variable_int(properties_len, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_uint8_property(MQTT_PROP_PAYLOAD_FORMAT_INDICATOR,
+				    param->prop.payload_format_indicator, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_uint32_property(MQTT_PROP_MESSAGE_EXPIRY_INTERVAL,
+				     param->prop.message_expiry_interval, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_uint16_property(MQTT_PROP_TOPIC_ALIAS,
+				     param->prop.topic_alias, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_string_property(MQTT_PROP_RESPONSE_TOPIC,
+				     &param->prop.response_topic, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_binary_property(MQTT_PROP_CORRELATION_DATA,
+				     &param->prop.correlation_data, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_user_properties(param->prop.user_prop, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	/* Client does not include Subscription Identifier in any case. */
+
+	err = encode_string_property(MQTT_PROP_CONTENT_TYPE,
+				     &param->prop.content_type, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
+}
+#else
+static int publish_properties_encode(const struct mqtt_publish_param *param,
+				     struct buf_ctx *buf)
+{
+	ARG_UNUSED(param);
+	ARG_UNUSED(buf);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+int publish_encode(const struct mqtt_client *client,
+		   const struct mqtt_publish_param *param,
+		   struct buf_ctx *buf)
 {
 	const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
 			MQTT_PKT_TYPE_PUBLISH, param->dup_flag,
@@ -886,6 +971,13 @@ int publish_encode(const struct mqtt_publish_param *param, struct buf_ctx *buf)
 
 	if (param->message.topic.qos) {
 		err_code = pack_uint16(param->message_id, buf);
+		if (err_code != 0) {
+			return err_code;
+		}
+	}
+
+	if (mqtt_is_version_5_0(client)) {
+		err_code = publish_properties_encode(param, buf);
 		if (err_code != 0) {
 			return err_code;
 		}

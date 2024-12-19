@@ -60,8 +60,8 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_PUBLISH", client);
 
 		evt.type = MQTT_EVT_PUBLISH;
-		err_code = publish_decode(type_and_flags, var_length, buf,
-					  &evt.param.publish);
+		err_code = publish_decode(client, type_and_flags, var_length,
+					  buf, &evt.param.publish);
 		evt.result = err_code;
 
 		client->internal.remaining_payload =
@@ -221,7 +221,42 @@ static int mqtt_read_publish_var_header(struct mqtt_client *client,
 		variable_header_length += sizeof(uint16_t);
 	}
 
-	/* Now we can read the whole header. */
+	if (mqtt_is_version_5_0(client)) {
+		struct buf_ctx backup;
+		uint8_t var_len = 1;
+		uint32_t prop_len = 0;
+
+		while (true) {
+			err_code = mqtt_read_message_chunk(
+				client, buf, variable_header_length + var_len);
+			if (err_code < 0) {
+				return err_code;
+			}
+
+			backup = *buf;
+			buf->cur += variable_header_length;
+
+			/* Try to decode variable integer, in case integer is
+			 * not complete, read more bytes from the stream and retry.
+			 */
+			err_code = unpack_variable_int(buf, &prop_len);
+			if (err_code >= 0) {
+				break;
+			}
+
+			if (err_code != -EAGAIN) {
+				return err_code;
+			}
+
+			/* Try again. */
+			var_len++;
+			*buf = backup;
+		}
+
+		*buf = backup;
+		variable_header_length += var_len + prop_len;
+	}
+
 	err_code = mqtt_read_message_chunk(client, buf,
 					   variable_header_length);
 	if (err_code < 0) {
