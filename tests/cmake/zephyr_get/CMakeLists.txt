@@ -490,7 +490,8 @@ endfunction()
 
 
 function(test_snippets_scope)
-  if(NOT TARGET snippets_scope)
+  zephyr_scope_exists(snippets_defined snippets)
+  if(NOT snippets_defined)
     zephyr_create_scope(snippets)
   endif()
 
