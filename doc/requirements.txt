@@ -1,8 +1,8 @@
 # DOC: used to generate docs
 
-sphinx
+sphinx>=8.1
 sphinx_rtd_theme~=3.0
-sphinx-tabs
+sphinx-tabs>=3.4.7
 sphinxcontrib-svg2pdfconverter
 pygments>=2.9
 sphinx-notfound-page
@@ -24,3 +24,6 @@ doxmlparser
 
 # Used by the Zephyr domain to organize code samples
 anytree
+
+# Used to generate the sensor catalog
+pigweed>=0.0.20
