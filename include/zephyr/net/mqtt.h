@@ -107,7 +107,7 @@ enum mqtt_qos {
 	MQTT_QOS_2_EXACTLY_ONCE  = 0x02
 };
 
-/** @brief MQTT CONNACK return codes. */
+/** @brief MQTT 3.1 CONNACK return codes. */
 enum mqtt_conn_return_code {
 	/** Connection accepted. */
 	MQTT_CONNECTION_ACCEPTED                = 0x00,
@@ -132,6 +132,32 @@ enum mqtt_conn_return_code {
 
 	/** The Client is not authorized to connect. */
 	MQTT_NOT_AUTHORIZED                     = 0x05
+};
+
+/** @brief MQTT 5.0 CONNACK reason codes (MQTT 5.0, chapter 3.2.2.2). */
+enum mqtt_connack_reason_code {
+	MQTT_CONNACK_SUCCESS = 0,
+	MQTT_CONNACK_UNSPECIFIED_ERROR = 128,
+	MQTT_CONNACK_MALFORMED_PACKET = 129,
+	MQTT_CONNACK_PROTOCOL_ERROR = 130,
+	MQTT_CONNACK_IMPL_SPECIFIC_ERROR = 131,
+	MQTT_CONNACK_UNSUPPORTED_PROTO_ERROR = 132,
+	MQTT_CONNACK_CLIENT_ID_NOT_VALID = 133,
+	MQTT_CONNACK_BAD_USERNAME_OR_PASS = 134,
+	MQTT_CONNACK_NOT_AUTHORIZED = 135,
+	MQTT_CONNACK_SERVER_UNAVAILABLE = 136,
+	MQTT_CONNACK_SERVER_BUSY = 137,
+	MQTT_CONNACK_BANNED = 138,
+	MQTT_CONNACK_BAD_AUTH_METHOD = 140,
+	MQTT_CONNACK_TOPIC_NAME_INVALID = 144,
+	MQTT_CONNACK_PACKET_TOO_LARGE = 149,
+	MQTT_CONNACK_QUOTA_EXCEEDED = 151,
+	MQTT_CONNACK_PAYLOAD_FORMAT_INVALID = 153,
+	MQTT_CONNACK_RETAIN_NOT_SUPPORTED = 154,
+	MQTT_CONNACK_QOS_NOT_SUPPORTED = 155,
+	MQTT_CONNACK_USE_ANOTHER_SERVER = 156,
+	MQTT_CONNACK_SERVER_MOVED = 157,
+	MQTT_CONNACK_CONNECTION_RATE_EXCEEDED = 159,
 };
 
 /** @brief MQTT SUBACK return codes. */
@@ -209,8 +235,103 @@ struct mqtt_connack_param {
 
 	/** The appropriate non-zero Connect return code indicates if the Server
 	 *  is unable to process a connection request for some reason.
+	 *  MQTT 3.1 - Return codes specified in @ref mqtt_conn_return_code
+	 *  MQTT 5.0 - Reason codes specified in @ref mqtt_connack_reason_code
 	 */
-	enum mqtt_conn_return_code return_code;
+	uint8_t return_code;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	struct {
+		/** MQTT 5.0, chapter 3.2.2.3.10 User Property. */
+		struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
+
+		/** MQTT 5.0, chapter 3.2.2.3.7 Assigned Client Identifier. */
+		struct mqtt_utf8 assigned_client_id;
+
+		/** MQTT 5.0, chapter 3.2.2.3.9 Reason String. */
+		struct mqtt_utf8 reason_string;
+
+		/** MQTT 5.0, chapter 3.2.2.3.15 Response Information. */
+		struct mqtt_utf8 response_information;
+
+		/** MQTT 5.0, chapter 3.2.2.3.16 Server Reference. */
+		struct mqtt_utf8 server_reference;
+
+		/** MQTT 5.0, chapter 3.2.2.3.17 Authentication Method. */
+		struct mqtt_utf8 auth_method;
+
+		/** MQTT 5.0, chapter 3.2.2.3.18 Authentication Data. */
+		struct mqtt_binstr auth_data;
+
+		/** MQTT 5.0, chapter 3.2.2.3.2 Session Expiry Interval. */
+		uint32_t session_expiry_interval;
+
+		/** MQTT 5.0, chapter 3.2.2.3.6 Maximum Packet Size. */
+		uint32_t maximum_packet_size;
+
+		/** MQTT 5.0, chapter 3.3.2.3.3 Receive Maximum. */
+		uint16_t receive_maximum;
+
+		/** MQTT 5.0, chapter 3.2.2.3.8 Topic Alias Maximum. */
+		uint16_t topic_alias_maximum;
+
+		/** MQTT 5.0, chapter 3.2.2.3.14 Server Keep Alive. */
+		uint16_t server_keep_alive;
+
+		/** MQTT 5.0, chapter 3.2.2.3.4 Maximum QoS. */
+		uint8_t maximum_qos;
+
+		/** MQTT 5.0, chapter 3.2.2.3.5 Retain Available. */
+		uint8_t retain_available;
+
+		/** MQTT 5.0, chapter 3.2.2.3.11 Wildcard Subscription Available. */
+		uint8_t wildcard_sub_available;
+
+		/** MQTT 5.0, chapter 3.2.2.3.12 Subscription Identifiers Available. */
+		uint8_t subscription_ids_available;
+
+		/** MQTT 5.0, chapter 3.2.2.3.13 Shared Subscription Available. */
+		uint8_t shared_sub_available;
+
+		/** Flags indicating whether given property was present in received packet. */
+		struct {
+			/** Session Expiry Interval property was present. */
+			bool has_session_expiry_interval;
+			/** Receive Maximum property was present. */
+			bool has_receive_maximum;
+			/** Maximum QoS property was present. */
+			bool has_maximum_qos;
+			/** Retain Available property was present. */
+			bool has_retain_available;
+			/** Maximum Packet Size property was present. */
+			bool has_maximum_packet_size;
+			/** Assigned Client Identifier property was present. */
+			bool has_assigned_client_id;
+			/** Topic Alias Maximum property was present. */
+			bool has_topic_alias_maximum;
+			/** Reason String property was present. */
+			bool has_reason_string;
+			/** User Property property was present. */
+			bool has_user_prop;
+			/** Wildcard Subscription Available property was present. */
+			bool has_wildcard_sub_available;
+			/** Subscription Identifiers Available property was present. */
+			bool has_subscription_ids_available;
+			/** Shared Subscription Available property was present. */
+			bool has_shared_sub_available;
+			/** Server Keep Alive property was present. */
+			bool has_server_keep_alive;
+			/** Response Information property was present. */
+			bool has_response_information;
+			/** Server Reference property was present. */
+			bool has_server_reference;
+			/** Authentication Method property was present. */
+			bool has_auth_method;
+			/** Authentication Data property was present. */
+			bool has_auth_data;
+		} rx;
+	} prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Parameters for MQTT publish acknowledgment (PUBACK). */

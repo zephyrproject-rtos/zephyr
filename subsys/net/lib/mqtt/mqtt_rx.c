@@ -23,7 +23,7 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 {
 	int err_code = 0;
 	bool notify_event = true;
-	struct mqtt_evt evt;
+	struct mqtt_evt evt = { 0 };
 
 	/* Success by default, overwritten in special cases. */
 	evt.result = 0;
@@ -38,6 +38,9 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 			NET_DBG("[CID %p]: return_code: %d", client,
 				 evt.param.connack.return_code);
 
+			/* For MQTT 5.0 this is still valid as MQTT_CONNACK_SUCCESS
+			 * is encoded as 0 as well.
+			 */
 			if (evt.param.connack.return_code ==
 						MQTT_CONNECTION_ACCEPTED) {
 				/* Set state. */
