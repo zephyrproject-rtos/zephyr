@@ -693,7 +693,7 @@ static void test_disconnect(void)
 {
 	int ret;
 
-	ret = mqtt_disconnect(&client_ctx);
+	ret = mqtt_disconnect(&client_ctx, NULL);
 	zassert_ok(ret, "MQTT client failed to disconnect (%d)", ret);
 	broker_process(MQTT_PKT_TYPE_DISCONNECT);
 

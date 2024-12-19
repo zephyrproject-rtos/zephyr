@@ -46,8 +46,7 @@ void event_notify(struct mqtt_client *client, const struct mqtt_evt *evt)
 	}
 }
 
-static void client_disconnect(struct mqtt_client *client, int result,
-			      bool notify)
+void mqtt_client_disconnect(struct mqtt_client *client, int result, bool notify)
 {
 	int err_code;
 
@@ -105,7 +104,7 @@ static int client_connect(struct mqtt_client *client)
 	return 0;
 
 error:
-	client_disconnect(client, err_code, false);
+	mqtt_client_disconnect(client, err_code, false);
 	return err_code;
 }
 
@@ -119,7 +118,7 @@ static int client_read(struct mqtt_client *client)
 
 	err_code = mqtt_handle_rx(client);
 	if (err_code < 0) {
-		client_disconnect(client, err_code, true);
+		mqtt_client_disconnect(client, err_code, true);
 	}
 
 	return err_code;
@@ -136,7 +135,7 @@ static int client_write(struct mqtt_client *client, const uint8_t *data,
 	if (err_code < 0) {
 		NET_ERR("Transport write failed, err_code = %d, "
 			 "closing connection", err_code);
-		client_disconnect(client, err_code, true);
+		mqtt_client_disconnect(client, err_code, true);
 		return err_code;
 	}
 
@@ -157,7 +156,7 @@ static int client_write_msg(struct mqtt_client *client,
 	if (err_code < 0) {
 		NET_ERR("Transport write failed, err_code = %d, "
 			 "closing connection", err_code);
-		client_disconnect(client, err_code, true);
+		mqtt_client_disconnect(client, err_code, true);
 		return err_code;
 	}
 
@@ -439,7 +438,8 @@ error:
 	return err_code;
 }
 
-int mqtt_disconnect(struct mqtt_client *client)
+int mqtt_disconnect(struct mqtt_client *client,
+		    const struct mqtt_disconnect_param *param)
 {
 	int err_code;
 	struct buf_ctx packet;
@@ -455,7 +455,7 @@ int mqtt_disconnect(struct mqtt_client *client)
 		goto error;
 	}
 
-	err_code = disconnect_encode(&packet);
+	err_code = disconnect_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -465,7 +465,7 @@ int mqtt_disconnect(struct mqtt_client *client)
 		goto error;
 	}
 
-	client_disconnect(client, 0, true);
+	mqtt_client_disconnect(client, 0, true);
 
 error:
 	mqtt_mutex_unlock(client);
@@ -584,7 +584,7 @@ int mqtt_abort(struct mqtt_client *client)
 	mqtt_mutex_lock(client);
 
 	if (client->internal.state != MQTT_STATE_IDLE) {
-		client_disconnect(client, -ECONNABORTED, true);
+		mqtt_client_disconnect(client, -ECONNABORTED, true);
 	}
 
 	mqtt_mutex_unlock(client);
@@ -686,7 +686,7 @@ static int read_publish_payload(struct mqtt_client *client, void *buffer,
 			ret = -ENOTCONN;
 		}
 
-		client_disconnect(client, ret, true);
+		mqtt_client_disconnect(client, ret, true);
 		goto exit;
 	}
 

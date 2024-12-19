@@ -746,7 +746,7 @@ static int eval_msg_disconnect(struct mqtt_test *mqtt_test)
 	buf.cur = client.tx_buf;
 	buf.end = client.tx_buf + client.tx_buf_size;
 
-	rc = disconnect_encode(&buf);
+	rc = disconnect_encode(&client, NULL, &buf);
 
 	/**TESTPOINTS: Check disconnect_encode functions*/
 	zassert_false(rc, "disconnect_encode failed");
