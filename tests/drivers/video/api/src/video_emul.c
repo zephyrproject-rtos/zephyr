@@ -184,6 +184,9 @@ ZTEST(video_common, test_video_vbuf)
 
 	/* Nothing left in the queue, possible to stop */
 	zexpect_ok(video_stream_stop(rx_dev));
+
+	/* Nothing tested, but this should not crash */
+	video_buffer_release(vbuf);
 }
 
 ZTEST_SUITE(video_emul, NULL, NULL, NULL, NULL, NULL);
