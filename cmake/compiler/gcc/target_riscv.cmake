@@ -69,6 +69,46 @@ if(CONFIG_RISCV_ISA_EXT_ZBS)
     string(CONCAT riscv_march ${riscv_march} "_zbs")
 endif()
 
+if(CONFIG_RISCV_ISA_EXT_XTHEADBA)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadbam1p0")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_XTHEADBB)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadbbm1p0")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_XTHEADBS)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadbsm1p0")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_XTHEADCMO)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadcmom1p0")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_XTHEADCONDMOV)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadcondmovm1p0")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_XTHEADFMV)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadfmvm1p0")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_XTHEADINT)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadintm1p0")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_XTHEADMAC)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadmacm1p0")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_XTHEADMEMIDX)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadmemidxm1p0")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_XTHEADSYNC)
+    string(CONCAT riscv_march ${riscv_march} "_xtheadsyncm1p0")
+endif()
+
 list(APPEND TOOLCHAIN_C_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
 list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT -mabi=${riscv_mabi} -march=${riscv_march})
 
