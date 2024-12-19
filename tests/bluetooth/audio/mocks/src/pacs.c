@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
 #include "pacs.h"
+#include "pacs_internal.h"
 
 /* List of fakes used by this unit tester */
 #define PACS_FFF_FAKES_LIST(FAKE) \
@@ -48,4 +50,12 @@ void mock_bt_pacs_init(void)
 void mock_bt_pacs_cleanup(void)
 {
 
+}
+
+const struct bt_audio_codec_cap *bt_pacs_get_codec_cap(enum bt_audio_dir dir,
+						       const struct bt_pac_codec *codec_id)
+{
+	static struct bt_audio_codec_cap mock_cap;
+
+	return &mock_cap;
 }
