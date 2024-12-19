@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig POSIX_FD_MGMT
-	bool "POSIX file descriptor management [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "POSIX file descriptor management"
 	help
 	  Select 'y' here and Zephyr will provide implementations for the POSIX_FD_MGMT Option Group.
 	  This includes support for dup(), dup2(), fcntl(), fseeko(), ftello(), ftruncate(),
