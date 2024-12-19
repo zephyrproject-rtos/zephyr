@@ -63,6 +63,9 @@ class TestInstance:
         self.execution_time = 0
         self.build_time = 0
         self.retries = 0
+        self.suite_repeat = None
+        self.test_repeat = None
+        self.test_shuffle = False
 
         self.name = os.path.join(platform.name, testsuite.name)
         self.dut = None
@@ -349,6 +352,23 @@ class TestInstance:
                     new_config_list.append(config)
 
             content = "\n".join(new_config_list)
+
+
+        if self.testsuite.harness_config:
+            self.suite_repeat = self.testsuite.harness_config.get('ztest_suite_repeat', None)
+            self.test_repeat = self.testsuite.harness_config.get('ztest_test_repeat', None)
+            self.test_shuffle = self.testsuite.harness_config.get('ztest_test_shuffle', False)
+
+
+        # Use suite_repeat and test_repeat values
+        if self.suite_repeat or self.test_repeat or self.test_shuffle:
+            content +="\nCONFIG_ZTEST_REPEAT=y"
+            if self.suite_repeat:
+                content += f"\nCONFIG_ZTEST_SUITE_REPEAT_COUNT={self.suite_repeat}"
+            if self.test_repeat:
+                content += f"\nCONFIG_ZTEST_TEST_REPEAT_COUNT={self.test_repeat}"
+            if self.test_shuffle:
+                content +="\nCONFIG_ZTEST_SHUFFLE=y"
 
         if enable_coverage:
             for cp in coverage_platform:
