@@ -1,4 +1,5 @@
 # Copyright (c) 2018 omSquare s.r.o.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: Atmel SAM0 RTC
@@ -13,7 +14,14 @@ properties:
   reg:
     required: true
 
-  clock-generator:
-    type: int
-    description: clock generator index
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  assigned-clocks:
+    required: true
+
+  assigned-clock-names:
     required: true
