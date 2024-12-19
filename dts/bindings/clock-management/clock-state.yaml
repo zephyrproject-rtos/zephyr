@@ -1,0 +1,28 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "clock-state"
+
+description: |
+  Statically defined clock configurations for this clock output. Each
+  configuration should define a frequency and settings for parent nodes of
+  this clock to produce that frequency.
+
+properties:
+  clocks:
+    type: phandle-array
+    description: |
+      Settings for parent nodes of this clock output to realize the
+      defined frequency. If these settings are absent, the clock framework
+      will attempt to use runtime rate setting if "CONFIG_CLOCK_MANAGEMENT_SET_RATE"
+      is enabled
+  clock-frequency:
+    type: int
+    required: true
+    description: Frequency this configuration produces, in Hz
+  locking-state:
+    type: boolean
+    description: |
+      If present, a consumer that applies this state will also lock the clock to
+      the frequency given by this state. This allows consumers to enforce a
+      requirement that their clock properties do not change.
