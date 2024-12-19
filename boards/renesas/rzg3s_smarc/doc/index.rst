@@ -69,6 +69,8 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | GTM       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| GPT       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
