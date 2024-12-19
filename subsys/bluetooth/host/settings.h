@@ -13,7 +13,9 @@
 #define BT_SETTINGS_SIZE(in_size) ((((((in_size) - 1) / 3) * 4) + 4) + 1)
 
 #define BT_SETTINGS_DEFINE(_hname, _subtree, _set, _commit)                                        \
-	SETTINGS_STATIC_HANDLER_DEFINE(bt_##_hname, "bt/" _subtree, NULL, _set, _commit, NULL)
+	SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(bt_##_hname, "bt/" _subtree, NULL, _set, _commit,\
+						  NULL, 1)
+
 
 #define ID_DATA_LEN(array) (bt_dev.id_count * sizeof(array[0]))
 
