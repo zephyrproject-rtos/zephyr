@@ -109,8 +109,8 @@ struct node_rx_iq_report {
 	uint8_t chan_idx;
 	uint16_t event_counter;
 	union {
-		uint8_t pdu[0] __aligned(4);
-		struct iq_sample sample[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, pdu) __aligned(4);
+		FLEXIBLE_ARRAY_DECLARE(struct iq_sample, sample);
 	};
 };
 
@@ -167,8 +167,8 @@ struct cte_conn_iq_report {
 	uint8_t sample_count;
 	uint8_t rssi_ant_id;
 	union {
-		uint8_t pdu[0] __aligned(4);
-		struct iq_sample sample[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, pdu) __aligned(4);
+		FLEXIBLE_ARRAY_DECLARE(struct iq_sample, sample);
 	};
 };
 

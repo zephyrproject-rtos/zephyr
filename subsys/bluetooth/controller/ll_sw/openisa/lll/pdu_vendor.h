@@ -7,27 +7,27 @@
 /* No vendor Data PDU struct octet3 */
 struct pdu_data_vnd_octet3 {
 	union {
-		uint8_t resv[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, resv);
 	} __packed;
 } __packed;
 
 /* No vendor BIS PDU struct octet3 */
 struct pdu_bis_vnd_octet3 {
 	union {
-		uint8_t resv[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, resv);
 	} __packed;
 } __packed;
 
 /* No vendor CIS PDU struct octet3 */
 struct pdu_cis_vnd_octet3 {
 	union {
-		uint8_t resv[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, resv);
 	} __packed;
 } __packed;
 
 /* No ISOAL helper vendor ISO PDU struct octet3 */
 struct pdu_iso_vnd_octet3 {
 	union {
-		uint8_t resv[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, resv);
 	} __packed;
 } __packed;
