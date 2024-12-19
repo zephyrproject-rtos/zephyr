@@ -42,7 +42,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_some_props_failed_returns_bad_status)
 		/* Valid property */
 		FUEL_GAUGE_VOLTAGE,
 	};
-	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)];
+	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)] = {0};
 
 	int ret = fuel_gauge_get_props(fixture->dev, prop_types, props, ARRAY_SIZE(props));
 
@@ -55,7 +55,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_all_props_failed_returns_err)
 		/* Invalid property */
 		FUEL_GAUGE_PROP_MAX,
 	};
-	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)];
+	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)] = {0};
 
 	int ret = fuel_gauge_set_props(fixture->dev, prop_types, props, ARRAY_SIZE(props));
 
@@ -166,7 +166,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
 	};
 
-	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)];
+	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)] = {0};
 
 	zassert_ok(fuel_gauge_get_props(fixture->dev, prop_types, props, ARRAY_SIZE(props)));
 }
@@ -181,7 +181,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 		FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
 
 	};
-	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)];
+	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)] = {0};
 
 	zassert_ok(fuel_gauge_set_props(fixture->dev, prop_types, props, ARRAY_SIZE(props)));
 }
