@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 tinyVision.ai Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_udc0 {
+	uvc: uvc {
+		compatible = "zephyr,uvc-device";
+
+		port {
+			uvc_ep_in: endpoint {
+				remote-endpoint-label = "zephyr_camera_ep_out";
+			};
+		};
+	};
+};
+
+&zephyr_camera_ep_out {
+	remote-endpoint-label = "uvc_ep_in";
+};
