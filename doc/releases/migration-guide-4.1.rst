@@ -153,6 +153,11 @@ I2C
 Input
 =====
 
+PWM
+===
+
+* Renamed the ``compatible`` from ``renesas,ra8-pwm`` to :dtcompatible:`renesas,ra-pwm`.
+
 Interrupt Controller
 ====================
 
