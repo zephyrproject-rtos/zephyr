@@ -104,12 +104,12 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	zassert_equal(req.tv_nsec, 0, "actual: %d expected: %d", req.tv_nsec, 0);
 }
 
-ZTEST(nanosleep, test_nanosleep_errors_errno)
+ZTEST(posix_timers, test_nanosleep_errors_errno)
 {
 	common_errors(SELECT_NANOSLEEP, CLOCK_REALTIME, 0);
 }
 
-ZTEST(nanosleep, test_clock_nanosleep_errors_errno)
+ZTEST(posix_timers, test_clock_nanosleep_errors_errno)
 {
 	struct timespec rem = {};
 	struct timespec req = {};
@@ -200,7 +200,7 @@ static void common_lower_bound_check(int selection, clockid_t clock_id, int flag
 	/* TODO: Upper bounds check when hr timers are available */
 }
 
-ZTEST(nanosleep, test_nanosleep_execution)
+ZTEST(posix_timers, test_nanosleep_execution)
 {
 	/* sleep for 1ns */
 	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 0, 1);
@@ -221,7 +221,7 @@ ZTEST(nanosleep, test_nanosleep_execution)
 	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 1, 1001);
 }
 
-ZTEST(nanosleep, test_clock_nanosleep_execution)
+ZTEST(posix_timers, test_clock_nanosleep_execution)
 {
 	struct timespec ts;
 
@@ -231,27 +231,27 @@ ZTEST(nanosleep, test_clock_nanosleep_execution)
 
 	/* until 1s + 1ns past the reference time */
 	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
-		ts.tv_sec + 1, 1);
+				 ts.tv_sec + 1, 1);
 
 	/* until 1s + 1us past the reference time */
 	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
-		ts.tv_sec + 1, 1000);
+				 ts.tv_sec + 1, 1000);
 
 	/* until 1s + 500000000ns past the reference time */
 	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
-		ts.tv_sec + 1, 500000000);
+				 ts.tv_sec + 1, 500000000);
 
 	/* until 2s past the reference time */
 	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
-		ts.tv_sec + 2, 0);
+				 ts.tv_sec + 2, 0);
 
 	/* until 2s + 1ns past the reference time */
 	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
-		ts.tv_sec + 2, 1);
+				 ts.tv_sec + 2, 1);
 
 	/* until 2s + 1us + 1ns past reference time */
 	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_MONOTONIC, TIMER_ABSTIME,
-		ts.tv_sec + 2, 1001);
+				 ts.tv_sec + 2, 1001);
 
 	clock_gettime(CLOCK_REALTIME, &ts);
 
@@ -281,5 +281,3 @@ ZTEST(nanosleep, test_clock_nanosleep_execution)
 	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_REALTIME, TIMER_ABSTIME,
 				 ts.tv_sec + 2, 1001);
 }
-
-ZTEST_SUITE(nanosleep, NULL, NULL, NULL, NULL, NULL);
