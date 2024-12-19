@@ -1050,6 +1050,24 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_SCHED_DEADLINE */
 
+void z_impl_k_reschedule(void)
+{
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&_sched_spinlock);
+
+	update_cache(0);
+
+	z_reschedule(&_sched_spinlock, key);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_reschedule(void)
+{
+	z_impl_k_reschedule();
+}
+#endif /* CONFIG_USERSPACE */
+
 bool k_can_yield(void)
 {
 	return !(k_is_pre_kernel() || k_is_in_isr() ||
