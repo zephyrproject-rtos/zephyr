@@ -21,6 +21,14 @@ Build System
 Kernel
 ******
 
+Security
+********
+
+* New options for stack canaries have been added, providing users with finer control over stack
+  protection. With this change, :kconfig:option:`CONFIG_STACK_CANARIES` no longer enables the
+  compiler option ``-fstack-protector-all``. Users who wish to use this option must now enable
+  :kconfig:option:`CONFIG_STACK_CANARIES_ALL`.
+
 Boards
 ******
 
