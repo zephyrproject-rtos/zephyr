@@ -41,11 +41,16 @@ def terminate_process(proc: subprocess.Popen) -> None:
     """
     Try to terminate provided process and all its subprocesses recursively.
     """
-    for child in psutil.Process(proc.pid).children(recursive=True):
-        try:
-            os.kill(child.pid, signal.SIGTERM)
-        except (ProcessLookupError, psutil.NoSuchProcess):
-            pass
+
+    try:
+        for child in psutil.Process(proc.pid).children(recursive=True):
+            try:
+                os.kill(child.pid, signal.SIGTERM)
+            except (ProcessLookupError, psutil.NoSuchProcess):
+                pass
+    except (ProcessLookupError, psutil.NoSuchProcess):
+        pass
+
     proc.terminate()
     # sleep for a while before attempting to kill
     time.sleep(0.5)
