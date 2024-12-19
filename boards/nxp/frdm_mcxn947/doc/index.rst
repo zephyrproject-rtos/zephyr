@@ -212,7 +212,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 .. zephyr-app-commands::
    :app: zephyr/samples/hello_world
    :board: frdm_mcxn947/mcxn947/cpu0/qspi
-   :gen-args: -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/root-rsa-2048.pem\" -DCONFIG_BOOTLOADER_MCUBOOT=y
+   :gen-args: --sysbuild
    :goals: flash
 
 
