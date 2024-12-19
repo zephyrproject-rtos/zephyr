@@ -171,7 +171,7 @@ static DEVICE_API(stepper, tmc22xx_stepper_api) = {
                                                                                                    \
 	static const struct tmc22xx_config tmc22xx_config_##inst = {                               \
 		.common = STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst),                       \
-		.enable_pin = GPIO_DT_SPEC_INST_GET(inst, enable_gpios),                           \
+		.enable_pin = GPIO_DT_SPEC_INST_GET(inst, en_gpios),	                           \
 		.msx_resolutions = msx_table,                                                      \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, msx_gpios),				   \
 		(.msx_pins = tmc22xx_stepper_msx_pins_##inst))					   \
