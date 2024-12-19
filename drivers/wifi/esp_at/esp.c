@@ -811,7 +811,7 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 	}
 
 	*sock = esp_socket_ref_from_link_id(dev, link_id);
-	if (!sock) {
+	if (*sock == NULL) {
 		LOG_ERR("No socket for link %ld", link_id);
 		return str - ipd_buf;
 	}
@@ -866,9 +866,9 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
-	struct esp_socket *sock;
-	int data_offset;
-	long data_len;
+	struct esp_socket *sock = NULL;
+	int data_offset = 0;
+	long data_len = 0;
 	int err;
 	int ret;
 
