@@ -1,0 +1,18 @@
+description: TI MSPM0 UART
+
+compatible: "ti,mspm0-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
