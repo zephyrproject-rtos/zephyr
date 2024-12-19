@@ -262,7 +262,7 @@ int mqtt_publish(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_encode(param, &packet);
+	err_code = publish_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
