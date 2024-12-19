@@ -13,7 +13,6 @@ import hashlib
 import logging
 import os
 import random
-from enum import Enum
 
 from twisterlib.constants import (
     SUPPORTED_SIMS,
@@ -32,7 +31,7 @@ from twisterlib.handlers import (
 )
 from twisterlib.platform import Platform
 from twisterlib.size_calc import SizeCalculator
-from twisterlib.statuses import TwisterStatus
+from twisterlib.statuses import TwisterStatus, TwisterStatusMachineInstance
 from twisterlib.testsuite import TestCase, TestSuite
 
 logger = logging.getLogger('twister')
@@ -63,6 +62,7 @@ class TestInstance:
         self.execution_time = 0
         self.build_time = 0
         self.retries = 0
+        self.instance_status_machine = TwisterStatusMachineInstance()
 
         self.name = os.path.join(platform.name, testsuite.name)
         self.dut = None
@@ -111,15 +111,18 @@ class TestInstance:
 
     @property
     def status(self) -> TwisterStatus:
-        return self._status
+        if self._status != str(self.instance_status_machine.current_state):
+            logger.error(f"exp {self._status} but \
+                {str(self.instance_status_machine.current_state)}")
+        return str(self.instance_status_machine.current_state)
 
     @status.setter
     def status(self, value : TwisterStatus) -> None:
         # Check for illegal assignments by value
         try:
-            key = value.name if isinstance(value, Enum) else value
-            self._status = TwisterStatus[key]
-        except KeyError as err:
+            self._status = TwisterStatus(value)
+            self.instance_status_machine.trigger(value)
+        except ValueError as err:
             raise StatusAttributeError(self.__class__, value) from err
 
     def add_filter(self, reason, filter_type):
