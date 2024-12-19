@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ GPT
+
+compatible: "renesas,rz-gpt"
+
+include: [base.yaml]
+
+properties:
+  prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+    description: Input clock prescaler. For RZ/G3S, only 1, 4, 16, 64, 256, 1024 are supported.
+
+  channel:
+    type: int
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
