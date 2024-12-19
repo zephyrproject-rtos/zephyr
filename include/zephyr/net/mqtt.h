@@ -84,7 +84,8 @@ enum mqtt_evt_type {
 /** @brief MQTT version protocol level. */
 enum mqtt_version {
 	MQTT_VERSION_3_1_0 = 3, /**< Protocol level for 3.1.0. */
-	MQTT_VERSION_3_1_1 = 4  /**< Protocol level for 3.1.1. */
+	MQTT_VERSION_3_1_1 = 4, /**< Protocol level for 3.1.1. */
+	MQTT_VERSION_5_0 = 5,   /**< Protocol level for 5.0. */
 };
 
 /** @brief MQTT Quality of Service types. */
@@ -183,6 +184,13 @@ struct mqtt_topic {
 	 *  @ref mqtt_qos for details.
 	 */
 	uint8_t qos;
+};
+
+/** @brief Abstracts MQTT UTF-8 encoded string pair.
+ */
+struct mqtt_utf8_pair {
+	struct mqtt_utf8 name;
+	struct mqtt_utf8 value;
 };
 
 /** @brief Parameters for a publish message. */
@@ -517,6 +525,32 @@ struct mqtt_client {
 	 */
 	struct mqtt_utf8 *password;
 
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** MQTT 5.0 Will properties. */
+	struct {
+		/** MQTT 5.0, chapter 3.1.3.2.8 User Property. */
+		struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
+
+		/** MQTT 5.0, chapter 3.1.3.2.5 Content Type. */
+		struct mqtt_utf8 content_type;
+
+		/** MQTT 5.0, chapter 3.1.3.2.6 Response Topic. */
+		struct mqtt_utf8 response_topic;
+
+		/** MQTT 5.0, chapter 3.1.3.2.7 Correlation Data. */
+		struct mqtt_binstr correlation_data;
+
+		/** MQTT 5.0, chapter 3.1.3.2.2 Will Delay Interval. */
+		uint32_t will_delay_interval;
+
+		/** MQTT 5.0, chapter 3.1.3.2.4 Message Expiry Interval. */
+		uint32_t message_expiry_interval;
+
+		/** MQTT 5.0, chapter 3.1.3.2.3 Payload Format Indicator. */
+		uint8_t payload_format_indicator;
+	} will_prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
 	/** Will topic and QoS. Can be NULL. */
 	struct mqtt_topic *will_topic;
 
@@ -551,6 +585,35 @@ struct mqtt_client {
 
 	/** Unanswered PINGREQ count on this connection. */
 	int8_t unacked_ping;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** MQTT 5.0 properties. */
+	struct {
+		/** MQTT 5.0, chapter 3.1.2.11.8 User Property. */
+		struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
+
+		/** MQTT 5.0, chapter 3.1.2.11.9 Authentication Method. */
+		struct mqtt_utf8 auth_method;
+
+		/** MQTT 5.0, chapter 3.1.2.11.10 Authentication Data. */
+		struct mqtt_binstr auth_data;
+
+		/** MQTT 5.0, chapter 3.1.2.11.2 Session Expiry Interval. */
+		uint32_t session_expiry_interval;
+
+		/** MQTT 5.0, chapter 3.1.2.11.4 Maximum Packet Size. */
+		uint32_t maximum_packet_size;
+
+		/** MQTT 5.0, chapter 3.1.2.11.3 Receive Maximum. */
+		uint16_t receive_maximum;
+
+		/** MQTT 5.0, chapter 3.1.2.11.6 Request Response Information. */
+		bool request_response_info;
+
+		/** MQTT 5.0, chapter 3.1.2.11.7 Request Response Information. */
+		bool request_problem_info;
+	} prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 
 	/** Will retain flag, 1 if will message shall be retained persistently.
 	 */
