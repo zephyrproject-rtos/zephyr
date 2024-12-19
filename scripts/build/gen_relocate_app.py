@@ -489,8 +489,12 @@ def parse_args():
 
 # return the absolute path for the object file.
 def get_obj_filename(searchpath, filename):
-    # get the object file name which is almost always pended with .obj
-    obj_filename = filename.split("/")[-1] + ".obj"
+    # if the file suffix is .o or .obj, look for that file
+    # otherwise get the object file name which is almost always pended with .obj
+    if filename.endswith(".o") or filename.endswith(".obj"):
+        obj_filename = filename.split("/")[-1]
+    else:
+        obj_filename = filename.split("/")[-1] + ".obj"
 
     for dirpath, _, files in os.walk(searchpath):
         for filename1 in files:
