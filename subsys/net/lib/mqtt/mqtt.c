@@ -577,6 +577,58 @@ error:
 	return err_code;
 }
 
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static int verify_auth_state(const struct mqtt_client *client)
+{
+	/* Enhanced authentication is only allowed when connecting at MQTT
+	 * level (before CONNACK is received).
+	 */
+	if (MQTT_HAS_STATE(client, MQTT_STATE_TCP_CONNECTED) &&
+	    !MQTT_HAS_STATE(client, MQTT_STATE_CONNECTED)) {
+		return 0;
+	}
+
+	/* Return generic protocol error */
+	return -EPROTO;
+}
+
+int mqtt_auth(struct mqtt_client *client, const struct mqtt_auth_param *param)
+{
+	int err_code;
+	struct buf_ctx packet;
+
+	NULL_PARAM_CHECK(client);
+	NULL_PARAM_CHECK(param);
+
+	mqtt_mutex_lock(client);
+
+	if (!mqtt_is_version_5_0(client)) {
+		NET_ERR("Auth packet only supported in MQTT 5.0");
+		err_code = -ENOTSUP;
+		goto error;
+	}
+
+	tx_buf_init(client, &packet);
+
+	err_code = verify_auth_state(client);
+	if (err_code < 0) {
+		goto error;
+	}
+
+	err_code = auth_encode(param, &packet);
+	if (err_code < 0) {
+		goto error;
+	}
+
+	err_code = client_write(client, packet.cur, packet.end - packet.cur);
+
+error:
+	mqtt_mutex_unlock(client);
+
+	return err_code;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
 int mqtt_abort(struct mqtt_client *client)
 {
 	NULL_PARAM_CHECK(client);

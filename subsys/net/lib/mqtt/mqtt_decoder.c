@@ -1078,4 +1078,65 @@ int disconnect_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 
 	return 0;
 }
+
+static int auth_properties_decode(struct buf_ctx *buf,
+				  struct mqtt_auth_param *param)
+{
+	struct property_decoder prop[] = {
+		{
+			&param->prop.auth_method,
+			&param->prop.rx.has_auth_method,
+			MQTT_PROP_AUTHENTICATION_METHOD
+		},
+		{
+			&param->prop.auth_data,
+			&param->prop.rx.has_auth_data,
+			MQTT_PROP_AUTHENTICATION_DATA
+		},
+		{
+			&param->prop.reason_string,
+			&param->prop.rx.has_reason_string,
+			MQTT_PROP_REASON_STRING
+		},
+		{
+			&param->prop.user_prop,
+			&param->prop.rx.has_user_prop,
+			MQTT_PROP_USER_PROPERTY
+		}
+	};
+
+	return properties_decode(prop, ARRAY_SIZE(prop), buf);
+}
+
+int auth_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+		struct mqtt_auth_param *param)
+{
+	size_t remaining_len;
+	uint8_t reason_code;
+	int err;
+
+	if (!mqtt_is_version_5_0(client)) {
+		return -ENOTSUP;
+	}
+
+	remaining_len = buf->end - buf->cur;
+
+	if (remaining_len > 0) {
+		err = unpack_uint8(buf, &reason_code);
+		if (err < 0) {
+			return err;
+		}
+
+		param->reason_code = reason_code;
+	}
+
+	if (remaining_len > 1) {
+		err = auth_properties_decode(buf, param);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	return 0;
+}
 #endif /* CONFIG_MQTT_VERSION_5_0 */
