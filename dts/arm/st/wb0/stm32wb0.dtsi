@@ -259,6 +259,15 @@
 			dma-requests= <25>;
 			status = "disabled";
 		};
+
+		/* Properties common to RNG of all STM32WB0x MCUs */
+		rng: rng@48600000 {
+			compatible = "st,stm32-rng";
+			reg = <0x48600000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 18)>;
+			generation-delay-ns = <1250>; /* 1.25us */
+			status = "disabled";
+		};
 	};
 
 	bt_hci_wb0: bt_hci_wb0 {
