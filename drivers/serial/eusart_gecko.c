@@ -465,7 +465,7 @@ static int eusart_gecko_pm_action(const struct device *dev, enum pm_device_actio
 	case PM_DEVICE_ACTION_SUSPEND:
 #ifdef EUSART_STATUS_TXIDLE
 		/* Wait for TX FIFO to flush before suspending */
-		while (!(EUSART_StatusGet(config->base) & EUSART_STATUS_TXIDLE)) {
+		while (!(EUSART_StatusGet(config->eusart) & EUSART_STATUS_TXIDLE)) {
 		}
 #endif
 		break;
