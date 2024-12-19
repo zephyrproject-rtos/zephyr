@@ -114,6 +114,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	}
 
 	net_pkt_set_lldp(pkt, true);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_LLDP);
 
 	ret = net_pkt_write(pkt, (uint8_t *)lldp->lldpdu,
 			    sizeof(struct net_lldpdu));
