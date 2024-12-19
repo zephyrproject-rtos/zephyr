@@ -1305,3 +1305,36 @@ enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *co
 
 	return pacs_get_available_contexts_for_conn(conn, dir);
 }
+
+struct codec_cap_lookup_id_data {
+	const struct bt_pac_codec *codec_id;
+	const struct bt_audio_codec_cap *codec_cap;
+};
+
+static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
+{
+	struct codec_cap_lookup_id_data *data = user_data;
+
+	if (cap->codec_cap->id == data->codec_id->id &&
+	    cap->codec_cap->cid == data->codec_id->cid &&
+	    cap->codec_cap->vid == data->codec_id->vid) {
+		data->codec_cap = cap->codec_cap;
+
+		return false;
+	}
+
+	return true;
+}
+
+const struct bt_audio_codec_cap *bt_pacs_get_codec_cap(enum bt_audio_dir dir,
+						       const struct bt_pac_codec *codec_id)
+{
+	struct codec_cap_lookup_id_data lookup_data = {
+		.codec_id = codec_id,
+		.codec_cap = NULL,
+	};
+
+	bt_pacs_cap_foreach(dir, codec_lookup_id, &lookup_data);
+
+	return lookup_data.codec_cap;
+}
