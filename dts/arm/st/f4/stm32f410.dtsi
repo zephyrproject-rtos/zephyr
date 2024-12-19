@@ -106,8 +106,4 @@
 			status = "disabled";
 		};
 	};
-
-	die_temp: dietemp {
-		io-channels = <&adc1 18>;
-	};
 };
