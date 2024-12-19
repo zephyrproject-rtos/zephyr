@@ -175,6 +175,39 @@ enum mqtt_suback_return_code {
 	MQTT_SUBACK_FAILURE = 0x80
 };
 
+/** @brief MQTT Disconnect reason codes (MQTT 5.0, chapter 3.14.2.1). */
+enum mqtt_disconnect_reason_code {
+	MQTT_DISCONNECT_NORMAL = 0,
+	MQTT_DISCONNECT_WITH_WILL_MSG = 4,
+	MQTT_DISCONNECT_UNSPECIFIED_ERROR = 128,
+	MQTT_DISCONNECT_MALFORMED_PACKET = 129,
+	MQTT_DISCONNECT_PROTOCOL_ERROR = 130,
+	MQTT_DISCONNECT_IMPL_SPECIFIC_ERROR = 131,
+	MQTT_DISCONNECT_NOT_AUTHORIZED = 135,
+	MQTT_DISCONNECT_SERVER_BUSY = 137,
+	MQTT_DISCONNECT_SERVER_SHUTTING_DOWN = 139,
+	MQTT_DISCONNECT_KEEP_ALIVE_TIMEOUT = 141,
+	MQTT_DISCONNECT_SESSION_TAKE_OVER = 142,
+	MQTT_DISCONNECT_TOPIC_FILTER_INVALID = 143,
+	MQTT_DISCONNECT_TOPIC_NAME_INVALID = 144,
+	MQTT_DISCONNECT_RECV_MAX_EXCEEDED = 147,
+	MQTT_DISCONNECT_TOPIC_ALIAS_INVALID = 148,
+	MQTT_DISCONNECT_PACKET_TOO_LARGE = 149,
+	MQTT_DISCONNECT_MESSAGE_RATE_TOO_HIGH = 150,
+	MQTT_DISCONNECT_QUOTA_EXCEEDED = 151,
+	MQTT_DISCONNECT_ADMIN_ACTION = 152,
+	MQTT_DISCONNECT_PAYLOAD_FORMAT_INVALID = 153,
+	MQTT_DISCONNECT_RETAIN_NOT_SUPPORTED = 154,
+	MQTT_DISCONNECT_QOS_NOT_SUPPORTED = 155,
+	MQTT_DISCONNECT_USE_ANOTHER_SERVER = 156,
+	MQTT_DISCONNECT_SERVER_MOVED = 157,
+	MQTT_DISCONNECT_SHARED_SUB_NOT_SUPPORTED = 158,
+	MQTT_DISCONNECT_CONNECTION_RATE_EXCEEDED = 159,
+	MQTT_DISCONNECT_MAX_CONNECT_TIME = 160,
+	MQTT_DISCONNECT_SUB_ID_NOT_SUPPORTED = 161,
+	MQTT_DISCONNECT_WILDCARD_SUB_NOT_SUPPORTED = 162,
+};
+
 /** @brief Abstracts UTF-8 encoded strings. */
 struct mqtt_utf8 {
 	const uint8_t *utf8;       /**< Pointer to UTF-8 string. */
@@ -534,6 +567,41 @@ struct mqtt_subscription_list {
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
+/** @brief Parameters for disconnect message. */
+struct mqtt_disconnect_param {
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/* MQTT 5.0 Disconnect reason code. */
+	enum mqtt_disconnect_reason_code reason_code;
+
+	/** MQTT 5.0 properties. */
+	struct {
+		/** MQTT 5.0, chapter 3.14.2.2.4 User Property. */
+		struct mqtt_utf8_pair user_prop[CONFIG_MQTT_USER_PROPERTIES_MAX];
+
+		/** MQTT 5.0, chapter 3.14.2.2.3 Reason String. */
+		struct mqtt_utf8 reason_string;
+
+		/** MQTT 5.0, chapter 3.14.2.2.5 Server Reference. */
+		struct mqtt_utf8 server_reference;
+
+		/** MQTT 5.0, chapter 3.14.2.2.2 Session Expiry Interval. */
+		uint32_t session_expiry_interval;
+
+		/** Flags indicating whether given property was present in received packet. */
+		struct {
+			/** Session Expiry Interval property was present. */
+			bool has_session_expiry_interval;
+			/** Reason String property was present. */
+			bool has_reason_string;
+			/** User Property property was present. */
+			bool has_user_prop;
+			/** Server Reference property was present. */
+			bool has_server_reference;
+		} rx;
+	} prop;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+};
+
 /**
  * @brief Defines event parameters notified along with asynchronous events
  *        to the application.
@@ -567,6 +635,11 @@ union mqtt_evt_param {
 
 	/** Parameters accompanying MQTT_EVT_UNSUBACK event. */
 	struct mqtt_unsuback_param unsuback;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/** Parameters accompanying MQTT_EVT_DISCONNECT event. */
+	struct mqtt_disconnect_param disconnect;
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
 /** @brief Defines MQTT asynchronous event notified to the application. */
@@ -1036,10 +1109,13 @@ int mqtt_ping(struct mqtt_client *client);
  *
  * @param[in] client Identifies client instance for which procedure is
  *                   requested.
+ * @param[in] param Optional Disconnect parameters. May be NULL.
+ *                  Ignored if MQTT 3.1.1 is used.
  *
  * @return 0 or a negative error code (errno.h) indicating reason of failure.
  */
-int mqtt_disconnect(struct mqtt_client *client);
+int mqtt_disconnect(struct mqtt_client *client,
+		    const struct mqtt_disconnect_param *param);
 
 /**
  * @brief API to abort MQTT connection. This will close the corresponding

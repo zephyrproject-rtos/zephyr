@@ -28,7 +28,7 @@ static const uint8_t ping_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
 };
 
 /** Never changing disconnect request. */
-static const uint8_t disc_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
+static const uint8_t empty_disc_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
 	MQTT_PKT_TYPE_DISCONNECT,
 	0x00
 };
@@ -1175,19 +1175,131 @@ int publish_complete_encode(const struct mqtt_client *client,
 				 reason_code, prop, buf);
 }
 
-int disconnect_encode(struct buf_ctx *buf)
+static int empty_disconnect_encode(struct buf_ctx *buf)
 {
 	uint8_t *cur = buf->cur;
 	uint8_t *end = buf->end;
 
-	if ((end - cur) < sizeof(disc_packet)) {
+	if ((end - cur) < sizeof(empty_disc_packet)) {
 		return -ENOMEM;
 	}
 
-	memcpy(cur, disc_packet, sizeof(disc_packet));
-	buf->end = (cur + sizeof(disc_packet));
+	memcpy(cur, empty_disc_packet, sizeof(empty_disc_packet));
+	buf->end = (cur + sizeof(empty_disc_packet));
 
 	return 0;
+}
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static uint32_t disconnect_properties_length(const struct mqtt_disconnect_param *param)
+{
+	return uint32_property_length(param->prop.session_expiry_interval) +
+	       string_property_length(&param->prop.reason_string) +
+	       user_properties_length(param->prop.user_prop) +
+	       string_property_length(&param->prop.server_reference);
+}
+
+static int disconnect_properties_encode(const struct mqtt_disconnect_param *param,
+					struct buf_ctx *buf)
+{
+	uint32_t properties_len;
+	int err;
+
+	/* Precalculate total properties length */
+	properties_len = disconnect_properties_length(param);
+	/* Disconnect properties length can be omitted if equal to 0. */
+	if (properties_len == 0) {
+		return 0;
+	}
+
+	err = pack_variable_int(properties_len, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_uint32_property(MQTT_PROP_SESSION_EXPIRY_INTERVAL,
+				     param->prop.session_expiry_interval, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_string_property(MQTT_PROP_REASON_STRING,
+				     &param->prop.reason_string, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_user_properties(param->prop.user_prop, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = encode_string_property(MQTT_PROP_SERVER_REFERENCE,
+				     &param->prop.server_reference, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
+}
+
+static int disconnect_5_0_encode(const struct mqtt_disconnect_param *param,
+				 struct buf_ctx *buf)
+{
+	const uint8_t message_type =
+		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_DISCONNECT, 0, 0, 0);
+	uint8_t *start;
+	int err;
+
+	/* The Reason Code and Property Length can be omitted if the Reason Code
+	 * is 0x00 (Normal disconnecton) and there are no Properties.
+	 */
+	if ((param->reason_code == MQTT_DISCONNECT_NORMAL) &&
+	    (disconnect_properties_length(param) == 0U)) {
+		return empty_disconnect_encode(buf);
+	}
+
+	/* Reserve space for fixed header. */
+	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
+	start = buf->cur;
+
+	err = pack_uint8(param->reason_code, buf);
+	if (err < 0) {
+		return err;
+	}
+
+	err = disconnect_properties_encode(param, buf);
+	if (err != 0) {
+		return err;
+	}
+
+	err = mqtt_encode_fixed_header(message_type, start, buf);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
+}
+#else
+static int disconnect_5_0_encode(const struct mqtt_disconnect_param *param,
+				 struct buf_ctx *buf)
+{
+	ARG_UNUSED(param);
+	ARG_UNUSED(buf);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+int disconnect_encode(const struct mqtt_client *client,
+		      const struct mqtt_disconnect_param *param,
+		      struct buf_ctx *buf)
+{
+	if (!mqtt_is_version_5_0(client) || param == NULL) {
+		return empty_disconnect_encode(buf);
+	}
+
+	return disconnect_5_0_encode(param, buf);
 }
 
 #if defined(CONFIG_MQTT_VERSION_5_0)
