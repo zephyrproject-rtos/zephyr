@@ -10,10 +10,6 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
-config FLASH_BASE_ADDRESS
-	hex
-	default 0x0
-
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
 	depends on LOG_BACKEND_SWO
