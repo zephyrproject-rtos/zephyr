@@ -11,8 +11,8 @@ supported:
   - uart
   - dma
   - spi
+  - counter
   - entropy
 testing:
   ignore_tags:
     - bluetooth
-    - tracing
