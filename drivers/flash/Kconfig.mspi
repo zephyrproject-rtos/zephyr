@@ -28,4 +28,22 @@ config FLASH_MSPI_ATXP032
 	select FLASH_JESD216
 	select MSPI_AMBIQ_AP3 if SOC_SERIES_APOLLO3X
 
+menuconfig FLASH_MSPI_NOR
+	bool "Generic MSPI NOR Flash"
+	default y
+	depends on DT_HAS_JEDEC_MSPI_NOR_ENABLED
+	select FLASH_MSPI
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios)
+
+config FLASH_MSPI_NOR_INIT_PRIORITY
+	int
+	depends on FLASH_MSPI_NOR
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to MSPI bus, it has to
+	  be initialized after MSPI driver.
+
 endmenu
