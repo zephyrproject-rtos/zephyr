@@ -1,0 +1,5 @@
+# Always set CONFIG_BOARD here. This isn't meant to be customized,
+# but is set as a "default" due to Kconfig language restrictions.
+config BOARD
+    default "weact_stm32h562_core"
+    depends on BOARD_WEACT_STM32H562_CORE
