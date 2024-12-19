@@ -6,6 +6,6 @@
 config COUNTER_MCUX_RTC
 	bool "MCUX RTC driver"
 	default y
-	depends on DT_HAS_NXP_KINETIS_RTC_ENABLED
+	depends on DT_HAS_NXP_RTC_ENABLED
 	help
-	  Enable support for mcux rtc driver.
+	  Enable support for MCU RTC driver.

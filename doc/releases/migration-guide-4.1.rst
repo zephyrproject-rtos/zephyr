@@ -216,6 +216,11 @@ SPI
 Regulator
 =========
 
+RTC
+===
+
+* Renamed the ``compatible`` from ``nxp,kinetis-rtc`` to :dtcompatible:`nxp,rtc`.
+
 Video
 =====
 
