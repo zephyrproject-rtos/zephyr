@@ -117,8 +117,7 @@ static int mesh_commit(void)
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
-			       NULL);
+SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit, NULL, 2);
 
 /* Pending flags that use K_NO_WAIT as the storage timeout */
 #define NO_WAIT_PENDING_BITS (BIT(BT_MESH_SETTINGS_NET_PENDING) |           \

@@ -453,17 +453,18 @@ static void test_rx_proxy_mixin(void)
 	/* Delay to provision dut */
 	k_sleep(K_MSEC(1000));
 
+	/* Scan adv data. */
+	xmit_param.retr = 5;
+	xmit_param.interval = 20;
+
+	ASSERT_OK(bt_mesh_test_wait_for_packet(xmit_scan_cb, &observer_sem, 20));
+
 	/* Scan proxy beacons. */
 	/* (total transmit duration) / (transmit interval) */
 	gatt_param.transmits = 5000 / 1000;
 	gatt_param.interval = 1000;
 	gatt_param.service = MESH_SERVICE_PROXY;
 	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &observer_sem, 20));
-
-	/* Scan adv data. */
-	xmit_param.retr = 5;
-	xmit_param.interval = 20;
-	ASSERT_OK(bt_mesh_test_wait_for_packet(xmit_scan_cb, &observer_sem, 20));
 
 	/* Scan proxy beacons again. */
 	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &observer_sem, 20));
