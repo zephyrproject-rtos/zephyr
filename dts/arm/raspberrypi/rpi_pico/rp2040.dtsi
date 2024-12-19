@@ -7,7 +7,7 @@
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/clock/rpi_pico_clock.h>
+#include <zephyr/dt-bindings/clock/rpi_pico_rp2040_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/regulator/rpi_pico.h>
 #include <zephyr/dt-bindings/reset/rp2040_reset.h>
@@ -428,6 +428,13 @@
 		compatible = "raspberrypi,pico-temp";
 		io-channels = <&adc 4>;
 		status = "disabled";
+	};
+
+	boot_flash: boot_flash@10000000 {
+		compatible = "zephyr,memory-region";
+		zephyr,memory-region = "BOOT_FLASH";
+		reg = <0x10000000 0x100>;
+		status = "okay";
 	};
 };
 
