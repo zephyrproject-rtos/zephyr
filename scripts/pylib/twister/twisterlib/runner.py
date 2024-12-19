@@ -1553,7 +1553,7 @@ class ProjectBuilder(FilterBuilder):
                 for tc in self.instance.testcases:
                     color = TwisterStatus.get_color(tc.status)
                     logger.info(f'    {" ":<{total_tests_width+25+4}} {tc.name:<75} '
-                                f'{color}{str.upper(tc.status.value):<12}{Fore.RESET}'
+                                f'{color}{str.upper(tc.status):<12}{Fore.RESET}'
                                 f'{" " + tc.reason if tc.reason else ""}')
 
             if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
@@ -1962,6 +1962,7 @@ class TwisterRunner:
                 return True
         except Exception as e:
             logger.error(f"General exception: {e}")
+            logger.error(traceback.format_exc())
             sys.exit(1)
 
     def execute(self, pipeline, done):
