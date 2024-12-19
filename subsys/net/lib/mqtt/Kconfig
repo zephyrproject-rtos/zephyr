@@ -81,4 +81,31 @@ config MQTT_CLEAN_SESSION
 	  the client. Setting this flag to 0 allows the client to create a
 	  persistent session.
 
+#if MQTT_VERSION_5_0
+
+config MQTT_USER_PROPERTIES_MAX
+	int "Maximum number of user properties in a packet"
+	default 1
+	range 1 $(UINT16_MAX)
+	help
+	  Maximum number of user properties that the client can include in a
+	  packet or parse on input.
+
+config MQTT_TOPIC_ALIAS_MAX
+	int "Maximum number of supported topic aliases"
+	default 5
+	range 0 $(UINT16_MAX)
+	help
+	  Maximum number of supported topic aliases used in PUBLISH packets.
+	  If set to 0, topic aliasing is disabled.
+
+config MQTT_TOPIC_ALIAS_STRING_MAX
+	int "The longest topic name that can be aliased"
+	default 64
+	range 8 $(UINT16_MAX)
+	help
+	  Specifies a size of a buffer for storing aliased topics.
+
+#endif # MQTT_VERSION_5_0
+
 endif # MQTT_LIB
