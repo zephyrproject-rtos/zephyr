@@ -309,7 +309,7 @@ int mqtt_publish_qos1_ack(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_ack_encode(param, &packet);
+	err_code = publish_ack_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -346,7 +346,7 @@ int mqtt_publish_qos2_receive(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_receive_encode(param, &packet);
+	err_code = publish_receive_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -383,7 +383,7 @@ int mqtt_publish_qos2_release(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_release_encode(param, &packet);
+	err_code = publish_release_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -420,7 +420,7 @@ int mqtt_publish_qos2_complete(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_complete_encode(param, &packet);
+	err_code = publish_complete_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}

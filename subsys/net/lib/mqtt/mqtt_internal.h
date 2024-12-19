@@ -238,7 +238,8 @@ int publish_encode(const struct mqtt_client *client,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_ack_encode(const struct mqtt_puback_param *param,
+int publish_ack_encode(const struct mqtt_client *client,
+		       const struct mqtt_puback_param *param,
 		       struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Publish Receive packet.
@@ -251,7 +252,8 @@ int publish_ack_encode(const struct mqtt_puback_param *param,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_receive_encode(const struct mqtt_pubrec_param *param,
+int publish_receive_encode(const struct mqtt_client *client,
+			   const struct mqtt_pubrec_param *param,
 			   struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Publish Release packet.
@@ -264,7 +266,8 @@ int publish_receive_encode(const struct mqtt_pubrec_param *param,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_release_encode(const struct mqtt_pubrel_param *param,
+int publish_release_encode(const struct mqtt_client *client,
+			   const struct mqtt_pubrel_param *param,
 			   struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Publish Complete packet.
@@ -277,7 +280,8 @@ int publish_release_encode(const struct mqtt_pubrel_param *param,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_complete_encode(const struct mqtt_pubcomp_param *param,
+int publish_complete_encode(const struct mqtt_client *client,
+			    const struct mqtt_pubcomp_param *param,
 			    struct buf_ctx *buf);
 
 /**@brief Constructs/encodes Disconnect packet.
@@ -369,45 +373,50 @@ int publish_decode(const struct mqtt_client *client, uint8_t flags,
 
 /**@brief Decode MQTT Publish Ack packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Publish Ack parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_ack_decode(struct buf_ctx *buf, struct mqtt_puback_param *param);
+int publish_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+		       struct mqtt_puback_param *param);
 
 /**@brief Decode MQTT Publish Receive packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Publish Receive parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_receive_decode(struct buf_ctx *buf,
+int publish_receive_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			   struct mqtt_pubrec_param *param);
 
 /**@brief Decode MQTT Publish Release packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Publish Release parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_release_decode(struct buf_ctx *buf,
+int publish_release_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			   struct mqtt_pubrel_param *param);
 
 /**@brief Decode MQTT Publish Complete packet.
  *
+ * @param[in] MQTT client for which packet is decoded.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
  * @param[out] param Pointer to buffer for decoded Publish Complete parameters.
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_complete_decode(struct buf_ctx *buf,
+int publish_complete_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			    struct mqtt_pubcomp_param *param);
 
 /**@brief Decode MQTT Subscribe packet.

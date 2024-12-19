@@ -810,25 +810,132 @@ int publish_decode(const struct mqtt_client *client, uint8_t flags,
 	return 0;
 }
 
-int publish_ack_decode(struct buf_ctx *buf, struct mqtt_puback_param *param)
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static int common_ack_properties_decode(struct buf_ctx *buf,
+					struct mqtt_common_ack_properties *prop)
 {
-	return unpack_uint16(buf, &param->message_id);
+	struct property_decoder prop_dec[] = {
+		{
+			&prop->reason_string,
+			&prop->rx.has_reason_string,
+			MQTT_PROP_REASON_STRING
+		},
+		{
+			&prop->user_prop,
+			&prop->rx.has_user_prop,
+			MQTT_PROP_USER_PROPERTY
+		}
+	};
+
+	return properties_decode(prop_dec, ARRAY_SIZE(prop_dec), buf);
+}
+#else
+static int common_ack_properties_decode(struct buf_ctx *buf,
+					struct mqtt_common_ack_properties *prop)
+{
+	ARG_UNUSED(prop);
+	ARG_UNUSED(buf);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+static int common_pub_ack_decode(struct buf_ctx *buf, uint16_t *message_id,
+				 uint8_t *reason_code,
+				 struct mqtt_common_ack_properties *prop)
+{
+	size_t remaining_len;
+	int err;
+
+	err = unpack_uint16(buf, message_id);
+	if (err < 0) {
+		return err;
+	}
+
+	remaining_len = buf->end - buf->cur;
+
+	/* For MQTT < 5.0 properties are NULL. */
+	if (prop != NULL && reason_code != NULL) {
+		if (remaining_len > 0) {
+			err = unpack_uint8(buf, reason_code);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		if (remaining_len > 1) {
+			err = common_ack_properties_decode(buf, prop);
+			if (err < 0) {
+				return err;
+			}
+		}
+	}
+
+	return 0;
 }
 
-int publish_receive_decode(struct buf_ctx *buf, struct mqtt_pubrec_param *param)
+int publish_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+		       struct mqtt_puback_param *param)
 {
-	return unpack_uint16(buf, &param->message_id);
+	struct mqtt_common_ack_properties *prop = NULL;
+	uint8_t *reason_code = NULL;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (mqtt_is_version_5_0(client)) {
+		prop = &param->prop;
+		reason_code = &param->reason_code;
+	}
+#endif
+
+	return common_pub_ack_decode(buf, &param->message_id, reason_code, prop);
 }
 
-int publish_release_decode(struct buf_ctx *buf, struct mqtt_pubrel_param *param)
+int publish_receive_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+			   struct mqtt_pubrec_param *param)
 {
-	return unpack_uint16(buf, &param->message_id);
+	struct mqtt_common_ack_properties *prop = NULL;
+	uint8_t *reason_code = NULL;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (mqtt_is_version_5_0(client)) {
+		prop = &param->prop;
+		reason_code = &param->reason_code;
+	}
+#endif
+
+	return common_pub_ack_decode(buf, &param->message_id, reason_code, prop);
 }
 
-int publish_complete_decode(struct buf_ctx *buf,
+int publish_release_decode(const struct mqtt_client *client, struct buf_ctx *buf,
+			   struct mqtt_pubrel_param *param)
+{
+	struct mqtt_common_ack_properties *prop = NULL;
+	uint8_t *reason_code = NULL;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (mqtt_is_version_5_0(client)) {
+		prop = &param->prop;
+		reason_code = &param->reason_code;
+	}
+#endif
+
+	return common_pub_ack_decode(buf, &param->message_id, reason_code, prop);
+}
+
+int publish_complete_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 			    struct mqtt_pubcomp_param *param)
 {
-	return unpack_uint16(buf, &param->message_id);
+	struct mqtt_common_ack_properties *prop = NULL;
+	uint8_t *reason_code = NULL;
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (mqtt_is_version_5_0(client)) {
+		prop = &param->prop;
+		reason_code = &param->reason_code;
+	}
+#endif
+
+	return common_ack_decode(buf, &param->message_id, reason_code, prop);
 }
 
 int subscribe_ack_decode(struct buf_ctx *buf, struct mqtt_suback_param *param)
