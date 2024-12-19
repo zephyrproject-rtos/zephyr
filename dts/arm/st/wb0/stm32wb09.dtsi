@@ -14,5 +14,21 @@
 / {
 	soc {
 		compatible = "st,stm32wb09", "st,stm32wb0", "simple-bus";
+
+		rng: rng@48600000 {
+			/* STM32WB09-specific TRNG differs heavily from other
+			 * RNGs and thus requires a specific driver. A special
+			 * "compatible" must be used to select that driver.
+			 *
+			 * Note that other properties, such as RCC enable
+			 * bit or location in the address space, are shared
+			 * with the other SoCs of the STM32WB0 series.
+			 *
+			 * The STM32WB09 TRNG also has an interrupt line,
+			 * unlike the RNG in other STM32WB0 SoCs...
+			 */
+			compatible = "st,stm32wb09-rng";
+			interrupts = <28 0>;
+		};
 	};
 };
