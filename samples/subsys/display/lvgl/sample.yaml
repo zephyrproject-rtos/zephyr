@@ -98,3 +98,13 @@ tests:
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
       fixture: fixture_display_rk043fn02h_ct
+  samples.subsys.display.lvgl.rtkmipilcdb00000be:
+    platform_allow:
+      - ek_ra8d1
+    tags:
+      - display
+      - shield
+    harness: console
+    extra_args: SHIELD=rtkmipilcdb00000be
+    harness_config:
+      fixture: fixture_display
