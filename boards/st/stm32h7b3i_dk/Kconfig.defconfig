@@ -22,10 +22,10 @@ if LVGL
 config CACHE_MANAGEMENT
 	default y
 
-config LV_USE_GPU_STM32_DMA2D
+config LV_USE_DRAW_DMA2D
 	default y
 
-config LV_GPU_DMA2D_CMSIS_INCLUDE
+config LV_DRAW_DMA2D_HAL_INCLUDE
 	default "stm32h7xx.h"
 
 config STM32_LTDC_FB_NUM
