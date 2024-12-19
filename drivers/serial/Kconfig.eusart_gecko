@@ -1,0 +1,17 @@
+# Gecko SDK EUSART
+
+# Copyright (c) 2024, Yishai Jaffe
+# SPDX-License-Identifier: Apache-2.0
+
+config EUSART_GECKO
+	bool "Gecko EUSART driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_EUSART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SOC_GECKO_EUSART
+	select PINCTRL if (SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2)
+	select CLOCK_CONTROL if SOC_FAMILY_SILABS_S2
+	select PM_DEVICE if PM && SOC_FAMILY_SILABS_S2
+	help
+	  Enable the Gecko eusart driver.
