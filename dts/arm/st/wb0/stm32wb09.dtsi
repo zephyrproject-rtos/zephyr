@@ -14,5 +14,16 @@
 / {
 	soc {
 		compatible = "st,stm32wb09", "st,stm32wb0", "simple-bus";
+
+		rng: rng@48600000 {
+			/**
+			 * STM32WB09 TRNG IP includes an interrupt line,
+			 * unlike the IP in other STM32WB0x SoCs. Remove
+			 * the generation-delay-ns property, since it is
+			 * only needed for TRNGs without interrupt lines.
+			 */
+			/delete-property/ generation-delay-ns;
+			interrupts = <28 0>;
+		};
 	};
 };
