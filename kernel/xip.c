@@ -10,13 +10,13 @@
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
 
-#ifdef CONFIG_STACK_CANARIES
+#ifdef CONFIG_REQUIRES_STACK_CANARIES
 #ifdef CONFIG_STACK_CANARIES_TLS
 extern Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 #else
 extern volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES_TLS */
-#endif /* CONFIG_STACK_CANARIES */
+#endif /* CONFIG_REQUIRES_STACK_CANARIES */
 
 /**
  * @brief Copy the data section from ROM to RAM
@@ -49,7 +49,7 @@ void z_data_copy(void)
 	data_copy_xip_relocation();
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_USERSPACE
-#ifdef CONFIG_STACK_CANARIES
+#ifdef CONFIG_REQUIRES_STACK_CANARIES
 	/* stack canary checking is active for all C functions.
 	 * __stack_chk_guard is some uninitialized value living in the
 	 * app shared memory sections. Preserve it, and don't make any
@@ -70,6 +70,6 @@ void z_data_copy(void)
 #else
 	z_early_memcpy(&_app_smem_start, &_app_smem_rom_start,
 		       _app_smem_end - _app_smem_start);
-#endif /* CONFIG_STACK_CANARIES */
+#endif /* CONFIG_REQUIRES_STACK_CANARIES */
 #endif /* CONFIG_USERSPACE */
 }

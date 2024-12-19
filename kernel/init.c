@@ -289,13 +289,13 @@ void z_bss_zero_pinned(void)
 }
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
-#ifdef CONFIG_STACK_CANARIES
+#ifdef CONFIG_REQUIRES_STACK_CANARIES
 #ifdef CONFIG_STACK_CANARIES_TLS
 extern Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 #else
 extern volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES_TLS */
-#endif /* CONFIG_STACK_CANARIES */
+#endif /* CONFIG_REQUIRES_STACK_CANARIES */
 
 /* LCOV_EXCL_STOP */
 
@@ -778,13 +778,13 @@ FUNC_NORETURN void z_cstart(void)
 #endif
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
-#ifdef CONFIG_STACK_CANARIES
+#ifdef CONFIG_REQUIRES_STACK_CANARIES
 	uintptr_t stack_guard;
 
 	z_early_rand_get((uint8_t *)&stack_guard, sizeof(stack_guard));
 	__stack_chk_guard = stack_guard;
 	__stack_chk_guard <<= 8;
-#endif	/* CONFIG_STACK_CANARIES */
+#endif	/* CONFIG_REQUIRES_STACK_CANARIES */
 
 #ifdef CONFIG_TIMING_FUNCTIONS_NEED_AT_BOOT
 	timing_init();
