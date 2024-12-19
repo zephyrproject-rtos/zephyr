@@ -76,7 +76,7 @@ extern "C" {
 #define GET_UT8STR_BUFFER_SIZE(STR) (sizeof(uint16_t) + (STR)->size)
 
 /**@brief Computes total size needed to pack a binary stream. */
-#define GET_BINSTR_BUFFER_SIZE(STR) ((STR)->len)
+#define GET_BINSTR_BUFFER_SIZE(STR) (sizeof(uint16_t) + (STR)->len)
 
 /**@brief Sets MQTT Client's state with one indicated in 'STATE'. */
 #define MQTT_SET_STATE(CLIENT, STATE) ((CLIENT)->internal.state |= (STATE))
