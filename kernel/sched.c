@@ -960,6 +960,21 @@ int z_unpend_all(_wait_q_t *wait_q)
 	return need_sched;
 }
 
+int z_unpend_all_rc(_wait_q_t *wait_q, int rc)
+{
+	int need_sched = 0;
+	struct k_thread *thread;
+
+	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
+		z_unpend_thread(thread);
+		arch_thread_return_value_set(thread, rc);
+		z_ready_thread(thread);
+		need_sched = 1;
+	}
+
+	return need_sched;
+}
+
 void init_ready_q(struct _ready_q *ready_q)
 {
 	_priq_run_init(&ready_q->runq);
