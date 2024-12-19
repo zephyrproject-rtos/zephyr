@@ -810,11 +810,13 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 		return err;
 	}
 
-	*sock = esp_socket_ref_from_link_id(dev, link_id);
-	if (!sock) {
+	struct esp_socket *esp_sock_temp = esp_socket_ref_from_link_id(dev, link_id);
+
+	if (!esp_sock_temp) {
 		LOG_ERR("No socket for link %ld", link_id);
 		return str - ipd_buf;
 	}
+	*sock = esp_sock_temp;
 
 	if (!ESP_PROTO_PASSIVE(esp_socket_ip_proto(*sock)) &&
 	    IS_ENABLED(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)) {
