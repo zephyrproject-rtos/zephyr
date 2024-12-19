@@ -82,11 +82,6 @@ static int spi_eusart_config(const struct device *dev, const struct spi_config *
 		return -ENOTSUP;
 	}
 
-	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
-		return -ENOTSUP;
-	}
-
 	if (config->operation & SPI_OP_MODE_SLAVE) {
 		LOG_ERR("Slave mode not supported");
 		return -ENOTSUP;
@@ -133,6 +128,8 @@ static int spi_eusart_config(const struct device *dev, const struct spi_config *
 		eusartAdvancedSpiInit.csPolarity = eusartCsActiveLow;
 	}
 
+	eusartAdvancedSpiInit.msbFirst = !(config->operation & SPI_TRANSFER_LSB);
+	eusartAdvancedSpiInit.autoCsEnable = !spi_cs_is_gpio(config);
 	eusartInit.databits = eusartDataBits8;
 	eusartInit.advancedSettings = &eusartAdvancedSpiInit;
 
