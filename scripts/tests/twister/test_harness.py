@@ -607,7 +607,7 @@ TEST_DATA_7 = [
     ),
     (
         True,
-        "On TC_START: Ztest case 'testcase' is not known in {} running suite(s)",
+        "TC_START: Ztest case 'testcase' is not known in {} running suite(s)",
         "START - test_testcase",
         [],
         {},
@@ -618,7 +618,7 @@ TEST_DATA_7 = [
     ),
     (
         True,
-        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
+        "TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "PASS - test_example in 0 seconds",
         [],
         {},
@@ -629,7 +629,7 @@ TEST_DATA_7 = [
     ),
     (
         True,
-        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
+        "TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "SKIP - test_example in 0 seconds",
         [],
         {},
@@ -640,7 +640,7 @@ TEST_DATA_7 = [
     ),
     (
         True,
-        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
+        "TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "FAIL - test_example in 0 seconds",
         [],
         {},
@@ -714,6 +714,7 @@ def test_test_handle(
         instance = TestInstance(
             testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
         )
+    instance.handler = mock.Mock(options=mock.Mock(verbose=0), type_str="handler_type")
 
     test_obj = Test()
     test_obj.configure(instance)
