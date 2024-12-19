@@ -27,6 +27,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	user_led {
@@ -130,6 +131,10 @@
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &adc0 {

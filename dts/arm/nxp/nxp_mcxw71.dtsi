@@ -311,6 +311,11 @@
 		interrupt-names = "hci_int";
 	};
 
+	ieee802154: ieee802154 {
+		compatible = "nxp,mcxw-ieee802154";
+		status = "disabled";
+	};
+
 	flexcan0: can@3b000 {
 		compatible = "nxp,flexcan";
 		reg = <0x3b000 0x3080>;

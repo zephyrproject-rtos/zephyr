@@ -1,0 +1,15 @@
+# NXP MCXW 802.15.4 configuration options
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_MCXW
+	bool "NXP MCXW series IEEE 802.15.4 Driver"
+	default y
+
+config CONFIG_IEEE802154_MCXW_INIT_PRIO
+	int "Initial priority for the IEEE802154 driver"
+	default 90
+
+config BT
+    default y
