@@ -1,0 +1,56 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# A pykwalify schema for basic validation of the patches.yml format.
+
+type: map
+mapping:
+  patches:
+    type: seq
+    sequence:
+      - type: map
+        mapping:
+          path:
+            required: true
+            type: str
+          sha256sum:
+            required: true
+            type: str
+            pattern: "^[0-9a-f]{64}$"
+          module:
+            required: true
+            type: str
+          author:
+            required: true
+            type: str
+          email:
+            required: true
+            type: str
+            pattern: ".+@.+"
+          date:
+            required: true
+            type: date
+            format: "%Y-%m-%d"
+          upstreamable:
+            type: bool
+            default: true
+          merge-pr:
+            type: str
+            pattern: "^https?://"
+          issue:
+            type: str
+            pattern: "^https?://"
+          merge-status:
+            type: bool
+          merge-commit:
+            type: str
+            pattern: "^[0-9a-f]{64}$"
+          merge-date:
+            type: date
+            format: "%Y-%m-%d"
+          apply-command:
+            type: str
+            default: "git apply"
+          comments:
+            type: str
