@@ -15,4 +15,5 @@ flash: 449
 supported:
   - counter
   - gpio
+  - i2c
   - watchdog
