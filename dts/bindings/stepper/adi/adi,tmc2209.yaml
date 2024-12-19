@@ -23,13 +23,9 @@ include:
       - micro-step-res
       - step-gpios
       - dir-gpios
+      - en-gpios
 
 properties:
-  enable-gpios:
-    type: phandle-array
-    description: |
-      GPIO pins used to control the enable signal of the motor driver.
-
   msx-gpios:
     type: phandle-array
     description: |

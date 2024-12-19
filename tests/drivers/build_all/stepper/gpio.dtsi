@@ -19,7 +19,7 @@ test_tmc2209: tmc2209_motor {
 	micro-step-res = <1>;
 	msx-gpios = <&test_gpio 0 0>,
 		    <&test_gpio 0 0>;
-	enable-gpios = <&test_gpio 0 0>;
+	en-gpios = <&test_gpio 0 0>;
 	step-gpios = <&test_gpio 0 0>;
 	dir-gpios = <&test_gpio 0 0>;
 };
