@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2024 Plentify (Pty) Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+
+};
+
+&arduino_spi {
+	status = "okay";
+
+	cs-gpios = <&arduino_header 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; /* D8 */
+
+	ade9153a@0 {
+		compatible = "adi,ade9153a";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <1000000>; /* conservatively set to 1MHz */
+		cf-gpios = <&arduino_header 8 (GPIO_ACTIVE_HIGH)>;
+		irq-gpios = <&arduino_header 9 (GPIO_ACTIVE_LOW)>;
+		reset-gpios = <&arduino_header 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+};
