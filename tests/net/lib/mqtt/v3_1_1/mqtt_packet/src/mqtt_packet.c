@@ -874,7 +874,7 @@ static int eval_msg_suback(struct mqtt_test *mqtt_test)
 
 	zassert_false(rc, "fixed_header_decode failed");
 
-	rc = subscribe_ack_decode(&buf, &dec_param);
+	rc = subscribe_ack_decode(&client, &buf, &dec_param);
 
 	/**TESTPOINT: Check subscribe_ack_decode function*/
 	zassert_false(rc, "subscribe_ack_decode failed");
@@ -1083,7 +1083,7 @@ static int eval_msg_unsuback(struct mqtt_test *mqtt_test)
 
 	zassert_false(rc, "fixed_header_decode failed");
 
-	rc = unsubscribe_ack_decode(&buf, &dec_param);
+	rc = unsubscribe_ack_decode(&client, &buf, &dec_param);
 
 	zassert_false(rc, "unsubscribe_ack_decode failed");
 

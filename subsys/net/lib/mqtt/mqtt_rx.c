@@ -113,7 +113,7 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_SUBACK!", client);
 
 		evt.type = MQTT_EVT_SUBACK;
-		err_code = subscribe_ack_decode(buf, &evt.param.suback);
+		err_code = subscribe_ack_decode(client, buf, &evt.param.suback);
 		evt.result = err_code;
 		break;
 
@@ -121,7 +121,8 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_UNSUBACK!", client);
 
 		evt.type = MQTT_EVT_UNSUBACK;
-		err_code = unsubscribe_ack_decode(buf, &evt.param.unsuback);
+		err_code = unsubscribe_ack_decode(client, buf,
+						  &evt.param.unsuback);
 		evt.result = err_code;
 		break;
 
