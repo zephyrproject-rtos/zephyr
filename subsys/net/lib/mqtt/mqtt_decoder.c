@@ -119,7 +119,8 @@ static int unpack_utf8_str(struct buf_ctx *buf, struct mqtt_utf8 *str)
 }
 
 /**
- * @brief Unpacks binary string from the buffer from the offset requested.
+ * @brief Unpacks binary string from the buffer from the offset requested with
+ *        the length provided.
  *
  * @param[in] length Binary string length.
  * @param[inout] buf A pointer to the buf_ctx structure containing current
@@ -130,8 +131,8 @@ static int unpack_utf8_str(struct buf_ctx *buf, struct mqtt_utf8 *str)
  * @retval 0 if the procedure is successful.
  * @retval -EINVAL if the buffer would be exceeded during the read
  */
-static int unpack_data(uint32_t length, struct buf_ctx *buf,
-		       struct mqtt_binstr *str)
+static int unpack_raw_data(uint32_t length, struct buf_ctx *buf,
+			   struct mqtt_binstr *str)
 {
 	NET_DBG(">> cur:%p, end:%p", (void *)buf->cur, (void *)buf->end);
 
@@ -154,23 +155,24 @@ static int unpack_data(uint32_t length, struct buf_ctx *buf,
 	return 0;
 }
 
-/**@brief Decode MQTT Packet Length in the MQTT fixed header.
+/**
+ * @brief Unpacks variable length integer from the buffer from the offset
+ *        requested.
  *
  * @param[inout] buf A pointer to the buf_ctx structure containing current
  *                   buffer position.
- * @param[out] length Length of variable header and payload in the
- *                              MQTT message.
+ * @param[out] val Memory where the value is to be unpacked.
  *
- * @retval 0 if the procedure is successful.
+ * @retval Number of bytes parsed if the procedure is successful.
  * @retval -EINVAL if the length decoding would use more that 4 bytes.
  * @retval -EAGAIN if the buffer would be exceeded during the read.
  */
-static int packet_length_decode(struct buf_ctx *buf, uint32_t *length)
+static int unpack_variable_int(struct buf_ctx *buf, uint32_t *val)
 {
 	uint8_t shift = 0U;
-	uint8_t bytes = 0U;
+	int bytes = 0;
 
-	*length = 0U;
+	*val = 0U;
 	do {
 		if (bytes >= MQTT_MAX_LENGTH_BYTES) {
 			return -EINVAL;
@@ -180,19 +182,19 @@ static int packet_length_decode(struct buf_ctx *buf, uint32_t *length)
 			return -EAGAIN;
 		}
 
-		*length += ((uint32_t)*(buf->cur) & MQTT_LENGTH_VALUE_MASK)
+		*val += ((uint32_t)*(buf->cur) & MQTT_LENGTH_VALUE_MASK)
 								<< shift;
 		shift += MQTT_LENGTH_SHIFT;
 		bytes++;
 	} while ((*(buf->cur++) & MQTT_LENGTH_CONTINUATION_BIT) != 0U);
 
-	if (*length > MQTT_MAX_PAYLOAD_SIZE) {
+	if (*val > MQTT_MAX_PAYLOAD_SIZE) {
 		return -EINVAL;
 	}
 
-	NET_DBG("length:0x%08x", *length);
+	NET_DBG("variable int:0x%08x", *val);
 
-	return 0;
+	return bytes;
 }
 
 int fixed_header_decode(struct buf_ctx *buf, uint8_t *type_and_flags,
@@ -205,8 +207,426 @@ int fixed_header_decode(struct buf_ctx *buf, uint8_t *type_and_flags,
 		return err_code;
 	}
 
-	return packet_length_decode(buf, length);
+	err_code = unpack_variable_int(buf, length);
+	if (err_code < 0) {
+		return err_code;
+	}
+
+	return 0;
 }
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+/**
+ * @brief Unpacks unsigned 32 bit value from the buffer from the offset
+ *        requested.
+ *
+ * @param[inout] buf A pointer to the buf_ctx structure containing current
+ *                   buffer position.
+ * @param[out] val Memory where the value is to be unpacked.
+ *
+ * @retval 0 if the procedure is successful.
+ * @retval -EINVAL if the buffer would be exceeded during the read
+ */
+static int unpack_uint32(struct buf_ctx *buf, uint32_t *val)
+{
+	uint8_t *cur = buf->cur;
+	uint8_t *end = buf->end;
+
+	NET_DBG(">> cur:%p, end:%p", (void *)cur, (void *)end);
+
+	if ((end - cur) < sizeof(uint32_t)) {
+		return -EINVAL;
+	}
+
+	*val = sys_get_be32(cur);
+	buf->cur = (cur + sizeof(uint32_t));
+
+	NET_DBG("<< val:%08x", *val);
+
+	return 0;
+}
+
+/**
+ * @brief Unpacks binary string from the buffer from the offset requested.
+ *        Binary string length is decoded from the first two bytes of the buffer.
+ *
+ * @param[inout] buf A pointer to the buf_ctx structure containing current
+ *                   buffer position.
+ * @param[out] bin Pointer to a binary string that will hold the binary string
+ *                 location in the buffer.
+ *
+ * @retval 0 if the procedure is successful.
+ * @retval -EINVAL if the buffer would be exceeded during the read
+ */
+static int unpack_binary_data(struct buf_ctx *buf, struct mqtt_binstr *bin)
+{
+	uint16_t len;
+	int err;
+
+	NET_DBG(">> cur:%p, end:%p", (void *)buf->cur, (void *)buf->end);
+
+	err = unpack_uint16(buf, &len);
+	if (err != 0) {
+		return err;
+	}
+
+	if ((buf->end - buf->cur) < len) {
+		return -EINVAL;
+	}
+
+	bin->len = len;
+	/* Zero length binary strings are permitted. */
+	if (len > 0) {
+		bin->data = buf->cur;
+		buf->cur += len;
+	} else {
+		bin->data = NULL;
+	}
+
+	NET_DBG("<< bin len:%08x", GET_BINSTR_BUFFER_SIZE(bin));
+
+	return 0;
+}
+
+struct property_decoder {
+	void *data;
+	bool *found;
+	uint8_t type;
+};
+
+int decode_uint32_property(struct property_decoder *prop,
+			   uint32_t *remaining_len,
+			   struct buf_ctx *buf)
+{
+	uint32_t *value = prop->data;
+
+	if (*remaining_len < sizeof(uint32_t)) {
+		return -EBADMSG;
+	}
+
+	if (unpack_uint32(buf, value) < 0) {
+		return -EBADMSG;
+	}
+
+	*remaining_len -= sizeof(uint32_t);
+	*prop->found = true;
+
+	return 0;
+}
+
+int decode_uint16_property(struct property_decoder *prop,
+			   uint32_t *remaining_len,
+			   struct buf_ctx *buf)
+{
+	uint16_t *value = prop->data;
+
+	if (*remaining_len < sizeof(uint16_t)) {
+		return -EBADMSG;
+	}
+
+	if (unpack_uint16(buf, value) < 0) {
+		return -EBADMSG;
+	}
+
+	*remaining_len -= sizeof(uint16_t);
+	*prop->found = true;
+
+	return 0;
+}
+
+int decode_uint8_property(struct property_decoder *prop,
+			   uint32_t *remaining_len,
+			   struct buf_ctx *buf)
+{
+	uint8_t *value = prop->data;
+
+	if (*remaining_len < sizeof(uint8_t)) {
+		return -EBADMSG;
+	}
+
+	if (unpack_uint8(buf, value) < 0) {
+		return -EBADMSG;
+	}
+
+	*remaining_len -= sizeof(uint8_t);
+	*prop->found = true;
+
+	return 0;
+}
+
+int decode_string_property(struct property_decoder *prop,
+			   uint32_t *remaining_len,
+			   struct buf_ctx *buf)
+{
+	struct mqtt_utf8 *str = prop->data;
+
+	if (unpack_utf8_str(buf, str) < 0) {
+		return -EBADMSG;
+	}
+
+	if (*remaining_len < sizeof(uint16_t) + str->size) {
+		return -EBADMSG;
+	}
+
+	*remaining_len -= sizeof(uint16_t) + str->size;
+	*prop->found = true;
+
+	return 0;
+}
+
+int decode_binary_property(struct property_decoder *prop,
+			   uint32_t *remaining_len,
+			   struct buf_ctx *buf)
+{
+	struct mqtt_binstr *bin = prop->data;
+
+	if (unpack_binary_data(buf, bin) < 0) {
+		return -EBADMSG;
+	}
+
+	if (*remaining_len < sizeof(uint16_t) + bin->len) {
+		return -EBADMSG;
+	}
+
+	*remaining_len -= sizeof(uint16_t) + bin->len;
+	*prop->found = true;
+
+	return 0;
+}
+
+int decode_user_property(struct property_decoder *prop,
+			   uint32_t *remaining_len,
+			   struct buf_ctx *buf)
+{
+	struct mqtt_utf8_pair *user_prop = prop->data;
+	struct mqtt_utf8_pair *chosen = NULL;
+	struct mqtt_utf8_pair temp = { 0 };
+	size_t prop_len;
+
+	if (unpack_utf8_str(buf, &temp.name) < 0) {
+		return -EBADMSG;
+	}
+
+	if (unpack_utf8_str(buf, &temp.value) < 0) {
+		return -EBADMSG;
+	}
+
+	prop_len = (2 * sizeof(uint16_t)) + temp.name.size + temp.value.size;
+	if (*remaining_len < prop_len) {
+		return -EBADMSG;
+	}
+
+	*remaining_len -= prop_len;
+	*prop->found = true;
+
+	for (int i = 0; i < CONFIG_MQTT_USER_PROPERTIES_MAX; i++) {
+		if (user_prop[i].name.utf8 == NULL) {
+			chosen = &user_prop[i];
+			break;
+		}
+	}
+
+	if (chosen == NULL) {
+		NET_DBG("Cannot parse all user properties, ignore excess");
+	} else {
+		memcpy(chosen, &temp, sizeof(struct mqtt_utf8_pair));
+	}
+
+	return 0;
+}
+
+static int properties_decode(struct property_decoder *prop, uint8_t cnt,
+			     struct buf_ctx *buf)
+{
+	uint32_t properties_len;
+	int bytes;
+	int err;
+
+	bytes = unpack_variable_int(buf, &properties_len);
+	if (bytes < 0) {
+		return -EBADMSG;
+	}
+
+	bytes += (int)properties_len;
+
+	while (properties_len > 0) {
+		struct property_decoder *current_prop = NULL;
+		uint8_t type;
+
+		/* Decode property type */
+		err = unpack_uint8(buf, &type);
+		if (err < 0) {
+			return -EBADMSG;
+		}
+
+		properties_len--;
+
+		/* Search if the property is supported in the provided property
+		 * array.
+		 */
+		for (int i = 0; i < cnt; i++) {
+			if (type == prop[i].type) {
+				current_prop = &prop[i];
+			}
+		}
+
+		if (current_prop == NULL) {
+			NET_DBG("Unsupported property %u", type);
+			return -EBADMSG;
+		}
+
+		/* Decode property value. */
+		switch (type) {
+		case MQTT_PROP_SESSION_EXPIRY_INTERVAL:
+		case MQTT_PROP_MAXIMUM_PACKET_SIZE:
+			err = decode_uint32_property(current_prop,
+						     &properties_len, buf);
+			break;
+		case MQTT_PROP_RECEIVE_MAXIMUM:
+		case MQTT_PROP_TOPIC_ALIAS_MAXIMUM:
+		case MQTT_PROP_SERVER_KEEP_ALIVE:
+			err = decode_uint16_property(current_prop,
+						     &properties_len, buf);
+			break;
+		case MQTT_PROP_MAXIMUM_QOS:
+		case MQTT_PROP_RETAIN_AVAILABLE:
+		case MQTT_PROP_WILDCARD_SUBSCRIPTION_AVAILABLE:
+		case MQTT_PROP_SUBSCRIPTION_IDENTIFIER_AVAILABLE:
+		case MQTT_PROP_SHARED_SUBSCRIPTION_AVAILABLE:
+			err = decode_uint8_property(current_prop,
+						    &properties_len, buf);
+			break;
+		case MQTT_PROP_ASSIGNED_CLIENT_IDENTIFIER:
+		case MQTT_PROP_REASON_STRING:
+		case MQTT_PROP_RESPONSE_INFORMATION:
+		case MQTT_PROP_SERVER_REFERENCE:
+		case MQTT_PROP_AUTHENTICATION_METHOD:
+			err = decode_string_property(current_prop,
+						     &properties_len, buf);
+			break;
+		case MQTT_PROP_USER_PROPERTY:
+			err = decode_user_property(current_prop,
+						   &properties_len, buf);
+			break;
+		case MQTT_PROP_AUTHENTICATION_DATA:
+			err = decode_binary_property(current_prop,
+						     &properties_len, buf);
+			break;
+		default:
+			err = -ENOTSUP;
+		}
+
+		if (err < 0) {
+			return -EBADMSG;
+		}
+	}
+
+	return bytes;
+}
+
+static int connack_properties_decode(struct buf_ctx *buf,
+				     struct mqtt_connack_param *param)
+{
+	struct property_decoder prop[] = {
+		{
+			&param->prop.session_expiry_interval,
+			&param->prop.rx.has_session_expiry_interval,
+			MQTT_PROP_SESSION_EXPIRY_INTERVAL
+		},
+		{
+			&param->prop.receive_maximum,
+			&param->prop.rx.has_receive_maximum,
+			MQTT_PROP_RECEIVE_MAXIMUM
+		},
+		{
+			&param->prop.maximum_qos,
+			&param->prop.rx.has_maximum_qos,
+			MQTT_PROP_MAXIMUM_QOS
+		},
+		{
+			&param->prop.retain_available,
+			&param->prop.rx.has_retain_available,
+			MQTT_PROP_RETAIN_AVAILABLE
+		},
+		{
+			&param->prop.maximum_packet_size,
+			&param->prop.rx.has_maximum_packet_size,
+			MQTT_PROP_MAXIMUM_PACKET_SIZE
+		},
+		{
+			&param->prop.assigned_client_id,
+			&param->prop.rx.has_assigned_client_id,
+			MQTT_PROP_ASSIGNED_CLIENT_IDENTIFIER
+		},
+		{
+			&param->prop.topic_alias_maximum,
+			&param->prop.rx.has_topic_alias_maximum,
+			MQTT_PROP_TOPIC_ALIAS_MAXIMUM
+		},
+		{
+			&param->prop.reason_string,
+			&param->prop.rx.has_reason_string,
+			MQTT_PROP_REASON_STRING
+		},
+		{
+			&param->prop.user_prop,
+			&param->prop.rx.has_user_prop,
+			MQTT_PROP_USER_PROPERTY
+		},
+		{
+			&param->prop.wildcard_sub_available,
+			&param->prop.rx.has_wildcard_sub_available,
+			MQTT_PROP_WILDCARD_SUBSCRIPTION_AVAILABLE
+		},
+		{
+			&param->prop.subscription_ids_available,
+			&param->prop.rx.has_subscription_ids_available,
+			MQTT_PROP_SUBSCRIPTION_IDENTIFIER_AVAILABLE
+		},
+		{
+			&param->prop.shared_sub_available,
+			&param->prop.rx.has_shared_sub_available,
+			MQTT_PROP_SHARED_SUBSCRIPTION_AVAILABLE
+		},
+		{
+			&param->prop.server_keep_alive,
+			&param->prop.rx.has_server_keep_alive,
+			MQTT_PROP_SERVER_KEEP_ALIVE
+		},
+		{
+			&param->prop.response_information,
+			&param->prop.rx.has_response_information,
+			MQTT_PROP_RESPONSE_INFORMATION
+		},
+		{
+			&param->prop.server_reference,
+			&param->prop.rx.has_server_reference,
+			MQTT_PROP_SERVER_REFERENCE
+		},
+		{
+			&param->prop.auth_method,
+			&param->prop.rx.has_auth_method,
+			MQTT_PROP_AUTHENTICATION_METHOD
+		},
+		{
+			&param->prop.auth_data,
+			&param->prop.rx.has_auth_data,
+			MQTT_PROP_AUTHENTICATION_DATA
+		}
+	};
+
+	return properties_decode(prop, ARRAY_SIZE(prop), buf);
+}
+#else
+static int connack_properties_decode(struct buf_ctx *buf,
+				     struct mqtt_connack_param *param)
+{
+	ARG_UNUSED(param);
+	ARG_UNUSED(buf);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
 
 int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 		       struct mqtt_connack_param *param)
@@ -224,16 +644,24 @@ int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 		return err_code;
 	}
 
-	if (client->protocol_version == MQTT_VERSION_3_1_1) {
-		param->session_present_flag =
-			flags & MQTT_CONNACK_FLAG_SESSION_PRESENT;
+	param->return_code = ret_code;
 
-		NET_DBG("[CID %p]: session_present_flag: %d", client,
-			 param->session_present_flag);
+	if (client->protocol_version == MQTT_VERSION_3_1_0) {
+		goto out;
 	}
 
-	param->return_code = (enum mqtt_conn_return_code)ret_code;
+	param->session_present_flag = flags & MQTT_CONNACK_FLAG_SESSION_PRESENT;
+	NET_DBG("[CID %p]: session_present_flag: %d", client,
+		param->session_present_flag);
 
+	if (mqtt_is_version_5_0(client)) {
+		err_code = connack_properties_decode(buf, param);
+		if (err_code < 0) {
+			return err_code;
+		}
+	}
+
+out:
 	return 0;
 }
 
@@ -306,7 +734,7 @@ int subscribe_ack_decode(struct buf_ctx *buf, struct mqtt_suback_param *param)
 		return err_code;
 	}
 
-	return unpack_data(buf->end - buf->cur, buf, &param->return_codes);
+	return unpack_raw_data(buf->end - buf->cur, buf, &param->return_codes);
 }
 
 int unsubscribe_ack_decode(struct buf_ctx *buf,
