@@ -21,7 +21,7 @@ from twisterlib.constants import (
     SUPPORTED_SIMS_WITH_EXEC,
 )
 from twisterlib.environment import TwisterEnv
-from twisterlib.error import BuildError, StatusAttributeError
+from twisterlib.error import BuildError, StatusAssignmentError
 from twisterlib.handlers import (
     BinaryHandler,
     DeviceHandler,
@@ -120,7 +120,7 @@ class TestInstance:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError as err:
-            raise StatusAttributeError(self.__class__, value) from err
+            raise StatusAssignmentError(self.__class__, value) from err
 
     def add_filter(self, reason, filter_type):
         self.filters.append({'type': filter_type, 'reason': reason })
