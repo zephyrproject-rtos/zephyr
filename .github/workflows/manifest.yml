@@ -20,7 +20,7 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         working-directory: zephyrproject/zephyr
         run: |
-          pip3 install west
+          pip install west
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
           west init -l . || true
