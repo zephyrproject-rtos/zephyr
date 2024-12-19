@@ -88,7 +88,7 @@ set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
-set(DEVICE_API_LD_TARGET       device_api_ld_target)
+set(ITERABLE_STRUCTS_LD_TARGET iterable_structs_ld_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
@@ -121,6 +121,7 @@ zephyr_include_directories(
   ${STDINCLUDE}
 )
 
+include(${ZEPHYR_BASE}/cmake/zpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
 
 zephyr_include_directories(${SOC_FULL_DIR})
@@ -137,6 +138,7 @@ foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
 endforeach()
 
 zephyr_compile_definitions(
+  ZPP
   KERNEL
   __ZEPHYR__=1
 )
@@ -674,6 +676,7 @@ set(ZEPHYR_CURRENT_CMAKE_DIR)
 get_property(LIBC_LINK_LIBRARIES TARGET zephyr_interface PROPERTY LIBC_LINK_LIBRARIES)
 zephyr_link_libraries(${LIBC_LINK_LIBRARIES})
 
+set(annotations_json ${CMAKE_BINARY_DIR}/zephyr/annotations.json)
 set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/zephyr/syscall_list.h)
 set(edk_syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/edk/include/generated/zephyr/syscall_list.h)
 set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
@@ -891,33 +894,35 @@ gen_kobj(KOBJ_INCLUDE_PATH)
 
 # Generate sections for kernel device subsystems
 set(
-  DEVICE_API_LD_SECTIONS
-  ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.ld
+  ITERABLE_STRUCTS_LD_SECTIONS
+  ${CMAKE_CURRENT_BINARY_DIR}/include/generated/iterable-structs-sections.ld
   )
 
-set(DEVICE_API_LINKER_SECTIONS_CMAKE
-    ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.cmake
+set(ITERABLE_STRUCTS_LINKER_SECTIONS_CMAKE
+    ${CMAKE_CURRENT_BINARY_DIR}/include/generated/iterable-structs-sections.cmake
 )
 
 add_custom_command(
-  OUTPUT ${DEVICE_API_LD_SECTIONS} ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+  OUTPUT ${ITERABLE_STRUCTS_LD_SECTIONS} ${ITERABLE_STRUCTS_LINKER_SECTIONS_CMAKE}
   COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
     --alignment ${CONFIG_LINKER_ITERABLE_SUBALIGN}
-    --input ${struct_tags_json}
+    --input ${annotations_json}
     --tag __subsystem
-    --ld-output ${DEVICE_API_LD_SECTIONS}
-    --cmake-output ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+    --tag __iterable_section_rom
+    --ld-output ${ITERABLE_STRUCTS_LD_SECTIONS}
+    --cmake-output ${ITERABLE_STRUCTS_LINKER_SECTIONS_CMAKE}
+    --cmake-prefix "ITERABLE_STRUCTS"
   DEPENDS
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
-    ${struct_tags_json}
+    ${annotations_json}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
-add_custom_target(${DEVICE_API_LD_TARGET}
-                  DEPENDS ${DEVICE_API_LD_SECTIONS}
-                          ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+add_custom_target(${ITERABLE_STRUCTS_LD_TARGET}
+                  DEPENDS ${ITERABLE_STRUCTS_LD_SECTIONS}
+                          ${ITERABLE_STRUCTS_LINKER_SECTIONS_CMAKE}
 )
 
 # Add a pseudo-target that is up-to-date when all generated headers
@@ -950,7 +955,7 @@ add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
-  ${DEVICE_API_LD_TARGET}
+  ${ITERABLE_STRUCTS_LD_TARGET}
   )
 
 add_custom_command(
