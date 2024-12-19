@@ -319,7 +319,9 @@ static void create_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
 	big_create_param.encryption = false;
 	big_create_param.interval = 10000; /* us */
 	big_create_param.latency = 10; /* milliseconds */
-	big_create_param.packing = 0; /* 0 - sequential; 1 - interleaved */
+	big_create_param.packing = (IS_ENABLED(CONFIG_BT_ISO_TEST_INTERLEAVED) ?
+				    BT_ISO_PACKING_INTERLEAVED :
+				    BT_ISO_PACKING_SEQUENTIAL);
 	big_create_param.framing = 0; /* 0 - unframed; 1 - framed */
 	iso_tx_qos.sdu = CONFIG_BT_ISO_TX_MTU; /* bytes */
 	iso_tx_qos.rtn = 2;
@@ -846,6 +848,7 @@ static void test_iso_recv_main(void)
 	k_sleep(K_MSEC(5000));
 
 	printk("Terminating BIG Sync...");
+
 	struct node_rx_pdu *node_rx = NULL;
 
 	err = ll_big_sync_terminate(big_handle, (void **)&node_rx);
