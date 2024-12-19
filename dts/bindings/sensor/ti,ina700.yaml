@@ -1,0 +1,83 @@
+#
+# Copyright 2024 Esco Medical ApS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    The INA700 is a digital power monitor with an integrated shunt resistor along with a
+    16-bit delta-sigma ADC specifically designed for current sensing applications.
+    The device can measure full-scale currents up to ±15.728 A, over the common-mode voltage
+    range of –0.3 V to +40 V.
+
+    The INA700 reports current, bus voltage, die temperature, power, energy and charge
+    accumulation with a precision ±0.5% integrated oscillator, all while performing the
+    needed calculations in the background. The integrated temperature sensor is ±3°C accurate
+    over the junction temperature range.
+
+compatible: "ti,ina700"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  alert-gpios:
+    type: phandle-array
+    description: |
+      Active-low signal emitted by the current sensor-device.
+      Can be configured to trigger on various conditions.
+
+  adc-mode:
+    type: string
+    description: |
+      ADC channel conversion configuration.
+      Default is the power-on reset value.
+    default: "Temperature, current and voltage continuous"
+    enum:
+      - "Shutdown"
+      - "Voltage single shot"
+      - "Reserved 1"
+      - "Reserved 2"
+      - "Temperature single shot"
+      - "Temperature and voltage single shot"
+      - "Temperature and current single shot"
+      - "Temperature, current and voltage single shot"
+      - "Shutdown continuous"
+      - "Voltage continuous"
+      - "Reserved 3"
+      - "Reserved 4"
+      - "Temperature continuous"
+      - "Temperature and voltage continuous"
+      - "Temperature and current continuous"
+      - "Temperature, current and voltage continuous"
+
+  vbus-conversion-time-us:
+    type: int
+    description: |
+      Vbus conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  vshunt-conversion-time-us:
+    type: int
+    description: |
+      Vshunt conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  temperature-conversion-time-us:
+    type: int
+    description: |
+      Temperature conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  sample-averaging-count:
+    type: int
+    description: |
+      Number of samples to average (applies to all inputs).
+      Default is the power-on reset value.
+    default: 1
+    enum: [1, 4, 16, 64, 128, 256, 512, 1024]

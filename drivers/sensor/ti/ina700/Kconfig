@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Esco Medical ApS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INA700
+	bool "INA700 Current/Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA700_ENABLED
+	select I2C
+	help
+	  Enable driver for INA700 Current/Power Monitor.
+
+if INA700
+
+config INA700_TRIGGER
+	bool "INA230 trigger mode"
+	help
+	  Set to enable trigger mode using gpio interrupt, where interrupts are configured to the
+	  alert gpio. In this mode, the conversion ready interrupt is enabled and converted data
+	  is read automatically in the system work queue and registered trigger callback is called.
+
+endif # INA700
