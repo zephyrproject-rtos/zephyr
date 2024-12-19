@@ -206,9 +206,9 @@ static void spi_tlx_txrx(const struct device *dev, uint32_t len)
 
 	/* prepare SPI module */
 	spi_set_transmode(cfg->peripheral_id, SPI_MODE_WRITE_AND_READ);
-	spi_set_cmd(cfg->peripheral_id, 0);
 	spi_tx_cnt(cfg->peripheral_id, len);
 	spi_rx_cnt(cfg->peripheral_id, len);
+	spi_set_cmd(cfg->peripheral_id, 0);
 
 	/* write and read bytes in chunks */
 	for (int i = 0; i < len; i = i + chunk_size) {
