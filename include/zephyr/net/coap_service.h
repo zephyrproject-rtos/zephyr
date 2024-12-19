@@ -48,7 +48,7 @@ struct coap_service_data {
 	struct coap_pending pending[CONFIG_COAP_SERVICE_PENDING_MESSAGES];
 };
 
-struct coap_service {
+__iterable_section_rom struct coap_service {
 	const char *name;
 	const char *host;
 	uint16_t *port;

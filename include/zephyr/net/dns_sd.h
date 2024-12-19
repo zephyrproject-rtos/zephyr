@@ -212,7 +212,7 @@ extern "C" {
  *
  * @see <a href="https://tools.ietf.org/html/rfc6763">RFC 6763</a>
  */
-struct dns_sd_rec {
+__iterable_section_rom struct dns_sd_rec {
 	/** "<Instance>" - e.g. "My HTTP Server" */
 	const char *instance;
 	/** Top half of the "<Service>" such as "_http" */
