@@ -209,6 +209,54 @@
 		status = "disabled";
 	};
 
+	i2c1: i2c@30a20000 {
+		compatible = "nxp,ii2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x30a20000 0x10000>;
+		interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_I2C1_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		status = "disabled";
+	};
+
+	i2c2: i2c@30a30000 {
+		compatible = "nxp,ii2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x30a30000 0x10000>;
+		interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_I2C2_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		status = "disabled";
+	};
+
+	i2c3: i2c@30a40000 {
+		compatible = "nxp,ii2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x30a40000 0x10000>;
+		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_I2C3_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		status = "disabled";
+	};
+
+	i2c4: i2c@30a50000 {
+		compatible = "nxp,ii2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x30a50000 0x10000>;
+		interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_I2C4_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		status = "disabled";
+	};
+
 	rdc: rdc@303d0000 {
 		compatible = "nxp,rdc";
 		reg = <0x303d0000 DT_SIZE_K(64)>;
