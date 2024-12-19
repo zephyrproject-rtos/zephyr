@@ -70,6 +70,14 @@ tests:
   sample.net.sockets.echo_client.nrf_802154:
     extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow: nrf52840dk/nrf52840
+  sample.net.sockets.echo_client.mcxw71_openthread:
+    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
+    slow: true
+    tags:
+      - net
+      - openthread
+    platform_allow: frdm_mcxw71
+    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   sample.net.sockets.echo_client.nrf_openthread:
     extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
     slow: true
