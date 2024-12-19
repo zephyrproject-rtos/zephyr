@@ -1190,3 +1190,9 @@ test_i2c_hs400x: hs400x@a6 {
 	compatible = "renesas,hs400x";
 	reg = <0xa6>;
 };
+
+test_i2c_ina700: ina700@a7 {
+	compatible = "ti,ina700";
+	reg = <0xa7>;
+	alert-gpios = <&test_gpio 0 0>;
+};
