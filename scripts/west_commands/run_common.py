@@ -6,6 +6,7 @@
 '''Common code used by commands which execute runners.
 '''
 
+import importlib.util
 import re
 import argparse
 import logging
@@ -28,7 +29,8 @@ from runners.core import FileType
 from runners.core import BuildConfiguration
 import yaml
 
-from zephyr_ext_common import ZEPHYR_SCRIPTS
+import zephyr_module
+from zephyr_ext_common import ZEPHYR_BASE, ZEPHYR_SCRIPTS
 
 # Runners depend on edtlib. Make sure the copy in the tree is
 # available to them before trying to import any.
@@ -106,6 +108,13 @@ class SocBoardFilesProcessing:
     board: bool = False
     priority: int = IGNORED_RUN_ONCE_PRIORITY
     yaml: object = None
+
+def import_from_path(module_name, file_path):
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 def command_verb(command):
     return "flash" if command.name == "flash" else "debug"
@@ -196,6 +205,14 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
     if user_args.context:
         dump_context(command, user_args, user_runner_args)
         return
+
+    # Import external module runners
+    for module in zephyr_module.parse_modules(ZEPHYR_BASE, command.manifest):
+        runners_ext = module.meta.get("runners", [])
+        for runner in runners_ext:
+            import_from_path(
+                module.meta.get("name", "runners_ext"), Path(module.project) / runner["file"]
+            )
 
     build_dir = get_build_dir(user_args)
     if not user_args.skip_rebuild:
