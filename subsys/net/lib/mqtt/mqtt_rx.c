@@ -78,7 +78,7 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_PUBACK!", client);
 
 		evt.type = MQTT_EVT_PUBACK;
-		err_code = publish_ack_decode(buf, &evt.param.puback);
+		err_code = publish_ack_decode(client, buf, &evt.param.puback);
 		evt.result = err_code;
 		break;
 
@@ -86,7 +86,8 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_PUBREC!", client);
 
 		evt.type = MQTT_EVT_PUBREC;
-		err_code = publish_receive_decode(buf, &evt.param.pubrec);
+		err_code = publish_receive_decode(client, buf,
+						  &evt.param.pubrec);
 		evt.result = err_code;
 		break;
 
@@ -94,7 +95,8 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_PUBREL!", client);
 
 		evt.type = MQTT_EVT_PUBREL;
-		err_code = publish_release_decode(buf, &evt.param.pubrel);
+		err_code = publish_release_decode(client, buf,
+						  &evt.param.pubrel);
 		evt.result = err_code;
 		break;
 
@@ -102,7 +104,8 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_PUBCOMP!", client);
 
 		evt.type = MQTT_EVT_PUBCOMP;
-		err_code = publish_complete_decode(buf, &evt.param.pubcomp);
+		err_code = publish_complete_decode(client, buf,
+						   &evt.param.pubcomp);
 		evt.result = err_code;
 		break;
 
