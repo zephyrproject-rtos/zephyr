@@ -378,6 +378,143 @@
 				status = "disabled";
 			};
 		};
+
+		gpt32e0: gpt32e@50048000 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x50048000 0xa4>;
+			channel = <0>;
+			interrupts = <128 1>, <129 1>, <130 1>, <131 1>, <132 1>,
+				     <133 1>, <134 1>, <135 1>, <136 1>, <137 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+		gpt32e1: gpt32e@50048100 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x50048100 0xa4>;
+			channel = <1>;
+			interrupts = <141 1>, <142 1>, <143 1>, <144 1>, <145 1>,
+				     <146 1>, <147 1>, <148 1>, <149 1>, <150 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+		gpt32e2: gpt32e@50048200 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x50048200 0xa4>;
+			channel = <2>;
+			interrupts = <154 1>, <155 1>, <156 1>, <157 1>, <158 1>,
+				     <159 1>, <160 1>, <161 1>, <162 1>, <163 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+		gpt32e3: gpt32e@50048300 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x50048300 0xa4>;
+			channel = <3>;
+			interrupts = <167 1>, <168 1>, <169 1>, <170 1>, <171 1>,
+				     <172 1>, <173 1>, <174 1>, <175 1>, <176 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+		gpt32e4: gpt32e@50048400 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x50048400 0xa4>;
+			channel = <4>;
+			interrupts = <180 1>, <181 1>, <182 1>, <183 1>, <184 1>,
+				     <185 1>, <186 1>, <187 1>, <188 1>, <189 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+		gpt32e5: gpt32e@50048500 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x50048500 0xa4>;
+			channel = <5>;
+			interrupts = <193 1>, <194 1>, <195 1>, <196 1>, <197 1>,
+				     <198 1>, <199 1>, <200 1>, <201 1>, <202 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+		gpt32e6: gpt32e@50048600 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x50048600 0xa4>;
+			channel = <6>;
+			interrupts = <206 1>, <207 1>, <208 1>, <209 1>, <210 1>,
+				     <211 1>, <212 1>, <213 1>, <214 1>, <215 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+		gpt32e7: gpt32e@50048700 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x50048700 0xa4>;
+			channel = <7>;
+			interrupts = <219 1>, <220 1>, <221 1>, <222 1>, <223 1>,
+				     <224 1>, <225 1>, <226 1>, <227 1>, <228 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
 	};
 };
 
