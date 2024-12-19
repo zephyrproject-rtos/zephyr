@@ -55,6 +55,35 @@ extern "C" {
 #define MQTT_PKT_TYPE_PINGRSP     0xD0
 #define MQTT_PKT_TYPE_DISCONNECT  0xE0
 
+/**@brief MQTT Property Types. */
+#define MQTT_PROP_PAYLOAD_FORMAT_INDICATOR          0x01
+#define MQTT_PROP_MESSAGE_EXPIRY_INTERVAL           0x02
+#define MQTT_PROP_CONTENT_TYPE                      0x03
+#define MQTT_PROP_RESPONSE_TOPIC                    0x08
+#define MQTT_PROP_CORRELATION_DATA                  0x09
+#define MQTT_PROP_SUBSCRIPTION_IDENTIFIER           0x0B
+#define MQTT_PROP_SESSION_EXPIRY_INTERVAL           0x11
+#define MQTT_PROP_ASSIGNED_CLIENT_IDENTIFIER        0x12
+#define MQTT_PROP_SERVER_KEEP_ALIVE                 0x13
+#define MQTT_PROP_AUTHENTICATION_METHOD             0x15
+#define MQTT_PROP_AUTHENTICATION_DATA               0x16
+#define MQTT_PROP_REQUEST_PROBLEM_INFORMATION       0x17
+#define MQTT_PROP_WILL_DELAY_INTERVAL               0x18
+#define MQTT_PROP_REQUEST_RESPONSE_INFORMATION      0x19
+#define MQTT_PROP_RESPONSE_INFORMATION              0x1A
+#define MQTT_PROP_SERVER_REFERENCE                  0x1C
+#define MQTT_PROP_REASON_STRING                     0x1F
+#define MQTT_PROP_RECEIVE_MAXIMUM                   0x21
+#define MQTT_PROP_TOPIC_ALIAS_MAXIMUM               0x22
+#define MQTT_PROP_TOPIC_ALIAS                       0x23
+#define MQTT_PROP_MAXIMUM_QOS                       0x24
+#define MQTT_PROP_RETAIN_AVAILABLE                  0x25
+#define MQTT_PROP_USER_PROPERTY                     0x26
+#define MQTT_PROP_MAXIMUM_PACKET_SIZE               0x27
+#define MQTT_PROP_WILDCARD_SUBSCRIPTION_AVAILABLE   0x28
+#define MQTT_PROP_SUBSCRIPTION_IDENTIFIER_AVAILABLE 0x29
+#define MQTT_PROP_SHARED_SUBSCRIPTION_AVAILABLE     0x2A
+
 /**@brief Masks for MQTT header flags. */
 #define MQTT_HEADER_DUP_MASK     0x08
 #define MQTT_HEADER_QOS_MASK     0x06
@@ -146,6 +175,12 @@ enum mqtt_state {
 	/** MQTT Connection successful. */
 	MQTT_STATE_CONNECTED            = 0x00000004,
 };
+
+static inline int mqtt_is_version_5_0(const struct mqtt_client *client)
+{
+	return (IS_ENABLED(CONFIG_MQTT_VERSION_5_0) &&
+		client->protocol_version == MQTT_VERSION_5_0);
+}
 
 /**@brief Notify application about MQTT event.
  *
