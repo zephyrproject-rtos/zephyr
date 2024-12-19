@@ -15,7 +15,7 @@
   data-arch="{{ board.archs | join(" ") }}"
   data-vendor="{{ board.vendor }}"
   data-socs="{{ board.socs | join(" ") }}"
-  tabindex="0">
+  data-supported-features="{{ board.supported_features | join(" ") }}" tabindex="0">
   <div class="vendor">{{ vendors[board.vendor] }}</div>
   {% if board.image -%}
   <img alt="A picture of the {{ board.full_name }} board"
