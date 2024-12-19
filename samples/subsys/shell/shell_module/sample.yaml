@@ -15,7 +15,7 @@ tests:
       - native_sim
       - intel_socfpga_agilex5_socdk
   sample.shell.shell_module.usb:
-    depends_on: usb_device
+    depends_on: usbd
     tags:
       - shell
       - usb

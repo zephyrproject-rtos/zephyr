@@ -10,6 +10,7 @@ config USBD_CDC_ACM_CLASS
 	select SERIAL_SUPPORT_INTERRUPT
 	select RING_BUFFER
 	select UART_INTERRUPT_DRIVEN
+	default y
 	help
 	  USB device CDC ACM class implementation.
 
@@ -20,6 +21,14 @@ config USBD_CDC_ACM_STACK_SIZE
 	default 1024
 	help
 	  USB CDC ACM workqueue stack size.
+
+config USBD_CDC_ACM_TX_DELAY
+	int
+	range 1 1000
+	default 100
+	help
+	  Time in milliseconds to wait before sending actual payload to host.
+	  This is needed to prevent tty ECHO on Linux.
 
 module = USBD_CDC_ACM
 module-str = usbd cdc_acm
