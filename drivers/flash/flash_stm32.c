@@ -19,6 +19,11 @@
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
+#include <stm32_ll_utils.h>
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <stm32_ll_icache.h>
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 #include <zephyr/logging/log.h>
 
 #include "flash_stm32.h"
@@ -431,6 +436,29 @@ flash_stm32_get_parameters(const struct device *dev)
 	return &flash_stm32_parameters;
 }
 
+/* Gives the total logical device size in bytes and return 0. */
+static int flash_stm32_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
+	 * This is required on STM32H5, where the manufacturing flash must be
+	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
+	 */
+	LL_ICACHE_Disable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+	*size = (uint64_t)(LL_GetFlashSize() * 1024);
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
+	LL_ICACHE_Enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+	return 0;
+}
+
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
 	/* Getting clocks information from device tree description depending
@@ -449,6 +477,7 @@ static DEVICE_API(flash, flash_stm32_api) = {
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
 	.get_parameters = flash_stm32_get_parameters,
+	.get_size = flash_stm32_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif
