@@ -20,10 +20,11 @@
  */
 
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
-#include <modbus_internal.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+
+#include <modbus_internal.h>
 LOG_MODULE_REGISTER(modbus_s, CONFIG_MODBUS_LOG_LEVEL);
 
 /*
@@ -74,6 +75,9 @@ static void update_noresp_ctr(struct modbus_context *ctx)
 #define update_noresp_ctr(...)
 #endif /* CONFIG_MODBUS_FC08_DIAGNOSTIC */
 
+#define HAS_MBS_USER_CB(_cb_name)                                                                  \
+	((ctx->mbs_user_cb != NULL) && (ctx->mbs_user_cb->_cb_name != NULL))
+
 /*
  * This function sets the indicated error response code into the response frame.
  * Then the routine is called to calculate the error check value.
@@ -104,6 +108,7 @@ static void mbs_exception_rsp(struct modbus_context *ctx, uint8_t excep_code)
  *  Byte count            1 Bytes
  *  Coil status           N * 1 Byte
  */
+#ifdef CONFIG_MODBUS_FC01_COIL_RD
 static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 {
 	const uint16_t coils_limit = 2000;
@@ -122,7 +127,7 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->coil_rd == NULL) {
+	if (!HAS_MBS_USER_CB(coil_rd)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -189,6 +194,7 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 
 	return true;
 }
+#endif
 
 /*
  * FC 02 (0x02) Read Discrete Inputs
@@ -203,6 +209,7 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
  *  Byte count            1 Bytes
  *  Input status           N * 1 Byte
  */
+#ifdef CONFIG_MODBUS_FC02_DI_RD
 static bool mbs_fc02_di_read(struct modbus_context *ctx)
 {
 	const uint16_t di_limit = 2000;
@@ -221,7 +228,7 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->discrete_input_rd == NULL) {
+	if (!HAS_MBS_USER_CB(discrete_input_rd)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -290,6 +297,7 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 
 	return true;
 }
+#endif
 
 /*
  * 03 (0x03) Read Holding Registers
@@ -304,6 +312,7 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
  *  Byte count            1 Bytes
  *  Register Value        N * 2 Byte
  */
+#ifdef CONFIG_MODBUS_FC03_HOLDING_REG_RD
 static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 {
 	const uint16_t regs_limit = 125;
@@ -323,8 +332,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	reg_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	if (reg_qty == 0 || reg_qty > regs_limit) {
-		LOG_ERR("Wrong register quantity, %u (limit is %u)",
-			reg_qty, regs_limit);
+		LOG_ERR("Wrong register quantity, %u (limit is %u)", reg_qty, regs_limit);
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -332,17 +340,16 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	/* Get number of bytes needed for response. */
 	num_bytes = (uint8_t)(reg_qty * sizeof(uint16_t));
 
-	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) || !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
 		/* Read integer register */
-		if (ctx->mbs_user_cb->holding_reg_rd == NULL) {
+		if (!HAS_MBS_USER_CB(holding_reg_rd)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
 
 	} else {
 		/* Read floating-point register */
-		if (ctx->mbs_user_cb->holding_reg_rd_fp == NULL) {
+		if (!HAS_MBS_USER_CB(holding_reg_rd_fp)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
@@ -397,11 +404,11 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
 			return true;
 		}
-
 	}
 
 	return true;
 }
+#endif
 
 /*
  * 04 (0x04) Read Input Registers
@@ -416,6 +423,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
  *  Byte count            1 Bytes
  *  Register Value        N * 2 Byte
  */
+#ifdef CONFIG_MODBUS_FC04_IN_REG_RD
 static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 {
 	const uint16_t regs_limit = 125;
@@ -435,8 +443,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	reg_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	if (reg_qty == 0 || reg_qty > regs_limit) {
-		LOG_ERR("Wrong register quantity, %u (limit is %u)",
-			reg_qty, regs_limit);
+		LOG_ERR("Wrong register quantity, %u (limit is %u)", reg_qty, regs_limit);
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -444,17 +451,16 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	/* Get number of bytes needed for response. */
 	num_bytes = (uint8_t)(reg_qty * sizeof(uint16_t));
 
-	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) || !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
 		/* Read integer register */
-		if (ctx->mbs_user_cb->input_reg_rd == NULL) {
+		if (!HAS_MBS_USER_CB(input_reg_rd)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
 
 	} else {
 		/* Read floating-point register */
-		if (ctx->mbs_user_cb->input_reg_rd_fp == NULL) {
+		if (!HAS_MBS_USER_CB(input_reg_rd_fp)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
@@ -513,6 +519,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 
 	return true;
 }
+#endif
 
 /*
  * FC 05 (0x05) Write Single Coil
@@ -527,6 +534,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
  *  Output Address        2 Bytes
  *  Output Value          2 Bytes
  */
+#ifdef CONFIG_MODBUS_FC05_COIL_WR
 static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 {
 	const uint8_t request_len = 4;
@@ -541,7 +549,7 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->coil_wr == NULL) {
+	if (!HAS_MBS_USER_CB(coil_wr)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -572,6 +580,7 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 
 	return true;
 }
+#endif
 
 /*
  * 06 (0x06) Write Single Register
@@ -586,6 +595,7 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
  *  Register Address      2 Bytes
  *  Register Value        2 Bytes
  */
+#ifdef CONFIG_MODBUS_FC06_HOLDING_REG_WR
 static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 {
 	const uint8_t request_len = 4;
@@ -599,7 +609,7 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->holding_reg_wr == NULL) {
+	if (!HAS_MBS_USER_CB(holding_reg_wr)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -622,6 +632,7 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 
 	return true;
 }
+#endif
 
 /*
  * 08 (0x08) Diagnostics
@@ -724,6 +735,7 @@ static bool mbs_fc08_diagnostics(struct modbus_context *ctx)
  *  Starting Address      2 Bytes
  *  Quantity of Outputs   2 Bytes
  */
+#ifdef CONFIG_MODBUS_FC15_COILS_WR
 static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 {
 	const uint16_t coils_limit = 2000;
@@ -743,7 +755,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->coil_wr == NULL) {
+	if (!HAS_MBS_USER_CB(coil_wr)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -760,8 +772,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 	}
 
 	/* Be sure byte count is valid for quantity of coils. */
-	if (((((coil_qty - 1) / 8) + 1) !=  num_bytes) ||
-	    (ctx->rx_adu.length  != (num_bytes + 5))) {
+	if (((((coil_qty - 1) / 8) + 1) != num_bytes) || (ctx->rx_adu.length != (num_bytes + 5))) {
 		LOG_ERR("Mismatch in the number of coils");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
@@ -783,8 +794,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 			coil_state = false;
 		}
 
-		err = ctx->mbs_user_cb->coil_wr(coil_addr + coil_cntr,
-						coil_state);
+		err = ctx->mbs_user_cb->coil_wr(coil_addr + coil_cntr, coil_state);
 
 		if (err != 0) {
 			LOG_INF("Coil address not supported");
@@ -805,6 +815,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 
 	return true;
 }
+#endif
 
 /*
  * FC16 (0x10) Write Multiple registers
@@ -826,6 +837,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
  * the 'Daniels Flow Meter' extensions.  This means that each register
  * requested is considered as a 32-bit IEEE-754 floating-point format.
  */
+#ifdef CONFIG_MODBUS_FC16_HOLDING_REGS_WR
 static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 {
 	const uint16_t regs_limit = 125;
@@ -853,16 +865,15 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 		return true;
 	}
 
-	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) || !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
 		/* Write integer register */
-		if (ctx->mbs_user_cb->holding_reg_wr == NULL) {
+		if (!HAS_MBS_USER_CB(holding_reg_wr)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
 	} else {
 		/* Write floating-point register */
-		if (ctx->mbs_user_cb->holding_reg_wr_fp == NULL) {
+		if (!HAS_MBS_USER_CB(holding_reg_wr_fp)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
@@ -924,6 +935,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 
 	return true;
 }
+#endif
 
 static bool mbs_try_user_fc(struct modbus_context *ctx, uint8_t fc)
 {
@@ -940,7 +952,7 @@ static bool mbs_try_user_fc(struct modbus_context *ctx, uint8_t fc)
 
 			p->excep_code = MODBUS_EXC_NONE;
 			rval = p->cb(iface, &ctx->rx_adu, &ctx->tx_adu, &p->excep_code,
-					p->user_data);
+				     p->user_data);
 
 			if (p->excep_code != MODBUS_EXC_NONE) {
 				LOG_INF("Custom handler failed with code %d", p->excep_code);
@@ -990,41 +1002,57 @@ bool modbus_server_handler(struct modbus_context *ctx)
 	update_server_msg_ctr(ctx);
 
 	switch (fc) {
+#ifdef CONFIG_MODBUS_FC01_COIL_RD
 	case MODBUS_FC01_COIL_RD:
 		send_reply = mbs_fc01_coil_read(ctx);
 		break;
+#endif
 
+#ifdef CONFIG_MODBUS_FC02_DI_RD
 	case MODBUS_FC02_DI_RD:
 		send_reply = mbs_fc02_di_read(ctx);
 		break;
+#endif
 
+#ifdef CONFIG_MODBUS_FC03_HOLDING_REG_RD
 	case MODBUS_FC03_HOLDING_REG_RD:
 		send_reply = mbs_fc03_hreg_read(ctx);
 		break;
+#endif
 
+#ifdef CONFIG_MODBUS_FC04_IN_REG_RD
 	case MODBUS_FC04_IN_REG_RD:
 		send_reply = mbs_fc04_inreg_read(ctx);
 		break;
+#endif
 
+#ifdef CONFIG_MODBUS_FC05_COIL_WR
 	case MODBUS_FC05_COIL_WR:
 		send_reply = mbs_fc05_coil_write(ctx);
 		break;
+#endif
 
+#ifdef CONFIG_MODBUS_FC06_HOLDING_REG_WR
 	case MODBUS_FC06_HOLDING_REG_WR:
 		send_reply = mbs_fc06_hreg_write(ctx);
 		break;
+#endif
 
 	case MODBUS_FC08_DIAGNOSTICS:
 		send_reply = mbs_fc08_diagnostics(ctx);
 		break;
 
+#ifdef CONFIG_MODBUS_FC15_COILS_WR
 	case MODBUS_FC15_COILS_WR:
 		send_reply = mbs_fc15_coils_write(ctx);
 		break;
+#endif
 
+#ifdef CONFIG_MODBUS_FC16_HOLDING_REGS_WR
 	case MODBUS_FC16_HOLDING_REGS_WR:
 		send_reply = mbs_fc16_hregs_write(ctx);
 		break;
+#endif
 
 	default:
 		send_reply = mbs_try_user_fc(ctx, fc);
