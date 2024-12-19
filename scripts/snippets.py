@@ -48,11 +48,11 @@ class Snippet:
     appends: Appends = field(default_factory=_new_append)
     board2appends: Dict[str, Appends] = field(default_factory=_new_board2appends)
 
-    def process_data(self, pathobj: Path, snippet_data: dict):
+    def process_data(self, pathobj: Path, snippet_data: dict, sysbuild: bool):
         '''Process the data in a snippet.yml file, after it is loaded into a
         python object and validated by pykwalify.'''
         def append_value(variable, value):
-            if variable in ('EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
+            if variable in ('SB_EXTRA_CONF_FILE', 'EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
                 path = pathobj.parent / value
                 if not path.is_file():
                     _err(f'snippet file {pathobj}: {variable}: file not found: {path}')
@@ -62,14 +62,18 @@ class Snippet:
             _err(f'unknown append variable: {variable}')
 
         for variable, value in snippet_data.get('append', {}).items():
-            self.appends[variable].append(append_value(variable, value))
+            if (sysbuild is True and variable[0:3] == 'SB_') or \
+            (sysbuild is False and variable[0:3] != 'SB_'):
+                self.appends[variable].append(append_value(variable, value))
         for board, settings in snippet_data.get('boards', {}).items():
             if board.startswith('/') and not board.endswith('/'):
                 _err(f"snippet file {pathobj}: board {board} starts with '/', so "
                      "it must end with '/' to use a regular expression")
             for variable, value in settings.get('append', {}).items():
-                self.board2appends[board][variable].append(
-                    append_value(variable, value))
+                if (sysbuild is True and variable[0:3] == 'SB_') or \
+                (sysbuild is False and variable[0:3] != 'SB_'):
+                    self.board2appends[board][variable].append(
+                        append_value(variable, value))
 
 class Snippets(UserDict):
     '''Type for all the information we have discovered about all snippets.
@@ -212,6 +216,8 @@ def parse_args():
     parser.add_argument('--cmake-out', type=Path,
                         help='''file to write cmake output to; include()
                         this file after calling this script''')
+    parser.add_argument('--sysbuild', action="store_true",
+                        help='''set if this is running as sysbuild''')
     return parser.parse_args()
 
 def setup_logging():
@@ -234,7 +240,7 @@ def process_snippets(args: argparse.Namespace) -> Snippets:
     # Process each path in snippet_root in order, adjusting
     # snippets as needed for each one.
     for root in args.snippet_root:
-        process_snippets_in(root, snippets)
+        process_snippets_in(root, snippets, args.sysbuild)
 
     return snippets
 
@@ -250,11 +256,11 @@ def find_snippets_in_roots(requested_snippets, snippet_roots) -> Snippets:
     # Process each path in snippet_root in order, adjusting
     # snippets as needed for each one.
     for root in snippet_roots:
-        process_snippets_in(root, snippets)
+        process_snippets_in(root, snippets, False)
 
     return snippets
 
-def process_snippets_in(root_dir: Path, snippets: Snippets) -> None:
+def process_snippets_in(root_dir: Path, snippets: Snippets, sysbuild: bool) -> None:
     '''Process snippet.yml files in *root_dir*,
     updating *snippets* as needed.'''
 
@@ -276,7 +282,7 @@ def process_snippets_in(root_dir: Path, snippets: Snippets) -> None:
         name = snippet_data['name']
         if name not in snippets:
             snippets[name] = Snippet(name=name)
-        snippets[name].process_data(snippet_yml, snippet_data)
+        snippets[name].process_data(snippet_yml, snippet_data, sysbuild)
         snippets.paths.add(snippet_yml)
 
 def load_snippet_yml(snippet_yml: Path) -> dict:

@@ -31,6 +31,7 @@ zephyr_get(BOARD_ROOT MERGE)
 zephyr_get(SOC_ROOT MERGE)
 zephyr_get(ARCH_ROOT MERGE)
 zephyr_get(SCA_ROOT MERGE)
+zephyr_get(SNIPPET_ROOT MERGE)
 
 # Convert paths to absolute, relative from APP_DIR
 zephyr_file(APPLICATION_ROOT MODULE_EXT_ROOT BASE_DIR ${APP_DIR})
@@ -38,6 +39,7 @@ zephyr_file(APPLICATION_ROOT BOARD_ROOT BASE_DIR ${APP_DIR})
 zephyr_file(APPLICATION_ROOT SOC_ROOT BASE_DIR ${APP_DIR})
 zephyr_file(APPLICATION_ROOT ARCH_ROOT BASE_DIR ${APP_DIR})
 zephyr_file(APPLICATION_ROOT SCA_ROOT BASE_DIR ${APP_DIR})
+zephyr_file(APPLICATION_ROOT SNIPPET_ROOT BASE_DIR ${APP_DIR})
 
 # Sysbuild must ensure any locally defined variables in sysbuild/CMakeLists.txt
 # have been added to the cache in order for the settings to propagate to images.
@@ -60,4 +62,8 @@ endif()
 
 if(DEFINED SCA_ROOT)
   set(SCA_ROOT ${SCA_ROOT} CACHE PATH "Sysbuild adjusted SCA_ROOT" FORCE)
+endif()
+
+if(DEFINED SNIPPET_ROOT)
+  set(SNIPPET_ROOT ${SNIPPET_ROOT} CACHE PATH "Sysbuild adjusted SNIPPET_ROOT" FORCE)
 endif()
