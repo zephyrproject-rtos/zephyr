@@ -6409,7 +6409,7 @@ static int bt_gatt_clear_cf(uint8_t id, const bt_addr_le_t *addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		return bt_settings_delete_ccc(id, addr);
+		return bt_settings_delete_cf(id, addr);
 	}
 
 	return 0;
