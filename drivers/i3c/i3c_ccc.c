@@ -860,14 +860,14 @@ int i3c_ccc_do_getmxds(const struct i3c_device_desc *target,
 		len = ccc_tgt_payload.num_xfer;
 
 		if ((fmt == GETMXDS_FORMAT_1) || (fmt == GETMXDS_FORMAT_2)) {
-			if (len == sizeof(((union i3c_ccc_getmxds *)0)->fmt1)) {
+			if (len == SIZEOF_FIELD(union i3c_ccc_getmxds, fmt1)) {
 				mxds->fmt1.maxwr = data[0];
 				mxds->fmt1.maxrd = data[1];
 				/* It is unknown wither format 1 or format 2 is returned ahead of
 				 * time
 				 */
 				memset(&mxds->fmt2.maxrdturn, 0, sizeof(mxds->fmt2.maxrdturn));
-			} else if (len == sizeof(((union i3c_ccc_getmxds *)0)->fmt2)) {
+			} else if (len == SIZEOF_FIELD(union i3c_ccc_getmxds, fmt2)) {
 				mxds->fmt2.maxwr = data[0];
 				mxds->fmt2.maxrd = data[1];
 				memcpy(&mxds->fmt2.maxrdturn, &data[2],
