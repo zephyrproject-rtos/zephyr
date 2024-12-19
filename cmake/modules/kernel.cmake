@@ -250,3 +250,17 @@ if("${CMAKE_EXTRA_GENERATOR}" STREQUAL "Eclipse CDT4")
   include(${ZEPHYR_BASE}/cmake/ide/eclipse_cdt4_generator_amendment.cmake)
   eclipse_cdt4_generator_amendment(1)
 endif()
+
+if(CONFIG_NET_CONFIG_SETTINGS)
+  # If network configuration library is enabled, check if the yaml file
+  # is present and use it to generate an initial configuration. Otherwise
+  # use the .config file to generate the initial configuration.
+  if(NOT NET_INIT_CONFIG_FILE)
+    set(NET_INIT_CONFIG_FILE ${APPLICATION_SOURCE_DIR}/net-init-config.yaml)
+  endif()
+  if(EXISTS ${APPLICATION_SOURCE_DIR}/net-init-config.yaml)
+    network_generate_config_file_for_target(app ${NET_INIT_CONFIG_FILE})
+  else()
+    network_generate_config_file_for_target(app ${DOTCONFIG})
+  endif()
+endif()
