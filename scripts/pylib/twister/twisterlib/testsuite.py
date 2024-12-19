@@ -13,7 +13,7 @@ from enum import Enum
 from pathlib import Path
 
 from twisterlib.environment import canonical_zephyr_base
-from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
+from twisterlib.error import StatusAssignmentError, TwisterException, TwisterRuntimeError
 from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.statuses import TwisterStatus
 
@@ -401,7 +401,7 @@ class TestCase(DisablePyTestCollectionMixin):
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError as err:
-            raise StatusAttributeError(self.__class__, value) from err
+            raise StatusAssignmentError(self.__class__, value) from err
 
     def __lt__(self, other):
         return self.name < other.name
@@ -469,7 +469,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError as err:
-            raise StatusAttributeError(self.__class__, value) from err
+            raise StatusAssignmentError(self.__class__, value) from err
 
     def load(self, data):
         for k, v in data.items():
