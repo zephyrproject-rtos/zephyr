@@ -182,6 +182,14 @@
 
 zephyr_udc0: &usb1 {
 	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <4>;
+	tx-cal-45-dp-ohms = <7>;
+	tx-cal-45-dm-ohms = <7>;
 };
 
 &lpcmp0 {

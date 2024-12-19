@@ -582,6 +582,11 @@
 			/* MCXN94x ROM Flash API supports writing of 128B pages. */
 			write-block-size = <128>;
 		};
+
+		uuid: uuid@1100000 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x1100000 0x10>;
+		};
 	};
 
 	os_timer: timers@49000 {
@@ -872,6 +877,12 @@
 		interrupts = <67 0>;
 		interrupt-names = "usb_otg";
 		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usbphy1: usbphy@10a000 {
+		compatible = "nxp,usbphy";
+		reg = <0x10a000 0x1000>;
 		status = "disabled";
 	};
 
