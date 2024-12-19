@@ -1210,9 +1210,12 @@ class ProjectBuilder(FilterBuilder):
                         # The 1st capture group is new ztest suite name.
                         # The 2nd capture group is new ztest unit test name.
                         new_ztest_suite = m_[1]
-                        if new_ztest_suite not in self.instance.testsuite.ztest_suite_names:
-                            logger.warning(
-                                f"Unexpected Ztest suite '{new_ztest_suite}' "
+                        if self.trace and \
+                           new_ztest_suite not in self.instance.testsuite.ztest_suite_names:
+                            # This can happen if a ZTEST_SUITE name is macro-generated
+                            # in the test source files, e.g. based on DT information.
+                            logger.debug(
+                                f"Unexpected Ztest suite '{new_ztest_suite}' is "
                                 f"not present in: {self.instance.testsuite.ztest_suite_names}"
                             )
                         test_func_name = m_[2].replace("test_", "", 1)
@@ -1222,10 +1225,12 @@ class ProjectBuilder(FilterBuilder):
                         detected_cases.append(testcase_id)
 
         logger.debug(
-            f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases."
+            f"Test instance {self.instance.name} already has {len(self.instance.testcases)} "
+            f"testcase(s) known: {self.instance.testcases}"
         )
         if detected_cases:
-            logger.debug(f"Detected Ztest cases: [{', '.join(detected_cases)}] in {elf_file}")
+            logger.debug(f"Detected {len(detected_cases)} Ztest case(s): "
+                         f"[{', '.join(detected_cases)}] in {elf_file}")
             tc_keeper = {
                 tc.name: {'status': tc.status, 'reason': tc.reason}
                 for tc in self.instance.testcases
