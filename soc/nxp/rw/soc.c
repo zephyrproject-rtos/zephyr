@@ -37,6 +37,7 @@ extern void z_arm_debug_monitor(void);
 extern void z_arm_pendsv(void);
 extern void sys_clock_isr(void);
 extern void z_arm_exc_spurious(void);
+extern void nxp_nbu_init(void);
 
 __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
@@ -437,12 +438,16 @@ void soc_early_init_hook(void)
 	/* Initialize clock */
 	clock_init();
 
-#if defined(CONFIG_ADC_MCUX_GAU) ||  defined(CONFIG_DAC_MCUX_GAU)
+#if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU)
 	POWER_PowerOnGau();
 #endif
 
 #if CONFIG_PM
 	nxp_rw6xx_power_init();
+#endif
+
+#if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
+	nxp_nbu_init();
 #endif
 
 #endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
