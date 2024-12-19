@@ -1936,7 +1936,9 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 	struct ssp_intel_ext_ctl *ext;
 #if SSP_IP_VER >= SSP_IP_VER_1_5
 	struct ssp_intel_link_ctl *link;
+#if SSP_IP_VER > SSP_IP_VER_1_5
 	struct dai_intel_ssp_plat_data *ssp = dai_get_plat_data(dp);
+#endif
 #endif
 
 	for (i = 0; i < aux_len; i += hop) {
