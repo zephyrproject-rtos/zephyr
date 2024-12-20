@@ -36,6 +36,14 @@
 				reg = <1>;
 				irq-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_rt1715: rt1715@2 {
+				compatible = "richtek,rt1715";
+				reg = <2>;
+				irq-gpios = <&test_gpio 0 0>;
+				vconn-ctrl-gpios = <&test_gpio 0 0>;
+				vconn-disc-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
