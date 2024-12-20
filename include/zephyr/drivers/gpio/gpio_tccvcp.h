@@ -9,7 +9,6 @@
 
 /*
  * GLOBAL DEFINITIONS
- *
  */
 
 /*
@@ -150,54 +149,52 @@
 
 /*
  * FUNCTION PROTOTYPES
- *
  */
 
 /*
  * vcp_gpio_config
  *
- * @param    [In] uiPort     :   Gpio port index, GPIO_GPX(X)
- * @param    [In] uiConfig   :   Gpio configuration options
+ * @param    [In] port     :   Gpio port index, GPIO_GPX(X)
+ * @param    [In] config   :   Gpio configuration options
  * @return
- *
  * Notes
  */
-int32_t vcp_gpio_config(uint32_t uiPort, uint32_t uiConfig);
+int32_t vcp_gpio_config(uint32_t port, uint32_t config);
 
 /*
  * vcp_gpio_set
  *
- * @param    [In] uiPort     :   Gpio port index, GPIO_GPX(X)
- * @param    [In] uiData     :   Gpio data value, (0 or 1)
+ * @param    [In] port     :   Gpio port index, GPIO_GPX(X)
+ * @param    [In] data     :   Gpio data value, (0 or 1)
  * @return   0 or 1
  *
  * Notes
  */
-int32_t vcp_gpio_set(uint32_t uiPort, uint32_t uiData);
+int32_t vcp_gpio_set(uint32_t port, uint32_t data);
 
 /*
  * vcp_gpio_peri_chan_sel
  *
- * @param    [In] uiPerichSel    : Gpio peri select index
- * @param    [In] uiCh           : Gpio peri select channel index
+ * @param    [In] peri_sel    : Gpio peri select index
+ * @param    [In] chan        : Gpio peri select channel index
  * @return   0 or 1
  *
  * Notes
  */
-int32_t vcp_gpio_peri_chan_sel(uint32_t uiPerichSel, uint32_t uiCh);
+int32_t vcp_gpio_peri_chan_sel(uint32_t peri_sel, uint32_t chan);
 
 /*
  * vcp_gpio_mfio_config
  *
- * @param    [In] uiPeriSel      :   MFIO peri select index
- * @param    [In] uiPeriType     :   MFIO peri select type (Disable/GPSB/UART/I2C)
- * @param    [In] uiChSel        :   MFIO channel select index
- * @param    [In] uiChNum        :   MFIO channel select value
+ * @param    [In] peri_sel      :   MFIO peri select index
+ * @param    [In] peri_type     :   MFIO peri select type (Disable/GPSB/UART/I2C)
+ * @param    [In] chan_sel      :   MFIO channel select index
+ * @param    [In] chan_num      :   MFIO channel select value
  * @return   0 or 1
  *
  * Notes
  */
-int32_t vcp_gpio_mfio_config(uint32_t uiPeriSel, uint32_t uiPeriType, uint32_t uiChSel,
-			     uint32_t uiChNum);
+int32_t vcp_gpio_mfio_config(uint32_t peri_sel, uint32_t peri_type, uint32_t chan_sel,
+			     uint32_t chan_num);
 
 #endif /* TCC_VCP_GPIO_HEADER */
