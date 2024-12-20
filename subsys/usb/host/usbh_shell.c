@@ -67,7 +67,8 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 	ep = strtol(argv[1], NULL, 16);
 	len = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
 
-	xfer = usbh_xfer_alloc(udev, ep, 0, 512, 10, NULL);
+	/* bmAttributes: bulk type, no synchronization, data endpoint */
+	xfer = usbh_xfer_alloc(udev, ep, 0x02, 512, 10, NULL);
 	if (!xfer) {
 		return -ENOMEM;
 	}
