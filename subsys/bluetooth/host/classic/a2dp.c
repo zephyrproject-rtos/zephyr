@@ -497,6 +497,8 @@ static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp)
 	for (; a2dp->get_cap_index < a2dp->peer_seps_count; a2dp->get_cap_index++) {
 		if (a2dp->discover_cb_param->seps_info[a2dp->get_cap_index].media_type ==
 		    BT_AVDTP_AUDIO) {
+			memset(&a2dp->get_capabilities_param, 0U,
+			       sizeof(a2dp->get_capabilities_param));
 			a2dp->get_capabilities_param.req.func = bt_a2dp_get_capabilities_cb;
 			a2dp->get_capabilities_param.buf = NULL;
 			a2dp->get_capabilities_param.stream_endpoint_id =
@@ -580,6 +582,7 @@ int bt_a2dp_discover(struct bt_a2dp *a2dp, struct bt_a2dp_discover_param *param)
 		return -EBUSY;
 	}
 
+	memset(&a2dp->discover_cb_param, 0U, sizeof(a2dp->discover_cb_param));
 	a2dp->discover_cb_param = param;
 	a2dp->discover_param.req.func = bt_a2dp_discover_cb;
 	a2dp->discover_param.buf = NULL;
@@ -606,6 +609,7 @@ static inline void bt_a2dp_stream_config_set_param(struct bt_a2dp *a2dp,
 						   uint8_t int_id, uint8_t codec_type,
 						   struct bt_avdtp_sep *sep)
 {
+	memset(&a2dp->set_config_param, 0U, sizeof(a2dp->set_config_param));
 	a2dp->set_config_param.req.func = cb;
 	a2dp->set_config_param.acp_stream_ep_id = remote_id;
 	a2dp->set_config_param.int_stream_endpoint_id = int_id;
@@ -733,6 +737,7 @@ static int bt_a2dp_stream_ctrl_pre(struct bt_a2dp_stream *stream, bt_avdtp_func_
 	}
 
 	a2dp = stream->a2dp;
+	memset(&a2dp->ctrl_param, 0U, sizeof(a2dp->ctrl_param));
 	a2dp->ctrl_param.req.func = cb;
 	a2dp->ctrl_param.acp_stream_ep_id = stream->remote_ep != NULL
 						    ? stream->remote_ep->sep.sep_info.id
