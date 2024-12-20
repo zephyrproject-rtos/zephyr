@@ -82,10 +82,6 @@ def main():
     #enable device tracing
     write_endpoint.write('enable')
 
-    #try to read to avoid garbage mixed to useful stream data
-    buff = usb.util.create_buffer(8192)
-    read_endpoint.read(buff, 10000)
-
     try:
         with open(output_file, "wb") as file_desc:
             while True:
@@ -96,6 +92,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        write_endpoint.write('disable')
         print('Data capture interrupted, data saved into {}'.format(args.output))
         usb.util.release_interface(usb_device, interface)
 
