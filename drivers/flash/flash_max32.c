@@ -52,9 +52,16 @@ static inline void max32_sem_give(const struct device *dev)
 static int api_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
 	const struct max32_flash_dev_config *const cfg = dev->config;
+	unsigned int key = 0;
 
 	address += cfg->flash_base;
+
+	key = irq_lock();
+
 	MXC_FLC_Read(address, buffer, length);
+
+	irq_unlock(key);
+
 	return 0;
 }
 
@@ -62,11 +69,17 @@ static int api_write(const struct device *dev, off_t address, const void *buffer
 {
 	const struct max32_flash_dev_config *const cfg = dev->config;
 	int ret = 0;
+	unsigned int key = 0;
 
 	max32_sem_take(dev);
 
 	address += cfg->flash_base;
+
+	key = irq_lock();
+
 	ret = MXC_FLC_Write(address, length, (uint32_t *)buffer);
+
+	irq_unlock(key);
 
 	max32_sem_give(dev);
 
@@ -79,9 +92,11 @@ static int api_erase(const struct device *dev, off_t start, size_t len)
 	uint32_t page_size = cfg->flash_erase_blk_sz;
 	uint32_t addr = (start + cfg->flash_base);
 	int ret = 0;
+	unsigned int key = 0;
 
 	max32_sem_take(dev);
 
+	key = irq_lock();
 	while (len) {
 		ret = MXC_FLC_PageErase(addr);
 		if (ret) {
@@ -95,6 +110,7 @@ static int api_erase(const struct device *dev, off_t start, size_t len)
 			len = 0;
 		}
 	}
+	irq_unlock(key);
 
 	max32_sem_give(dev);
 
