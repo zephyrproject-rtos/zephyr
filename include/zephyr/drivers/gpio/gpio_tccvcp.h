@@ -21,21 +21,21 @@
  *   [3:0]  : function selection (0~15)
  */
 
-#define GPIO_INPUTBUF_SHIFT (10)
-#define GPIO_INPUTBUF_MASK  (0x3UL)
+#define GPIO_INPUTBUF_SHIFT 10
+#define GPIO_INPUTBUF_MASK  0x3UL
 #define GPIO_INPUTBUF_EN    ((2UL | 1UL) << (uint32_t)GPIO_INPUTBUF_SHIFT)
 #define GPIO_INPUTBUF_DIS   ((2UL | 0UL) << (uint32_t)GPIO_INPUTBUF_SHIFT)
 
-#define GPIO_OUTPUT_SHIFT (9)
+#define GPIO_OUTPUT_SHIFT 9
 #define VCP_GPIO_OUTPUT   (1UL << (uint32_t)GPIO_OUTPUT_SHIFT)
 #define VCP_GPIO_INPUT    (0UL << (uint32_t)GPIO_OUTPUT_SHIFT)
 
-#define GPIO_DS_SHIFT (6)
-#define GPIO_DS_MASK  (0x7UL)
+#define GPIO_DS_SHIFT 6
+#define GPIO_DS_MASK  0x7UL
 #define GPIO_DS(x)    ((((x) & (uint32_t)GPIO_DS_MASK) | 0x4UL) << (uint32_t)GPIO_DS_SHIFT)
 
-#define GPIO_PULL_SHIFT (4)
-#define GPIO_PULL_MASK  (0x3UL)
+#define GPIO_PULL_SHIFT 4
+#define GPIO_PULL_MASK  0x3UL
 #define GPIO_NOPULL     (0UL << (uint32_t)GPIO_PULL_SHIFT)
 #define GPIO_PULLUP     (1UL << (uint32_t)GPIO_PULL_SHIFT)
 #define GPIO_PULLDN     (2UL << (uint32_t)GPIO_PULL_SHIFT)
@@ -48,51 +48,51 @@
 #define GPIO_IN_EN        0x24
 #define GPIO_IODIR        0x08
 
-#define GPIO_FUNC_MASK (0xFUL)
+#define GPIO_FUNC_MASK 0xFUL
 #define GPIO_FUNC(x)   ((x) & (uint32_t)GPIO_FUNC_MASK)
 
-#define GPIO_MFIO_CFG_CH_SEL0     (0)
-#define GPIO_MFIO_CFG_PERI_SEL0   (4)
-#define GPIO_MFIO_CFG_CH_SEL1     (8)
-#define GPIO_MFIO_CFG_PERI_SEL1   (12)
-#define GPIO_MFIO_CFG_CH_SEL2     (16)
-#define GPIO_MFIO_CFG_PERI_SEL2   (20)
-#define GPIO_MFIO_DISABLE         (0)
-#define GPIO_MFIO_SPI2            (1)
-#define GPIO_MFIO_UART3           (2)
-#define GPIO_MFIO_I2C3            (3)
-#define GPIO_MFIO_SPI3            (1)
-#define GPIO_MFIO_UART4           (2)
-#define GPIO_MFIO_I2C4            (3)
-#define GPIO_MFIO_SPI4            (1)
-#define GPIO_MFIO_UART5           (2)
-#define GPIO_MFIO_I2C5            (3)
-#define GPIO_MFIO_CH0             (0)
-#define GPIO_MFIO_CH1             (1)
-#define GPIO_MFIO_CH2             (2)
-#define GPIO_MFIO_CH3             (3)
-#define GPIO_PERICH_SEL_UARTSEL_0 (0)
-#define GPIO_PERICH_SEL_UARTSEL_1 (1)
-#define GPIO_PERICH_SEL_UARTSEL_2 (2)
-#define GPIO_PERICH_SEL_I2CSEL_0  (3)
-#define GPIO_PERICH_SEL_I2CSEL_1  (4)
-#define GPIO_PERICH_SEL_I2CSEL_2  (5)
-#define GPIO_PERICH_SEL_SPISEL_0  (6)
-#define GPIO_PERICH_SEL_SPISEL_1  (7)
-#define GPIO_PERICH_SEL_I2SSEL_0  (8)
-#define GPIO_PERICH_SEL_PWMSEL_0  (10)
-#define GPIO_PERICH_SEL_PWMSEL_1  (12)
-#define GPIO_PERICH_SEL_PWMSEL_2  (14)
-#define GPIO_PERICH_SEL_PWMSEL_3  (16)
-#define GPIO_PERICH_SEL_PWMSEL_4  (18)
-#define GPIO_PERICH_SEL_PWMSEL_5  (20)
-#define GPIO_PERICH_SEL_PWMSEL_6  (22)
-#define GPIO_PERICH_SEL_PWMSEL_7  (24)
-#define GPIO_PERICH_SEL_PWMSEL_8  (26)
-#define GPIO_PERICH_CH0           (0)
-#define GPIO_PERICH_CH1           (1)
-#define GPIO_PERICH_CH2           (2)
-#define GPIO_PERICH_CH3           (3)
+#define GPIO_MFIO_CFG_CH_SEL0     0
+#define GPIO_MFIO_CFG_PERI_SEL0   4
+#define GPIO_MFIO_CFG_CH_SEL1     8
+#define GPIO_MFIO_CFG_PERI_SEL1   12
+#define GPIO_MFIO_CFG_CH_SEL2     16
+#define GPIO_MFIO_CFG_PERI_SEL2   20
+#define GPIO_MFIO_DISABLE         0
+#define GPIO_MFIO_SPI2            1
+#define GPIO_MFIO_UART3           2
+#define GPIO_MFIO_I2C3            3
+#define GPIO_MFIO_SPI3            1
+#define GPIO_MFIO_UART4           2
+#define GPIO_MFIO_I2C4            3
+#define GPIO_MFIO_SPI4            1
+#define GPIO_MFIO_UART5           2
+#define GPIO_MFIO_I2C5            3
+#define GPIO_MFIO_CH0             0
+#define GPIO_MFIO_CH1             1
+#define GPIO_MFIO_CH2             2
+#define GPIO_MFIO_CH3             3
+#define GPIO_PERICH_SEL_UARTSEL_0 0
+#define GPIO_PERICH_SEL_UARTSEL_1 1
+#define GPIO_PERICH_SEL_UARTSEL_2 2
+#define GPIO_PERICH_SEL_I2CSEL_0  3
+#define GPIO_PERICH_SEL_I2CSEL_1  4
+#define GPIO_PERICH_SEL_I2CSEL_2  5
+#define GPIO_PERICH_SEL_SPISEL_0  6
+#define GPIO_PERICH_SEL_SPISEL_1  7
+#define GPIO_PERICH_SEL_I2SSEL_0  8
+#define GPIO_PERICH_SEL_PWMSEL_0  10
+#define GPIO_PERICH_SEL_PWMSEL_1  12
+#define GPIO_PERICH_SEL_PWMSEL_2  14
+#define GPIO_PERICH_SEL_PWMSEL_3  16
+#define GPIO_PERICH_SEL_PWMSEL_4  18
+#define GPIO_PERICH_SEL_PWMSEL_5  20
+#define GPIO_PERICH_SEL_PWMSEL_6  22
+#define GPIO_PERICH_SEL_PWMSEL_7  24
+#define GPIO_PERICH_SEL_PWMSEL_8  26
+#define GPIO_PERICH_CH0           0
+#define GPIO_PERICH_CH1           1
+#define GPIO_PERICH_CH2           2
+#define GPIO_PERICH_CH3           3
 
 /*
  * gpio port & pin structures
@@ -101,10 +101,10 @@
  *   [4:0] : pin number (0~31)
  */
 
-#define GPIO_PIN_MASK     (0x1FUL)
-#define GPIO_PIN_NUM_MASK (0x3FUL)
+#define GPIO_PIN_MASK     0x1FUL
+#define GPIO_PIN_NUM_MASK 0x3FUL
 
-#define GPIO_PORT_SHIFT (5)
+#define GPIO_PORT_SHIFT 5
 #define GPIO_PORT_MASK  ((uint32_t)0x1F << (uint32_t)GPIO_PORT_SHIFT)
 
 #define GPIO_PORT_A ((uint32_t)0 << (uint32_t)GPIO_PORT_SHIFT)
@@ -145,7 +145,7 @@
 
 #define GPIO_PMGPIO_SEL (GPIO_PMGPIO_BASE + 0x8UL)
 
-#define GPIO_LIST_NUM (6)
+#define GPIO_LIST_NUM 6
 
 /*
  * FUNCTION PROTOTYPES
