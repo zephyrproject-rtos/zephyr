@@ -14,3 +14,7 @@ properties:
   phys:
     type: phandle
     description: PHY provider specifier
+
+  bus-wait-cycles:
+    type: int
+    description: Specifies CPU bus access wait cycles
