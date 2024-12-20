@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TCC_VCPTTC_TIMER_H
-#define TCC_VCPTTC_TIMER_H
+#ifndef ZEPHYR_DRIVERS_TIMER_TCC_VCPTTC_TIMER_H_
+#define ZEPHYR_DRIVERS_TIMER_TCC_VCPTTC_TIMER_H_
 
 #define TIMER_INDEX CONFIG_TCC_VCPTTC_TIMER_INDEX
 
@@ -124,4 +124,4 @@ struct timer_resource_table {
 	void *rsc_table_arg;
 };
 
-#endif
+#endif /* ZEPHYR_DRIVERS_TIMER_TCC_VCPTTC_TIMER_H_ */
