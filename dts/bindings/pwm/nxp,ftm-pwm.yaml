@@ -1,11 +1,11 @@
 # Copyright 2017, 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: Kinetis FTM PWM
+description: NXP FlexTimer Module (FTM) PWM controller
 
-compatible: "nxp,kinetis-ftm-pwm"
+compatible: "nxp,ftm-pwm"
 
-include: [pwm-controller.yaml, "nxp,kinetis-ftm.yaml", "pinctrl-device.yaml"]
+include: [pwm-controller.yaml, "nxp,ftm.yaml", "pinctrl-device.yaml"]
 
 properties:
   "#pwm-cells":
