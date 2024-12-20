@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef _BOARD_SOC__H_
-#define _BOARD_SOC__H_
+#ifndef ZEPHYR_SOC_TCC_TCC7045_SOC_H_
+#define ZEPHYR_SOC_TCC_TCC7045_SOC_H_
 
 #define TCC_NULL_PTR ((void *)0)
 
@@ -25,4 +25,4 @@
 
 int32_t soc_div64_to_32(uint64_t *pullDividend, uint32_t uiDivisor, uint32_t *puiRem);
 
-#endif /* _BOARD_SOC__H_ */
+#endif /* ZEPHYR_SOC_TCC_TCC7045_SOC_H_ */
