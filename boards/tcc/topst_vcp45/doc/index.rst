@@ -83,9 +83,6 @@ The following features are supported:
    * - GPIO
      - :kconfig:option:`CONFIG_GPIO` & 'GPIO_TCCVCP'
      - :dtcompatible:`tcc,tccvcp-gpio`
-   * - UART
-     - :kconfig:option:`CONFIG_SERIAL` & 'CONFIG_UART_TCCVCP'
-     - :dtcompatible:`tcc,tccvcp-uart`
    * - Timer
      - :kconfig:option:`CONFIG_TCC_VCPTTC_TIMER`
      - :dtcompatible:`tcc,ttcvcp`
