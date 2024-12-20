@@ -7,7 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_SYS_RING_BUFFER_H_
 #define ZEPHYR_INCLUDE_SYS_RING_BUFFER_H_
 
-#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <errno.h>
 
@@ -62,6 +61,11 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 	buf->get_head = buf->get_tail = buf->get_base = value;
 }
 
+#define RING_BUF_INIT(buf, size8)	\
+{					\
+	.buffer = buf,			\
+	.size = size8,			\
+}
 /**
  * @brief Define and initialize a ring buffer for byte data.
  *
@@ -80,10 +84,7 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 	BUILD_ASSERT(size8 < RING_BUFFER_MAX_SIZE,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
 	static uint8_t __noinit _ring_buffer_data_##name[size8]; \
-	struct ring_buf name = { \
-		.buffer = _ring_buffer_data_##name, \
-		.size = size8 \
-	}
+	struct ring_buf name = RING_BUF_INIT(_ring_buffer_data_##name, size8)
 
 /**
  * @brief Define and initialize an "item based" ring buffer.
