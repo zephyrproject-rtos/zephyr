@@ -67,6 +67,8 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| GPT       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
