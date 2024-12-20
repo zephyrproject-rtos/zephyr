@@ -173,7 +173,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			channel = <1>;
-			interrupts = <32 1>, <33 1>, <34 1>, <35 1>;
+			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40072100 0x100>;
 			status = "disabled";
@@ -213,15 +213,6 @@
 			compatible = "renesas,ra-adc";
 			interrupt-names = "scanend";
 			reg = <0x4005c000 0x100>;
-			#io-channel-cells = <1>;
-			vref-mv = <3300>;
-			status = "disabled";
-		};
-
-		adc1: adc@4005c200 {
-			compatible = "renesas,ra-adc";
-			interrupt-names = "scanend";
-			reg = <0x4005c200 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
 			status = "disabled";
