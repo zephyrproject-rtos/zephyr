@@ -152,7 +152,7 @@ int32_t vcp_gpio_config(uint32_t port, uint32_t config)
 				pullen_addr = (GPIO_REG_BASE(port) + 0x1CUL);
 			}
 
-			vcp_gpio_set_register(pullen_addr, bit, (uint32_t)TRUE);
+			vcp_gpio_set_register(pullen_addr, bit, (uint32_t)true);
 
 			if (GPIO_IS_GPIOK(port)) {
 				pullsel_addr = (GPIO_PMGPIO_BASE + 0x14UL);
@@ -160,7 +160,7 @@ int32_t vcp_gpio_config(uint32_t port, uint32_t config)
 				pullsel_addr = (GPIO_REG_BASE(port) + 0x20UL);
 			}
 
-			vcp_gpio_set_register(pullsel_addr, bit, (uint32_t)TRUE);
+			vcp_gpio_set_register(pullsel_addr, bit, (uint32_t)true);
 		} else if (pull == GPIO_PULLDN) {
 			if (GPIO_IS_GPIOK(port)) {
 				pullen_addr = (GPIO_PMGPIO_BASE + 0x10UL);
@@ -168,7 +168,7 @@ int32_t vcp_gpio_config(uint32_t port, uint32_t config)
 				pullen_addr = (GPIO_REG_BASE(port) + 0x1CUL);
 			}
 
-			vcp_gpio_set_register(pullen_addr, bit, (uint32_t)TRUE);
+			vcp_gpio_set_register(pullen_addr, bit, (uint32_t)true);
 
 			if (GPIO_IS_GPIOK(port)) {
 				pullsel_addr = (GPIO_PMGPIO_BASE + 0x14UL);
@@ -176,7 +176,7 @@ int32_t vcp_gpio_config(uint32_t port, uint32_t config)
 				pullsel_addr = (GPIO_REG_BASE(port) + 0x20UL);
 			}
 
-			vcp_gpio_set_register(pullsel_addr, bit, (uint32_t)FALSE);
+			vcp_gpio_set_register(pullsel_addr, bit, (uint32_t)false);
 		} else {
 			if (GPIO_IS_GPIOK(port)) {
 				pullen_addr = (GPIO_PMGPIO_BASE + 0x10UL);
@@ -184,7 +184,7 @@ int32_t vcp_gpio_config(uint32_t port, uint32_t config)
 				pullen_addr = (GPIO_REG_BASE(port) + 0x1CUL);
 			}
 
-			vcp_gpio_set_register(pullen_addr, bit, (uint32_t)FALSE);
+			vcp_gpio_set_register(pullen_addr, bit, (uint32_t)false);
 		}
 
 		/* drive strength */
@@ -209,11 +209,11 @@ int32_t vcp_gpio_config(uint32_t port, uint32_t config)
 		if ((config & VCP_GPIO_OUTPUT) != 0UL) {
 			outen_addr = GPIO_REG_OUTEN(port);
 
-			vcp_gpio_set_register(outen_addr, bit, (uint32_t)TRUE);
+			vcp_gpio_set_register(outen_addr, bit, (uint32_t)true);
 		} else {
 			outen_addr = GPIO_REG_OUTEN(port);
 
-			vcp_gpio_set_register(outen_addr, bit, (uint32_t)FALSE);
+			vcp_gpio_set_register(outen_addr, bit, (uint32_t)false);
 		}
 
 		/* input buffer enable */
@@ -224,7 +224,7 @@ int32_t vcp_gpio_config(uint32_t port, uint32_t config)
 				ien_addr = (GPIO_REG_BASE(port) + 0x24UL);
 			}
 
-			vcp_gpio_set_register(ien_addr, bit, (uint32_t)TRUE);
+			vcp_gpio_set_register(ien_addr, bit, (uint32_t)true);
 		} else if (ien == GPIO_INPUTBUF_DIS) {
 			if (GPIO_IS_GPIOK(port)) {
 				ien_addr = (GPIO_PMGPIO_BASE + 0x0CUL);
@@ -232,7 +232,7 @@ int32_t vcp_gpio_config(uint32_t port, uint32_t config)
 				ien_addr = (GPIO_REG_BASE(port) + 0x24UL);
 			}
 
-			vcp_gpio_set_register(ien_addr, bit, (uint32_t)FALSE);
+			vcp_gpio_set_register(ien_addr, bit, (uint32_t)false);
 		}
 	}
 
@@ -240,7 +240,7 @@ int32_t vcp_gpio_config(uint32_t port, uint32_t config)
 }
 
 int32_t vcp_gpio_mfio_config(uint32_t peri_sel, uint32_t peri_type, uint32_t chan_sel,
-			      uint32_t chan_num)
+			     uint32_t chan_num)
 {
 	uint32_t base_val, set_val, clear_bit, comp_val;
 
