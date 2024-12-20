@@ -1787,7 +1787,6 @@ Release Notes:
   maintainers:
     - simonguinot
   collaborators:
-    - mbolivar-ampere
     - soburi
     - thedjnK
   files:
@@ -4519,7 +4518,7 @@ West:
   maintainers:
     - pdgendt
   collaborators:
-    - mbolivar-ampere
+    - mbolivar
     - carlescufi
     - swinslow
   files:
