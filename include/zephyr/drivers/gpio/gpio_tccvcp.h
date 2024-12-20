@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TCC_VCP_GPIO_HEADER
-#define TCC_VCP_GPIO_HEADER
+#ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_TCCVCP_H_
+#define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_TCCVCP_H_
 
 /*
  * GLOBAL DEFINITIONS
@@ -197,4 +197,4 @@ int32_t vcp_gpio_peri_chan_sel(uint32_t peri_sel, uint32_t chan);
 int32_t vcp_gpio_mfio_config(uint32_t peri_sel, uint32_t peri_type, uint32_t chan_sel,
 			     uint32_t chan_num);
 
-#endif /* TCC_VCP_GPIO_HEADER */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_TCCVCP_H_ */
