@@ -19,24 +19,24 @@
 /* Maximum value of interval counter */
 #define VCP_MAX_INTERVAL_COUNT 0xFFFFFFFFU
 
-#define CYCLES_NEXT_MIN (10000)
-#define CYCLES_NEXT_MAX (VCP_MAX_INTERVAL_COUNT)
+#define CYCLES_NEXT_MIN 10000
+#define CYCLES_NEXT_MAX VCP_MAX_INTERVAL_COUNT
 
 /* Register Map */
-#define TMR_OP_EN_CFG    (0x000UL)
-#define TMR_MAIN_CNT_LVD (0x004UL)
-#define TMR_CMP_VALUE0   (0x008UL)
-#define TMR_CMP_VALUE1   (0x00CUL)
-#define TMR_PSCL_CNT     (0x010UL)
-#define TMR_MAIN_CNT     (0x014UL)
-#define TMR_IRQ_CTRL     (0x018UL)
+#define TMR_OP_EN_CFG    0x000UL
+#define TMR_MAIN_CNT_LVD 0x004UL
+#define TMR_CMP_VALUE0   0x008UL
+#define TMR_CMP_VALUE1   0x00CUL
+#define TMR_PSCL_CNT     0x010UL
+#define TMR_MAIN_CNT     0x014UL
+#define TMR_IRQ_CTRL     0x018UL
 
 /* Configuration Value */
 #define TMR_OP_EN_CFG_LDM0_ON         (1UL << 28UL)
 #define TMR_OP_EN_CFG_LDM1_ON         (1UL << 29UL)
 #define TMR_OP_EN_CFG_OPMODE_FREE_RUN (0UL << 26UL)
 #define TMR_OP_EN_CFG_OPMODE_ONE_SHOT (1UL << 26UL)
-#define TMR_OP_EN_CFG_LDZERO_OFFSET   (25UL)
+#define TMR_OP_EN_CFG_LDZERO_OFFSET   25UL
 #define TMR_OP_EN_CFG_CNT_EN          (1UL << 24UL)
 
 /**
@@ -45,7 +45,7 @@
  */
 #define TMR_IRQ_CLR_CTRL_WRITE (1UL << 31UL)
 #define TMR_IRQ_CLR_CTRL_READ  (0UL << 31UL)
-#define TMR_IRQ_MASK_ALL       (0x1FUL)
+#define TMR_IRQ_MASK_ALL       0x1FUL
 #define TMR_IRQ_CTRL_IRQ_EN0   (1UL << 16UL)
 #define TMR_IRQ_CTRL_IRQ_EN1   (2UL << 16UL)
 #define TMR_IRQ_CTRL_IRQ_EN2   (4UL << 16UL)
@@ -55,10 +55,10 @@
 	((TMR_IRQ_CTRL_IRQ_EN0) | (TMR_IRQ_CTRL_IRQ_EN1) | (TMR_IRQ_CTRL_IRQ_EN2) |                \
 	 (TMR_IRQ_CTRL_IRQ_EN3) | (TMR_IRQ_CTRL_IRQ_EN4))
 
-#define TMR_PRESCALE (11UL)
-#define TMR_CLK_RATE ((12UL) * (1000UL) * (1000UL))
+#define TMR_PRESCALE 11UL
+#define TMR_CLK_RATE (12UL * 1000UL * 1000UL)
 
-#define VCP_MAX_INT_VAL (4294967295UL)
+#define VCP_MAX_INT_VAL 4294967295UL
 
 BUILD_ASSERT(TIMER_CLOCK_FREQUECY == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 	     "Configured system timer frequency does not match the TTC "
