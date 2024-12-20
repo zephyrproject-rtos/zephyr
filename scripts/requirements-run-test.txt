@@ -9,9 +9,6 @@ pyocd>=0.35.0
 tabulate
 natsort
 
-# used by mcuboot
-cbor>=1.0.0
-
 # use for twister
 psutil
 
