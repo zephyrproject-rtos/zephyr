@@ -32,7 +32,7 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, tcc_ttcvcp));
 #ifdef CONFIG_TICKLESS_KERNEL
 static uint32_t last_cycles;
 #endif
-static boolean flag_timer_initialized = FALSE;
+static bool flag_timer_initialized;
 static struct timer_resource_table vcp_timer_resource[TIMER_CH_MAX];
 
 uint32_t vcp_timer_irq_clear(enum timer_channel channel);
@@ -135,19 +135,19 @@ uint32_t vcp_timer_irq_clear(enum timer_channel channel)
 
 static void vcp_timer_handler(void *arg_ptr)
 {
-	struct timer_resource_table *timer = NULL_PTR;
+	struct timer_resource_table *timer = TCC_NULL_PTR;
 	uint32_t reg;
 
 	memcpy(&timer, (const void *)&arg_ptr, sizeof(struct timer_resource_table *));
 
-	if (timer != NULL_PTR) {
+	if (timer != TCC_NULL_PTR) {
 		reg = TIMER_BASE_ADDR + TMR_IRQ_CTRL;
 
 		if (((sys_read32(reg) & TMR_IRQ_CTRL_IRQ_ALLEN) != 0UL) &&
-		    (timer->rsc_table_used == TRUE)) {
+		    (timer->rsc_table_used == true)) {
 			vcp_timer_irq_clear(timer->rsc_table_channel);
 
-			if (timer->rsc_table_handler != NULL_PTR) {
+			if (timer->rsc_table_handler != TCC_NULL_PTR) {
 				timer->rsc_table_handler(timer->rsc_table_channel,
 							 timer->rsc_table_arg);
 			}
@@ -342,18 +342,18 @@ static int32_t vcp_timer_enable_with_config(const struct vcp_timer_config *cfg_p
 {
 	int32_t ret = 0;
 
-	if (flag_timer_initialized == FALSE) {
+	if (flag_timer_initialized == false) {
 		return -EIO;
 	}
 
-	if ((cfg_ptr == NULL_PTR) || (TIMER_CH_MAX <= cfg_ptr->cfg_channel)) {
+	if ((cfg_ptr == TCC_NULL_PTR) || (TIMER_CH_MAX <= cfg_ptr->cfg_channel)) {
 		return -EINVAL;
 	}
 
 	ret = vcp_timer_enable_mode(cfg_ptr);
 
 	if (ret == 0) {
-		vcp_timer_resource[cfg_ptr->cfg_channel].rsc_table_used = TRUE;
+		vcp_timer_resource[cfg_ptr->cfg_channel].rsc_table_used = true;
 		vcp_timer_resource[cfg_ptr->cfg_channel].rsc_table_handler = cfg_ptr->handler_fn;
 		vcp_timer_resource[cfg_ptr->cfg_channel].rsc_table_arg = cfg_ptr->arg_ptr;
 
@@ -400,7 +400,7 @@ static int32_t vcp_timer_init(void)
 
 	ret = 0;
 
-	if (flag_timer_initialized == TRUE) {
+	if (flag_timer_initialized == true) {
 		return ret;
 	}
 
@@ -408,9 +408,9 @@ static int32_t vcp_timer_init(void)
 		reg = MCU_BSP_TIMER_BASE + (resIndex * 0x100UL);
 
 		vcp_timer_resource[resIndex].rsc_table_channel = (enum timer_channel)resIndex;
-		vcp_timer_resource[resIndex].rsc_table_used = FALSE;
-		vcp_timer_resource[resIndex].rsc_table_handler = NULL_PTR;
-		vcp_timer_resource[resIndex].rsc_table_arg = NULL_PTR;
+		vcp_timer_resource[resIndex].rsc_table_used = false;
+		vcp_timer_resource[resIndex].rsc_table_handler = TCC_NULL_PTR;
+		vcp_timer_resource[resIndex].rsc_table_arg = TCC_NULL_PTR;
 
 		sys_write32(0x7FFFU, (uint32_t)(reg + TMR_OP_EN_CFG));
 		sys_write32(0x0U, (uint32_t)(reg + TMR_MAIN_CNT_LVD));
@@ -422,7 +422,7 @@ static int32_t vcp_timer_init(void)
 		sys_write32(reg_val, (uint32_t)(reg + TMR_IRQ_CTRL));
 	}
 
-	flag_timer_initialized = TRUE;
+	flag_timer_initialized = true;
 
 	return ret;
 }

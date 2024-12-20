@@ -119,7 +119,7 @@ struct vcp_timer_config {
 
 struct timer_resource_table {
 	enum timer_channel rsc_table_channel;
-	boolean rsc_table_used;
+	bool rsc_table_used;
 	vcp_timer_handler_fn rsc_table_handler;
 	void *rsc_table_arg;
 };
