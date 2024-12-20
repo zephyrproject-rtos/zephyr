@@ -10,14 +10,12 @@
 
 /*
  * DEFINITIONS
- *
  */
 
 #define CKC_MHZ(x) (uint32_t)((x) * 1000000)
 
 /*
  * FUNCTION PROTOTYPES
- *
  */
 
 void vcp_clock_init(void);
