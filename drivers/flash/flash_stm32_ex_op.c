@@ -28,7 +28,7 @@ int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 		(const struct flash_stm32_ex_op_sector_wp_in *)in;
 	struct flash_stm32_ex_op_sector_wp_out *result =
 		(struct flash_stm32_ex_op_sector_wp_out *)out;
-	uint32_t change_mask;
+	uint64_t change_mask;
 	int rc = 0, rc2 = 0;
 #ifdef CONFIG_USERSPACE
 	bool syscall_trap = z_syscall_trap();

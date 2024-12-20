@@ -344,11 +344,11 @@ void flash_stm32_page_layout(const struct device *dev,
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 
 int flash_stm32_update_wp_sectors(const struct device *dev,
-				  uint32_t changed_sectors,
-				  uint32_t protected_sectors);
+				  uint64_t changed_sectors,
+				  uint64_t protected_sectors);
 
 int flash_stm32_get_wp_sectors(const struct device *dev,
-			       uint32_t *protected_sectors);
+			       uint64_t *protected_sectors);
 #endif
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
 uint8_t flash_stm32_get_rdp_level(const struct device *dev);
