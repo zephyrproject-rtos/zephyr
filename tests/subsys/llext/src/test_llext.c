@@ -321,7 +321,15 @@ static LLEXT_CONST uint8_t multi_file_ext[] ELF_ALIGN = {
 	#include "multi_file.inc"
 };
 LLEXT_LOAD_UNLOAD(multi_file)
-#endif
+
+#if defined(CONFIG_RISCV) && defined(CONFIG_RISCV_ISA_EXT_C)
+static LLEXT_CONST uint8_t riscv_edge_case_cb_type_ext[] ELF_ALIGN = {
+	#include "riscv_edge_case_cb_type.inc"
+};
+LLEXT_LOAD_UNLOAD(riscv_edge_case_cb_type)
+#endif /* CONFIG_RISCV && CONFIG_RISCV_ISA_EXT_C */
+
+#endif /* !CONFIG_LLEXT_TYPE_ELF_OBJECT */
 
 #ifndef CONFIG_USERSPACE
 static LLEXT_CONST uint8_t export_dependent_ext[] ELF_ALIGN = {
