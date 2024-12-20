@@ -90,7 +90,7 @@ The following features are supported:
      - :kconfig:option:`CONFIG_CLOCK_CONTROL_TCC_CCU`
      - :dtcompatible:`tcc,ccu`
 
-Not all hardware features are supported yet. See `TCC70xx Full Specification` for the complete list of hardware features.
+Not all hardware features are supported yet. See "TCC70xx Full Specification" for the complete list of hardware features.
 
 The default configuration can be found in
 
