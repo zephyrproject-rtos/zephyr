@@ -27,6 +27,9 @@ static K_SEM_DEFINE(sem_iso_data, CONFIG_BT_ISO_TX_BUF_COUNT,
 
 #define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
+#define SOURCE_DRIFT_COMP_TIMEOUT_US 20000 /* Drift compensate every 20 ms */
+#define SOURCE_DRIFT_COMP_COUNTDOWN  ((SOURCE_DRIFT_COMP_TIMEOUT_US / BIG_SDU_INTERVAL_US) - 1U)
+
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
@@ -173,10 +176,13 @@ int main(void)
 
 	uint16_t seq_num[BIS_ISO_CHAN_COUNT];
 	bool is_first_iso_data_send = true;
+	int64_t drift_comp_us = 0;
 	uint32_t ts_ctlr = 0U;
 	uint32_t ts_app = 0U;
 	int64_t delta_ts = 0;
 	int32_t delta_sn = 0;
+
+	uint32_t ts_prev = k_ticks_to_us_floor32(sys_clock_tick_get());
 
 	while (true) {
 		struct bt_iso_tx_info tx_info;
@@ -246,12 +252,29 @@ int main(void)
 				/* NOTE: Change in delta (drift) for a duration of SDU intervals can
 				 *       be used to synchronize the clock with the Controller.
 				 */
+				static uint8_t countdown = SOURCE_DRIFT_COMP_COUNTDOWN;
+				static int64_t drift_us;
+
+				/* Accumulate relative drift */
+				drift_us += delta_ts - tx_info.ts + ts_app;
+
+				/* Transfer the accumulated drift to compensate sampling interval */
+				if (!countdown--) {
+					countdown = SOURCE_DRIFT_COMP_COUNTDOWN;
+					drift_comp_us = drift_us;
+					drift_us = 0U;
+
+					printk("Compensate %lld us drift\n", drift_comp_us);
+				}
 			}
 
 			/* Permit a reasonable clock jitter (at least Bluetooth active clock
 			 * jitter), in the verification of timestamp.
+			 *
+			 * Let's consider that the source clock is allowed to drift up to half the
+			 * BIG SDU interval duration before drift compensation is applied.
 			 */
-			uint32_t jitter_us = 2U;
+			uint32_t jitter_us = BIG_SDU_INTERVAL_US;
 
 			/* Validate ISO data being enqueued at the required timestamp.
 			 * Ignore checking first ISO data sent.
@@ -276,9 +299,37 @@ int main(void)
 		}
 
 		iso_send_count++;
-		ts_ctlr += BIG_SDU_INTERVAL_US;
-		ts_app += BIG_SDU_INTERVAL_US;
 
+		/* NOTE: Here we are simulating a drift compensated sleep for
+		 *       BIG_SDU_INTERVAL_US
+		 */
+		uint32_t sleep_us;
+
+		if (drift_comp_us < BIG_SDU_INTERVAL_US) {
+			sleep_us = BIG_SDU_INTERVAL_US - drift_comp_us;
+		} else {
+			sleep_us = 0U;
+		}
+
+		/* Reset drift compensation value */
+		drift_comp_us = 0;
+
+		/* Sleep, simulating source ISO data sampling */
+		uint32_t ts_curr;
+
+		do {
+			k_sleep(K_USEC(10));
+			ts_curr = k_ticks_to_us_floor32(sys_clock_tick_get());
+		} while ((ts_curr - ts_prev) < sleep_us);
+
+		/* Increment the application timestamp by the simulated sampling duration */
+		ts_app += (ts_curr - ts_prev);
+		ts_prev = ts_curr;
+
+		/* Increment the timestamp with respect to Controller's clock */
+		ts_ctlr += BIG_SDU_INTERVAL_US;
+
+		/* Count down to iterate BIG terminate and BIG create */
 		timeout_counter--;
 		if (!timeout_counter) {
 			timeout_counter = INITIAL_TIMEOUT_COUNTER;
@@ -330,6 +381,8 @@ int main(void)
 			delta_ts = 0;
 			delta_sn = 0;
 			is_first_iso_data_send = true;
+
+			ts_prev = k_ticks_to_us_floor32(sys_clock_tick_get());
 		}
 	}
 }
