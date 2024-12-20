@@ -213,7 +213,7 @@ class TestInstance:
     def testsuite_runnable(testsuite, fixtures):
         can_run = False
         # console harness allows us to run the test and capture data.
-        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test', 'gtest', 'robot']:
+        if testsuite.harness in ['console', 'ztest', 'pytest', 'test', 'gtest', 'robot', 'ctest']:
             can_run = True
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
@@ -256,6 +256,8 @@ class TestInstance:
             handler.ready = True
         else:
             handler = Handler(self, "", *common_args)
+            if self.testsuite.harness == "ctest":
+                handler.ready = True
 
         self.handler = handler
 
@@ -291,6 +293,7 @@ class TestInstance:
 
         target_ready = bool(self.testsuite.type == "unit" or \
                             self.platform.type == "native" or \
+                            self.testsuite.harness == "ctest" or \
                             (simulator and simulator.name in SUPPORTED_SIMS and \
                              simulator.name not in self.testsuite.simulation_exclude) or \
                             device_testing)
