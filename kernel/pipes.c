@@ -36,7 +36,7 @@ static struct k_obj_type obj_type_pipe;
 #endif /* CONFIG_OBJ_CORE_PIPE */
 
 
-void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
+__deprecated void z_impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
 	pipe->buffer = buffer;
 	pipe->size = size;
@@ -60,7 +60,7 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 #endif /* CONFIG_OBJ_CORE_PIPE */
 }
 
-int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
+__deprecated int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 {
 	void *buffer;
 	int ret;
@@ -87,6 +87,15 @@ int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 }
 
 #ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
+{
+	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(buffer, size));
+
+	z_impl_k_pipe_init(pipe, buffer, size);
+}
+#include <zephyr/syscalls/k_pipe_init_mrsh.c>
+
 static inline int z_vrfy_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 {
 	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
@@ -377,7 +386,7 @@ static size_t pipe_write(struct k_pipe *pipe, sys_dlist_t *src_list,
 	return num_bytes_written;
 }
 
-int z_impl_k_pipe_put(struct k_pipe *pipe, const void *data,
+__deprecated int z_impl_k_pipe_put(struct k_pipe *pipe, const void *data,
 		      size_t bytes_to_write, size_t *bytes_written,
 		      size_t min_xfer, k_timeout_t timeout)
 {
@@ -696,7 +705,7 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 	return ret;
 }
 
-int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
+__deprecated int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		     size_t *bytes_read, size_t min_xfer, k_timeout_t timeout)
 {
 	__ASSERT(((arch_is_in_isr() == false) ||
@@ -736,7 +745,7 @@ int z_vrfy_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 #include <zephyr/syscalls/k_pipe_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
+__deprecated size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
 {
 	size_t res;
 	k_spinlock_key_t key;
@@ -773,7 +782,7 @@ size_t z_vrfy_k_pipe_read_avail(struct k_pipe *pipe)
 #include <zephyr/syscalls/k_pipe_read_avail_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-size_t z_impl_k_pipe_write_avail(struct k_pipe *pipe)
+__deprecated size_t z_impl_k_pipe_write_avail(struct k_pipe *pipe)
 {
 	size_t res;
 	k_spinlock_key_t key;
