@@ -347,3 +347,5 @@ pmod_header: &pmod1_header {};
 	interrupts = <89 12>;
 	status = "okay";
 };
+
+pmod_sd_shield: &sdhc0 {};
