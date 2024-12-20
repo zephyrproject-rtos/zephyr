@@ -64,6 +64,11 @@
 				status = "disabled";
 			};
 		};
+
+		trng: trng {
+			compatible = "renesas,ra-trng";
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {
