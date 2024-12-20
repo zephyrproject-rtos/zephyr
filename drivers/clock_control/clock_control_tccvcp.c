@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT tcc_ccu
 
 #include <errno.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/syscon.h>
 #include <zephyr/sys/util.h>
@@ -51,24 +52,24 @@ static void clock_dev_write_pclk_ctrl(uint32_t uiReg, uint32_t md, uint32_t en, 
 
 static void clock_dev_write_clk_ctrl(uint32_t uiReg, uint32_t en, uint32_t conf, uint32_t sel);
 
-static long clock_dev_find_pms(struct clock_pms *psPll, uint32_t srcFreq);
+static int32_t clock_dev_find_pms(struct clock_pms *psPll, uint32_t srcFreq);
 
-static long clock_dev_set_pll_rate(uint32_t uiReg, uint32_t uiRate);
+static int32_t clock_dev_set_pll_rate(uint32_t uiReg, uint32_t uiRate);
 
 static uint32_t clock_dev_get_pll_rate(uint32_t uiReg);
 
-static uint32_t clock_dev_get_pll_div(long iId);
+static uint32_t clock_dev_get_pll_div(int32_t iId);
 
-static long clock_dev_find_clk_ctrl(struct clock_clk_ctrl *CLKCTRL);
+static int32_t clock_dev_find_clk_ctrl(struct clock_clk_ctrl *CLKCTRL);
 
 static uint32_t clock_dev_cal_pclk_div(const struct clock_pclk_ctrl *psPclkCtrl,
 				       uint32_t *puiClkDiv, const uint32_t srcClk,
 				       uint32_t uiDivMax);
 
-static long clock_dev_find_pclk(struct clock_pclk_ctrl *psPclkCtrl,
-				       enum clock_pclk_ctrl_type eType);
+static int32_t clock_dev_find_pclk(struct clock_pclk_ctrl *psPclkCtrl,
+				   enum clock_pclk_ctrl_type eType);
 
-static void clock_dev_reset_clk_src(long iId);
+static void clock_dev_reset_clk_src(int32_t iId);
 
 /* PLL Configuration Macro */
 static void clock_dev_write_pll(uint32_t reg, uint32_t en, uint32_t p, uint32_t m, uint32_t s)
@@ -95,8 +96,7 @@ static void clock_dev_write_pll(uint32_t reg, uint32_t en, uint32_t p, uint32_t 
 				; /* if cpu clokc is 1HGz then loop 100. */
 			}
 
-			sys_write32(sys_read32(reg) |
-					((en & 1UL) << (uint32_t)CLOCK_PLL_EN_SHIFT),
+			sys_write32(sys_read32(reg) | ((en & 1UL) << (uint32_t)CLOCK_PLL_EN_SHIFT),
 				    reg);
 
 			while ((sys_read32(reg) & (1UL << (uint32_t)CLOCK_PLL_LOCKST_SHIFT)) ==
@@ -246,12 +246,12 @@ static void clock_dev_write_clk_ctrl(uint32_t reg, uint32_t en, uint32_t conf, u
 	}
 }
 
-static long clock_dev_find_pms(struct clock_pms *pll_ptr, uint32_t src_freq)
+static int32_t clock_dev_find_pms(struct clock_pms *pll_ptr, uint32_t src_freq)
 {
-	unsigned long long pll, src, fvco;
-	unsigned long long srch_p, srch_m, temp, src_pll;
+	uint64_t pll, src, fvco;
+	uint64_t srch_p, srch_m, temp, src_pll;
 	uint32_t err, srch_err;
-	long srch_s;
+	int32_t srch_s;
 
 	if (pll_ptr == NULL) {
 		return 0;
@@ -262,34 +262,33 @@ static long clock_dev_find_pms(struct clock_pms *pll_ptr, uint32_t src_freq)
 		return 0;
 	}
 
-	pll = (unsigned long long)pll_ptr->fpll;
-	src = (unsigned long long)src_freq;
+	pll = (uint64_t)pll_ptr->fpll;
+	src = (uint64_t)src_freq;
 
 	err = 0xFFFFFFFFUL;
 	srch_err = 0xFFFFFFFFUL;
 
-	for (srch_s = (long)CLOCK_PLL_S_MIN; srch_s <= (long)CLOCK_PLL_S_MAX;
-	     srch_s++) {
-		fvco = pll << (unsigned long long)srch_s;
+	for (srch_s = (int32_t)CLOCK_PLL_S_MIN; srch_s <= (int32_t)CLOCK_PLL_S_MAX; srch_s++) {
+		fvco = pll << (uint64_t)srch_s;
 
-		if ((fvco >= (unsigned long long)CLOCK_PLL_VCO_MIN) &&
-		    (fvco <= (unsigned long long)CLOCK_PLL_VCO_MAX)) {
-			for (srch_p = (unsigned long long)CLOCK_PLL_P_MIN;
-			     srch_p <= (unsigned long long)CLOCK_PLL_P_MAX; srch_p++) {
+		if ((fvco >= (uint64_t)CLOCK_PLL_VCO_MIN) &&
+		    (fvco <= (uint64_t)CLOCK_PLL_VCO_MAX)) {
+			for (srch_p = (uint64_t)CLOCK_PLL_P_MIN;
+			     srch_p <= (uint64_t)CLOCK_PLL_P_MAX; srch_p++) {
 				srch_m = fvco * srch_p;
 				soc_div64_to_32(&(srch_m), (uint32_t)src_freq, NULL);
 
-				if ((srch_m < (unsigned long long)CLOCK_PLL_M_MIN) ||
-				    (srch_m > (unsigned long long)CLOCK_PLL_M_MAX)) {
+				if ((srch_m < (uint64_t)CLOCK_PLL_M_MIN) ||
+				    (srch_m > (uint64_t)CLOCK_PLL_M_MAX)) {
 					continue;
 				}
 
 				temp = srch_m * src;
 				soc_div64_to_32(&(temp), (uint32_t)srch_p, NULL);
-				src_pll = (temp >> (unsigned long long)srch_s);
+				src_pll = (temp >> (uint64_t)srch_s);
 
-				if ((src_pll < (unsigned long long)CLOCK_PLL_MIN_RATE) ||
-				    (src_pll > (unsigned long long)CLOCK_PLL_MAX_RATE)) {
+				if ((src_pll < (uint64_t)CLOCK_PLL_MIN_RATE) ||
+				    (src_pll > (uint64_t)CLOCK_PLL_MAX_RATE)) {
 					continue;
 				}
 
@@ -310,7 +309,7 @@ static long clock_dev_find_pms(struct clock_pms *pll_ptr, uint32_t src_freq)
 		return -EIO;
 	}
 
-	temp = src * (unsigned long long)pll_ptr->m;
+	temp = src * (uint64_t)pll_ptr->m;
 	soc_div64_to_32(&(temp), (uint32_t)(pll_ptr->p), NULL);
 	pll_ptr->fpll = (uint32_t)(temp >> pll_ptr->s);
 	pll_ptr->en = 1;
@@ -318,19 +317,19 @@ static long clock_dev_find_pms(struct clock_pms *pll_ptr, uint32_t src_freq)
 	return 0;
 }
 
-static long clock_dev_set_pll_rate(uint32_t reg, uint32_t rate)
+static int32_t clock_dev_set_pll_rate(uint32_t reg, uint32_t rate)
 {
 	struct clock_pms pll;
-	unsigned long long cal_m;
-	long err;
+	uint64_t cal_m;
+	int32_t err;
 
 	err = 0;
 	pll.fpll = rate;
 
 	if (clock_dev_find_pms(&pll, CLOCK_XIN_CLK_RATE) != 0L) {
-		cal_m = (unsigned long long)CLOCK_PLL_P_MIN * (unsigned long long)CLOCK_PLL_VCO_MIN;
-		cal_m += (unsigned long long)CLOCK_XIN_CLK_RATE;
-		cal_m /= (unsigned long long)CLOCK_XIN_CLK_RATE;
+		cal_m = (uint64_t)CLOCK_PLL_P_MIN * (uint64_t)CLOCK_PLL_VCO_MIN;
+		cal_m += (uint64_t)CLOCK_XIN_CLK_RATE;
+		cal_m /= (uint64_t)CLOCK_XIN_CLK_RATE;
 		clock_dev_write_pll(reg, 0UL, (uint32_t)CLOCK_PLL_P_MIN, (uint32_t)cal_m,
 				    (uint32_t)CLOCK_PLL_S_MIN);
 		err = -EIO;
@@ -345,7 +344,7 @@ static uint32_t clock_dev_get_pll_rate(uint32_t reg)
 {
 	uint32_t reg_val;
 	struct clock_pms pll_cfg;
-	unsigned long long temp;
+	uint64_t temp;
 
 	if (reg == 0UL) {
 		return 0;
@@ -358,13 +357,13 @@ static uint32_t clock_dev_get_pll_rate(uint32_t reg)
 	pll_cfg.s = (reg_val >> (uint32_t)CLOCK_PLL_S_SHIFT) & ((uint32_t)CLOCK_PLL_S_MASK);
 	pll_cfg.en = (reg_val >> (uint32_t)CLOCK_PLL_EN_SHIFT) & (1UL);
 	pll_cfg.src = (reg_val >> (uint32_t)CLOCK_PLL_SRC_SHIFT) & ((uint32_t)CLOCK_PLL_SRC_MASK);
-	temp = (unsigned long long)CLOCK_XIN_CLK_RATE * (unsigned long long)pll_cfg.m;
+	temp = (uint64_t)CLOCK_XIN_CLK_RATE * (uint64_t)pll_cfg.m;
 	soc_div64_to_32(&temp, (uint32_t)(pll_cfg.p), NULL);
 
 	return (uint32_t)((temp) >> pll_cfg.s);
 }
 
-static uint32_t clock_dev_get_pll_div(long id)
+static uint32_t clock_dev_get_pll_div(int32_t id)
 {
 	uint32_t ret;
 	CLOCKMpll_t m_pll_id;
@@ -437,10 +436,10 @@ static uint32_t clock_dev_cal_pclk_div(const struct clock_pclk_ctrl *pclk_ctrl_p
 	return (err1 < err2) ? err1 : err2;
 }
 
-static long clock_dev_find_pclk(struct clock_pclk_ctrl *pclk_ctrl_ptr,
-				       enum clock_pclk_ctrl_type type)
+static int32_t clock_dev_find_pclk(struct clock_pclk_ctrl *pclk_ctrl_ptr,
+				   enum clock_pclk_ctrl_type type)
 {
-	long ret, last_idx, idx;
+	int32_t ret, last_idx, idx;
 	uint32_t div_max, srch_src, err_div, md;
 	uint32_t divider[CLOCK_SRC_MAX_NUM];
 	uint32_t err[CLOCK_SRC_MAX_NUM];
@@ -460,7 +459,7 @@ static long clock_dev_find_pclk(struct clock_pclk_ctrl *pclk_ctrl_ptr,
 
 	memset((void *)divider, 0x00U, sizeof(divider));
 	srch_src = 0xFFFFFFFFUL;
-	last_idx = (long)CLOCK_SRC_MAX_NUM - 1L;
+	last_idx = (int32_t)CLOCK_SRC_MAX_NUM - 1L;
 
 	for (idx = last_idx; idx >= 0L; idx--) {
 		if (micom_clock_source[idx] == 0UL) {
@@ -533,13 +532,13 @@ static long clock_dev_find_pclk(struct clock_pclk_ctrl *pclk_ctrl_ptr,
 	return 0;
 }
 
-static void clock_dev_reset_clk_src(long id)
+static void clock_dev_reset_clk_src(int32_t id)
 {
-	if (id >= (long)CLOCK_SRC_MAX_NUM) {
+	if (id >= (int32_t)CLOCK_SRC_MAX_NUM) {
 		return;
 	}
 
-	if (id < (long)CLOCK_PLL_MAX_NUM) {
+	if (id < (int32_t)CLOCK_PLL_MAX_NUM) {
 		micom_clock_source[id] = clock_get_pll_rate(id);
 		micom_clock_source[CLOCK_PLL_MAX_NUM + id] =
 			micom_clock_source[id] / (clock_dev_get_pll_div(id) + 1UL);
@@ -548,8 +547,8 @@ static void clock_dev_reset_clk_src(long id)
 
 void vcp_clock_init(void)
 {
-	static long initialized = -1;
-	long idx;
+	static int32_t initialized = -1;
+	int32_t idx;
 
 	if (initialized == 1L) {
 		return;
@@ -557,19 +556,19 @@ void vcp_clock_init(void)
 
 	initialized = 1;
 
-	for (idx = 0L; idx < ((long)CLOCK_PLL_MAX_NUM * 2L); idx++) {
+	for (idx = 0L; idx < ((int32_t)CLOCK_PLL_MAX_NUM * 2L); idx++) {
 		micom_clock_source[idx] = 0;
 	}
 
 	micom_clock_source[CLOCK_PLL_MAX_NUM * 2] = (uint32_t)CLOCK_XIN_CLK_RATE;
 	micom_clock_source[(CLOCK_PLL_MAX_NUM * 2) + 1] = 0UL;
 
-	for (idx = 0L; idx < (long)CLOCK_PLL_MAX_NUM; idx++) {
+	for (idx = 0L; idx < (int32_t)CLOCK_PLL_MAX_NUM; idx++) {
 		clock_dev_reset_clk_src(idx);
 	}
 }
 
-long clock_set_pll_div(long id, uint32_t pll_div)
+int32_t clock_set_pll_div(int32_t id, uint32_t pll_div)
 {
 	CLOCKMpll_t mpll_id;
 	uint32_t reg, offset, reg_val, real_pll_div;
@@ -613,7 +612,7 @@ long clock_set_pll_div(long id, uint32_t pll_div)
 	return 0;
 }
 
-uint32_t clock_get_pll_rate(long id)
+uint32_t clock_get_pll_rate(int32_t id)
 {
 	uint32_t reg;
 	CLOCKPll_t pll_id;
@@ -632,12 +631,12 @@ uint32_t clock_get_pll_rate(long id)
 	return clock_dev_get_pll_rate(reg);
 }
 
-long clock_set_pll_rate(long id, uint32_t rate)
+int32_t clock_set_pll_rate(int32_t id, uint32_t rate)
 {
 	uint32_t reg;
 	CLOCKPll_t pll_id;
 	enum clock_mpclk_ctrl_sel mpclk_sel;
-	long idx;
+	int32_t idx;
 
 	reg = (uint32_t)0;
 	pll_id = (CLOCKPll_t)id;
@@ -653,16 +652,16 @@ long clock_set_pll_rate(long id, uint32_t rate)
 		return -EINVAL;
 	}
 
-	idx = (long)mpclk_sel;
+	idx = (int32_t)mpclk_sel;
 	clock_dev_set_pll_rate(reg, rate);
 	micom_clock_source[idx] = clock_dev_get_pll_rate(reg);
 
 	return 0;
 }
 
-static long clock_dev_find_clk_ctrl(struct clock_clk_ctrl *clk_ctrl)
+static int32_t clock_dev_find_clk_ctrl(struct clock_clk_ctrl *clk_ctrl)
 {
-	long ret;
+	int32_t ret;
 	uint32_t div_table[CLOCK_SRC_MAX_NUM];
 	uint32_t err[CLOCK_SRC_MAX_NUM];
 	uint32_t idx, srch_src, clk_rate, xin_freq;
@@ -790,7 +789,7 @@ static long clock_dev_find_clk_ctrl(struct clock_clk_ctrl *clk_ctrl)
 	return 0;
 }
 
-long clock_set_clk_ctrl_rate(long id, uint32_t rate)
+int32_t clock_set_clk_ctrl_rate(int32_t id, uint32_t rate)
 {
 	uint32_t reg;
 	struct clock_clk_ctrl clk_ctrl;
@@ -815,7 +814,7 @@ long clock_set_clk_ctrl_rate(long id, uint32_t rate)
 	return 0;
 }
 
-uint32_t clock_get_clk_ctrl_rate(long id)
+uint32_t clock_get_clk_ctrl_rate(int32_t id)
 {
 	struct clock_clk_ctrl clk_ctrl;
 	enum clock_mclk_ctrl_sel mclk_sel;
@@ -836,18 +835,18 @@ uint32_t clock_get_clk_ctrl_rate(long id)
 		src_freq = (uint32_t)CLOCK_XIN_CLK_RATE;
 		break;
 	case CLOCK_MCLKCTRL_SEL_PLL0:
-		src_freq = clock_get_pll_rate((long)CLOCK_PLL_MICOM_0);
+		src_freq = clock_get_pll_rate((int32_t)CLOCK_PLL_MICOM_0);
 		break;
 	case CLOCK_MCLKCTRL_SEL_PLL1:
-		src_freq = clock_get_pll_rate((long)CLOCK_PLL_MICOM_1);
+		src_freq = clock_get_pll_rate((int32_t)CLOCK_PLL_MICOM_1);
 		break;
 	case CLOCK_MCLKCTRL_SEL_PLL0DIV:
-		src_freq = clock_get_pll_rate((long)CLOCK_PLL_MICOM_0) /
-			   (clock_dev_get_pll_div((long)CLOCK_PLL_MICOM_0) + 1UL);
+		src_freq = clock_get_pll_rate((int32_t)CLOCK_PLL_MICOM_0) /
+			   (clock_dev_get_pll_div((int32_t)CLOCK_PLL_MICOM_0) + 1UL);
 		break;
 	case CLOCK_MCLKCTRL_SEL_PLL1DIV:
-		src_freq = clock_get_pll_rate((long)CLOCK_PLL_MICOM_1) /
-			   (clock_dev_get_pll_div((long)CLOCK_PLL_MICOM_1) + 1UL);
+		src_freq = clock_get_pll_rate((int32_t)CLOCK_PLL_MICOM_1) /
+			   (clock_dev_get_pll_div((int32_t)CLOCK_PLL_MICOM_1) + 1UL);
 		break;
 	default:
 		src_freq = 0UL;
@@ -866,7 +865,7 @@ uint32_t clock_get_clk_ctrl_rate(long id)
 	return ret;
 }
 
-long clock_is_peri_enabled(long id)
+int32_t clock_is_peri_enabled(int32_t id)
 {
 	CLOCKPeri_t peri_offset;
 	uint32_t reg;
@@ -878,7 +877,7 @@ long clock_is_peri_enabled(long id)
 	return ((sys_read32(reg) & (1UL << (uint32_t)CLOCK_PCLKCTRL_EN_SHIFT)) != 0UL) ? 1L : 0L;
 }
 
-long clock_enable_peri(long id)
+int32_t clock_enable_peri(int32_t id)
 {
 	CLOCKPeri_t peri_offset;
 	uint32_t reg;
@@ -891,7 +890,7 @@ long clock_enable_peri(long id)
 	return 0;
 }
 
-long clock_disable_peri(long id)
+int32_t clock_disable_peri(int32_t id)
 {
 	CLOCKPeri_t peri_offset;
 	uint32_t reg;
@@ -905,7 +904,7 @@ long clock_disable_peri(long id)
 	return 0;
 }
 
-uint32_t clock_get_peri_rate(long id)
+uint32_t clock_get_peri_rate(int32_t id)
 {
 	CLOCKPeri_t peri_offset;
 	uint32_t reg, reg_va, src_freq, ret;
@@ -925,18 +924,18 @@ uint32_t clock_get_peri_rate(long id)
 
 	switch (pclk_sel) {
 	case CLOCK_PCLKCTRL_SEL_PLL0:
-		src_freq = clock_get_pll_rate((long)CLOCK_PLL_MICOM_0);
+		src_freq = clock_get_pll_rate((int32_t)CLOCK_PLL_MICOM_0);
 		break;
 	case CLOCK_PCLKCTRL_SEL_PLL1:
-		src_freq = clock_get_pll_rate((long)CLOCK_PLL_MICOM_1);
+		src_freq = clock_get_pll_rate((int32_t)CLOCK_PLL_MICOM_1);
 		break;
 	case CLOCK_PCLKCTRL_SEL_PLL0DIV:
-		src_freq = clock_get_pll_rate((long)CLOCK_PLL_MICOM_0) /
-			   (clock_dev_get_pll_div((long)CLOCK_PLL_MICOM_0) + 1UL);
+		src_freq = clock_get_pll_rate((int32_t)CLOCK_PLL_MICOM_0) /
+			   (clock_dev_get_pll_div((int32_t)CLOCK_PLL_MICOM_0) + 1UL);
 		break;
 	case CLOCK_PCLKCTRL_SEL_PLL1DIV:
-		src_freq = clock_get_pll_rate((long)CLOCK_PLL_MICOM_1) /
-			   (clock_dev_get_pll_div((long)CLOCK_PLL_MICOM_1) + 1UL);
+		src_freq = clock_get_pll_rate((int32_t)CLOCK_PLL_MICOM_1) /
+			   (clock_dev_get_pll_div((int32_t)CLOCK_PLL_MICOM_1) + 1UL);
 		break;
 	case CLOCK_PCLKCTRL_SEL_XIN:
 		src_freq = (uint32_t)CLOCK_XIN_CLK_RATE;
@@ -958,11 +957,11 @@ uint32_t clock_get_peri_rate(long id)
 	return ret;
 }
 
-long clock_set_peri_rate(long id, uint32_t rate)
+int32_t clock_set_peri_rate(int32_t id, uint32_t rate)
 {
 	CLOCKPeri_t peri_offset;
 	uint32_t reg;
-	long err;
+	int32_t err;
 	struct clock_pclk_ctrl pclk_ctrl;
 
 	peri_offset = CLOCK_PERI_SFMC;
@@ -977,7 +976,7 @@ long clock_set_peri_rate(long id, uint32_t rate)
 
 	if (clock_dev_find_pclk(&pclk_ctrl, CLOCK_PCLKCTRL_TYPE_XXX) != 0L) {
 		clock_dev_write_pclk_ctrl(reg, (uint32_t)CLOCK_PCLKCTRL_MODE_DIVIDER,
-					  (uint32_t)FALSE, (uint32_t)CLOCK_MPCLKCTRL_SEL_XIN, 1UL,
+					  (uint32_t)false, (uint32_t)CLOCK_MPCLKCTRL_SEL_XIN, 1UL,
 					  (uint32_t)CLOCK_PCLKCTRL_TYPE_XXX);
 		err = -EIO;
 	} else {
@@ -994,42 +993,42 @@ long clock_set_peri_rate(long id, uint32_t rate)
 	return err;
 }
 
-long clock_is_iobus_pwdn(long id)
+int32_t clock_is_iobus_pwdn(int32_t id)
 {
 	uint32_t reg;
-	long rest;
+	int32_t rest;
 	CLOCKIobus_t iobus;
 
 	iobus = (CLOCKIobus_t)id;
 
-	if ((long)iobus < (32L * 1L)) {
+	if ((int32_t)iobus < (32L * 1L)) {
 		reg = (uint32_t)MCU_BSP_SUBSYS_BASE + (uint32_t)CLOCK_MCKC_HCLK0;
-	} else if ((long)iobus < (32L * 2L)) {
+	} else if ((int32_t)iobus < (32L * 2L)) {
 		reg = (uint32_t)MCU_BSP_SUBSYS_BASE + (uint32_t)CLOCK_MCKC_HCLK1;
-	} else if ((long)iobus < (32L * 3L)) {
+	} else if ((int32_t)iobus < (32L * 3L)) {
 		reg = (uint32_t)MCU_BSP_SUBSYS_BASE + (uint32_t)CLOCK_MCKC_HCLK2;
 	} else {
 		return -EINVAL;
 	}
 
-	rest = (long)iobus % 32L;
+	rest = (int32_t)iobus % 32L;
 
 	return ((sys_read32(reg) & (1UL << (uint32_t)rest)) != 0UL) ? 0L : 1L;
 }
 
-long clock_enable_iobus(long id, boolean en)
+int32_t clock_enable_iobus(int32_t id, bool en)
 {
-	long ret;
+	int32_t ret;
 
-	if (en == TRUE) {
-		if (clock_set_iobus_pwdn(id, FALSE) == 0L) {
-			ret = clock_set_sw_reset(id, FALSE);
+	if (en == true) {
+		if (clock_set_iobus_pwdn(id, false) == 0L) {
+			ret = clock_set_sw_reset(id, false);
 		} else {
 			ret = -EIO;
 		}
 	} else {
-		if (clock_set_sw_reset(id, TRUE) == 0L) {
-			ret = clock_set_iobus_pwdn(id, TRUE);
+		if (clock_set_sw_reset(id, true) == 0L) {
+			ret = clock_set_iobus_pwdn(id, true);
 		} else {
 			ret = -EIO;
 		}
@@ -1038,27 +1037,27 @@ long clock_enable_iobus(long id, boolean en)
 	return ret;
 }
 
-long clock_set_iobus_pwdn(long id, boolean en)
+int32_t clock_set_iobus_pwdn(int32_t id, bool en)
 {
 	uint32_t reg;
-	long rest;
+	int32_t rest;
 	CLOCKIobus_t iobus;
 
 	iobus = (CLOCKIobus_t)id;
 
-	if ((long)iobus < (32L * 1L)) {
+	if ((int32_t)iobus < (32L * 1L)) {
 		reg = (uint32_t)MCU_BSP_SUBSYS_BASE + (uint32_t)CLOCK_MCKC_HCLK0;
-	} else if ((long)iobus < (32L * 2L)) {
+	} else if ((int32_t)iobus < (32L * 2L)) {
 		reg = (uint32_t)MCU_BSP_SUBSYS_BASE + (uint32_t)CLOCK_MCKC_HCLK1;
-	} else if ((long)iobus < (32L * 3L)) {
+	} else if ((int32_t)iobus < (32L * 3L)) {
 		reg = (uint32_t)MCU_BSP_SUBSYS_BASE + (uint32_t)CLOCK_MCKC_HCLK2;
 	} else {
 		return -EINVAL;
 	}
 
-	rest = (long)iobus % 32;
+	rest = (int32_t)iobus % 32;
 
-	if (en == TRUE) {
+	if (en == true) {
 		sys_write32(sys_read32(reg) & ~((uint32_t)1UL << (uint32_t)rest), reg);
 	} else {
 		sys_write32(sys_read32(reg) | ((uint32_t)1UL << (uint32_t)rest), reg);
@@ -1067,27 +1066,27 @@ long clock_set_iobus_pwdn(long id, boolean en)
 	return 0;
 }
 
-long clock_set_sw_reset(long id, boolean reset)
+int32_t clock_set_sw_reset(int32_t id, bool reset)
 {
 	uint32_t reg;
-	long rest;
+	int32_t rest;
 	CLOCKIobus_t iobus;
 
 	iobus = (CLOCKIobus_t)id;
 
-	if ((long)iobus < (32L * 1L)) {
+	if ((int32_t)iobus < (32L * 1L)) {
 		reg = (uint32_t)MCU_BSP_SUBSYS_BASE + (uint32_t)CLOCK_MCKC_HCLKSWR0;
-	} else if ((long)iobus < (32L * 2L)) {
+	} else if ((int32_t)iobus < (32L * 2L)) {
 		reg = (uint32_t)MCU_BSP_SUBSYS_BASE + (uint32_t)CLOCK_MCKC_HCLKSWR1;
-	} else if ((long)iobus < (32L * 3L)) {
+	} else if ((int32_t)iobus < (32L * 3L)) {
 		reg = (uint32_t)MCU_BSP_SUBSYS_BASE + (uint32_t)CLOCK_MCKC_HCLKSWR2;
 	} else {
 		return -EINVAL;
 	}
 
-	rest = (long)iobus % 32;
+	rest = (int32_t)iobus % 32;
 
-	if (reset == TRUE) {
+	if (reset == true) {
 		sys_write32(sys_read32(reg) & ~((uint32_t)1UL << (uint32_t)rest), reg);
 	} else {
 		sys_write32(sys_read32(reg) | ((uint32_t)1UL << (uint32_t)rest), reg);
