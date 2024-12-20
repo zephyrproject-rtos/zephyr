@@ -34,6 +34,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         port: str,
         frequency: int | None,
         reset_mode: str | None,
+        download_address: int | None,
         start_address: int | None,
         conn_modifiers: str | None,
         cli: Path | None,
@@ -46,6 +47,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
         self._port = port
         self._frequency = frequency
+        self._download_address = download_address
         self._start_address = start_address
         self._reset_mode = reset_mode
         self._conn_modifiers = conn_modifiers
@@ -150,6 +152,15 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             help="Reset mode",
         )
         parser.add_argument(
+            "--download-address",
+            # To accept arguments in hex format, a wrapper lambda around int() must be used.
+            # Wrapping the lambda with functools.wraps() makes it so that 'invalid int value'
+            # is displayed when an invalid value is provided for this argument.
+            type=functools.wraps(int)(lambda s: int(s, base=0)),
+            required=False,
+            help="Address where flashing should be done"
+        )
+        parser.add_argument(
             "--start-address",
             # To accept arguments in hex format, a wrapper lambda around int() must be used.
             # Wrapping the lambda with functools.wraps() makes it so that 'invalid int value'
@@ -194,6 +205,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             port=args.port,
             frequency=args.frequency,
             reset_mode=args.reset_mode,
+            download_address=args.download_address,
             start_address=args.start_address,
             conn_modifiers=args.conn_modifiers,
             cli=args.cli,
@@ -233,13 +245,22 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             self.check_call(cmd + ["--erase", "all"])
 
         # flash image and run application
-        dl_file = self.cfg.elf_file if self._use_elf else self.cfg.hex_file
+        if self._use_elf:
+            dl_file = self.cfg.elf_file
+        elif self.cfg.bin_file is not None and os.path.isfile(self.cfg.bin_file) and \
+            "zephyr.signed" in self.cfg.bin_file:
+            dl_file = self.cfg.bin_file
+        elif self.cfg.hex_file is not None and os.path.isfile(self.cfg.hex_file):
+            # --user-elf not used and no bin file given, default to hex
+            dl_file = self.cfg.hex_file
         if dl_file is None:
             raise RuntimeError('cannot flash; no download file was specified')
         elif not os.path.isfile(dl_file):
             raise RuntimeError(f'download file {dl_file} does not exist')
 
         flash_and_run_args = ["--download", dl_file]
+        if self._download_address is not None:
+            flash_and_run_args.append(f"0x{self._download_address:X}")
 
         # '--start' is needed to start execution after flash.
         # The default start address is the beggining of the flash,
