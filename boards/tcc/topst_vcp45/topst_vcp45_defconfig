@@ -1,15 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
 
-CONFIG_XIP=n
-CONFIG_SRAM_VECTOR_TABLE=y
-
 CONFIG_MAX_THREAD_BYTES=3
 CONFIG_THREAD_STACK_INFO=y
-
-CONFIG_SYSCON=y
-
-CONFIG_TIMEOUT_64BIT=y
 
 CONFIG_GPIO=y
 
