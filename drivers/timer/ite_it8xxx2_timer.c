@@ -150,6 +150,8 @@ void timer_5ms_one_shot(void)
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
 void arch_busy_wait(uint32_t usec_to_wait)
 {
+	uint32_t start = IT8XXX2_EXT_CNTOX(BUSY_WAIT_H_TIMER);
+
 	if (!usec_to_wait) {
 		return;
 	}
@@ -157,16 +159,8 @@ void arch_busy_wait(uint32_t usec_to_wait)
 	/* Decrease 1us here to calibrate our access registers latency */
 	usec_to_wait--;
 
-	/*
-	 * We want to set the bit(1) re-start busy wait timer as soon
-	 * as possible, so we directly write 0xb instead of | bit(1).
-	 */
-	IT8XXX2_EXT_CTRLX(BUSY_WAIT_L_TIMER) = IT8XXX2_EXT_ETX_COMB_RST_EN;
-
 	for (;;) {
-		uint32_t curr = IT8XXX2_EXT_CNTOX(BUSY_WAIT_H_TIMER);
-
-		if (curr >= usec_to_wait) {
+		if ((IT8XXX2_EXT_CNTOX(BUSY_WAIT_H_TIMER) - start) >= usec_to_wait) {
 			break;
 		}
 	}
