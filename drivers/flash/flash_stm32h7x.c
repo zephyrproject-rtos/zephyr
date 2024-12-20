@@ -242,6 +242,70 @@ int flash_stm32_get_wp_sectors(const struct device *dev, uint64_t *protected_sec
 }
 #endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
 
+#ifdef CONFIG_FLASH_STM32_BLOCK_REGISTERS
+int flash_stm32_control_register_disable(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	/*
+	 * Access to control register can be disabled by writing wrong key to
+	 * the key register. Option register will remain disabled until reset.
+	 * Writing wrong key causes a bus fault, so we need to set FAULTMASK to
+	 * disable faults, and clear bus fault pending bit before enabling them
+	 * again.
+	 */
+	regs->CR1 |= FLASH_CR_LOCK;
+#ifdef DUAL_BANK
+	regs->CR2 |= FLASH_CR_LOCK;
+#endif /* DUAL_BANK */
+
+	__set_FAULTMASK(1);
+	regs->KEYR1 = 0xffffffff;
+
+#ifdef DUAL_BANK
+	regs->KEYR2 = 0xffffffff;
+#endif /* DUAL_BANK */
+	/* Make sure that the fault occurs before we clear it. */
+	barrier_dsync_fence_full();
+
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	/* Make sure to clear the fault before changing the fault mask. */
+	barrier_dsync_fence_full();
+
+	__set_FAULTMASK(0);
+
+	return 0;
+}
+
+int flash_stm32_option_bytes_disable(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	/*
+	 * Access to option register can be disabled by writing wrong key to
+	 * the key register. Option register will remain disabled until reset.
+	 * Writing wrong key causes a bus fault, so we need to set FAULTMASK to
+	 * disable faults, and clear bus fault pending bit before enabling them
+	 * again.
+	 */
+	regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
+
+	__set_FAULTMASK(1);
+	regs->OPTKEYR = 0xffffffff;
+	/* Make sure that the fault occurs before we clear it. */
+	barrier_dsync_fence_full();
+
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	/* Make sure to clear the fault before changing the fault mask. */
+	barrier_dsync_fence_full();
+	__set_FAULTMASK(0);
+
+	return 0;
+}
+#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
+
 int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
