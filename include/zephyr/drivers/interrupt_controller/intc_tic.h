@@ -70,14 +70,14 @@ typedef struct tic_irq_func_ptr {
 #define tic_cpu_if      ((volatile tic_cpu_interface *)(VCP_TIC_CPU_BASE))
 
 /* ----------- DISTRIBUTOR CONTROL REGISTER -----------                 */
-#define ARM_BIT_TIC_DIST_ICDDCR_EN (0x00000001UL) /* Global TIC enable. */
+#define ARM_BIT_TIC_DIST_ICDDCR_EN 0x00000001UL /* Global TIC enable. */
 
 /* ----------- CPU INTERFACE CONTROL REGISTER ---------                 */
-#define TIC_CPUIF_CTRL_ENABLEGRP0 (0x00000001UL) /* Enable secure interrupts.      */
-#define TIC_CPUIF_CTRL_ENABLEGRP1 (0x00000002UL) /* Enable non-secure interrupts.  */
-#define TIC_CPUIF_CTRL_ACKCTL     (0x00000004UL) /* Secure ack of NS interrupts.   */
+#define TIC_CPUIF_CTRL_ENABLEGRP0 0x00000001UL /* Enable secure interrupts.      */
+#define TIC_CPUIF_CTRL_ENABLEGRP1 0x00000002UL /* Enable non-secure interrupts.  */
+#define TIC_CPUIF_CTRL_ACKCTL     0x00000004UL /* Secure ack of NS interrupts.   */
 
-#define TIC_SGI_TO_TARGETLIST (0UL)
+#define TIC_SGI_TO_TARGETLIST 0
 
 #define MAX_API_CALL_INTERRUPT_PRIORITY 0
 

@@ -8,23 +8,22 @@
 
 /*
  * DEFINITIONS
- *
  */
 
-#define TIC_INT_TYPE_LEVEL_HIGH   (0x1U)
-#define TIC_INT_TYPE_LEVEL_LOW    (0x2U)
-#define TIC_INT_TYPE_EDGE_RISING  (0x4U)
-#define TIC_INT_TYPE_EDGE_FALLING (0x8U)
+#define TIC_INT_TYPE_LEVEL_HIGH   0x1
+#define TIC_INT_TYPE_LEVEL_LOW    0x2
+#define TIC_INT_TYPE_EDGE_RISING  0x4
+#define TIC_INT_TYPE_EDGE_FALLING 0x8
 #define TIC_INT_TYPE_EDGE_BOTH    (TIC_INT_TYPE_EDGE_RISING | TIC_INT_TYPE_EDGE_FALLING)
 
-#define TIC_IRQ_DEFAULT_PRIORITY (0xFAUL)
-#define TIC_PRIORITY_NO_MEAN     (0x100UL)
+#define TIC_IRQ_DEFAULT_PRIORITY 0xFA
+#define TIC_PRIORITY_NO_MEAN     0x100
 
 #define TIC_SPI 0x0
 #define TIC_PPI 0x1
 
-#define TIC_PPI_START (16UL)
-#define TIC_SPI_START (32UL)
+#define TIC_PPI_START 16
+#define TIC_SPI_START 32
 
 #define TIC_CAN0_0                (TIC_SPI_START + 0UL)
 #define TIC_CAN0_1                (TIC_SPI_START + 1UL)
@@ -107,16 +106,16 @@
 #define TIC_EXT7                  (TIC_SPI_START + 78UL)
 #define TIC_EXT8                  (TIC_SPI_START + 79UL)
 #define TIC_EXT9                  (TIC_SPI_START + 80UL)
-#define TIC_EXTn0                 (TIC_SPI_START + 81UL)
-#define TIC_EXTn1                 (TIC_SPI_START + 82UL)
-#define TIC_EXTn2                 (TIC_SPI_START + 83UL)
-#define TIC_EXTn3                 (TIC_SPI_START + 84UL)
-#define TIC_EXTn4                 (TIC_SPI_START + 85UL)
-#define TIC_EXTn5                 (TIC_SPI_START + 86UL)
-#define TIC_EXTn6                 (TIC_SPI_START + 87UL)
-#define TIC_EXTn7                 (TIC_SPI_START + 88UL)
-#define TIC_EXTn8                 (TIC_SPI_START + 89UL)
-#define TIC_EXTn9                 (TIC_SPI_START + 90UL)
+#define TIC_EXT_N0                (TIC_SPI_START + 81UL)
+#define TIC_EXT_N1                (TIC_SPI_START + 82UL)
+#define TIC_EXT_N2                (TIC_SPI_START + 83UL)
+#define TIC_EXT_N3                (TIC_SPI_START + 84UL)
+#define TIC_EXT_N4                (TIC_SPI_START + 85UL)
+#define TIC_EXT_N5                (TIC_SPI_START + 86UL)
+#define TIC_EXT_N6                (TIC_SPI_START + 87UL)
+#define TIC_EXT_N7                (TIC_SPI_START + 88UL)
+#define TIC_EXT_N8                (TIC_SPI_START + 89UL)
+#define TIC_EXT_N9                (TIC_SPI_START + 90UL)
 #define TIC_FMU_IRQ               (TIC_SPI_START + 91UL)
 #define TIC_FMU_FIQ               (TIC_SPI_START + 92UL)
 #define TIC_I2S_DMA               (TIC_SPI_START + 93UL)
@@ -151,7 +150,7 @@
 
 #define TIC_EINT_START_INT (TIC_EXT0)
 #define TIC_EINT_END_INT   (TIC_EXT9)
-#define TIC_EINT_NUM       ((unsigned long)TIC_EXTn0 - (unsigned long)TIC_EXT0)
+#define TIC_EINT_NUM       ((unsigned long)TIC_EXT_N0 - (unsigned long)TIC_EXT0)
 
 #define TIC_INT_SRC_CNT (TIC_SPU + 1UL)
 
