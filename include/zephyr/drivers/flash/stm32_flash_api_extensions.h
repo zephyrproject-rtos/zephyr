@@ -66,12 +66,12 @@ enum stm32_ex_ops {
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 struct flash_stm32_ex_op_sector_wp_in {
-	uint32_t enable_mask;
-	uint32_t disable_mask;
+	uint64_t enable_mask;
+	uint64_t disable_mask;
 };
 
 struct flash_stm32_ex_op_sector_wp_out {
-	uint32_t protected_mask;
+	uint64_t protected_mask;
 };
 #endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
 
