@@ -159,7 +159,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	hdr->int_status = data->status1;
 	hdr->is_full_res = data->is_full_res;
 	hdr->selected_range = data->selected_range;
-	hdr->accel_odr = cfg->odr;
+	hdr->accel_odr = data->odr;
 	hdr->sample_set_size = sample_set_size;
 
 	uint32_t buf_avail = buf_len;
