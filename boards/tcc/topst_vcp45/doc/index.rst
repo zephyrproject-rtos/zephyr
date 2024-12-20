@@ -108,8 +108,6 @@ Build an app, for example :zephyr:code-sample:`hello_world`
    :board: topst_vcp45
    :goals: topst_vcp45
 
-Change all 'printf' in the samples/hello_world/src/main.c file to 'printk'.
-
 west build --build-dir topst_vcp45 -b topst_vcp45 samples/hello_world
 
 Creating a ROM Build Directory and Downloading Necessary Tools and Images
@@ -492,8 +490,7 @@ Debugging
             $ sudo tio -b 115200 /dev/ttyUSB0
 
     Verify the Software
-        After resetting the board, you should see messages on the terminal.
-
+        Because the serial device driver has not yet been added to this PR, you cannot see the sentences output by the hello_world program.
 
 References
 **********
