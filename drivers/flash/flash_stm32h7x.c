@@ -767,7 +767,7 @@ static int stm32h7_flash_init(const struct device *dev)
 	}
 #endif
 
-	return flash_stm32h7_cr_lock(dev, false);
+	return flash_stm32h7_cr_lock(dev, true);
 }
 
 DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
