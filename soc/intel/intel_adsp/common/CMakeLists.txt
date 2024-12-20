@@ -82,11 +82,22 @@ add_custom_command(
       --rename-section .module.boot=.module
       ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/boot.mod 2>${NULL_FILE}
 
+  COMMAND ${CMAKE_OBJCOPY}
+      --only-section .cold
+      --only-section .coldrodata
+      --only-section .module.cold
+      --set-section-flags .module.cold=noload,readonly
+      --rename-section .module.cold=.module
+      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/cold.mod 2>${NULL_FILE}
+
   # Remove .fw_metadata here...
   COMMAND ${CMAKE_OBJCOPY}
       --remove-section .imr
       --remove-section .imrdata
+      --remove-section .cold
+      --remove-section .coldrodata
       --remove-section .module.boot
+      --remove-section .module.cold
       --remove-section .fw_metadata
       --set-section-flags .module.main=noload,readonly
       --set-section-flags .static_uuid_entries=noload,readonly
