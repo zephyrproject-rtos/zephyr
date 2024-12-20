@@ -16,12 +16,12 @@
 #include <string.h>
 #include "soc.h"
 
-unsigned int z_soc_irq_get_active(void)
+uint32_t z_soc_irq_get_active(void)
 {
 	return z_tic_irq_get_active();
 }
 
-void z_soc_irq_eoi(unsigned int irq)
+void z_soc_irq_eoi(uint32_t irq)
 {
 	z_tic_irq_eoi(irq);
 }
@@ -31,25 +31,25 @@ void z_soc_irq_init(void)
 	z_tic_irq_init();
 }
 
-void z_soc_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void z_soc_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags)
 {
 	/* Configure interrupt type and priority */
 	z_tic_irq_priority_set(irq, prio, flags);
 }
 
-void z_soc_irq_enable(unsigned int irq)
+void z_soc_irq_enable(uint32_t irq)
 {
 	/* Enable interrupt */
 	z_tic_irq_enable(irq);
 }
 
-void z_soc_irq_disable(unsigned int irq)
+void z_soc_irq_disable(uint32_t irq)
 {
 	/* Disable interrupt */
 	z_tic_irq_disable(irq);
 }
 
-int z_soc_irq_is_enabled(unsigned int irq)
+int32_t z_soc_irq_is_enabled(uint32_t irq)
 {
 	/* Check if interrupt is enabled */
 	return z_tic_irq_is_enabled(irq);
@@ -65,31 +65,28 @@ void soc_early_init_hook(void)
 	vcp_clock_init();
 
 	/* Enable SYS_3P3 */
-	vcp_gpio_config(SYS_PWR_EN, (unsigned long)(GPIO_FUNC(0U) | VCP_GPIO_OUTPUT));
+	vcp_gpio_config(SYS_PWR_EN, (uint32_t)(GPIO_FUNC(0U) | VCP_GPIO_OUTPUT));
 	vcp_gpio_set(SYS_PWR_EN, 1UL);
 }
 
-static int32_t reduce_dividend(unsigned long long *dividend, uint32_t divisor,
-			       unsigned long long *res)
+static int32_t reduce_dividend(uint64_t *dividend, uint32_t divisor, uint64_t *res)
 {
 	uint32_t high = (uint32_t)(*dividend >> 32ULL);
 
 	if (high >= divisor) {
 		high /= divisor;
-		*res = ((unsigned long long)high) << 32ULL;
+		*res = ((uint64_t)high) << 32ULL;
 
-		if ((divisor > 0UL) &&
-		    ((*dividend / (unsigned long long)divisor) >= (unsigned long long)high)) {
+		if ((divisor > 0UL) && ((*dividend / (uint64_t)divisor) >= (uint64_t)high)) {
 			return -EINVAL;
 		}
 
-		*dividend -= (((unsigned long long)high * (unsigned long long)divisor) << 32ULL);
+		*dividend -= (((uint64_t)high * (uint64_t)divisor) << 32ULL);
 	}
 	return 0;
 }
 
-static void adjust_divisor_and_quotient(unsigned long long *b, unsigned long long *d,
-					unsigned long long rem)
+static void adjust_divisor_and_quotient(uint64_t *b, uint64_t *d, uint64_t rem)
 {
 	while ((*b > 0ULL) && (*b < rem)) {
 		*b = *b + *b;
@@ -97,8 +94,7 @@ static void adjust_divisor_and_quotient(unsigned long long *b, unsigned long lon
 	}
 }
 
-static int32_t perform_division(unsigned long long *rem, unsigned long long *b,
-				unsigned long long *d, unsigned long long *res)
+static int32_t perform_division(uint64_t *rem, uint64_t *b, uint64_t *d, uint64_t *res)
 {
 	do {
 		if (*rem >= *b) {
@@ -118,15 +114,15 @@ static int32_t perform_division(unsigned long long *rem, unsigned long long *b,
 	return 0;
 }
 
-int32_t soc_div64_to_32(unsigned long long *dividend_ptr, uint32_t divisor, uint32_t *rem_ptr)
+int32_t soc_div64_to_32(uint64_t *dividend_ptr, uint32_t divisor, uint32_t *rem_ptr)
 {
 	int32_t ret_val = 0;
-	unsigned long long rem = 0;
-	unsigned long long b = divisor;
-	unsigned long long d = 1;
-	unsigned long long res = 0;
+	uint64_t rem = 0;
+	uint64_t b = divisor;
+	uint64_t d = 1;
+	uint64_t res = 0;
 
-	if (dividend_ptr == NULL_PTR) {
+	if (dividend_ptr == TCC_NULL_PTR) {
 		return -EINVAL;
 	}
 
@@ -146,7 +142,7 @@ int32_t soc_div64_to_32(unsigned long long *dividend_ptr, uint32_t divisor, uint
 
 	*dividend_ptr = res;
 
-	if (rem_ptr != NULL_PTR) {
+	if (rem_ptr != TCC_NULL_PTR) {
 		*rem_ptr = (uint32_t)rem;
 	}
 

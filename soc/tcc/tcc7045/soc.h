@@ -8,26 +8,10 @@
 #ifndef _BOARD_SOC__H_
 #define _BOARD_SOC__H_
 
-#ifndef FALSE
-#define FALSE (0U)
-#endif
+#define TCC_NULL_PTR ((void *)0)
 
-#ifndef TRUE
-#define TRUE (1U)
-#endif
-
-#ifndef NULL_PTR
-#define NULL_PTR ((void *)0)
-#endif
-
-#ifndef NULL
-#define NULL (0)
-#endif
-
-#ifndef ON
-#define ON  (TRUE)
-#define OFF (FALSE)
-#endif
+#define TCC_ON  (1U)
+#define TCC_OFF (0U)
 
 #define MCU_BSP_UART_BASE  (0xA0200000UL)
 #define MCU_BSP_GDMA_BASE  (0xA0800000UL)
@@ -39,8 +23,6 @@
 
 #define SYS_PWR_EN (GPIO_GPC(2UL))
 
-int32_t soc_div64_to_32(unsigned long long *pullDividend, uint32_t uiDivisor, uint32_t *puiRem);
-
-typedef unsigned char boolean; /* for use with TRUE/FALSE        */
+int32_t soc_div64_to_32(uint64_t *pullDividend, uint32_t uiDivisor, uint32_t *puiRem);
 
 #endif /* _BOARD_SOC__H_ */
