@@ -62,8 +62,7 @@ struct flash_stm32_sector_t {
 	volatile uint32_t *sr;
 };
 
-static __unused int write_optb(const struct device *dev, uint32_t mask,
-			       uint32_t value)
+static __unused int write_optb(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
@@ -102,6 +101,65 @@ static __unused int write_optb(const struct device *dev, uint32_t mask,
 	return 0;
 }
 
+static __unused int write_wp_reg(const struct device *dev, uint32_t mask, uint32_t value,
+				 uint32_t bank)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	int rc;
+#ifdef DUAL_BANK
+	uint32_t number_of_banks = 2;
+#else  /* DUAL_BANK */
+	uint32_t number_of_banks = 1;
+#endif /* DUAL_BANK */
+#ifdef CONFIG_SOC_SERIES_STM32H7RSX
+	volatile uint32_t *cur =
+		(volatile uint32_t *)((uint32_t)regs + offsetof(FLASH_TypeDef, WRPSR));
+	volatile uint32_t *prg =
+		(volatile uint32_t *)((uint32_t)regs + offsetof(FLASH_TypeDef, WRPSRP));
+#else
+	volatile uint32_t *cur =
+		(volatile uint32_t *)((uint32_t)regs + offsetof(FLASH_TypeDef, WPSN_CUR1));
+	volatile uint32_t *prg =
+		(volatile uint32_t *)((uint32_t)regs + offsetof(FLASH_TypeDef, WPSN_PRG1));
+#endif
+
+#ifdef DUAL_BANK
+	if (bank == 1) {
+		cur = (volatile uint32_t *)((uint32_t)regs + offsetof(FLASH_TypeDef, WPSN_CUR2));
+		prg = (volatile uint32_t *)((uint32_t)regs + offsetof(FLASH_TypeDef, WPSN_PRG2));
+	}
+#endif /* DUAL_BANK */
+
+	if (bank >= number_of_banks) {
+		return -EINVAL;
+	}
+
+	/* Check if already done. */
+	if ((*cur & mask) == value) {
+		return 0;
+	}
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		LOG_ERR("Err flash no idle");
+		return rc;
+	}
+
+	*prg = (*cur & ~mask) | value;
+	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
+
+	/* Make sure previous write is completed. */
+	barrier_dsync_fence_full();
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		LOG_ERR("Err flash no idle");
+		return rc;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
 uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 {
@@ -112,10 +170,88 @@ uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 
 void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 {
-	write_optb(dev, FLASH_OPTSR_RDP_Msk,
-		(uint32_t)level << FLASH_OPTSR_RDP_Pos);
+	write_optb(dev, FLASH_OPTSR_RDP_Msk, (uint32_t)level << FLASH_OPTSR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+
+int flash_stm32_update_wp_sectors(const struct device *dev, uint64_t changed_sectors,
+				  uint64_t protected_sectors)
+{
+#ifdef CONFIG_SOC_SERIES_STM32H7RSX
+	uint64_t bank_mask = FLASH_WRPSRP_WRPS_Msk >> FLASH_WRPSRP_WRPS_Pos;
+	uint32_t pos = FLASH_WRPSRP_WRPS_Pos;
+#else
+	uint64_t bank_mask = FLASH_WPSN_WRPSN_Msk >> FLASH_WPSN_WRPSN_Pos;
+	uint32_t pos = FLASH_WPSN_WRPSN_Pos;
+#endif
+	uint32_t sectors_per_bank = 32 - __builtin_clz(bank_mask);
+	uint64_t sectors_mask = 0;
+#ifdef DUAL_BANK
+	uint32_t number_of_banks = 2;
+#else  /* DUAL_BANK */
+	uint32_t number_of_banks = 1;
+#endif /* DUAL_BANK */
+	uint32_t protected_sectors_reg;
+	uint32_t changed_sectors_reg;
+	int ret;
+
+	for (int i = 0; i < number_of_banks; i++) {
+		sectors_mask |= bank_mask << (sectors_per_bank * i);
+	}
+
+	if ((changed_sectors & sectors_mask) != changed_sectors) {
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < number_of_banks; i++) {
+		/* Prepare protected and changed masks per bank. */
+		protected_sectors_reg = (protected_sectors >> sectors_per_bank * i) & bank_mask;
+		changed_sectors_reg = (changed_sectors >> sectors_per_bank * i) & bank_mask;
+
+		if (changed_sectors == 0) {
+			continue;
+		}
+		changed_sectors_reg <<= pos;
+		protected_sectors_reg <<= pos;
+		/* Sector is protected when bit == 0. Flip protected_sectors bits */
+		protected_sectors_reg = ~protected_sectors_reg;
+
+		ret = write_wp_reg(dev, changed_sectors_reg, protected_sectors_reg, i);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int flash_stm32_get_wp_sectors(const struct device *dev, uint64_t *protected_sectors)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+#ifdef CONFIG_SOC_SERIES_STM32H7RSX
+	uint32_t mask = FLASH_WRPSRP_WRPS_Msk;
+	uint32_t pos = FLASH_WRPSRP_WRPS_Pos;
+	uint32_t cur = regs->WRPSR;
+#else
+	uint32_t mask = FLASH_WPSN_WRPSN_Msk;
+	uint32_t pos = FLASH_WPSN_WRPSN_Pos;
+	uint32_t cur = regs->WPSN_CUR1;
+#endif
+
+	*protected_sectors = (~cur & mask) >> pos;
+#ifdef DUAL_BANK
+	/* Available only for STM32H7x */
+	uint64_t proctected_sectors_2 =
+		(~regs->WPSN_CUR2 & FLASH_WPSN_WRPSN_Msk) >> FLASH_WPSN_WRPSN_Pos;
+	uint32_t sectors_per_bank = 32 - __builtin_clz(FLASH_WPSN_WRPSN_Msk) + FLASH_WPSN_WRPSN_Pos;
+	*protected_sectors |= proctected_sectors_2 << sectors_per_bank;
+#endif /* DUAL_BANK */
+
+	return 0;
+}
+#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
 
 int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 {
