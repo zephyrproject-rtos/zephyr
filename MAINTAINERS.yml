@@ -1774,7 +1774,6 @@ Release Notes:
   maintainers:
     - simonguinot
   collaborators:
-    - mbolivar-ampere
     - soburi
     - thedjnK
   files:
@@ -4423,7 +4422,7 @@ VFS:
 West:
   status: odd fixes
   collaborators:
-    - mbolivar-ampere
+    - mbolivar
     - carlescufi
     - swinslow
     - pdgendt
