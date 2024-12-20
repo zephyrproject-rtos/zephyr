@@ -135,7 +135,7 @@ void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
 	if (session->req != NULL) {
 		struct bt_avdtp_req *req = session->req;
 
-		req->status = 0;
+		req->status = BT_AVDTP_SUCCESS;
 		bt_avdtp_clear_req(session);
 		if (req->func != NULL) {
 			req->func(req);
@@ -163,7 +163,7 @@ void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
 
 		bt_avdtp_set_state(sep, AVDTP_IDLE);
 		avdtp_sep_unlock(sep);
-		req->status = 0;
+		req->status = BT_AVDTP_SUCCESS;
 		bt_avdtp_clear_req(session);
 		if (req->func != NULL) {
 			req->func(req);
@@ -245,7 +245,7 @@ static struct net_buf *avdtp_create_reply_pdu(uint8_t msg_type, uint8_t pkt_type
 static void avdtp_set_status(struct bt_avdtp_req *req, struct net_buf *buf, uint8_t msg_type)
 {
 	if (msg_type == BT_AVDTP_ACCEPT) {
-		req->status = 0;
+		req->status = BT_AVDTP_SUCCESS;
 	} else if (msg_type == BT_AVDTP_REJECT) {
 		if (buf->len >= 1U) {
 			req->status = net_buf_pull_u8(buf);
@@ -340,11 +340,12 @@ static struct bt_avdtp_sep *avdtp_get_sep(uint8_t stream_endpoint_id)
 	return sep;
 }
 
-static struct bt_avdtp_sep *avdtp_get_cmd_sep(struct net_buf *buf)
+static struct bt_avdtp_sep *avdtp_get_cmd_sep(struct net_buf *buf, uint8_t *error_code)
 {
 	struct bt_avdtp_sep *sep;
 
 	if (buf->len < 1U) {
+		*error_code = BT_AVDTP_BAD_LENGTH;
 		LOG_WRN("Invalid ACP SEID");
 		return NULL;
 	}
@@ -361,7 +362,7 @@ static void avdtp_get_capabilities_handler(struct bt_avdtp *session, struct net_
 		struct bt_avdtp_sep *sep;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_cmd_sep(buf);
+		sep = avdtp_get_cmd_sep(buf, &error_code);
 		if ((sep == NULL) || (session->ops->get_capabilities_ind == NULL)) {
 			err = -ENOTSUP;
 		} else {
@@ -429,7 +430,7 @@ static void avdtp_process_configuration(struct bt_avdtp *session, struct net_buf
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_cmd_sep(buf);
+		sep = avdtp_get_cmd_sep(buf, &error_code);
 		avdtp_sep_lock(sep);
 		if (sep == NULL) {
 			err = -ENOTSUP;
@@ -449,14 +450,9 @@ static void avdtp_process_configuration(struct bt_avdtp *session, struct net_buf
 			if (!(sep->state & expected_state)) {
 				err = -ENOTSUP;
 				error_code = BT_AVDTP_BAD_STATE;
-			} else {
+			} else if (buf->len >= 1U) {
 				uint8_t int_seid;
 
-				if (buf->len < 1U) {
-					LOG_WRN("Invalid INT SEID");
-					avdtp_sep_unlock(sep);
-					return;
-				}
 				/* INT Stream Endpoint ID */
 				int_seid = net_buf_pull_u8(buf) >> 2;
 				if (!reconfig) {
@@ -466,6 +462,10 @@ static void avdtp_process_configuration(struct bt_avdtp *session, struct net_buf
 					err = session->ops->re_configuration_ind(
 						session, sep, int_seid, buf, &error_code);
 				}
+			} else {
+				LOG_WRN("Invalid INT SEID");
+				err = -ENOTSUP;
+				error_code = BT_AVDTP_BAD_LENGTH;
 			}
 		}
 
@@ -513,12 +513,16 @@ static void avdtp_process_configuration(struct bt_avdtp *session, struct net_buf
 		} else if (msg_type == BT_AVDTP_REJECT) {
 			if (buf->len < 1U) {
 				LOG_WRN("Invalid RSP frame");
-				return;
+				req->status = BT_AVDTP_BAD_LENGTH;
+			} else {
+				/* Service Category */
+				net_buf_pull_u8(buf);
 			}
-			/* Service Category */
-			net_buf_pull_u8(buf);
 		}
-		avdtp_set_status(req, buf, msg_type);
+
+		if (req->status == BT_AVDTP_SUCCESS) {
+			avdtp_set_status(req, buf, msg_type);
+		}
 		bt_avdtp_clear_req(session);
 		if (req->func != NULL) {
 			req->func(req);
@@ -570,7 +574,7 @@ static void avdtp_open_handler(struct bt_avdtp *session, struct net_buf *buf, ui
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_cmd_sep(buf);
+		sep = avdtp_get_cmd_sep(buf, &error_code);
 		avdtp_sep_lock(sep);
 		if ((sep == NULL) || (session->ops->open_ind == NULL)) {
 			err = -ENOTSUP;
@@ -618,19 +622,33 @@ static void avdtp_open_handler(struct bt_avdtp *session, struct net_buf *buf, ui
 		}
 		k_work_cancel_delayable(&session->timeout_work);
 		avdtp_set_status(req, buf, msg_type);
-		if (msg_type == BT_AVDTP_ACCEPT) {
+		if (msg_type == BT_AVDTP_ACCEPT && req->status == BT_AVDTP_SUCCESS) {
 			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPENING);
 			/* wait the media l2cap is established */
 			if (!avdtp_media_connect(session, CTRL_REQ(req)->sep)) {
 				return;
 			}
 		}
-		if (req->status) {
+		if (req->status != BT_AVDTP_SUCCESS) {
 			bt_avdtp_clear_req(session);
 			if (req->func != NULL) {
 				req->func(req);
 			}
 		}
+	}
+}
+
+static void avdtp_handle_reject(struct net_buf *buf, struct bt_avdtp_req *req)
+{
+	if (buf->len > 1U) {
+		uint8_t acp_seid;
+
+		acp_seid = net_buf_pull_u8(buf);
+		if (acp_seid != CTRL_REQ(req)->acp_stream_ep_id) {
+			req->status = BT_AVDTP_BAD_ACP_SEID;
+		}
+	} else {
+		req->status = BT_AVDTP_BAD_LENGTH;
 	}
 }
 
@@ -644,7 +662,7 @@ static void avdtp_start_handler(struct bt_avdtp *session, struct net_buf *buf, u
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_cmd_sep(buf);
+		sep = avdtp_get_cmd_sep(buf, &error_code);
 		avdtp_sep_lock(sep);
 		if ((sep == NULL) || (session->ops->start_ind == NULL)) {
 			err = -ENOTSUP;
@@ -691,16 +709,12 @@ static void avdtp_start_handler(struct bt_avdtp *session, struct net_buf *buf, u
 		if (msg_type == BT_AVDTP_ACCEPT) {
 			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_STREAMING);
 		} else if (msg_type == BT_AVDTP_REJECT) {
-			if (buf->len > 1U) {
-				uint8_t acp_seid;
-
-				acp_seid = net_buf_pull_u8(buf);
-				if (acp_seid != CTRL_REQ(req)->acp_stream_ep_id) {
-					return;
-				}
-			}
+			avdtp_handle_reject(buf, req);
 		}
-		avdtp_set_status(req, buf, msg_type);
+
+		if (req->status == BT_AVDTP_SUCCESS) {
+			avdtp_set_status(req, buf, msg_type);
+		}
 		bt_avdtp_clear_req(session);
 		if (req->func != NULL) {
 			req->func(req);
@@ -718,7 +732,7 @@ static void avdtp_close_handler(struct bt_avdtp *session, struct net_buf *buf, u
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_cmd_sep(buf);
+		sep = avdtp_get_cmd_sep(buf, &error_code);
 		avdtp_sep_lock(sep);
 		if ((sep == NULL) || (session->ops->close_ind == NULL)) {
 			err = -ENOTSUP;
@@ -765,7 +779,7 @@ static void avdtp_close_handler(struct bt_avdtp *session, struct net_buf *buf, u
 		}
 		k_work_cancel_delayable(&session->timeout_work);
 		avdtp_set_status(req, buf, msg_type);
-		if (msg_type == BT_AVDTP_ACCEPT) {
+		if (msg_type == BT_AVDTP_ACCEPT && req->status == BT_AVDTP_SUCCESS) {
 			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_CLOSING);
 			if (!avdtp_media_disconnect(CTRL_REQ(req)->sep)) {
 				return;
@@ -788,7 +802,7 @@ static void avdtp_suspend_handler(struct bt_avdtp *session, struct net_buf *buf,
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_cmd_sep(buf);
+		sep = avdtp_get_cmd_sep(buf, &error_code);
 		avdtp_sep_lock(sep);
 		if ((sep == NULL) || (session->ops->suspend_ind == NULL)) {
 			err = -ENOTSUP;
@@ -836,16 +850,12 @@ static void avdtp_suspend_handler(struct bt_avdtp *session, struct net_buf *buf,
 		if (msg_type == BT_AVDTP_ACCEPT) {
 			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPEN);
 		} else if (msg_type == BT_AVDTP_REJECT) {
-			if (buf->len >= 1U) {
-				uint8_t acp_seid;
-
-				acp_seid = net_buf_pull_u8(buf);
-				if (acp_seid != CTRL_REQ(req)->acp_stream_ep_id) {
-					return;
-				}
-			}
+			avdtp_handle_reject(buf, req);
 		}
-		avdtp_set_status(req, buf, msg_type);
+
+		if (req->status == BT_AVDTP_SUCCESS) {
+			avdtp_set_status(req, buf, msg_type);
+		}
 		bt_avdtp_clear_req(session);
 		if (req->func != NULL) {
 			req->func(req);
@@ -863,7 +873,7 @@ static void avdtp_abort_handler(struct bt_avdtp *session, struct net_buf *buf, u
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_cmd_sep(buf);
+		sep = avdtp_get_cmd_sep(buf, &error_code);
 		avdtp_sep_lock(sep);
 		if ((sep == NULL) || (session->ops->abort_ind == NULL)) {
 			err = -ENOTSUP;
@@ -922,16 +932,12 @@ static void avdtp_abort_handler(struct bt_avdtp *session, struct net_buf *buf, u
 			 */
 			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_IDLE);
 		} else if (msg_type == BT_AVDTP_REJECT) {
-			if (buf->len >= 1U) {
-				uint8_t acp_seid;
-
-				acp_seid = net_buf_pull_u8(buf);
-				if (acp_seid != CTRL_REQ(req)->acp_stream_ep_id) {
-					return;
-				}
-			}
+			avdtp_handle_reject(buf, req);
 		}
-		avdtp_set_status(req, buf, msg_type);
+
+		if (req->status == BT_AVDTP_SUCCESS) {
+			avdtp_set_status(req, buf, msg_type);
+		}
 		bt_avdtp_clear_req(session);
 		if (req->func != NULL) {
 			req->func(req);
