@@ -21,10 +21,6 @@ TOPST: Total Open-Platform for System development and Training
 
 VCP: Vehicle Control Processor
 
-.. image:: topst_vcp45.png
-     :align: center
-     :alt: TOPST_VCP45 Board
-
 Hardware
 ********
 
