@@ -128,7 +128,7 @@ int main(void)
 	uint32_t dtr = 0;
 
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
-	if (!device_is_ready(dev) || usb_enable(NULL)) {
+	if (!device_is_ready(dev)) {
 		return 0;
 	}
 
