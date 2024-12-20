@@ -8,6 +8,7 @@
 #include <renesas/ra/ra4/r7fa4m1ab3cfp.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <dt-bindings/input/input-event-codes.h>
 #include "ek_ra4m1-pinctrl.dtsi"
 
 / {
@@ -30,8 +31,19 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: s1 {
+			gpios = <&ioport1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
 	};
 };
 
@@ -86,4 +98,9 @@
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+};
+
+&port_irq0 {
+	interrupts = <27 12>;
+	status = "okay";
 };
