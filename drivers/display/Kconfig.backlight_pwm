@@ -1,0 +1,18 @@
+# Configuration for backlight pwm driver
+
+# Copyright (c) 2024 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config BACKLIGHT_PWM
+	bool "Backlight PWM driver"
+	default y
+	depends on DT_HAS_BACKLIGHT_PWM_ENABLED
+	help
+	  Enable Backlight PWM driver.
+
+config BACKLIGHT_PWM_INIT_PRIORITY
+	int "Backlight-PWM driver initialization priority"
+	default 70
+	help
+	  Initialization priority for the Backlight-PWM driver. It must be
+	  greater than the PWM controller init priority.
