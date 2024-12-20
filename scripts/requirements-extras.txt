@@ -18,9 +18,6 @@ lpc_checksum
 # used by scripts/build/gen_cfb_font_header.py - helper script for user
 Pillow>=10.0
 
-# can be used to sign a Zephyr application binary for consumption by a bootloader
-imgtool>=2.1.0
-
 # used by scripts/release/bug_bash.py for generating top ten bug squashers
 PyGithub
 
