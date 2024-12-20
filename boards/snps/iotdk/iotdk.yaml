@@ -5,7 +5,6 @@ arch: arc
 toolchain:
   - zephyr
   - cross-compile
-  - xtools
 ram: 128
 testing:
   ignore_tags:
