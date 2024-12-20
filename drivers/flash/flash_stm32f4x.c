@@ -273,8 +273,8 @@ uint32_t flash_stm32_option_bytes_read(const struct device *dev)
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 int flash_stm32_update_wp_sectors(const struct device *dev,
-				  uint32_t changed_sectors,
-				  uint32_t protected_sectors)
+				  uint64_t changed_sectors,
+				  uint64_t protected_sectors)
 {
 	changed_sectors <<= FLASH_OPTCR_nWRP_Pos;
 	protected_sectors <<= FLASH_OPTCR_nWRP_Pos;
@@ -286,12 +286,12 @@ int flash_stm32_update_wp_sectors(const struct device *dev,
 	/* Sector is protected when bit == 0. Flip protected_sectors bits */
 	protected_sectors = ~protected_sectors & changed_sectors;
 
-	return flash_stm32_option_bytes_write(dev, changed_sectors,
-					      protected_sectors);
+	return flash_stm32_option_bytes_write(dev, (uint32_t)changed_sectors,
+					      (uint32_t)protected_sectors);
 }
 
 int flash_stm32_get_wp_sectors(const struct device *dev,
-			       uint32_t *protected_sectors)
+			       uint64_t *protected_sectors)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
