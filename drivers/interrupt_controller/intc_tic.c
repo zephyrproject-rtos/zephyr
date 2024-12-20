@@ -161,8 +161,7 @@ void z_tic_irq_enable(unsigned int irq)
 			reg_offset = ((irq + 10UL) >> 5UL);    /* Calculate the register offset. */
 			mask_bit_id = ((irq + 10UL) & 0x1FUL); /* Mask bit ID. */
 
-			tic_distributer->dist_intr_set_en[reg_offset] =
-				(1UL << mask_bit_id);
+			tic_distributer->dist_intr_set_en[reg_offset] = (1UL << mask_bit_id);
 		}
 	} else {
 		LOG_ERR("%s: Invalid irq number = %u\n", __func__, irq);
@@ -187,8 +186,7 @@ void z_tic_irq_disable(unsigned int irq)
 			reg_offset = ((irq + 10UL) >> 5UL);    /* Calculate the register offset. */
 			mask_bit_id = ((irq + 10UL) & 0x1FUL); /* Mask bit ID. */
 
-			tic_distributer->dist_intr_clr_en[reg_offset] =
-				(1UL << mask_bit_id);
+			tic_distributer->dist_intr_clr_en[reg_offset] = (1UL << mask_bit_id);
 		}
 	} else {
 		LOG_ERR("%s: Invalid irq number = %u\n", __func__, irq);
@@ -243,7 +241,7 @@ void tic_irq_handler(void *arg)
 	intr_ack_reg = z_tic_irq_get_active();
 	irq = intr_ack_reg & 0x3FFU; /* Mask away the CPUID. */
 	func_isr = (tic_isr_func)NULL;
-	intr_arg_ptr = NULL_PTR;
+	intr_arg_ptr = TCC_NULL_PTR;
 
 	if (irq < TIC_INT_SRC_CNT) {
 		func_isr = tic_intr_table[irq].if_func_ptr; /* Fetch ISR handler. */
