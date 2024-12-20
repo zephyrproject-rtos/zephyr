@@ -8,7 +8,7 @@ config TIC
 	default y
 	depends on DT_HAS_TCC_TIC_ENABLED
 	help
-		The Telechips Interrupt Controller provides hardware assistance for prioritizing
-		and aggregating the interrupt sources for ARM Cortex-R5 processor cores.
+	  The Telechips Interrupt Controller provides hardware assistance for prioritizing
+	  and aggregating the interrupt sources for ARM Cortex-R5 processor cores.
 
 endif
