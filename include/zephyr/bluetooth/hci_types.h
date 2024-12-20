@@ -1714,19 +1714,19 @@ struct bt_hci_cp_le_set_pawr_subevent_data {
 struct bt_hci_cp_le_set_pawr_response_data {
 	uint16_t sync_handle;
 	uint16_t request_event;
-	uint8_t request_subevent;
-	uint8_t response_subevent;
-	uint8_t response_slot;
-	uint8_t response_data_length;
-	uint8_t response_data[0];
+	uint8_t  request_subevent;
+	uint8_t  response_subevent;
+	uint8_t  response_slot;
+	uint8_t  response_data_length;
+	uint8_t  response_data[0];
 } __packed;
 
 #define BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT  BT_OP(BT_OGF_LE, 0x0084) /* 0x2084 */
 struct bt_hci_cp_le_set_pawr_sync_subevent {
 	uint16_t sync_handle;
 	uint16_t periodic_adv_properties;
-	uint8_t num_subevents;
-	uint8_t subevents[0];
+	uint8_t  num_subevents;
+	uint8_t  subevents[0];
 } __packed;
 
 
@@ -1736,11 +1736,11 @@ struct bt_hci_cp_le_set_per_adv_param_v2 {
 	uint16_t min_interval;
 	uint16_t max_interval;
 	uint16_t props;
-	uint8_t num_subevents;
-	uint8_t subevent_interval;
-	uint8_t response_slot_delay;
-	uint8_t response_slot_spacing;
-	uint8_t num_response_slots;
+	uint8_t  num_subevents;
+	uint8_t  subevent_interval;
+	uint8_t  response_slot_delay;
+	uint8_t  response_slot_spacing;
+	uint8_t  num_response_slots;
 } __packed;
 
 
@@ -1761,7 +1761,7 @@ struct bt_hci_cp_le_set_per_adv_param_v2 {
 
 #define BT_HCI_OP_LE_PER_ADV_CREATE_SYNC        BT_OP(BT_OGF_LE, 0x0044) /* 0x2044 */
 struct bt_hci_cp_le_per_adv_create_sync {
-	uint8_t options;
+	uint8_t      options;
 	uint8_t      sid;
 	bt_addr_le_t addr;
 	uint16_t     skip;
@@ -2406,27 +2406,27 @@ struct bt_hci_cp_le_tx_test_v4_tx_power {
 #define BT_HCI_OP_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES BT_OP(BT_OGF_LE, 0x0089) /* 0x2089 */
 
 struct bt_hci_rp_le_read_local_supported_capabilities {
-	uint8_t status;
-	uint8_t num_config_supported;
+	uint8_t  status;
+	uint8_t  num_config_supported;
 	uint16_t max_consecutive_procedures_supported;
-	uint8_t num_antennas_supported;
-	uint8_t max_antenna_paths_supported;
-	uint8_t roles_supported;
-	uint8_t modes_supported;
-	uint8_t rtt_capability;
-	uint8_t rtt_aa_only_n;
-	uint8_t rtt_sounding_n;
-	uint8_t rtt_random_payload_n;
+	uint8_t  num_antennas_supported;
+	uint8_t  max_antenna_paths_supported;
+	uint8_t  roles_supported;
+	uint8_t  modes_supported;
+	uint8_t  rtt_capability;
+	uint8_t  rtt_aa_only_n;
+	uint8_t  rtt_sounding_n;
+	uint8_t  rtt_random_payload_n;
 	uint16_t nadm_sounding_capability;
 	uint16_t nadm_random_capability;
-	uint8_t cs_sync_phys_supported;
+	uint8_t  cs_sync_phys_supported;
 	uint16_t subfeatures_supported;
 	uint16_t t_ip1_times_supported;
 	uint16_t t_ip2_times_supported;
 	uint16_t t_fcs_times_supported;
 	uint16_t t_pm_times_supported;
-	uint8_t t_sw_time_supported;
-	uint8_t tx_snr_capability;
+	uint8_t  t_sw_time_supported;
+	uint8_t  tx_snr_capability;
 } __packed;
 
 #define BT_HCI_OP_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES BT_OP(BT_OGF_LE, 0x008A) /* 0x208A */
@@ -2440,26 +2440,26 @@ struct bt_hci_cp_le_read_remote_supported_capabilities {
 
 struct bt_hci_cp_le_write_cached_remote_supported_capabilities {
 	uint16_t handle;
-	uint8_t num_config_supported;
+	uint8_t  num_config_supported;
 	uint16_t max_consecutive_procedures_supported;
-	uint8_t num_antennas_supported;
-	uint8_t max_antenna_paths_supported;
-	uint8_t roles_supported;
-	uint8_t modes_supported;
-	uint8_t rtt_capability;
-	uint8_t rtt_aa_only_n;
-	uint8_t rtt_sounding_n;
-	uint8_t rtt_random_payload_n;
+	uint8_t  num_antennas_supported;
+	uint8_t  max_antenna_paths_supported;
+	uint8_t  roles_supported;
+	uint8_t  modes_supported;
+	uint8_t  rtt_capability;
+	uint8_t  rtt_aa_only_n;
+	uint8_t  rtt_sounding_n;
+	uint8_t  rtt_random_payload_n;
 	uint16_t nadm_sounding_capability;
 	uint16_t nadm_random_capability;
-	uint8_t cs_sync_phys_supported;
+	uint8_t  cs_sync_phys_supported;
 	uint16_t subfeatures_supported;
 	uint16_t t_ip1_times_supported;
 	uint16_t t_ip2_times_supported;
 	uint16_t t_fcs_times_supported;
 	uint16_t t_pm_times_supported;
-	uint8_t t_sw_time_supported;
-	uint8_t tx_snr_capability;
+	uint8_t  t_sw_time_supported;
+	uint8_t  tx_snr_capability;
 } __packed;
 
 #define BT_HCI_OP_LE_CS_SECURITY_ENABLE BT_OP(BT_OGF_LE, 0x008C) /* 0x208C */
@@ -2485,9 +2485,9 @@ struct bt_hci_cp_le_security_enable {
 
 struct bt_hci_cp_le_cs_set_default_settings {
 	uint16_t handle;
-	uint8_t role_enable;
-	uint8_t cs_sync_antenna_selection;
-	int8_t max_tx_power;
+	uint8_t  role_enable;
+	uint8_t  cs_sync_antenna_selection;
+	int8_t   max_tx_power;
 } __packed;
 
 #define BT_HCI_OP_LE_CS_READ_REMOTE_FAE_TABLE BT_OP(BT_OGF_LE, 0x008E) /* 0x208E */
@@ -2500,7 +2500,7 @@ struct bt_hci_cp_le_read_remote_fae_table {
 
 struct bt_hci_cp_le_write_cached_remote_fae_table {
 	uint16_t handle;
-	int8_t remote_fae_table[72];
+	int8_t   remote_fae_table[72];
 } __packed;
 
 #define BT_HCI_OP_LE_CS_SET_CHANNEL_CLASSIFICATION BT_OP(BT_OGF_LE, 0x0092) /* 0x2092 */
@@ -2514,19 +2514,19 @@ struct bt_hci_cp_le_write_cached_remote_fae_table {
 
 struct bt_hci_cp_le_set_procedure_parameters {
 	uint16_t handle;
-	uint8_t config_id;
+	uint8_t  config_id;
 	uint16_t max_procedure_len;
 	uint16_t min_procedure_interval;
 	uint16_t max_procedure_interval;
 	uint16_t max_procedure_count;
-	uint8_t min_subevent_len[3];
-	uint8_t max_subevent_len[3];
-	uint8_t tone_antenna_config_selection;
-	uint8_t phy;
-	uint8_t tx_power_delta;
-	uint8_t preferred_peer_antenna;
-	uint8_t snr_control_initiator;
-	uint8_t snr_control_reflector;
+	uint8_t  min_subevent_len[3];
+	uint8_t  max_subevent_len[3];
+	uint8_t  tone_antenna_config_selection;
+	uint8_t  phy;
+	uint8_t  tx_power_delta;
+	uint8_t  preferred_peer_antenna;
+	uint8_t  snr_control_initiator;
+	uint8_t  snr_control_reflector;
 } __packed;
 
 #define BT_HCI_OP_LE_CS_PROCEDURE_ENABLE BT_OP(BT_OGF_LE, 0x0094) /* 0x2094 */
@@ -2536,8 +2536,8 @@ struct bt_hci_cp_le_set_procedure_parameters {
 
 struct bt_hci_cp_le_procedure_enable {
 	uint16_t handle;
-	uint8_t config_id;
-	uint8_t enable;
+	uint8_t  config_id;
+	uint8_t  enable;
 } __packed;
 
 #define BT_HCI_OP_LE_CS_TEST BT_OP(BT_OGF_LE, 0x0095) /* 0x2095 */
@@ -2650,62 +2650,62 @@ struct bt_hci_cp_le_procedure_enable {
 #define BT_HCI_OP_LE_CS_TEST_PAYLOAD_USER     0x80
 
 struct bt_hci_op_le_cs_test {
-	uint8_t main_mode_type;
-	uint8_t sub_mode_type;
-	uint8_t main_mode_repetition;
-	uint8_t mode_0_steps;
-	uint8_t role;
-	uint8_t rtt_type;
-	uint8_t cs_sync_phy;
-	uint8_t cs_sync_antenna_selection;
-	uint8_t subevent_len[3];
+	uint8_t  main_mode_type;
+	uint8_t  sub_mode_type;
+	uint8_t  main_mode_repetition;
+	uint8_t  mode_0_steps;
+	uint8_t  role;
+	uint8_t  rtt_type;
+	uint8_t  cs_sync_phy;
+	uint8_t  cs_sync_antenna_selection;
+	uint8_t  subevent_len[3];
 	uint16_t subevent_interval;
-	uint8_t max_num_subevents;
-	uint8_t transmit_power_level;
-	uint8_t t_ip1_time;
-	uint8_t t_ip2_time;
-	uint8_t t_fcs_time;
-	uint8_t t_pm_time;
-	uint8_t t_sw_time;
-	uint8_t tone_antenna_config_selection;
-	uint8_t reserved;
-	uint8_t snr_control_initiator;
-	uint8_t snr_control_reflector;
+	uint8_t  max_num_subevents;
+	uint8_t  transmit_power_level;
+	uint8_t  t_ip1_time;
+	uint8_t  t_ip2_time;
+	uint8_t  t_fcs_time;
+	uint8_t  t_pm_time;
+	uint8_t  t_sw_time;
+	uint8_t  tone_antenna_config_selection;
+	uint8_t  reserved;
+	uint8_t  snr_control_initiator;
+	uint8_t  snr_control_reflector;
 	uint16_t drbg_nonce;
-	uint8_t channel_map_repetition;
+	uint8_t  channel_map_repetition;
 	uint16_t override_config;
-	uint8_t override_parameters_length;
-	uint8_t override_parameters_data[];
+	uint8_t  override_parameters_length;
+	uint8_t  override_parameters_data[];
 } __packed;
 
 #define BT_HCI_OP_LE_CS_CREATE_CONFIG BT_OP(BT_OGF_LE, 0x0090) /* 0x2090 */
 
 struct bt_hci_cp_le_cs_create_config {
 	uint16_t handle;
-	uint8_t config_id;
-	uint8_t create_context;
-	uint8_t main_mode_type;
-	uint8_t sub_mode_type;
-	uint8_t min_main_mode_steps;
-	uint8_t max_main_mode_steps;
-	uint8_t main_mode_repetition;
-	uint8_t mode_0_steps;
-	uint8_t role;
-	uint8_t rtt_type;
-	uint8_t cs_sync_phy;
-	uint8_t channel_map[10];
-	uint8_t channel_map_repetition;
-	uint8_t channel_selection_type;
-	uint8_t ch3c_shape;
-	uint8_t ch3c_jump;
-	uint8_t reserved;
+	uint8_t  config_id;
+	uint8_t  create_context;
+	uint8_t  main_mode_type;
+	uint8_t  sub_mode_type;
+	uint8_t  min_main_mode_steps;
+	uint8_t  max_main_mode_steps;
+	uint8_t  main_mode_repetition;
+	uint8_t  mode_0_steps;
+	uint8_t  role;
+	uint8_t  rtt_type;
+	uint8_t  cs_sync_phy;
+	uint8_t  channel_map[10];
+	uint8_t  channel_map_repetition;
+	uint8_t  channel_selection_type;
+	uint8_t  ch3c_shape;
+	uint8_t  ch3c_jump;
+	uint8_t  reserved;
 } __packed;
 
 #define BT_HCI_OP_LE_CS_REMOVE_CONFIG BT_OP(BT_OGF_LE, 0x0091) /* 0x2091 */
 
 struct bt_hci_cp_le_cs_remove_config {
 	uint16_t handle;
-	uint8_t config_id;
+	uint8_t  config_id;
 } __packed;
 
 #define BT_HCI_OP_LE_CS_TEST_END BT_OP(BT_OGF_LE, 0x0096) /* 0x2096 */
@@ -2873,47 +2873,47 @@ struct bt_hci_evt_remote_ext_features {
 
 #define BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED_V2 0x24
 struct bt_hci_evt_le_per_adv_sync_established_v2 {
-	uint8_t status;
-	uint16_t handle;
-	uint8_t sid;
+	uint8_t      status;
+	uint16_t     handle;
+	uint8_t      sid;
 	bt_addr_le_t adv_addr;
-	uint8_t phy;
-	uint16_t interval;
-	uint8_t clock_accuracy;
-	uint8_t num_subevents;
-	uint8_t subevent_interval;
-	uint8_t response_slot_delay;
-	uint8_t response_slot_spacing;
+	uint8_t      phy;
+	uint16_t     interval;
+	uint8_t      clock_accuracy;
+	uint8_t      num_subevents;
+	uint8_t      subevent_interval;
+	uint8_t      response_slot_delay;
+	uint8_t      response_slot_spacing;
 } __packed;
 
 #define BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2 0x25
 struct bt_hci_evt_le_per_advertising_report_v2 {
 	uint16_t handle;
-	int8_t tx_power;
-	int8_t rssi;
-	uint8_t cte_type;
+	int8_t   tx_power;
+	int8_t   rssi;
+	uint8_t  cte_type;
 	uint16_t periodic_event_counter;
-	uint8_t subevent;
-	uint8_t data_status;
-	uint8_t length;
-	uint8_t data[0];
+	uint8_t  subevent;
+	uint8_t  data_status;
+	uint8_t  length;
+	uint8_t  data[0];
 } __packed;
 
 #define BT_HCI_EVT_LE_PAST_RECEIVED_V2 0x26
 struct bt_hci_evt_le_past_received_v2 {
-	uint8_t status;
-	uint16_t conn_handle;
-	uint16_t service_data;
-	uint16_t sync_handle;
-	uint8_t adv_sid;
+	uint8_t      status;
+	uint16_t     conn_handle;
+	uint16_t     service_data;
+	uint16_t     sync_handle;
+	uint8_t      adv_sid;
 	bt_addr_le_t addr;
-	uint8_t phy;
-	uint16_t interval;
-	uint8_t clock_accuracy;
-	uint8_t num_subevents;
-	uint8_t subevent_interval;
-	uint8_t response_slot_delay;
-	uint8_t response_slot_spacing;
+	uint8_t      phy;
+	uint16_t     interval;
+	uint8_t      clock_accuracy;
+	uint8_t      num_subevents;
+	uint8_t      subevent_interval;
+	uint8_t      response_slot_delay;
+	uint8_t      response_slot_spacing;
 } __packed;
 
 #define BT_HCI_EVT_LE_PER_ADV_SUBEVENT_DATA_REQUEST 0x27
@@ -2926,8 +2926,8 @@ struct bt_hci_evt_le_per_adv_subevent_data_request {
 #define BT_HCI_EVT_LE_PER_ADV_RESPONSE_REPORT 0x28
 
 struct bt_hci_evt_le_per_adv_response {
-	int8_t tx_power;
-	int8_t rssi;
+	int8_t  tx_power;
+	int8_t  rssi;
 	uint8_t cte_type;
 	uint8_t response_slot;
 	uint8_t data_status;
@@ -2955,8 +2955,8 @@ struct bt_hci_evt_le_enh_conn_complete_v2 {
 	uint16_t     latency;
 	uint16_t     supv_timeout;
 	uint8_t      clock_accuracy;
-	uint8_t adv_handle;
-	uint16_t sync_handle;
+	uint8_t      adv_handle;
+	uint16_t     sync_handle;
 } __packed;
 
 #define BT_HCI_EVT_SYNC_CONN_COMPLETE           0x2c
@@ -3448,7 +3448,7 @@ struct bt_hci_evt_le_biginfo_adv_report {
 
 #define BT_HCI_EVT_LE_SUBRATE_CHANGE            0x23
 struct bt_hci_evt_le_subrate_change {
-	uint8_t status;
+	uint8_t  status;
 	uint16_t handle;
 	uint16_t subrate_factor;
 	uint16_t peripheral_latency;
@@ -3538,35 +3538,35 @@ struct bt_hci_evt_le_cis_established_v2 {
 
 #define BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE 0x2C
 struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete {
-	uint8_t status;
+	uint8_t  status;
 	uint16_t conn_handle;
-	uint8_t num_config_supported;
+	uint8_t  num_config_supported;
 	uint16_t max_consecutive_procedures_supported;
-	uint8_t num_antennas_supported;
-	uint8_t max_antenna_paths_supported;
-	uint8_t roles_supported;
-	uint8_t modes_supported;
-	uint8_t rtt_capability;
-	uint8_t rtt_aa_only_n;
-	uint8_t rtt_sounding_n;
-	uint8_t rtt_random_payload_n;
+	uint8_t  num_antennas_supported;
+	uint8_t  max_antenna_paths_supported;
+	uint8_t  roles_supported;
+	uint8_t  modes_supported;
+	uint8_t  rtt_capability;
+	uint8_t  rtt_aa_only_n;
+	uint8_t  rtt_sounding_n;
+	uint8_t  rtt_random_payload_n;
 	uint16_t nadm_sounding_capability;
 	uint16_t nadm_random_capability;
-	uint8_t cs_sync_phys_supported;
+	uint8_t  cs_sync_phys_supported;
 	uint16_t subfeatures_supported;
 	uint16_t t_ip1_times_supported;
 	uint16_t t_ip2_times_supported;
 	uint16_t t_fcs_times_supported;
 	uint16_t t_pm_times_supported;
-	uint8_t t_sw_time_supported;
-	uint8_t tx_snr_capability;
+	uint8_t  t_sw_time_supported;
+	uint8_t  tx_snr_capability;
 } __packed;
 
 #define BT_HCI_EVT_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE 0x2D
 struct bt_hci_evt_le_cs_read_remote_fae_table_complete {
-	uint8_t status;
+	uint8_t  status;
 	uint16_t conn_handle;
-	int8_t remote_fae_table[72];
+	int8_t   remote_fae_table[72];
 } __packed;
 
 #define BT_HCI_LE_CS_CONFIG_ACTION_REMOVED 0x00
@@ -3574,35 +3574,35 @@ struct bt_hci_evt_le_cs_read_remote_fae_table_complete {
 
 #define BT_HCI_EVT_LE_CS_SECURITY_ENABLE_COMPLETE 0x2E
 struct bt_hci_evt_le_cs_security_enable_complete {
-	uint8_t status;
+	uint8_t  status;
 	uint16_t handle;
 } __packed;
 
 #define BT_HCI_EVT_LE_CS_CONFIG_COMPLETE 0x2F
 struct bt_hci_evt_le_cs_config_complete {
-	uint8_t status;
+	uint8_t  status;
 	uint16_t handle;
-	uint8_t config_id;
-	uint8_t action;
-	uint8_t main_mode_type;
-	uint8_t sub_mode_type;
-	uint8_t min_main_mode_steps;
-	uint8_t max_main_mode_steps;
-	uint8_t main_mode_repetition;
-	uint8_t mode_0_steps;
-	uint8_t role;
-	uint8_t rtt_type;
-	uint8_t cs_sync_phy;
-	uint8_t channel_map[10];
-	uint8_t channel_map_repetition;
-	uint8_t channel_selection_type;
-	uint8_t ch3c_shape;
-	uint8_t ch3c_jump;
-	uint8_t reserved;
-	uint8_t t_ip1_time;
-	uint8_t t_ip2_time;
-	uint8_t t_fcs_time;
-	uint8_t t_pm_time;
+	uint8_t  config_id;
+	uint8_t  action;
+	uint8_t  main_mode_type;
+	uint8_t  sub_mode_type;
+	uint8_t  min_main_mode_steps;
+	uint8_t  max_main_mode_steps;
+	uint8_t  main_mode_repetition;
+	uint8_t  mode_0_steps;
+	uint8_t  role;
+	uint8_t  rtt_type;
+	uint8_t  cs_sync_phy;
+	uint8_t  channel_map[10];
+	uint8_t  channel_map_repetition;
+	uint8_t  channel_selection_type;
+	uint8_t  ch3c_shape;
+	uint8_t  ch3c_jump;
+	uint8_t  reserved;
+	uint8_t  t_ip1_time;
+	uint8_t  t_ip2_time;
+	uint8_t  t_fcs_time;
+	uint8_t  t_pm_time;
 } __packed;
 
 #define BT_HCI_LE_CS_TEST_CONN_HANDLE 0x0FFF
@@ -3672,14 +3672,14 @@ struct bt_hci_evt_le_cs_config_complete {
 /** Subevent result step data format: Mode 0 Initiator  */
 struct bt_hci_le_cs_step_data_mode_0_initiator {
 #ifdef CONFIG_LITTLE_ENDIAN
-	uint8_t packet_quality_aa_check: 4;
-	uint8_t packet_quality_bit_errors: 4;
+	uint8_t  packet_quality_aa_check: 4;
+	uint8_t  packet_quality_bit_errors: 4;
 #else
-	uint8_t packet_quality_bit_errors: 4;
-	uint8_t packet_quality_aa_check: 4;
+	uint8_t  packet_quality_bit_errors: 4;
+	uint8_t  packet_quality_aa_check: 4;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t packet_rssi;
-	uint8_t packet_antenna;
+	uint8_t  packet_rssi;
+	uint8_t  packet_antenna;
 	uint16_t measured_freq_offset;
 } __packed;
 
@@ -3804,42 +3804,42 @@ struct bt_hci_evt_le_cs_subevent_result_step {
 
 struct bt_hci_evt_le_cs_subevent_result {
 	uint16_t conn_handle;
-	uint8_t config_id;
+	uint8_t  config_id;
 	uint16_t start_acl_conn_event_counter;
 	uint16_t procedure_counter;
 	uint16_t frequency_compensation;
-	uint8_t reference_power_level;
-	uint8_t procedure_done_status;
-	uint8_t subevent_done_status;
+	uint8_t  reference_power_level;
+	uint8_t  procedure_done_status;
+	uint8_t  subevent_done_status;
 #ifdef CONFIG_LITTLE_ENDIAN
-	uint8_t procedure_abort_reason: 4;
-	uint8_t subevent_abort_reason: 4;
+	uint8_t  procedure_abort_reason: 4;
+	uint8_t  subevent_abort_reason: 4;
 #else
-	uint8_t subevent_abort_reason: 4;
-	uint8_t procedure_abort_reason: 4;
+	uint8_t  subevent_abort_reason: 4;
+	uint8_t  procedure_abort_reason: 4;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t num_antenna_paths;
-	uint8_t num_steps_reported;
-	uint8_t steps[];
+	uint8_t  num_antenna_paths;
+	uint8_t  num_steps_reported;
+	uint8_t  steps[];
 } __packed;
 
 #define BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE 0x32
 
 struct bt_hci_evt_le_cs_subevent_result_continue {
 	uint16_t conn_handle;
-	uint8_t config_id;
-	uint8_t procedure_done_status;
-	uint8_t subevent_done_status;
+	uint8_t  config_id;
+	uint8_t  procedure_done_status;
+	uint8_t  subevent_done_status;
 #ifdef CONFIG_LITTLE_ENDIAN
-	uint8_t procedure_abort_reason: 4;
-	uint8_t subevent_abort_reason: 4;
+	uint8_t  procedure_abort_reason: 4;
+	uint8_t  subevent_abort_reason: 4;
 #else
-	uint8_t subevent_abort_reason: 4;
-	uint8_t procedure_abort_reason: 4;
+	uint8_t  subevent_abort_reason: 4;
+	uint8_t  procedure_abort_reason: 4;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t num_antenna_paths;
-	uint8_t num_steps_reported;
-	uint8_t steps[];
+	uint8_t  num_antenna_paths;
+	uint8_t  num_steps_reported;
+	uint8_t  steps[];
 } __packed;
 
 #define BT_HCI_EVT_LE_CS_TEST_END_COMPLETE 0x33
@@ -3849,14 +3849,14 @@ struct bt_hci_evt_le_cs_test_end_complete {
 
 #define BT_HCI_EVT_LE_CS_PROCEDURE_ENABLE_COMPLETE 0x30
 struct bt_hci_evt_le_cs_procedure_enable_complete {
-	uint8_t status;
+	uint8_t  status;
 	uint16_t handle;
-	uint8_t config_id;
-	uint8_t state;
-	uint8_t tone_antenna_config_selection;
-	uint8_t selected_tx_power;
-	uint8_t subevent_len[3];
-	uint8_t subevents_per_event;
+	uint8_t  config_id;
+	uint8_t  state;
+	uint8_t  tone_antenna_config_selection;
+	uint8_t  selected_tx_power;
+	uint8_t  subevent_len[3];
+	uint8_t  subevents_per_event;
 	uint16_t subevent_interval;
 	uint16_t event_interval;
 	uint16_t procedure_interval;
