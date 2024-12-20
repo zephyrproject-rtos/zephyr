@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_INTC_TIC_H_
-#define ZEPHYR_DRIVERS_INTC_TIC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_TIC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_TIC_H_
 
 #include <stdint.h>
 
@@ -202,4 +202,4 @@ void z_tic_arm_enter_irq(int irq);
 void tic_irq_vector_set(uint32_t irq, uint32_t prio, uint8_t irq_type, tic_isr_func irq_func,
 			void *irq_arg);
 
-#endif /* ZEPHYR_DRIVERS_INTC_TIC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_TIC_H_ */
