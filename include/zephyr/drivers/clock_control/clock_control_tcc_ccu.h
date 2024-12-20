@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef CLOCK_CONTROL_TCC_CCU_HEADER
-#define CLOCK_CONTROL_TCC_CCU_HEADER
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_TCC_CCU_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_TCC_CCU_H_
 
 /*
  * DEFINITIONS
@@ -48,4 +48,4 @@ int32_t clock_set_iobus_pwdn(int32_t id, bool en);
 
 int32_t clock_set_sw_reset(int32_t id, bool reset);
 
-#endif /* CLOCK_CONTROL_TCC_CCU_HEADER */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_TCC_CCU_H_ */
