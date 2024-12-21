@@ -50,8 +50,8 @@ class RegNum():
 
 
 class GdbStub_RISC_V(GdbStub):
-    ARCH_DATA_BLK_STRUCT    = "<IIIIIIIIIIIIIIIIII"
-    ARCH_DATA_BLK_STRUCT_2  = "<QQQQQQQQQQQQQQQQQQ"
+    ARCH_DATA_BLK_STRUCT    = "<IIIIIIIIIIIIIIIIIII"
+    ARCH_DATA_BLK_STRUCT_2  = "<QQQQQQQQQQQQQQQQQQQ"
 
     GDB_SIGNAL_DEFAULT = 7
 
@@ -76,7 +76,6 @@ class GdbStub_RISC_V(GdbStub):
         self.registers = dict()
 
         self.registers[RegNum.RA] = tu[0]
-        self.registers[RegNum.TP] = tu[1]
         self.registers[RegNum.T0] = tu[2]
         self.registers[RegNum.T1] = tu[3]
         self.registers[RegNum.T2] = tu[4]
@@ -93,6 +92,7 @@ class GdbStub_RISC_V(GdbStub):
         self.registers[RegNum.T5] = tu[15]
         self.registers[RegNum.T6] = tu[16]
         self.registers[RegNum.PC] = tu[17]
+        self.registers[RegNum.SP] = tu[18]
 
     def handle_register_group_read_packet(self):
         reg_fmt = "<I" if self.arch_data_ver == 1 else "<Q"
