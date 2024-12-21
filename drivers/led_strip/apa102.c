@@ -21,7 +21,17 @@ static int apa102_update(const struct device *dev, void *buf, size_t size)
 {
 	const struct apa102_config *config = dev->config;
 	static const uint8_t zeros[] = { 0, 0, 0, 0 };
-	static const uint8_t ones[] = { 0xFF, 0xFF, 0xFF, 0xFF };
+
+	/*
+	 * the only function of the “End frame” is to supply more clock pulses
+	 * to the string until the data has permeated to the last LED. The
+	 * number of clock pulses required is exactly half the total number
+	 * of LEDs in the string
+	 */
+	uint8_t ones[((size / sizeof(struct led_rgb)) / 2) + 1];
+
+	memset(ones, 0xFF, sizeof(ones));
+
 	const struct spi_buf tx_bufs[] = {
 		{
 			/* Start frame: at least 32 zeros */
