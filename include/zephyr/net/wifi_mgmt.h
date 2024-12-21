@@ -1418,7 +1418,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @return 1 if support, 0 if not support
 	 */
-	int (*bss_ext_capab)(const struct device *dev, int capab);
+	int (*bss_ext_capab)(const struct device *dev, enum wifi_ext_capab capab);
 
 	/** Send legacy scan
 	 *
