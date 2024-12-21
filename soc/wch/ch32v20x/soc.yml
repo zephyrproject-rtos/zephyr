@@ -1,0 +1,8 @@
+# Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+series:
+  - name: ch32v20x
+    socs:
+      - name: ch32v203
+      - name: ch32v208
