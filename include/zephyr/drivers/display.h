@@ -127,8 +127,6 @@ struct display_buffer_descriptor {
 	uint16_t height;
 	/** Number of pixels between consecutive rows in the data buffer */
 	uint16_t pitch;
-	/** Indicates that this is not the last write buffer of the frame */
-	bool frame_incomplete;
 };
 
 /**
