@@ -1424,6 +1424,7 @@ const static struct ipc_service_backend backend_ops = {
 		.control_config = {							\
 			.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),			\
 			.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),			\
+			.unbound_mode = ICMSG_UNBOUND_MODE_DISABLE, /* TODO: */		\
 		},									\
 		.tx = {									\
 			.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR_INST(i, tx, rx),	\
