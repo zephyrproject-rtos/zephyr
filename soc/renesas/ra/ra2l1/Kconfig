@@ -1,0 +1,10 @@
+# Copyright (c) 2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA2L1
+	select ARM
+	select CPU_CORTEX_M23
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select PLATFORM_SPECIFIC_INIT
+	select HAS_SWO
