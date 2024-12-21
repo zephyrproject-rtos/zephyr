@@ -7,6 +7,7 @@ common:
   - qemu_cortex_m3
   integration_platforms:
   - native_sim
+  sysbuild: false
 
 tests:
   # Test the initial state with no snippets applied
