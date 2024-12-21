@@ -1395,7 +1395,7 @@ static int start_adv(void)
 	int err;
 
 	/* Create a connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
+	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_REDUCED, NULL, &ext_adv);
 	if (err != 0) {
 		printk("Failed to create advertising set (err %d)\n", err);
 
