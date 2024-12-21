@@ -71,6 +71,8 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "WEP";
 	case WIFI_SECURITY_TYPE_WPA_PSK:
 		return "WPA-PSK";
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		return "WPA/WPA2/WPA3 PSK";
 	case WIFI_SECURITY_TYPE_DPP:
 		return "DPP";
 	case WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2:
@@ -83,12 +85,6 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "EAP-PEAP-TLS";
 	case WIFI_SECURITY_TYPE_EAP_TLS_SHA256:
 		return "EAP-TLS-SHA256";
-	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_HNP:
-		return "WPA/WPA2/WPA3 PSK security with HNP";
-	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E:
-		return "WPA/WPA2/WPA3 PSK security with H2E";
-	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO:
-		return "WPA/WPA2/WPA3 PSK security with AUTO";
 	case WIFI_SECURITY_TYPE_FT_PSK:
 		return "FT-PSK";
 	case WIFI_SECURITY_TYPE_FT_SAE:
@@ -364,9 +360,7 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 	    ((params->security == WIFI_SECURITY_TYPE_PSK ||
 		  params->security == WIFI_SECURITY_TYPE_WPA_PSK ||
 		  params->security == WIFI_SECURITY_TYPE_PSK_SHA256 ||
-		  params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_HNP ||
-		  params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E ||
-		  params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO) &&
+		  params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) &&
 	     ((params->psk_length < 8) || (params->psk_length > 64) ||
 	      (params->psk_length == 0U) || !params->psk)) ||
 	    ((params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
