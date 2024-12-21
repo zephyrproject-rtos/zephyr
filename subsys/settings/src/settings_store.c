@@ -55,7 +55,11 @@ int settings_load_subtree(const char *subtree)
 	 */
 	k_mutex_lock(&settings_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
-		cs->cs_itf->csi_load(cs, &arg);
+		rc = cs->cs_itf->csi_load(cs, &arg);
+		if (rc < 0) {
+			k_mutex_unlock(&settings_lock);
+			return rc;
+		}
 	}
 	rc = settings_commit_subtree(subtree);
 	k_mutex_unlock(&settings_lock);
