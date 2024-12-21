@@ -24,6 +24,14 @@ tests:
       - nucleo_f411re
     integration_platforms:
       - qemu_x86
+  drivers.flash.flash_simulator.semihost:
+    extra_args: CONFIG_FLASH_SIMULATOR_SEMIHOST=y
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_cortex_m3
+      - qemu_riscv32
+    integration_platforms:
+      - qemu_cortex_a53
   drivers.flash.flash_simulator.qemu_erase_value_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
     platform_allow: qemu_x86

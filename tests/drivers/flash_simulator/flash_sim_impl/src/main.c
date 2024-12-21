@@ -41,7 +41,7 @@ static const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_fla
 #else
 static const struct device *const flash_dev = DEVICE_DT_GET(DT_NODELABEL(sim_flash_controller));
 #endif
-static uint8_t test_read_buf[TEST_SIM_FLASH_SIZE];
+static uint8_t test_read_buf[FLASH_SIMULATOR_ERASE_UNIT];
 
 static uint32_t p32_inc;
 
@@ -126,23 +126,24 @@ static void test_init(void)
 
 ZTEST(flash_sim_api, test_read)
 {
-	off_t i;
-	int rc;
-
-	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+	int rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			 FLASH_SIMULATOR_FLASH_SIZE);
+
 	zassert_equal(0, rc, "flash_erase should succeed");
 
+	for (off_t offset = FLASH_SIMULATOR_BASE_OFFSET;
+	     offset < TEST_SIM_FLASH_END;
+	     offset += sizeof(test_read_buf)) {
+		rc = flash_read(flash_dev, offset,
+				test_read_buf, sizeof(test_read_buf));
+		zassert_equal(0, rc, "flash_read should succeed");
 
-	rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
-			test_read_buf, sizeof(test_read_buf));
-	zassert_equal(0, rc, "flash_read should succeed");
-
-	for (i = 0; i < sizeof(test_read_buf); i++) {
-		zassert_equal(FLASH_SIMULATOR_ERASE_VALUE,
-			     test_read_buf[i],
-			     "sim flash byte at offset 0x%x has value 0x%08x",
-			     i, test_read_buf[i]);
+		for (off_t i = 0; i < sizeof(test_read_buf); i++) {
+			zassert_equal(FLASH_SIMULATOR_ERASE_VALUE,
+				test_read_buf[i],
+				"sim flash byte at offset 0x%x has value 0x%08x",
+				i, test_read_buf[i]);
+		}
 	}
 }
 
