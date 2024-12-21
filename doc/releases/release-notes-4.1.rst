@@ -282,9 +282,6 @@ Trusted Firmware-M
 LVGL
 ****
 
-* Added ``frame_incomplete`` support to indicate whether a write is the last
-  write of the frame (:github:`81250`)
-
 Tests and Samples
 *****************
 
