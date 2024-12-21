@@ -32,15 +32,19 @@ typedef union _z_irq {
 		uint32_t l1: CONFIG_1ST_LEVEL_INTERRUPT_BITS;
 		/* Second level interrupt bits */
 		uint32_t l2: CONFIG_2ND_LEVEL_INTERRUPT_BITS;
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 		/* Third level interrupt bits */
 		uint32_t l3: CONFIG_3RD_LEVEL_INTERRUPT_BITS;
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 	} bits;
 
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 	/* Third level IRQ's interrupt controller */
 	struct {
 		/* IRQ of the third level interrupt aggregator */
 		uint32_t irq: CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS;
 	} l3_intc;
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
 	/* Second level IRQ's interrupt controller */
 	struct {
@@ -61,16 +65,20 @@ static inline uint32_t _z_l2_irq(_z_irq_t irq)
 	return irq.bits.l2 - 1;
 }
 
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 static inline uint32_t _z_l3_irq(_z_irq_t irq)
 {
 	return irq.bits.l3 - 1;
 }
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
 static inline unsigned int _z_irq_get_level(_z_irq_t z_irq)
 {
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 	if (z_irq.bits.l3 != 0) {
 		return 3;
 	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
 	if (z_irq.bits.l2 != 0) {
 		return 2;
@@ -142,7 +150,9 @@ static inline unsigned int irq_to_level_2(unsigned int irq)
 		.bits = {
 			.l1 = 0,
 			.l2 = irq + 1,
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 			.l3 = 0,
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 		},
 	};
 
@@ -168,6 +178,7 @@ static inline unsigned int irq_parent_level_2(unsigned int irq)
 	return _z_l1_irq(z_irq);
 }
 
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 /**
  * @brief Return the 3rd level interrupt number
  *
@@ -241,6 +252,7 @@ static inline unsigned int irq_parent_level_3(unsigned int irq)
 
 	return _z_l2_irq(z_irq);
 }
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
 /**
  * @brief Return the interrupt number for a given level
@@ -256,11 +268,14 @@ static inline unsigned int irq_from_level(unsigned int irq, unsigned int level)
 		return irq;
 	} else if (level == 2) {
 		return irq_from_level_2(irq);
-	} else if (level == 3) {
+	}
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	else if (level == 3) {
 		return irq_from_level_3(irq);
 	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
-	/* level is higher than 3 */
+	/* level is higher than what's supported */
 	__ASSERT_NO_MSG(false);
 	return irq;
 }
@@ -279,11 +294,14 @@ static inline unsigned int irq_to_level(unsigned int irq, unsigned int level)
 		return irq;
 	} else if (level == 2) {
 		return irq_to_level_2(irq);
-	} else if (level == 3) {
+	}
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	else if (level == 3) {
 		return irq_to_level_3(irq);
 	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
-	/* level is higher than 3 */
+	/* level is higher than what's supported */
 	__ASSERT_NO_MSG(false);
 	return irq;
 }
@@ -303,11 +321,14 @@ static inline unsigned int irq_parent_level(unsigned int irq, unsigned int level
 		return irq;
 	} else if (level == 2) {
 		return irq_parent_level_2(irq);
-	} else if (level == 3) {
+	}
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	else if (level == 3) {
 		return irq_parent_level_3(irq);
 	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
-	/* level is higher than 3 */
+	/* level is higher than what's supported */
 	__ASSERT_NO_MSG(false);
 	return irq;
 }
@@ -322,19 +343,24 @@ static inline unsigned int irq_parent_level(unsigned int irq, unsigned int level
 static inline unsigned int irq_get_intc_irq(unsigned int irq)
 {
 	const unsigned int level = irq_get_level(irq);
-
-	__ASSERT_NO_MSG(level <= 3);
 	_z_irq_t z_irq = {
 		.irq = irq,
 	};
 
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	__ASSERT_NO_MSG(level <= 3);
 	if (level == 3) {
 		return z_irq.l3_intc.irq;
-	} else if (level == 2) {
-		return z_irq.l2_intc.irq;
-	} else {
-		return irq;
 	}
+#else
+	__ASSERT_NO_MSG(level <= 2);
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+
+	if (level == 2) {
+		return z_irq.l2_intc.irq;
+	}
+
+	return irq;
 }
 
 /**
@@ -351,8 +377,12 @@ static inline unsigned int irq_increment(unsigned int irq, unsigned int val)
 		.irq = irq,
 	};
 
-	if (z_irq.bits.l3 != 0) {
+	if (false) {
+		/* so that it evaluates the next condition */
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	} else if (z_irq.bits.l3 != 0) {
 		z_irq.bits.l3 += val;
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 	} else if (z_irq.bits.l2 != 0) {
 		z_irq.bits.l2 += val;
 	} else {
