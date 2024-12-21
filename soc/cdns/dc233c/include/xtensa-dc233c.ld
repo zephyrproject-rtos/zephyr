@@ -19,8 +19,8 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
-#define RAMABLE_REGION RAM :sram0_phdr
-#define ROMABLE_REGION RAM :sram0_phdr
+#define RAMABLE_REGION RAM
+#define ROMABLE_REGION RAM
 
 #ifdef CONFIG_MMU
 #define MMU_PAGE_ALIGN . = ALIGN(CONFIG_MMU_PAGE_SIZE);
