@@ -1,0 +1,22 @@
+# STM32 MSPI flash driver configuration options
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+DT_STM32_MSPI_1_HAS_DMA := $(dt_nodelabel_has_prop,xspi1,dmas)
+DT_STM32_MSPI_2_HAS_DMA := $(dt_nodelabel_has_prop,xspi2,dmas)
+
+config MSPI_STM32
+	bool "STM32 XSPI Flash driver"
+	default y
+	depends on DT_HAS_ST_STM32_MSPI_CONTROLLER_ENABLED
+	select USE_STM32_HAL_XSPI
+	select USE_STM32_LL_DLYB
+	select DMA if $(DT_STM32_MSPI_1_HAS_DMA) || $(DT_STM32_MSPI_2_HAS_DMA)
+	select USE_STM32_HAL_DMA if $(DT_STM32_MSPI_1_HAS_DMA) || \
+					$(DT_STM32_MSPI_2_HAS_DMA)
+	select USE_STM32_HAL_DMA_EX if SOC_SERIES_STM32H5X && \
+					($(DT_STM32_MSPI_1_HAS_DMA) || \
+					 $(DT_STM32_MSPI_2_HAS_DMA))
+	help
+	  Enable driver for STM32 family of processors.
