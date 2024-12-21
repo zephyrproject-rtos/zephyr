@@ -233,6 +233,11 @@ Drivers and Sensors
 
 * Sensors
 
+  * WE
+
+    * Replaced outdated :dtcompatible:`we,wsen-pdus` differential pressure sensor driver
+      and renamed it to :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
+
 * Serial
 
 * SPI
