@@ -11,12 +11,15 @@
 
 #include "_main.h"
 
-ZTEST(hash_map, test_empty)
+#define KEY_1   "first_key"
+#define VALUE_1 1
+
+ZTEST(hash_map_string, test_empty)
 {
 	/* test size 0 */
 	zassert_true(sys_hashmap_is_empty(&map));
 
 	/* test size 1 */
-	zassume_equal(1, sys_hashmap_insert(&map, 1, 1, NULL, NULL));
+	zassume_equal(1, string_map_insert(&map, KEY_1, VALUE_1, NULL, NULL));
 	zassert_false(sys_hashmap_is_empty(&map));
 }
