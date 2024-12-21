@@ -1,0 +1,48 @@
+# Copyright 2024 Kelly Helmut Lord
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Input double tap pseudo-device
+
+  Listens for key events as an input and produces key events as output
+  corresponding to double taps.
+
+  Can be optionally be associated to a specific device to listen for events
+  only from that device.
+
+  Example configuration:
+
+  #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+  double_tap {
+          input = <&buttons>;
+          compatible = "zephyr,input-double-tap";
+          input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
+          double-tap-codes = <INPUT_KEY_A>, <INPUT_KEY_B>;
+          double-tap-delay-ms = <300>;
+  };
+
+compatible: "zephyr,input-double-tap"
+
+properties:
+  input:
+    type: phandle
+    description: |
+      Input device phandle, if not specified listen for input from all devices.
+
+  input-codes:
+    type: array
+    required: true
+    description: |
+      Array of input event key codes (INPUT_KEY_* or INPUT_BTN_*).
+
+  double-tap-codes:
+    type: array
+    required: true
+    description: |
+      Array of key codes to be generated for double taps (INPUT_KEY_* or INPUT_BTN_*).
+
+  double-tap-delay-ms:
+    type: int
+    required: true
+    description: Maximum time delay between taps to register a double tap, in milliseconds.

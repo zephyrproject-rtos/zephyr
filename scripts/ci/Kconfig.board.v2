@@ -6,5 +6,8 @@
 
 mainmenu "Zephyr board / SoC v2 Configuration"
 
+config BOARD_REVISION
+	def_string "$(BOARD_REVISION)"
+
 source "boards/Kconfig.v2"
 source "soc/Kconfig.v2"

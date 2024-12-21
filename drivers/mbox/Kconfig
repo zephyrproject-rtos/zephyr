@@ -21,6 +21,8 @@ source "drivers/mbox/Kconfig.nrf_vevif_task"
 source "drivers/mbox/Kconfig.nrf_vevif_event"
 source "drivers/mbox/Kconfig.nrf_bellboard"
 source "drivers/mbox/Kconfig.stm32_hsem"
+source "drivers/mbox/Kconfig.esp32"
+
 
 config MBOX_INIT_PRIORITY
 	int "MBOX init priority"

@@ -7,6 +7,8 @@ tests:
   drivers.adc:
     depends_on: adc
     min_flash: 40
+    platform_exclude:
+      - nucleo_u031r8
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
@@ -14,7 +16,7 @@ tests:
       - b_u585i_iot02a
   drivers.adc.dma_st_stm32:
     extra_args:
-      - OVERLAY_CONFIG="overlay-dma-stm32.conf"
+      - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
     depends_on:
       - adc
       - dma
@@ -33,15 +35,17 @@ tests:
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_l476rg
+      - nucleo_u083rc
       - nucleo_u575zi_q
       - nucleo_wb55rg
       - nucleo_wba52cg
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk
+      - stm32u083c_dk
   drivers.adc.dma_nxp_kinetis:
     extra_args:
-      - OVERLAY_CONFIG="overlay-dma-kinetis.conf"
+      - EXTRA_CONF_FILE="overlay-dma-kinetis.conf"
     depends_on:
       - adc
       - dma
@@ -53,7 +57,7 @@ tests:
       - frdm_k82f
   drivers.adc.dma_espressif:
     extra_args:
-      - OVERLAY_CONFIG="overlay-dma-esp32.conf"
+      - EXTRA_CONF_FILE="overlay-dma-esp32.conf"
     depends_on:
       - adc
       - dma

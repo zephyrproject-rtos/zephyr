@@ -627,6 +627,9 @@ static const struct i2c_driver_api i2c_xilinx_axi_driver_api = {
 	.target_register = i2c_xilinx_axi_target_register,
 	.target_unregister = i2c_xilinx_axi_target_unregister,
 #endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #define I2C_XILINX_AXI_INIT(n, compat)                                                             \

@@ -41,7 +41,7 @@ Here's an example to build and flash the sample for the
    :compact:
 
 The same can be achieved by using the
-:zephyr_file:`samples/basic/multitarget_hello_world/sample.yaml` setup:
+:zephyr_file:`samples/sysbuild/hello_world/sample.yaml` setup:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sysbuild/hello_world

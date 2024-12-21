@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Xudong Zheng
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The representation of Raspberry Pi Pico external oscillator
+
+compatible: "raspberrypi,pico-xosc"
+
+include: raspberrypi,pico-clock.yaml
+
+properties:
+  startup-delay-multiplier:
+    type: int
+    description: Startup delay multiplier

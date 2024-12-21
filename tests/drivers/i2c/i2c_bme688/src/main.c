@@ -9,9 +9,9 @@
 #include <zephyr/ztest.h>
 #include "sensor.h"
 
-#define SENSOR_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(bosch_bme680)
-#define I2C_TEST_NODE DT_PARENT(SENSOR_NODE)
-#define DEVICE_ADDRESS (uint8_t)DT_REG_ADDR(SENSOR_NODE)
+#define SENSOR_NODE    DT_COMPAT_GET_ANY_STATUS_OKAY(bosch_bme680)
+#define I2C_TEST_NODE  DT_PARENT(SENSOR_NODE)
+#define DEVICE_ADDRESS (uint8_t) DT_REG_ADDR(SENSOR_NODE)
 
 static const struct device *const i2c_device = DEVICE_DT_GET(I2C_TEST_NODE);
 static struct calibration_coeffs cal_coeffs;
@@ -73,7 +73,7 @@ static void set_sensor_iir_filter(void)
 /* Read calibration coefficients for temperature, humifity and pressure */
 static void read_calibration_coeffs(struct calibration_coeffs *coeffs)
 {
-	uint8_t register_data[MAX_BURST_READ_SIZE] = { 0 };
+	uint8_t register_data[MAX_BURST_READ_SIZE] = {0};
 
 	/* Humidity */
 	TC_PRINT("Reading humidity calibration coefficients\n");
@@ -201,13 +201,47 @@ static uint16_t read_adc_humidity(void)
 ZTEST(i2c_controller_to_sensor, test_i2c_basic_memory_read)
 {
 	int err;
-	uint8_t entire_sensor_memory[SENSOR_MEMORY_SIZE_IN_BYTES] = { 0 };
+	uint32_t i2c_config = I2C_SPEED_SET(CONFIG_TEST_I2C_SPEED) | I2C_MODE_CONTROLLER;
+	uint8_t entire_sensor_memory[SENSOR_MEMORY_SIZE_IN_BYTES] = {0};
 
 	TC_PRINT("Device address 0x%x\n", DEVICE_ADDRESS);
+	TC_PRINT("I2C speed setting: %d\n", CONFIG_TEST_I2C_SPEED);
+
+	err = i2c_configure(i2c_device, i2c_config);
+	zassert_equal(err, 0, "i2c_configure' failed with error: %d\n", err);
 
 	err = i2c_read(i2c_device, entire_sensor_memory, SENSOR_MEMORY_SIZE_IN_BYTES,
 		       DEVICE_ADDRESS);
 	zassert_equal(err, 0, "i2c_read' failed with error: %d\n", err);
+}
+
+ZTEST(i2c_controller_to_sensor, test_i2c_nack_handling)
+{
+	int err;
+	uint8_t test_data;
+
+	TC_PRINT("Device address 0x%x\n", DEVICE_ADDRESS);
+
+	err = i2c_read(i2c_device, &test_data, 1, DEVICE_ADDRESS + 1);
+	zassert_equal(err, -EIO, "Invalid device address not detected, err: %d\n", err);
+
+	err = i2c_reg_read_byte(i2c_device, DEVICE_ADDRESS, CHIP_ID_REGISTER_ADDRESS, &test_data);
+	zassert_equal(err, 0, "Failed to read device register after previous address NACK: %d\n",
+		      err);
+}
+
+ZTEST(i2c_controller_to_sensor, test_i2c_bus_recovery)
+{
+	int err;
+	uint8_t test_data;
+
+	TC_PRINT("Device address 0x%x\n", DEVICE_ADDRESS);
+
+	err = i2c_recover_bus(i2c_device);
+	zassert_equal(err, 0, "'i2c_recover_bus' failed with error: %d\n", err);
+
+	err = i2c_reg_read_byte(i2c_device, DEVICE_ADDRESS, CHIP_ID_REGISTER_ADDRESS, &test_data);
+	zassert_equal(err, 0, "Failed to read device register after bus recovery: %d\n", err);
 }
 
 ZTEST(i2c_controller_to_sensor, test_i2c_controlled_sensor_operation)
@@ -217,10 +251,11 @@ ZTEST(i2c_controller_to_sensor, test_i2c_controlled_sensor_operation)
 	int16_t temperature = 0;
 	uint32_t pressure = 0;
 	uint32_t humidity = 0;
-	uint32_t i2c_config = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
+	uint32_t i2c_config = I2C_SPEED_SET(CONFIG_TEST_I2C_SPEED) | I2C_MODE_CONTROLLER;
 	uint8_t measurements_left = MEASUREMENT_CYCLES + 1;
 
 	TC_PRINT("Device address 0x%x\n", DEVICE_ADDRESS);
+	TC_PRINT("I2C speed setting: %d\n", CONFIG_TEST_I2C_SPEED);
 
 	err = i2c_configure(i2c_device, i2c_config);
 	zassert_equal(err, 0, "i2c_configure' failed with error: %d\n", err);

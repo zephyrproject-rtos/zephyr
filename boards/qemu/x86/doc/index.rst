@@ -1,7 +1,4 @@
-.. _qemu_x86:
-
-X86 Emulation (QEMU)
-####################
+.. zephyr:board:: qemu_x86
 
 Overview
 ********

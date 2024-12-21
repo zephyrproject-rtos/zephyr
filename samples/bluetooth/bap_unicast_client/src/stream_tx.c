@@ -19,7 +19,7 @@
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -48,7 +48,7 @@ static bool stream_is_streaming(const struct bt_bap_stream *bap_stream)
 
 	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
 	if (err != 0) {
-		false;
+		return false;
 	}
 
 	return ep_info.state == BT_BAP_EP_STATE_STREAMING;

@@ -5,7 +5,7 @@ description: Generic fixed-rate clock provider
 
 compatible: "fixed-clock"
 
-include: clock-controller.yaml
+include: [base.yaml, clock-controller.yaml]
 
 properties:
   clock-frequency:

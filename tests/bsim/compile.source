@@ -25,7 +25,7 @@ function _compile(){
   default_cmake_args=(-DCONFIG_COVERAGE=y -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_ASSERT=y)
   local cmake_args=(${cmake_args:-"${default_cmake_args[@]}"})
-  local cmake_extra_args="${cmake_extra_args:-""}"
+  local cmake_extra_args=(${cmake_extra_args:-""})
   local ninja_args="${ninja_args:-""}"
   local cc_flags="${cc_flags:-""}"
 
@@ -42,6 +42,10 @@ function _compile(){
   local map_file_name=${exe_name}.Tsymbols
 
   local this_dir=${WORK_DIR}/${app}/${exe_basename}
+  local app_absolute=$(realpath "${app_root}/${app}")
+  if [[ "${app_absolute}" != "${app_root}"* ]]; then
+    this_dir=${WORK_DIR}/${app_absolute}/${exe_basename}
+  fi
 
   local modules_arg="${ZEPHYR_MODULES:+-DZEPHYR_MODULES=${ZEPHYR_MODULES}}"
 
@@ -57,7 +61,7 @@ function _compile(){
   local cmake_cmd+=( -DOVERLAY_CONFIG="${conf_overlay}" \
             -DEXTRA_CONF_FILE="${extra_conf_file}" \
             ${modules_arg} \
-            "${cmake_args[@]}" ${cc_flags:+-DCMAKE_C_FLAGS=${cc_flags}} ${cmake_extra_args})
+            "${cmake_args[@]}" ${cc_flags:+-DCMAKE_C_FLAGS=${cc_flags}} "${cmake_extra_args[@]}")
   if [ -v sysbuild ]; then
     local cmake_cmd+=( -DAPP_DIR=${app_root}/${app} ${ZEPHYR_BASE}/share/sysbuild/)
   else

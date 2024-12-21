@@ -12,7 +12,8 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-static int soc_npcx7_init(void)
+extern void scfg_init(void);
+void soc_early_init_hook(void)
 {
 	struct scfg_reg *inst_scfg = (struct scfg_reg *)
 			DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg);
@@ -22,8 +23,5 @@ static int soc_npcx7_init(void)
 	 * for more information. It will be fixed in next chip.
 	 */
 	inst_scfg->DEVCNT |= BIT(7);
-
-	return 0;
+	scfg_init();
 }
-
-SYS_INIT(soc_npcx7_init, PRE_KERNEL_1, 0);

@@ -16,4 +16,4 @@ void test_entry(void)
 {
 	/* This function is never called */
 }
-LL_EXTENSION_SYMBOL(test_entry);
+EXPORT_SYMBOL(test_entry);

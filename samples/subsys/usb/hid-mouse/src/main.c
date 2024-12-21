@@ -55,9 +55,11 @@ static ALWAYS_INLINE void rwup_if_suspended(void)
 	}
 }
 
-static void input_cb(struct input_event *evt)
+static void input_cb(struct input_event *evt, void *user_data)
 {
 	static uint8_t tmp[MOUSE_REPORT_COUNT];
+
+	ARG_UNUSED(user_data);
 
 	switch (evt->code) {
 	case INPUT_KEY_0:
@@ -95,7 +97,7 @@ static void input_cb(struct input_event *evt)
 
 }
 
-INPUT_CALLBACK_DEFINE(NULL, input_cb);
+INPUT_CALLBACK_DEFINE(NULL, input_cb, NULL);
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 static int enable_usb_device_next(void)
@@ -174,11 +176,11 @@ int main(void)
 	}
 
 	while (true) {
-		uint8_t __aligned(sizeof(void *)) report[MOUSE_REPORT_COUNT];
+		UDC_STATIC_BUF_DEFINE(report, MOUSE_REPORT_COUNT);
 
 		k_msgq_get(&mouse_msgq, &report, K_FOREVER);
 
-		ret = hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
+		ret = hid_int_ep_write(hid_dev, report, MOUSE_REPORT_COUNT, NULL);
 		if (ret) {
 			LOG_ERR("HID write error, %d", ret);
 		} else {

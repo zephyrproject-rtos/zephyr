@@ -1,0 +1,22 @@
+common:
+  tags:
+    - kernel
+    - benchmark
+  integration_platforms:
+    - qemu_x86
+    - qemu_cortex_a53
+  timeout: 120
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "PROJECT EXECUTION SUCCESSFUL"
+
+tests:
+  benchmark.wait_queues.dumb:
+    extra_configs:
+      - CONFIG_WAITQ_DUMB=y
+
+  benchmark.wait_queues.scalable:
+    extra_configs:
+      - CONFIG_WAITQ_SCALABLE=y

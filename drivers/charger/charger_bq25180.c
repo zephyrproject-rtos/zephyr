@@ -32,8 +32,15 @@ LOG_MODULE_REGISTER(bq25180, CONFIG_CHARGER_LOG_LEVEL);
 #define BQ25180_STAT0_CHG_STAT_CONSTANT_VOLTAGE 0x02
 #define BQ25180_STAT0_CHG_STAT_DONE 0x03
 #define BQ25180_STAT0_VIN_PGOOD_STAT BIT(0)
+#define BQ25180_VBAT_MSK                        GENMASK(6, 0)
 #define BQ25180_ICHG_CHG_DIS BIT(7)
 #define BQ25180_ICHG_MSK GENMASK(6, 0)
+#define BQ25180_IC_CTRL_VRCH_100                0x00
+#define BQ25180_IC_CTRL_VRCH_200                BIT(5)
+#define BQ25180_IC_CTRL_VRCH_MSK                BIT(5)
+#define BQ25180_VLOWV_SEL_2_8                   BIT(6)
+#define BQ25180_VLOWV_SEL_3_0                   0x00
+#define BQ25180_VLOWV_SEL_MSK                   BIT(6)
 #define BQ25180_WATCHDOG_SEL_1_MSK GENMASK(1, 0)
 #define BQ25180_WATCHDOG_DISABLE 0x03
 #define BQ25180_DEVICE_ID_MSK GENMASK(3, 0)
@@ -45,10 +52,17 @@ LOG_MODULE_REGISTER(bq25180, CONFIG_CHARGER_LOG_LEVEL);
 /* Charging current limits */
 #define BQ25180_CURRENT_MIN_MA 5
 #define BQ25180_CURRENT_MAX_MA 1000
+#define BQ25180_VOLTAGE_MIN_MV 3500
+#define BQ25180_VOLTAGE_MAX_MV 4650
+
+#define BQ25180_FACTOR_VBAT_TO_MV 10
 
 struct bq25180_config {
 	struct i2c_dt_spec i2c;
 	uint32_t initial_current_microamp;
+	uint32_t max_voltage_microvolt;
+	uint32_t recharge_voltage_microvolt;
+	uint32_t precharge_threshold_voltage_microvolt;
 };
 
 /*
@@ -85,6 +99,28 @@ static uint32_t bq25180_ichg_to_ma(uint8_t ichg)
 	}
 
 	return (ichg - 31) * 10 + 40;
+}
+
+static int bq25180_mv_to_vbatreg(const struct bq25180_config *cfg, uint32_t voltage_mv,
+				 uint8_t *vbat)
+{
+	if (!IN_RANGE(voltage_mv, BQ25180_VOLTAGE_MIN_MV, cfg->max_voltage_microvolt)) {
+		LOG_WRN("charging voltage out of range: %dmV, "
+			"clamping to the nearest limit",
+			voltage_mv);
+	}
+	voltage_mv = CLAMP(voltage_mv, BQ25180_VOLTAGE_MIN_MV, cfg->max_voltage_microvolt);
+
+	*vbat = (voltage_mv - BQ25180_VOLTAGE_MIN_MV) / BQ25180_FACTOR_VBAT_TO_MV;
+
+	return 0;
+}
+
+static uint32_t bq25180_vbatreg_to_mv(uint8_t vbat)
+{
+	vbat &= BQ25180_VBAT_MSK;
+
+	return (vbat * BQ25180_FACTOR_VBAT_TO_MV) + BQ25180_VOLTAGE_MIN_MV;
 }
 
 static int bq25183_charge_enable(const struct device *dev, const bool enable)
@@ -136,6 +172,41 @@ static int bq25180_get_charge_current(const struct device *dev,
 	}
 
 	*const_charge_current_ua = bq25180_ichg_to_ma(val) * 1000;
+
+	return 0;
+}
+
+static int bq25180_set_charge_voltage(const struct device *dev, uint32_t const_charge_voltage_uv)
+{
+	const struct bq25180_config *cfg = dev->config;
+	uint8_t val;
+	int ret;
+
+	ret = bq25180_mv_to_vbatreg(cfg, const_charge_voltage_uv / 1000, &val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_VBAT_CTRL, BQ25180_VBAT_MSK, val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+static int bq25180_get_charge_voltage(const struct device *dev, uint32_t *const_charge_voltage_uv)
+{
+	const struct bq25180_config *cfg = dev->config;
+	uint8_t val;
+	int ret;
+
+	ret = i2c_reg_read_byte_dt(&cfg->i2c, BQ25180_VBAT_CTRL, &val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*const_charge_voltage_uv = bq25180_vbatreg_to_mv(val) * 1000;
 
 	return 0;
 }
@@ -215,6 +286,8 @@ static int bq25180_get_prop(const struct device *dev, charger_prop_t prop,
 		return bq25180_get_status(dev, &val->status);
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
 		return bq25180_get_charge_current(dev, &val->const_charge_current_ua);
+	case CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV:
+		return bq25180_get_charge_voltage(dev, &val->const_charge_voltage_uv);
 	default:
 		return -ENOTSUP;
 	}
@@ -226,6 +299,8 @@ static int bq25180_set_prop(const struct device *dev, charger_prop_t prop,
 	switch (prop) {
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
 		return bq25180_set_charge_current(dev, val->const_charge_current_ua);
+	case CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV:
+		return bq25180_set_charge_voltage(dev, val->const_charge_voltage_uv);
 	default:
 		return -ENOTSUP;
 	}
@@ -262,6 +337,38 @@ static int bq25180_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = bq25180_set_charge_voltage(dev, cfg->max_voltage_microvolt);
+	if (ret < 0) {
+		LOG_ERR("Could not set the target voltage. (rc: %d)", ret);
+		return ret;
+	}
+
+	if (cfg->recharge_voltage_microvolt > 0) {
+		if ((cfg->max_voltage_microvolt - cfg->recharge_voltage_microvolt) > 100000) {
+			val = BQ25180_IC_CTRL_VRCH_200;
+		} else {
+			val = BQ25180_IC_CTRL_VRCH_100;
+		}
+
+		ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_IC_CTRL, BQ25180_IC_CTRL_VRCH_MSK,
+					     val);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* Precharge threshold voltage */
+	if (cfg->precharge_threshold_voltage_microvolt <= 2800000) {
+		val = BQ25180_VLOWV_SEL_2_8;
+	} else {
+		val = BQ25180_VLOWV_SEL_3_0;
+	}
+
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_IC_CTRL, BQ25180_VLOWV_SEL_MSK, val);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (cfg->initial_current_microamp > 0) {
 		ret = bq25180_set_charge_current(dev, cfg->initial_current_microamp);
 		if (ret < 0) {
@@ -272,16 +379,20 @@ static int bq25180_init(const struct device *dev)
 	return 0;
 }
 
-#define CHARGER_BQ25180_INIT(inst)								\
-	static const struct bq25180_config bq25180_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
-		.initial_current_microamp = DT_INST_PROP(					\
-				inst, constant_charge_current_max_microamp),			\
-	};											\
-												\
-	DEVICE_DT_INST_DEFINE(inst, bq25180_init, NULL, NULL,					\
-			      &bq25180_config_##inst, POST_KERNEL,				\
-			      CONFIG_CHARGER_INIT_PRIORITY,					\
-			      &bq25180_api);
+#define CHARGER_BQ25180_INIT(inst)                                                                 \
+	static const struct bq25180_config bq25180_config_##inst = {                               \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.initial_current_microamp =                                                        \
+			DT_INST_PROP(inst, constant_charge_current_max_microamp),                  \
+		.max_voltage_microvolt =                                                           \
+			DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),                 \
+		.recharge_voltage_microvolt =                                                      \
+			DT_INST_PROP_OR(inst, re_charge_voltage_microvolt, 0),                     \
+		.precharge_threshold_voltage_microvolt =                                           \
+			DT_INST_PROP(inst, precharge_voltage_threshold_microvolt),                 \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, bq25180_init, NULL, NULL, &bq25180_config_##inst, POST_KERNEL, \
+			      CONFIG_CHARGER_INIT_PRIORITY, &bq25180_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CHARGER_BQ25180_INIT)

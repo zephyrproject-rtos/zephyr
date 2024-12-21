@@ -12,7 +12,7 @@ properties:
   bt-hci-name:
     default: "Atmosic BLE"
   bt-hci-bus:
-    default: "BT_HCI_BUS_VIRTUAL"
+    default: "virtual"
 
   reg:
       type: array

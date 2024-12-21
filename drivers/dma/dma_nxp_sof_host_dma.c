@@ -118,16 +118,41 @@ static int sof_host_dma_reload(const struct device *dev, uint32_t chan_id,
 
 	memcpy(UINT_TO_POINTER(chan->dest), UINT_TO_POINTER(chan->src), chan->size);
 
-	if (chan->direction == MEMORY_TO_HOST) {
-		/* force range to main memory so that host doesn't read any
-		 * stale data.
-		 */
-		ret = sys_cache_data_flush_range(UINT_TO_POINTER(chan->dest),
-						 chan->size);
-		if (ret < 0) {
-			LOG_ERR("failed to flush data cache range");
-			return ret;
-		}
+	/*
+	 * MEMORY_TO_HOST transfer: force range to main memory so that
+	 * the host doesn't read any stale data.
+	 *
+	 * HOST_TO_MEMORY transfer:
+	 *	SOF assumes that data is copied from host to local memory via
+	 *	DMA, which is not the case for imx platforms. For these
+	 *	platforms, the DSP is in charge of copying the data from host to
+	 *	local memory.
+	 *
+	 *	Additionally, because of the aforementioned assumption,
+	 *	SOF performs a cache invalidation on the destination
+	 *	memory chunk before data is copied further down the
+	 *	pipeline.
+	 *
+	 *	If the destination memory chunk is cacheable what seems
+	 *	to happen is that the invalidation operation forces the
+	 *	DSP to fetch the data from RAM instead of the cache.
+	 *	Since a writeback was never performed on the destination
+	 *	memory chunk, the RAM will contain stale data.
+	 *
+	 *	With this in mind, the writeback should also be
+	 *	performed in HOST_TO_MEMORY transfers (aka playback)
+	 *	to keep the cache and RAM in sync. This way, the DSP
+	 *	will read the correct data from RAM (when forced to do
+	 *	so by the cache invalidation operation).
+	 *
+	 *	TODO: this is NOT optimal since we perform two unneeded
+	 *	cache management operations and should be addressed in
+	 *	SOF at some point.
+	 */
+	ret = sys_cache_data_flush_range(UINT_TO_POINTER(chan->dest), chan->size);
+	if (ret < 0) {
+		LOG_ERR("failed to flush data cache range");
+		return ret;
 	}
 
 	return 0;

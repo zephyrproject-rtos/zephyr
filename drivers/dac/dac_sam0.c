@@ -63,6 +63,10 @@ static int dac_sam0_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		return -ENOSYS;
+	}
+
 	return 0;
 }
 

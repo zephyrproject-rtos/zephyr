@@ -8,7 +8,17 @@
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_TMP116_H_
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <sys/types.h>
+
+enum sensor_attribute_tmp_116 {
+	/** Turn on power saving/one shot mode */
+	SENSOR_ATTR_TMP116_ONE_SHOT_MODE = SENSOR_ATTR_PRIV_START,
+	/** Shutdown the sensor */
+	SENSOR_ATTR_TMP116_SHUTDOWN_MODE,
+	/** Turn on continuous conversion */
+	SENSOR_ATTR_TMP116_CONTINUOUS_CONVERSION_MODE,
+};
 
 #define EEPROM_TMP116_SIZE (4 * sizeof(uint16_t))
 

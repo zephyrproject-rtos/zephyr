@@ -13,6 +13,11 @@ static const uint8_t crc8_ccitt_small_table[16] = {
 	0x38, 0x3f, 0x36, 0x31, 0x24, 0x23, 0x2a, 0x2d
 };
 
+static const uint8_t crc8_rohc_small_table[16] = {
+	0x00, 0x1c, 0x38, 0x24, 0x70, 0x6c, 0x48, 0x54,
+	0xe0, 0xfc, 0xd8, 0xc4, 0x90, 0x8c, 0xa8, 0xb4
+};
+
 uint8_t crc8_ccitt(uint8_t val, const void *buf, size_t cnt)
 {
 	size_t i;
@@ -22,6 +27,19 @@ uint8_t crc8_ccitt(uint8_t val, const void *buf, size_t cnt)
 		val ^= p[i];
 		val = (val << 4) ^ crc8_ccitt_small_table[val >> 4];
 		val = (val << 4) ^ crc8_ccitt_small_table[val >> 4];
+	}
+	return val;
+}
+
+uint8_t crc8_rohc(uint8_t val, const void *buf, size_t cnt)
+{
+	size_t i;
+	const uint8_t *p = buf;
+
+	for (i = 0; i < cnt; i++) {
+		val ^= p[i];
+		val = (val >> 4) ^ crc8_rohc_small_table[val & 0x0f];
+		val = (val >> 4) ^ crc8_rohc_small_table[val & 0x0f];
 	}
 	return val;
 }

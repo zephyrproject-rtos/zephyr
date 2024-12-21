@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/linker/sections.h>
@@ -26,6 +27,8 @@
 #include <fsl_device_registers.h>
 #include <fsl_cache.h>
 
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
+
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 #include "flash_clock_setup.h"
 #endif
@@ -36,41 +39,36 @@
 #endif
 
 /* Core clock frequency: 250105263Hz */
-#define CLOCK_INIT_CORE_CLOCK                     250105263U
+#define CLOCK_INIT_CORE_CLOCK 250105263U
 
-#define SYSTEM_IS_XIP_FLEXSPI() \
-	((((uint32_t)nxp_rt600_init >= 0x08000000U) &&		\
-	  ((uint32_t)nxp_rt600_init < 0x10000000U)) ||		\
-	 (((uint32_t)nxp_rt600_init >= 0x18000000U) &&		\
-	  ((uint32_t)nxp_rt600_init < 0x20000000U)))
+#define SYSTEM_IS_XIP_FLEXSPI()                                                                    \
+	((((uint32_t)nxp_rt600_init >= 0x08000000U) &&                                             \
+	  ((uint32_t)nxp_rt600_init < 0x10000000U)) ||                                             \
+	 (((uint32_t)nxp_rt600_init >= 0x18000000U) && ((uint32_t)nxp_rt600_init < 0x20000000U)))
 
-#define CTIMER_CLOCK_SOURCE(node_id) \
+#define CTIMER_CLOCK_SOURCE(node_id)                                                               \
 	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
 #define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
-#define TO_CLOCK_ATTACH_ID(inst, val) CLKCTL1_TUPLE_MUXA(CT32BIT##inst##FCLKSEL_OFFSET, val)
-#define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
+#define TO_CLOCK_ATTACH_ID(inst, val)     CLKCTL1_TUPLE_MUXA(CT32BIT##inst##FCLKSEL_OFFSET, val)
+#define CTIMER_CLOCK_SETUP(node_id)       CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
 
 #ifdef CONFIG_INIT_SYS_PLL
-const clock_sys_pll_config_t g_sysPllConfig = {
-	.sys_pll_src  = kCLOCK_SysPllXtalIn,
-	.numerator	  = 0,
-	.denominator  = 1,
-	.sys_pll_mult = kCLOCK_SysPllMult22
-};
+const clock_sys_pll_config_t g_sysPllConfig = {.sys_pll_src = kCLOCK_SysPllXtalIn,
+					       .numerator = 0,
+					       .denominator = 1,
+					       .sys_pll_mult = kCLOCK_SysPllMult22};
 #endif
 
 #ifdef CONFIG_INIT_AUDIO_PLL
-const clock_audio_pll_config_t g_audioPllConfig = {
-	.audio_pll_src	= kCLOCK_AudioPllXtalIn,
-	.numerator		= 5040,
-	.denominator	= 27000,
-	.audio_pll_mult = kCLOCK_AudioPllMult22
-};
+const clock_audio_pll_config_t g_audioPllConfig = {.audio_pll_src = kCLOCK_AudioPllXtalIn,
+						   .numerator = 5040,
+						   .denominator = 27000,
+						   .audio_pll_mult = kCLOCK_AudioPllMult22};
 #endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 /* USB PHY condfiguration */
-#define BOARD_USB_PHY_D_CAL (0x0CU)
+#define BOARD_USB_PHY_D_CAL     (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
@@ -95,29 +93,28 @@ extern void z_arm_pendsv(void);
 extern void sys_clock_isr(void);
 extern void z_arm_exc_spurious(void);
 
-__imx_boot_ivt_section void (* const image_vector_table[])(void)  = {
-	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE),  /* 0x00 */
-	z_arm_reset,				/* 0x04 */
-	z_arm_nmi,					/* 0x08 */
-	z_arm_hard_fault,			/* 0x0C */
-	z_arm_mpu_fault,			/* 0x10 */
-	z_arm_bus_fault,			/* 0x14 */
-	z_arm_usage_fault,			/* 0x18 */
+__imx_boot_ivt_section void (*const image_vector_table[])(void) = {
+	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
+	z_arm_reset,                                         /* 0x04 */
+	z_arm_nmi,                                           /* 0x08 */
+	z_arm_hard_fault,                                    /* 0x0C */
+	z_arm_mpu_fault,                                     /* 0x10 */
+	z_arm_bus_fault,                                     /* 0x14 */
+	z_arm_usage_fault,                                   /* 0x18 */
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
-	z_arm_secure_fault,			/* 0x1C */
+	z_arm_secure_fault, /* 0x1C */
 #else
 	z_arm_exc_spurious,
-#endif /* CONFIG_ARM_SECURE_FIRMWARE */
-	(void (*)())_flash_used,	/* 0x20, imageLength. */
-	0,				/* 0x24, imageType (Plain Image) */
-	0,				/* 0x28, authBlockOffset/crcChecksum */
-	z_arm_svc,		/* 0x2C */
-	z_arm_debug_monitor,	/* 0x30 */
-	(void (*)())image_vector_table,		/* 0x34, imageLoadAddress. */
-	z_arm_pendsv,						/* 0x38 */
-#if defined(CONFIG_SYS_CLOCK_EXISTS) && \
-	defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
-	sys_clock_isr,						/* 0x3C */
+#endif                                  /* CONFIG_ARM_SECURE_FIRMWARE */
+	(void (*)())_flash_used,        /* 0x20, imageLength. */
+	0,                              /* 0x24, imageType (Plain Image) */
+	0,                              /* 0x28, authBlockOffset/crcChecksum */
+	z_arm_svc,                      /* 0x2C */
+	z_arm_debug_monitor,            /* 0x30 */
+	(void (*)())image_vector_table, /* 0x34, imageLoadAddress. */
+	z_arm_pendsv,                   /* 0x38 */
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
+	sys_clock_isr, /* 0x3C */
 #else
 	z_arm_exc_spurious,
 #endif
@@ -273,6 +270,13 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM3);
 #endif
 
+#if CONFIG_AUDIO_CODEC_WM8904
+	/* attach AUDIO PLL clock to MCLK */
+	CLOCK_AttachClk(kAUDIO_PLL_to_MCLK_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivMclkClk, 1);
+	SYSCTL1->MCLKPINDIR = SYSCTL1_MCLKPINDIR_MCLKPINDIR_MASK;
+#endif
+
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay))
 	CLOCK_AttachClk(kLPOSC_to_WDT0_CLK);
 #else
@@ -282,7 +286,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) && CONFIG_IMX_USDHC
 	/* Make sure USDHC ram buffer has been power up*/
 	POWER_DisablePD(kPDRUNCFG_APD_USDHC0_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USDHC0_SRAM);
@@ -303,6 +307,13 @@ static ALWAYS_INLINE void clock_init(void)
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(i3c0), nxp_mcux_i3c, okay))
 	CLOCK_AttachClk(kFFRO_to_I3C_CLK);
 	CLOCK_AttachClk(kLPOSC_to_I3C_TC_CLK);
+
+	CLOCK_SetClkDiv(kCLOCK_DivI3cClk,
+			DT_PROP(DT_NODELABEL(i3c0), clk_divider));
+	CLOCK_SetClkDiv(kCLOCK_DivI3cSlowClk,
+			DT_PROP(DT_NODELABEL(i3c0), clk_divider_slow));
+	CLOCK_SetClkDiv(kCLOCK_DivI3cTcClk,
+			DT_PROP(DT_NODELABEL(i3c0), clk_divider_tc));
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpadc0), nxp_lpc_lpadc, okay)
@@ -311,6 +322,18 @@ static ALWAYS_INLINE void clock_init(void)
 	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
 	CLOCK_AttachClk(kSFRO_to_ADC_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, DT_PROP(DT_NODELABEL(lpadc0), clk_divider));
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay) && CONFIG_INIT_AUDIO_PLL
+	/* Using the Audio PLL as input clock leads to better clock dividers
+	 * for typical PCM sample rates ({8,16,24,32,48,96} kHz.
+	 */
+	/* DMIC source from audio pll, divider 8, 24.576M/8=3.072MHZ
+	 * Select Audio PLL as clock source. This should produce a bit clock
+	 * of 3.072MHZ
+	 */
+	CLOCK_AttachClk(kAUDIO_PLL_to_DMIC_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 8);
 #endif
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
@@ -327,17 +350,14 @@ static ALWAYS_INLINE void clock_init(void)
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC)
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) && CONFIG_IMX_USDHC)
 
-void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
-	uint32_t speed, uint32_t strength)
+void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init, uint32_t speed, uint32_t strength)
 {
-
 }
 
 void imxrt_usdhc_dat3_pull(bool pullup)
 {
-
 }
 #endif
 
@@ -347,11 +367,9 @@ void imxrt_usdhc_dat3_pull(bool pullup)
  *
  * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
- *
- * @return 0
  */
 
-static int nxp_rt600_init(void)
+void soc_early_init_hook(void)
 {
 	/* Initialize clock */
 	clock_init();
@@ -359,13 +377,11 @@ static int nxp_rt600_init(void)
 #ifndef CONFIG_IMXRT6XX_CODE_CACHE
 	CACHE64_DisableCache(CACHE64);
 #endif
-
-	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 #ifndef CONFIG_NXP_IMXRT_BOOT_HEADER
 	/*
@@ -374,18 +390,16 @@ void z_arm_platform_init(void)
 	 * set the stack pointer, since we are about to push to
 	 * the stack when we call SystemInit
 	 */
-	 /* Clear stack limit registers */
-	 __set_MSPLIM(0);
-	 __set_PSPLIM(0);
+	/* Clear stack limit registers */
+	__set_MSPLIM(0);
+	__set_PSPLIM(0);
 	/* Disable MPU */
-	 MPU->CTRL &= ~MPU_CTRL_ENABLE_Msk;
-	 /* Set stack pointer */
-	 __set_MSP((uint32_t)(z_main_stack + CONFIG_MAIN_STACK_SIZE));
+	MPU->CTRL &= ~MPU_CTRL_ENABLE_Msk;
+	/* Set stack pointer */
+	__set_MSP((uint32_t)(z_main_stack + CONFIG_MAIN_STACK_SIZE));
 #endif /* !CONFIG_NXP_IMXRT_BOOT_HEADER */
 	/* This is provided by the SDK */
 	SystemInit();
 }
 
 #endif
-
-SYS_INIT(nxp_rt600_init, PRE_KERNEL_1, 0);

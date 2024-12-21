@@ -20,6 +20,57 @@ source "subsys/bindesc/Kconfig.version"
 source "subsys/bindesc/Kconfig.build_time"
 source "subsys/bindesc/Kconfig.host_info"
 
+config BINDESC_DEFINE_MAX_DATA_SIZE
+	int "Bindesc max data size"
+	range 4 $(UINT16_MAX)
+	default 128
+	help
+	  Determines the maximum size of a binary descriptor's data. The theoretical
+	  limit to this value is the maximum value of a uint16_t (65535), in practice
+	  it's recommened to keep this value much smaller for easier handling of the data.
+
 endif # BINDESC_DEFINE
+
+config BINDESC_READ
+	bool "Binary Descriptors Read"
+	help
+	  Enable the app to read the binary descriptors of another image
+
+if BINDESC_READ
+
+module = BINDESC_READ
+module-str = Binary Descriptor read
+source "subsys/logging/Kconfig.template.log_config"
+
+config BINDESC_READ_RAM
+	bool "Bindesc read from RAM"
+	help
+	  Enable reading and parsing binary descriptors from RAM.
+
+config BINDESC_READ_MEMORY_MAPPED_FLASH
+	bool "Bindesc read from memory mapped flash"
+	help
+	  Enable reading and parsing binary descriptors from memory mapped flash.
+
+config BINDESC_READ_FLASH
+	bool "Bindesc read from flash"
+	help
+	  Enable reading and parsing binary descriptors from non memory mapped flash
+	  (e.g. external flash).
+
+if BINDESC_READ_FLASH
+
+config BINDESC_READ_FLASH_MAX_DATA_SIZE
+	int "Bindesc read flash max data size"
+	range 4 $(UINT16_MAX)
+	default 128
+	help
+	  The maximum expected size of the descriptors' data. This should be set to
+	  the value set to BINDESC_DEFINE_MAX_DATA_SIZE by the read image.
+	  Any descriptor that exceeds this size will be ignored.
+
+endif # BINDESC_READ_FLASH
+
+endif # BINDESC_READ
 
 endif # BINDESC

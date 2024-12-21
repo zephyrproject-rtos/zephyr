@@ -77,6 +77,8 @@ rsource "Kconfig.dummy"
 
 rsource "Kconfig.bluetooth"
 
+rsource "Kconfig.lorawan"
+
 rsource "Kconfig.shell"
 
 rsource "Kconfig.uart"

@@ -22,7 +22,7 @@ Usage
 *****
 
 The shield can be used in any application by setting ``--shield npm1300_ek``
-when invoking ``west build``. You can check :ref:`npm1300_ek_sample` for a
+when invoking ``west build``. You can check :zephyr:code-sample:`npm1300_ek` for a
 comprehensive sample.
 
 References

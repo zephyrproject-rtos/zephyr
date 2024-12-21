@@ -12,6 +12,8 @@ from pathlib import Path
 import shlex
 import subprocess
 import sys
+import socket
+import time
 import tempfile
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps, FileType
@@ -25,13 +27,19 @@ except ImportError:
 
 DEFAULT_JLINK_EXE = 'JLink.exe' if sys.platform == 'win32' else 'JLinkExe'
 DEFAULT_JLINK_GDB_PORT = 2331
+DEFAULT_JLINK_RTT_PORT = 19021
 
 def is_ip(ip):
+    if not ip:
+        return False
     try:
-        ipaddress.ip_address(ip)
+        ipaddress.ip_address(ip.split(':')[0])
     except ValueError:
         return False
     return True
+
+def is_tunnel(tunnel):
+    return tunnel.startswith("tunnel:") if tunnel else False
 
 class ToggleAction(argparse.Action):
 
@@ -49,6 +57,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  gdbserver='JLinkGDBServer',
                  gdb_host='',
                  gdb_port=DEFAULT_JLINK_GDB_PORT,
+                 rtt_port=DEFAULT_JLINK_RTT_PORT,
                  tui=False, tool_opt=[]):
         super().__init__(cfg)
         self.file = cfg.file
@@ -70,6 +79,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.gdb_port = gdb_port
         self.tui_arg = ['-tui'] if tui else []
         self.loader = loader
+        self.rtt_port = rtt_port
 
         self.tool_opt = []
         for opts in [shlex.split(opt) for opt in tool_opt]:
@@ -81,9 +91,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
                           dev_id=True, flash_addr=True, erase=True, reset=True,
-                          tool_opt=True, file=True)
+                          tool_opt=True, file=True, rtt=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -126,6 +136,10 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             dest='reset', nargs=0,
                             action=ToggleAction,
                             help='obsolete synonym for --reset/--no-reset')
+        parser.add_argument('--rtt-client', default='JLinkRTTClient',
+                            help='RTT client, default is JLinkRTTClient')
+        parser.add_argument('--rtt-port', default=DEFAULT_JLINK_RTT_PORT,
+                            help=f'jlink rtt port, defaults to {DEFAULT_JLINK_RTT_PORT}')
 
         parser.set_defaults(reset=False)
 
@@ -142,6 +156,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  loader=args.loader,
                                  gdb_host=args.gdb_host,
                                  gdb_port=args.gdb_port,
+                                 rtt_port=args.rtt_port,
                                  tui=args.tui, tool_opt=args.tool_opt)
 
     def print_gdbserver_message(self):
@@ -237,7 +252,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         server_cmd = ([self.gdbserver] +
                       ['-select',
-                                           ('ip' if is_ip(self.dev_id) else 'usb') +
+                                           ('ip' if (is_ip(self.dev_id) or is_tunnel(self.dev_id)) else 'usb') +
                                            (f'={self.dev_id}' if self.dev_id else ''),
                        '-port', str(self.gdb_port),
                        '-if', self.iface,
@@ -248,6 +263,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                        '-singlerun'] +
                       (['-nogui'] if self.supports_nogui else []) +
                       (['-rtos', plugin_dir] if rtos else []) +
+                      ['-rtttelnetport', str(self.rtt_port)] +
                       self.tool_opt)
 
         if command == 'flash':
@@ -258,6 +274,27 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             self.require(self.gdbserver)
             self.print_gdbserver_message()
             self.check_call(server_cmd)
+        elif command == 'rtt':
+            self.print_gdbserver_message()
+            server_cmd += ['-nohalt']
+            server_proc = self.popen_ignore_int(server_cmd)
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # wait for the port to be open
+                while server_proc.poll() is None:
+                    try:
+                        sock.connect(('localhost', self.rtt_port))
+                        break
+                    except ConnectionRefusedError:
+                        time.sleep(0.1)
+                sock.shutdown(socket.SHUT_RDWR)
+                time.sleep(0.1)
+                self.run_telnet_client('localhost', self.rtt_port)
+            except Exception as e:
+                self.logger.error(e)
+            finally:
+                server_proc.terminate()
+                server_proc.wait()
         else:
             if self.gdb_cmd is None:
                 raise ValueError('Cannot debug; gdb is missing')
@@ -320,10 +357,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 raise ValueError(err)
 
         else:
-            # use hex or bin file provided by the buildsystem, preferring .hex over .bin
+            # Use hex, bin or elf file provided by the buildsystem.
+            # Preferring .hex over .bin and .elf
             if self.hex_name is not None and os.path.isfile(self.hex_name):
                 flash_file = self.hex_name
                 flash_cmd = f'loadfile "{self.hex_name}"'
+            # Preferring .bin over .elf
             elif self.bin_name is not None and os.path.isfile(self.bin_name):
                 if self.dt_flash:
                     flash_addr = self.flash_address_from_build_conf(self.build_conf)
@@ -331,9 +370,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     flash_addr = 0
                 flash_file = self.bin_name
                 flash_cmd = f'loadfile "{self.bin_name}" 0x{flash_addr:x}'
+            elif self.elf_name is not None and os.path.isfile(self.elf_name):
+                flash_file = self.elf_name
+                flash_cmd = f'loadfile "{self.elf_name}"'
             else:
-                err = 'Cannot flash; no hex ({}) or bin ({}) files found.'
-                raise ValueError(err.format(self.hex_name, self.bin_name))
+                err = 'Cannot flash; no hex ({}), bin ({}) or elf ({}) files found.'
+                raise ValueError(err.format(self.hex_name, self.bin_name, self.elf_name))
 
         # Flash the selected build artifact
         lines.append(flash_cmd)
@@ -367,7 +409,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 loader_details = "?" + self.loader
 
             cmd = ([self.commander] +
-                   (['-IP', f'{self.dev_id}'] if is_ip(self.dev_id) else (['-USB', f'{self.dev_id}'] if self.dev_id else [])) +
+                   (['-IP', f'{self.dev_id}'] if (is_ip(self.dev_id) or is_tunnel(self.dev_id)) else (['-USB', f'{self.dev_id}'] if self.dev_id else [])) +
                    (['-nogui', '1'] if self.supports_nogui else []) +
                    ['-if', self.iface,
                     '-speed', self.speed,

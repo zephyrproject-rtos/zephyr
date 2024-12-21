@@ -1,0 +1,47 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_FLEXSPI := nxp,imx-flexspi
+
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+
+DT_FLASH_PARENT_IS_FLEXSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
+DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
+		if $(DT_FLASH_PARENT_IS_FLEXSPI)
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config FLASH_SIZE
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
+		if $(DT_FLASH_HAS_SIZE_PROP)
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_MCUX_FLEXSPI_XIP
+	bool
+	default $(DT_FLASH_PARENT_IS_FLEXSPI)
+	select XIP
+	help
+	  Allows REfor the soc to safely initialize the clocks for the
+	  FlexSpi when planning to execute code in FlexSpi Memory.
+
+if FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
+
+config CODE_DATA_RELOCATION_SRAM
+	default y if !CPU_CORTEX_M7
+
+config CODE_DATA_RELOCATION
+	default y if CPU_CORTEX_M7
+
+config FLASH_MCUX_FLEXSPI_XIP_MEM
+	string
+	prompt "Flexspi drivers memory location"
+	default "RAM"
+	help
+	  Select the location to run the FlexSPI drivers when using
+	  the flash API.
+
+endif

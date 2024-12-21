@@ -15,9 +15,9 @@ common:
     - qemu_riscv64
     - qemu_x86_64
 tests:
-  thrift.ThriftTest.newlib.binaryProtocol: {}
-  thrift.ThriftTest.newlib.compactProtocol:
+  thrift.ThriftTest.binaryProtocol: {}
+  thrift.ThriftTest.compactProtocol:
     extra_configs:
       - CONFIG_THRIFT_COMPACT_PROTOCOL=y
-  thrift.ThriftTest.newlib.tlsTransport:
-    extra_args: OVERLAY_CONFIG="overlay-tls.conf"
+  thrift.ThriftTest.tlsTransport:
+    extra_args: EXTRA_CONF_FILE="overlay-tls.conf"

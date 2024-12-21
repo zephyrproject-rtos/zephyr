@@ -16,6 +16,10 @@
 #include <cpu_init.h>
 #include "manifest.h"
 
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
+#include <adsp_boot.h>
+#endif /* CONFIG_SOC_SERIES_INTEL_ADSP_ACE */
+
 /* Important note about linkage:
  *
  * The C code here, starting from boot_core0(), is running entirely in
@@ -138,6 +142,15 @@ extern void lp_sram_init(void);
 
 __imr void boot_core0(void)
 {
+#if defined(CONFIG_INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW)
+	int prid;
+
+	prid = arch_proc_id();
+	if (prid != 0) {
+		((void (*)(void))DSPCS.bootctl[prid].baddr)();
+	}
+#endif
+
 	cpu_early_init();
 
 #ifdef CONFIG_ADSP_DISABLE_L2CACHE_AT_BOOT
@@ -157,6 +170,6 @@ __imr void boot_core0(void)
 	xtensa_vecbase_lock();
 
 	/* Zephyr! */
-	extern FUNC_NORETURN void z_cstart(void);
-	z_cstart();
+	extern FUNC_NORETURN void z_prep_c(void);
+	z_prep_c();
 }

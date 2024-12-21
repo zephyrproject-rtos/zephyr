@@ -51,4 +51,4 @@ FILE(GLOB app_sources src/main.c)
 target_sources(app PRIVATE ${app_sources})
 
 zephyr_linker_sources(SECTIONS sections-rom.ld)
-zephyr_iterable_section(NAME http_resource_desc_test_http_service KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+zephyr_iterable_section(NAME http_resource_desc_test_http_service KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})

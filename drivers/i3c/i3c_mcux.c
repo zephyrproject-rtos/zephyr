@@ -98,27 +98,8 @@ struct mcux_i3c_data {
 	/** Condvar for waiting for bus to be in IDLE state */
 	struct k_condvar condvar;
 
-	struct {
-		/**
-		 * Clock divider for use when generating clock for
-		 * I3C Push-pull mode.
-		 */
-		uint8_t clk_div_pp;
-
-		/**
-		 * Clock divider for use when generating clock for
-		 * I3C open drain mode.
-		 */
-		uint8_t clk_div_od;
-
-		/**
-		 * Clock divider for the slow time control clock.
-		 */
-		uint8_t clk_div_tc;
-
-		/** I3C open drain clock frequency in Hz. */
-		uint32_t i3c_od_scl_hz;
-	} clocks;
+	/** I3C open drain clock frequency in Hz. */
+	uint32_t i3c_od_scl_hz;
 
 #ifdef CONFIG_I3C_USE_IBI
 	struct {
@@ -1478,7 +1459,6 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 	const struct device *dev = i3c_ibi_work->controller;
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *data = dev->data;
-	struct i3c_dev_attached_list *dev_list = &data->common.attached_dev;
 	I3C_Type *base = config->base;
 	struct i3c_device_desc *target = NULL;
 	uint32_t mstatus, ibitype, ibiaddr;
@@ -1536,7 +1516,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 
 	switch (ibitype) {
 	case I3C_MSTATUS_IBITYPE_IBI:
-		target = i3c_dev_list_i3c_addr_find(dev_list, (uint8_t)ibiaddr);
+		target = i3c_dev_list_i3c_addr_find(dev, (uint8_t)ibiaddr);
 		if (target != NULL) {
 			ret = mcux_i3c_do_one_xfer_read(base, &payload[0],
 							sizeof(payload), true);
@@ -1912,8 +1892,8 @@ static int mcux_i3c_configure(const struct device *dev,
 	master_config.baudRate_Hz.i3cPushPullBaud = ctrl_cfg->scl.i3c;
 	master_config.enableOpenDrainHigh = dev_cfg->disable_open_drain_high_pp ? false : true;
 
-	if (dev_data->clocks.i3c_od_scl_hz) {
-		master_config.baudRate_Hz.i3cOpenDrainBaud = dev_data->clocks.i3c_od_scl_hz;
+	if (dev_data->i3c_od_scl_hz) {
+		master_config.baudRate_Hz.i3cOpenDrainBaud = dev_data->i3c_od_scl_hz;
 	}
 
 	/* Initialize hardware */
@@ -1978,10 +1958,6 @@ static int mcux_i3c_init(const struct device *dev)
 	if (ret != 0) {
 		goto err_out;
 	}
-
-	CLOCK_SetClkDiv(kCLOCK_DivI3cClk, data->clocks.clk_div_pp);
-	CLOCK_SetClkDiv(kCLOCK_DivI3cSlowClk, data->clocks.clk_div_od);
-	CLOCK_SetClkDiv(kCLOCK_DivI3cTcClk, data->clocks.clk_div_tc);
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
@@ -2159,12 +2135,9 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 			DT_INST_PROP(id, disable_open_drain_high_pp),		\
 	};									\
 	static struct mcux_i3c_data mcux_i3c_data_##id = {			\
-		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),	\
+		.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),		\
 		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(id, i3c_scl_hz, 0),	\
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(id, i2c_scl_hz, 0),	\
-		.clocks.clk_div_pp = DT_INST_PROP(id, clk_divider),		\
-		.clocks.clk_div_od = DT_INST_PROP(id, clk_divider_slow),	\
-		.clocks.clk_div_tc = DT_INST_PROP(id, clk_divider_tc),		\
 	};									\
 	DEVICE_DT_INST_DEFINE(id,						\
 			      mcux_i3c_init,					\

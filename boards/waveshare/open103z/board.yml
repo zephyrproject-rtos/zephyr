@@ -1,5 +1,6 @@
 board:
   name: waveshare_open103z
+  full_name: Open103Z
   vendor: waveshare
   socs:
     - name: stm32f103xe

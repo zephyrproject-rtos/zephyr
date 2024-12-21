@@ -37,7 +37,7 @@
 		led2 = &user_led1_blue;
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
-		watchdog0 = &fs26_wdt;
+		watchdog0 = &swt0;
 		/* For pwm test suites */
 		pwm-0 = &emios0_pwm;
 		pwm-1 = &flexio0_pwm;
@@ -199,6 +199,10 @@
 		max-bitrate = <2000000>;
 		#phy-cells = <0>;
 	};
+};
+
+&pmc {
+	lm-reg;
 };
 
 &flash0 {

@@ -1,5 +1,6 @@
 board:
   name: stm32g0316_disco
+  full_name: STM32G0316 Discovery
   vendor: st
   socs:
     - name: stm32g031xx

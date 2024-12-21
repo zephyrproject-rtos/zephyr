@@ -37,3 +37,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 			 :: "r"(intenable), "r"(BIT(ZSR_IRQ_OFFLOAD_INT)));
 	arch_irq_unlock(key);
 }
+
+void arch_irq_offload_init(void)
+{
+}

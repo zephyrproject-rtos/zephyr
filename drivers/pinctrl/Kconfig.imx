@@ -1,4 +1,4 @@
-# Copyright (c) 2022 NXP
+# Copyright 2022, 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config PINCTRL_IMX
@@ -15,6 +15,13 @@ config PINCTRL_IMX_SCU
 	default y
 	help
 	  Enable pin controller driver for SCU-based NXP i.MX SoCs.
+
+config PINCTRL_IMX_SCMI
+	bool "Pin controller SCMI-based driver for i.MX SoCs"
+	depends on ARM_SCMI_PINCTRL_HELPERS
+	default y
+	help
+	  Enable pin controller SCMI-based driver for NXP i.MX SoCs.
 
 # TODO: Find better place for this option
 config MCUX_XBARA

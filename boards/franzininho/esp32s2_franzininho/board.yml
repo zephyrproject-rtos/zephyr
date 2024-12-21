@@ -1,5 +1,6 @@
 board:
   name: esp32s2_franzininho
+  full_name: ESP32-S2 Franzininho
   vendor: espressif
   socs:
   - name: esp32s2

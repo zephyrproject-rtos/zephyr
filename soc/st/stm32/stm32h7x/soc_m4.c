@@ -26,11 +26,8 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32h7_m4_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable ART Flash cache accelerator */
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_ART);
@@ -51,11 +48,8 @@ static int stm32h7_m4_init(void)
 		 * End of system initialization is reached when CM7 takes HSEM.
 		 */
 		while ((HSEM->RLR[CFG_HW_ENTRY_STOP_MODE_SEMID] & HSEM_R_LOCK)
-				!= HSEM_R_LOCK)
+				!= HSEM_R_LOCK) {
 			;
+		}
 	}
-
-	return 0;
 }
-
-SYS_INIT(stm32h7_m4_init, PRE_KERNEL_1, 0);

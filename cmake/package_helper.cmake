@@ -44,20 +44,6 @@
 
 cmake_minimum_required(VERSION 3.20.5)
 
-# add_custom_target and set_target_properties are not supported in script mode.
-# However, several Zephyr CMake modules create custom target for user convenience
-# like menuconfig, boards, shields, etc.
-# As we are not generating a build system with this tool, only running part of
-# the modules, then we simply override those functions to allow running those
-# modules.
-function(add_custom_target)
-  # This silence the error: 'add_custom_target command is not scriptable'
-endfunction()
-
-function(set_target_properties)
-  # This silence the error: 'set_target_properties command is not scriptable'
-endfunction()
-
 # Find last `-B` and `-S` instances.
 foreach(i RANGE ${CMAKE_ARGC})
   if(CMAKE_ARGV${i} MATCHES "^-B(.*)")
@@ -110,17 +96,6 @@ if(NOT DEFINED MODULES)
     " to execute in script mode."
   )
 endif()
-
-# Loading Zephyr CMake extension commands, which allows us to overload Zephyr
-# scoping rules.
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS extensions)
-
-# Zephyr scoping creates custom targets for handling of properties.
-# However, custom targets cannot be used in CMake script mode.
-# Therefore disable zephyr_set(... SCOPE ...) in package helper as it is not needed.
-function(zephyr_set variable)
-  # This silence the error: zephyr_set(...  SCOPE <scope>) doesn't exists.
-endfunction()
 
 string(REPLACE ";" "," MODULES "${MODULES}")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS zephyr_default:${MODULES})

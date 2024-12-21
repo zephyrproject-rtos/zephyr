@@ -9,6 +9,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(oa_tc6, CONFIG_ETHERNET_LOG_LEVEL);
 
+/*
+ * When IPv6 support enabled - the minimal size of network buffer
+ * shall be at least 128 bytes (i.e. default value).
+ */
+#if defined(CONFIG_NET_IPV6) && (CONFIG_NET_BUF_DATA_SIZE < 128)
+#error IPv6 requires at least 128 bytes of continuous data to handle headers!
+#endif
+
 int oa_tc6_reg_read(struct oa_tc6 *tc6, const uint32_t reg, uint32_t *val)
 {
 	uint8_t buf[OA_TC6_HDR_SIZE + 12] = { 0 };
@@ -320,7 +328,9 @@ int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
 
 int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 {
+	const uint16_t buf_rx_size = CONFIG_NET_BUF_DATA_SIZE;
 	struct net_buf *buf_rx = NULL;
+	uint32_t buf_rx_used = 0;
 	uint32_t hdr, ftr;
 	uint8_t sbo, ebo;
 	int ret;
@@ -328,6 +338,10 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 	/*
 	 * Special case - append already received data (extracted from previous
 	 * chunk) to new packet.
+	 *
+	 * This code is NOT used when OA_CONFIG0 RFA [13:12] is set to 01
+	 * (ZAREFE) - so received ethernet frames will always start on the
+	 * beginning of new chunks.
 	 */
 	if (tc6->concat_buf) {
 		net_pkt_append_buffer(pkt, tc6->concat_buf);
@@ -335,16 +349,18 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 	}
 
 	do {
-		buf_rx = net_pkt_get_frag(pkt, tc6->cps, OA_TC6_BUF_ALLOC_TIMEOUT);
 		if (!buf_rx) {
-			LOG_ERR("OA RX: Can't allocate RX buffer fordata!");
-			return -ENOMEM;
+			buf_rx = net_pkt_get_frag(pkt, buf_rx_size, OA_TC6_BUF_ALLOC_TIMEOUT);
+			if (!buf_rx) {
+				LOG_ERR("OA RX: Can't allocate RX buffer fordata!");
+				return -ENOMEM;
+			}
 		}
 
 		hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1);
 		hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
 
-		ret = oa_tc6_chunk_spi_transfer(tc6, buf_rx->data, NULL, hdr, &ftr);
+		ret = oa_tc6_chunk_spi_transfer(tc6, buf_rx->data + buf_rx_used, NULL, hdr, &ftr);
 		if (ret < 0) {
 			LOG_ERR("OA RX: transmission error: %d!", ret);
 			goto unref_buf;
@@ -382,9 +398,6 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 			}
 		}
 
-		net_pkt_append_buffer(pkt, buf_rx);
-		buf_rx->len = tc6->cps;
-
 		if (FIELD_GET(OA_DATA_FTR_EV, ftr)) {
 			/*
 			 * Check if received frame shall be dropped - i.e. MAC has
@@ -411,12 +424,22 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 			}
 
 			/* Set final size of the buffer */
-			buf_rx->len = ebo;
+			buf_rx_used += ebo;
+			buf_rx->len = buf_rx_used;
+			net_pkt_append_buffer(pkt, buf_rx);
 			/*
 			 * Exit when complete packet is read and added to
 			 * struct net_pkt
 			 */
 			break;
+		} else {
+			buf_rx_used += tc6->cps;
+			if ((buf_rx_size - buf_rx_used) < tc6->cps) {
+				net_pkt_append_buffer(pkt, buf_rx);
+				buf_rx->len = buf_rx_used;
+				buf_rx_used = 0;
+				buf_rx = NULL;
+			}
 		}
 	} while (tc6->rca > 0);
 

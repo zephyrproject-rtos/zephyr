@@ -5,6 +5,7 @@ config SAM_HSMCI
 	bool "ATMEL SAM HSMCI driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_HSMCI_ENABLED
+	select PINCTRL
 	select SDHC_SUPPORTS_NATIVE_MODE
 	help
 	  Enable the ATMEL SAM HSMCI MMC/SD card driver.

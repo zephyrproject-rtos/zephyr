@@ -1,0 +1,10 @@
+/* Copyright (c) 2024 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	blocking_emul: blocking-emul@80 {
+		compatible = "zephyr,blocking-emul";
+		reg = <0x80>;
+	};
+};

@@ -1,19 +1,10 @@
-.. _olimexino_stm32:
-
-OLIMEXINO-STM32
-###############
+.. zephyr:board:: olimexino_stm32
 
 Overview
 ********
 
 The OLIMEXINO-STM32 board is based on the STMicroelectronics STM32F103RB ARM
 Cortex-M3 CPU.
-
-.. figure:: img/olimexino_stm32.jpg
-     :align: center
-     :alt: OLIMEXINO-STM32
-
-     OLIMEXINO-STM32
 
 More information about the board can be found at the
 `OLIMEXINO-STM32 website`_ and `OLIMEXINO-STM32 user manual`_.

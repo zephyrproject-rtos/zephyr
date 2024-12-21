@@ -75,6 +75,11 @@ config SHELL_BACKEND_SERIAL_API_ASYNC
 
 endchoice
 
+config SHELL_BACKEND_SERIAL_FORCE_TX_BLOCKING_MODE
+	bool "Force blocking mode for TX"
+	help
+	  Force blocking mode for TX.
+
 config SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE
 	int "Set TX ring buffer size"
 	default 8
@@ -320,7 +325,7 @@ config SHELL_MQTT_RX_BUF_SIZE
 
 config SHELL_MQTT_TX_BUF_SIZE
 	int "TX buffer size"
-	range 32 65535
+	range 32 $(UINT16_MAX)
 	default 256
 	help
 	  Buffer size for the MQTT data transmission.
@@ -566,6 +571,125 @@ module-str = TELNET shell backend
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # SHELL_TELNET_BACKEND
+
+config SHELL_BACKEND_WEBSOCKET
+	bool "Websocket backend."
+	depends on HTTP_SERVER_WEBSOCKET
+	depends on NET_NATIVE_IP
+	select NET_SOCKETS_SERVICE
+	select NET_SOCKETS
+	help
+	  Enable Websocket backend.
+
+if SHELL_BACKEND_WEBSOCKET
+
+config SHELL_WEBSOCKET_BACKEND_COUNT
+	int "How many Webconsole sessions are supported"
+	default 2
+	range 1 8
+	help
+	  Each connection consumes memory so select the value according to your
+	  needs. Also note that each console session needs unique HTTP endpoint
+	  configured.
+	  Note that if you have only one HTTP endpoint for the websocket console,
+	  setting the this value to 2, allows latter console session to kick out
+	  the previous one. If set this value to 1, then the latter connecting
+	  webconsole session will fail. If you have multiple HTTP endpoints, then
+	  This value should be increased accordingly.
+
+config SHELL_WEBSOCKET_PROMPT
+	string "Displayed prompt name"
+	default ""
+	help
+	  Displayed prompt name for Websocket backend. If prompt is set, the shell will
+	  send two newlines during initialization.
+
+config SHELL_WEBSOCKET_ENDPOINT_URL
+	string "Websocket endpoint URL"
+	default "console"
+	help
+	  What is the HTTP endpoint URL where the client should connect to.
+
+config SHELL_WEBSOCKET_IP_ADDR
+	string "Websocket IP listen address"
+	default ""
+	help
+	  This option is used to configure on which IP address and network interface
+	  the HTTP server is listening. If left empty, then all network interfaces are
+	  listened.
+
+config SHELL_WEBSOCKET_PORT
+	int "Websocket port number"
+	default 443 if NET_SOCKETS_SOCKOPT_TLS
+	default 80
+	help
+	  This option is used to configure on which port websocket is going
+	  to be bound.
+
+config SHELL_WEBSOCKET_LINE_BUF_SIZE
+	int "Websocket line buffer size"
+	default 100
+	help
+	  This option can be used to modify the size of the buffer storing
+	  shell output line, prior to sending it through the network.
+	  Of course an output line can be longer than such size, it just
+	  means sending it will start as soon as it reaches this size.
+	  It really depends on what type of output is expected.
+	  A lot of short lines: better reduce this value. On the contrary,
+	  raise it.
+
+config SHELL_WEBSOCKET_SEND_TIMEOUT
+	int "Websocket line send timeout"
+	default 100
+	help
+	  This option can be used to modify the duration of the timer that kick
+	  in when a line buffer is not empty but did not yet meet the line feed.
+
+module = SHELL_WEBSOCKET
+default-timeout = 100
+source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
+
+default-size = 512
+source "subsys/shell/Kconfig.template.shell_log_queue_size"
+
+choice
+	prompt "Initial log level limit"
+	default SHELL_WEBSOCKET_INIT_LOG_LEVEL_DEFAULT
+
+config SHELL_WEBSOCKET_INIT_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_WEBSOCKET_INIT_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_WEBSOCKET_INIT_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_WEBSOCKET_INIT_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_WEBSOCKET_INIT_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_WEBSOCKET_INIT_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_WEBSOCKET_INIT_LOG_LEVEL
+	int
+	default 0 if SHELL_WEBSOCKET_INIT_LOG_LEVEL_NONE
+	default 1 if SHELL_WEBSOCKET_INIT_LOG_LEVEL_ERR
+	default 2 if SHELL_WEBSOCKET_INIT_LOG_LEVEL_WRN
+	default 3 if SHELL_WEBSOCKET_INIT_LOG_LEVEL_INF
+	default 4 if SHELL_WEBSOCKET_INIT_LOG_LEVEL_DBG
+	default 5 if SHELL_WEBSOCKET_INIT_LOG_LEVEL_DEFAULT
+
+module = SHELL_WEBSOCKET
+module-str = Websocket shell backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SHELL_WEBSOCKET_BACKEND
 
 config SHELL_BACKEND_DUMMY
 	bool "Dummy backend."

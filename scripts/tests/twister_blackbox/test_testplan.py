@@ -31,7 +31,7 @@ class TestTestPlan:
     ]
     TESTDATA_2 = [
         ('buildable', 6),
-        ('runnable', 5),
+        ('runnable', 4),
     ]
     TESTDATA_3 = [
         (True, 1),
@@ -56,7 +56,7 @@ class TestTestPlan:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_subtest(self, out_path, test, expected_exception, expected_subtest_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '--sub-test', test, '-y'] + \
                [val for pair in zip(
@@ -89,7 +89,7 @@ class TestTestPlan:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_filter(self, out_path, filter, expected_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '--filter', filter, '-y'] + \
                [val for pair in zip(
@@ -101,14 +101,16 @@ class TestTestPlan:
             self.loader.exec_module(self.twister_module)
 
         assert str(exc.value) == '0'
-
+        import pprint
         with open(os.path.join(out_path, 'testplan.json')) as f:
             j = json.load(f)
+            pprint.pprint(j)
         filtered_j = [
             (ts['platform'], ts['name'], tc['identifier']) \
                 for ts in j['testsuites'] \
                 for tc in ts['testcases'] if 'reason' not in tc
         ]
+        pprint.pprint(filtered_j)
 
         assert expected_count == len(filtered_j)
 
@@ -120,7 +122,7 @@ class TestTestPlan:
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', '')
     def test_integration(self, out_path, integration, expected_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                (['--integration'] if integration else []) + \

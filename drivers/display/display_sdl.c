@@ -534,7 +534,7 @@ static const struct display_driver_api sdl_display_api = {
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_SDL_DEFINE)
 
-static void display_sdl_native_posix_options(void)
+static void display_sdl_options(void)
 {
 	static struct args_struct_t sdl_display_options[] = {
 		{ .option = "display_zoom_pct",
@@ -551,4 +551,4 @@ static void display_sdl_native_posix_options(void)
 	native_add_command_line_opts(sdl_display_options);
 }
 
-NATIVE_TASK(display_sdl_native_posix_options, PRE_BOOT_1, 1);
+NATIVE_TASK(display_sdl_options, PRE_BOOT_1, 1);

@@ -11,6 +11,15 @@ Native POSIX execution (native_posix)
 Overview
 ********
 
+.. warning::
+   ``native_posix`` is deprecated in favour of :ref:`native_sim<native_sim>`, and will be removed
+   in the 4.2 release.
+
+.. note::
+   For native_posix users, if needed, :ref:`native_sim<native_sim>` includes a compatibility mode
+   :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT`,
+   which will set its configuration to mimic a native_posix-like configuration.
+
 ``native_posix`` is the predecessor of :ref:`native_sim<native_sim>`.
 Just like with :ref:`native_sim<native_sim>` you can build your Zephyr application
 with the Zephyr kernel, creating a normal Linux executable with your host tooling,
@@ -18,15 +27,6 @@ and can debug and instrument it like any other Linux program.
 
 But unlike with :ref:`native_sim<native_sim>` you are limited to only using the host C library.
 :ref:`native_sim<native_sim>` supports all ``native_posix`` use cases.
-
-.. note::
-
-   | If you are a new user, you are encouraged to use :ref:`native_sim<native_sim>` directly.
-   | If you have been using native_posix you are recommended to start using
-     :ref:`native_sim<native_sim>` instead.
-   | If needed, :ref:`native_sim<native_sim>` includes a compatibility mode
-     :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT`,
-     which will set its configuration to mimic a native_posix's like configuration.
 
 This board does not intend to simulate any particular HW, but it provides
 a few peripherals such as an Ethernet driver, display, UART, etc., to enable

@@ -1,0 +1,11 @@
+identifier: fpb_ra6e1
+name: Renesas FPB-RA6E1
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio

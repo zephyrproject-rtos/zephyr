@@ -15,8 +15,11 @@ ${ZEPHYR_BASE}/tests/bsim/bluetooth/ll/cis/compile.sh
 app=tests/bsim/bluetooth/ll/advx compile
 app=tests/bsim/bluetooth/ll/advx \
   conf_overlay=overlay-ticker_expire_info.conf compile
+app=tests/bsim/bluetooth/ll/advx conf_overlay=overlay-scan_aux_use_chains.conf compile
 
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split.conf compile
+app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_1ms.conf compile
+app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_tx_defer.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_low_lat.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_single_timer.conf compile
@@ -24,7 +27,9 @@ app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_single_timer.conf compile
 app=tests/bsim/bluetooth/ll/bis compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ll_interface.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf compile
+app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-scan_aux_use_chains.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_file=prj_vs_dp.conf compile
+app=tests/bsim/bluetooth/ll/bis conf_file=prj_past.conf compile
 
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
   conf_file=prj_dut_llcp.conf compile

@@ -45,7 +45,7 @@ static void test_address(bt_addr_le_t *addr)
 	/* Only save the address if this is the first scan */
 	if (bt_addr_le_eq(&adv_set_data[adv_index].old_addr, BT_ADDR_LE_ANY)) {
 		bt_addr_le_copy(&adv_set_data[adv_index].old_addr, addr);
-		adv_set_data[adv_index].old_time = 0;
+		adv_set_data[adv_index].old_time = k_uptime_get();
 		return;
 	}
 

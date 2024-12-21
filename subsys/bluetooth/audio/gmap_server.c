@@ -226,26 +226,27 @@ static bool valid_gmap_features(enum bt_gmap_role role, struct bt_gmap_feat feat
 		}
 
 		if ((ugt_feat & BT_GMAP_UGT_FEAT_SOURCE) != 0 &&
-		    CONFIG_BT_ASCS_ASE_SRC_COUNT == 0) {
+		    CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT == 0) {
 			LOG_DBG("Cannot support BT_GMAP_UGT_FEAT_SOURCE with "
-				"CONFIG_BT_ASCS_ASE_SRC_COUNT == 0");
+				"CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT == 0");
 
 			return false;
 		}
 
 		if ((ugt_feat & BT_GMAP_UGT_FEAT_MULTISOURCE) != 0 &&
-		    (CONFIG_BT_ASCS_ASE_SRC_COUNT < 2 || CONFIG_BT_ASCS_MAX_ACTIVE_ASES < 2)) {
+		    (CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT < 2 || CONFIG_BT_ASCS_MAX_ACTIVE_ASES < 2)) {
 			LOG_DBG("Cannot support BT_GMAP_UGT_FEAT_MULTISOURCE with "
-				"CONFIG_BT_ASCS_ASE_SRC_COUNT (%d) or "
+				"CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT (%d) or "
 				"CONFIG_BT_ASCS_MAX_ACTIVE_ASES (%d) < 2",
-				CONFIG_BT_ASCS_ASE_SRC_COUNT, CONFIG_BT_ASCS_MAX_ACTIVE_ASES);
+				CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT, CONFIG_BT_ASCS_MAX_ACTIVE_ASES);
 
 			return false;
 		}
 
-		if ((ugt_feat & BT_GMAP_UGT_FEAT_SINK) != 0 && CONFIG_BT_ASCS_ASE_SNK_COUNT == 0) {
+		if ((ugt_feat & BT_GMAP_UGT_FEAT_SINK) != 0
+		     && CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT == 0) {
 			LOG_DBG("Cannot support BT_GMAP_UGT_FEAT_SINK with "
-				"CONFIG_BT_ASCS_ASE_SNK_COUNT == 0");
+				"CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT == 0");
 
 			return false;
 		}
@@ -262,11 +263,11 @@ static bool valid_gmap_features(enum bt_gmap_role role, struct bt_gmap_feat feat
 		}
 
 		if ((ugt_feat & BT_GMAP_UGT_FEAT_MULTISINK) != 0 &&
-		    (CONFIG_BT_ASCS_ASE_SNK_COUNT < 2 || CONFIG_BT_ASCS_MAX_ACTIVE_ASES < 2)) {
+		    (CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT < 2 || CONFIG_BT_ASCS_MAX_ACTIVE_ASES < 2)) {
 			LOG_DBG("Cannot support BT_GMAP_UGT_FEAT_MULTISINK with "
-				"CONFIG_BT_ASCS_ASE_SNK_COUNT (%d) or "
+				"CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT (%d) or "
 				"CONFIG_BT_ASCS_MAX_ACTIVE_ASES (%d) < 2",
-				CONFIG_BT_ASCS_ASE_SNK_COUNT, CONFIG_BT_ASCS_MAX_ACTIVE_ASES);
+				CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT, CONFIG_BT_ASCS_MAX_ACTIVE_ASES);
 
 			return false;
 		}

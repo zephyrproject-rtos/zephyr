@@ -146,14 +146,16 @@ class LogParserV3(LogParser):
                 # intmax_t, size_t or ptrdiff_t
                 arg_data_type = DataTypes.LONG
 
-            elif fmt in ('c', 'd', 'i', 'o', 'u') or str.lower(fmt) == 'x':
+            elif fmt in ('c', 'd', 'i', 'o', 'u', 'x', 'X'):
+                unsigned = fmt in ('c', 'o', 'u', 'x', 'X')
+
                 if fmt_str[idx - 1] == 'l':
                     if fmt_str[idx - 2] == 'l':
-                        arg_data_type = DataTypes.LONG_LONG
+                        arg_data_type = DataTypes.ULONG_LONG if unsigned else DataTypes.LONG_LONG
                     else:
-                        arg_data_type = DataTypes.LONG
+                        arg_data_type = DataTypes.ULONG if unsigned else DataTypes.LONG
                 else:
-                    arg_data_type = DataTypes.INT
+                    arg_data_type = DataTypes.UINT if unsigned else DataTypes.INT
 
                 is_parsing = False
                 do_extract = True

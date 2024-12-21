@@ -19,6 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/crc.h>
+#include <zephyr/sys/util.h>
 
 /*
  * Note: When loading a bitstream, the iCE40 has a 'quirk' in that the CS
@@ -49,18 +50,6 @@
  */
 #define FPGA_ICE40_LOAD_MODE_SPI  0
 #define FPGA_ICE40_LOAD_MODE_GPIO 1
-
-#ifndef BITS_PER_NIBBLE
-#define BITS_PER_NIBBLE 4
-#endif
-
-#ifndef BITS_PER_BYTE
-#define BITS_PER_BYTE 8
-#endif
-
-#ifndef NIBBLES_PER_BYTE
-#define NIBBLES_PER_BYTE (BITS_PER_BYTE / BITS_PER_NIBBLE)
-#endif
 
 /*
  * Values in Hz, intentionally to be comparable with the spi-max-frequency
@@ -217,6 +206,26 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	gpio_port_pins_t creset;
 	struct fpga_ice40_data *data = dev->data;
 	const struct fpga_ice40_config *config = dev->config;
+
+	if (!device_is_ready(config->clk.port)) {
+		LOG_ERR("%s: GPIO for clk is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(config->pico.port)) {
+		LOG_ERR("%s: GPIO for pico is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	if (config->set == NULL) {
+		LOG_ERR("%s: set register was not specified", dev->name);
+		return -EFAULT;
+	}
+
+	if (config->clear == NULL) {
+		LOG_ERR("%s: clear register was not specified", dev->name);
+		return -EFAULT;
+	}
 
 	/* prepare masks */
 	cs = BIT(config->bus.config.cs.gpio.pin);
@@ -513,13 +522,23 @@ static int fpga_ice40_init(const struct device *dev)
 	int ret;
 	const struct fpga_ice40_config *config = dev->config;
 
+	if (!device_is_ready(config->creset.port)) {
+		LOG_ERR("%s: GPIO for creset is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(config->cdone.port)) {
+		LOG_ERR("%s: GPIO for cdone is not ready", dev->name);
+		return -ENODEV;
+	}
+
 	ret = gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
 		LOG_ERR("failed to configure CRESET: %d", ret);
 		return ret;
 	}
 
-	ret = gpio_pin_configure_dt(&config->cdone, 0);
+	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize CDONE: %d", ret);
 		return ret;

@@ -121,7 +121,8 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_STM32F4_FSOTG_DEFINE)
  * On USBHS, we cannot access the DWC2 register until VBUS is detected and
  * valid. If the user tries to force usbd_enable() and the corresponding
  * udc_enable() without a "VBUS ready" notification, the event wait will block
- * until a valid VBUS signal is detected.
+ * until a valid VBUS signal is detected or until the
+ * CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT timeout expires.
  */
 static K_EVENT_DEFINE(usbhs_events);
 #define USBHS_VBUS_READY	BIT(0)
@@ -182,10 +183,19 @@ static inline int usbhs_enable_nrfs_service(const struct device *dev)
 static inline int usbhs_enable_core(const struct device *dev)
 {
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+	k_timeout_t timeout = K_FOREVER;
+
+	#if CONFIG_NRFS_HAS_VBUS_DETECTOR_SERVICE
+	if (CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT) {
+		timeout = K_MSEC(CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT);
+	}
+	#endif
 
 	if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_NO_WAIT)) {
 		LOG_WRN("VBUS is not ready, block udc_enable()");
-		k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_FOREVER);
+		if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, timeout)) {
+			return -ETIMEDOUT;
+		}
 	}
 
 	wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;
@@ -249,6 +259,36 @@ static inline int usbhs_is_phy_clk_off(const struct device *dev)
 	return !k_event_test(&usbhs_events, USBHS_VBUS_READY);
 }
 
+static inline int usbhs_post_hibernation_entry(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+
+	sys_set_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
+
+	sys_write32(0x87, (mem_addr_t)wrapper + 0xC80);
+	sys_write32(0x87, (mem_addr_t)wrapper + 0xC84);
+	sys_write32(1, (mem_addr_t)wrapper + 0x004);
+
+	return 0;
+}
+
+static inline int usbhs_pre_hibernation_exit(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+
+	sys_clear_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
+
+	wrapper->TASKS_START = 1;
+	sys_write32(0, (mem_addr_t)wrapper + 0xC80);
+	sys_write32(0, (mem_addr_t)wrapper + 0xC84);
+
+	return 0;
+}
+
 #define QUIRK_NRF_USBHS_DEFINE(n)						\
 	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
 		.init = usbhs_enable_nrfs_service,				\
@@ -258,6 +298,8 @@ static inline int usbhs_is_phy_clk_off(const struct device *dev)
 		.irq_clear = usbhs_irq_clear,					\
 		.caps = usbhs_init_caps,					\
 		.is_phy_clk_off = usbhs_is_phy_clk_off,				\
+		.post_hibernation_entry = usbhs_post_hibernation_entry,		\
+		.pre_hibernation_exit = usbhs_pre_hibernation_exit,		\
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)

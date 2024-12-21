@@ -79,4 +79,14 @@
 @{
 @}
 
+@brief Tests
+@defgroup all_tests Tests
+@{
+@}
+
+@defgroup kernel_memprotect_tests Memory Protection
+@ingroup all_tests
+@{
+@}
+
 */

@@ -1,7 +1,8 @@
-.. _max30101:
+.. zephyr:code-sample:: max30101
+   :name: MAX30101 Heart Rate Sensor
+   :relevant-api: sensor_interface
 
-MAX30101 Heart Rate Sensor
-##########################
+   Get heart rate data from a MAX30101 sensor (polling mode).
 
 Overview
 ********

@@ -1,3 +1,0 @@
-temp_sensor: &temp {
-	status = "okay";
-};

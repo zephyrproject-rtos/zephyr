@@ -7,7 +7,7 @@
 #define __BT_HCI_RAW_INTERNAL_H
 
 #include <zephyr/devicetree.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #ifdef __cplusplus
 extern "C" {

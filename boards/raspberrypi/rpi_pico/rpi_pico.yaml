@@ -21,3 +21,4 @@ supported:
   - dma
   - counter
   - clock
+  - usbd

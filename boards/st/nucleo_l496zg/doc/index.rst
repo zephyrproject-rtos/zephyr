@@ -1,7 +1,4 @@
-.. _nucleo_l496zg_board:
-
-ST Nucleo L496ZG
-################
+.. zephyr:board:: nucleo_l496zg
 
 Overview
 ********
@@ -27,10 +24,6 @@ some highlights of the Nucleo L476ZG board:
 - 8 LEDs: user LEDs (LD1, LD2, LD3), communication LED (LD4), USB
   power fault(LD5), power LED (LD6), USB FS OTG (LD7, LD8)
 - 2 push buttons: USER and RESET
-
-.. image:: img/nucleo_l496zg.jpg
-   :align: center
-   :alt: Nucleo L496ZG
 
 More information about the board can be found at the `Nucleo L496ZG website`_.
 
@@ -127,6 +120,8 @@ The Zephyr nucleo_l496zg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
+| OTG FS    | on-chip    | USB OTG Full-speed                  |
++-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | System Window Watchdog              |
 +-----------+------------+-------------------------------------+
 
@@ -182,6 +177,8 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Nucleo L496ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_l496zg`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -189,16 +186,23 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo L496ZG board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version
-included in the Zephyr SDK since v0.9.5.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to Nucleo L496ZG
 ----------------------------------------
 
 Connect the Nucleo L496ZG to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
@@ -223,7 +227,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -242,3 +246,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L496 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00083560.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

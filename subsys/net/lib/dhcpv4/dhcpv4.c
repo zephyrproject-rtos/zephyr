@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 
-#define PKT_WAIT_TIME K_SECONDS(1)
+#define PKT_WAIT_TIME K_MSEC(100)
 
 static K_MUTEX_DEFINE(lock);
 
@@ -285,7 +285,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 #endif
 
 	pkt = net_pkt_alloc_with_buffer(iface, size, AF_INET,
-					IPPROTO_UDP, K_FOREVER);
+					IPPROTO_UDP, PKT_WAIT_TIME);
 	if (!pkt) {
 		return NULL;
 	}
@@ -1054,35 +1054,59 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			break;
 		}
 #if defined(CONFIG_DNS_RESOLVER)
+#define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
 		case DHCPV4_OPTIONS_DNS_SERVER: {
 			struct dns_resolve_context *ctx;
-			struct sockaddr_in dns;
-			const struct sockaddr *dns_servers[] = {
-				(struct sockaddr *)&dns, NULL
-			};
+			struct sockaddr_in dnses[MAX_DNS_SERVERS] = { 0 };
+			const struct sockaddr *dns_servers[MAX_DNS_SERVERS + 1] = { 0 };
+			const uint8_t addr_size = 4U;
 			int status;
+
+			for (uint8_t i = 0; i < MAX_DNS_SERVERS; i++) {
+				dns_servers[i] = (struct sockaddr *)&dnses[i];
+			}
 
 			/* DNS server option may present 1 or more
 			 * addresses. Each 4 bytes in length. DNS
 			 * servers should be listed in order
-			 * of preference.  Hence we choose the first
-			 * and skip the rest.
+			 * of preference. Hence how many we parse
+			 * depends on CONFIG_DNS_RESOLVER_MAX_SERVERS
 			 */
-			if (length % 4 != 0U) {
+			if (length % addr_size != 0U) {
 				NET_ERR("options_dns, bad length");
 				return false;
 			}
 
-			(void)memset(&dns, 0, sizeof(dns));
+			const uint8_t provided_servers_cnt = length / addr_size;
+			uint8_t dns_servers_cnt = 0;
 
-			if (net_pkt_read(pkt, dns.sin_addr.s4_addr, 4) ||
-			    net_pkt_skip(pkt, length - 4U)) {
+			if (provided_servers_cnt > MAX_DNS_SERVERS) {
+				NET_WARN("DHCP server provided more DNS servers than can be saved");
+				dns_servers_cnt = MAX_DNS_SERVERS;
+			} else {
+				for (uint8_t i = provided_servers_cnt; i < MAX_DNS_SERVERS; i++) {
+					dns_servers[i] = NULL;
+				}
+
+				dns_servers_cnt = provided_servers_cnt;
+			}
+
+			for (uint8_t i = 0; i < dns_servers_cnt; i++) {
+				if (net_pkt_read(pkt, dnses[i].sin_addr.s4_addr, addr_size)) {
+					NET_ERR("options_dns, short packet");
+					return false;
+				}
+			}
+
+			if (net_pkt_skip(pkt, length - dns_servers_cnt * addr_size)) {
 				NET_ERR("options_dns, short packet");
 				return false;
 			}
 
 			ctx = dns_resolve_get_default();
-			dns.sin_family = AF_INET;
+			for (uint8_t i = 0; i < dns_servers_cnt; i++) {
+				dnses[i].sin_family = AF_INET;
+			}
 			status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
 			if (status < 0) {
 				NET_DBG("options_dns, failed to set "
@@ -1789,7 +1813,7 @@ int net_dhcpv4_remove_option_vendor_callback(struct net_dhcpv4_option_callback *
 
 void net_dhcpv4_start(struct net_if *iface)
 {
-	return dhcpv4_start_internal(iface, true);
+	dhcpv4_start_internal(iface, true);
 }
 
 void net_dhcpv4_stop(struct net_if *iface)

@@ -28,7 +28,7 @@ properties:
       nodes will have a nodelabel that matches the Cypress SoC HAL defines
       and be of the form p<port>_<pin>_<periph><inst>_<signal>.
 
-      For example the SPI on PSoC-63 Pioneer Kit would be
+      For example the SPI on PSOC 63 Pioneer Kit would be
          pinctrl-0 = <&p12_0_spi6_mosi &p12_1_spi6_miso &p12_2_spi6_clk &p12_3_spi6_sel0>;
 
     required: true

@@ -210,14 +210,16 @@ static int malloc_prepare(void)
 
 	/* Align size to power of two */
 	heap_size = 1;
-	while (heap_size * 2 <= HEAP_SIZE)
+	while (heap_size * 2 <= HEAP_SIZE) {
 		heap_size *= 2;
+	}
 
 	/* Search for an aligned heap that fits within the available space */
 	while (heap_size >= HEAP_ALIGN) {
 		heap_base = UINT_TO_POINTER(ROUND_UP(HEAP_BASE, heap_size));
-		if (POINTER_TO_UINT(heap_base) + heap_size <= HEAP_BASE + HEAP_SIZE)
+		if (POINTER_TO_UINT(heap_base) + heap_size <= HEAP_BASE + HEAP_SIZE) {
 			break;
+		}
 		heap_size >>= 1;
 	}
 #else

@@ -348,7 +348,8 @@ static int allocate_new_file(struct fs_file_t *file)
 			goto out;
 		}
 		file_size = fs_tell(file);
-		if (file_size < CONFIG_LOG_BACKEND_FS_FILE_SIZE) {
+		if (IS_ENABLED(CONFIG_LOG_BACKEND_FS_APPEND_TO_NEWEST_FILE) &&
+		    file_size < CONFIG_LOG_BACKEND_FS_FILE_SIZE) {
 			/* There is space left to log to the latest file, no need to create
 			 * a new one or delete old ones at this point.
 			 */

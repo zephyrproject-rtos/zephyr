@@ -4,6 +4,8 @@
 config SOC_SERIES_IT8XXX2
 	select CPU_HAS_FPU if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr" || RISCV_ISA_EXT_M
 	select HAS_PM
+	select ARCH_HAS_CUSTOM_CPU_IDLE
+	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 
 if SOC_SERIES_IT8XXX2
 
@@ -18,6 +20,7 @@ config SOC_IT8XXX2
 	select RISCV_ISA_EXT_M if !(SOC_IT81302BX || SOC_IT81202BX)
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
+	imply XIP
 
 config SOC_IT8XXX2_REG_SET_V1
 	bool
@@ -152,6 +155,15 @@ config SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
 	  - GPIOA6 -> TRST
 	  Supported I/O voltage is 3.3V.
 
+config SOC_IT8XXX2_LCVCO
+	bool "LCVCO calibration"
+	depends on SOC_IT8XXX2_INT_32K
+	help
+	  The LCVCO is a highly precise clock controller used for
+	  calibrating the frequency shift of the PLL. Enabling this
+	  option allows for supported LCVCO calibration, improving
+	  the accuracy of the USB clock.
+
 choice
 	prompt "Clock source for PLL reference clock"
 
@@ -182,6 +194,34 @@ config SOC_IT8XXX2_EXCEPTIONS_IN_RAM
 	  has more reliable performance characteristics than executing directly from
 	  Flash. This can significantly improve performance when under I-cache
 	  pressure.
+
+config SOC_IT8XXX2_LIBRARY_TO_RAM
+	bool
+	help
+	  If this is selected it means that there is a library that needs to be excluded
+	  from the text section.
+
+config SOC_IT8XXX2_SERIAL_IN_RAM
+	bool "Place serial handling code in RAM"
+	select SOC_IT8XXX2_USE_ILM
+	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	help
+	  Place serial handling (Include uart_ns16550.c and uart_ite_it8xxx2.c) code
+	  in ILM. This can improve performance.
+
+config SOC_IT8XXX2_KERNEL_IN_RAM
+	bool "Place kernel handling code in RAM"
+	select SOC_IT8XXX2_USE_ILM
+	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	help
+	  Place kernel handling code in ILM. This can significantly improve performance.
+
+config SOC_IT8XXX2_ZEPHYR_IN_RAM
+	bool "Place zephyr handling code in RAM"
+	select SOC_IT8XXX2_USE_ILM
+	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	help
+	  Place zephyr handling code in ILM. This can significantly improve performance.
 
 config SOC_IT8XXX2_SHA256_HW_ACCELERATE
 	bool "HW SHA256 calculation"

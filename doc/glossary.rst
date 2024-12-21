@@ -60,7 +60,7 @@ Glossary of Terms
       See :ref:`board_terminology` for additional details.
 
    board qualifiers
-      The set of additional tokens, separated by a forward slash (`/`) that
+      The set of additional tokens, separated by a forward slash (``/``) that
       follow the :term:`board name` (and optionally :term:`board revision`) to
       form the :term:`board target`. The currently accepted qualifiers are
       :term:`SoC`, :term:`CPU cluster` and :term:`variant`.

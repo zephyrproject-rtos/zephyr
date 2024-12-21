@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: coap-client
    :name: CoAP client
-   :relevant-api: coap udp
+   :relevant-api: coap
 
    Use the CoAP library to implement a client that fetches a resource.
 

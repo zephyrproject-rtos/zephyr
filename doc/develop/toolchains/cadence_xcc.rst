@@ -31,21 +31,46 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
    * Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc`` or ``xt-clang``.
    * Set :envvar:`XTENSA_TOOLCHAIN_PATH` to the toolchain installation
      directory.
-   * Set :envvar:`XTENSA_CORE` to the SoC ID where application is being
-     targeting.
-   * Set :envvar:`TOOLCHAIN_VER` to the Xtensa SDK version.
+
+   * There are two ways to specify the SoC ID and the SDK version to use.
+     They are mutually exclusive, and cannot be used together.
+
+     #. When building for a single SoC:
+
+        * Set :envvar:`XTENSA_CORE` to the SoC ID where application is being
+          targeted.
+        * Set :envvar:`TOOLCHAIN_VER` to the Xtensa SDK version.
+
+     #. When building for multiple SoCs, for each SoC and board combination:
+
+        * Set :envvar:`XTENSA_CORE_{normalized_board_target}`
+          to the SoC ID where application is being targeted.
+        * Set :envvar:`TOOLCHAIN_VAR_{normalized_board_target}`
+          to the Xtensa SDK version.
 
 #. For example, assuming the SDK is installed in ``/opt/xtensa``, and
-   using the SDK for application development on ``intel_adsp_cavs15``,
-   setup the environment using:
+   using the SDK for application development on ``intel_adsp/ace15_mtpm``,
+   setup the environment using the two above mentioned ways:
 
-   .. code-block:: console
+   #. Single SoC:
 
-      # Linux
-      export ZEPHYR_TOOLCHAIN_VARIANT=xcc
-      export XTENSA_TOOLCHAIN_PATH=/opt/xtensa/XtDevTools/install/tools/
-      export XTENSA_CORE=X6H3SUE_RI_2018_0
-      export TOOLCHAIN_VER=RI-2018.0-linux
+      .. code-block:: console
+
+         # Linux
+         export ZEPHYR_TOOLCHAIN_VARIANT=xt-clang
+         export XTENSA_TOOLCHAIN_PATH=/opt/xtensa/XtDevTools/install/tools/
+         export XTENSA_CORE=ace10_LX7HiFi4_2022_10
+         export TOOLCHAIN_VER=RI-2022.10-linux
+
+   #. Multiple SoCs:
+
+      .. code-block:: console
+
+         # Linux
+         export ZEPHYR_TOOLCHAIN_VARIANT=xt-clang
+         export XTENSA_TOOLCHAIN_PATH=/opt/xtensa/XtDevTools/install/tools/
+         export TOOLCHAIN_VER_intel_adsp_ace15_mtpm=RI-2022.10-linux
+         export XTENSA_CORE_intel_adsp_ace15_mtpm=ace10_LX7HiFi4_2022_10
 
 #. To use Clang-based compiler:
 

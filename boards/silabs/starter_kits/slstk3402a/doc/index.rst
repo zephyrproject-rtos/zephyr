@@ -1,7 +1,4 @@
-.. _slstk3402a:
-
-EFM32 Pearl Gecko 12 (SLSTK3402A)
-#################################
+.. zephyr:board:: slstk3402a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFM32 Pearl Gecko 12 Starter Kit SLSTK3402A contains an MCU from the
 EFM32PG family built on an ARM® Cortex®-M4F processor with excellent low
 power capabilities.
-
-.. figure:: slstk3402a.jpg
-   :align: center
-   :alt: SLSTK3402A
-
-   EFM32PG12 SLSTK3402A (image courtesy of Silicon Labs)
 
 Hardware
 ********
@@ -159,7 +150,7 @@ board. The adaptor provides:
 Flashing an application to SLSTK3402A
 -------------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::

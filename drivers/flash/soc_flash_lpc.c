@@ -17,9 +17,9 @@
 #include "fsl_flashiap.h"
 
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc11), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc11))
 #define DT_DRV_COMPAT nxp_iap_fmc11
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc54), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc54))
 #define DT_DRV_COMPAT nxp_iap_fmc54
 #else
 #error No matching compatible for soc_flash_lpc.c

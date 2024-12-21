@@ -1,5 +1,6 @@
 board:
   name: nucleo_h533re
+  full_name: Nucleo H533RE
   vendor: st
   socs:
     - name: stm32h533xx

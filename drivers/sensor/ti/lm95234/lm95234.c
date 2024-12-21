@@ -147,14 +147,16 @@ static int lm95234_sample_fetch(const struct device *dev,
 	switch ((uint32_t)chan) {
 	case SENSOR_CHAN_ALL:
 		ret = lm95234_fetch_temp(cfg, data, SENSOR_CHAN_AMBIENT_TEMP, &data->local);
-		if (ret)
+		if (ret) {
 			return ret;
+		}
 		for (int i = 0; i < ARRAY_SIZE(data->remote); i++) {
 			ret = lm95234_fetch_temp(cfg, data,
 						 SENSOR_CHAN_LM95234_REMOTE_TEMP_1 + i,
 						 &data->remote[i]);
-			if (ret)
+			if (ret) {
 				return ret;
+			}
 		}
 		break;
 	case SENSOR_CHAN_AMBIENT_TEMP:

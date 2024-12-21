@@ -43,4 +43,11 @@ int riscv_clic_irq_is_enabled(uint32_t irq);
  */
 void riscv_clic_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 
+/**
+ * @brief Set vector mode of interrupt
+ *
+ * @param irq interrupt ID
+ */
+void riscv_clic_irq_vector_set(uint32_t irq);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RISCV_CLIC_H_ */

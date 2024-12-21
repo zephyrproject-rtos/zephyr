@@ -1,0 +1,13 @@
+identifier: mpfs_icicle/polarfire/u54/smp
+name: Microchip PolarFire SoC Icicle Kit
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 3840
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - flash
+vendor: microchip

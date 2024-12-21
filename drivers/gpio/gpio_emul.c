@@ -762,7 +762,7 @@ static int gpio_emul_manage_callback(const struct device *port,
 	return gpio_manage_callback(&drv_data->callbacks, cb, set);
 }
 
-static gpio_port_pins_t gpio_emul_get_pending_int(const struct device *dev)
+static uint32_t gpio_emul_get_pending_int(const struct device *dev)
 {
 	struct gpio_emul_data *drv_data =
 		(struct gpio_emul_data *)dev->data;

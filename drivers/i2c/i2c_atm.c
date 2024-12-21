@@ -7,6 +7,10 @@
 #define DT_DRV_COMPAT atmosic_atm_i2c
 
 #include <zephyr/logging/log.h>
+#ifdef CONFIG_PM
+#include <zephyr/pm/pm.h>
+#endif
+
 LOG_MODULE_REGISTER(i2c_atm, CONFIG_I2C_LOG_LEVEL);
 
 #include <soc.h>
@@ -24,6 +28,7 @@ LOG_MODULE_REGISTER(i2c_atm, CONFIG_I2C_LOG_LEVEL);
 #include "at_wrpr.h"
 #include "at_pinmux.h"
 #include "at_apb_i2c_regs_core_macro.h"
+#include "pinmux.h"
 
 #ifndef __I2C_TRANSACTION_SETUP_MACRO__
 #define I2C(DEF) (I2C0_##DEF)
@@ -31,9 +36,19 @@ LOG_MODULE_REGISTER(i2c_atm, CONFIG_I2C_LOG_LEVEL);
 #define I2C(DEF) (I2C_##DEF)
 #endif
 
-typedef enum i2c_head_e { I2C_HEAD_START = 0, I2C_HEAD_STALL } i2c_head_t;
+#if defined(CONFIG_SOC_SERIES_ATMX2) || defined(CONFIG_SOC_SERIES_ATM33)
+#define I2C_GPIO_REQUIRED 1
+#endif
 
-typedef enum i2c_rw_e { I2C_WRITE = 0, I2C_READ } i2c_rw_t;
+typedef enum i2c_head_e {
+	I2C_HEAD_START = 0,
+	I2C_HEAD_STALL
+} i2c_head_t;
+
+typedef enum i2c_rw_e {
+	I2C_WRITE = 0,
+	I2C_READ
+} i2c_rw_t;
 
 typedef enum i2c_ack_e {
 	/* ACK is active low */
@@ -41,7 +56,11 @@ typedef enum i2c_ack_e {
 	I2C_NACK
 } i2c_ack_t;
 
-typedef enum i2c_tail_e { I2C_TAIL_STOP = 0, I2C_TAIL_STALL, I2C_TAIL_RESTART } i2c_tail_t;
+typedef enum i2c_tail_e {
+	I2C_TAIL_STOP = 0,
+	I2C_TAIL_STALL,
+	I2C_TAIL_RESTART
+} i2c_tail_t;
 
 struct i2c_atm_data {
 	uint32_t config;
@@ -55,6 +74,10 @@ struct i2c_atm_config {
 	CMSDK_AT_APB_I2C_TypeDef *base;
 	bool sda_pullup;
 	set_callback_t config_pins;
+#if defined(I2C_GPIO_REQUIRED) && defined(CONFIG_PM)
+	set_callback_t suspend_device;
+	set_callback_t resume_device;
+#endif
 	uint32_t mode;
 	uint32_t speed;
 };
@@ -258,11 +281,11 @@ static int i2c_atm_transfer(struct device const *dev, struct i2c_msg *msgs, uint
 
 static int i2c_atm_set_speed(struct device const *dev, uint32_t speed)
 {
-	static uint32_t const s2f_tbl[] = { [I2C_SPEED_STANDARD] = KHZ(100),
-					    [I2C_SPEED_FAST] = KHZ(400),
-					    [I2C_SPEED_FAST_PLUS] = MHZ(1),
-					    [I2C_SPEED_HIGH] = 0,
-					    [I2C_SPEED_ULTRA] = 0 };
+	static uint32_t const s2f_tbl[] = {[I2C_SPEED_STANDARD] = KHZ(100),
+					   [I2C_SPEED_FAST] = KHZ(400),
+					   [I2C_SPEED_FAST_PLUS] = MHZ(1),
+					   [I2C_SPEED_HIGH] = 0,
+					   [I2C_SPEED_ULTRA] = 0};
 
 	uint32_t hertz = s2f_tbl[speed];
 
@@ -276,6 +299,78 @@ static int i2c_atm_set_speed(struct device const *dev, uint32_t speed)
 
 	return 0;
 }
+
+#ifdef PSEQ_CTRL0__I2C_LATCH_OPEN__MASK
+static void i2c_atm_pseq_latch_close(void)
+{
+	WRPR_CTRL_SET(CMSDK_PSEQ, WRPR_CTRL__CLK_ENABLE);
+	{
+		PSEQ_CTRL0__I2C_LATCH_OPEN__CLR(CMSDK_PSEQ->CTRL0);
+	}
+	WRPR_CTRL_SET(CMSDK_PSEQ, WRPR_CTRL__CLK_DISABLE);
+}
+#endif
+
+#ifdef CONFIG_PM
+#ifdef I2C_GPIO_REQUIRED
+static void suspend_i2c_device(const struct device *dev)
+{
+	if (!device_is_ready(dev)) {
+		LOG_ERR("I2C device %s is not ready", dev->name);
+		return;
+	}
+
+	struct i2c_atm_config const *config = dev->config;
+	config->suspend_device();
+}
+
+static void resume_i2c_device(const struct device *dev)
+{
+	if (!device_is_ready(dev)) {
+		LOG_ERR("I2C device %s is not ready", dev->name);
+		return;
+	}
+
+	struct i2c_atm_config const *config = dev->config;
+	config->resume_device();
+}
+
+static void notify_pm_state_entry(enum pm_state state)
+{
+	if (state != PM_STATE_SUSPEND_TO_RAM) {
+		return;
+	}
+
+#define SUSPEND_I2C(inst) suspend_i2c_device(DEVICE_DT_GET(DT_DRV_INST(inst)))
+	DT_INST_FOREACH_STATUS_OKAY(SUSPEND_I2C);
+#undef SUSPEND_I2C
+}
+#endif // I2C_GPIO_REQUIRED
+
+static void notify_pm_state_exit(enum pm_state state)
+{
+	if (state != PM_STATE_SUSPEND_TO_RAM) {
+		return;
+	}
+
+#ifdef I2C_GPIO_REQUIRED
+#define RESUME_I2C(inst) resume_i2c_device(DEVICE_DT_GET(DT_DRV_INST(inst)))
+	DT_INST_FOREACH_STATUS_OKAY(RESUME_I2C);
+#undef RESUME_I2C
+#endif
+
+#ifdef PSEQ_CTRL0__I2C_LATCH_OPEN__MASK
+	i2c_atm_pseq_latch_close();
+#endif
+}
+
+static struct pm_notifier notifier = {
+#ifdef I2C_GPIO_REQUIRED
+	.state_entry = notify_pm_state_entry,
+#endif
+	.state_exit = notify_pm_state_exit,
+};
+#endif // CONFIG_PM
 
 static int i2c_atm_configure(struct device const *dev, uint32_t cfg)
 {
@@ -291,11 +386,11 @@ static int i2c_atm_configure(struct device const *dev, uint32_t cfg)
 	config->config_pins();
 
 #ifdef PSEQ_CTRL0__I2C_LATCH_OPEN__MASK
-	WRPR_CTRL_SET(CMSDK_PSEQ, WRPR_CTRL__CLK_ENABLE);
-	{
-		PSEQ_CTRL0__I2C_LATCH_OPEN__CLR(CMSDK_PSEQ->CTRL0);
-	}
-	WRPR_CTRL_SET(CMSDK_PSEQ, WRPR_CTRL__CLK_DISABLE);
+	i2c_atm_pseq_latch_close();
+#endif
+
+#ifdef CONFIG_PM
+	pm_notifier_register(&notifier);
 #endif
 
 	return i2c_atm_set_speed(dev, I2C_SPEED_GET(cfg));
@@ -317,8 +412,8 @@ static int i2c_atm_init(struct device const *dev)
 	return i2c_atm_configure(dev, config->mode | bitrate);
 }
 
-#define I2C_SCK(n) CONCAT(CONCAT(I2C, DT_INST_PROP(n, instance)), _SCK)
-#define I2C_SDA(n) CONCAT(CONCAT(I2C, DT_INST_PROP(n, instance)), _SDA)
+#define I2C_SCK(n)  CONCAT(CONCAT(I2C, DT_INST_PROP(n, instance)), _SCK)
+#define I2C_SDA(n)  CONCAT(CONCAT(I2C, DT_INST_PROP(n, instance)), _SDA)
 #define I2C_BASE(n) CONCAT(CMSDK_I2C, DT_INST_PROP(n, instance))
 #define I2C_DEVICE_INIT(n)                                                                         \
 	static void i2c_atm_config_pins_##n(void)                                                  \
@@ -331,11 +426,33 @@ static int i2c_atm_init(struct device const *dev)
 			PIN_PULLUP(DT_INST_PROP(n, scl_pin));                                      \
 		}                                                                                  \
 	}                                                                                          \
+	IF_ENABLED(I2C_GPIO_REQUIRED, (                                                            \
+	IF_ENABLED(CONFIG_PM, (                                                                    \
+	static void i2c_atm_suspend_device_##n(void)                                               \
+	{                                                                                          \
+		GPIO_SET_INPUT_PULLUP(PIN2GPIO(DT_INST_PROP(n, scl_pin)));                         \
+		PIN_SELECT(DT_INST_PROP(n, scl_pin), GPIO);                                        \
+		GPIO_SET_INPUT_PULLUP(PIN2GPIO(DT_INST_PROP(n, sda_pin)));                         \
+		PIN_SELECT(DT_INST_PROP(n, sda_pin), GPIO);                                        \
+	}                                                                                          \
+	static void i2c_atm_resume_device_##n(void)                                                \
+	{                                                                                          \
+		PIN_SELECT(DT_INST_PROP(n, scl_pin), I2C_SCK(n));                                  \
+		PIN_SELECT(DT_INST_PROP(n, sda_pin), I2C_SDA(n));                                  \
+	}                                                                                          \
+	)) /* CONFIG_PM */                                                                         \
+	)) /* I2C_GPIO_REQUIRED */                                                                 \
 	static struct i2c_atm_config const i2c_atm_config_##n = {                                  \
 		.instance = n,                                                                     \
 		.base = I2C_BASE(n),                                                               \
 		.sda_pullup = DT_INST_PROP(n, sda_pullup),                                         \
 		.config_pins = i2c_atm_config_pins_##n,                                            \
+	        IF_ENABLED(I2C_GPIO_REQUIRED, (                                                    \
+		IF_ENABLED(CONFIG_PM, (                                                            \
+		.suspend_device = i2c_atm_suspend_device_##n,                                      \
+		.resume_device = i2c_atm_resume_device_##n,                                        \
+		)) /* CONFIG_PM */                                                                 \
+		)) /* I2C_GPIO_REQUIRED */                                                         \
 		.mode = I2C_MODE_CONTROLLER,                                                       \
 		.speed = DT_INST_PROP(n, clock_frequency),                                         \
 	};                                                                                         \

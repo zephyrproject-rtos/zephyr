@@ -8,8 +8,8 @@
  * @brief Public APIs for DSP basicmath
  */
 
-#ifndef INCLUDE_ZEPHYR_DSP_BASICMATH_H_
-#define INCLUDE_ZEPHYR_DSP_BASICMATH_H_
+#ifndef ZEPHYR_INCLUDE_DSP_BASICMATH_H_
+#define ZEPHYR_INCLUDE_DSP_BASICMATH_H_
 
 #include <zephyr/dsp/dsp.h>
 
@@ -929,4 +929,4 @@ DSP_FUNC_SCOPE void zdsp_clip_q7(const DSP_DATA q7_t *src, DSP_DATA q7_t *dst, q
 #include <zephyr/dsp/basicmath_f16.h>
 #endif /* CONFIG_FP16 */
 
-#endif /* INCLUDE_ZEPHYR_DSP_BASICMATH_H_ */
+#endif /* ZEPHYR_INCLUDE_DSP_BASICMATH_H_ */

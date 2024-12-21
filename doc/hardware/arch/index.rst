@@ -12,3 +12,4 @@ Architecture-related Guides
    semihost.rst
    x86.rst
    xtensa.rst
+   arm-scmi.rst

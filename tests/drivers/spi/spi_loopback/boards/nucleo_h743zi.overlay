@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-
 /* Set div-q to get test clk freq into acceptable SPI freq range */
 &pll {
 	/delete-property/ div-q;

@@ -20,23 +20,23 @@ properties:
     description: |
       Channels available with this divider configuration.
 
-  sense-resistor-micro-ohms:
+  sense-resistor-milli-ohms:
     type: int
     required: true
     description: |
-      Resistance of the shunt resistor in micro-ohms
+      Resistance of the shunt resistor in milli-ohms.
 
   sense-gain-mult:
     type: int
     default: 1
     description: |
-      Amplifier gain multiplier. The default is <1>.
+      Amplifier gain multiplier. The default is <1>. The maximum value is <65535>.
 
   sense-gain-div:
     type: int
     default: 1
     description: |
-      Amplifier gain divider. The default is <1>.
+      Amplifier gain divider. The default is <1>. The maximum value is <65535>.
 
   power-gpios:
     type: phandle-array

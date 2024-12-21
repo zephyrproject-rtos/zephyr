@@ -29,6 +29,7 @@
 		zephyr,flash-controller = &s26ks512s0;
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart7;
 		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
@@ -210,20 +211,20 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 14 sectors
+			/* The MCUBoot swap-move algorithm uses the last 11 sectors
 			 * of the primary slot0 for swap status and move.
 			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(56))>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(44))>;
 			};
-			slot1_partition: partition@32E000 {
+			slot1_partition: partition@32B000 {
 				label = "image-1";
-				reg = <0x0032E000 DT_SIZE_M(3)>;
+				reg = <0x0032B000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@62E000 {
+			storage_partition: partition@62B000 {
 				label = "storage";
-				reg = <0x0062E000 (DT_SIZE_M(58) - DT_SIZE_K(184))>;
+				reg = <0x0062B000 (DT_SIZE_M(58) - DT_SIZE_K(172))>;
 			};
 		};
 	};
@@ -384,12 +385,17 @@
 	nxp,prescaler = <64>;
 };
 
+&enet2 {
+	status = "okay";
+};
+
 &enet2_mac {
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &enet2_mdio {
@@ -419,6 +425,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-names = "default", "slow", "med", "fast";
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

@@ -113,22 +113,22 @@ ZTEST(posix_headers, test_pthread_h)
 	zassert_not_null(pthread_key_delete);
 	/* zassert_not_null(pthread_mutex_consistent); */ /* not implemented */
 	zassert_not_null(pthread_mutex_destroy);
-	/* zassert_not_null(pthread_mutex_getprioceiling); */ /* not implemented */
+	zassert_not_null(pthread_mutex_getprioceiling);
 	zassert_not_null(pthread_mutex_init);
 	zassert_not_null(pthread_mutex_lock);
-	/* zassert_not_null(pthread_mutex_setprioceiling); */ /* not implemented */
+	zassert_not_null(pthread_mutex_setprioceiling);
 	zassert_not_null(pthread_mutex_timedlock);
 	zassert_not_null(pthread_mutex_trylock);
 	zassert_not_null(pthread_mutex_unlock);
 	zassert_not_null(pthread_mutexattr_destroy);
-	/* zassert_not_null(pthread_mutexattr_getprioceiling); */ /* not implemented */
+	zassert_not_null(pthread_mutexattr_getprioceiling);
 	zassert_not_null(pthread_mutexattr_getprotocol);
 	/* zassert_not_null(pthread_mutexattr_getpshared); */ /* not implemented */
 	/* zassert_not_null(pthread_mutexattr_getrobust); */  /* not implemented */
 	zassert_not_null(pthread_mutexattr_gettype);
 	zassert_not_null(pthread_mutexattr_init);
-	/* zassert_not_null(pthread_mutexattr_setprioceiling); */ /* not implemented */
-	/* zassert_not_null(pthread_mutexattr_setprotocol); */    /* not implemented */
+	zassert_not_null(pthread_mutexattr_setprioceiling);
+	zassert_not_null(pthread_mutexattr_setprotocol);
 	/* zassert_not_null(pthread_mutexattr_setpshared); */     /* not implemented */
 	/* zassert_not_null(pthread_mutexattr_setrobust); */      /* not implemented */
 	zassert_not_null(pthread_mutexattr_settype);

@@ -9,6 +9,11 @@ endif()
 zephyr_library()
 zephyr_library_link_libraries(subsys__bluetooth)
 
+if(CONFIG_BT_SHELL AND CONFIG_BT_LL_SW_SPLIT)
+  add_subdirectory(ticker/shell)
+  add_subdirectory(ll_sw/shell)
+endif()
+
 zephyr_library_sources(
   util/mem.c
   util/memq.c
@@ -93,7 +98,13 @@ if(CONFIG_BT_CONN)
     ll_sw/ull_llcp_chmu.c
     ll_sw/ull_llcp_remote.c
     )
-  zephyr_library_sources_ifdef(
+    if (CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER OR
+        CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+      zephyr_library_sources(
+        ll_sw/ull_llcp_past.c
+      )
+    endif()
+    zephyr_library_sources_ifdef(
     CONFIG_BT_PERIPHERAL
     ll_sw/ull_peripheral.c
     )
@@ -182,13 +193,13 @@ zephyr_library_include_directories_ifdef(
   )
 
 zephyr_library_include_directories_ifdef(
-  CONFIG_SOC_COMPATIBLE_NRF
+  CONFIG_BT_LLL_VENDOR_NORDIC
   ll_sw/nordic
   ll_sw/nordic/hci
   )
 
 zephyr_library_include_directories_ifdef(
-  CONFIG_SOC_OPENISA_RV32M1
+  CONFIG_BT_LLL_VENDOR_OPENISA
   ll_sw/openisa
   ll_sw/openisa/hci
   )
@@ -199,12 +210,12 @@ add_subdirectory_ifdef(
   )
 
 add_subdirectory_ifdef(
-  CONFIG_SOC_COMPATIBLE_NRF
+  CONFIG_BT_LLL_VENDOR_NORDIC
   ll_sw/nordic
   )
 
 add_subdirectory_ifdef(
-  CONFIG_SOC_OPENISA_RV32M1
+  CONFIG_BT_LLL_VENDOR_OPENISA
   ll_sw/openisa
   )
 

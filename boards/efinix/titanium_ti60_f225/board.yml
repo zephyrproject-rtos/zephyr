@@ -1,5 +1,6 @@
 board:
   name: titanium_ti60_f225
+  full_name: Titanium Ti60 F225
   vendor: efinix
   socs:
   - name: efinix_sapphire

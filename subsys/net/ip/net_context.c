@@ -105,6 +105,10 @@ bool net_context_is_reuseport_set(struct net_context *context)
 bool net_context_is_v6only_set(struct net_context *context)
 {
 #if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+	if (context == NULL) {
+		return false;
+	}
+
 	return context->options.ipv6_v6only;
 #else
 	ARG_UNUSED(context);
@@ -117,6 +121,17 @@ bool net_context_is_recv_pktinfo_set(struct net_context *context)
 {
 #if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
 	return context->options.recv_pktinfo;
+#else
+	ARG_UNUSED(context);
+
+	return false;
+#endif
+}
+
+bool net_context_is_timestamping_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
+	return (bool)(context->options.timestamping > 0);
 #else
 	ARG_UNUSED(context);
 
@@ -861,7 +876,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 			ptr = &maddr->address.in_addr;
 
-		} else if (addr4->sin_addr.s_addr == INADDR_ANY) {
+		} else if (UNALIGNED_GET(&addr4->sin_addr.s_addr) == INADDR_ANY) {
 			if (iface == NULL) {
 				iface = net_if_ipv4_select_src_iface(
 					&net_sin(&context->remote)->sin_addr);
@@ -2011,19 +2026,6 @@ static int context_sendto(struct net_context *context,
 		const struct sockaddr_in *addr4 = (const struct sockaddr_in *)dst_addr;
 		struct sockaddr_in mapped;
 
-		/* Get the destination address from the mapped IPv6 address */
-		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
-		    addr4->sin_family == AF_INET6 &&
-		    net_ipv6_addr_is_v4_mapped(&net_sin6(dst_addr)->sin6_addr)) {
-			struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
-
-			mapped.sin_port = addr6->sin6_port;
-			mapped.sin_family = AF_INET;
-			net_ipaddr_copy(&mapped.sin_addr,
-					(struct in_addr *)(&addr6->sin6_addr.s6_addr32[3]));
-			addr4 = &mapped;
-		}
-
 		if (msghdr) {
 			addr4 = msghdr->msg_name;
 			addrlen = msghdr->msg_namelen;
@@ -2036,6 +2038,19 @@ static int context_sendto(struct net_context *context,
 			/* For sendmsg(), the dst_addr is NULL so set it here.
 			 */
 			dst_addr = (const struct sockaddr *)addr4;
+		}
+
+		/* Get the destination address from the mapped IPv6 address */
+		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
+		    addr4->sin_family == AF_INET6 &&
+		    net_ipv6_addr_is_v4_mapped(&net_sin6(dst_addr)->sin6_addr)) {
+			struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
+
+			mapped.sin_port = addr6->sin6_port;
+			mapped.sin_family = AF_INET;
+			net_ipaddr_copy(&mapped.sin_addr,
+					(struct in_addr *)(&addr6->sin6_addr.s6_addr32[3]));
+			addr4 = &mapped;
 		}
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
@@ -2441,7 +2456,7 @@ unlock:
 	return verdict;
 }
 
-#if defined(CONFIG_NET_UDP)
+#if defined(CONFIG_NET_NATIVE_UDP)
 static int recv_udp(struct net_context *context,
 		    net_context_recv_cb_t cb,
 		    k_timeout_t timeout,
@@ -2523,7 +2538,7 @@ static int recv_udp(struct net_context *context,
 }
 #else
 #define recv_udp(...) 0
-#endif /* CONFIG_NET_UDP */
+#endif /* CONFIG_NET_NATIVE_UDP */
 
 static enum net_verdict net_context_raw_packet_received(
 					struct net_conn *conn,

@@ -256,6 +256,8 @@ static int nsos_close(void *obj)
 		errno = nsos_adapt_get_zephyr_errno();
 	}
 
+	k_free(sock);
+
 	return ret;
 }
 

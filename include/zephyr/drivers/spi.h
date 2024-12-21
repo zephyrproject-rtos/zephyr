@@ -100,10 +100,10 @@ extern "C" {
 #define SPI_WORD_SIZE_SHIFT	(5U)
 #define SPI_WORD_SIZE_MASK	(0x3FU << SPI_WORD_SIZE_SHIFT)
 /** @endcond */
-/** Get SPI word size. */
+/** Get SPI word size (data frame size) in bits. */
 #define SPI_WORD_SIZE_GET(_operation_)					\
 	(((_operation_) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
-/** Set SPI word size. */
+/** Set SPI word size (data frame size) in bits. */
 #define SPI_WORD_SET(_word_size_)		\
 	((_word_size_) << SPI_WORD_SIZE_SHIFT)
 /** @} */
@@ -211,7 +211,7 @@ struct spi_cs_control {
  */
 #define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev)			\
 	GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(spi_dev), cs_gpios,	\
-				   DT_REG_ADDR(spi_dev), {})
+				   DT_REG_ADDR_RAW(spi_dev), {})
 
 /**
  * @brief Get a <tt>struct gpio_dt_spec</tt> for a SPI device's chip select pin
@@ -309,7 +309,7 @@ struct spi_config {
 	 * - 0:      Master or slave.
 	 * - 1..3:   Polarity, phase and loop mode.
 	 * - 4:      LSB or MSB first.
-	 * - 5..10:  Size of a data frame in bits.
+	 * - 5..10:  Size of a data frame (word) in bits.
 	 * - 11:     Full/half duplex.
 	 * - 12:     Hold on the CS line if possible.
 	 * - 13:     Keep resource locked for the caller.
@@ -419,12 +419,46 @@ struct spi_dt_spec {
 	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
 
 /**
+ * @brief Value that will never compare true with any valid overrun character
+ */
+#define SPI_MOSI_OVERRUN_UNKNOWN 0x100
+
+/**
+ * @brief The value sent on MOSI when all TX bytes are sent, but RX continues
+ *
+ * For drivers where the MOSI line state when receiving is important, this value
+ * can be queried at compile-time to determine whether allocating a constant
+ * array is necessary.
+ *
+ * @param node_id Devicetree node identifier for the SPI device to query
+ *
+ * @retval SPI_MOSI_OVERRUN_UNKNOWN if controller does not export the value
+ * @retval byte default MOSI value otherwise
+ */
+#define SPI_MOSI_OVERRUN_DT(node_id) \
+	DT_PROP_OR(node_id, overrun_character, SPI_MOSI_OVERRUN_UNKNOWN)
+
+/**
+ * @brief The value sent on MOSI when all TX bytes are sent, but RX continues
+ *
+ * This is equivalent to
+ * <tt>SPI_MOSI_OVERRUN_DT(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ *
+ * @retval SPI_MOSI_OVERRUN_UNKNOWN if controller does not export the value
+ * @retval byte default MOSI value otherwise
+ */
+#define SPI_MOSI_OVERRUN_DT_INST(inst) \
+	DT_INST_PROP_OR(inst, overrun_character, SPI_MOSI_OVERRUN_UNKNOWN)
+
+/**
  * @brief SPI buffer structure
  */
 struct spi_buf {
 	/** Valid pointer to a data buffer, or NULL otherwise */
 	void *buf;
-	/** Length of the buffer @a buf.
+	/** Length of the buffer @a buf in bytes.
 	 * If @a buf is NULL, length which as to be sent as dummy bytes (as TX
 	 * buffer) or the length of bytes that should be skipped (as RX buffer).
 	 */
@@ -437,7 +471,7 @@ struct spi_buf {
 struct spi_buf_set {
 	/** Pointer to an array of spi_buf, or NULL */
 	const struct spi_buf *buffers;
-	/** Length of the array pointed by @a buffers */
+	/** Length of the array (number of buffers) pointed by @a buffers */
 	size_t count;
 };
 
@@ -1049,164 +1083,6 @@ static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
 	struct spi_dt_spec *spec = spi_iodev->data;
 
 	return spi_is_ready_dt(spec);
-}
-
-/**
- * @brief Copy the tx_bufs and rx_bufs into a set of RTIO requests
- *
- * @param[in] r rtio context
- * @param[in] iodev iodev to transceive with
- * @param[in] tx_bufs transmit buffer set
- * @param[in] rx_bufs receive buffer set
- * @param[out] last_sqe last sqe submitted, NULL if not enough memory
- *
- * @retval Number of submission queue entries
- * @retval -ENOMEM out of memory
- */
-static inline int spi_rtio_copy(struct rtio *r,
-				struct rtio_iodev *iodev,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs,
-				struct rtio_sqe **last_sqe)
-{
-	int ret = 0;
-	size_t tx_count = tx_bufs ? tx_bufs->count : 0;
-	size_t rx_count = rx_bufs ? rx_bufs->count : 0;
-
-	uint32_t tx = 0, tx_len = 0;
-	uint32_t rx = 0, rx_len = 0;
-	uint8_t *tx_buf, *rx_buf;
-
-	struct rtio_sqe *sqe = NULL;
-
-	if (tx < tx_count) {
-		tx_buf = tx_bufs->buffers[tx].buf;
-		tx_len = tx_bufs->buffers[tx].len;
-	} else {
-		tx_buf = NULL;
-		tx_len = rx_bufs->buffers[rx].len;
-	}
-
-	if (rx < rx_count) {
-		rx_buf = rx_bufs->buffers[rx].buf;
-		rx_len = rx_bufs->buffers[rx].len;
-	} else {
-		rx_buf = NULL;
-		rx_len = tx_bufs->buffers[tx].len;
-	}
-
-
-	while ((tx < tx_count || rx < rx_count) && (tx_len > 0 || rx_len > 0)) {
-		sqe = rtio_sqe_acquire(r);
-
-		if (sqe == NULL) {
-			ret = -ENOMEM;
-			rtio_sqe_drop_all(r);
-			goto out;
-		}
-
-		ret++;
-
-		/* If tx/rx len are same, we can do a simple transceive */
-		if (tx_len == rx_len) {
-			if (tx_buf == NULL) {
-				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
-						   rx_buf, rx_len, NULL);
-			} else if (rx_buf == NULL) {
-				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
-						    tx_buf, tx_len, NULL);
-			} else {
-				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-							 tx_buf, rx_buf, rx_len, NULL);
-			}
-			tx++;
-			rx++;
-			if (rx < rx_count) {
-				rx_buf = rx_bufs->buffers[rx].buf;
-				rx_len = rx_bufs->buffers[rx].len;
-			} else {
-				rx_buf = NULL;
-				rx_len = 0;
-			}
-			if (tx < tx_count) {
-				tx_buf = tx_bufs->buffers[tx].buf;
-				tx_len = tx_bufs->buffers[tx].len;
-			} else {
-				tx_buf = NULL;
-				tx_len = 0;
-			}
-		} else if (tx_len == 0) {
-			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
-					   (uint8_t *)rx_buf,
-					   (uint32_t)rx_len,
-					   NULL);
-			rx++;
-			if (rx < rx_count) {
-				rx_buf = rx_bufs->buffers[rx].buf;
-				rx_len = rx_bufs->buffers[rx].len;
-			} else {
-				rx_buf = NULL;
-				rx_len = 0;
-			}
-		} else if (rx_len == 0) {
-			rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
-					    (uint8_t *)tx_buf,
-					    (uint32_t)tx_len,
-					    NULL);
-			tx++;
-			if (tx < tx_count) {
-				tx_buf = rx_bufs->buffers[rx].buf;
-				tx_len = rx_bufs->buffers[rx].len;
-			} else {
-				tx_buf = NULL;
-				tx_len = 0;
-			}
-		} else if (tx_len > rx_len) {
-			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-						 (uint8_t *)tx_buf,
-						 (uint8_t *)rx_buf,
-						 (uint32_t)rx_len,
-						 NULL);
-			tx_len -= rx_len;
-			tx_buf += rx_len;
-			rx++;
-			if (rx < rx_count) {
-				rx_buf = rx_bufs->buffers[rx].buf;
-				rx_len = rx_bufs->buffers[rx].len;
-			} else {
-				rx_buf = NULL;
-				rx_len = tx_len;
-			}
-		} else if (rx_len > tx_len) {
-			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-						 (uint8_t *)tx_buf,
-						 (uint8_t *)rx_buf,
-						 (uint32_t)tx_len,
-						 NULL);
-			rx_len -= tx_len;
-			rx_buf += tx_len;
-			tx++;
-			if (tx < tx_count) {
-				tx_buf = tx_bufs->buffers[tx].buf;
-				tx_len = tx_bufs->buffers[tx].len;
-			} else {
-				tx_buf = NULL;
-				tx_len = rx_len;
-			}
-		} else {
-			__ASSERT_NO_MSG("Invalid spi_rtio_copy state");
-		}
-
-		sqe->flags = RTIO_SQE_TRANSACTION;
-	}
-
-	if (sqe != NULL) {
-		sqe->flags = 0;
-		*last_sqe = sqe;
-	}
-
-out:
-	return ret;
 }
 
 #endif /* CONFIG_SPI_RTIO */

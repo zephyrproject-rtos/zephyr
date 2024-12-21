@@ -1,5 +1,6 @@
 board:
   name: st25dv_mb1283_disco
+  full_name: ST25DV Discovery, MB1283 version
   vendor: st
   socs:
     - name: stm32f405xx

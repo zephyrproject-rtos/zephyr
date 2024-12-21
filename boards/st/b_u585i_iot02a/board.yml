@@ -1,5 +1,6 @@
 board:
   name: b_u585i_iot02a
+  full_name: B-U585I-IOT02A Discovery kit
   vendor: st
   socs:
     - name: stm32u585xx

@@ -959,9 +959,11 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 	struct oma_tlv tlv;
 	int ret;
 
-	/* In case of block transfer go directly to the
-	 * message processing - consecutive blocks will not carry the TLV
-	 * header.
+	/* In case of block transfer, check if there are any fragments
+	 * left from the previous resource (instance). If this is the
+	 * case, proceed directly to processing the message -
+	 * consecutive blocks from the same resource do not carry the
+	 * TLV header.
 	 */
 	if (msg->in.block_ctx != NULL && msg->in.block_ctx->ctx.current > 0) {
 		msg->path.res_id = msg->in.block_ctx->path.res_id;
@@ -971,7 +973,6 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 			return ret;
 		}
 
-		return 0;
 	}
 
 	while (true) {

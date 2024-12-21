@@ -1,5 +1,5 @@
 identifier: slwrb4255a
-name: EFR32FG13 2400/915 MHz 19 dBm Dual Band Radio Board (SLWRB4255A)
+name: EFR32FG13 2400/915 MHz 19 dBm Dual Band Radio Board (SLWRB4255A, BRD4255A)
 type: mcu
 arch: arm
 ram: 64

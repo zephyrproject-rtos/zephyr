@@ -101,11 +101,8 @@ static void dma_xmc4xxx_isr(const struct device *dev)
 		struct dma_xmc4xxx_channel *dma_channel;
 
 		dma_channel = &dev_data->channels[i];
-		if (dma_channel->cb && dma_channel->dlr_line != DLR_LINE_UNSET &&
+		if (dma_channel->dlr_line != DLR_LINE_UNSET &&
 		    sr_overruns & BIT(dma_channel->dlr_line)) {
-
-			LOG_ERR("Overruns detected on channel %d", i);
-			dma_channel->cb(dev, dma_channel->user_data, i, -EIO);
 
 			/* From XMC4700/4800 reference documentation - Section 4.4.1 */
 			/* Once the overrun condition is entered the user can clear the */
@@ -114,6 +111,11 @@ static void dma_xmc4xxx_isr(const struct device *dev)
 			/* disabling and enabling the respective line. */
 			DLR->LNEN &= ~BIT(dma_channel->dlr_line);
 			DLR->LNEN |= BIT(dma_channel->dlr_line);
+
+			LOG_ERR("Overruns detected on channel %d", i);
+			if (dma_channel->cb != NULL) {
+				dma_channel->cb(dev, dma_channel->user_data, i, -EIO);
+			}
 		}
 	}
 }

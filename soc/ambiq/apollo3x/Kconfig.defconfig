@@ -6,4 +6,9 @@ if SOC_SERIES_APOLLO3X
 
 rsource "Kconfig.defconfig.apollo3*"
 
+# Need to enlarge the IDLE stack size because the power
+# management operations are executed in the idle task
+config IDLE_STACK_SIZE
+	default 2048 if PM
+
 endif # SOC_SERIES_APOLLO3X

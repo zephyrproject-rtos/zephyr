@@ -9,90 +9,15 @@ config ROM_START_OFFSET
 
 config NUM_IRQS
 	default 129
-if MCUX_OS_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 1000000
-
-endif # MCUX_OS_TIMER
-
-if CORTEX_M_SYSTICK
-
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 260000000
-
-endif # CORTEX_M_SYSTICK
-
-# The base address is determined from the zephyr,flash node with the following
-# precedence:
-# FlexSPI base address (if flash node is on a FlexSPI bus)
-# node reg property (used for memory regions such as SRAM)
-
-# Workaround for not being able to have commas in macro arguments
-
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_FLEXSPI := nxp,imx-flexspi
-
-# Macros to shorten Kconfig definitions
-DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
-		if $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-
-# The RW6xx has no internal flash. If the flash node has a size property,
-# use that over the reg property. This is used for the external flash
-# present on the board. Otherwise, fallback to the reg property
-config FLASH_SIZE
-	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
-		if $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
-	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
-
-if NXP_RW_ROM_RAMLOADER
-
-FLASH_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-FLEXSPI_BASE := $(dt_node_reg_addr_hex,/soc/spi@134000,1)
-config BUILD_OUTPUT_ADJUST_LMA
-	default "$(FLEXSPI_BASE) - $(FLASH_BASE)"
-
-endif # NXP_RW_ROM_RAMLOADER
-
-if FLASH_MCUX_FLEXSPI_XIP
-
-# Avoid RWW hazards by defaulting logging to disabled
-choice FLASH_LOG_LEVEL_CHOICE
-	default FLASH_LOG_LEVEL_OFF
-endchoice
-
-choice MEMC_LOG_LEVEL_CHOICE
-	default MEMC_LOG_LEVEL_OFF
-endchoice
-
-# Code relocation is needed when MEMC driver is enabled
-config CODE_DATA_RELOCATION_SRAM
-	default y if MEMC
-
-endif # FLASH_MCUX_FLEXSPI_XIP
-
-choice USB_MCUX_CONTROLLER_TYPE
-	default USB_DC_NXP_EHCI
-endchoice
+	default 1000000 if MCUX_OS_TIMER
+	default 260000000 if CORTEX_M_SYSTICK
 
 if BT
 
-config FLASH
+config NXP_MONOLITHIC_BT
 	default y
-
-config BT_DIS_MANUF
-	default "NXP"
-
-config BT_BUF_EVT_DISCARDABLE_SIZE
-	default 84
-
-config BT_HCI_ACL_FLOW_CONTROL
-	default n
 
 config HCI_NXP_ENABLE_AUTO_SLEEP
 	default y
@@ -100,13 +25,13 @@ config HCI_NXP_ENABLE_AUTO_SLEEP
 config HCI_NXP_SET_CAL_DATA
 	default y
 
-config HEAP_MEM_POOL_SIZE
-	default 256
+config MAIN_STACK_SIZE
+	default 1280
 
 endif # BT
 
-config NXP_MONOLITHIC_BT
-	default y if BT
+config NXP_MONOLITHIC_WIFI
+	default y if WIFI
 
 config NXP_FW_LOADER
 	default y if (BT || WIFI)

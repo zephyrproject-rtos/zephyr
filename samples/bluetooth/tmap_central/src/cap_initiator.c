@@ -1,21 +1,31 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_CAP_INITIATOR)
-
-#include <zephyr/types.h>
 #include <stddef.h>
-#include <zephyr/kernel.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/conn.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
+
+#if defined(CONFIG_BT_CAP_INITIATOR)
 
 static struct k_work_delayable audio_send_work;
 
@@ -33,7 +43,7 @@ static K_SEM_DEFINE(sem_discover_source, 0, 1);
 static K_SEM_DEFINE(sem_audio_start, 0, 1);
 
 static void unicast_stream_configured(struct bt_bap_stream *stream,
-				      const struct bt_audio_codec_qos_pref *pref)
+				      const struct bt_bap_qos_cfg_pref *pref)
 {
 	printk("Configured stream %p\n", stream);
 
@@ -383,17 +393,22 @@ static void audio_timer_timeout(struct k_work *work)
 		data_initialized = true;
 	}
 
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-	net_buf_add_mem(buf, buf_data, len_to_send);
-	buf_to_send = buf;
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+	if (buf != NULL) {
+		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+		net_buf_add_mem(buf, buf_data, len_to_send);
+		buf_to_send = buf;
 
-	ret = bt_bap_stream_send(stream, buf_to_send, 0);
-	if (ret < 0) {
-		printk("Failed to send audio data on streams: (%d)\n", ret);
-		net_buf_unref(buf_to_send);
+		ret = bt_bap_stream_send(stream, buf_to_send, 0);
+		if (ret < 0) {
+			printk("Failed to send audio data on streams: (%d)\n", ret);
+			net_buf_unref(buf_to_send);
+		} else {
+			printk("Sending mock data with len %zu\n", len_to_send);
+		}
 	} else {
-		printk("Sending mock data with len %zu\n", len_to_send);
+		printk("Failed to allocate TX buffer\n");
+		/* Retry later */
 	}
 
 	k_work_schedule(&audio_send_work, K_MSEC(1000));

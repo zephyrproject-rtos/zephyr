@@ -27,6 +27,11 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	 * r0: address of the system_off function
 	 */
 	push	{r4-r12, lr}
+
+	/* Move system_off to protected register. */
+	mov 	r4, r0
+
+	/* Store CPU context */
 	ldr	r1, =_cpu_context
 
 	mrs	r2, msp
@@ -65,13 +70,15 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/*
 	 * Mark entering suspend to RAM.
 	 */
-	bl pm_s2ram_mark_set
+	mov 	r1, lr
+	bl 	pm_s2ram_mark_set
+	mov	lr, r1
 
 	/*
 	 * Call the system_off function passed as parameter. This should never
 	 * return.
 	 */
-	blx	r0
+	blx	r4
 
 	/*
 	 * The system_off function returns here only when the powering off was
@@ -81,9 +88,12 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/*
 	 * Reset the marking of suspend to RAM, return is ignored.
 	 */
-	push	{r0}
-	bl pm_s2ram_mark_check_and_clear
-	pop	{r0}
+	mov 	r1, lr
+	bl	pm_s2ram_mark_check_and_clear
+	mov 	lr, r1
+
+	/* Move system_off back to r0 as return value */
+	mov	r0, r4
 
 	pop	{r4-r12, lr}
 	bx	lr
@@ -94,12 +104,12 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	/*
 	 * Check if reset occurred after suspending to RAM.
 	 */
-	push    {lr}
-	bl      pm_s2ram_mark_check_and_clear
-	cmp	r0, #0x1
-	pop     {lr}
-	beq	resume
-	bx	lr
+	mov 	r1, lr
+	bl 	pm_s2ram_mark_check_and_clear
+	mov 	lr, r1
+	cmp     r0, #0x1
+	beq     resume
+	bx      lr
 
 resume:
 	/*

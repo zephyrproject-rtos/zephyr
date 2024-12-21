@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Lexmark International, Inc.
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,8 +85,8 @@
 #define ICC_SRE_ELx_DIB_BIT	BIT(2)
 #define ICC_SRE_EL3_EN_BIT	BIT(3)
 
-/* MPIDR */
-#define MPIDR_AFFLVL_MASK	(0xff)
+/* MPIDR mask to extract Aff0, Aff1, and Aff2 */
+#define MPIDR_AFFLVL_MASK (0xffffff)
 
 #define MPIDR_AFF0_SHIFT	(0)
 #define MPIDR_AFF1_SHIFT	(8)

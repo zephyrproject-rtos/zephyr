@@ -149,6 +149,14 @@ static uint8_t cmux_frame_dlci2_at_newline[] = {0xF9, 0x0B, 0xEF, 0x05, 0x0D, 0x
 static uint8_t cmux_frame_data_dlci2_at_newline[] = {0x0D, 0x0A};
 
 /*************************************************************************************************/
+/*                                     DLCI2 AT CMUX error frames				 */
+/*************************************************************************************************/
+static uint8_t cmux_frame_dlci2_at_cgdcont_invalid_length[] = {
+	0xF9, 0x0B, 0xEF, 0xFE, 0x41, 0x54, 0x2B, 0x43, 0x47, 0x44, 0x43, 0x4F, 0x4E,
+	0x54, 0x3D, 0x31, 0x2C, 0x22, 0x49, 0x50, 0x22, 0x2C, 0x22, 0x74, 0x72, 0x61,
+	0x63, 0x6B, 0x75, 0x6E, 0x69, 0x74, 0x2E, 0x6D, 0x32, 0x6D, 0x22, 0x23, 0xF9};
+
+/*************************************************************************************************/
 /*                                    DLCI1 AT CMUX frames                                       */
 /*************************************************************************************************/
 static uint8_t cmux_frame_dlci1_at_at[] = {0xF9, 0x07, 0xEF, 0x05, 0x41, 0x54, 0x30, 0xF9};
@@ -283,7 +291,7 @@ static void *test_modem_cmux_setup(void)
 	};
 
 	bus_mock_pipe = modem_backend_mock_init(&bus_mock, &bus_mock_config);
-	__ASSERT_NO_MSG(modem_pipe_open(bus_mock_pipe) == 0);
+	__ASSERT_NO_MSG(modem_pipe_open(bus_mock_pipe, K_SECONDS(10)) == 0);
 
 	/* Connect CMUX */
 	__ASSERT_NO_MSG(modem_cmux_attach(&cmux, bus_mock_pipe) == 0);
@@ -731,9 +739,9 @@ ZTEST(modem_cmux, test_modem_cmux_disconnect_connect)
 ZTEST(modem_cmux, test_modem_cmux_disconnect_connect_sync)
 {
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
-	zassert_true(modem_pipe_close(dlci1_pipe) == 0, "Failed to close DLCI1");
+	zassert_true(modem_pipe_close(dlci1_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI1");
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_disc);
-	zassert_true(modem_pipe_close(dlci2_pipe) == 0, "Failed to close DLCI2");
+	zassert_true(modem_pipe_close(dlci2_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI2");
 	modem_backend_mock_prime(&bus_mock, &transaction_control_cld);
 	zassert_true(modem_cmux_disconnect(&cmux) == 0, "Failed to disconnect CMUX");
 	zassert_true(modem_cmux_disconnect(&cmux) == -EALREADY,
@@ -745,21 +753,25 @@ ZTEST(modem_cmux, test_modem_cmux_disconnect_connect_sync)
 		     "Should already be connected");
 
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
-	zassert_true(modem_pipe_open(dlci1_pipe) == 0, "Failed to open DLCI1 pipe");
+	zassert_true(modem_pipe_open(dlci1_pipe, K_SECONDS(10)) == 0,
+		     "Failed to open DLCI1 pipe");
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
-	zassert_true(modem_pipe_open(dlci2_pipe) == 0, "Failed to open DLCI2 pipe");
+	zassert_true(modem_pipe_open(dlci2_pipe, K_SECONDS(10)) == 0,
+		     "Failed to open DLCI2 pipe");
 }
 
 ZTEST(modem_cmux, test_modem_cmux_dlci_close_open_sync)
 {
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
-	zassert_true(modem_pipe_close(dlci1_pipe) == 0, "Failed to close DLCI1");
+	zassert_true(modem_pipe_close(dlci1_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI1");
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_disc);
-	zassert_true(modem_pipe_close(dlci2_pipe) == 0, "Failed to close DLCI2");
+	zassert_true(modem_pipe_close(dlci2_pipe, K_SECONDS(10)) == 0, "Failed to close DLCI2");
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
-	zassert_true(modem_pipe_open(dlci1_pipe) == 0, "Failed to open DLCI1 pipe");
+	zassert_true(modem_pipe_open(dlci1_pipe, K_SECONDS(10)) == 0,
+		     "Failed to open DLCI1 pipe");
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
-	zassert_true(modem_pipe_open(dlci2_pipe) == 0, "Failed to open DLCI2 pipe");
+	zassert_true(modem_pipe_open(dlci2_pipe, K_SECONDS(10)) == 0,
+		     "Failed to open DLCI2 pipe");
 }
 
 ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
@@ -789,14 +801,14 @@ ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 	/* Validate no new requests can be submitted */
 	modem_cmux_connect(&cmux);
 	modem_cmux_disconnect(&cmux);
-	modem_pipe_open(dlci1_pipe);
-	modem_pipe_open(dlci2_pipe);
+	modem_pipe_open(dlci1_pipe, K_SECONDS(10));
+	modem_pipe_open(dlci2_pipe, K_SECONDS(10));
 	modem_pipe_transmit(dlci1_pipe, transmit, sizeof(transmit));
 	modem_pipe_transmit(dlci2_pipe, transmit, sizeof(transmit));
 	modem_pipe_receive(dlci1_pipe, receive, sizeof(receive));
 	modem_pipe_receive(dlci2_pipe, receive, sizeof(receive));
-	modem_pipe_close(dlci1_pipe);
-	modem_pipe_close(dlci2_pipe);
+	modem_pipe_close(dlci1_pipe, K_SECONDS(10));
+	modem_pipe_close(dlci2_pipe, K_SECONDS(10));
 	k_msleep(500);
 	zassert_true(modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1)) == 0);
 
@@ -805,9 +817,51 @@ ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 	modem_backend_mock_prime(&bus_mock, &transaction_control_sabm);
 	zassert_ok(modem_cmux_connect(&cmux));
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
-	zassert_ok(modem_pipe_open(dlci1_pipe));
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)));
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
-	zassert_ok(modem_pipe_open(dlci2_pipe));
+	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)));
+}
+
+ZTEST(modem_cmux, test_modem_drop_frames_with_invalid_length)
+{
+	int ret;
+	uint32_t events;
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_at_cgdcont_invalid_length,
+			       sizeof(cmux_frame_dlci2_at_cgdcont_invalid_length));
+
+	k_msleep(100);
+
+	events = k_event_test(&cmux_event, EVENT_CMUX_DLCI2_RECEIVE_READY);
+
+	zassert_false(events & EVENT_CMUX_DLCI2_RECEIVE_READY,
+		      "Receive event should not have been received for DLCI2 pipe");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_at_cgdcont,
+			       sizeof(cmux_frame_dlci2_at_cgdcont));
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_at_newline,
+			       sizeof(cmux_frame_dlci2_at_newline));
+
+	k_msleep(100);
+
+	events = k_event_test(&cmux_event, EVENT_CMUX_DLCI2_RECEIVE_READY);
+	zassert_equal(events, EVENT_CMUX_DLCI2_RECEIVE_READY,
+		      "Receive ready event not received for DLCI2 pipe");
+
+	ret = modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	zassert_true(ret == (sizeof(cmux_frame_data_dlci2_at_cgdcont) +
+			     sizeof(cmux_frame_data_dlci2_at_newline)),
+		     "Incorrect number of bytes received");
+
+	zassert_true(memcmp(buffer2, cmux_frame_data_dlci2_at_cgdcont,
+			    sizeof(cmux_frame_data_dlci2_at_cgdcont)) == 0,
+		     "Incorrect data received");
+
+	zassert_true(memcmp(&buffer2[sizeof(cmux_frame_data_dlci2_at_cgdcont)],
+			    cmux_frame_data_dlci2_at_newline,
+			    sizeof(cmux_frame_data_dlci2_at_newline)) == 0,
+		     "Incorrect data received");
 }
 
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);

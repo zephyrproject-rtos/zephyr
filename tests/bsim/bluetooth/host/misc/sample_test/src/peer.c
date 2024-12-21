@@ -15,6 +15,7 @@
 #include "testlib/att_read.h"
 #include "testlib/att_write.h"
 #include "testlib/conn.h"
+#include "testlib/log_utils.h"
 
 #include "babblekit/flags.h"
 #include "babblekit/sync.h"
@@ -23,11 +24,13 @@
 /* local includes */
 #include "data.h"
 
-LOG_MODULE_REGISTER(peer, CONFIG_APP_LOG_LEVEL);
+LOG_MODULE_REGISTER(peer, LOG_LEVEL_DBG);
 
 static DEFINE_FLAG(is_subscribed);
 static DEFINE_FLAG(got_notification_1);
 static DEFINE_FLAG(got_notification_2);
+
+extern unsigned long runtime_log_level;
 
 int find_characteristic(struct bt_conn *conn,
 			const struct bt_uuid *svc,
@@ -122,9 +125,7 @@ static void subscribe(struct bt_conn *conn,
 	sub_params.subscribe = sub_cb;
 	sub_params.value = BT_GATT_CCC_NOTIFY;
 	sub_params.value_handle = handle;
-
-	/* Set-up auto-discovery of the CCC handle */
-	sub_params.ccc_handle = 0;
+	sub_params.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	sub_params.disc_params = &ccc_disc_params;
 	sub_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
@@ -165,6 +166,9 @@ void entrypoint_peer(void)
 
 	/* Initialize device sync library */
 	bk_sync_init();
+
+	/* Set the log level given by the `log_level` CLI argument */
+	bt_testlib_log_level_set("peer", runtime_log_level);
 
 	/* Initialize Bluetooth */
 	err = bt_enable(NULL);

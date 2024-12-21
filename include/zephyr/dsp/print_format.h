@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_DSP_PRINT_FORMAT_H
-#define ZEPHYR_INCLUDE_ZEPHYR_DSP_PRINT_FORMAT_H
+#ifndef ZEPHYR_INCLUDE_DSP_PRINT_FORMAT_H_
+#define ZEPHYR_INCLUDE_DSP_PRINT_FORMAT_H_
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -63,4 +63,4 @@ static inline int64_t ___PRIq_arg_shift(int64_t q, int shift)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_DSP_PRINT_FORMAT_H */
+#endif /* ZEPHYR_INCLUDE_DSP_PRINT_FORMAT_H_ */

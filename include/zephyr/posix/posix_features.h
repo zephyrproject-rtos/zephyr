@@ -123,7 +123,10 @@
 #endif
 
 /* #define _POSIX_SPORADIC_SERVER (-1L) */
-/* #define _POSIX_SYNCHRONIZED_IO (-1L) */
+
+#ifdef CONFIG_POSIX_SYNCHRONIZED_IO
+#define _POSIX_SYNCHRONIZED_IO _POSIX_VERSION
+#endif
 
 #ifdef CONFIG_POSIX_THREAD_ATTR_STACKADDR
 #define _POSIX_THREAD_ATTR_STACKADDR _POSIX_VERSION
@@ -328,7 +331,9 @@
 #define SYMLOOP_MAX         _POSIX_SYMLOOP_MAX
 #define TIMER_MAX           _POSIX_TIMER_MAX
 #define TTY_NAME_MAX        _POSIX_TTY_NAME_MAX
+#ifndef TZNAME_MAX
 #define TZNAME_MAX          _POSIX_TZNAME_MAX
+#endif
 
 /* Pathname variable values */
 #define FILESIZEBITS             (32)

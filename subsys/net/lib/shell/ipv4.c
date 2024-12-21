@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include "net_shell_private.h"
 #include "../ip/ipv4.h"
 
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_IPV4)
 static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -50,7 +50,7 @@ static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 			   &ipv4->unicast[i].netmask));
 	}
 }
-#endif /* CONFIG_NET_NATIVE_IPV4 */
+#endif /* CONFIG_NET_IPV4 */
 
 static int cmd_net_ipv4(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -62,14 +62,17 @@ static int cmd_net_ipv4(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
-	struct net_shell_user_data user_data;
-
 	PR("IPv4 fragmentation support                : %s\n",
 	   IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) ? "enabled" :
 	   "disabled");
 	PR("IPv4 conflict detection support           : %s\n",
 	   IS_ENABLED(CONFIG_NET_IPV4_ACD) ? "enabled" :
 	   "disabled");
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+
+#if defined(CONFIG_NET_IPV4)
+	struct net_shell_user_data user_data;
+
 	PR("Max number of IPv4 network interfaces "
 	   "in the system          : %d\n",
 	   CONFIG_NET_IF_MAX_IPV4_COUNT);
@@ -85,14 +88,14 @@ static int cmd_net_ipv4(const struct shell *sh, size_t argc, char *argv[])
 
 	/* Print information about address lifetime */
 	net_if_foreach(ip_address_lifetime_cb, &user_data);
-#endif
+#endif /* CONFIG_NET_IPV4 */
 
 	return 0;
 }
 
 static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 {
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_IPV4)
 	struct net_if *iface = NULL;
 	int idx;
 	struct in_addr addr;
@@ -151,16 +154,15 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 		net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
 	}
 
-#else /* CONFIG_NET_NATIVE_IPV4 */
-	PR_INFO("Set %s and %s to enable native %s support.\n",
-			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV4", "IPv4");
-#endif /* CONFIG_NET_NATIVE_IPV4 */
+#else /* CONFIG_NET_IPV4 */
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_IPV4", "IPv4");
+#endif /* CONFIG_NET_IPV4 */
 	return 0;
 }
 
 static int cmd_net_ip_del(const struct shell *sh, size_t argc, char *argv[])
 {
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_IPV4)
 	struct net_if *iface = NULL;
 	int idx;
 	struct in_addr addr;
@@ -201,16 +203,15 @@ static int cmd_net_ip_del(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 	}
-#else /* CONFIG_NET_NATIVE_IPV4 */
-	PR_INFO("Set %s and %s to enable native %s support.\n",
-			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV4", "IPv4");
-#endif /* CONFIG_NET_NATIVE_IPV4 */
+#else /* CONFIG_NET_IPV4 */
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_IPV4", "IPv4");
+#endif /* CONFIG_NET_IPV4 */
 	return 0;
 }
 
 static int cmd_net_ip_gateway(const struct shell *sh, size_t argc, char *argv[])
 {
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_IPV4)
 	struct net_if *iface;
 	int idx;
 	struct in_addr addr;
@@ -238,10 +239,9 @@ static int cmd_net_ip_gateway(const struct shell *sh, size_t argc, char *argv[])
 
 	net_if_ipv4_set_gw(iface, &addr);
 
-#else /* CONFIG_NET_NATIVE_IPV4 */
-	PR_INFO("Set %s and %s to enable native %s support.\n",
-			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV4", "IPv4");
-#endif /* CONFIG_NET_NATIVE_IPV4 */
+#else /* CONFIG_NET_IPV4 */
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_IPV4", "IPv4");
+#endif /* CONFIG_NET_IPV4 */
 	return 0;
 }
 

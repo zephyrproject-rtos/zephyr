@@ -21,7 +21,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -114,21 +114,6 @@ static void recv_cb(struct bt_bap_stream *stream,
 	printk("Receiving ISO packets\n");
 }
 
-static uint16_t interval_to_sync_timeout(uint16_t interval)
-{
-	uint32_t interval_ms;
-	uint32_t timeout;
-
-	/* Add retries and convert to unit in 10's of ms */
-	interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(interval);
-	timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
-
-	/* Enforce restraints */
-	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
-
-	return (uint16_t)timeout;
-}
-
 static bool pa_decode_base(struct bt_data *data, void *user_data)
 {
 	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
@@ -198,7 +183,7 @@ static int reset(void)
 	k_sem_reset(&sem_pa_sync_lost);
 	k_sem_reset(&sem_data_received);
 
-	broadcast_id = INVALID_BROADCAST_ID;
+	broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	bis_index_bitfield = 0U;
 	pbs_found = false;
 
@@ -290,7 +275,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	if (!bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO)) {
 		/* Save broadcast_id */
-		if (broadcast_id == INVALID_BROADCAST_ID) {
+		if (broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
 			broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 		}
 
@@ -307,7 +292,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		pbs_found = true;
 
 		/* Continue parsing if Broadcast Audio Announcement Service was not found */
-		if (broadcast_id == INVALID_BROADCAST_ID) {
+		if (broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
 			return true;
 		}
 
@@ -331,7 +316,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)&broadcast_id);
 
-	if ((broadcast_id != INVALID_BROADCAST_ID) && pbs_found) {
+	if ((broadcast_id != BT_BAP_INVALID_BROADCAST_ID) && pbs_found) {
 		sync_broadcast_pa(info);
 	}
 }

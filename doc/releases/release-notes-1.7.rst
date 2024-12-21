@@ -147,7 +147,7 @@ Documentation
 * Site-wide glossary added.
 * Porting guides added.
 * Sample README files converted to documents included in the website.
-* Improved consistency of :ref:`boards` and :ref:`samples-and-demos`.
+* Improved consistency of :ref:`boards` and :zephyr:code-sample-category:`samples`.
 
 
 JIRA Related Items

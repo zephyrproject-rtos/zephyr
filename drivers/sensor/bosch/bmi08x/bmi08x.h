@@ -427,7 +427,7 @@ enum bmi08x_odr {
 #define BMI08X_GYR_SCALE(range_dps) ((2 * range_dps * SENSOR_PI) / 180LL / 65536LL)
 
 /* report of data sync is selected */
-#define BMI08X_ACCEL_DATA_SYNC_EN(inst) DT_NODE_HAS_STATUS(DT_INST_PHANDLE(inst, data_sync), okay)
+#define BMI08X_ACCEL_DATA_SYNC_EN(inst) DT_NODE_HAS_STATUS_OKAY(DT_INST_PHANDLE(inst, data_sync))
 /* Macro used for compile time optimization to compile in/out code used for data-sync
  * if at least 1 bmi08x has data-sync enabled
  */

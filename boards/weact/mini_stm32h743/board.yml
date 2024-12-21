@@ -1,5 +1,6 @@
 board:
   name: mini_stm32h743
+  full_name: MiniSTM32H743 Core Board
   vendor: weact
   socs:
     - name: stm32h743xx

@@ -1,7 +1,4 @@
-.. _msp_exp432p401r_launchxl:
-
-MSP-EXP432P401R LaunchXL
-########################
+.. zephyr:board:: msp_exp432p401r_launchxl
 
 Overview
 ********
@@ -10,10 +7,6 @@ The SimpleLink MSP‐EXP432P401R LaunchPad development kit is an easy-to-use eva
 module for the SimpleLink MSP432P401R microcontroller. It contains everything needed to start
 developing on the SimpleLink MSP432 low-power + performance ARM |reg| 32-bit Cortex |reg|-M4F
 microcontroller (MCU).
-
-.. figure:: img/msp_exp432p401r_launchxl.jpg
-     :align: center
-     :alt: MSP-EXP432P401R LaunchXL development board
 
 Features:
 =========
@@ -32,8 +25,8 @@ Supported Features
 ==================
 
 * The on-board 32-kHz crystal allows for lower LPM3 sleep currents and a higher-precision clock source than the
-  default internal 32-kHz REFOCLK. Therefore, the presence of the crystal allows the full range of low-
-  power modes to be used.
+  default internal 32-kHz REFOCLK. Therefore, the presence of the crystal allows the full range of low-power
+  modes to be used.
 * The on-board 48-MHz crystal allows the device to run at its maximum operating speed for MCLK and HSMCLK.
 
 The MSP-EXP432P401R LaunchXL development board configuration supports the following hardware features:
@@ -100,7 +93,7 @@ Flashing
 Follow the :ref:`getting_started` instructions for Zephyr application
 development.
 
-For example, to build and flash the :ref:`hello_world` application for the
+For example, to build and flash the :zephyr:code-sample:`hello_world` application for the
 MSP-EXP432P401R LaunchXL:
 
 .. zephyr-app-commands::
@@ -132,6 +125,8 @@ build target:
 
 References
 **********
+
+.. target-notes::
 
 TI MSP432 Wiki:
    https://en.wikipedia.org/wiki/TI_MSP432

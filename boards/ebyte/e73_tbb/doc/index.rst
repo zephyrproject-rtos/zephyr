@@ -1,7 +1,4 @@
-.. _ebyte_e73_tbb_nrf52832:
-
-EBYTE E73-TBB
-#############
+.. zephyr:board:: ebyte_e73_tbb
 
 Overview
 ********
@@ -24,12 +21,6 @@ the following devices:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/ebyte_e73_tbb_nrf52832.jpg
-     :align: center
-     :alt: EBYTE E73-TBB
-
-     EBYTE E73-TBB (Credit: EBYTE)
 
 More information about the board can be found at the
 `E73-TBB website`_. The `Nordic Semiconductor Infocenter`_

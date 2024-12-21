@@ -17,8 +17,9 @@ supported:
   - uart
   - i2c
   - spi
+  - can
+  - net
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: nxp

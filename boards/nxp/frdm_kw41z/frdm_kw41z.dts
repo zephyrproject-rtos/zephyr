@@ -33,6 +33,7 @@
 		zephyr,shell-uart = &lpuart0;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart0;
 	};
 
 	leds {
@@ -183,7 +184,7 @@
 			label = "image-0";
 			reg = <0x00000000 0x00070000>;
 		};
-		storage_partition: partition@700000 {
+		storage_partition: partition@70000 {
 			label = "storage";
 			reg = <0x00070000 0x00010000>;
 		};

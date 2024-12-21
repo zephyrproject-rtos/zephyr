@@ -48,6 +48,23 @@ static int tmp116_reg_write(const struct device *dev, uint8_t reg,
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
+int tmp116_write_config(const struct device *dev, uint16_t mask, uint16_t conf)
+{
+	uint16_t config = 0;
+	int result;
+
+	result = tmp116_reg_read(dev, TMP116_REG_CFGR, &config);
+
+	if (result < 0) {
+		return result;
+	}
+
+	config &= ~mask;
+	config |= conf;
+
+	return tmp116_reg_write(dev, TMP116_REG_CFGR, config);
+}
+
 static bool check_eeprom_bounds(const struct device *dev, off_t offset,
 			       size_t len)
 {
@@ -232,12 +249,13 @@ static int tmp116_attr_set(const struct device *dev,
 {
 	struct tmp116_data *drv_data = dev->data;
 	int16_t value;
+	uint16_t avg;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 
-	switch (attr) {
+	switch ((int)attr) {
 	case SENSOR_ATTR_OFFSET:
 		if (drv_data->id != TMP117_DEVICE_ID) {
 			LOG_ERR("%s: Offset is only supported by TMP117",
@@ -251,6 +269,38 @@ static int tmp116_attr_set(const struct device *dev,
 						/ (int32_t)TMP116_RESOLUTION;
 
 		return tmp116_reg_write(dev, TMP117_REG_TEMP_OFFSET, value);
+
+	case SENSOR_ATTR_OVERSAMPLING:
+		/* sensor supports averaging 1, 8, 32 and 64 samples */
+		switch (val->val1) {
+		case 1:
+			avg = TMP116_AVG_1_SAMPLE;
+			break;
+
+		case 8:
+			avg = TMP116_AVG_8_SAMPLES;
+			break;
+
+		case 32:
+			avg = TMP116_AVG_32_SAMPLES;
+			break;
+
+		case 64:
+			avg = TMP116_AVG_64_SAMPLES;
+			break;
+
+		default:
+			return -EINVAL;
+		}
+		return tmp116_write_config(dev, TMP116_CFGR_AVG, avg);
+	case SENSOR_ATTR_TMP116_SHUTDOWN_MODE:
+		return tmp116_write_config(dev, TMP116_CFGR_MODE, TMP116_MODE_SHUTDOWN);
+
+	case SENSOR_ATTR_TMP116_CONTINUOUS_CONVERSION_MODE:
+		return tmp116_write_config(dev, TMP116_CFGR_MODE, TMP116_MODE_CONTINUOUS);
+
+	case SENSOR_ATTR_TMP116_ONE_SHOT_MODE:
+		return tmp116_write_config(dev, TMP116_CFGR_MODE, TMP116_MODE_ONE_SHOT);
 
 	default:
 		return -ENOTSUP;

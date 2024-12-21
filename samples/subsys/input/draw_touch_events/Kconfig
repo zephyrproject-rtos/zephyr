@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SCREEN_WIDTH_TO_CROSS_DIM
+	int "Screen width to cross horizontal/vertical dimension ratio"
+	default 25
+
+source "Kconfig.zephyr"

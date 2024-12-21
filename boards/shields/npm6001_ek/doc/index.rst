@@ -28,7 +28,7 @@ Usage
 *****
 
 The shield can be used in any application by setting ``--shield npm6001_ek``
-when invoking ``west build``. You can check :ref:`npm6001_ek_sample` for a
+when invoking ``west build``. You can check :zephyr:code-sample:`npm6001_ek` for a
 comprehensive sample.
 
 References

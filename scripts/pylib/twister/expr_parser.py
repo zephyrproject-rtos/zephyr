@@ -227,7 +227,7 @@ def ast_expr(ast, env, edt):
     elif ast[0] == "dt_compat_enabled":
         compat = ast[1][0]
         for node in edt.nodes:
-            if compat in node.compats and node.status == "okay":
+            if (node.matching_compat == compat or compat in node.compats) and node.status == "okay":
                 return True
         return False
     elif ast[0] == "dt_alias_exists":
@@ -240,30 +240,17 @@ def ast_expr(ast, env, edt):
         # Checks if the DT has an enabled alias node whose parent has
         # a given compatible. For matching things like gpio-leds child
         # nodes, which do not have compatibles themselves.
-        #
-        # The legacy "dt_compat_enabled_with_alias" form is still
-        # accepted but is now deprecated and causes a warning. This is
-        # meant to give downstream users some time to notice and
-        # adjust. Its argument order only made sense under the (bad)
-        # assumption that the gpio-leds child node has the same compatible
 
         alias = ast[1][0]
         compat = ast[1][1]
-
-        return ast_handle_dt_enabled_alias_with_parent_compat(edt, alias,
-                                                              compat)
-    elif ast[0] == "dt_compat_enabled_with_alias":
-        compat = ast[1][0]
-        alias = ast[1][1]
-
-        _logger.warning('dt_compat_enabled_with_alias("%s", "%s"): '
-                        'this is deprecated, use '
-                        'dt_enabled_alias_with_parent_compat("%s", "%s") '
-                        'instead',
-                        compat, alias, alias, compat)
-
-        return ast_handle_dt_enabled_alias_with_parent_compat(edt, alias,
-                                                              compat)
+        for node in edt.nodes:
+            parent = node.parent
+            if parent is None:
+                continue
+            if node.status == "okay" and alias in node.aliases and \
+                    (parent.matching_compat == compat or compat in parent.compats):
+                return True
+        return False
     elif ast[0] == "dt_label_with_parent_compat_enabled":
         compat = ast[1][1]
         label = ast[1][0]
@@ -272,7 +259,8 @@ def ast_expr(ast, env, edt):
             parent = node.parent
         else:
             return False
-        return parent is not None and parent.status == 'okay' and parent.matching_compat == compat
+        return parent is not None and parent.status == 'okay' and \
+            (parent.matching_compat == compat or compat in parent.compats)
     elif ast[0] == "dt_chosen_enabled":
         chosen = ast[1][0]
         node = edt.chosen_node(chosen)
@@ -285,20 +273,6 @@ def ast_expr(ast, env, edt):
         if node and node.status == "okay":
             return True
         return False
-
-def ast_handle_dt_enabled_alias_with_parent_compat(edt, alias, compat):
-    # Helper shared with the now deprecated
-    # dt_compat_enabled_with_alias version.
-
-    for node in edt.nodes:
-        parent = node.parent
-        if parent is None:
-            continue
-        if (node.status == "okay" and alias in node.aliases and
-                    parent.matching_compat == compat):
-            return True
-
-    return False
 
 mutex = threading.Lock()
 

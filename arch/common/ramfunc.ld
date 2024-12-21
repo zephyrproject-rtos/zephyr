@@ -9,6 +9,7 @@
 
 SECTION_DATA_PROLOGUE(.ramfunc,,)
 {
+	__ramfunc_region_start = .;
 	MPU_ALIGN(__ramfunc_size);
 	__ramfunc_start = .;
 	*(.ramfunc)

@@ -18,7 +18,7 @@ tests:
       - qemu_x86
       - native_sim
     tags: bluetooth
-    extra_args: OVERLAY_CONFIG="duo.conf"
+    extra_args: EXTRA_CONF_FILE="duo.conf"
     extra_configs:
       - CONFIG_TMAP_PERIPHERAL_SET_RANK=2
     integration_platforms:

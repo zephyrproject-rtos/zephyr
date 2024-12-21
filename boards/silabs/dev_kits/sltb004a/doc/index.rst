@@ -1,7 +1,4 @@
-.. _sltb004a:
-
-EFR32MG12 Thunderboard (SLTB004A)
-#################################
+.. zephyr:board:: sltb004a
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The EFR32MG12 Thunderboard (a.k.a Thunderboard Sense 2) contains an MCU
 from the EFR32MG12 family built on ARM® Cortex®-M4F processor with low
 power capabilities.
-
-.. image:: sltb004a.jpg
-   :align: center
-   :alt: EFR32MG12 SLTB004A
 
 Hardware
 ********
@@ -165,7 +158,7 @@ board. The adaptor provides:
 Flashing an application to SLTB004A
 -----------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::

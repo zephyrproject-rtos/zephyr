@@ -78,6 +78,7 @@ at 24 MHz once the SD card has been initialized:
                     status = "okay";
 		    mmc {
 			compatible = "zephyr,sdmmc-disk";
+                        disk-name = "SD";
 			status = "okay";
 		    };
                     spi-max-frequency = <24000000>;

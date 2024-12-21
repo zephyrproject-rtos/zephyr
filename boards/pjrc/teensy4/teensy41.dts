@@ -34,6 +34,29 @@
 	};
 };
 
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	nxp,unique-mac;
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		status = "okay";
+		compatible = "ti,dp83825";
+		reg = <0>;
+		reset-gpios = <&gpio2 14 GPIO_ACTIVE_LOW>;
+		int-gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
+		ti,interface-type = "rmii";
+	};
+};
+
 &lpspi3 {
 	status = "okay";
 };
@@ -48,6 +71,7 @@
 	pinctrl-names = "default", "slow", "med", "fast";
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

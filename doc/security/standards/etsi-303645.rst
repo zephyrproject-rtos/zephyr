@@ -4,7 +4,7 @@ ETSI 303-645
 ############
 
 
-`ETSI EN 303 645`, also known as "Cyber Security for Consumer Internet
+**ETSI EN 303 645**, also known as "Cyber Security for Consumer Internet
 of Things: Baseline Requirements," is a standard developed by the
 European Telecommunications Standards Institute (ETSI).
 
@@ -327,7 +327,8 @@ Provisions Assessment
       - The device should verify the authenticity and integrity of software updates.
       - R C
       - Y
-      - Functionality provided by `MCUboot <https://github.com/zephyrproject-rtos/mcuboot>`. Also see :ref:`Device Firwmware Upgrade  <dfu>`
+      - Functionality provided by `MCUboot <https://github.com/zephyrproject-rtos/mcuboot>`_.
+        Also see :ref:`Device Firwmware Upgrade  <dfu>`.
 
         .. _ETSI_Provision_5_3_10:
     * - Provision 5.3-10
@@ -557,7 +558,8 @@ Provisions Assessment
       - The consumer IoT device should verify its software using secure boot mechanisms.
       - R
       - Y
-      - Functionality provided by `MCUboot <https://github.com/zephyrproject-rtos/mcuboot>`. Also see :ref:`Security Overview  <west-sign>`
+      - Functionality provided by `MCUboot <https://github.com/zephyrproject-rtos/mcuboot>`_.
+        Also see :ref:`Security Overview  <west-sign>`.
 
         .. _ETSI_Provision_5_7_2:
     * - Provision 5.7-2

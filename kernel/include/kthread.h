@@ -204,6 +204,13 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 		return true;
 	}
 
+	/* Otherwise we have to be running a preemptible thread or
+	 * switching to a metairq
+	 */
+	if (thread_is_preemptible(_current) || thread_is_metairq(thread)) {
+		return true;
+	}
+
 	/* Edge case on ARM where a thread can be pended out of an
 	 * interrupt handler before the "synchronous" swap starts
 	 * context switching.  Platforms with atomic swap can never
@@ -211,13 +218,6 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 	 */
 	if (IS_ENABLED(CONFIG_SWAP_NONATOMIC)
 	    && z_is_thread_timeout_active(thread)) {
-		return true;
-	}
-
-	/* Otherwise we have to be running a preemptible thread or
-	 * switching to a metairq
-	 */
-	if (thread_is_preemptible(_current) || thread_is_metairq(thread)) {
 		return true;
 	}
 

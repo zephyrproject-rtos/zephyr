@@ -27,11 +27,13 @@ config HTS221_TRIGGER_NONE
 config HTS221_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_HTS221),drdy-gpios)
 	select HTS221_TRIGGER
 
 config HTS221_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_HTS221),drdy-gpios)
 	select HTS221_TRIGGER
 
 endchoice # HTS221_TRIGGER_MODE

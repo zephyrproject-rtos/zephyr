@@ -12,17 +12,19 @@ if LLEXT
 
 choice LLEXT_BINARY_TYPE
 	prompt "Binary object type for llext"
-	default LLEXT_TYPE_ELF_OBJECT if ARM
+	default LLEXT_TYPE_ELF_OBJECT if ARM || ARM64
 	default LLEXT_TYPE_ELF_SHAREDLIB if XTENSA
+	default LLEXT_TYPE_ELF_RELOCATABLE if RISCV
 	help
 	  Object type for llext
 
 config LLEXT_TYPE_ELF_OBJECT
 	bool "Single object ELF file"
+	depends on !RISCV
 	help
 	  Build and expect object files as binary object type for the
 	  llext subsystem. A single compiler invocation is used to
-	  generate the object file.
+	  generate the object file. Currently not supported on RISC-V.
 
 config LLEXT_TYPE_ELF_RELOCATABLE
 	bool "Relocatable ELF file"
@@ -66,6 +68,12 @@ config LLEXT_STORAGE_WRITABLE
 	help
 	  Select if LLEXT storage is writable, i.e. if extensions are stored in
 	  RAM and can be modified in place
+
+config LLEXT_EXPORT_DEVICES
+	bool "Export all DT devices to llexts"
+	help
+	  When enabled, all Zephyr devices defined in the device tree are
+	  made available to llexts via the standard DT_ / DEVICE_* macros.
 
 config LLEXT_EXPORT_BUILTINS_BY_SLID
 	bool "Export built-in symbols to llexts via SLIDs"

@@ -1,0 +1,7 @@
+identifier: ATMEVK-M3231-02/ATMx2xx-x1x
+name: ATMEVK-M3231-02
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+vendor: atmosic

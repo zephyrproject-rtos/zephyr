@@ -3,16 +3,26 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT zephyr_sw_generator
+
 #include <zephyr/kernel.h>
-
 #include <zephyr/drivers/video.h>
-
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(video_sw_generator);
+
+LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_PATTERN_COLOR_BAR 0
-#define VIDEO_PATTERN_FPS       30
+#define DEFAULT_FRAME_RATE      30
+/*
+ * The pattern generator needs about 1.5 ms to fill out a 320x160 RGB565
+ * buffer and 25 ms for a 720p XRGB32 buffer (tested on i.MX RT1064). So,
+ * the max frame rate actually varies between 40 and 666 fps depending on
+ * the buffer format. There is no way to determine this value for each
+ * format. 60 fps is therefore chosen as a common value in practice.
+ */
+#define MAX_FRAME_RATE          60
 
 struct video_sw_generator_data {
 	const struct device *dev;
@@ -25,6 +35,7 @@ struct video_sw_generator_data {
 	bool ctrl_hflip;
 	bool ctrl_vflip;
 	struct k_poll_signal *signal;
+	uint32_t frame_rate;
 };
 
 static const struct video_format_cap fmts[] = {{
@@ -52,7 +63,7 @@ static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpo
 	struct video_sw_generator_data *data = dev->data;
 	int i = 0;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -79,7 +90,7 @@ static int video_sw_generator_get_fmt(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -92,7 +103,7 @@ static int video_sw_generator_stream_start(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	k_work_schedule(&data->buf_work, K_MSEC(1000 / VIDEO_PATTERN_FPS));
+	k_work_schedule(&data->buf_work, K_MSEC(1000 / data->frame_rate));
 
 	return 0;
 }
@@ -134,6 +145,7 @@ static void __fill_buffer_colorbar(struct video_sw_generator_data *data, struct 
 
 	vbuf->timestamp = k_uptime_get_32();
 	vbuf->bytesused = i;
+	vbuf->line_offset = 0;
 }
 
 static void __buffer_work(struct k_work *work)
@@ -144,7 +156,7 @@ static void __buffer_work(struct k_work *work)
 
 	data = CONTAINER_OF(dwork, struct video_sw_generator_data, buf_work);
 
-	k_work_reschedule(&data->buf_work, K_MSEC(1000 / VIDEO_PATTERN_FPS));
+	k_work_reschedule(&data->buf_work, K_MSEC(1000 / data->frame_rate));
 
 	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 	if (vbuf == NULL) {
@@ -171,7 +183,7 @@ static int video_sw_generator_enqueue(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -185,7 +197,7 @@ static int video_sw_generator_dequeue(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -226,6 +238,9 @@ static int video_sw_generator_get_caps(const struct device *dev, enum video_endp
 	caps->format_caps = fmts;
 	caps->min_vbuf_count = 0;
 
+	/* SW generator produces full frames */
+	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
+
 	return 0;
 }
 
@@ -261,6 +276,67 @@ static inline int video_sw_generator_set_ctrl(const struct device *dev, unsigned
 	return 0;
 }
 
+static int video_sw_generator_set_frmival(const struct device *dev, enum video_endpoint_id ep,
+					  struct video_frmival *frmival)
+{
+	struct video_sw_generator_data *data = dev->data;
+
+	if (frmival->denominator && frmival->numerator) {
+		data->frame_rate = MIN(DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator),
+				       MAX_FRAME_RATE);
+	} else {
+		return -EINVAL;
+	}
+
+	frmival->numerator = 1;
+	frmival->denominator = data->frame_rate;
+
+	return 0;
+}
+
+static int video_sw_generator_get_frmival(const struct device *dev, enum video_endpoint_id ep,
+					  struct video_frmival *frmival)
+{
+	struct video_sw_generator_data *data = dev->data;
+
+	frmival->numerator = 1;
+	frmival->denominator = data->frame_rate;
+
+	return 0;
+}
+
+static int video_sw_generator_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
+					   struct video_frmival_enum *fie)
+{
+	int i = 0;
+
+	if (ep != VIDEO_EP_OUT || fie->index) {
+		return -EINVAL;
+	}
+
+	while (fmts[i].pixelformat && (fmts[i].pixelformat != fie->format->pixelformat)) {
+		i++;
+	}
+
+	if ((i == ARRAY_SIZE(fmts)) || (fie->format->width > fmts[i].width_max) ||
+	    (fie->format->width < fmts[i].width_min) ||
+	    (fie->format->height > fmts[i].height_max) ||
+	    (fie->format->height < fmts[i].height_min)) {
+		return -EINVAL;
+	}
+
+	fie->type = VIDEO_FRMIVAL_TYPE_STEPWISE;
+	fie->stepwise.min.numerator = 1;
+	fie->stepwise.min.denominator = MAX_FRAME_RATE;
+	fie->stepwise.max.numerator = UINT32_MAX;
+	fie->stepwise.max.denominator = 1;
+	/* The frame interval step size is the minimum resolution of K_MSEC(), which is 1ms */
+	fie->stepwise.step.numerator = 1;
+	fie->stepwise.step.denominator = 1000;
+
+	return 0;
+}
+
 static const struct video_driver_api video_sw_generator_driver_api = {
 	.set_format = video_sw_generator_set_fmt,
 	.get_format = video_sw_generator_get_fmt,
@@ -271,6 +347,9 @@ static const struct video_driver_api video_sw_generator_driver_api = {
 	.dequeue = video_sw_generator_dequeue,
 	.get_caps = video_sw_generator_get_caps,
 	.set_ctrl = video_sw_generator_set_ctrl,
+	.set_frmival = video_sw_generator_set_frmival,
+	.get_frmival = video_sw_generator_get_frmival,
+	.enum_frmival = video_sw_generator_enum_frmival,
 #ifdef CONFIG_POLL
 	.set_signal = video_sw_generator_set_signal,
 #endif
@@ -281,6 +360,7 @@ static struct video_sw_generator_data video_sw_generator_data_0 = {
 	.fmt.height = 160,
 	.fmt.pitch = 320 * 2,
 	.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,
+	.frame_rate = DEFAULT_FRAME_RATE,
 };
 
 static int video_sw_generator_init(const struct device *dev)

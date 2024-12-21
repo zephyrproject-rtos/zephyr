@@ -1,16 +1,6 @@
 # TI CC1352R LaunchXL board
 
-# Copyright (c) 2021 Florin Stancu
+# Copyright (c) 2024 Alexandre Bailon
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_CC1352P1_LAUNCHXL
-
-config BOARD_ANTENNA_INIT_PRIO
-	int "Board antenna switch initialization priority"
-	default 70
-	help
-	  Set the priority for board init, must be greater than
-	  KERNEL_INIT_PRIORITY_DEVICE but smaller than
-	  IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO.
-
-endif # BOARD_CC1352P1_LAUNCHXL
+source "boards/ti/common/Kconfig"

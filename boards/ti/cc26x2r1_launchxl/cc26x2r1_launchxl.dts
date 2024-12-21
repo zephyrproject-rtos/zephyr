@@ -7,131 +7,31 @@
 /dts-v1/;
 
 #include <ti/cc2652r.dtsi>
-#include "boosterpack_connector.dtsi"
+#include "../common/launchxl.dtsi"
+#include "../common/launchxl-flash.dtsi"
 #include "cc26x2r1_launchxl-pinctrl.dtsi"
-#include <zephyr/dt-bindings/input/input-event-codes.h>
-
-#define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
 
 / {
 	model = "TI CC26x2R1 LaunchXL";
 	compatible = "ti,launchxl-cc26x2r1";
 
-	aliases {
-		led0 = &led0;
-		led1 = &led1;
-		sw0 = &btn0;
-		sw1 = &btn1;
-		watchdog0 = &wdt0;
-		mcuboot-led0 = &led1;
-		mcuboot-button0 = &btn1;
-	};
-
 	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,code-partition = &slot0_partition;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-		led0: led_0 {
-			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
-			label = "Green LED";
-		};
-		led1: led_1 {
-			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
-			label = "Red LED";
-		};
-	};
-
-	keys {
-		compatible = "gpio-keys";
-		btn0: btn_0 {
-			gpios = <&gpio0 13 BTN_GPIO_FLAGS>;
-			label = "Push button 1";
-			zephyr,code = <INPUT_KEY_0>;
-		};
-		btn1: btn_1 {
-			gpios = <&gpio0 14 BTN_GPIO_FLAGS>;
-			label = "Push button 2";
-			zephyr,code = <INPUT_KEY_1>;
-		};
+		/delete-property/ zephyr,ieee802154;
 	};
 };
 
-&flash0 {
-	partitions {
-		/* 40 KiB (0xa000) for MCUboot */
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x0000a000>;
-		};
-
-		/* 136 KiB (0x22000) per slot for application */
-		slot0_partition: partition@a000 {
-			label = "image-0";
-			reg = <0x0000a000 0x00022000>;
-		};
-
-		slot1_partition: partition@2c000 {
-			label = "image-1";
-			reg = <0x0002c000 0x00022000>;
-		};
-
-		/* 32 KiB (0x8000) for storage */
-		storage_partition: partition@4e000 {
-			label = "storage";
-			reg = <0x0004e000 0x00008000>;
-		};
-
-		/* CCFG (customer configuration area) is located in uppermost
-		 * flash sector (0x2000/8 KiB @ 0x56000), keep it unused.
-		 */
-	};
+&radio {
+	status = "disabled";
 };
 
-&cpu0 {
-	clock-frequency = <48000000>;
+&ieee802154 {
+	status = "disabled";
 };
 
-&trng {
-	status = "okay";
-};
-
-&gpio0 {
-	status = "okay";
+&ieee802154g {
+	status = "disabled";
 };
 
 &adc0 {
-	status = "okay";
-};
-
-&uart0 {
-	status = "okay";
-	current-speed = <115200>;
-	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
-	pinctrl-names = "default";
-};
-
-&i2c0 {
-	status = "okay";
-	pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
-	pinctrl-1 = <&i2c0_scl_sleep &i2c0_sda_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-&spi0 {
-	status = "okay";
-	pinctrl-0 = <&spi0_sck_default &spi0_mosi_default
-				 &spi0_miso_default &spi0_cs_default>;
-	pinctrl-names = "default";
-
-	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
-};
-
-&wdt0 {
 	status = "okay";
 };

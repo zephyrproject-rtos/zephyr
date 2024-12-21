@@ -16,6 +16,8 @@
 
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
 
 extern void z_arm64_mm_init(bool is_primary_core);
 
@@ -30,6 +32,10 @@ __weak void z_arm64_mm_init(bool is_primary_core) { }
  */
 void z_prep_c(void)
 {
+#if defined(CONFIG_SOC_PREP_HOOK)
+	soc_prep_hook();
+#endif
+
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[0]);
 
@@ -52,6 +58,9 @@ extern FUNC_NORETURN void arch_secondary_cpu_init(void);
 void z_arm64_secondary_prep_c(void)
 {
 	arch_secondary_cpu_init();
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
+#endif
 
 	CODE_UNREACHABLE;
 }

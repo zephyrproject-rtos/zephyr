@@ -11,8 +11,8 @@ The POSIX architecture
 Overview
 ********
 
-The POSIX architecture, in combination with the inf_clock SOC layer,
-provides the foundation, architecture and SOC layers for a set of virtual test
+The native simulator in combination with the POSIX architecture and the inf_clock SOC layer,
+provide the foundation, architecture and SOC layers for a set of virtual test
 boards.
 
 Using these, a Zephyr application can be compiled together with
@@ -33,9 +33,9 @@ target hardware in the early phases of development.
 Types of POSIX arch based boards
 ================================
 
-Today there are two types of POSIX boards: The native boards, :ref:`native_posix<native_posix>`
-and :ref:`native_sim<native_sim>`, and the :ref:`bsim boards<bsim boards>`.
-While they share the main objectives and principles, the first are intended as
+Today there are two types of POSIX boards:
+:ref:`native_sim<native_sim>`, and the :ref:`bsim boards<bsim boards>`.
+While they share the main objectives and principles, the first is intended as
 a HW agnostic test platform which in some cases utilizes the host OS
 peripherals, while the second intend to simulate a particular HW platform,
 with focus on their radio (e.g. BT LE) and utilize the `BabbleSim`_ physical layer
@@ -63,8 +63,8 @@ This port is designed and tested to run in Linux.
 
 .. note::
 
-   The 32 bit version of this port does not directly work in Windows Subsystem
-   for Linux (WSL) because WSL does not support native 32-bit binaries.
+   The 32 bit version of this port does not directly work in the old Windows Subsystem
+   for Linux (WSL1) because WSL1 does not support native 32-bit binaries.
    You may want to consider WSL2, or, if using :ref:`native_sim <native_sim>`,
    you can also just use the ``native_sim/native/64``
    target: Check :ref:`32 and 64bit versions<native_sim32_64>`.
@@ -183,7 +183,7 @@ Currently, these are the most significant features which are not supported in th
 * Stack checks: :kconfig:option:`CONFIG_HW_STACK_PROTECTION`,
   :kconfig:option:`CONFIG_STACK_CANARIES`, and
   :kconfig:option:`CONFIG_THREAD_ANALYZER`.
-  This is due to how Zephyr allocated threads' stacks are not `actually` being used like they are
+  This is due to how Zephyr allocated threads' stacks are not *actually* being used like they are
   in other architectures. Check
   :ref:`the architecture section's architecture layer paragraph <posix_arch_design_archl>`
   for more information.
@@ -304,128 +304,171 @@ side-effects.
 Architecture and design
 ***********************
 
-.. figure:: layering.svg
+.. note::
+
+   This section does not describe anymore the old :ref:`native_posix<native_posix>` or
+   :kconfig:option:`CONFIG_NATIVE_APPLICATION` based architecture.
+   It only describes the new native simulator based architecture used by targets built with the
+   :kconfig:option:`CONFIG_NATIVE_LIBRARY` option.
+
+.. note::
+
+   This description applies to the boards on the tree,
+   but it is not a requirement for other POSIX arch based boards to follow what is described here.
+
+.. figure:: layering_natsim.svg
     :align: center
-    :alt: Zephyr layering in native build
+    :alt: Zephyr layering in a native simulator build
     :figclass: align-center
 
-    Zephyr layering when built against an embedded target (left), and
-    targeting a POSIX arch based board (right)
+    Zephyr layering when built against an embedded target (left), and targeting a native_simulator
+    based board (right)
+
+.. figure:: components_natsim.svg
+    :align: center
+    :alt: native_sim boards and the native simulator
+    :figclass: align-center
+
+    Relationship between Zephyr, the native_sim target and the native simulator
+
+When building targeting Zephyr's :ref:`native_sim<native_sim>` board, we build our embedded SW,
+that is, our application, the Zephyr kernel, and any subsystems and drivers we have selected,
+with the :ref:`POSIX architecture<posix_arch_design_archl>` and the
+:ref:`inf_clock<posix_arch_design_socl>` SOC layers.
+The result of this build is a pre-linked elf library, which contains what we can call the
+embedded SW.
+Then the `native simulator <https://github.com/BabbleSim/native_simulator/>`_ runner will be built.
+And after both the "embedded SW" and the runner will be linked together to form the final Linux
+executable.
+This final executable is typically called ``zephyr.exe`` and can be run or debugged just like any
+other normal Linux executable.
+
+The native simulator runner provides the Linux program entry point, command line argument parsing,
+the HW models scheduler, as well as a component to emulate the CPU start/stop and CPU thread
+switching.
+It also provides a mechanism to register functions which need to be run at different points of the
+executable lifetime.
+When targeting native_sim, the native simulator is also built with some basic HW models like a
+system timer and an interrupt controller.
+You can find more information on these in the
+`native simulator design documentation <https://github.com/BabbleSim/native_simulator/blob/main/docs/Design.md>`_.
+
+The native_sim target is a single microcontroller (MCU) target with simple HW models. Other targets
+like the :ref:`simulated nRF5340 (nrf5340bsim)<nrf5340bsim>` are multi MCU targets. Where one
+embedded Zephyr image can be build for each MCU, and all MCU images and the runner are assembled
+together into one executable with more elaborate HW models of those SOCs.
+
+Native simulator runner context and the embedded context
+========================================================
+
+It is worth noting that the embedded SW library is first pre-linked. That is that all symbols which
+can be resolved inside that library will be resolved. And that, after, all these library symbols,
+except a selected few marked with an special annotation, will be hidden from further linking.
+In this way, the runner link stage will not link to or conflict with any of these hidden symbols,
+neither from the runner itself or from other CPUs embedded SW libraries.
+It is also worth noting that all expected Zephyr sections are built and ordered with the Zephyr
+linker script in that first embedded SW library link.
+
+When the embedded SW is built, one has the option of linking an embedded C standard library with it,
+or leave at that point all C library calls unresolved, and let them be linked in the final stage
+with the host C library.
+
+Due to all this, we can conceptually see our build divided in two separate contexts:
+One is the embedded/Zephyr context, in which we build the Zephyr OS, an application for a given MCU,
+and which may be built with an embedded C library.
+Another is the runner context, which is always built with the host C library and which has very
+limited visibility into the embedded context.
+
+From the embedded context we can easily call into the runner context: All runner context symbols
+will be linkable in the final link stage unless another embedded symbol with the same name was
+already linked to it in the first pass.
+But from the runner context only the symbols from the embedded context annotated with the
+``NATIVE_SIMULATOR_IF`` macro will be linkable.
+
+From Zephyr's build system it is possible to request a file to be built in the runner context by
+adding it to the cmake ``native_simulator`` library target. You can check
+:zephyr_file:`arch/posix/CMakeLists.txt` for more information.
+
+You can find more information in the native simulator
+`build documentation <https://github.com/BabbleSim/native_simulator/blob/main/docs/Design.md#build-and-symbol-visibility>`_
 
 .. _posix_arch_design_archl:
 
 Arch layer
 ==========
 
-In this architecture each Zephyr thread is mapped to one POSIX pthread.
-The POSIX architecture emulates a single threaded CPU/MCU by only allowing
-one SW thread to execute at a time, as commanded by the Zephyr kernel.
-Whenever the Zephyr kernel desires to context switch two threads,
-the POSIX arch blocks and unblocks the corresponding pthreads.
+The POSIX architecture is mainly responsible for two things:
+
+* Set up the Zephyr build to produce an static library for the host architecture to be later
+  used with the native simulator build and linked with the native simulator runner.
+* Provide a thin adaptation between the API the Zephyr kernel expects from an architecture
+  layer and the native simulator CPU threading emulation (NCT).
+
+This layer together with the NCT maps each Zephyr thread into one POSIX pthread, and emulates a
+single threaded CPU/MCU by only allowing one SW thread to execute at a time, as commanded by the
+Zephyr kernel. Whenever the Zephyr kernel desires to context switch two threads, the POSIX arch,
+using NCT, blocks and unblocks the corresponding pthreads.
 
 This architecture provides the same interface to the Kernel as other
 architectures and is therefore transparent for the application.
+
+Note that all threads use a normal Linux pthread stack, and do not use
+the Zephyr thread stack allocation for their call stacks or automatic
+variables. The Zephyr stacks (which are allocated in "static memory") are
+only used by the POSIX architecture to keep thread bookkeeping data.
 
 When using this architecture, the code is compiled natively for the host system,
 and typically as a 32-bit binary assuming pointer and integer types are 32-bits
 wide.
 
-Note that all threads use a normal Linux pthread stack, and do not use
-the Zephyr thread stack allocation for their call stacks or automatic
-variables. The Zephyr stacks (which are allocated in "static memory") are
-only used by the POSIX architecture for thread bookkeeping.
+.. _posix_arch_design_socl:
 
-SOC and board layers
-====================
+SOC layer
+=========
 
-.. note::
+This SOC layer is mainly a very thin layer on top of the native simulator CPU emulation layer,
+which is responsible for handling the simulation of the CPU start/stop, as well as the
+initialization of the arch layer, and calling into the Zephyr boot (:c:func:`z_cstart()`) during
+the CPU boot itself.
 
-   This description applies to all current POSIX arch based boards on tree,
-   but it is not a requirement for another board to follow what is described here.
+It also provides the :ref:`native_tasks<posix_arch_design_native_tasks>`, and specifies
+a few other hooks it expects the board layer to provide.
 
-When the executable process is started (that is the board
-:c:func:`main`, which is the linux executable C :c:func:`main`),
-first, early initialization steps are taken care of
-(command line argument parsing, initialization of the HW models, etc).
+Board layer
+===========
 
-After, the "CPU simulation" is started, by creating a new pthread
-and provisionally blocking the original thread. The original thread will only
-be used for HW models after this;
-while this newly created thread will be the first "SW" thread and start
-executing the boot of the embedded code (including the POSIX arch code).
+The board layer is responsible to provide all the hooks the SOC layer and native simulator runner
+expect. This includes the hooks to boot the CPU (which call into the SOC layer), to handle
+interrupts, and the hooks for low level tracing and busy wait handling.
 
-During this MCU boot process, the Zephyr kernel will be initialized and
-eventually this will call into the embedded application `main()`,
-just like in the embedded target.
-As the embedded SW execution progresses, more Zephyr threads may be spawned,
-and for each the POSIX architecture will create a dedicated pthread.
+The overall execution and scheduling is handled by the native simulator runner itself, which calls
+when necessary into the board layer hooks.
+You can find information about how the native simulator runs the embedded SW in its
+`design documentation <https://github.com/BabbleSim/native_simulator/blob/main/docs/Design.md#overall-execution>`_
 
-Eventually the simulated CPU will be put to sleep by the embedded SW
-(normally when the boot is completed). This whole simulated CPU boot,
-until the first time it goes to sleep happens in 0 simulated time.
+For more complex simulated boards, like :ref:`bsim ones<bsim boards>`, the board layer also provides
+the necessary logic and configuration to mimic a real target and SOC.
 
-At this point the last executing SW pthread will be blocked,
-and the first thread (reserved for the HW models now) will be allowed
-to execute again. This thread will, from now on, be the one handling both the
-HW models and the device simulated time.
+Note that the SOC/board split in this architecture is different than for other Zephyr targets.
+This was done to enable very different real SOC simulations to share a common architecture and SOC
+layer, while placing the real SOC specific replacement logic in the board layer.
 
-The HW models are designed around timed events,
-and this thread will check what is the next
-scheduled HW event, advance simulated time until that point, and call the
-corresponding HW model event function.
-
-Eventually one of these HW models will raise an interrupt to the
-simulated CPU. When the IRQ controller wants to wake the simulated
-CPU, the HW thread is blocked, and the simulated CPU is awakened by
-letting the last SW thread continue executing.
-
-This process of getting the CPU to sleep, letting the HW models run,
-and raising an interrupt which wake the CPU again is repeated until the end
-of the simulation, where the CPU execution always takes 0 simulated time.
-
-When a SW thread is awakened by an interrupt, it will be made to enter the
-interrupt handler by the soc_inf code.
-
-If the SW unmasks a pending interrupt while running, or triggers a SW
-interrupt, the interrupt controller may raise the interrupt immediately
-depending on interrupt priorities, masking, and locking state.
-
-Interrupts are executed in the context (and using the stack) of the SW
-thread in which they are received. Meaning, there is no dedicated thread or
-stack for interrupt handling.
-
-To ensure determinism when the Zephyr code is running,
-and to ease application debugging,
-the board uses a different time than real time: simulated time.
-How and if simulated time relates to the host time, is up to the simulated
-board.
-
-The Zephyr application sees the code executing as if the CPU were running at
-an infinitely fast clock, and fully decoupled from the underlying host CPU
-speed.
-No simulated time passes while the application or kernel code execute.
 
 .. _posix_busy_wait:
 
 Busy waits
 ==========
 
-Busy waits work thanks to provided board functionality.
-This does not need to be the same for all boards, but both native_sim and the
-nrf52_bsim board work similarly thru the combination of a board specific
-`arch_busy_wait()` and a special fake HW timer (provided by the board).
+Busy waits work thanks to logic provided by the board and native simulator.
+This does not need to be the same for all boards, but both :ref:`native_sim<native_sim>` and the
+:ref:`nrf*bsim boards<bsim boards>` work similarly through the combination of a board specific
+:c:func:`arch_busy_wait()` and an special fake HW timer provided by the native simulator.
 
-When a SW thread wants to busy wait, this fake timer will be programmed in
-the future time corresponding to the end of the busy wait and the CPU will
-be put immediately to sleep in the busy_wait caller context.
-When this fake HW timer expires the CPU will be waken with a special
-non-maskable phony interrupt which does not have a corresponding interrupt
-handler but will resume the busy_wait SW execution.
-Note that other interrupts may arrive while the busy wait is in progress,
-which may delay the `k_busy_wait()` return just like in real life.
+Please check the
+`native simulator busy wait design documentation <https://github.com/BabbleSim/native_simulator/blob/main/docs/Design.md#busy-waits>`_
+for more info.
 
-Interrupts may be locked out or masked during this time, but the special
-fake-timer non-maskable interrupt will wake the CPU nonetheless.
+.. _posix_arch_design_native_tasks:
 
 
 NATIVE_TASKS
@@ -433,9 +476,13 @@ NATIVE_TASKS
 
 The soc_inf layer provides a special type of hook called the NATIVE_TASKS.
 
-These allow registering (at build/link time) functions which will be called
+These allow registering (at build/link time) embedded context functions which will be called
 at different stages during the process execution: Before command line parsing
 (so dynamic command line arguments can be registered using this hook),
 before initialization of the HW models, before the simulated CPU is started,
 after the simulated CPU goes to sleep for the first time,
 and when the application exists.
+
+These hooks are ultimately based on the
+`native simulator tasks <https://github.com/BabbleSim/native_simulator/blob/main/docs/Design.md#native-simulator-tasks>`_
+which the users may also register from code built in the runner context.

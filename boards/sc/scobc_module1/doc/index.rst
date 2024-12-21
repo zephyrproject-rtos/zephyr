@@ -1,7 +1,4 @@
-.. _scobc_module1:
-
-Space Cubics OBC module 1
-#########################
+.. zephyr:board:: scobc_module1
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 `Space Cubics`_ OBC module 1 is a single board computer for spacecraft,
 especially for 3U CubeSats.  The board is based on Xilinx Artix-7 FPGA and
 implements ARM Cortex M3 as the main CPU.
-
-.. figure:: scobc.jpg
-   :align: center
-   :alt: Space Cubics OBC module 1
-
-   Space Cubics OBC module 1
 
 It is designed to survive in the severe space environment, extreme temperature,
 vacuum, and space radiation.
@@ -73,7 +64,7 @@ Flashing
 Here is an example for building and flashing the \`hello\_world\`
 application for the board:
 
-Here is an example for building and flashing the :ref:`hello_world` application
+Here is an example for building and flashing the :zephyr:code-sample:`hello_world` application
 for the default design:
 
 .. zephyr-app-commands::
@@ -94,7 +85,7 @@ above steps. It was merely written to internal RAM in the FPGA.
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

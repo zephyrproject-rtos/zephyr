@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 #include <zephyr/device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 

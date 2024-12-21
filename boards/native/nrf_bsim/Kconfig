@@ -94,15 +94,6 @@ config SOC_SERIES_BSIM_NRF54LX
 	help
 	  Any NRF54L simulated SOC with BabbleSim, based on the POSIX arch
 
-if BOARD_NRF5340BSIM_NRF5340_CPUAPP
-
-# Replica of the option provided by the BOARD_NRF5340DK_NRF5340_CPUAPP board so samples can be
-# reused as is
-config BOARD_ENABLE_CPUNET
-	bool "NRF53 Network MCU"
-
-endif # BOARD_NRF5340BSIM_NRF5340_CPUNET
-
 if SOC_SERIES_BSIM_NRF53X
 
 # Let's reuse the RTC sync options so applications which use it can be reused as is

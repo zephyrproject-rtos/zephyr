@@ -1,0 +1,11 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF Global Power Domain
+
+compatible: "nordic,nrf-gpd"
+
+include: base.yaml
+
+power-domain-cells:
+  - id

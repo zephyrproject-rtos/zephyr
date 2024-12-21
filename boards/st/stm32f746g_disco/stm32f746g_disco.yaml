@@ -19,4 +19,5 @@ supported:
   - usb_device
   - display
   - memc
+  - dma
 vendor: st

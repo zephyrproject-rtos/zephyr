@@ -36,6 +36,11 @@ struct lll_conn_iso_stream {
 	uint32_t offset;            /* Offset of CIS from start of CIG in us */
 	uint32_t sub_interval;      /* Interval between subevents in us */
 	uint8_t  nse:5;             /* Number of subevents */
+
+	/* Frame Spacing */
+	uint16_t tifs_us;
+
+	/* Stream parameters */
 	struct lll_conn_iso_stream_rxtx rx; /* RX parameters */
 	struct lll_conn_iso_stream_rxtx tx; /* TX parameters */
 
@@ -93,6 +98,7 @@ struct lll_conn_iso_group {
 
 	/* Accumulates LLL prepare callback latencies */
 	uint16_t latency_prepare;
+	uint16_t lazy_prepare;
 	uint16_t latency_event;
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)

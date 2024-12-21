@@ -1,7 +1,4 @@
-.. rpi_4b:
-
-Raspberry Pi 4 Model B (Cortex-A72)
-###################################
+.. zephyr:board:: rpi_4b
 
 Overview
 ********

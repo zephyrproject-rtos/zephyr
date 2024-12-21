@@ -10,7 +10,8 @@
 
 #define BT_EATT_PSM		0x27
 #define BT_ATT_DEFAULT_LE_MTU	23
-#define BT_ATT_TIMEOUT		K_SECONDS(30)
+#define BT_ATT_TIMEOUT_SEC	30
+#define BT_ATT_TIMEOUT		K_SECONDS(BT_ATT_TIMEOUT_SEC)
 
 /* Local ATT Rx MTU
  *
@@ -293,6 +294,7 @@ struct bt_att_req {
 
 void bt_att_init(void);
 uint16_t bt_att_get_mtu(struct bt_conn *conn);
+uint16_t bt_att_get_uatt_mtu(struct bt_conn *conn);
 struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op,
 				  size_t len);
 

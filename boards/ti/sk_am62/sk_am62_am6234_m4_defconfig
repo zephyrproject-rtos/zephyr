@@ -11,9 +11,6 @@ CONFIG_CORTEX_M_SYSTICK=y
 # Zephyr Kernel Configuration
 CONFIG_XIP=n
 
-# Enable Pinctrl
-CONFIG_PINCTRL=y
-
 # Serial Driver
 CONFIG_SERIAL=y
 

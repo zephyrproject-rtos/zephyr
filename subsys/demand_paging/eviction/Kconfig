@@ -5,6 +5,7 @@
 
 choice EVICTION_CHOICE
 	prompt "Page frame eviction algorithms"
+	default EVICTION_LRU if ARM64
 	default EVICTION_NRU
 	depends on DEMAND_PAGING
 

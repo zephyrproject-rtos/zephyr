@@ -1,5 +1,6 @@
 board:
   name: nucleo_l152re
+  full_name: Nucleo L152RE
   vendor: st
   socs:
     - name: stm32l152xe

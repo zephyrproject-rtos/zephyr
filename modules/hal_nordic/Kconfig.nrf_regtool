@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menu "nrf-regtool options"
-	depends on SOC_SERIES_NRF54HX
+	depends on SOC_SERIES_NRF54HX || SOC_SERIES_NRF92X
 
 config NRF_REGTOOL_GENERATE_UICR
 	bool "Generate UICR"
@@ -25,12 +25,5 @@ config NRF_REGTOOL_VERBOSITY
 	     the peripheral configurations, but in a less readable format.
 	  3. Print even more details, which are typically only useful for
 	     nrf-regtool developers.
-
-config NRF_REGTOOL_EXTRA_GENERATE_ARGS
-	string "Extra arguments to 'nrf-regtool generate'"
-	help
-	  List of additional arguments to every nrf-regtool invocation used for
-	  generating hex files. Example value: "--fill all --fill-byte 0xff".
-	  Run "nrf-regtool generate -h" to see all of the available options.
 
 endmenu

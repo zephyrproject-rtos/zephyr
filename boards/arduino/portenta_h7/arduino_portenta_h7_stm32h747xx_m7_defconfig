@@ -7,17 +7,11 @@ CONFIG_POWER_SUPPLY_DIRECT_SMPS=y
 # Enable GPIO
 CONFIG_GPIO=y
 
-# Enable clocks
-CONFIG_CLOCK_CONTROL=y
-
 # Enable MPU
 CONFIG_ARM_MPU=y
 
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
-
-# enable pin controller
-CONFIG_PINCTRL=y
 
 # Use zephyr,code-partition as flash offset
 CONFIG_USE_DT_CODE_PARTITION=y

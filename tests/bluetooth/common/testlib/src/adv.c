@@ -50,7 +50,7 @@ int bt_testlib_adv_conn(struct bt_conn **conn, int id, const char *name)
 	param.id = id;
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_1;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_1;
-	param.options |= BT_LE_ADV_OPT_CONNECTABLE;
+	param.options |= BT_LE_ADV_OPT_CONN;
 
 	k_condvar_init(&ctx.done);
 

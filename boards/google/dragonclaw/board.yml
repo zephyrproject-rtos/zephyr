@@ -1,5 +1,6 @@
 board:
   name: google_dragonclaw
+  full_name: Dragonclaw Development Board
   vendor: google
   socs:
     - name: stm32f412cx

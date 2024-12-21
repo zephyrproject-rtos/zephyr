@@ -1,7 +1,4 @@
-.. _nrf52840_blip:
-
-Electronut Labs Blip
-####################
+.. zephyr:board:: nrf52840_blip
 
 Overview
 ********
@@ -24,12 +21,6 @@ nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/nrf52840_blip.jpg
-     :align: center
-     :alt: Electronut Labs Blip
-
-     Electronut Labs Blip (Credit: Electronut Labs)
 
 More information about the board is available at https://github.com/electronut/ElectronutLabs-blip.
 
@@ -141,7 +132,7 @@ Flashing
 Applications are flashed and run as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

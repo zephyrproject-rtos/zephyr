@@ -21,10 +21,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
         os: [ubuntu-22.04]
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.13
+      image: ghcr.io/zephyrproject-rtos/ci:v0.27.4
 
     steps:
     - name: Apply Container Owner Mismatch Workaround
@@ -43,6 +43,8 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
         west init -l . || true
+        # we do not depend on any hals, tools or bootloader, save some time and space...
+        west config manifest.group-filter -- -hal,-tools,-bootloader
         west config --global update.narrow true
         west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
         west forall -c 'git reset --hard HEAD'

@@ -101,7 +101,7 @@ static int leuart_gecko_fifo_fill(const struct device *dev,
 				  int len)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (base->STATUS & LEUART_STATUS_TXBL)) {
@@ -116,7 +116,7 @@ static int leuart_gecko_fifo_read(const struct device *dev, uint8_t *rx_data,
 				  const int len)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (base->STATUS & LEUART_STATUS_RXDATAV)) {
@@ -317,7 +317,7 @@ static const struct uart_driver_api leuart_gecko_driver_api = {
 #endif
 };
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 #define PIN_LEUART_0_RXD {DT_INST_PROP_BY_IDX(0, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(0, location_rx, 2), gpioModeInput, 1}
@@ -368,9 +368,9 @@ static void leuart_gecko_config_func_0(const struct device *dev)
 }
 #endif
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
 
 #define PIN_LEUART_1_RXD {DT_INST_PROP_BY_IDX(1, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(1, location_rx, 2), gpioModeInput, 1}
@@ -421,4 +421,4 @@ static void leuart_gecko_config_func_1(const struct device *dev)
 }
 #endif
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */

@@ -114,6 +114,16 @@
 			compatible = "vnd,enum-required-false-holder-inst";
 		};
 
+		test_enum_string_array: enum-8 {
+			compatible = "vnd,enum-string-array-holder";
+			val = "foo", "zoo", "foo";
+		};
+
+		test_enum_int_array: enum-9 {
+			compatible = "vnd,enum-int-array-holder";
+			val = <4 3 4 0>;
+		};
+
 		/*
 		 * disabled/reserved should be the only nodes with their
 		 * compatible in the tree.
@@ -687,6 +697,20 @@
 			val = "XA XPLUS XB";
 		};
 
+		test_str_unquoted_esc_t: string-unquoted-escape-t {
+			compatible = "vnd,string-unquoted";
+			val = "XA\nXPLUS\nXB";
+		};
+
+		/*
+		 * Tests expect all vnd,string-unquoted instances to evaluate to doubles,
+		 * so use vnd,string instead.
+		 */
+		test_str_unquoted_esc_s: string-unquoted-escape-s {
+			compatible = "vnd,string";
+			val = "XSTR1 \" plus \" XSTR2";
+		};
+
 		test_stra_unquoted_f0: string-array-unquoted-f0 {
 			compatible = "vnd,string-array-unquoted";
 			val = "1.0e2", "2.0e2", "3.0e2", "4.0e2";
@@ -700,6 +724,43 @@
 		test_stra_unquoted_t: string-array-unquoted-t {
 			compatible = "vnd,string-array-unquoted";
 			val = "XA XPLUS XB", "XC XPLUS XD", "XA XMINUS XB", "XC XMINUS XD";
+		};
+
+		/*
+		 * Tests expect all vnd,string-array-unquoted instances to evaluate to doubles,
+		 * so use vnd,string-array instead.
+		 */
+		test_stra_unquoted_esc: string-array-unquoted-escape {
+			compatible = "vnd,string-array";
+			val = "XA\nXPLUS\nXB", "XSTR1 \" plus \" XSTR2";
+		};
+
+		test_str_escape_0: string-escape-0 {
+			compatible = "vnd,string";
+			val = "\a\b\f\n\r\t\v";
+		};
+
+		test_str_escape_1: string-escape-1 {
+			compatible = "vnd,string";
+			val = "\'single\' \"double\"";
+		};
+
+		test_str_escape_2: string-escape-2 {
+			compatible = "vnd,string";
+			val = "first\nsecond";
+		};
+
+		test_str_escape_3: string-escape-3 {
+			compatible = "vnd,string";
+			val = "\x01\x7F";
+		};
+
+		test_stra_escape: string-array-escape {
+			compatible = "vnd,string-array";
+			val = "\a\b\f\n\r\t\v",
+			      "\'single\' \"double\"",
+			      "first\nsecond",
+			      "\x01\x7F";
 		};
 
 		test-mtd@ffeeddcc {

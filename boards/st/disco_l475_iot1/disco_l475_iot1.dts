@@ -75,6 +75,7 @@
 		accel0 = &lsm6dsl;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		die-temp0 = &die_temp;
 	};
 };
 

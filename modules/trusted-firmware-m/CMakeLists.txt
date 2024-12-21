@@ -437,7 +437,7 @@ if (CONFIG_BUILD_WITH_TFM)
       ${pad_args}
       ${HEX_ADDR_ARGS_${SUFFIX}}
       ${ADD_${SUFFIX}_IMAGE_MIN_VER}
-      -s auto
+      -s ${CONFIG_TFM_IMAGE_SECURITY_COUNTER}
       --measured-boot-record
       -H ${CONFIG_ROM_START_OFFSET}
       ${INPUT_FILE}

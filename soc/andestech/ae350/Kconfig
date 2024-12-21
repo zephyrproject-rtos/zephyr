@@ -5,6 +5,7 @@ config SOC_SERIES_ANDES_AE350
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
+	imply XIP
 
 config SOC_ANDES_AE350
 	select ATOMIC_OPERATIONS_BUILTIN
@@ -90,6 +91,7 @@ config SOC_ANDES_V5_EXECIT
 config SOC_ANDES_V5_PMA
 	bool "Andes V5 Physical Memory Attribute (PMA)"
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select SOC_EARLY_INIT_HOOK
 	help
 		This option enables the Andes V5 PMA, in order to support SW to
 		configure physical memory attribute by PMA CSRs. The address

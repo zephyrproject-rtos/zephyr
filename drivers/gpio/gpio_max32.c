@@ -101,8 +101,8 @@ static int api_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flag
 	} else if (flags & GPIO_INPUT) {
 		gpio_cfg.func = MXC_GPIO_FUNC_IN;
 	} else {
-		/* this case will not occur this function call for gpio mode in/out */
-		gpio_cfg.func = MXC_GPIO_FUNC_ALT1; /* TODO: Think on it */
+		gpio_cfg.func = MXC_GPIO_FUNC_IN;
+		gpio_cfg.pad = MXC_GPIO_PAD_NONE;
 	}
 
 	if (flags & MAX32_GPIO_VSEL_VDDIOH) {

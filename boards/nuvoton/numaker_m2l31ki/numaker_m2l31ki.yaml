@@ -13,4 +13,5 @@ ram: 168
 flash: 512
 supported:
   - gpio
+  - usbd
 vendor: nuvoton

@@ -29,7 +29,7 @@ be selected by enabling the Kconfig's for the required callbacks (see
 :ref:`mcumgr_cb_events` for further details). A callback function with the
 :c:type:`mgmt_cb` type definition can then be declared and registered by
 calling :c:func:`mgmt_callback_register` for the desired event inside of a
-:c:struct`mgmt_callback` structure. Handlers are called in the order that they
+:c:struct:`mgmt_callback` structure. Handlers are called in the order that they
 were registered.
 
 With the system enabled, a basic handler can be set up and defined in

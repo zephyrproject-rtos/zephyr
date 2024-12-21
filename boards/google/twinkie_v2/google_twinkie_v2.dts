@@ -65,14 +65,14 @@
 	csa_vbus: vbusc {
 		compatible = "current-sense-amplifier";
 		io-channels = <&adc1 17>;
-		sense-resistor-micro-ohms = <3000>;
+		sense-resistor-milli-ohms = <3>;
 		sense-gain-mult = <100>;
 	};
 
 	csa_cc2: vconc {
 		compatible = "current-sense-amplifier";
 		io-channels = <&adc1 18>;
-		sense-resistor-micro-ohms = <10000>;
+		sense-resistor-milli-ohms = <10>;
 		sense-gain-mult = <25>;
 	};
 
@@ -123,7 +123,7 @@
 		zephyr,resolution = <12>;
 	};
 
-	channel@15 {
+	channel@f {
 		reg = <15>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
@@ -132,7 +132,7 @@
 		zephyr,resolution = <12>;
 	};
 
-	channel@17 {
+	channel@11 {
 		reg = <17>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
@@ -141,7 +141,7 @@
 		zephyr,resolution = <12>;
 	};
 
-	channel@18 {
+	channel@12 {
 		reg = <18>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";

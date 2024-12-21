@@ -54,7 +54,7 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	struct bt_bap_broadcast_source_subgroup_param *subgroup_param;
 	struct bt_bap_broadcast_source_stream_param *stream_params;
 	struct bt_audio_codec_cfg *codec_cfg;
-	struct bt_audio_codec_qos *codec_qos;
+	struct bt_bap_qos_cfg *qos_cfg;
 	struct bt_bap_stream *streams;
 	const uint16_t latency = 10U; /* ms*/
 	const uint32_t pd = 40000U;   /* us */
@@ -75,8 +75,8 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	zassert_not_null(stream_params);
 	codec_cfg = malloc(sizeof(struct bt_audio_codec_cfg));
 	zassert_not_null(codec_cfg);
-	codec_qos = malloc(sizeof(struct bt_audio_codec_qos));
-	zassert_not_null(codec_qos);
+	qos_cfg = malloc(sizeof(struct bt_bap_qos_cfg));
+	zassert_not_null(qos_cfg);
 	streams = malloc(sizeof(struct bt_bap_stream) * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
 	zassert_not_null(streams);
 	bis_data = malloc(CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
@@ -91,14 +91,14 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	       sizeof(struct bt_bap_broadcast_source_stream_param) *
 		       CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
 	memset(codec_cfg, 0, sizeof(struct bt_audio_codec_cfg));
-	memset(codec_qos, 0, sizeof(struct bt_audio_codec_qos));
+	memset(qos_cfg, 0, sizeof(struct bt_bap_qos_cfg));
 	memset(streams, 0, sizeof(struct bt_bap_stream) * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
 	memset(bis_data, 0, CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
 
 	/* Initialize default values*/
 	*codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_16KHZ,
 					       BT_AUDIO_CODEC_CFG_DURATION_10, loc, 40U, 1, ctx);
-	*codec_qos = BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, sdu, rtn, latency, pd);
+	*qos_cfg = BT_BAP_QOS_CFG_UNFRAMED(10000u, sdu, rtn, latency, pd);
 	memcpy(bis_data, bis_cfg_data, sizeof(bis_cfg_data));
 
 	for (size_t i = 0U; i < CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT; i++) {
@@ -116,7 +116,7 @@ static void bap_broadcast_source_test_suite_fixture_init(
 
 	fixture->param->params_count = CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT;
 	fixture->param->params = subgroup_param;
-	fixture->param->qos = codec_qos;
+	fixture->param->qos = qos_cfg;
 	fixture->param->encryption = false;
 	memset(fixture->param->broadcast_code, 0, sizeof(fixture->param->broadcast_code));
 	fixture->param->packing = BT_ISO_PACKING_SEQUENTIAL;
@@ -320,7 +320,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_subg
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_qos_null)
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
-	struct bt_audio_codec_qos *qos = create_param->qos;
+	struct bt_bap_qos_cfg *qos = create_param->qos;
 	int err;
 
 	create_param->qos = NULL;
@@ -759,7 +759,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_reconfigure_inval_qos_null)
 {
 	struct bt_bap_broadcast_source_param *param = fixture->param;
-	struct bt_audio_codec_qos *qos = param->qos;
+	struct bt_bap_qos_cfg *qos = param->qos;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
@@ -1162,79 +1162,6 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_delete_inval_doub
 	err = bt_bap_broadcast_source_delete(source);
 	zassert_not_equal(0, err, "Did not fail with deleting already deleting source");
 }
-
-ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id)
-{
-	struct bt_bap_broadcast_source_param *create_param = fixture->param;
-	uint32_t broadcast_id;
-	int err;
-
-	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
-	       create_param->params_count, fixture->stream_cnt);
-
-	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
-	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
-
-	err = bt_bap_broadcast_source_get_id(fixture->source, &broadcast_id);
-	zassert_equal(0, err, "Unable to get broadcast ID: err %d", err);
-
-	err = bt_bap_broadcast_source_delete(fixture->source);
-	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
-	fixture->source = NULL;
-}
-
-ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id_inval_source_null)
-{
-	uint32_t broadcast_id;
-	int err;
-
-	err = bt_bap_broadcast_source_get_id(NULL, &broadcast_id);
-	zassert_not_equal(0, err, "Did not fail with null source");
-}
-
-ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id_inval_id_null)
-{
-	struct bt_bap_broadcast_source_param *create_param = fixture->param;
-	int err;
-
-	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
-	       create_param->params_count, fixture->stream_cnt);
-
-	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
-	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
-
-	err = bt_bap_broadcast_source_get_id(fixture->source, NULL);
-	zassert_not_equal(0, err, "Did not fail with null ID");
-
-	err = bt_bap_broadcast_source_delete(fixture->source);
-	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
-	fixture->source = NULL;
-}
-
-ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id_inval_state)
-{
-	struct bt_bap_broadcast_source_param *create_param = fixture->param;
-	struct bt_bap_broadcast_source *source;
-	uint32_t broadcast_id;
-	int err;
-
-	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
-	       create_param->params_count, fixture->stream_cnt);
-
-	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
-	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
-
-	source = fixture->source;
-
-	err = bt_bap_broadcast_source_delete(fixture->source);
-	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
-	fixture->source = NULL;
-
-	err = bt_bap_broadcast_source_get_id(source, &broadcast_id);
-	zassert_not_equal(0, err, "Did not fail with deleted broadcast source");
-}
-
-
 
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_single_bis)
 {

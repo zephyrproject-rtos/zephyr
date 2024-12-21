@@ -1,5 +1,6 @@
 board:
   name: lpcxpresso11u68
+  full_name: LPCXpresso11U68
   vendor: nxp
   socs:
     - name: lpc11u68

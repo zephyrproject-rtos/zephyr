@@ -19,20 +19,20 @@ tests:
     integration_platforms:
       - qemu_x86
   sample.net.sockets.echo_client.802154:
-    extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-qemu_802154.conf"
     platform_allow: qemu_x86
   sample.net.sockets.echo_client.802154.rf2xx:
-    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow: samr21_xpro
   sample.net.sockets.echo_client.802154.rf2xx.xplained:
     extra_args:
       - SHIELD=atmel_rf2xx_xplained
-      - OVERLAY_CONFIG="overlay-802154.conf"
+      - EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow: sam4s_xplained
   sample.net.sockets.echo_client.802154.rf2xx.xpro:
     extra_args:
       - SHIELD=atmel_rf2xx_xpro
-      - OVERLAY_CONFIG="overlay-802154.conf"
+      - EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow:
       - sam4e_xpro
       - sam_v71_xult/samv71q21
@@ -41,7 +41,7 @@ tests:
   sample.net.sockets.echo_client.802154.rf2xx.legacy:
     extra_args:
       - SHIELD=atmel_rf2xx_legacy
-      - OVERLAY_CONFIG="overlay-802154.conf"
+      - EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow:
       - sam4e_xpro
       - sam_v71_xult/samv71q21
@@ -50,7 +50,7 @@ tests:
   sample.net.sockets.echo_client.802154.rf2xx.arduino:
     extra_args:
       - SHIELD=atmel_rf2xx_arduino
-      - OVERLAY_CONFIG="overlay-802154.conf"
+      - EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow:
       - sam_v71_xult/samv71q21
       - frdm_k64f
@@ -60,18 +60,18 @@ tests:
   sample.net.sockets.echo_client.802154.rf2xx.mikrobus:
     extra_args:
       - SHIELD=atmel_rf2xx_mikrobus
-      - OVERLAY_CONFIG="overlay-802154.conf"
+      - EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow: lpcxpresso55s69/lpc55s69/cpu0/ns
   sample.net.sockets.echo_client.mcr20a:
     extra_args:
       - SHIELD=frdm_cr20a
-      - OVERLAY_CONFIG=overlay-802154.conf
+      - EXTRA_CONF_FILE=overlay-802154.conf
     platform_allow: frdm_k64f
   sample.net.sockets.echo_client.nrf_802154:
-    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow: nrf52840dk/nrf52840
   sample.net.sockets.echo_client.nrf_openthread:
-    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
     slow: true
     tags:
       - net
@@ -79,10 +79,10 @@ tests:
     platform_allow: nrf52840dk/nrf52840
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   sample.net.sockets.echo_client.b91_802154:
-    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow: tlsr9518adk80d
   sample.net.sockets.echo_client.b91_openthread:
-    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
     slow: true
     tags:
       - net
@@ -90,7 +90,7 @@ tests:
     platform_allow: tlsr9518adk80d
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   sample.net.sockets.echo_client.kw41z_openthread:
-    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
     slow: true
     tags:
       - net
@@ -100,9 +100,12 @@ tests:
   sample.net.sockets.echo_client.userspace:
     extra_args:
       - CONFIG_USERSPACE=y
-      - OVERLAY_CONFIG="overlay-e1000.conf"
+      - EXTRA_CONF_FILE="overlay-e1000.conf"
     platform_allow:
       - qemu_x86
       - qemu_x86_64
     integration_platforms:
       - qemu_x86
+  sample.net.sockets.echo_client.802154.subg:
+    extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
+    platform_allow: beagleconnect_freedom

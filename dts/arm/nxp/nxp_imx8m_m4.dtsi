@@ -136,6 +136,36 @@
 			#clock-cells = <3>;
 		};
 
+		ecspi1: spi@30820000 {
+			compatible = "nxp,imx-ecspi";
+			reg = <0x30820000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <31 3>;
+			clocks = <&ccm IMX_CCM_ECSPI1_CLK 0 0>;
+			status = "disabled";
+		};
+
+		ecspi2: spi@30830000 {
+			compatible = "nxp,imx-ecspi";
+			reg = <0x30830000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <32 3>;
+			clocks = <&ccm IMX_CCM_ECSPI2_CLK 0 0>;
+			status = "disabled";
+		};
+
+		ecspi3: spi@30840000 {
+			compatible = "nxp,imx-ecspi";
+			reg = <0x30840000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <33 3>;
+			clocks = <&ccm IMX_CCM_ECSPI3_CLK 0 0>;
+			status = "disabled";
+		};
+
 		uart1: uart@30860000 {
 			compatible = "nxp,imx-iuart";
 			reg = <0x30860000 0x10000>;

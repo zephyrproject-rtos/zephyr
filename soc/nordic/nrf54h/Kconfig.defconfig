@@ -39,4 +39,7 @@ config SPI_DW_HSSI
 config SPI_DW_ACCESS_WORD_ONLY
 	default y if SPI_DW
 
+config PM_DEVICE_POWER_DOMAIN
+	default n if PM_DEVICE
+
 endif # SOC_SERIES_NRF54HX

@@ -1,7 +1,4 @@
-.. _mpfs_icicle:
-
-Microchip mpfs_icicle
-#####################
+.. zephyr:board:: mpfs_icicle
 
 Overview
 ********
@@ -45,7 +42,7 @@ To establish an OpenOCD connection run:
 .. code-block:: bash
 
    sudo LD_LIBRARY_PATH=<softconsole_path>/openocd/bin \
-   <softconsole_path>/openocd/bin/openocd  --file \
+   <softconsole_path>/openocd/bin/openocd --command "set DEVICE MPFS" --file \
    <softconsole_path>/openocd/share/openocd/scripts/board/microsemi-riscv.cfg
 
 

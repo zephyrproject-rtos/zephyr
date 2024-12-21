@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SHELL_UART_H__
-#define SHELL_UART_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_UART_H_
+#define ZEPHYR_INCLUDE_SHELL_UART_H_
 
 #include <zephyr/drivers/serial/uart_async_rx.h>
 #include <zephyr/mgmt/mcumgr/transport/smp_shell.h>
@@ -115,4 +115,4 @@ struct smp_shell_data *shell_uart_smp_shell_data_get_ptr(void);
 }
 #endif
 
-#endif /* SHELL_UART_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_UART_H_ */

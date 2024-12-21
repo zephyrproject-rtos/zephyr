@@ -5,8 +5,8 @@ common:
   harness_config:
     fixture: gpio_spi_loopback
   platform_allow: |
-    nrf52840dk/nrf52840 nrf54l15pdk/nrf54l15/cpuapp nrf54h20dk/nrf54h20/cpuapp
-    nrf54h20dk/nrf54h20/cpurad
+    nrf52840dk/nrf52840 nrf54l15dk/nrf54l15/cpuapp nrf54h20dk/nrf54h20/cpuapp
+    nrf54h20dk/nrf54h20/cpurad nrf54h20dk/nrf54h20/cpuppr
 
 tests:
   drivers.spi.spi_mode0:
@@ -55,5 +55,6 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_exclude:
       - nrf52840dk/nrf52840
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr

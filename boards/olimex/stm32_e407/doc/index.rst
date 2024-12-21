@@ -1,19 +1,10 @@
-.. _olimex_stm32_e407:
-
-OLIMEX-STM32-E407
-#################
+.. zephyr:board:: olimex_stm32_e407
 
 Overview
 ********
 
 The OLIMEX-STM32-E407 board is open source hardware and is based on
 the STMicroelectronics STM32F407ZG ARM Cortex-M4 CPU.
-
-.. figure:: img/olimex_stm32_e407.jpg
-     :align: center
-     :alt: OLIMEX-STM32-E407
-
-     OLIMEX-STM32-E407
 
 Hardware
 ********
@@ -336,7 +327,7 @@ Flashing an application to the Olimex-STM32-E407
 Connect the ST-Link USB dongle to your host computer and to the JTAG port of
 the OLIMEX-STM32-E407 board. Then build and flash an application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -360,7 +351,7 @@ Debugging
 =========
 
 Provided that you have a JTAG probe, you can debug an application in the usual
-way.  Here is an example for the :ref:`hello_world` application.
+way.  Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

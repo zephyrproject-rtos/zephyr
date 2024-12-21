@@ -2,24 +2,24 @@
  *  @brief Bluetooth Volume Control Profile (VCP) Volume Renderer role.
  *
  *  Copyright (c) 2020 Bose Corporation
- *  Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ *  Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *  Copyright (c) 2022 Codecoup
  *  Copyright 2023 NXP
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 
 static struct bt_vcp_included vcp_included;
 
-static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
+static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
 	if (err) {
 		printk("VCS state get failed (%d)\n", err);
@@ -28,7 +28,7 @@ static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
 	}
 }
 
-static void vcs_flags_cb(int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
 	if (err) {
 		printk("VCS flags get failed (%d)\n", err);

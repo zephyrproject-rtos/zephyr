@@ -3,9 +3,6 @@
 
 if SOC_FAMILY_LPC
 
-config SERIAL_INIT_PRIORITY
-	default 55 if SERIAL
-
 config BUILD_WITH_TFM
 	default y if TRUSTED_EXECUTION_NONSECURE
 

@@ -6,5 +6,9 @@ properties:
   "#io-channel-cells":
     const: 1
 
+  alert-rdy-gpios:
+    type: phandle-array
+    description: Interrupt pin. Comparator output or conversion ready
+
 io-channel-cells:
   - input

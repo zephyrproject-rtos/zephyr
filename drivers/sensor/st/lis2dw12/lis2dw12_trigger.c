@@ -67,20 +67,35 @@ static int lis2dw12_enable_int(const struct device *dev,
 		return lis2dw12_pin_int1_route_set(ctx,
 				&int_route.ctrl4_int1_pad_ctrl);
 #endif /* CONFIG_LIS2DW12_TAP */
-#ifdef CONFIG_LIS2DW12_THRESHOLD
+#ifdef CONFIG_LIS2DW12_WAKEUP
 	/**
 	 * Trigger fires when channel reading transitions configured
 	 * thresholds.  The thresholds are configured via the @ref
 	 * SENSOR_ATTR_LOWER_THRESH and @ref SENSOR_ATTR_UPPER_THRESH
 	 * attributes.
 	 */
-	case SENSOR_TRIG_THRESHOLD:
+	case SENSOR_TRIG_MOTION:
 		LOG_DBG("Setting int1_wu: %d\n", enable);
 		lis2dw12_pin_int1_route_get(ctx,
 				&int_route.ctrl4_int1_pad_ctrl);
 		int_route.ctrl4_int1_pad_ctrl.int1_wu = enable;
 		return lis2dw12_pin_int1_route_set(ctx,
 						   &int_route.ctrl4_int1_pad_ctrl);
+#endif
+#ifdef CONFIG_LIS2DW12_SLEEP
+	/**
+	 * Trigger fires when channel reading transitions configured
+	 * thresholds for a certain time. The thresholds are configured
+	 * via the @ref SENSOR_ATTR_LOWER_THRESH and @ref SENSOR_ATTR_UPPER_THRESH
+	 * attributes.
+	 */
+	case SENSOR_TRIG_STATIONARY:
+	LOG_DBG("Setting int2_sleep_chg: %d\n", enable);
+		lis2dw12_pin_int2_route_get(ctx,
+				&int_route.ctrl5_int2_pad_ctrl);
+		int_route.ctrl5_int2_pad_ctrl.int2_sleep_chg = enable;
+		return lis2dw12_pin_int2_route_set(ctx,
+						   &int_route.ctrl5_int2_pad_ctrl);
 #endif
 #ifdef CONFIG_LIS2DW12_FREEFALL
 	/**
@@ -154,13 +169,22 @@ int lis2dw12_trigger_set(const struct device *dev,
 		lis2dw12->double_tap_trig = trig;
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
 #endif /* CONFIG_LIS2DW12_TAP */
-#ifdef CONFIG_LIS2DW12_THRESHOLD
-	case SENSOR_TRIG_THRESHOLD:
+#ifdef CONFIG_LIS2DW12_WAKEUP
+	case SENSOR_TRIG_MOTION:
 	{
 		LOG_DBG("Set trigger %d (handler: %p)\n", trig->type, handler);
-		lis2dw12->threshold_handler = handler;
-		lis2dw12->threshold_trig = trig;
-		return lis2dw12_enable_int(dev, SENSOR_TRIG_THRESHOLD, state);
+		lis2dw12->motion_handler = handler;
+		lis2dw12->motion_trig = trig;
+		return lis2dw12_enable_int(dev, SENSOR_TRIG_MOTION, state);
+	}
+#endif
+#ifdef CONFIG_LIS2DW12_SLEEP
+	case SENSOR_TRIG_STATIONARY:
+	{
+		LOG_DBG("Set trigger %d (handler: %p)\n", trig->type, handler);
+		lis2dw12->stationary_handler = handler;
+		lis2dw12->stationary_trig = trig;
+		return lis2dw12_enable_int(dev, SENSOR_TRIG_STATIONARY, state);
 	}
 #endif
 #ifdef CONFIG_LIS2DW12_FREEFALL
@@ -214,14 +238,28 @@ static int lis2dw12_handle_double_tap_int(const struct device *dev)
 }
 #endif /* CONFIG_LIS2DW12_TAP */
 
-#ifdef CONFIG_LIS2DW12_THRESHOLD
+#ifdef CONFIG_LIS2DW12_WAKEUP
 static int lis2dw12_handle_wu_ia_int(const struct device *dev)
 {
 	struct lis2dw12_data *lis2dw12 = dev->data;
-	sensor_trigger_handler_t handler = lis2dw12->threshold_handler;
+	sensor_trigger_handler_t handler = lis2dw12->motion_handler;
 
 	if (handler) {
-		handler(dev, lis2dw12->threshold_trig);
+		handler(dev, lis2dw12->motion_trig);
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_LIS2DW12_SLEEP
+static int lis2dw12_handle_sleep_change_int(const struct device *dev)
+{
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	sensor_trigger_handler_t handler = lis2dw12->stationary_handler;
+
+	if (handler) {
+		handler(dev, lis2dw12->stationary_trig);
 	}
 
 	return 0;
@@ -265,9 +303,14 @@ static void lis2dw12_handle_interrupt(const struct device *dev)
 		lis2dw12_handle_double_tap_int(dev);
 	}
 #endif /* CONFIG_LIS2DW12_TAP */
-#ifdef CONFIG_LIS2DW12_THRESHOLD
+#ifdef CONFIG_LIS2DW12_WAKEUP
 	if (sources.all_int_src.wu_ia) {
 		lis2dw12_handle_wu_ia_int(dev);
+	}
+#endif
+#ifdef CONFIG_LIS2DW12_SLEEP
+	if (sources.all_int_src.sleep_change_ia) {
+		lis2dw12_handle_sleep_change_int(dev);
 	}
 #endif
 #ifdef CONFIG_LIS2DW12_FREEFALL

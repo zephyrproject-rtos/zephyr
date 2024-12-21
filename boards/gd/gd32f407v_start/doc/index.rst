@@ -1,7 +1,4 @@
-.. _gd32f407v_start:
-
-GigaDevice GD32F407V-START
-##########################
+.. zephyr:board:: gd32f407v_start
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32F407VE Cortex-M4 High Performance MCU.
 The GD32F407VE features a single-core ARM Cortex-M4 MCU which can run up
 to 168 MHz with flash accesses zero wait states, 3072kiB of Flash, 192kiB of
 SRAM and 82 GPIOs.
-
-.. image:: img/gd32f407v_start.webp
-     :align: center
-     :alt: gd32f407v_start
 
 Hardware
 ********
@@ -96,7 +89,7 @@ if not installed yet.
 Also, J-Link can be used to program the board via the SWD interface
 (PA13/SWDIO and PA14/SWCLK in the JP6 header).
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

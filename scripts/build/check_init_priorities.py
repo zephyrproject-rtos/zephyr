@@ -41,10 +41,6 @@ _DEVICE_ORD_PREFIX = "__device_dts_ord_"
 _DEVICE_INIT_LEVELS = ["EARLY", "PRE_KERNEL_1", "PRE_KERNEL_2", "POST_KERNEL",
                       "APPLICATION", "SMP"]
 
-# List of compatibles for node where the initialization priority should be the
-# opposite of the device tree inferred dependency.
-_INVERTED_PRIORITY_COMPATIBLES = frozenset()
-
 # List of compatibles for nodes where we don't check the priority.
 _IGNORE_COMPATIBLES = frozenset([
         # There is no direct dependency between the CDC ACM UART and the USB
@@ -259,13 +255,6 @@ class Validator():
             if dev_compat in _IGNORE_COMPATIBLES:
                 self.log.info(f"Ignoring priority: {dev_node._binding.compatible}")
                 return
-
-        if dev_node._binding and dep_node._binding:
-            dev_compat = dev_node._binding.compatible
-            dep_compat = dep_node._binding.compatible
-            if (dev_compat, dep_compat) in _INVERTED_PRIORITY_COMPATIBLES:
-                self.log.info(f"Swapped priority: {dev_compat}, {dep_compat}")
-                dev_ord, dep_ord = dep_ord, dev_ord
 
         dev_prio, dev_init = self._obj.devices.get(dev_ord, (None, None))
         dep_prio, dep_init = self._obj.devices.get(dep_ord, (None, None))

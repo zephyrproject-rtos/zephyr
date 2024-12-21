@@ -16,6 +16,5 @@ supported:
   - i2c
   - spi
   - uart
-  - usb
   - usb_device
 vendor: atmel

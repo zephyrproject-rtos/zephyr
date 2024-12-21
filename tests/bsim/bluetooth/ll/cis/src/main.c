@@ -75,18 +75,12 @@ static bt_addr_le_t peer_addr;
 	BT_LE_CONN_PARAM(CONN_INTERVAL_MIN, CONN_INTERVAL_MAX, 0U, CONN_TIMEOUT)
 
 #if defined(CONFIG_TEST_USE_LEGACY_ADVERTISING)
-#define BT_LE_ADV_CONN_CUSTOM BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
-					      BT_LE_ADV_OPT_ONE_TIME, \
-					      ADV_INTERVAL_MIN, \
-					      ADV_INTERVAL_MAX, \
-					      NULL)
+#define BT_LE_ADV_CONN_CUSTOM                                                                      \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN, ADV_INTERVAL_MIN, ADV_INTERVAL_MAX, NULL)
 #else /* !CONFIG_TEST_USE_LEGACY_ADVERTISING */
-#define BT_LE_ADV_CONN_CUSTOM BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
-					      BT_LE_ADV_OPT_EXT_ADV | \
-					      BT_LE_ADV_OPT_ONE_TIME, \
-					      ADV_INTERVAL_MIN, \
-					      ADV_INTERVAL_MAX, \
-					      NULL)
+#define BT_LE_ADV_CONN_CUSTOM                                                                      \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_EXT_ADV, ADV_INTERVAL_MIN,              \
+			ADV_INTERVAL_MAX, NULL)
 #endif /* !CONFIG_TEST_USE_LEGACY_ADVERTISING */
 
 #define SEQ_NUM_MAX 1000U

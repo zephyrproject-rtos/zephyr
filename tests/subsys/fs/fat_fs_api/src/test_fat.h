@@ -16,9 +16,9 @@
 #elif defined(CONFIG_DISK_DRIVER_FLASH)
 #define DISK_NAME DT_PROP(DT_NODELABEL(test_disk), disk_name)
 #elif defined(CONFIG_DISK_DRIVER_SDMMC)
-#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
+#define DISK_NAME "SD"
 #elif defined(CONFIG_DISK_DRIVER_MMC)
-#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#define DISK_NAME "SD2"
 #else
 #error "Failed to select DISK access type"
 #endif
@@ -39,6 +39,7 @@ extern const char test_str[];
 extern FATFS fat_fs;
 
 int check_file_dir_exists(const char *path);
+int wipe_partition(void);
 
 void test_fat_mount(void);
 void test_fat_unmount(void);

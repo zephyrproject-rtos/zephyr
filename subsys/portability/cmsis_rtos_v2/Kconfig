@@ -18,7 +18,7 @@ if CMSIS_RTOS_V2
 config CMSIS_V2_THREAD_MAX_COUNT
 	int "Maximum thread count in CMSIS RTOS V2 application"
 	default 15
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention max number of threads in CMSIS RTOS V2 compliant application.
 	  There's a limitation on the number of threads due to memory
@@ -27,7 +27,7 @@ config CMSIS_V2_THREAD_MAX_COUNT
 config CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
 	int "Maximum dynamic thread count in CMSIS RTOS V2 application"
 	default 0
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention max number of dynamic threads in CMSIS RTOS V2 compliant
 	  application. There's a limitation on the number of threads due to memory
@@ -51,28 +51,28 @@ config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 config CMSIS_V2_TIMER_MAX_COUNT
 	int "Maximum timer count in CMSIS RTOS V2 application"
 	default 5
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention maximum number of timers in CMSIS RTOS V2 compliant application.
 
 config CMSIS_V2_MUTEX_MAX_COUNT
 	int "Maximum mutex count in CMSIS RTOS V2 application"
 	default 5
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention max number of mutexes in CMSIS RTOS V2 compliant application.
 
 config CMSIS_V2_SEMAPHORE_MAX_COUNT
 	int "Maximum semaphore count in CMSIS RTOS V2 application"
 	default 5
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention max number of semaphores in CMSIS RTOS V2 compliant application.
 
 config CMSIS_V2_MEM_SLAB_MAX_COUNT
 	int "Maximum mem slab count in CMSIS RTOS V2 application"
 	default 5
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention maximum number of memory slabs in CMSIS RTOS V2 compliant application.
 
@@ -85,7 +85,7 @@ config CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE
 config CMSIS_V2_MSGQ_MAX_COUNT
 	int "Maximum message queue count in CMSIS RTOS V2 application"
 	default 5
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention maximum number of message queues in CMSIS RTOS V2 compliant application.
 
@@ -98,7 +98,7 @@ config CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE
 config CMSIS_V2_EVT_FLAGS_MAX_COUNT
 	int "Maximum event flags count in CMSIS RTOS V2 application"
 	default 5
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention maximum number of event flags in CMSIS RTOS V2 compliant application.
 endif

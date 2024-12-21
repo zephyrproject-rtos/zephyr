@@ -107,6 +107,7 @@
 
 &adc {
     ch-cell = <1>;
+    ch-store = <2>;
     ch-batt = <11>;
 };
 

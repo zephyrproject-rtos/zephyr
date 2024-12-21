@@ -1,7 +1,4 @@
-.. _efm32gg_stk3701a:
-
-EFM32 Giant Gecko 11 (SLSTK3701A)
-#################################
+.. zephyr:board:: slstk3701a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFM32 Giant Gecko Starter Kit SLSTK3701A contains an MCU from the
 EFM32GG Series 1 family built on an ARM® Cortex®-M4F processor with excellent
 low power capabilities.
-
-.. figure:: slstk3701a.jpg
-   :align: center
-   :alt: EFM32GG11 SLSTK3701A
-
-   EFM32GG11 SLSTK3701A (image courtesy of Silicon Labs)
 
 Hardware
 ********
@@ -148,7 +139,7 @@ board. The adaptor provides:
 Flashing an application to SLSTK3701A
 -------------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::

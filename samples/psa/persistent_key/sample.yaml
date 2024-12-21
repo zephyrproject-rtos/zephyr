@@ -1,0 +1,31 @@
+sample:
+  name: PSA Crypto persistent key sample
+  description: Demonstration of persistent key usage in the PSA Crypto API.
+common:
+  tags:
+    - psa.secure_storage
+  timeout: 10
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Sample finished successfully."
+tests:
+  sample.psa.persistent_key.tfm:
+    filter: CONFIG_BUILD_WITH_TFM
+    tags:
+      - trusted-firmware-m
+  sample.psa.persistent_key.secure_storage.entropy_driver:
+    filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
+            and CONFIG_ENTROPY_HAS_DRIVER
+    extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-entropy_driver.conf
+    tags:
+      - drivers.entropy
+      - settings
+  sample.psa.persistent_key.secure_storage.entropy_not_secure:
+    filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
+            and not CONFIG_ENTROPY_HAS_DRIVER
+    extra_args: EXTRA_CONF_FILE="overlay-secure_storage.conf;overlay-entropy_not_secure.conf"
+    tags:
+      - random
+      - settings

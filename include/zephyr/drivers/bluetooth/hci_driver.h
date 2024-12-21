@@ -21,7 +21,7 @@
  */
 
 #include <stdbool.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/device.h>

@@ -373,7 +373,7 @@ static void kb1200_uart_irq_init(void)
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.irq_cfg_func = kb1200_uart_irq_init,))  \
 		.ser = (struct serial_regs *)DT_INST_REG_ADDR(n),                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                        \
-	DEVICE_DT_INST_DEFINE(n, &kb1200_uart_init, NULL, &kb1200_uart_data_##n,                   \
+	DEVICE_DT_INST_DEFINE(n, kb1200_uart_init, NULL, &kb1200_uart_data_##n,                    \
 			      &kb1200_uart_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
 			      &kb1200_uart_api);
 

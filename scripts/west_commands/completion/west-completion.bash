@@ -1064,6 +1064,7 @@ __comp_west_twister()
 		--coverage-tool
 		--exclude-platform -P
 		--filter
+                --log-level
 		--platform -p
 		--runtime-artifact-cleanup -M
 	"
@@ -1114,6 +1115,11 @@ __comp_west_twister()
 			return
 		        ;;
 
+		--log-level)
+		        __set_comp "CRITICAL DEBUG ERROR INFO NOTSET WARNING"
+			return
+		        ;;
+
 		--runtime-artifact-cleanup|-M)
 		        __set_comp "all pass"
 			return
@@ -1129,6 +1135,53 @@ __comp_west_twister()
 			return
 			;;
 
+		# We don't know how to autocomplete those
+		$(__west_to_extglob "$other_opts") )
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			__set_comp $all_opts
+			;;
+	esac
+}
+
+__comp_west_sdk()
+{
+	local bool_opts="
+		--interactive -i
+		--no-toolchains -T
+		--no-hosttools -H
+	"
+
+	local dir_opts="
+		--install-dir -d
+		--install-base -b
+	"
+
+	local other_opts="
+		--version
+		--toolchains -t
+		--personal-access-token
+		--api-url
+	"
+
+	all_opts="$bool_opts $dir_opts $other_opts"
+
+	case "$prev" in
+		sdk)
+			__set_comp "list install"
+			return
+			;;
+		list)
+			return
+			;;
+		$(__west_to_extglob "$dir_opts") )
+			__set_comp_dirs
+			return
+			;;
 		# We don't know how to autocomplete those
 		$(__west_to_extglob "$other_opts") )
 			return
@@ -1176,6 +1229,7 @@ __comp_west()
 		spdx
 		blobs
 		twister
+		sdk
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})

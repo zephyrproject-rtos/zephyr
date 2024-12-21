@@ -577,7 +577,6 @@ static int open(const struct device *instance)
 
 	data->vr.notify_cb = virtio_notify_cb;
 	data->vr.priv = (void *) conf;
-	data->vr.shm_device.name = instance->name;
 
 	err = ipc_static_vrings_init(&data->vr, conf->role);
 	if (err != 0) {
@@ -595,9 +594,9 @@ static int open(const struct device *instance)
 	rpmsg_inst->cb = ept_cb;
 
 	err = ipc_rpmsg_init(rpmsg_inst, data->role, conf->buffer_size,
-			     data->vr.shm_io, &data->vr.vdev,
-			     (void *) data->vr.shm_device.regions->virt,
-			     data->vr.shm_device.regions->size, ns_bind_cb);
+			     &data->vr.shm_io, &data->vr.vdev,
+			     (void *)data->vr.shm_addr,
+			     data->vr.shm_size, ns_bind_cb);
 	if (err != 0) {
 		goto error;
 	}

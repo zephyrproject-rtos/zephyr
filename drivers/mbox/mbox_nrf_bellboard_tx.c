@@ -23,7 +23,7 @@ static int bellboard_tx_send(const struct device *dev, uint32_t id, const struct
 	}
 
 	if (msg != NULL) {
-		return -ENOTSUP;
+		return -EMSGSIZE;
 	}
 
 	nrfy_bellboard_task_trigger(config->bellboard, nrf_bellboard_trigger_task_get(id));

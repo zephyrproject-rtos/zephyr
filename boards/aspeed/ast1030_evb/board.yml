@@ -1,5 +1,6 @@
 board:
   name: ast1030_evb
+  full_name: AST1030_EVB
   vendor: aspeed
   socs:
   - name: ast1030

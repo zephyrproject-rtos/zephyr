@@ -129,6 +129,8 @@ static inline uint32_t jesd216_sfdp_magic(const struct jesd216_sfdp_header *hp)
  * the standard.  Rather than pre-define layouts to access to all
  * potential fields this header provides functions for specific fields
  * known to be important, such as density and erase command support.
+ *
+ * Must be aligned to a DWORD (32-bit) address according to JESD216F.
  */
 struct jesd216_bfp {
 	uint32_t dw1;
@@ -141,7 +143,7 @@ struct jesd216_bfp {
 	uint32_t dw8;
 	uint32_t dw9;
 	uint32_t dw10[];
-} __packed;
+} __aligned(4);
 
 /* Provide a few word-specific flags and bitfield ranges for values
  * that an application or driver might expect to want to extract.

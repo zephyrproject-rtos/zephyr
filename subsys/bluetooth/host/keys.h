@@ -6,6 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_SUBSYS_BLUETOOTH_HOST_KEYS_H_
+#define ZEPHYR_SUBSYS_BLUETOOTH_HOST_KEYS_H_
+
+#include <zephyr/bluetooth/bluetooth.h>
+
 /** @cond INTERNAL_HIDDEN */
 
 enum bt_keys_type {
@@ -233,3 +238,5 @@ void bt_keys_link_key_update_usage(const bt_addr_t *addr);
 void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data);
 
 /** @endcond */
+
+#endif /* ZEPHYR_SUBSYS_BLUETOOTH_HOST_KEYS_H_ */

@@ -37,6 +37,7 @@ struct i2c_gecko_config {
 
 struct i2c_gecko_data {
 	struct k_sem device_sync_sem;
+	struct k_sem bus_lock;
 	uint32_t dev_config;
 #if defined(CONFIG_I2C_TARGET)
 	struct i2c_target_config *target_cfg;
@@ -68,6 +69,8 @@ static int i2c_gecko_configure(const struct device *dev, uint32_t dev_config_raw
 		return -EINVAL;
 	}
 
+	k_sem_take(&data->bus_lock, K_FOREVER);
+
 	data->dev_config = dev_config_raw;
 	i2cInit.freq = baudrate;
 
@@ -76,6 +79,8 @@ static int i2c_gecko_configure(const struct device *dev, uint32_t dev_config_raw
 #endif
 
 	I2C_Init(base, &i2cInit);
+
+	k_sem_give(&data->bus_lock);
 
 	return 0;
 }
@@ -92,6 +97,8 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	if (!num_msgs) {
 		return 0;
 	}
+
+	k_sem_take(&data->bus_lock, K_FOREVER);
 
 	seq.addr = addr << 1;
 
@@ -137,6 +144,8 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	} while (num_msgs);
 
 finish:
+	k_sem_give(&data->bus_lock);
+
 	if (ret != i2cTransferDone) {
 		ret = -EIO;
 	}
@@ -145,9 +154,15 @@ finish:
 
 static int i2c_gecko_init(const struct device *dev)
 {
+	struct i2c_gecko_data *data = dev->data;
 	const struct i2c_gecko_config *config = dev->config;
 	uint32_t bitrate_cfg;
 	int error;
+
+	/* Initialize mutex to guarantee that each transaction
+	 * is atomic and has exclusive access to the I2C bus
+	 */
+	k_sem_init(&data->bus_lock, 1, 1);
 
 	CMU_ClockEnable(config->clock, true);
 
@@ -207,6 +222,9 @@ static const struct i2c_driver_api i2c_gecko_driver_api = {
 #if defined(CONFIG_I2C_TARGET)
 	.target_register = i2c_gecko_target_register,
 	.target_unregister = i2c_gecko_target_unregister,
+#endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
 

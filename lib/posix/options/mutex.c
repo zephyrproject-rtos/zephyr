@@ -12,10 +12,11 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/sem.h>
 
 LOG_MODULE_REGISTER(pthread_mutex, CONFIG_PTHREAD_MUTEX_LOG_LEVEL);
 
-static struct k_spinlock pthread_mutex_spinlock;
+static SYS_SEM_DEFINE(lock, 1, 1);
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
@@ -106,35 +107,42 @@ struct k_mutex *to_posix_mutex(pthread_mutex_t *mu)
 
 static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 {
-	int type;
-	size_t bit;
-	int ret = 0;
-	struct k_mutex *m;
-	k_spinlock_key_t key;
+	int type = -1;
+	size_t bit = -1;
+	int ret = EINVAL;
+	size_t lock_count = -1;
+	struct k_mutex *m = NULL;
+	struct k_thread *owner = NULL;
 
-	key = k_spin_lock(&pthread_mutex_spinlock);
+	SYS_SEM_LOCK(&lock) {
+		m = to_posix_mutex(mu);
+		if (m == NULL) {
+			ret = EINVAL;
+			SYS_SEM_LOCK_BREAK;
+		}
 
-	m = to_posix_mutex(mu);
-	if (m == NULL) {
-		k_spin_unlock(&pthread_mutex_spinlock, key);
-		return EINVAL;
+		LOG_DBG("Locking mutex %p with timeout %llx", m, timeout.ticks);
+
+		ret = 0;
+		bit = posix_mutex_to_offset(m);
+		type = posix_mutex_type[bit];
+		owner = m->owner;
+		lock_count = m->lock_count;
 	}
 
-	LOG_DBG("Locking mutex %p with timeout %llx", m, timeout.ticks);
+	if (ret != 0) {
+		goto handle_error;
+	}
 
-	bit = posix_mutex_to_offset(m);
-	type = posix_mutex_type[bit];
-
-	if (m->owner == k_current_get()) {
+	if (owner == k_current_get()) {
 		switch (type) {
 		case PTHREAD_MUTEX_NORMAL:
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-				k_spin_unlock(&pthread_mutex_spinlock, key);
 				LOG_DBG("Timeout locking mutex %p", m);
-				return EBUSY;
+				ret = EBUSY;
+				break;
 			}
 			/* On most POSIX systems, this usually results in an infinite loop */
-			k_spin_unlock(&pthread_mutex_spinlock, key);
 			LOG_DBG("Attempt to relock non-recursive mutex %p", m);
 			do {
 				(void)k_sleep(K_FOREVER);
@@ -142,7 +150,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 			CODE_UNREACHABLE;
 			break;
 		case PTHREAD_MUTEX_RECURSIVE:
-			if (m->lock_count >= MUTEX_MAX_REC_LOCK) {
+			if (lock_count >= MUTEX_MAX_REC_LOCK) {
 				LOG_DBG("Mutex %p locked recursively too many times", m);
 				ret = EAGAIN;
 			}
@@ -157,7 +165,6 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 			break;
 		}
 	}
-	k_spin_unlock(&pthread_mutex_spinlock, key);
 
 	if (ret == 0) {
 		ret = k_mutex_lock(m, timeout);
@@ -171,6 +178,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 		}
 	}
 
+handle_error:
 	if (ret < 0) {
 		LOG_DBG("k_mutex_unlock() failed: %d", ret);
 		ret = -ret;
@@ -307,8 +315,35 @@ int pthread_mutex_destroy(pthread_mutex_t *mu)
 int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
 				  int *protocol)
 {
+	if ((attr == NULL) || (protocol == NULL)) {
+		return EINVAL;
+	}
+
 	*protocol = PTHREAD_PRIO_NONE;
 	return 0;
+}
+
+/**
+ * @brief Set protocol attribute for mutex.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol)
+{
+	if (attr == NULL) {
+		return EINVAL;
+	}
+
+	switch (protocol) {
+	case PTHREAD_PRIO_NONE:
+		return 0;
+	case PTHREAD_PRIO_INHERIT:
+		return ENOTSUP;
+	case PTHREAD_PRIO_PROTECT:
+		return ENOTSUP;
+	default:
+		return EINVAL;
+	}
 }
 
 int pthread_mutexattr_init(pthread_mutexattr_t *attr)
@@ -379,6 +414,42 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 		return EINVAL;
 	}
 }
+
+#ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
+int pthread_mutex_getprioceiling(const pthread_mutex_t *mutex, int *prioceiling)
+{
+	ARG_UNUSED(mutex);
+	ARG_UNUSED(prioceiling);
+
+	return ENOSYS;
+}
+
+int pthread_mutex_setprioceiling(pthread_mutex_t *mutex, int prioceiling, int *old_ceiling)
+{
+	ARG_UNUSED(mutex);
+	ARG_UNUSED(prioceiling);
+	ARG_UNUSED(old_ceiling);
+
+	return ENOSYS;
+}
+
+int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr, int *prioceiling)
+{
+	ARG_UNUSED(attr);
+	ARG_UNUSED(prioceiling);
+
+	return ENOSYS;
+}
+
+int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr, int prioceiling)
+{
+	ARG_UNUSED(attr);
+	ARG_UNUSED(prioceiling);
+
+	return ENOSYS;
+}
+
+#endif /* CONFIG_POSIX_THREAD_PRIO_PROTECT */
 
 static int pthread_mutex_pool_init(void)
 {

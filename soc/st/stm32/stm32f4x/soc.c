@@ -16,15 +16,14 @@
 #include <cmsis_core.h>
 #include <stm32_ll_system.h>
 
+extern void stm32_power_init(void);
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int st_stm32f4_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable ART Flash I/D-cache and prefetch */
 	LL_FLASH_EnablePrefetch();
@@ -34,8 +33,7 @@ static int st_stm32f4_init(void)
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 16 MHz from HSI */
 	SystemCoreClock = 16000000;
-
-	return 0;
+#if CONFIG_PM
+	stm32_power_init();
+#endif
 }
-
-SYS_INIT(st_stm32f4_init, PRE_KERNEL_1, 0);

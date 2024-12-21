@@ -32,7 +32,7 @@ instantiated anywhere in the code base.
     DEFINE_DATA(d2, 3, 4);
     DEFINE_DATA(d3, 5, 6);
 
-Then the linker has to be setup to place the place the structure in a
+Then the linker has to be setup to place the structure in a
 contiguous segment using one of the linker macros such as
 :c:macro:`ITERABLE_SECTION_RAM` or :c:macro:`ITERABLE_SECTION_ROM`. Custom
 linker snippets are normally declared using one of the

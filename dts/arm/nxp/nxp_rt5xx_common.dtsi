@@ -569,13 +569,11 @@
 		min-bus-freq = <400000>;
 	};
 
-	lpadc0: lpadc@13a000 {
+	lpadc0: adc@13a000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x13a000 0x304>;
 		interrupts = <22 0>;
 		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
 		voltage-ref= <1>;
 		calibration-average = <128>;
 		power-level = <0>;
@@ -587,7 +585,7 @@
 
 	smartdma: dma@27020 {
 		compatible = "nxp,smartdma";
-		reg = <0x27020 0x1000>;
+		reg = <0x27000 0x1000>;
 		program-mem = <0x24100000>;
 		interrupts = <73 0>;
 		status = "disabled";

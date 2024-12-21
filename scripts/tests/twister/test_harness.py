@@ -13,18 +13,24 @@ import pytest
 import re
 import logging as logger
 
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
+# ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
+from conftest import ZEPHYR_BASE
+
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from twisterlib.harness import Gtest, Bsim
-from twisterlib.harness import Harness
-from twisterlib.harness import Robot
-from twisterlib.harness import Test
+from twisterlib.harness import (
+    Bsim,
+    Console,
+    Gtest,
+    Harness,
+    HarnessImporter,
+    Pytest,
+    PytestHarnessException,
+    Robot,
+    Test,
+)
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
-from twisterlib.harness import Console
-from twisterlib.harness import Pytest
-from twisterlib.harness import PytestHarnessException
-from twisterlib.harness import HarnessImporter
 
 GTEST_START_STATE = " RUN      "
 GTEST_PASS_STATE = "       OK "
@@ -33,9 +39,18 @@ GTEST_FAIL_STATE = "  FAILED  "
 SAMPLE_GTEST_START = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Running all tests.[0m"
 )
-SAMPLE_GTEST_FMT = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test} (0ms)[0m"
+SAMPLE_GTEST_FMT = (
+    "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test} (0ms)[0m"
+)
+SAMPLE_GTEST_FMT_FAIL_WITH_PARAM = (
+    "[00:00:00.000,000] [0m<inf> label:  "
+    + "[{state}] {suite}.{test}, where GetParam() = 8-byte object <0B-00 00-00 00-9A 80-F7> (0 ms total)[0m"
+)
 SAMPLE_GTEST_END = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Done running all tests.[0m"
+)
+SAMPLE_GTEST_END_VARIANT = (
+    "[00:00:00.000,000] [0m<inf> label:  [----------] Global test environment tear-down[0m"
 )
 
 
@@ -45,39 +60,86 @@ def process_logs(harness, logs):
 
 
 TEST_DATA_RECORDING = [
-                ([''], "^START:(?P<foo>.*):END", [], None),
-                (['START:bar:STOP'], "^START:(?P<foo>.*):END", [], None),
-                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}], None),
-                (['START:bar:baz:END'], "^START:(?P<foo>.*):(?P<boo>.*):END", [{'foo':'bar', 'boo':'baz'}], None),
-                (['START:bar:baz:END','START:may:jun:END'], "^START:(?P<foo>.*):(?P<boo>.*):END",
-                 [{'foo':'bar', 'boo':'baz'}, {'foo':'may', 'boo':'jun'}], None),
-                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}], []),
-                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}], ['boo']),
-                (['START:bad_json:END'], "^START:(?P<foo>.*):END",
-                 [{'foo':{'ERROR':{'msg':'Expecting value: line 1 column 1 (char 0)', 'doc':'bad_json'}}}], ['foo']),
-                (['START::END'], "^START:(?P<foo>.*):END", [{'foo':{}}], ['foo']),
-                (['START: {"one":1, "two":2} :END'], "^START:(?P<foo>.*):END", [{'foo':{'one':1, 'two':2}}], ['foo']),
-                (['START: {"one":1, "two":2} :STOP:oops:END'], "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
-                   [{'foo':{'one':1, 'two':2},'boo':'oops'}], ['foo']),
-                (['START: {"one":1, "two":2} :STOP:{"oops":0}:END'], "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
-                   [{'foo':{'one':1, 'two':2},'boo':{'oops':0}}], ['foo','boo']),
-                      ]
+    ([""], "^START:(?P<foo>.*):END", [], None),
+    (["START:bar:STOP"], "^START:(?P<foo>.*):END", [], None),
+    (["START:bar:END"], "^START:(?P<foo>.*):END", [{"foo": "bar"}], None),
+    (
+        ["START:bar:baz:END"],
+        "^START:(?P<foo>.*):(?P<boo>.*):END",
+        [{"foo": "bar", "boo": "baz"}],
+        None,
+    ),
+    (
+        ["START:bar:baz:END", "START:may:jun:END"],
+        "^START:(?P<foo>.*):(?P<boo>.*):END",
+        [{"foo": "bar", "boo": "baz"}, {"foo": "may", "boo": "jun"}],
+        None,
+    ),
+    (["START:bar:END"], "^START:(?P<foo>.*):END", [{"foo": "bar"}], []),
+    (["START:bar:END"], "^START:(?P<foo>.*):END", [{"foo": "bar"}], ["boo"]),
+    (
+        ["START:bad_json:END"],
+        "^START:(?P<foo>.*):END",
+        [
+            {
+                "foo": {
+                    "ERROR": {
+                        "msg": "Expecting value: line 1 column 1 (char 0)",
+                        "doc": "bad_json",
+                    }
+                }
+            }
+        ],
+        ["foo"],
+    ),
+    (["START::END"], "^START:(?P<foo>.*):END", [{"foo": {}}], ["foo"]),
+    (
+        ['START: {"one":1, "two":2} :END'],
+        "^START:(?P<foo>.*):END",
+        [{"foo": {"one": 1, "two": 2}}],
+        ["foo"],
+    ),
+    (
+        ['START: {"one":1, "two":2} :STOP:oops:END'],
+        "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
+        [{"foo": {"one": 1, "two": 2}, "boo": "oops"}],
+        ["foo"],
+    ),
+    (
+        ['START: {"one":1, "two":2} :STOP:{"oops":0}:END'],
+        "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
+        [{"foo": {"one": 1, "two": 2}, "boo": {"oops": 0}}],
+        ["foo", "boo"],
+    ),
+]
+
+
 @pytest.mark.parametrize(
     "lines, pattern, expected_records, as_json",
     TEST_DATA_RECORDING,
-    ids=["empty", "no match", "match 1 field", "match 2 fields", "match 2 records",
-         "as_json empty", "as_json no such field", "error parsing json", "empty json value", "simple json",
-         "plain field and json field", "two json fields"
-        ]
+    ids=[
+        "empty",
+        "no match",
+        "match 1 field",
+        "match 2 fields",
+        "match 2 records",
+        "as_json empty",
+        "as_json no such field",
+        "error parsing json",
+        "empty json value",
+        "simple json",
+        "plain field and json field",
+        "two json fields",
+    ],
 )
 def test_harness_parse_record(lines, pattern, expected_records, as_json):
     harness = Harness()
-    harness.record = { 'regex': pattern }
+    harness.record = {"regex": pattern}
     harness.record_pattern = re.compile(pattern)
 
     harness.record_as_json = as_json
     if as_json is not None:
-        harness.record['as_json'] = as_json
+        harness.record["as_json"] = as_json
 
     assert not harness.recording
 
@@ -87,101 +149,120 @@ def test_harness_parse_record(lines, pattern, expected_records, as_json):
     assert harness.recording == expected_records
 
 
-TEST_DATA_1 = [('RunID: 12345', False, False, False, None, True),
-                ('PROJECT EXECUTION SUCCESSFUL', False, False, False, 'passed', False),
-                ('PROJECT EXECUTION SUCCESSFUL', True, False, False, 'failed', False),
-                ('PROJECT EXECUTION FAILED', False, False, False, 'failed', False),
-                ('ZEPHYR FATAL ERROR', False, True, False, None, False),
-                ('GCOV_COVERAGE_DUMP_START', None, None, True, None, False),
-                ('GCOV_COVERAGE_DUMP_END', None, None, False, None, False),]
+TEST_DATA_1 = [
+    ("RunID: 12345", False, False, False, TwisterStatus.NONE, True),
+    ("PROJECT EXECUTION SUCCESSFUL", False, False, False, TwisterStatus.PASS, False),
+    ("PROJECT EXECUTION SUCCESSFUL", True, False, False, TwisterStatus.FAIL, False),
+    ("PROJECT EXECUTION FAILED", False, False, False, TwisterStatus.FAIL, False),
+    ("ZEPHYR FATAL ERROR", False, True, False, TwisterStatus.NONE, False),
+    ("GCOV_COVERAGE_DUMP_START", None, None, True, TwisterStatus.NONE, False),
+    ("GCOV_COVERAGE_DUMP_END", None, None, False, TwisterStatus.NONE, False),
+]
+
+
 @pytest.mark.parametrize(
     "line, fault, fail_on_fault, cap_cov, exp_stat, exp_id",
     TEST_DATA_1,
-    ids=["match id", "passed passed", "passed failed", "failed failed", "fail on fault", "GCOV START", "GCOV END"]
+    ids=[
+        "match id",
+        "passed passed",
+        "passed failed",
+        "failed failed",
+        "fail on fault",
+        "GCOV START",
+        "GCOV END",
+    ],
 )
 def test_harness_process_test(line, fault, fail_on_fault, cap_cov, exp_stat, exp_id):
-    #Arrange
+    # Arrange
     harness = Harness()
     harness.run_id = 12345
-    harness.state = None
+    harness.status = TwisterStatus.NONE
     harness.fault = fault
     harness.fail_on_fault = fail_on_fault
-    mock.patch.object(Harness, 'parse_record', return_value=None)
+    mock.patch.object(Harness, "parse_record", return_value=None)
 
-    #Act
+    # Act
     harness.process_test(line)
 
-    #Assert
+    # Assert
     assert harness.matched_run_id == exp_id
-    assert harness.state == exp_stat
+    assert harness.status == exp_stat
     assert harness.capture_coverage == cap_cov
     assert harness.recording == []
 
 
 def test_robot_configure(tmp_path):
-    #Arrange
+    # Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
 
-    mock_testsuite = mock.Mock(id = 'id', testcases = [])
+    mock_testsuite = mock.Mock(id="id", testcases=[])
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
+    outdir = tmp_path / "gtest_out"
     outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+    )
     instance.testsuite.harness_config = {
-        'robot_testsuite': '/path/to/robot/test',
-        'robot_option': 'test_option'
+        "robot_testsuite": "/path/to/robot/test",
+        "robot_option": "test_option",
     }
     robot_harness = Robot()
 
-    #Act
+    # Act
     robot_harness.configure(instance)
 
-    #Assert
+    # Assert
     assert robot_harness.instance == instance
-    assert robot_harness.path == '/path/to/robot/test'
-    assert robot_harness.option == 'test_option'
+    assert robot_harness.path == "/path/to/robot/test"
+    assert robot_harness.option == "test_option"
 
 
 def test_robot_handle(tmp_path):
-    #Arrange
+    # Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
 
-    mock_testsuite = mock.Mock(id = 'id', testcases = [])
+    mock_testsuite = mock.Mock(id="id", testcases=[])
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
+    outdir = tmp_path / "gtest_out"
     outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+    )
 
     handler = Robot()
     handler.instance = instance
-    handler.id = 'test_case_1'
+    handler.id = "test_case_1"
 
-    line = 'Test case passed'
+    line = "Test case passed"
 
-    #Act
+    # Act
     handler.handle(line)
-    tc = instance.get_case_or_create('test_case_1')
+    tc = instance.get_case_or_create("test_case_1")
 
-    #Assert
-    assert instance.state == "passed"
-    assert tc.status == "passed"
+    # Assert
+    assert instance.status == TwisterStatus.PASS
+    assert tc.status == TwisterStatus.PASS
 
 
-TEST_DATA_2 = [("", 0, "passed"), ("Robot test failure: sourcedir for mock_platform", 1, "failed"),]
+TEST_DATA_2 = [
+    ("", 0, TwisterStatus.PASS),
+    ("Robot test failure: sourcedir for mock_platform", 1, TwisterStatus.FAIL),
+]
+
+
 @pytest.mark.parametrize(
-    "exp_out, returncode, expected_status",
-    TEST_DATA_2,
-    ids=["passed", "failed"]
+    "exp_out, returncode, expected_status", TEST_DATA_2, ids=["passed", "failed"]
 )
 def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_status):
     # Arrange
@@ -198,14 +279,16 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
 
-    mock_testsuite = mock.Mock(id = 'id', testcases = [mock.Mock()])
+    mock_testsuite = mock.Mock(id="id", testcases=[mock.Mock()])
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
+    outdir = tmp_path / "gtest_out"
     outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+    )
     instance.build_dir = "build_dir"
 
     open_mock = mock.mock_open()
@@ -215,19 +298,19 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     robot.option = option
     robot.instance = instance
     proc_mock = mock.Mock(
-        returncode = returncode,
-        communicate = mock.Mock(return_value=(b"output", None))
+        returncode=returncode, communicate=mock.Mock(return_value=(b"output", None))
     )
-    popen_mock = mock.Mock(return_value = mock.Mock(
-        __enter__ = mock.Mock(return_value = proc_mock),
-        __exit__ = mock.Mock()
-    ))
+    popen_mock = mock.Mock(
+        return_value=mock.Mock(
+            __enter__=mock.Mock(return_value=proc_mock), __exit__=mock.Mock()
+        )
+    )
 
     # Act
-    with mock.patch("subprocess.Popen", popen_mock) as mock.mock_popen, \
-         mock.patch("builtins.open", open_mock):
-        robot.run_robot_test(command,handler)
-
+    with mock.patch("subprocess.Popen", popen_mock) as mock.mock_popen, mock.patch(
+        "builtins.open", open_mock
+    ):
+        robot.run_robot_test(command, handler)
 
     # Assert
     assert instance.status == expected_status
@@ -235,68 +318,92 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     assert exp_out in caplog.text
 
 
-TEST_DATA_3 = [('one_line', None), ('multi_line', 2),]
+TEST_DATA_3 = [
+    ("one_line", None),
+    ("multi_line", 2),
+]
+
+
 @pytest.mark.parametrize(
-    "type, num_patterns",
-    TEST_DATA_3,
-    ids=["one line", "multi line"]
+    "type, num_patterns", TEST_DATA_3, ids=["one line", "multi line"]
 )
 def test_console_configure(tmp_path, type, num_patterns):
-    #Arrange
+    # Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
 
-    mock_testsuite = mock.Mock(id = 'id', testcases = [])
+    mock_testsuite = mock.Mock(id="id", testcases=[])
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
+    outdir = tmp_path / "gtest_out"
     outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+    )
     instance.testsuite.harness_config = {
-        'type': type,
-        'regex': ['pattern1', 'pattern2']
+        "type": type,
+        "regex": ["pattern1", "pattern2"],
     }
     console = Console()
 
-    #Act
+    # Act
     console.configure(instance)
 
-    #Assert
+    # Assert
     if num_patterns == 2:
         assert len(console.patterns) == num_patterns
-        assert [pattern.pattern for pattern in console.patterns] == ['pattern1', 'pattern2']
+        assert [pattern.pattern for pattern in console.patterns] == [
+            "pattern1",
+            "pattern2",
+        ]
     else:
-        assert console.pattern.pattern == 'pattern1'
+        assert console.pattern.pattern == "pattern1"
 
 
-TEST_DATA_4 = [("one_line", True, "passed", "line", False, False),
-                ("multi_line", True, "passed", "line", False, False),
-                ("multi_line", False, "passed", "line", False, False),
-                ("invalid_type", False, None, "line", False, False),
-                ("invalid_type", False, None, "ERROR", True, False),
-                ("invalid_type", False, None, "COVERAGE_START", False, True),
-                ("invalid_type", False, None, "COVERAGE_END", False, False)]
+TEST_DATA_4 = [
+    ("one_line", True, TwisterStatus.PASS, "line", False, False),
+    ("multi_line", True, TwisterStatus.PASS, "line", False, False),
+    ("multi_line", False, TwisterStatus.PASS, "line", False, False),
+    ("invalid_type", False, TwisterStatus.NONE, "line", False, False),
+    ("invalid_type", False, TwisterStatus.NONE, "ERROR", True, False),
+    ("invalid_type", False, TwisterStatus.NONE, "COVERAGE_START", False, True),
+    ("invalid_type", False, TwisterStatus.NONE, "COVERAGE_END", False, False),
+]
+
+
 @pytest.mark.parametrize(
     "line_type, ordered_val, exp_state, line, exp_fault, exp_capture",
     TEST_DATA_4,
-    ids=["one line", "multi line ordered", "multi line not ordered", "logger error", "fail on fault", "GCOV START", "GCOV END"]
+    ids=[
+        "one line",
+        "multi line ordered",
+        "multi line not ordered",
+        "logger error",
+        "fail on fault",
+        "GCOV START",
+        "GCOV END",
+    ],
 )
-def test_console_handle(tmp_path, line_type, ordered_val, exp_state, line, exp_fault, exp_capture):
+def test_console_handle(
+    tmp_path, line_type, ordered_val, exp_state, line, exp_fault, exp_capture
+):
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
 
-    mock_testsuite = mock.Mock(id = 'id', testcases = [])
+    mock_testsuite = mock.Mock(id="id", testcases=[])
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
+    outdir = tmp_path / "gtest_out"
     outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+    )
 
     console = Console()
     console.instance = instance
@@ -304,7 +411,7 @@ def test_console_handle(tmp_path, line_type, ordered_val, exp_state, line, exp_f
     console.patterns = [re.compile("pattern1"), re.compile("pattern2")]
     console.pattern = re.compile("pattern")
     console.patterns_expected = 0
-    console.state = None
+    console.status = TwisterStatus.NONE
     console.fail_on_fault = True
     console.FAULT = "ERROR"
     console.GCOV_START = "COVERAGE_START"
@@ -315,7 +422,7 @@ def test_console_handle(tmp_path, line_type, ordered_val, exp_state, line, exp_f
     console.regex = ["regex1", "regex2"]
     console.id = "test_case_1"
 
-    instance.get_case_or_create('test_case_1')
+    instance.get_case_or_create("test_case_1")
     instance.testsuite.id = "test_suite_1"
 
     console.next_pattern = 0
@@ -327,7 +434,7 @@ def test_console_handle(tmp_path, line_type, ordered_val, exp_state, line, exp_f
     line2 = "pattern2"
     console.handle(line1)
     console.handle(line2)
-    assert console.state == exp_state
+    assert console.status == exp_state
     with pytest.raises(Exception):
         console.handle(line)
         assert logger.error.called
@@ -335,124 +442,128 @@ def test_console_handle(tmp_path, line_type, ordered_val, exp_state, line, exp_f
     assert console.capture_coverage == exp_capture
 
 
-TEST_DATA_5 = [("serial_pty", 0), (None, 0),(None, 1)]
-@pytest.mark.parametrize(
-   "pty_value, hardware_value",
-   TEST_DATA_5,
-   ids=["hardware pty", "hardware", "non hardware"]
-)
+TEST_DATA_5 = [("serial_pty", 0), (None, 0), (None, 1)]
 
+
+@pytest.mark.parametrize(
+    "pty_value, hardware_value",
+    TEST_DATA_5,
+    ids=["hardware pty", "hardware", "non hardware"],
+)
 def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_value):
-    #Arrange
+    # Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
 
-    mock_testsuite = mock.Mock(id = 'id', testcases = [])
+    mock_testsuite = mock.Mock(id="id", testcases=[])
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
+    outdir = tmp_path / "gtest_out"
     outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+    )
 
     handler = mock.Mock()
     handler.instance = instance
 
     hardware = mock.Mock()
     hardware.serial_pty = pty_value
-    hardware.serial = 'serial'
+    hardware.serial = "serial"
     hardware.baud = 115200
     hardware.runner = "runner"
     hardware.runner_params = ["--runner-param1", "runner-param2"]
-    hardware.fixtures = ['fixture1:option1', 'fixture2']
+    hardware.fixtures = ["fixture1:option1", "fixture2"]
 
     options = handler.options
     options.west_flash = "args"
 
-    hardware.probe_id = '123'
-    hardware.product = 'product'
-    hardware.pre_script = 'pre_script'
-    hardware.post_flash_script = 'post_flash_script'
-    hardware.post_script = 'post_script'
+    hardware.probe_id = "123"
+    hardware.product = "product"
+    hardware.pre_script = "pre_script"
+    hardware.post_flash_script = "post_flash_script"
+    hardware.post_script = "post_script"
 
     pytest_test = Pytest()
     pytest_test.configure(instance)
 
-    #Act
+    # Act
     if hardware_value == 0:
         handler.get_hardware.return_value = hardware
         command = pytest_test._generate_parameters_for_hardware(handler)
     else:
         handler.get_hardware.return_value = None
 
-    #Assert
+    # Assert
     if hardware_value == 1:
         with pytest.raises(PytestHarnessException) as exinfo:
             pytest_test._generate_parameters_for_hardware(handler)
-        assert str(exinfo.value) == 'Hardware is not available'
+        assert str(exinfo.value) == "Hardware is not available"
     else:
-        assert '--device-type=hardware' in command
+        assert "--device-type=hardware" in command
         if pty_value == "serial_pty":
-            assert '--device-serial-pty=serial_pty' in command
+            assert "--device-serial-pty=serial_pty" in command
         else:
-            assert '--device-serial=serial' in command
-            assert '--device-serial-baud=115200' in command
-        assert '--runner=runner' in command
-        assert '--runner-params=--runner-param1' in command
-        assert '--runner-params=runner-param2' in command
-        assert '--west-flash-extra-args=args' in command
-        assert '--device-id=123' in command
-        assert '--device-product=product' in command
-        assert '--pre-script=pre_script' in command
-        assert '--post-flash-script=post_flash_script' in command
-        assert '--post-script=post_script' in command
-        assert '--twister-fixture=fixture1:option1' in command
-        assert '--twister-fixture=fixture2' in command
+            assert "--device-serial=serial" in command
+            assert "--device-serial-baud=115200" in command
+        assert "--runner=runner" in command
+        assert "--runner-params=--runner-param1" in command
+        assert "--runner-params=runner-param2" in command
+        assert "--west-flash-extra-args=args" in command
+        assert "--device-id=123" in command
+        assert "--device-product=product" in command
+        assert "--pre-script=pre_script" in command
+        assert "--post-flash-script=post_flash_script" in command
+        assert "--post-script=post_script" in command
+        assert "--twister-fixture=fixture1:option1" in command
+        assert "--twister-fixture=fixture2" in command
 
 
 def test__update_command_with_env_dependencies():
-    cmd = ['cmd']
+    cmd = ["cmd"]
     pytest_test = Pytest()
-    mock.patch.object(Pytest, 'PYTEST_PLUGIN_INSTALLED', False)
+    mock.patch.object(Pytest, "PYTEST_PLUGIN_INSTALLED", False)
 
     # Act
     result_cmd, _ = pytest_test._update_command_with_env_dependencies(cmd)
 
     # Assert
-    assert result_cmd == ['cmd', '-p', 'twister_harness.plugin']
+    assert result_cmd == ["cmd", "-p", "twister_harness.plugin"]
 
 
 def test_pytest_run(tmp_path, caplog):
     # Arrange
     timeout = 10
-    cmd=['command']
-    exp_out = 'Support for handler handler_type not implemented yet'
+    cmd = ["command"]
+    exp_out = "Support for handler handler_type not implemented yet"
 
     harness = Pytest()
     harness = mock.create_autospec(harness)
 
-    mock.patch.object(Pytest, 'generate_command', return_value=cmd)
-    mock.patch.object(Pytest, 'run_command')
+    mock.patch.object(Pytest, "generate_command", return_value=cmd)
+    mock.patch.object(Pytest, "run_command")
 
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
 
-    mock_testsuite = mock.Mock(id = 'id', testcases = [], source_dir = 'source_dir', harness_config = {})
+    mock_testsuite = mock.Mock(
+        id="id", testcases=[], source_dir="source_dir", harness_config={}
+    )
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    handler = mock.Mock(
-        options = mock.Mock(verbose= 0),
-        type_str = 'handler_type'
-    )
+    handler = mock.Mock(options=mock.Mock(verbose=0), type_str="handler_type")
 
-    outdir = tmp_path / 'gtest_out'
+    outdir = tmp_path / "gtest_out"
     outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+    )
     instance.handler = handler
 
     test_obj = Pytest()
@@ -461,63 +572,111 @@ def test_pytest_run(tmp_path, caplog):
     # Act
     test_obj.pytest_run(timeout)
     # Assert
-    assert test_obj.state == 'failed'
+    assert test_obj.status == TwisterStatus.FAIL
     assert exp_out in caplog.text
 
 
-TEST_DATA_6 = [(None), ('Test')]
-@pytest.mark.parametrize(
-   "name",
-   TEST_DATA_6,
-   ids=["no name", "provided name"]
-)
+TEST_DATA_6 = [(None), ("Test")]
+
+
+@pytest.mark.parametrize("name", TEST_DATA_6, ids=["no name", "provided name"])
 def test_get_harness(name):
-    #Arrange
+    # Arrange
     harnessimporter = HarnessImporter()
     harness_name = name
 
-    #Act
+    # Act
     harness_class = harnessimporter.get_harness(harness_name)
 
-    #Assert
+    # Assert
     assert isinstance(harness_class, Test)
 
 
-TEST_DATA_7 = [("", "Running TESTSUITE suite_name", ['suite_name'], None, True, None),
-            ("", "START - test_testcase", [], "started", True, None),
-            ("", "PASS - test_example in 0 seconds", [], "passed", True, None),
-            ("", "SKIP - test_example in 0 seconds", [], "skipped", True, None),
-            ("", "FAIL - test_example in 0 seconds", [], "failed", True, None),
-            ("not a ztest and no state for test_id", "START - test_testcase", [], "passed", False, "passed"),
-            ("not a ztest and no state for test_id", "START - test_testcase", [], "failed", False, "failed")]
+TEST_DATA_7 = [
+    (
+        "",
+        "Running TESTSUITE suite_name",
+        ["suite_name"],
+        TwisterStatus.NONE,
+        True,
+        TwisterStatus.NONE,
+    ),
+    ("", "START - test_testcase", [], TwisterStatus.STARTED, True, TwisterStatus.NONE),
+    (
+        "",
+        "PASS - test_example in 0 seconds",
+        [],
+        TwisterStatus.PASS,
+        True,
+        TwisterStatus.NONE,
+    ),
+    (
+        "",
+        "SKIP - test_example in 0 seconds",
+        [],
+        TwisterStatus.SKIP,
+        True,
+        TwisterStatus.NONE,
+    ),
+    (
+        "",
+        "FAIL - test_example in 0 seconds",
+        [],
+        TwisterStatus.FAIL,
+        True,
+        TwisterStatus.NONE,
+    ),
+    (
+        "not a ztest and no state for test_id",
+        "START - test_testcase",
+        [],
+        TwisterStatus.PASS,
+        False,
+        TwisterStatus.PASS,
+    ),
+    (
+        "not a ztest and no state for test_id",
+        "START - test_testcase",
+        [],
+        TwisterStatus.FAIL,
+        False,
+        TwisterStatus.FAIL,
+    ),
+]
+
+
 @pytest.mark.parametrize(
-   "exp_out, line, exp_suite_name, exp_status, ztest, state",
-   TEST_DATA_7,
-   ids=['testsuite', 'testcase', 'pass', 'skip', 'failed', 'ztest pass', 'ztest fail']
+    "exp_out, line, exp_suite_name, exp_status, ztest, state",
+    TEST_DATA_7,
+    ids=["testsuite", "testcase", "pass", "skip", "failed", "ztest pass", "ztest fail"],
 )
-def test_test_handle(tmp_path, caplog, exp_out, line, exp_suite_name, exp_status, ztest, state):
+def test_test_handle(
+    tmp_path, caplog, exp_out, line, exp_suite_name, exp_status, ztest, state
+):
     # Arrange
     line = line
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
 
-    mock_testsuite = mock.Mock(id = 'id', testcases = [])
+    mock_testsuite = mock.Mock(id="id", testcases=[])
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
+    outdir = tmp_path / "gtest_out"
     outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+    )
 
     test_obj = Test()
     test_obj.configure(instance)
     test_obj.id = "test_id"
     test_obj.ztest = ztest
-    test_obj.state = state
-    test_obj.id = 'test_id'
-    #Act
+    test_obj.status = state
+    test_obj.id = "test_id"
+    # Act
     test_obj.handle(line)
 
     # Assert
@@ -540,10 +699,12 @@ def gtest(tmp_path):
     mock_testsuite.id = "id"
     mock_testsuite.testcases = []
     mock_testsuite.harness_config = {}
-    outdir = tmp_path / 'gtest_out'
+    outdir = tmp_path / "gtest_out"
     outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+    )
 
     harness = Gtest()
     harness.configure(instance)
@@ -553,7 +714,7 @@ def gtest(tmp_path):
 def test_gtest_start_test_no_suites_detected(gtest):
     process_logs(gtest, [SAMPLE_GTEST_START])
     assert len(gtest.detected_suite_names) == 0
-    assert gtest.state is None
+    assert gtest.status == TwisterStatus.NONE
 
 
 def test_gtest_start_test(gtest):
@@ -566,12 +727,13 @@ def test_gtest_start_test(gtest):
             ),
         ],
     )
-    assert gtest.state is None
+    assert gtest.status == TwisterStatus.NONE
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
     assert (
-        gtest.instance.get_case_by_name("id.suite_name.test_name").status == "started"
+        gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.STARTED
     )
 
 
@@ -588,11 +750,16 @@ def test_gtest_pass(gtest):
             ),
         ],
     )
-    assert gtest.state is None
+    assert gtest.status == TwisterStatus.NONE
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "passed"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name") != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.PASS
+    )
 
 
 def test_gtest_failed(gtest):
@@ -608,11 +775,16 @@ def test_gtest_failed(gtest):
             ),
         ],
     )
-    assert gtest.state is None
+    assert gtest.status == TwisterStatus.NONE
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "failed"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name") != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.FAIL
+    )
 
 
 def test_gtest_skipped(gtest):
@@ -628,11 +800,16 @@ def test_gtest_skipped(gtest):
             ),
         ],
     )
-    assert gtest.state is None
+    assert gtest.status == TwisterStatus.NONE
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "skipped"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name") != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.SKIP
+    )
 
 
 def test_gtest_all_pass(gtest):
@@ -649,7 +826,33 @@ def test_gtest_all_pass(gtest):
             SAMPLE_GTEST_END,
         ],
     )
-    assert gtest.state == "passed"
+    assert gtest.status == TwisterStatus.PASS
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name") != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.PASS
+    )
+
+
+def test_gtest_all_pass_with_variant(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name"
+            ),
+            SAMPLE_GTEST_END_VARIANT,
+        ],
+    )
+    assert gtest.status == "passed"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
@@ -676,13 +879,24 @@ def test_gtest_one_skipped(gtest):
             SAMPLE_GTEST_END,
         ],
     )
-    assert gtest.state == "passed"
+    assert gtest.status == TwisterStatus.PASS
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "passed"
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name1") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name1").status == "skipped"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name") != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.PASS
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name1")
+        != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name1").status
+        == TwisterStatus.SKIP
+    )
 
 
 def test_gtest_one_fail(gtest):
@@ -705,7 +919,71 @@ def test_gtest_one_fail(gtest):
             SAMPLE_GTEST_END,
         ],
     )
-    assert gtest.state == "failed"
+    assert gtest.status == TwisterStatus.FAIL
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test0") != TwisterStatus.NONE
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test0").status
+        == TwisterStatus.PASS
+    )
+    assert gtest.instance.get_case_by_name("id.suite_name.test1") != TwisterStatus.NONE
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test1").status
+        == TwisterStatus.FAIL
+    )
+
+
+def test_gtest_one_fail_with_variant(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_END_VARIANT,
+        ],
+    )
+    assert gtest.status == "failed"
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test0").status == "passed"
+    assert gtest.instance.get_case_by_name("id.suite_name.test1") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test1").status == "failed"
+
+
+def test_gtest_one_fail_with_variant_and_param(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_FMT_FAIL_WITH_PARAM.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_END_VARIANT,
+        ],
+    )
+    assert gtest.status == "failed"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
@@ -801,26 +1079,26 @@ def test_gtest_repeated_run(gtest):
 
 def test_bsim_build(monkeypatch, tmp_path):
     mocked_instance = mock.Mock()
-    build_dir = tmp_path / 'build_dir'
+    build_dir = tmp_path / "build_dir"
     os.makedirs(build_dir)
     mocked_instance.build_dir = str(build_dir)
-    mocked_instance.name = 'platform_name/test/dummy.test'
+    mocked_instance.name = "platform_name/test/dummy.test"
     mocked_instance.testsuite.harness_config = {}
 
     harness = Bsim()
     harness.instance = mocked_instance
 
-    monkeypatch.setenv('BSIM_OUT_PATH', str(tmp_path))
-    os.makedirs(os.path.join(tmp_path, 'bin'), exist_ok=True)
-    zephyr_exe_path = os.path.join(build_dir, 'zephyr', 'zephyr.exe')
+    monkeypatch.setenv("BSIM_OUT_PATH", str(tmp_path))
+    os.makedirs(os.path.join(tmp_path, "bin"), exist_ok=True)
+    zephyr_exe_path = os.path.join(build_dir, "zephyr", "zephyr.exe")
     os.makedirs(os.path.dirname(zephyr_exe_path), exist_ok=True)
-    with open(zephyr_exe_path, 'w') as file:
-        file.write('TEST_EXE')
+    with open(zephyr_exe_path, "w") as file:
+        file.write("TEST_EXE")
 
     harness.build()
 
-    new_exe_path = os.path.join(tmp_path, 'bin', 'bs_platform_name_test_dummy_test')
+    new_exe_path = os.path.join(tmp_path, "bin", "bs_platform_name_test_dummy_test")
     assert os.path.exists(new_exe_path)
-    with open(new_exe_path, 'r') as file:
+    with open(new_exe_path, "r") as file:
         exe_content = file.read()
-    assert 'TEST_EXE' in exe_content
+    assert "TEST_EXE" in exe_content

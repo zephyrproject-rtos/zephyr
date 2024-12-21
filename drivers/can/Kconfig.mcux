@@ -31,10 +31,11 @@ config CAN_MCUX_FLEXCAN_WAIT_TIMEOUT
 config CAN_MAX_MB
 	int "Maximum number of message buffers for concurrent active instances"
 	default 16
-	depends on SOC_SERIES_S32K3 || SOC_SERIES_S32K1
+	depends on SOC_SERIES_S32K3 || SOC_SERIES_S32K1 || SOC_SERIES_S32ZE
 	range 1 96 if SOC_SERIES_S32K3
 	range 1 32 if SOC_SERIES_S32K1 && !SOC_S32K142W && !SOC_S32K144W
 	range 1 64 if SOC_S32K142W || SOC_S32K144W
+	range 1 128 if SOC_SERIES_S32ZE
 	help
 	  Defines maximum number of message buffers for concurrent active instances.
 
@@ -47,6 +48,7 @@ config CAN_MAX_FILTER
 	range 1 96 if SOC_SERIES_S32K3
 	range 1 32 if SOC_SERIES_S32K1 && !SOC_S32K142W && !SOC_S32K144W
 	range 1 64 if SOC_S32K142W || SOC_S32K144W
+	range 1 128 if SOC_SERIES_S32ZE
 	help
 	  Defines maximum number of concurrent active RX filters
 

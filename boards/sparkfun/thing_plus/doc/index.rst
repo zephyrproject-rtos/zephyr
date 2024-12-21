@@ -92,7 +92,7 @@ In most cases you'll want to use the ``ns`` target with any of the Zephyr
 or Nordic based examples.
 
 Some of the examples do not use secure mode, so they do not required the ``ns`` suffix.
-A great example of this is the `hello_world` below.
+A great example of this is the :zephyr:code-sample:`hello_world` below.
 
 Flashing
 ========
@@ -103,7 +103,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

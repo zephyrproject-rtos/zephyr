@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2024, Joakim Andersson
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+compatible: "st,stm32f1-clock-mco"
+
+description: |
+        STM32 F1 series Microcontroller Clock Output (MCO)
+
+        The STM32F1 MCO is similar to other series but has no configurable
+        prescaler before the output. However, note that certain inputs of
+        the MCO are fitted with a fixed prescaler, making it possible to
+        output a slowed down variation of certain clocks.
+
+        Example:
+                &mco1 {
+                        clocks = <&rcc STM32_SRC_LSE MCO1_SEL(7)>;
+                        pinctrl-0 = <&rcc_mco_pa8>;
+                        pinctrl-names = "default";
+                        status = "okay";
+                };
+
+        Note: in the `clocks` property, the domain clock source cell should
+        use the value representing the base clock, regardless of whether or
+        not the selected input is fitted with a prescaler.
+
+        Example:
+                /* PLL3 clock divided by 2 */
+                clocks = <&rcc STM32_SRC_PLL3CLK MCO1_SEL(9)>;
+                /* PLL3 clock */
+                clocks = <&rcc STM32_SRC_PLL3CLK MCO1_SEL(11)>;
+
+include:
+  - name: st,stm32-clock-mco.yaml
+    property-blocklist:
+      - prescaler

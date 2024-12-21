@@ -227,4 +227,8 @@ static int init_dcache(void)
 	return 0;
 }
 
-SYS_INIT(init_dcache, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+void arch_cache_init(void)
+{
+	init_dcache();
+}

@@ -1,0 +1,6 @@
+tests:
+  boards.esp32.ethernet:
+    platform_allow:
+      - esp32_ethernet_kit/esp32/procpu
+    tags:
+      - ethernet

@@ -39,6 +39,30 @@
 
 };
 
+&enet {
+	status = "okay";
+};
+
+&enet_mac {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+	phy: phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <1>;
+		status = "okay";
+	};
+};
+
 &uart4 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;

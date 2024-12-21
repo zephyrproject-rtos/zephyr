@@ -340,15 +340,15 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	if (raw == EXT_RAW_CNT) {
 		hw_cnt = ms;
 	} else {
-		if (clock_source_sel == EXT_PSR_32P768K)
+		if (clock_source_sel == EXT_PSR_32P768K) {
 			hw_cnt = MS_TO_COUNT(32768, ms);
-		else if (clock_source_sel == EXT_PSR_1P024K)
+		} else if (clock_source_sel == EXT_PSR_1P024K) {
 			hw_cnt = MS_TO_COUNT(1024, ms);
-		else if (clock_source_sel == EXT_PSR_32)
+		} else if (clock_source_sel == EXT_PSR_32) {
 			hw_cnt = MS_TO_COUNT(32, ms);
-		else if (clock_source_sel == EXT_PSR_EC_CLK)
+		} else if (clock_source_sel == EXT_PSR_EC_CLK) {
 			hw_cnt = MS_TO_COUNT(EC_FREQ, ms);
-		else {
+		} else {
 			LOG_ERR("Timer %d clock source error !", ext_timer);
 			return -1;
 		}
@@ -381,10 +381,11 @@ static int timer_init(enum ext_timer_idx ext_timer,
 
 	/* Disable external timer x */
 	IT8XXX2_EXT_CTRLX(ext_timer) &= ~IT8XXX2_EXT_ETXEN;
-	if (start == EXT_START_TIMER)
+	if (start == EXT_START_TIMER) {
 		/* Enable and re-start external timer x */
 		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN |
 						 IT8XXX2_EXT_ETXRST);
+	}
 
 	if (with_int == EXT_WITH_TIMER_INT) {
 		irq_enable(irq_num);

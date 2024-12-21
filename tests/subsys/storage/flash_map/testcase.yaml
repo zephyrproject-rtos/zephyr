@@ -4,8 +4,6 @@ tests:
       - nrf51dk/nrf51822
       - nrf9160dk/nrf9160/ns
       - qemu_x86
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
@@ -13,7 +11,8 @@ tests:
     integration_platforms:
       - native_sim
   storage.flash_map.mpu:
-    extra_args: OVERLAY_CONFIG=overlay-mpu.conf
+    extra_args: EXTRA_CONF_FILE=overlay-mpu.conf
+    timeout: 120
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -24,12 +23,10 @@ tests:
       - nrf52840dk/nrf52840
     tags: flash_map
   storage.flash_map.mbedtls:
-    extra_args: OVERLAY_CONFIG=overlay-mbedtls.conf
+    extra_args: EXTRA_CONF_FILE=overlay-mbedtls.conf
     platform_allow:
       - nrf51dk/nrf51822
       - qemu_x86
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
@@ -37,11 +34,9 @@ tests:
     integration_platforms:
       - native_sim
   storage.flash_map.psa:
-    extra_args: OVERLAY_CONFIG=overlay-psa.conf
+    extra_args: EXTRA_CONF_FILE=overlay-psa.conf
     platform_allow:
       - nrf51dk/nrf51822
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - mr_canhubk3

@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/classic/hfp_ag.h>
@@ -148,7 +149,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		if (default_conn != NULL) {
 			default_conn = NULL;
 		}
-		printk("Connection failed (err 0x%02x)\n", err);
+		printk("Connection failed, err 0x%02x %s\n", err, bt_hci_err_to_str(err));
 	} else {
 		if (default_conn == conn) {
 			struct bt_conn_info info;
@@ -175,7 +176,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	printk("Disconnected (reason 0x%02x)\n", reason);
+	printk("Disconnected, reason 0x%02x %s\n", reason, bt_hci_err_to_str(reason));
 
 	if (default_conn != conn) {
 		return;
@@ -197,7 +198,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 	bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 
-	printk("Security changed: %s level %u (err %d)\n", addr, level, err);
+	printk("Security changed: %s level %u, err %s(%d)\n", addr, level,
+	       bt_security_err_to_str(err), err);
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -206,10 +208,15 @@ static struct bt_conn_cb conn_callbacks = {
 	.security_changed = security_changed,
 };
 
-static void scan_discovery_cb(struct bt_br_discovery_result *results, size_t count)
+static void discovery_recv_cb(const struct bt_br_discovery_result *result)
+{
+	(void)result;
+}
+
+static void discovery_timeout_cb(const struct bt_br_discovery_result *results, size_t count)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
-	uint8_t *eir;
+	const uint8_t *eir;
 	bool cod_hf = false;
 	static uint8_t temp[240];
 	size_t len = sizeof(results->eir);
@@ -273,7 +280,7 @@ static void discover_work_handler(struct k_work *work)
 	br_discover.limited = false;
 
 	err = bt_br_discovery_start(&br_discover, scan_result,
-				    CONFIG_BT_HFP_AG_DISCOVER_RESULT_COUNT, scan_discovery_cb);
+				    CONFIG_BT_HFP_AG_DISCOVER_RESULT_COUNT);
 	if (err) {
 		printk("Fail to start discovery (err %d)\n", err);
 		return;
@@ -342,6 +349,11 @@ static void call_remote_accept_work_handler(struct k_work *work)
 	}
 }
 
+static struct bt_br_discovery_cb discovery_cb = {
+	.recv = discovery_recv_cb,
+	.timeout = discovery_timeout_cb,
+};
+
 static void bt_ready(int err)
 {
 	if (err) {
@@ -356,6 +368,8 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	bt_conn_cb_register(&conn_callbacks);
+
+	bt_br_discovery_cb_register(&discovery_cb);
 
 	bt_hfp_ag_register(&ag_cb);
 

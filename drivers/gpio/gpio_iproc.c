@@ -77,7 +77,7 @@ static int gpio_iproc_port_set_masked_raw(const struct device *dev, uint32_t mas
 
 	value = sys_read32(base + IPROC_GPIO_DATA_OUT_OFFSET);
 	value = (value & (~mask)) | (value & mask);
-	sys_write32(base + IPROC_GPIO_DATA_OUT_OFFSET, value);
+	sys_write32(value, base + IPROC_GPIO_DATA_OUT_OFFSET);
 
 	return 0;
 }
@@ -87,7 +87,7 @@ static int gpio_iproc_port_set_bits_raw(const struct device *dev, uint32_t mask)
 	const struct gpio_iproc_config *const cfg = DEV_CFG(dev);
 	mem_addr_t base = cfg->base;
 
-	sys_write32(base + IPROC_GPIO_DATA_OUT_OFFSET, mask);
+	sys_write32(mask, base + IPROC_GPIO_DATA_OUT_OFFSET);
 
 	return 0;
 }
@@ -101,7 +101,7 @@ static int gpio_iproc_port_clear_bits_raw(const struct device *dev, uint32_t mas
 	/* Clear pins. */
 	value = sys_read32(base + IPROC_GPIO_DATA_OUT_OFFSET);
 	value = (value & ~mask);
-	sys_write32(base + IPROC_GPIO_DATA_OUT_OFFSET, value);
+	sys_write32(value, base + IPROC_GPIO_DATA_OUT_OFFSET);
 
 	return 0;
 }
@@ -115,7 +115,7 @@ static int gpio_iproc_port_toggle_bits(const struct device *dev, uint32_t mask)
 	/* toggles pins. */
 	value = sys_read32(base + IPROC_GPIO_DATA_OUT_OFFSET);
 	value = (value ^ mask);
-	sys_write32(base + IPROC_GPIO_DATA_OUT_OFFSET, value);
+	sys_write32(value, base + IPROC_GPIO_DATA_OUT_OFFSET);
 
 	return 0;
 }

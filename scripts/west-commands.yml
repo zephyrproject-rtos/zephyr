@@ -46,6 +46,9 @@ west-commands:
       - name: attach
         class: Attach
         help: interactively debug a board
+      - name: rtt
+        class: Rtt
+        help: open an rtt shell
   - file: scripts/west_commands/export.py
     commands:
       - name: zephyr-export
@@ -76,3 +79,8 @@ west-commands:
       - name: simulate
         class: Simulate
         help: simulate board
+  - file: scripts/west_commands/sdk.py
+    commands:
+      - name: sdk
+        class: Sdk
+        help: manage Zephyr SDK

@@ -3,6 +3,8 @@
 
 if SOC_SERIES_POLARFIRE
 
+rsource "Kconfig.defconfig.polarfire*"
+
 # MPFS should be configured so that the mtimer clock is 1MHz independent of the CPU clock...
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC

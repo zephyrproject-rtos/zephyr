@@ -79,3 +79,9 @@ tests:
     filter: >
       not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
       and not CONFIG_CODE_DATA_RELOCATION
+  arch.interrupt.multilevel:
+    filter: CONFIG_MULTI_LEVEL_INTERRUPTS
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="multilevel_irq.overlay"
+    extra_configs:
+      - CONFIG_TEST_MULTILEVEL_IRQ=y

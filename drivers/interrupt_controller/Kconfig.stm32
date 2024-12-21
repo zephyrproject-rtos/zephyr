@@ -12,4 +12,11 @@ config EXTI_STM32
 	help
 	  Enable EXTI driver for STM32 line of MCUs
 
+config GPIO_INTC_STM32WB0
+	bool "GPIO Interrupt Controller Driver for STM32WB0 series"
+	default y
+	depends on DT_HAS_ST_STM32WB0_GPIO_INTC_ENABLED
+	help
+	  Enable GPIO interrupt controller driver for STM32WB0 series
+
 endif # SOC_FAMILY_STM32

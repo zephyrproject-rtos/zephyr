@@ -1,17 +1,7 @@
-.. _xg27_dk2602a:
-
-EFR32xG27 Dev Kit (xG27-DK2602A)
-################################
+.. zephyr:board:: xg27_dk2602a
 
 Silicon Labs xG27-DK2602A is a Dev Kit using the EFR32BG27 SoC. The kit
 consists of the EFR32BG27 +8 dBm Dev Kit Board (BRD2602A).
-
-.. figure:: ./xg27_dk2602a.png
-   :height: 260px
-   :align: center
-   :alt: xG27-DK2602A
-
-   xG27-DK2602A (image courtesy of Silicon Labs)
 
 Hardware
 ********
@@ -82,14 +72,14 @@ The simplest way to flash the board is by using West, which runs Simplicity
 Commander in unattended mode and passes all the necessary arguments to it.
 
 - If Simplicity Commander is installed in the system and the directory in
-  which `commander` executable is located is present in the `PATH` environment
+  which ``commander`` executable is located is present in the :envvar:`PATH` environment
   variable:
 
   .. code-block:: console
 
    west flash
 
-- Otherwise, one should specify full path to the `commander` executable:
+- Otherwise, one should specify full path to the ``commander`` executable:
 
   .. code-block:: console
 
@@ -105,7 +95,7 @@ Commander in unattended mode and passes all the necessary arguments to it.
 Programming and Debugging
 =========================
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
@@ -114,7 +104,7 @@ Build the Zephyr kernel and application:
    :goals: build
 
 Connect your device to your host computer using the USB port and you
-should see a USB connection. Use `west`'s flash command
+should see a USB connection. Use ``west``'s flash command
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
 

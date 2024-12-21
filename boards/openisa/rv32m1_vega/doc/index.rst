@@ -1,9 +1,6 @@
 .. highlight:: sh
 
-.. _rv32m1_vega:
-
-OpenISA VEGAboard
-#################
+.. zephyr:board:: rv32m1_vega
 
 Overview
 ********
@@ -12,12 +9,6 @@ The VEGAboard contains the RV32M1 SoC, featuring two RISC-V CPUs,
 on-die XIP flash, and a full complement of peripherals, including a
 2.4 GHz multi-protocol radio. It also has built-in sensors and
 Arduino-style expansion connectors.
-
-.. figure:: rv32m1_vega.jpg
-   :align: center
-   :alt: RV32M1-VEGA
-
-   OpenISA VEGAboard (image copyright: www.open-isa.org)
 
 The two RISC-V CPUs are named RI5CY and ZERO-RISCY, and are
 respectively based on the `PULP platform`_ designs by the same names:
@@ -577,8 +568,8 @@ toolchain and OpenOCD::
    The above only sets these variables for your current shell session.
    You need to make sure this happens every time you use this board.
 
-Now let's compile the :ref:`hello_world` application. (You can try
-others as well; see :ref:`samples-and-demos` for more.)
+Now let's compile the :zephyr:code-sample:`hello_world` application. (You can try
+others as well; see :zephyr:code-sample-category:`samples` for more.)
 
 .. We can't use zephyr-app-commands to provide build instructions
    due to the below mentioned linker issue.

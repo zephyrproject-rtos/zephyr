@@ -38,6 +38,13 @@
 #error "Storage size must be aligned"
 #endif
 
+#ifdef TEST_STORAGE_IN_FLASH
+// for testing storage in flash
+#define ATM_TEST_STORAGE_SIZE 0x4000
+#else
+#define ATM_TEST_STORAGE_SIZE 0
+#endif
+
 #define ATM_TOTAL_STORAGE_SIZE (ATM_STORAGE_SIZE + ATM_FACTORY_SIZE)
 
 #define ATM_SPE_OFFSET 0x0
@@ -60,7 +67,8 @@
 #ifdef RUN_IN_FLASH
 /* NSPE runs from flash */
 #define ATM_NSPE_OFFSET 0
-#define ATM_NSPE_SIZE FLASH_SIZE
+#define ATM_NSPE_SIZE           (FLASH_SIZE - ATM_TEST_STORAGE_SIZE)
+#define ATM_TEST_STORAGE_OFFSET (ATM_NSPE_OFFSET + ATM_NSPE_SIZE)
 #if (RUN_IN_FLASH == 1)
 #define ATM_FAST_CODE_SIZE 0
 /* data placed after SPE */
@@ -71,14 +79,17 @@
 	- ATM_TOTAL_STORAGE_SIZE)
 /* data placed after fast code area */
 #define ATM_DATA_START_OFFSET (ATM_FAST_CODE_OFFSET + ATM_FAST_CODE_SIZE)
-#endif
+#else
+#error "Invalid RUN_IN_FLASH option"
+#endif // RUN_IN_FLASH == 1
 #else
 #define ATM_NSPE_OFFSET (ATM_SPE_OFFSET + ATM_SPE_SIZE)
 #define ATM_NSPE_SIZE (ATM_RRAM_AVAIL_SIZE - ATM_SPE_SIZE \
 	- ATM_TOTAL_STORAGE_SIZE)
 /* data placed after NSPE */
 #define ATM_DATA_START_OFFSET (ATM_NSPE_OFFSET + ATM_NSPE_SIZE)
-#endif
+#define ATM_TEST_STORAGE_OFFSET 0
+#endif // RUN_IN_FLASH
 
 #define ATM_FACTORY_OFFSET  ATM_DATA_START_OFFSET
 /* storage partition follows factory parition (if any) */
@@ -90,5 +101,6 @@
 #define ATM_FACTORY_NODE_ID cece0050
 #define ATM_STORAGE_NODE_ID cece0051
 #define ATM_FAST_CODE_NODE_ID cece0080
+#define ATM_TEST_STORAGE_NODE_ID cece00f0
 
 #endif // _ATMOSIC_ATM_ATM34XX_PARTITION_DEFS_H_

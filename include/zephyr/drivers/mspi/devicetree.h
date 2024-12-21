@@ -212,7 +212,8 @@ extern "C" {
  * @return #gpio_dt_spec struct corresponding with mspi_dev's chip enable
  */
 #define MSPI_DEV_CE_GPIOS_DT_SPEC_GET(mspi_dev)                                                   \
-		GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(mspi_dev), ce_gpios, DT_REG_ADDR(mspi_dev), {})
+		GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(mspi_dev), ce_gpios,                            \
+					   DT_REG_ADDR_RAW(mspi_dev), {})
 
 /**
  * @brief Get a <tt>struct gpio_dt_spec</tt> for a MSPI device's chip enable pin

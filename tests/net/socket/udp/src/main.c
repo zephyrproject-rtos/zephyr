@@ -1492,6 +1492,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	io_vector[0].iov_len = sizeof(buf);
 
 	memset(msg, 0, sizeof(*msg));
+	memset(cmsgbuf, 0, cmsgbuf_len);
 	msg->msg_control = cmsgbuf;
 	msg->msg_controllen = cmsgbuf_len;
 	msg->msg_iov = io_vector;
@@ -1565,6 +1566,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	io_vector[1].iov_len = sizeof(buf);
 
 	memset(msg, 0, sizeof(*msg));
+	memset(cmsgbuf, 0, cmsgbuf_len);
 	msg->msg_control = cmsgbuf;
 	msg->msg_controllen = cmsgbuf_len;
 	msg->msg_iov = io_vector;
@@ -1624,6 +1626,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	io_vector[0].iov_len = sizeof(buf2);
 
 	memset(msg, 0, sizeof(*msg));
+	memset(cmsgbuf, 0, cmsgbuf_len);
 	msg->msg_control = cmsgbuf;
 	msg->msg_controllen = cmsgbuf_len;
 	msg->msg_iov = io_vector;

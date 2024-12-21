@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common assignments for any nRF70 shield */
+
+/* D0 */
+iovdd-ctrl-gpios = <&arduino_header 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+/* D1 */
+bucken-gpios = <&arduino_header 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+/* D7 */
+host-irq-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;
+
+/* Short-range (SR) co-existence */
+/* D8 */
+srrf-switch-gpios = <&arduino_header 14 GPIO_ACTIVE_HIGH>;
+
+/* Maximum TX power limits for 2.4 GHz */
+wifi-max-tx-pwr-2g-dsss = <21>;
+wifi-max-tx-pwr-2g-mcs0 = <16>;
+wifi-max-tx-pwr-2g-mcs7 = <16>;
+
+/* List of interfaces */
+wlan0: wlan0 {
+	compatible = "nordic,wlan";
+};

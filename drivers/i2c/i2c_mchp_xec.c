@@ -836,6 +836,9 @@ static const struct i2c_driver_api i2c_xec_driver_api = {
 	.target_register = i2c_xec_target_register,
 	.target_unregister = i2c_xec_target_unregister,
 #endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 static int i2c_xec_init(const struct device *dev)

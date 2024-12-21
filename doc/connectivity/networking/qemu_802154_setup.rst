@@ -20,13 +20,13 @@ For the steps below, you will need two terminal windows:
 * Terminal #2 is terminal window with ``echo-client`` Zephyr sample application.
 
 If you want to capture the transferred network data, you must compile the
-``monitor_15_4`` program in ``net-tools`` directory.
+``monitor_15_4`` program in the ``tools/net-tools`` directory.
 
 Open a terminal window and type:
 
 .. code-block:: console
 
-   cd $ZEPHYR_BASE/../net-tools
+   cd $ZEPHYR_BASE/../tools/net-tools
    make monitor_15_4
 
 

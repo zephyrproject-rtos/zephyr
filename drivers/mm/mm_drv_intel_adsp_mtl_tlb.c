@@ -338,6 +338,7 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 	k_spinlock_key_t key;
 	uint32_t entry_idx, bank_idx;
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
+	uint16_t entry;
 	uintptr_t pa;
 	int ret = 0;
 
@@ -359,6 +360,17 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 
 	key = k_spin_lock(&tlb_lock);
 
+	entry_idx = get_tlb_entry_idx(va);
+	entry = tlb_entries[entry_idx];
+
+	/* Check if the translation is enabled in the TLB entry.
+	 * Attempt to flush the cache of an inactive address will result in a cpu exception.
+	 */
+	if (!(entry & TLB_ENABLE_BIT)) {
+		ret = -EFAULT;
+		goto out_unlock;
+	}
+
 	/*
 	 * Flush the cache to make sure the backing physical page
 	 * has the latest data.
@@ -371,8 +383,7 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 #endif
 	}
 
-	entry_idx = get_tlb_entry_idx(va);
-	pa = tlb_entry_to_pa(tlb_entries[entry_idx]);
+	pa = tlb_entry_to_pa(entry);
 
 	/* Restore default entry settings with cleared the enable bit. */
 	tlb_entries[entry_idx] = 0;
@@ -395,6 +406,7 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 		}
 	}
 
+out_unlock:
 	k_spin_unlock(&tlb_lock, key);
 
 out:
@@ -478,7 +490,11 @@ static int sys_mm_drv_unmap_region_initial(void *virt_in, size_t size)
 
 		int ret2 = sys_mm_drv_unmap_page_wflush(va, false);
 
-		if (ret2 != 0) {
+		/* -EFAULT means that this page is not mapped.
+		 * This is not an error since we want to unmap all virtual memory without knowing
+		 * which pages are mapped.
+		 */
+		if (ret2 != 0 && ret2 != -EFAULT) {
 			__ASSERT(false, "cannot unmap %p\n", va);
 
 			ret = ret2;

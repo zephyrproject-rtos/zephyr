@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_ZEPHYR_DSP_TYPES_H_
-#define INCLUDE_ZEPHYR_DSP_TYPES_H_
+#ifndef ZEPHYR_INCLUDE_DSP_TYPES_H_
+#define ZEPHYR_INCLUDE_DSP_TYPES_H_
 
 #include <stdint.h>
 
@@ -68,4 +68,4 @@ typedef double float64_t;
  * @}
  */
 
-#endif /* INCLUDE_ZEPHYR_DSP_TYPES_H_ */
+#endif /* ZEPHYR_INCLUDE_DSP_TYPES_H_ */

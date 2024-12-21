@@ -313,7 +313,7 @@ static int uart_stellaris_fifo_fill(const struct device *dev,
 				    int len)
 {
 	const struct uart_stellaris_config *config = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) && ((config->uart->fr & UARTFR_TXFF) == 0U)) {
 		config->uart->dr = (uint32_t)tx_data[num_tx++];
@@ -336,7 +336,7 @@ static int uart_stellaris_fifo_read(const struct device *dev,
 				    const int size)
 {
 	const struct uart_stellaris_config *config = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((size - num_rx > 0) && ((config->uart->fr & UARTFR_RXFE) == 0U)) {
 		rx_data[num_rx++] = (uint8_t)config->uart->dr;
@@ -593,7 +593,7 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_0 = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &uart_stellaris_init,
+		    uart_stellaris_init,
 		    NULL,
 		    &uart_stellaris_dev_data_0, &uart_stellaris_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
@@ -632,7 +632,7 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_1 = {
 };
 
 DEVICE_DT_INST_DEFINE(1,
-		    &uart_stellaris_init,
+		    uart_stellaris_init,
 		    NULL,
 		    &uart_stellaris_dev_data_1, &uart_stellaris_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
@@ -671,7 +671,7 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_2 = {
 };
 
 DEVICE_DT_INST_DEFINE(2,
-		    &uart_stellaris_init,
+		    uart_stellaris_init,
 		    NULL,
 		    &uart_stellaris_dev_data_2, &uart_stellaris_dev_cfg_2,
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,

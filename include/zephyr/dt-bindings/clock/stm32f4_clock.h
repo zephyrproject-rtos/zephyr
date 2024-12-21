@@ -60,21 +60,25 @@
  * @param mask Mask for the RCC_CFGRx field.
  * @param val Clock value (0, 1, ... 7).
  */
-#define STM32_CLOCK(val, mask, shift, reg)					\
+#define STM32_DOMAIN_CLOCK(val, mask, shift, reg)					\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
 	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
 
-/** @brief RCC_CFGR register offset */
+/** @brief RCC_CFGRx register offset */
 #define CFGR_REG		0x08
 /** @brief RCC_BDCR register offset */
 #define BDCR_REG		0x70
 
 /** @brief Device domain clocks selection helpers */
 /** CFGR devices */
-#define I2S_SEL(val)		STM32_CLOCK(val, 1, 23, CFGR_REG)
+#define I2S_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 23, CFGR_REG)
+#define MCO1_SEL(val)           STM32_MCO_CFGR(val, 0x3, 21, CFGR_REG)
+#define MCO1_PRE(val)           STM32_MCO_CFGR(val, 0x7, 24, CFGR_REG)
+#define MCO2_SEL(val)           STM32_MCO_CFGR(val, 0x3, 30, CFGR_REG)
+#define MCO2_PRE(val)           STM32_MCO_CFGR(val, 0x7, 27, CFGR_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+#define RTC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 8, BDCR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F4_CLOCK_H_ */

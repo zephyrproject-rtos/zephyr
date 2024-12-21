@@ -1,0 +1,48 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+#include <zephyr/dt-bindings/regulator/nxp_vref.h>
+
+/* To do this test, connect LPADC0 channel 6A(J4 pin 5) to VREF_OUT (J2 pin 3) */
+
+/ {
+	resources: resources {
+		compatible = "test-regulator-voltage";
+		regulators = <&vref>;
+		tolerance-microvolt = <40000>;
+		set-read-delay-ms = <1>;
+		adc-avg-count = <10>;
+		io-channels = <&adc0 0>;
+		min-microvolt = <1000000>;
+		max-microvolt = <2100000>;
+	};
+};
+
+&vref {
+	regulator-initial-mode = <NXP_VREF_MODE_INTERNAL_REGULATOR>;
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* In this case, the LPADC reference source cannot be set to VREFO,
+	 * switch the reference source to VDD_ANA.
+	 */
+	voltage-ref= <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		/* the signal name is ADC0_A6 but it is still channel 2 */
+		zephyr,input-positive = <MCUX_LPADC_CH2A>;
+	};
+};

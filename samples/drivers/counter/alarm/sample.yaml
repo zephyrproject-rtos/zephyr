@@ -36,6 +36,11 @@ tests:
       - stm32h735g_disco
       - stm32h573i_dk
       - rpi_pico
+      - mr_canhubk3
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
     integration_platforms:
       - nucleo_f746zg
   sample.drivers.counter.alarm.stm32_rtc:

@@ -16,22 +16,52 @@ config AUTO_TEST
 
 if ENTROPY_ATM_TRNG
 
+# NOTE: To get the best performance from the TRNG, a suitable
+# PRNG should be used for random and cryptographically secure
+# random number generators.  TRNG only provides a source of
+# entropy for these generators.
+# Avoid the use of ENTROPY_DEVICE_RANDOM_GENERATOR or
+# HARDWARE_DEVICE_CS_GENERATOR option that acquire numbers
+# directly from the entropy generator.
+
 # default the RNG to a PRNG seeded by the ATM TRNG
 choice RNG_GENERATOR_CHOICE
 	default XOSHIRO_RANDOM_GENERATOR
 endchoice
 
-# For standalone HCI apps, Tinycrypt is required for CSPRNG
-config TINYCRYPT
-	default y if BT_HCI_RAW && BT_HCI_RAW_H4
-
-if MBEDTLS || TINYCRYPT
 # ATM TRNG HW should be used as an entropy source for a
 # secure PRNG implementation.  Use the default AES-CTR mode drbg.
 choice CSPRNG_GENERATOR_CHOICE
 	default CTR_DRBG_CSPRNG_GENERATOR
 endchoice
-endif # MBEDTLS || TINYCRYPT
+
+# CTR_DRBG_CSPRNG requires MBEDTLS
+config ATM_REQUIRES_MBEDTLS
+	bool
+	default y
+	select MBEDTLS
+
+config BT_RX_STACK_SIZE
+	int
+	default 1856 if ATM_BLE && ATM_AES_HW
+	default 1792
+	depends on ATM_REQUIRES_MBEDTLS
+	depends on BT
+
+config MAIN_STACK_SIZE
+	int
+	default 2560 if COVERAGE_GCOV
+	default 1856 if ATM_BLE && ATM_AES_HW
+	default 1792 if ATM_REQUIRES_MBEDTLS
+
+config ZTEST_STACK_SIZE
+	int
+	default 2048 if COVERAGE_GCOV
+	default 1792 if ATM_REQUIRES_MBEDTLS
+
+config THREAD_NAME
+	bool
+	default y if COVERAGE_GCOV
 
 endif # ENTROPY_ATM_TRNG
 

@@ -1,0 +1,21 @@
+/* Copyright (C) 2023 BeagleBoard.org Foundation
+ * Copyright (C) 2023 S Prashanth
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ *	Andrew Davis <afd@ti.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+
+&pinctrl {
+	uart2_tx_default: uart2_tx_default {
+		/* 0x1c is address of padconfig register of p8.34 and 14 is mux mode */
+		pinmux = <K3_PINMUX(0x1c, PIN_OUTPUT, MUX_MODE_14)>;
+	};
+
+	uart2_rx_default: uart2_rx_default {
+		/* 0x14 is address of padconfig register of p8.22 and 14 is mux mode */
+		pinmux = <K3_PINMUX(0x14, PIN_INPUT, MUX_MODE_14)>;
+	};
+};

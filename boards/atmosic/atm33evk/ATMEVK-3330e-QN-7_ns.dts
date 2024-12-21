@@ -106,8 +106,9 @@
 };
 
 &adc {
-    ch-cell = <1>;
-    ch-batt = <11>;
+	ch-cell = <1>;
+	ch-store = <2>;
+	ch-batt = <11>;
 };
 
 &uart1 {

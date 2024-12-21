@@ -1,7 +1,4 @@
-.. _icev_wireless:
-
-ICE-V Wireless
-##############
+.. zephyr:board:: icev_wireless
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The ICE-V Wireless is a combined ESP32C3 and iCE40 FPGA board.
 
 See the `ICE-V Wireless Github Project`_ for details.
-
-.. figure:: img/icev_wireless.jpg
-   :align: center
-   :alt: ICE-V Wireless
-
-   ICE-V Wireless
 
 Hardware
 ********
@@ -112,7 +103,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -138,7 +129,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: icev_wireless
    :goals: build
    :west-args: --sysbuild
@@ -174,7 +165,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -224,7 +215,7 @@ The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite t
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
 parameter when building.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -233,7 +224,7 @@ Here is an example for building the :ref:`hello_world` application.
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
 You can debug an application in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -243,6 +234,8 @@ You can debug an application in the usual way. Here is an example for the
 
 References
 **********
+
+.. target-notes::
 
 .. _ICE-V Wireless Github Project:
    https://github.com/ICE-V-Wireless/ICE-V-Wireless

@@ -16,13 +16,13 @@ manifest:
       groups:
         - optional
     - name: lz4
-      revision: 8e303c264fc21c2116dc612658003a22e933124d
+      revision: 11b8a1e22fa651b524494e55d22b69d3d9cebcfd
       path: modules/lib/lz4
       remote: upstream
       groups:
         - optional
     - name: nanopb
-      revision: 4474bd35bd39de067f0532a1b19ce3aed9ed9807
+      revision: 98bf4db69897b53434f3d0ba72e0a3ab1a902824
       path: modules/lib/nanopb
       remote: upstream
       groups:
@@ -33,14 +33,20 @@ manifest:
       remote: upstream
       groups:
         - optional
+    - name: zephyr-lang-rust
+      revision: 7af3db47bf7335ac6a6fe7480df6b41fb46dbe9d
+      path: modules/lang/rust
+      remote: upstream
+      groups:
+        - optional
     - name: sof
-      revision: 3f1716b0da7a48358bc265586b90b2252745c14c
+      revision: 316f414b64dee8e4aefce503af6c2c2e57d266f4
       path: modules/audio/sof
       remote: upstream
       groups:
         - optional
     - name: tf-m-tests
-      revision: d552e4f18b92032bd335d5e3aa312f6acd82a83b
+      revision: 502ea90105ee18f20c78f710e2ba2ded0fc0756e
       path: modules/tee/tf-m/tf-m-tests
       remote: upstream
       groups:

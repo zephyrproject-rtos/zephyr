@@ -9,6 +9,7 @@ config SOC_SERIES_M46X
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select CORTEX_M_SYSTICK if SYS_CLOCK_EXISTS
+	select HAS_POWEROFF
 
 config SOC_M467
 	select HAS_NUMAKER_HAL

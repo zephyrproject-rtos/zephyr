@@ -10,6 +10,8 @@
  *
  * @brief Zperf API
  * @defgroup zperf Zperf API
+ * @since 3.3
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

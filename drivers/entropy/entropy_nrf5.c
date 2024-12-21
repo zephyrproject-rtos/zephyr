@@ -8,6 +8,7 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <hal/nrf_rng.h>
 #include <zephyr/irq.h>
@@ -76,7 +77,7 @@ struct rng_pool {
 	uint8_t last;
 	uint8_t mask;
 	uint8_t threshold;
-	uint8_t buffer[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, buffer);
 };
 
 #define RNG_POOL_DEFINE(name, len) uint8_t name[sizeof(struct rng_pool) + (len)]

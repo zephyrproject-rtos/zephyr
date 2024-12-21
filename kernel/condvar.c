@@ -49,7 +49,7 @@ int z_impl_k_condvar_signal(struct k_condvar *condvar)
 
 	struct k_thread *thread = z_unpend_first_thread(&condvar->wait_q);
 
-	if (thread != NULL) {
+	if (unlikely(thread != NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_condvar, signal, condvar, K_FOREVER);
 
 		arch_thread_return_value_set(thread, 0);

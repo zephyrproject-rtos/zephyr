@@ -58,7 +58,7 @@ struct itimerspec {
 
 #include <zephyr/kernel.h>
 #include <errno.h>
-#include "posix_types.h"
+#include <zephyr/posix/posix_types.h>
 #include <zephyr/posix/signal.h>
 
 #ifdef __cplusplus
@@ -97,6 +97,7 @@ int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
 /* Timer APIs */
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
 int timer_delete(timer_t timerid);
+struct itimerspec;
 int timer_gettime(timer_t timerid, struct itimerspec *its);
 int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue);

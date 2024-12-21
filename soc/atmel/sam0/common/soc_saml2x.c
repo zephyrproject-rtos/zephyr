@@ -251,7 +251,7 @@ static inline void pause_for_debug(void)
 static inline void pause_for_debug(void) {}
 #endif
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	pause_for_debug();
 

@@ -9,6 +9,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_spi.h>
 #include <zephyr/logging/log.h>
@@ -53,6 +54,7 @@ struct stream {
 	uint32_t channel; /* stores the channel for dma */
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_blk_cfg[2];
+	int wait_for_dma_status;
 };
 #endif
 
@@ -296,9 +298,6 @@ static int spi_mcux_configure(const struct device *dev,
 }
 
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
-/* Dummy buffer used as a sink when rc buf is null */
-uint32_t dummy_rx_buffer;
-
 /* This function is executed in the interrupt context */
 static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 			 uint32_t channel, int status)
@@ -313,6 +312,9 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 	} else {
 		/* identify the origin of this callback */
 		if (channel == data->dma_tx.channel) {
+			if (status != data->dma_tx.wait_for_dma_status) {
+				return;
+			}
 			/* this part of the transfer ends */
 			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG;
 		} else if (channel == data->dma_rx.channel) {
@@ -331,7 +333,7 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 
 static void spi_mcux_prepare_txlastword(uint32_t *txLastWord,
 				const uint8_t *buf, const struct spi_config *spi_cfg,
-				size_t len)
+				size_t len, bool rx_ignore)
 {
 	uint32_t word_size;
 
@@ -344,6 +346,10 @@ static void spi_mcux_prepare_txlastword(uint32_t *txLastWord,
 		*txLastWord = buf[len - 1U];
 	}
 
+	if (rx_ignore) {
+		*txLastWord |= (uint32_t)SPI_FIFOWR_RXIGNORE_MASK;
+	}
+
 	*txLastWord |= (uint32_t)SPI_FIFOWR_EOT_MASK;
 
 	*txLastWord |= ((uint32_t)SPI_DEASSERT_ALL &
@@ -354,7 +360,8 @@ static void spi_mcux_prepare_txlastword(uint32_t *txLastWord,
 }
 
 static void spi_mcux_prepare_txdummy(uint32_t *dummy, bool last_packet,
-				const struct spi_config *spi_cfg)
+				     const struct spi_config *spi_cfg,
+				     bool rx_ignore)
 {
 	uint32_t word_size;
 
@@ -362,6 +369,9 @@ static void spi_mcux_prepare_txdummy(uint32_t *dummy, bool last_packet,
 
 	if (last_packet) {
 		*dummy |= (uint32_t)SPI_FIFOWR_EOT_MASK;
+	}
+	if (rx_ignore) {
+		*dummy |= (uint32_t)SPI_FIFOWR_RXIGNORE_MASK;
 	}
 
 	*dummy |= ((uint32_t)SPI_DEASSERT_ALL &
@@ -372,7 +382,8 @@ static void spi_mcux_prepare_txdummy(uint32_t *dummy, bool last_packet,
 }
 
 static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
-				 const struct spi_config *spi_cfg, size_t len, bool last_packet)
+				const struct spi_config *spi_cfg, size_t len,
+				bool last_packet, bool rx_ignore)
 {
 	const struct spi_mcux_config *cfg = dev->config;
 	struct spi_mcux_data *data = dev->data;
@@ -395,11 +406,11 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	if (buf == NULL) {
 		data->dummy_tx_buffer = 0;
 		data->last_word = 0;
-		spi_mcux_prepare_txdummy(&data->dummy_tx_buffer, last_packet, spi_cfg);
+		spi_mcux_prepare_txdummy(&data->dummy_tx_buffer, last_packet, spi_cfg, rx_ignore);
 
 		if (last_packet  &&
 		    ((word_size > 8) ? (len > 2U) : (len > 1U))) {
-			spi_mcux_prepare_txdummy(&data->last_word, last_packet, spi_cfg);
+			spi_mcux_prepare_txdummy(&data->last_word, last_packet, spi_cfg, rx_ignore);
 			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
 			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 			blk_cfg->block_size = (word_size > 8) ?
@@ -417,16 +428,18 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 			blk_cfg->block_size = sizeof(uint32_t);
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			data->dma_tx.wait_for_dma_status = DMA_STATUS_COMPLETE;
 		} else {
 			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
 			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 			blk_cfg->block_size = len;
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			data->dma_tx.wait_for_dma_status = DMA_STATUS_BLOCK;
 		}
 	} else {
 		if (last_packet) {
-			spi_mcux_prepare_txlastword(&data->last_word, buf, spi_cfg, len);
+			spi_mcux_prepare_txlastword(&data->last_word, buf, spi_cfg, len, rx_ignore);
 		}
 		/* If last packet and data transfer frame is bigger then 1,
 		 * use dma descriptor to send the last data.
@@ -448,10 +461,12 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 			blk_cfg->block_size = sizeof(uint32_t);
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			data->dma_tx.wait_for_dma_status = DMA_STATUS_COMPLETE;
 		} else {
 			blk_cfg->source_address = (uint32_t)buf;
 			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 			blk_cfg->block_size = len;
+			data->dma_tx.wait_for_dma_status = DMA_STATUS_BLOCK;
 		}
 	}
 
@@ -472,7 +487,7 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 
 	uint32_t tmpData = 0U;
 
-	spi_mcux_prepare_txdummy(&tmpData, last_packet, spi_cfg);
+	spi_mcux_prepare_txdummy(&tmpData, last_packet, spi_cfg, rx_ignore);
 
 	/* Setup the control info.
 	 * Halfword writes to just the control bits (offset 0xE22) doesn't push
@@ -505,6 +520,11 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 	/* retrieve active RX DMA channel (used in callback) */
 	struct stream *stream = &data->dma_rx;
 
+	if (buf == NULL) {
+		data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG;
+		return 0;
+	}
+
 	blk_cfg = &stream->dma_blk_cfg[0];
 
 	/* prepare the block for this RX DMA channel */
@@ -512,14 +532,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 	blk_cfg->block_size = len;
 
 	/* rx direction has periph as source and mem as dest. */
-	if (buf == NULL) {
-		/* if rx buff is null, then write data to dummy address. */
-		blk_cfg->dest_address = (uint32_t)&dummy_rx_buffer;
-		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-	} else {
-		blk_cfg->dest_address = (uint32_t)buf;
-	}
-
+	blk_cfg->dest_address = (uint32_t)buf;
 	blk_cfg->source_address = (uint32_t)&base->FIFORD;
 
 	/* direction is given by the DT */
@@ -545,6 +558,7 @@ static int spi_mcux_dma_move_buffers(const struct device *dev, size_t len,
 			const struct spi_config *spi_cfg, bool last_packet)
 {
 	struct spi_mcux_data *data = dev->data;
+	bool rx_ignore = data->ctx.rx_buf ? false : true;
 	int ret;
 
 	ret = spi_mcux_dma_rx_load(dev, data->ctx.rx_buf, len);
@@ -554,7 +568,7 @@ static int spi_mcux_dma_move_buffers(const struct device *dev, size_t len,
 	}
 
 	ret = spi_mcux_dma_tx_load(dev, data->ctx.tx_buf, spi_cfg,
-							len, last_packet);
+				   len, last_packet, rx_ignore);
 
 	return ret;
 }
@@ -815,6 +829,9 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_mcux_release,
 };
 
@@ -885,7 +902,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		SPI_DMA_CHANNELS(id)		\
 	};								\
 	DEVICE_DT_INST_DEFINE(id,					\
-			    &spi_mcux_init,				\
+			    spi_mcux_init,				\
 			    NULL,					\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\

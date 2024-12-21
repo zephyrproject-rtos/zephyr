@@ -747,10 +747,15 @@ static int uart_xec_irq_tx_complete(const struct device *dev)
 	const struct uart_xec_device_config * const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
+	int ret;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
-	int ret = ((regs->LSR & (LSR_TEMT | LSR_THRE))
-				== (LSR_TEMT | LSR_THRE)) ? 1 : 0;
+	if ((regs->IER & IER_TBE) ||
+	    ((regs->LSR & (LSR_TEMT | LSR_THRE)) != (LSR_TEMT | LSR_THRE))) {
+		ret = 0;
+	} else {
+		ret = 1;
+	}
 
 	k_spin_unlock(&dev_data->lock, key);
 
@@ -1097,7 +1102,7 @@ static const struct uart_driver_api uart_xec_driver_api = {
 		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),		\
 	};								\
 	PM_DEVICE_DT_INST_DEFINE(n, uart_xec_pm_action);		\
-	DEVICE_DT_INST_DEFINE(n, &uart_xec_init,			\
+	DEVICE_DT_INST_DEFINE(n, uart_xec_init,				\
 			      PM_DEVICE_DT_INST_GET(n),			\
 			      &uart_xec_dev_data_##n,			\
 			      &uart_xec_dev_cfg_##n,			\

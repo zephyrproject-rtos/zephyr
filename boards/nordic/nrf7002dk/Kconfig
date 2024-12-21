@@ -1,0 +1,50 @@
+# nRF5340 DK board configuration
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config IPM_NRFX
+	default IPM
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+if BOARD_NRF7002DK_NRF5340_CPUAPP || \
+	BOARD_NRF7002DK_NRF5340_CPUAPP_NRF7001
+
+config BT_HCI_IPC
+	default y if BT
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BT_HCI_IPC
+
+config DOMAIN_CPUNET_BOARD
+	string
+	default "nrf7002dk/nrf5340/cpunet"
+	help
+	  The board which will be used for CPUNET domain when creating a multi
+	  image application where one or more images should be located on
+	  another board. For example hci_ipc on the nRF5340_cpunet for
+	  Bluetooth applications.
+
+endif
+
+if BOARD_NRF7002DK_NRF5340_CPUNET
+
+config BT_CTLR
+	default y if BT
+
+config BT_ECC
+	default y if BT
+
+config DOMAIN_CPUAPP_BOARD
+	string
+	default "nrf7002dk/nrf5340/cpuapp" if BOARD_NRF7002DK_NRF5340_CPUAPP
+	default "nrf7002dk/nrf5340/cpuapp/nrf7001" if BOARD_NRF7002DK_NRF5340_CPUAPP_NRF7001
+	help
+	  The board which will be used for CPUAPP domain when creating a multi
+	  image application where one or more images should be located on
+	  another board.
+
+endif

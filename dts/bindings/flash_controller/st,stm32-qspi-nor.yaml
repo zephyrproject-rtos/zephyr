@@ -61,3 +61,13 @@ properties:
       supporting 1-4-4 mode also would support fast page programming.
 
       If absent, then 1-4-4 program page is used in quad mode.
+
+  requires-ulbpr:
+    type: boolean
+    description: |
+      Indicates the device requires the ULBPR (0x98) command.
+
+      Some flash chips such as the Microchip SST26VF series have a block
+      protection register that initializes to write-protected.  Use this
+      property to indicate that the BPR must be unlocked before write
+      operations can proceed.

@@ -240,55 +240,6 @@ static int cmd_version(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-#define DEFAULT_PASSWORD "zephyr"
-
-static void login_init(void)
-{
-	printk("Shell Login Demo\nHint: password = %s\n", DEFAULT_PASSWORD);
-	if (!CONFIG_SHELL_CMD_ROOT[0]) {
-		shell_set_root_cmd("login");
-	}
-}
-
-static int check_passwd(char *passwd)
-{
-	/* example only -- not recommended for production use */
-	return strcmp(passwd, DEFAULT_PASSWORD);
-}
-
-static int cmd_login(const struct shell *sh, size_t argc, char **argv)
-{
-	static uint32_t attempts;
-
-	if (check_passwd(argv[1]) != 0) {
-		shell_error(sh, "Incorrect password!");
-		attempts++;
-		if (attempts > 3) {
-			k_sleep(K_SECONDS(attempts));
-		}
-		return -EINVAL;
-	}
-
-	/* clear history so password not visible there */
-	z_shell_history_purge(sh->history);
-	shell_obscure_set(sh, false);
-	shell_set_root_cmd(NULL);
-	shell_prompt_change(sh, "uart:~$ ");
-	shell_print(sh, "Shell Login Demo\n");
-	shell_print(sh, "Hit tab for help.\n");
-	attempts = 0;
-	return 0;
-}
-
-static int cmd_logout(const struct shell *sh, size_t argc, char **argv)
-{
-	shell_set_root_cmd("login");
-	shell_obscure_set(sh, true);
-	shell_prompt_change(sh, "login: ");
-	shell_print(sh, "\n");
-	return 0;
-}
-
 static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 {
 	static bool in_use;
@@ -395,13 +346,6 @@ SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
 
 SHELL_CMD_ARG_REGISTER(bypass, NULL, "Bypass shell", cmd_bypass, 1, 0);
 
-SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_START_OBSCURED, login, NULL,
-			    "<password>", cmd_login, 2, 0);
-
-SHELL_COND_CMD_REGISTER(CONFIG_SHELL_START_OBSCURED, logout, NULL,
-			"Log out.", cmd_logout);
-
-
 /* Create a set of commands. Commands to this set are added using @ref SHELL_SUBCMD_ADD
  * and @ref SHELL_SUBCMD_COND_ADD.
  */
@@ -429,10 +373,6 @@ SHELL_CMD_REGISTER(section_cmd, &sub_section_cmd,
 
 int main(void)
 {
-	if (IS_ENABLED(CONFIG_SHELL_START_OBSCURED)) {
-		login_init();
-	}
-
 #if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
 	const struct device *dev;
 	uint32_t dtr = 0;

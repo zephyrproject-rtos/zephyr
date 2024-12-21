@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
 
 static struct bt_gatt_exchange_params mtu_exchange_params;
 static uint32_t write_count;
@@ -134,8 +135,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	printk("%s: %s role %u (reason %u)\n", __func__, addr, conn_info.role,
-	       reason);
+	printk("%s: %s role %u, reason %u %s\n", __func__, addr, conn_info.role,
+	       reason, bt_hci_err_to_str(reason));
 
 	conn_connected = NULL;
 
@@ -166,7 +167,7 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 			     enum bt_security_err err)
 {
-	printk("%s: to level %u (err %u)\n", __func__, level, err);
+	printk("%s: to level %u, err %s(%u)\n", __func__, level, bt_security_err_to_str(err), err);
 }
 #endif
 

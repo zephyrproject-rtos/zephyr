@@ -32,7 +32,7 @@
 		timers9: timers@40014c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00080000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 19U)>;
 			resets = <&rctl STM32_RESET(APB2, 19U)>;
 			/* Shared with TIM1_BRK */
 			interrupts = <24 0>;
@@ -49,7 +49,7 @@
 		timers10: timers@40015000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40015000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 20U)>;
 			resets = <&rctl STM32_RESET(APB2, 20U)>;
 			/* Shared with TIM1_UP */
 			interrupts = <25 0>;
@@ -66,7 +66,7 @@
 		timers11: timers@40015400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40015400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00200000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21U)>;
 			resets = <&rctl STM32_RESET(APB2, 21U)>;
 			/* Shared with TIM1_TRG_COM */
 			interrupts = <26 0>;
@@ -83,7 +83,7 @@
 		timers12: timers@40001800 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000040>;
+			clocks = <&rcc STM32_CLOCK(APB1, 6U)>;
 			resets = <&rctl STM32_RESET(APB1, 6U)>;
 			/* Shared with TIM8_BRK */
 			interrupts = <43 0>;
@@ -100,7 +100,7 @@
 		timers13: timers@40001c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000080>;
+			clocks = <&rcc STM32_CLOCK(APB1, 7U)>;
 			resets = <&rctl STM32_RESET(APB1, 7U)>;
 			/* Shared with TIM8_UP */
 			interrupts = <44 0>;
@@ -117,7 +117,7 @@
 		timers14: timers@40002000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40002000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000100>;
+			clocks = <&rcc STM32_CLOCK(APB1, 8U)>;
 			resets = <&rctl STM32_RESET(APB1, 8U)>;
 			/* Shared with TIM8_TRG_COM */
 			interrupts = <45 0>;

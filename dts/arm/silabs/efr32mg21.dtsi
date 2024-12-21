@@ -8,12 +8,90 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <dt-bindings/clock/silabs/xg21-clock.h>
+#include <freq.h>
 #include "gpio_gecko.h"
 
 / {
 	chosen {
 		zephyr,entropy = &se;
 		zephyr,flash-controller = &msc;
+	};
+
+	clocks {
+		sysclk: sysclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfrcodpll>;
+		};
+		hclk: hclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&sysclk>;
+			/* Divider 1, 2, or 4 */
+			clock-div = <1>;
+		};
+		pclk: pclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hclk>;
+			/* Divider 1 or 2 */
+			clock-div = <2>;
+		};
+		lspclk: lspclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&pclk>;
+			/* Divider 1 or 2 */
+			clock-div = <2>;
+		};
+		hclkdiv1024: hclkdiv1024 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hclk>;
+			/* Fixed divider of 1024 */
+			clock-div = <1024>;
+		};
+		traceclk: traceclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hclk>;
+		};
+		em01grpaclk: em01grpaclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfrcodpll>;
+		};
+		iadcclk: iadcclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&em01grpaclk>;
+		};
+		em23grpaclk: em23grpaclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
+		em4grpaclk: em4grpaclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
+		rtccclk: rtccclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
+		wdog0clk: wdog0clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
+		wdog1clk: wdog1clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
 	};
 
 	cpus {
@@ -40,6 +118,79 @@
 	};
 
 	soc {
+		cmu: clock@50008000 {
+			compatible = "silabs,series-clock";
+			reg = <0x50008000 0x4000>;
+			interrupts = <48 0>;
+			interrupt-names = "cmu";
+			status = "okay";
+			#clock-cells = <2>;
+		};
+
+		fsrco: fsrco@50018000 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			reg = <0x50018000 0x4000>;
+			clock-frequency = <DT_FREQ_M(20)>;
+		};
+
+		clk_hfxo: hfxo: hfxo@5000c000 {
+			#clock-cells = <0>;
+			compatible = "silabs,hfxo";
+			reg = <0x5000c000 0x4000>;
+			interrupts = <45 0>;
+			interrupt-names = "hfxo";
+			clock-frequency = <DT_FREQ_K(38400)>;
+			ctune = <140>;
+			precision = <50>;
+		};
+
+		lfxo: lfxo@50020000 {
+			#clock-cells = <0>;
+			compatible = "silabs,series2-lfxo";
+			reg = <0x50020000 0x4000>;
+			clock-frequency = <32768>;
+			ctune = <63>;
+			precision = <50>;
+			timeout = <4096>;
+			status = "disabled";
+		};
+
+		hfrcodpll: hfrcodpll@50010000 {
+			#clock-cells = <0>;
+			compatible = "silabs,series2-hfrcodpll";
+			reg = <0x50010000 0x4000>;
+			clock-frequency = <DT_FREQ_M(19)>;
+		};
+
+		hfrcoem23: hfrcoem23@5a014000 {
+			#clock-cells = <0>;
+			compatible = "silabs,series2-hfrcoem23";
+			reg = <0x5a014000 0x4000>;
+			clock-frequency = <DT_FREQ_M(19)>;
+		};
+
+		lfrco: lfrco@50024000 {
+			#clock-cells = <0>;
+			compatible = "silabs,series2-lfrco";
+			reg = <0x50024000 0x4000>;
+			clock-frequency = <32768>;
+		};
+
+		ulfrco: ulfrco@50028000 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			reg = <0x50028000 0x4000>;
+			clock-frequency = <1000>;
+		};
+
+		clkin0: clkin0@5003c46c {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			reg = <0x5003c46c 0x4>;
+			clock-frequency = <DT_FREQ_M(38)>;
+		};
+
 		msc: flash-controller@50030000 {
 			compatible = "silabs,gecko-flash-controller";
 			reg = <0x50030000 0x31a4>;
@@ -61,6 +212,7 @@
 			interrupts = <11 0>, <12 0>;
 			interrupt-names = "rx", "tx";
 			peripheral-id = <0>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
@@ -70,6 +222,7 @@
 			interrupts = <13 0>, <14 0>;
 			interrupt-names = "rx", "tx";
 			peripheral-id = <1>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
@@ -79,6 +232,7 @@
 			interrupts = <15 0>, <16 0>;
 			interrupt-names = "rx", "tx";
 			peripheral-id = <2>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
@@ -89,6 +243,7 @@
 			#size-cells = <0>;
 			reg = <0x5a010000 0x400>;
 			interrupts = <27 0>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_LSPCLK>;
 			status = "disabled";
 		};
 
@@ -99,15 +254,18 @@
 			#size-cells = <0>;
 			reg = <0x50068000 0x400>;
 			interrupts = <28 0>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
 		rtcc0: rtcc@58000000 {
-			compatible = "silabs,gecko-rtcc";
+			compatible = "silabs,gecko-stimer";
 			reg = <0x58000000 0x400>;
 			interrupts = <10 0>;
+			interrupt-names = "rtcc";
 			clock-frequency = <32768>;
 			prescaler = <1>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_RTCCCLK>;
 			status = "disabled";
 		};
 
@@ -116,6 +274,7 @@
 			reg = <0x5003c300 0x3c00>;
 			interrupts = <26 2>, <25 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 
 			ranges;
 			#address-cells = <1>;
@@ -171,6 +330,7 @@
 			reg = <0x5a018000 0x2C>;
 			peripheral-id = <0>;
 			interrupts = <43 0>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_WDOG0CLK>;
 			status = "disabled";
 		};
 
@@ -179,6 +339,7 @@
 			reg = <0x5a01c000 0x2C>;
 			peripheral-id = <1>;
 			interrupts = <44 0>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_WDOG1CLK>;
 			status = "disabled";
 		};
 

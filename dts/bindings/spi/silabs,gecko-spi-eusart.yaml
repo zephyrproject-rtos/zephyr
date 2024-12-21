@@ -1,0 +1,21 @@
+description: GECKO EUSART SPI
+
+compatible: "silabs,gecko-spi-eusart"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true

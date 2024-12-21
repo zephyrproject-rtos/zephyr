@@ -21,7 +21,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 #include "../mpl_internal.h"
 

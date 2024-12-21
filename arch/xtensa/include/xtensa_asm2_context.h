@@ -6,6 +6,10 @@
 #ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_CONTEXT_H_
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_CONTEXT_H_
 
+#if defined(__XT_CLANG__)
+#include <xtensa/xtensa-types.h>
+#endif
+
 #include <xtensa/corebits.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/config/tie.h>

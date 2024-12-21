@@ -244,6 +244,7 @@ static int ens210_wait_boot(const struct device *dev)
 
 		if (cnt == 0) {
 			ens210_sys_reset(dev);
+			k_sleep(K_MSEC(1));
 		}
 
 		ens210_sys_enable(dev, 0);

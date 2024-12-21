@@ -1,0 +1,11 @@
+common:
+  filter: not CONFIG_BIG_ENDIAN
+tests:
+  debug.coresight.stp_demux:
+    integration_platforms:
+      - native_sim
+  debug.coresight.stp_demux_max_utilization:
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_LOG_FRONTEND_STMESP_DEMUX_MAX_UTILIZATION=y

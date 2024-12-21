@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2024 Charles Dias
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* AHB clocks must respect the minimum ratio AHB / DCMI_PIXCLK of 2.5 (AN5020 - Rev 3).
+ * The OV2640 PCLK is around 72 MHz for QQVGA resolution (160x120) with MCO1_SEL_HSI48
+ * and MCO1_PRE_DIV_4.
+ */
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(240)>;
+	d1cpre = <1>;
+	hpre = <1>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+/* See reference manual (RM0433 Rev 8) page 390:
+ *   100: HSI48 clock selected (hsi48_ck)
+ */
+#define MCO1_SEL_HSI48 4
+
+ /* See reference manual (RM0433 Rev 8) page 391:
+  *   0100: division by 4
+  */
+#define MCO1_PRE_DIV_4 4
+
+&mco1 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_HSI48 MCO1_SEL(MCO1_SEL_HSI48)>;
+	prescaler = <MCO1_PRE(MCO1_PRE_DIV_4)>;
+	pinctrl-0 = <&rcc_mco_1_pa8>;
+	pinctrl-names = "default";
+};
+
+&zephyr_camera_i2c {
+	ov2640: ov2640@30 {
+		supply-gpios = <&dcmi_camera_connector 8 GPIO_ACTIVE_HIGH>;
+		clock-rate-control = <0x80>;
+	};
+};
+
+&zephyr_camera_dvp {
+	dmas = <&dma1 0 75 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
+		STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};

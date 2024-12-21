@@ -5,5 +5,6 @@ config PWM_GD32
 	bool "GigaDevice GD32 PWM driver"
 	default y
 	depends on DT_HAS_GD_GD32_PWM_ENABLED
+	select PINCTRL
 	help
 	  Enable the GigaDevice GD32 PWM driver.

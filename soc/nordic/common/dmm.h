@@ -23,18 +23,26 @@ extern "C" {
 
 /** @cond INTERNAL_HIDDEN */
 
+#ifdef CONFIG_DCACHE
+
 /* Determine if memory region is cacheable. */
-#define DMM_IS_REG_CACHEABLE(node_id)					 \
-	COND_CODE_1(CONFIG_DCACHE,					 \
-	   (COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_memory_attr),	 \
-	    ((DT_PROP(node_id, zephyr_memory_attr) & DT_MEM_CACHEABLE)), \
-	    (0))), (0))
+#define DMM_IS_REG_CACHEABLE(node_id)					     \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_memory_attr),	     \
+		((DT_PROP(node_id, zephyr_memory_attr) & DT_MEM_CACHEABLE)), \
+		(0))
 
 /* Determine required alignment of the data buffers in specified memory region.
  * Cache line alignment is required if region is cacheable and data cache is enabled.
  */
 #define DMM_REG_ALIGN_SIZE(node_id) \
 	(DMM_IS_REG_CACHEABLE(node_id) ? CONFIG_DCACHE_LINE_SIZE : sizeof(uint8_t))
+
+#else
+
+#define DMM_IS_REG_CACHEABLE(node_id) 0
+#define DMM_REG_ALIGN_SIZE(node_id) (sizeof(uint8_t))
+
+#endif /* CONFIG_DCACHE */
 
 /* Determine required alignment of the data buffers in memory region
  * associated with specified device node.
@@ -155,6 +163,14 @@ int dmm_buffer_in_prepare(void *region, void *user_buffer, size_t user_length, v
  */
 int dmm_buffer_in_release(void *region, void *user_buffer, size_t user_length, void *buffer_in);
 
+/**
+ * @brief Initialize DMM.
+ *
+ * @retval 0 If succeeded.
+ * @retval -errno Negative errno code on failure.
+ */
+int dmm_init(void);
+
 /** @endcond */
 
 #else
@@ -191,6 +207,11 @@ static ALWAYS_INLINE int dmm_buffer_in_release(void *region, void *user_buffer, 
 	ARG_UNUSED(user_buffer);
 	ARG_UNUSED(user_length);
 	ARG_UNUSED(buffer_in);
+	return 0;
+}
+
+static ALWAYS_INLINE int dmm_init(void)
+{
 	return 0;
 }
 

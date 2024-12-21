@@ -1,0 +1,11 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&edma0 {
+	status = "okay";
+};
+
+dma0: &edma0 { };

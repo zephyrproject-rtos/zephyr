@@ -361,8 +361,9 @@ FS_EXT2_DECLARE_DEFAULT_CONFIG(ext2_default_cfg);
 
 /* Superblock is used only once. Because ext2 may have only one instance at the time we could
  * statically allocate this strusture.
+ * Alignment needed for reads to work with DMAs that force it (e.g. stm32 SDMMC + DMA).
  */
-static struct ext2_disk_superblock superblock;
+static struct ext2_disk_superblock __aligned(CONFIG_EXT2_SUPERBLOCK_ALIGNMENT) superblock;
 
 static int ext2_mount(struct fs_mount_t *mountp)
 {

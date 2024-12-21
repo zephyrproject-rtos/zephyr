@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_NUMAKER
+	bool "Nuvoton NuMaker USB 1.1 device controller"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED
+	help
+	  Enable Nuvoton NuMaker USB 1.1 device controller driver
+
+if UDC_NUMAKER
+
+config UDC_NUMAKER_MSG_QUEUE_SIZE
+	int "UDC NuMaker message queue size"
+	default 32
+	help
+	  Maximum number of messages the driver can queue for interrupt bottom half processing.
+
+config UDC_NUMAKER_THREAD_STACK_SIZE
+	int "UDC NuMaker driver internal thread stack size"
+	default 1536
+	help
+	  Size of the stack for the driver internal thread.
+
+config UDC_NUMAKER_THREAD_PRIORITY
+	int "UDC NuMaker driver internal thread priority"
+	default 8
+	help
+	  Priority of the driver internal thread.
+
+endif # UDC_NUMAKER

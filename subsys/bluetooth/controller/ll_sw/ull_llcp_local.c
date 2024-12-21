@@ -243,9 +243,21 @@ void llcp_lr_flush_procedures(struct ll_conn *conn)
 void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		struct node_rx_pdu *rx)
 {
-	/* Store RX node and link */
-	ctx->node_ref.rx = rx;
-	ctx->node_ref.link = link;
+	/* In the case of a specific connection update procedure collision it can occur that
+	 * an 'unexpected' REJECT_IND_PDU is received and passed as RX'ed and will then result in
+	 * discarding of the retention of the previously received CONNECTION_UPDATE_IND
+	 * and following this, an assert will be hit when attempting to use this retained
+	 * RX node for creating the notification on completion of connection param request.
+	 * (see comment in ull_llcp_conn_upd.c::lp_cu_st_wait_instant() for more details)
+	 *
+	 * The workaround/fix for this is to only store an RX node for retention if
+	 * 'we havent already' got one
+	 */
+	if (!ctx->node_ref.rx) {
+		/* Store RX node and link */
+		ctx->node_ref.rx = rx;
+		ctx->node_ref.link = link;
+	}
 
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -352,6 +364,11 @@ void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		llcp_lp_comm_tx_ack(conn, ctx, tx);
 		break;
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+	case PROC_PERIODIC_SYNC:
+		llcp_lp_past_tx_ack(conn, ctx, tx);
+		break;
+#endif /* defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) */
 	default:
 		break;
 		/* Ignore tx_ack */
@@ -451,6 +468,11 @@ static void lr_act_run(struct ll_conn *conn)
 		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+	case PROC_PERIODIC_SYNC:
+		llcp_lp_past_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);

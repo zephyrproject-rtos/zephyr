@@ -1,0 +1,76 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMXRT118X
+	select CPU_CORTEX_M_HAS_DWT
+	select SOC_RESET_HOOK
+	select INIT_ARCH_HW_AT_BOOT if SOC_MIMXRT1189_CM33
+	select ARM
+	select CLOCK_CONTROL
+	select HAS_MCUX_CACHE
+	select ARMV8_M_DSP if SOC_MIMXRT1189_CM33
+	select CPU_HAS_ARM_SAU if SOC_MIMXRT1189_CM33
+	select HAS_MCUX
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS if SOC_MIMXRT1189_CM33
+	select ARM_MPU if SOC_MIMXRT1189_CM33
+	select INIT_ARM_PLL
+	select ARM_TRUSTZONE_M if SOC_MIMXRT1189_CM33
+	select CPU_HAS_ICACHE if SOC_MIMXRT1189_CM7
+	select CPU_HAS_DCACHE if SOC_MIMXRT1189_CM7
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION if SOC_MIMXRT1189_CM7
+	select HAS_MCUX_IOMUXC
+	select HAS_SWO
+	select HAS_MCUX_FLEXSPI
+	select SOC_EARLY_INIT_HOOK
+
+config SOC_MIMXRT1189_CM33
+	select CPU_CORTEX_M33
+
+config SOC_MIMXRT1189_CM7
+	select CPU_CORTEX_M7
+
+if SOC_SERIES_IMXRT118X
+
+config IMAGE_CONTAINER_OFFSET
+	hex "Image container"
+	default 0x1000
+	help
+	  Image container is a boot image format that is used by ROM. Container
+	  format consists container header, image arrary entry, signature block
+	  and user program images and data. The boot ROM expects container data
+	  to be saved in external memory.
+
+# Note- This config present the offest between container header and user
+# image. If ROM_START_OFFSET changed, you also need to change CONTAINER_USER_IMAGE_OFFSET
+# value. CONTAINER_USER_IMAGE_OFFSET = ROM_START_OFFSET - IMAGE_CONTAINER_OFFSET.
+config CONTAINER_USER_IMAGE_OFFSET
+	hex "The offset between container header and user image"
+	default 0xA000
+	help
+	  The offset between container and user image. IF change the user image
+	  start address, please don't forget to modify CONTAINER_USER_IMAGE_OFFSET
+	  value, this will make ROM could get the user image start address.
+
+config MCUX_CORE_SUFFIX
+	default "_cm7" if SOC_MIMXRT1189_CM7
+	default "_cm33" if SOC_MIMXRT1189_CM33
+
+config TRDC_MCUX_TRDC
+	default y
+	bool "Use TRDC MCUX Driver"
+
+config S3MU_MCUX_S3MU
+	default y
+	bool "Use S3MU MCUX Driver"
+
+config IMXRT118X_CM33_XCACHE_PS
+	bool "Use CM33 XCACHE_PS"
+	default y if SOC_MIMXRT1189_CM33
+	help
+	  Use CM33 XCACHE_PS at boot. Please note XCACHE_PC have been
+	  enabled in SystemInit function. If this Kconfig is cleared,
+	  the XCACHE controller won't be enabled during SOC init
+
+endif # SOC_SERIES_IMXRT118X

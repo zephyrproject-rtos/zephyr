@@ -26,7 +26,7 @@
 struct bt_bap_stream_ops mock_bap_stream_ops;
 
 DEFINE_FAKE_VOID_FUNC(mock_bap_stream_configured_cb, struct bt_bap_stream *,
-		      const struct bt_audio_codec_qos_pref *);
+		      const struct bt_bap_qos_cfg_pref *);
 DEFINE_FAKE_VOID_FUNC(mock_bap_stream_qos_set_cb, struct bt_bap_stream *);
 DEFINE_FAKE_VOID_FUNC(mock_bap_stream_enabled_cb, struct bt_bap_stream *);
 DEFINE_FAKE_VOID_FUNC(mock_bap_stream_metadata_updated_cb, struct bt_bap_stream *);

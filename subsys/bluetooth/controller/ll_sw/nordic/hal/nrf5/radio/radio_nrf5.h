@@ -49,7 +49,13 @@
 #error "Unsupported SoC."
 #endif
 
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+#include <hal/nrf_grtc.h>
+#include <hal/nrf_ppib.h>
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 #include <hal/nrf_rtc.h>
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
+
 #include <hal/nrf_timer.h>
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
@@ -64,6 +70,9 @@
 
 /* This has to come before the ppi/dppi includes below. */
 #include "radio_nrf5_fem.h"
+
+/* Include RTC/GRTC Compare Index used to Trigger Radio TXEN/RXEN */
+#include "hal/cntr.h"
 
 #if defined(PPI_PRESENT)
 #include <hal/nrf_ppi.h>
@@ -100,3 +109,6 @@
 #else /* For simulated targets there is no delay for the PPI task -> TIMER start */
 #define HAL_RADIO_TMR_START_DELAY_US 0U
 #endif
+
+/* This is the minimum prepare duration required to setup radio for deferred transmission */
+#define HAL_RADIO_TMR_DEFERRED_TX_DELAY_US 50U

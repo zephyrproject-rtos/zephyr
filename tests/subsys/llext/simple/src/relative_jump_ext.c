@@ -62,4 +62,4 @@ void test_entry(void)
 	printk("exit\n");
 	zassert_equal(test_var, 1, "relative jump test failed");
 }
-LL_EXTENSION_SYMBOL(test_entry);
+EXPORT_SYMBOL(test_entry);

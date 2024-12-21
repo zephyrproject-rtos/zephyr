@@ -23,9 +23,9 @@
 
 /** Fixed clocks  */
 /* Low speed clocks defined in stm32_common_clocks.h */
-#define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
-#define STM32_SRC_HSE		(STM32_SRC_HSI + 1)
-
+#define STM32_SRC_HSI           (STM32_SRC_LSI + 1)
+#define STM32_SRC_HSE           (STM32_SRC_HSI + 1)
+#define STM32_SRC_PLLCLK        (STM32_SRC_HSE + 1)
 
 #define STM32_CLOCK_REG_MASK    0xFFU
 #define STM32_CLOCK_REG_SHIFT   0U
@@ -49,13 +49,14 @@
  * @param mask Mask for the RCC_CFGRx field.
  * @param val Clock value (0, 1, ... 7).
  */
-#define STM32_CLOCK(val, mask, shift, reg)					\
+#define STM32_DOMAIN_CLOCK(val, mask, shift, reg)					\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
 	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
 
-/** @brief RCC_CFGR2 register offset */
+/** @brief RCC_CFGRx register offset */
+#define CFGR1_REG               0x04
 #define CFGR2_REG		0x2C
 
 /** @brief RCC_BDCR register offset */
@@ -63,9 +64,13 @@
 
 /** @brief Device domain clocks selection helpers */
 /** CFGR2 devices */
-#define I2S2_SEL(val)		STM32_CLOCK(val, 1, 17, CFGR2_REG)
-#define I2S3_SEL(val)		STM32_CLOCK(val, 1, 18, CFGR2_REG)
+#define I2S2_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 17, CFGR2_REG)
+#define I2S3_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 18, CFGR2_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+#define RTC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 8, BDCR_REG)
+
+/** CFGR1 devices */
+#define MCO1_SEL(val)           STM32_MCO_CFGR(val, 0x7, 24, CFGR1_REG)
+/* No MCO prescaler support on STM32F1 series. */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_ */

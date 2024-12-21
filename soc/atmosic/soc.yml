@@ -11,3 +11,18 @@ family:
         socs:
           - name: ATM34xx-2
           - name: ATM34xx-5
+runners:
+  run_once:
+    '--erase_flash':
+      - run: first
+        runners:
+          - atmisp
+        groups:
+          - qualifiers:
+              - ATM33xx-5
+              - ATM33xx-5/ns
+              - ATM34xx-2
+              - ATM34xx-2/ns
+              - ATM34xx-5
+              - ATM34xx-5/ns
+              - ATMx2xx-x1x

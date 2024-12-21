@@ -1,7 +1,4 @@
-.. _stm32c0116_dk_board:
-
-ST STM32C0116-DK Discovery Kit
-##############################
+.. zephyr:board:: stm32c0116_dk
 
 Overview
 ********
@@ -11,10 +8,6 @@ microcontroller in a UFQFPN20 package. This Discovery kit features one UFQFPN20
 to DIL20 module designed with the STM32C011F6 microcontroller and allows the user to develop
 and share applications. It includes an on-board ST-LINK/V2-1 to debug and program the embedded
 STM32 microcontroller. Important board features include:
-
-.. image:: img/stm32c0116_dk.jpg
-     :align: center
-     :alt: STM32C0116-DK
 
 More information about the board can be found at the `STM32C0116-DK website`_.
 
@@ -106,6 +99,8 @@ The STM32C0116 Discovery board is configured as follows:
 Programming and Debugging
 *************************
 
+STM32C0116-DK Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
+
 Applications for the ``stm32c0116_dk`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -113,7 +108,15 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32C0116-DK Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner jlink
 
 Flashing an application to STM32C0116-DK
 -------------------------------------------
@@ -121,7 +124,7 @@ Flashing an application to STM32C0116-DK
 First, connect the STM32C0116 Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -152,3 +155,6 @@ You should see the following message on the console:
 
 .. _STM32C0x1 reference manual:
    https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-64bit-mcus-stmicroelectronics.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

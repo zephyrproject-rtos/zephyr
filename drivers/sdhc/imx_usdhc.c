@@ -58,6 +58,7 @@ struct usdhc_config {
 	const struct gpio_dt_spec pwr_gpio;
 	const struct gpio_dt_spec detect_gpio;
 	bool detect_dat3;
+	bool detect_cd;
 	bool no_180_vol;
 	uint32_t data_timeout;
 	uint32_t read_watermark;
@@ -809,10 +810,18 @@ static int imx_usdhc_get_card_present(const struct device *dev)
 			imx_usdhc_dat3_pull(cfg, true);
 			USDHC_CardDetectByData3(cfg->base, false);
 		}
+	} else if (cfg->detect_cd) {
+		/*
+		 * Detect the card via the USDHC_CD signal internal to
+		 * the peripheral
+		 */
+		data->card_present = USDHC_DetectCardInsert(cfg->base);
 	} else if (cfg->detect_gpio.port) {
 		data->card_present = gpio_pin_get_dt(&cfg->detect_gpio) > 0;
 	} else {
-		data->card_present = USDHC_DetectCardInsert(cfg->base);
+		LOG_WRN("No card detection method configured, assuming card "
+			"is present");
+		data->card_present = true;
 	}
 	return ((int)data->card_present);
 }
@@ -1090,6 +1099,7 @@ static const struct sdhc_driver_api usdhc_api = {
 		.detect_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),	\
 		.data_timeout = DT_INST_PROP(n, data_timeout),			\
 		.detect_dat3 = DT_INST_PROP(n, detect_dat3),			\
+		.detect_cd = DT_INST_PROP(n, detect_cd),			\
 		.no_180_vol = DT_INST_PROP(n, no_1_8_v),			\
 		.read_watermark = DT_INST_PROP(n, read_watermark),		\
 		.write_watermark = DT_INST_PROP(n, write_watermark),		\

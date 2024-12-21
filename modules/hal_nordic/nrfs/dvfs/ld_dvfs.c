@@ -264,7 +264,12 @@ int32_t ld_dvfs_configure_hsfll(enum dvfs_frequency_setting oppoint)
 
 	uint8_t freq_trim = get_dvfs_oppoint_data(oppoint)->new_f_trim_entry;
 
-#ifdef CONFIG_SOC_NRF54H20_CPUAPP
+	/* Temporary patch fixing medlow oppoint trim index */
+	if (oppoint == DVFS_FREQ_MEDLOW) {
+		freq_trim = 2;
+	}
+
+#if defined(NRF_APPLICATION)
 	hsfll_trim.vsup	  = NRF_FICR->TRIM.APPLICATION.HSFLL.TRIM.VSUP;
 	hsfll_trim.coarse = NRF_FICR->TRIM.APPLICATION.HSFLL.TRIM.COARSE[freq_trim];
 	hsfll_trim.fine	  = NRF_FICR->TRIM.APPLICATION.HSFLL.TRIM.FINE[freq_trim];

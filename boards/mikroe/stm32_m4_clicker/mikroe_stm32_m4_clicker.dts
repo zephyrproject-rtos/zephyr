@@ -1,0 +1,137 @@
+/*
+ * Copyright (c) 2024 Ian Morris
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f415Rg.dtsi>
+#include <st/f4/stm32f415rgtx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Mikroe STM32 M4 Clicker";
+	compatible = "st,stm32f415rg";
+
+	chosen {
+		zephyr,console = &usb_cdc_acm_uart;
+		zephyr,shell-uart = &usb_cdc_acm_uart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		ld1: led_1 {
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+			label = "User LED 1";
+		};
+		ld2: led_2 {
+			gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+			label = "User LED 2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		btn1: button_1 {
+			label = "User Button 1";
+			gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn2: button_2 {
+			label = "User Button 2";
+			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpioa 0 0>,	/* AN  */
+				<1 0 &gpiob 5 0>,	/* RST */
+				<2 0 &gpiob 12 0>,	/* CS   */
+				<3 0 &gpiob 13 0>,	/* SCK  */
+				<4 0 &gpiob 14 0>,	/* MISO */
+				<5 0 &gpiob 15 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &gpiob 0 0>,	/* PWM  */
+				<7 0 &gpiob 1 0>,	/* INT  */
+				<8 0 &gpioc 11 0>,	/* RX   */
+				<9 0 &gpioc 10 0>,	/* TX   */
+				<10 0 &gpiob 10 0>,	/* SCL  */
+				<11 0 &gpiob 11 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
+
+	aliases {
+		led0 = &ld1;
+		led1 = &ld2;
+		sw0 = &btn1;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <16>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+				&spi2_miso_pb14 &spi2_mosi_pb15>;
+		pinctrl-names = "default";
+		status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	usb_cdc_acm_uart: cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+mikrobus_spi: &spi2 {};
+mikrobus_serial: &usart3 {};
+mikrobus_i2c: &i2c2 {};

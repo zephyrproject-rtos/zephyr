@@ -1,15 +1,39 @@
 common:
   depends_on: netif
-  # native_sim uses if_*() from the native libc
-  filter: not CONFIG_NATIVE_LIBC
-  integration_platforms:
-    - qemu_x86
   min_ram: 16
-  platform_allow:
-    - qemu_x86
   tags:
     - iface
     - net
     - posix
+  # 1 tier0 platform per supported architecture (dependent on netif support)
+  integration_platforms:
+    - mps2/an385
+    - qemu_x86
+  # native_posix and native_sim link to if_*() from the host libc which causes the test to crash
+  # immediately.
+  filter: not CONFIG_NATIVE_LIBC
 tests:
-  portability.posix.net: {}
+  portability.posix.net:
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
+  portability.posix.net.armclang_std_libc:
+    toolchain_allow: armclang
+    extra_configs:
+      - CONFIG_ARMCLANG_STD_LIBC=y
+  portability.posix.net.arcmwdtlib:
+    toolchain_allow: arcmwdt
+    extra_configs:
+      - CONFIG_ARCMWDT_LIBC=y
+  portability.posix.net.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
+  portability.posix.net.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.net.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y

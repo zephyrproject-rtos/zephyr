@@ -124,8 +124,9 @@ static int read_port_reg(const struct device *dev, uint8_t reg, uint8_t pin,
 	uint8_t b_buf;
 	int ret;
 
-	if (pin >= 8)
+	if (pin >= 8) {
 		reg++;
+	}
 
 	ret = i2c_reg_read_byte_dt(&config->bus, reg, &b_buf);
 	if (ret != 0) {

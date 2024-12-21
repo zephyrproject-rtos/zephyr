@@ -3,7 +3,7 @@
 
 description: |
   NXP LCDIC Controller. This controller implements 8080 and SPI mode MIPI-DBI
-  compliant transfers. Only SPI mode is currently supported.
+  compliant transfers.
 compatible: "nxp,lcdic"
 
 include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
@@ -23,3 +23,26 @@ properties:
     description: |
       Swap bytes while transferring on LCDIC. When set, the LCDIC will send
       the most significant byte first when using multibyte pixel formats.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin. The controller will set this pin to logic high to reset
+      the display. If not provided, the LCDIC module's reset pin will be used
+      to reset attached displays.
+
+  nxp,write-inactive-cycles:
+    type: int
+    default: 6
+    description: |
+      Set minimum count of write inactive cycles, as a multiple of the module
+      clock frequency. This controls the length of the inactive period of the
+      WRX signal. Default is IP reset value. Only valid in 8080 mode.
+
+  nxp,write-active-cycles:
+    type: int
+    default: 6
+    description: |
+      Set minimum count of write active cycles, as a multiple of the module
+      clock frequency. This controls the length of the active period of the
+      WRX signal. Default is IP reset value. Only valid in 8080 mode.

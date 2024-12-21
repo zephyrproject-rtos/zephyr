@@ -154,6 +154,9 @@ static int tca954x_channel_init(const struct device *dev)
 static const struct i2c_driver_api tca954x_api_funcs = {
 	.configure = tca954x_configure,
 	.transfer = tca954x_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT_PRIO,

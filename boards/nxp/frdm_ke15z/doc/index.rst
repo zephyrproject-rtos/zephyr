@@ -1,7 +1,4 @@
-.. _frdm_ke15z:
-
-NXP FRDM-KE15Z
-##############
+.. zephyr:board:: frdm_ke15z
 
 Overview
 ********
@@ -11,10 +8,6 @@ MCU-based platforms. The FRDM-KE15Z contains a robust TSI module
 with up to 50 channels which makes this board highly flexible
 for touch keys. Offers options for serial
 communication, flash programming, and run-control debugging.
-
-.. figure:: frdm_ke15z.webp
-   :align: center
-   :alt: FRDM-KE15Z
 
 Hardware
 ********
@@ -129,7 +122,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -147,7 +140,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

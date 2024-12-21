@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_output_custom.h>
@@ -19,6 +21,7 @@
 #define LOG_COLOR_CODE_RED     "\x1B[1;31m"
 #define LOG_COLOR_CODE_GREEN   "\x1B[1;32m"
 #define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
+#define LOG_COLOR_CODE_BLUE    "\x1B[1;34m"
 
 #define HEXDUMP_BYTES_IN_LINE 16
 
@@ -38,10 +41,10 @@ static const char *const severity[] = {
 
 static const char *const colors[] = {
 	NULL,
-	LOG_COLOR_CODE_RED,     /* err */
-	LOG_COLOR_CODE_YELLOW,  /* warn */
+	IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR) ? LOG_COLOR_CODE_RED : NULL,    /* err */
+	IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR) ? LOG_COLOR_CODE_YELLOW : NULL, /* warn */
 	IS_ENABLED(CONFIG_LOG_INFO_COLOR_GREEN) ? LOG_COLOR_CODE_GREEN : NULL,   /* info */
-	NULL                    /* dbg */
+	IS_ENABLED(CONFIG_LOG_DBG_COLOR_BLUE) ? LOG_COLOR_CODE_BLUE : NULL,   /* dbg */
 };
 
 static uint32_t freq;
@@ -147,28 +150,6 @@ static int print_formatted(const struct log_output *output,
 	return length;
 }
 
-static void buffer_write(log_output_func_t outf, uint8_t *buf, size_t len,
-			 void *ctx)
-{
-	int processed;
-
-	while (len != 0) {
-		processed = outf(buf, len, ctx);
-		len -= processed;
-		buf += processed;
-	}
-}
-
-
-void log_output_flush(const struct log_output *output)
-{
-	buffer_write(output->func, output->buf,
-		     output->control_block->offset,
-		     output->control_block->ctx);
-
-	output->control_block->offset = 0;
-}
-
 static inline bool is_leap_year(uint32_t year)
 {
 	return (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0));
@@ -251,19 +232,15 @@ static int timestamp_print(const struct log_output *output,
 		ms = (remainder * 1000U) / freq;
 		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
 
-		if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
-			length = log_custom_timestamp_print(output, timestamp, print_formatted);
-		} else if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-			   flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) && flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
 #if defined(CONFIG_REQUIRES_FULL_LIBC)
 			char time_str[sizeof("1970-01-01T00:00:00")];
-			struct tm *tm;
-			time_t time;
+			struct tm tm_timestamp = {0};
+			time_t time_seconds = total_seconds;
 
-			time = total_seconds;
-			tm = gmtime(&time);
+			gmtime_r(&time_seconds, &tm_timestamp);
 
-			strftime(time_str, sizeof(time_str), "%FT%T", tm);
+			strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
 
 			length = print_formatted(output, "%s.%06uZ ",
 						 time_str, ms * 1000U + us);
@@ -277,6 +254,8 @@ static int timestamp_print(const struct log_output *output,
 					date.year, date.month, date.day,
 					hours, mins, seconds, ms * 1000U + us);
 #endif
+		} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
+			length = log_custom_timestamp_print(output, timestamp, print_formatted);
 		} else {
 			if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP)) {
 				length = print_formatted(output,
@@ -286,6 +265,50 @@ static int timestamp_print(const struct log_output *output,
 							"[%5lu.%06d] ",
 #endif
 							total_seconds, ms * 1000U + us);
+			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP)) {
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+				char time_str[sizeof("1970-01-01 00:00:00")];
+				struct tm tm_timestamp = {0};
+				time_t time_seconds = total_seconds;
+
+				gmtime_r(&time_seconds, &tm_timestamp);
+
+				strftime(time_str, sizeof(time_str), "%F %T", &tm_timestamp);
+
+				length = print_formatted(output, "[%s.%03u,%03u] ", time_str, ms,
+							 us);
+#else
+				struct YMD_date date;
+
+				get_YMD_from_seconds(total_seconds, &date);
+				hours = hours % 24;
+				length = print_formatted(
+					output, "[%04u-%02u-%02u %02u:%02u:%02u.%03u,%03u] ",
+					date.year, date.month, date.day, hours, mins, seconds, ms,
+					us);
+#endif
+			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP)) {
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+				char time_str[sizeof("1970-01-01T00:00:00")];
+				struct tm tm_timestamp = {0};
+				time_t time_seconds = total_seconds;
+
+				gmtime_r(&time_seconds, &tm_timestamp);
+
+				strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
+
+				length = print_formatted(output, "[%s,%06uZ] ", time_str,
+							 ms * 1000U + us);
+#else
+				struct YMD_date date;
+
+				get_YMD_from_seconds(total_seconds, &date);
+				hours = hours % 24;
+				length = print_formatted(output,
+							 "[%04u-%02u-%02uT%02u:%02u:%02u,%06uZ] ",
+							 date.year, date.month, date.day, hours,
+							 mins, seconds, ms * 1000U + us);
+#endif
 			} else {
 				length = print_formatted(output,
 							"[%02u:%02u:%02u.%03u,%03u] ",
@@ -740,11 +763,9 @@ void log_output_dropped_process(const struct log_output *output, uint32_t cnt)
 	cnt = MIN(cnt, 9999);
 	len = snprintk(buf, sizeof(buf), "%d", cnt);
 
-	buffer_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1,
-		     output->control_block->ctx);
-	buffer_write(outf, buf, len, output->control_block->ctx);
-	buffer_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1,
-		     output->control_block->ctx);
+	log_output_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1, output->control_block->ctx);
+	log_output_write(outf, buf, len, output->control_block->ctx);
+	log_output_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1, output->control_block->ctx);
 }
 
 void log_output_timestamp_freq_set(uint32_t frequency)

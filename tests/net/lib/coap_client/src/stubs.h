@@ -15,11 +15,30 @@
 
 #include <zephyr/net/coap_client.h>
 
-#define ZSOCK_POLLIN  1
+
+/* Copy from zephyr/include/zephyr/net/socket.h */
+/**
+ * @name Options for poll()
+ * @{
+ */
+/* ZSOCK_POLL* values are compatible with Linux */
+/** zsock_poll: Poll for readability */
+#define ZSOCK_POLLIN 1
+/** zsock_poll: Poll for exceptional condition */
+#define ZSOCK_POLLPRI 2
+/** zsock_poll: Poll for writability */
 #define ZSOCK_POLLOUT 4
+/** zsock_poll: Poll results in error condition (output value only) */
+#define ZSOCK_POLLERR 8
+/** zsock_poll: Poll detected closed connection (output value only) */
+#define ZSOCK_POLLHUP 0x10
+/** zsock_poll: Invalid socket (output value only) */
+#define ZSOCK_POLLNVAL 0x20
+/** @} */
+
 
 void set_socket_events(short events);
-void clear_socket_events(void);
+void clear_socket_events(short events);
 
 DECLARE_FAKE_VALUE_FUNC(uint32_t, z_impl_sys_rand32_get);
 DECLARE_FAKE_VOID_FUNC(z_impl_sys_rand_get, void *, size_t);

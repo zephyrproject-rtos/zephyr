@@ -36,8 +36,13 @@ def pytest_addoption(parser: pytest.Parser):
         type=float,
         default=60.0,
         help='Set base timeout (in seconds) used during monitoring if some '
-             'operations are finished in a finite amount of time (e.g. waiting '
-             'for flashing).'
+             'operations are finished in a finite amount of time.'
+    )
+    twister_harness_group.addoption(
+        '--flash-timeout',
+        type=float,
+        default=60.0,
+        help='Set timeout for device flashing (in seconds).'
     )
     twister_harness_group.addoption(
         '--build-dir',

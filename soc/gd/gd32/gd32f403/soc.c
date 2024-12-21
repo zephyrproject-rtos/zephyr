@@ -19,15 +19,8 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int gigadevice_gd32_soc_init(void)
+void soc_early_init_hook(void)
 {
 	SystemInit();
-
-	return 0;
 }
-
-SYS_INIT(gigadevice_gd32_soc_init, PRE_KERNEL_1, 0);

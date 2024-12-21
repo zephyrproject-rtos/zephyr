@@ -60,8 +60,18 @@ if TRUSTED_EXECUTION_NONSECURE
 config SPE_PATH
 	string "Path to SPE build directory"
 
-config ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
+config ATM_ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
+	bool "ATM Non-Secure Firmware uses Secure Entry functions"
 	default y if SPE_PATH != ""
+	help
+	  Option as ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS.
+
+config ATM_ARM_ENTRY_VENEERS_LIB_NAME
+	string "ATM Entry Veneers symbol file"
+	depends on SPE_PATH != ""
+	default "libentryveneers.a"
+	help
+	  Library file as ARM_ENTRY_VENEERS_LIB_NAME.
 
 config MERGE_SPE_NSPE
 	bool "Merge SPE and application into single image"

@@ -24,7 +24,9 @@ if (CONFIG_BT_MICP_MIC_DEV)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_MICP_MIC_CTLR micp_mic_ctlr.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_CCID ccid.c)
+# When CONFIG_BT_AUDIO and CONFIG_BT_CONN is enabled we pull in ccid. It is based on CONFIG_BT_CONN
+# as CCID depends on GATT, and GATT is enabled when CONFIG_BT_CONN=y.
+zephyr_library_sources_ifdef(CONFIG_BT_CONN ccid.c)
 
 zephyr_library_link_libraries(subsys__bluetooth)
 

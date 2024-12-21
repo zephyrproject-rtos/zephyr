@@ -66,8 +66,8 @@ and act on regions and attributes (see next section for more details).
 A test for the ``mem-attr`` library and its usage is provided in
 ``tests/subsys/mem_mgmt/mem_attr/``.
 
-Migration guide from `zephyr,memory-region-mpu`
-***********************************************
+Migration guide from ``zephyr,memory-region-mpu``
+*************************************************
 
 When the ``zephyr,memory-attr`` property was introduced, the
 ``zephyr,memory-region-mpu`` property was removed and deprecated.

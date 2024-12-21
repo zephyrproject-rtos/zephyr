@@ -1,7 +1,4 @@
-.. _sensortile_box:
-
-ST SensorTile.box
-#################
+.. zephyr:board:: sensortile_box
 
 Overview
 ********
@@ -12,10 +9,6 @@ remote motion and environmental sensor data.
 The SensorTile.box board fits into a small plastic box with a long-life rechargeable
 battery, and communicates with a standard smartphone through its Bluetooth interface,
 providing data coming from the sensors.
-
-.. image:: img/sensortile_box.jpg
-     :align: center
-     :alt: SensorTile.box
 
 More information about the board can be found at the `SensorTile.box website`_.
 
@@ -185,7 +178,7 @@ You should see following confirmation on your Linux host:
    usb 2-2: SerialNumber: 204A325D574D
 
 You can build and flash the provided sample application
-(:ref:`sensortile_box sensors`) that reads sensors data and outputs
+(:zephyr:code-sample:`sensortile_box_sensors`) that reads sensors data and outputs
 values on the console.
 
 References

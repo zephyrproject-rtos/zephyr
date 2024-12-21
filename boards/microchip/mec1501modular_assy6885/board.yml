@@ -1,5 +1,6 @@
 board:
   name: mec1501modular_assy6885
+  full_name: MEC1501 Modular card ASSY6885
   vendor: microchip
   socs:
     - name: mec1501_hsz

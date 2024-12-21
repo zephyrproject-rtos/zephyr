@@ -2,8 +2,6 @@ common:
   tags: llext
   platform_exclude:
     # platforms with active issues
-    - apollo4p_evb            # See #73443
-    - apollo4p_blue_kxr_evb   # See #73443
     - numaker_pfm_m487        # See #63167
     - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
     - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
@@ -20,6 +18,10 @@ common:
     - qemu_cortex_r5          # ARM Cortex-R5 (ARMv7-R ISA)
     - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
     - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
+  extra_configs:
+    - arch:arm64:CONFIG_LLEXT_HEAP_SIZE=128
+  extra_conf_files:
+    - prj.conf
 
 tests:
   # While there is in practice no value in compiling subsys/llext/*.c
@@ -29,62 +31,67 @@ tests:
   llext.simple.loader_build:
     build_only: true
 
-  # Run the suite with all combinations of core Kconfig options for the llext
-  # subsystem (storage type, ELF type, MPU/MMU etc)
+  # Run the suite with all combinations of core Kconfig options for the LLEXT
+  # subsystem (storage type, ELF type, MPU/MMU etc). To focus on LLEXT issues,
+  # most tests include no_mem_protection.conf, which disables memory protection
+  # hardware completely.
   llext.simple.readonly:
-    arch_allow: arm # Xtensa needs writable storage
-    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    arch_allow: arm riscv # Xtensa needs writable storage
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.readonly_mpu:
     min_ram: 128
-    arch_allow: arm # Xtensa needs writable storage
+    arch_allow: arm # Xtensa needs writable storage, currently not supported on RISC-V
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
-  llext.simple.writable:
-    arch_allow: arm xtensa
+  llext.simple.readonly_mmu:
+    arch_allow: arm64 arm riscv
+    filter: CONFIG_MMU or CONFIG_RISCV_PMP
     integration_platforms:
-      - qemu_xtensa             # Xtensa ISA
-    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+      - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
+      - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  llext.simple.writable:
+    arch_allow: arm xtensa riscv
+    integration_platforms:
+      - qemu_xtensa/dc233c      # Xtensa ISA
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
   llext.simple.writable_relocatable:
-    arch_allow: arm xtensa
+    arch_allow: arm xtensa riscv
     integration_platforms:
-      - qemu_xtensa             # Xtensa ISA
+      - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
 
   # Test the Symbol Link Identifier (SLID) linking feature on writable
   # storage to cover both ARM and Xtensa architectures on the same test.
   llext.simple.writable_slid_linking:
-    arch_allow: arm xtensa
+    arch_allow: arm xtensa riscv
     integration_platforms:
-      - qemu_xtensa             # Xtensa ISA
-    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+      - qemu_xtensa/dc233c      # Xtensa ISA
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
   llext.simple.writable_relocatable_slid_linking:
-    arch_allow: arm xtensa
+    arch_allow: arm xtensa riscv
     integration_platforms:
-      - qemu_xtensa             # Xtensa ISA
+      - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y

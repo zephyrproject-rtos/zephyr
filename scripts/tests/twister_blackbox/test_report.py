@@ -19,6 +19,7 @@ from lxml import etree
 
 # pylint: disable=no-name-in-module
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
 
@@ -27,9 +28,9 @@ class TestReport:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             [
-                'qemu_x86.xml', 'mps2_an385.xml',
+                'qemu_x86_atom.xml', 'mps2_an385.xml',
                 'testplan.json', 'twister.json',
                 'twister.log', 'twister_report.xml',
                 'twister_suite_report.xml', 'twister.xml'
@@ -39,9 +40,9 @@ class TestReport:
     TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             [
-                'mps2_an385_TEST.xml', 'qemu_x86_TEST.xml',
+                'mps2_an385_TEST.xml', 'qemu_x86_atom_TEST.xml',
                 'twister_TEST.json', 'twister_TEST_report.xml',
                 'twister_TEST_suite_report.xml', 'twister_TEST.xml'
             ]
@@ -50,7 +51,7 @@ class TestReport:
     TESTDATA_3 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             ['--report-name', 'abcd'],
             [
                 'abcd.json', 'abcd_report.xml',
@@ -59,20 +60,20 @@ class TestReport:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             ['--report-name', '1234', '--platform-reports'],
             [
-                'mps2_an385.xml', 'qemu_x86.xml',
+                'mps2_an385.xml', 'qemu_x86_atom.xml',
                 '1234.json', '1234_report.xml',
                 '1234_suite_report.xml', '1234.xml'
             ]
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             ['--report-name', 'Final', '--platform-reports', '--report-suffix=Test'],
             [
-                'mps2_an385_Test.xml', 'qemu_x86_Test.xml',
+                'mps2_an385_Test.xml', 'qemu_x86_atom_Test.xml',
                 'Final_Test.json', 'Final_Test_report.xml',
                 'Final_Test_suite_report.xml', 'Final_Test.xml'
             ]
@@ -81,7 +82,7 @@ class TestReport:
     TESTDATA_4 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             [
                 'twister.json', 'twister_report.xml',
                 'twister_suite_report.xml', 'twister.xml'
@@ -92,7 +93,7 @@ class TestReport:
     TESTDATA_5 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             [
                 'testplan.json', 'twister.log',
                 'twister.json', 'twister_report.xml',
@@ -104,17 +105,17 @@ class TestReport:
     TESTDATA_6 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             "TEST_LOG_FILE.log"
         ),
     ]
     TESTDATA_7 = [
         (
             os.path.join(TEST_DATA, 'tests', 'one_fail_two_error_one_pass'),
-            ['qemu_x86'],
-            [r'one_fail_two_error_one_pass.agnostic.group1.subgroup2 on qemu_x86 FAILED \(.*\)',
-            r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86 ERROR \(Build failure\)',
-            r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86 ERROR \(Build failure\)'],
+            ['qemu_x86/atom'],
+            [r'one_fail_two_error_one_pass.agnostic.group1.subgroup2 on qemu_x86/atom FAILED \(.*\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86/atom ERROR \(Build failure\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86/atom ERROR \(Build failure\)'],
         )
     ]
 
@@ -305,7 +306,7 @@ class TestReport:
                 assert os.path.exists(path), 'file not found {f_name}'
 
             for f_platform in test_platforms:
-                platform_path = os.path.join(twister_path, f_platform)
+                platform_path = os.path.join(twister_path, f_platform.replace("/", "_"))
                 assert os.path.exists(platform_path), f'file not found {f_platform}'
 
             assert str(sys_exit.value) == '0'
@@ -349,18 +350,18 @@ class TestReport:
             (
                 os.path.join(TEST_DATA, 'tests', 'dummy'),
                 ['--detailed-skipped-report'],
-                {'qemu_x86': 5, 'frdm_k64f': 1}
+                {'qemu_x86/atom': 5, 'intel_adl_crb/alder_lake': 1}
             ),
             (
                 os.path.join(TEST_DATA, 'tests', 'dummy'),
                 ['--detailed-skipped-report', '--report-filtered'],
-                {'qemu_x86': 6, 'frdm_k64f': 6}
+                {'qemu_x86/atom': 6, 'intel_adl_crb/alder_lake': 6}
             ),
         ],
         ids=['dummy tests', 'dummy tests with filtered']
     )
     def test_detailed_skipped_report(self, out_path, test_path, flags, expected_testcase_counts):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'intel_adl_crb/alder_lake']
         args = ['-i', '--outdir', out_path, '-T', test_path] + \
                flags + \
                [val for pair in zip(
@@ -396,7 +397,7 @@ class TestReport:
         ids=['no filtered', 'with filtered']
     )
     def test_report_filtered(self, out_path, test_path, report_filtered, expected_filtered_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         args = ['-i', '--outdir', out_path, '-T', test_path] + \
                (['--report-filtered'] if report_filtered else []) + \
                [val for pair in zip(
@@ -414,13 +415,13 @@ class TestReport:
 
         testsuites = j.get('testsuites')
         assert testsuites, 'No testsuites found.'
-        statuses = [testsuite.get('status') for testsuite in testsuites]
+        statuses = [TwisterStatus(testsuite.get('status')) for testsuite in testsuites]
         filtered_status_count = statuses.count("filtered")
         assert filtered_status_count == expected_filtered_count, \
             f'Expected {expected_filtered_count} filtered statuses, got {filtered_status_count}.'
 
     def test_enable_size_report(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--enable-size-report'] + \

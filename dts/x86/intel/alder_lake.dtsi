@@ -348,6 +348,7 @@
 
 			mmc {
 				compatible = "zephyr,mmc-disk";
+				disk-name = "SD2";
 				bus-width = <8>;
 				status = "okay";
 			};

@@ -11,12 +11,31 @@
 #ifndef ZEPHYR_INCLUDE_MGMT_SMP_BT_H_
 #define ZEPHYR_INCLUDE_MGMT_SMP_BT_H_
 
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/types.h>
 struct bt_conn;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** SMP service UUID value. */
+#define SMP_BT_SVC_UUID_VAL \
+	BT_UUID_128_ENCODE(0x8d53dc1d, 0x1db7, 0x4cd3, 0x868b, 0x8a527460aa84)
+
+/** SMP service UUID. */
+#define SMP_BT_SVC_UUID \
+	BT_UUID_DECLARE_128(SMP_BT_SVC_UUID_VAL)
+
+/** SMP characteristic UUID value. */
+#define SMP_BT_CHR_UUID_VAL \
+	BT_UUID_128_ENCODE(0xda2e7828, 0xfbce, 0x4e01, 0xae9e, 0x261174997c48)
+
+/** SMP characteristic UUID
+ *  Used for both requests and responses.
+ */
+#define SMP_BT_CHR_UUID \
+	BT_UUID_DECLARE_128(SMP_BT_CHR_UUID_VAL)
 
 /**
  * @brief	Registers the SMP Bluetooth service. Should only be called if the Bluetooth

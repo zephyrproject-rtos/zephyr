@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  platform_allow:
+    - nrf52840dk/nrf52840
+    - nrf5340dk/nrf5340/cpuapp
+  tags:
+    - mgmt
+    - mcumgr
+    - img_mgmt
+  build_only: false
+tests:
+  img.mgmt.slot.info: {}
+  img.mgmt.slot.info.too.large:
+    extra_args:
+      - FILE_SUFFIX=too_large
+  img.mgmt.slot.info.dual.slot:
+    extra_args:
+      - FILE_SUFFIX=dual_slot

@@ -5,7 +5,8 @@ config NUCLEI_ECLIC
 	bool "Enhanced Core Local Interrupt Controller (ECLIC)"
 	default y
 	depends on DT_HAS_NUCLEI_ECLIC_ENABLED
-	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING if !RISCV_VECTORED_MODE
+	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
 	help
 	  Interrupt controller for Nuclei SoC core.
 
@@ -16,6 +17,13 @@ config NRFX_CLIC
 	select GEN_IRQ_VECTOR_TABLE
 	help
 	  Interrupt controller for Nordic VPR cores.
+
+config CLIC_SMCLICSHV_EXT
+	bool
+	help
+	  The selective hardware vectoring extension gives users the flexibility
+	  to select the behavior for each interrupt. The CLIC driver needs to
+	  implement the riscv_clic_irq_vector_set() function.
 
 if NUCLEI_ECLIC
 

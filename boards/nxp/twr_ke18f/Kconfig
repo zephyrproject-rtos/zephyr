@@ -7,6 +7,7 @@ if BOARD_TWR_KE18F
 
 config BOARD_TWR_KE18F_FLEXIO_CLKOUT
 	bool "CLKOUT signal on FlexIO header"
+	select PINCTRL
 	help
 	  Enable the CLKOUT signal on FlexIO header pin 7 (PTE10).
 

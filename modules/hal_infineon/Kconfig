@@ -4,6 +4,9 @@
 config ZEPHYR_HAL_INFINEON_MODULE
 	bool
 
+config ZEPHYR_HAL_INFINEON_MODULE_BLOBS
+	bool
+
 if SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_PSOC6_LEGACY
 
 config USE_INFINEON_ADC
@@ -63,8 +66,7 @@ config USE_INFINEON_UART
 config USE_INFINEON_PWM
 	bool
 	help
-	  Enable Pulse Width Modulator (PWM) HAL module
-	  driver for Infineon devices
+	  Enable Pulse Width Modulator (PWM) HAL module driver for Infineon devices
 
 config USE_INFINEON_WDT
 	bool
@@ -77,7 +79,13 @@ config USE_INFINEON_FLASH
 	help
 	  Enable Flash HAL module driver for Infineon devices
 
+config USE_INFINEON_SMIF
+	bool
+	help
+	  Enable SMIF HAL driver for Infineon devices
+
 endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_PSOC6_LEGACY
+
 config USE_INFINEON_ABSTRACTION_RTOS
 	bool "Abstraction RTOS component (Zephyr support)"
 	help

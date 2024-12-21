@@ -93,6 +93,13 @@ config NET_STATISTICS_IGMP
 	help
 	  Keep track of IGMP related statistics
 
+config NET_STATISTICS_DNS
+	bool "Domain Name Service (DNS) statistics"
+	depends on DNS_RESOLVER || MDNS_RESPONDER || LLMNR_RESPONDER
+	default y
+	help
+	  Keep track of DNS related statistics
+
 config NET_STATISTICS_PPP
 	bool "Point-to-point (PPP) statistics"
 	depends on NET_L2_PPP

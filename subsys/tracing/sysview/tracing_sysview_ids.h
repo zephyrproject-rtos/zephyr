@@ -155,6 +155,8 @@ extern "C" {
 
 #define TID_SYSCALL (130u + TID_OFFSET)
 
+#define TID_NAMED_EVENT (131u + TID_OFFSET)
+
 /* latest ID is 130 */
 
 #ifdef __cplusplus

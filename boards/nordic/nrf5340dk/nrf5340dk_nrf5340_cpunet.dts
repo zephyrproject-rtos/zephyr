@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include "nrf5340dk_common.dtsi"
 #include "nrf5340dk_nrf5340_cpunet-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -27,92 +28,8 @@
 		zephyr,ieee802154 = &ieee802154;
 	};
 
-	leds {
-		compatible = "gpio-leds";
-		led0: led_0 {
-			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
-			label = "Green LED 0";
-		};
-		led1: led_1 {
-			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
-			label = "Green LED 1";
-		};
-		led2: led_2 {
-			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
-			label = "Green LED 2";
-		};
-		led3: led_3 {
-			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
-			label = "Green LED 3";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-		button0: button_0 {
-			gpios = <&gpio0 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 1";
-			zephyr,code = <INPUT_KEY_0>;
-		};
-		button1: button_1 {
-			gpios = <&gpio0 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 2";
-			zephyr,code = <INPUT_KEY_1>;
-		};
-		button2: button_2 {
-			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 3";
-			zephyr,code = <INPUT_KEY_2>;
-		};
-		button3: button_3 {
-			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 4";
-			zephyr,code = <INPUT_KEY_3>;
-		};
-	};
-
-	arduino_header: connector {
-		compatible = "arduino-header-r3";
-		#gpio-cells = <2>;
-		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio0 4 0>,	/* A0 */
-			   <1 0 &gpio0 5 0>,	/* A1 */
-			   <2 0 &gpio0 6 0>,	/* A2 */
-			   <3 0 &gpio0 7 0>,	/* A3 */
-			   <4 0 &gpio0 25 0>,	/* A4 */
-			   <5 0 &gpio0 26 0>,	/* A5 */
-			   <6 0 &gpio1 0 0>,	/* D0 */
-			   <7 0 &gpio1 1 0>,	/* D1 */
-			   <8 0 &gpio1 4 0>,	/* D2 */
-			   <9 0 &gpio1 5 0>,	/* D3 */
-			   <10 0 &gpio1 6 0>,	/* D4 */
-			   <11 0 &gpio1 7 0>,	/* D5 */
-			   <12 0 &gpio1 8 0>,	/* D6 */
-			   <13 0 &gpio1 9 0>,	/* D7 */
-			   <14 0 &gpio1 10 0>,	/* D8 */
-			   <15 0 &gpio1 11 0>,	/* D9 */
-			   <16 0 &gpio1 12 0>,	/* D10 */
-			   <17 0 &gpio1 13 0>,	/* D11 */
-			   <18 0 &gpio1 14 0>,	/* D12 */
-			   <19 0 &gpio1 15 0>,	/* D13 */
-			   <20 0 &gpio1 2 0>,	/* D14 */
-			   <21 0 &gpio1 3 0>;	/* D15 */
-	};
-
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		led0 = &led0;
-		led1 = &led1;
-		led2 = &led2;
-		led3 = &led3;
-		sw0 = &button0;
-		sw1 = &button1;
-		sw2 = &button2;
-		sw3 = &button3;
-		bootloader-led0 = &led0;
-		mcuboot-button0 = &button0;
-		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
 	};
 };
@@ -188,5 +105,5 @@ arduino_spi: &spi0 {
 	status = "okay";
 };
 
-/* Include shared RAM configuration file */
-#include "nrf5340_shared_sram_planning_conf.dtsi"
+/* Include default shared RAM configuration file */
+#include <common/nordic/nrf5340_shared_sram_partition.dtsi>

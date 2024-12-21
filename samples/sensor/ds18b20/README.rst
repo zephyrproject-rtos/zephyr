@@ -1,7 +1,8 @@
-.. _ds18b20_sample:
+.. zephyr:code-sample:: ds18b20
+   :name: DS18B20 1-Wire Temperature Sensor
+   :relevant-api: sensor_interface w1_sensor
 
-DS18B20 1-Wire Temperature Sensor
-#################################
+   Get ambient temperature data from a DS18B20 sensor (polling mode).
 
 Overview
 ********

@@ -1,12 +1,16 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_NRF54H20_CPUPPR
+if SOC_NRF54H20_CPUPPR || SOC_NRF54H20_ENGB_CPUPPR
 
 config NUM_IRQS
 	default 496
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
+#
+# As PPR has limited memory most of tests does not fit with asserts enabled.
+config ASSERT
+	default n
 
-endif # SOC_NRF54H20_CPUPPR
+endif # SOC_NRF54H20_CPUPPR || SOC_NRF54H20_ENGB_CPUPPR

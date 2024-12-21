@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  harness_config:
+    fixture: gpio_loopback
+  tags:
+    - drivers
+    - comparator
+tests:
+  drivers.comparator.gpio_loopback.mcux_acmp:
+    platform_allow:
+      - frdm_ke15z
+  drivers.comparator.gpio_loopback.nrf_comp:
+    extra_args:
+      - SNIPPET="gpio_loopback_nrf_comp"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+  drivers.comparator.gpio_loopback.nrf_lpcomp:
+    extra_args:
+      - SNIPPET="gpio_loopback_nrf_lpcomp"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf5340dk/nrf5340/cpuapp

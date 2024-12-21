@@ -1,0 +1,95 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/*
+ * To use this board with this display, perform the following modifications:
+ * - Depopulate resistors R78, R604, R598, R15, R245, R243, R11, R20, R237,
+ *   R235, R431, R447, R420, R459, R485, and R486
+ * - Populate resistors R286, R19, R246, R242, R123, R239, R124, R125, R236,
+ *   R233, and R12
+ * - Remove jumper JP30
+ * - Set jumper JP40 to postion 1-2, JP38 to 1-2, and JP16 to position 2-3
+ */
+
+/*
+ * To connect the display configure SW1 on the display to
+ * ON-ON-OFF (8 bit 8080 mode), and connect the following pins
+ * | Board Pin | Display Pin | Function |
+ * |-----------|-------------|----------|
+ * | HD2.8     | D0          | D[0]     |
+ * | HD2.16    | D1          | D[1]     |
+ * | J5.2      | TE          | TE       |
+ * | J5.4      | D2          | D[2]     |
+ * | J5.1      | D3          | D[3]     |
+ * | J5.6      | RD          | RDX      |
+ * | J5.3      | D4          | D[4]     |
+ * | HD2.7     | D5          | D[5]     |
+ * | HD2.6     | D6          | D[6]     |
+ * | HD2.1     | D7          | D[7]     |
+ * | HD2.2     | WR          | WR       |
+ * | HD8.1     | CS          | CS       |
+ * | HD8.2     | D/C         | DC       |
+ * | J13.8     | GND         | GND      |
+ * | J13.7     | VDD         | 3V3      |
+ * | J5.10     | SCL         | IC2_SCL  |
+ * | J5.9      | SDA         | IC2_SDA  |
+ * | HD2.4     | INT         | INT      |
+ * | HD2.5     | RST         | RESET    |
+ */
+
+/* Expand the LCDIC pinmux to cover all 8080 mode pins */
+&pinmux_lcdic {
+	group0 {
+		pinmux = <IO_MUX_LCD_8080_IO42>,
+			<IO_MUX_LCD_8080_IO43>,
+			<IO_MUX_LCD_8080_IO44>,
+			<IO_MUX_LCD_8080_IO45>,
+			<IO_MUX_LCD_8080_IO46>,
+			<IO_MUX_LCD_8080_IO47>,
+			<IO_MUX_LCD_8080_IO48>,
+			<IO_MUX_LCD_8080_IO49>,
+			<IO_MUX_LCD_8080_IO51>,
+			<IO_MUX_LCD_8080_IO52>,
+			<IO_MUX_LCD_8080_IO53>,
+			<IO_MUX_LCD_8080_IO54>,
+			<IO_MUX_LCD_8080_IO56>,
+			<IO_MUX_LCD_8080_IO57>;
+		slew-rate = "ultra";
+	};
+};
+
+&st7796s {
+	mipi-mode = <MIPI_DBI_MODE_8080_BUS_8_BIT>;
+	/*
+	 * Display supports minimum write cycle time of 66ns. This
+	 * means we can clock the LCDIC module at 30MHz, as
+	 * the minimum write duration will be 2x the module
+	 * clock. Note that this frequency is too fast for reading
+	 * from the display module
+	 */
+	mipi-max-frequency = <30000000>;
+	/*
+	 * Note that this display is *not* buggy- we use rgb-is-inverted
+	 * as a workaround here to get the display to report an inverted
+	 * color format. This is because the "nxp,swap-bytes" setting
+	 * on the LCDIC will apply byte swapping in hardware, so the
+	 * display should report an inverted color format to account
+	 * for this. This results in better performance for applications
+	 * like LVGL, which would otherwise have to swap RGB565 data in
+	 * software
+	 */
+	rgb-is-inverted;
+};
+
+&lcdic {
+	/* Enable byte swapping */
+	nxp,swap-bytes;
+	/* Set pulse width for write active and write inactive to min value */
+	nxp,write-active-cycles = <1>;
+	nxp,write-inactive-cycles = <1>;
+};

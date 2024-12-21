@@ -634,9 +634,9 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 		irq_enable(DT_IRQN(DT_NODELABEL(i2s_##dir)));                  \
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s_rx), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s_rx))
 I2S_INIT(rx);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s_tx), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s_tx))
 I2S_INIT(tx);
 #endif

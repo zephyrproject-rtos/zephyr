@@ -18,7 +18,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
@@ -441,7 +441,7 @@ static int active_index_subscribe(struct bt_has_client *inst, uint16_t value_han
 	inst->active_index_subscription.notify = active_preset_notify_cb;
 	inst->active_index_subscription.subscribe = active_index_subscribe_cb;
 	inst->active_index_subscription.value_handle = value_handle;
-	inst->active_index_subscription.ccc_handle = 0x0000;
+	inst->active_index_subscription.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	inst->active_index_subscription.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	inst->active_index_subscription.disc_params = &inst->params.discover;
 	inst->active_index_subscription.value = BT_GATT_CCC_NOTIFY;
@@ -543,7 +543,7 @@ static int control_point_subscribe(struct bt_has_client *inst, uint16_t value_ha
 	inst->control_point_subscription.notify = control_point_notify_cb;
 	inst->control_point_subscription.subscribe = control_point_subscribe_cb;
 	inst->control_point_subscription.value_handle = value_handle;
-	inst->control_point_subscription.ccc_handle = 0x0000;
+	inst->control_point_subscription.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	inst->control_point_subscription.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	inst->control_point_subscription.disc_params = &inst->params.discover;
 	atomic_set_bit(inst->control_point_subscription.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
@@ -739,7 +739,7 @@ static int features_subscribe(struct bt_has_client *inst, uint16_t value_handle)
 	inst->features_subscription.notify = features_notify_cb;
 	inst->features_subscription.subscribe = features_subscribe_cb;
 	inst->features_subscription.value_handle = value_handle;
-	inst->features_subscription.ccc_handle = 0x0000;
+	inst->features_subscription.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	inst->features_subscription.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	inst->features_subscription.disc_params = &inst->params.discover;
 	inst->features_subscription.value = BT_GATT_CCC_NOTIFY;

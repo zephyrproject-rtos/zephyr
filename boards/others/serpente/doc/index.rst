@@ -1,7 +1,4 @@
-.. _serpente:
-
-Arturo182 Serpente
-##################
+.. zephyr:board:: serpente
 
 Overview
 ********
@@ -10,10 +7,6 @@ The Serpente is a very small low-cost development and prototyping
 board equipped with 4MiB flash storage, a PWM enabled RGB led and 6 I/O pins.
 The board comes with 3 different USB connector options: USB Type-C plug,
 USB Type-C socket and USB Type-A plug.
-
-.. image:: img/serpente.jpg
-     :align: center
-     :alt: Serpente Boards
 
 Hardware
 ********
@@ -74,7 +67,7 @@ USB Device Port
 ===============
 
 The SAMD21 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which prints "Hello World!"
 to the host PC.
 

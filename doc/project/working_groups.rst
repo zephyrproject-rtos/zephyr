@@ -18,8 +18,8 @@ Working Group Membership Eligibility
   consultation with the TSC.
 - Each working group shall have a team of members who are actively involved
   in its activities and decision-making processes.
-- It is expected that WG membership shall be **open to all Zephyr project
-  :ref:`Collaborators <collaborator>`**; however, working groups may impose
+- It is expected that WG membership shall be **open to all** Zephyr project
+  :ref:`Collaborators <collaborator>`; however, working groups may impose
   restrictions such as the number of participants from a single company.
 - All TSC members are eligible to join a working group as members, part of
   the responsibilities being a TSC member.

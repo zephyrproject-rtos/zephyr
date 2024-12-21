@@ -14,6 +14,8 @@
  * https://github.com/torvalds/linux/blob/master/[tools/]include/linux/time64.h
  *
  * @defgroup net_time Network time representation.
+ * @since 3.5
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

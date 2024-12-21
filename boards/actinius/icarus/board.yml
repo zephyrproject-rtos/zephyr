@@ -1,5 +1,6 @@
 board:
   name: actinius_icarus
+  full_name: Icarus
   vendor: actinius
   socs:
   - name: nrf9160

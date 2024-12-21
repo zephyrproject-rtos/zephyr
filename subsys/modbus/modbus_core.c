@@ -137,6 +137,8 @@ void modbus_tx_adu(struct modbus_context *ctx)
 
 int modbus_tx_wait_rx_adu(struct modbus_context *ctx)
 {
+	k_sem_reset(&ctx->client_wait_sem);
+
 	modbus_tx_adu(ctx);
 
 	if (k_sem_take(&ctx->client_wait_sem, K_USEC(ctx->rxwait_to)) != 0) {

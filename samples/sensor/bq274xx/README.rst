@@ -1,7 +1,8 @@
-.. _bq274xx-sample:
+.. zephyr:code-sample:: bq274xx
+   :name: BQ274XX fuel gauge sensor
+   :relevant-api: sensor_interface
 
-BQ274XX Sensor Sample
-#####################
+   Get various fuel gauge parameters from a BQ274XX sensor.
 
 Overview
 ********

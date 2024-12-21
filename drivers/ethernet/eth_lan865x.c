@@ -67,36 +67,19 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 	int ret = -ENOTSUP;
 
 	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
-		ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_OFF);
-		if (ret) {
-			return ret;
-		}
-
-		ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR,
+		return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR,
 				       LAN865x_MAC_NCFGR_CAF);
-		if (ret) {
-			return ret;
-		}
-
-		return lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
-		ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_OFF);
-		if (ret) {
-			return ret;
-		}
-
 		memcpy(ctx->mac_address, config->mac_address.addr,
 		       sizeof(ctx->mac_address));
 
 		lan865x_write_macaddress(dev);
 
-		net_if_set_link_addr(ctx->iface, ctx->mac_address,
+		return net_if_set_link_addr(ctx->iface, ctx->mac_address,
 				     sizeof(ctx->mac_address),
 				     NET_LINK_ETHERNET);
-
-		return lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
@@ -297,9 +280,34 @@ static void lan865x_write_macaddress(const struct device *dev)
 	val = (mac[5] << 8) | mac[4];
 	oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_SAT2, val);
 
-	/* SPEC_ADD1_BOTTOM */
+	/*
+	 * SPEC_ADD1_BOTTOM - setting unique lower MAC address, back off time is
+	 * generated out of it.
+	 */
 	val = (mac[5] << 24) | (mac[4] << 16) | (mac[3] << 8) | mac[2];
 	oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_SAB1, val);
+}
+
+static int lan865x_set_specific_multicast_addr(const struct device *dev)
+{
+	struct lan865x_data *ctx = dev->data;
+	uint32_t mac_h_hash = 0xffffffff;
+	uint32_t mac_l_hash = 0xffffffff;
+	int ret;
+
+	/* Enable hash for all multicast addresses */
+	ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_HRT, mac_h_hash);
+	if (ret) {
+		return ret;
+	}
+
+	ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_HRB, mac_l_hash);
+	if (ret) {
+		return ret;
+	}
+
+	return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR,
+				LAN865x_MAC_NCFGR_MTIHEN);
 }
 
 static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
@@ -357,10 +365,12 @@ static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 	}
 
 	lan865x_write_macaddress(dev);
+	lan865x_set_specific_multicast_addr(dev);
 
 	ret = lan865x_init_chip(dev, silicon_rev);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	if (cfg->plca->enable) {
 		ret = lan865x_config_plca(dev, cfg->plca->node_id,

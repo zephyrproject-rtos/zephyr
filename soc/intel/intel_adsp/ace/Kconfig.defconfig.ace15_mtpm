@@ -6,4 +6,12 @@ if SOC_INTEL_ACE15_MTPM
 config MP_MAX_NUM_CPUS
 	default 3
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 393216000 if XTENSA_TIMER
+	default 1000000 if INTEL_ADSP_SIM
+	default 38400000 if INTEL_ADSP_TIMER
+
+config XTENSA_CCOUNT_HZ
+	default 393216000
+
 endif

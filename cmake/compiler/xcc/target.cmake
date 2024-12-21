@@ -40,12 +40,6 @@ foreach(file_name include/stddef.h include-fixed/limits.h)
   list(APPEND NOSTDINC ${_OUTPUT})
 endforeach()
 
-list(APPEND TOOLCHAIN_LIBS
-  gcc
-  hal
-  )
-
-
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and
 # link a dummy C file.

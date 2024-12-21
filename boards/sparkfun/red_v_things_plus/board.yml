@@ -1,5 +1,6 @@
 board:
   name: sparkfun_red_v_things_plus
+  full_name: RED-V Things Plus
   vendor: sparkfun
   socs:
     - name: fe310

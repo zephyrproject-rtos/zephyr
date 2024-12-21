@@ -30,6 +30,10 @@ struct dwc2_vendor_quirks {
 	int (*caps)(const struct device *dev);
 	/* Called while waiting for bits that require PHY to be clocked */
 	int (*is_phy_clk_off)(const struct device *dev);
+	/* Called after hibernation entry sequence */
+	int (*post_hibernation_entry)(const struct device *dev);
+	/* Called before hibernation exit sequence */
+	int (*pre_hibernation_exit)(const struct device *dev);
 };
 
 /* Driver configuration per instance */
@@ -72,5 +76,7 @@ DWC2_QUIRK_FUNC_DEFINE(shutdown)
 DWC2_QUIRK_FUNC_DEFINE(irq_clear)
 DWC2_QUIRK_FUNC_DEFINE(caps)
 DWC2_QUIRK_FUNC_DEFINE(is_phy_clk_off)
+DWC2_QUIRK_FUNC_DEFINE(post_hibernation_entry)
+DWC2_QUIRK_FUNC_DEFINE(pre_hibernation_exit)
 
 #endif /* ZEPHYR_DRIVERS_USB_UDC_DWC2_H */

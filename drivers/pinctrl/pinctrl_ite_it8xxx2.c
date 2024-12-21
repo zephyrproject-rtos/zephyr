@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_pinctrl_func
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 
@@ -365,6 +366,20 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 	gpio_base->GPIO_GCR &= ~IT8XXX2_GPIO_LPCRSTEN;
 
 #ifdef CONFIG_SOC_IT8XXX2_REG_SET_V2
+#if defined(CONFIG_I2C_ITE_ENHANCE) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c5))
+	const struct gpio_dt_spec scl_gpios = GPIO_DT_SPEC_GET(DT_NODELABEL(i2c5), scl_gpios);
+	const struct gpio_dt_spec sda_gpios = GPIO_DT_SPEC_GET(DT_NODELABEL(i2c5), sda_gpios);
+
+	/*
+	 * When setting these pins as I2C alternate mode and then setting
+	 * GCR7 or func3-ext of GPIO extended, it will cause leakage.
+	 * In order to prevent leakage, it must be set to GPIO INPUT mode.
+	 */
+	/* Set I2C5 SCL as GPIO input to prevent leakage */
+	gpio_pin_configure_dt(&scl_gpios, GPIO_INPUT);
+	/* Set I2C5 SDA as GPIO input to prevent leakage */
+	gpio_pin_configure_dt(&sda_gpios, GPIO_INPUT);
+#endif
 	/*
 	 * Swap the default I2C2 SMCLK2/SMDAT2 pins from GPC7/GPD0 to GPF6/GPF7,
 	 * and I2C3 SMCLK3/SMDAT3 pins from GPB2/GPB5 to GPH1/GPH2,

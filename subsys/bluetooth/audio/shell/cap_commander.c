@@ -21,7 +21,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 #include "audio.h"
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
@@ -103,6 +103,17 @@ static void cap_broadcast_reception_start_cb(struct bt_conn *conn, int err)
 
 	shell_print(ctx_shell, "Broadcast reception start completed");
 }
+
+static void cap_broadcast_reception_stop_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		shell_error(ctx_shell, "Broadcast reception stop failed (%d) for conn %p", err,
+			    (void *)conn);
+		return;
+	}
+
+	shell_print(ctx_shell, "Broadcast reception stop completed");
+}
 #endif
 
 static struct bt_cap_commander_cb cbs = {
@@ -122,6 +133,7 @@ static struct bt_cap_commander_cb cbs = {
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 	.broadcast_reception_start = cap_broadcast_reception_start_cb,
+	.broadcast_reception_stop = cap_broadcast_reception_stop_cb,
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 };
 
@@ -605,7 +617,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 			return -ENOEXEC;
 		}
 
-		if (!VALID_BIS_SYNC(bis_sync)) {
+		if (!BT_BAP_BASS_VALID_BIT_BITFIELD(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -662,6 +674,83 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 
 	return 0;
 }
+
+static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, size_t argc,
+						      char *argv[])
+{
+	struct bt_cap_commander_broadcast_reception_stop_member_param
+		member_params[CONFIG_BT_MAX_CONN] = {0};
+	const size_t cap_args = argc - 1; /* First argument is the command itself */
+	struct bt_cap_commander_broadcast_reception_stop_param param = {
+		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.param = member_params,
+	};
+
+	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
+	size_t conn_cnt = 0U;
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	/* TODO: Add support for coordinated sets */
+
+	/* Populate the array of connected connections */
+	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
+	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+		struct bt_conn *conn = connected_conns[i];
+
+		if (conn == NULL) {
+			break;
+		}
+
+		conn_cnt++;
+	}
+
+	if (cap_args > conn_cnt) {
+		shell_error(sh, "Cannot use %zu arguments for %zu connections", argc, conn_cnt);
+
+		return -ENOEXEC;
+	}
+
+	for (size_t i = 0U; i < cap_args; i++) {
+		const char *arg = argv[i + 1];
+		unsigned long src_id;
+
+		src_id = shell_strtoul(arg, 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parse src_id: %d", err);
+
+			return -ENOEXEC;
+		}
+
+		if (src_id > UINT8_MAX) {
+			shell_error(sh, "Invalid src_id: %lu", src_id);
+
+			return -ENOEXEC;
+		}
+
+		/* TODO: Allow for multiple subgroups */
+		member_params[i].num_subgroups = 1;
+		member_params[i].src_id = src_id;
+		member_params[i].member.member = connected_conns[i];
+		param.count++;
+	}
+
+	shell_print(sh, "Stopping broadcast reception on %zu connection(s)", param.count);
+
+	err = bt_cap_commander_broadcast_reception_stop(&param);
+	if (err != 0) {
+		shell_print(sh, "Failed to initiate broadcast reception stop: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 
 static int cmd_cap_commander(const struct shell *sh, size_t argc, char **argv)
@@ -710,6 +799,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "<broadcast_id> [<pa_interval>] [<sync_bis>] "
 		      "[<metadata>]",
 		      cmd_cap_commander_broadcast_reception_start, 5, 3),
+	SHELL_CMD_ARG(broadcast_reception_stop, NULL,
+		      "Stop broadcast reception "
+		      "<src_id [...]>",
+		      cmd_cap_commander_broadcast_reception_stop, 2, 0),
+
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 	SHELL_SUBCMD_SET_END);
 

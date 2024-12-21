@@ -1,0 +1,22 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sim3u1xx_dk
+name: Silicon Labs SiM3U development kit
+type: mcu
+arch: arm
+ram: 32
+flash: 256
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+supported:
+  - crypto
+  - dma
+  - flash
+  - gpio
+  - nvs
+  - uart
+vendor: gardena

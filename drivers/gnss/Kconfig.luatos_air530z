@@ -6,6 +6,7 @@ config GNSS_LUATOS_AIR530Z
 	default y
 	depends on GNSS
 	depends on DT_HAS_LUATOS_AIR530Z_ENABLED
+	depends on GNSS_REFERENCE_FRAME_WGS84
 	select MODEM_MODULES
 	select MODEM_BACKEND_UART
 	select MODEM_CHAT

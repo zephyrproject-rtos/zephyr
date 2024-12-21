@@ -1,5 +1,0 @@
-# Copyright 2019 The Chromium OS Authors
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_GOOGLE_KUKUI
-	select SOC_STM32F098XX

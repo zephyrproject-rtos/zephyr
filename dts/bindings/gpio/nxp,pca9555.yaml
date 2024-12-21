@@ -1,0 +1,10 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+description: NXP PCA9555 I2C GPIO expander node
+compatible: nxp,pca9555
+include: nxp,pca_series.yaml
+
+properties:
+  ngpios:
+    required: true
+    const: 16

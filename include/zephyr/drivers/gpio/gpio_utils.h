@@ -17,6 +17,10 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define GPIO_PORT_PIN_MASK_FROM_NGPIOS(ngpios)			\
 	((gpio_port_pins_t)(((uint64_t)1 << (ngpios)) - 1U))
 
@@ -95,5 +99,9 @@ static inline void gpio_fire_callbacks(sys_slist_t *list,
 		}
 	}
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_UTILS_H_ */

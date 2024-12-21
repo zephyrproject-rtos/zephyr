@@ -1,5 +1,6 @@
 board:
   name: da14695_dk_usb
+  full_name: DA14695 Development Kit USB
   vendor: renesas
   socs:
   - name: da14695

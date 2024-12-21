@@ -4,6 +4,7 @@ menuconfig WIFI_ESP32
 	bool "ESP32 SoC WiFi support"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED
+	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS
 	depends on !SMP
 	select THREAD_CUSTOM_DATA
 	select NET_L2_WIFI_MGMT
@@ -18,6 +19,12 @@ menuconfig WIFI_ESP32
 	  stuff.
 
 if WIFI_ESP32
+
+config HEAP_MEM_POOL_ADD_SIZE_WIFI
+	int
+	default 4096
+	help
+	  Make sure there is a minimal heap available for Wi-Fi driver.
 
 config NET_TCP_WORKQ_STACK_SIZE
 	default 2048
@@ -34,6 +41,13 @@ config ESP32_WIFI_STA_AUTO_DHCPV4
 	depends on NET_IPV4
 	help
 	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
+
+config ESP32_WIFI_AP_STA_MODE
+	bool "Activates the Station/AP co-existence mode."
+	depends on WIFI_NM
+	help
+	  The Station/AP coexistence mode allows the ESP32 to operate as both a station and
+	  an access point simultaneously. This mode is not enabled by default.
 
 config ESP32_WIFI_STA_RECONNECT
 	bool "WiFi connection retry"
@@ -161,6 +175,39 @@ config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 	  than WiFi layer can transmit. In these cases, we may run out of TX
 	  buffers.
 
+choice ESP32_WIFI_MGMT_RX_BUFFER
+	prompt "Type of WiFi RX MGMT buffers"
+	default ESP32_WIFI_STATIC_RX_MGMT_BUFFER
+	help
+	  Select type of WiFi RX MGMT buffers:
+
+	  If "Static" is selected, WiFi RX MGMT buffers are allocated when WiFi is initialized and released
+	  when WiFi is de-initialized. The size of each static RX MGMT buffer is fixed to about 500 Bytes.
+
+	  If "Dynamic" is selected, each WiFi RX MGMT buffer is allocated as needed when a MGMT data frame is
+	  received. The MGMT buffer is freed after the MGMT data frame has been processed by the WiFi driver.
+
+	config ESP32_WIFI_STATIC_RX_MGMT_BUFFER
+		bool "Static"
+	config ESP32_WIFI_DYNAMIC_RX_MGMT_BUFFER
+		bool "Dynamic"
+endchoice
+
+config ESP32_WIFI_DYNAMIC_RX_MGMT_BUF
+	int
+	default 0 if ESP32_WIFI_STATIC_RX_MGMT_BUFFER
+	default 1 if ESP32_WIFI_DYNAMIC_RX_MGMT_BUFFER
+
+config ESP32_WIFI_RX_MGMT_BUF_NUM_DEF
+	int "Max number of WiFi RX MGMT buffers"
+	range 1 10
+	default 5
+	help
+	  Set the number of WiFi RX_MGMT buffers.
+
+	  For Management buffers, the number of dynamic and static management buffers is the same.
+	  In order to prevent memory fragmentation, the management buffer type should be set to static first.
+
 config ESP32_WIFI_CSI_ENABLED
 	bool "WiFi CSI(Channel State Information)"
 	default n
@@ -220,6 +267,13 @@ config ESP32_WIFI_AMSDU_TX_ENABLED
 	help
 	  Select this option to enable AMSDU TX feature
 
+config ESP32_WIFI_MGMT_SBUF_NUM
+	int "WiFi mgmt short buffer number"
+	range 6 32
+	default 32
+	help
+	  Set the number of WiFi management short buffer.
+
 config ESP32_WIFI_IRAM_OPT
 	bool "WiFi IRAM speed optimization"
 	default n if (BT && ESP_SPIRAM && SOC_SERIES_ESP32)
@@ -237,10 +291,62 @@ config ESP32_WIFI_RX_IRAM_OPT
 	  When this option is disabled, more than 17Kbytes of IRAM memory will be saved
 	  but Wi-Fi performance will be reduced.
 
+config ESP32_WIFI_MAX_THREAD_PRIORITY
+	int "Maximum work queue thread priority"
+	default 7
+	help
+	  Maximum priority of thread used for processing driver work queue items.
+
+config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
+	int "Minimum active time"
+	range 8 60
+	default 50
+	help
+	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station enters the active state,
+	  it will work for at least ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME. If a data packet is received or sent
+	  during this period, the time will be refreshed. If the time is up, but the station still has packets
+	  to receive or send, the time will also be refreshed. unit: milliseconds.
+
+config ESP32_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
+	int "Maximum keep alive time"
+	range 10 60
+	default 10
+	help
+	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. If no packet has been
+	  sent within ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME, a null data packet will be sent
+	  to maintain the connection with the AP. unit: seconds.
+
+config ESP32_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
+	int "Minimum wait broadcast data time"
+	range 10 30
+	default 15
+	help
+	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station knows through the beacon
+	  that AP will send broadcast packet, it will wait for ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
+	  before entering the sleep process. If a broadcast packet is received with more data bits, the time
+	  will refreshed. unit: milliseconds.
+
+choice ESP_WIFI_HEAP
+	prompt "Wifi adapter heap in use"
+	default ESP_WIFI_HEAP_RUNTIME
+
+	config ESP_WIFI_HEAP_RUNTIME
+		bool "Wifi adapter use ESP runtime heap"
+		depends on ESP_HEAP_RUNTIME
+
+	config ESP_WIFI_HEAP_SPIRAM
+		bool "Wifi adapter use SPIRAM heap"
+		depends on ESP_SPIRAM
+
+	config ESP_WIFI_HEAP_SYSTEM
+		bool "Wifi adapter use system heap"
+
+endchoice # ESP_WIFI_HEAP
+
 config ESP32_WIFI_FTM_ENABLE
 	bool "WiFi FTM"
 	default n
-	depends on SOC_SERIES_ESP32C3
+	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 	help
 	  Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
 
@@ -270,7 +376,8 @@ config ESP32_WIFI_MBEDTLS_CRYPTO
 	select MBEDTLS_PK_WRITE_C
 	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
 	select MBEDTLS_CMAC
-	select MBEDTLS_ZEPHYR_ENTROPY
+	select MBEDTLS_ENTROPY_C
+	select MBEDTLS_ENTROPY_POLL_ZEPHYR
 	help
 	  Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
 

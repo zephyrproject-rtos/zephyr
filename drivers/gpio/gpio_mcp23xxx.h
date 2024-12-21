@@ -61,6 +61,7 @@ struct mcp23xxx_config {
 	struct gpio_dt_spec gpio_reset;
 
 	uint8_t ngpios;
+	bool is_open_drain;
 	mcp23xxx_read_port_regs read_fn;
 	mcp23xxx_write_port_regs write_fn;
 	mcp23xxx_bus_is_ready bus_fn;

@@ -1,7 +1,4 @@
-.. _nucleo_u5a5zj_q_board:
-
-ST Nucleo U5A5ZJ Q
-##################
+.. zephyr:board:: nucleo_u5a5zj_q
 
 Overview
 ********
@@ -279,14 +276,19 @@ This probe allows to flash the board using various tools.
 Flashing
 ========
 
-Board is configured to be flashed using west STM32CubeProgrammer runner.
-Installation of `STM32CubeProgrammer`_ is then required to flash the board.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, openocd (provided in Zephyr SDK), JLink and pyocd can also be
-used to flash and debug the board if west is told to use it as runner,
-which can be done by passing either ``-r openocd``, ``-r jlink`` or ``-r pyocd``.
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
 
-For pyocd additional target information needs to be installed.
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
+
+For pyOCD, additional target information needs to be installed.
 This can be done by executing the following commands.
 
 .. code-block:: console
@@ -300,7 +302,7 @@ Flashing an application to Nucleo U5A5ZJ Q
 
 Connect the Nucleo U5A5ZJ Q to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 

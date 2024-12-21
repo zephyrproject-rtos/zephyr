@@ -475,7 +475,7 @@ static const struct uart_driver_api uart_cmsdk_apb_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev);
@@ -500,7 +500,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_0 = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_0,
 		    &uart_cmsdk_apb_dev_cfg_0, PRE_KERNEL_1,
@@ -538,9 +538,9 @@ static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev)
 #endif
 #endif
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev);
@@ -565,7 +565,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_1 = {
 };
 
 DEVICE_DT_INST_DEFINE(1,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_1,
 		    &uart_cmsdk_apb_dev_cfg_1, PRE_KERNEL_1,
@@ -603,9 +603,9 @@ static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev)
 #endif
 #endif
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(2))
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev);
@@ -630,7 +630,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_2 = {
 };
 
 DEVICE_DT_INST_DEFINE(2,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_2,
 		    &uart_cmsdk_apb_dev_cfg_2, PRE_KERNEL_1,
@@ -668,9 +668,9 @@ static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev)
 #endif
 #endif
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(2), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(2)) */
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(3))
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev);
@@ -695,7 +695,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_3 = {
 };
 
 DEVICE_DT_INST_DEFINE(3,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_3,
 		    &uart_cmsdk_apb_dev_cfg_3, PRE_KERNEL_1,
@@ -733,9 +733,9 @@ static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev)
 #endif
 #endif
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(3), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(3)) */
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(4))
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev);
@@ -760,7 +760,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_4 = {
 };
 
 DEVICE_DT_INST_DEFINE(4,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_4,
 		    &uart_cmsdk_apb_dev_cfg_4, PRE_KERNEL_1,
@@ -798,4 +798,4 @@ static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev)
 #endif
 #endif
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(4), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(4)) */

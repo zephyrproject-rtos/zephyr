@@ -1,5 +1,6 @@
 board:
   name: nucleo_f070rb
+  full_name: Nucleo F070RB
   vendor: st
   socs:
     - name: stm32f070xb

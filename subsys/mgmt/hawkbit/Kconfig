@@ -33,9 +33,17 @@ config HAWKBIT_POLL_INTERVAL
 	  This time interval is zero and 43200 minutes(30 days). This will be overridden
 	  by the value configured in the settings of the hawkBit server.
 
+config HAWKBIT_AUTOHANDLER
+	bool "hawkBit autohandler"
+	select EVENTS
+	default y
+	help
+	  Activate autohandler to handle the update process automatically.
+
 config HAWKBIT_SHELL
 	bool "hawkBit shell utilities"
 	depends on SHELL
+	depends on HAWKBIT_AUTOHANDLER
 	help
 	  Activate shell module that provides hawkBit commands.
 
@@ -160,6 +168,12 @@ config HAWKBIT_REBOOT_COLD
 	  Do a cold reboot after the update.
 
 endchoice
+
+config HEAP_MEM_POOL_ADD_SIZE_HAWKBIT
+	int "Heap memory pool size for hawkBit"
+	default 4096
+	help
+	  Set the size of the heap memory pool for hawkBit.
 
 module = HAWKBIT
 module-str = Log Level for hawkbit

@@ -20,3 +20,11 @@ if(CONFIG_HTTP_SERVER AND CONFIG_WEBSOCKET)
   zephyr_library_sources(http_server_ws.c)
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 endif()
+
+if(CONFIG_HTTP_SERVER AND CONFIG_FILE_SYSTEM)
+  zephyr_linker_sources(SECTIONS iterables_content_type.ld)
+endif()
+
+if(CONFIG_HTTP_SERVER AND CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+  zephyr_linker_sources(SECTIONS iterables_header_capture.ld)
+endif()

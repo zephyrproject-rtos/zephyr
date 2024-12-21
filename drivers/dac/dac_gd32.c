@@ -115,6 +115,11 @@ static int dac_gd32_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	data->resolutions[dacx] = channel_cfg->resolution;
 
 	dac_gd32_disable(dacx);

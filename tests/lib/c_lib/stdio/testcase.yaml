@@ -1,0 +1,21 @@
+common:
+  tags:
+    - clib
+  min_ram: 128
+  filter: not CONFIG_NATIVE_LIBC
+tests:
+  libraries.libc.common.stdio.minimal:
+    tags: minimal_libc
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  libraries.libc.common.stdio.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  libraries.libc.common.stdio.newlib:
+    tags: newlib
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y

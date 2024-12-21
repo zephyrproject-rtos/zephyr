@@ -17,4 +17,3 @@ API Reference
 *************
 
 .. doxygengroup:: mdio_interface
-   :project: Zephyr

@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpuppr_vpr {
+	status = "okay";
+};
+
+&cpuppr_ram3x_region {
+	status = "okay";
+};
+
+&cpuflpr_vpr {
+	status = "okay";
+};

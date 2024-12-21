@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-23, NXP
+ * Copyright 2019-24, NXP
  * Copyright (c) 2022, Basalte bv
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -54,7 +54,7 @@ struct mcux_elcdif_data {
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
 #ifdef CONFIG_MCUX_ELCDIF_PXP
-	/* Given to when PXP completes rotation */
+	/* Given to when PXP completes operation */
 	struct k_sem pxp_done;
 #endif
 };
@@ -138,12 +138,12 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 
 #ifdef CONFIG_MCUX_ELCDIF_PXP
 	if (full_fb) {
-		/* Configure PXP using DMA API, and rotate frame */
+		/* Configure PXP using DMA API, and rotate/flip frame */
 		struct dma_config pxp_dma = {0};
 		struct dma_block_config pxp_block = {0};
 
 		/* Source buffer is input to display_write, we will
-		 * place rotated output into a driver framebuffer.
+		 * place modified output into a driver framebuffer.
 		 */
 		dev_data->active_fb = dev_data->fb[dev_data->next_idx];
 		pxp_block.source_address = (uint32_t)buf;
@@ -171,6 +171,17 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 			pxp_dma.dma_slot |= DMA_MCUX_PXP_CMD(DMA_MCUX_PXP_CMD_ROTATE_0);
 		}
 
+		/* DMA linked_channel sets the flip direction */
+		if (IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP_FLIP_HORIZONTAL)) {
+			pxp_dma.linked_channel |= DMA_MCUX_PXP_FLIP(DMA_MCUX_PXP_FLIP_HORIZONTAL);
+		} else if (IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP_FLIP_VERTICAL)) {
+			pxp_dma.linked_channel |= DMA_MCUX_PXP_FLIP(DMA_MCUX_PXP_FLIP_VERTICAL);
+		} else if (IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP_FLIP_BOTH)) {
+			pxp_dma.linked_channel |= DMA_MCUX_PXP_FLIP(DMA_MCUX_PXP_FLIP_BOTH);
+		} else {
+			pxp_dma.linked_channel |= DMA_MCUX_PXP_FLIP(DMA_MCUX_PXP_FLIP_DISABLE);
+		}
+
 		pxp_dma.channel_direction = MEMORY_TO_MEMORY;
 		pxp_dma.source_data_size = desc->width * dev_data->pixel_bytes;
 		pxp_dma.dest_data_size = config->rgb_mode.panelWidth * dev_data->pixel_bytes;
@@ -191,7 +202,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		}
 		k_sem_take(&dev_data->pxp_done, K_FOREVER);
 	} else {
-		LOG_WRN("PXP rotation will not work correctly unless a full sized "
+		LOG_WRN("PXP rotation/flip will not work correctly unless a full sized "
 			"framebuffer is provided");
 	}
 #endif /* CONFIG_MCUX_ELCDIF_PXP */
@@ -203,10 +214,8 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 	/* Update index of active framebuffer */
 	dev_data->next_idx = (dev_data->next_idx + 1) % CONFIG_MCUX_ELCDIF_FB_NUM;
 #endif
-
-	if (IS_ENABLED(CONFIG_MCUX_ELCDIF_LP)) {
-		ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
-	}
+	/* Enable frame buffer completion interrupt */
+	ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
 	/* Wait for frame send to complete */
 	k_sem_take(&dev_data->sem, K_FOREVER);
 	return ret;
@@ -299,11 +308,10 @@ static void mcux_elcdif_isr(const struct device *dev)
 	status = ELCDIF_GetInterruptStatus(config->base);
 	ELCDIF_ClearInterruptStatus(config->base, status);
 	if (config->base->CUR_BUF == ((uint32_t)dev_data->active_fb)) {
-		if (IS_ENABLED(CONFIG_MCUX_ELCDIF_LP)) {
-			/* Disable frame completion interrupt if Low power mode is activated*/
-			ELCDIF_DisableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
-		}
-		/* Post to sem to notify that frame display is complete.*/
+		/* Disable frame completion interrupt, post to
+		 * sem to notify that frame send is complete.
+		 */
+		ELCDIF_DisableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
 		k_sem_give(&dev_data->sem);
 	}
 }
@@ -341,9 +349,6 @@ static int mcux_elcdif_init(const struct device *dev)
 	dev_data->active_fb = dev_data->fb[0];
 
 	ELCDIF_RgbModeInit(config->base, &dev_data->rgb_mode);
-	if (!IS_ENABLED(CONFIG_MCUX_ELCDIF_LP)) {
-		ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
-	}
 	ELCDIF_RgbModeStart(config->base);
 
 	return 0;

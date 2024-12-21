@@ -1,6 +1,6 @@
 # STM32H723ZG Nucleo board configuration
 
-# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_NUCLEO_H723ZG

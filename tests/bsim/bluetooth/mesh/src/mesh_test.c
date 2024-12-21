@@ -88,7 +88,7 @@ static int ra_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	LOG_INF("\trssi: %d", ctx->recv_rssi);
 
 	if (ra_cb) {
-		ra_cb(net_buf_simple_pull_mem(buf, buf->len), buf->len);
+		ra_cb(buf->data, buf->len);
 	}
 
 	return 0;
@@ -186,6 +186,10 @@ static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
 static struct bt_mesh_od_priv_proxy_cli priv_proxy_cli;
 #endif
 
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+static struct bt_mesh_brg_cfg_cli brg_cfg_cli;
+#endif
+
 static const struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -204,6 +208,12 @@ static const struct bt_mesh_model models[] = {
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
 	BT_MESH_MODEL_OD_PRIV_PROXY_CLI(&priv_proxy_cli),
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_SRV)
+	BT_MESH_MODEL_BRG_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+	BT_MESH_MODEL_BRG_CFG_CLI(&brg_cfg_cli),
 #endif
 };
 
@@ -560,10 +570,16 @@ uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr)
 
 void bt_mesh_test_send_over_adv(void *data, size_t len)
 {
+	bt_mesh_test_send_over_adv_cb(data, len, NULL, NULL);
+}
+
+void bt_mesh_test_send_over_adv_cb(void *data, size_t len, const struct bt_mesh_send_cb *cb,
+				   void *cb_data)
+{
 	struct bt_mesh_adv *adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 						     BT_MESH_TRANSMIT(0, 20), K_NO_WAIT);
 	net_buf_simple_add_mem(&adv->b, data, len);
-	bt_mesh_adv_send(adv, NULL, NULL);
+	bt_mesh_adv_send(adv, cb, cb_data);
 }
 
 int bt_mesh_test_wait_for_packet(bt_le_scan_cb_t scan_cb, struct k_sem *observer_sem, uint16_t wait)

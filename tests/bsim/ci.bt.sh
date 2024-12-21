@@ -35,12 +35,9 @@ TESTS_FILE=tests/bsim/bluetooth/tests.nrf5340bsim_nrf5340_cpuapp.txt \
 tests/bsim/run_parallel.sh
 
 # nrf54l15bsim/nrf54l15/cpuapp set:
-# We provisionally disable the nrf54l15 BT tests in CI due to instability issues in the
-# controller for this platform. See https://github.com/zephyrproject-rtos/zephyr/issues/74635
-# This should be reverted once the underlaying issue is fixed
-#nice tests/bsim/bluetooth/compile.nrf54l15bsim_nrf54l15_cpuapp.sh
+nice tests/bsim/bluetooth/compile.nrf54l15bsim_nrf54l15_cpuapp.sh
 
-#BOARD=nrf54l15bsim/nrf54l15/cpuapp \
-#RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.54l15_cpuapp.xml \
-#TESTS_FILE=tests/bsim/bluetooth/tests.nrf54l15bsim_nrf54l15_cpuapp.txt \
-#tests/bsim/run_parallel.sh
+BOARD=nrf54l15bsim/nrf54l15/cpuapp \
+RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.54l15_cpuapp.xml \
+TESTS_FILE=tests/bsim/bluetooth/tests.nrf54l15bsim_nrf54l15_cpuapp.txt \
+tests/bsim/run_parallel.sh

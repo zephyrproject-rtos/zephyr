@@ -18,11 +18,11 @@ static inline bool is_hw_caps_supported(const struct device *dev,
 {
 	const struct ethernet_api *api = dev->api;
 
-	if (!api) {
+	if (!api || !api->get_capabilities) {
 		return false;
 	}
 
-	return !!(api->get_capabilities(dev) & caps);
+	return ((api->get_capabilities(dev) & caps) != 0);
 }
 
 static int ethernet_set_config(uint32_t mgmt_request,

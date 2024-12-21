@@ -14,6 +14,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "ll.h"
 
@@ -28,8 +29,8 @@
 #define EVT_PROP_TXP    BIT(6)
 #define ADV_INTERVAL    0x20   /* 20 ms advertising interval */
 #define ADV_WAIT_MS     10     /* 10 ms wait loop */
-#define OWN_ADDR_TYPE   BT_ADDR_LE_RANDOM_ID
-#define PEER_ADDR_TYPE  BT_ADDR_LE_RANDOM_ID
+#define OWN_ADDR_TYPE   BT_HCI_OWN_ADDR_RANDOM
+#define PEER_ADDR_TYPE  BT_HCI_OWN_ADDR_RANDOM
 #define PEER_ADDR       peer_addr
 #define ADV_CHAN_MAP    0x07
 #define FILTER_POLICY   0x00
@@ -185,7 +186,7 @@ static void test_advx_main(void)
 	printk("success.\n");
 
 	printk("Connectable advertising...");
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_2, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
@@ -401,7 +402,7 @@ static void test_advx_main(void)
 	k_sleep(K_MSEC(1000));
 
 	printk("Create connectable advertising set...");
-	err = bt_le_ext_adv_create(BT_LE_ADV_CONN, &adv_callbacks, &adv);
+	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_2, &adv_callbacks, &adv);
 	if (err) {
 		goto exit;
 	}
@@ -654,7 +655,7 @@ static void test_advx_main(void)
 		}
 	};
 	const struct bt_le_adv_param adv_param = {
-		.options = BT_LE_ADV_OPT_CONNECTABLE,
+		.options = BT_LE_ADV_OPT_CONN,
 		.peer = &direct_addr,
 	};
 	err = bt_le_adv_start(&adv_param, NULL, 0, NULL, 0);

@@ -104,7 +104,7 @@ static int wdt_counter_install_timeout(const struct device *dev,
 	uint32_t max_timeout = counter_get_top_value(counter) -
 				counter_get_guard_period(counter,
 				COUNTER_GUARD_PERIOD_LATE_TO_SET);
-	uint32_t timeout_ticks = counter_us_to_ticks(counter, cfg->window.max * 1000);
+	uint32_t timeout_ticks = counter_us_to_ticks(counter, (uint64_t)cfg->window.max * 1000);
 
 	if (cfg->flags & ~WDT_SUPPORTED_CFG_FLAGS) {
 		return -ENOTSUP;

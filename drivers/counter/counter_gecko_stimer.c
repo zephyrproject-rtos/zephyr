@@ -110,8 +110,9 @@ static int counter_gecko_start(const struct device *dev)
 	bool is_top_timer_running = false;
 
 	error_code = sl_sleeptimer_is_timer_running(&top_timer, &is_top_timer_running);
-	if ((error_code == SL_STATUS_OK) && (is_top_timer_running == true))
+	if ((error_code == SL_STATUS_OK) && (is_top_timer_running == true)) {
 		return 0;
+	}
 	struct counter_gecko_data *const dev_data = (struct counter_gecko_data *const)(dev)->data;
 
 	error_code = sl_sleeptimer_start_timer(&top_timer, dev_data->top_data.ticks, top_callback,

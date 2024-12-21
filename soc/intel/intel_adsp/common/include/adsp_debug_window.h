@@ -53,6 +53,7 @@
 #define ADSP_DW_SLOT_TELEMETRY		0x4c455400
 #define ADSP_DW_SLOT_TRACE		0x54524143
 #define ADSP_DW_SLOT_SHELL		0x73686c6c
+#define ADSP_DW_SLOT_DEBUG_STREAM	0x53523134
 #define ADSP_DW_SLOT_BROKEN		0x44414544
 
  /* for debug and critical types */

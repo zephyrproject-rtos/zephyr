@@ -14,8 +14,21 @@
 			reg = <0x0 0x1000>;
 			status = "okay";
 
-			gnss: gnss-nmea-generic {
+			gnss_nmea_generic: gnss-nmea-generic {
 				compatible = "gnss-nmea-generic";
+			};
+
+			gnss_air530z: air530z {
+				compatible = "luatos,air530z";
+			};
+
+			gnss_lc86g: lc86g {
+				compatible = "quectel,lc86g";
+				pps-mode = "GNSS_PPS_MODE_ENABLED";
+			};
+
+			gnss_m8: m8 {
+				compatible = "u-blox,m8";
 			};
 		};
 	};

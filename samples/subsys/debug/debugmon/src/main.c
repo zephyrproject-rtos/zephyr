@@ -51,8 +51,9 @@ void z_arm_debug_monitor(void)
 	printk("Entered debug monitor interrupt\n");
 
 	/* Spin in breakpoint. Other, higher-priority interrupts will continue to execute */
-	while (true)
+	while (true) {
 		;
+	}
 }
 
 int main(void)

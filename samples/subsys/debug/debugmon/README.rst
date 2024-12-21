@@ -1,7 +1,7 @@
-.. _debugmon-sample:
+.. zephyr:code-sample:: debugmon
+   :name: Debug Monitor
 
-Debug monitor
-#############
+   Configure the Debug Monitor feature on a Cortex-M processor.
 
 Overview
 ********

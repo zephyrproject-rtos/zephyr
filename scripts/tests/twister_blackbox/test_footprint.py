@@ -16,6 +16,7 @@ import re
 
 # pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock, clear_log_in_test
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
 
@@ -56,7 +57,7 @@ class TestFootprint:
     )
     def test_compare_report(self, caplog, out_path, old_ram_multiplier, expect_delta_log):
         # First run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--enable-size-report'] + \
@@ -76,9 +77,10 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
+
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
             f.write(json.dumps(j, indent=4))
 
@@ -89,7 +91,7 @@ class TestFootprint:
         )
 
         # Second run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--compare-report', report_path] + \
@@ -117,7 +119,7 @@ class TestFootprint:
 
     def test_footprint_from_buildlog(self, out_path):
         # First run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                [] + \
@@ -137,12 +139,12 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     assert self.RAM_KEY in ts
                     old_values += [ts[self.RAM_KEY]]
 
         # Second run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--footprint-from-buildlog'] + \
@@ -162,7 +164,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     assert self.RAM_KEY in ts
                     new_values += [ts[self.RAM_KEY]]
 
@@ -182,7 +184,7 @@ class TestFootprint:
     def test_footprint_threshold(self, caplog, out_path, old_ram_multiplier,
                                  threshold, expect_delta_log):
         # First run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--enable-size-report'] + \
@@ -202,7 +204,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
@@ -215,7 +217,7 @@ class TestFootprint:
         )
 
         # Second run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                [f'--footprint-threshold={threshold}'] + \
@@ -251,7 +253,7 @@ class TestFootprint:
     )
     def test_show_footprint(self, caplog, out_path, flags, old_ram_multiplier, expect_delta_log):
         # First run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--enable-size-report'] + \
@@ -271,7 +273,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
@@ -284,7 +286,7 @@ class TestFootprint:
         )
 
         # Second run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                flags + \
@@ -324,7 +326,7 @@ class TestFootprint:
     )
     def test_last_metrics(self, caplog, out_path, old_ram_multiplier, expect_delta_log):
         # First run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--enable-size-report'] + \
@@ -344,7 +346,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
@@ -357,7 +359,7 @@ class TestFootprint:
         )
 
         # Second run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--last-metrics'] + \
@@ -388,7 +390,7 @@ class TestFootprint:
         clear_log_in_test()
 
         # Third run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--compare-report', report_path] + \
@@ -421,7 +423,7 @@ class TestFootprint:
     )
     def test_all_deltas(self, caplog, out_path, old_ram_multiplier, expect_delta_log):
         # First run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--enable-size-report'] + \
@@ -441,7 +443,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
@@ -454,7 +456,7 @@ class TestFootprint:
         )
 
         # Second run
-        test_platforms = ['frdm_k64f']
+        test_platforms = ['intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--all-deltas'] + \

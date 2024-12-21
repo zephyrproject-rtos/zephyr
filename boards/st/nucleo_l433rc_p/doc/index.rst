@@ -1,7 +1,4 @@
-.. _nucleo_l433rc_board:
-
-ST Nucleo L433RC
-################
+.. zephyr:board:: nucleo_l433rc_p
 
 Overview
 ********
@@ -20,10 +17,6 @@ some highlights of the Nucleo L433RC board:
 
 - Three LEDs: USB communication (LD1), power LED (LD3), user LED (LD4)
 - One push-button: RESET
-
-.. image:: img/nucleo_l433rc_p.jpg
-  :align: center
-  :alt: Nucleo L433RC
 
 More information about the board can be found at the `Nucleo L433RC-P website`_.
 
@@ -173,6 +166,8 @@ to LPUART1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Nucleo L433RC-P board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_l433rc_p`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -180,9 +175,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo L433RC-P board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version
-included in the Zephyr SDK since v0.9.2.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to Nucleo L433RC-P
 ------------------------------------------
@@ -195,7 +197,7 @@ then run a serial host program to connect with your Nucleo board.
    $ picocom /dev/ttyACM0 -b 115200
 
 Now build and flash an application. Here is an example for
-:ref:`hello_world`.
+:zephyr:code-sample:`hello_world`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -213,7 +215,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -232,3 +234,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L432 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00151940.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

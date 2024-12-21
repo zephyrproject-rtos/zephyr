@@ -336,7 +336,7 @@ static int mipi_dbi_flexio_lcdif_command_write(const struct device *dev,
 
 }
 
-static int mipi_dbi_flexio_lcdif_reset(const struct device *dev, uint32_t delay)
+static int mipi_dbi_flexio_lcdif_reset(const struct device *dev, k_timeout_t delay)
 {
 	int err;
 	const struct mcux_flexio_lcdif_config *config = dev->config;
@@ -357,7 +357,7 @@ static int mipi_dbi_flexio_lcdif_reset(const struct device *dev, uint32_t delay)
 		return err;
 	}
 
-	k_msleep(delay);
+	k_sleep(delay);
 
 	err = gpio_pin_set_dt(&config->reset, 1);
 	if (err < 0) {

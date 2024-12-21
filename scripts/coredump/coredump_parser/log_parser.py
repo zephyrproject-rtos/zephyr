@@ -10,13 +10,17 @@ import struct
 
 # Note: keep sync with C code
 COREDUMP_HDR_ID = b'ZE'
-COREDUMP_HDR_VER = 1
+COREDUMP_HDR_VER = 2
 LOG_HDR_STRUCT = "<ccHHBBI"
 LOG_HDR_SIZE = struct.calcsize(LOG_HDR_STRUCT)
 
 COREDUMP_ARCH_HDR_ID = b'A'
 LOG_ARCH_HDR_STRUCT = "<cHH"
 LOG_ARCH_HDR_SIZE = struct.calcsize(LOG_ARCH_HDR_STRUCT)
+
+COREDUMP_THREADS_META_HDR_ID = b'T'
+LOG_THREADS_META_HDR_STRUCT = "<cHH"
+LOG_THREADS_META_HDR_SIZE = struct.calcsize(LOG_THREADS_META_HDR_STRUCT)
 
 COREDUMP_MEM_HDR_ID = b'M'
 COREDUMP_MEM_HDR_VER = 1
@@ -71,6 +75,9 @@ class CoredumpLogFile:
     def get_memory_regions(self):
         return self.memory_regions
 
+    def get_threads_metadata(self):
+        return self.threads_metadata
+
     def parse_arch_section(self):
         hdr = self.fd.read(LOG_ARCH_HDR_SIZE)
         _, hdr_ver, num_bytes = struct.unpack(LOG_ARCH_HDR_STRUCT, hdr)
@@ -78,6 +85,16 @@ class CoredumpLogFile:
         arch_data = self.fd.read(num_bytes)
 
         self.arch_data = {"hdr_ver" : hdr_ver, "data" : arch_data}
+
+        return True
+
+    def parse_threads_metadata_section(self):
+        hdr = self.fd.read(LOG_THREADS_META_HDR_SIZE)
+        _, hdr_ver, num_bytes = struct.unpack(LOG_THREADS_META_HDR_STRUCT, hdr)
+
+        data = self.fd.read(num_bytes)
+
+        self.threads_metadata = {"hdr_ver" : hdr_ver, "data" : data}
 
         return True
 
@@ -125,7 +142,7 @@ class CoredumpLogFile:
             logger.error("Log header ID not found...")
             return False
 
-        if hdr_ver != COREDUMP_HDR_VER:
+        if hdr_ver > COREDUMP_HDR_VER:
             logger.error(f"Log version: {hdr_ver}, expected: {COREDUMP_HDR_VER}!")
             return False
 
@@ -154,6 +171,10 @@ class CoredumpLogFile:
             if section_id == COREDUMP_ARCH_HDR_ID:
                 if not self.parse_arch_section():
                     logger.error("Cannot parse architecture section")
+                    return False
+            elif section_id == COREDUMP_THREADS_META_HDR_ID:
+                if not self.parse_threads_metadata_section():
+                    logger.error("Cannot parse threads metadata section")
                     return False
             elif section_id == COREDUMP_MEM_HDR_ID:
                 if not self.parse_memory_section():

@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Renesas RA entropy generator driver configuration
+
+config ENTROPY_RENESAS_RA_RSIP_E51A_TRNG
+	bool "Renesas RA RSIP-E51A TRNG driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_RSIP_E51A_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	select USE_RA_FSP_SCE
+	help
+	  This option enables the Renesas RA RSIP-E51A RNG.

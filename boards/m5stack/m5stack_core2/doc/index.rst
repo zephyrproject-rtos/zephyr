@@ -1,7 +1,4 @@
-.. _m5stack_core2:
-
-M5Stack Core2
-#############
+.. zephyr:board:: m5stack_core2
 
 Overview
 ********
@@ -25,13 +22,6 @@ M5Stack Core2 features the following integrated components:
 - IMO 6-axis IMU MPU6886
 - MIC SPM1423
 - Battery 390mAh 3,7V
-
-.. figure:: img/m5stack_core2.webp
-        :align: center
-        :alt: M5Stack-Core2
-        :width: 400 px
-
-        M5Stack-Core2 module
 
 Functional Description
 **********************
@@ -79,7 +69,7 @@ of the M5Stack Core2 board.
 | MPU6886          | combines a 3-axis gyroscope and a 3-axis accelerometer.                  |           |
 |                  | For details please refer to :ref:`m5stack_core2_ext`                     |           |
 +------------------+--------------------------------------------------------------------------+-----------+
-| Grove port       | Note: Grove port requires 5V to be enabled via `bus_5v` regulator        | supported |
+| Grove port       | Note: Grove port requires 5V to be enabled via ``bus_5v`` regulator      | supported |
 +------------------+--------------------------------------------------------------------------+-----------+
 | Built-in         | The `SPM-1423`_ I2S driven microphone.                                   | todo      |
 | microphone       |                                                                          |           |
@@ -183,7 +173,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``m5stack_core2`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

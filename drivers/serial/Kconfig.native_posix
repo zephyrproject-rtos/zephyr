@@ -13,7 +13,7 @@ config UART_NATIVE_POSIX
 
 if UART_NATIVE_POSIX
 
-choice
+choice NATIVE_UART_0
 	prompt "Native UART Port 0 connection"
 	default NATIVE_UART_0_ON_OWN_PTY
 

@@ -1,7 +1,4 @@
-.. _seeeduino_xiao:
-
-Seeeduino XIAO
-##############
+.. zephyr:board:: seeeduino_xiao
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The Seeeduino XIAO is a tiny (20 mm x 17.5 mm) ARM development
 board with onboard LEDs, USB port, and range of I/O broken out
 onto 14 pins.
-
-.. image:: img/seeeduino_xiao.jpg
-     :align: center
-     :alt: Seeeduino XIAO
 
 Hardware
 ********
@@ -98,7 +91,7 @@ USB Device Port
 ===============
 
 The SAMD21 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
@@ -120,7 +113,7 @@ will be entered automatically when you run :code:`west flash`.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

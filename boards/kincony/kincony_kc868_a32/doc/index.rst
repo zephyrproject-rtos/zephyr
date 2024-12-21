@@ -1,7 +1,4 @@
-.. _kincony_kc868_a32:
-
-KINCONY KC868-A32
-#################
+.. zephyr:board:: kincony_kc868_a32
 
 Overview
 ********
@@ -22,12 +19,6 @@ The features include the following:
 - USB Type-B connector for programming and filling firmware
 - RESET and DOWNLOAD buttons
 - Powered by 12V DC
-
-.. figure:: img/kincony_kc868_a32.jpg
-    :align: center
-    :alt: KINCONCY-KC868-A32
-
-    KINCONCY-KC868-A32
 
 System requirements
 ===================
@@ -58,7 +49,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``kincony_kc868_a32`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -93,5 +84,7 @@ Enable Ethernet in KConfig:
 
 References
 **********
+
+.. target-notes::
 
 .. _KINCONY KC868-A32 User Guide: https://www.kincony.com/arduino-esp32-32-channel-relay-module-kc868-a32.html

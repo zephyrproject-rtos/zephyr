@@ -31,6 +31,10 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 
 #include "ieee802154_cc13xx_cc26xx.h"
 
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+#include <zephyr/net/openthread.h>
+#endif
+
 /* Overrides from SmartRF Studio 7 2.13.0 */
 static uint32_t overrides[] = {
 	/* DC/DC regulator: In Tx, use DCDCCTL5[3:0]=0x3 (DITHER_EN=0 and IPEAK=3). */
@@ -777,7 +781,13 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 	},
 
 	.cmd_radio_setup = {
+#if defined(CONFIG_SOC_CC1352R) || defined(CONFIG_SOC_CC2652R) || \
+	defined(CONFIG_SOC_CC1352R7) || defined(CONFIG_SOC_CC2652R7)
 		.commandNo = CMD_RADIO_SETUP,
+#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC2652P) || \
+	defined(CONFIG_SOC_CC1352P7) || defined(CONFIG_SOC_CC2652P7)
+		.commandNo = CMD_RADIO_SETUP_PA,
+#endif /* CONFIG_SOC_CCxx52x */
 		.status = IDLE,
 		.pNextOp = NULL,
 		.startTrigger.triggerType = TRIG_NOW,
@@ -796,11 +806,21 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)
+#define L2 IEEE802154_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
+#define MTU IEEE802154_MTU
+#elif defined(CONFIG_NET_L2_OPENTHREAD)
+#define L2 OPENTHREAD_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
+#define MTU 1280
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_PHY_IEEE802154)
 NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
 			  &ieee802154_cc13xx_cc26xx_data, NULL,
 			  CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
-			  &ieee802154_cc13xx_cc26xx_radio_api, IEEE802154_L2,
-			  NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);
+			  &ieee802154_cc13xx_cc26xx_radio_api, L2,
+			  L2_CTX_TYPE, MTU);
 #else
 DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
 		      &ieee802154_cc13xx_cc26xx_data, NULL, POST_KERNEL,

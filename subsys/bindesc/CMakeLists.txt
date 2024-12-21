@@ -66,3 +66,5 @@ if(CONFIG_BINDESC_DEFINE_HOST_INFO)
   gen_str_definition(CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER_ID})
   gen_str_definition(CXX_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION})
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_BINDESC_READ bindesc_read.c)

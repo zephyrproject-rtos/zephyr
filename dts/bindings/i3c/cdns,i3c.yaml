@@ -19,3 +19,8 @@ properties:
     type: int
     required: true
     description: The controller input clock frequency
+
+  ibid-thr:
+    type: int
+    default: 1
+    description: IBI Data Fifo Threashold Value

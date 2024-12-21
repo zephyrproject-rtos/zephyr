@@ -36,6 +36,7 @@ struct ll_adv_set {
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
 	uint8_t  hci_handle;
 #endif
+	uint8_t  max_skip;
 	uint16_t event_counter;
 	uint16_t max_events;
 	uint32_t remain_duration_us;

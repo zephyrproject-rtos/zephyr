@@ -44,6 +44,7 @@ struct gpio_keys_config {
 	struct gpio_keys_pin_data *pin_data;
 	k_work_handler_t handler;
 	bool polling_mode;
+	bool no_disconnect;
 };
 
 struct gpio_keys_data {
@@ -61,9 +62,15 @@ static void gpio_keys_poll_pin(const struct device *dev, int key_index)
 	const struct gpio_keys_pin_config *pin_cfg = &cfg->pin_cfg[key_index];
 	struct gpio_keys_pin_data *pin_data = &cfg->pin_data[key_index];
 	int new_pressed;
+	int ret;
 
-	new_pressed = gpio_pin_get(pin_cfg->spec.port, pin_cfg->spec.pin);
+	ret = gpio_pin_get_dt(&pin_cfg->spec);
+	if (ret < 0) {
+		LOG_ERR("key_index %d get failed: %d", key_index, ret);
+		return;
+	}
 
+	new_pressed = ret;
 	LOG_DBG("%s: pin_state=%d, new_pressed=%d, key_index=%d", dev->name,
 		pin_data->cb_data.pin_state, new_pressed, key_index);
 
@@ -145,7 +152,7 @@ static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 		return ret;
 	}
 
-	cb->pin_state = -1;
+	cb->pin_state = gpio_pin_get_dt(gpio_spec);
 
 	LOG_DBG("port=%s, pin=%d", gpio_spec->port->name, gpio_spec->pin);
 
@@ -232,10 +239,12 @@ static int gpio_keys_pm_action(const struct device *dev,
 				}
 			}
 
-			ret = gpio_pin_configure_dt(gpio, GPIO_DISCONNECTED);
-			if (ret != 0) {
-				LOG_ERR("Pin %d configuration failed: %d", i, ret);
-				return ret;
+			if (!cfg->no_disconnect) {
+				ret = gpio_pin_configure_dt(gpio, GPIO_DISCONNECTED);
+				if (ret != 0) {
+					LOG_ERR("Pin %d configuration failed: %d", i, ret);
+					return ret;
+				}
 			}
 		}
 
@@ -246,10 +255,12 @@ static int gpio_keys_pm_action(const struct device *dev,
 		for (int i = 0; i < cfg->num_keys; i++) {
 			const struct gpio_dt_spec *gpio = &cfg->pin_cfg[i].spec;
 
-			ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
-			if (ret != 0) {
-				LOG_ERR("Pin %d configuration failed: %d", i, ret);
-				return ret;
+			if (!cfg->no_disconnect) {
+				ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
+				if (ret != 0) {
+					LOG_ERR("Pin %d configuration failed: %d", i, ret);
+					return ret;
+				}
 			}
 
 			if (cfg->polling_mode) {
@@ -298,6 +309,7 @@ static int gpio_keys_pm_action(const struct device *dev,
 		.handler = COND_CODE_1(DT_INST_PROP(i, polling_mode),                              \
 				       (gpio_keys_poll_pins), (gpio_keys_change_deferred)),        \
 		.polling_mode = DT_INST_PROP(i, polling_mode),                                     \
+		.no_disconnect = DT_INST_PROP(i, no_disconnect),                                   \
 	};                                                                                         \
 												   \
 	static struct gpio_keys_data gpio_keys_data_##i;                                           \

@@ -8,6 +8,11 @@ tests:
     integration_platforms:
       - native_sim
     platform_exclude: xenvm
+  kernel.device.metadata:
+    platform_allow:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_DEVICE_DT_METADATA=y
   kernel.device.minimallibc:
     integration_platforms:
       - native_sim

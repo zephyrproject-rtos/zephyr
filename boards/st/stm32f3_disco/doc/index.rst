@@ -1,7 +1,4 @@
-.. _stm32f3_disco_board:
-
-ST STM32F3 Discovery
-####################
+.. zephyr:board:: stm32f3_disco
 
 Overview
 ********
@@ -34,10 +31,6 @@ started quickly. Here are some highlights of the STM32F3DISCOVERY board:
 
 .. HINT::
    Recent PCB revisions (E and newer) are shipped with I3G4250D and LSM303AGR.
-
-.. image:: img/stm32f3_disco.jpg
-     :align: center
-     :alt: STM32F3DISCOVERY
 
 More information about the board can be found at the
 `STM32F3DISCOVERY website`_.
@@ -201,9 +194,6 @@ transceiver must be connected to ``PD0`` (``CAN1_RX``) and ``PD1``
 Programming and Debugging
 *************************
 
-Flashing
-========
-
 STM32F3DISCOVERY Discovery kit includes a ST-LINK/V2 or ST-LINK/V2-B embedded
 debug tool interface.
 
@@ -211,13 +201,27 @@ Applications for the ``stm32f3_disco`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
 Flashing an application to STM32F3DISCOVERY
 -------------------------------------------
 
 First, connect the STM32F3DISCOVERY Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -255,7 +259,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -280,3 +284,6 @@ Again you have to use the adapted command for newer PCB revisions (E and newer):
 
 .. _STM32F303xC reference manual:
    https://www.st.com/resource/en/reference_manual/dm00043574.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

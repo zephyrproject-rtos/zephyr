@@ -860,8 +860,8 @@ static struct emul_mspi_driver_api emul_mspi_driver_api = {
 #define MSPI_CONFIG(n)                                                                            \
 	{                                                                                         \
 		.channel_num           = EMUL_MSPI_INST_ID,                                       \
-		.op_mode               = DT_ENUM_IDX_OR(n, op_mode, MSPI_OP_MODE_CONTROLLER),     \
-		.duplex                = DT_ENUM_IDX_OR(n, duplex, MSPI_HALF_DUPLEX),             \
+		.op_mode               = DT_INST_ENUM_IDX_OR(n, op_mode, MSPI_OP_MODE_CONTROLLER),\
+		.duplex                = DT_INST_ENUM_IDX_OR(n, duplex, MSPI_HALF_DUPLEX),        \
 		.max_freq              = DT_INST_PROP(n, clock_frequency),                        \
 		.dqs_support           = DT_INST_PROP_OR(n, dqs_support, false),                  \
 		.sw_multi_periph       = DT_INST_PROP(n, software_multiperipheral),               \

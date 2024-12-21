@@ -79,17 +79,9 @@ void lll_periph_prepare(void *param)
 
 	lll = p->param;
 
-	/* Accumulate window widening */
-	lll->periph.window_widening_prepare_us +=
-	    lll->periph.window_widening_periodic_us * (p->lazy + 1);
-	if (lll->periph.window_widening_prepare_us >
-	    lll->periph.window_widening_max_us) {
-		lll->periph.window_widening_prepare_us =
-			lll->periph.window_widening_max_us;
-	}
-
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, lll_conn_abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_conn_peripheral_is_abort_cb, lll_conn_abort_cb,
+			  prepare_cb, 0U, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -132,7 +124,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_conn_prepare_reset();
 
 	/* Calculate the current event latency */
-	lll->latency_event = lll->latency_prepare + p->lazy;
+	lll->lazy_prepare = p->lazy;
+	lll->latency_event = lll->latency_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->latency_event;
@@ -158,6 +151,15 @@ static int prepare_cb(struct lll_prepare_param *p)
 					       lll->latency_event,
 					       &lll->data_chan_map[0],
 					       lll->data_chan_count);
+	}
+
+	/* Accumulate window widening */
+	lll->periph.window_widening_prepare_us +=
+	    lll->periph.window_widening_periodic_us * (lll->lazy_prepare + 1U);
+	if (lll->periph.window_widening_prepare_us >
+	    lll->periph.window_widening_max_us) {
+		lll->periph.window_widening_prepare_us =
+			lll->periph.window_widening_max_us;
 	}
 
 	/* current window widening */
@@ -209,7 +211,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_isr_set(lll_conn_isr_rx, lll);
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(lll->tifs_tx_us);
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
@@ -313,9 +315,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+	defined(CONFIG_BT_CTLR_TX_DEFER) || \
 	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_tmr_end_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR ||
+	* CONFIG_BT_CTLR_TX_DEFER ||
+	* HAL_RADIO_GPIO_HAVE_PA_PIN
+	*/
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	radio_rssi_measure();

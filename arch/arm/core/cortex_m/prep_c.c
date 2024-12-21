@@ -20,6 +20,8 @@
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
 
 #if defined(__GNUC__)
 /*
@@ -181,6 +183,10 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 void z_prep_c(void)
 {
+#if defined(CONFIG_SOC_PREP_HOOK)
+	soc_prep_hook();
+#endif
+
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
@@ -193,6 +199,13 @@ void z_prep_c(void)
 #else
 	z_arm_interrupt_init();
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
+#endif
+
+#ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT
+	z_arm_debug_enable_null_pointer_detection();
+#endif
 	z_cstart();
 	CODE_UNREACHABLE;
 }

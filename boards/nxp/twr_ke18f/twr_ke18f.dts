@@ -35,6 +35,7 @@
 		sw1 = &user_button_2;
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
+		mcuboot-button0 = &user_button_3;
 	};
 
 	chosen {
@@ -47,6 +48,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart0;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
@@ -283,6 +285,7 @@
 &adc0 {
 	status = "okay";
 	sample-time = <12>;
+	vref-mv = <3300>;
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 };

@@ -1,7 +1,4 @@
-.. _ruuvi_ruuvitag:
-
-Ruuvi RuuviTag
-##############
+.. zephyr:board:: ruuvi_ruuvitag
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 RuuviTag is an advanced battery-operated open-source Bluetooth
 enabled sensor beacon platform capable of sending temperature, humidity,
 pressure, and motion information over Bluetooth Low Energy.
-
-.. figure:: img/ruuvitag.jpg
-     :align: center
-     :alt: RUUVI RuuviTag
-
-     RUUVI RuuviTag (Credit: https://ruuvi.com/)
 
 More information about the board can be found at the
 `ruuvitag website`_.

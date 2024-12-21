@@ -365,19 +365,19 @@
 			<text x="6.39" y="301.76" class="st17" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>QEMU</text>		</g>
 		<g id="shape88-174" v:mID="88" v:groupContext="shape" transform="translate(646.299,-127.559)">
 			<title>Sheet.88</title>
-			<desc>native_ posix</desc>
+			<desc>native _sim</desc>
 			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
 			<v:textRect cx="32.3082" cy="291.969" width="64.62" height="28.3465"/>
 			<rect x="0" y="277.795" width="64.6164" height="28.3465" class="st3"/>
-			<text x="16.19" y="288.97" class="st9" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>native_<v:lf/><tspan
-						x="20.64" dy="1.2em" class="st6">posix</tspan></text>		</g>
+			<text x="16.19" y="288.97" class="st9" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>native<v:lf/><tspan
+						x="20.64" dy="1.2em" class="st6">_sim</tspan></text>		</g>
 		<g id="shape89-178" v:mID="89" v:groupContext="shape" transform="translate(302.18,-259.795)">
 			<title>Sheet.89</title>
-			<desc>native_posix</desc>
+			<desc>native_sim</desc>
 			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
 			<v:textRect cx="32.3082" cy="291.969" width="64.62" height="28.3465"/>
 			<rect x="0" y="277.795" width="64.6164" height="28.3465" class="st3"/>
-			<text x="4.51" y="294.97" class="st9" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>native_posix</text>		</g>
+			<text x="4.51" y="294.97" class="st9" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>native_sim</text>		</g>
 		<g id="shape90-181" v:mID="90" v:groupContext="shape" transform="translate(287.819,-267.874)">
 			<title>Sheet.90</title>
 			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>

@@ -28,8 +28,9 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 					 ADXL367_TO_REG(reg),
 					 (uint8_t *) data, length);
 	} else {
-		if (length != 1)
+		if (length != 1) {
 			return -EINVAL;
+		}
 
 		return i2c_reg_write_byte_dt(&config->i2c,
 					     ADXL367_TO_REG(reg),

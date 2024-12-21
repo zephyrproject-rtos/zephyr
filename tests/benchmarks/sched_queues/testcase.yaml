@@ -1,0 +1,25 @@
+common:
+  tags:
+    - kernel
+    - benchmark
+  integration_platforms:
+    - qemu_x86
+    - qemu_cortex_a53
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "PROJECT EXECUTION SUCCESSFUL"
+
+tests:
+  benchmark.sched_queues.dumb:
+    extra_configs:
+      - CONFIG_SCHED_DUMB=y
+
+  benchmark.sched_queues.scalable:
+    extra_configs:
+      - CONFIG_SCHED_SCALABLE=y
+
+  benchmark.sched_queues.multiq:
+    extra_configs:
+      - CONFIG_SCHED_MULTIQ=y

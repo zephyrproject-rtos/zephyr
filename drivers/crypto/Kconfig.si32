@@ -1,0 +1,18 @@
+# Copyright (c) 2024 GARDENA GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_SI32
+	bool "Si32 AES driver"
+	default y
+	depends on DT_HAS_SILABS_SI32_AES_ENABLED
+	select DMA
+	help
+	  Enable hardware accelerated AES driver.
+
+config CRYPTO_SI32_MAX_SESSION
+	int "Maximum of sessions the Si32 driver can handle"
+	default 2
+	depends on CRYPTO_SI32
+	help
+	  This can be used to tweak the amount of sessions the driver
+	  can handle in parallel.

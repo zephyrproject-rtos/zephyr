@@ -39,3 +39,9 @@ properties:
     description: |
       Desired switched capacitor ratio set at initialization. This entry will overwrite
       the selection set by the PROG resistor.
+
+  cirrus,hw-i2c-lock:
+    type: boolean
+    description: |
+      Indicate if the hardware write lock was enabled via the resistor value applied to
+      PGPIO2.

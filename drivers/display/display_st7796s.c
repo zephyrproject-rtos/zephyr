@@ -118,7 +118,13 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	 * and vice versa.
 	 */
 	if (config->dbi_config.mode == MIPI_DBI_MODE_8080_BUS_8_BIT) {
-		if (config->madctl & ST7796S_MADCTL_BGR) {
+		/*
+		 * Similar to the handling for other interface modes,
+		 * invert the reported pixel format if "rgb_is_inverted"
+		 * is enabled
+		 */
+		if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
+		    config->rgb_is_inverted) {
 			return PIXEL_FORMAT_RGB_565;
 		} else {
 			return PIXEL_FORMAT_BGR_565;
@@ -133,7 +139,8 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	 * if rgb_is_inverted is enabled.
 	 * It is a workaround for supporting buggy modules that display RGB as BGR.
 	 */
-	if (!(config->madctl & ST7796S_MADCTL_BGR) != !config->rgb_is_inverted) {
+	if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
+	    config->rgb_is_inverted) {
 		return PIXEL_FORMAT_BGR_565;
 	} else {
 		return PIXEL_FORMAT_RGB_565;

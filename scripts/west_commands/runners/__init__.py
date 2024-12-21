@@ -25,6 +25,7 @@ def _import_runner_module(runner_name):
 # defined; otherwise, ZephyrBinaryRunner.get_runners() won't work.
 
 _names = [
+    # zephyr-keep-sorted-start
     'atmisp',
     'blackmagicprobe',
     'bossac',
@@ -48,10 +49,11 @@ _names = [
     'nsim',
     'nxp_s32dbg',
     'openocd',
+    'probe_rs',
     'pyocd',
+    'qemu',
     'renode',
     'renode-robot',
-    'qemu',
     'silabs_commander',
     'spi_burn',
     'stm32cubeprogrammer',
@@ -59,8 +61,9 @@ _names = [
     'teensy',
     'trace32',
     'uf2',
+    'xsdb',
     'xtensa',
-    # Keep this list sorted by runner name; don't add to the end.
+    # zephyr-keep-sorted-stop
 ]
 
 for _name in _names:

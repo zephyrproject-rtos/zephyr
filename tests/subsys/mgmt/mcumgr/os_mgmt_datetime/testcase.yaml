@@ -8,7 +8,6 @@ common:
     - mcumgr
     - os_mgmt_datetime
   platform_allow:
-    - native_posix
     - native_sim
     - qemu_cortex_m0
     - qemu_riscv64

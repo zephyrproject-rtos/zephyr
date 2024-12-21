@@ -11,8 +11,8 @@ if POSIX_SEMAPHORES
 
 config POSIX_SEM_VALUE_MAX
 	int "Maximum semaphore value"
-	default 32767
-	range 1 32767
+	default $(INT16_MAX)
+	range 1 $(INT16_MAX)
 	help
 	  Maximum semaphore count in POSIX compliant Application.
 
@@ -28,7 +28,7 @@ config POSIX_SEM_NSEMS_MAX
 config POSIX_SEM_NAMELEN_MAX
 	int "Maximum semaphore name length"
 	default 16
-	range 2 255
+	range 2 $(UINT8_MAX)
 	help
 	  Maximum length of name for a named semaphore.
 	  The max value of 255 corresponds to {NAME_MAX}.

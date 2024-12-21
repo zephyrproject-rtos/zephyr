@@ -215,7 +215,7 @@
 #define I2SLCTL_SPA(x)		BIT(16 + x)
 #define I2SLCTL_CPA(x)		BIT(23 + x)
 
-#define I2CLCTL_MLCS(x)		DAI_INTEL_SSP_SET_BITS(30, 27, x)
+#define I2CLCTL_MLCS(x)		DAI_INTEL_SSP_SET_BITS(29, 27, x)
 #define SHIM_CLKCTL		0x78
 #define SHIM_CLKCTL_I2SFDCGB(x)		BIT(20 + x)
 #define SHIM_CLKCTL_I2SEFDCGB(x)	BIT(18 + x)

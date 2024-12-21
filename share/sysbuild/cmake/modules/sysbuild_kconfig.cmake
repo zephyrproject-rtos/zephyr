@@ -11,6 +11,11 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_sysbuild_guiconfig
 )
 
 set(KCONFIG_TARGETS sysbuild_menuconfig sysbuild_guiconfig)
+foreach(extra_target ${EXTRA_KCONFIG_TARGETS})
+  set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_sysbuild_${extra_target}
+      "${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${extra_target}}"
+  )
+endforeach()
 list(TRANSFORM EXTRA_KCONFIG_TARGETS PREPEND "sysbuild_")
 
 zephyr_get(APPLICATION_CONFIG_DIR)

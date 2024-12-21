@@ -45,7 +45,7 @@ config PM_DEVICE
 config REGULATOR
 	default y
 
-config PM_DEVICE_RUNTIME_EXCLUSIVE
-	default n if PM_DEVICE_RUNTIME
+config PM_DEVICE_SYSTEM_MANAGED
+	default y if PM_DEVICE_RUNTIME
 
 endif # SOC_SERIES_DA1469X

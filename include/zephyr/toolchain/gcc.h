@@ -250,6 +250,9 @@ do {                                                                    \
 
 #ifndef __deprecated
 #define __deprecated	__attribute__((deprecated))
+/* When adding this, remember to follow the instructions in
+ * https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
+ */
 #endif
 
 #ifndef __attribute_const__
@@ -312,6 +315,9 @@ do {                                                                    \
 /* Generic message */
 #ifndef __DEPRECATED_MACRO
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
+/* When adding this, remember to follow the instructions in
+ * https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
+ */
 #endif
 
 /* These macros allow having ARM asm functions callable from thumb */

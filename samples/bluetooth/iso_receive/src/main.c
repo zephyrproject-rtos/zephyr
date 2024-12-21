@@ -22,7 +22,7 @@
 
 #define PA_RETRY_COUNT 6
 
-#define BIS_ISO_CHAN_COUNT 2
+#define BIS_ISO_CHAN_COUNT MIN(2U, CONFIG_BT_ISO_MAX_CHAN)
 
 static bool         per_adv_found;
 static bool         per_adv_lost;
@@ -42,7 +42,7 @@ static K_SEM_DEFINE(sem_big_sync_lost, 0, BIS_ISO_CHAN_COUNT);
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
-#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(LED0_NODE)
 static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 #define HAS_LED     1
 #define BLINK_ONOFF K_MSEC(500)
@@ -276,7 +276,7 @@ static struct bt_iso_chan *bis[] = {
 static struct bt_iso_big_sync_param big_sync_param = {
 	.bis_channels = bis,
 	.num_bis = BIS_ISO_CHAN_COUNT,
-	.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT) << 1),
+	.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT)),
 	.mse = BT_ISO_SYNC_MSE_ANY, /* any number of subevents */
 	.sync_timeout = 100, /* in 10 ms units */
 };

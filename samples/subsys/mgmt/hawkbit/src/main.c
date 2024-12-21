@@ -5,7 +5,9 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/config.h>
+#include <zephyr/mgmt/hawkbit/autohandler.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/reboot.h>
@@ -83,7 +85,7 @@ int main(void)
 
 #if defined(CONFIG_HAWKBIT_POLLING)
 	LOG_INF("Starting hawkBit polling mode");
-	hawkbit_autohandler();
+	hawkbit_autohandler(true);
 #endif
 
 #if defined(CONFIG_HAWKBIT_MANUAL)

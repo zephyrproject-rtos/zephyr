@@ -1,7 +1,4 @@
-.. _riscv32-virtual:
-
-RISCV32 Virtual
-###############
+.. zephyr:board:: riscv32_virtual
 
 Overview
 ********

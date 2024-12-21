@@ -52,8 +52,9 @@ void stm32_hsem_mailbox_ipm_rx_isr(const struct device *dev)
 	uint32_t mask_semid = (1U << data->rx_semid);
 
 	/* Check semaphore rx_semid interrupt status */
-	if (!ll_hsem_isactiveflag_cmisr(HSEM, mask_semid))
+	if (!ll_hsem_isactiveflag_cmisr(HSEM, mask_semid)) {
 		return;
+	}
 
 	/* Notify user with NULL data pointer */
 	if (data->callback) {

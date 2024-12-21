@@ -1,0 +1,7 @@
+identifier: ATMEVK-M3202-02/ATMx2xx-x1x
+name: ATMEVK-M3202-02
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+vendor: atmosic

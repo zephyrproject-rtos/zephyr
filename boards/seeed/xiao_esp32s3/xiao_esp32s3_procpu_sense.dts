@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2023 Seeed Studio inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "xiao_esp32s3_procpu_common.dtsi"
+#include <espressif/partitions_0x0_amp.dtsi>
+
+/ {
+	model = "Seeed Xiao ESP32S3 PROCPU Sense";
+	compatible = "seeed,xiao-esp32s3";
+
+	chosen {
+		zephyr,camera = &lcd_cam;
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	ov2640: ov2640@30 {
+		compatible = "ovti,ov2640";
+		reg = <0x30>;
+		status = "okay";
+		clock-rate-control = <0x80>;
+		port {
+			ov2640_ep_out: endpoint {
+				remote-endpoint-label = "dvp_ep_in";
+			};
+		};
+	};
+};
+
+&dma {
+	status = "okay";
+};
+
+&lcd_cam {
+	status = "okay";
+	cam-clk = <10000000>;
+	pinctrl-0 = <&lcd_cam_default>;
+	pinctrl-names = "default";
+	source = <&ov2640>;
+	dmas = <&dma 2>;
+	dma-names = "rx";
+	port {
+		dvp_ep_in: endpoint {
+			remote-endpoint-label = "ov2640_ep_out";
+		};
+	};
+};
+
+&spi2 {
+	status = "okay";
+	cs-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+
+	sdcard: sdcard@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+		spi-max-frequency = <20000000>;
+	};
+};

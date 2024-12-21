@@ -1,7 +1,4 @@
-.. _pandora_stm32l475_board:
-
-Alientek STM32L475 Pandora
-##########################
+.. zephyr:board:: pandora_stm32l475
 
 Overview
 ********
@@ -28,14 +25,11 @@ some highlights of the STM32L475 Pandora board:
 - MCU current ammeter with 4 ranges and auto-calibration
 - Connector for external board or RF-EEPROM
 - Four power supply options:
+
     - ST-LINK/V2-1
     - USB FS connector
     - External 5 V
     - CR2032 battery (not provided)
-
-.. image:: img/pandora_stm32l475.jpg
-     :align: center
-     :alt: STM32L475 Pandora
 
 More information about the board can be found at the `STM32L475 Pandora website`_.
 
@@ -182,7 +176,7 @@ board. For example:
    $ minicom -D /dev/ttyACM0
 
 Then, build and flash in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -199,7 +193,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

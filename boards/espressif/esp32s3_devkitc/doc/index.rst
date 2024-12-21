@@ -1,14 +1,11 @@
-.. _esp32s3_devkitc:
-
-ESP32S3-DevKitC
-###############
+.. zephyr:board:: esp32s3_devkitc
 
 Overview
 ********
 
 The ESP32-S3-DevKitC is an entry-level development board equipped with either ESP32-S3-WROOM-1
 or ESP32-S3-WROOM-1U, a module named for its small size. This board integrates complete Wi-Fi
-and Bluetooth Low Energy functions. For more information, check `ESP32-S3 DevKitC`_
+and Bluetooth Low Energy functions. For more information, check `ESP32-S3-DevKitC`_.
 
 Hardware
 ********
@@ -18,7 +15,7 @@ and Bluetooth® Low Energy (Bluetooth LE). It consists of high-performance dual-
 (Xtensa® 32-bit LX7), a low power coprocessor, a Wi-Fi baseband, a Bluetooth LE baseband,
 RF module, and numerous peripherals.
 
-ESP32-S3 DevKitC includes the following features:
+ESP32-S3-DevKitC includes the following features:
 
 - Dual core 32-bit Xtensa Microprocessor (Tensilica LX7), running up to 240MHz
 - Additional vector instructions support for AI acceleration
@@ -76,9 +73,10 @@ Asymmetric Multiprocessing (AMP)
 
 ESP32S3-DevKitC allows 2 different applications to be executed in ESP32-S3 SoC. Due to its dual-core
 architecture, each core can be enabled to execute customized tasks in stand-alone mode
-and/or exchanging data over OpenAMP framework. See :ref:`ipc_samples` folder as code reference.
+and/or exchanging data over OpenAMP framework. See :zephyr:code-sample-category:`ipc` folder as code reference.
 
-For more information, check the datasheet at `ESP32-S3 Datasheet`_.
+For more information, check the datasheet at `ESP32-S3 Datasheet`_ or the technical reference
+manual at `ESP32-S3 Technical Reference Manual`_.
 
 Supported Features
 ==================
@@ -150,7 +148,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -176,7 +174,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: esp32s3_devkitc/esp32s3/procpu
    :goals: build
    :west-args: --sysbuild
@@ -212,7 +210,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -230,7 +228,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32s3_devkitc`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -255,35 +253,33 @@ message in the monitor:
 Debugging
 *********
 
-ESP32-S3 support on OpenOCD is available upstream as of version 0.12.0.
-Download and install OpenOCD from `OpenOCD`_.
+ESP32-S3 support on OpenOCD is available at `OpenOCD ESP32`_.
 
 ESP32-S3 has a built-in JTAG circuitry and can be debugged without any additional chip. Only an USB cable connected to the D+/D- pins is necessary.
 
-Further documentation can be obtained from the SoC vendor in `JTAG debugging
-for ESP32-S3`_.
+Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32-S3`_.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: esp32s3_devkitc/esp32s3/procpu
    :goals: build flash
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: esp32s3_devkitc/esp32s3/procpu
    :goals: debug
 
-.. _`JTAG debugging for ESP32-S3`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
-.. _`OpenOCD`: https://github.com/openocd-org/openocd
-.. _`ESP32-S3 DevKitC`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html
-
 References
 **********
 
-.. _ESP32-S3 DevKitC User Guide: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html
-.. _ESP32-S3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf
-.. _ESP32 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf
+.. target-notes::
+
+.. _`ESP32-S3-DevKitC`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html
+.. _`ESP32-S3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf
+.. _`ESP32-S3 Technical Reference Manual`: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf
+.. _`JTAG debugging for ESP32-S3`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

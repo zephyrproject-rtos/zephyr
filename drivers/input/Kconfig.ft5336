@@ -7,6 +7,7 @@ menuconfig INPUT_FT5336
 	default y
 	depends on DT_HAS_FOCALTECH_FT5336_ENABLED
 	select I2C
+	select INPUT_TOUCH
 	help
 	  Enable driver for multiple Focaltech capacitive touch panel
 	  controllers. This driver should support FT5x06, FT5606, FT5x16,

@@ -10,6 +10,6 @@ config CACHE_NRF_CACHE
 
 config CACHE_NRF_PATCH_LINEADDR
 	bool "Patch lineaddr"
-	default y if SOC_NRF54H20
+	default y if SOC_NRF54H20 || SOC_NRF54H20_ENGB
 	help
 	  Manually set 28th bit in the LINEADDR in Trustzone Secure build.

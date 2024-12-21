@@ -433,12 +433,13 @@ static int gpio_ite_configure(const struct device *dev,
 	}
 
 	/* Set input or output. */
-	if (flags & GPIO_OUTPUT)
+	if (flags & GPIO_OUTPUT) {
 		*reg_gpcr = (*reg_gpcr | GPCR_PORT_PIN_MODE_OUTPUT) &
 				~GPCR_PORT_PIN_MODE_INPUT;
-	else
+	} else {
 		*reg_gpcr = (*reg_gpcr | GPCR_PORT_PIN_MODE_INPUT) &
 				~GPCR_PORT_PIN_MODE_OUTPUT;
+	}
 
 	/* Handle pullup / pulldown */
 	if (flags & GPIO_PULL_UP) {
@@ -475,8 +476,9 @@ static int gpio_ite_get_config(const struct device *dev,
 		"Invalid GPIO group index");
 
 	/* push-pull or open-drain */
-	if (*reg_gpotr & mask)
+	if (*reg_gpotr & mask) {
 		flags |= GPIO_OPEN_DRAIN;
+	}
 
 	/* 1.8V or 3.3V */
 	reg_1p8v = &IT8XXX2_GPIO_GCRX(

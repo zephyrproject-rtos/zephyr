@@ -28,4 +28,5 @@ supported:
   - regulator
   - adc
   - usb_device
+  - i3c
 vendor: nxp

@@ -375,15 +375,17 @@ static int vl53l1x_attr_get(const struct device *dev,
 {
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_DISTANCE);
 
+	int ret;
+
 	if (attr == SENSOR_ATTR_CONFIGURATION) {
-		vl53l1x_get_mode(dev, val);
+		ret = vl53l1x_get_mode(dev, val);
 	} else if (attr == SENSOR_ATTR_CALIB_TARGET) {
-		vl53l1x_get_roi(dev, val);
+		ret = vl53l1x_get_roi(dev, val);
 	} else {
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int vl53l1x_attr_set(const struct device *dev,
@@ -393,15 +395,17 @@ static int vl53l1x_attr_set(const struct device *dev,
 {
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_DISTANCE);
 
+	int ret;
+
 	if (attr == SENSOR_ATTR_CONFIGURATION) {
-		vl53l1x_set_mode(dev, val);
+		ret = vl53l1x_set_mode(dev, val);
 	} else if (attr == SENSOR_ATTR_CALIB_TARGET) {
-		vl53l1x_set_roi(dev, val);
+		ret = vl53l1x_set_roi(dev, val);
 	} else {
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static const struct sensor_driver_api vl53l1x_api_funcs = {

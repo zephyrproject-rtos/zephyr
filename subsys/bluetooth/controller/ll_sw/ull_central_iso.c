@@ -73,9 +73,11 @@ static void mfy_cis_offset_get(void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING  == 0 */
 
-static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
-			   uint32_t sdu_interval, uint16_t max_sdu, uint8_t *bn,
-			   uint8_t *max_pdu);
+static uint32_t iso_interval_adjusted_bn_max_pdu_get(bool framed, uint32_t iso_interval,
+						     uint32_t iso_interval_cig,
+						     uint32_t sdu_interval,
+						     uint16_t max_sdu, uint8_t *bn,
+						     uint8_t *max_pdu);
 static uint8_t ll_cig_parameters_validate(void);
 static uint8_t ll_cis_parameters_validate(uint8_t cis_idx, uint8_t cis_id,
 					  uint16_t c_sdu, uint16_t p_sdu,
@@ -154,6 +156,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	uint16_t cis_created_handles[STREAMS_PER_GROUP];
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
+	uint32_t iso_interval_cig_us;
 	uint32_t iso_interval_us;
 	uint32_t cig_sync_delay;
 	uint32_t max_se_length;
@@ -228,11 +231,11 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 		 * handle the throughput. For unframed these must be divisible, if they're not,
 		 * framed mode must be forced.
 		 */
-		cig->iso_interval = cig->c_sdu_interval / ISO_INT_UNIT_US;
+		iso_interval_us = cig->c_sdu_interval;
 
-		if (cig->iso_interval < BT_HCI_ISO_INTERVAL_MIN) {
+		if (iso_interval_us < ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN)) {
 			/* ISO_Interval is below minimum (5 ms) */
-			cig->iso_interval = BT_HCI_ISO_INTERVAL_MIN;
+			iso_interval_us = ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN);
 		}
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO_AVOID_SEGMENTATION)
@@ -240,7 +243,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 		 * segmentation is not invoked in ISO-AL.
 		 */
 		if (cig->central.framing && cig->c_sdu_interval == 10000U) {
-			cig->iso_interval = 6; /* 7500 us */
+			iso_interval_us = 7500U; /* us */
 		}
 #endif
 
@@ -250,10 +253,11 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 			 */
 			force_framed = true;
 		}
+	} else {
+		iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
 	}
 
-	iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
-	cig->lll.iso_interval_us = iso_interval_us;
+	iso_interval_cig_us = iso_interval_us;
 
 	lll_hdr_init(&cig->lll, cig);
 	max_se_length = 0U;
@@ -360,14 +364,21 @@ ll_cig_parameters_commit_retry:
 			 * directions
 			 */
 			if (tx) {
+				uint32_t iso_interval_adjust_us;
 				uint8_t max_pdu;
 				uint8_t bn;
 
 				bn = cis->lll.tx.bn;
 				max_pdu = cis->lll.tx.max_pdu;
-				set_bn_max_pdu(cis->framed, iso_interval_us,
-					       cig->c_sdu_interval,
-					       cis->c_max_sdu, &bn, &max_pdu);
+				iso_interval_adjust_us =
+					iso_interval_adjusted_bn_max_pdu_get(cis->framed,
+						iso_interval_us, iso_interval_cig_us,
+						cig->c_sdu_interval, cis->c_max_sdu, &bn, &max_pdu);
+				if (iso_interval_adjust_us != iso_interval_us) {
+					iso_interval_us = iso_interval_adjust_us;
+
+					goto ll_cig_parameters_commit_retry;
+				}
 				cis->lll.tx.bn = bn;
 				cis->lll.tx.max_pdu = max_pdu;
 			} else {
@@ -375,14 +386,21 @@ ll_cig_parameters_commit_retry:
 			}
 
 			if (rx) {
+				uint32_t iso_interval_adjust_us;
 				uint8_t max_pdu;
 				uint8_t bn;
 
 				bn = cis->lll.rx.bn;
 				max_pdu = cis->lll.rx.max_pdu;
-				set_bn_max_pdu(cis->framed, iso_interval_us,
-					       cig->p_sdu_interval,
-					       cis->p_max_sdu, &bn, &max_pdu);
+				iso_interval_adjust_us =
+					iso_interval_adjusted_bn_max_pdu_get(cis->framed,
+						iso_interval_us, iso_interval_cig_us,
+						cig->p_sdu_interval, cis->p_max_sdu, &bn, &max_pdu);
+				if (iso_interval_adjust_us != iso_interval_us) {
+					iso_interval_us = iso_interval_adjust_us;
+
+					goto ll_cig_parameters_commit_retry;
+				}
 				cis->lll.rx.bn = bn;
 				cis->lll.rx.max_pdu = max_pdu;
 			} else {
@@ -401,6 +419,9 @@ ll_cig_parameters_commit_retry:
 		se[i].total_count = MAX((cis->central.c_rtn + 1) * cis->lll.tx.bn,
 					(cis->central.p_rtn + 1) * cis->lll.rx.bn);
 	}
+
+	cig->lll.iso_interval_us = iso_interval_us;
+	cig->iso_interval = iso_interval_us / ISO_INT_UNIT_US;
 
 	handle_iter = UINT16_MAX;
 	total_time = 0U;
@@ -910,6 +931,7 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 #endif /* CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
 	cis->lll.event_count = LLL_CONN_ISO_EVENT_COUNT_MAX;
 	cis->lll.next_subevent = 0U;
+	cis->lll.tifs_us = conn->lll.tifs_cis_us;
 	cis->lll.sn = 0U;
 	cis->lll.nesn = 0U;
 	cis->lll.cie = 0U;
@@ -1170,9 +1192,11 @@ static void ticker_op_cb(uint32_t status, void *param)
 }
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING  == 0 */
 
-static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
-			   uint32_t sdu_interval, uint16_t max_sdu, uint8_t *bn,
-			   uint8_t *max_pdu)
+static uint32_t iso_interval_adjusted_bn_max_pdu_get(bool framed, uint32_t iso_interval,
+						     uint32_t iso_interval_cig,
+						     uint32_t sdu_interval,
+						     uint16_t max_sdu, uint8_t *bn,
+						     uint8_t *max_pdu)
 {
 	if (framed) {
 		uint32_t max_drift_us;
@@ -1222,13 +1246,23 @@ static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 		}
 	} else {
 		/* For unframed, ISO_Interval must be N x SDU_Interval */
-		LL_ASSERT(iso_interval % sdu_interval == 0);
+		if ((iso_interval % sdu_interval) != 0) {
+			/* The requested ISO interval is doubled until it is multiple of
+			 * SDU_interval.
+			 * For example, between 7.5 and 10 ms, 7.5 is added in iterations to reach
+			 * 30 ms ISO interval; or between 10 and 7.5 ms, 10 is added in iterations
+			 * to reach the same 30 ms ISO interval.
+			 */
+			iso_interval += iso_interval_cig;
+		}
 
 		/* Core 5.3 Vol 6, Part G section 2.1:
 		 * BN >= ceil(Max_SDU/Max_PDU * ISO_Interval/SDU_Interval)
 		 */
 		*bn = DIV_ROUND_UP(max_sdu * iso_interval, (*max_pdu) * sdu_interval);
 	}
+
+	return iso_interval;
 }
 
 static uint8_t ll_cig_parameters_validate(void)

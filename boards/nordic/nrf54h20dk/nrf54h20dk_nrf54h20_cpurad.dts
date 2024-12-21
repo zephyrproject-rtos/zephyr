@@ -7,12 +7,11 @@
 /dts-v1/;
 
 #include <nordic/nrf54h20_cpurad.dtsi>
-#include "nrf54h20dk_nrf54h20-memory_map.dtsi"
-#include "nrf54h20dk_nrf54h20-ipc_conf.dtsi"
-#include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
+#include "nrf54h20dk_nrf54h20-common.dtsi"
 
 /delete-node/ &cpuapp_cpuppr_ipc;
 /delete-node/ &cpuapp_cpusys_ipc;
+/delete-node/ &cpuapp_cpuflpr_ipc;
 /delete-node/ &cpusec_cpuapp_ipc;
 
 / {
@@ -33,10 +32,6 @@
 		ipc-to-cpusys = &cpurad_cpusys_ipc;
 		resetinfo = &cpurad_resetinfo;
 	};
-};
-
-&shared_ram3x_region {
-	status = "okay";
 };
 
 &cpuapp_cpurad_ram0x_region {
@@ -100,7 +95,6 @@ ipc0: &cpuapp_cpurad_ipc {
 	pinctrl-0 = <&uart135_default>;
 	pinctrl-1 = <&uart135_sleep>;
 	pinctrl-names = "default", "sleep";
-	hw-flow-control;
 };
 
 &uart136 {
@@ -112,4 +106,8 @@ ipc0: &cpuapp_cpurad_ipc {
 
 &cpurad_ieee802154 {
 	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "disabled";
 };

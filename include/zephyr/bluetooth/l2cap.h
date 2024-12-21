@@ -272,7 +272,10 @@ struct bt_l2cap_br_chan {
 	struct k_fifo			_pdu_tx_queue;
 };
 
-/** @brief L2CAP Channel operations structure. */
+/** @brief L2CAP Channel operations structure.
+ *
+ * The object has to stay valid and constant for the lifetime of the channel.
+ */
 struct bt_l2cap_chan_ops {
 	/** @brief Channel connected callback
 	 *
@@ -341,6 +344,15 @@ struct bt_l2cap_chan_ops {
 	 *
 	 *  @param chan The channel receiving data.
 	 *  @param buf Buffer containing incoming data.
+	 *
+	 *  @note This callback is mandatory, unless
+	 *  @kconfig{CONFIG_BT_L2CAP_SEG_RECV} is enabled and seg_recv is
+	 *  supplied.
+	 *
+	 *  If the application returns @c -EINPROGRESS, the application takes
+	 *  ownership of the reference in @p buf. (I.e. This pointer value can
+	 *  simply be given to @ref bt_l2cap_chan_recv_complete without any
+	 *  calls @ref net_buf_ref or @ref net_buf_unref.)
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 *  @return -EINPROGRESS in case where user has to confirm once the data
@@ -462,6 +474,9 @@ struct bt_l2cap_server {
 	 *  This callback is called whenever a new incoming connection requires
 	 *  authorization.
 	 *
+	 *  @warning It is the responsibility of this callback to zero out the
+	 *  parent of the chan object.
+	 *
 	 *  @param conn The connection that is requesting authorization
 	 *  @param server Pointer to the server structure this callback relates to
 	 *  @param chan Pointer to received the allocated channel
@@ -516,6 +531,9 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
  *  each channel connected() callback will be called. If the connection is
  *  rejected disconnected() callback is called instead.
  *
+ *  @warning It is the responsibility of the caller to zero out the
+ *  parents of the chan objects.
+ *
  *  @param conn Connection object.
  *  @param chans Array of channel objects.
  *  @param psm Channel PSM to connect to.
@@ -550,6 +568,9 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu);
  *  LE and/or type of bt_l2cap_br_chan for BR/EDR. Then pass to this API
  *  the location (address) of bt_l2cap_chan type object which is a member
  *  of both transport dedicated objects.
+ *
+ *  @warning It is the responsibility of the caller to zero out the
+ *  parent of the chan object.
  *
  *  @param conn Connection object.
  *  @param chan Channel object.
@@ -599,6 +620,10 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  allocate buffers from the channel's `alloc_seg` callback and will fallback
  *  on the stack's global buffer pool (sized
  *  @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}).
+ *
+ *  @warning The buffer's user_data _will_ be overwritten by this function. Do
+ *  not store anything in it. As soon as a call to this function has been made,
+ *  consider ownership of user_data transferred into the stack.
  *
  *  @note Buffer ownership is transferred to the stack in case of success, in
  *  case of an error the caller retains the ownership of the buffer.

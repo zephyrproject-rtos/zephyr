@@ -10,6 +10,7 @@ config SOC_MIMX8MM6_A53
 	select HAS_MCUX_IOMUXC if PINCTRL
 	select HAS_MCUX_RDC
 	select HAS_MCUX_CACHE
+	select SOC_PREP_HOOK
 
 config SOC_MIMX8MM6_M4
 	select ARM
@@ -21,6 +22,7 @@ config SOC_MIMX8MM6_M4
 	select HAS_MCUX_RDC
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_IOMUXC
+	select SOC_EARLY_INIT_HOOK
 
 config SOC_MIMX8ML8_A53
 	select ARM64
@@ -31,6 +33,7 @@ config SOC_MIMX8ML8_A53
 	select HAS_MCUX_IOMUXC if PINCTRL
 	select HAS_MCUX_RDC
 	select HAS_MCUX_CACHE
+	select SOC_PREP_HOOK
 
 config SOC_MIMX8MN6_A53
 	select ARM64
@@ -41,6 +44,7 @@ config SOC_MIMX8MN6_A53
 	select HAS_MCUX_IOMUXC if PINCTRL
 	select HAS_MCUX_RDC
 	select HAS_MCUX_CACHE
+	select SOC_PREP_HOOK
 
 config SOC_MIMX8ML8_ADSP
 	select XTENSA
@@ -71,6 +75,7 @@ config SOC_MIMX8ML8_M7
 	select ARM_MPU
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_IOMUXC
+	select SOC_EARLY_INIT_HOOK
 
 config SOC_MIMX8MQ6_M4
 	select ARM

@@ -15,7 +15,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/debug/stack.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
@@ -274,7 +274,7 @@ static void command_status(struct net_buf *buf)
  */
 static void discard_event(void)
 {
-	struct net_buf *buf = net_buf_get(&event_queue, K_FOREVER);
+	struct net_buf *buf = k_fifo_get(&event_queue, K_FOREVER);
 
 	net_buf_unref(buf);
 	m_events--;
@@ -292,7 +292,7 @@ static struct net_buf *queue_event(struct net_buf *buf)
 		bt_buf_set_type(evt, BT_BUF_EVT);
 		net_buf_add_le32(evt, sys_cpu_to_le32(k_uptime_get()));
 		net_buf_add_mem(evt, buf->data, buf->len);
-		net_buf_put(&event_queue, evt);
+		k_fifo_put(&event_queue, evt);
 		m_events++;
 	}
 	return evt;
@@ -306,7 +306,7 @@ static void service_events(void *p1, void *p2, void *p3)
 	struct net_buf *buf, *evt;
 
 	while (1) {
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		if (bt_buf_get_type(buf) == BT_BUF_EVT) {
 
 			evt = queue_event(buf);
@@ -348,7 +348,7 @@ static void service_events(void *p1, void *p2, void *p3)
 				net_buf_add_le32(data,
 					sys_cpu_to_le32(k_uptime_get()));
 				net_buf_add_mem(data, buf->data, buf->len);
-				net_buf_put(&data_queue, data);
+				k_fifo_put(&data_queue, data);
 			}
 #if defined(CONFIG_BT_ISO)
 		} else if (bt_buf_get_type(buf) == BT_BUF_ISO_IN) {
@@ -360,7 +360,7 @@ static void service_events(void *p1, void *p2, void *p3)
 				net_buf_add_le32(data,
 					sys_cpu_to_le32(k_uptime_get()));
 				net_buf_add_mem(data, buf->data, buf->len);
-				net_buf_put(&iso_data_queue, data);
+				k_fifo_put(&iso_data_queue, data);
 			}
 #endif /* CONFIG_BT_ISO */
 		}
@@ -378,7 +378,7 @@ static void flush_events(uint16_t size)
 	uint16_t  response = sys_cpu_to_le16(CMD_FLUSH_EVENTS_RSP);
 	struct net_buf *buf;
 
-	while ((buf = net_buf_get(&event_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&event_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 		m_events--;
 	}
@@ -401,7 +401,7 @@ static void get_event(uint16_t size)
 	size = 0;
 
 	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	buf = net_buf_get(&event_queue, K_FOREVER);
+	buf = k_fifo_get(&event_queue, K_FOREVER);
 	if (buf) {
 		size = sys_cpu_to_le16(buf->len);
 		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
@@ -428,7 +428,7 @@ static void get_events(uint16_t size)
 	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
 	edtt_write((uint8_t *)&count, sizeof(count), EDTTT_BLOCK);
 	while (count--) {
-		buf = net_buf_get(&event_queue, K_FOREVER);
+		buf = k_fifo_get(&event_queue, K_FOREVER);
 		size = sys_cpu_to_le16(buf->len);
 		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 		edtt_write((uint8_t *)buf->data, buf->len, EDTTT_BLOCK);
@@ -467,7 +467,7 @@ static void le_flush_data(uint16_t size)
 	uint16_t  response = sys_cpu_to_le16(CMD_LE_FLUSH_DATA_RSP);
 	struct net_buf *buf;
 
-	while ((buf = net_buf_get(&data_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&data_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 	read_excess_bytes(size);
@@ -514,7 +514,7 @@ static void le_data_read(uint16_t size)
 	size = 0;
 
 	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	buf = net_buf_get(&data_queue, K_FOREVER);
+	buf = k_fifo_get(&data_queue, K_FOREVER);
 	if (buf) {
 		size = sys_cpu_to_le16(buf->len);
 		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
@@ -584,7 +584,7 @@ static void le_flush_iso_data(uint16_t size)
 	uint16_t  response = sys_cpu_to_le16(CMD_LE_FLUSH_ISO_DATA_RSP);
 	struct net_buf *buf;
 
-	while ((buf = net_buf_get(&iso_data_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&iso_data_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 	read_excess_bytes(size);
@@ -631,7 +631,7 @@ static void le_iso_data_read(uint16_t size)
 	size = 0;
 
 	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	buf = net_buf_get(&iso_data_queue, K_FOREVER);
+	buf = k_fifo_get(&iso_data_queue, K_FOREVER);
 	if (buf) {
 		size = sys_cpu_to_le16(buf->len);
 		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
@@ -819,10 +819,11 @@ int main(void)
 
 			edtt_read((uint8_t *)&multiple, sizeof(multiple),
 				  EDTTT_BLOCK);
-			if (multiple)
+			if (multiple) {
 				get_events(--size);
-			else
+			} else {
 				get_event(--size);
+			}
 		}
 		break;
 		case CMD_LE_FLUSH_DATA_REQ:

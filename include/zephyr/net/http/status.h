@@ -14,6 +14,8 @@
 /**
  * @brief HTTP response status codes
  * @defgroup http_status_codes HTTP response status codes
+ * @since 3.3
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

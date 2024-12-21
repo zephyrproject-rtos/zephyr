@@ -1,6 +1,7 @@
 # MCUXpresso SDK SCG
 
 # Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config CLOCK_CONTROL_MCUX_SCG
@@ -9,3 +10,10 @@ config CLOCK_CONTROL_MCUX_SCG
 	depends on DT_HAS_NXP_KINETIS_SCG_ENABLED
 	help
 	  Enable support for mcux scg driver.
+
+config CLOCK_CONTROL_MCUX_SCG_K4
+	bool "MCUX driver for K4 Generation SCG"
+	default y
+	depends on DT_HAS_NXP_SCG_K4_ENABLED
+	help
+	  Enable support for SCG K4 driver

@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_emul_ctlr);
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/spi_emul.h>
 
 /** Working data for the device */
@@ -131,6 +132,9 @@ int spi_emul_register(const struct device *dev, struct spi_emul *emul)
 
 static const struct spi_driver_api spi_emul_api = {
 	.transceive = spi_emul_io,
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_emul_release,
 };
 

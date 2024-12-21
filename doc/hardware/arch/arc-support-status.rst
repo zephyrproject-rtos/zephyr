@@ -92,3 +92,23 @@ Notes
 .. [#f6] currently only ARC VPX scalar port is supported. The support of VPX vector pipeline, VCCM,
          STU is not included in this port, and require additional development and / or other runtime
          integration.
+
+VPX Vector Registers
+--------------------
+Zephyr supports a limited form sharing of the VPX vector registers known as
+cooperative sharing. Threads that use these registers must bookend the relevant
+sections with calls to :c:func:`arc_vpx_lock` and :c:func:`arc_vpx_unlock` to
+control access to this resource.
+
+.. note::
+    If the system has multiple CPUs, then it is the responsibility of the
+    application developer to both pin the thread to a single CPU before it
+    attempts to get the cooperative lock, and not modify the CPU affinity
+    while it is waiting for or holding that cooperative lock.
+
+Configuration Options
+=====================
+
+The cooperative sharing of the VPX vector registers is selected when
+configuration option :kconfig:option:`CONFIG_ARC_VPX_COOPERATIVE_SHARING`
+is enabled.

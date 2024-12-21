@@ -25,10 +25,12 @@
 			label = "factory";
 			reg = <ATM_FACTORY_OFFSET ATM_FACTORY_SIZE>;
 		};
+#ifndef TEST_STORAGE_IN_FLASH
 		storage_partition: partition@ATM_STORAGE_NODE_ID {
 			label = "storage";
 			reg = <ATM_STORAGE_OFFSET ATM_STORAGE_SIZE>;
 		};
+#endif
 #if ATMWSTK_SIZE
 		slot2_partition: partition@ATMWSTK_NODE_ID {
 			label = "image-2";
@@ -37,3 +39,18 @@
 #endif
 	};
 };
+
+#ifdef TEST_STORAGE_IN_FLASH
+// flash driver testing, allocate a storage partition at the beginning of flash
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "fixed-partitions";
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0 0x4000>;
+		};
+	};
+};
+#endif

@@ -1,17 +1,10 @@
-.. _lpcxpresso51u68:
-
-NXP LPCXPRESSO51U68
-###################
+.. zephyr:board:: lpcxpresso51u68
 
 Overview
 ********
 
 The LPCXpresso51u68 development board uses an NXP LPC51U68 MCU based
 on an ARM CORTEX-M0+ core.
-
-.. figure:: lpcxpresso51u68.jpg
-   :align: center
-   :alt: LPCXpresso51U68
 
 Hardware
 ********
@@ -133,7 +126,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -148,7 +141,7 @@ Here is an example for the :ref:`hello_world` application.
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

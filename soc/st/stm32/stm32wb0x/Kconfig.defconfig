@@ -1,0 +1,11 @@
+# STMicroelectronics STM32WB0 MCU series
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32WB0X
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_SERIES_STM32WB0X

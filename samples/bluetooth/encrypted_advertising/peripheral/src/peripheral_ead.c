@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
 #include <zephyr/logging/log.h>
@@ -127,21 +128,10 @@ static bool rpa_expired_cb(struct bt_le_ext_adv *adv)
 static int create_adv(struct bt_le_ext_adv **adv)
 {
 	int err;
-	struct bt_le_adv_param params;
-
-	memset(&params, 0, sizeof(struct bt_le_adv_param));
-
-	params.options |= BT_LE_ADV_OPT_CONNECTABLE;
-	params.options |= BT_LE_ADV_OPT_EXT_ADV;
-
-	params.id = BT_ID_DEFAULT;
-	params.sid = 0;
-	params.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
-	params.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
 	adv_cb.rpa_expired = rpa_expired_cb;
 
-	err = bt_le_ext_adv_create(&params, &adv_cb, adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &adv_cb, adv);
 	if (err) {
 		LOG_ERR("Failed to create advertiser (%d)", err);
 		return -1;
@@ -198,7 +188,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err) {
-		LOG_ERR("Failed to connect to %s (%u)", addr, err);
+		LOG_ERR("Failed to connect to %s %u %s", addr, err, bt_hci_err_to_str(err));
 		return;
 	}
 
@@ -213,7 +203,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_DBG("Disconnected from %s (reason 0x%02x)", addr, reason);
+	LOG_DBG("Disconnected from %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
 
 	k_poll_signal_raise(&disconn_signal, 0);
 }
@@ -227,7 +217,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	if (!err) {
 		LOG_DBG("Security changed: %s level %u", addr, level);
 	} else {
-		LOG_DBG("Security failed: %s level %u err %d", addr, level, err);
+		LOG_DBG("Security failed: %s level %u err %s(%d)", addr, level,
+			bt_security_err_to_str(err), err);
 	}
 }
 

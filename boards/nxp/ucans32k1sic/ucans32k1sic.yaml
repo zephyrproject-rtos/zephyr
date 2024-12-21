@@ -21,3 +21,4 @@ supported:
   - can
   - watchdog
   - counter
+  - adc

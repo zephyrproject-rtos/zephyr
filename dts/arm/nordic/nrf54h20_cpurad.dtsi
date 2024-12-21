@@ -10,6 +10,7 @@ cpu: &cpurad {};
 systick: &cpurad_systick {};
 nvic: &cpurad_nvic {};
 cpuppr_vevif: &cpuppr_vevif_tx {};
+cpuflpr_vevif: &cpuflpr_vevif_tx {};
 cpusys_vevif: &cpusys_vevif_tx {};
 wdt010: &cpurad_wdt010 {};
 wdt011: &cpurad_wdt011 {};
@@ -19,12 +20,18 @@ wdt011: &cpurad_wdt011 {};
 /delete-node/ &cpuapp_ppb;
 /delete-node/ &cpuapp_ram0;
 /delete-node/ &cpuppr;
+/delete-node/ &cpuflpr;
 
 / {
 	soc {
 		compatible = "simple-bus";
 		interrupt-parent = <&cpurad_nvic>;
 		ranges;
+
+		stmesp: memory@a3000000 {
+			compatible = "arm,stmesp";
+			reg = <0xa3000000 0x1000000>;
+		};
 	};
 };
 
@@ -59,21 +66,36 @@ wdt011: &cpurad_wdt011 {};
 };
 
 &dppic130 {
-	owned-channels = <0>;
-	sink-channels = <0>;
-	nonsecure-channels = <0>;
+	owned-channels = <0 2 3>;
+	sink-channels = <0 2>;
+	source-channels = <3>;
+	nonsecure-channels = <0 2 3>;
 	status = "okay";
 };
 
 &dppic132 {
-	owned-channels = <0>;
-	source-channels = <0>;
-	nonsecure-channels = <0>;
+	owned-channels = <0 2 3>;
+	sink-channels = <3>;
+	source-channels = <0 2>;
+	nonsecure-channels = <0 2 3>;
 	status = "okay";
 };
 
 &ipct130 {
-	owned-channels = <0>;
-	source-channel-links = <0 3 0>;
+	status = "okay";
+	owned-channels = <0 2>;
+	sink-channel-links = <2 NRF_DOMAIN_ID_RADIOCORE 2>;
+	source-channel-links = <0 NRF_DOMAIN_ID_RADIOCORE 0>,
+			       <2 NRF_DOMAIN_ID_RADIOCORE 2>;
+};
+
+&cpurad_ipct {
+	status = "okay";
+	sink-channel-links = <0 NRF_DOMAIN_ID_GLOBALSLOW 0>,
+			     <2 NRF_DOMAIN_ID_GLOBALSLOW 2>;
+	source-channel-links = <2 NRF_DOMAIN_ID_GLOBALSLOW 2>;
+};
+
+&dppic020 {
 	status = "okay";
 };

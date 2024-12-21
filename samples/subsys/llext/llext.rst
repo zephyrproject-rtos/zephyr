@@ -1,10 +1,5 @@
-.. _llext-samples:
+.. zephyr:code-sample-category:: llext
+   :name: Linkable Loadable Extensions (LLEXT)
+   :show-listing:
 
-Linkable Loadable Extension Samples
-###################################
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that demonstrate the :ref:`llext` subsystem.

@@ -34,14 +34,20 @@ prefixed with ``coap_resource_`` and added to a linker file:
 
     #include <zephyr/linker/iterable_sections.h>
 
-    ITERABLE_SECTION_RAM(coap_resource_my_service, 4)
+    ITERABLE_SECTION_RAM(coap_resource_my_service, Z_LINK_ITERABLE_SUBALIGN)
 
 Add this linker file to your application using CMake:
 
 .. code-block:: cmake
     :caption: ``CMakeLists.txt``
 
+    # Support LD linker template
     zephyr_linker_sources(DATA_SECTIONS sections-ram.ld)
+
+    # Support CMake linker generator
+    zephyr_iterable_section(NAME coap_resource_my_service
+                            GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT}
+                            SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
 You can now define your service as part of the application:
 

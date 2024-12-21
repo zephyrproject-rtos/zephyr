@@ -1,0 +1,51 @@
+sample:
+  name: Logging using Coresight STM on nrf54h20
+common:
+  sysbuild: true
+tests:
+  sample.boards.nrf.coresight_stm.dict:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    build_only: true
+    required_snippets:
+      - nordic-log-stm-dict
+    extra_args:
+      - SB_CONFIG_APP_CPUPPR_RUN=y
+      - SB_CONFIG_APP_CPUFLPR_RUN=y
+  sample.boards.nrf.coresight_stm:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Timing for log message with 0 arguments:"
+        - "Timing for log message with 1 argument:"
+        - "Timing for log message with 2 arguments:"
+        - "Timing for log message with 3 arguments:"
+        - "Timing for log_message with string:"
+    extra_args:
+      - SB_CONFIG_APP_CPUPPR_RUN=y
+      - SB_CONFIG_APP_CPUFLPR_RUN=y
+    required_snippets:
+      - nordic-log-stm
+  sample.boards.nrf.coresight_stm.local_uart:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Timing for log message with 0 arguments:"
+        - "Timing for log message with 1 argument:"
+        - "Timing for log message with 2 arguments:"
+        - "Timing for log message with 3 arguments:"
+        - "Timing for log_message with string:"

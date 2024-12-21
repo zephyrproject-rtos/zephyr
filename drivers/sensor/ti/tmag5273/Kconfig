@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config TMAG5273
-	bool "TMAG5273 3D Hall-Effect Sensor"
+	bool "TMAG5273/TMAG3001 3D Hall-Effect Sensor"
 	default y
 	depends on DT_HAS_TI_TMAG5273_ENABLED
 	select I2C
 	select GPIO
 	imply CRC
 	help
-	  Enable driver for TMAG5273 I2C-based 3d Hall-Effect sensor.
+	  Enable driver for TMAG5273 and TMAG3001 I2C-based 3d Hall-Effect sensor.

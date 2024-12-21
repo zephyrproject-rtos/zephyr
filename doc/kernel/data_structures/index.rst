@@ -20,10 +20,12 @@ behind this design is to allow the collections to be used in contexts
 where dynamic allocation is disallowed (i.e. there is no need to
 allocate node objects because the memory is provided by the user).
 
-Note also that these libraries are uniformly unsynchronized; access to
+Note also that these libraries are generally unsynchronized; access to
 them is not threadsafe by default.  These are data structures, not
 synchronization primitives.  The expectation is that any locking
-needed will be provided by the user.
+needed will be provided by the user.  Some of the provided data
+structures are thread safe in specific usage scenarios (see
+:ref:`spsc_lockfree` and :ref:`mpsc_lockfree`).
 
 .. toctree::
   :maxdepth: 1

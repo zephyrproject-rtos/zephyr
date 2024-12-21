@@ -12,7 +12,7 @@ config SOC_SERIES_S32K3
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
 	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
-	select PLATFORM_SPECIFIC_INIT if XIP
+	select SOC_RESET_HOOK if XIP
 	select USE_DT_CODE_PARTITION if XIP
 	select CLOCK_CONTROL
 	select HAS_MCUX
@@ -21,6 +21,8 @@ config SOC_SERIES_S32K3
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_CACHE
+	select HAS_MCUX_EDMA
+	select SOC_EARLY_INIT_HOOK
 
 if SOC_SERIES_S32K3
 
@@ -37,24 +39,5 @@ config IVT_HEADER_SIZE
 	default $(dt_node_reg_size_hex,$(dt_nodelabel_path,ivt_header))
 	help
 	  Size of ivt header region
-
-config NXP_S32_PMC_LMEN
-	bool "Last Mile regulator"
-	default y if CLOCK_CONTROL
-	help
-	  Enables the Last Mile regulator, which regulates an external 1.5V
-	  voltage on V15 down to the core and logic supply (V11 power domain),
-	  which is typically 1.1V.
-	  When enabling PLL as system clock, the PMC last mile regulator should
-	  be enabled.
-
-config NXP_S32_PMC_LMBCTLEN
-	bool "External BCTL regulator for V15"
-	depends on NXP_S32_PMC_LMEN
-	help
-	  This option must be selected if an external BJT between VDD_HV_A and
-	  V15 is used on the PCB. The base of this BJT must be connected to the
-	  VRC_CTRL pin and is controlled by the PMC to regulate a voltage of
-	  1.5V on V15 pin.
 
 endif # SOC_SERIES_S32K3

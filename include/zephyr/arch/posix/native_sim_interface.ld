@@ -4,8 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-SECTION_PROLOGUE (.native_sim_if,,)
+#include <zephyr/linker/sections.h>
+
+SECTIONS
 {
-	KEEP(*(.native_sim_if));
-	KEEP(*(.native_sim_if.*));
-}
+	SECTION_PROLOGUE (.native_sim_if.data,,)
+	{
+		KEEP(*(.native_sim_if.data));
+	}
+} INSERT AFTER .data;
+
+SECTIONS
+{
+	SECTION_PROLOGUE (.native_sim_if,,)
+	{
+		KEEP(*(.native_sim_if));
+		KEEP(*(.native_sim_if.*));
+	}
+} INSERT AFTER .text;

@@ -1,10 +1,18 @@
 common:
+  build_only: true
   tags:
     - drivers
     - display
-  build_only: true
-  platform_allow:
-    - native_posix
-    - native_sim
+  depends_on: display
+
 tests:
-  drivers.display.default: {}
+  drivers.display.build.default:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+
+  drivers.display.build.rk055hdmipi4ma0:
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
+    extra_args:
+      - SHIELD=rk055hdmipi4ma0

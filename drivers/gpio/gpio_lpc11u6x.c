@@ -459,21 +459,21 @@ static void gpio_lpc11u6x_isr(const void *arg)
 		}
 	}
 	/* For each port with active pins, fire the GPIO interrupt callbacks. */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	if (pins[0]) {
 		port = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 		data = port->data;
 		gpio_fire_callbacks(&data->cb_list, port, pins[0]);
 	}
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	if (pins[1]) {
 		port = DEVICE_DT_GET(DT_NODELABEL(gpio1));
 		data = port->data;
 		gpio_fire_callbacks(&data->cb_list, port, pins[1]);
 	}
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
 	if (pins[2]) {
 		port = DEVICE_DT_GET(DT_NODELABEL(gpio2));
 		data = port->data;
@@ -589,14 +589,14 @@ DEVICE_DT_DEFINE(DT_NODELABEL(gpio##id),				\
 		    PRE_KERNEL_2, CONFIG_GPIO_INIT_PRIORITY,		\
 		    &gpio_lpc11u6x_driver_api)
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 GPIO_LPC11U6X_INIT(0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 GPIO_LPC11U6X_INIT(1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
 GPIO_LPC11U6X_INIT(2);
 #endif

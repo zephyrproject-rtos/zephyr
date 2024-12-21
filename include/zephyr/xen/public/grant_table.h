@@ -126,7 +126,7 @@ typedef uint32_t grant_ref_t;
  * Version 1 of the grant table entry structure is maintained purely
  * for backwards compatibility.  New guests should use version 2.
  */
-#if __XEN_INTERFACE_VERSION__ < 0x0003020a
+#if CONFIG_XEN_INTERFACE_VERSION < 0x0003020a
 #define grant_entry_v1 grant_entry
 #define grant_entry_v1_t grant_entry_t
 #endif
@@ -232,13 +232,13 @@ typedef struct grant_entry_v1 grant_entry_v1_t;
 #define GNTTABOP_copy				5
 #define GNTTABOP_query_size			6
 #define GNTTABOP_unmap_and_replace		7
-#if __XEN_INTERFACE_VERSION__ >= 0x0003020a
+#if CONFIG_XEN_INTERFACE_VERSION >= 0x0003020a
 #define GNTTABOP_set_version			8
 #define GNTTABOP_get_status_frames		9
 #define GNTTABOP_get_version			10
 #define GNTTABOP_swap_grant_ref			11
 #define GNTTABOP_cache_flush			12
-#endif /* __XEN_INTERFACE_VERSION__ */
+#endif /* CONFIG_XEN_INTERFACE_VERSION */
 /* ` } */
 
 /*
@@ -315,7 +315,7 @@ struct gnttab_setup_table {
 
 	/* OUT parameters. */
 	int16_t status; /* => enum grant_status */
-#if __XEN_INTERFACE_VERSION__ < 0x00040300
+#if CONFIG_XEN_INTERFACE_VERSION < 0x00040300
 	XEN_GUEST_HANDLE(ulong) frame_list;
 #else
 	XEN_GUEST_HANDLE(xen_pfn_t) frame_list;

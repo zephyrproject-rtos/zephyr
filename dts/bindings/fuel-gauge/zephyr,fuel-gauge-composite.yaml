@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Composite fuel-gauge constructed from analog input values
+
+compatible: "zephyr,fuel-gauge-composite"
+
+include: [fuel-gauge.yaml, battery.yaml]
+
+properties:
+  battery-voltage:
+    type: phandle
+    required: true
+    description: |
+      Device to read battery voltage from.
+
+      Device must implement the sensor API and provide the
+      `SENSOR_CHAN_VOLTAGE` channel.
+
+  battery-current:
+    type: phandle
+    description: |
+      Device to read battery current from.
+
+      Device must implement the sensor API and provide the
+      `SENSOR_CHAN_CURRENT` channel.
+
+  device-chemistry:
+    required: true
+
+  ocv-capacity-table-0:
+    required: true

@@ -40,14 +40,16 @@ typedef struct pinctrl_soc_pin {
  *
  * @param node_id Node identifier.
  */
-#define Z_PINCTRL_ESP32_PINCFG_INIT(node_id)							\
-	(((ESP32_NO_PULL * DT_PROP(node_id, bias_disable)) << ESP32_PIN_BIAS_SHIFT) |		\
-	 ((ESP32_PULL_UP * DT_PROP(node_id, bias_pull_up)) << ESP32_PIN_BIAS_SHIFT) |		\
-	 ((ESP32_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << ESP32_PIN_BIAS_SHIFT) |	\
-	 ((ESP32_PUSH_PULL * DT_PROP(node_id, drive_push_pull)) << ESP32_PIN_DRV_SHIFT) |	\
-	 ((ESP32_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain)) << ESP32_PIN_DRV_SHIFT) |	\
-	 ((ESP32_PIN_OUT_HIGH * DT_PROP(node_id, output_high)) << ESP32_PIN_OUT_SHIFT) |	\
-	 ((ESP32_PIN_OUT_LOW * DT_PROP(node_id, output_low)) << ESP32_PIN_OUT_SHIFT))
+#define Z_PINCTRL_ESP32_PINCFG_INIT(node_id)                                                       \
+	(((ESP32_NO_PULL * DT_PROP(node_id, bias_disable)) << ESP32_PIN_BIAS_SHIFT) |              \
+	 ((ESP32_PULL_UP * DT_PROP(node_id, bias_pull_up)) << ESP32_PIN_BIAS_SHIFT) |              \
+	 ((ESP32_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << ESP32_PIN_BIAS_SHIFT) |          \
+	 ((ESP32_PUSH_PULL * DT_PROP(node_id, drive_push_pull)) << ESP32_PIN_DRV_SHIFT) |          \
+	 ((ESP32_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain)) << ESP32_PIN_DRV_SHIFT) |        \
+	 ((ESP32_PIN_OUT_HIGH * DT_PROP(node_id, output_high)) << ESP32_PIN_OUT_SHIFT) |           \
+	 ((ESP32_PIN_OUT_LOW * DT_PROP(node_id, output_low)) << ESP32_PIN_OUT_SHIFT) |             \
+	 ((ESP32_PIN_OUT_EN * DT_PROP(node_id, output_enable)) << ESP32_PIN_EN_DIR_SHIFT) |        \
+	 ((ESP32_PIN_IN_EN * DT_PROP(node_id, input_enable)) << ESP32_PIN_EN_DIR_SHIFT))
 
 /**
  * @brief Utility macro to initialize each pin.

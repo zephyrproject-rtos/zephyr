@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 include(extensions)
 include(west)
+include(yaml)
 include(root)
 include(zephyr_module)
 include(boards)
@@ -120,6 +121,8 @@ target_link_options(testbinary PRIVATE
 target_link_libraries(testbinary PRIVATE
   ${EXTRA_LDFLAGS_AS_LIST}
   )
+
+target_compile_options(test_interface INTERFACE $<TARGET_PROPERTY:compiler,debug>)
 
 if(CONFIG_COVERAGE)
   target_compile_options(test_interface INTERFACE $<TARGET_PROPERTY:compiler,coverage>)

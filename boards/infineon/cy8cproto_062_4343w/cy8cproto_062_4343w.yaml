@@ -4,7 +4,7 @@
 #
 
 identifier: cy8cproto_062_4343w
-name: CY8CPROTO-062-4343W PSoC 6 Wi-Fi BT Prototyping Kit
+name: CY8CPROTO-062-4343W PSOC 6 Wi-Fi BT Prototyping Kit
 type: mcu
 arch: arm
 ram: 1024

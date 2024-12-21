@@ -1,0 +1,40 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic TRACE and Debug Domain
+
+  Configuration for the Trace and Debug subsystem
+
+compatible: "nordic,nrf-tddconf"
+
+include: base.yaml
+
+properties:
+  etbsources:
+    type: int
+    description: |
+      Bitmask of enabled sources for the ETB sink. Valid values can be found in
+      dt-bindings/misc/nordic-tddconf.h
+
+  tpiusources:
+    type: int
+    description: |
+      Bitmask of enabled sources for the TPIU sink. Valid values can be found in
+      dt-bindings/misc/nordic-tddconf.h
+
+  etrsources:
+    type: int
+    description: |
+      Bitmask of enabled sources for the ETR sink. Valid values can be found in
+      dt-bindings/misc/nordic-tddconf.h
+
+  portconfig:
+    type: int
+    default: 3
+    description: TPIU clock divider - TDD HSFLL / 2^(2 + portconfig)
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3

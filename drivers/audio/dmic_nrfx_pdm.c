@@ -15,6 +15,7 @@
 LOG_MODULE_REGISTER(dmic_nrfx_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 
 struct dmic_nrfx_pdm_drv_data {
+	const nrfx_pdm_t *pdm;
 	struct onoff_manager *clk_mgr;
 	struct onoff_client clk_cli;
 	struct k_mem_slab *mem_slab;
@@ -58,8 +59,7 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 			LOG_ERR("Failed to allocate buffer: %d", ret);
 			stop = true;
 		} else {
-			err = nrfx_pdm_buffer_set(buffer,
-						  drv_data->block_size / 2);
+			err = nrfx_pdm_buffer_set(drv_data->pdm, buffer, drv_data->block_size / 2);
 			if (err != NRFX_SUCCESS) {
 				LOG_ERR("Failed to set buffer: 0x%08x", err);
 				stop = true;
@@ -94,8 +94,13 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 
 	if (stop) {
 		drv_data->stopping = true;
-		nrfx_pdm_stop();
+		nrfx_pdm_stop(drv_data->pdm);
 	}
+}
+
+static bool is_in_freq_range(uint32_t freq, const struct dmic_cfg *pdm_cfg)
+{
+	return freq >= pdm_cfg->io.min_pdm_clk_freq && freq <= pdm_cfg->io.max_pdm_clk_freq;
 }
 
 static bool is_better(uint32_t freq,
@@ -132,6 +137,37 @@ static bool check_pdm_frequencies(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
 	uint32_t req_rate = pdm_cfg->streams[0].pcm_rate;
 	bool better_found = false;
 
+#if NRF_PDM_HAS_PRESCALER
+	uint32_t src_freq = 32 * 1000 * 1000UL;
+	uint32_t req_freq = req_rate * ratio;
+	uint32_t prescaler = src_freq / req_freq;
+	uint32_t act_freq = src_freq / prescaler;
+
+	if (is_in_freq_range(act_freq, pdm_cfg) &&
+	    is_better(act_freq, ratio, req_rate, best_diff, best_rate, best_freq)) {
+		config->prescaler = prescaler;
+
+		better_found = true;
+	}
+
+	/* Stop if an exact rate match is found. */
+	if (*best_diff == 0) {
+		return true;
+	}
+
+	/* Prescaler value is rounded down by default,
+	 * thus value rounded up should be checked as well.
+	 */
+	prescaler += 1;
+	act_freq  = src_freq / prescaler;
+
+	if (is_in_freq_range(act_freq, pdm_cfg) &&
+	    is_better(act_freq, ratio, req_rate, best_diff, best_rate, best_freq)) {
+		config->prescaler = prescaler;
+
+		better_found = true;
+	}
+#else
 	if (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X)) {
 		const uint32_t src_freq =
 			(NRF_PDM_HAS_MCLKCONFIG && drv_cfg->clk_src == ACLK)
@@ -158,10 +194,8 @@ static bool check_pdm_frequencies(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
 						 (src_freq + req_freq / 2));
 		uint32_t act_freq = src_freq / (1048576 / clk_factor);
 
-		if (act_freq >= pdm_cfg->io.min_pdm_clk_freq &&
-		    act_freq <= pdm_cfg->io.max_pdm_clk_freq &&
-		    is_better(act_freq, ratio, req_rate,
-			      best_diff, best_rate, best_freq)) {
+		if (is_in_freq_range(act_freq, pdm_cfg) &&
+		    is_better(act_freq, ratio, req_rate, best_diff, best_rate, best_freq)) {
 			config->clock_freq = clk_factor * 4096;
 
 			better_found = true;
@@ -216,6 +250,7 @@ static bool check_pdm_frequencies(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
 			}
 		}
 	}
+#endif /* NRF_PDM_HAS_PRESCALER */
 
 	return better_found;
 }
@@ -236,8 +271,26 @@ static bool find_suitable_clock(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
 		uint8_t         ratio_val;
 		nrf_pdm_ratio_t ratio_enum;
 	} ratios[] = {
-		{  64, NRF_PDM_RATIO_64X },
-		{  80, NRF_PDM_RATIO_80X }
+#if defined(PDM_RATIO_RATIO_Ratio32)
+		{ 32, NRF_PDM_RATIO_32X },
+#endif
+#if defined(PDM_RATIO_RATIO_Ratio48)
+		{ 48, NRF_PDM_RATIO_48X },
+#endif
+#if defined(PDM_RATIO_RATIO_Ratio50)
+		{ 50, NRF_PDM_RATIO_50X },
+#endif
+		{ 64, NRF_PDM_RATIO_64X },
+		{ 80, NRF_PDM_RATIO_80X },
+#if defined(PDM_RATIO_RATIO_Ratio96)
+		{ 96, NRF_PDM_RATIO_96X },
+#endif
+#if defined(PDM_RATIO_RATIO_Ratio100)
+		{ 100, NRF_PDM_RATIO_100X },
+#endif
+#if defined(PDM_RATIO_RATIO_Ratio128)
+		{ 128, NRF_PDM_RATIO_128X }
+#endif
 	};
 
 	for (int r = 0; best_diff != 0 && r < ARRAY_SIZE(ratios); ++r) {
@@ -327,7 +380,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	/* If either rate or width is 0, the stream is to be disabled. */
 	if (stream->pcm_rate == 0 || stream->pcm_width == 0) {
 		if (drv_data->configured) {
-			nrfx_pdm_uninit();
+			nrfx_pdm_uninit(drv_data->pdm);
 			drv_data->configured = false;
 		}
 
@@ -357,11 +410,11 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	}
 
 	if (drv_data->configured) {
-		nrfx_pdm_uninit();
+		nrfx_pdm_uninit(drv_data->pdm);
 		drv_data->configured = false;
 	}
 
-	err = nrfx_pdm_init(&nrfx_cfg, drv_cfg->event_handler);
+	err = nrfx_pdm_init(drv_data->pdm, &nrfx_cfg, drv_cfg->event_handler);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize PDM: 0x%08x", err);
 		return -EIO;
@@ -385,7 +438,7 @@ static int start_transfer(struct dmic_nrfx_pdm_drv_data *drv_data)
 	nrfx_err_t err;
 	int ret;
 
-	err = nrfx_pdm_start();
+	err = nrfx_pdm_start(drv_data->pdm);
 	if (err == NRFX_SUCCESS) {
 		return 0;
 	}
@@ -460,7 +513,7 @@ static int dmic_nrfx_pdm_trigger(const struct device *dev,
 	case DMIC_TRIGGER_STOP:
 		if (drv_data->active) {
 			drv_data->stopping = true;
-			nrfx_pdm_stop();
+			nrfx_pdm_stop(drv_data->pdm);
 		}
 		break;
 
@@ -541,16 +594,18 @@ static const struct _dmic_ops dmic_ops = {
 #define PDM_NRFX_DEVICE(idx)						     \
 	static void *rx_msgs##idx[DT_PROP(PDM(idx), queue_size)];	     \
 	static struct dmic_nrfx_pdm_drv_data dmic_nrfx_pdm_data##idx;	     \
+	static const nrfx_pdm_t dmic_nrfx_pdm##idx = NRFX_PDM_INSTANCE(idx); \
 	static int pdm_nrfx_init##idx(const struct device *dev)		     \
 	{								     \
 		IRQ_CONNECT(DT_IRQN(PDM(idx)), DT_IRQ(PDM(idx), priority),   \
-			    nrfx_isr, nrfx_pdm_irq_handler, 0);		     \
+			    nrfx_isr, nrfx_pdm_##idx##_irq_handler, 0);      \
 		const struct dmic_nrfx_pdm_drv_cfg *drv_cfg = dev->config;   \
 		int err = pinctrl_apply_state(drv_cfg->pcfg,		     \
 					      PINCTRL_STATE_DEFAULT);	     \
 		if (err < 0) {						     \
 			return err;					     \
 		}							     \
+		dmic_nrfx_pdm_data##idx.pdm = &dmic_nrfx_pdm##idx;	     \
 		k_msgq_init(&dmic_nrfx_pdm_data##idx.rx_queue,		     \
 			    (char *)rx_msgs##idx, sizeof(void *),	     \
 			    ARRAY_SIZE(rx_msgs##idx));			     \
@@ -582,5 +637,14 @@ static const struct _dmic_ops dmic_ops = {
 			 POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,	     \
 			 &dmic_ops);
 
-/* Existing SoCs only have one PDM instance. */
+#ifdef CONFIG_HAS_HW_NRF_PDM0
 PDM_NRFX_DEVICE(0);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_PDM20
+PDM_NRFX_DEVICE(20);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_PDM21
+PDM_NRFX_DEVICE(21);
+#endif

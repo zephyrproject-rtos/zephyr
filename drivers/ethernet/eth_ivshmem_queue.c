@@ -82,8 +82,9 @@ void eth_ivshmem_queue_reset(struct eth_ivshmem_queue *q)
 	memset(q->tx.shmem, 0, q->vring_header_size);
 
 	/* Init TX ring descriptors */
-	for (unsigned int i = 0; i < q->tx.vring.num - 1; i++)
+	for (unsigned int i = 0; i < q->tx.vring.num - 1; i++) {
 		q->tx.vring.desc[i].next = i + 1;
+	}
 	q->tx.vring.desc[q->tx.vring.num - 1].next = 0;
 }
 

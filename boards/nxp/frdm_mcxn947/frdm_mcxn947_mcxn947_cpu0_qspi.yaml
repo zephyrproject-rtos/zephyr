@@ -1,0 +1,32 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxn947/mcxn947/cpu0/qspi
+name: NXP FRDM MCXN947 QSPI (CPU0)
+type: mcu
+arch: arm
+ram: 320
+flash: 8192
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - can
+  - dma
+  - gpio
+  - spi
+  - dac
+  - i2c
+  - watchdog
+  - pwm
+  - counter
+  - sdhc
+  - regulator
+  - adc
+  - usb_device
+  - i3c
+vendor: nxp

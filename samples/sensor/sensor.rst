@@ -1,10 +1,5 @@
-.. _sensor-samples:
+.. zephyr:code-sample-category:: sensors
+   :name: Sensors
+   :show-listing:
 
-Sensor Samples
-##############
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   These samples demonstrate how to use various sensors supported by Zephyr.

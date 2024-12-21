@@ -61,3 +61,9 @@ properties:
     type: int
     description: |
       Dynamic address to be assigned to the device.
+
+  supports-setaasa:
+    type: boolean
+    description: |
+      Indicates if the device supports the CCC SETAASA. If true, it will
+      be used as an optimization for bus initialization.

@@ -185,6 +185,36 @@ config MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO
 
 endchoice
 
+config MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_HOOK
+	bool "Image slot state hook"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Allows applications to add additional fields to responses for the image slot state
+	  command.
+
+config MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_STATES
+	int
+	prompt "Predicted maximum number of entries per group" if MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_HOOK
+	default 15
+	help
+	  This is used for defining CBOR map holding group data.
+	  The value does not affect memory allocation, it is used by zcbor
+	  to figure out how to encode map depending on its predicted size.
+
+config MCUMGR_GRP_IMG_SLOT_INFO
+	bool "Slot info"
+	default y if MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
+	help
+	  This will enable the slot information function which will return information about all
+	  images and slots that the application can see.
+
+config MCUMGR_GRP_IMG_SLOT_INFO_HOOKS
+	bool "Slot info hooks"
+	depends on MCUMGR_GRP_IMG_SLOT_INFO && MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  This will enable the slot info function hooks which can be used to add additional
+	  information to responses.
+
 module = MCUMGR_GRP_IMG
 module-str = mcumgr_grp_img
 source "subsys/logging/Kconfig.template.log_config"

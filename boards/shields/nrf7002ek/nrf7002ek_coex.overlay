@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	nrf_radio_coex: coex {
+		compatible = "nordic,nrf7002-coex";
+		status = "okay";
+
+		/* D2 */
+		status0-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;
+		/* D3 */
+		req-gpios = <&arduino_header 9 GPIO_ACTIVE_HIGH>;
+		/* D4 */
+		grant-gpios = <&arduino_header 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
+		/* D6 */
+		swctrl1-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>;
+	};
+};

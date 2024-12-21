@@ -32,13 +32,26 @@ static inline int sd_idle(struct sd_card *card)
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }
 
-/* Sends CMD8 during SD initialization */
+/*
+ * Perform init required for both SD and SDIO cards.
+ * This function performs the following portions of SD initialization
+ * - CMD0 (SD reset)
+ * - CMD8 (SD voltage check)
+ */
 static int sd_send_interface_condition(struct sd_card *card)
 {
 	struct sdhc_command cmd;
 	int ret;
 	uint32_t resp;
 
+	/* Reset card with CMD0 */
+	ret = sd_idle(card);
+	if (ret) {
+		LOG_ERR("Card error on CMD0");
+		return ret;
+	}
+
+	/* Query voltage with CMD 8 */
 	cmd.opcode = SD_SEND_IF_COND;
 	cmd.arg = SD_IF_COND_VHS_3V3 | SD_IF_COND_CHECK;
 	cmd.response_type = (SD_RSP_TYPE_R7 | SD_SPI_RSP_TYPE_R7);
@@ -56,7 +69,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 		resp = cmd.response[0];
 	}
 	if ((resp & 0xFF) != SD_IF_COND_CHECK) {
-		LOG_INF("Legacy card detected, no CMD8 support");
+		LOG_DBG("Legacy card detected, no CMD8 support");
 		/* Retry probe */
 		return SD_RETRY;
 	}
@@ -84,22 +97,11 @@ static int sd_enable_crc(struct sd_card *card)
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }
 
-/*
- * Perform init required for both SD and SDIO cards.
- * This function performs the following portions of SD initialization
- * - CMD0 (SD reset)
- * - CMD8 (SD voltage check)
- */
+/* Retries SD and SDIO initialisation until card has valid response to SD CMD8 */
 static int sd_common_init(struct sd_card *card)
 {
 	int ret;
 
-	/* Reset card with CMD0 */
-	ret = sd_idle(card);
-	if (ret) {
-		LOG_ERR("Card error on CMD0");
-		return ret;
-	}
 	/* Perform voltage check using SD CMD8 */
 	ret = sd_retry(sd_send_interface_condition, card, CONFIG_SD_RETRY_COUNT);
 	if (ret == -ETIMEDOUT) {

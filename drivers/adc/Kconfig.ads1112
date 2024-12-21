@@ -6,6 +6,7 @@
 config ADC_ADS1112
 	bool "Texas Instruments ADS1112 ADC driver"
 	depends on DT_HAS_TI_ADS1112_ENABLED
+	default y
 	select I2C
 	select ADC_CONFIGURABLE_INPUTS
 	help

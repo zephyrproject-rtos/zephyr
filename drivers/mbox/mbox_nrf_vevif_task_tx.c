@@ -10,11 +10,7 @@
 
 #include <haly/nrfy_vpr.h>
 
-#if defined(CONFIG_SOC_NRF54L15_ENGA_CPUAPP)
-#define TASKS_IDX_MAX 17U
-#else
 #define TASKS_IDX_MAX NRF_VPR_TASKS_TRIGGER_MAX
-#endif
 
 struct mbox_vevif_task_tx_conf {
 	NRF_VPR_Type *vpr;
@@ -38,7 +34,7 @@ static int vevif_task_tx_send(const struct device *dev, uint32_t id, const struc
 	}
 
 	if (msg != NULL) {
-		return -ENOTSUP;
+		return -EMSGSIZE;
 	}
 
 	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));

@@ -6,6 +6,10 @@ set(CMAKE_LINKER ${LLVMLLD_LINKER})
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
+list(APPEND TOOLCHAIN_LD_FLAGS -fuse-ld=lld)
+list(APPEND CMAKE_REQUIRED_FLAGS -fuse-ld=lld)
+string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
+
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
 macro(configure_linker_script linker_script_gen linker_pass_define)
@@ -30,7 +34,6 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   endif()
 
   zephyr_get_include_directories_for_lang(C current_includes)
-  get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
   add_custom_command(
     OUTPUT ${linker_script_gen}
@@ -45,9 +48,9 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
     -D_LINKER
     -D_ASMLANGUAGE
+    -D__LLD_LINKER_CMD__
     -imacros ${AUTOCONF_H}
     ${current_includes}
-    ${current_defines}
     ${template_script_defines}
     -E ${LINKER_SCRIPT}
     -P # Prevent generation of debug `#line' directives.
@@ -98,18 +101,33 @@ function(toolchain_ld_link_elf)
     ${LINKERFLAGPREFIX},--no-whole-archive
     ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
-    ${LIB_INCLUDE_DIR}
     -L${PROJECT_BINARY_DIR}
-    ${TOOLCHAIN_LIBS}
 
     ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
   )
 endfunction(toolchain_ld_link_elf)
 
+# Function for finalizing link setup after Zephyr configuration has completed.
+#
+# This function will generate the correct CMAKE_C_LINK_EXECUTABLE / CMAKE_CXX_LINK_EXECUTABLE
+# signature to ensure that standard c and runtime libraries are correctly placed
+# and the end of link invocation and doesn't appear in the middle of the link
+# command invocation.
+macro(toolchain_linker_finalize)
+  get_property(zephyr_std_libs TARGET linker PROPERTY lib_include_dir)
+  get_property(link_order TARGET linker PROPERTY link_order_library)
+  foreach(lib ${link_order})
+    get_property(link_flag TARGET linker PROPERTY ${lib}_library)
+    list(APPEND zephyr_std_libs "${link_flag}")
+  endforeach()
+  string(REPLACE ";" " " zephyr_std_libs "${zephyr_std_libs}")
+
+ set(common_link "<LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${zephyr_std_libs}")
+ set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_ASM_COMPILER> <FLAGS> <CMAKE_ASM_LINK_FLAGS> ${common_link}")
+ set(CMAKE_C_LINK_EXECUTABLE   "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> ${common_link}")
+ set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> ${common_link}")
+endmacro()
 
 # Load toolchain_ld-family macros
-include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_base.cmake)
-include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_baremetal.cmake)
-include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)

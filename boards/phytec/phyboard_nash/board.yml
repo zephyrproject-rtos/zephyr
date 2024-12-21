@@ -1,0 +1,6 @@
+board:
+  name: phyboard_nash
+  full_name: phyBOARD-Nash i.MX93
+  vendor: phytec
+  socs:
+  - name: mimx9352

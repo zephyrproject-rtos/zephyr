@@ -1,7 +1,4 @@
-.. _nucleo_g071rb_board:
-
-ST Nucleo G071RB
-################
+.. zephyr:board:: nucleo_g071rb
 
 Overview
 ********
@@ -23,10 +20,6 @@ some highlights of the Nucleo G071RB board:
 
 - Three LEDs: USB communication (LD1), user LED (LD4), power LED (LD3)
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_g071rb.jpg
-   :align: center
-   :alt: Nucleo G071RB
 
 More information about the board can be found at the `Nucleo G071RB website`_.
 
@@ -149,6 +142,8 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+Nucleo G071RB board includes an ST-LINK/V3 embedded debug tool interface.
+
 Applications for the ``nucleo_g071rb`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -156,7 +151,17 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo G071RB board includes an ST-LINK/V3 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
 
 Flashing an application to Nucleo G071RB
 ----------------------------------------
@@ -174,7 +179,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -198,3 +203,6 @@ References
 
 .. _G071RB on www.st.com:
    https://www.st.com/en/microcontrollers/stm32g071rb.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

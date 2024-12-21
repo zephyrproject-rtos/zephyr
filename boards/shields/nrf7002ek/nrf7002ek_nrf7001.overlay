@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,wifi = &wlan0;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	nrf70: nrf7001-spi@0 {
+		compatible = "nordic,nrf7001-spi";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+
+		/* Include common nRF70 overlays */
+		#include "nrf7002ek_common.dtsi"
+	};
+};

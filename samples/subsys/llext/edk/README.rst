@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: llext-edk
    :name: Linkable loadable extensions EDK
-   :relevant-api: llext
+   :relevant-api: llext_apis
 
     Enable linkable loadable extension development outside the Zephyr tree using
     LLEXT EDK (Extension Development Kit).

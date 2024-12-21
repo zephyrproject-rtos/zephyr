@@ -21,7 +21,7 @@ In order to enable the EEPROM shell, the following :ref:`Kconfig <kconfig>` opti
 * :kconfig:option:`CONFIG_EEPROM`
 * :kconfig:option:`CONFIG_EEPROM_SHELL`
 
-For example, building the :ref:`hello_world` sample for the :ref:`native_sim` with the EEPROM shell:
+For example, building the :zephyr:code-sample:`hello_world` sample for the :ref:`native_sim` with the EEPROM shell:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

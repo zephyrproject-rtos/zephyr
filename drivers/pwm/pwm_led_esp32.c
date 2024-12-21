@@ -22,6 +22,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_ledc_esp32, CONFIG_PWM_LOG_LEVEL);
 
+#if SOC_LEDC_SUPPORT_APB_CLOCK
+#define CLOCK_SOURCE LEDC_APB_CLK
+#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+#define CLOCK_SOURCE LEDC_SCLK
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+#define SCLK_CLK_FREQ MHZ(60)
+#elif defined(CONFIG_SOC_SERIES_ESP32C6)
+#define SCLK_CLK_FREQ MHZ(80)
+#endif
+#endif
+
 struct pwm_ledc_esp32_data {
 	ledc_hal_context_t hal;
 	struct k_sem cmd_sem;
@@ -62,7 +73,6 @@ static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct dev
 
 static void pwm_led_esp32_low_speed_update(const struct device *dev, int speed_mode, int channel)
 {
-	uint32_t reg_addr;
 	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
 
 	if (speed_mode == LEDC_LOW_SPEED_MODE) {
@@ -250,7 +260,6 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
 					    uint32_t channel_idx, uint64_t *cycles)
 {
-	struct pwm_ledc_esp32_config *config = (struct pwm_ledc_esp32_config *) dev->config;
 	struct pwm_ledc_esp32_channel_config *channel = get_channel_config(dev, channel_idx);
 
 	if (!channel) {
@@ -273,7 +282,6 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 {
 	int ret;
 	uint64_t clk_freq;
-	struct pwm_ledc_esp32_config *config = (struct pwm_ledc_esp32_config *) dev->config;
 	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
 	struct pwm_ledc_esp32_channel_config *channel = get_channel_config(dev, channel_idx);
 
@@ -333,9 +341,7 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 
 int pwm_led_esp32_init(const struct device *dev)
 {
-	int ret;
 	const struct pwm_ledc_esp32_config *config = dev->config;
-	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -354,12 +360,6 @@ static const struct pwm_driver_api pwm_led_esp32_api = {
 };
 
 PINCTRL_DT_INST_DEFINE(0);
-
-#if SOC_LEDC_SUPPORT_APB_CLOCK
-	#define CLOCK_SOURCE	LEDC_APB_CLK
-#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
-	#define CLOCK_SOURCE	LEDC_SCLK
-#endif
 
 #define CHANNEL_CONFIG(node_id)                                                \
 	{                                                                      \

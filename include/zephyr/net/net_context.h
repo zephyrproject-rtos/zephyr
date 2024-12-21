@@ -17,6 +17,8 @@
 /**
  * @brief Application network context
  * @defgroup net_context Application network context
+ * @since 1.0
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -198,7 +200,7 @@ struct net_conn_handle;
 
 /**
  * Note that we do not store the actual source IP address in the context
- * because the address is already be set in the network interface struct.
+ * because the address is already set in the network interface struct.
  * If there is no such source address there, the packet cannot be sent
  * anyway. This saves 12 bytes / context in IPv6.
  */

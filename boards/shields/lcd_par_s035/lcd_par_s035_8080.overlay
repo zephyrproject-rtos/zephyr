@@ -9,10 +9,28 @@
 /{
 	chosen {
 		zephyr,display = &st7796s;
+		zephyr,touch = &gt911_lcd_par_s035;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911_lcd_par_s035>;
+		swap-xy;
+		invert-y;
 	};
 };
 
-&nxp_flexio_lcd {
+&nxp_8080_touch_panel_i2c {
+	status = "okay";
+	gt911_lcd_par_s035: gt911-lcd_par_s035@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&nxp_lcd_8080_connector 9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&nxp_lcd_8080_connector 11 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&zephyr_mipi_dbi_parallel {
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;

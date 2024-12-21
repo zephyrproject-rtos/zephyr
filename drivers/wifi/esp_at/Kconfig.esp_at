@@ -164,7 +164,7 @@ config WIFI_ESP_AT_DNS_USE
 config WIFI_ESP_AT_CIPDINFO_USE
 	bool "Use CIPDINFO to get peer ip and port"
 	help
-	  Enable AT+CIPDINFO got get peer ip-address and port.
+	  Enable AT+CIPDINFO to get peer ip-address and port.
 
 config WIFI_ESP_AT_FETCH_VERSION
 	bool "Fetch and log ESP-AT firmware version"

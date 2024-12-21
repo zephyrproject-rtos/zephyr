@@ -25,4 +25,9 @@ config INPUT_CST816S_INTERRUPT
 	help
 	  Enable interrupt support (requires GPIO).
 
+config INPUT_CST816S_EV_DEVICE
+	bool "Device specific event support"
+	help
+	  Enable device specific event support.
+
 endif # INPUT_CST816S

@@ -34,7 +34,7 @@
 			reg = <ATM_FACTORY_OFFSET ATM_FACTORY_SIZE>;
 		};
 #endif
-#if ATM_STORAGE_SIZE
+#if ATM_STORAGE_SIZE && !ATM_TEST_STORAGE_SIZE
 		storage_partition: partition@ATM_STORAGE_NODE_ID {
 			label = "storage";
 			reg = <ATM_STORAGE_OFFSET ATM_STORAGE_SIZE>;
@@ -43,16 +43,24 @@
 	};
 };
 
-#ifdef RUN_IN_FLASH
+#if defined(RUN_IN_FLASH) || ATM_TEST_STORAGE_SIZE
 &flash0 {
 	partitions {
 		compatible = "atmosic,tz-fixed-partitions", "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+#ifdef RUN_IN_FLASH
 		nspe_partition: partition@ATM_NSPE_NODE_ID {
 			label = "nspe_partition";
 			reg = <ATM_NSPE_OFFSET ATM_NSPE_SIZE>;
 		};
+#endif
+#if ATM_TEST_STORAGE_SIZE
+		storage_partition: partition@ATM_TEST_STORAGE_NODE_ID {
+			label = "storage";
+			reg = <ATM_TEST_STORAGE_OFFSET ATM_TEST_STORAGE_SIZE>;
+		};
+#endif
 	};
 };
 #endif

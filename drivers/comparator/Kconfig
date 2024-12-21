@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig COMPARATOR
+	bool "Comparator drivers"
+	help
+	  Enable comparator driver configuration.
+
+if COMPARATOR
+
+module = COMPARATOR
+module-str = comparator
+source "subsys/logging/Kconfig.template.log_config"
+
+config COMPARATOR_INIT_PRIORITY
+	int "COMPARATOR init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Comparator device driver initialization priority.
+
+rsource "Kconfig.fake_comp"
+rsource "Kconfig.mcux_acmp"
+rsource "Kconfig.nrf_comp"
+rsource "Kconfig.nrf_lpcomp"
+rsource "Kconfig.shell"
+
+endif # COMPARATOR

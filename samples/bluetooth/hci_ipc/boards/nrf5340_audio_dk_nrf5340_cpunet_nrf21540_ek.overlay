@@ -1,0 +1,15 @@
+/ {
+	nrf_radio_fem: nrf21540_fem {
+		compatible        = "nordic,nrf21540-fem";
+		tx-en-gpios       = <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 */
+		rx-en-gpios       = <&arduino_header 9  GPIO_ACTIVE_HIGH>; /* D3 */
+		pdn-gpios         = <&arduino_header 15 GPIO_ACTIVE_HIGH>; /* D9 */
+		ant-sel-gpios     = <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 */
+		mode-gpios        = <&arduino_header 8  GPIO_ACTIVE_HIGH>; /* D2 */
+		supply-voltage-mv = <3000>;
+	};
+};
+
+&radio {
+	fem = <&nrf_radio_fem>;
+};

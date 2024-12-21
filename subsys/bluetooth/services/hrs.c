@@ -45,6 +45,12 @@ LOG_MODULE_REGISTER(hrs);
 #define CONFIG_BT_HRS_DEFAULT_PERM_RW 0
 #endif
 
+/**
+ * @brief GATT ATTR Error that should be returned in case
+ * HRS Control point request is not supported.
+ */
+#define BT_HRS_ATT_ERR_CONTROL_POINT_NOT_SUPPORTED 0x80
+
 #define HRS_GATT_PERM_DEFAULT (						\
 	CONFIG_BT_HRS_DEFAULT_PERM_RW_AUTHEN ?				\
 	(BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN) :	\
@@ -79,6 +85,33 @@ static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(hrs_blsc));
 }
 
+static ssize_t ctrl_point_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	int err = -ENOTSUP;
+	struct bt_hrs_cb *listener;
+
+	LOG_INF("HRS CTRL Point Written %d", len);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&hrs_cbs, listener, _node) {
+		if (listener->ctrl_point_write) {
+			err = listener->ctrl_point_write(*((uint8_t *)buf));
+			/* If we get an error other than ENOTSUP then immediately
+			 * break the loop and return a generic gatt error, assuming this
+			 * listener supports this request code, but failed to serve it
+			 */
+			if ((err != 0) && (err != -ENOTSUP)) {
+				return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+			}
+		}
+	}
+	if (err) {
+		return BT_GATT_ERR(BT_HRS_ATT_ERR_CONTROL_POINT_NOT_SUPPORTED);
+	} else {
+		return len;
+	}
+}
+
 /* Heart Rate Service Declaration */
 BT_GATT_SERVICE_DEFINE(hrs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HRS),
@@ -91,7 +124,7 @@ BT_GATT_SERVICE_DEFINE(hrs_svc,
 			       read_blsc, NULL, NULL),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_CONTROL_POINT, BT_GATT_CHRC_WRITE,
 			       HRS_GATT_PERM_DEFAULT & GATT_PERM_WRITE_MASK,
-			       NULL, NULL, NULL),
+			       NULL, ctrl_point_write, NULL),
 );
 
 static int hrs_init(void)

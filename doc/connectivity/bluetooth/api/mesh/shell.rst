@@ -1788,6 +1788,80 @@ a Config Composition Data Status message, and reading the metadata of the model 
 	* ``Offset``: Offset within the page.
 
 
+Bridge Configuration Client
+---------------------------
+
+The Bridge Configuration Client model is an optional Bluetooth Mesh model that can be enabled through the
+:kconfig:option:`CONFIG_BT_MESH_BRG_CFG_CLI` configuration option. The model provides functionality
+for configuring the subnet bridge functionality of a mesh node.
+
+``mesh models brg_cfg bridge-get``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the current Subnet Bridge state.
+
+``mesh models brg_cfg bridge-set <State(disable, enable)>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Set the Subnet Bridge state.
+
+	* ``State``: Disable or enable the Subnet Bridge functionality.
+
+``mesh models brg_cfg table-size-get``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the current size of the Bridging Table.
+
+``mesh models brg_cfg table-add <Directions> <NetIdx1> <NetIdx2> <Addr1> <Addr2>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Add an entry to the Bridging Table.
+
+	* ``Directions``: Allowed directions for the bridged traffic. Valid values are:
+
+		* ``0x01``: Bridging is allowed only for messages with ``Addr1`` as the source address and ``Addr2`` as the destination address.
+		* ``0x02``: Bridging is allowed in both directions.
+
+	* ``NetIdx1``: NetKey index of the first subnet.
+	* ``NetIdx2``: NetKey index of the second subnet.
+	* ``Addr1``: Address of the node in the first subnet.
+	* ``Addr2``: Address of the node in the second subnet.
+
+``mesh models brg_cfg table-remove <NetIdx1> <NetIdx2> <Addr1> <Addr2>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Remove an entry from the Bridging Table.
+
+	* ``NetIdx1``: NetKey index of the first subnet.
+	* ``NetIdx2``: NetKey index of the second subnet.
+	* ``Addr1``: Address of the node in the first subnet.
+	* ``Addr2``: Address of the node in the second subnet.
+
+``mesh models brg_cfg subnets-get <Filter> <NetIdx> <StartIdx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a filtered set of NetKey index pairs extracted from the Bridging Table.
+
+	* ``Filter``: Filter to be applied when reporting pairs of NetKey indexes extracted from the Bridging Table. Allowed values:
+
+		* ``0x00``: Report all pairs.
+		* ``0x01``: Report pairs in which the NetKey index of the first subnet matches ``NetIdx``.
+		* ``0x02``: Report pairs in which the NetKey index of the second subnet matches ``NetIdx``.
+		* ``0x03``: Report pairs in which one of the NetKey indexes matches ``NetIdx``.
+
+	* ``NetIdx``: NetKey index of any of the subnets.
+	* ``StartIdx``: Start offset in units of pairs of NetKey indexes to read.
+
+``mesh models brg_cfg table-get <NetIdx1> <NetIdx2> <StartIdx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get a list of addresses and allowed traffic directions of the Bridging Table entries.
+
+	* ``NetIdx1``: NetKey index of the first subnet.
+	* ``NetIdx2``: NetKey index of the second subnet.
+	* ``StartIdx``: Start offset to read in units of Bridging Table state entries.
+
+
 Configuration database
 ======================
 

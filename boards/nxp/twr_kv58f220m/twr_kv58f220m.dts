@@ -25,12 +25,14 @@
 		sw3 = &user_button_3;
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
+		mcuboot-button0 = &user_button_0;
 	};
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &uart0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;

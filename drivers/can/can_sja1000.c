@@ -23,7 +23,7 @@ static inline void can_sja1000_write_reg(const struct device *dev, uint8_t reg, 
 {
 	const struct can_sja1000_config *config = dev->config;
 
-	return config->write_reg(dev, reg, val);
+	config->write_reg(dev, reg, val);
 }
 
 static inline uint8_t can_sja1000_read_reg(const struct device *dev, uint8_t reg)

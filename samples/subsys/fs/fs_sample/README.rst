@@ -41,7 +41,7 @@ Building and Running FAT samples
 ********************************
 
 Boards with default configurations, for example ``arduino_mkrzero`` or
-``nrf52840dk/nrf52840`` using internal flash can be build using command:
+``nrf52840dk/nrf52840`` using internal flash can be built using command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/fs_sample
@@ -73,7 +73,7 @@ sample lists them out on the debug serial output.
 Building and Running EXT2 samples
 *********************************
 
-Ext2 sample can be build for ``hifive_unmatched`` or ``bl5340_dvk/nrf5340/cpuapp``. Because
+Ext2 sample can be built for ``hifive_unmatched`` or ``bl5340_dvk/nrf5340/cpuapp``. Because
 FAT is default file system for this sample, additional flags must be passed to build
 the sample.
 

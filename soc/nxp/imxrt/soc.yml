@@ -8,9 +8,7 @@ family:
     - name: mimxrt1021
     - name: mimxrt1024
     - name: mimxrt1042
-    - name: mimxrt1051
     - name: mimxrt1052
-    - name: mimxrt1061
     - name: mimxrt1062
     - name: mimxrt1064
   - name: imxrt11xx
@@ -23,6 +21,12 @@ family:
       cpuclusters:
       - name: cm7
       - name: cm4
+  - name: imxrt118x
+    socs:
+    - name: mimxrt1189
+      cpuclusters:
+      - name: cm33
+      - name: cm7
   - name: imxrt5xx
     socs:
     - name: mimxrt595s

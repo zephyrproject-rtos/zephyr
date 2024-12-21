@@ -7,3 +7,21 @@ properties:
   io-channels:
     required: true
     description: ADC channel for temperature sensor
+
+  avgslope:
+    type: string
+    required: true
+    description: |
+      Average slope of T-V chart (in mV/°C), found in MCU datasheet
+      chapters "Electrical characteristics" or "Operating conditions"
+
+  ntc:
+    type: boolean
+    description: |
+      Negative Temperature Coefficient
+
+      Set when the sensor's value is inversely proportional to temperature
+      (i.e., the sensor's value decreases as the temperature increases).
+
+      This is visible in the formula used for temperature calculation, which has the
+      form "Calibration_Value - ADC_Value" rather than "ADC_Value - Calibration_Value".

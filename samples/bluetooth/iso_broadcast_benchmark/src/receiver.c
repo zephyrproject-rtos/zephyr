@@ -372,9 +372,9 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 					    BT_ISO_SYNC_TIMEOUT_MIN,
 					    BT_ISO_SYNC_TIMEOUT_MAX);
 	big_sync_param.num_bis = bis_count;
-	/* BIS indexes start from 0x01, so add one to `i` */
+	/* BIS indexes start from 0x01 */
 	for (int i = 1; i <= big_sync_param.num_bis; i++) {
-		big_sync_param.bis_bitfield |= BIT(i);
+		big_sync_param.bis_bitfield |= BT_ISO_BIS_INDEX_BIT(i);
 	}
 
 	LOG_INF("Syncing to BIG");

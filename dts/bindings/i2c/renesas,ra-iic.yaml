@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA I2C Master controller
+
+compatible: "renesas,ra-iic"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    required: true
+    type: int
+
+  interrupts:
+    required: true
+
+  rise-time-ns:
+    type: int
+    default: 120
+
+  fall-time-ns:
+    type: int
+    default: 120
+
+  duty-cycle-percent:
+    type: int
+    default: 50
+
+  interrupt-priority-level:
+    type: int
+    default: 12

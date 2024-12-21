@@ -11,13 +11,14 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/sensor.h>
 
 #define ADXL362_SLAVE_ID    1
 
 /* ADXL362 communication commands */
 #define ADXL362_WRITE_REG           0x0A
 #define ADXL362_READ_REG            0x0B
-#define ADXL362_WRITE_FIFO          0x0D
+#define ADXL362_READ_FIFO           0x0D
 
 /* Registers */
 #define ADXL362_REG_DEVID_AD            0x00
@@ -160,6 +161,8 @@
 #define ADXL362_STATUS_CHECK_DATA_READY(x)	(((x) >> 0) & 0x1)
 #define ADXL362_STATUS_CHECK_INACT(x)		(((x) >> 5) & 0x1)
 #define ADXL362_STATUS_CHECK_ACTIVITY(x)	(((x) >> 4) & 0x1)
+#define ADXL362_STATUS_CHECK_FIFO_OVR(x)	(((x) >> 3) & 0x1)
+#define ADXL362_STATUS_CHECK_FIFO_WTR(x)	(((x) >> 2) & 0x1)
 
 /* ADXL362 scale factors from specifications */
 #define ADXL362_ACCEL_2G_LSB_PER_G	1000
@@ -170,6 +173,12 @@
 #define ADXL362_TEMP_MC_PER_LSB 65
 #define ADXL362_TEMP_BIAS_LSB 350
 #define ADXL362_TEMP_BIAS_TEST_CONDITION 25
+
+/* ADXL362 check fifo sample header */
+#define ADXL362_FIFO_HDR_CHECK_ACCEL_X(x)	((((x) & 0xC000) >> 14) == 0x00)
+#define ADXL362_FIFO_HDR_CHECK_ACCEL_Y(x)	((((x) & 0xC000) >> 14) == 0x01)
+#define ADXL362_FIFO_HDR_CHECK_ACCEL_Z(x)	((((x) & 0xC000) >> 14) == 0x02)
+#define ADXL362_FIFO_HDR_CHECK_TEMP(x)	((((x) & 0xC000) >> 14) == 0x03)
 
 struct adxl362_config {
 	struct spi_dt_spec bus;
@@ -192,6 +201,11 @@ struct adxl362_data {
 	} __packed;
 	int16_t temp;
 	uint8_t selected_range;
+	uint8_t accel_odr;
+
+	uint8_t fifo_mode;
+	uint8_t en_temp_read;
+	uint16_t water_mark_lvl;
 
 #if defined(CONFIG_ADXL362_TRIGGER)
 	const struct device *dev;
@@ -213,7 +227,44 @@ struct adxl362_data {
 	struct k_work work;
 #endif
 #endif /* CONFIG_ADXL362_TRIGGER */
+#ifdef CONFIG_ADXL362_STREAM
+	uint8_t status;
+	uint8_t fifo_ent[2];
+	struct rtio_iodev_sqe *sqe;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	uint64_t timestamp;
+	struct rtio *r_cb;
+	uint8_t fifo_full_irq: 1;
+	uint8_t fifo_wmark_irq: 1;
+	uint8_t res: 6;
+#endif /* CONFIG_ADXL362_STREAM */
 };
+
+struct adxl362_sample_data {
+#ifdef CONFIG_ADXL362_STREAM
+	uint8_t is_fifo: 1;
+	uint8_t res: 7;
+#endif /*CONFIG_ADXL362_STREAM*/
+	uint8_t selected_range;
+	int16_t acc_x;
+	int16_t acc_y;
+	int16_t acc_z;
+	int16_t temp;
+};
+
+struct adxl362_fifo_data {
+	uint8_t is_fifo: 1;
+	uint8_t has_tmp: 1;
+	uint8_t selected_range: 3;
+	uint8_t accel_odr: 3;
+	uint8_t int_status;
+	uint16_t fifo_byte_count;
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+BUILD_ASSERT(sizeof(struct adxl362_fifo_data) % 4 == 0,
+		"adxl362_fifo_data struct should be word aligned");
 
 #if defined(CONFIG_ADXL362_ACCEL_RANGE_RUNTIME) ||\
 		defined(CONFIG_ADXL362_ACCEL_RANGE_2G)
@@ -239,6 +290,10 @@ struct adxl362_data {
 #	define ADXL362_DEFAULT_ODR_ACC		ADXL362_ODR_400_HZ
 #endif
 
+void adxl362_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void adxl362_stream_irq_handler(const struct device *dev);
+int adxl362_fifo_read(const struct device *dev, void *buff, size_t length);
+
 #ifdef CONFIG_ADXL362_TRIGGER
 int adxl362_reg_write_mask(const struct device *dev,
 			   uint8_t reg_addr, uint8_t mask, uint8_t data);
@@ -258,4 +313,21 @@ int adxl362_set_interrupt_mode(const struct device *dev, uint8_t mode);
 int adxl362_clear_data_ready(const struct device *dev);
 #endif /* CONFIG_ADT7420_TRIGGER */
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+int adxl362_rtio_fetch(const struct device *dev,
+				struct adxl362_sample_data *sample_data);
+void adxl362_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+int adxl362_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+void adxl362_accel_convert(struct sensor_value *val, int accel,
+				  int range);
+void adxl362_temp_convert(struct sensor_value *val, int temp);
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
+#ifdef CONFIG_ADXL362_STREAM
+int adxl362_fifo_setup(const struct device *dev, uint8_t mode,
+			      uint16_t water_mark_lvl, uint8_t en_temp_read);
+#endif /* CONFIG_ADXL362_STREAM */
+
+int adxl362_reg_access(const struct device *dev, uint8_t cmd,
+			      uint8_t reg_addr, void *data, size_t length);
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL362_ADXL362_H_ */

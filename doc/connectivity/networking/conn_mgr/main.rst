@@ -311,7 +311,7 @@ If this happens, the :ref:`timeout event<conn_mgr_control_events_timeout>` is ra
 Connection Persistence
 ----------------------
 
-Each iface also has a connection persistence setting that you can enable or disable by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_PERSISTENT` flag with :c:func:`conn_mgr_binding_set_flag`.
+Each iface also has a connection persistence setting that you can enable or disable by setting the :c:enumerator:`CONN_MGR_IF_PERSISTENT` flag with :c:func:`conn_mgr_binding_set_flag`.
 
 This setting specifies how the iface should handle unintentional connection loss.
 
@@ -416,7 +416,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    In Zephyr, ifaces are automatically taken admin-up (see :ref:`net_if_interface_state_management` for details on iface states) during initialization.
 
-   Applications can disable this behavior by setting the :c:enumerator:`~net_if_flag.NET_IF_NO_AUTO_START` interface flag with :c:func:`net_if_flag_set`.
+   Applications can disable this behavior by setting the :c:enumerator:`NET_IF_NO_AUTO_START` interface flag with :c:func:`net_if_flag_set`.
 
 .. _conn_mgr_control_automations_auto_connect:
 
@@ -424,7 +424,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    By default, Connection Manager will automatically connect any :ref:`bound <conn_mgr_impl_binding>` iface that becomes admin-up.
 
-   Applications can disable this by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_CONNECT` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
+   Applications can disable this by setting the :c:enumerator:`CONN_MGR_IF_NO_AUTO_CONNECT` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
 
 .. _conn_mgr_control_automations_auto_down:
 
@@ -432,7 +432,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    By default, Connection Manager will automatically take any bound iface admin-down if it has given up on associating.
 
-   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
+   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
 
 .. _conn_mgr_control_api:
 

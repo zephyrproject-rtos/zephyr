@@ -18,7 +18,7 @@ void sys_arch_reboot(int type)
 	MAP_PRCMMCUReset(!!type);
 }
 
-static int ti_cc32xx_init(void)
+void soc_early_init_hook(void)
 {
 
 	/* Note: This function also performs CC3220 Initialization */
@@ -32,8 +32,4 @@ static int ti_cc32xx_init(void)
 	MAP_PRCMPeripheralClkEnable(PRCM_UARTA0, PRCM_RUN_MODE_CLK |
 				    PRCM_SLP_MODE_CLK);
 #endif
-
-	return 0;
 }
-
-SYS_INIT(ti_cc32xx_init, PRE_KERNEL_1, 0);

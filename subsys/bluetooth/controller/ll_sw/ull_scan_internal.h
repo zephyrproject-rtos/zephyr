@@ -91,4 +91,8 @@ struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux);
 void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx);
 
 /* Helper function to stop auxiliary scan context */
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+int ull_scan_aux_stop(void *parent);
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 int ull_scan_aux_stop(struct ll_scan_aux_set *aux);
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */

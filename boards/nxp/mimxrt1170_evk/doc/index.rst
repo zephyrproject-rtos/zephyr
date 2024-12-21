@@ -1,7 +1,4 @@
-﻿.. _mimxrt1170_evk:
-
-NXP MIMXRT1170-EVK/EVKB
-#######################
+﻿.. zephyr:board:: mimxrt1170_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The dual core i.MX RT1170 runs on the Cortex-M7 core at 1 GHz and on the Cortex-
 at 400 MHz. The i.MX RT1170 MCU offers support over a wide temperature range
 and is qualified for consumer, industrial and automotive markets. Zephyr
 supports the initial revision of this EVK, as well as rev EVKB.
-
-.. image:: mimxrt1170_evk.jpg
-   :align: center
-   :alt: MIMXRT1170-EVK
 
 Hardware
 ********
@@ -111,8 +104,8 @@ NXP considers the MIMXRT1170-EVK as the superset board for the i.MX RT11xx
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT11xx family.  NXP prioritizes enabling
 this board with new support for Zephyr features. Note that this table
-covers two boards: the RT1170 EVK (`mimxrt1170_evk//cm7/cm4`), and
-RT1170 EVKB (`mimxrt1170_evk@B//cm7/cm4`)
+covers two boards: the RT1170 EVK (``mimxrt1170_evk//cm7/cm4``), and
+RT1170 EVKB (``mimxrt1170_evk@B//cm7/cm4``)
 
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | Interface | Controller | Driver/Component                    | RT1170 EVK      | RT1170 EVKB     |
@@ -160,11 +153,11 @@ RT1170 EVKB (`mimxrt1170_evk@B//cm7/cm4`)
 |           |            | :ref:`rk055hdmipi4ma0`,             |                 |                 |
 |           |            | and :ref:`g1120b0mipi` shields      |                 |                 |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
-| ACMP      | on-chip    | analog comparator                   | Supported       | No support      |
+| ACMP      | on-chip    | sensor                              | Supported       | No support      |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | CAAM RNG  | on-chip    | entropy                             | Supported (M7)  | No support      |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
-| FLEXSPI   | on-chip    | flash programming                   | Supported (M7)  | No support      |
+| FLEXSPI   | on-chip    | flash programming                   | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | SDHC      | on-chip    | SD host controller                  | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
@@ -362,11 +355,6 @@ EVK. See `Using J-Link with MIMXRT1170-EVKB`_ or
 Using LinkServer
 ----------------
 
-Known limitations with LinkServer and these boards include:
-- ``west flash`` will not write images to non-flash locations. The flash
-command only works when all data in the image is written to flash memory
-regions.
-
 Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
 search path.  LinkServer works with the default CMSIS-DAP firmware included in
 the on-board debugger.
@@ -410,7 +398,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Before powering the board, make sure SW1 is set to 0001b
 
@@ -431,7 +419,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -478,4 +466,4 @@ ENET1G Driver
 
 Current default of ethernet driver is to use 100M Ethernet instance ENET.
 To use the 1G Ethernet instance ENET1G, include the overlay to west build with
-the option `-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay` instead.
+the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.

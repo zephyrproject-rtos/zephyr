@@ -64,7 +64,7 @@ static const struct linear_range dcdc1_ranges[] = {
 	LINEAR_RANGE_INIT(700000U, 25000U, 0x00U, 0x7FU),
 };
 
-static const struct regulator_axp192_desc dcdc1_desc = {
+__maybe_unused static const struct regulator_axp192_desc dcdc1_desc = {
 	.enable_reg = AXP192_REG_DCDC123_LDO23_CONTROL,
 	.enable_mask = 0x01U,
 	.enable_val = 0x01U,
@@ -83,7 +83,7 @@ static const struct linear_range dcdc2_ranges[] = {
 	LINEAR_RANGE_INIT(700000U, 25000U, 0x00U, 0x3FU),
 };
 
-static const struct regulator_axp192_desc dcdc2_desc = {
+__maybe_unused static const struct regulator_axp192_desc dcdc2_desc = {
 	.enable_reg = AXP192_REG_EXTEN_DCDC2_CONTROL,
 	.enable_mask = 0x01U,
 	.enable_val = 0x01U,
@@ -102,7 +102,7 @@ static const struct linear_range dcdc3_ranges[] = {
 	LINEAR_RANGE_INIT(700000U, 25000U, 0x00U, 0x7FU),
 };
 
-static const struct regulator_axp192_desc dcdc3_desc = {
+__maybe_unused static const struct regulator_axp192_desc dcdc3_desc = {
 	.enable_reg = AXP192_REG_DCDC123_LDO23_CONTROL,
 	.enable_mask = 0x02U,
 	.enable_val = 0x02U,
@@ -121,7 +121,7 @@ static const struct linear_range ldoio0_ranges[] = {
 	LINEAR_RANGE_INIT(1800000u, 100000u, 0x00u, 0x0Fu),
 };
 
-static const struct regulator_axp192_desc ldoio0_desc = {
+__maybe_unused static const struct regulator_axp192_desc ldoio0_desc = {
 	.enable_reg = AXP192_REG_GPIO0_CONTROL,
 	.enable_mask = 0x07u,
 	.enable_val = 0x03u,
@@ -139,7 +139,7 @@ static const struct linear_range ldo2_ranges[] = {
 	LINEAR_RANGE_INIT(1800000U, 100000U, 0x00U, 0x0FU),
 };
 
-static const struct regulator_axp192_desc ldo2_desc = {
+__maybe_unused static const struct regulator_axp192_desc ldo2_desc = {
 	.enable_reg = AXP192_REG_DCDC123_LDO23_CONTROL,
 	.enable_mask = 0x04U,
 	.enable_val = 0x04U,
@@ -157,7 +157,7 @@ static const struct linear_range ldo3_ranges[] = {
 	LINEAR_RANGE_INIT(1800000U, 100000U, 0x00U, 0x0FU),
 };
 
-static const struct regulator_axp192_desc ldo3_desc = {
+__maybe_unused static const struct regulator_axp192_desc ldo3_desc = {
 	.enable_reg = AXP192_REG_DCDC123_LDO23_CONTROL,
 	.enable_mask = 0x08U,
 	.enable_val = 0x08U,

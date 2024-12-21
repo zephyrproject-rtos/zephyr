@@ -2,16 +2,11 @@
 
 # Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
 # SPDX-License-Identifier: BSD-3-Clause
 
-# This script uses edtlib to generate a header file from a devicetree
-# (.dts) file. Information from binding files in YAML format is used
-# as well.
-#
-# Bindings are files that describe devicetree nodes. Devicetree nodes are
-# usually mapped to bindings via their 'compatible = "..."' property.
-#
-# See Zephyr's Devicetree user guide for details.
+# This script uses edtlib to generate a header file from a pickled
+# edt file.
 #
 # Note: Do not access private (_-prefixed) identifiers from edtlib here (and
 # also note that edtlib is not meant to expose the dtlib API directly).
@@ -20,28 +15,19 @@
 
 import argparse
 from collections import defaultdict
-import logging
 import os
 import pathlib
 import pickle
 import re
 import sys
+from typing import Iterable, NoReturn, Optional
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
                                 'src'))
 
+import edtlib_logger
 from devicetree import edtlib
 
-class LogFormatter(logging.Formatter):
-    '''A log formatter that prints the level name in lower case,
-    for compatibility with earlier versions of edtlib.'''
-
-    def __init__(self):
-        super().__init__(fmt='%(levelnamelower)s: %(message)s')
-
-    def format(self, record):
-        record.levelnamelower = record.levelname.lower()
-        return super().format(record)
 
 def main():
     global header_file
@@ -49,48 +35,12 @@ def main():
 
     args = parse_args()
 
-    setup_edtlib_logging()
+    edtlib_logger.setup_edtlib_logging()
 
-    vendor_prefixes = {}
-    for prefixes_file in args.vendor_prefixes:
-        vendor_prefixes.update(edtlib.load_vendor_prefixes_txt(prefixes_file))
-
-    try:
-        edt = edtlib.EDT(args.dts, args.bindings_dirs,
-                         # Suppress this warning if it's suppressed in dtc
-                         warn_reg_unit_address_mismatch=
-                             "-Wno-simple_bus_reg" not in args.dtc_flags,
-                         default_prop_types=True,
-                         infer_binding_for_paths=["/zephyr,user"],
-                         werror=args.edtlib_Werror,
-                         vendor_prefixes=vendor_prefixes)
-    except edtlib.EDTError as e:
-        sys.exit(f"devicetree error: {e}")
+    with open(args.edt_pickle, 'rb') as f:
+        edt = pickle.load(f)
 
     flash_area_num = 0
-
-    # Save merged DTS source, as a debugging aid
-    with open(args.dts_out, "w", encoding="utf-8") as f:
-        print(edt.dts_source, file=f)
-
-    # The raw index into edt.compat2nodes[compat] is used for node
-    # instance numbering within a compatible.
-    #
-    # As a way to satisfy people's intuitions about instance numbers,
-    # though, we sort this list so enabled instances come first.
-    #
-    # This might look like a hack, but it keeps drivers and
-    # applications which don't use instance numbers carefully working
-    # as expected, since e.g. instance number 0 is always the
-    # singleton instance if there's just one enabled node of a
-    # particular compatible.
-    #
-    # This doesn't violate any devicetree.h API guarantees about
-    # instance ordering, since we make no promises that instance
-    # numbers are stable across builds.
-    for compat, nodes in edt.compat2nodes.items():
-        edt.compat2nodes[compat] = sorted(
-            nodes, key=lambda node: 0 if node.status == "okay" else 1)
 
     # Create the generated header.
     with open(args.header_out, "w", encoding="utf-8") as header_file:
@@ -98,14 +48,16 @@ def main():
 
         write_utils()
 
+        sorted_nodes = sorted(edt.nodes, key=lambda node: node.dep_ordinal)
+
         # populate all z_path_id first so any children references will
         # work correctly.
-        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+        for node in sorted_nodes:
             node.z_path_id = node_z_path_id(node)
 
         # Check to see if we have duplicate "zephyr,memory-region" property values.
         regions = dict()
-        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+        for node in sorted_nodes:
             if 'zephyr,memory-region' in node.props:
                 region = node.props['zephyr,memory-region'].val
                 if region in regions:
@@ -113,7 +65,7 @@ def main():
                              f"between {regions[region].path} and {node.path}")
                 regions[region] = node
 
-        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+        for node in sorted_nodes:
             write_node_comment(node)
 
             out_comment("Node's full path:")
@@ -122,6 +74,12 @@ def main():
             out_comment("Node's name with unit-address:")
             out_dt_define(f"{node.z_path_id}_FULL_NAME",
                           f'"{escape(node.name)}"')
+            out_dt_define(f"{node.z_path_id}_FULL_NAME_UNQUOTED",
+                          f'{escape(node.name)}')
+            out_dt_define(f"{node.z_path_id}_FULL_NAME_TOKEN",
+                          f'{edtlib.str_as_token(escape(node.name))}')
+            out_dt_define(f"{node.z_path_id}_FULL_NAME_UPPER_TOKEN",
+                          f'{edtlib.str_as_token(escape(node.name)).upper()}')
 
             if node.parent is not None:
                 out_comment(f"Node parent ({node.parent.path}) identifier:")
@@ -149,23 +107,8 @@ def main():
         write_chosen(edt)
         write_global_macros(edt)
 
-    if args.edt_pickle_out:
-        write_pickled_edt(edt, args.edt_pickle_out)
 
-
-def setup_edtlib_logging():
-    # The edtlib module emits logs using the standard 'logging' module.
-    # Configure it so that warnings and above are printed to stderr,
-    # using the LogFormatter class defined above to format each message.
-
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(LogFormatter())
-
-    logger = logging.getLogger('edtlib')
-    logger.setLevel(logging.WARNING)
-    logger.addHandler(handler)
-
-def node_z_path_id(node):
+def node_z_path_id(node: edtlib.Node) -> str:
     # Return the node specific bit of the node's path identifier:
     #
     # - the root node's path "/" has path identifier "N"
@@ -183,36 +126,20 @@ def node_z_path_id(node):
 
     return "_".join(components)
 
-def parse_args():
+
+def parse_args() -> argparse.Namespace:
     # Returns parsed command-line arguments
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument("--dts", required=True, help="DTS file")
-    parser.add_argument("--dtc-flags",
-                        help="'dtc' devicetree compiler flags, some of which "
-                             "might be respected here")
-    parser.add_argument("--bindings-dirs", nargs='+', required=True,
-                        help="directory with bindings in YAML format, "
-                        "we allow multiple")
     parser.add_argument("--header-out", required=True,
                         help="path to write header to")
-    parser.add_argument("--dts-out", required=True,
-                        help="path to write merged DTS source code to (e.g. "
-                             "as a debugging aid)")
-    parser.add_argument("--edt-pickle-out",
-                        help="path to write pickled edtlib.EDT object to")
-    parser.add_argument("--vendor-prefixes", action='append', default=[],
-                        help="vendor-prefixes.txt path; used for validation; "
-                             "may be given multiple times")
-    parser.add_argument("--edtlib-Werror", action="store_true",
-                        help="if set, edtlib-specific warnings become errors. "
-                             "(this does not apply to warnings shared "
-                             "with dtc.)")
+    parser.add_argument("--edt-pickle",
+                        help="path to read pickled edtlib.EDT object from")
 
     return parser.parse_args()
 
 
-def write_top_comment(edt):
+def write_top_comment(edt: edtlib.EDT) -> None:
     # Writes an overview comment with misc. info at the top of the header and
     # configuration file
 
@@ -242,14 +169,14 @@ followed by /chosen nodes.
     out_comment(s, blank_before=False)
 
 
-def write_utils():
+def write_utils() -> None:
     # Writes utility macros
 
     out_comment("Used to remove brackets from around a single argument")
     out_define("DT_DEBRACKET_INTERNAL(...)", "__VA_ARGS__")
 
 
-def write_node_comment(node):
+def write_node_comment(node: edtlib.Node) -> None:
     # Writes a comment describing 'node' to the header and configuration file
 
     s = f"""\
@@ -288,7 +215,7 @@ Binding (compatible = {node.matching_compat}):
     out_comment(s)
 
 
-def relativize(path):
+def relativize(path) -> Optional[str]:
     # If 'path' is within $ZEPHYR_BASE, returns it relative to $ZEPHYR_BASE,
     # with a "$ZEPHYR_BASE/..." hint at the start of the string. Otherwise,
     # returns 'path' unchanged.
@@ -304,7 +231,7 @@ def relativize(path):
         return path
 
 
-def write_idents_and_existence(node):
+def write_idents_and_existence(node: edtlib.Node) -> None:
     # Writes macros related to the node's aliases, labels, etc.,
     # as well as existence flags.
 
@@ -327,7 +254,7 @@ def write_idents_and_existence(node):
         out_dt_define(ident, "DT_" + node.z_path_id, width=maxlen)
 
 
-def write_bus(node):
+def write_bus(node: edtlib.Node) -> None:
     # Macros about the node's bus controller, if there is one
 
     bus = node.bus_node
@@ -342,7 +269,7 @@ def write_bus(node):
     out_dt_define(f"{node.z_path_id}_BUS", f"DT_{bus.z_path_id}")
 
 
-def write_special_props(node):
+def write_special_props(node: edtlib.Node) -> None:
     # Writes required macros for special case properties, when the
     # data cannot otherwise be obtained from write_vanilla_props()
     # results
@@ -361,7 +288,8 @@ def write_special_props(node):
     write_fixed_partitions(node)
     write_gpio_hogs(node)
 
-def write_ranges(node):
+
+def write_ranges(node: edtlib.Node) -> None:
     # ranges property: edtlib knows the right #address-cells and
     # #size-cells of parent and child, and can therefore pack the
     # child & parent addresses and sizes correctly
@@ -404,7 +332,8 @@ def write_ranges(node):
     out_dt_define(f"{path_id}_FOREACH_RANGE(fn)",
             " ".join(f"fn(DT_{path_id}, {i})" for i,range in enumerate(node.ranges)))
 
-def write_regs(node):
+
+def write_regs(node: edtlib.Node) -> None:
     # reg property: edtlib knows the right #address-cells and
     # #size-cells, and can therefore pack the register base addresses
     # and sizes correctly
@@ -440,7 +369,8 @@ def write_regs(node):
     for macro, val in name_vals:
         out_dt_define(macro, val)
 
-def write_interrupts(node):
+
+def write_interrupts(node: edtlib.Node) -> None:
     # interrupts property: we have some hard-coded logic for interrupt
     # mapping here.
     #
@@ -508,7 +438,7 @@ def write_interrupts(node):
         out_dt_define(macro, val)
 
 
-def write_compatibles(node):
+def write_compatibles(node: edtlib.Node) -> None:
     # Writes a macro for each of the node's compatibles. We don't care
     # about whether edtlib / Zephyr's binding language recognizes
     # them. The compatibles the node provides are what is important.
@@ -527,7 +457,8 @@ def write_compatibles(node):
             out_dt_define(f"{node.z_path_id}_COMPAT_MODEL_IDX_{i}",
                           quote_str(node.edt.compat2model[compat]))
 
-def write_children(node):
+
+def write_children(node: edtlib.Node) -> None:
     # Writes helper macros for dealing with node's children.
 
     out_comment("Helper macros for child nodes of this node.")
@@ -574,11 +505,11 @@ def write_children(node):
             for child in node.children.values() if child.status == "okay"))
 
 
-def write_status(node):
+def write_status(node: edtlib.Node) -> None:
     out_dt_define(f"{node.z_path_id}_STATUS_{str2ident(node.status)}", 1)
 
 
-def write_pinctrls(node):
+def write_pinctrls(node: edtlib.Node) -> None:
     # Write special macros for pinctrl-<index> and pinctrl-names properties.
 
     out_comment("Pin control (pinctrl-<i>, pinctrl-names) properties:")
@@ -608,7 +539,7 @@ def write_pinctrls(node):
                           f"DT_{ph.z_path_id}")
 
 
-def write_fixed_partitions(node):
+def write_fixed_partitions(node: edtlib.Node) -> None:
     # Macros for child nodes of each fixed-partitions node.
 
     if not (node.parent and "fixed-partitions" in node.parent.compats):
@@ -620,7 +551,7 @@ def write_fixed_partitions(node):
     flash_area_num += 1
 
 
-def write_gpio_hogs(node):
+def write_gpio_hogs(node: edtlib.Node) -> None:
     # Write special macros for gpio-hog node properties.
 
     macro = f"{node.z_path_id}_GPIO_HOGS"
@@ -635,7 +566,8 @@ def write_gpio_hogs(node):
         for macro, val in macro2val.items():
             out_dt_define(macro, val)
 
-def write_vanilla_props(node):
+
+def write_vanilla_props(node: edtlib.Node) -> None:
     # Writes macros for any and all properties defined in the
     # "properties" section of the binding for the node.
     #
@@ -656,12 +588,7 @@ def write_vanilla_props(node):
             macro2val[macro] = val
 
         if prop.spec.type == 'string':
-            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UNQUOTED
-            macro2val[macro + "_STRING_UNQUOTED"] = prop.val
-            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_TOKEN
-            macro2val[macro + "_STRING_TOKEN"] = prop.val_as_token
-            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UPPER_TOKEN
-            macro2val[macro + "_STRING_UPPER_TOKEN"] = prop.val_as_token.upper()
+            macro2val.update(string_macros(macro, prop.val))
             # DT_N_<node-id>_P_<prop-id>_IDX_0:
             # DT_N_<node-id>_P_<prop-id>_IDX_0_EXISTS:
             # Allows treating the string like a degenerate case of a
@@ -669,45 +596,13 @@ def write_vanilla_props(node):
             macro2val[macro + "_IDX_0"] = quote_str(prop.val)
             macro2val[macro + "_IDX_0_EXISTS"] = 1
 
-        if prop.enum_index is not None:
-            # DT_N_<node-id>_P_<prop-id>_ENUM_IDX
-            macro2val[macro + "_ENUM_IDX"] = prop.enum_index
-            spec = prop.spec
-
-            if spec.enum_tokenizable:
-                as_token = prop.val_as_token
-
-                # DT_N_<node-id>_P_<prop-id>_ENUM_VAL_<val>_EXISTS 1
-                macro2val[macro + f"_ENUM_VAL_{as_token}_EXISTS"] = 1
-                # DT_N_<node-id>_P_<prop-id>_ENUM_TOKEN
-                macro2val[macro + "_ENUM_TOKEN"] = as_token
-
-                if spec.enum_upper_tokenizable:
-                    # DT_N_<node-id>_P_<prop-id>_ENUM_UPPER_TOKEN
-                    macro2val[macro + "_ENUM_UPPER_TOKEN"] = as_token.upper()
-            else:
-                # DT_N_<node-id>_P_<prop-id>_ENUM_VAL_<val>_EXISTS 1
-                macro2val[macro + f"_ENUM_VAL_{prop.val}_EXISTS"] = 1
+        if prop.enum_indices is not None:
+            macro2val.update(enum_macros(prop, macro))
 
         if "phandle" in prop.type:
             macro2val.update(phandle_macros(prop, macro))
         elif "array" in prop.type:
-            for i, subval in enumerate(prop.val):
-                # DT_N_<node-id>_P_<prop-id>_IDX_<i>
-                # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
-
-                if isinstance(subval, str):
-                    macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
-                    subval_as_token = edtlib.str_as_token(subval)
-                    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UNQUOTED
-                    macro2val[macro + f"_IDX_{i}_STRING_UNQUOTED"] = subval
-                    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_TOKEN
-                    macro2val[macro + f"_IDX_{i}_STRING_TOKEN"] = subval_as_token
-                    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UPPER_TOKEN
-                    macro2val[macro + f"_IDX_{i}_STRING_UPPER_TOKEN"] = subval_as_token.upper()
-                else:
-                    macro2val[macro + f"_IDX_{i}"] = subval
-                macro2val[macro + f"_IDX_{i}_EXISTS"] = 1
+            macro2val.update(array_macros(prop, macro))
 
         plen = prop_len(prop)
         if plen is not None:
@@ -749,7 +644,59 @@ def write_vanilla_props(node):
         out_comment("(No generic property macros)")
 
 
-def write_dep_info(node):
+def string_macros(macro: str, val: str):
+    # Returns a dict of macros for a string 'val'.
+    # The 'macro' argument is the N_<node-id>_P_<prop-id>... part.
+
+    as_token = edtlib.str_as_token(val)
+    return {
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UNQUOTED
+        f"{macro}_STRING_UNQUOTED": escape_unquoted(val),
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_TOKEN
+        f"{macro}_STRING_TOKEN": as_token,
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UPPER_TOKEN
+        f"{macro}_STRING_UPPER_TOKEN": as_token.upper()}
+
+
+def enum_macros(prop: edtlib.Property, macro: str):
+    # Returns a dict of macros for property 'prop' with a defined enum in their dt-binding.
+    # The 'macro' argument is the N_<node-id>_P_<prop-id> part.
+
+    spec = prop.spec
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_IDX
+    ret = {f"{macro}_IDX_{i}_ENUM_IDX": index for i, index in enumerate(prop.enum_indices)}
+    val = prop.val_as_tokens if spec.enum_tokenizable else (prop.val if isinstance(prop.val, list) else [prop.val])
+
+    for i, subval in enumerate(val):
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+        ret[macro + f"_IDX_{i}_EXISTS"] = 1
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_VAL_<val>_EXISTS 1
+        ret[macro + f"_IDX_{i}_ENUM_VAL_{subval}_EXISTS"] = 1
+
+    return ret
+
+
+def array_macros(prop: edtlib.Property, macro: str):
+    # Returns a dict of macros for array property 'prop'.
+    # The 'macro' argument is the N_<node-id>_P_<prop-id> part.
+
+    ret = {}
+    for i, subval in enumerate(prop.val):
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+        ret[macro + f"_IDX_{i}_EXISTS"] = 1
+
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>
+        if isinstance(subval, str):
+            ret[macro + f"_IDX_{i}"] = quote_str(subval)
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_...
+            ret.update(string_macros(macro + f"_IDX_{i}", subval))
+        else:
+            ret[macro + f"_IDX_{i}"] = subval
+
+    return ret
+
+
+def write_dep_info(node: edtlib.Node) -> None:
     # Write dependency-related information about the node.
 
     def fmt_dep_list(dep_list):
@@ -775,7 +722,7 @@ def write_dep_info(node):
                   fmt_dep_list(node.required_by))
 
 
-def prop2value(prop):
+def prop2value(prop: edtlib.Property) -> edtlib.PropertyValType:
     # Gets the macro value for property 'prop', if there is
     # a single well-defined C rvalue that it can be represented as.
     # Returns None if there isn't one.
@@ -799,7 +746,7 @@ def prop2value(prop):
     return None
 
 
-def prop_len(prop):
+def prop_len(prop: edtlib.Property) -> Optional[int]:
     # Returns the property's length if and only if we should generate
     # a _LEN macro for the property. Otherwise, returns None.
     #
@@ -834,7 +781,7 @@ def prop_len(prop):
     return None
 
 
-def phandle_macros(prop, macro):
+def phandle_macros(prop: edtlib.Property, macro: str) -> dict:
     # Returns a dict of macros for phandle or phandles property 'prop'.
     #
     # The 'macro' argument is the N_<node-id>_P_<prop-id> bit.
@@ -874,7 +821,7 @@ def phandle_macros(prop, macro):
     return ret
 
 
-def controller_and_data_macros(entry, i, macro):
+def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: str):
     # Helper procedure used by phandle_macros().
     #
     # Its purpose is to write the "controller" (i.e. label property of
@@ -915,7 +862,7 @@ def controller_and_data_macros(entry, i, macro):
     return ret
 
 
-def write_chosen(edt):
+def write_chosen(edt: edtlib.EDT):
     # Tree-wide information such as chosen nodes is printed here.
 
     out_comment("Chosen nodes\n")
@@ -928,7 +875,7 @@ def write_chosen(edt):
         out_define(macro, value, width=max_len)
 
 
-def write_global_macros(edt):
+def write_global_macros(edt: edtlib.EDT):
     # Global or tree-wide information, such as number of instances
     # with status "okay" for each compatible, is printed here.
 
@@ -1008,19 +955,25 @@ def write_global_macros(edt):
             out_define(
                 f"DT_COMPAT_{str2ident(compat)}_BUS_{str2ident(bus)}", 1)
 
-def str2ident(s):
+
+def str2ident(s: str) -> str:
     # Converts 's' to a form suitable for (part of) an identifier
 
     return re.sub('[-,.@/+]', '_', s.lower())
 
 
-def list2init(l):
+def list2init(l: Iterable[str]) -> str:
     # Converts 'l', a Python list (or iterable), to a C array initializer
 
     return "{" + ", ".join(l) + "}"
 
 
-def out_dt_define(macro, val, width=None, deprecation_msg=None):
+def out_dt_define(
+    macro: str,
+    val: str,
+    width: Optional[int] = None,
+    deprecation_msg: Optional[str] = None,
+) -> str:
     # Writes "#define DT_<macro> <val>" to the header file
     #
     # The macro will be left-justified to 'width' characters if that
@@ -1037,7 +990,12 @@ def out_dt_define(macro, val, width=None, deprecation_msg=None):
     return ret
 
 
-def out_define(macro, val, width=None, deprecation_msg=None):
+def out_define(
+    macro: str,
+    val: str,
+    width: Optional[int] = None,
+    deprecation_msg: Optional[str] = None,
+) -> None:
     # Helper for out_dt_define(). Outputs "#define <macro> <val>",
     # adds a deprecation message if given, and allocates whitespace
     # unless told not to.
@@ -1052,7 +1010,7 @@ def out_define(macro, val, width=None, deprecation_msg=None):
     print(s, file=header_file)
 
 
-def out_comment(s, blank_before=True):
+def out_comment(s: str, blank_before=True) -> None:
     # Writes 's' as a comment to the header and configuration file. 's' is
     # allowed to have multiple lines. blank_before=True adds a blank line
     # before the comment.
@@ -1083,36 +1041,39 @@ def out_comment(s, blank_before=True):
         print("/* " + s + " */", file=header_file)
 
 
-def escape(s):
-    # Backslash-escapes any double quotes and backslashes in 's'
+ESCAPE_TABLE = str.maketrans(
+    {
+        "\n": "\\n",
+        "\r": "\\r",
+        "\\": "\\\\",
+        '"': '\\"',
+    }
+)
 
-    # \ must be escaped before " to avoid double escaping
-    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+def escape(s: str) -> str:
+    # Backslash-escapes any double quotes, backslashes, and new lines in 's'
+
+    return s.translate(ESCAPE_TABLE)
 
 
-def quote_str(s):
+def quote_str(s: str) -> str:
     # Puts quotes around 's' and escapes any double quotes and
     # backslashes within it
 
     return f'"{escape(s)}"'
 
 
-def write_pickled_edt(edt, out_file):
-    # Writes the edt object in pickle format to out_file.
+def escape_unquoted(s: str) -> str:
+    # C macros cannot contain line breaks, so replace them with spaces.
+    # Whitespace is used to separate preprocessor tokens, but it does not matter
+    # which whitespace characters are used, so a line break and a space are
+    # equivalent with regards to unquoted strings being used as C code.
 
-    with open(out_file, 'wb') as f:
-        # Pickle protocol version 4 is the default as of Python 3.8
-        # and was introduced in 3.4, so it is both available and
-        # recommended on all versions of Python that Zephyr supports
-        # (at time of writing, Python 3.6 was Zephyr's minimum
-        # version, and 3.8 the most recent CPython release).
-        #
-        # Using a common protocol version here will hopefully avoid
-        # reproducibility issues in different Python installations.
-        pickle.dump(edt, f, protocol=4)
+    return s.replace("\r", " ").replace("\n", " ")
 
 
-def err(s):
+def err(s: str) -> NoReturn:
     raise Exception(s)
 
 

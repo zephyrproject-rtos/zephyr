@@ -417,7 +417,7 @@ int icm42688_read_all(const struct device *dev, uint8_t data[14]);
 static inline void icm42688_accel_g(struct icm42688_cfg *cfg, int32_t in, int32_t *out_g,
 				    uint32_t *out_ug)
 {
-	int32_t sensitivity = 0; /* value equivalent for 1g */
+	int32_t sensitivity;
 
 	switch (cfg->accel_fs) {
 	case ICM42688_DT_ACCEL_FS_2:
@@ -432,6 +432,8 @@ static inline void icm42688_accel_g(struct icm42688_cfg *cfg, int32_t in, int32_
 	case ICM42688_DT_ACCEL_FS_16:
 		sensitivity = 2048;
 		break;
+	default:
+		CODE_UNREACHABLE;
 	}
 
 	/* Whole g's */
@@ -452,7 +454,7 @@ static inline void icm42688_accel_g(struct icm42688_cfg *cfg, int32_t in, int32_
 static inline void icm42688_gyro_dps(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_dps,
 				     uint32_t *out_udps)
 {
-	int64_t sensitivity = 0; /* value equivalent for 10x gyro reading deg/s */
+	int64_t sensitivity;
 
 	switch (cfg->gyro_fs) {
 	case ICM42688_DT_GYRO_FS_2000:
@@ -479,6 +481,8 @@ static inline void icm42688_gyro_dps(const struct icm42688_cfg *cfg, int32_t in,
 	case ICM42688_DT_GYRO_FS_15_625:
 		sensitivity = 20972;
 		break;
+	default:
+		CODE_UNREACHABLE;
 	}
 
 	int32_t in10 = in * 10;

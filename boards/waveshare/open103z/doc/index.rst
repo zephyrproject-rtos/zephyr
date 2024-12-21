@@ -1,14 +1,9 @@
-.. _waveshare_open103z_board:
-
-Waveshare Open103Z
-##################
+.. zephyr:board:: waveshare_open103z
 
 Overview
 ********
 
 The Waveshare Open103Z-64 is a development board equipped with STM32F103ZE MCU.
-
-.. image:: img/waveshare_open103z.jpg
 
 Hardware
 ********
@@ -55,7 +50,7 @@ Flashing
 ========
 
 Build and flash applications as usual. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -66,7 +61,7 @@ Debugging
 =========
 
 Debug applications as usual. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -1,7 +1,4 @@
-.. _gd32f450v_start:
-
-GigaDevice GD32F450V-START
-##########################
+.. zephyr:board:: gd32f450v_start
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32F450VK Cortex-M4F Stretch Performance MCU.
 The GD32F450VK features a single-core ARM Cortex-M4F MCU which can run up
 to 200 MHz with flash accesses zero wait states, 3072kiB of Flash, 256kiB of
 SRAM and 82 GPIOs.
-
-.. image:: img/gd32f450v_start.webp
-     :align: center
-     :alt: gd32f450v_start
 
 Hardware
 ********
@@ -89,7 +82,7 @@ The GD32F450V-START includes an onboard programmer/debugger (GD-Link) which
 allows flash programming and debugging over USB. There is also a SWD header
 (JP100) which can be used with tools like Segger J-Link.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

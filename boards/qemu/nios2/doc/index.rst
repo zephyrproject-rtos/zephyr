@@ -1,7 +1,4 @@
-.. _qemu_nios2:
-
-Altera Nios-II Emulation (QEMU)
-###############################
+.. zephyr:board:: qemu_nios2
 
 Overview
 ********

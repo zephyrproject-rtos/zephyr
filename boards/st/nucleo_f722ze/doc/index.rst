@@ -1,7 +1,4 @@
-.. _nucleo_f722ze_board:
-
-ST Nucleo F722ZE
-################
+.. zephyr:board:: nucleo_f722ze
 
 Overview
 ********
@@ -22,11 +19,6 @@ Key Features:
    - ST Morpho connector
 - On-board ST-LINK debugger/programmer
 - Flexible power supply options, including ST-LINK VBUS and external sources.
-
-.. image:: img/nucleo_f722ze.jpg
-   :width: 800px
-   :align: center
-   :alt: Nucleo F722ZE
 
 Hardware
 ********
@@ -182,15 +174,26 @@ Programming and Debugging
 *************************
 
 The ``nucleo_f722ze`` can be flashed and debugged in the typical manner.
-The Nucleo F722ZE board includes an ST-LINK V2-1 debugger, which can be used
-with the OpenOCD version provided with the Zephyr SDK. Refer to
-:ref:`build_an_application` and :ref:`application_run` for detailed
+The Nucleo F722ZE board includes an ST-LINK V2-1 debugger.
+
+Refer to :ref:`build_an_application` and :ref:`application_run` for detailed
 instructions.
 
 Flashing
 ========
 
-Build the :ref:`hello_world` application and flash it using the on-board
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
+Build the :zephyr:code-sample:`hello_world` application and flash it using the on-board
 ST-LINK interface:
 
 .. zephyr-app-commands::
@@ -207,14 +210,6 @@ Debugging
    :maybe-skip-config:
    :goals: debug
 
-J-Link OB Firmware
-------------------
-
-Like many other STM32 evaluation boards, the Nucleo F722ZE's on-board ST-LINK
-debug interface may be flashed with `SEGGER J-Link OB firmware`_. This
-firmware turns the ST-LINK into a J-Link probe. If the on-board debugger has
-been re-flashed with J-Link OB firmware, simply append ``--runner jlink`` to
-all flashing/debugging commands.
 
 References
 **********
@@ -243,3 +238,6 @@ More information about Nucleo F722ZE:
 
 .. _STM32 Nucleo-144 User Manual (UM1974):
    https://www.st.com/resource/en/user_manual/um1974-stm32-nucleo144-boards-mb1137-stmicroelectronics.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

@@ -21,10 +21,12 @@ endif()
 if(CONFIG_NATIVE_APPLICATION)
 	zephyr_include_directories(
 		nsi_compat/
+		${ZEPHYR_BASE}/scripts/native_simulator/common/src/include/
 	)
 	zephyr_library_sources(
-		posix_core.c
+		posix_core_nsi.c
 		nsi_compat/nsi_compat.c
+		${ZEPHYR_BASE}/scripts/native_simulator/common/src/nct.c
 		${ZEPHYR_BASE}/scripts/native_simulator/common/src/nce.c
 		${ZEPHYR_BASE}/scripts/native_simulator/common/src/nsi_host_trampolines.c
 	)

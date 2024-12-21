@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include <zephyr/sys/crc.h>
 #include <zephyr/net/net_ip.h>
@@ -29,13 +30,14 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include "dns_pack.h"
 #include "dns_internal.h"
 #include "dns_cache.h"
+#include "../../ip/net_stats.h"
 
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
 
-extern void dns_dispatcher_svc_handler(struct k_work *work);
+extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, NULL, dns_dispatcher_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, dns_dispatcher_svc_handler,
 				      DNS_RESOLVER_MAX_POLL);
 
 #define MDNS_IPV4_ADDR "224.0.0.251:5353"
@@ -652,7 +654,7 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 	struct dns_addrinfo info = { 0 };
 	uint32_t ttl; /* RR ttl, so far it is not passed to caller */
 	uint8_t *src, *addr;
-	const char *query_name;
+	char *query_name;
 	int address_size;
 	/* index that points to the current answer being analyzed */
 	int answer_ptr;
@@ -741,6 +743,13 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			}
 
 			query_name = dns_msg->msg + dns_msg->query_offset;
+
+			/* Convert the query name to small case so that our
+			 * hash checker can find it.
+			 */
+			for (size_t i = 0, n = strlen(query_name); i < n; i++) {
+				query_name[i] = tolower(query_name[i]);
+			}
 
 			/* Add \0 and query type (A or AAAA) to the hash */
 			*query_hash = crc16_ansi(query_name,
@@ -954,6 +963,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	int server_addr_len;
 	uint16_t dns_id, len;
 	int ret, sock, family;
+	char *query_name;
 
 	sock = ctx->servers[server_idx].sock;
 	family = ctx->servers[server_idx].dns_server.sa_family;
@@ -970,11 +980,20 @@ static int dns_write(struct dns_resolve_context *ctx,
 		return -EINVAL;
 	}
 
+	query_name = buf + DNS_MSG_HEADER_SIZE;
+
+	/* Convert the query name to small case so that our
+	 * hash checker can find it later when we get the answer.
+	 */
+	for (int i = 0; i < dns_qname->len; i++) {
+		query_name[i] = tolower(query_name[i]);
+	}
+
 	/* Add \0 and query type (A or AAAA) to the hash. Note that
 	 * the dns_qname->len contains the length of \0
 	 */
 	ctx->queries[query_idx].query_hash =
-		crc16_ansi(buf + DNS_MSG_HEADER_SIZE, dns_qname->len + 2);
+		crc16_ansi(query_name, dns_qname->len + 2);
 
 	if (hop_limit > 0) {
 		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
@@ -1041,6 +1060,20 @@ static int dns_write(struct dns_resolve_context *ctx,
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", -errno);
 		return ret;
+	} else {
+		if (IS_ENABLED(CONFIG_NET_STATISTICS_DNS)) {
+			struct net_if *iface = NULL;
+
+			if (IS_ENABLED(CONFIG_NET_IPV6) && server->sa_family == AF_INET6) {
+				iface = net_if_ipv6_select_src_iface(&net_sin6(server)->sin6_addr);
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) && server->sa_family == AF_INET) {
+				iface = net_if_ipv4_select_src_iface(&net_sin(server)->sin_addr);
+			}
+
+			if (iface != NULL) {
+				net_stats_update_dns_sent(iface);
+			}
+		}
 	}
 
 	return 0;
@@ -1285,7 +1318,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 
 try_resolve:
 #ifdef CONFIG_DNS_RESOLVER_CACHE
-	ret = dns_cache_find(&dns_cache, query, cached_info, sizeof(cached_info));
+	ret = dns_cache_find(&dns_cache, query, cached_info, ARRAY_SIZE(cached_info));
 	if (ret > 0) {
 		/* The query was cached, no
 		 * need to continue further.

@@ -1,0 +1,19 @@
+# Gecko and Si32 SDK
+
+# Copyright (c) 2017, Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_SILABS_MODULE
+	bool
+
+config ZEPHYR_HAL_SILABS_MODULE_BLOBS
+	bool
+
+config HAS_SILABS_GECKO
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+
+config HAS_SILABS_SI32
+	bool
+	select HAS_CMSIS_CORE

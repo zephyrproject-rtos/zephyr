@@ -31,6 +31,21 @@ COND_CODE_1(DT_NODE_EXISTS(DT_INST(1, ite_it8xxx2_usbpd)), (2), (1))
  */
 #define SOC_USBPD_ITE_ACTIVE_PORT_COUNT DT_NUM_INST_STATUS_OKAY(ite_it8xxx2_usbpd)
 
+/* PLL Frequency Auto-Calibration Control 0 Register */
+#define PLL_FREQ_AUTO_CAL_EN       BIT(7)
+#define LOCK_TUNING_FACTORS_OF_LCO BIT(3)
+/* LC Oscillator Control Register */
+#define LCO_Power_CTRL             BIT(1)
+/* LC Oscillator Control Register 1 */
+#define LDO_Power_CTRL             BIT(1)
+/* LC Oscillator Tuning Factor 2 */
+#define LCO_SC_FACTOR_MASK         GENMASK(6, 4)
+#define LCO_SC_FACTOR(n)           FIELD_PREP(LCO_SC_FACTOR_MASK, n)
+/* PLL Frequency Auto-Calibration Control 2 Register */
+#define AUTO_CAL_ENABLE            BIT(1)
+#define PLL_FREQ_AUTO_CAL_START    BIT(0)
+#define AUTO_CAL_ENABLE_AND_START  (AUTO_CAL_ENABLE | PLL_FREQ_AUTO_CAL_START)
+
 uint32_t chip_get_pll_freq(void)
 {
 	uint32_t pllfreq;
@@ -83,7 +98,9 @@ void __soc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
 struct pll_config_t {
 	uint8_t pll_freq;
+	uint8_t div_mcu;
 	uint8_t div_fnd;
+	uint8_t div_usb;
 	uint8_t div_uart;
 	uint8_t div_smb;
 	uint8_t div_sspi;
@@ -93,10 +110,18 @@ struct pll_config_t {
 	uint8_t div_usbpd;
 };
 
-static const struct pll_config_t pll_configuration[] = {
+enum pll_frequency {
+	PLL_FREQ_48M = 0,
+	PLL_FREQ_96M,
+	PLL_FREQ_CNT
+};
+
+static const struct pll_config_t pll_configuration[PLL_FREQ_CNT] = {
 	/*
 	 * PLL frequency setting = 4 (48MHz)
+	 * MCU   div = 0 (PLL / 1 = 48 mhz)
 	 * FND   div = 0 (PLL / 1 = 48 mhz)
+	 * USB   div = 0 (PLL / 1 = 48 mhz)
 	 * UART  div = 1 (PLL / 2 = 24 mhz)
 	 * SMB   div = 1 (PLL / 2 = 24 mhz)
 	 * SSPI  div = 1 (PLL / 2 = 24 mhz)
@@ -105,19 +130,49 @@ static const struct pll_config_t pll_configuration[] = {
 	 * PWM   div = 0 (PLL / 1 = 48 mhz)
 	 * USBPD div = 5 (PLL / 6 =  8 mhz)
 	 */
-	{.pll_freq  = 4,
-	 .div_fnd   = 0,
-	 .div_uart  = 1,
-	 .div_smb   = 1,
-	 .div_sspi  = 1,
+	[PLL_FREQ_48M] = {.pll_freq = 4,
+			  .div_mcu = 0,
+			  .div_fnd = 0,
+			  .div_usb = 0,
+			  .div_uart = 1,
+			  .div_smb = 1,
+			  .div_sspi = 1,
 #ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
-	 .div_ec    = 1,
+			  .div_ec = 1,
 #else
-	 .div_ec    = 6,
+			  .div_ec = 6,
 #endif
-	 .div_jtag  = 1,
-	 .div_pwm   = 0,
-	 .div_usbpd = 5}
+			  .div_jtag = 1,
+			  .div_pwm = 0,
+			  .div_usbpd = 5},
+	/*
+	 * PLL frequency setting = 7 (96MHz)
+	 * MCU   div = 1 (PLL / 2 = 48 mhz)
+	 * FND   div = 1 (PLL / 2 = 48 mhz)
+	 * USB   div = 1 (PLL / 2 = 48 mhz)
+	 * UART  div = 3 (PLL / 4 = 24 mhz)
+	 * SMB   div = 3 (PLL / 4 = 24 mhz)
+	 * SSPI  div = 3 (PLL / 4 = 24 mhz)
+	 * EC    div = 6 (FND / 6 =  8 mhz)
+	 * JTAG  div = 3 (PLL / 4 = 24 mhz)
+	 * PWM   div = 1 (PLL / 2 = 48 mhz)
+	 * USBPD div = 11 (PLL / 12 =  8 mhz)
+	 */
+	[PLL_FREQ_96M] = {.pll_freq = 7,
+			  .div_mcu = 1,
+			  .div_fnd = 1,
+			  .div_usb = 1,
+			  .div_uart = 3,
+			  .div_smb = 3,
+			  .div_sspi = 3,
+#ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
+			  .div_ec = 1,
+#else
+			  .div_ec = 6,
+#endif
+			  .div_jtag = 3,
+			  .div_pwm = 1,
+			  .div_usbpd = 11},
 };
 
 void __soc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
@@ -142,12 +197,12 @@ void __soc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
 	chip_pll_ctrl(CHIP_PLL_SLEEP);
 	/* Chip sleep and wait timer wake it up */
 	__asm__ volatile  ("wfi");
-	/* New FND clock frequency */
-	IT8XXX2_ECPM_SCDCR0 = pll->div_fnd << 4;
+	/* New FND and MCU clock frequency */
+	IT8XXX2_ECPM_SCDCR0 = (pll->div_fnd << 4) | pll->div_mcu;
 	/* Chip doze after wfi instruction */
 	chip_pll_ctrl(CHIP_PLL_DOZE);
-	/* UART */
-	IT8XXX2_ECPM_SCDCR1 = pll->div_uart;
+	/* USB and UART */
+	IT8XXX2_ECPM_SCDCR1 = (pll->div_usb << 4) | pll->div_uart;
 	/* SSPI and SMB */
 	IT8XXX2_ECPM_SCDCR2 = (pll->div_sspi << 4) | pll->div_smb;
 	/* USBPD and PWM */
@@ -182,8 +237,27 @@ static int chip_change_pll(void)
 	if (IS_ENABLED(CONFIG_HAS_ITE_INTC)) {
 		ite_intc_save_and_disable_interrupts();
 	}
+
+	/* Disable auto calibration before setting PLL frequency */
+	if (IT8XXX2_ECPM_PFACC0R & PLL_FREQ_AUTO_CAL_EN) {
+		IT8XXX2_ECPM_PFACC0R &= ~PLL_FREQ_AUTO_CAL_EN;
+	}
+
 	/* configure PLL/CPU/flash clock */
-	chip_configure_pll(&pll_configuration[0]);
+	if (IS_ENABLED(CONFIG_SOC_IT8XXX2_LCVCO)) {
+		chip_configure_pll(&pll_configuration[PLL_FREQ_96M]);
+
+		/* Enable LCVCO calibration */
+		IT8XXX2_ECPM_PFACC1R = 0x01;
+		IT8XXX2_ECPM_PFACC0R |= (PLL_FREQ_AUTO_CAL_EN | LOCK_TUNING_FACTORS_OF_LCO);
+		IT8XXX2_ECPM_LCOCR |= LCO_Power_CTRL;
+		IT8XXX2_ECPM_LCOCR1 |= LDO_Power_CTRL;
+		IT8XXX2_ECPM_LCOTF2 &= ~LCO_SC_FACTOR_MASK;
+		IT8XXX2_ECPM_LCOTF2 |= LCO_SC_FACTOR(2);
+		IT8XXX2_ECPM_PFACC2R = AUTO_CAL_ENABLE_AND_START;
+	} else {
+		chip_configure_pll(&pll_configuration[PLL_FREQ_48M]);
+	}
 	if (IS_ENABLED(CONFIG_HAS_ITE_INTC)) {
 		ite_intc_restore_interrupts();
 	}
@@ -252,6 +326,12 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 		 * wfi success.
 		 */
 	} while (ite_intc_no_irq());
+
+	if (IS_ENABLED(CONFIG_SOC_IT8XXX2_LCVCO)) {
+		if (mode != CHIP_PLL_DOZE) {
+			IT8XXX2_ECPM_PFACC2R |= PLL_FREQ_AUTO_CAL_START;
+		}
+	}
 
 #ifdef CONFIG_ESPI
 	/* CPU has been woken up, the interrupt is no longer needed */
@@ -323,7 +403,7 @@ static int ite_it8xxx2_init(void)
 	IT8XXX2_EGPIO_EGCR |= IT8XXX2_EGPIO_EEPODD;
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1))
 	/* UART1 board init */
 	/* bit2: clocks to UART1 modules are not gated. */
 	IT8XXX2_ECPM_CGCTRL3R &= ~BIT(2);
@@ -337,9 +417,9 @@ static int ite_it8xxx2_init(void)
 	/* switch UART1 on without hardware flow control */
 	gpio_regs->GPIO_GCR1 |= IT8XXX2_GPIO_U1CTRL_SIN0_SOUT0_EN;
 
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) */
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2))
 	/* UART2 board init */
 	/* setting voltage 3.3v */
 	gpio_regs->GPIO_GCR21 &= ~(IT8XXX2_GPIO_GPH1VS | IT8XXX2_GPIO_GPH2VS);
@@ -355,7 +435,7 @@ static int ite_it8xxx2_init(void)
 	/* switch UART2 on without hardware flow control */
 	gpio_regs->GPIO_GCR1 |= IT8XXX2_GPIO_U2CTRL_SIN1_SOUT1_EN;
 
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) */
 
 #if (SOC_USBPD_ITE_PHY_PORT_COUNT > 0)
 	int port;

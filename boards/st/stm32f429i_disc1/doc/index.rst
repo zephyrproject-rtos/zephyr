@@ -1,7 +1,4 @@
-.. _stm32f429i_disc1_board:
-
-ST STM32F429I Discovery
-#######################
+.. zephyr:board:: stm32f429i_disc1
 
 Overview
 ********
@@ -30,10 +27,6 @@ some highlights of the STM32F429I-DISC1 board:
 	- LD2 (red) for 3.3 V power-on
 	- Two user LEDs: LD3 (green), LD4 (red)
 	- Two USB OTG LEDs: LD5 (green) VBUS and LD6 (red) OC (over-current)
-
-.. image:: img/stm32f429i_disc1.jpg
-     :align: center
-     :alt: STM32F429I-DISC1
 
 More information about the board can be found at the `STM32F429I-DISC1 website`_.
 
@@ -182,7 +175,7 @@ Alternatively, you can use `STM32CubeProgrammer`_ (after installing it) using th
 First, connect the STM32F429I-DISC1 Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -206,7 +199,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -1,7 +1,4 @@
-.. _kv260_r5:
-
-Xilinx KV260 Development Board RPU Cortex-R5
-############################################
+.. zephyr:board:: kv260_r5
 
 Overview
 ********
@@ -16,10 +13,6 @@ This processing unit is based on an ARM Cortex-R5 CPU, it also enables the follo
 * ARM PL-390 Generic Interrupt Controller
 * Xilinx Zynq TTC (Cadence TTC)
 * Xilinx Zynq UART
-
-.. figure:: kv260-starter-kit.jpg
-   :align: center
-   :alt: Xilinx KV260 Starter Kit
 
 Hardware
 ********

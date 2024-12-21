@@ -22,11 +22,13 @@ virtual connections).
 Prerequisites
 *************
 
-On the Linux Host, fetch the Zephyr ``net-tools`` project, which is located
-in a separate Git repository:
+On the Linux Host, find the Zephyr `net-tools`_ project, which can either be
+found in a Zephyr standard installation under the ``tools/net-tools`` directory
+or installed stand alone from its own git repository:
 
 .. code-block:: console
 
+   sudo apt install -y socat libpcap-dev
    git clone https://github.com/zephyrproject-rtos/net-tools
    cd net-tools
    make
@@ -247,9 +249,8 @@ Terminal #1:
 
 .. code-block:: console
 
-   socat PTY,link=/tmp/slip.devMAIN UNIX-LISTEN:/tmp/slip.sockMAIN
-   $ZEPHYR_BASE/../net-tools/tunslip6 -t tapMAIN -T -s /tmp/slip.devMAIN \
-        2001:db8::1/64
+   socat PTY,link=/tmp/slip.devMAIN UNIX-LISTEN:/tmp/slip.sockMAIN &
+   sudo $ZEPHYR_BASE/../tools/net-tools/tunslip6 -t tapMAIN -T -s /tmp/slip.devMAIN 2001:db8::1/64 &
    # Now run Zephyr
    make -Cbuild run QEMU_INSTANCE=MAIN
 
@@ -258,7 +259,8 @@ Terminal #2:
 
 .. code-block:: console
 
-   socat PTY,link=/tmp/slip.devOTHER UNIX-LISTEN:/tmp/slip.sockOTHER
-   $ZEPHYR_BASE/../net-tools/tunslip6 -t tapOTHER -T -s /tmp/slip.devOTHER \
-        2001:db8::1/64
+   socat PTY,link=/tmp/slip.devOTHER UNIX-LISTEN:/tmp/slip.sockOTHER &
+   sudo $ZEPHYR_BASE/../tools/net-tools/tunslip6 -t tapOTHER -T -s /tmp/slip.devOTHER 2001:db8::1/64 &
    make -Cbuild run QEMU_INSTANCE=OTHER
+
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

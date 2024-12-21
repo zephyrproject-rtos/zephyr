@@ -8,7 +8,7 @@
 #include <zephyr/pm/pm.h>
 #include <fsl_dcdc.h>
 #include <fsl_gpc.h>
-#include <zephyr/dt-bindings/pm/imx_spc.h>
+#include <zephyr/dt-bindings/power/imx_spc.h>
 #include "power.h"
 
 #include <zephyr/logging/log.h>

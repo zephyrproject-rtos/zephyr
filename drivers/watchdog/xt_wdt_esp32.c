@@ -42,6 +42,8 @@ struct esp32_xt_wdt_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
+	int irq_priority;
+	int irq_flags;
 };
 
 static int esp32_xt_wdt_setup(const struct device *dev, uint8_t options)
@@ -126,8 +128,11 @@ static int esp32_xt_wdt_init(const struct device *dev)
 	xt_wdt_hal_enable_backup_clk(&data->hal,
 						ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ/1000);
 
-	int err = esp_intr_alloc(cfg->irq_source, 0, (ISR_HANDLER)esp32_xt_wdt_isr, (void *)dev,
-				 NULL);
+	int err = esp_intr_alloc(cfg->irq_source,
+				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+				ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+				(ISR_HANDLER)esp32_xt_wdt_isr, (void *)dev, NULL);
+
 	if (err) {
 		LOG_ERR("Failed to register ISR\n");
 		return -EFAULT;
@@ -151,7 +156,9 @@ static struct esp32_xt_wdt_data esp32_xt_wdt_data0;
 static struct esp32_xt_wdt_config esp32_xt_wdt_config0 = {
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
-	.irq_source = DT_INST_IRQN(0),
+	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
+	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
+	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(xt_wdt),

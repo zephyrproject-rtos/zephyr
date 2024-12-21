@@ -1,0 +1,15 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Firmware drivers"
+
+config ARM_SCMI
+	bool "Support for ARM's SCMI"
+	depends on ARM || ARM64
+	help
+	  Enable support for ARM's System Configuration and Management
+	  Interface (SCMI).
+
+source "drivers/firmware/scmi/Kconfig"
+
+endmenu

@@ -1,5 +1,6 @@
 board:
   name: da1469x_dk_pro
+  full_name: DA1469x Development Kit Pro
   vendor: renesas
   socs:
   - name: da14699

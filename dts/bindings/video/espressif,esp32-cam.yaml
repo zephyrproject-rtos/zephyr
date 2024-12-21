@@ -1,0 +1,50 @@
+#
+# Copyright (c) 2024 espros photonics Co.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: esp32 LCD CAM Peripheral interface
+
+compatible: "espressif,esp32-lcd-cam"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  source:
+    required: true
+    type: phandle
+    description: Connected source device, i.e. camera sensor
+
+  data-width:
+    type: int
+    description: Camera input data width. 8/16 bits
+    enum: [8, 16]
+
+  invert-byte-order:
+    type: boolean
+    description: invert byte order in 16bit mode
+
+  invert-bit-order:
+    type: boolean
+    description: invert bit order
+
+  invert-pclk:
+    type: boolean
+    description: invert pixel clock signal
+
+  invert-de:
+    type: boolean
+    description: invert data enable signal
+
+  invert-hsync:
+    type: boolean
+    description: invert hsync signal
+
+  invert-vsync:
+    type: boolean
+    description: invert vsync signal
+
+  cam-clk:
+    type: int
+    description: camera clock frequency

@@ -21,9 +21,12 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 set_ifndef(KCONFIG_NAMESPACE "CONFIG")
 
 set_ifndef(KCONFIG_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Kconfig)
+set(KCONFIG_BOARD_DIR ${KCONFIG_BINARY_DIR}/boards)
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 
 if(HWMv1)
+  # HWMv1 only supoorts a single board dir which points directly to the board dir.
+  set(KCONFIG_BOARD_DIR ${BOARD_DIR})
   # Support multiple SOC_ROOT
   file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR}/soc)
   set(kconfig_soc_root ${SOC_ROOT})
@@ -73,7 +76,7 @@ else()
 endif()
 
 if(NOT DEFINED BOARD_DEFCONFIG)
-  zephyr_file(CONF_FILES ${BOARD_DIR} DEFCONFIG BOARD_DEFCONFIG)
+  zephyr_file(CONF_FILES ${BOARD_DIRECTORIES} DEFCONFIG BOARD_DEFCONFIG)
 endif()
 
 if(DEFINED BOARD_REVISION)
@@ -95,11 +98,13 @@ set(PARSED_KCONFIG_SOURCES_TXT ${PROJECT_BINARY_DIR}/kconfig/sources.txt)
 if(CONF_FILE)
   string(CONFIGURE "${CONF_FILE}" CONF_FILE_EXPANDED)
   string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE_EXPANDED}")
+  build_info(kconfig user-files PATH ${CONF_FILE_AS_LIST})
 endif()
 
 if(EXTRA_CONF_FILE)
   string(CONFIGURE "${EXTRA_CONF_FILE}" EXTRA_CONF_FILE_EXPANDED)
   string(REPLACE " " ";" EXTRA_CONF_FILE_AS_LIST "${EXTRA_CONF_FILE_EXPANDED}")
+  build_info(kconfig extra-user-files PATH ${EXTRA_CONF_FILE_AS_LIST})
 endif()
 
 zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} KCONF board_extension_conf_files SUFFIX ${FILE_SUFFIX})
@@ -155,7 +160,7 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   APP_VERSION_TWEAK_STRING=${APP_VERSION_TWEAK_STRING}
   CONFIG_=${KCONFIG_NAMESPACE}_
   KCONFIG_CONFIG=${DOTCONFIG}
-  BOARD_DIR=${BOARD_DIR}
+  KCONFIG_BOARD_DIR=${KCONFIG_BOARD_DIR}
   BOARD=${BOARD}
   BOARD_REVISION=${BOARD_REVISION}
   BOARD_QUALIFIERS=${BOARD_QUALIFIERS}
@@ -354,6 +359,7 @@ endif()
 if(CREATE_NEW_DOTCONFIG)
   set(input_configs_flags --handwritten-input-configs)
   set(input_configs ${merge_config_files} ${FORCED_CONF_FILE})
+  build_info(kconfig files PATH ${input_configs})
 else()
   set(input_configs ${DOTCONFIG} ${FORCED_CONF_FILE})
 endif()

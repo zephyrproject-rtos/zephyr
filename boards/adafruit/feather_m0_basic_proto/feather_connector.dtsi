@@ -5,4 +5,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	feather_header: connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &porta 2 0>,	/* A0 */
+			   <1 0 &portb 8 0>,	/* A1 */
+			   <2 0 &portb 9 0>,	/* A2 */
+			   <3 0 &porta 4 0>,	/* A3 */
+			   <4 0 &porta 5 0>,	/* A4 */
+			   <5 0 &portb 2 0>,	/* A5 */
+			   <6 0 &portb 11 0>,	/* SCK */
+			   <7 0 &portb 10 0>,	/* MOSI */
+			   <8 0 &porta 12 0>,	/* MISO */
+			   <9 0 &porta 11 0>,	/* RX / D0 */
+			   <10 0 &porta 10 0>,	/* TX / D1 */
+			   <11 0 &porta 13 0>,	/* GND (NC) */
+			   <12 0 &porta 22 0>,	/* SDA */
+			   <13 0 &porta 23 0>,	/* SCL */
+			   <14 0 &porta 15 0>,	/* D5 */
+			   <15 0 &porta 20 0>,	/* D6 */
+			   <16 0 &porta 7 0>,	/* D9 */
+			   <17 0 &porta 18 0>,	/* D10 */
+			   <18 0 &porta 16 0>,	/* D11 */
+			   <19 0 &porta 19 0>,	/* D12 */
+			   <20 0 &porta 17 0>;	/* D13 */
+	};
+};
+
 feather_i2c: &sercom3 {};
+feather_spi: &sercom4 {};

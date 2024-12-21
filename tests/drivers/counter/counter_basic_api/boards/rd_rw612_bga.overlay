@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,4 +30,19 @@
 
 &mrt1_channel3 {
 	status = "okay";
+};
+
+/*
+ * For testing purposes, free up memory spaces not needed by the testing.
+ */
+&smu1 {
+	smu1_data: memory@0 {
+		/delete-property/ zephyr,memory-attr;
+	};
+};
+
+&smu2 {
+	smu2_data: memory@0 {
+		/delete-property/ zephyr,memory-attr;
+	};
 };

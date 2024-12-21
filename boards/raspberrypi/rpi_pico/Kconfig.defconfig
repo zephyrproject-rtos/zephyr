@@ -3,9 +3,6 @@
 
 if BOARD_RPI_PICO
 
-config RP2_FLASH_W25Q080
-	default y
-
 if I2C_DW
 
 config I2C_DW_CLOCK_SPEED

@@ -1,0 +1,266 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/stm32wb0_clock.h>
+#include <zephyr/dt-bindings/reset/stm32wb0_reset.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <freq.h>
+#include <mem.h>
+
+/* NOTE: for some registers, the reserved size in the memory map differs
+ * between WB05/09 and WB06/07. In these cases, if all the registers fit
+ * in the smallest size, the peripheral is defined in this file with the
+ * smallest size in the 'reg' property.
+ */
+/ {
+	chosen {
+		zephyr,flash-controller = &flash;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	clocks {
+		/* High-speed clock nodes
+		 * These nodes must only be used as input to
+		 * the RCC node (i.e., 'clocks' property)
+		 */
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+
+		clk_hsi: clk-hsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(64)>;
+			status = "disabled";
+		};
+
+		/* Dummy node representing the RC64MPLL block in PLL mode
+		 * Using this node as RCC node input requires HSE to be enabled.
+		 */
+		pll: pll64m {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(64)>;
+			status = "disabled";
+		};
+
+		/* Slow speed clock nodes
+		 * These nodes must only be used for the
+		 * 'slow-clock' property of the RCC node.
+		 */
+		clk_lse: clk-lse {
+			#clock-cells = <0>;
+			compatible = "st,stm32-lse-clock";
+			clock-frequency = <32768>;
+			driving-capability = <1>;
+			status = "disabled";
+		};
+
+		clk_lsi: clk-lsi {
+			/* "fixed-clock" compatible is required for compatibility with the
+			 * macros in `include/drivers/clock_control/stm32_clock_control.h`
+			 */
+			#clock-cells = <0>;
+			compatible = "st,stm32wb0-lsi-clock", "fixed-clock";
+			clock-frequency = <DT_FREQ_K(32)>;
+			status = "disabled";
+		};
+
+		/* Dummy node representing the "CLK_16MHz/512" slow clock source.
+		 * WARNING: this clock is not active in DEEPSTOP, so all slow clock peripherals
+		 * are stopped, and cannot wake up the SoC, if this is selected as slow-clock!
+		 */
+		clk_16mhz_div512: clk-16mhz-div512 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <(DT_FREQ_M(16) / 512)>;
+			status = "disabled";
+		};
+	};
+
+	soc {
+		flash: flash-controller@40001000 {
+			compatible = "st,stm32wb0-flash-controller", "st,stm32-flash-controller";
+			reg = <0x40001000 DT_SIZE_K(1)>;
+			interrupts = <0 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@10040000 {
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				write-block-size = <4>;
+				erase-block-size = <2048>;
+				/* maximum erase time(ms) for a page (2K) */
+				max-erase-time = <40>;
+			};
+		};
+
+		rcc: rcc@48400000 {
+			compatible = "st,stm32wb0-rcc";
+			reg = <0x48400000 DT_SIZE_K(1)>;
+			#clock-cells = <2>;
+
+			rctl: reset-controller {
+				compatible = "st,stm32-rcc-rctl";
+				#reset-cells = <1>;
+			};
+		};
+
+		pwrc: power@48500000 {
+			compatible = "st,stm32wb0-pwr";
+			reg = <0x48500000 DT_SIZE_K(1)>;
+		};
+
+		/* STM32WB0 GPIO interrupt controller
+		 *
+		 * The 'reg' property corresponds to the SYSCFG memory range,
+		 * because that's where the GPIO INTC registers are located.
+		 */
+		gpio_intc: interrupt-controller@40000000 {
+			compatible = "st,stm32wb0-gpio-intc";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <1>;
+			reg = <0x40000000 64>;
+			num-lines = <32>;
+			interrupts = <15 0>, <16 0>;
+			interrupt-names = "gpioa", "gpiob";
+			line-ranges = <0 16>, <16 16>;
+		};
+
+		pinctrl: pin-controller@48000000 {
+			compatible = "st,stm32-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x48000000 DT_SIZE_M(2)>;
+
+			gpioa: gpio@48000000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000000 DT_SIZE_K(1)>;
+				clocks = <&rcc STM32_CLOCK(AHB0, 2)>;
+			};
+
+			gpiob: gpio@48100000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48100000 DT_SIZE_K(1)>;
+				clocks = <&rcc STM32_CLOCK(AHB0, 3)>;
+			};
+		};
+
+		usart1: serial@41004000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x41004000 DT_SIZE_K(1)>;
+
+			clocks = <&rcc STM32_CLOCK(APB1, 10)>;
+			resets = <&rctl STM32_RESET(APB1, 10)>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		lpuart1: serial@41005000 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x41005000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 8)>;
+			resets = <&rctl STM32_RESET(APB1, 8)>;
+			interrupts = <9 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@41000000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41000000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
+			interrupts = <3 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		spi3: spi@41007000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41007000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <7 0>;
+			status = "disabled";
+		};
+
+		adc1: adc@41006000 {
+			compatible = "st,stm32wb0-adc";
+			reg = <0x41006000 256>;
+			/* On STM32WB0, the two ADC clock domains (ANALOG / DIGITAL)
+			 * can be controlled independently. Expose this feature to
+			 * the driver by having two `clocks` property entries:
+			 *  - first entry is digital part of ADC block (always-on)
+			 *  - second entry is analog part of ADC block (on-demand)
+			 */
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_CLOCK(APB1, 5)>;
+			interrupts = <12 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		dma1: dma@48700000 {
+			compatible = "st,stm32-dma-v2bis";
+			#dma-cells = <2>;
+			reg = <0x48700000 256>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			interrupts = <17 0 17 0 17 0 17 0 17 0 17 0 17 0 17 0>;
+			dma-requests = <8>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		dmamux1: dmamux@48800000 {
+			compatible = "st,stm32-dmamux";
+			reg = <0x48800000 DT_SIZE_K(1)>;
+			/* `clocks` property is identical between DMA and DMAMUX
+			 * because they share a single common bit in RCC registers
+			 */
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			#dma-cells = <3>;
+			dma-channels = <8>;
+			dma-generators = <1>;
+			dma-requests= <25>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

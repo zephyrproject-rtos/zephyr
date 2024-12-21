@@ -1,5 +1,6 @@
 board:
   name: nucleo_wl55jc
+  full_name: Nucleo WL55JC
   vendor: st
   socs:
     - name: stm32wl55xx

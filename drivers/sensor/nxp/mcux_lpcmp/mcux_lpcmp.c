@@ -273,8 +273,6 @@ static int mcux_lpcmp_sample_fetch(const struct device *dev, enum sensor_channel
 	const struct mcux_lpcmp_config *config = dev->config;
 	struct mcux_lpcmp_data *data = dev->data;
 
-	__ASSERT_NO_MSG(val != NULL);
-
 	if (chan != SENSOR_CHAN_ALL && (int16_t)chan != SENSOR_CHAN_MCUX_LPCMP_OUTPUT) {
 		return -ENOTSUP;
 	}

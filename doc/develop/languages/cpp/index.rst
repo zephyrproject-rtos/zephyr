@@ -31,9 +31,10 @@ or a **cxx** suffix are compiled using the C++ compiler. For example,
 :file:`myCplusplusApp.cpp` is compiled using C++.
 
 The C++ standard requires the ``main()`` function to have the return type of
-``int``. Your ``main()`` must be defined as ``int main(void)``. Zephyr ignores
-the return value from main, so applications should not return status
-information and should, instead, return zero.
+``int``. Your ``main()`` must be defined as ``int main(void)`` or
+``int main(int, char **)``. To use main with arguments the ``CONFIG_BOOTARGS`` option
+has to be selected. Zephyr ignores the return value from main, so applications
+should not return status information and should, instead, return zero.
 
 .. note::
     Do not use C++ for kernel, driver, or system initialization code.

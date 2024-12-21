@@ -1,7 +1,4 @@
- .. _samr34_xpro:
-
-SAM R34 Xplained Pro Evaluation Kit
-###################################
+.. zephyr:board:: samr34_xpro
 
 Overview
 ********
@@ -16,10 +13,6 @@ The SAMR34 and SAMR35 parts are produced as a System-in-Package (SiP),
 including both a SAML21 die, and a Semtech SX1276 LoRa radio die.
 
 This board is also referred to as DM320111.
-
-.. image:: img/atsamr34-xpro.jpg
-     :align: center
-     :alt: SAMR34-XPRO
 
 Hardware
 ********

@@ -11,6 +11,7 @@ supported:
   - gpio
   - arduino_serial
   - arduino_spi
+  - backup_sram
   - can
   - gpio
   - uart
@@ -22,7 +23,6 @@ supported:
   - counter
   - spi
   - usb_device
-  - usb
   - rtc
   - i2c
 vendor: st

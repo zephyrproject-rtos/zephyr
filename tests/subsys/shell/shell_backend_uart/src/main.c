@@ -110,6 +110,7 @@ SHELL_DEFINE(shell_euart0, "", &shell_transport_euart0,
 
 static void *setup(void)
 {
+	uint8_t tx_content[SAMPLE_DATA_SIZE] = {0};
 	static struct shell_backend_uart_fixture fixture = {
 		.dev = DEVICE_DT_GET(DT_NODELABEL(euart0)),
 	};
@@ -119,6 +120,10 @@ static void *setup(void)
 
 	/* Let the shell backend initialize. */
 	k_usleep(10);
+
+	/* get the shell startup newline */
+	uart_emul_get_tx_data(fixture.dev, tx_content, SAMPLE_DATA_SIZE);
+	zassert_mem_equal(tx_content, "\r\n", strlen("\r\n"));
 
 	return &fixture;
 }

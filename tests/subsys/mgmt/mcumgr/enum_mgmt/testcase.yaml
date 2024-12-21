@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - nrf52840dk/nrf52840
+  tags:
+    - mgmt
+    - mcumgr
+    - enum_mgmt
+tests:
+  enum.mgmt:
+    build_only: false
+  enum.mgmt.shell:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_MCUMGR_GRP_SHELL=y
+  enum.mgmt.os:
+    extra_configs:
+      - CONFIG_MCUMGR_GRP_OS=y
+  enum.mgmt.shell.os:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_MCUMGR_GRP_SHELL=y
+      - CONFIG_MCUMGR_GRP_OS=y

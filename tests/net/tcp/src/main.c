@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include <zephyr/linker/sections.h>
 #include <zephyr/tc_util.h>
 
+#include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_pkt.h>
@@ -39,27 +40,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #define PEER_PORT 4242
 
 /* Data (1280 bytes) to be sent */
-static const char lorem_ipsum[] =
-	"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris id "
-	"sodales lacus. Proin vel rhoncus sapien. Morbi semper, enim in "
-	"ullamcorper luctus, urna mi efficitur ex, laoreet eleifend massa "
-	"felis ac dui. Duis ut magna convallis, tristique leo eu, ornare "
-	"eros. Mauris a neque dictum, lobortis quam ut, rutrum erat. Vivamus "
-	"vulputate neque vel auctor porta. Duis consectetur justo ac molestie "
-	"tristique. In hac habitasse platea dictumst. Cras augue metus, "
-	"aliquet sodales elit eget suscipit rutrum tellus. Nulla ante purus, "
-	"dictum id tellus at, mattis cursus lectus. Mauris fringilla eros "
-	"lorem, in auctor erat consequat nec. Ut pharetra sollicitudin dolor "
-	"vel laoreet. Praesent eu lectus a dolor fringilla aliquet varius "
-	"eget erat. Ut vitae mauris commodo, feugiat arcu non vehicula nunc. "
-	"Nam ac enim elit. Praesent sit amet erat massa. Suspendisse potenti. "
-	"Etiam diam justo, tempus vel lobortis tincidunt, scelerisque vitae "
-	"mauris. Aenean vestibulum venenatis dapibus. Curabitur id ullamcorper"
-	" diam. Ut eu turpis mauris. Aliquam et ligula est. Proin a velit non "
-	"velit interdum vulputate. Proin vehicula eleifend suscipit. Cras "
-	"condimentum non massa egestas tempor. Donec quis scelerisque est, id "
-	"suscipit neque. Ut lobortis cursus ultrices. Aenean malesuada, nibh "
-	"ut laoreet.";
+static const char lorem_ipsum[] = LOREM_IPSUM;
 
 static struct in_addr my_addr  = { { { 192, 0, 2, 1 } } };
 static struct sockaddr_in my_addr_s = {

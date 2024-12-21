@@ -9,3 +9,4 @@
 #include <mocks/scan.h>
 
 DEFINE_FAKE_VALUE_FUNC(int, bt_le_scan_set_enable, uint8_t);
+DEFINE_FAKE_VALUE_FUNC(bool, bt_le_scan_active_scanner_running);

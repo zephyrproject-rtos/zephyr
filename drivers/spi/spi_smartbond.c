@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(spi_smartbond);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
@@ -1122,6 +1123,9 @@ static const struct spi_driver_api spi_smartbond_driver_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_smartbond_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_smartbond_release,
 };
 
@@ -1223,11 +1227,11 @@ static int spi_smartbond_isr_connect(const struct device *dev)
 
 	switch ((uint32_t)cfg->regs) {
 	case (uint32_t)SPI:
-		COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(spi), okay),
+		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi)),
 			(SPI_SMARTBOND_ISR_CONNECT), (NULL));
 		break;
 	case (uint32_t)SPI2:
-		COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(spi2), okay),
+		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi2)),
 			(SPI2_SMARTBOND_ISR_CONNECT), (NULL));
 		break;
 	default:

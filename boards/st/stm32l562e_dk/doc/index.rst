@@ -1,7 +1,4 @@
-.. _stm32l562e_dk_board:
-
-ST STM32L562E-DK Discovery
-##########################
+.. zephyr:board:: stm32l562e_dk
 
 Overview
 ********
@@ -42,10 +39,6 @@ the STM32L562E-DK Discovery board:
 
 - 2 user LEDs
 - User and reset push-buttons
-
-.. image:: img/stm32l562e_dk.jpg
-   :align: center
-   :alt: STM32L562E-DK Discovery
 
 More information about the board can be found at the `STM32L562E-DK Discovery website`_.
 
@@ -223,7 +216,7 @@ The BOARD options are summarized below:
 +------------------------------+-------------------------------------------+
 
 Here are the instructions to build Zephyr with a non-secure configuration,
-using `tfm_ipc_` sample:
+using :zephyr:code-sample:`tfm_ipc` sample:
 
    .. code-block:: bash
 
@@ -239,7 +232,7 @@ option bit TZEN will be set).
       $ west flash
 
 Please note that, after having run a TFM sample on the board, you will need to
-run `./build/tfm/api_ns/regression.sh` once more to clean up the board from secure
+run ``./build/tfm/api_ns/regression.sh`` once more to clean up the board from secure
 options and get back the platform back to a "normal" state and be able to run
 usual, non-TFM, binaries.
 Also note that, even then, TZEN will remain set, and you will need to use
@@ -284,6 +277,8 @@ assigned to USART1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+STM32L562E-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
+
 Applications for the ``stm32l562e_dk`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -291,24 +286,30 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32L562E-DK Discovery board includes an ST-LINK/V3E embedded debug tool
-interface. Support can be enabled on pyocd by adding "pack" support with the
-following pyocd command:
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+
+Support can also be enabled for pyOCD by adding "pack" support with the
+following pyOCD commands:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32l562qe
 
-Alternatively, this interface is supported by the openocd version
-included in the Zephyr SDK since v0.13.1.
-
 Flashing an application to STM32L562E-DK Discovery
 --------------------------------------------------
 
 Connect the STM32L562E-DK Discovery to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
@@ -333,7 +334,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

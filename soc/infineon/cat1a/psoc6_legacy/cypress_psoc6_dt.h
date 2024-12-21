@@ -6,7 +6,7 @@
  */
 
 /** @file
- * @brief Cypress PSoC-6 MCU family devicetree helper macros
+ * @brief Cypress PSOC 6 MCU family devicetree helper macros
  */
 
 #ifndef _CYPRESS_PSOC6_DT_H_
@@ -19,7 +19,7 @@
  * Devicetree macros related to interrupt
  *
  * The main "API" macro is CY_PSOC6_IRQ_CONFIG. It is an internal definition
- * used to configure the PSoC-6 interrupts in a generic way. This is necessary
+ * used to configure the PSOC 6 interrupts in a generic way. This is necessary
  * because Cortex-M0+ can handle a limited number of interrupts and have
  * multiplexers in front of any NVIC interrupt line.
  *
@@ -48,7 +48,7 @@
  * configuration code.
  *
  * The Cortex-M0+ must get from interrupt parent the interrupt line and
- * configure the interrupt channel to connect PSoC-6 peripheral interrupt to
+ * configure the interrupt channel to connect PSOC 6 peripheral interrupt to
  * Cortex-M0+ NVIC. The multiplexer is configured by CY_PSOC6_DT_NVIC_MUX_MAP
  * using the interrupt value from the interrupt parent.
  *

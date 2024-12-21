@@ -40,7 +40,7 @@ static void arm_musca_s1_pinmux_defaults(void)
 	scc[IOMUX_ALTF1_OUTSEL] = 0xffff;
 	scc[IOMUX_ALTF1_OENSEL] = 0xffff;
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart0))
 	/* clear bit 0/1 for GPIO0/1 to steer from ALTF1 */
 	scc[IOMUX_MAIN_INSEL]  &= ~(BIT(0) | BIT(1));
 	scc[IOMUX_MAIN_OUTSEL] &= ~(BIT(0) | BIT(1));

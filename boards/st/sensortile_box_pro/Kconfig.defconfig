@@ -7,12 +7,6 @@ if BOARD_SENSORTILE_BOX_PRO
 
 if BT
 
-config SPI
-	default y
-
-config BT_SPI
-	default y
-
 config BT_BLUENRG_ACI
 	default y
 

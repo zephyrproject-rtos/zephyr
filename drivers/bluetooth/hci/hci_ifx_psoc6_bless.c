@@ -6,7 +6,7 @@
  */
 
 /**
- * @brief PSoC 6 BLE (BLESS) driver.
+ * @brief PSOC 6 BLE (BLESS) driver.
  */
 
 #include <errno.h>
@@ -245,7 +245,7 @@ static int psoc6_bless_hci_init(const struct device *dev)
 	/* Registers the generic callback functions.  */
 	Cy_BLE_RegisterEventCallback(psoc6_bless_events_handler);
 
-	/* Initializes the PSoC 6 BLESS Controller. */
+	/* Initializes the PSOC 6 BLESS Controller. */
 	result = Cy_BLE_InitController(&psoc6_bless_config);
 	if (result != CY_BLE_SUCCESS) {
 		LOG_ERR("Failed to init the BLE Controller");

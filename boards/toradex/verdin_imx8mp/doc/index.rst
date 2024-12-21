@@ -1,7 +1,4 @@
-.. _verdin_imx8mp:
-
-Toradex Verdin iMX8M Plus SoM
-#############################
+.. zephyr:board:: verdin_imx8mp
 
 Overview
 ********
@@ -33,12 +30,6 @@ Quoting NXP:
 
 The Verdin iMX8M Plus integrates a total of 4 Arm Cortex™-A53 CPUs, operating at 1.6 GHz, alongside
 a single Arm Cortex™-M7F microcontroller operating at 800 MHz.
-
-.. figure:: verdin_imx8mp_front.jpg
-   :align: center
-   :alt: Toradex Verdin iMX8M Plus
-
-   Toradex Verdin iMX8M Plus (Credit: Toradex)
 
 Regarding the Cortex-A53 cluster, it employs the ARMv8-A architecture as a mid-range and
 energy-efficient processor. With four cores in this cluster, each core is equipped with its own L1
@@ -251,7 +242,7 @@ Toradex Verdin iMX8M Plus SoM can be debugged by connecting an external JLink JT
 X56 debug connector and to the PC, or simply connecting a USB-C to X66 on the Verdin Development
 Board. Then, the application can be debugged using the usual way.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

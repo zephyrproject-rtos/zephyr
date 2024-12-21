@@ -31,6 +31,8 @@ K_MUTEX_DEFINE(canopen_send_mutex);
 K_MUTEX_DEFINE(canopen_emcy_mutex);
 K_MUTEX_DEFINE(canopen_co_mutex);
 
+static canopen_rxmsg_callback_t rxmsg_callback;
+
 inline void canopen_send_lock(void)
 {
 	k_mutex_lock(&canopen_send_mutex, K_FOREVER);
@@ -61,6 +63,11 @@ inline void canopen_od_unlock(void)
 	k_mutex_unlock(&canopen_co_mutex);
 }
 
+void canopen_set_rxmsg_callback(canopen_rxmsg_callback_t callback)
+{
+	rxmsg_callback = callback;
+}
+
 static void canopen_detach_all_rx_filters(CO_CANmodule_t *CANmodule)
 {
 	uint16_t i;
@@ -83,6 +90,7 @@ static void canopen_rx_callback(const struct device *dev, struct can_frame *fram
 	CO_CANmodule_t *CANmodule = (CO_CANmodule_t *)user_data;
 	CO_CANrxMsg_t rxMsg;
 	CO_CANrx_t *buffer;
+	canopen_rxmsg_callback_t callback = rxmsg_callback;
 	int i;
 
 	ARG_UNUSED(dev);
@@ -105,6 +113,9 @@ static void canopen_rx_callback(const struct device *dev, struct can_frame *fram
 			rxMsg.DLC = frame->dlc;
 			memcpy(rxMsg.data, frame->data, frame->dlc);
 			buffer->pFunct(buffer->object, &rxMsg);
+			if (callback != NULL) {
+				callback();
+			}
 			break;
 		}
 	}

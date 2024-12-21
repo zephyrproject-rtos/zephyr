@@ -1,0 +1,107 @@
+# Copyright (c) 2024 Chris Ruehl
+# Code based on the bosch,bmp388.yaml
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for BMP390
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+
+  odr:
+    type: string
+    description: |
+      Default output data rate in Hz. Only the following values are allowed:
+        200   - 200     - 5ms  (default; chip reset value)
+        100   - 100     - 10ms
+        50    - 50      - 20ms
+        25    - 25      - 40ms
+        12.5  - 25/2    - 80ms
+        6.25  - 25/4    - 160ms
+        3.125 - 25/8    - 320ms
+        1.563 - 25/16   - 640ms
+        .781  - 25/32   - 1.28s
+        .391  - 25/64   - 2.56s
+        .195  - 25/128  - 5.12s
+        .098  - 25/256  - 10.24s
+        .049  - 25/512  - 20.48s
+        .024  - 25/1024 - 40.96s
+        .012  - 25/2048 - 81.92s
+        .006  - 25/4096 - 163.84s
+        .003  - 25/8192 - 327.68s
+    default: "200"
+    enum:
+      - "200"
+      - "100"
+      - "50"
+      - "25"
+      - "12.5"
+      - "6.25"
+      - "3.125"
+      - "1.563"
+      - ".781"
+      - ".391"
+      - ".195"
+      - ".098"
+      - ".049"
+      - ".024"
+      - ".012"
+      - ".006"
+      - ".003"
+
+  osr-press:
+    type: int
+    description: |
+      Default pressure oversampling rate. Only the following values are
+      allowed:
+        1 sample, 16-bit, 2.64 Pa
+        2 samples, 17-bit, 1.32 Pa
+        4 samples, 18-bit, 0.66 Pa (default; chip reset value)
+        8 samples, 19-bit, 0.33 Pa
+        16 samples, 20-bit, 0.17 Pa
+        32 Samples, 21-bit, 0.085 Pa
+    default: 4
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+
+  osr-temp:
+    type: int
+    description: |
+      Default temperature oversampling rate. Only the following values are
+      allowed:
+        1 sample, 16-bit, .0050 C (default; chip reset value)
+        2 samples, 17-bit, .0025 C
+        4 samples, 18-bit, .0012 C
+        8 samples, 19-bit, .0006 C
+        16 samples, 20-bit, .0003 C
+        32 Samples, 21-bit, .00015 C
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+
+  iir-filter:
+    type: int
+    description: |
+      Default IIR filter coefficient. The default 0 is the chip reset value.
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 3
+      - 7
+      - 15
+      - 31
+      - 63
+      - 127

@@ -8,8 +8,8 @@
  * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp388-ds001.pdf
  */
 
-#ifndef __BMP388_H
-#define __BMP388_H
+#ifndef ZEPHYR_BMP388_H
+#define ZEPHYR_BMP388_H
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -19,16 +19,29 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
 
-#define DT_DRV_COMPAT bosch_bmp388
-
+#define DT_DRV_COMPAT  bosch_bmp388
 #define BMP388_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #define BMP388_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT  bosch_bmp390
+#define BMP390_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BMP390_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#undef DT_DRV_COMPAT
+
+#if defined(BMP388_BUS_SPI) || defined(BMP390_BUS_SPI)
+#define BMP3XX_USE_SPI_BUS
+#endif
+
+#if defined(BMP388_BUS_I2C) || defined(BMP390_BUS_I2C)
+#define BMP3XX_USE_I2C_BUS
+#endif
 
 union bmp388_bus {
-#if BMP388_BUS_SPI
+#ifdef BMP3XX_USE_SPI_BUS
 	struct spi_dt_spec spi;
 #endif
-#if BMP388_BUS_I2C
+#ifdef BMP3XX_USE_I2C_BUS
 	struct i2c_dt_spec i2c;
 #endif
 };
@@ -45,13 +58,13 @@ struct bmp388_bus_io {
 	bmp388_reg_write_fn write;
 };
 
-#if BMP388_BUS_SPI
+#ifdef BMP3XX_USE_SPI_BUS
 #define BMP388_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB |	\
 			      SPI_MODE_CPOL | SPI_MODE_CPHA)
 extern const struct bmp388_bus_io bmp388_bus_io_spi;
 #endif
 
-#if BMP388_BUS_I2C
+#ifdef BMP3XX_USE_I2C_BUS
 extern const struct bmp388_bus_io bmp388_bus_io_i2c;
 #endif
 
@@ -176,6 +189,7 @@ struct bmp388_data {
 	uint8_t odr;
 	uint8_t osr_pressure;
 	uint8_t osr_temp;
+	uint8_t chip_id;
 	struct bmp388_cal_data cal;
 
 #if defined(CONFIG_BMP388_TRIGGER)
@@ -212,4 +226,4 @@ int bmp388_reg_field_update(const struct device *dev,
 			    uint8_t mask,
 			    uint8_t val);
 
-#endif /* __BMP388_H */
+#endif /* ZEPHYR_BMP388_H */

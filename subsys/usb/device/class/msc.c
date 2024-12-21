@@ -442,7 +442,7 @@ static bool readFormatCapacity(void)
 
 static bool readCapacity(void)
 {
-	uint8_t capacity[8];
+	static uint8_t capacity[8];
 
 	sys_put_be32(block_count - 1, &capacity[0]);
 	sys_put_be32(BLOCK_SIZE, &capacity[4]);

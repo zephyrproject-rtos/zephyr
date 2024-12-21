@@ -215,7 +215,7 @@ static inline void vtd_set_irte_msi(const struct device *dev,
 	const struct vtd_driver_api *api =
 		(const struct vtd_driver_api *)dev->api;
 
-	return api->set_irte_msi(dev, irte_idx, msi);
+	api->set_irte_msi(dev, irte_idx, msi);
 }
 
 static inline bool vtd_irte_is_msi(const struct device *dev,

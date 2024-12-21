@@ -44,6 +44,11 @@ static int dac_esp32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	dac_output_enable(channel_cfg->channel_id);
 
 	return 0;
@@ -63,8 +68,7 @@ static int dac_esp32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(cfg->clock_dev,
-		(clock_control_subsys_t) &cfg->clock_subsys) != 0) {
+	if (clock_control_on(cfg->clock_dev, (clock_control_subsys_t)cfg->clock_subsys) != 0) {
 		LOG_ERR("DAC clock setup failed (%d)", -EIO);
 		return -EIO;
 	}

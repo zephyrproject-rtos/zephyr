@@ -15,7 +15,7 @@ tests:
     integration_platforms:
       - mps2/an385
       - qemu_x86
-    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    extra_args: EXTRA_CONF_FILE=overlay_deferred.conf
     # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
     # because of following chain of dependencies:
     # LOG_MIPI_SYST_ENABLE=y --> CONFIG_MIPI_SYST_LIB --> \
@@ -26,7 +26,7 @@ tests:
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y
   logging.format.switch.immediate:
-    extra_args: OVERLAY_CONFIG=overlay_immediate.conf
+    extra_args: EXTRA_CONF_FILE=overlay_immediate.conf
     integration_platforms:
       - mps2/an385
       - qemu_x86
@@ -34,7 +34,7 @@ tests:
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y
   logging.format.switch.custom_output:
-    extra_args: OVERLAY_CONFIG=overlay_custom_output.conf
+    extra_args: EXTRA_CONF_FILE=overlay_custom_output.conf
     integration_platforms:
       - mps2/an385
       - qemu_x86

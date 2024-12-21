@@ -276,7 +276,7 @@ static void *test_modem_ppp_setup(void)
 	};
 
 	mock_pipe = modem_backend_mock_init(&mock, &mock_config);
-	zassert_true(modem_pipe_open(mock_pipe) == 0, "Failed to open mock pipe");
+	zassert_true(modem_pipe_open(mock_pipe, K_SECONDS(10)) == 0, "Failed to open mock pipe");
 	modem_ppp_attach(&ppp, mock_pipe);
 	return NULL;
 }

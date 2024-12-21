@@ -6,7 +6,7 @@ description: STM32 LCD-TFT display controller
 
 compatible: "st,stm32-ltdc"
 
-include: [lcd-controller.yaml, pinctrl-device.yaml]
+include: [lcd-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   disp-on-gpios:
@@ -28,6 +28,9 @@ properties:
       If not defined, internal RAM will be used.
 
   clocks:
+    required: true
+
+  resets:
     required: true
 
   interrupts:

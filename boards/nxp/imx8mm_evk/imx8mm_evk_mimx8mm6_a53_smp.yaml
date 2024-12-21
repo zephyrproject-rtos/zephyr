@@ -11,11 +11,12 @@ arch: arm64
 toolchain:
   - zephyr
   - cross-compile
-ram: 128
+ram: 1024
 supported:
   - smp
+  - uart
+  - net
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: nxp

@@ -10,46 +10,7 @@ if SOC_FAMILY_NXP_IMXRT
 # can override the defaults given here
 rsource "*/Kconfig"
 
-# Used for default value in FLASH_MCUX_FLEXSPI_XIP
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_FLEXSPI := nxp,imx-flexspi
-# Macros to shorten Kconfig definitions
-DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
-
-config FLASH_MCUX_FLEXSPI_XIP
-	bool "MCUX FlexSPI flash access with xip"
-	default $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
-	select XIP
-	help
-	  Allows for the soc to safely initialize the clocks for the
-	  FlexSpi when planning to execute code in FlexSpi Memory.
-
-if FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
-
-choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
-	prompt "FlexSPI drivers relocation target"
-	default FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
-	help
-	  Select the location to run the FlexSPI drivers when using
-	  the flash API.
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
-	bool "ITCM"
-	select CODE_DATA_RELOCATION
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
-	bool "RAM"
-	select CODE_DATA_RELOCATION_SRAM
-
-endchoice
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM
-	string
-	default "ITCM" if FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
-	default "RAM" if FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
-
-endif # FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
+rsource "../common/Kconfig.flexspi_xip"
 
 # Note- When SECOND_CORE_MCUX is set, the dependencies for this Kconfig
 # should be set elsewhere, since the determination of which SOC core
@@ -63,6 +24,8 @@ config NXP_IMXRT_BOOT_HEADER
 	  application from an external flash device.
 
 if NXP_IMXRT_BOOT_HEADER
+
+rsource "../common/Kconfig.rom_loader"
 
 choice BOOT_DEVICE
 	prompt "Boot device"
@@ -88,8 +51,8 @@ endchoice # BOOT_DEVICE
 
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	hex "FlexSPI config block offset"
-	default 0x400 if SOC_SERIES_IMXRT5XX || SOC_SERIES_IMXRT6XX || SOC_MIMXRT1011
 	default 0x0 if BOOT_FLEXSPI_NOR
+	default 0x400
 	help
 	  FlexSPI configuration block consists of parameters regarding specific
 	  flash devices including read command sequence, quad mode enablement
@@ -113,7 +76,6 @@ config DEVICE_CONFIGURATION_DATA
 	  useful if your application expects components like SDRAM to be
 	  initialized at boot time.
 
-
 config EXTERNAL_MEM_CONFIG_DATA
 	bool "External Memory Configuration Data"
 	depends on !DEVICE_CONFIGURATION_DATA
@@ -128,6 +90,7 @@ config EXTERNAL_MEM_CONFIG_DATA
 config EXTERNAL_MEM_CONFIG_OFFSET
 	hex "External memory configuration offset"
 	depends on EXTERNAL_MEM_CONFIG_DATA
+	default 0x800 if SOC_SERIES_IMXRT118X
 	default 0x1040 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 	help
 	  As specified by the boot ROM, the External Memory configuration data must be
@@ -143,23 +106,13 @@ config NXP_IMX_EXTERNAL_SDRAM
 	  an MPU region will be defined to disable cached access to the
 	  SDRAM memory space.
 
-config NXP_IMX_RT_ROM_RAMLOADER
-	depends on !FLASH_MCUX_FLEXSPI_XIP && NXP_IMXRT_BOOT_HEADER
-	# Required so that debugger will load image to correct offset
-	select BUILD_OUTPUT_HEX
-	bool "Create output image that IMX RT ROM can load from FlexSPI to ram"
+config NXP_IMX_EXTERNAL_HYPERRAM
+	bool "Allow access to external HYPERRAM region"
 	help
-	  Builds an output image that the IMX RT BootROM can load from the
-	  FlexSPI boot device into RAM region. The image will be loaded
-	  from FLEXSPI into the region specified by `zephyr,flash` node.
-
-# Setup LMA adjustment if using the RAMLOADER feature of ROM
-FLASH_CHOSEN := zephyr,flash
-FLASH_BASE := $(dt_chosen_reg_addr_hex,$(FLASH_CHOSEN))
-FLEXSPI_BASE := $(dt_node_reg_addr_hex,/soc/spi@402a8000,1)
-config BUILD_OUTPUT_ADJUST_LMA
-	default "$(FLEXSPI_BASE) - $(FLASH_BASE)" if NXP_IMX_RT_ROM_RAMLOADER
-
+	  Enable access to external HYPERRAM region managed by the FLEXSPI.
+	  This setting should be enabled when the application uses HYPERRAM,
+	  or an MPU region will be defined to disable cached access to the
+	  HYPERRAM memory space.
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT11xx series"
 	depends on SOC_SERIES_IMXRT11XX
@@ -171,12 +124,7 @@ config SECOND_CORE_MCUX
 	  generated header specifying the VMA and LMA of each memory section
 	  to load
 
-
-config FLEXSPI_CONFIG_BLOCK_OFFSET
-	hex
-	default 0x400 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
-
-if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 config PM_MCUX_GPC
 	bool "MCUX general power controller driver"
@@ -206,6 +154,6 @@ config INIT_ENET_PLL
 config INIT_SYS_PLL
 	bool "Initialize System PLL"
 
-endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 endif # SOC_FAMILY_NXP_IMXRT

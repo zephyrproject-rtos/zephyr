@@ -17,6 +17,7 @@ tests:
       - stm32f072b_disco
       - stm32f3_disco
       - stm32h573i_dk
+      - stm32u083c_dk
       - nucleo_g071rb
       - nucleo_f207zg
       - nucleo_f401re
@@ -24,6 +25,7 @@ tests:
       - nucleo_wl55jc
       - nucleo_l073rz
       - nucleo_l152re
+      - nucleo_u083rc
       - nucleo_wb55rg
       - rpi_pico
       - sltb010a@0
@@ -37,6 +39,17 @@ tests:
       - frdm_mcxn947/mcxn947/cpu0
       - mimxrt1170_evk@B/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
       - mimxrt1040_evk
       - mimxrt1060_evk
       - frdm_ke17z512
+      - frdm_mcxn236
+      - max32655evkit/max32655/m4
+      - max32662evkit
+      - max32666evkit/max32666/cpu0
+      - max32670evkit
+      - max32672evkit
+      - max32675evkit
+      - max32680evkit/max32680/m4
+      - max32690evkit/max32690/m4

@@ -6,7 +6,7 @@
 
 #include "smp_test_util.h"
 #include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zcbor_encode.h>
 

@@ -1,7 +1,4 @@
-.. _nrf52_vbluno52:
-
-nRF52-VBLUno52
-##############
+.. zephyr:board:: nrf52_vbluno52
 
 Overview
 ********
@@ -17,12 +14,6 @@ the following devices:
 * GPIO
 * FLASH
 * RADIO (Bluetooth Low Energy 5.0)
-
-.. figure:: img/nrf52_vbluno52.jpg
-     :align: center
-     :alt: nRF52 VBLUno52
-
-     nRF52_VBLUno52 board
 
 Hardware
 ********
@@ -87,7 +78,7 @@ See the :ref:`getting_started` for general information on setting up
 your development environment.
 
 You can build and flash applications in the usual way. Here is an
-example for the :ref:`hello_world` application.
+example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -100,8 +91,8 @@ Testing the VBLUno52 with Zephyr: buttons, LEDs, UART, BLE
 Here are some sample applications that you can use to test different
 components on the VBLUno52 board:
 
-* :ref:`hello_world`
+* :zephyr:code-sample:`hello_world`
 * :zephyr:code-sample:`blinky`
 * :zephyr:code-sample:`button`
-* :ref:`bluetooth-beacon-sample`
-* :ref:`peripheral_hr`
+* :zephyr:code-sample:`bluetooth_beacon`
+* :zephyr:code-sample:`ble_peripheral_hr`

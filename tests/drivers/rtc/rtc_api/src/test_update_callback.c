@@ -34,7 +34,11 @@ ZTEST(rtc_api, test_update_callback)
 
 	ret = rtc_update_set_callback(rtc, NULL, NULL);
 
-	zassert_ok(ret, "Failed to clear and disable update callback");
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	} else {
+		zassert_ok(ret, "Failed to clear and disable update callback");
+	}
 
 	key = k_spin_lock(&lock);
 

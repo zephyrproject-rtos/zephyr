@@ -1,0 +1,23 @@
+common:
+  ignore_faults: true
+tests:
+  kernel.demand_paging.mem_map:
+    tags:
+      - kernel
+      - mmu
+      - demand_paging
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_x86_tiny
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
+  kernel.demand_paging.mem_map.timing_funcs:
+    tags:
+      - kernel
+      - mmu
+      - demand_paging
+    platform_allow: qemu_x86_tiny
+    extra_configs:
+      - CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS=y
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0

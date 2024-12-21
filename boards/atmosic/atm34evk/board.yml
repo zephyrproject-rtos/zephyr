@@ -3,8 +3,10 @@ boards:
   vendor: atmosic
   revision:
     format: custom
+    default: normal
     revisions:
     - name: mcuboot
+    - name: normal
   socs:
     - name: ATM34xx-2
       variants:
@@ -14,8 +16,10 @@ boards:
   vendor: atmosic
   revision:
     format: custom
+    default: normal
     revisions:
     - name: mcuboot
+    - name: normal
   socs:
     - name: ATM34xx-5
       variants:
@@ -25,8 +29,10 @@ boards:
   vendor: atmosic
   revision:
     format: custom
+    default: normal
     revisions:
     - name: mcuboot
+    - name: normal
   socs:
     - name: ATM34xx-2
       variants:
@@ -36,8 +42,10 @@ boards:
   vendor: atmosic
   revision:
     format: custom
+    default: normal
     revisions:
     - name: mcuboot
+    - name: normal
   socs:
     - name: ATM34xx-5
       variants:
@@ -47,8 +55,10 @@ boards:
   vendor: atmosic
   revision:
     format: custom
+    default: normal
     revisions:
     - name: mcuboot
+    - name: normal
   socs:
     - name: ATM34xx-2
       variants:
@@ -58,8 +68,10 @@ boards:
   vendor: atmosic
   revision:
     format: custom
+    default: normal
     revisions:
     - name: mcuboot
+    - name: normal
   socs:
     - name: ATM34xx-5
       variants:

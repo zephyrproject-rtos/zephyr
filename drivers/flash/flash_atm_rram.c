@@ -124,4 +124,4 @@ static int flash_atm_rram_init(struct device const *dev)
 }
 
 DEVICE_DT_INST_DEFINE(0, flash_atm_rram_init, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_atm_rram_api);
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &flash_atm_rram_api);

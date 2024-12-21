@@ -8,11 +8,14 @@
 LOG_MODULE_REGISTER(net_coap_service_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/coap_service.h>
+#include <zephyr/net/mld.h>
 
 #ifdef CONFIG_NET_IPV6
 #include "net_private.h"
 #include "ipv6.h"
 #endif
+
+#include "net_sample_common.h"
 
 static const uint16_t coap_port = 5683;
 
@@ -70,6 +73,8 @@ static int join_coap_multicast_group(void)
 
 int main(void)
 {
+	wait_for_network();
+
 	return join_coap_multicast_group();
 }
 
@@ -77,6 +82,8 @@ int main(void)
 
 int main(void)
 {
+	wait_for_network();
+
 	return 0;
 }
 

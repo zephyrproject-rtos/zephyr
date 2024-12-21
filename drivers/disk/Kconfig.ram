@@ -3,7 +3,8 @@
 
 config DISK_DRIVER_RAM
 	bool "RAM Disk"
-	default y if DT_HAS_ZEPHYR_RAM_DISK_ENABLED
+	depends on DT_HAS_ZEPHYR_RAM_DISK_ENABLED
+	default y
 	help
 	  RAM buffer used to emulate storage disk.
 	  This option can be used to test the file

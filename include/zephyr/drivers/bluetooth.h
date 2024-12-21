@@ -21,7 +21,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/hci_vs.h>
@@ -46,6 +46,14 @@ enum {
 	 * initial connection data length parameters are not equal to the
 	 * default data length parameters. Therefore the host should initiate
 	 * the DLE procedure after connection establishment.
+	 *
+	 * That requirement is stated in Core Spec v5.4 Vol 6 Part B. 4.5.10
+	 * Data PDU length management:
+	 *
+	 * > For a new connection:
+	 * > - ... If either value is not 27, then the Controller should
+	 * >   initiate the Data Length Update procedure at the earliest
+	 * >   practical opportunity.
 	 */
 	BT_HCI_QUIRK_NO_AUTO_DLE = BIT(1),
 };
@@ -61,10 +69,15 @@ enum bt_hci_bus {
 	BT_HCI_BUS_SDIO          = 6,
 	BT_HCI_BUS_SPI           = 7,
 	BT_HCI_BUS_I2C           = 8,
-	BT_HCI_BUS_IPM           = 9,
+	BT_HCI_BUS_SMD           = 9,
+	BT_HCI_BUS_VIRTIO        = 10,
+	BT_HCI_BUS_IPC           = 11,
+	/* IPM is deprecated and simply an alias for IPC */
+	BT_HCI_BUS_IPM           = BT_HCI_BUS_IPC,
 };
 
-#define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)
+#define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
+	UTIL_CAT(BT_HCI_QUIRK_, DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx))
 #define BT_DT_HCI_QUIRKS_GET(node_id) COND_CODE_1(DT_NODE_HAS_PROP(node_id, bt_hci_quirks), \
 						  (DT_FOREACH_PROP_ELEM_SEP(node_id, \
 									    bt_hci_quirks, \
@@ -76,7 +89,8 @@ enum bt_hci_bus {
 #define BT_DT_HCI_NAME_GET(node_id) DT_PROP_OR(node_id, bt_hci_name, "HCI")
 #define BT_DT_HCI_NAME_INST_GET(inst) BT_DT_HCI_NAME_GET(DT_DRV_INST(inst))
 
-#define BT_DT_HCI_BUS_GET(node_id) DT_STRING_TOKEN_OR(node_id, bt_hci_bus, BT_HCI_BUS_VIRTUAL)
+#define BT_DT_HCI_BUS_GET(node_id) \
+	UTIL_CAT(BT_HCI_BUS_, DT_STRING_UPPER_TOKEN_OR(node_id, bt_hci_bus, VIRTUAL))
 #define BT_DT_HCI_BUS_INST_GET(inst) BT_DT_HCI_BUS_GET(DT_DRV_INST(inst))
 
 typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);

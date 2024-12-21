@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
- * Copyright 2020 NXP
+ * Copyright 2020, 2024 NXP
  *
  * Heavily based on pwm_mcux_ftm.c, which is:
  * Copyright (c) 2017, NXP
@@ -22,7 +22,11 @@
 
 LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 
+#if defined(TPM0)
 #define MAX_CHANNELS ARRAY_SIZE(TPM0->CONTROLS)
+#else
+#define MAX_CHANNELS ARRAY_SIZE(TPM1->CONTROLS)
+#endif
 
 struct mcux_tpm_config {
 	TPM_Type *base;
@@ -160,9 +164,16 @@ static int mcux_tpm_init(const struct device *dev)
 
 	for (i = 0; i < config->channel_count; i++) {
 		channel->chnlNumber = i;
+#if !(defined(FSL_FEATURE_TPM_HAS_PAUSE_LEVEL_SELECT) && FSL_FEATURE_TPM_HAS_PAUSE_LEVEL_SELECT)
 		channel->level = kTPM_NoPwmSignal;
+#else
+		channel->level = kTPM_HighTrue;
+		channel->pauseLevel = kTPM_ClearOnPause;
+#endif
 		channel->dutyCyclePercent = 0;
+#if defined(FSL_FEATURE_TPM_HAS_COMBINE) && FSL_FEATURE_TPM_HAS_COMBINE
 		channel->firstEdgeDelayPercent = 0;
+#endif
 		channel++;
 	}
 

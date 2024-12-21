@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
+#include <cmdline.h>
+#include <posix_native_task.h>
 
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_core.h>
@@ -68,6 +70,8 @@ struct eth_context {
 	const struct device *ptp_clock;
 #endif
 };
+
+static const char *if_name_cmd_opt;
 
 #define DEFINE_RX_THREAD(x, _)						\
 	K_KERNEL_STACK_DEFINE(rx_thread_stack_##x,			\
@@ -343,6 +347,10 @@ static void eth_iface_init(struct net_if *iface)
 		ctx->if_name = CONFIG_ETH_NATIVE_POSIX_DRV_NAME;
 	}
 
+	if (if_name_cmd_opt != NULL) {
+		ctx->if_name = if_name_cmd_opt;
+	}
+
 	LOG_DBG("Interface %p using \"%s\"", iface, ctx->if_name);
 
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
@@ -350,7 +358,8 @@ static void eth_iface_init(struct net_if *iface)
 
 	ctx->dev_fd = eth_iface_create(CONFIG_ETH_NATIVE_POSIX_DEV_NAME, ctx->if_name, false);
 	if (ctx->dev_fd < 0) {
-		LOG_ERR("Cannot create %s (%d)", ctx->if_name, -errno);
+		LOG_ERR("Cannot create %s (%d/%s)", ctx->if_name, ctx->dev_fd,
+			strerror(-ctx->dev_fd));
 	} else {
 		/* Create a thread that will handle incoming data from host */
 		create_rx_handler(ctx);
@@ -587,3 +596,22 @@ LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, PTP_INIT_FUNC, (), _)
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_PTP_DEVICE, (;), _);
 
 #endif /* CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK */
+
+static void add_native_posix_options(void)
+{
+	static struct args_struct_t eth_native_posix_options[] = {
+		{
+			.is_mandatory = false,
+			.option = "eth-if",
+			.name = "name",
+			.type = 's',
+			.dest = (void *)&if_name_cmd_opt,
+			.descript = "Name of the eth interface to use",
+		},
+		ARG_TABLE_ENDMARKER,
+	};
+
+	native_add_command_line_opts(eth_native_posix_options);
+}
+
+NATIVE_TASK(add_native_posix_options, PRE_BOOT_1, 10);

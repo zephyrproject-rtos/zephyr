@@ -9,4 +9,7 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,/soc/flash-controller@60002000/flash@0)
 
+config BOOTLOADER_MCUBOOT
+	default y if SOC_ESP32S3_APPCPU
+
 endif # SOC_SERIES_ESP32S3

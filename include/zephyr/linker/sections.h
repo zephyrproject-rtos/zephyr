@@ -67,6 +67,7 @@
 #define _IMX_BOOT_DATA_SECTION_NAME	.boot_hdr.data
 #define _IMX_BOOT_IVT_SECTION_NAME	.boot_hdr.ivt
 #define _IMX_BOOT_DCD_SECTION_NAME	.boot_hdr.dcd_data
+#define _IMX_BOOT_CONTAINER_SECTION_NAME .boot_hdr.container
 
 #define _STM32_SDRAM1_SECTION_NAME	.stm32_sdram1
 #define _STM32_SDRAM2_SECTION_NAME	.stm32_sdram2
@@ -98,6 +99,11 @@
 #define PINNED_RODATA_SECTION_NAME	pinned_rodata
 #define PINNED_DATA_SECTION_NAME	pinned_data
 #define PINNED_NOINIT_SECTION_NAME	pinned_noinit
+#endif
+
+#if defined(CONFIG_LINKER_USE_ONDEMAND_SECTION)
+#define ONDEMAND_TEXT_SECTION_NAME	ondemand_text
+#define ONDEMAND_RODATA_SECTION_NAME	ondemand_rodata
 #endif
 
 /* Short section references for use in ASM files */
@@ -138,6 +144,14 @@
 #define PINNED_DATA			DATA
 #define PINNED_NOINIT			NOINIT
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
+
+#if defined(CONFIG_LINKER_USE_ONDEMAND_SECTION)
+#define ONDEMAND_TEXT			ONDEMAND_TEXT_SECTION_NAME
+#define ONDEMAND_RODATA		ONDEMAND_RODATA_SECTION_NAME
+#else
+#define ONDEMAND_TEXT			TEXT
+#define ONDEMAND_RODATA		RODATA
+#endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
 
 #endif /* _ASMLANGUAGE */
 

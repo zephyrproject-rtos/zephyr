@@ -1,0 +1,70 @@
+# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon Cat1 PWM
+
+compatible: "infineon,cat1-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  interrupts:
+    type: array
+    required: true
+
+  pinctrl-0:
+    description: |
+      PORT pin configuration for the PWM signal.
+      We expect that the phandles will reference pinctrl nodes. These
+      nodes will have a nodelabel that matches the Infineon SoC Pinctrl
+      defines and have following
+      format: p<port>_<pin>_<peripheral inst>_<signal>.
+
+      Examples:
+        pinctrl-0 = <&p1_1_pwm0_0>;
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  resolution:
+    type: int
+
+  divider-type:
+    type: int
+    description: |
+      Specifies which type of divider to use.
+      Defined by cy_en_divider_types_t in cy_sysclk.h.
+    required: true
+
+  divider-sel:
+    type: int
+    description: |
+      Specifies which divider of the selected type to configure.
+    required: true
+
+  divider-val:
+    type: int
+    description: |
+      Causes integer division of (divider value + 1), or division by 1 to 256
+      (8-bit divider) or 1 to 65536 (16-bit divider).
+    required: true
+
+  "#pwm-cells":
+    const: 3
+    description: |
+      Number of items to expect in a PWM
+      - channel of the timer used for PWM (not used)
+      - period to set in ns
+      - flags: standard flags like PWM_POLARITY_NORMAL
+
+pwm-cells:
+  - channel
+  - period
+  - flags

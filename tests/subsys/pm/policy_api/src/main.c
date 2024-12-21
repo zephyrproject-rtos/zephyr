@@ -312,7 +312,7 @@ ZTEST(policy_api, test_pm_policy_events)
 	const struct pm_state_info *next;
 	uint32_t now;
 
-	now = k_cyc_to_us_ceil32(k_cycle_get_32());
+	now = k_cyc_to_ticks_ceil32(k_cycle_get_32());
 
 	/* events:
 	 *   - 10ms from now (time < runtime idle latency)
@@ -323,21 +323,21 @@ ZTEST(policy_api, test_pm_policy_events)
 	 *
 	 * first event wins, so we must stay active
 	 */
-	pm_policy_event_register(&evt1, 10000);
-	pm_policy_event_register(&evt2, 200000);
-	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(2000000));
+	pm_policy_event_register(&evt1, k_ms_to_cyc_floor32(10) + k_cycle_get_32());
+	pm_policy_event_register(&evt2, k_ms_to_cyc_floor32(200) + k_cycle_get_32());
+	next = pm_policy_next_state(0U, now + k_sec_to_ticks_floor32(2));
 	zassert_is_null(next);
 
 	/* remove first event so second event now wins, meaning we can now enter
 	 * runtime idle
 	 */
 	pm_policy_event_unregister(&evt1);
-	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(2000000));
+	next = pm_policy_next_state(0U, now + k_sec_to_ticks_floor32(2));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	/* remove second event, now we can enter deepest state */
 	pm_policy_event_unregister(&evt2);
-	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(2000000));
+	next = pm_policy_next_state(0U, now + k_sec_to_ticks_floor32(2));
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
 
 	/* events:
@@ -348,15 +348,15 @@ ZTEST(policy_api, test_pm_policy_events)
 	 *
 	 * system wakeup wins, so we can go up to runtime idle.
 	 */
-	pm_policy_event_register(&evt1, 2000000);
-	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(200000));
+	pm_policy_event_register(&evt1, k_sec_to_cyc_floor32(2) + k_cycle_get_32());
+	next = pm_policy_next_state(0U, now + k_ms_to_ticks_floor32(200));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	/* modify event to occur in 10ms, so it now wins system wakeup and
 	 * requires to stay awake
 	 */
-	pm_policy_event_update(&evt1, 10000);
-	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(200000));
+	pm_policy_event_update(&evt1, k_ms_to_cyc_floor32(10) + k_cycle_get_32());
+	next = pm_policy_next_state(0U, now + k_ms_to_ticks_floor32(200));
 	zassert_is_null(next);
 
 	pm_policy_event_unregister(&evt1);

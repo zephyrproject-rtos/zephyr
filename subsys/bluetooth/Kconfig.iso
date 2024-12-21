@@ -27,7 +27,7 @@ config BT_ISO_UNICAST
 config BT_ISO_PERIPHERAL
 	bool "Bluetooth Isochronous Channel Unicast Peripheral Support"
 	depends on !BT_CTLR || BT_CTLR_PERIPHERAL_ISO_SUPPORT
-	select BT_PERIPHERAL
+	depends on BT_PERIPHERAL
 	select BT_ISO_UNICAST
 	help
 	  This option enables support for Bluetooth Unicast
@@ -36,7 +36,7 @@ config BT_ISO_PERIPHERAL
 config BT_ISO_CENTRAL
 	bool "Bluetooth Isochronous Channel Unicast Central Support"
 	depends on !BT_CTLR || BT_CTLR_CENTRAL_ISO_SUPPORT
-	select BT_CENTRAL
+	depends on BT_CENTRAL
 	select BT_ISO_UNICAST
 	help
 	  This option enables support for Bluetooth Broadcast
@@ -60,9 +60,9 @@ config BT_ISO_BROADCASTER
 config BT_ISO_SYNC_RECEIVER
 	bool "Bluetooth Isochronous Synchronized Receiver Support"
 	depends on !BT_CTLR || BT_CTLR_SYNC_ISO_SUPPORT
+	depends on BT_OBSERVER
 	select BT_ISO_BROADCAST
 	select BT_ISO_RX
-	select BT_OBSERVER
 	select BT_PER_ADV_SYNC
 	help
 	  This option enables support for the Bluetooth Isochronous
@@ -83,14 +83,14 @@ config BT_ISO_MAX_CHAN
 config BT_ISO_TX_BUF_COUNT
 	int "Number of Isochronous TX buffers"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Number of buffers available for outgoing Isochronous channel SDUs.
 
 config BT_ISO_TX_FRAG_COUNT
 	int "Number of ISO TX fragment buffers"
 	default 2
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of buffers available for fragments of TX buffers. Warning:
 	  setting this to 0 means that the application must ensure that
@@ -114,7 +114,7 @@ config BT_ISO_TX_MTU
 config BT_ISO_RX_BUF_COUNT
 	int "Number of Isochronous RX buffers"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Number of buffers available for incoming Isochronous channel SDUs.
 

@@ -3,10 +3,10 @@
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
 if(CONFIG_BOARD_QEMU_XTENSA)
-  set(QEMU_CPU_TYPE_${ARCH} dc233c)
+  set(QEMU_CPU_TYPE_${ARCH} ${CONFIG_SOC})
 
   set(QEMU_FLAGS_${ARCH}
-    -machine sim -semihosting -nographic -cpu dc233c
+    -machine sim -semihosting -nographic -cpu ${CONFIG_SOC}
   )
 endif()
 

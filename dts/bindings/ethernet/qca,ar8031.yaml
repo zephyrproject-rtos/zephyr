@@ -1,0 +1,15 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Qualcomm Atheros AR8031 Ethernet PHY
+
+compatible: "qca,ar8031"
+
+include: ethernet-phy.yaml
+
+properties:
+  eee-en:
+    type: boolean
+    description: |
+      Enable IEEE 802.3az Energy Efficient Ethernet which provides a mechanism
+      to greatly save the power consumption between data packets burst.

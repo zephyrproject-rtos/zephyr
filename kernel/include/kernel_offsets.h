@@ -71,6 +71,7 @@ GEN_OFFSET_SYM(_thread_t, tls);
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
 
 GEN_ABSOLUTE_SYM(__z_interrupt_stack_SIZEOF, sizeof(z_interrupt_stacks[0]));
+GEN_ABSOLUTE_SYM(__z_interrupt_all_stacks_SIZEOF, sizeof(z_interrupt_stacks));
 
 /* member offsets in the device structure. Used in image post-processing */
 #ifdef CONFIG_DEVICE_DEPS

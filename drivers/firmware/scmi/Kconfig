@@ -1,0 +1,60 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if ARM_SCMI
+
+config ARM_SCMI_CLK_HELPERS
+	bool "Helper functions for SCMI clock protocol"
+	default y
+	depends on DT_HAS_ARM_SCMI_CLOCK_ENABLED
+	help
+	  Enable support for SCMI clock protocol helper functions.
+
+config ARM_SCMI_MAILBOX_TRANSPORT
+	bool "SCMI transport based on shared memory and doorbells"
+	default y
+	depends on DT_HAS_ARM_SCMI_ENABLED
+	depends on ARM_SCMI_SHMEM
+	select ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
+	help
+	  Enable support for SCMI transport based on shared memory
+	  and doorbells.
+
+config ARM_SCMI_PINCTRL_HELPERS
+	bool "Helper functions for SCMI pinctrl protocol"
+	default y
+	depends on DT_HAS_ARM_SCMI_PINCTRL_ENABLED
+	select PINCTRL
+	help
+	  Enable support for SCMI pinctrl protocol helper functions.
+
+config ARM_SCMI_SHMEM
+	bool "SCMI shared memory (SHMEM) driver"
+	default y
+	depends on DT_HAS_ARM_SCMI_SHMEM_ENABLED
+	help
+	  Enable support for SCMI shared memory (SHMEM) driver.
+
+config ARM_SCMI_SHMEM_INIT_PRIORITY
+	int "SCMI shared memory (SHMEM) initialization priority"
+	default 15
+	help
+	  SCMI SHMEM driver device initialization priority.
+
+config ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
+	bool "Transport layer has static channels"
+	help
+	  Enable this if the SCMI transport layer uses static channels.
+	  What this means is that each protocol will have its channels
+	  assigned at compile time. This option is recommended for
+	  transport layer drivers which can use the default channel
+	  allocation scheme (i.e: use protocol-specific channels if
+	  they exist, otherwise use base protocol channels).
+
+config ARM_SCMI_TRANSPORT_INIT_PRIORITY
+	int "SCMI transport layer initialization priority"
+	default 20
+	help
+	  SCMI transport driver device initialization priority.
+
+endif # ARM_SCMI

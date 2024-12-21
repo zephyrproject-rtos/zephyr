@@ -1,0 +1,24 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMX9596_M7
+	select ARM
+	select CPU_CORTEX_M7
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ARM_MPU
+	select ARM_MPU
+	select SOC_LATE_INIT_HOOK
+	select HAS_MCUX
+
+config SOC_MIMX9596_A55
+	select ARM64
+	select CPU_CORTEX_A55
+	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
+	select HAS_MCUX
+
+config MCUX_CORE_SUFFIX
+	default "_cm7" if SOC_MIMX9596_M7
+	default "_ca55" if SOC_MIMX9596_A55

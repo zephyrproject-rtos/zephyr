@@ -1,7 +1,4 @@
-.. _dragino_lsn50_board:
-
-Dragino LSN50 LoRA Sensor Node
-##############################
+.. zephyr:board:: dragino_lsn50
 
 Overview
 ********
@@ -22,10 +19,6 @@ This kit provides:
 - Li/SOCI2 Unchargable Battery
 - GPIOs exposed via screw terminals on the carrier board
 - Housing
-
-.. image:: img/dragino_lsn50.jpg
-     :align: center
-     :alt: Dragino LSN50
 
 More information about the board can be found at the `Dragino LSN50 website`_.
 
@@ -149,7 +142,7 @@ Dragino LSN50  board requires an external debugger.
 Flashing an application to Dragino LSN50
 ----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect the Dragino LSN50 to a STLinkV2 to your host computer using the USB port, then
 run a serial host program to connect with your board. For example:
@@ -175,7 +168,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

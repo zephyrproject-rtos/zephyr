@@ -26,6 +26,7 @@ struct regulator_nxp_vref_config {
 	VREF_Type *base;
 	uint16_t buf_start_delay;
 	uint16_t bg_start_time;
+	bool current_compensation_en;
 };
 
 static int regulator_nxp_vref_enable(const struct device *dev)
@@ -43,8 +44,9 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 	*csr |= VREF_CSR_HCBGEN_MASK;
 
 	/* Monitor until stable */
-	while (!(*csr & VREF_CSR_VREFST_MASK))
+	while (!(*csr & VREF_CSR_VREFST_MASK)) {
 		;
+	}
 
 	/* Enable output buffer */
 	*csr |= VREF_CSR_BUF21EN_MASK;
@@ -182,6 +184,8 @@ static const struct regulator_driver_api api = {
 
 static int regulator_nxp_vref_init(const struct device *dev)
 {
+	const struct regulator_nxp_vref_config *config = dev->config;
+	VREF_Type *const base = config->base;
 	int ret;
 
 	regulator_common_data_init(dev);
@@ -190,6 +194,13 @@ static int regulator_nxp_vref_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
+
+	if (config->current_compensation_en) {
+		base->CSR |= VREF_CSR_ICOMPEN_MASK;
+	}
+
+	/* Workaround some chips not resetting the value correctly on reset */
+	base->UTRIM = 0;
 
 	return regulator_common_init(dev, false);
 }
@@ -204,6 +215,8 @@ static int regulator_nxp_vref_init(const struct device *dev)
 				nxp_buffer_startup_delay_us),			\
 		.bg_start_time = DT_INST_PROP(inst,				\
 				nxp_bandgap_startup_time_us),			\
+		.current_compensation_en = DT_INST_PROP(inst,			\
+				nxp_current_compensation_en),			\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst,\

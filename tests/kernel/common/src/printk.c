@@ -5,14 +5,13 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/sys/printk-hooks.h>
 
 #define BUF_SZ 1024
 
 static int pos;
 char pk_console[BUF_SZ];
 
-void __printk_hook_install(int (*fn)(int));
-void *__printk_get_hook(void);
 int (*_old_char_out)(int);
 
 #if defined(CONFIG_PICOLIBC)

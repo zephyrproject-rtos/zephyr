@@ -91,6 +91,7 @@ config SHELL_PRINTF_BUFF_SIZE
 
 config SHELL_DEFAULT_TERMINAL_WIDTH
 	int "Default terminal width"
+	range 1 $(UINT16_MAX)
 	default 80
 	help
 	  Default terminal width is used to break lines.
@@ -101,7 +102,7 @@ config SHELL_DEFAULT_TERMINAL_HEIGHT
 
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
-	range 3 255
+	range 3 $(UINT8_MAX)
 	default 20
 	help
 	  Maximum number of arguments that can build a command.
@@ -275,6 +276,13 @@ config SHELL_LOG_BACKEND
 	  Disabling log output to a specific shell backend can be achieved
 	  using the shell backend's LOG_LEVEL option
 	  (e.g. CONFIG_SHELL_TELNET_INIT_LOG_LEVEL_NONE=y).
+
+config SHELL_LOG_BACKEND_CUSTOM
+	bool "Use custom backend implementation"
+	help
+	  When enabled, standard implementation of shell log backend is not included.
+	  It allows to provide custom implementation of multiplexing logging messages
+	  with shell data.
 
 config SHELL_LOG_FORMAT_TIMESTAMP
 	bool "Format timestamp"

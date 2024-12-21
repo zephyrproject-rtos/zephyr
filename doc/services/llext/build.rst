@@ -112,18 +112,18 @@ The different build steps are:
 ``PRE_BUILD``
 
     Before the extension code is linked, if the architecture uses dynamic
-    libraries. This step can access `lib_target` and its own properties.
+    libraries. This step can access ``lib_target`` and its own properties.
 
 ``POST_BUILD``
 
     After the extension code is built, but before packaging it in an ``.llext``
-    file. This step is expected to create a `pkg_input` file by reading the
-    contents of `lib_output`.
+    file. This step is expected to create a :file:`pkg_input` file by reading the
+    contents of :file:`lib_output`.
 
 ``POST_PKG``
 
     After the extension output file has been created. The command can operate
-    on the final llext file `pkg_output`.
+    on the final llext file :file:`pkg_output`.
 
 Anything else after ``COMMAND`` will be passed to ``add_custom_command()`` as-is
 (including multiple commands and other options).

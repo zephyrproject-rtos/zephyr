@@ -10,7 +10,7 @@
 #include <zephyr/usb/usbh.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "usbh_device.h"
 

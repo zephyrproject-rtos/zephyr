@@ -28,11 +28,13 @@ config LIS2DW12_TRIGGER_NONE
 config LIS2DW12_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DW12),irq-gpios)
 	select LIS2DW12_TRIGGER
 
 config LIS2DW12_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DW12),irq-gpios)
 	select LIS2DW12_TRIGGER
 
 endchoice
@@ -63,10 +65,15 @@ config LIS2DW12_TAP
 
 endif # LIS2DW12_TRIGGER
 
-config LIS2DW12_THRESHOLD
-	bool "Wakeup threshold trigger (via interrupt)"
+config LIS2DW12_SLEEP
+	bool "Sleep mode"
 	help
-	  Enable the wakeup threshold trigger feature.
+	  Enable sleep (inactivity) mode with ODR change when detected
+
+config LIS2DW12_WAKEUP
+	bool "Wakeup detection (via interrupt)"
+	help
+	  Enable the wakeup detection feature.
 	  The wake-up interrupt signal is generated if a certain number of
 	  consecutive data exceed the configured threshold (config in DT).
 	  The threshold is applied to both positive and negative data: for

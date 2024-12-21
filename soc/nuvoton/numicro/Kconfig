@@ -4,7 +4,7 @@
 # Author: Saravanan Sekar <saravanan@linumiz.com>
 
 config SOC_FAMILY_NUMICRO
-	select PLATFORM_SPECIFIC_INIT
+	select SOC_RESET_HOOK
 
 if SOC_FAMILY_NUMICRO
 

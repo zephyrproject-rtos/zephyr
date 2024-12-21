@@ -22,9 +22,35 @@
 	 */
 
 	cmpl $MULTIBOOT_EAX_MAGIC, %eax
+
+#ifndef CONFIG_DYNAMIC_BOOTARGS
 	je 1f
 	xorl %ebx, %ebx
 1:
+#else
+	movl $multiboot_cmdline, %edi
+	je setup_copy_cmdline
+	xorl %ebx, %ebx
+	jmp end_cmdline
+
+setup_copy_cmdline:
+	testl $MULTIBOOT_INFO_FLAGS_CMDLINE, __multiboot_info_t_flags_OFFSET(%ebx)
+	jz end_cmdline
+
+	movl $multiboot_cmdline + CONFIG_BOOTARGS_ARGS_BUFFER_SIZE - 1, %edx
+	movl __multiboot_info_t_cmdline_OFFSET(%ebx), %esi
+copy_cmdline:
+	cmpl %esi, %edx
+	je end_cmdline
+	cmpb $0, (%esi)
+	je end_cmdline
+
+	movsb
+	jmp copy_cmdline
+end_cmdline:
+	movb $0, (%edi)
+#endif
+
 #endif
 
 #ifdef CONFIG_PIC_DISABLE

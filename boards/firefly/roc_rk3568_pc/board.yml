@@ -1,5 +1,6 @@
 board:
   name: roc_rk3568_pc
+  full_name: ROC-RK3568-PC (Quad-core Cortex-A55)
   vendor: firefly
   socs:
   - name: rk3568

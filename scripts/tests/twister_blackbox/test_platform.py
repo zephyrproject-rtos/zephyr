@@ -14,6 +14,7 @@ import pytest
 import sys
 import json
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -23,18 +24,20 @@ class TestPlatform:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
             {
                 'selected_test_scenarios': 3,
                 'selected_test_instances': 9,
+                'executed_test_instances': 6,
                 'skipped_configurations': 3,
                 'skipped_by_static_filter': 3,
                 'skipped_at_runtime': 0,
-                'passed_configurations': 6,
+                'passed_configurations': 4,
+                'built_configurations': 2,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
-                'executed_test_cases': 10,
-                'skipped_test_cases': 5,
+                'executed_test_cases': 8,
+                'skipped_test_cases': 2,
                 'platform_count': 3,
                 'executed_on_platform': 4,
                 'only_built': 2
@@ -42,18 +45,20 @@ class TestPlatform:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
             {
                 'selected_test_scenarios': 1,
                 'selected_test_instances': 3,
+                'executed_test_instances': 0,
                 'skipped_configurations': 3,
                 'skipped_by_static_filter': 3,
                 'skipped_at_runtime': 0,
                 'passed_configurations': 0,
+                'built_configurations': 0,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
                 'executed_test_cases': 0,
-                'skipped_test_cases': 3,
+                'skipped_test_cases': 0,
                 'platform_count': 3,
                 'executed_on_platform': 0,
                 'only_built': 0
@@ -78,7 +83,7 @@ class TestPlatform:
         ids=['dummy in additional board root', 'no additional board root, crash']
     )
     def test_board_root(self, out_path, board_root, expected_returncode):
-        test_platforms = ['qemu_x86', 'dummy_board/dummy_soc']
+        test_platforms = ['qemu_x86', 'dummy/unit_testing']
         board_root_path = os.path.join(TEST_DATA, 'boards')
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
@@ -95,14 +100,14 @@ class TestPlatform:
         # but we need to differentiate crashes.
         with open(os.path.join(out_path, 'twister.log')) as f:
             log = f.read()
-            error_regex = r'ERROR.*platform_filter\s+-\s+unrecognized\s+platform\s+-\s+dummy_board/dummy_soc$'
+            error_regex = r'ERROR.*platform_filter\s+-\s+unrecognized\s+platform\s+-\s+dummy/unit_testing$'
             board_error = re.search(error_regex, log)
             assert board_error if not board_root else not board_error
 
         assert str(sys_exit.value) == expected_returncode
 
     def test_force_platform(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                ['--force-platform'] + \
@@ -145,7 +150,7 @@ class TestPlatform:
 
         assert str(sys_exit.value) == '0'
 
-        assert all([platform == 'qemu_x86' for platform, _, _ in filtered_j])
+        assert all([platform == 'qemu_x86/atom' for platform, _, _ in filtered_j])
 
     @pytest.mark.parametrize(
         'test_path, test_platforms',
@@ -187,8 +192,9 @@ class TestPlatform:
                 os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
                 ['qemu_x86', 'qemu_x86_64'],
                 {
-                    'passed_configurations': 3,
                     'selected_test_instances': 6,
+                    'passed_configurations': 2,
+                    'executed_test_instances': 3,
                     'executed_on_platform': 2,
                     'only_built': 1,
                 }
@@ -214,7 +220,7 @@ class TestPlatform:
         sys.stderr.write(err)
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) test configurations passed'
+                     r' (?P<test_instances>[0-9]+) executed test configurations passed'
 
         built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
                       r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
@@ -226,7 +232,7 @@ class TestPlatform:
         assert int(pass_search.group('passed_configurations')) == \
                expected['passed_configurations']
         assert int(pass_search.group('test_instances')) == \
-               expected['selected_test_instances']
+               expected['executed_test_instances']
 
         built_search = re.search(built_regex, err, re.MULTILINE)
 
@@ -258,22 +264,32 @@ class TestPlatform:
             self.loader.exec_module(self.twister_module)
 
         select_regex = r'^INFO    - (?P<test_scenarios>[0-9]+) test scenarios' \
-                       r' \((?P<test_instances>[0-9]+) test instances\) selected,' \
-                       r' (?P<skipped_configurations>[0-9]+) configurations skipped' \
+                       r' \((?P<test_instances>[0-9]+) configurations\) selected,' \
+                       r' (?P<skipped_configurations>[0-9]+) configurations filtered' \
                        r' \((?P<skipped_by_static_filter>[0-9]+) by static filter,' \
                        r' (?P<skipped_at_runtime>[0-9]+) at runtime\)\.$'
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<failed_configurations>[0-9]+) failed,' \
+                     r' (?P<executed_test_instances>[0-9]+) executed test configurations passed' \
+                     r' \([0-9]+\.[0-9]+%\), (?P<built_configurations>[0-9]+) built \(not run\),' \
+                     r' (?P<failed_configurations>[0-9]+) failed,' \
                      r' (?P<errored_configurations>[0-9]+) errored,' \
-                     r' (?P<skipped_configurations>[0-9]+) skipped with' \
-                     r' [0-9]+ warnings in [0-9]+\.[0-9]+ seconds$'
+                     r' with (?:[0-9]+|no) warnings in [0-9]+\.[0-9]+ seconds.$'
 
-        case_regex = r'^INFO    - In total (?P<executed_test_cases>[0-9]+)' \
-                     r' test cases were executed, (?P<skipped_test_cases>[0-9]+) skipped' \
-                     r' on (?P<platform_count>[0-9]+) out of total [0-9]+ platforms' \
-                     r' \([0-9]+\.[0-9]+%\)$'
+        case_regex = r'^INFO    - (?P<passed_cases>[0-9]+) of' \
+                     r' (?P<executed_test_cases>[0-9]+) executed test cases passed' \
+                     r' \([0-9]+\.[0-9]+%\)' \
+                     r'(?:, (?P<blocked_cases>[0-9]+) blocked)?' \
+                     r'(?:, (?P<failed_cases>[0-9]+) failed)?' \
+                     r'(?:, (?P<errored_cases>[0-9]+) errored)?' \
+                     r'(?:, (?P<none_cases>[0-9]+) without a status)?' \
+                     r' on (?P<platform_count>[0-9]+) out of total' \
+                     r' (?P<total_platform_count>[0-9]+) platforms \([0-9]+\.[0-9]+%\)'
+
+        skip_regex = r'(?P<skipped_test_cases>[0-9]+) selected test cases not executed:' \
+                     r'(?: (?P<skipped_cases>[0-9]+) skipped)?' \
+                     r'(?:, (?P<filtered_cases>[0-9]+) filtered)?' \
+                     r'.'
 
         built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
                       r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
@@ -302,24 +318,31 @@ class TestPlatform:
         assert pass_search
         assert int(pass_search.group('passed_configurations')) == \
                expected['passed_configurations']
-        assert int(pass_search.group('test_instances')) == \
-               expected['selected_test_instances']
-        assert int(pass_search.group('failed_configurations')) == \
-               expected['failed_configurations']
-        assert int(pass_search.group('errored_configurations')) == \
-               expected['errored_configurations']
-        assert int(pass_search.group('skipped_configurations')) == \
-               expected['skipped_configurations']
+        assert int(pass_search.group('built_configurations')) == \
+               expected['built_configurations']
+        assert int(pass_search.group('executed_test_instances')) == \
+               expected['executed_test_instances']
+        if expected['failed_configurations']:
+            assert int(pass_search.group('failed_configurations')) == \
+                   expected['failed_configurations']
+        if expected['errored_configurations']:
+            assert int(pass_search.group('errored_configurations')) == \
+                   expected['errored_configurations']
 
         case_search = re.search(case_regex, err, re.MULTILINE)
 
         assert case_search
         assert int(case_search.group('executed_test_cases')) == \
                expected['executed_test_cases']
-        assert int(case_search.group('skipped_test_cases')) == \
-               expected['skipped_test_cases']
         assert int(case_search.group('platform_count')) == \
                expected['platform_count']
+
+        if expected['skipped_test_cases']:
+            skip_search = re.search(skip_regex, err, re.MULTILINE)
+
+            assert skip_search
+            assert int(skip_search.group('skipped_test_cases')) == \
+                   expected['skipped_test_cases']
 
         built_search = re.search(built_regex, err, re.MULTILINE)
 

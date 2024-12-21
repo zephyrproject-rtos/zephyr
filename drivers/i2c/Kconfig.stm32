@@ -5,6 +5,7 @@ menuconfig I2C_STM32
 	bool "STM32 I2C driver"
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V1_ENABLED || DT_HAS_ST_STM32_I2C_V2_ENABLED
+	select PINCTRL
 	help
 	  Enable I2C support on the STM32 SoCs
 
@@ -42,7 +43,8 @@ config I2C_STM32_COMBINED_INTERRUPT
 	bool
 	depends on I2C_STM32_INTERRUPT
 	default y if SOC_SERIES_STM32C0X || SOC_SERIES_STM32F0X || \
-		     SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X
+		     SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X || \
+		     SOC_SERIES_STM32U0X || SOC_SERIES_STM32WB0X
 
 config I2C_STM32_BUS_RECOVERY
 	bool "Bus recovery support"

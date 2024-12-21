@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SILABS_SLEEPTIMER_TIMER
+	bool "Silabs Sleeptimer system clock driver"
+	depends on SOC_FAMILY_SILABS_S2
+	depends on DT_HAS_SILABS_GECKO_STIMER_ENABLED
+	select SOC_SILABS_SLEEPTIMER
+	select TICKLESS_CAPABLE
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	help
+	  This module implements a kernel device driver for the sleeptimer
+	  and provides the standard "system clock driver" interfaces.

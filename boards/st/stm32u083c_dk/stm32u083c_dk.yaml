@@ -1,0 +1,18 @@
+identifier: stm32u083c_dk
+name: ST STM32U083C-DK Discovery Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - dac
+  - gpio
+  - i2c
+  - pwm
+  - usart
+ram: 40
+flash: 256

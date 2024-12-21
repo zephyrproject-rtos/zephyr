@@ -4,7 +4,6 @@
 config LOG_BACKEND_ADSP
 	bool "Intel ADSP buffer backend"
 	depends on SOC_FAMILY_INTEL_ADSP
-	select LOG_OUTPUT
 	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help
 	  Enable backend for the host trace protocol of the Intel ADSP

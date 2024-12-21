@@ -23,6 +23,7 @@ if(CONFIG_SETTINGS)
   src/test_blob.c
   src/test_sar.c
   src/test_lcd.c
+  src/test_brg.c
 )
 
 if(CONFIG_BT_MESH_USES_MBEDTLS_PSA)
@@ -72,6 +73,7 @@ else()
   src/test_op_agg.c
   src/test_sar.c
   src/test_cdp1.c
+  src/test_brg.c
  )
 
 endif()

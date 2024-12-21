@@ -1,0 +1,6 @@
+board:
+  name: mck_ra8t1
+  full_name: RA8T1 Evaluation Kit
+  vendor: renesas
+  socs:
+  - name: r7fa8t1ahecbd

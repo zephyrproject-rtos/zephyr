@@ -7,8 +7,8 @@ Installation
 
 If you plan to use this plugin with Twister, then you don't need to install it
 separately by pip. When Twister uses this plugin for pytest tests, it updates
-`PYTHONPATH` variable, and then extends pytest command by
-`-p twister_harness.plugin` argument.
+:envvar:`PYTHONPATH` variable, and then extends pytest command by
+``-p twister_harness.plugin`` argument.
 
 
 Usage

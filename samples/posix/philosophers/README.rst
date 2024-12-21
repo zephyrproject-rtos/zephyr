@@ -1,12 +1,12 @@
-.. _posix-philosophers-sample:
+.. zephyr:code-sample:: posix-philosophers
+   :name: POSIX Philosophers
 
-POSIX Philosophers
-##################
+   Implement a solution to the Dining Philosophers problem using the POSIX API.
 
 Overview
 ********
 
-This sample implements Zephyr's :ref:`Dining Philosophers Sample <dining-philosophers-sample>` using the
+This sample implements Zephyr's :zephyr:code-sample:`dining-philosophers` sample using the
 :ref:`POSIX API <posix_support>`. The source code for this sample can be found under
 :file:`samples/posix/philosophers`.
 
@@ -52,5 +52,4 @@ Like the original philosophers sample, the POSIX variant also enables
 Additional Information
 **********************
 
-For additional information, please refer to the
-:ref:`Dining Philosophers Sample <dining-philosophers-sample>`.
+For additional information, please refer to the :zephyr:code-sample:`dining-philosophers` sample.

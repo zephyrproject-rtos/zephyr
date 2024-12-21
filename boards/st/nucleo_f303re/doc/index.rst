@@ -1,7 +1,4 @@
-.. _nucleo_f303re_board:
-
-ST Nucleo F303RE
-################
+.. zephyr:board:: nucleo_f303re
 
 Overview
 ********
@@ -26,10 +23,6 @@ Here are some highlights of the Nucleo F303RE board:
 
 - One user LED
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f303re.jpg
-   :align: center
-   :alt: Nucleo F303RE
 
 More information about the board can be found at the `Nucleo F303RE website`_,
 and in the `STM32 Nucleo-64 board User Manual`_.
@@ -143,7 +136,20 @@ Programming and Debugging
 *************************
 
 The Nucleo F303RE board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 
 .. _Nucleo F303RE website:
@@ -160,3 +166,6 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 .. _STM32F303RE datasheet:
    https://www.st.com/resource/en/datasheet/stm32f303re.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

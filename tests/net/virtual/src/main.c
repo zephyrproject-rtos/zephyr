@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/ztest.h>
 
 #include <zephyr/net/dummy.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/virtual_mgmt.h>
@@ -309,8 +309,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	if ((iface != net_if_lookup_by_dev(DEVICE_GET(eth_test_dummy1))) &&
 	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth_test_dummy2))) &&
 	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth_test))) &&
-	    (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)))
+	    (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL))) {
 		return;
+	}
 
 	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
 	    net_if_get_by_iface(iface));

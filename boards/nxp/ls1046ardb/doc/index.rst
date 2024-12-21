@@ -1,7 +1,4 @@
-.. _nxp_ls1046ardb:
-
-NXP LS1046A RDB
-#################################
+.. zephyr:board:: ls1046ardb
 
 Overview
 ********

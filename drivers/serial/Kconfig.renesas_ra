@@ -1,4 +1,5 @@
 # Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_RENESAS_RA
@@ -7,5 +8,29 @@ config UART_RENESAS_RA
 	depends on DT_HAS_RENESAS_RA_UART_SCI_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  Enable Renesas RA series UART driver.
+
+config UART_SCI_RA
+	bool "Renesas RA SCI UART"
+	default y
+	depends on DT_HAS_RENESAS_RA_SCI_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC
+	select USE_RA_FSP_SCI_UART
+	select USE_RA_FSP_DTC if UART_ASYNC_API
+	select PINCTRL
+	help
+	  Enable Renesas RA SCI UART Driver.
+
+if UART_SCI_RA
+
+config UART_RA_SCI_UART_FIFO_ENABLE
+	bool "RA SCI UART FIFO usage enable"
+	default y
+	help
+	  Enable RA SCI FIFO
+
+endif

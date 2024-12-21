@@ -3,6 +3,12 @@
 # Copyright (c) 2016 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_HAL_STM32_MODULE
+	bool
+
+config ZEPHYR_HAL_STM32_MODULE_BLOBS
+	bool
+
 config HAS_STM32LIB
 	bool
 
@@ -442,15 +448,20 @@ config USE_STM32_HAL_RAMCFG
 	  Enable STM32Cube RAMs configuration controller (RAMCFG) HAL module
 	  driver
 
+config USE_STM32_HAL_RADIO
+	bool
+	help
+	  Enable STM32Cube Radio HAL module driver
+
+config USE_STM32_HAL_RADIO_TIMER
+	bool
+	help
+	  Enable STM32Cube Radio Timer HAL module driver
+
 config USE_STM32_HAL_RAMECC
 	bool
 	help
 	  Enable STM32Cube RAM ECC monitoring (RAMECC) HAL module driver
-
-config USE_STM32_HAL_RAMCFG
-	bool
-	help
-	  Enable STM32Cube RAM config (RAMCFG) HAL module driver
 
 config USE_STM32_HAL_RNG
 	bool

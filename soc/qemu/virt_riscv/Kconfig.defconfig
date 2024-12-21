@@ -19,11 +19,14 @@ config 2ND_LVL_ISR_TBL_OFFSET
 config 2ND_LVL_INTR_00_OFFSET
 	default 11
 
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 11
+
 config MAX_IRQ_PER_AGGREGATOR
-	default 52
+	default 1024
 
 config NUM_IRQS
-	default 1035
+	default 1036
 
 config PMP_SLOTS
 	default 16

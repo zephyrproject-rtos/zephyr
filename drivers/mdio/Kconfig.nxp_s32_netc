@@ -7,5 +7,6 @@ config MDIO_NXP_S32_NETC
 	depends on DT_HAS_NXP_S32_NETC_EMDIO_ENABLED
 	depends on ETH_NXP_S32_NETC && DT_HAS_NXP_S32_NETC_PSI_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
 	help
 	  Enable NETC External MDIO Controller driver for NXP S32 SoCs.

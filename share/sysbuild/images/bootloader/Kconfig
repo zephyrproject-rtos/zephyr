@@ -30,6 +30,90 @@ endchoice
 
 if BOOTLOADER_MCUBOOT
 
+choice MCUBOOT_MODE
+	prompt "Mode of operation"
+	default MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH
+	help
+	  The operating mode of MCUboot (which will also be propagated to the application).
+
+config MCUBOOT_MODE_SINGLE_APP
+	bool "Single slot"
+	help
+	  MCUboot will only boot slot0_partition placed application and does not care about other
+	  slots. In this mode application is not able to DFU its own update to secondary slot and
+	  all updates need to be performed using MCUboot serial recovery.
+
+config MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH
+	bool "Swap without scratch (swap using move)"
+	help
+	  MCUboot expects slot0_partition and slot1_partition to be present in DT and application
+	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  in main application if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config MCUBOOT_MODE_SWAP_SCRATCH
+	bool "Swap using scratch"
+	help
+	  MCUboot expects slot0_partition, slot1_partition and scratch_partition to be present in
+	  DT, and application will boot from slot0_partition. In this mode scratch_partition is
+	  used as temporary storage when MCUboot swaps application from the secondary slot to the
+	  primary slot.
+	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected in main application if MCUboot
+	  has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config MCUBOOT_MODE_OVERWRITE_ONLY
+	bool "Overwrite"
+	help
+	  MCUboot will take contents of secondary slot of an image and will overwrite primary slot
+	  with it. In this mode it is not possible to revert back to previous version as it is not
+	  stored in the secondary slot.
+	  This mode supports MCUBOOT_BOOTLOADER_NO_DOWNGRADE which means that the overwrite will
+	  not happen unless the version of secondary slot is higher than the version in primary
+	  slot.
+
+config MCUBOOT_MODE_DIRECT_XIP
+	bool "DirectXIP"
+	help
+	  MCUboot expects slot0_partition and slot1_partition to exist in DT. In this mode MCUboot
+	  can boot from either partition and will select one with higher application image version,
+	  which usually means major.minor.patch triple, unless BOOT_VERSION_CMP_USE_BUILD_NUMBER is
+	  also selected in MCUboot that enables comparison of build number.
+	  This option automatically selectes MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible
+	  to swap back to older version of application.
+
+config MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
+	bool "DirectXIP with revert"
+	help
+	  MCUboot expects slot0_partition and slot1_partition to exist in DT. In this mode MCUboot
+	  will boot the application with the higher version from either slot, as long as it has
+	  been marked to be boot next time for test or permanently. In case when application is
+	  marked for test it needs to confirm itself, on the first boot, or it will be removed and
+	  MCUboot will revert to booting previously approved application.
+	  This mode does not allow freely switching between application versions, as, once higher
+	  version application is approved, it is not possible to select lower version for boot.
+	  This mode selects MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible to downgrade
+	  running application, but note that MCUboot may do that if application with higher
+	  version will not get confirmed.
+
+config MCUBOOT_MODE_RAM_LOAD
+	bool "RAM load"
+	help
+	  MCUboot expects slot0_partition and slot1_partition to exist in DT. In this mode, MCUboot
+	  will select the image with the higher version number, copy it to RAM and begin execution
+	  from there. The image must be linked to execute from RAM, the address that it is copied
+	  to is specified using the load-addr argument when running imgtool.
+
+	  Note: RAM must be assigned to the bootloader that is not used by the application in this
+	  mode so that the bootloader is able to function until the application has booted.
+
+config MCUBOOT_MODE_FIRMWARE_UPDATER
+	bool "Firmware updater"
+	help
+	  MCUboot will only boot slot0_partition for the main application but has an entrance
+	  mechanism defined for entering the slot1_partition which is a dedicated firmware updater
+	  application used to update the slot0_partition application.
+
+endchoice
+
 config SIGNATURE_TYPE
 	string
 	default NONE if BOOT_SIGNATURE_TYPE_NONE
@@ -64,9 +148,14 @@ config BOOT_SIGNATURE_KEY_FILE
 	help
 	  Absolute path to signing key file to use with MCUBoot.
 
+config SUPPORT_BOOT_ENCRYPTION
+	bool
+	depends on !BOOT_SIGNATURE_TYPE_NONE && !MCUBOOT_MODE_DIRECT_XIP && !MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT && !MCUBOOT_MODE_FIRMWARE_UPDATER
+	default y
+
 config BOOT_ENCRYPTION
 	bool "Encrypted image support"
-	depends on !BOOT_SIGNATURE_TYPE_NONE
+	depends on SUPPORT_BOOT_ENCRYPTION
 	help
 	  Support encrypted images.
 

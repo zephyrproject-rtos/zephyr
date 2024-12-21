@@ -11,10 +11,6 @@
 / {
 	model = "Silicon Labs BRD4161A (Mighty Gecko 12 Radio Board)";
 	compatible = "silabs,slwrb4161a", "silabs,efr32mg12p";
-
-	chosen {
-		zephyr,bt-hci = &bt_hci_silabs;
-	};
 };
 
 &cpu0 {
@@ -92,8 +88,4 @@
 		reg = <0x40>;
 		status = "okay";
 	};
-};
-
-&bt_hci_silabs {
-	status = "okay";
 };

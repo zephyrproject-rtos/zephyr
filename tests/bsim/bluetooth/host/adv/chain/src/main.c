@@ -51,6 +51,14 @@ static void test_adv_main(void)
 	extern int broadcaster_multiple(void);
 	int err;
 
+	err = bt_enable(NULL);
+	if (err) {
+		FAIL("Bluetooth init failed\n");
+
+		bs_trace_silent_exit(err);
+		return;
+	}
+
 	err = broadcaster_multiple();
 	if (err) {
 		FAIL("Adv tests failed\n");

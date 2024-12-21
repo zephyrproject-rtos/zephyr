@@ -42,7 +42,7 @@ Building and Running
 ********************
 
 This sample runs with X-NUCLEO-IKS01A2 stacked on any board with a matching
-Arduino connector. For this example, we use a :ref:`nucleo_f401re_board` board.
+Arduino connector. For this example, we use a :zephyr:board:`nucleo_f401re` board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/x_nucleo_iks01a2/sensorhub

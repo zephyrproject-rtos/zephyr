@@ -114,7 +114,8 @@ static int wdt_nrf_install_timeout(const struct device *dev,
 		 * the timeout) from range 0xF-0xFFFFFFFF given in 32768 Hz
 		 * clock ticks. This makes the allowed range of 0x1-0x07CFFFFF
 		 * in milliseconds. Check if the provided value is within
-		 * this range. */
+		 * this range.
+		 */
 		if ((cfg->window.max == 0U) || (cfg->window.max > 0x07CFFFFF)) {
 			return -EINVAL;
 		}
@@ -186,23 +187,30 @@ static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_ty
 
 #define WDT(idx) DT_NODELABEL(wdt##idx)
 
+#define WDT_NRFX_WDT_IRQ(idx)						       \
+	COND_CODE_1(CONFIG_WDT_NRFX_NO_IRQ,				       \
+		(),							       \
+		(IRQ_CONNECT(DT_IRQN(WDT(idx)), DT_IRQ(WDT(idx), priority),    \
+			     nrfx_isr, nrfx_wdt_##idx##_irq_handler, 0)))
+
 #define WDT_NRFX_WDT_DEVICE(idx)					       \
 	static void wdt_##idx##_event_handler(nrf_wdt_event_t event_type,      \
 					      uint32_t requests,	       \
 					      void *p_context)		       \
 	{								       \
-		wdt_event_handler(DEVICE_DT_GET(WDT(idx)), event_type,         \
+		wdt_event_handler(DEVICE_DT_GET(WDT(idx)), event_type,	       \
 				  requests, p_context);			       \
 	}								       \
 	static int wdt_##idx##_init(const struct device *dev)		       \
 	{								       \
 		const struct wdt_nrfx_config *config = dev->config;	       \
 		nrfx_err_t err_code;					       \
-		IRQ_CONNECT(DT_IRQN(WDT(idx)), DT_IRQ(WDT(idx), priority),     \
-			    nrfx_isr, nrfx_wdt_##idx##_irq_handler, 0);	       \
+		WDT_NRFX_WDT_IRQ(idx);					       \
 		err_code = nrfx_wdt_init(&config->wdt,			       \
 					 NULL,				       \
-					 wdt_##idx##_event_handler,	       \
+					 IS_ENABLED(CONFIG_WDT_NRFX_NO_IRQ)    \
+						 ? NULL			       \
+						 : wdt_##idx##_event_handler,  \
 					 NULL);				       \
 		if (err_code != NRFX_SUCCESS) {				       \
 			return -EBUSY;					       \

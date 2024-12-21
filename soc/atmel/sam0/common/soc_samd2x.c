@@ -286,7 +286,7 @@ static inline void osc8m_disable(void)
 }
 #endif
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	osc8m_init();
 	osc32k_init();

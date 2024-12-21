@@ -20,4 +20,4 @@ Media Proxy
 Media Control Client
 ====================
 
-.. doxygengroup:: bt_gatt_mcc
+.. doxygengroup:: bt_mcc

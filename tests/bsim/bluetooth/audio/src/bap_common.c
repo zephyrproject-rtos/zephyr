@@ -15,7 +15,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 
-#include "common.h"
 #include "bap_common.h"
 
 void print_hex(const uint8_t *ptr, size_t len)
@@ -86,7 +85,7 @@ void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 	print_ltv_array("meta", codec_cfg->meta, codec_cfg->meta_len);
 }
 
-void print_qos(const struct bt_audio_codec_qos *qos)
+void print_qos(const struct bt_bap_qos_cfg *qos)
 {
 	printk("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
 	       "rtn %u latency %u pd %u\n",

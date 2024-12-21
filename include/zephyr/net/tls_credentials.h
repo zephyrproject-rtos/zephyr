@@ -16,6 +16,8 @@
 /**
  * @brief TLS credentials management
  * @defgroup tls_credentials TLS credentials management
+ * @since 1.13
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

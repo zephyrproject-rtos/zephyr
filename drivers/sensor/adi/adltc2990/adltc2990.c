@@ -228,6 +228,7 @@ static int adltc2990_fetch_property_value(const struct device *dev,
 static int adltc2990_init(const struct device *dev)
 {
 	const struct adltc2990_config *cfg = dev->config;
+	int err;
 
 	if (!i2c_is_ready_dt(&cfg->bus)) {
 		LOG_ERR("I2C bus %s not ready", cfg->bus.bus->name);
@@ -238,12 +239,17 @@ static int adltc2990_init(const struct device *dev)
 					 cfg->measurement_mode[1] << 3 | cfg->measurement_mode[0];
 
 	LOG_DBG("Setting Control Register to: 0x%x", ctrl_reg_setting);
-	int err = i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting);
-
+	err = i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting);
 	if (err < 0) {
 		LOG_ERR("configuring for single bus failed: %d", err);
 		return err;
 	}
+
+	err = adltc2990_trigger_measurement(dev);
+	if (err < 0) {
+		LOG_ERR("triggering measurement failed: %d", err);
+	}
+
 	LOG_INF("Initializing ADLTC2990 with name %s", dev->name);
 	return 0;
 }

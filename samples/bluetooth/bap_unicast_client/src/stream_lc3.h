@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys_clock.h>
 
 /* Since the lc3.h header file is not available when CONFIG_LIBLC3=n, we need to guard the include

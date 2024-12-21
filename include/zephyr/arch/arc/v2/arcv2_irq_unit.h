@@ -199,9 +199,11 @@ bool z_arc_v2_irq_unit_is_in_isr(void)
 /**
  * @brief Sets an IRQ line to level/pulse trigger
  *
- * Sets the IRQ line <irq> to trigger an interrupt based on the level or the
- * edge of the signal. Valid values for <trigger> are _ARC_V2_INT_LEVEL and
+ * Sets the IRQ line @p irq to trigger an interrupt based on the level or the
+ * edge of the signal. Valid values for @p trigger are _ARC_V2_INT_LEVEL and
  * _ARC_V2_INT_PULSE.
+ * @param irq IRQ line
+ * @param trigger Trigger state
  */
 static ALWAYS_INLINE
 void z_arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)
@@ -217,8 +219,10 @@ void z_arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)
 /**
  * @brief Returns an IRQ line trigger type
  *
- * Gets the IRQ line <irq> trigger type.
- * Valid values for <trigger> are _ARC_V2_INT_LEVEL and _ARC_V2_INT_PULSE.
+ * Gets the IRQ line @p irq trigger type.
+ * Valid values for @retval trigger are _ARC_V2_INT_LEVEL and _ARC_V2_INT_PULSE.
+ *
+ * @param irq IRQ line
  *
  * @return trigger state
  */

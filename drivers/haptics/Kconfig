@@ -1,0 +1,24 @@
+# Copyright 2024 Cirrus Logic, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HAPTICS
+	bool "Haptic feedback drivers"
+	help
+	  Enable haptics driver configuration.
+
+if HAPTICS
+
+module = HAPTICS
+module-str = haptics
+source "subsys/logging/Kconfig.template.log_config"
+
+config HAPTICS_INIT_PRIORITY
+	int "Haptic driver init priority"
+	default 90
+	help
+	  Haptic driver initialization priority.
+
+source "drivers/haptics/Kconfig.drv2605"
+
+endif # HAPTICS

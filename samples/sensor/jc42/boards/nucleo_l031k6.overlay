@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2020, Steven Daglish <s.c.daglish@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	mcp9808@18 {
+		compatible = "microchip,mcp9808", "jedec,jc-42.4-temp";
+		reg = <0x18>;
+		int-gpios = <&gpiob 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		resolution = <3>;
+	};
+};

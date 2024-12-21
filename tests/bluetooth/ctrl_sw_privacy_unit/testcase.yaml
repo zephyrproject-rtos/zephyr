@@ -1,9 +1,0 @@
-common:
-  tags: bluetooth
-tests:
-  bluetooth.privacy.test:
-    platform_allow:
-      - native_posix
-      - native_sim
-    integration_platforms:
-      - native_sim

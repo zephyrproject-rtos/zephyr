@@ -1,7 +1,4 @@
-.. _stm32f030_demo:
-
-STM32F030 DEMO BOARD
-####################
+.. zephyr:board:: stm32f030_demo
 
 This board has the bare minimum components required to power on
 the STM32F030F4P6 MCU. Most of the GPIOs on the STM32 SoC have
@@ -10,10 +7,6 @@ that match the SoC's pin names.
 
 For practical use, you'll need to add additional components
 and circuits using a breadboard, for example.
-
-.. image:: img/stm32f030_demo.jpg
-   :align: center
-   :alt: STM32F030 DEMO BOARD
 
 More information about the board can be found at the `stm32-base.org website`_.
 

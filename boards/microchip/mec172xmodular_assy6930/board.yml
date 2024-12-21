@@ -1,5 +1,6 @@
 board:
   name: mec172xmodular_assy6930
+  full_name: MEC172x Modular Card ASSY6930 (Rev. B)
   vendor: microchip
   socs:
     - name: mec172x_nsz

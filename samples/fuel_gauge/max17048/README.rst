@@ -1,12 +1,12 @@
-.. _MAX17048_sample:
+.. zephyr:code-sample:: max17048
+   :name: MAX17048 Li-Ion battery fuel gauge
 
-MAX17048 Li-Ion battery fuel gauge
-###################################
+   Read battery percentage and power status using MAX17048 fuel gauge.
 
 Overview
 ********
 
-This sample shows how to use the Zephyr :ref:`fuel_gauge_api` API driver for the `MAX17048` fuel gauge.
+This sample shows how to use the Zephyr :ref:`fuel_gauge_api` API driver for the MAX17048 fuel gauge.
 
 .. _MAX17048: https://www.maximintegrated.com/en/products/power/battery-management/MAX17048.html
 

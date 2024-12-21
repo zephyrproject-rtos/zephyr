@@ -1,7 +1,4 @@
-.. _adafruit_feather_m0_lora:
-
-Adafruit Feather M0 LoRa
-########################
+.. zephyr:board:: adafruit_feather_m0_lora
 
 Overview
 ********
@@ -10,10 +7,6 @@ The Adafruit Feather M0 Lora is a thin, light ARM development
 boards with an onboard battery connector and charger for 3.7 V lithium
 polymer batteries, charging status indicator and user LEDs, native USB
 connector, 20 I/O pins, and a LoRa radio module from Semtech.
-
-.. image:: img/adafruit_feather_m0_lora.jpg
-     :align: center
-     :alt: Adafruit Feather M0 LoRa
 
 Hardware
 ********
@@ -99,7 +92,7 @@ USB Device Port
 ===============
 
 The SAMD21 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
@@ -119,7 +112,7 @@ the reset button twice.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

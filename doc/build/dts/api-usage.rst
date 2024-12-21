@@ -34,18 +34,18 @@ identifier* for it. This is a just a C macro that refers to the node.
 These are the main ways to get a node identifier:
 
 By path
-   Use :c:func:`DT_PATH()` along with the node's full path in the devicetree,
+   Use :c:macro:`DT_PATH()` along with the node's full path in the devicetree,
    starting from the root node. This is mostly useful if you happen to know the
    exact node you're looking for.
 
 By node label
-   Use :c:func:`DT_NODELABEL()` to get a node identifier from a :ref:`node
+   Use :c:macro:`DT_NODELABEL()` to get a node identifier from a :ref:`node
    label <dt-node-labels>`. Node labels are often provided by SoC :file:`.dtsi`
    files to give nodes names that match the SoC datasheet, like ``i2c1``,
    ``spi2``, etc.
 
 By alias
-   Use :c:func:`DT_ALIAS()` to get a node identifier for a property of the
+   Use :c:macro:`DT_ALIAS()` to get a node identifier for a property of the
    special ``/aliases`` node. This is sometimes done by applications (like
    :zephyr:code-sample:`blinky`, which uses the ``led0`` alias) that need to
    refer to *some* device of a particular type ("the board's user LED") but
@@ -54,14 +54,14 @@ By alias
 By instance number
    This is done primarily by device drivers, as instance numbers are a way to
    refer to individual nodes based on a matching compatible. Get these with
-   :c:func:`DT_INST()`, but be careful doing so. See below.
+   :c:macro:`DT_INST()`, but be careful doing so. See below.
 
 By chosen node
-   Use :c:func:`DT_CHOSEN()` to get a node identifier for ``/chosen`` node
+   Use :c:macro:`DT_CHOSEN()` to get a node identifier for ``/chosen`` node
    properties.
 
 By parent/child
-   Use :c:func:`DT_PARENT()` and :c:func:`DT_CHILD()` to get a node identifier
+   Use :c:macro:`DT_PARENT()` and :c:macro:`DT_CHILD()` to get a node identifier
    for a parent or child node, starting from a node identifier you already have.
 
 Two node identifiers which refer to the same node are identical and can be used
@@ -82,7 +82,7 @@ Here are a few ways to get node identifiers for the ``i2c@40002000`` node:
 - ``DT_NODELABEL(i2c1)``
 - ``DT_ALIAS(sensor_controller)``
 - ``DT_INST(x, vnd_soc_i2c)`` for some unknown number ``x``. See the
-  :c:func:`DT_INST()` documentation for details.
+  :c:macro:`DT_INST()` documentation for details.
 
 .. important::
 
@@ -133,7 +133,7 @@ The right API to use to read property values depends on the node and property.
 Checking properties and values
 ==============================
 
-You can use :c:func:`DT_NODE_HAS_PROP()` to check if a node has a property. For
+You can use :c:macro:`DT_NODE_HAS_PROP()` to check if a node has a property. For
 the :ref:`example devicetree <dt-node-main-ex>` above:
 
 .. code-block:: c
@@ -202,7 +202,7 @@ Its properties can be accessed like this:
    unsigned char b[] = DT_PROP(FOO, b); /* {0xaa, 0xbb, 0xcc, 0xdd} */
    char* c[] = DT_PROP(FOO, c);         /* {"foo", "bar"} */
 
-You can use :c:func:`DT_PROP_LEN()` to get logical array lengths in number of
+You can use :c:macro:`DT_PROP_LEN()` to get logical array lengths in number of
 elements.
 
 .. code-block:: c
@@ -226,12 +226,12 @@ total number of register blocks in the node's ``reg`` property.
 
 You **cannot** read register block addresses and lengths with ``DT_PROP(node,
 reg)``. Instead, if a node only has one register block, use
-:c:func:`DT_REG_ADDR` or :c:func:`DT_REG_SIZE`:
+:c:macro:`DT_REG_ADDR` or :c:macro:`DT_REG_SIZE`:
 
 - ``DT_REG_ADDR(node_id)``: the given node's register block address
 - ``DT_REG_SIZE(node_id)``: its size
 
-Use :c:func:`DT_REG_ADDR_BY_IDX` or :c:func:`DT_REG_SIZE_BY_IDX` instead if the
+Use :c:macro:`DT_REG_ADDR_BY_IDX` or :c:macro:`DT_REG_SIZE_BY_IDX` instead if the
 node has multiple register blocks:
 
 - ``DT_REG_ADDR_BY_IDX(node_id, idx)``: address of register block at index
@@ -261,7 +261,7 @@ Given a node identifier ``node_id``, ``DT_NUM_IRQS(node_id)`` is the total
 number of interrupt specifiers in the node's ``interrupts`` property.
 
 The most general purpose API macro for accessing these is
-:c:func:`DT_IRQ_BY_IDX`:
+:c:macro:`DT_IRQ_BY_IDX`:
 
 .. code-block:: c
 
@@ -274,7 +274,7 @@ macro, check the bindings file for the node you are interested in to find the
 ``val`` names.
 
 Most Zephyr devicetree bindings have a cell named ``irq``, which is the
-interrupt number. You can use :c:func:`DT_IRQN` as a convenient way to get a
+interrupt number. You can use :c:macro:`DT_IRQN` as a convenient way to get a
 processed view of this value.
 
 .. warning::
@@ -302,8 +302,8 @@ syntax introduced in :ref:`dt-writing-property-values`. Properties which
 contain phandles have type ``phandle``, ``phandles``, or ``phandle-array`` in
 their bindings. We'll call these "phandle properties" for short.
 
-You can convert a phandle to a node identifier using :c:func:`DT_PHANDLE`,
-:c:func:`DT_PHANDLE_BY_IDX`, or :c:func:`DT_PHANDLE_BY_NAME`, depending on the
+You can convert a phandle to a node identifier using :c:macro:`DT_PHANDLE`,
+:c:macro:`DT_PHANDLE_BY_IDX`, or :c:macro:`DT_PHANDLE_BY_NAME`, depending on the
 type of property you are working with.
 
 One common use case for phandle properties is referring to other hardware in
@@ -312,13 +312,13 @@ phandle to a Zephyr driver-level :ref:`struct device <device_model_api>`.
 See :ref:`dt-get-device` for ways to do that.
 
 Another common use case is accessing specifier values in a phandle array. The
-general purpose APIs for this are :c:func:`DT_PHA_BY_IDX` and :c:func:`DT_PHA`.
-There are also hardware-specific shorthands like :c:func:`DT_GPIO_CTLR_BY_IDX`,
-:c:func:`DT_GPIO_CTLR`,
-:c:func:`DT_GPIO_PIN_BY_IDX`, :c:func:`DT_GPIO_PIN`,
-:c:func:`DT_GPIO_FLAGS_BY_IDX`, and :c:func:`DT_GPIO_FLAGS`.
+general purpose APIs for this are :c:macro:`DT_PHA_BY_IDX` and :c:macro:`DT_PHA`.
+There are also hardware-specific shorthands like :c:macro:`DT_GPIO_CTLR_BY_IDX`,
+:c:macro:`DT_GPIO_CTLR`,
+:c:macro:`DT_GPIO_PIN_BY_IDX`, :c:macro:`DT_GPIO_PIN`,
+:c:macro:`DT_GPIO_FLAGS_BY_IDX`, and :c:macro:`DT_GPIO_FLAGS`.
 
-See :c:func:`DT_PHA_HAS_CELL_AT_IDX` and :c:func:`DT_PROP_HAS_IDX` for ways to
+See :c:macro:`DT_PHA_HAS_CELL_AT_IDX` and :c:macro:`DT_PROP_HAS_IDX` for ways to
 check if a specifier value is present in a phandle property.
 
 .. _other-devicetree-apis:
@@ -328,12 +328,12 @@ Other APIs
 
 Here are pointers to some other available APIs.
 
-- :c:func:`DT_CHOSEN`, :c:func:`DT_HAS_CHOSEN`: for properties
+- :c:macro:`DT_CHOSEN`, :c:macro:`DT_HAS_CHOSEN`: for properties
   of the special ``/chosen`` node
-- :c:func:`DT_HAS_COMPAT_STATUS_OKAY`, :c:func:`DT_NODE_HAS_COMPAT`: global-
-  and node-specific tests related to the ``compatible`` property
-- :c:func:`DT_BUS`: get a node's bus controller, if there is one
-- :c:func:`DT_ENUM_IDX`: for properties whose values are among a fixed list of
+- :c:macro:`DT_HAS_COMPAT_STATUS_OKAY`, :c:macro:`DT_NODE_HAS_COMPAT`: global- and
+  node-specific tests related to the ``compatible`` property
+- :c:macro:`DT_BUS`: get a node's bus controller, if there is one
+- :c:macro:`DT_ENUM_IDX`: for properties whose values are among a fixed list of
   choices
 - :ref:`devicetree-flash-api`: APIs for managing fixed flash partitions.
   Also see :ref:`flash_map_api`, which wraps this in a more user-friendly API.
@@ -346,7 +346,7 @@ rely on :ref:`instance identifiers <dt-node-identifiers>`.
 
 To use these, you must define ``DT_DRV_COMPAT`` to the ``compat`` value your
 driver implements support for. This ``compat`` value is what you would pass to
-:c:func:`DT_INST`.
+:c:macro:`DT_INST`.
 
 If you do that, you can access the properties of individual instances of your
 compatible with less typing, like this:

@@ -1,25 +1,16 @@
 /*
- * Copyright (c) 2019 Linaro Limited
- *
+ * Copyright (c) 2022 Andes Technology Corporation.
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
-	chosen {
-		/*
-		 * shared memory reserved for the inter-processor communication
-		 */
-		zephyr,sram = &sram;
-	};
-
-	sram: memory@0 {
-		compatible = "mmio-sram";
-		reg = <0x00000000 0x10000000 >;
-	};
-
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox 1>, <&mbox 0>;
+		mboxes = <&mbox 9>, <&mbox 10>;
 		mbox-names = "tx", "rx";
 	};
+};
+
+&dram {
+	reg = <0x00000000 0x10000000>;
 };

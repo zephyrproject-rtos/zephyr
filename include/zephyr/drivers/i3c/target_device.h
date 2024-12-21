@@ -14,10 +14,12 @@
  * @{
  */
 
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/device.h>
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +41,15 @@ struct i3c_config_target {
 	bool enable;
 
 	/**
-	 * I3C target address.
+	 * I3C target dynamic address.
+	 *
+	 * Used when operates as secondary controller
+	 * or as a target device.
+	 */
+	uint8_t dynamic_addr;
+
+	/**
+	 * I3C target static address.
 	 *
 	 * Used used when operates as secondary controller
 	 * or as a target device.
@@ -90,7 +100,6 @@ struct i3c_config_target {
  * reference to i3c_target_register().
  */
 struct i3c_target_config {
-	/** Private, do not modify */
 	sys_snode_t node;
 
 	/**
@@ -233,14 +242,15 @@ __subsystem struct i3c_target_driver_api {
  *            driver configured in target mode.
  * @param buf Pointer to the buffer
  * @param len Length of the buffer
+ * @param hdr_mode HDR mode see @c I3C_MSG_HDR_MODE*
  *
  * @retval Total number of bytes written
- * @retval -ENOTSUP Not in Target Mode
+ * @retval -ENOTSUP Not in Target Mode or HDR Mode not supported
  * @retval -ENOSPC No space in Tx FIFO
  * @retval -ENOSYS If target mode is not implemented
  */
 static inline int i3c_target_tx_write(const struct device *dev,
-				      uint8_t *buf, uint16_t len)
+				      uint8_t *buf, uint16_t len, uint8_t hdr_mode)
 {
 	const struct i3c_driver_api *api =
 		(const struct i3c_driver_api *)dev->api;
@@ -249,7 +259,7 @@ static inline int i3c_target_tx_write(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->target_tx_write(dev, buf, len);
+	return api->target_tx_write(dev, buf, len, hdr_mode);
 }
 
 /**

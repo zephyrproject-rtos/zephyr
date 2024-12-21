@@ -1,7 +1,4 @@
-.. _contextualelectronics_abc:
-
-Contextual Electronics Advanced BLE Cell
-########################################
+.. zephyr:board:: contextualelectronics_abc
 
 Overview
 ********
@@ -20,12 +17,6 @@ Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * Quectel BG95 Modem
-
-.. figure:: img/contextualelectronics_abc.jpg
-     :align: center
-     :alt: Contextual Electronics Advanced BLE Cell
-
-     Contextual Electronics Advanced BLE Cell (Credit: Chris Gamell)
 
 More information about the board can be found at the `ABC Board website`_.
 The `Nordic Semiconductor Infocenter`_ contains the processor's information
@@ -93,7 +84,7 @@ Flashing
 Flashing Zephyr onto the ``contextualelectronics_abc`` board requires
 an external programmer. The programmer is attached to the SWD header.
 
-Build the Zephyr kernel and the :ref:`hello_world` sample application.
+Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

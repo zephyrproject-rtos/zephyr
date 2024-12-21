@@ -74,10 +74,10 @@ properties:
       Specify the accelerometer range in g.
       Default is power-up configuration.
     enum:
-      - 0 # ICM42688_DT_ACCEL_FS_16G
-      - 1 # ICM42688_DT_ACCEL_FS_8G
-      - 2 # ICM42688_DT_ACCEL_FS_4G
-      - 3 # ICM42688_DT_ACCEL_FS_2G
+      - 0 # ICM42688_DT_ACCEL_FS_16
+      - 1 # ICM42688_DT_ACCEL_FS_8
+      - 2 # ICM42688_DT_ACCEL_FS_4
+      - 3 # ICM42688_DT_ACCEL_FS_2
 
   gyro-pwr-mode:
     type: int

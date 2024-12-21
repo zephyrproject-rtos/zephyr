@@ -1,5 +1,6 @@
 board:
   name: nucleo_f103rb
+  full_name: Nucleo F103RB
   vendor: st
   socs:
     - name: stm32f103xb

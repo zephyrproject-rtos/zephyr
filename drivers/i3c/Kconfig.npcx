@@ -10,6 +10,7 @@ config I3C_NPCX
 	depends on DT_HAS_NUVOTON_NPCX_I3C_ENABLED
 	select RESET
 	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	select PINCTRL
 	default y
 	help
 	  This option enables the I3C driver for NPCX family of

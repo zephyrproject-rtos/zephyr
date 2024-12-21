@@ -1,7 +1,4 @@
-.. _sam_e70_xplained:
-
-SAM E70(B) Xplained
-###################
+.. zephyr:board:: sam_e70_xplained
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The SAM E70 Xplained evaluation kit is a development platform to evaluate the
 Atmel SAM E70 series microcontrollers. The current version allows to use both
 IC variations ATSAME70Q21A(B).
-
-.. image:: img/sam_e70_xplained.jpg
-     :align: center
-     :alt: SAM E70 Xplained
 
 Hardware
 ********
@@ -141,7 +134,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the SAM E70 Xplained board to your host computer using the
-   USB debug port. Then build and flash the :ref:`hello_world`
+   USB debug port. Then build and flash the :zephyr:code-sample:`hello_world`
    application.
 
    .. zephyr-app-commands::
@@ -171,7 +164,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

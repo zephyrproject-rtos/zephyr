@@ -59,19 +59,3 @@
 #define HAL_RADIO_GPIO_NRF21540_PDN_POL_INV 1
 #endif	/* DT_GPIO_FLAGS(FEM_NODE, pdn_gpios) & GPIO_ACTIVE_LOW */
 #endif	/* FEM_HAS_PROP(pdn_gpios) */
-
-#if FEM_HAS_PROP(spi_if)
-/* This is the "SPI device" node, i.e. the one with compatible
- * nordic,nrf21540-fem-spi.
- */
-#define FEM_SPI_DEV_NODE DT_PHANDLE(FEM_NODE, spi_if)
-/* If the SPI device node has a chip select gpio... */
-#if DT_SPI_DEV_HAS_CS_GPIOS(FEM_SPI_DEV_NODE)
-/* set a macro indicating that, and... */
-#define HAL_RADIO_FEM_NRF21540_HAS_CSN 1
-/* use it to get the CSN polarity. */
-#if DT_SPI_DEV_CS_GPIOS_FLAGS(FEM_SPI_DEV_NODE) & GPIO_ACTIVE_LOW
-#define HAL_RADIO_GPIO_NRF21540_CSN_POL_INV 1
-#endif	/* DT_SPI_DEV_CS_GPIOS_FLAGS(FEM_SPI_DEV_NODE) & GPIO_ACTIVE_LOW */
-#endif	/* DT_SPI_DEV_HAS_CS_GPIOS(FEM_SPI_DEV_NODE) */
-#endif	/* FEM_HAS_PROP(spi_if) */

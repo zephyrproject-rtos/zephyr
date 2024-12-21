@@ -124,14 +124,17 @@ static int stm32_vbat_init(const struct device *dev)
 	return 0;
 }
 
-#define STM32_VBAT_GET_ADC_OR_NULL(inst)                                                           \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_INST_IO_CHANNELS_CTLR(inst), okay),                      \
-		    (DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst))), (NULL))
+#define ASSERT_VBAT_ADC_ENABLED(inst)	\
+	BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(inst)),			\
+		"ADC instance '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(inst)) "' needed "	\
+		"by Vbat sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(inst)) "' is not enabled")
 
 #define STM32_VBAT_DEFINE(inst)									\
+	ASSERT_VBAT_ADC_ENABLED(inst);								\
+												\
 	static struct stm32_vbat_data stm32_vbat_dev_data_##inst = {				\
-		.adc = STM32_VBAT_GET_ADC_OR_NULL(inst),					\
-		.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),		\
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),				\
+		.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(inst)),		\
 		.adc_cfg = {									\
 			.gain = ADC_GAIN_1,							\
 			.reference = ADC_REF_INTERNAL,						\

@@ -194,30 +194,32 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 }
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
+int ieee802514_beacon_header_length(uint8_t *buf, uint8_t length)
 {
 	struct ieee802154_beacon *beacon = (struct ieee802154_beacon *)buf;
 	struct ieee802154_pas_spec *pas;
 	uint8_t len = IEEE802154_BEACON_SF_SIZE + IEEE802154_BEACON_GTS_SPEC_SIZE;
 
 	if (length < len) {
-		return false;
+		return -EINVAL;
 	}
 
+	/* see section 7.3.1.5 on how to calculate GTS length */
 	if (beacon->gts.desc_count) {
 		len += IEEE802154_BEACON_GTS_DIR_SIZE +
 		       beacon->gts.desc_count * IEEE802154_BEACON_GTS_SIZE;
 	}
 
 	if (length < len) {
-		return false;
+		return -EINVAL;
 	}
 
+	/* see section 7.3.1.6 on how to calculate pending address length */
 	pas = (struct ieee802154_pas_spec *)buf + len;
 
 	len += IEEE802154_BEACON_PAS_SPEC_SIZE;
 	if (length < len) {
-		return false;
+		return -EINVAL;
 	}
 
 	if (pas->nb_sap || pas->nb_eap) {
@@ -226,12 +228,10 @@ static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, u
 	}
 
 	if (length < len) {
-		return false;
+		return -EINVAL;
 	}
 
-	mpdu->beacon = beacon;
-
-	return true;
+	return len;
 }
 
 static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
@@ -376,7 +376,7 @@ static inline bool validate_payload_and_mfr(struct ieee802154_mpdu *mpdu, uint8_
 	NET_DBG("Header size: %u, payload size %u", (uint32_t)(p_buf - buf), length);
 
 	if (type == IEEE802154_FRAME_TYPE_BEACON) {
-		if (!validate_beacon(mpdu, p_buf, length)) {
+		if (ieee802514_beacon_header_length(p_buf, length) < 0) {
 			return false;
 		}
 	} else if (type == IEEE802154_FRAME_TYPE_DATA) {
@@ -461,16 +461,19 @@ void ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_
 	hdr_len += src->addr ? src->len : dst->len;
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	struct ieee802154_security_ctx *sec_ctx;
+	struct ieee802154_context *ctx;
+
 	if (broadcast) {
 		NET_DBG("Broadcast packets are not being encrypted.");
 		goto done;
 	}
 
-	struct ieee802154_context *ctx = (struct ieee802154_context *)net_if_l2_data(iface);
+	ctx = (struct ieee802154_context *)net_if_l2_data(iface);
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
-	struct ieee802154_security_ctx *sec_ctx = &ctx->sec_ctx;
+	sec_ctx = &ctx->sec_ctx;
 	if (sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
 		goto release;
 	}
@@ -594,6 +597,7 @@ static uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 					   struct ieee802154_frame_params *params, uint8_t *p_buf)
 {
 	struct ieee802154_address_field *address_field;
+	struct ieee802154_address *src_addr;
 
 	/* destination address */
 	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
@@ -619,7 +623,6 @@ static uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 	}
 
 	address_field = (struct ieee802154_address_field *)p_buf;
-	struct ieee802154_address *src_addr;
 
 	if (fs->fc.pan_id_comp) {
 		src_addr = &address_field->comp.addr;
@@ -691,11 +694,11 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 			goto out;
 		}
 	} else {
+		uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
+
 		if (src->len != IEEE802154_EXT_ADDR_LENGTH) {
 			goto out;
 		}
-
-		uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 
 		sys_memcpy_swap(ext_addr_le, src->addr, IEEE802154_EXT_ADDR_LENGTH);
 		if (memcmp(ctx->ext_addr, ext_addr_le, src->len)) {
@@ -708,6 +711,8 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 	p_buf = generate_addressing_fields(ctx, fs, &params, p_buf);
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	uint8_t level, authtag_len, payload_len;
+
 	if (broadcast) {
 		/* TODO: This may not always be correct. */
 		NET_DBG("No security hdr needed: broadcasting");
@@ -727,16 +732,14 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 		goto out;
 	}
 
-	uint8_t level = ctx->sec_ctx.level;
-
+	level = ctx->sec_ctx.level;
 	if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
 		level -= 4U;
 	}
 
-	uint8_t authtag_len = level_2_authtag_len[level];
-	uint8_t payload_len = buf->len - ll_hdr_len - authtag_len;
-
 	/* Let's encrypt/auth only in the end, if needed */
+	authtag_len = level_2_authtag_len[level];
+	payload_len = buf->len - ll_hdr_len - authtag_len;
 	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, ll_hdr_len,
 				     payload_len, authtag_len, ctx->ext_addr)) {
 		goto out;
@@ -930,16 +933,19 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 				    struct ieee802154_mpdu *mpdu)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint8_t level, authtag_len, ll_hdr_len, payload_len;
+	struct ieee802154_mhr *mhr = &mpdu->mhr;
+	struct ieee802154_address *src;
 	bool ret = false;
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
-	uint8_t level = ctx->sec_ctx.level;
-
-	if (!mpdu->mhr.fs->fc.security_enabled) {
+	if (!mhr->fs->fc.security_enabled) {
 		ret = true;
 		goto out;
 	}
+
+	level = ctx->sec_ctx.level;
 
 	/* Section 9.2.4: Incoming frame security procedure, Security Enabled field is set to one
 	 *
@@ -948,7 +954,7 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	 * a) Legacy security. If the Frame Version field of the frame to be unsecured is set to
 	 *    zero, the procedure shall return with a Status of UNSUPPORTED_LEGACY.
 	 */
-	if (mpdu->mhr.aux_sec->control.security_level != level) {
+	if (mhr->aux_sec->control.security_level != level) {
 		goto out;
 	}
 
@@ -956,24 +962,24 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 		level -= 4U;
 	}
 
-	uint8_t authtag_len = level_2_authtag_len[level];
-	uint8_t ll_hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
-	uint8_t payload_len = net_pkt_get_len(pkt) - ll_hdr_len - authtag_len;
-	uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
+	authtag_len = level_2_authtag_len[level];
+	ll_hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
+	payload_len = net_pkt_get_len(pkt) - ll_hdr_len - authtag_len;
 
 	/* TODO: Handle src short address.
 	 * This will require to look up in nbr cache with short addr
 	 * in order to get the extended address related to it.
 	 */
-	if (net_pkt_lladdr_src(pkt)->len != IEEE802154_EXT_ADDR_LENGTH) {
-		NET_ERR("Decrypting packages with short source addresses is not supported.");
+	if (mhr->fs->fc.src_addr_mode != IEEE802154_ADDR_MODE_EXTENDED) {
+		NET_ERR("Only encrypting packages with extended source addresses is supported.");
 		goto out;
 	}
 
-	sys_memcpy_swap(ext_addr_le, net_pkt_lladdr_src(pkt)->addr, net_pkt_lladdr_src(pkt)->len);
+	src = mhr->fs->fc.pan_id_comp ? &mhr->src_addr->comp.addr : &mhr->src_addr->plain.addr;
+
 	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt), ll_hdr_len, payload_len,
-				     authtag_len, ext_addr_le,
-				     sys_le32_to_cpu(mpdu->mhr.aux_sec->frame_counter))) {
+				     authtag_len, src->ext_addr,
+				     sys_le32_to_cpu(mhr->aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");
 		goto out;
 	}

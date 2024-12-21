@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <nordic/nrf_common.dtsi>
+#include <zephyr/dt-bindings/adc/nrf-saadc-v3.h>
 
 / {
 	cpus {

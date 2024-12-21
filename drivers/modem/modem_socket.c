@@ -269,7 +269,7 @@ int modem_socket_poll(struct modem_socket_config *cfg, struct zsock_pollfd *fds,
 	int ret, i;
 	uint8_t found_count = 0;
 
-	if (!cfg || nfds > CONFIG_NET_SOCKETS_POLL_MAX) {
+	if (!cfg || nfds > CONFIG_ZVFS_POLL_MAX) {
 		return -EINVAL;
 	}
 	struct k_poll_event events[nfds];

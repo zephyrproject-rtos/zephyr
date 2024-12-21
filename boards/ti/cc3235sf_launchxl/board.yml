@@ -1,5 +1,6 @@
 board:
   name: cc3235sf_launchxl
+  full_name: CC3235SF LaunchXL
   vendor: ti
   socs:
   - name: cc3235sf

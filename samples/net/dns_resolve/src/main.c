@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(net_dns_resolve_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dns_resolve.h>
 
+#include "net_sample_common.h"
+
 #if defined(CONFIG_MDNS_RESOLVER)
 #if defined(CONFIG_NET_IPV4)
 static struct k_work_delayable mdns_ipv4_timer;
@@ -394,6 +396,8 @@ int main(void)
 	struct net_if *iface = net_if_get_default();
 
 	LOG_INF("Starting DNS resolve sample");
+
+	wait_for_network();
 
 	setup_ipv4(iface);
 

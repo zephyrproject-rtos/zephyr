@@ -11,7 +11,9 @@
 
 #include <../../subsys/bluetooth/audio/tbs_internal.h>
 
+#include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/logging/log.h>
+
 #define LOG_MODULE_NAME bttester_ccp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
@@ -277,7 +279,7 @@ static void tbs_client_cp_cb(struct bt_conn *conn, int err, uint8_t inst_index, 
 	tbs_client_cp_ev(conn, err);
 }
 
-static const struct bt_tbs_client_cb tbs_client_callbacks = {
+static struct bt_tbs_client_cb tbs_client_callbacks = {
 	.discover = tbs_client_discover_cb,
 	.originate_call = tbs_client_cp_cb,
 	.terminate_call = tbs_client_cp_cb,
@@ -860,10 +862,15 @@ static const struct btp_handler ccp_handlers[] = {
 
 uint8_t tester_init_ccp(void)
 {
+	int err;
+
 	tester_register_command_handlers(BTP_SERVICE_ID_CCP, ccp_handlers,
 					 ARRAY_SIZE(ccp_handlers));
 
-	bt_tbs_client_register_cb(&tbs_client_callbacks);
+	err = bt_tbs_client_register_cb(&tbs_client_callbacks);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -1157,10 +1164,45 @@ static const struct btp_handler tbs_handlers[] = {
 
 uint8_t tester_init_tbs(void)
 {
+	const struct bt_tbs_register_param gtbs_param = {
+		.provider_name = "Generic TBS",
+		.uci = "un000",
+		.uri_schemes_supported = "tel,skype",
+		.gtbs = true,
+		.authorization_required = false,
+		.technology = BT_TBS_TECHNOLOGY_3G,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+	};
+	const struct bt_tbs_register_param tbs_param = {
+		.provider_name = "TBS",
+		.uci = "un000",
+		.uri_schemes_supported = "tel,skype",
+		.gtbs = false,
+		.authorization_required = false,
+		/* Set different technologies per bearer */
+		.technology = BT_TBS_TECHNOLOGY_4G,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+	};
+	int err;
+
 	bt_tbs_register_cb(&tbs_cbs);
 
 	tester_register_command_handlers(BTP_SERVICE_ID_TBS, tbs_handlers,
 					 ARRAY_SIZE(tbs_handlers));
+
+	err = bt_tbs_register_bearer(&gtbs_param);
+	if (err < 0) {
+		LOG_DBG("Failed to register GTBS: %d", err);
+
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_register_bearer(&tbs_param);
+	if (err < 0) {
+		LOG_DBG("Failed to register TBS: %d", err);
+
+		return BTP_STATUS_FAILED;
+	}
 
 	return BTP_STATUS_SUCCESS;
 }

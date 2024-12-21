@@ -199,48 +199,6 @@ static inline int net_ipv6_finalize(struct net_pkt *pkt,
 #endif
 
 /**
- * @brief Join a given multicast group.
- *
- * @param iface Network interface where join message is sent
- * @param addr Multicast group to join
- *
- * @return Return 0 if joining was done, <0 otherwise.
- */
-#if defined(CONFIG_NET_IPV6_MLD)
-int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr);
-#else
-static inline int
-net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(addr);
-
-	return -ENOTSUP;
-}
-#endif /* CONFIG_NET_IPV6_MLD */
-
-/**
- * @brief Leave a given multicast group.
- *
- * @param iface Network interface where leave message is sent
- * @param addr Multicast group to leave
- *
- * @return Return 0 if leaving is done, <0 otherwise.
- */
-#if defined(CONFIG_NET_IPV6_MLD)
-int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr);
-#else
-static inline int
-net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(addr);
-
-	return -ENOTSUP;
-}
-#endif /* CONFIG_NET_IPV6_MLD */
-
-/**
  * @brief Send MLDv2 report message with a single entry.
  *
  * @param iface Network interface where message is sent

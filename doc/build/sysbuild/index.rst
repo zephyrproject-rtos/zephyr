@@ -95,7 +95,7 @@ As mentioned above, you can run sysbuild via ``west build`` or ``cmake``.
 
       .. zephyr-app-commands::
          :tool: west
-         :app: samples/hello_world
+         :zephyr-app: samples/hello_world
          :board: reel_board
          :goals: build
          :west-args: --sysbuild
@@ -157,7 +157,7 @@ To handle this, sysbuild has namespaces for configuration variables. You can use
 namespaces to direct settings either to sysbuild itself or to a specific Zephyr
 application managed by sysbuild using the information in these sections.
 
-The following example shows how to build :ref:`hello_world` with MCUboot enabled,
+The following example shows how to build :zephyr:code-sample:`hello_world` with MCUboot enabled,
 applying to both images debug optimizations:
 
 .. tabs::
@@ -166,7 +166,7 @@ applying to both images debug optimizations:
 
       .. zephyr-app-commands::
          :tool: west
-         :app: samples/hello_world
+         :zephyr-app: samples/hello_world
          :board: reel_board
          :goals: build
          :west-args: --sysbuild
@@ -316,7 +316,7 @@ enable MCUboot and build and flash the sample as follows:
 
       .. zephyr-app-commands::
          :tool: west
-         :app: samples/hello_world
+         :zephyr-app: samples/hello_world
          :board: reel_board
          :goals: build
          :west-args: --sysbuild
@@ -381,7 +381,7 @@ specify this file when building with sysbuild, as follows:
 
       .. zephyr-app-commands::
          :tool: west
-         :app: samples/hello_world
+         :zephyr-app: samples/hello_world
          :board: reel_board
          :goals: build
          :west-args: --sysbuild
@@ -499,8 +499,8 @@ In sysbuild and Zephyr CMake build system a board may refer to:
 * A specific SoC on a physical board with multiple SoCs, such as
   :ref:`nrf9160dk_nrf9160` and :ref:`nrf9160dk_nrf52840`.
 
-If your main application, for example, is built for ``mps2_an521``, and your
-helper application must target the ``mps2_an521_remote`` board (cpu1), add
+If your main application, for example, is built for ``mps2/an521/cpu0``, and your
+helper application must target the ``mps2/an521/cpu1`` board target, add
 a CMake function call that is structured as follows:
 
 .. code-block:: cmake
@@ -508,7 +508,7 @@ a CMake function call that is structured as follows:
    ExternalZephyrProject_Add(
      APPLICATION my_sample
      SOURCE_DIR <path-to>/my_sample
-     BOARD mps2_an521_remote
+     BOARD mps2/an521/cpu1
    )
 
 This could be useful, for example, if your main application requires another
@@ -658,7 +658,7 @@ with ``application``.
 Sysbuild file suffix support
 ----------------------------
 
-File suffix support through the makevar:`FILE_SUFFIX` is supported in sysbuild
+File suffix support through the :makevar:`FILE_SUFFIX` is supported in sysbuild
 (see :ref:`application-file-suffixes` for details on this feature in applications). For sysbuild,
 a globally provided option will be passed down to all images. In addition, the image configuration
 file will have this value applied and used (instead of the build type) if the file exists.

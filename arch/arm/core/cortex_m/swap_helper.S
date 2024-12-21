@@ -27,7 +27,6 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_arm_svc)
 GTEXT(z_arm_pendsv)
 GTEXT(z_do_kernel_oops)
-GTEXT(z_arm_pendsv_c)
 #if defined(CONFIG_USERSPACE)
 GTEXT(z_arm_do_syscall)
 #endif
@@ -118,20 +117,125 @@ out_fp_endif:
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
-    mov r4, lr
-    mov r0, lr
-    bl z_arm_pendsv_c
-    mov lr, r4
+    /* Protect the kernel state while we play with the thread lists */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    cpsid i
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
+    msr BASEPRI_MAX, r0
+    isb /* Make the effect of disabling interrupts be realized immediately */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
-    ldr r1, =_kernel
-    ldr r2, [r1, #_kernel_offset_to_current]
+    /*
+     * Prepare to clear PendSV with interrupts unlocked, but
+     * don't clear it yet. PendSV must not be cleared until
+     * the new thread is context-switched in since all decisions
+     * to pend PendSV have been taken with the current kernel
+     * state and this is what we're handling currently.
+     */
+    ldr r7, =_SCS_ICSR
+    ldr r6, =_SCS_ICSR_UNPENDSV
+
+    /* _kernel is still in r1 */
+
+    /* fetch the thread to run from the ready queue cache */
+    ldr r2, [r1, #_kernel_offset_to_ready_q_cache]
+
+    str r2, [r1, #_kernel_offset_to_current]
+
+    /*
+     * Clear PendSV so that if another interrupt comes in and
+     * decides, with the new kernel state based on the new thread
+     * being context-switched in, that it needs to reschedule, it
+     * will take, but that previously pended PendSVs do not take,
+     * since they were based on the previous kernel state and this
+     * has been handled.
+     */
+
+    /* _SCS_ICSR is still in r7 and _SCS_ICSR_UNPENDSV in r6 */
+    str r6, [r7, #0]
+
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+    /* Grab the TLS pointer */
+    ldr r4, =_thread_offset_to_tls
+    adds r4, r2, r4
+    ldr r0, [r4]
+
+    /* For Cortex-M, store TLS pointer in a global variable,
+     * as it lacks the process ID or thread ID register
+     * to be used by toolchain to access thread data.
+     */
+    ldr r4, =z_arm_tls_ptr
+    str r0, [r4]
+#endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
     /* Restore EXC_RETURN value. */
-    mov lr, r0
+    ldrsb lr, [r2, #_thread_offset_to_mode_exc_return]
+#endif
+
+    /* Restore previous interrupt disable state (irq_lock key)
+     * (We clear the arch.basepri field after restoring state)
+     */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && (_thread_offset_to_basepri > 124)
+    /* Doing it this way since the offset to thread->arch.basepri can in
+     * some configurations be larger than the maximum of 124 for ldr/str
+     * immediate offsets.
+     */
+    ldr r4, =_thread_offset_to_basepri
+    adds r4, r2, r4
+
+    ldr r0, [r4]
+    movs.n r3, #0
+    str r3, [r4]
+#else
+    ldr r0, [r2, #_thread_offset_to_basepri]
+    movs r3, #0
+    str r3, [r2, #_thread_offset_to_basepri]
 #endif
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    /* BASEPRI not available, previous interrupt disable state
+     * maps to PRIMASK.
+     *
+     * Only enable interrupts if value is 0, meaning interrupts
+     * were enabled before irq_lock was called.
+     */
+    cmp r0, #0
+    bne _thread_irq_disabled
+    cpsie i
+_thread_irq_disabled:
+
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
+    /* Re-program dynamic memory map */
+    push {r2,lr}
+    mov r0, r2
+    bl z_arm_configure_dynamic_mpu_regions
+    pop {r2,r3}
+    mov lr, r3
+#endif
+
+#ifdef CONFIG_USERSPACE
+    /* restore mode */
+    ldr r3, =_thread_offset_to_mode
+    adds r3, r2, r3
+    ldr r0, [r3]
+    mrs r3, CONTROL
+    movs.n r1, #1
+    bics r3, r1
+    orrs r3, r0
+    msr CONTROL, r3
+
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
+
+#endif
+
     ldr r4, =_thread_offset_to_callee_saved
     adds r0, r2, r4
 
@@ -149,6 +253,9 @@ out_fp_endif:
     subs r0, #36
     ldmia r0!, {r4-r7}
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    /* restore BASEPRI for the incoming thread */
+    msr BASEPRI, r0
+
 #ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-in thread had been using the FP registers. */
     tst lr, #_EXC_RETURN_FTYPE_Msk
@@ -176,6 +283,30 @@ in_fp_endif:
     bic r3, #_CONTROL_FPCA_Msk
     msr CONTROL, r3
     isb
+#endif
+
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
+    /* Re-program dynamic memory map */
+    push {r2,lr}
+    mov r0, r2 /* _current thread */
+    bl z_arm_configure_dynamic_mpu_regions
+    pop {r2,lr}
+#endif
+
+#ifdef CONFIG_USERSPACE
+    /* restore mode */
+    ldr r0, [r2, #_thread_offset_to_mode]
+    mrs r3, CONTROL
+    bic r3, #1
+    orr r3, r0
+    msr CONTROL, r3
+
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
+
 #endif
 
     /* load callee-saved + psp from thread */
@@ -300,6 +431,7 @@ _stack_frame_endif:
     /* exception return is done in z_arm_int_exit() */
     ldr r0, =z_arm_int_exit
     bx r0
+
 #endif
 
 _oops:
@@ -315,6 +447,7 @@ _oops:
     mov  r1, sp /* pointer to _callee_saved_t */
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+    mov r2, lr /* EXC_RETURN */
     bl z_do_kernel_oops
     /* return from SVC exception is done here */
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)

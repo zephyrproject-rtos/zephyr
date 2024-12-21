@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,5 +37,21 @@
 #define DMA_MCUX_PXP_FMT_RGB565   0
 #define DMA_MCUX_PXP_FMT_RGB888   1
 #define DMA_MCUX_PXP_FMT_ARGB8888 2
+
+#define DMA_MCUX_PXP_FLIP_MASK  0x3
+#define DMA_MCUX_PXP_FLIP_SHIFT 0x0
+
+/*
+ * In order to configure the PXP to flip, the user should
+ * supply a flip setting as the DMA linked_channel parameter, like so:
+ * linked_channel |= DMA_MCUX_PXP_FLIP(DMA_MCUX_PXP_FLIP_HORIZONTAL)
+ */
+
+#define DMA_MCUX_PXP_FLIP(x) ((x << DMA_MCUX_PXP_FLIP_SHIFT) & DMA_MCUX_PXP_FLIP_MASK)
+
+#define DMA_MCUX_PXP_FLIP_DISABLE    0
+#define DMA_MCUX_PXP_FLIP_HORIZONTAL 1
+#define DMA_MCUX_PXP_FLIP_VERTICAL   2
+#define DMA_MCUX_PXP_FLIP_BOTH       3
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_MCUX_PXP_H_ */

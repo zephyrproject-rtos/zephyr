@@ -37,6 +37,8 @@ config BOARD_DEPRECATED_RELEASE
 	  the Zephyr release that the board configuration will be removed.
 	  When set, any build for that board will generate a clearly visible
 	  deprecation warning.
+	  When adding this to a BOARD, remember to follow the instructions in
+	  https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
 
 config QEMU_TARGET
 	bool
@@ -127,7 +129,7 @@ config QEMU_EXTRA_FLAGS
 	  GDBstub over serial with `-serial tcp:127.0.0.1:5678,server`
 
 # There might not be any board options, hence the optional source
-osource "$(BOARD_DIR)/Kconfig"
+osource "$(KCONFIG_BOARD_DIR)/Kconfig"
 endmenu
 
 config BOARD_HAS_TIMING_FUNCTIONS

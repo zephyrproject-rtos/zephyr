@@ -43,11 +43,13 @@ config ADT7420_TRIGGER_NONE
 config ADT7420_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADT7420),int-gpios)
 	select ADT7420_TRIGGER
 
 config ADT7420_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADT7420),int-gpios)
 	select ADT7420_TRIGGER
 
 endchoice

@@ -70,7 +70,7 @@ static inline int z_vrfy_sensor_get_decoder(const struct device *dev,
 
 static inline int z_vrfy_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 						       const struct device *sensor,
-						       const enum sensor_channel *channels,
+						       const struct sensor_chan_spec *channels,
 						       size_t num_channels)
 {
 	K_OOPS(K_SYSCALL_OBJ(iodev, K_OBJ_RTIO_IODEV));

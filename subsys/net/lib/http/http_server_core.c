@@ -12,6 +12,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/fs_interface.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
@@ -58,6 +60,13 @@ static bool server_running;
 
 static void close_client_connection(struct http_client_ctx *client);
 
+HTTP_SERVER_CONTENT_TYPE(html, "text/html")
+HTTP_SERVER_CONTENT_TYPE(css, "text/css")
+HTTP_SERVER_CONTENT_TYPE(js, "text/javascript")
+HTTP_SERVER_CONTENT_TYPE(jpg, "image/jpeg")
+HTTP_SERVER_CONTENT_TYPE(png, "image/png")
+HTTP_SERVER_CONTENT_TYPE(svg, "image/svg+xml")
+
 int http_server_init(struct http_server_ctx *ctx)
 {
 	int proto;
@@ -101,14 +110,14 @@ int http_server_init(struct http_server_ctx *ctx)
 		memset(&addr_storage, 0, sizeof(struct sockaddr_storage));
 
 		/* Set up the server address struct according to address family */
-		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6) && svc->host != NULL &&
 		    zsock_inet_pton(AF_INET6, svc->host, &addr.addr6->sin6_addr) == 1) {
 			af = AF_INET6;
 			len = sizeof(*addr.addr6);
 
 			addr.addr6->sin6_family = AF_INET6;
 			addr.addr6->sin6_port = htons(*svc->port);
-		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && svc->host != NULL &&
 			   zsock_inet_pton(AF_INET, svc->host, &addr.addr4->sin_addr) == 1) {
 			af = AF_INET;
 			len = sizeof(*addr.addr4);
@@ -148,6 +157,16 @@ int http_server_init(struct http_server_ctx *ctx)
 			LOG_ERR("socket: %d", errno);
 			failed++;
 			continue;
+		}
+
+		/* If IPv4-to-IPv6 mapping is enabled, then turn off V6ONLY option
+		 * so that IPv6 socket can serve IPv4 connections.
+		 */
+		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+			int optval = 0;
+
+			(void)zsock_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &optval,
+					       sizeof(optval));
 		}
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -202,7 +221,8 @@ int http_server_init(struct http_server_ctx *ctx)
 			continue;
 		}
 
-		LOG_DBG("Initialized HTTP Service %s:%u", svc->host, *svc->port);
+		LOG_DBG("Initialized HTTP Service %s:%u",
+			svc->host ? svc->host : "<any>", *svc->port);
 
 		ctx->fds[count].fd = fd;
 		ctx->fds[count].events = ZSOCK_POLLIN;
@@ -272,6 +292,7 @@ static void client_release_resources(struct http_client_ctx *client)
 {
 	struct http_resource_detail *detail;
 	struct http_resource_detail_dynamic *dynamic_detail;
+	struct http_response_ctx response_ctx;
 
 	HTTP_SERVICE_FOREACH(service) {
 		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
@@ -297,8 +318,8 @@ static void client_release_resources(struct http_client_ctx *client)
 				continue;
 			}
 
-			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED,
-					   NULL, 0, dynamic_detail->user_data);
+			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED, NULL, 0, &response_ctx,
+					   dynamic_detail->user_data);
 		}
 	}
 }
@@ -386,6 +407,12 @@ static int handle_http_preface(struct http_client_ctx *client)
 		/* We don't have full preface yet, get more data. */
 		return -EAGAIN;
 	}
+
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+	client->header_capture_ctx.count = 0;
+	client->header_capture_ctx.cursor = 0;
+	client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 	if (strncmp(client->cursor, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
 		return enter_http1_request(client);
@@ -683,7 +710,8 @@ struct http_resource_detail *get_resource_detail(const char *path,
 			if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
 				int ret;
 
-				ret = fnmatch(resource->resource, path, FNM_PATHNAME);
+				ret = fnmatch(resource->resource, path,
+					      (FNM_PATHNAME | FNM_LEADING_DIR));
 				if (ret == 0) {
 					*path_len = strlen(resource->resource);
 					return resource->detail;
@@ -704,6 +732,49 @@ struct http_resource_detail *get_resource_detail(const char *path,
 	return NULL;
 }
 
+int http_server_find_file(char *fname, size_t fname_size, size_t *file_size, bool *gzipped)
+{
+	struct fs_dirent dirent;
+	size_t len;
+	int ret;
+
+	ret = fs_stat(fname, &dirent);
+	if (ret < 0) {
+		len = strlen(fname);
+		snprintk(fname + len, fname_size - len, ".gz");
+		ret = fs_stat(fname, &dirent);
+		*gzipped = (ret == 0);
+	}
+
+	if (ret == 0) {
+		*file_size = dirent.size;
+		return ret;
+	}
+
+	return -ENOENT;
+}
+
+void http_server_get_content_type_from_extension(char *url, char *content_type,
+						 size_t content_type_size)
+{
+	size_t url_len = strlen(url);
+
+	HTTP_SERVER_CONTENT_TYPE_FOREACH(ct) {
+		char *ext;
+
+		if (url_len <= ct->extension_len) {
+			continue;
+		}
+
+		ext = &url[url_len - ct->extension_len];
+
+		if (strncmp(ext, ct->extension, ct->extension_len) == 0) {
+			strncpy(content_type, ct->content_type, content_type_size);
+			return;
+		}
+	}
+}
+
 int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t len)
 {
 	while (len) {
@@ -720,6 +791,29 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 	}
 
 	return 0;
+}
+
+bool http_response_is_final(struct http_response_ctx *rsp, enum http_data_status status)
+{
+	if (status != HTTP_SERVER_DATA_FINAL) {
+		return false;
+	}
+
+	if (rsp->final_chunk ||
+	    (rsp->status == 0 && rsp->header_count == 0 && rsp->body_len == 0)) {
+		return true;
+	}
+
+	return false;
+}
+
+bool http_response_is_provided(struct http_response_ctx *rsp)
+{
+	if (rsp->status != 0 || rsp->header_count > 0 || rsp->body_len > 0) {
+		return true;
+	}
+
+	return false;
 }
 
 int http_server_start(void)

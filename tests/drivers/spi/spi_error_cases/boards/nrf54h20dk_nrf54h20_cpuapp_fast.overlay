@@ -46,6 +46,10 @@
 	status = "okay";
 };
 
+&dma_fast_region {
+	status = "okay";
+};
+
 &spi121 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";

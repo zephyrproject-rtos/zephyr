@@ -1,5 +1,6 @@
 board:
   name: hsdk
+  full_name: ARC HS Development Kit
   vendor: snps
   socs:
   - name: arc_hsdk

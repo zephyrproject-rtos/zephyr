@@ -1,7 +1,4 @@
-.. _xt-sim:
-
-Xtensa simulator
-################
+.. zephyr:board:: xt-sim
 
 Overview
 ********
@@ -12,12 +9,6 @@ from various processor options and even create customized instructions in
 addition to a base ISA to tailor the processor for a particular application.
 
 For more information, see https://ip.cadence.com/ipportfolio/tensilica-ip/xtensa-customizable
-
-.. figure:: img/xt-sim.jpg
-     :align: center
-     :alt: Xtensa Xplorer (Eclipse base frontend for xt-sim)
-
-     Xtensa Xplorer
 
 Hardware
 ********
@@ -38,7 +29,7 @@ System requirements
 Prerequisites
 =============
 A Linux host system is required for Xtensa development work.
-We recommend using a __``Debian 9.x (Stretch)``__ or recent __``Ubuntu``__
+We recommend using a Debian 9.x (Stretch) or recent Ubuntu
 releases (with multilib support).
 
 Only Xtensa tools version ``RF-2016.4-linux`` or later are officially
@@ -176,5 +167,7 @@ Build and run as follows:
 
 References
 **********
+
+.. target-notes::
 
 .. _Xtensa tools: https://ip.cadence.com/support/sdk-evaluation-request

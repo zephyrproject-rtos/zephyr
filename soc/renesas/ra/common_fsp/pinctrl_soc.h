@@ -10,7 +10,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 
-#include <zephyr/dt-bindings/pinctrl/renesas/ra-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 
 /**
  * @brief Type to hold a renesas ra pin's pinctrl configuration.
@@ -39,6 +39,7 @@ typedef struct ra_pinctrl_soc_pin pinctrl_soc_pin_t;
 		.pin_num = RA_GET_PIN_NUM(DT_PROP_BY_IDX(node_id, prop, idx)),                     \
 		.cfg = (DT_PROP(node_id, bias_pull_up) << 4) |                                     \
 		       (DT_PROP(node_id, drive_open_drain) << 6) |                                 \
+		       (DT_PROP(node_id, renesas_analog_enable) << 15) |                           \
 		       (DT_ENUM_IDX(node_id, drive_strength) << 10) |                              \
 		       (RA_GET_MODE(DT_PROP_BY_IDX(node_id, prop, idx)) << 16) |                   \
 		       (RA_GET_PSEL(DT_PROP_BY_IDX(node_id, prop, idx)) << 24),                    \

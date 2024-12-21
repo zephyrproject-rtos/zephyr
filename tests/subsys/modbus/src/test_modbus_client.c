@@ -150,7 +150,7 @@ void test_holding_reg(void)
 	for (uint16_t idx = 0; idx < ARRAY_SIZE(fhr_wr); idx++) {
 		err = modbus_write_holding_regs_fp(client_iface,
 						 node,
-						 fp_offset + idx,
+						 fp_offset + idx * 2,
 						 &fhr_wr[0], 1);
 		zassert_equal(err, 0, "FC16 write request failed");
 	}
@@ -175,6 +175,14 @@ void test_holding_reg(void)
 					  fhr_wr,
 					  ARRAY_SIZE(fhr_wr));
 	zassert_not_equal(err, 0, "FC16 FP out of range request not failed");
+
+	err = modbus_write_holding_regs(client_iface, node, fp_offset,
+					hr_wr, ARRAY_SIZE(hr_wr) - 1);
+	zassert_not_equal(err, 0, "FC16 write to FP address request not failed");
+
+	err = modbus_read_holding_regs(client_iface, node, fp_offset,
+				       hr_rd, ARRAY_SIZE(hr_rd) - 1);
+	zassert_not_equal(err, 0, "FC16 read from FP address request not failed");
 
 	err = modbus_read_holding_regs_fp(client_iface,
 					  node,

@@ -1,5 +1,6 @@
 board:
   name: nucleo_h7a3zi_q
+  full_name: Nucleo H7A3ZI-Q
   vendor: st
   socs:
     - name: stm32h7a3xx

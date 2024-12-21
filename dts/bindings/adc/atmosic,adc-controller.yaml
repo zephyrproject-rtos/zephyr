@@ -18,5 +18,9 @@ properties:
       type: int
       required: false
 
+    ch-store:
+      type: int
+      required: false
+
 io-channel-cells:
     - input

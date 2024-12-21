@@ -1,0 +1,7 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BEAGLEBONE_AI64
+	select SOC_J721E_MAIN_R5F0_0 if BOARD_BEAGLEBONE_AI64_J721E_MAIN_R5F0_0

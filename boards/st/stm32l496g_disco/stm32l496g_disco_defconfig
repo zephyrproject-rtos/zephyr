@@ -12,12 +12,6 @@ CONFIG_SERIAL=y
 # enable GPIOs
 CONFIG_GPIO=y
 
-# Enable Clocks
-CONFIG_CLOCK_CONTROL=y
-
 # console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# enable pin controller
-CONFIG_PINCTRL=y

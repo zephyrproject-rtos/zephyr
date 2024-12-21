@@ -168,15 +168,142 @@ config NET_IPV4_MAPPING_TO_IPV6
 config NET_SHELL
 	bool "Network shell utilities"
 	select SHELL
-	select NET_IPV4_IGMP if NET_IPV4
+	select NET_IPV4_IGMP if NET_NATIVE_IPV4
 	select REQUIRES_FLOAT_PRINTF
 	help
 	  Activate shell module that provides network commands like
 	  ping to the console.
 
+if NET_SHELL
+
+config NET_SHELL_SHOW_DISABLED_COMMANDS
+	bool "Show disabled command information"
+	default y
+	help
+	  By default all the network shell commands are there and the
+	  command itself will print out that it is disabled and how to
+	  enable it. If you do not need this and only want to see the
+	  commands that you can actively use, then you can save a little
+	  bit of flash by not showing commands that cannot be used with
+	  current configuration.
+
+config NET_SHELL_ETHERNET_SUPPORTED
+	bool "Ethernet related configuration"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_L2_ETHERNET
+
+config NET_SHELL_CAPTURE_SUPPORTED
+	bool "Packet capture configuration"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_CAPTURE
+
+config NET_SHELL_DHCPV4_SUPPORTED
+	bool "DHCPv4 start / stop"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_DHCPV4_SERVER || NET_DHCPV4
+
+config NET_SHELL_DHCPV6_SUPPORTED
+	bool "DHCPv6 start / stop"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_DHCPV6
+
+config NET_SHELL_DNS_RESOLVER_SUPPORTED
+	bool "DNS resolver"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || DNS_RESOLVER
+
+config NET_SHELL_EVENT_MONITOR_SUPPORTED
+	bool "Network management event monitoring configuration"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_MGMT_EVENT_MONITOR
+
+config NET_SHELL_GPTP_SUPPORTED
+	bool "gPTP monitoring"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_GPTP
+
+config NET_SHELL_HTTP_SERVER_SUPPORTED
+	bool "HTTP server status"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || HTTP_SERVER
+
+config NET_SHELL_CONNECTION_MANAGER_SUPPORTED
+	bool "Connection manager status"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_CONNECTION_MANAGER
+
+config NET_SHELL_IPV4_SUPPORTED
+	bool "IPv4 config"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_NATIVE_IPV4 && NET_IPV4)
+
+config NET_SHELL_IPV6_SUPPORTED
+	bool "IPv6 config"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_NATIVE_IPV6 && NET_IPV6)
+
+config NET_SHELL_IP_SUPPORTED
+	bool "Generic IP utilities"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_IP
+
+config NET_SHELL_PKT_ALLOC_SUPPORTED
+	bool "Packet allocation monitoring"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_DEBUG_NET_PKT_ALLOC
+
+config NET_SHELL_PPP_SUPPORTED
+	bool "PPP config"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_L2_PPP
+
+config NET_SHELL_POWER_MANAGEMENT_SUPPORTED
+	bool "Network power management resume / suspend"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_POWER_MANAGEMENT
+
+config NET_SHELL_ROUTE_SUPPORTED
+	bool "IP routing config"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_ROUTE && NET_NATIVE)
+
+config NET_SHELL_SOCKETS_SERVICE_SUPPORTED
+	bool "Socket service status"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_SOCKETS_SERVICE
+
+config NET_SHELL_STATISTICS_SUPPORTED
+	bool "Network statistics monitoring"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_STATISTICS
+
+config NET_SHELL_TCP_SUPPORTED
+	bool "Send / receive TCP data"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_NATIVE_TCP && NET_TCP)
+
+config NET_SHELL_UDP_SUPPORTED
+	bool "Send / receive UDP data"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_NATIVE_UDP && NET_UDP)
+
+config NET_SHELL_VIRTUAL_SUPPORTED
+	bool "Virtual network interface management"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_L2_VIRTUAL
+
+config NET_SHELL_VLAN_SUPPORTED
+	bool "Virtual LAN config"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_VLAN
+
+config NET_SHELL_WEBSOCKET_SUPPORTED
+	bool "Websocket client status"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || WEBSOCKET_CLIENT
+
 config NET_SHELL_DYN_CMD_COMPLETION
 	bool "Network shell dynamic command completion"
-	depends on NET_SHELL
 	default y
 	help
 	  Enable various net-shell command to support dynamic command
@@ -191,11 +318,13 @@ config NET_SHELL_DYN_CMD_COMPLETION
 
 config NET_SHELL_REQUIRE_TX_THREAD
 	bool
-	depends on NET_SHELL && (SHELL_BACKEND_TELNET || SHELL_BACKEND_MQTT)
+	depends on SHELL_BACKEND_TELNET || SHELL_BACKEND_MQTT
 	default y if NET_ARP
 	help
 	  Hidden symbol indicating that network shell requires separate TX
 	  thread due to possible deadlocks during shell/net stack operations.
+
+endif # NET_SHELL
 
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
@@ -880,6 +1009,15 @@ config NET_PKT_TXTIME_STATS_DETAIL
 	  in TX path. This is very special configuration and will increase
 	  the size of net_pkt so in typical cases you should not enable it.
 	  The extra statistics can be seen in net-shell using "net stats"
+	  command.
+
+config NET_PKT_ALLOC_STATS
+	bool "Get net_pkt allocation statistics"
+	help
+	  Collect net_pkt allocation statistics, like number of allocations,
+	  average allocation size, average allocation time in usec, for both
+	  succeeded and failed allocations.
+	  The extra statistics can be seen in net-shell using "net mem"
 	  command.
 
 config NET_PROMISCUOUS_MODE

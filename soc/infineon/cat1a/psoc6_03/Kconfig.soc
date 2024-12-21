@@ -16,7 +16,7 @@ config SOC_PACKAGE_PSOC6_03_68_QFN
 config SOC_PACKAGE_PSOC6_03_49_WLCSP
 	bool
 
-# Infineon PSoC6_03 series MCUs
+# Infineon PSOC 6_03 series MCUs
 config SOC_CY8C6245AZI_S3D72
 	bool
 	select SOC_DIE_PSOC6_03

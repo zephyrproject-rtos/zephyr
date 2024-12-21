@@ -10,6 +10,7 @@
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <esp_err.h>
 #include <soc/soc_pins.h>
@@ -80,7 +81,6 @@ struct esp32_touch_sensor_data {
 static void esp32_touch_sensor_interrupt_cb(void *arg)
 {
 	const struct device *dev = arg;
-	struct esp32_touch_sensor_data *dev_data = dev->data;
 	const struct esp32_touch_sensor_config *dev_cfg = dev->config;
 	const struct esp32_touch_sensor_channel_config *channel_cfg;
 	const int num_channels = dev_cfg->num_channels;
@@ -162,7 +162,11 @@ static esp_err_t esp32_rtc_isr_install(intr_handler_t intr_handler, const void *
 
 	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
 	REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
-	err = esp_intr_alloc(ETS_RTC_CORE_INTR_SOURCE, 0, intr_handler, (void *)handler_arg, NULL);
+
+	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq),
+			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags)),
+			intr_handler, (void *)handler_arg, NULL);
 
 	return err;
 }

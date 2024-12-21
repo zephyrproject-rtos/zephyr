@@ -1,5 +1,6 @@
 board:
   name: fvp_baser_aemv8r
+  full_name: Debug with Arm DS
   vendor: arm
   socs:
   - name: fvp_aemv8r_aarch64

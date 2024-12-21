@@ -430,7 +430,11 @@ static const struct i2c_driver_api i2c_xmc4_driver_api = {
 	.transfer = ifx_xmc4_i2c_transfer,
 	.get_config = ifx_xmc4_i2c_get_config,
 	.target_register = ifx_xmc4_i2c_target_register,
-	.target_unregister = ifx_xmc4_i2c_target_unregister};
+	.target_unregister = ifx_xmc4_i2c_target_unregister,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
+};
 
 /* Macros for I2C instance declaration */
 #define XMC4_IRQ_HANDLER_INIT(index)                                                               \

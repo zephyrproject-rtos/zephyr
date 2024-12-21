@@ -38,6 +38,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include "platform-zephyr.h"
 
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#include <openthread/nat64.h>
+#endif
+
+#define PKT_IS_IPv6(_p) ((NET_IPV6_HDR(_p)->vtc & 0xf0) == 0x60)
+
 #define SHORT_ADDRESS_SIZE 2
 
 #define FCS_SIZE     2
@@ -62,8 +68,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
  * IEEE 802.15.4, sections 12.1.3.1, 12.2.5 and 12.3.3.
  */
 #define PHR_DURATION_US 32U
-
-#define DEFAULT_SENSITIVITY -100
 
 enum pending_events {
 	PENDING_EVENT_FRAME_TO_SEND, /* There is a tx frame to send  */
@@ -373,11 +377,19 @@ void platformRadioInit(void)
 	radio_api->configure(radio_dev, IEEE802154_CONFIG_EVENT_HANDLER, &cfg);
 }
 
+static void radio_set_channel(uint16_t ch)
+{
+	channel = ch;
+	radio_api->set_channel(radio_dev, ch);
+}
+
 void transmit_message(struct k_work *tx_job)
 {
 	int tx_err;
 
 	ARG_UNUSED(tx_job);
+
+	enum ieee802154_hw_caps radio_caps = radio_api->get_capabilities(radio_dev);
 
 	/*
 	 * The payload is already in tx_payload->data,
@@ -388,10 +400,7 @@ void transmit_message(struct k_work *tx_job)
 	 */
 	tx_payload->len = sTransmitFrame.mLength - FCS_SIZE;
 
-	channel = sTransmitFrame.mChannel;
-
-	radio_api->set_channel(radio_dev, channel);
-	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(sTransmitFrame.mChannel));
 
 #if defined(CONFIG_OPENTHREAD_TIME_SYNC)
 	if (sTransmitFrame.mInfo.mTxInfo.mIeInfo->mTimeIeOffset != 0) {
@@ -409,17 +418,27 @@ void transmit_message(struct k_work *tx_job)
 					     sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed);
 	net_pkt_set_ieee802154_mac_hdr_rdy(tx_pkt, sTransmitFrame.mInfo.mTxInfo.mIsHeaderUpdated);
 
-	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
+	if ((radio_caps & IEEE802154_HW_TXTIME) &&
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
 #if defined(CONFIG_NET_PKT_TXTIME)
 		uint32_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
 				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
 		net_pkt_set_timestamp_ns(tx_pkt, convert_32bit_us_wrapped_to_64bit_ns(tx_at));
 #endif
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+		if (radio_caps & IEEE802154_HW_SELECTIVE_TXCHANNEL) {
+			net_pkt_set_ieee802154_txchannel(tx_pkt, sTransmitFrame.mChannel);
+		} else {
+			radio_set_channel(sTransmitFrame.mChannel);
+		}
+#else
+		radio_set_channel(sTransmitFrame.mChannel);
+#endif
 		tx_err =
 			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
-		if (radio_api->get_capabilities(radio_dev) & IEEE802154_HW_CSMA) {
+		radio_set_channel(sTransmitFrame.mChannel);
+		if (radio_caps & IEEE802154_HW_CSMA) {
 			tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA, tx_pkt,
 					       tx_payload);
 		} else {
@@ -430,6 +449,7 @@ void transmit_message(struct k_work *tx_job)
 			}
 		}
 	} else {
+		radio_set_channel(sTransmitFrame.mChannel);
 		tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_DIRECT, tx_pkt, tx_payload);
 	}
 
@@ -508,20 +528,57 @@ static void openthread_handle_received_frame(otInstance *instance,
 	net_pkt_unref(pkt);
 }
 
-static void openthread_handle_frame_to_send(otInstance *instance,
-					    struct net_pkt *pkt)
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+
+static otMessage *openthread_ip4_new_msg(otInstance *instance, otMessageSettings *settings)
 {
+	return otIp4NewMessage(instance, settings);
+}
+
+static otError openthread_nat64_send(otInstance *instance, otMessage *message)
+{
+	return otNat64Send(instance, message);
+}
+
+#else /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
+static otMessage *openthread_ip4_new_msg(otInstance *instance, otMessageSettings *settings)
+{
+	return NULL;
+}
+
+static otError openthread_nat64_send(otInstance *instance, otMessage *message)
+{
+	return OT_ERROR_DROP;
+}
+
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
+static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt *pkt)
+{
+	otError error;
 	struct net_buf *buf;
 	otMessage *message;
 	otMessageSettings settings;
+	bool is_ip6 = PKT_IS_IPv6(pkt);
 
-	NET_DBG("Sending Ip6 packet to ot stack");
+	NET_DBG("Sending %s packet to ot stack", is_ip6 ? "IPv6" : "IPv4");
 
 	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
 	settings.mLinkSecurityEnabled = true;
-	message = otIp6NewMessage(instance, &settings);
-	if (message == NULL) {
+
+	message = is_ip6 ? otIp6NewMessage(instance, &settings)
+			 : openthread_ip4_new_msg(instance, &settings);
+	if (!message) {
+		NET_ERR("Cannot allocate new message buffer");
 		goto exit;
+	}
+
+	if (IS_ENABLED(CONFIG_OPENTHREAD)) {
+		/* Set multicast loop so the stack can process multicast packets for
+		 * subscribed addresses.
+		 */
+		otMessageSetMulticastLoopEnabled(message, true);
 	}
 
 	for (buf = pkt->buffer; buf; buf = buf->frags) {
@@ -532,9 +589,11 @@ static void openthread_handle_frame_to_send(otInstance *instance,
 		}
 	}
 
-	if (otIp6Send(instance, message) != OT_ERROR_NONE) {
-		NET_ERR("Error while calling otIp6Send");
-		goto exit;
+	error = is_ip6 ? otIp6Send(instance, message) : openthread_nat64_send(instance, message);
+
+	if (error != OT_ERROR_NONE) {
+		NET_ERR("Error while calling %s [error: %d]",
+			is_ip6 ? "otIp6Send" : "openthread_nat64_send", error);
 	}
 
 exit:
@@ -1128,7 +1187,7 @@ int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
-	return DEFAULT_SENSITIVITY;
+	return CONFIG_OPENTHREAD_DEFAULT_RX_SENSITIVITY;
 }
 
 otError otPlatRadioGetTransmitPower(otInstance *aInstance, int8_t *aPower)

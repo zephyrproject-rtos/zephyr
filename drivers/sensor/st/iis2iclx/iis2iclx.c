@@ -15,7 +15,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
@@ -31,7 +30,7 @@ static int iis2iclx_freq_to_odr_val(uint16_t freq)
 	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(iis2iclx_odr_map); i++) {
-		if (freq == iis2iclx_odr_map[i]) {
+		if (freq <= iis2iclx_odr_map[i]) {
 			return i;
 		}
 	}
@@ -50,7 +49,7 @@ static int iis2iclx_odr_to_freq_val(uint16_t odr)
 	return iis2iclx_odr_map[ARRAY_SIZE(iis2iclx_odr_map) - 1];
 }
 
-static const uint16_t iis2iclx_accel_fs_map[] = {500, 3000, 1000, 2000};
+static const uint16_t iis2iclx_accel_fs_map[] = {500, 3000, 1000, 2000}; /* fs in mg */
 static const uint16_t iis2iclx_accel_fs_sens[] = {1, 8, 2, 4};
 
 static int iis2iclx_accel_range_to_fs_val(int32_t range)
@@ -130,7 +129,7 @@ static int iis2iclx_accel_range_set(const struct device *dev, int32_t range)
 	int fs;
 	struct iis2iclx_data *data = dev->data;
 
-	fs = iis2iclx_accel_range_to_fs_val(range);
+	fs = iis2iclx_accel_range_to_fs_val(range * 1000); /* pass range in mg */
 	if (fs < 0) {
 		return fs;
 	}
@@ -204,8 +203,8 @@ static int iis2iclx_sample_fetch_accel(const struct device *dev)
 		return -EIO;
 	}
 
-	data->acc[0] = sys_le16_to_cpu(buf[0]);
-	data->acc[1] = sys_le16_to_cpu(buf[1]);
+	data->acc[0] = buf[0];
+	data->acc[1] = buf[1];
 
 	return 0;
 }
@@ -222,7 +221,7 @@ static int iis2iclx_sample_fetch_temp(const struct device *dev)
 		return -EIO;
 	}
 
-	data->temp_sample = sys_le16_to_cpu(buf);
+	data->temp_sample = buf;
 
 	return 0;
 }

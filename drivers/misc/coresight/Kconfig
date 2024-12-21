@@ -1,0 +1,112 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NORDIC_NRF_TBM := nordic,nrf-tbm
+
+config NRF_ETR
+	bool "Coresight ETR handler (with Nordic TBM)"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_TBM))
+	select NRFX_TBM
+	imply UART_ASYNC_API
+	default y
+	help
+	  Module handles data stored in the ETR circular buffer (e.g. STM logging
+	  data). Busyness is tracked using TBM (Trace Buffer Monitor) peripheral
+	  which is specific to Nordic Semiconductor SoCs.
+
+if NRF_ETR
+
+config NRF_ETR_DECODE
+	bool "Decode ETR content"
+	default y if LOG_FRONTEND_STMESP_FSC
+	select MIPI_STP_DECODER
+	select CS_TRACE_DEFMT
+	select LOG_FRONTEND_STMESP_DEMUX
+	select LOG_OUTPUT
+	imply CBPRINTF_FP_SUPPORT
+	help
+	  In this mode, log messages stored by Coresight STM logging frontends are
+	  decoded and printed in the human readable form.
+
+config NRF_ETR_DECODE_DROP_PERIOD
+	int "Period of dropped messages notification"
+	default 5000
+	help
+	  Period (in milliseconds) how often it is checked if any dropped messages
+	  have occurred.
+
+config NRF_ETR_DEBUG
+	bool "Debug mode"
+	depends on !LOG_PRINTK
+	select MIPI_STP_DECODER
+	select CS_TRACE_DEFMT
+	help
+	  In debug mode STPv2 decoded data is printed.
+
+config NRF_ETR_STACK_SIZE
+	int "ETR thread stack size"
+	default 2048 if NRF_ETR_DECODE || NRF_ETR_DEBUG
+	default 1024
+
+config NRF_ETR_BACKOFF
+	int "Thread backoff time (ms)"
+	default 10
+	help
+	  Determines how often attempt to dump the data is performed.
+
+config NRF_ETR_FLUSH_TIMEOUT
+	int "Backoff time during flushing (ms)"
+	default 100
+	help
+	  When thread triggers flushing of ETR data, it periodically checks if
+	  there is still a pending ETR data. This option specifies how often
+	  thread is waking up to check. Given in milliseconds.
+
+config NRF_ETR_SYNC_PERIOD
+	int "Period of custom synchronization frame"
+	default 0 if NRF_ETR_DECODE
+	default 0 if NRF_ETR_DEBUG
+	default 16
+	help
+	  To help find the synchronization when decoding the ETR content
+	  by a host tool a synchronization pattern (16 bytes of 0xFF) can be
+	  sent on regular intervals. This frame is sent between Coresight formatter
+	  frames. Use 0 to disable.
+
+config NRF_ETR_SHELL
+	bool "Use shell"
+	select UART_ASYNC_API
+	select UART_ASYNC_RX_HELPER
+	select SHELL_LOG_BACKEND_CUSTOM
+	depends on NRF_ETR_DECODE
+	default y if SHELL
+	help
+	  Enable shell with Coresight STM logging support.
+
+if NRF_ETR_SHELL
+
+config NRF_ETR_SHELL_PROMPT
+	string "Displayed prompt name"
+	default "uart:~$ "
+	help
+	  Displayed prompt name for UART shell with Coresight STM logging.
+
+config NRF_ETR_SHELL_ASYNC_RX_BUFFER_SIZE
+	int "Size of the RX buffer"
+	default 16
+	help
+	  Size of a single RX buffer. Together with buffer count it defines the
+	  space that can hold RX data. It may be decreased if shell input is
+	  slow and may need to be increased if long messages are pasted directly
+	  to the shell prompt.
+
+config NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT
+	int "Number of RX buffers"
+	default 4
+	range 2 64
+	help
+	  Number of RX buffers.
+
+endif # NRF_ETR_SHELL
+
+endif # NRF_ETR

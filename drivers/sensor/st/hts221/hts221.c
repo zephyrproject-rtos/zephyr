@@ -9,7 +9,6 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/byteorder.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
 
@@ -82,8 +81,8 @@ static int hts221_sample_fetch(const struct device *dev,
 		return status;
 	}
 
-	data->rh_sample = sys_le16_to_cpu(buf[0] | (buf[1] << 8));
-	data->t_sample = sys_le16_to_cpu(buf[2] | (buf[3] << 8));
+	data->rh_sample = buf[0] | (buf[1] << 8);
+	data->t_sample = buf[2] | (buf[3] << 8);
 
 	return 0;
 }
@@ -105,12 +104,12 @@ static int hts221_read_conversion_data(const struct device *dev)
 
 	data->h0_rh_x2 = buf[0];
 	data->h1_rh_x2 = buf[1];
-	data->t0_degc_x8 = sys_le16_to_cpu(buf[2] | ((buf[5] & 0x3) << 8));
-	data->t1_degc_x8 = sys_le16_to_cpu(buf[3] | ((buf[5] & 0xC) << 6));
-	data->h0_t0_out = sys_le16_to_cpu(buf[6] | (buf[7] << 8));
-	data->h1_t0_out = sys_le16_to_cpu(buf[10] | (buf[11] << 8));
-	data->t0_out = sys_le16_to_cpu(buf[12] | (buf[13] << 8));
-	data->t1_out = sys_le16_to_cpu(buf[14] | (buf[15] << 8));
+	data->t0_degc_x8 = buf[2] | ((buf[5] & 0x3) << 8);
+	data->t1_degc_x8 = buf[3] | ((buf[5] & 0xC) << 6);
+	data->h0_t0_out = buf[6] | (buf[7] << 8);
+	data->h1_t0_out = buf[10] | (buf[11] << 8);
+	data->t0_out = buf[12] | (buf[13] << 8);
+	data->t1_out = buf[14] | (buf[15] << 8);
 
 	return 0;
 }

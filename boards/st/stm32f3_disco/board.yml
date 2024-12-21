@@ -1,5 +1,6 @@
 board:
   name: stm32f3_disco
+  full_name: STM32F3 Discovery
   vendor: st
   revision:
     format: letter

@@ -18,12 +18,14 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		sdhc0 = &usdhc1;
+		mcuboot-button0 = &user_button;
 	};
 
 	chosen {
-		zephyr,flash-controller = &is25wp064;
-		zephyr,flash = &is25wp064;
+		zephyr,flash-controller = &is25lp064;
+		zephyr,flash = &is25lp064;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,sram = &sdram0;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
@@ -93,11 +95,11 @@ arduino_serial: &lpuart2 {
 &flexspi {
 	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
-	is25wp064: is25wp064@0 {
+	is25lp064: is25lp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <104000000>;
 		status = "okay";
 		jedec-id = [9d 70 17];
 		erase-block-size = <4096>;
@@ -204,6 +206,7 @@ zephyr_udc0: &usb1 {
 	pwr-gpios = <&gpio3 24 GPIO_ACTIVE_HIGH>;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

@@ -64,4 +64,10 @@ config NEWLIB_LIBC_HEAP_LISTENER
 	  Notify registered heap listeners upon certain events related to the newlib
 	  libc heap usage, such as the heap resize.
 
+config NEWLIB_LIBC_CUSTOM_SBRK
+	bool "Allow user to define _sbrk"
+	help
+	  Allow user to define custom version of the _sbrk function. Some application
+	  may need to use the remaining RAM for also other purposes than heap.
+
 endif # NEWLIB_LIBC

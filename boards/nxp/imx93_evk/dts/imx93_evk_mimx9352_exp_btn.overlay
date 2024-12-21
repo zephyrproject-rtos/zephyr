@@ -1,0 +1,33 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * Apply this overlay to test RFU_BTN1 and RFU_BTN2 on PCAL6524.
+ *
+ * The user buttons RFU_BTN1 and RFU_BTN2 is connected to i.MX 93 GPIO by default,
+ * but can be changed to connect to onboard GPIO expander PCAL6524. To do this,
+ * switch SW1006 to 0000, then switch SW1005 to 0101.
+ */
+
+/* Remove default keys */
+/delete-node/ &btn_1;
+/delete-node/ &btn_2;
+
+/ {
+	keys {
+		compatible = "gpio-keys";
+
+		btn_1: btn_1{
+			label = "BTN1";
+			gpios = <&gpio_exp1 5 GPIO_ACTIVE_LOW>;
+		};
+
+		btn_2: btn_2{
+			label = "BTN2";
+			gpios = <&gpio_exp1 6 GPIO_ACTIVE_LOW>;
+		};
+	};
+};

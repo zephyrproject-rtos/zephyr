@@ -2,4 +2,4 @@ board:
   name: dummy
   vendor: others
   socs:
-  - name: dummy_soc
+  - name: unit_testing

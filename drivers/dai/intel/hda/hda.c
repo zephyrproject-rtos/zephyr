@@ -32,10 +32,13 @@ static int dai_hda_set_config_tplg(struct dai_intel_hda *dp, const void *spec_co
 	struct dai_intel_hda_pdata *hda = dai_get_drvdata(dp);
 	const struct dai_intel_ipc_hda_params *config = spec_config;
 
-	if (config->channels)
+	if (config->channels) {
 		hda->params.channels = config->channels;
-	if (config->rate)
+	}
+
+	if (config->rate) {
 		hda->params.rate = config->rate;
+	}
 
 	return 0;
 }
@@ -65,8 +68,9 @@ static int dai_hda_config_set(const struct device *dev, const struct dai_config 
 {
 	struct dai_intel_hda *dp = (struct dai_intel_hda *)dev->data;
 
-	if (cfg->type == DAI_INTEL_HDA)
+	if (cfg->type == DAI_INTEL_HDA) {
 		return dai_hda_set_config_tplg(dp, bespoke_cfg);
+	}
 
 	return 0;
 }

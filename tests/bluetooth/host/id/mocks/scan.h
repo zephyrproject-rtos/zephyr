@@ -11,3 +11,4 @@
 #define SCAN_FFF_FAKES_LIST(FAKE) FAKE(bt_le_scan_set_enable)
 
 DECLARE_FAKE_VALUE_FUNC(int, bt_le_scan_set_enable, uint8_t);
+DECLARE_FAKE_VALUE_FUNC(bool, bt_le_scan_active_scanner_running);

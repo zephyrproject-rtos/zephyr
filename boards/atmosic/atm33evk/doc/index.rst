@@ -126,6 +126,11 @@ as such rather than "J-Link driver".  (In Device Manager, expand category
 Programming and Debugging
 *************************
 
+It is recommended that we set environment variables ZEPHYR_TOOLCHAIN_VARIANT to zephyr and ZEPHYR_SDK_INSTALL_DIR to the directory where Zephyr SDK is installed. For example, assuming you installed SDK version 0.16.8  in your home directory, for reference, it will be like this in a bash shell environment: (use ``setenv`` in a C shell environment)::
+
+  export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+  export ZEPHYR_SDK_INSTALL_DIR=<$HOME/zephyr-sdk-0.16.8>
+
 Applications for the ATMEVK-33xx-xx-5 and ATMEVK-33xxe-xx-5 boards can be built, flashed, and debugged with the familiar `west build` and `west flash`.  Except for the case of debugging, a convenience wrapper script is provided that can invoke all the right `west` commands as detailed in the section on `Support Script`_.  For most cases, using this script is the recommended way to build and program an atm33evk.  Needless to say, it is still important to understand concepts such as an MCUboot vs. non-MCUboot builds as well as the various BLE link controller options, which are described later in this section.
 
 The atm33evk boards require at least two images to be built -- the SPE and the application.
@@ -300,7 +305,7 @@ When -d and -a will build not just the app but the dependencies and generating a
 
 
 Atmosic In-System Programming (ISP) Tool
-****************************************
+========================================
 
 This SDK ships with a tool called Atmosic In-System Programming Tool
 (ISP) for bundling all three types of binaries -- OTP NVDS, flash NVDS, and
@@ -308,84 +313,110 @@ flash -- into a single binary archive.
 
 +---------------+-----------------------------------------------------+
 |  Binary Type  |  Description                                        |
-+---------------+-----------------------------------------------------+
++===============+=====================================================+
 |   .bin        |  binary file, contains flash or nvds data only.     |
 +---------------+-----------------------------------------------------+
 
 The ISP tool, which is also shipped as a stand-alone package, can then be used
 to unpack the components of the archive and download them on a device.
 
-west atm_arch commands
-======================
+Python Requirements
+-------------------
 
-atm isp archive tool
-  -atm_isp_path ATM_ISP_PATH, --atm_isp_path ATM_ISP_PATH
-                        specify atm_isp exe path path
-  -d, --debug           debug enabled, default false
-  -s, --show            show archive
-  -b, --burn            burn archive
-  -a, --append          append to input atm file
-  -i INPUT_ATM_FILE, --input_atm_file INPUT_ATM_FILE
-                        input atm file path
-  -o OUTPUT_ATM_FILE, --output_atm_file OUTPUT_ATM_FILE
-                        output atm file path
-  -p PARTITION_INFO_FILE, --partition_info_file PARTITION_INFO_FILE
-                        partition info file path
-  -nvds_file NVDS_FILE, --nvds_file NVDS_FILE
-                        nvds file path
-  -spe_file SPE_FILE, --spe_file SPE_FILE
-                        spe file path
-  -app_file APP_FILE, --app_file APP_FILE
-                        application file path
-  -mcuboot_file MCUBOOT_FILE, --mcuboot_file MCUBOOT_FILE
-                        mcuboot file path
-  -atmwstk_file ATMWSTK_FILE, --atmwstk_file ATMWSTK_FILE
-                        atmwstk file path
-  -openocd_pkg_root OPENOCD_PKG_ROOT, --openocd_pkg_root OPENOCD_PKG_ROOT
-                        Path to directory where openocd and its scripts are found
+Support atm isp archive tool has to install specific python protobuf version 3.20.3 first.
 
-Support Linux and Windows currently. The ``--atm_isp_path`` option should be specifiec accordingly.
+To install with Openair requirement list file::
 
-On Linux::
-  the ``--atm_isp_path`` option should be modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+  pip install -r openair/scripts/requirements.txt
 
-On Windows::
-  the ``--atm_isp_path`` option should be modules/hal/atmosic_lib/tools/atm_arch/bin/Windows_NT/atm_isp.exe
+Or install with pip command directly::
+
+  pip install grpcio-tools==1.47.0 protobuf==3.20.3
+
+Note: This install operation will uninstall current python protobuf packages and reinstall to python protobuf to be version 3.20.3.
+
+West atm_arch commands
+----------------------
+
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| command arguments                                                           |  Description                                               |
++=============================================================================+============================================================+
+| -d, --debug                                                                 |  debug enabled, default false                              |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -s, --show                                                                  |  show archive                                              |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -b, --burn                                                                  |  burn archive                                              |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -a, --append                                                                |  append to input atm file                                  |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -a, --append                                                                |  append to input atm file                                  |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -i INPUT_ATM_FILE, --input_atm_file INPUT_ATM_FILE                          |  input atm file path                                       |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -o OUTPUT_ATM_FILE, --output_atm_file OUTPUT_ATM_FILE                       |  output atm file path                                      |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -p PARTITION_INFO_FILE, --partition_info_file PARTITION_INFO_FILE           |  partition info file path                                  |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -storage_data_file STOAGE_DATA_FILE, --storage_data_file STOAGE_DATA_FILE   |  storage data file path                                    |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -factory_data_file FACTORY_DATA_FILE, --factory_data_file FACTORY_DATA_FILE |  factory data file path                                    |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -spe_file SPE_FILE, --spe_file SPE_FILE                                     |  spe file path                                             |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -app_file APP_FILE, --app_file APP_FILE                                     |  application file path                                     |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -mcuboot_file MCUBOOT_FILE, --mcuboot_file MCUBOOT_FILE                     |  mcuboot file path                                         |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -atmwstk_file ATMWSTK_FILE, --atmwstk_file ATMWSTK_FILE                     |  atmwstk file path (.elf or .bin)                          |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -openocd_pkg_root OPENOCD_PKG_ROOT, --openocd_pkg_root OPENOCD_PKG_ROOT     |  Path to directory where openocd and its scripts are found |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
 
 When ``-DCONFIG_SPE_PATH`` has been sepcified, the parition_info infomation will merge from build_dir of application and spe to build_dir of application and named as parition_info.map.merge.
 
-When not use SPE::
-  the ``-p`` option should be <build_dir>/zehpyr/parition_info.map
-When use SPE::
-  the ``-p`` option should be <build_dir>/zehpyr/parition_info.map.merge
+* When not use SPE, the ``-p`` option should be <build_dir>/zehpyr/parition_info.map
+* When use SPE, the ``-p`` option should be <build_dir>/zehpyr/parition_info.map.merge
 
-When build with wireless stack, the ``-DCONFIG_USE_ATMWSTK=y -DCONFIG_ATMWSTK=\"<ATMWSTK>\"``, the wireless stack elf file should be transfered to binary::
+When build with wireless stack, the ``-DCONFIG_USE_ATMWSTK=y -DCONFIG_ATMWSTK=\"<ATMWSTK>\"``, the wireless stack elf file should be packed within isp file as well::
+
+    --atmwstk_file <ATMSWTK_PATH>/atmwstk_<ATMWSTK>.elf
+
+or::
+
+    --atmwstk_file <ATMSWTK_PATH>/atmwstk_<ATMWSTK>.bin
+
+* replace ``<ATMSWTK_PATH>`` the wireless stack file, it should be openair/modules/hal_atmosic/ATM33xx-5/drivers/ble defaultly.
+* replace ``<ATMWSTK>`` the wireless stack, PD50LL or LL.
+
+The wireless stack ``elf`` file will be transfered to binary automatically and this requires the environment variables ZEPHYR_TOOLCHAIN_VARIANT has been set. Or to transfer to binary manually by::
+
     <ZEPHYR_TOOLCHAIN_VARIANT>/arm-zephyr-eabi/bin/arm-zephyr-eabi-objcopy -O binary <ATMSWTK_PATH>/atmwstk_<ATMWSTK>.elf <ATMSWTK_PATH>/atmwstk_<ATMWSTK>.bin
 
 * replace ``<ZEPHYR_TOOLCHAIN_VARIANT>`` the zephyr toolchain path.
-* replace ``<ATMSWTK_PATH>`` the wireless stack file, it should be openair/modules/hal_atmosic/ATM33xx-5/drivers/ble defaultly.
-* replace ``<ATMWSTK>`` the wireless stack, PD50LL or LL.
 
 Generate atm isp file
 ---------------------
 
 Without SPE::
+
   west atm_arch -o <BOARD>_beacon.atm \
     -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
     --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
-    --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.bin \
+    --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.elf \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
 
 With SPE::
+
   west atm_arch -o <BOARD>_beacon.atm \
     -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
     --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
-    --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.bin \
+    --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.elf \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
 
 Without ATMWSTK::
+
   west atm_arch -o <BOARD>_beacon.atm \
     -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
@@ -393,21 +424,23 @@ Without ATMWSTK::
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
 
 Without MCUBOOT::
+
   west atm_arch -o <BOARD>_beacon.atm \
     -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.bin \
     --spe_file build/<BOARD>/<SPE>/zephyr/zephyr.bin \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
 
-Show atm isp file
------------------
+Show and Flash atm isp file
+---------------------------
+
+show commnad::
 
   west atm_arch -i <BOARD>_beacon.atm \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
     --show
 
-Flash atm isp file
-------------------
+flash commnad::
 
   west atm_arch -i <BOARD>_beacon.atm \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
@@ -415,7 +448,7 @@ Flash atm isp file
     --burn
 
 Programming Secure Journal
-=========================
+==========================
 
 The secure journal is a dedicated block of RRAM that has the property of being a write once, append-only data storage area that replaces traditional OTP memory. This region is located near the end of the RRAM storage array at 0x8F800– 0x8FEEF (1776 bytes).
 

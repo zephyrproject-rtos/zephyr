@@ -67,33 +67,29 @@ static ALWAYS_INLINE void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
 #endif
 
 #if defined(CONFIG_PWM) && \
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay) || \
-	 DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay) || \
-	 DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm0)) || \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm1)) || \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm2)))
 	CLOCK_SetTpmClock(TPMSRC_MCGPLLCLK);
 #endif
 }
 
-static int kwx_init(void)
+void soc_early_init_hook(void)
 {
 	/* Initialize system clock to 40 MHz */
 	clock_init();
-
-	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
-
-SYS_INIT(kwx_init, PRE_KERNEL_1, 0);
+#endif /* CONFIG_SOC_RESET_HOOK */

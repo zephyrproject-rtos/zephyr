@@ -14,6 +14,8 @@
 /**
  * @brief OpenThread Layer 2 abstraction layer
  * @defgroup openthread OpenThread L2 abstraction layer
+ * @since 1.11
+ * @version 0.8.0
  * @ingroup ieee802154
  * @{
  */

@@ -165,8 +165,9 @@ def main():
     setup_logging(args.verbose)
     bindings = load_bindings(args.dts_roots, args.dts_folders)
     base_binding = load_base_binding()
+    driver_sources = load_driver_sources()
     vnd_lookup = VndLookup(args.vendor_prefixes, bindings)
-    dump_content(bindings, base_binding, vnd_lookup, args.out_dir,
+    dump_content(bindings, base_binding, vnd_lookup, driver_sources, args.out_dir,
                  args.turbo_mode)
 
 def parse_args():
@@ -243,7 +244,60 @@ def load_base_binding():
     return edtlib.Binding(os.fspath(base_yaml), base_includes, require_compatible=False,
                           require_description=False)
 
-def dump_content(bindings, base_binding, vnd_lookup, out_dir, turbo_mode):
+def load_driver_sources():
+    driver_sources = {}
+    dt_drv_compat_occurrences = defaultdict(list)
+
+    dt_drv_compat_pattern = re.compile(r"#define DT_DRV_COMPAT\s+(.*)")
+    device_dt_inst_define_pattern = re.compile(r"DEVICE_DT_INST_DEFINE")
+
+    folders_to_scan = ["boards", "drivers", "modules", "soc", "subsys"]
+
+    # When looking at folders_to_scan, a file is considered as a likely driver source if:
+    # - There is only one and only one file with a "#define DT_DRV_COMPAT <compatible>" for a given
+    #   compatible.
+    # - or, a file contains both a "#define DT_DRV_COMPAT <compatible>" and a
+    #   DEVICE_DT_INST_DEFINE(...) call.
+
+    for folder in folders_to_scan:
+        for dirpath, _, filenames in os.walk(ZEPHYR_BASE / folder):
+            for filename in filenames:
+                if not filename.endswith(('.c', '.h')):
+                    continue
+                filepath = Path(dirpath) / filename
+                with open(filepath, "r", encoding="utf-8") as f:
+                    content = f.read()
+
+                relative_path = filepath.relative_to(ZEPHYR_BASE)
+
+                # Find all DT_DRV_COMPAT occurrences in the file
+                dt_drv_compat_matches = dt_drv_compat_pattern.findall(content)
+                for compatible in dt_drv_compat_matches:
+                    dt_drv_compat_occurrences[compatible].append(relative_path)
+
+                if dt_drv_compat_matches and device_dt_inst_define_pattern.search(content):
+                    for compatible in dt_drv_compat_matches:
+                        if compatible in driver_sources:
+                            # Mark as ambiguous if multiple files define the same compatible
+                            driver_sources[compatible] = None
+                        else:
+                            driver_sources[compatible] = relative_path
+
+    # Remove ambiguous driver sources
+    driver_sources = {k: v for k, v in driver_sources.items() if v is not None}
+
+    # Consider DT_DRV_COMPATs with only one occurrence as driver sources
+    for compatible, occurrences in dt_drv_compat_occurrences.items():
+        if compatible not in driver_sources and len(occurrences) == 1:
+            path = occurrences[0]
+            # Assume the driver is defined in the enclosing folder if it's a header file
+            if path.suffix == ".h":
+                path = path.parent
+            driver_sources[compatible] = path
+
+    return driver_sources
+
+def dump_content(bindings, base_binding, vnd_lookup, driver_sources, out_dir, turbo_mode):
     # Dump the generated .rst files for a vnd2bindings dict.
     # Files are only written if they are changed. Existing .rst
     # files which would not be written by the 'vnd2bindings'
@@ -256,7 +310,7 @@ def dump_content(bindings, base_binding, vnd_lookup, out_dir, turbo_mode):
         write_dummy_index(bindings, out_dir)
     else:
         write_bindings_rst(vnd_lookup, out_dir)
-        write_orphans(bindings, base_binding, vnd_lookup, out_dir)
+        write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir)
 
 def setup_bindings_dir(bindings, out_dir):
     # Make a set of all the Path objects we will be creating for
@@ -382,7 +436,7 @@ def write_bindings_rst(vnd_lookup, out_dir):
 
     write_if_updated(out_dir / 'bindings.rst', string_io.getvalue())
 
-def write_orphans(bindings, base_binding, vnd_lookup, out_dir):
+def write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir):
     # Write out_dir / bindings / foo / binding_page.rst for each binding
     # in 'bindings', along with any "disambiguation" pages needed when a
     # single compatible string can be handled by multiple bindings.
@@ -415,7 +469,7 @@ def write_orphans(bindings, base_binding, vnd_lookup, out_dir):
         string_io = io.StringIO()
 
         print_binding_page(binding, base_names, vnd_lookup,
-                           dup_compat2bindings, string_io)
+                           driver_sources, dup_compat2bindings, string_io)
 
         written = write_if_updated(out_dir / 'bindings' /
                                    binding_filename(binding),
@@ -443,7 +497,7 @@ def write_orphans(bindings, base_binding, vnd_lookup, out_dir):
     logging.info('done writing :orphan: files; %d files needed updates',
                  num_written)
 
-def print_binding_page(binding, base_names, vnd_lookup, dup_compats,
+def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compats,
                        string_io):
     # Print the rst content for 'binding' to 'string_io'. The
     # 'dup_compats' argument should support membership testing for
@@ -499,6 +553,19 @@ def print_binding_page(binding, base_names, vnd_lookup, dup_compats,
     print('Vendor: '
           f':ref:`{vnd_lookup.vendor(vnd)} <{vnd_lookup.target(vnd)}>`\n',
           file=string_io)
+
+    # Link to driver implementation (if it exists).
+    compatible = re.sub("[-,.@/+]", "_", compatible.lower())
+    if compatible in driver_sources:
+        print_block(
+            f"""\
+            .. note::
+
+               An implementation of a driver matching this compatible is available in
+               :zephyr_file:`{driver_sources[compatible]}`.
+        """,
+            string_io,
+        )
 
     # Binding description.
     if binding.bus:

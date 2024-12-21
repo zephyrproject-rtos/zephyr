@@ -1,7 +1,4 @@
-.. _bl654_usb:
-
-Ezurio BL654 USB (451-00004)
-############################
+.. zephyr:board:: bl654_usb
 
 Overview
 ********
@@ -22,12 +19,6 @@ This USB adapter has the following features:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`RTC (nRF RTC System Clock)`
-
-.. figure:: img/bl654_usb.jpg
-     :align: center
-     :alt: BL654 USB adapter
-
-     BL654 USB Adapter
 
 .. figure:: img/bl654_usb_pcb.jpg
      :align: center
@@ -104,7 +95,7 @@ Programming and Debugging
 Applications for the ``bl654_usb`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details). The
 ``bl654_usb`` board cannot be used for debugging. The compatible BL654 DVK
-board can be used for development. Documentation can be found at the :ref:`bl654_dvk`
+board can be used for development. Documentation can be found at the :zephyr:board:`bl654_dvk`
 site and :zephyr_file:`boards/ezurio/bl654_dvk/doc/bl654_dvk.rst`
 
 Flashing
@@ -160,9 +151,9 @@ Testing Bluetooth on the BL654 USB
 Many of the Bluetooth examples will work on the BL654 USB.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 
 Testing the LED on the BL654 USB

@@ -183,7 +183,7 @@ static int vrt_handle_out(const struct device *dev,
 
 	LOG_DBG("Handle data OUT, %zu | %zu", pkt->length, net_buf_tailroom(buf));
 
-	if (net_buf_tailroom(buf) == 0 || pkt->length < ep_cfg->mps) {
+	if (net_buf_tailroom(buf) == 0 || pkt->length < udc_mps_ep_size(ep_cfg)) {
 		buf = udc_buf_get(dev, ep);
 
 		if (ep == USB_CONTROL_EP_OUT) {
@@ -246,13 +246,13 @@ static int vrt_handle_in(const struct device *dev,
 	}
 
 	LOG_DBG("Handle data IN, %zu | %u | %u",
-		pkt->length, buf->len, ep_cfg->mps);
+		pkt->length, buf->len, udc_mps_ep_size(ep_cfg));
 	min_len = MIN(pkt->length, buf->len);
 	memcpy(pkt->data, buf->data, min_len);
 	net_buf_pull(buf, min_len);
 	pkt->length = min_len;
 
-	if (buf->len == 0 || pkt->length < ep_cfg->mps) {
+	if (buf->len == 0 || pkt->length < udc_mps_ep_size(ep_cfg)) {
 		if (udc_ep_buf_has_zlp(buf)) {
 			udc_ep_buf_clear_zlp(buf);
 			goto continue_in;

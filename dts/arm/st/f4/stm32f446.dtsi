@@ -23,7 +23,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 12U)>;
 			interrupts = <35 5>;
 			dmas = <&dma2 3 3 0x400 0x3
 				&dma2 2 3 0x400 0x3>;
@@ -34,7 +34,7 @@
 		usart3: serial@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 18U)>;
 			resets = <&rctl STM32_RESET(APB1, 18U)>;
 			interrupts = <39 0>;
 			status = "disabled";
@@ -43,7 +43,7 @@
 		uart4: serial@40004c00 {
 			compatible ="st,stm32-uart";
 			reg = <0x40004c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 19U)>;
 			resets = <&rctl STM32_RESET(APB1, 19U)>;
 			interrupts = <52 0>;
 			status = "disabled";
@@ -52,7 +52,7 @@
 		uart5: serial@40005000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20U)>;
 			resets = <&rctl STM32_RESET(APB1, 20U)>;
 			interrupts = <53 0>;
 			status = "disabled";
@@ -63,7 +63,7 @@
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25U)>;
 			status = "disabled";
 		};
 
@@ -73,14 +73,14 @@
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			/* also enabling clock for can1 (master instance) */
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
 			master-can-reg = <0x40006400>;
 			status = "disabled";
 		};
 
 		usbotg_fs: usb@50000000 {
 			num-bidir-endpoints = <6>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>,
+			clocks = <&rcc STM32_CLOCK(AHB2, 7U)>,
 				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 		};
 
@@ -93,7 +93,7 @@
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
 			phys = <&otghs_fs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x20000000>,
+			clocks = <&rcc STM32_CLOCK(AHB1, 29U)>,
 				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
 		};
@@ -101,7 +101,7 @@
 		backup_sram: memory@40024000 {
 			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x40024000 DT_SIZE_K(4)>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 18U)>;
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};
@@ -109,7 +109,7 @@
 		adc2: adc@40012100 {
 			compatible = "st,stm32-adc";
 			reg = <0x40012100 0x050>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
+			clocks = <&rcc STM32_CLOCK(APB2, 9U)>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -125,7 +125,7 @@
 		adc3: adc@40012200 {
 			compatible = "st,stm32-adc";
 			reg = <0x40012200 0x050>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 10U)>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -141,7 +141,7 @@
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29U)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -149,7 +149,7 @@
 		fmc: memory-controller@a0000000 {
 			compatible = "st,stm32-fmc";
 			reg = <0xa0000000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000001>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 0U)>;
 			status = "disabled";
 
 			sdram: sdram {

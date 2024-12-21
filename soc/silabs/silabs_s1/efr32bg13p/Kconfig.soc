@@ -1,5 +1,3 @@
-# Silicon Labs EFR32BG13P (Blue Gecko) MCU series
-
 # Copyright (c) 2020 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
@@ -7,7 +5,7 @@ config SOC_SERIES_EFR32BG13P
 	bool
 	select SOC_FAMILY_SILABS_S1
 	help
-	  EFR32BG13P Series MCU
+	  Silicon Labs EFR32BG13P (Blue Gecko) Series MCU
 
 config SOC_PART_NUMBER_EFR32BG13P632F512GM48
 	bool

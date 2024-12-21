@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
  * to 0 or 1, hence the use of #if IS_ENABLED().
  */
 #if IS_ENABLED(NRFX_PWM_NRF52_ANOMALY_109_WORKAROUND_ENABLED)
-#define ANOMALY_109_IRQ_CONNECT(...) IRQ_CONNECT(__VA_ARGS__)
 #define ANOMALY_109_EGU_IRQ_CONNECT(idx) _EGU_IRQ_CONNECT(idx)
 #define _EGU_IRQ_CONNECT(idx) \
 	extern void nrfx_egu_##idx##_irq_handler(void); \
@@ -28,7 +27,6 @@ LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 		    DT_IRQ(DT_NODELABEL(egu##idx), priority), \
 		    nrfx_isr, nrfx_egu_##idx##_irq_handler, 0)
 #else
-#define ANOMALY_109_IRQ_CONNECT(...)
 #define ANOMALY_109_EGU_IRQ_CONNECT(idx)
 #endif
 
@@ -61,6 +59,12 @@ static uint16_t *seq_values_ptr_get(const struct device *dev)
 	const struct pwm_nrfx_config *config = dev->config;
 
 	return (uint16_t *)config->seq.values.p_raw;
+}
+
+static void pwm_handler(nrfx_pwm_evt_type_t event_type, void *p_context)
+{
+	ARG_UNUSED(event_type);
+	ARG_UNUSED(p_context);
 }
 
 static bool pwm_period_check_and_set(const struct device *dev,
@@ -229,7 +233,8 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 		 * until another playback is requested (new values will be
 		 * loaded then) or the PWM peripheral is stopped.
 		 */
-		nrfx_pwm_simple_playback(&config->pwm, &config->seq, 1, 0);
+		nrfx_pwm_simple_playback(&config->pwm, &config->seq, 1,
+					 NRFX_PWM_FLAG_NO_EVT_FINISHED);
 	}
 
 	return 0;
@@ -252,18 +257,12 @@ static const struct pwm_driver_api pwm_nrfx_drv_api_funcs = {
 	.get_cycles_per_sec = pwm_nrfx_get_cycles_per_sec,
 };
 
-static int pwm_nrfx_init(const struct device *dev)
+static void pwm_resume(const struct device *dev)
 {
 	const struct pwm_nrfx_config *config = dev->config;
 	uint8_t initially_inverted = 0;
 
-	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-
-	ANOMALY_109_EGU_IRQ_CONNECT(NRFX_PWM_NRF52_ANOMALY_109_EGU_INSTANCE);
-
-	if (ret < 0) {
-		return ret;
-	}
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	for (size_t i = 0; i < NRF_PWM_CHANNEL_COUNT; i++) {
 		uint32_t psel;
@@ -283,64 +282,53 @@ static int pwm_nrfx_init(const struct device *dev)
 
 		seq_values_ptr_get(dev)[i] = PWM_NRFX_CH_VALUE(0, inverted);
 	}
-
-	nrfx_err_t result = nrfx_pwm_init(&config->pwm,
-					  &config->initial_config,
-					  NULL,
-					  NULL);
-	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
-		return -EBUSY;
-	}
-
-	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
-static void pwm_nrfx_uninit(const struct device *dev)
+static void pwm_suspend(const struct device *dev)
 {
 	const struct pwm_nrfx_config *config = dev->config;
 
-	nrfx_pwm_uninit(&config->pwm);
+	nrfx_pwm_stop(&config->pwm, false);
+	while (!nrfx_pwm_stopped_check(&config->pwm)) {
+	}
 
 	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 }
 
 static int pwm_nrfx_pm_action(const struct device *dev,
 			      enum pm_device_action action)
 {
-	const struct pwm_nrfx_config *config = dev->config;
-	int ret = 0;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-		if (ret < 0) {
-			return ret;
-		}
-		ret = pwm_nrfx_init(dev);
-		break;
-
-	case PM_DEVICE_ACTION_SUSPEND:
-		pwm_nrfx_uninit(dev);
-
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-		if (ret < 0) {
-			return ret;
-		}
-		break;
-
-	default:
+	if (action == PM_DEVICE_ACTION_RESUME) {
+		pwm_resume(dev);
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
+		pwm_suspend(dev);
+	} else {
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
-#else
 
-#define pwm_nrfx_pm_action NULL
+static int pwm_nrfx_init(const struct device *dev)
+{
+	const struct pwm_nrfx_config *config = dev->config;
+	nrfx_err_t err;
 
-#endif /* CONFIG_PM_DEVICE */
+	ANOMALY_109_EGU_IRQ_CONNECT(NRFX_PWM_NRF52_ANOMALY_109_EGU_INSTANCE);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	}
+
+	err = nrfx_pwm_init(&config->pwm, &config->initial_config, pwm_handler, dev->data);
+	if (err != NRFX_SUCCESS) {
+		LOG_ERR("Failed to initialize device: %s", dev->name);
+		return -EBUSY;
+	}
+
+	return pm_device_driver_init(dev, pwm_nrfx_pm_action);
+}
 
 #define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
 #define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
@@ -377,9 +365,8 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 	};								      \
 	static int pwm_nrfx_init##idx(const struct device *dev)		      \
 	{								      \
-		ANOMALY_109_IRQ_CONNECT(				      \
-			DT_IRQN(PWM(idx)), DT_IRQ(PWM(idx), priority),	      \
-			nrfx_isr, nrfx_pwm_##idx##_irq_handler, 0);	      \
+		IRQ_CONNECT(DT_IRQN(PWM(idx)), DT_IRQ(PWM(idx), priority),    \
+			    nrfx_isr, nrfx_pwm_##idx##_irq_handler, 0);	      \
 		return pwm_nrfx_init(dev);				      \
 	};								      \
 	PM_DEVICE_DT_DEFINE(PWM(idx), pwm_nrfx_pm_action);		      \
@@ -390,50 +377,7 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 			 POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		      \
 			 &pwm_nrfx_drv_api_funcs)
 
-#ifdef CONFIG_HAS_HW_NRF_PWM0
-PWM_NRFX_DEVICE(0);
-#endif
+#define COND_PWM_NRFX_DEVICE(unused, prefix, i, _) \
+	IF_ENABLED(CONFIG_HAS_HW_NRF_PWM##prefix##i, (PWM_NRFX_DEVICE(prefix##i);))
 
-#ifdef CONFIG_HAS_HW_NRF_PWM1
-PWM_NRFX_DEVICE(1);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM2
-PWM_NRFX_DEVICE(2);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM3
-PWM_NRFX_DEVICE(3);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM20
-PWM_NRFX_DEVICE(20);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM21
-PWM_NRFX_DEVICE(21);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM22
-PWM_NRFX_DEVICE(22);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM120
-PWM_NRFX_DEVICE(120);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM130
-PWM_NRFX_DEVICE(130);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM131
-PWM_NRFX_DEVICE(131);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM132
-PWM_NRFX_DEVICE(132);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM133
-PWM_NRFX_DEVICE(133);
-#endif
+NRFX_FOREACH_PRESENT(PWM, COND_PWM_NRFX_DEVICE, (), (), _)

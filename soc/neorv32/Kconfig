@@ -9,6 +9,7 @@ config SOC_NEORV32
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
 	select RISCV_PRIVILEGED
+	imply XIP
 
 if SOC_NEORV32
 

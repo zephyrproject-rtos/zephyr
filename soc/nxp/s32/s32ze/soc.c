@@ -12,7 +12,7 @@
 
 #include <OsIf.h>
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	/* enable peripheral port access at EL1 and EL0 */
 	__asm__ volatile("mrc p15, 0, r0, c15, c0, 0\n");
@@ -44,11 +44,7 @@ void z_arm_platform_init(void)
 	}
 }
 
-static int soc_init(void)
+void soc_early_init_hook(void)
 {
 	OsIf_Init(NULL);
-
-	return 0;
 }
-
-SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

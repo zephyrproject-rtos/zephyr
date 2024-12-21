@@ -348,6 +348,9 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 #ifdef CONFIG_I2C_CALLBACK
 	.transfer_cb = i2c_mcux_transfer_cb,
 #endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #define I2C_DEVICE_INIT_MCUX(n)			\

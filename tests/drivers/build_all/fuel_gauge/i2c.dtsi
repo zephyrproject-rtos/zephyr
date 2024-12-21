@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ***************************************/
+
+max17048@0 {
+	compatible = "maxim,max17048";
+	reg = <0x0>;
+	status = "okay";
+};
+
+bq27z746@1 {
+	compatible = "ti,bq27z746";
+	reg = <0x1>;
+	status = "okay";
+};
+
+sbs-gauge-new-api@2 {
+	compatible = "sbs,sbs-gauge-new-api";
+	reg = <0x2>;
+	status = "okay";
+};

@@ -1,6 +1,9 @@
 sample:
   name: CMSIS_RTOS_V2 Dining Philosophers
 common:
+  platform_key:
+    - arch
+    - simulation
   integration_platforms:
     - native_sim
   extra_args: DEBUG_PRINTF=1
@@ -8,7 +11,7 @@ common:
   min_ram: 32
   min_flash: 34
   platform_exclude:
-    - qemu_xtensa
+    - qemu_xtensa/dc233c
     - qemu_x86_64
   harness: console
   harness_config:

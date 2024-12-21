@@ -1,7 +1,4 @@
-.. _mimxrt1020_evk:
-
-NXP MIMXRT1020-EVK
-##################
+.. zephyr:board:: mimxrt1020_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The i.MX RT1020 expands the i.MX RT crossover processor families by providing
 high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1020 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
-
-.. image:: mimxrt1020_evk.jpg
-   :align: center
-   :alt: MIMXRT1020-EVK
 
 Hardware
 ********
@@ -81,7 +74,7 @@ Supported Features
 
 The mimxrt1020_evk board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+:zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
 already supported, which can also be re-used on this mimxrt1020_evk board:
@@ -261,7 +254,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -279,7 +272,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

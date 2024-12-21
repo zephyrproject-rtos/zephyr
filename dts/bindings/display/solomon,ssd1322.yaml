@@ -1,0 +1,69 @@
+description: SSD1322 display controller
+
+compatible: "solomon,ssd1322"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  column-offset:
+    type: int
+    required: true
+    description: First visible column number.
+
+  row-offset:
+    type: int
+    default: 0
+    description: |
+      COM pin used as first row, mapped to the line set by start-line.
+      The default corresponds to the reset value of the register.
+
+  start-line:
+    type: int
+    default: 0
+    description: |
+      Starting line address of display ram (0-127).
+      The default corresponds to the reset value of the register.
+
+  mux-ratio:
+    type: int
+    default: 128
+    description: |
+      COM Pin Multiplex ratio from 16-128.
+      The default corresponds to the reset value of the register.
+
+  remap-row-first:
+    type: boolean
+    description: Set scan direction to vertical first (swap rows/columns).
+
+  remap-columns:
+    type: boolean
+    description: Reverse the column order (flip horizontally).
+
+  remap-rows:
+    type: boolean
+    description: Reverse the row order (flip vertically).
+
+  remap-nibble:
+    type: boolean
+    description: Reverse every group of 4 nibbles.
+
+  remap-com-odd-even-split:
+    type: boolean
+    description: Odd even split of COM pins.
+
+  remap-com-dual:
+    type: boolean
+    description: Dual COM mode.
+
+  segments-per-pixel:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+    description: |
+      Map multiple adjacent segments to one pixel.
+      Some displays (such as the Newhaven Display NHD-2.7-12864WDW3) connect
+      two adjacent pixel drivers to each physical pixel. By setting this to 2,
+      the driver will repeat each pixel. The default disables this functionality,
+      as it only applies to very specific display models.

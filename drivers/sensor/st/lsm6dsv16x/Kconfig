@@ -29,11 +29,15 @@ config LSM6DSV16X_TRIGGER_NONE
 config LSM6DSV16X_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios)
 	select LSM6DSV16X_TRIGGER
 
 config LSM6DSV16X_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios)
 	select LSM6DSV16X_TRIGGER
 
 endchoice

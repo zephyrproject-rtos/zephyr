@@ -25,6 +25,8 @@ extern "C" {
 /**
  * @brief Offloaded Net Devices
  * @defgroup offloaded_netdev Offloaded Net Devices
+ * @since 3.4
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

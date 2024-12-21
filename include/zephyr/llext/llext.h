@@ -50,6 +50,9 @@ enum llext_mem {
 	LLEXT_MEM_SYMTAB,       /**< Symbol table */
 	LLEXT_MEM_STRTAB,       /**< Symbol name strings */
 	LLEXT_MEM_SHSTRTAB,     /**< Section name strings */
+	LLEXT_MEM_PREINIT,      /**< Array of early setup functions */
+	LLEXT_MEM_INIT,         /**< Array of setup functions */
+	LLEXT_MEM_FINI,         /**< Array of cleanup functions */
 
 	LLEXT_MEM_COUNT,        /**< Number of regions managed by LLEXT */
 };
@@ -61,6 +64,9 @@ enum llext_mem {
 
 struct llext_loader;
 /** @endcond */
+
+/* Maximim number of dependency LLEXTs */
+#define LLEXT_MAX_DEPENDENCIES 8
 
 /**
  * @brief Structure describing a linkable loadable extension
@@ -111,6 +117,9 @@ struct llext {
 
 	/** Extension use counter, prevents unloading while in use */
 	unsigned int use_count;
+
+	/** Array of extensions, whose symbols this extension accesses */
+	struct llext *dependency[LLEXT_MAX_DEPENDENCIES];
 };
 
 /**
@@ -126,6 +135,12 @@ struct llext_load_param {
 	 * the memory buffer, when calculating relocation targets.
 	 */
 	bool pre_located;
+	/**
+	 * Extensions can implement custom ELF sections to be loaded in specific
+	 * memory regions, detached from other sections of compatible types.
+	 * This optional callback checks whether a section should be detached.
+	 */
+	bool (*section_detached)(const elf_shdr_t *shdr);
 };
 
 /** Default initializer for @ref llext_load_param */
@@ -168,7 +183,7 @@ int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg);
  * @retval -ENOTSUP Unsupported ELF features
  */
 int llext_load(struct llext_loader *loader, const char *name, struct llext **ext,
-	       struct llext_load_param *ldr_parm);
+	       const struct llext_load_param *ldr_parm);
 
 /**
  * @brief Unload an extension
@@ -176,6 +191,74 @@ int llext_load(struct llext_loader *loader, const char *name, struct llext **ext
  * @param[in] ext Extension to unload
  */
 int llext_unload(struct llext **ext);
+
+/** @brief Entry point function signature for an extension. */
+typedef void (*llext_entry_fn_t)(void *user_data);
+
+/**
+ * @brief Calls bringup functions for an extension.
+ *
+ * Must be called before accessing any symbol in the extension. Will execute
+ * the extension's own setup functions in the caller context.
+ * @see llext_bootstrap
+ *
+ * @param[in] ext Extension to initialize.
+ * @returns 0 on success, or a negative error code.
+ * @retval -EFAULT A relocation issue was detected
+ */
+int llext_bringup(struct llext *ext);
+
+/**
+ * @brief Calls teardown functions for an extension.
+ *
+ * Will execute the extension's own cleanup functions in the caller context.
+ * After this function completes, the extension is no longer usable and must be
+ * fully unloaded with @ref llext_unload.
+ * @see llext_bootstrap
+ *
+ * @param[in] ext Extension to de-initialize.
+ * @returns 0 on success, or a negative error code.
+ * @retval -EFAULT A relocation issue was detected
+ */
+int llext_teardown(struct llext *ext);
+
+/**
+ * @brief Bring up, execute, and teardown an extension.
+ *
+ * Calls the extension's own setup functions, an additional entry point and
+ * the extension's cleanup functions in the current thread context.
+ *
+ * This is a convenient wrapper around @ref llext_bringup and @ref
+ * llext_teardown that matches the @ref k_thread_entry_t signature, so it can
+ * be directly started as a new user or kernel thread via @ref k_thread_create.
+ *
+ * @param[in] ext Extension to execute. Passed as `p1` in @ref k_thread_create.
+ * @param[in] entry_fn Main entry point of the thread after performing
+ *                     extension setup. Passed as `p2` in @ref k_thread_create.
+ * @param[in] user_data Argument passed to @a entry_fn. Passed as `p3` in
+ *                      @ref k_thread_create.
+ */
+void llext_bootstrap(struct llext *ext, llext_entry_fn_t entry_fn, void *user_data);
+
+/**
+ * @brief Get pointers to setup or cleanup functions for an extension.
+ *
+ * This syscall can be used to get the addresses of all the functions that
+ * have to be called for full extension setup or cleanup.
+ *
+ * @see llext_bootstrap
+ *
+ * @param[in]    ext Extension to initialize.
+ * @param[in]    is_init `true` to get functions to be called at setup time,
+ *                       `false` to get the cleanup ones.
+ * @param[inout] buf Buffer to store the function pointers in. Can be `NULL`
+ *                   to only get the minimum required size.
+ * @param[in]    size Allocated size of the buffer in bytes.
+ * @returns the size used by the array in bytes, or a negative error code.
+ * @retval -EFAULT A relocation issue was detected
+ * @retval -ENOMEM Array does not fit in the allocated buffer
+ */
+__syscall ssize_t llext_get_fn_table(struct llext *ext, bool is_init, void *buf, size_t size);
 
 /**
  * @brief Find the address for an arbitrary symbol.
@@ -216,7 +299,7 @@ int llext_call_fn(struct llext *ext, const char *sym_name);
  * @param[in] domain Memory domain to add partitions to
  *
  * @returns 0 on success, or a negative error code.
- * @retval -ENOSYS @kconfig{CONFIG_USERSPACE} is not enabled or supported
+ * @retval -ENOSYS Option @kconfig{CONFIG_USERSPACE} is not enabled or supported
  */
 int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
 
@@ -246,8 +329,8 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
  *
  * Searches for a section by name in the ELF file and returns its offset.
  *
- * @param loader Extension loader data and context
- * @param search_name Section name to search for
+ * @param[in] loader Extension loader data and context
+ * @param[in] search_name Section name to search for
  * @returns the section offset or a negative error code
  */
 ssize_t llext_find_section(struct llext_loader *loader, const char *search_name);
@@ -271,5 +354,7 @@ void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext,
 #ifdef __cplusplus
 }
 #endif
+
+#include <zephyr/syscalls/llext.h>
 
 #endif /* ZEPHYR_LLEXT_H */

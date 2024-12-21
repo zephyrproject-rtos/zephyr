@@ -80,7 +80,7 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 					RCC_SPI123CLKSOURCE_CLKP, spi1_actual_domain_clk);
 
 			/* Check perclk configuration */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(perck), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(perck))
 			uint32_t perclk_dt_domain_clk, perclk_actual_domain_clk;
 
 			perclk_dt_domain_clk = DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(perck), 0, bus);

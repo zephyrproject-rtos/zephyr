@@ -1,5 +1,6 @@
 board:
   name: stm32l476g_disco
+  full_name: STM32L476G Discovery
   vendor: st
   socs:
     - name: stm32l476xx

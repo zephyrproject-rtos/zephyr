@@ -8,6 +8,7 @@
 #include <silabs/efr32bg22.dtsi>
 #include <silabs/efr32bg2x-pinctrl.dtsi>
 #include "thunderboard.dtsi"
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
 	/* These aliases are provided for compatibility with samples */
@@ -25,6 +26,50 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci_silabs;
 	};
+};
+
+&hfxo {
+	status = "okay";
+	ctune = <120>;
+	precision = <50>;
+};
+
+&lfxo {
+	status = "okay";
+	ctune = <37>;
+	precision = <50>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_K(76800)>;
+	clocks = <&hfxo>;
+	dpll-n = <3839>;
+	dpll-m = <1919>;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-autorecover;
+};
+
+&em23grpaclk {
+	clocks = <&lfxo>;
+};
+
+&em4grpaclk {
+	clocks = <&lfxo>;
+};
+
+&rtccclk {
+	clocks = <&lfxo>;
+};
+
+&wdog0clk {
+	clocks = <&lfxo>;
+};
+
+&dcdc {
+	status = "okay";
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
 };
 
 &flash0 {

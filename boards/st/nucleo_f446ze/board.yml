@@ -1,5 +1,6 @@
 board:
   name: nucleo_f446ze
+  full_name: Nucleo F446ZE
   vendor: st
   socs:
     - name: stm32f446xx

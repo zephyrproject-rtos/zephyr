@@ -379,13 +379,11 @@ function(atm_partition_info)
     )
     if (CONFIG_TRUSTED_EXECUTION_NONSECURE AND CONFIG_SPE_PATH)
 	set(input_file2 ${spe_path}/zephyr/partition_info.map)
-        if(EXISTS "${input_file2}")
-	    set(output_file_merge ${ZEPHYR_BINARY_DIR}/partition_info.map.merge)
-	    message("Merge Partition Info Map File to ${output_file_merge}")
-	    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-	    COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_PARTITION_INFO_SCRIPT} merge -i1 ${input_file2} -i2 ${output_file} -o ${output_file_merge}
-	    )
-	endif()
+        set(output_file_merge ${ZEPHYR_BINARY_DIR}/partition_info.map.merge)
+	message("Merge Partition Info Map File to ${output_file_merge}")
+	set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+	COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_PARTITION_INFO_SCRIPT} merge -i1 ${input_file2} -i2 ${output_file} -o ${output_file_merge}
+        )
     endif()
   else()
     message("west build can't find ${CONFIG_GEN_PARTITION_INFO_SCRIPT}, ignore generate partition info")
@@ -436,8 +434,10 @@ function(zephyr_atmosic_tasks)
     import_spe_kconfig(CONFIG_ ${SPEDOTCONFIG})
     assert(${SPE_CONFIG_TRUSTED_EXECUTION_SECURE} "Error: Application passed as CONFIG_SPE_PATH is not configured as a SPE.")
 
-    # copy the veneer library to a location the zephyr can link
-    zephyr_file_copy(${spe_path}/${CONFIG_ARM_ENTRY_VENEERS_LIB_NAME} ${CMAKE_BINARY_DIR}/${CONFIG_ARM_ENTRY_VENEERS_LIB_NAME})
+    # link the veneer library
+    zephyr_compile_definitions(CONFIG_ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS)
+    zephyr_link_libraries(${spe_path}/${CONFIG_ATM_ARM_ENTRY_VENEERS_LIB_NAME})
+
     if (CONFIG_ATM_SPLIT_IMG)
       split_img()
       if (CONFIG_BOOTLOADER_MCUBOOT)

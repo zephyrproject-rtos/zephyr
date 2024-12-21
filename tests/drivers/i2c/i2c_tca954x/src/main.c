@@ -8,13 +8,13 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_channel_0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(i2c_channel_0))
 #define I2C_0_CTRL_NODE_ID      DT_ALIAS(i2c_channel_0)
 #else
 #error "I2C 0 controller device not found"
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_channel_1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(i2c_channel_1))
 #define I2C_1_CTRL_NODE_ID      DT_ALIAS(i2c_channel_1)
 #else
 #error "I2C 1 controller device not found"

@@ -27,7 +27,7 @@ enum mipi_stp_decoder_ctrl_type {
 	STP_DATA32 = 8,
 	STP_DATA64 = 16,
 	STP_DECODER_NULL = 128,
-	STP_DECODER_MASTER,
+	STP_DECODER_MAJOR,
 	STP_DECODER_MERROR,
 	STP_DECODER_CHANNEL,
 	STP_DECODER_VERSION,
@@ -50,7 +50,7 @@ enum mipi_stp_decoder_ctrl_type {
 	_type == STP_DATA32 ? "DATA32" : (\
 	_type == STP_DATA64 ? "DATA64" : (\
 	_type == STP_DECODER_NULL ? "NULL" : (\
-	_type == STP_DECODER_MASTER ? "MASTER" : (\
+	_type == STP_DECODER_MAJOR ? "MAJOR" : (\
 	_type == STP_DECODER_MERROR ? "MERROR" : (\
 	_type == STP_DECODER_CHANNEL ? "CHANNEL" : (\
 	_type == STP_DECODER_VERSION ? "VERSION" : (\
@@ -62,7 +62,7 @@ enum mipi_stp_decoder_ctrl_type {
 
 /** @brief Union with data associated with a given STP opcode. */
 union mipi_stp_decoder_data {
-	/** ID - used for master and channel. */
+	/** ID - used for major and channel. */
 	uint16_t id;
 
 	/** Frequency. */

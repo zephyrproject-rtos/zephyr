@@ -639,6 +639,8 @@ void sys_trace_k_thread_ready(struct k_thread *thread);
 void sys_trace_k_thread_pend(struct k_thread *thread);
 void sys_trace_k_thread_info(struct k_thread *thread);
 
+void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1);
+
 #define sys_port_trace_pm_system_suspend_enter(ticks)			       \
 	SEGGER_SYSVIEW_RecordU32(TID_PM_SYSTEM_SUSPEND, (uint32_t)ticks)
 #define sys_port_trace_pm_system_suspend_exit(ticks, state)		       \
@@ -677,6 +679,51 @@ void sys_trace_k_thread_info(struct k_thread *thread);
 
 #define sys_trace_sys_init_enter(...)
 #define sys_trace_sys_init_exit(...)
+
+#define sys_port_trace_socket_init(sock, family, type, proto)
+#define sys_port_trace_socket_close_enter(sock)
+#define sys_port_trace_socket_close_exit(sock, ret)
+#define sys_port_trace_socket_shutdown_enter(sock, how)
+#define sys_port_trace_socket_shutdown_exit(sock, ret)
+#define sys_port_trace_socket_bind_enter(sock, addr, addrlen)
+#define sys_port_trace_socket_bind_exit(sock, ret)
+#define sys_port_trace_socket_connect_enter(sock, addr, addrlen)
+#define sys_port_trace_socket_connect_exit(sock, ret)
+#define sys_port_trace_socket_listen_enter(sock, backlog)
+#define sys_port_trace_socket_listen_exit(sock, ret)
+#define sys_port_trace_socket_accept_enter(sock)
+#define sys_port_trace_socket_accept_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_sendto_enter(sock, len, flags, dest_addr, addrlen)
+#define sys_port_trace_socket_sendto_exit(sock, ret)
+#define sys_port_trace_socket_sendmsg_enter(sock, msg, flags)
+#define sys_port_trace_socket_sendmsg_exit(sock, ret)
+#define sys_port_trace_socket_recvfrom_enter(sock, max_len, flags, addr, addrlen)
+#define sys_port_trace_socket_recvfrom_exit(sock, src_addr, addrlen, ret)
+#define sys_port_trace_socket_recvmsg_enter(sock, msg, flags)
+#define sys_port_trace_socket_recvmsg_exit(sock, msg, ret)
+#define sys_port_trace_socket_fcntl_enter(sock, cmd, flags)
+#define sys_port_trace_socket_fcntl_exit(sock, ret)
+#define sys_port_trace_socket_ioctl_enter(sock, req)
+#define sys_port_trace_socket_ioctl_exit(sock, ret)
+#define sys_port_trace_socket_poll_enter(fds, nfds, timeout)
+#define sys_port_trace_socket_poll_exit(fds, nfds, ret)
+#define sys_port_trace_socket_getsockopt_enter(sock, level, optname)
+#define sys_port_trace_socket_getsockopt_exit(sock, level, optname, optval, optlen, ret)
+#define sys_port_trace_socket_setsockopt_enter(sock, level, optname, optval, optlen)
+#define sys_port_trace_socket_setsockopt_exit(sock, ret)
+#define sys_port_trace_socket_getpeername_enter(sock)
+#define sys_port_trace_socket_getpeername_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_getsockname_enter(sock)
+#define sys_port_trace_socket_getsockname_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)
+#define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret)
+
+#define sys_port_trace_net_recv_data_enter(iface, pkt)
+#define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
+#define sys_port_trace_net_send_data_enter(pkt)
+#define sys_port_trace_net_send_data_exit(pkt, ret)
+#define sys_port_trace_net_rx_time(pkt, end_time)
+#define sys_port_trace_net_tx_time(pkt, end_time)
 
 #ifdef __cplusplus
 }

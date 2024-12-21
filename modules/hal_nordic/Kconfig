@@ -55,7 +55,7 @@ endchoice
 
 config NRF_802154_TEMPERATURE_UPDATE
 	bool "nRF 802.15.4 temperature update"
-	default y if !SOC_NRF54H20
+	default y if !SOC_NRF54H20 && !SOC_NRF54H20_ENGB
 	help
 	  Enable temperature update for nRF 802.15.4 driver
 
@@ -204,6 +204,7 @@ config NRF_802154_SECURITY_KEY_STORAGE_SIZE
 
 config NRF_802154_CARRIER_FUNCTIONS
 	bool "nRF 802.15.4 carrier functions"
+	default y if OPENTHREAD_DIAG
 	help
 	  This option enables functions such as modulated carrier and continuous carrier.
 	  If this option is modified on a multicore SoC, its remote counterpart must be set to the exact same value.

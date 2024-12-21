@@ -1,0 +1,12 @@
+identifier: ek_ra4m2
+name: Renesas EK-RA4M2
+type: mcu
+arch: arm
+ram: 128
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart

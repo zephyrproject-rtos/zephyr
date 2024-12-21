@@ -1,7 +1,4 @@
-.. _sensortile_box_pro_board:
-
-ST SensorTile.box PRO
-#####################
+.. zephyr:board:: sensortile_box_pro
 
 Overview
 ********
@@ -13,10 +10,6 @@ and developing apps based on remote motion and environmental sensor data.
 The SensorTile.box PRO board fits into a small plastic box with a long-life rechargeable
 battery, and communicates with a standard smartphone through its Bluetooth interface,
 providing data coming from the sensors.
-
-.. image:: img/sensortile_box_pro.jpg
-     :align: center
-     :alt: SensorTile.box PRO
 
 More information about the board can be found at the `SensorTile.box PRO website`_.
 
@@ -40,6 +33,9 @@ sensors on board)
 
 Hardware
 ********
+
+The following is a summary of the main board features. More info can be find on `UM3133`_
+and the `schematic`_.
 
 The STM32U585xx devices are an ultra-low-power microcontrollers family (STM32U5
 Series) based on the high-performance Arm|reg| Cortex|reg|-M33 32-bit RISC core.
@@ -163,8 +159,6 @@ Motion and environmental sensors
     (`lps22df datasheet`_)
   - **LIS2DU12** 3-axis accelerometer
     (`lis2du12 datasheet`_)
-  - **HTS221** Humidity sensor
-    (`hts221 datasheet`_)
   - **STTS22H** Digital temperature sensor
     (`stts22hh datasheet`_)
   - **MP23db01HP** Microphone / audio sensor
@@ -213,6 +207,14 @@ SensorTile.box PRO can be connected as a USB device to a PC host through its USB
 The final application may use it to declare SensorTile.box PRO device as belonging to a
 certain standard or vendor class, e.g. a CDC, a mass storage or a composite device with both
 functions.
+
+BlueNRG-LP chip
+===============
+
+The board is equipped with an STMicroelectronics `BlueNRG-LP`_ chip. Before running Zephyr Bluetooth samples
+on SensorTile.box PRO, it is required to upgrade the BlueNRG chip with a Zephyr BLE stack compatible firmware.
+The upgrade may be easily performed using the application provided in `SensorTile.box PRO BLE firmware upgrade package`_.
+For more information about BLE binaries for SensorTile.box family, see `stsw-mkbox-bleco`_.
 
 Console
 =======
@@ -324,7 +326,7 @@ You should see following confirmation on your Linux host:
    usb 2-2: SerialNumber: 204A325D574D
 
 You can build and flash the provided sample application
-(:ref:`sensortile_box_pro_sample_sensors`) that reads sensors data and outputs
+(:zephyr:code-sample:`sensortile_box_pro_sensors`) that reads sensors data and outputs
 values on the console.
 
 References
@@ -334,6 +336,12 @@ References
 
 .. _SensorTile.box PRO website:
    https://www.st.com/en/evaluation-tools/steval-mkboxpro.html
+
+.. _UM3133:
+   https://www.st.com/resource/en/user_manual/um3133-getting-started-with-sensortilebox-pro-multisensors-and-wireless-connectivity-development-kit-for-any-intelligent-iot-node-stmicroelectronics.pdf
+
+.. _schematic:
+   https://www.st.com/resource/en/schematic_pack/steval-mkboxpro-schematic.pdf
 
 .. _STM32U585 on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32u575-585.html
@@ -353,14 +361,20 @@ References
 .. _lis2du12 datasheet:
    https://www.st.com/en/mems-and-sensors/lis2du12.html
 
-.. _hts221 datasheet:
-   https://www.st.com/en/mems-and-sensors/hts221.html
-
 .. _stts22hh datasheet:
    https://www.st.com/en/mems-and-sensors/stts22h.html
 
 .. _mp23db01hp datasheet:
    https://www.st.com/en/mems-and-sensors/mp23db01hp.html
+
+.. _BlueNRG-LP:
+   https://www.st.com/en/wireless-connectivity/bluenrg-lp.html
+
+.. _SensorTile.box PRO BLE firmware upgrade package:
+   https://github.com/STMicroelectronics/stsw-mkbox-bleco/blob/master/ble_fw_upg_app/README.rst
+
+.. _stsw-mkbox-bleco:
+   https://www.st.com/en/embedded-software/stsw-mkbox-bleco.html
 
 .. _AN2606:
    http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf

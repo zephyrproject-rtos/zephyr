@@ -1,4 +1,5 @@
 board:
   name: up_squared
+  full_name: UP Squared
   socs:
     - name: apollo_lake

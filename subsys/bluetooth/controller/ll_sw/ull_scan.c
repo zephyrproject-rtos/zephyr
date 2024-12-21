@@ -228,7 +228,8 @@ uint8_t ll_scan_enable(uint8_t enable)
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
+#if (defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_JIT_SCHEDULING)) || \
+	defined(CONFIG_BT_CTLR_PRIVACY)
 	struct lll_scan *lll;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && is_coded_phy) {
@@ -240,19 +241,24 @@ uint8_t ll_scan_enable(uint8_t enable)
 		own_addr_type = scan->own_addr_type;
 	}
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	ull_filter_scan_update(lll->filter_policy);
 
 	lll->rl_idx = FILTER_IDX_NONE;
 	lll->rpa_gen = 0;
 
-	if ((lll->type & 0x1) &&
-	    (own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	     own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
+	if ((lll->type & 0x1) && (own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_PUBLIC ||
+				  own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_RANDOM)) {
 		/* Generate RPAs if required */
 		ull_filter_rpa_update(false);
 		lll->rpa_gen = 1;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	lll->scan_aux_score = 0;
+#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_JIT_SCHEDULING */
+#endif /* (CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_JIT_SCHEDULING) || CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -659,6 +665,13 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+	/* Stop associated auxiliary scan contexts */
+	err = ull_scan_aux_stop(&scan->lll);
+	if (err && (err != -EALREADY)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	/* Find and stop associated auxiliary scan contexts */
 	for (uint8_t aux_handle = 0; aux_handle < CONFIG_BT_CTLR_SCAN_AUX_SET;
 	     aux_handle++) {
@@ -691,6 +704,7 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 			LL_ASSERT(!parent || (parent != aux_scan_lll));
 		}
 	}
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	return 0;

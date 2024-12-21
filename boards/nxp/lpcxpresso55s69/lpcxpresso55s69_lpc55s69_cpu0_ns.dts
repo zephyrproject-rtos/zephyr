@@ -30,6 +30,7 @@
 		zephyr,sram = &non_secure_ram;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,uart-mcumgr = &flexcomm0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;

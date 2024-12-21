@@ -29,10 +29,19 @@ static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
 
+#if defined(CONFIG_TEST_CONN_INTERVAL_1MS)
+#define UPDATE_PARAM_INTERVAL_MIN 1
+#define UPDATE_PARAM_INTERVAL_MAX 1
+#define UPDATE_PARAM_LATENCY      0
+#define UPDATE_PARAM_TIMEOUT      10
+#define TEST_NOTIFY_COUNT         3000
+#else /* !CONFIG_TEST_CONN_INTERVAL_1MS */
 #define UPDATE_PARAM_INTERVAL_MIN 25
 #define UPDATE_PARAM_INTERVAL_MAX 45
 #define UPDATE_PARAM_LATENCY      1
 #define UPDATE_PARAM_TIMEOUT      250
+#define TEST_NOTIFY_COUNT         3
+#endif /* !CONFIG_TEST_CONN_INTERVAL_1MS */
 
 static struct bt_le_conn_param update_params = {
 	.interval_min = UPDATE_PARAM_INTERVAL_MIN,
@@ -60,6 +69,7 @@ static uint8_t connected_signal;
  */
 
 #define WAIT_TIME 6 /*seconds*/
+#define WAIT_TIME_TX_DEFER 800 /* milliseconds */
 #define WAIT_TIME_REPEAT 22 /*seconds*/
 extern enum bst_result_t bst_result;
 
@@ -77,7 +87,11 @@ extern enum bst_result_t bst_result;
 
 static void test_con1_init(void)
 {
-	bst_ticker_set_next_tick_absolute(WAIT_TIME*1e6);
+	if (IS_ENABLED(CONFIG_BT_CTLR_TX_DEFER)) {
+		bst_ticker_set_next_tick_absolute(WAIT_TIME_TX_DEFER*1e3);
+	} else {
+		bst_ticker_set_next_tick_absolute(WAIT_TIME*1e6);
+	}
 	bst_result = In_progress;
 }
 
@@ -119,16 +133,32 @@ static uint8_t notify_func(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params,
 			const void *data, uint16_t length)
 {
+	static uint32_t cycle_stamp;
 	static int notify_count;
+	uint32_t cycle_now;
+	uint64_t delta;
+
 	if (!data) {
 		printk("[UNSUBSCRIBED]\n");
 		params->value_handle = 0U;
 		return BT_GATT_ITER_STOP;
 	}
 
-	printk("[NOTIFICATION] data %p length %u\n", data, length);
+	cycle_now = k_cycle_get_32();
+	delta = cycle_now - cycle_stamp;
+	cycle_stamp = cycle_now;
+	delta = k_cyc_to_ns_floor64(delta);
 
-	if (notify_count++ >= 1) { /* We consider it passed */
+	if (!IS_ENABLED(CONFIG_TEST_CONN_INTERVAL_1MS) ||
+	    ((delta > (NSEC_PER_MSEC / 2U)) &&
+	     (delta < (NSEC_PER_MSEC + (NSEC_PER_MSEC / 2U))))) {
+		notify_count++;
+	}
+
+	printk("[NOTIFICATION] %u. data %p length %u in %llu ns\n",
+	       notify_count, data, length, delta);
+
+	if (notify_count >= TEST_NOTIFY_COUNT) { /* We consider it passed */
 		int err;
 
 		/* Disconnect before actually passing */

@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 
 #include "eth_enc28j60_priv.h"
+#include "eth.h"
 
 #define D10D24S 11
 
@@ -712,7 +713,14 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHSTAT2, &phstat2);
 			if (phstat2 & ENC28J60_BIT_PHSTAT2_LSTAT) {
 				LOG_INF("%s: Link up", dev->name);
-				net_eth_carrier_on(context->iface);
+				/* We may have been interrupted before L2 init complete
+				 * If so flag that the carrier should be set on in init
+				 */
+				if (context->iface_initialized) {
+					net_eth_carrier_on(context->iface);
+				} else {
+					context->iface_carrier_on_init = true;
+				}
 			} else {
 				LOG_INF("%s: Link down", dev->name);
 
@@ -750,7 +758,12 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 
 	ethernet_init(iface);
 
-	net_if_carrier_off(iface);
+	/* The device may have already interrupted us to flag link UP */
+	if (context->iface_carrier_on_init) {
+		net_if_carrier_on(iface);
+	} else {
+		net_if_carrier_off(iface);
+	}
 	context->iface_initialized = true;
 }
 
@@ -801,10 +814,19 @@ static int eth_enc28j60_init(const struct device *dev)
 	/* Errata B7/1 */
 	k_busy_wait(D10D24S);
 
-	/* Assign octets not previously taken from devicetree */
-	context->mac_address[0] = MICROCHIP_OUI_B0;
-	context->mac_address[1] = MICROCHIP_OUI_B1;
-	context->mac_address[2] = MICROCHIP_OUI_B2;
+	/* Apply a random MAC address if requested in DT */
+	if (config->random_mac) {
+		gen_random_mac(context->mac_address, MICROCHIP_OUI_B0, MICROCHIP_OUI_B1,
+			       MICROCHIP_OUI_B2);
+		LOG_INF("Random MAC Addr %02x:%02x:%02x:%02x:%02x:%02x", context->mac_address[0],
+			context->mac_address[1], context->mac_address[2], context->mac_address[3],
+			context->mac_address[4], context->mac_address[5]);
+	} else {
+		/* Assign octets not previously taken from devicetree */
+		context->mac_address[0] = MICROCHIP_OUI_B0;
+		context->mac_address[1] = MICROCHIP_OUI_B1;
+		context->mac_address[2] = MICROCHIP_OUI_B2;
+	}
 
 	if (eth_enc28j60_init_buffers(dev)) {
 		return -ETIMEDOUT;
@@ -850,6 +872,7 @@ static int eth_enc28j60_init(const struct device *dev)
 		.full_duplex = DT_INST_PROP(0, full_duplex),                                       \
 		.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,                                            \
 		.hw_rx_filter = DT_INST_PROP_OR(inst, hw_rx_filter, ENC28J60_RECEIVE_FILTERS),     \
+		.random_mac = DT_INST_PROP(inst, zephyr_random_mac_address),                    \
 	};                                                                                         \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_enc28j60_init, NULL, &eth_enc28j60_runtime_##inst, \

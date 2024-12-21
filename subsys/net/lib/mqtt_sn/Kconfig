@@ -13,7 +13,7 @@ if MQTT_SN_LIB
 
 config MQTT_SN_LIB_MAX_PAYLOAD_SIZE
 	int "Maximum payload size of an MQTT-SN message"
-	default 255
+	default $(UINT8_MAX)
 
 config MQTT_SN_LIB_MAX_MSGS
 	int "Number of preallocated messages"

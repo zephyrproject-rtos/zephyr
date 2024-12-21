@@ -10,4 +10,4 @@ tests:
     filter: dt_compat_enabled("arm,ethos-u")
     build_only: true
     integration_platforms:
-      - mps3/an547
+      - mps3/corstone300/an547

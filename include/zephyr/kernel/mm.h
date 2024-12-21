@@ -114,6 +114,25 @@ extern "C" {
  */
 #define K_MEM_MAP_LOCK		BIT(17)
 
+/**
+ * Region will be unpaged i.e. not mapped into memory
+ *
+ * This is meant to be used by kernel code and not by application code.
+ *
+ * Corresponding memory address range will be set so no actual memory will
+ * be allocated initially. Allocation will happen through demand paging when
+ * addresses in that range are accessed. This is incompatible with
+ * K_MEM_MAP_LOCK.
+ *
+ * When this flag is specified, the phys argument to arch_mem_map()
+ * is interpreted as a backing store location value not a physical address.
+ * This is very similar to arch_mem_page_out() in that regard.
+ * Two special location values are defined: ARCH_UNPAGED_ANON_ZERO and
+ * ARCH_UNPAGED_ANON_UNINIT. Those are to be used with anonymous memory
+ * mappings for zeroed and uninitialized pages respectively.
+ */
+#define K_MEM_MAP_UNPAGED	BIT(18)
+
 /** @} */
 
 /**
@@ -173,6 +192,54 @@ static inline void *k_mem_map(size_t size, uint32_t flags)
 	return k_mem_map_phys_guard((uintptr_t)NULL, size, flags, true);
 }
 
+#ifdef CONFIG_DEMAND_MAPPING
+/**
+ * Create an unpaged mapping
+ *
+ * This maps backing-store "location" tokens into Zephyr's address space.
+ * Corresponding memory address range will be set so no actual memory will
+ * be allocated initially. Allocation will happen through demand paging when
+ * addresses in the mapped range are accessed.
+ *
+ * The kernel will choose a base virtual address and return it to the caller.
+ * The memory access permissions for all contexts will be set per the
+ * provided flags argument.
+ *
+ * If user thread access control needs to be managed in any way, do not enable
+ * K_MEM_PERM_USER flags here; instead manage the region's permissions
+ * with memory domain APIs after the mapping has been established. Setting
+ * K_MEM_PERM_USER here will allow all user threads to access this memory
+ * which is usually undesirable.
+ *
+ * This is incompatible with K_MEM_MAP_LOCK.
+ *
+ * The provided backing-store "location" token must be linearly incrementable
+ * by a page size across the entire mapping.
+ *
+ * Allocated pages will have write-back cache settings.
+ *
+ * The returned virtual memory pointer will be page-aligned. The size
+ * parameter, and any base address for re-mapping purposes must be page-
+ * aligned.
+ *
+ * Note that the allocation includes two guard pages immediately before
+ * and after the requested region. The total size of the allocation will be
+ * the requested size plus the size of these two guard pages.
+ *
+ * @param location Backing store initial location token
+ * @param size Size of the memory mapping. This must be page-aligned.
+ * @param flags K_MEM_PERM_*, K_MEM_MAP_* control flags.
+ * @return The mapping location, or NULL if insufficient virtual address
+ *         space to establish the mapping, or insufficient memory for paging
+ *         structures.
+ */
+static inline void *k_mem_map_unpaged(uintptr_t location, size_t size, uint32_t flags)
+{
+	flags |= K_MEM_MAP_UNPAGED;
+	return k_mem_map_phys_guard(location, size, flags, false);
+}
+#endif
+
 /**
  * Un-map mapped memory
  *
@@ -190,6 +257,23 @@ static inline void k_mem_unmap(void *addr, size_t size)
 {
 	k_mem_unmap_phys_guard(addr, size, true);
 }
+
+/**
+ * Modify memory mapping attribute flags
+ *
+ * This updates caching, access and control flags for the provided
+ * page-aligned memory region.
+ *
+ * Calling this function on a region which was not mapped to begin with is
+ * undefined behavior. However system memory implicitly mapped at boot time
+ * is supported.
+ *
+ * @param addr Page-aligned memory region base virtual address
+ * @param size Page-aligned memory region size
+ * @param flags K_MEM_PERM_*, K_MEM_MAP_* control flags.
+ * @return 0 for success, negative error code otherwise.
+ */
+int k_mem_update_flags(void *addr, size_t size, uint32_t flags);
 
 /**
  * Given an arbitrary region, provide a aligned region that covers it

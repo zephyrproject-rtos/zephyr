@@ -22,4 +22,4 @@ void test_entry(void)
 	/* unused */
 }
 
-LL_EXTENSION_SYMBOL(number);
+EXPORT_SYMBOL(number);

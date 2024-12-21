@@ -1,0 +1,96 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <dt-bindings/usb-c/pd.h>
+
+/ {
+	aliases {
+		usbc-port0 = &port0;
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port0: usbc-port@0 {
+			compatible = "usb-c-connector";
+			reg = <0>;
+			tcpc = <&tcpc0>;
+			vbus = <&vbus0>;
+			ppc = <&ppc0>;
+			power-role = "sink";
+			sink-pdos = <PDO_FIXED(5000, 100, 0)>;
+		};
+	};
+};
+
+&pinctrl {
+	tcpc0_default: tcpc0_default {
+		group0 {
+			pinmux = <PA12MFP_GPIO>;
+			digital-path-disable;
+		};
+		group1 {
+			pinmux = <PC0MFP_UTCPD0_CC1>,
+				 <PC1MFP_UTCPD0_CC2>,
+				 <PC2MFP_UTCPD0_CCDB1>,
+				 <PC3MFP_UTCPD0_CCDB2>,
+				 <PA1MFP_GPIO>,
+				 <PA3MFP_UTCPD0_VBSNKEN>;
+		};
+	};
+
+	eadc0_default: eadc0_default {
+		group0 {
+			pinmux = <PB15MFP_EADC0_CH15>;
+			digital-path-disable;
+		};
+	};
+};
+
+&tcpc0 {
+	status = "okay";
+	pinctrl-0 = <&tcpc0_default>;
+	pinctrl-names = "default";
+	gpios = <&gpioa 12 0>,
+		<&gpioa 1 GPIO_ACTIVE_HIGH>;
+	gpio-names = "vbus-detect", "vbus-discharge";
+	vbus-sink-enable-polarity = "high-active";
+	vbus-divide = "divide-10";
+	io-channels = <&eadc0 15>;
+	io-channel-names = "chn-vbus";
+};
+
+&vbus0 {
+	status = "okay";
+};
+
+&ppc0 {
+	status = "okay";
+};
+
+&eadc0 {
+	status = "okay";
+	pinctrl-0 = <&eadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@15 {
+		reg = <15>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 0x80)>;
+	};
+};
+
+/* Enable GPIO modules which are needed for below use cases:
+ * 1. GPIO pins
+ * 2. Power pins which need to disable digital input path
+ */
+&gpioa {
+	status = "okay";
+};
+&gpiob {
+	status = "okay";
+};

@@ -22,3 +22,4 @@ config SOC_SERIES_XMC4XXX
 	select HAS_XMCLIB_WDT
 	select HAS_XMCLIB_ETH
 	select HAS_XMCLIB_CAN
+	select HAS_XMCLIB_RTC

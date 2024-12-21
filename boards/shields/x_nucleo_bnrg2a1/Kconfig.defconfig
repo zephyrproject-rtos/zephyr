@@ -5,12 +5,6 @@ if SHIELD_X_NUCLEO_BNRG2A1
 
 if BT
 
-config SPI
-	default y
-
-config BT_SPI
-	default y
-
 config BT_BLUENRG_ACI
 	default y
 

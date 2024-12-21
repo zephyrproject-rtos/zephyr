@@ -62,6 +62,12 @@ extern void z_riscv_irq_priority_set(unsigned int irq,
 #define z_riscv_irq_priority_set(i, p, f) /* Nothing */
 #endif /* CONFIG_RISCV_HAS_PLIC || CONFIG_RISCV_HAS_CLIC */
 
+#ifdef CONFIG_RISCV_HAS_CLIC
+extern void z_riscv_irq_vector_set(unsigned int irq);
+#else
+#define z_riscv_irq_vector_set(i) /* Nothing */
+#endif /* CONFIG_RISCV_HAS_CLIC */
+
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
 	Z_ISR_DECLARE(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
@@ -74,6 +80,7 @@ extern void z_riscv_irq_priority_set(unsigned int irq,
 	Z_ISR_DECLARE_DIRECT(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
 		      ISR_FLAG_DIRECT, isr_p); \
 	z_riscv_irq_priority_set(irq_p, priority_p, flags_p); \
+	z_riscv_irq_vector_set(irq_p); \
 }
 
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()

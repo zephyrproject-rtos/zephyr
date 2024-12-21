@@ -24,7 +24,7 @@ static void osc32k_init(void)
 {
 	OSC32KCTRL->XOSC32K.reg = OSC32KCTRL_XOSC32K_ENABLE | OSC32KCTRL_XOSC32K_XTALEN
 				| OSC32KCTRL_XOSC32K_EN32K | OSC32KCTRL_XOSC32K_RUNSTDBY
-				| OSC32KCTRL_XOSC32K_STARTUP(6) | OSC32KCTRL_XOSC32K_CGM_XT;
+				| OSC32KCTRL_XOSC32K_STARTUP(0) | OSC32KCTRL_XOSC32K_CGM_XT;
 
 	while (!OSC32KCTRL->STATUS.bit.XOSC32KRDY) {
 	}
@@ -105,7 +105,7 @@ static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 				| GCLK_GENCTRL_GENEN;
 }
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	uint8_t dfll_div;
 

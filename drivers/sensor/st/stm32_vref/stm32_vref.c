@@ -96,9 +96,7 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 	}
 
 /*
- * ERRATA: STM32H5X: bus fault errors occur when reading engineering bytes with
- * icache enabled.
- * See https://github.com/zephyrproject-rtos/zephyr/commit/065a8f2
+ * STM32H5X: accesses to flash RO region must be done with caching disabled.
  */
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_ICACHE_Disable();
@@ -150,6 +148,23 @@ static int stm32_vref_init(const struct device *dev)
 	return 0;
 }
 
+/**
+ * Verify that the ADC instance which this driver uses to measure internal
+ * voltage reference is enabled. On STM32 MCUs with more than one ADC, it is
+ * possible to compile this driver even if the ADC used for measurement is
+ * disabled. In such cases, fail build with an explicit error message.
+ */
+#if !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0))
+
+/* Use BUILD_ASSERT to get preprocessing on the message */
+BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed by "
+		"Vref sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(0)) "' is not enabled");
+
+/* To reduce noise in the compiler error log, do not attempt
+ * to instantiate device if the sensor's ADC is not enabled.
+ */
+#else
+
 static struct stm32_vref_data stm32_vref_dev_data = {
 	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
 	.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),
@@ -167,3 +182,5 @@ static const struct stm32_vref_config stm32_vref_dev_config = {
 
 SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_vref_init, NULL, &stm32_vref_dev_data, &stm32_vref_dev_config,
 			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &stm32_vref_driver_api);
+
+#endif /* !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0)) */

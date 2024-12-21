@@ -196,6 +196,7 @@ struct bme680_data {
 	uint8_t res_heat_range;
 	int8_t res_heat_val;
 	int8_t range_sw_err;
+	bool has_read_compensation;
 
 	/* Calculated sensor values. */
 	int32_t calc_temp;

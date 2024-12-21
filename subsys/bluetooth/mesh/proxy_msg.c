@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -64,6 +64,15 @@ static void proxy_sar_timeout(struct k_work *work)
 	LOG_WRN("Proxy SAR timeout");
 
 	role = CONTAINER_OF(dwork, struct bt_mesh_proxy_role, sar_timer);
+
+	while (!k_fifo_is_empty(&role->pending)) {
+		struct bt_mesh_adv *adv = k_fifo_get(&role->pending, K_NO_WAIT);
+
+		__ASSERT_NO_MSG(adv);
+
+		bt_mesh_adv_unref(adv);
+	}
+
 	if (role->conn) {
 		bt_conn_disconnect(role->conn,
 				   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
@@ -200,7 +209,7 @@ static void buf_send_end(struct bt_conn *conn, void *user_data)
 	bt_mesh_adv_unref(adv);
 }
 
-int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
+static int proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
 {
 	int err;
 
@@ -230,6 +239,41 @@ int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
 	return err;
 }
 
+int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
+{
+	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
+
+	k_fifo_put(&role->pending, bt_mesh_adv_ref(adv));
+
+	bt_mesh_wq_submit(&role->work);
+
+	return 0;
+}
+
+static void proxy_msg_send_pending(struct k_work *work)
+{
+	struct bt_mesh_proxy_role *role;
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_mesh_adv *adv;
+
+	role = CONTAINER_OF(dwork, struct bt_mesh_proxy_role, sar_timer);
+	if (!role->conn) {
+		return;
+	}
+
+	adv = k_fifo_get(&role->pending, K_NO_WAIT);
+	if (!adv) {
+		return;
+	}
+
+	(void)proxy_relay_send(role->conn, adv);
+	bt_mesh_adv_unref(adv);
+
+	if (!k_fifo_is_empty(&role->pending)) {
+		bt_mesh_wq_submit(&role->work);
+	}
+}
+
 static void proxy_msg_init(struct bt_mesh_proxy_role *role)
 {
 	/* Check if buf has been allocated, in this way, we no longer need
@@ -246,6 +290,9 @@ static void proxy_msg_init(struct bt_mesh_proxy_role *role)
 				      CONFIG_BT_MESH_PROXY_MSG_LEN);
 
 	net_buf_simple_reset(&role->buf);
+
+	k_fifo_init(&role->pending);
+	k_work_init(&role->work, proxy_msg_send_pending);
 
 	k_work_init_delayable(&role->sar_timer, proxy_sar_timeout);
 }

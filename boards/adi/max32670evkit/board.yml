@@ -3,6 +3,7 @@
 
 board:
   name: max32670evkit
+  full_name: MAX32670EVKIT
   vendor: adi
   socs:
     - name: max32670

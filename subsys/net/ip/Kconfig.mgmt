@@ -105,6 +105,13 @@ config NET_MGMT_EVENT_MONITOR
 	  NET_MGMT_EVENT_QUEUE_SIZE from the default in order not to miss
 	  any events.
 
+config NET_MGMT_EVENT_MONITOR_STACK_SIZE
+	int "Size of the stack allocated for the event_mon_stack thread"
+	depends on NET_MGMT_EVENT_MONITOR
+	default 1024
+	help
+	  Sets the size of the stack for event_mon_stack_thread.
+
 config NET_MGMT_EVENT_MONITOR_AUTO_START
 	bool "Start the event monitor automatically at boot"
 	depends on NET_MGMT_EVENT_MONITOR && SHELL_BACKEND_SERIAL
@@ -125,5 +132,15 @@ config NET_DEBUG_MGMT_EVENT_STACK
 	depends on NET_MGMT_EVENT_THREAD
 	help
 	  Add debug messages output on how much Net MGMT event stack is used.
+
+config NET_MGMT_THREAD_PRIO_CUSTOM
+	bool "Customize net mgmt thread priority"
+
+if NET_MGMT_THREAD_PRIO_CUSTOM
+config NET_MGMT_THREAD_PRIORITY
+	int "Priority of net_mgmt thread"
+	default NUM_PREEMPT_PRIORITIES
+
+endif # NET_MGMT_THREAD_PRIO_CUSTOM
 
 endif # NET_MGMT_EVENT

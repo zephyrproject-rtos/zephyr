@@ -101,7 +101,18 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 #if ((defined(USB_DEVICE_CONFIG_EHCI)) && (USB_DEVICE_CONFIG_EHCI > 0U))
 /*! @brief How many the DTD are supported. */
 #define USB_DEVICE_CONFIG_EHCI_MAX_DTD (16U)
+
+#ifndef CONFIG_UDC_BUF_FORCE_NOCACHE
+#ifdef CONFIG_NOCACHE_MEMORY
+#define USB_DEVICE_CONFIG_BUFFER_PROPERTY_CACHEABLE (1U)
 #endif
+#endif
+#endif
+
+/* TODO: After Kconfig item that enable/disable sof is added,
+ * use the Kconfig item to control this macro.
+ */
+#define USB_DEVICE_CONFIG_SOF_NOTIFICATIONS (1U)
 
 #endif
 

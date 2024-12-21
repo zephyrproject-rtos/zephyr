@@ -36,6 +36,10 @@
 	};
 };
 
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
 &uicr {
 	gpio-as-nreset;
 };

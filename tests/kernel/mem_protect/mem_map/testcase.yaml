@@ -10,7 +10,9 @@ tests:
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
       - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
-    platform_exclude: qemu_x86_64
+    platform_exclude:
+      - qemu_x86_64
+      - intel_adsp/ace30/ptl
     integration_platforms:
       - qemu_x86
   kernel.memory_protection.mem_map.x86_64:
@@ -31,3 +33,13 @@ tests:
     extra_sections: _TRANSPLANTED_FUNC
     extra_args: CONF_FILE=prj_x86_64_coverage_exec.conf
     platform_allow: qemu_x86_64
+  kernel.memory_protection.mem_map.soc_intel_adsp:
+    # This needs special treatment because the TEST_MEM_MAP section
+    # is placed at the end. Since there is code in TEST_MEM_MAP,
+    # rimage thinks the whole text section spans from .text to
+    # end of TEST_MEM_MAP, which overlaps .data and others, so
+    # it complains. Skip the execution test to avoid this issue.
+    extra_sections: _TRANSPLANTED_FUNC
+    extra_args: EXTRA_CFLAGS=-DSKIP_EXECUTE_TESTS
+    platform_allow:
+      - intel_adsp/ace30/ptl

@@ -1,7 +1,4 @@
-.. _bl653_dvk:
-
-Ezurio BL653 DVK
-################
+.. zephyr:board:: bl653_dvk
 
 Overview
 ********
@@ -26,12 +23,6 @@ This development kit has the following features:
 * :abbr:`UART (Universal Asynchronous Receiver-Transmitter)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/bl653_dvk.jpg
-     :align: center
-     :alt: BL653 Development Kit
-
-     BL653 Development Kit Board
 
 More information about the board can be found at the
 `BL653 website`_.
@@ -120,7 +111,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -151,9 +142,9 @@ Testing Bluetooth on the BL653 DVK
 Many of the Bluetooth examples will work on the BL653 DVK.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 
 Testing the LEDs and buttons on the BL653 DVK

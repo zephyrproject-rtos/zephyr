@@ -31,7 +31,6 @@
  */
 #define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
 
-#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
 #define EXT_REF (IS_ENABLED(CONFIG_CORTEX_M_SYSTICK_EXTERNAL_REF))
 
 static struct k_spinlock lock;
@@ -39,9 +38,9 @@ static struct k_spinlock lock;
 static uint32_t last_load;
 
 #ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
-#define cycle_t uint64_t
+typedef uint64_t cycle_t;
 #else
-#define cycle_t uint32_t
+typedef uint32_t cycle_t;
 #endif
 
 /*
@@ -175,10 +174,13 @@ void sys_clock_correct(uint32_t cycles)
 }
 #endif
 
-/* Callout out of platform assembly, not hooked via IRQ_CONNECT... */
-void sys_clock_isr(void *arg)
+/* sys_clock_isr is calling directly from the platform's vectors table.
+ * However using ISR_DIRECT_DECLARE() is not so suitable due to possible
+ * tracing overflow, so here is a stripped down version of it.
+ */
+ARCH_ISR_DIAG_OFF
+__attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 {
-	ARG_UNUSED(arg);
 	uint32_t dcycles;
 	uint32_t dticks;
 
@@ -198,13 +200,14 @@ void sys_clock_isr(void *arg)
 	 * sys_clock_idle_exit function.
 	 */
 	if (timeout_idle) {
+		ISR_DIRECT_PM();
 		z_arm_int_exit();
 
 		return;
 	}
 #endif /* CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER */
 
-	if (TICKLESS) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* In TICKLESS mode, the SysTick.LOAD is re-programmed
 		 * in sys_clock_set_timeout(), followed by resetting of
 		 * the counter (VAL = 0).
@@ -224,8 +227,11 @@ void sys_clock_isr(void *arg)
 	} else {
 		sys_clock_announce(1);
 	}
+
+	ISR_DIRECT_PM();
 	z_arm_int_exit();
 }
+ARCH_ISR_DIAG_ON
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
@@ -340,7 +346,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 uint32_t sys_clock_elapsed(void)
 {
-	if (!TICKLESS) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
@@ -432,7 +438,15 @@ void sys_clock_idle_exit(void)
 #endif /* CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER */
 
 	if (last_load == TIMER_STOPPED) {
-		SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+		/* We really don’t know here how much time has passed,
+		 * so let’s restart the timer from scratch.
+		 */
+		K_SPINLOCK(&lock) {
+			last_load = CYC_PER_TICK;
+			SysTick->LOAD = last_load - 1;
+			SysTick->VAL = 0; /* resets timer to last_load */
+			SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+		}
 	}
 }
 

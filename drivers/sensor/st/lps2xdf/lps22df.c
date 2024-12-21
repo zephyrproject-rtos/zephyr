@@ -43,11 +43,29 @@ static int lps22df_sample_fetch(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
+#ifdef CONFIG_LPS2XDF_TRIGGER
+/**
+ * lps22df_config_interrupt - config the interrupt mode
+ */
+static int lps22df_config_interrupt(const struct device *dev)
+{
+	const struct lps2xdf_config *const cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lps22df_int_mode_t mode;
+
+	if (lps22df_interrupt_mode_get(ctx, &mode) < 0) {
+		return -EIO;
+	}
+
+	mode.drdy_latched = ~cfg->drdy_pulsed;
+
+	return lps22df_interrupt_mode_set(ctx, &mode);
+}
+
 /**
  * lps22df_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
-#ifdef CONFIG_LPS2XDF_TRIGGER
 static void lps22df_handle_interrupt(const struct device *dev)
 {
 	int ret;
@@ -138,6 +156,7 @@ const struct lps2xdf_chip_api st_lps22df_chip_api = {
 	.mode_set_odr_raw = lps22df_mode_set_odr_raw,
 	.sample_fetch = lps22df_sample_fetch,
 #if CONFIG_LPS2XDF_TRIGGER
+	.config_interrupt = lps22df_config_interrupt,
 	.handle_interrupt = lps22df_handle_interrupt,
 	.trigger_set = lps22df_trigger_set,
 #endif

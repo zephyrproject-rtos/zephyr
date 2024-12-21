@@ -549,7 +549,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 	}
 
 	phys = k_mem_page_frame_to_phys(pf);
-	arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags | K_MEM_CACHE_WB);
+	arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags);
 
 	if (lock) {
 		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
@@ -575,28 +575,34 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	uint8_t *pos;
 	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
 
-	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0U) &&
-		   ((flags & K_MEM_MAP_UNINIT) != 0U)),
-		 "user access to anonymous uninitialized pages is forbidden");
-	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0U,
-		 "unaligned size %zu passed to %s", size, __func__);
-	__ASSERT(size != 0, "zero sized memory mapping");
 	__ASSERT(!is_anon || (is_anon && page_frames_initialized),
 		 "%s called too early", __func__);
 	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
 		 "%s does not support explicit cache settings", __func__);
 
-	CHECKIF(size_add_overflow(size, CONFIG_MMU_PAGE_SIZE * 2, &total_size)) {
+	if (((flags & K_MEM_PERM_USER) != 0U) &&
+	    ((flags & K_MEM_MAP_UNINIT) != 0U)) {
+		LOG_ERR("user access to anonymous uninitialized pages is forbidden");
+		return NULL;
+	}
+	if ((size % CONFIG_MMU_PAGE_SIZE) != 0U) {
+		LOG_ERR("unaligned size %zu passed to %s", size, __func__);
+		return NULL;
+	}
+	if (size == 0) {
+		LOG_ERR("zero sized memory mapping");
+		return NULL;
+	}
+
+	/* Need extra for the guard pages (before and after) which we
+	 * won't map.
+	 */
+	if (size_add_overflow(size, CONFIG_MMU_PAGE_SIZE * 2, &total_size)) {
 		LOG_ERR("too large size %zu passed to %s", size, __func__);
 		return NULL;
 	}
 
 	key = k_spin_lock(&z_mm_lock);
-
-	/* Need extra for the guard pages (before and after) which we
-	 * won't map.
-	 */
-	total_size = size + (CONFIG_MMU_PAGE_SIZE * 2);
 
 	dst = virt_region_alloc(total_size, CONFIG_MMU_PAGE_SIZE);
 	if (dst == NULL) {
@@ -616,16 +622,34 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 
 	if (is_anon) {
 		/* Mapping from anonymous memory */
-		VIRT_FOREACH(dst, size, pos) {
-			ret = map_anon_page(pos, flags);
+		flags |= K_MEM_CACHE_WB;
+#ifdef CONFIG_DEMAND_MAPPING
+		if ((flags & K_MEM_MAP_LOCK) == 0) {
+			flags |= K_MEM_MAP_UNPAGED;
+			VIRT_FOREACH(dst, size, pos) {
+				arch_mem_map(pos,
+					     uninit ? ARCH_UNPAGED_ANON_UNINIT
+						    : ARCH_UNPAGED_ANON_ZERO,
+					     CONFIG_MMU_PAGE_SIZE, flags);
+			}
+			LOG_DBG("memory mapping anon pages %p to %p unpaged", dst, pos-1);
+			/* skip the memset() below */
+			uninit = true;
+		} else
+#endif
+		{
+			VIRT_FOREACH(dst, size, pos) {
+				ret = map_anon_page(pos, flags);
 
-			if (ret != 0) {
-				/* TODO: call k_mem_unmap(dst, pos - dst)  when
-				 * implemented in #28990 and release any guard virtual
-				 * page as well.
-				 */
-				dst = NULL;
-				goto out;
+				if (ret != 0) {
+					/* TODO:
+					 * call k_mem_unmap(dst, pos - dst)
+					 * when implemented in #28990 and
+					 * release any guard virtual page as well.
+					 */
+					dst = NULL;
+					goto out;
+				}
 			}
 		}
 	} else {
@@ -638,15 +662,16 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 		arch_mem_map(dst, phys, size, flags);
 	}
 
-	if (!uninit) {
+out:
+	k_spin_unlock(&z_mm_lock, key);
+
+	if (dst != NULL && !uninit) {
 		/* If we later implement mappings to a copy-on-write
 		 * zero page, won't need this step
 		 */
 		memset(dst, 0, size);
 	}
 
-out:
-	k_spin_unlock(&z_mm_lock, key);
 	return dst;
 }
 
@@ -789,6 +814,36 @@ out:
 	k_spin_unlock(&z_mm_lock, key);
 }
 
+int k_mem_update_flags(void *addr, size_t size, uint32_t flags)
+{
+	uintptr_t phys;
+	k_spinlock_key_t key;
+	int ret;
+
+	k_mem_assert_virtual_region(addr, size);
+
+	key = k_spin_lock(&z_mm_lock);
+
+	/*
+	 * We can achieve desired result without explicit architecture support
+	 * by unmapping and remapping the same physical memory using new flags.
+	 */
+
+	ret = arch_page_phys_get(addr, &phys);
+	if (ret < 0) {
+		goto out;
+	}
+
+	/* TODO: detect and handle paged-out memory as well */
+
+	arch_mem_unmap(addr, size);
+	arch_mem_map(addr, phys, size, flags);
+
+out:
+	k_spin_unlock(&z_mm_lock, key);
+	return ret;
+}
+
 size_t k_mem_free_get(void)
 {
 	size_t ret;
@@ -881,8 +936,9 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 			num_bits = adjusted_sz / CONFIG_MMU_PAGE_SIZE;
 			offset = virt_to_bitmap_offset(adjusted_start, adjusted_sz);
 			if (sys_bitarray_test_and_set_region(
-			    &virt_region_bitmap, num_bits, offset, true))
+			    &virt_region_bitmap, num_bits, offset, true)) {
 				goto fail;
+			}
 		}
 	} else {
 		/* Obtain an appropriately sized chunk of virtual memory */
@@ -994,6 +1050,34 @@ static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION) || CONFIG_LINKER_USE_PINNED_SECTION */
 
+#ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
+static void z_paging_ondemand_section_map(void)
+{
+	uint8_t *addr;
+	size_t size;
+	uintptr_t location;
+	uint32_t flags;
+
+	size = (uintptr_t)lnkr_ondemand_text_size;
+	flags = K_MEM_MAP_UNPAGED | K_MEM_PERM_EXEC | K_MEM_CACHE_WB;
+	VIRT_FOREACH(lnkr_ondemand_text_start, size, addr) {
+		k_mem_paging_backing_store_location_query(addr, &location);
+		arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+		sys_bitarray_set_region(&virt_region_bitmap, 1,
+					virt_to_bitmap_offset(addr, CONFIG_MMU_PAGE_SIZE));
+	}
+
+	size = (uintptr_t)lnkr_ondemand_rodata_size;
+	flags = K_MEM_MAP_UNPAGED | K_MEM_CACHE_WB;
+	VIRT_FOREACH(lnkr_ondemand_rodata_start, size, addr) {
+		k_mem_paging_backing_store_location_query(addr, &location);
+		arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+		sys_bitarray_set_region(&virt_region_bitmap, 1,
+					virt_to_bitmap_offset(addr, CONFIG_MMU_PAGE_SIZE));
+	}
+}
+#endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
+
 void z_mem_manage_init(void)
 {
 	uintptr_t phys;
@@ -1070,6 +1154,11 @@ void z_mem_manage_init(void)
 		}
 	}
 #endif /* CONFIG_DEMAND_PAGING */
+
+#ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
+	z_paging_ondemand_section_map();
+#endif
+
 #if __ASSERT_ON
 	page_frames_initialized = true;
 #endif
@@ -1107,6 +1196,20 @@ extern struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_out
 
 static inline void do_backing_store_page_in(uintptr_t location)
 {
+#ifdef CONFIG_DEMAND_MAPPING
+	/* Check for special cases */
+	switch (location) {
+	case ARCH_UNPAGED_ANON_ZERO:
+		memset(K_MEM_SCRATCH_PAGE, 0, CONFIG_MMU_PAGE_SIZE);
+		__fallthrough;
+	case ARCH_UNPAGED_ANON_UNINIT:
+		/* nothing else to do */
+		return;
+	default:
+		break;
+	}
+#endif /* CONFIG_DEMAND_MAPPING */
+
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
 	uint32_t time_diff;
 
@@ -1167,14 +1270,18 @@ static inline void do_backing_store_page_out(uintptr_t location)
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 }
 
-/* Current implementation relies on interrupt locking to any prevent page table
- * access, which falls over if other CPUs are active. Addressing this is not
- * as simple as using spinlocks as regular memory reads/writes constitute
- * "access" in this sense.
- *
- * Current needs for demand paging are on uniprocessor systems.
+#if defined(CONFIG_SMP) && defined(CONFIG_DEMAND_PAGING_ALLOW_IRQ)
+/*
+ * SMP support is very simple. Some resources such as the scratch page could
+ * be made per CPU, backing store driver execution be confined to the faulting
+ * CPU, statistics be made to cope with access concurrency, etc. But in the
+ * end we're dealing with memory transfer to/from some external storage which
+ * is inherently slow and whose access is most likely serialized anyway.
+ * So let's simply enforce global demand paging serialization across all CPUs
+ * with a mutex as there is no real gain from added parallelism here.
  */
-BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP));
+static K_MUTEX_DEFINE(z_mm_paging_lock);
+#endif
 
 static void virt_region_foreach(void *addr, size_t size,
 				void (*func)(void *))
@@ -1264,16 +1371,21 @@ static int do_mem_evict(void *addr)
 	bool dirty;
 	struct k_mem_page_frame *pf;
 	uintptr_t location;
-	int key, ret;
+	k_spinlock_key_t key;
 	uintptr_t flags, phys;
+	int ret;
 
 #if CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	__ASSERT(!k_is_in_isr(),
 		 "%s is unavailable in ISRs with CONFIG_DEMAND_PAGING_ALLOW_IRQ",
 		 __func__);
+#ifdef CONFIG_SMP
+	k_mutex_lock(&z_mm_paging_lock, K_FOREVER);
+#else
 	k_sched_lock();
+#endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 	flags = arch_page_info_get(addr, &phys, false);
 	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
 		 "address %p isn't mapped", addr);
@@ -1293,19 +1405,23 @@ static int do_mem_evict(void *addr)
 
 	__ASSERT(ret == 0, "failed to prepare page frame");
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
 		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	page_frame_free_locked(pf);
 out:
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+#ifdef CONFIG_SMP
+	k_mutex_unlock(&z_mm_paging_lock);
+#else
 	k_sched_unlock();
+#endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	return ret;
 }
@@ -1331,11 +1447,12 @@ int k_mem_page_out(void *addr, size_t size)
 
 int k_mem_page_frame_evict(uintptr_t phys)
 {
-	int key, ret;
+	k_spinlock_key_t key;
 	struct k_mem_page_frame *pf;
 	bool dirty;
 	uintptr_t flags;
 	uintptr_t location;
+	int ret;
 
 	__ASSERT(page_frames_initialized, "%s called on 0x%lx too early",
 		 __func__, phys);
@@ -1348,9 +1465,13 @@ int k_mem_page_frame_evict(uintptr_t phys)
 	__ASSERT(!k_is_in_isr(),
 		 "%s is unavailable in ISRs with CONFIG_DEMAND_PAGING_ALLOW_IRQ",
 		 __func__);
+#ifdef CONFIG_SMP
+	k_mutex_lock(&z_mm_paging_lock, K_FOREVER);
+#else
 	k_sched_lock();
+#endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 	pf = k_mem_phys_to_page_frame(phys);
 	if (!k_mem_page_frame_is_mapped(pf)) {
 		/* Nothing to do, free page */
@@ -1367,19 +1488,23 @@ int k_mem_page_frame_evict(uintptr_t phys)
 	}
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
 		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	key = irq_lock();
+	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	page_frame_free_locked(pf);
 out:
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+#ifdef CONFIG_SMP
+	k_mutex_unlock(&z_mm_paging_lock);
+#else
 	k_sched_unlock();
+#endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	return ret;
 }
@@ -1480,12 +1605,13 @@ static inline struct k_mem_page_frame *do_eviction_select(bool *dirty)
 static bool do_page_fault(void *addr, bool pin)
 {
 	struct k_mem_page_frame *pf;
-	int key, ret;
+	k_spinlock_key_t key;
 	uintptr_t page_in_location, page_out_location;
 	enum arch_page_location status;
 	bool result;
 	bool dirty = false;
-	struct k_thread *faulting_thread = _current_cpu->current;
+	struct k_thread *faulting_thread;
+	int ret;
 
 	__ASSERT(page_frames_initialized, "page fault at %p happened too early",
 		 addr);
@@ -1499,13 +1625,11 @@ static bool do_page_fault(void *addr, bool pin)
 	 */
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	/* We lock the scheduler so that other threads are never scheduled
-	 * during the page-in/out operation.
-	 *
-	 * We do however re-enable interrupts during the page-in/page-out
-	 * operation if and only if interrupts were enabled when the exception
-	 * was taken; in this configuration page faults in an ISR are a bug;
-	 * all their code/data must be pinned.
+	/*
+	 * We do re-enable interrupts during the page-in/page-out operation
+	 * if and only if interrupts were enabled when the exception was
+	 * taken; in this configuration page faults in an ISR are a bug; all
+	 * their code/data must be pinned.
 	 *
 	 * If interrupts were disabled when the exception was taken, the
 	 * arch code is responsible for keeping them that way when entering
@@ -1515,20 +1639,35 @@ static bool do_page_fault(void *addr, bool pin)
 	 * entire operation. This is far worse for system interrupt latency
 	 * but requires less pinned pages and ISRs may also take page faults.
 	 *
-	 * Support for allowing k_mem_paging_backing_store_page_out() and
+	 * On UP we lock the scheduler so that other threads are never
+	 * scheduled during the page-in/out operation. Support for
+	 * allowing k_mem_paging_backing_store_page_out() and
 	 * k_mem_paging_backing_store_page_in() to also sleep and allow
 	 * other threads to run (such as in the case where the transfer is
-	 * async DMA) is not implemented. Even if limited to thread context,
-	 * arbitrary memory access triggering exceptions that put a thread to
-	 * sleep on a contended page fault operation will break scheduling
-	 * assumptions of cooperative threads or threads that implement
-	 * crticial sections with spinlocks or disabling IRQs.
+	 * async DMA) is not supported on UP. Even if limited to thread
+	 * context, arbitrary memory access triggering exceptions that put
+	 * a thread to sleep on a contended page fault operation will break
+	 * scheduling assumptions of cooperative threads or threads that
+	 * implement critical sections with spinlocks or disabling IRQs.
+	 *
+	 * On SMP, though, exclusivity cannot be assumed solely from being
+	 * a cooperative thread. Another thread with any prio may be running
+	 * on another CPU so exclusion must already be enforced by other
+	 * means. Therefore trying to prevent scheduling on SMP is pointless,
+	 * and k_sched_lock()  is equivalent to a no-op on SMP anyway.
+	 * As a result, sleeping/rescheduling in the SMP case is fine.
 	 */
-	k_sched_lock();
 	__ASSERT(!k_is_in_isr(), "ISR page faults are forbidden");
+#ifdef CONFIG_SMP
+	k_mutex_lock(&z_mm_paging_lock, K_FOREVER);
+#else
+	k_sched_lock();
+#endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
+	faulting_thread = _current_cpu->current;
+
 	status = arch_page_location_get(addr, &page_in_location);
 	if (status == ARCH_PAGE_LOCATION_BAD) {
 		/* Return false to treat as a fatal error */
@@ -1559,7 +1698,7 @@ static bool do_page_fault(void *addr, bool pin)
 	__ASSERT(status == ARCH_PAGE_LOCATION_PAGED_OUT,
 		 "unexpected status value %d", status);
 
-	paging_stats_faults_inc(faulting_thread, key);
+	paging_stats_faults_inc(faulting_thread, key.key);
 
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
@@ -1576,7 +1715,7 @@ static bool do_page_fault(void *addr, bool pin)
 	__ASSERT(ret == 0, "failed to prepare page frame");
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 	/* Interrupts are now unlocked if they were not locked when we entered
 	 * this function, and we may service ISRs. The scheduler is still
 	 * locked.
@@ -1588,7 +1727,7 @@ static bool do_page_fault(void *addr, bool pin)
 	do_backing_store_page_in(page_in_location);
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 	k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_BUSY);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_MAPPED);
@@ -1603,9 +1742,13 @@ static bool do_page_fault(void *addr, bool pin)
 		k_mem_paging_eviction_add(pf);
 	}
 out:
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+#ifdef CONFIG_SMP
+	k_mutex_unlock(&z_mm_paging_lock);
+#else
 	k_sched_unlock();
+#endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 
 	return result;
@@ -1653,10 +1796,10 @@ bool k_mem_page_fault(void *addr)
 static void do_mem_unpin(void *addr)
 {
 	struct k_mem_page_frame *pf;
-	unsigned int key;
+	k_spinlock_key_t key;
 	uintptr_t flags, phys;
 
-	key = irq_lock();
+	key = k_spin_lock(&z_mm_lock);
 	flags = arch_page_info_get(addr, &phys, false);
 	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
 		 "invalid data page at %p", addr);
@@ -1667,7 +1810,7 @@ static void do_mem_unpin(void *addr)
 			k_mem_paging_eviction_add(pf);
 		}
 	}
-	irq_unlock(key);
+	k_spin_unlock(&z_mm_lock, key);
 }
 
 void k_mem_unpin(void *addr, size_t size)

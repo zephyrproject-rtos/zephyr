@@ -23,6 +23,7 @@
 		die-temp0 = &die_temp;
 		pwm-led0 = &pwm_led1;
 		watchdog0 = &wdt0;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -161,4 +162,8 @@
 		compatible = "ethernet-phy";
 		reg = <0>;
 	};
+};
+
+&rtc {
+	status = "okay";
 };

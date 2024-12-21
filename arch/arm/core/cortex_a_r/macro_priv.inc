@@ -18,6 +18,27 @@
 	ubfx	\rreg0, \rreg0, #0, #24
 .endm
 
+/*
+ * Get CPU logic id by looking up cpu_node_list
+ * returns
+ *   reg0: MPID
+ *   reg1: logic id (0 ~ CONFIG_MP_MAX_NUM_CPUS - 1)
+ * clobbers: reg0, reg1, reg2, reg3
+ */
+.macro get_cpu_logic_id reg0, reg1, reg2, reg3
+	get_cpu_id \reg0
+	ldr	\reg3, =cpu_node_list
+	mov	\reg1, #0
+1:	ldr	\reg2, [\reg3, \reg1, lsl #2]
+	cmp	\reg2, \reg0
+	beq	2f
+	add	\reg1, \reg1, #1
+	cmp	\reg1, #CONFIG_MP_MAX_NUM_CPUS
+	bne	1b
+	b	.
+2:
+.endm
+
 .macro get_cpu rreg0
 	/*
          * Get CPU pointer.
@@ -33,8 +54,7 @@
 	 */
 	srsdb sp!, #MODE_SYS
 	cps #MODE_SYS
-	stmdb sp, {r0-r3, r12, lr}^
-	sub sp, #24
+	push {r0-r3, r12, lr}
 
 	/* TODO: EXTRA_EXCEPTION_INFO */
 	mov r0, sp

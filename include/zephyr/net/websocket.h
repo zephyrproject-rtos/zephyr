@@ -26,6 +26,8 @@ extern "C" {
 /**
  * @brief Websocket API
  * @defgroup websocket Websocket API
+ * @since 1.12
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

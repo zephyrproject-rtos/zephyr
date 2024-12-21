@@ -9,6 +9,7 @@ zephyr_library_sources(
   irq_init.c
   irq_manage.c
   prep_c.c
+  reboot.c
   reset.S
   reset.c
   switch.S
@@ -28,6 +29,7 @@ if(${SRAM_LENGTH} GREATER 11 OR ${KERNEL_VM_LENGTH} GREATER 11)
   zephyr_cc_option(-mcmodel=large)
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 zephyr_library_sources_ifdef(CONFIG_FPU_SHARING fpu.c fpu.S)
 zephyr_library_sources_ifdef(CONFIG_ARM_MMU mmu.c mmu.S)
 zephyr_library_sources_ifdef(CONFIG_ARM_MPU cortex_r/arm_mpu.c)

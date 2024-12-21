@@ -14,7 +14,7 @@
 #elif CONFIG_DISK_DRIVER_FLASH
 	#define STORAGE_DEVICE "NAND"
 #elif CONFIG_DISK_DRIVER_SDMMC
-	#define STORAGE_DEVICE "SDMMC"
+	#define STORAGE_DEVICE "SD"
 #endif
 
 /* All tests must use this structure to mount file system. After each test this structure is cleaned

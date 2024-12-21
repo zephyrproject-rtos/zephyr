@@ -17,7 +17,7 @@ tests:
     integration_platforms:
       - mps2/an385
       - qemu_x86
-    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    extra_args: EXTRA_CONF_FILE=overlay_deferred.conf
     harness: console
     harness_config:
       type: multi_line
@@ -35,7 +35,7 @@ tests:
       - CONFIG_REQUIRES_FULL_LIBC=y
   sample.logger.syst.immediate:
     toolchain_exclude: xcc
-    extra_args: OVERLAY_CONFIG=overlay_immediate.conf
+    extra_args: EXTRA_CONF_FILE=overlay_immediate.conf
     integration_platforms:
       - qemu_x86
       - sam_e70_xplained/same70q21
@@ -50,7 +50,7 @@ tests:
       - CONFIG_REQUIRES_FULL_LIBC=y
   sample.logger.syst.catalog.deferred:
     toolchain_exclude: xcc
-    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    extra_args: EXTRA_CONF_FILE=overlay_deferred.conf
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
@@ -79,7 +79,7 @@ tests:
     filter: CONFIG_FULL_LIBC_SUPPORTED
   sample.logger.syst.deferred_cpp:
     toolchain_exclude: xcc
-    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    extra_args: EXTRA_CONF_FILE=overlay_deferred.conf
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
@@ -108,7 +108,7 @@ tests:
     filter: CONFIG_FULL_LIBC_SUPPORTED
   sample.logger.syst.catalog.deferred_cpp:
     toolchain_exclude: xcc
-    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    extra_args: EXTRA_CONF_FILE=overlay_deferred.conf
     integration_platforms:
       - qemu_x86
       - qemu_x86_64

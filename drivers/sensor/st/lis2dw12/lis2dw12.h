@@ -58,6 +58,11 @@
 #define LIS2DW12_SHIFT_PM1		4
 #define LIS2DW12_SHIFT_PMOTHER		2
 
+/* shift value for 12 bit resolution */
+#define LIS2DW12_SHIFT_TEMP        4
+/* Temperature 12 bit scale factor in uC = 1000000/16 as 1 LSB = C/16 */
+#define LIS2DW12_TEMP_SCALE_FACTOR 62500
+
 /**
  * struct lis2dw12_device_config - lis2dw12 hw configuration
  * @bus_name: Pointer to bus master identifier.
@@ -92,18 +97,24 @@ struct lis2dw12_device_config {
 	uint8_t tap_latency;
 	uint8_t tap_quiet;
 #endif /* CONFIG_LIS2DW12_TAP */
+#ifdef CONFIG_LIS2DW12_SLEEP
+	uint8_t sleep_duration;
+#endif
 #ifdef CONFIG_LIS2DW12_FREEFALL
 	uint8_t freefall_duration;
 	uint8_t freefall_threshold;
 #endif /* CONFIG_LIS2DW12_FREEFALL */
-#ifdef CONFIG_LIS2DW12_THRESHOLD
+#ifdef CONFIG_LIS2DW12_WAKEUP
 	uint8_t wakeup_duration;
-#endif /* CONFIG_LIS2DW12_THRESHOLD */
+#endif /* CONFIG_LIS2DW12_WAKEUP */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 };
 
 /* sensor data */
 struct lis2dw12_data {
+	/* temperature raw data */
+	int16_t temp;
+	/* accelerometer raw data */
 	int16_t acc[3];
 
 	 /* save sensitivity */
@@ -123,10 +134,14 @@ struct lis2dw12_data {
 	sensor_trigger_handler_t double_tap_handler;
 	const struct sensor_trigger *double_tap_trig;
 #endif /* CONFIG_LIS2DW12_TAP */
-#ifdef CONFIG_LIS2DW12_THRESHOLD
-	sensor_trigger_handler_t threshold_handler;
-	const struct sensor_trigger *threshold_trig;
-#endif /* CONFIG_LIS2DW12_THRESHOLD */
+#ifdef CONFIG_LIS2DW12_WAKEUP
+	sensor_trigger_handler_t motion_handler;
+	const struct sensor_trigger *motion_trig;
+#endif /* CONFIG_LIS2DW12_WAKEUP */
+#ifdef CONFIG_LIS2DW12_SLEEP
+	sensor_trigger_handler_t stationary_handler;
+	const struct sensor_trigger *stationary_trig;
+#endif
 #ifdef CONFIG_LIS2DW12_FREEFALL
 	sensor_trigger_handler_t freefall_handler;
 	const struct sensor_trigger *freefall_trig;
@@ -147,5 +162,10 @@ int lis2dw12_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler);
 #endif /* CONFIG_LIS2DW12_TRIGGER */
+
+/* LIS2DW12 specific channels */
+enum sensor_channel_lis2dw12 {
+	SENSOR_CHAN_LIS2DW12_INT_STATUS = SENSOR_CHAN_PRIV_START,
+};
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LIS2DW12_LIS2DW12_H_ */

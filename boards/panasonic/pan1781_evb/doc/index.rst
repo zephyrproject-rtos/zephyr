@@ -1,17 +1,10 @@
-.. _pan1781_evb:
-
-PAN1781 Evaluation Board
-########################
+.. zephyr:board:: pan1781_evb
 
 Overview
 ********
 
 The PAN1781 Evaluation Board is a development tool for the PAN1781 module
 which is based on the nRF52820 chipset from Nordic Semiconductor.
-
-.. figure:: pan1781_evaluation_board.jpg
-     :align: center
-     :alt: PAN1781 Evaluation Board
 
 You can find more information about the PAN1781 module and the PAN1781
 evaluation board on the `product website`_.
@@ -22,8 +15,8 @@ development kits for the nRF52820 from Nordic Semiconductor.
 The PAN1781 evaluation board is closely linked to these other evaluation
 boards:
 
-* :ref:`pan1780_evb`
-* :ref:`pan1782_evb`
+* :zephyr:board:`pan1780_evb`
+* :zephyr:board:`pan1782_evb`
 
 Usage
 *****

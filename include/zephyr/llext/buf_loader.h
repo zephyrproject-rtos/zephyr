@@ -47,16 +47,19 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
  * @param _buf Buffer containing the ELF binary
  * @param _buf_len Buffer length in bytes
  */
-#define LLEXT_BUF_LOADER(_buf, _buf_len)		\
-	{						\
-		.loader = {				\
-			.read = llext_buf_read,		\
-			.seek = llext_buf_seek,		\
-			.peek = llext_buf_peek,		\
-		},					\
-		.buf = (_buf),				\
-		.len = (_buf_len),			\
-		.pos = 0				\
+#define LLEXT_BUF_LOADER(_buf, _buf_len)                                                           \
+	{                                                                                          \
+		.loader =                                                                          \
+			{                                                                          \
+				.prepare = NULL,                                                   \
+				.read = llext_buf_read,                                            \
+				.seek = llext_buf_seek,                                            \
+				.peek = llext_buf_peek,                                            \
+				.finalize = NULL,                                                  \
+			},                                                                         \
+		.buf = (_buf),                                                                     \
+		.len = (_buf_len),                                                                 \
+		.pos = 0,                                                                          \
 	}
 
 /**

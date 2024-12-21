@@ -16,10 +16,8 @@ app=tests/bsim/bluetooth/host/gatt/caching conf_overlay=psa_overlay.conf compile
 app=tests/bsim/bluetooth/host/gatt/general compile
 app=tests/bsim/bluetooth/host/gatt/notify compile
 app=tests/bsim/bluetooth/host/gatt/notify_multiple compile
-app=tests/bsim/bluetooth/host/gatt/settings compile
-app=tests/bsim/bluetooth/host/gatt/settings conf_file=prj_2.conf compile
-app=tests/bsim/bluetooth/host/gatt/ccc_store compile
-app=tests/bsim/bluetooth/host/gatt/ccc_store conf_file=prj_2.conf compile
-app=tests/bsim/bluetooth/host/gatt/sc_indicate compile
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/gatt/settings/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/gatt/ccc_store/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/gatt/sc_indicate/compile.sh
 
 wait_for_background_jobs

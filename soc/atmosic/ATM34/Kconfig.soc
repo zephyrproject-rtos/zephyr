@@ -18,4 +18,5 @@ config SOC_ATM34XX_5
 	select SOC_SERIES_ATM34
 
 config SOC
-	default "ATM34xx" if (SOC_ATM34XX_2 || SOC_ATM34XX_5)
+	default "ATM34xx-2" if SOC_ATM34XX_2
+	default "ATM34xx-5" if SOC_ATM34XX_5

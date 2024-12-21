@@ -69,10 +69,10 @@ else()
   dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
   dt_reg_addr(img_0_off PATH ${dts_partition_path})
 
-  if(CONFIG_ESP_SIMPLE_BOOT)
-    board_finalize_runner_args(esp32 "--esp-app-address=${boot_off}")
-  else()
+  if(CONFIG_BOOTLOADER_MCUBOOT)
     board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
+  else()
+    board_finalize_runner_args(esp32 "--esp-app-address=${boot_off}")
   endif()
 
 endif()

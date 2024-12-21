@@ -38,7 +38,7 @@
 
 #define CLKSRC_FREQ(clk) DT_PROP(DT_PATH(clocks, clk), clock_frequency)
 
-#define IS_CLKSRC_ENABLED(clk) DT_NODE_HAS_STATUS(DT_PATH(clocks, clk), okay)
+#define IS_CLKSRC_ENABLED(clk) DT_NODE_HAS_STATUS_OKAY(DT_PATH(clocks, clk))
 
 #define SCKSCR_INIT_VALUE _CONCAT(CLKSRC_, SYSCLK_SRC)
 

@@ -1,7 +1,4 @@
-.. _m2gl025-miv:
-
-Microchip M2GL025 Mi-V
-######################
+.. zephyr:board:: m2gl025_miv
 
 Overview
 ********

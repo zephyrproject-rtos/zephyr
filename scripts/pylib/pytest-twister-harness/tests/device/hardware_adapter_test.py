@@ -99,7 +99,7 @@ def test_if_get_command_returns_proper_string_6(patched_which, device: HardwareA
     assert isinstance(device.command, list)
     assert device.command == [
         'west', 'flash', '--skip-rebuild', '--build-dir', 'build', '--runner', 'jlink',
-        '--tool-opt=-SelectEmuBySN p_id'
+        '--dev-id', 'p_id'
     ]
 
 

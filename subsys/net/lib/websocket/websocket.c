@@ -458,7 +458,7 @@ static int websocket_close_vmeth(void *obj)
 static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 					 int timeout)
 {
-	int fd_backup[CONFIG_NET_SOCKETS_POLL_MAX];
+	int fd_backup[CONFIG_ZVFS_POLL_MAX];
 	const struct fd_op_vtable *vtable;
 	void *ctx;
 	int ret = 0;
@@ -645,7 +645,8 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 	k_timepoint_t req_end_timepoint = sys_timepoint_calc(req_timeout);
 
 	return sendmsg_all(ctx->real_sock, &msg,
-			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0, req_end_timepoint);
+			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? ZSOCK_MSG_DONTWAIT : 0,
+			   req_end_timepoint);
 #endif /* CONFIG_NET_TEST */
 }
 
@@ -995,7 +996,7 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 			ret = wait_rx(ctx->real_sock, timeout_to_ms(&tout));
 			if (ret == 0) {
 				ret = zsock_recv(ctx->real_sock, ctx->recv_buf.buf,
-						 ctx->recv_buf.size, MSG_DONTWAIT);
+						 ctx->recv_buf.size, ZSOCK_MSG_DONTWAIT);
 				if (ret < 0) {
 					ret = -errno;
 				}
