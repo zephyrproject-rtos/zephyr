@@ -37,10 +37,10 @@ config NXP_MONOLITHIC_IEEE802154
 	default y if IEEE802154
 
 config NXP_FW_LOADER
-	default y if (BT || WIFI || IEEE802154)
+	default y if (BT || WIFI)
 
 config NXP_RF_IMU
-	default y if (BT || WIFI || IEEE802154)
+	default y if (BT || WIFI)
 
 if PM
 # For PM mode 3 we change this config to get better accuracy
