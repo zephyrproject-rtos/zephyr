@@ -274,6 +274,8 @@ Sensors
   of properties without the prefix. The sensor based driver for the :dtcompatible:`nxp,kinetis-acmp`
   has been updated to support both the new and deprecated property names. Uses of the deprecated
   property names should be updated to the new property names.
+* Boards using the :dtcompatible:`bosch,bme280` compatible as an interface to a BMP280 sensor
+  must add the new :dtcompatible:`bosch,bmp280` compatible to the node.
 
 Serial
 ======

@@ -1,4 +1,4 @@
-# BMP280 temperature and pressure sensor configuration options
+# BME280 temperature and pressure sensor configuration options
 
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2017 IpTronix S.r.l.
@@ -123,5 +123,10 @@ config BME280_FILTER_8
 config BME280_FILTER_16
 	bool "16"
 endchoice
+
+config BME280_BMP280
+	bool "Use BME280 driver for BMP280"
+	depends on DT_HAS_BOSCH_BMP280_ENABLED
+	default y
 
 endif # BME280
