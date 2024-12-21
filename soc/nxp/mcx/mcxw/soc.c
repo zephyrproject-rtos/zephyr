@@ -17,7 +17,6 @@
 #include <fsl_clock.h>
 
 extern uint32_t SystemCoreClock;
-extern void nxp_nbu_init(void);
 
 static ALWAYS_INLINE void clock_init(void)
 {
@@ -215,8 +214,4 @@ void soc_early_init_hook(void)
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
-
-#if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
-	nxp_nbu_init();
-#endif
 }

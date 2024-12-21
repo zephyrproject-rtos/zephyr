@@ -23,5 +23,3 @@ config MCUX_CORE_SUFFIX
 	default "_cm33_core1" if SOC_MCXW727C_CPU1
 
 endif # SOC_MCXW727C
-
-	rsource "../../common/Kconfig.nbu"

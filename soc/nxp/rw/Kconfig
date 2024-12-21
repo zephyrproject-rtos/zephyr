@@ -52,7 +52,6 @@ config IMAGE_VECTOR_TABLE_OFFSET
 endif # NXP_RW6XX_BOOT_HEADER
 
 rsource "../common/Kconfig.flexspi_xip"
-rsource "../common/Kconfig.nbu"
 
 config XTAL32K
 	bool "Use the External 32K clock"

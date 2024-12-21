@@ -19,7 +19,6 @@
 
 	chosen {
 		zephyr,bt-hci = &hci;
-		zephyr,nbu = &nbu;
 	};
 
 	cpus {
@@ -304,14 +303,10 @@
 		status = "disabled";
 	};
 
-	nbu: nbu {
-		compatible = "nxp,nbu";
-		interrupts = <48 2>;
-		interrupt-names = "nbu_rx_int";
-	};
-
 	hci: hci_ble {
 		compatible = "nxp,hci-ble";
+		interrupts = <48 2>;
+		interrupt-names = "hci_int";
 	};
 
 	flexcan0: can@3b000 {

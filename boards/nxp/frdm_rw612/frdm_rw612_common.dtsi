@@ -199,11 +199,6 @@
 	pinctrl-names = "default";
 };
 
-&nbu {
-	status = "okay";
-	wakeup-source;
-};
-
 &imu {
 	status = "okay";
 	wakeup-source;
