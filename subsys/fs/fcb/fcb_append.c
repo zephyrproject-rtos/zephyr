@@ -11,11 +11,10 @@
 #include <zephyr/fs/fcb.h>
 #include "fcb_priv.h"
 
-static struct flash_sector *
-fcb_new_sector(struct fcb *fcb, int cnt)
+static struct flash_sector const *fcb_new_sector(struct fcb *fcb, int cnt)
 {
-	struct flash_sector *prev;
-	struct flash_sector *cur;
+	struct flash_sector const *prev;
+	struct flash_sector const *cur;
 	int i;
 
 	prev = NULL;
@@ -39,7 +38,7 @@ fcb_new_sector(struct fcb *fcb, int cnt)
 int
 fcb_append_to_scratch(struct fcb *fcb)
 {
-	struct flash_sector *sector;
+	struct flash_sector const *sector;
 	int rc;
 
 	sector = fcb_new_sector(fcb, 0);
@@ -59,7 +58,7 @@ fcb_append_to_scratch(struct fcb *fcb)
 int
 fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 {
-	struct flash_sector *sector;
+	struct flash_sector const *sector;
 	struct fcb_entry *active;
 	int cnt;
 	int rc;
