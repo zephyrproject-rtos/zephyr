@@ -994,13 +994,6 @@ static void sink_wait_for_data(void)
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 }
 
-static void base_wait_for_metadata_update(void)
-{
-	printk("Waiting for meta update\n");
-	WAIT_FOR_FLAG(flag_base_metadata_updated);
-	backchannel_sync_send_all(); /* let others know we have received a metadata update */
-}
-
 static void wait_for_broadcast_code(void)
 {
 	printk("Waiting for broadcast code\n");
@@ -1059,11 +1052,6 @@ static void test_cap_acceptor_broadcast_reception(void)
 
 	wait_for_broadcast_code();
 	sink_wait_for_data();
-
-	/* Since we are re-using the BAP broadcast source test
-	 * we get a metadata update
-	 */
-	base_wait_for_metadata_update();
 
 	/* when flag_bis_sync_requested is unset the bis_sync for all subgroups were set to 0 */
 	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
