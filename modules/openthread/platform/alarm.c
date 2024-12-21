@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
- * Copyright (c) 2024 NXP.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,10 +131,3 @@ uint16_t otPlatTimeGetXtalAccuracy(void)
 {
 	return otPlatRadioGetCslAccuracy(NULL);
 }
-
-#ifdef CONFIG_HDLC_RCP_IF
-uint64_t otPlatTimeGet(void)
-{
-	return k_ticks_to_us_floor64(k_uptime_ticks());
-}
-#endif
