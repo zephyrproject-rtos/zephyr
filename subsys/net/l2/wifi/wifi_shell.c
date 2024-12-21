@@ -1515,7 +1515,6 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	params.setup.implicit = 1;
 	params.setup.trigger = 0;
 	params.setup.announce = 0;
-	params.setup.exponent = 10;
 
 	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 		return -EINVAL;
@@ -3412,9 +3411,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
-		"<dialog_token: 1-255> <flow_id: 0-7> <teardown_all_twt: 0/1>.\n",
+		"<dialog_token: 1-255> <flow_id: 0-7>.\n",
 		cmd_wifi_twt_teardown,
-		6, 0),
+		5, 0),
 	SHELL_CMD_ARG(teardown_all, NULL, " Teardown all TWT flows.\n",
 		cmd_wifi_twt_teardown_all,
 		1, 0),
