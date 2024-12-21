@@ -120,3 +120,8 @@ config COMMON_LIBC_REMOVE
 	default y if FILE_SYSTEM
 	help
 	  Common implementation of remove().
+
+config COMMON_LIBC_FEOF
+	bool "Common C library feof"
+	help
+	  Common implementation of feof().
