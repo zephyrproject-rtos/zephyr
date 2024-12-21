@@ -571,6 +571,9 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRIS
 	EAP_SERVER_GTC
 	EAP_SERVER_TTLS
 )
+zephyr_library_compile_definitions_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	CONFIG_NO_CONFIG_BLOBS
+)
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_EAPOL
 	${HOSTAP_SRC_BASE}/eapol_supp/eapol_supp_sm.c
