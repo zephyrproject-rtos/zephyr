@@ -37,6 +37,8 @@ static int assign_ep_addr(const struct device *dev,
 			ep = idx;
 		}
 
+		LOG_DBG("trying to assign address for EP 0x%02x", ep);
+
 		if (usbd_ep_bm_is_set(config_ep_bm, ep) ||
 		    usbd_ep_bm_is_set(class_ep_bm, ep)) {
 			continue;
@@ -168,10 +170,12 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 		}
 
 		if ((*dhp)->bDescriptorType == USB_DESC_ENDPOINT) {
+			LOG_DBG("Endpoint Descriptor");
 			ed = (struct usb_ep_descriptor *)(*dhp);
 			ret = assign_ep_addr(uds_ctx->dev, ed,
 					     config_ep_bm, &class_ep_bm);
 			if (ret) {
+				LOG_ERR("Failed to assign endpoint address");
 				return ret;
 			}
 
@@ -185,6 +189,7 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 	}
 
 	if (tmp_nif <= *nif) {
+		LOG_WRN("tmp_nif %u, nif %u", tmp_nif, *nif);
 		return -EINVAL;
 	}
 
@@ -272,6 +277,9 @@ static void usbd_init_update_fs_mps0(struct usbd_context *const uds_ctx)
 	case UDC_MPS0_64:
 		desc->bMaxPacketSize0 = 64;
 		break;
+	case UDC_MPS0_512:
+		desc->bMaxPacketSize0 = 9;
+		break;
 	}
 }
 
@@ -280,6 +288,20 @@ int usbd_init_configurations(struct usbd_context *const uds_ctx)
 	struct usbd_config_node *cfg_nd;
 
 	usbd_init_update_fs_mps0(uds_ctx);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->ss_configs, cfg_nd, node) {
+		int ret;
+
+		ret = init_configuration(uds_ctx, USBD_SPEED_SS, cfg_nd);
+		if (ret) {
+			LOG_ERR("Failed to init SS configuration %u",
+				usbd_config_get_value(cfg_nd));
+			return ret;
+		}
+
+		LOG_INF("SS bNumConfigurations %u",
+			usbd_get_num_configs(uds_ctx, USBD_SPEED_SS));
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
 		int ret;
