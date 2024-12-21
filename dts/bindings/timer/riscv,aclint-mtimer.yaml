@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Tenstorrent Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: RISC-V Advanced Core Local Interruptor
+
+compatible: "riscv,aclint-mtimer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
