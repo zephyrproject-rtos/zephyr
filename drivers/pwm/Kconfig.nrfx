@@ -20,3 +20,8 @@ config PWM_NRFX
 	select PINCTRL
 	help
 	  Enable support for nrfx Hardware PWM driver for nRF52 MCU series.
+
+config PWM_NRFX_INIT_PRIORITY
+	int
+	default 99 if HAS_HW_NRF_PWM120
+	default PWM_INIT_PRIORITY
