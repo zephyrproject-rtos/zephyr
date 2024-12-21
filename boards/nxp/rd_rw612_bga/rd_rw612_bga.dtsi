@@ -29,6 +29,12 @@
 		zephyr,flash-controller = &mx25u51245g;
 		zephyr,console = &flexcomm3;
 		zephyr,shell-uart = &flexcomm3;
+		zephyr,hdlc_rcp_if = &hdlc_rcp_if;
+	};
+
+	hdlc_rcp_if: hdlc_rcp_if {
+		compatible = "nxp,hdlc-rcp-if";
+		status = "okay";
 	};
 
 	gpio_keys {
