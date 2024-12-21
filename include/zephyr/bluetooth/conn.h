@@ -78,10 +78,6 @@ struct bt_le_conn_param {
 						  BT_GAP_INIT_CONN_INT_MAX, \
 						  0, 400)
 
-#define BT_LE_CONN_PARAM_MUL_LINK BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_MUL_LINK_MIN, \
-						  BT_GAP_INIT_CONN_MUL_LINK_MAX, \
-						  0, 400)
-
 /** Connection PHY information for LE connections */
 struct bt_conn_le_phy_info {
 	uint8_t tx_phy; /** Connection transmit PHY */
