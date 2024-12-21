@@ -953,28 +953,37 @@ static void response_download_cb(struct http_response *rsp, enum http_final_call
 		}
 	}
 
-	if (rsp->body_found) {
-		body_data = rsp->body_frag_start;
-		body_len = rsp->body_frag_len;
-
-		ret = flash_img_buffered_write(&hb_context->flash_ctx, body_data, body_len,
-					       final_data == HTTP_DATA_FINAL);
-		if (ret < 0) {
-			LOG_ERR("Failed to write flash: %d", ret);
-			hb_context->code_status = HAWKBIT_DOWNLOAD_ERROR;
-			return;
-		}
-
-#ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
-		stream_flash_progress_save(&hb_context->flash_ctx.stream, "hawkbit/flash_progress");
-#endif
+	if (!rsp->body_found) {
+		return;
 	}
+
+	body_data = rsp->body_frag_start;
+	body_len = rsp->body_frag_len;
+
+	ret = flash_img_buffered_write(&hb_context->flash_ctx, body_data, body_len,
+				       final_data == HTTP_DATA_FINAL);
+	if (ret < 0) {
+		LOG_ERR("Failed to write flash: %d", ret);
+		hb_context->code_status = HAWKBIT_DOWNLOAD_ERROR;
+		return;
+	}
+
+#if defined CONFIG_HAWKBIT_SAVE_PROGRESS && IS_EQ(CONFIG_HAWKBIT_SAVE_PROGRESS_INTERVAL, 0)
+	stream_flash_progress_save(&hb_context->flash_ctx.stream, "hawkbit/flash_progress");
+#endif
 
 	hb_context->dl.downloaded_size = flash_img_bytes_written(&hb_context->flash_ctx);
 
 	downloaded = hb_context->dl.downloaded_size * 100 / hb_context->dl.file_size;
 
 	if (downloaded != download_progress) {
+#if defined CONFIG_HAWKBIT_SAVE_PROGRESS && !IS_EQ(CONFIG_HAWKBIT_SAVE_PROGRESS_INTERVAL, 0)
+		if ((downloaded / CONFIG_HAWKBIT_SAVE_PROGRESS_INTERVAL) >
+		    (download_progress / CONFIG_HAWKBIT_SAVE_PROGRESS_INTERVAL)) {
+			stream_flash_progress_save(&hb_context->flash_ctx.stream,
+						   "hawkbit/flash_progress");
+		}
+#endif
 		download_progress = downloaded;
 		LOG_DBG("Downloaded: %u%% (%u / %u)", download_progress,
 			hb_context->dl.downloaded_size, hb_context->dl.file_size);

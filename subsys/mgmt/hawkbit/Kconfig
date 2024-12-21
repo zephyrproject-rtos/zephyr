@@ -199,6 +199,15 @@ config HAWKBIT_SAVE_PROGRESS
 	  This is especially useful for large updates over unreliable networks or in
 	  resource-constrained environments.
 
+config HAWKBIT_SAVE_PROGRESS_INTERVAL
+	int "Save the hawkBit update download progress interval"
+	default 5
+	range 0 100
+	depends on HAWKBIT_SAVE_PROGRESS
+	help
+	  Set the interval (in percent) that the hawkBit update download progress will be saved.
+	  0 means that the progress will be saved every time a new chunk is downloaded.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for hawkBit code.
