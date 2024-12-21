@@ -20,6 +20,16 @@ schema;scenario-schema:
     "arch_allow":
       type: any
       required: false
+    "vendor_exclude":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "vendor_allow":
+      type: seq
+      required: false
+      sequence:
+        - type: str
     "testcases":
       type: seq
       required: false

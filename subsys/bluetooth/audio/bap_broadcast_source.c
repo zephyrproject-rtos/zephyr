@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Source */
 
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
@@ -55,6 +56,7 @@ static struct bt_bap_broadcast_subgroup
 	broadcast_source_subgroups[CONFIG_BT_BAP_BROADCAST_SRC_COUNT]
 				  [CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
 static struct bt_bap_broadcast_source broadcast_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT];
+static sys_slist_t bap_broadcast_source_cbs = SYS_SLIST_STATIC_INIT(&bap_broadcast_source_cbs);
 
 /**
  * 2 octets UUID
@@ -238,9 +240,9 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 }
 
 static struct bt_iso_chan_ops broadcast_source_iso_ops = {
-	.sent		= broadcast_source_iso_sent,
-	.connected	= broadcast_source_iso_connected,
-	.disconnected	= broadcast_source_iso_disconnected,
+	.sent = broadcast_source_iso_sent,
+	.connected = broadcast_source_iso_connected,
+	.disconnected = broadcast_source_iso_disconnected,
 };
 
 bool bt_bap_ep_is_broadcast_src(const struct bt_bap_ep *ep)
@@ -440,8 +442,7 @@ static bool encode_base(struct bt_bap_broadcast_source *source, struct net_buf_s
 	 */
 	streams_encoded = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
-		if (!encode_base_subgroup(subgroup,
-					  &source->stream_data[streams_encoded],
+		if (!encode_base_subgroup(subgroup, &source->stream_data[streams_encoded],
 					  &streams_encoded, buf)) {
 			return false;
 		}
@@ -454,12 +455,10 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 {
 	struct bt_bap_broadcast_subgroup *subgroup, *next_subgroup;
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&source->subgroups, subgroup,
-					  next_subgroup, _node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&source->subgroups, subgroup, next_subgroup, _node) {
 		struct bt_bap_stream *stream, *next_stream;
 
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream,
-						  next_stream, _node) {
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream, next_stream, _node) {
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 			stream->ep->stream = NULL;
 			stream->ep = NULL;
@@ -467,8 +466,7 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 			stream->qos = NULL;
 			stream->group = NULL;
 
-			sys_slist_remove(&subgroup->streams, NULL,
-					 &stream->_node);
+			sys_slist_remove(&subgroup->streams, NULL, &stream->_node);
 		}
 		sys_slist_remove(&source->subgroups, NULL, &subgroup->_node);
 	}
@@ -777,8 +775,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				bis_count++;
 			}
 
-			err = broadcast_source_setup_stream(index, stream,
-							    codec_cfg, qos, source);
+			err = broadcast_source_setup_stream(index, stream, codec_cfg, qos, source);
 			if (err != 0) {
 				LOG_DBG("Failed to setup streams[%zu]: %d", i, err);
 				broadcast_source_cleanup(source);
@@ -1039,7 +1036,7 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
 int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct bt_le_ext_adv *adv)
 {
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
-	struct bt_iso_big_create_param param = { 0 };
+	struct bt_iso_big_create_param param = {0};
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
 	struct bt_bap_stream *stream;
@@ -1078,8 +1075,7 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 	param.latency = source->qos->latency;
 	param.encryption = source->encryption;
 	if (param.encryption) {
-		(void)memcpy(param.bcode, source->broadcast_code,
-			     sizeof(param.bcode));
+		(void)memcpy(param.bcode, source->broadcast_code, sizeof(param.bcode));
 	}
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	param.irc = source->irc;
@@ -1125,13 +1121,11 @@ int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 		return -EALREADY;
 	}
 
-	err =  bt_iso_big_terminate(source->big);
+	err = bt_iso_big_terminate(source->big);
 	if (err) {
 		LOG_DBG("Failed to terminate BIG (err %d)", err);
 		return err;
 	}
-
-	source->big = NULL;
 
 	return 0;
 }
@@ -1184,6 +1178,105 @@ int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 		LOG_DBG("base_buf %p with size %u not large enough", base_buf, base_buf->size);
 
 		return -EMSGSIZE;
+	}
+
+	return 0;
+}
+
+static struct bt_bap_broadcast_source *get_broadcast_source_by_big(const struct bt_iso_big *big)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sources); i++) {
+		if (broadcast_sources[i].big == big) {
+			return &broadcast_sources[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void big_started_cb(struct bt_iso_big *big)
+{
+	struct bt_bap_broadcast_source *source = get_broadcast_source_by_big(big);
+	struct bt_bap_broadcast_source_cb *listener;
+
+	if (source == NULL) {
+		/* Not one of ours */
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bap_broadcast_source_cbs, listener, _node) {
+		if (listener->started != NULL) {
+			listener->started(source);
+		}
+	}
+}
+
+static void big_stopped_cb(struct bt_iso_big *big, uint8_t reason)
+{
+	struct bt_bap_broadcast_source *source = get_broadcast_source_by_big(big);
+	struct bt_bap_broadcast_source_cb *listener;
+
+	if (source == NULL) {
+		/* Not one of ours */
+		return;
+	}
+
+	source->big = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bap_broadcast_source_cbs, listener, _node) {
+		if (listener->stopped != NULL) {
+			listener->stopped(source, reason);
+		}
+	}
+}
+
+int bt_bap_broadcast_source_register_cb(struct bt_bap_broadcast_source_cb *cb)
+{
+	static bool iso_big_cb_registered;
+
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&bap_broadcast_source_cbs, &cb->_node, NULL)) {
+		LOG_DBG("cb %p is already registered", cb);
+
+		return -EEXIST;
+	}
+
+	if (!iso_big_cb_registered) {
+		static struct bt_iso_big_cb big_cb = {
+			.started = big_started_cb,
+			.stopped = big_stopped_cb,
+		};
+		const int err = bt_iso_big_register_cb(&big_cb);
+
+		if (err != 0) {
+			__ASSERT(false, "Failed to register ISO BIG callbacks: %d", err);
+		}
+
+		iso_big_cb_registered = true;
+	}
+
+	sys_slist_append(&bap_broadcast_source_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_bap_broadcast_source_unregister_cb(struct bt_bap_broadcast_source_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&bap_broadcast_source_cbs, &cb->_node)) {
+		LOG_DBG("cb %p is not registered", cb);
+
+		return -ENOENT;
 	}
 
 	return 0;

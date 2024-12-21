@@ -268,7 +268,7 @@ static int esp32_ipm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ipm_driver_api esp32_ipm_driver_api = {
+static DEVICE_API(ipm, esp32_ipm_driver_api) = {
 	.send = esp32_ipm_send,
 	.register_callback = esp32_ipm_register_callback,
 	.max_data_size_get = esp32_ipm_max_data_size_get,

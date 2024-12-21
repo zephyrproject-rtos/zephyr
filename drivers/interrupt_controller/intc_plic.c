@@ -103,6 +103,7 @@ struct plic_stats {
 };
 
 struct plic_data {
+	struct k_spinlock lock;
 
 #ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
 	struct plic_stats stats;
@@ -279,11 +280,13 @@ static void plic_irq_enable_set_state(uint32_t irq, bool enable)
  */
 void riscv_plic_irq_enable(uint32_t irq)
 {
-	uint32_t key = irq_lock();
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	struct plic_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	plic_irq_enable_set_state(irq, true);
 
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
 }
 
 /**
@@ -298,11 +301,34 @@ void riscv_plic_irq_enable(uint32_t irq)
  */
 void riscv_plic_irq_disable(uint32_t irq)
 {
-	uint32_t key = irq_lock();
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	struct plic_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	plic_irq_enable_set_state(irq, false);
 
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
+}
+
+/* Check if the local IRQ of a PLIC instance is enabled */
+static int local_irq_is_enabled(const struct device *dev, uint32_t local_irq)
+{
+	uint32_t bit_position = local_irq & PLIC_REG_MASK;
+	int is_enabled = IS_ENABLED(CONFIG_PLIC_IRQ_AFFINITY) ? 0 : 1;
+
+	for (uint32_t cpu_num = 0; cpu_num < arch_num_cpus(); cpu_num++) {
+		mem_addr_t en_addr =
+			get_context_en_addr(dev, cpu_num) + local_irq_to_reg_offset(local_irq);
+		uint32_t en_value = sys_read32(en_addr);
+
+		if (IS_ENABLED(CONFIG_PLIC_IRQ_AFFINITY)) {
+			is_enabled |= !!(en_value & BIT(bit_position));
+		} else {
+			is_enabled &= !!(en_value & BIT(bit_position));
+		}
+	}
+
+	return is_enabled;
 }
 
 /**
@@ -316,27 +342,15 @@ void riscv_plic_irq_disable(uint32_t irq)
 int riscv_plic_irq_is_enabled(uint32_t irq)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
+	struct plic_data *data = dev->data;
 	const uint32_t local_irq = irq_from_level_2(irq);
-	uint32_t bit_position = local_irq & PLIC_REG_MASK;
-	uint32_t en_value;
-	int is_enabled = IS_ENABLED(CONFIG_PLIC_IRQ_AFFINITY) ? 0 : 1;
-	uint32_t key = irq_lock();
+	int ret = 0;
 
-	for (uint32_t cpu_num = 0; cpu_num < arch_num_cpus(); cpu_num++) {
-		mem_addr_t en_addr =
-			get_context_en_addr(dev, cpu_num) + local_irq_to_reg_offset(local_irq);
-
-		en_value = sys_read32(en_addr);
-		if (IS_ENABLED(CONFIG_PLIC_IRQ_AFFINITY)) {
-			is_enabled |= !!(en_value & BIT(bit_position));
-		} else {
-			is_enabled &= !!(en_value & BIT(bit_position));
-		}
+	K_SPINLOCK(&data->lock) {
+		ret = local_irq_is_enabled(dev, local_irq);
 	}
 
-	irq_unlock(key);
-
-	return is_enabled;
+	return ret;
 }
 
 /**
@@ -388,7 +402,7 @@ void riscv_plic_irq_set_pending(uint32_t irq)
  */
 unsigned int riscv_plic_get_irq(void)
 {
-	return save_irq[arch_proc_id()];
+	return save_irq[arch_curr_cpu()->id];
 }
 
 /**
@@ -400,7 +414,7 @@ unsigned int riscv_plic_get_irq(void)
  */
 const struct device *riscv_plic_get_dev(void)
 {
-	return save_dev[arch_proc_id()];
+	return save_dev[arch_curr_cpu()->id];
 }
 
 #ifdef CONFIG_PLIC_IRQ_AFFINITY
@@ -413,9 +427,10 @@ const struct device *riscv_plic_get_dev(void)
 int riscv_plic_irq_set_affinity(uint32_t irq, uint32_t cpumask)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
-	const struct plic_data *data = dev->data;
+	struct plic_data *data = dev->data;
 	__maybe_unused const struct plic_config *config = dev->config;
 	const uint32_t local_irq = irq_from_level_2(irq);
+	k_spinlock_key_t key;
 
 	if (local_irq >= config->nr_irqs) {
 		__ASSERT(false, "overflow: irq %d, local_irq %d", irq, local_irq);
@@ -427,17 +442,15 @@ int riscv_plic_irq_set_affinity(uint32_t irq, uint32_t cpumask)
 		return -EINVAL;
 	}
 
-	uint32_t key = irq_lock();
-
+	key = k_spin_lock(&data->lock);
 	/* Updated irq_cpumask for next time setting plic enable register */
 	data->irq_cpumask[local_irq] = (plic_cpumask_t)cpumask;
 
 	/* If irq is enabled, apply the new irq affinity */
-	if (riscv_plic_irq_is_enabled(irq)) {
-		riscv_plic_irq_enable(irq);
+	if (local_irq_is_enabled(dev, local_irq)) {
+		plic_irq_enable_set_state(irq, true);
 	}
-
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -485,7 +498,7 @@ static void plic_irq_handler(const struct device *dev)
 	const struct plic_config *config = dev->config;
 	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
 	struct _isr_table_entry *ite;
-	uint32_t cpu_id = arch_proc_id();
+	uint32_t cpu_id = arch_curr_cpu()->id;
 	/* Get the IRQ number generating the interrupt */
 	const uint32_t local_irq = sys_read32(claim_complete_addr);
 

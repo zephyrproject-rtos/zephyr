@@ -31,7 +31,7 @@ static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
 	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
 };
-#elif defined(CONFIG_SOC_NRF54L15)
+#elif defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) || defined(CONFIG_SOC_NRF54L15)
 static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
@@ -661,13 +661,13 @@ static int init_saadc(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api adc_nrfx_driver_api = {
+static DEVICE_API(adc, adc_nrfx_driver_api) = {
 	.channel_setup = adc_nrfx_channel_setup,
 	.read          = adc_nrfx_read,
 #ifdef CONFIG_ADC_ASYNC
 	.read_async    = adc_nrfx_read_async,
 #endif
-#if defined(CONFIG_SOC_NRF54L15)
+#if defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) ||  defined(CONFIG_SOC_NRF54L15)
 	.ref_internal  = 900,
 #elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
 	.ref_internal  = 1024,

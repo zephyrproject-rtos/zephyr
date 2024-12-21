@@ -1,0 +1,13 @@
+common:
+  tags:
+    - dns
+    - net
+  depends_on: netif
+  min_ram: 21
+  timeout: 600
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+tests:
+  net.dns.dispatch:
+    min_ram: 21

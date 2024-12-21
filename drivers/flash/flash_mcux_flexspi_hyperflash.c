@@ -633,7 +633,7 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 	return 0;
 }
 
-static const struct flash_driver_api flash_flexspi_hyperflash_api = {
+static DEVICE_API(flash, flash_flexspi_hyperflash_api) = {
 	.read = flash_flexspi_hyperflash_read,
 	.write = flash_flexspi_hyperflash_write,
 	.erase = flash_flexspi_hyperflash_erase,

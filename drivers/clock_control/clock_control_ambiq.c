@@ -119,7 +119,7 @@ static int ambiq_clock_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api ambiq_clock_driver_api = {
+static DEVICE_API(clock_control, ambiq_clock_driver_api) = {
 	.on = ambiq_clock_on,
 	.off = ambiq_clock_off,
 	.get_rate = ambiq_clock_get_rate,

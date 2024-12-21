@@ -585,7 +585,7 @@ static int xlnx_quadspi_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api xlnx_quadspi_driver_api = {
+static DEVICE_API(spi, xlnx_quadspi_driver_api) = {
 	.transceive = xlnx_quadspi_transceive_blocking,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = xlnx_quadspi_transceive_async,
@@ -601,38 +601,31 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 #define STARTUP_BLOCK_INIT(n)
 #endif
 
-#define XLNX_QUADSPI_INIT(n)						\
-	static void xlnx_quadspi_config_func_##n(const struct device *dev);	\
-									\
-	static const struct xlnx_quadspi_config xlnx_quadspi_config_##n = { \
-		.base = DT_INST_REG_ADDR(n),				\
-		.irq_config_func = xlnx_quadspi_config_func_##n,	\
-		.num_ss_bits = DT_INST_PROP(n, xlnx_num_ss_bits),	\
-		.num_xfer_bytes =					\
-			DT_INST_PROP(n, xlnx_num_transfer_bits) / 8,	\
-		.fifo_size = DT_INST_PROP_OR(n, fifo_size, 0),		\
-		STARTUP_BLOCK_INIT(n)					\
-	};								\
-									\
-	static struct xlnx_quadspi_data xlnx_quadspi_data_##n = {	\
-		SPI_CONTEXT_INIT_LOCK(xlnx_quadspi_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(xlnx_quadspi_data_##n, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &xlnx_quadspi_init,			\
-			    NULL,					\
-			    &xlnx_quadspi_data_##n,			\
-			    &xlnx_quadspi_config_##n, POST_KERNEL,	\
-			    CONFIG_SPI_INIT_PRIORITY,			\
-			    &xlnx_quadspi_driver_api);			\
-									\
-	static void xlnx_quadspi_config_func_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    xlnx_quadspi_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+#define XLNX_QUADSPI_INIT(n)                                                                       \
+	static void xlnx_quadspi_config_func_##n(const struct device *dev);                        \
+                                                                                                   \
+	static const struct xlnx_quadspi_config xlnx_quadspi_config_##n = {                        \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.irq_config_func = xlnx_quadspi_config_func_##n,                                   \
+		.num_ss_bits = DT_INST_PROP(n, xlnx_num_ss_bits),                                  \
+		.num_xfer_bytes = DT_INST_PROP(n, xlnx_num_transfer_bits) / 8,                     \
+		.fifo_size = DT_INST_PROP_OR(n, fifo_size, 0),                                     \
+		STARTUP_BLOCK_INIT(n)};                                                            \
+                                                                                                   \
+	static struct xlnx_quadspi_data xlnx_quadspi_data_##n = {                                  \
+		SPI_CONTEXT_INIT_LOCK(xlnx_quadspi_data_##n, ctx),                                 \
+		SPI_CONTEXT_INIT_SYNC(xlnx_quadspi_data_##n, ctx),                                 \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+                                                                                                   \
+	SPI_DEVICE_DT_INST_DEFINE(n, &xlnx_quadspi_init, NULL, &xlnx_quadspi_data_##n,             \
+				  &xlnx_quadspi_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
+				  &xlnx_quadspi_driver_api);                                       \
+                                                                                                   \
+	static void xlnx_quadspi_config_func_##n(const struct device *dev)                         \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), xlnx_quadspi_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(XLNX_QUADSPI_INIT)

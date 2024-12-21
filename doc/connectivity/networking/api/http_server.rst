@@ -231,8 +231,8 @@ resource handler, which echoes received data back to the client:
 .. code-block:: c
 
     static int dyn_handler(struct http_client_ctx *client, enum http_data_status status,
-			               uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
-			               void *user_data)
+                           const struct http_request_ctx *request_ctx,
+                           struct http_response_ctx *response_ctx, void *user_data)
     {
     #define MAX_TEMP_PRINT_LEN 32
         static char print_str[MAX_TEMP_PRINT_LEN];
@@ -247,11 +247,11 @@ resource handler, which echoes received data back to the client:
             return 0;
         }
 
-        processed += len;
+        processed += request_ctx->data_len;
 
         snprintf(print_str, sizeof(print_str), "%s received (%zd bytes)",
-                 http_method_str(method), len);
-        LOG_HEXDUMP_DBG(buffer, len, print_str);
+                 http_method_str(method), request_ctx->data_len);
+        LOG_HEXDUMP_DBG(request_ctx->data, request_ctx->data_len, print_str);
 
         if (status == HTTP_SERVER_DATA_FINAL) {
             LOG_DBG("All data received (%zd bytes).", processed);
@@ -259,8 +259,8 @@ resource handler, which echoes received data back to the client:
         }
 
         /* Echo data back to client */
-        response_ctx->body = buffer;
-        response_ctx->body_len = len;
+        response_ctx->body = request_ctx->data;
+        response_ctx->body_len = request_ctx->data_len;
         response_ctx->final_chunk = (status == HTTP_SERVER_DATA_FINAL);
 
         return 0;
@@ -295,6 +295,14 @@ complete payload has been received), the server reports
 the application shall reset any progress recorded for the resource, and await
 a new request to come. The server guarantees that the resource can only be
 accessed by single client at a time.
+
+The ``request_ctx`` parameter is used to pass request data to the application:
+
+* The ``data`` and ``data_len`` fields pass request data to the application.
+
+* The ``headers``, ``header_count`` and ``headers_status`` fields pass request
+  headers to the application, if
+  :kconfig:option:`CONFIG_HTTP_SERVER_CAPTURE_HEADERS` is enabled.
 
 The ``response_ctx`` field is used by the application to pass response data to
 the HTTP server:
@@ -365,7 +373,9 @@ Accessing request headers
 
 The application can register an interest in any specific HTTP request headers.
 These headers are then stored for each incoming request, and can be accessed
-from within a dynamic resource callback.
+from within a dynamic resource callback. Request headers are only included in
+the first callback for a given request, and are not passed to any subsequent
+callbacks.
 
 This feature must first be enabled with
 :kconfig:option:`CONFIG_HTTP_SERVER_CAPTURE_HEADERS` Kconfig option.

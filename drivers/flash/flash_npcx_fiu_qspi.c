@@ -16,7 +16,7 @@
 #include "flash_npcx_fiu_qspi.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(npcx_fiu_qspi, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(npcx_fiu_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 /* Driver convenience defines */
 #define HAL_INSTANCE(dev) \

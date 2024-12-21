@@ -202,6 +202,49 @@ struct i3c_target_callbacks {
 	int (*read_processed_cb)(struct i3c_target_config *config,
 				 uint8_t *val);
 
+#ifdef CONFIG_I3C_TARGET_BUFFER_MODE
+	/** @brief Function called when a write to the device is completed.
+	 *
+	 * This function is invoked by the controller when it completes
+	 * reception of data from the source buffer to the destination
+	 * buffer in an ongoing write operation to the device.
+	 *
+	 * @param config Configuration structure associated with the
+	 *               device to which the operation is addressed.
+	 *
+	 * @param ptr pointer to the buffer that contains the data to be transferred.
+	 *
+	 * @param len the length of the data to be transferred.
+	 */
+	void (*buf_write_received_cb)(struct i3c_target_config *config, uint8_t *ptr, uint32_t len);
+
+	/** @brief Function called when a read from the device is initiated.
+	 *
+	 * This function is invoked by the controller when the bus is ready to
+	 * provide additional data by buffer for a read operation from the address
+	 * associated with the device.
+	 *
+	 * The value returned in @p **ptr and @p *len will be transmitted. A success
+	 * return shall cause the controller to react to additional read operations.
+	 * An error return shall cause the controller to ignore bus operations until
+	 * a new start condition is received.
+	 *
+	 * @param config the configuration structure associated with the
+	 * device to which the operation is addressed.
+	 *
+	 * @param ptr pointer to storage for the address of data buffer to return
+	 * for the read request.
+	 *
+	 * @param len pointer to storage for the length of the data to be transferred
+	 * for the read request.
+	 *
+	 * @param hdr_mode HDR mode
+	 *
+	 * @return 0 if data has been provided, or a negative error code.
+	 */
+	int (*buf_read_requested_cb)(struct i3c_target_config *config, uint8_t **ptr, uint32_t *len,
+				     uint8_t *hdr_mode);
+#endif
 	/**
 	 * @brief Function called when a stop condition is observed after a
 	 * start condition addressed to a particular device.

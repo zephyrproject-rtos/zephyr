@@ -6,6 +6,7 @@
 
 SIMULATION_ID="cap_broadcast"
 VERBOSITY_LEVEL=2
+EXECUTE_TIMEOUT=120
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 

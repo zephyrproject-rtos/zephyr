@@ -20,5 +20,5 @@ jobs:
           ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
           PR_STAT_ES_INDEX: ${{ vars.PR_STAT_ES_INDEX }}
         run: |
-          pip3 install pygithub elasticsearch
+          pip install pygithub elasticsearch
           python3 ./scripts/ci/stats/merged_prs.py --pull-request ${{ github.event.pull_request.number }} --repo ${{ github.repository }}

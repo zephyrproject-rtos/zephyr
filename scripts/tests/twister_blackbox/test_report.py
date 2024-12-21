@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -174,7 +174,7 @@ class TestReport:
                 pytest.fail(f"Unsupported file type: '{path}'")
 
         for f_platform in test_platforms:
-            platform_path = os.path.join(out_path, f_platform.replace("/", "_"))
+            platform_path = os.path.join(out_path, f_platform.replace("/", "_") + ".json", )
             assert os.path.exists(platform_path), f'file not found {f_platform}'
 
         assert str(sys_exit.value) == '0'
@@ -350,12 +350,12 @@ class TestReport:
             (
                 os.path.join(TEST_DATA, 'tests', 'dummy'),
                 ['--detailed-skipped-report'],
-                {'qemu_x86/atom': 5, 'intel_adl_crb/alder_lake': 1}
+                {'qemu_x86/atom': 6, 'intel_adl_crb/alder_lake': 1}
             ),
             (
                 os.path.join(TEST_DATA, 'tests', 'dummy'),
                 ['--detailed-skipped-report', '--report-filtered'],
-                {'qemu_x86/atom': 6, 'intel_adl_crb/alder_lake': 6}
+                {'qemu_x86/atom': 13, 'intel_adl_crb/alder_lake': 13}
             ),
         ],
         ids=['dummy tests', 'dummy tests with filtered']
@@ -392,7 +392,7 @@ class TestReport:
         'test_path, report_filtered, expected_filtered_count',
         [
             (os.path.join(TEST_DATA, 'tests', 'dummy'), False, 0),
-            (os.path.join(TEST_DATA, 'tests', 'dummy'), True, 4),
+            (os.path.join(TEST_DATA, 'tests', 'dummy'), True, 10),
         ],
         ids=['no filtered', 'with filtered']
     )

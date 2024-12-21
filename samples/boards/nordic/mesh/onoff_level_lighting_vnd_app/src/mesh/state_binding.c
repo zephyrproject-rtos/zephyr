@@ -6,7 +6,6 @@
  */
 
 #include <math.h>
-#include <zephyr/drivers/gpio.h>
 
 #include "ble_mesh.h"
 #include "device_composition.h"

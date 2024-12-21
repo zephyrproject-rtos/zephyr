@@ -104,7 +104,7 @@ static int mbox_plic_set_enabled(const struct device *dev, uint32_t ch, bool ena
 	return 0;
 }
 
-static const struct mbox_driver_api mbox_plic_driver_api = {
+static DEVICE_API(mbox, mbox_plic_driver_api) = {
 	.send = mbox_plic_send,
 	.register_callback = mbox_plic_register_callback,
 	.mtu_get = mbox_plic_mtu_get,

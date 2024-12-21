@@ -310,7 +310,7 @@ static int entropy_nrf5_get_entropy_isr(const struct device *dev,
 
 static int entropy_nrf5_init(const struct device *dev);
 
-static const struct entropy_driver_api entropy_nrf5_api_funcs = {
+static DEVICE_API(entropy, entropy_nrf5_api_funcs) = {
 	.get_entropy = entropy_nrf5_get_entropy,
 	.get_entropy_isr = entropy_nrf5_get_entropy_isr
 };

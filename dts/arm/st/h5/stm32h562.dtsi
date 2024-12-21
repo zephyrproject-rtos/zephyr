@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 /* keep both header files for compatibility */
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
+#include <mem.h>
 
 / {
 	clocks {
@@ -54,6 +55,24 @@
 				reg = <0x42022000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 8U)>;
 			};
+		};
+
+		sram1: memory@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "SRAM1";
+		};
+
+		sram2: memory@20040000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20040000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "SRAM2";
+		};
+
+		sram3: memory@20050000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20050000 DT_SIZE_K(320)>;
+			zephyr,memory-region = "SRAM3";
 		};
 
 		backup_sram: memory@40036400 {
@@ -264,7 +283,8 @@
 					STM32_ADC_RES(8, 0x02)
 					STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		timers4: timers@40000800 {

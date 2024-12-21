@@ -17,3 +17,9 @@ test_gpio_dht22: dht22 {
 	dio-gpios = <&test_gpio 0 0>;
 	/* dht22; */
 };
+
+test_gpio_hcsr04: hcsr04 {
+	compatible = "hc-sr04";
+	trigger-gpios = <&test_gpio 0 0>;
+	echo-gpios = <&test_gpio 1 0>;
+};

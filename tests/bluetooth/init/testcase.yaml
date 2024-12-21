@@ -143,8 +143,6 @@ tests:
       - nrf52dk/nrf52832
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
-      - nrf52840dk/nrf52840
-      - nrf52dk/nrf52832
   bluetooth.init.test_ctlr_ticker:
     extra_args:
       - CONF_FILE=prj_ctlr_ticker.conf
@@ -152,7 +150,6 @@ tests:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
     integration_platforms:
-      - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
   bluetooth.init.test_ctlr_broadcaster:
     extra_args: CONF_FILE=prj_ctlr_broadcaster.conf
@@ -161,6 +158,8 @@ tests:
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
+    integration_platforms:
+      - nrf52dk/nrf52832
   bluetooth.init.test_ctlr_peripheral:
     extra_args: CONF_FILE=prj_ctlr_peripheral.conf
     platform_allow:
@@ -168,6 +167,8 @@ tests:
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
+    integration_platforms:
+      - nrf52dk/nrf52832
   bluetooth.init.test_ctlr_peripheral_priv:
     extra_args: CONF_FILE=prj_ctlr_peripheral_priv.conf
     platform_allow:
@@ -175,6 +176,8 @@ tests:
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
+    integration_platforms:
+      - nrf52840dk/nrf52840
   bluetooth.init.test_ctlr_observer:
     extra_args: CONF_FILE=prj_ctlr_observer.conf
     platform_allow:
@@ -184,8 +187,6 @@ tests:
       - rv32m1_vega/openisa_rv32m1/ri5cy
     integration_platforms:
       - nrf52dk/nrf52832
-      - nrf51dk/nrf51822
-      - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_central:
     extra_args: CONF_FILE=prj_ctlr_central.conf
     platform_allow:
@@ -195,7 +196,6 @@ tests:
       - rv32m1_vega/openisa_rv32m1/ri5cy
     integration_platforms:
       - nrf52dk/nrf52832
-      - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_central_priv:
     extra_args: CONF_FILE=prj_ctlr_central_priv.conf
@@ -206,7 +206,6 @@ tests:
       - rv32m1_vega/openisa_rv32m1/ri5cy
     integration_platforms:
       - nrf52dk/nrf52832
-      - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_broadcaster_ext:
     extra_args: CONF_FILE=prj_ctlr_broadcaster_ext.conf
@@ -343,7 +342,6 @@ tests:
       - rv32m1_vega/openisa_rv32m1/ri5cy
     integration_platforms:
       - nrf52840dk/nrf52840
-      - nrf52dk/nrf52832
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_config_bt_recv_workq_bt:
     extra_args:

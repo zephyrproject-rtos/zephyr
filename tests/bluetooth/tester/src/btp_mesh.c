@@ -290,7 +290,7 @@ static void oob_store_handler(struct k_work *work)
 #endif /* CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD */
 #endif
 
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
 static struct {
 	struct bt_mesh_blob_cli_inputs inputs;
 	struct bt_mesh_blob_target targets[32];
@@ -1023,7 +1023,7 @@ static uint8_t proxy_solicit(const void *cmd, uint16_t cmd_len,
 static struct bt_mesh_brg_cfg_cli brg_cfg_cli;
 #endif /* CONFIG_BT_MESH_BRG_CFG_CLI */
 
-static const struct bt_mesh_model root_models[] = {
+static const struct bt_mesh_model primary_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub, health_srv_meta),
@@ -1052,15 +1052,6 @@ static const struct bt_mesh_model root_models[] = {
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 	BT_MESH_MODEL_RPR_SRV,
 #endif
-#if defined(CONFIG_BT_MESH_DFD_SRV)
-	BT_MESH_MODEL_DFD_SRV(&dfd_srv),
-#endif
-#if defined(CONFIG_BT_MESH_DFU_SRV)
-	BT_MESH_MODEL_DFU_SRV(&dfu_srv),
-#endif
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
-	BT_MESH_MODEL_BLOB_CLI(&blob_cli),
-#endif
 #if defined(CONFIG_BT_MESH_PRIV_BEACON_SRV)
 	BT_MESH_MODEL_PRIV_BEACON_SRV,
 #endif
@@ -1085,7 +1076,23 @@ static const struct bt_mesh_model root_models[] = {
 
 };
 
-static const struct bt_mesh_model root_models_alt[] = {
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+static const struct bt_mesh_model dfu_distributor_models[] = {BT_MESH_MODEL_DFD_SRV(&dfd_srv)};
+#endif
+
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+static const struct bt_mesh_model dfu_target_models[] = {
+	BT_MESH_MODEL_DFU_SRV(&dfu_srv),
+};
+#endif
+
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
+static const struct bt_mesh_model blob_client_models[] = {
+	BT_MESH_MODEL_BLOB_CLI(&blob_cli),
+};
+#endif
+
+static const struct bt_mesh_model primary_models_alt[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub, health_srv_meta_alt),
@@ -1114,15 +1121,6 @@ static const struct bt_mesh_model root_models_alt[] = {
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 	BT_MESH_MODEL_RPR_SRV,
 #endif
-#if defined(CONFIG_BT_MESH_DFD_SRV)
-	BT_MESH_MODEL_DFD_SRV(&dfd_srv),
-#endif
-#if defined(CONFIG_BT_MESH_DFU_SRV)
-	BT_MESH_MODEL_DFU_SRV(&dfu_srv),
-#endif
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
-	BT_MESH_MODEL_BLOB_CLI(&blob_cli),
-#endif
 #if defined(CONFIG_BT_MESH_PRIV_BEACON_SRV)
 	BT_MESH_MODEL_PRIV_BEACON_SRV,
 #endif
@@ -1146,6 +1144,7 @@ static const struct bt_mesh_model root_models_alt[] = {
 #endif
 
 };
+
 struct model_data *lookup_model_bound(uint16_t id)
 {
 	int i;
@@ -1164,11 +1163,29 @@ static const struct bt_mesh_model vnd_models[] = {
 };
 
 static const struct bt_mesh_elem elements[] = {
-	BT_MESH_ELEM(0, root_models, vnd_models),
+	BT_MESH_ELEM(0, primary_models, vnd_models),
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+	BT_MESH_ELEM(0, dfu_distributor_models, BT_MESH_MODEL_NONE),
+#endif
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+	BT_MESH_ELEM(0, dfu_target_models, BT_MESH_MODEL_NONE),
+#endif
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
+	BT_MESH_ELEM(0, blob_client_models, BT_MESH_MODEL_NONE),
+#endif
 };
 
 static const struct bt_mesh_elem elements_alt[] = {
-	BT_MESH_ELEM(0, root_models_alt, vnd_models),
+	BT_MESH_ELEM(0, primary_models_alt, vnd_models),
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+	BT_MESH_ELEM(0, dfu_distributor_models, BT_MESH_MODEL_NONE),
+#endif
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+	BT_MESH_ELEM(0, dfu_target_models, BT_MESH_MODEL_NONE),
+#endif
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
+	BT_MESH_ELEM(0, blob_client_models, BT_MESH_MODEL_NONE),
+#endif
 };
 
 static void link_open(bt_mesh_prov_bearer_t bearer)
@@ -4492,7 +4509,7 @@ static uint8_t dfu_firmware_update_apply(const void *cmd, uint16_t cmd_len,
 }
 #endif
 
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
 static void blob_cli_inputs_prepare(uint16_t group, uint16_t app_idx)
 {
 	int i;
@@ -5315,7 +5332,7 @@ static const struct btp_handler mdl_handlers[] = {
 		.func = dfu_firmware_update_apply,
 	},
 #endif
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
 	{
 		.opcode = BTP_MMDL_BLOB_INFO_GET,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,

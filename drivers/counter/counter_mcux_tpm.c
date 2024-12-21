@@ -251,7 +251,7 @@ static int mcux_tpm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_tpm_driver_api = {
+static DEVICE_API(counter, mcux_tpm_driver_api) = {
 	.start = mcux_tpm_start,
 	.stop = mcux_tpm_stop,
 	.get_value = mcux_tpm_get_value,

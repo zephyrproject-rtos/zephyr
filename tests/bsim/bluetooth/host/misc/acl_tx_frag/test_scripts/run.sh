@@ -9,6 +9,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 test_name="$(guess_test_long_name)"
 simulation_id=${test_name}
 verbosity_level=2
+EXECUTE_TIMEOUT=120
 
 # sixty-second (maximum) sim time.
 # The test will exit simulation as soon as it has passed.

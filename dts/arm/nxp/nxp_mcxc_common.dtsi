@@ -35,7 +35,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 		status = "okay";
 	};
 
@@ -67,7 +67,7 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			fsec = <0xff>;
+			fsec = <0xfe>;
 			fopt = <0x3d>;
 			config-field-offset = <0x400>;
 
@@ -107,31 +107,31 @@
 		};
 
 		porta: pinmux@40049000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
 		};
 
 		portb: pinmux@4004a000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
 		};
 
 		portc: pinmux@4004b000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
 		};
 
 		portd: pinmux@4004c000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
 		};
 
 		porte: pinmux@4004d000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
 		};
@@ -223,7 +223,7 @@
 		};
 
 		lpuart0: uart@40054000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x40054000 0x1000>;
 			interrupts = <12 0>;
 			clocks = <&sim KINETIS_SIM_MCGPCLK 0x1038 20>;
@@ -231,7 +231,7 @@
 		};
 
 		lpuart1: uart@40055000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x40055000 0x1000>;
 			interrupts = <13 0>;
 			clocks = <&sim KINETIS_SIM_MCGPCLK 0x1038 21>;
@@ -252,6 +252,7 @@
 			reg = <0x40038000 0x88>;
 			interrupts = <17 0>;
 			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 24>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -261,6 +262,7 @@
 			reg = <0x40039000 0x88>;
 			interrupts = <18 0>;
 			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 25>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -270,6 +272,7 @@
 			reg = <0x4003a000 0x88>;
 			interrupts = <19 0>;
 			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 26>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -287,7 +290,7 @@
 		};
 
 		rtc: rtc@4003d000 {
-			compatible = "nxp,kinetis-rtc";
+			compatible = "nxp,rtc";
 			reg = <0x4003d000 0x1000>;
 			interrupts = <20 0>, <21 0>;
 			interrupt-names = "alarm", "seconds";

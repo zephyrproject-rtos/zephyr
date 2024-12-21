@@ -106,7 +106,7 @@ static int dummy_display_set_pixel_format(const struct device *dev,
 	return 0;
 }
 
-static const struct display_driver_api dummy_display_api = {
+static DEVICE_API(display, dummy_display_api) = {
 	.blanking_on = dummy_display_blanking_on,
 	.blanking_off = dummy_display_blanking_off,
 	.write = dummy_display_write,

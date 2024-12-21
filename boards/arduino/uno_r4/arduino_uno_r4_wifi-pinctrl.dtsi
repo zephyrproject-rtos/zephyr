@@ -4,12 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r7fa4m1xxxxxx.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 
 &pinctrl {
 	sci2_default: sci2_default {
 		group1 {
-			pinmux = <P301_RXD2>, <P302_TXD2>;
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_2, 3, 2)>;
+			drive-strength = "medium";
+		};
+		group2 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_2, 3, 1)>;
 		};
 	};
 };

@@ -395,7 +395,7 @@ static int entropy_smartbond_pm_action(const struct device *dev, enum pm_device_
 }
 #endif
 
-static const struct entropy_driver_api entropy_smartbond_api_funcs = {
+static DEVICE_API(entropy, entropy_smartbond_api_funcs) = {
 	.get_entropy = entropy_smartbond_get_entropy,
 	.get_entropy_isr = entropy_smartbond_get_entropy_isr};
 

@@ -12,4 +12,5 @@
 	etrsources = <(NRF_TDDCONF_SOURCE_STMMAINCORE | NRF_TDDCONF_SOURCE_STMPPR |
 		NRF_TDDCONF_SOURCE_STMFLPR)>;
 	portconfig = <0>;
+	etrbuffer = <&etr_buffer>;
 };

@@ -95,7 +95,7 @@ static inline int numaker_scc_configure(const struct device *dev, clock_control_
 }
 
 /* System clock controller driver registration */
-static const struct clock_control_driver_api numaker_scc_api = {
+static DEVICE_API(clock_control, numaker_scc_api) = {
 	.on = numaker_scc_on,
 	.off = numaker_scc_off,
 	.get_rate = numaker_scc_get_rate,

@@ -131,7 +131,7 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in3_pa3 &adc1_in9_pb1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 

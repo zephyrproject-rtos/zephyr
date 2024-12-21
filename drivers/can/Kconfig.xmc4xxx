@@ -6,6 +6,7 @@ config CAN_XMC4XXX
 	bool "Infineon XMC4xxx CAN Driver"
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_CAN_NODE_ENABLED
+	select PINCTRL
 	help
 	  Enable Infineon XMC4xxx CAN Driver
 

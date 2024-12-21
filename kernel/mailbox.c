@@ -216,7 +216,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	k_spinlock_key_t key;
 
 	/* save sender id so it can be used during message matching */
-	tx_msg->rx_source_thread = _current;
+	tx_msg->rx_source_thread = arch_current_thread();
 
 	/* finish readying sending thread (actual or dummy) for send */
 	sending_thread = tx_msg->_syncing_thread;
@@ -296,7 +296,7 @@ int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	       k_timeout_t timeout)
 {
 	/* configure things for a synchronous send, then send the message */
-	tx_msg->_syncing_thread = _current;
+	tx_msg->_syncing_thread = arch_current_thread();
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mbox, put, mbox, timeout);
 
@@ -321,7 +321,7 @@ void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	 */
 	mbox_async_alloc(&async);
 
-	async->thread.prio = _current->base.prio;
+	async->thread.prio = arch_current_thread()->base.prio;
 
 	async->tx_msg = *tx_msg;
 	async->tx_msg._syncing_thread = (struct k_thread *)&async->thread;
@@ -388,7 +388,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	int result;
 
 	/* save receiver id so it can be used during message matching */
-	rx_msg->tx_target_thread = _current;
+	rx_msg->tx_target_thread = arch_current_thread();
 
 	/* search mailbox's tx queue for a compatible sender */
 	key = k_spin_lock(&mbox->lock);
@@ -425,7 +425,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, get, mbox, timeout);
 
 	/* wait until a matching sender appears or a timeout occurs */
-	_current->base.swap_data = rx_msg;
+	arch_current_thread()->base.swap_data = rx_msg;
 	result = z_pend_curr(&mbox->lock, key, &mbox->rx_msg_queue, timeout);
 
 	/* consume message data immediately, if needed */

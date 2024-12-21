@@ -1,10 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-zephyr_library_sources(libc-hooks.c)
+zephyr_library_sources(
+  assert.c
+  cbprintf.c
+  chk_fail.c
+  errno_wrap.c
+  exit.c
+  locks.c
+  stdio.c
+  )
 
-# Do not allow LTO when compiling libc-hooks.c file
-set_source_files_properties(libc-hooks.c PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+zephyr_library_compile_options(-fno-lto)
 
 # define __LINUX_ERRNO_EXTENSIONS__ so we get errno defines like -ESHUTDOWN
 # used by the network stack

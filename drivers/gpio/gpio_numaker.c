@@ -198,7 +198,7 @@ static int gpio_numaker_manage_callback(const struct device *dev, struct gpio_ca
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static const struct gpio_driver_api gpio_numaker_api = {
+static DEVICE_API(gpio, gpio_numaker_api) = {
 	.pin_configure = gpio_numaker_configure,
 	.port_get_raw = gpio_numaker_port_get_raw,
 	.port_set_masked_raw = gpio_numaker_port_set_masked_raw,

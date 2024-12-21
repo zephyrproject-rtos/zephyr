@@ -398,7 +398,7 @@ static int mcux_lpcmp_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api mcux_lpcmp_driver_api = {
+static DEVICE_API(sensor, mcux_lpcmp_driver_api) = {
 	.attr_set = mcux_lpcmp_attr_set,
 	.attr_get = mcux_lpcmp_attr_get,
 #ifdef CONFIG_MCUX_LPCMP_TRIGGER

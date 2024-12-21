@@ -1765,6 +1765,7 @@ struct ieee802154_radio_api {
 	 */
 	int (*stop)(const struct device *dev);
 
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 	/**
 	 * @brief Start continuous carrier wave transmission.
 	 *
@@ -1785,6 +1786,30 @@ struct ieee802154_radio_api {
 	 * @retval -EIO not started
 	 */
 	int (*continuous_carrier)(const struct device *dev);
+
+	/**
+	 * @brief Start modulated carrier wave transmission.
+	 *
+	 * @details When the radio is emitting modulated carrier signals, it
+	 * blocks all transmissions on the selected channel.
+	 * This function is to be called only during radio
+	 * tests. Do not use it during normal device operation.
+	 *
+	 * @note Implementations MAY **sleep** and will usually NOT be
+	 * **isr-ok**. MAY be called in any interface state once the driver is
+	 * fully initialized ("ready").
+	 *
+	 * @param dev pointer to IEEE 802.15.4 driver device
+	 * @param data Pointer to a buffer to modulate the carrier with.
+	 * The first byte is the data length.
+	 *
+	 * @retval 0 modulated carrier wave transmission started
+	 * @retval -EALREADY The driver was already in "TESTING" state and
+	 * emitting a modulated carrier.
+	 * @retval -EIO not started
+	 */
+	int (*modulated_carrier)(const struct device *dev, const uint8_t *data);
+#endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
 
 	/**
 	 * @brief Set or update driver configuration.

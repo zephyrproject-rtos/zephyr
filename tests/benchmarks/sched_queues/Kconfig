@@ -21,9 +21,16 @@ config BENCHMARK_NUM_THREADS
 	  stress on the ready queue and better highlight the performance
 	  differences as the number of threads in the ready queue changes.
 
+config BENCHMARK_RECORDING
+	bool "Log statistics as records"
+	default n
+	help
+	  Log summary statistics as records to pass results
+	  to the Twister JSON report and recording.csv file(s).
+
 config BENCHMARK_VERBOSE
 	bool "Display detailed results"
-	default y
+	default n
 	help
 	  This option displays the average time of all the iterations done for
 	  each thread in the tests. This generates large amounts of output. To

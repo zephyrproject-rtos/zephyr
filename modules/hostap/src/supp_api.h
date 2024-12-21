@@ -157,6 +157,15 @@ int supplicant_set_power_save(const struct device *dev, struct wifi_ps_params *p
 int supplicant_set_twt(const struct device *dev, struct wifi_twt_params *params);
 
 /**
+ * @brief Set Wi-Fi BTWT parameters
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param params BTWT parameters to set
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_set_btwt(const struct device *dev, struct wifi_twt_params *params);
+
+/**
  * @brief Get Wi-Fi power save configuration
  *
  * @param dev Wi-Fi interface name to use
@@ -183,7 +192,8 @@ int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_
  */
 int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 /** Set Wi-Fi enterprise mode CA/client Cert and key
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -242,6 +252,23 @@ int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_thr
 int supplicant_btm_query(const struct device *dev, uint8_t reason);
 #endif
 
+/** Send legacy roam
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_legacy_roam(const struct device *dev);
+
+/** Judge ap whether support the capability
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param capab is the capability to judge
+ *
+ * @return 1 if support, 0 if not support
+ */
+int supplicant_bss_ext_capab(const struct device *dev, int capab);
+
 /** Get Wi-Fi connection parameters recently used
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -285,6 +312,17 @@ static inline int hapd_state(const struct device *dev, int *state)
 {
 	return -EINVAL;
 }
+#endif
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
+/** Start AP WPS PBC/PIN
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param params wps operarion parameters
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_ap_wps_config(const struct device *dev, struct wifi_wps_config_params *params);
 #endif
 
 /**

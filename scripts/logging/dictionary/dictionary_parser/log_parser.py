@@ -46,6 +46,9 @@ def formalize_fmt_string(fmt_str):
     # No %p for pointer either, so use %x
     new_str = new_str.replace("%p", "0x%x")
 
+    # No %z support, use %d instead
+    new_str = new_str.replace("%z", "%d")
+
     return new_str
 
 

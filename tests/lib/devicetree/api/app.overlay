@@ -506,6 +506,71 @@
 			status = "okay";
 		};
 
+		test_video0: video@10010000 {
+			compatible = "vnd,video-single-port";
+			reg = <0x10010000 0x1000>;
+
+			test_video0_port: port {
+				test_video0_out: endpoint {
+					remote-endpoint-label = "test_video2_port0_in0";
+				};
+			};
+		};
+
+		test_video1: video@10011000 {
+			compatible = "vnd,video-single-port";
+			reg = <0x10011000 0x1000>;
+
+			test_video1_port: port {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				test_video1_out0: endpoint@0 {
+					reg = <0x0>;
+					remote-endpoint-label = "test_video2_port0_in1";
+				};
+
+				test_video1_out1: endpoint@1 {
+					reg = <0x1>;
+					remote-endpoint-label = "test_video2_port1_in";
+				};
+			};
+		};
+
+		test_video2: video@10012000 {
+			compatible = "vnd,video-multi-port";
+			reg = <0x10012000 0x1000>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				test_video2_port0: port@0 {
+					reg = <0x0>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					test_video2_port0_in0: endpoint@0 {
+						reg = <0x0>;
+						remote-endpoint-label = "test_video0_out";
+					};
+
+					test_video2_port0_in1: endpoint@1 {
+						reg = <0x1>;
+						remote-endpoint-label = "test_video1_out0";
+					};
+				};
+
+				test_video2_port1: port@1 {
+					reg = <0x1>;
+
+					test_video2_port1_in: endpoint {
+						remote-endpoint-label = "test_video1_out1";
+					};
+				};
+			};
+		};
+
 		test_pwm1: pwm@55551111 {
 			compatible = "vnd,pwm";
 			#pwm-cells = <3>;
@@ -568,6 +633,18 @@
 			reg = < 0x55556666 0x1000 >;
 			status = "okay";
 			phys = <&test_transceiver1>;
+		};
+
+		test_parent: test-parent {
+			compatible = "vnd,parent-bindings";
+
+			test_parent_a: parent-a {
+				val = <0>;
+
+				test_parent_b: parent-b {
+					val = <0>;
+				};
+			};
 		};
 
 		/* there should only be one of these */
@@ -638,18 +715,22 @@
 			status = "okay";
 			foo = <1>;
 			bar = <2>;
+			bool-foo;
+			bool-bar;
 		};
 
 		device-with-props-1 {
 			compatible = "vnd,device-with-props";
 			status = "okay";
 			foo = <2>;
+			bool-foo;
 		};
 
 		device-with-props-2 {
 			compatible = "vnd,device-with-props";
 			status = "disabled";
 			baz = <1>;
+			bool-baz;
 		};
 
 		test_string_token_0: string-token-0 {

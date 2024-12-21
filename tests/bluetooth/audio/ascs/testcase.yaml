@@ -16,7 +16,12 @@ tests:
   bluetooth.audio.ascs.test_unicast_client_enabled:
     type: unit
     extra_configs:
+      - CONFIG_BT_CENTRAL=y
+      - CONFIG_BT_ISO_CENTRAL=y
       - CONFIG_BT_BAP_UNICAST_CLIENT=y
+      - CONFIG_BT_GATT_CLIENT=y
+      - CONFIG_BT_GATT_AUTO_DISCOVER_CCC=y
+      - CONFIG_BT_GATT_AUTO_UPDATE_MTU=y
   bluetooth.audio.ascs.test_stream_pair:
     type: unit
     extra_configs:

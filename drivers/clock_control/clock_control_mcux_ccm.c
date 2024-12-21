@@ -489,7 +489,7 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 
 
 
-static const struct clock_control_driver_api mcux_ccm_driver_api = {
+static DEVICE_API(clock_control, mcux_ccm_driver_api) = {
 	.on = mcux_ccm_on,
 	.off = mcux_ccm_off,
 	.get_rate = mcux_ccm_get_subsys_rate,

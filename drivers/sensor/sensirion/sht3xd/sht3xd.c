@@ -156,7 +156,7 @@ static int sht3xd_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api sht3xd_driver_api = {
+static DEVICE_API(sensor, sht3xd_driver_api) = {
 #ifdef CONFIG_SHT3XD_TRIGGER
 	.attr_set = sht3xd_attr_set,
 	.trigger_set = sht3xd_trigger_set,

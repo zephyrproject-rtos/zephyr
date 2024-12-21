@@ -94,6 +94,8 @@ jobs:
       run: |
         git config --global user.email "actions@zephyrproject.org"
         git config --global user.name "Github Actions"
+        rm -fr ".git/rebase-apply"
+        rm -fr ".git/rebase-merge"
         git rebase origin/${BASE_REF}
         git clean -f -d
         git log --graph --oneline HEAD...${PR_HEAD}
@@ -106,11 +108,10 @@ jobs:
 
     - name: install-pip
       run: |
-        sudo pip3 install -U setuptools wheel pip
-        pip3 install -r doc/requirements.txt
-        pip3 install west==${WEST_VERSION}
-        pip3 install cmake==${CMAKE_VERSION}
-        pip3 install coverxygen
+        pip install -r doc/requirements.txt
+        pip install west==${WEST_VERSION}
+        pip install cmake==${CMAKE_VERSION}
+        pip install coverxygen
 
     - name: west setup
       run: |
@@ -221,10 +222,9 @@ jobs:
 
     - name: install-pip
       run: |
-        pip3 install -U setuptools wheel pip
-        pip3 install -r doc/requirements.txt
-        pip3 install west==${WEST_VERSION}
-        pip3 install cmake==${CMAKE_VERSION}
+        pip install -r doc/requirements.txt
+        pip install west==${WEST_VERSION}
+        pip install cmake==${CMAKE_VERSION}
 
     - name: west setup
       run: |

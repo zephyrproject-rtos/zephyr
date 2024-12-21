@@ -68,6 +68,8 @@ static int cmd_net_ipv4(const struct shell *sh, size_t argc, char *argv[])
 	PR("IPv4 conflict detection support           : %s\n",
 	   IS_ENABLED(CONFIG_NET_IPV4_ACD) ? "enabled" :
 	   "disabled");
+	PR("Path MTU Discovery (PMTU)                 : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV4_PMTU) ? "enabled" : "disabled");
 #endif /* CONFIG_NET_NATIVE_IPV4 */
 
 #if defined(CONFIG_NET_IPV4)

@@ -406,7 +406,7 @@ static int auxdisplay_itron_write(const struct device *dev, const uint8_t *data,
 	return send_cmd(dev, data, len, false, true);
 }
 
-static const struct auxdisplay_driver_api auxdisplay_itron_auxdisplay_api = {
+static DEVICE_API(auxdisplay, auxdisplay_itron_auxdisplay_api) = {
 	.display_on = auxdisplay_itron_display_on,
 	.display_off = auxdisplay_itron_display_off,
 	.cursor_set_enabled = auxdisplay_itron_cursor_set_enabled,

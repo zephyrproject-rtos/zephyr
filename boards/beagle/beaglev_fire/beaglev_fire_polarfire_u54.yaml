@@ -4,7 +4,7 @@ type: mcu
 arch: riscv
 toolchain:
   - zephyr
-ram: 3840
+ram: 2048000
 testing:
   ignore_tags:
     - net

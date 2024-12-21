@@ -642,7 +642,7 @@ skip_int_gpio:
 	return 0;
 }
 
-static const struct ethphy_driver_api rt_rtl8211f_phy_api = {
+static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 	.get_link = phy_rt_rtl8211f_get_link,
 	.cfg_link = phy_rt_rtl8211f_cfg_link,
 	.link_cb_set = phy_rt_rtl8211f_link_cb_set,

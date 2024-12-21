@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2024 Norik Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "octopus_som_common-pinctrl.dtsi"
+
+/ {
+	model = "Norik Octopus SoM";
+	compatible = "norik,octopus-som";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 7 0>;
+			label = "Green LED 1";
+		};
+
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	sim_select: sim_select {
+		compatible = "norik,sim_select";
+		sim-gpios= <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		sim = "external";
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		watchdog0 = &wdt0;
+		accel0 = &adxl362;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	adxl362: adxl362@0 {
+		compatible = "adi,adxl362";
+		spi-max-frequency = <8000000>;
+		reg = <0>;
+		int1-gpios = <&gpio0 12 0>;
+	};
+};
+
+/* Include default memory partition configuration file */
+#include <common/nordic/nrf91xx_partition.dtsi>

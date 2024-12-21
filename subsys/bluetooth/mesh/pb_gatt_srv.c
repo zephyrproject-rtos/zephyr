@@ -26,6 +26,7 @@
 #include "foundation.h"
 #include "access.h"
 #include "proxy.h"
+#include "gatt.h"
 #include "proxy_msg.h"
 #include "pb_gatt_srv.h"
 
@@ -242,13 +243,12 @@ static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
 	prov_sd_len += 1;
 
 dev_name:
-#if defined(CONFIG_BT_MESH_PB_GATT_USE_DEVICE_NAME)
-	prov_sd[prov_sd_len].type = BT_DATA_NAME_COMPLETE;
-	prov_sd[prov_sd_len].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
-	prov_sd[prov_sd_len].data = CONFIG_BT_DEVICE_NAME;
-
-	prov_sd_len += 1;
-#endif
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT_USE_DEVICE_NAME)) {
+		prov_sd[prov_sd_len].type = BT_DATA_NAME_COMPLETE;
+		prov_sd[prov_sd_len].data_len = BT_DEVICE_NAME_LEN;
+		prov_sd[prov_sd_len].data = BT_DEVICE_NAME;
+		prov_sd_len += 1;
+	}
 
 	return prov_sd_len;
 }

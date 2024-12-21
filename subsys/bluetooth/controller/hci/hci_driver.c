@@ -900,7 +900,7 @@ static int hci_driver_close(const struct device *dev)
 	return 0;
 }
 
-static const struct bt_hci_driver_api hci_driver_api = {
+static DEVICE_API(bt_hci, hci_driver_api) = {
 	.open = hci_driver_open,
 	.close	= hci_driver_close,
 	.send = hci_driver_send,

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT	nxp_kinetis_dspi
+#define DT_DRV_COMPAT	nxp_dspi
 
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
@@ -795,7 +795,7 @@ static int spi_mcux_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_mcux_driver_api = {
+static DEVICE_API(spi, spi_mcux_driver_api) = {
 	.transceive = spi_mcux_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
@@ -906,23 +906,23 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		    DT_INST_PROP_OR(id, ctar, 0),			\
 		.samplePoint =						\
 		    DT_INST_PROP_OR(id, sample_point, 0),		\
-		.enable_continuous_sck =					\
+		.enable_continuous_sck =				\
 		    DT_INST_PROP(id, continuous_sck),			\
 		.enable_rxfifo_overwrite =				\
 		    DT_INST_PROP(id, rx_fifo_overwrite),		\
-		.enable_modified_timing_format =				\
+		.enable_modified_timing_format =			\
 		    DT_INST_PROP(id, modified_timing_format),		\
 		.is_dma_chn_shared =					\
 		    DT_INST_PROP(id, nxp_rx_tx_chn_share),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 	};								\
-	DEVICE_DT_INST_DEFINE(id,					\
+	SPI_DEVICE_DT_INST_DEFINE(id,					\
 			    spi_mcux_init,				\
 			    NULL,					\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_SPI_INIT_PRIORITY,		\
+			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_mcux_driver_api);			\
 	static void spi_mcux_config_func_##id(const struct device *dev)	\
 	{								\

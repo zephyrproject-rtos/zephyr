@@ -283,7 +283,7 @@ config XTENSA_SYSCALL_USE_HELPER
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
 	depends on (XTENSA_MMU || XTENSA_MPU) && USERSPACE
 	help
-	  Use syscall helpers for passing more then 3 arguments.
+	  Use syscall helpers for passing more than 3 arguments.
 	  This is a workaround for toolchains where they have
 	  issue modeling register usage.
 

@@ -81,6 +81,10 @@ uart2: &scb2 {
 	status = "okay";
 };
 
+&mcwdt0 {
+	status = "okay";
+};
+
 &bluetooth {
 	status = "okay";
 };

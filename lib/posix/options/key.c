@@ -13,14 +13,9 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/sem.h>
 
-struct pthread_key_data {
-	sys_snode_t node;
-	pthread_thread_data thread_data;
-};
-
 LOG_MODULE_REGISTER(pthread_key, CONFIG_PTHREAD_KEY_LOG_LEVEL);
 
-static SYS_SEM_DEFINE(pthread_key_lock, 1, 1);
+SYS_SEM_DEFINE(pthread_key_lock, 1, 1);
 
 /* This is non-standard (i.e. an implementation detail) */
 #define PTHREAD_KEY_INITIALIZER (-1)

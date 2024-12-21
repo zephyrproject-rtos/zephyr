@@ -119,6 +119,7 @@ static int spi_config(const struct device *dev,
 {
 	const struct spi_gecko_config *gecko_config = dev->config;
 	struct spi_gecko_data *data = dev->data;
+	mem_addr_t ctrl_reg = (mem_addr_t)&gecko_config->base->CTRL;
 	uint32_t spi_frequency;
 
 #ifdef CONFIG_CLOCK_CONTROL
@@ -147,13 +148,9 @@ static int spi_config(const struct device *dev,
 	}
 
 	if (config->operation & SPI_CS_ACTIVE_HIGH) {
-		LOG_ERR("CS active high not supported");
-		return -ENOTSUP;
-	}
-
-	if (config->operation & SPI_LOCK_ON) {
-		LOG_ERR("Lock On not supported");
-		return -ENOTSUP;
+		sys_set_bit(ctrl_reg, _USART_CTRL_CSINV_SHIFT);
+	} else {
+		sys_clear_bit(ctrl_reg, _USART_CTRL_CSINV_SHIFT);
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
@@ -163,8 +160,9 @@ static int spi_config(const struct device *dev,
 	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
-		return -ENOTSUP;
+		sys_clear_bit(ctrl_reg, _USART_CTRL_MSBF_SHIFT);
+	} else {
+		sys_set_bit(ctrl_reg, _USART_CTRL_MSBF_SHIFT);
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
@@ -372,6 +370,8 @@ static int spi_gecko_init(const struct device *dev)
 	/* Enable the peripheral */
 	config->base->CMD = (uint32_t) usartEnable;
 
+	spi_context_unlock_unconditionally(&data->ctx);
+
 	return 0;
 }
 
@@ -384,13 +384,19 @@ static int spi_gecko_transceive(const struct device *dev,
 	uint16_t control = 0;
 	int ret;
 
+	spi_context_lock(&data->ctx, false, NULL, NULL, config);
+
 	ret = spi_config(dev, config, &control);
 	if (ret < 0) {
+		spi_context_release(&data->ctx, ret);
 		return ret;
 	}
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 	spi_gecko_xfer(dev, config);
+
+	spi_context_release(&data->ctx, ret);
+
 	return 0;
 }
 
@@ -408,16 +414,15 @@ static int spi_gecko_transceive_async(const struct device *dev,
 static int spi_gecko_release(const struct device *dev,
 			     const struct spi_config *config)
 {
-	const struct spi_gecko_config *gecko_config = dev->config;
+	struct spi_gecko_data *data = dev->data;
 
-	if (!(gecko_config->base->STATUS & USART_STATUS_TXIDLE)) {
-		return -EBUSY;
-	}
+	spi_context_unlock_unconditionally(&data->ctx);
+
 	return 0;
 }
 
 /* Device Instantiation */
-static const struct spi_driver_api spi_gecko_api = {
+static DEVICE_API(spi, spi_gecko_api) = {
 	.transceive = spi_gecko_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_gecko_transceive_async,
@@ -443,7 +448,7 @@ static const struct spi_driver_api spi_gecko_api = {
 	    GET_GECKO_USART_CLOCK(n) \
 	    .clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000) \
 	}; \
-	DEVICE_DT_INST_DEFINE(n, \
+	SPI_DEVICE_DT_INST_DEFINE(n, \
 			spi_gecko_init, \
 			NULL, \
 			&spi_gecko_data_##n, \
@@ -476,7 +481,7 @@ static const struct spi_driver_api spi_gecko_api = {
 	    .loc_tx = DT_INST_PROP_BY_IDX(n, location_tx, 0), \
 	    .loc_clk = DT_INST_PROP_BY_IDX(n, location_clk, 0), \
 	}; \
-	DEVICE_DT_INST_DEFINE(n, \
+	SPI_DEVICE_DT_INST_DEFINE(n, \
 			spi_gecko_init, \
 			NULL, \
 			&spi_gecko_data_##n, \

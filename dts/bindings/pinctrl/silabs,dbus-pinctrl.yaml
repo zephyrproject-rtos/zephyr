@@ -1,0 +1,128 @@
+# Copyright (c) 2024 Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The Silabs pin controller is a singleton node responsible for controlling
+    pin function selection and pin properties. For example, you can use this
+    node to route USART0 RX to pin PA1 and enable the pull-up resistor on the
+    pin. This pin controller is used for devices that use DBUS (Digital Bus)
+    for alternate function configuration, including Series 2 devices.
+
+    The pinctrl settings are referenced in a device tree peripheral node. For
+    example when configuring a USART:
+
+      &usart0 {
+        compatible = "silabs,gecko-usart";
+        pinctrl-0 = <&usart0_default>;
+        pinctrl-names = "default";
+      }
+
+    pinctrl-0 is a phandle that stores the pin settings for the peripheral, in
+    this example &usart0_default. This phandle is defined as a child node of the
+    'pinctrl' node, typically in a board-pinctrl.dtsi file in the board
+    directory or a device tree overlay in the application:
+
+      &pinctrl {
+        /* Configuration for USART0 peripheral, default state */
+        usart0_default: usart0_default {
+          /* Group of output pins with shared properties (name is arbitrary) */
+          group0 {
+            /* Configure PA8 as USART0 TX in GPIO DBUS */
+            pins = <USART0_TX_PA8>;
+            /* Configure GPIO to push-pull mode */
+            drive-push-pull;
+            /* Set DOUT high */
+            output-high;
+          };
+          /* Group of input pins with shared properties (name is arbitrary) */
+          group1 {
+            /* Configure PA9 as USART0 RX in GPIO DBUS */
+            pins = <USART0_RX_PA9>;
+            /* Configure GPIO to input mode */
+            input-enable;
+            /* Enable input glitch filter */
+            silabs,input-filter;
+          };
+        };
+      };
+
+    The 'usart0_default' child node encodes the pin configurations for a
+    particular state of the device, the default (active) state.
+
+    Pin configurations are organized in groups within each child node. Each
+    group can specify a list of pin function selections in the `pins` property,
+    that all will be configured with the same GPIO mode as given by the rest
+    of the properties on the group.
+
+    The possible pin properties are as follows:
+
+    - input-disable: Configure GPIO to disabled mode. Setting this property is
+                     optional, as pins are disabled by default. If the "Input
+                     disabled with pull-up" mode is desired, the property must
+                     be set in combination with bias-pull-up.
+    - input-enable: Configure GPIO to input mode.
+    - drive-push-pull: Configure GPIO to push-pull mode.
+    - drive-open-drain: Configure GPIO to open-drain (wired-AND) mode.
+    - drive-open-source: Configure GPIO to open-source (wired-OR) mode.
+
+    Only one of the above properties must be set at a time, as they are mutually
+    exclusive. Additional properties may be combined with the above ones:
+
+    - bias-pull-down: Enable pull-down resistor. Allowed in input-enable and
+                      drive-open-source modes.
+    - bias-pull-up: Enable pull-up resistor. Allowed in input-disable,
+                    input-enable and drive-open-drain modes.
+    - output-high: Drive GPIO high. Allowed in drive-push-pull mode.
+    - output-low: Drive GPIO low. Allowed in drive-push-pull mode. Setting
+                  this property is optional, leaving it out has the same effect.
+    - silabs,input-filter: Enable input glitch filter. Allowed in input-enable
+                           and drive-open-drain modes.
+    - silabs,alternate-port-control: Use alternate port control settings.
+                                     Allowed in drive-push-pull and
+                                     drive-open-drain modes.
+
+compatible: "silabs,dbus-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Silabs DBUS pin controller pin configuration. Each child node defines
+    the configuration for a particular group of pins.
+  child-binding:
+    description: |
+      Silabs DBUS pin controller pin configuration group.
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+          - drive-open-drain
+          - drive-open-source
+          - drive-push-pull
+          - input-disable
+          - input-enable
+          - output-high
+          - output-low
+
+    properties:
+      pins:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should be
+          defined using the <peripheral>_<signal>_<pin> macros available from
+          the SoC DeviceTree files.
+
+      silabs,input-filter:
+        description: |
+          Enable input glitch filter on this pin. May be used in input-enable
+          and drive-open-drain modes.
+        type: boolean
+
+      silabs,alternate-port-control:
+        description: |
+          Use Alternate Port Control settings for Slew Rate and Input Disable
+          for this pin. May be used in drive-push-pull and drive-open-drain
+          modes.
+        type: boolean

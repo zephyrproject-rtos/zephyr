@@ -15,6 +15,7 @@ supported:
   - dac
   - dma
   - i2c
+  - flash
   - pwm
   - spi
   - watchdog

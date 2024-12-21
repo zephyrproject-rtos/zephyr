@@ -718,7 +718,7 @@ static int fdc2x1x_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api fdc2x1x_api_funcs = {
+static DEVICE_API(sensor, fdc2x1x_api_funcs) = {
 	.attr_set = fdc2x1x_attr_set,
 	.sample_fetch = fdc2x1x_sample_fetch,
 	.channel_get = fdc2x1x_channel_get,

@@ -673,7 +673,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_ite_driver_api = {
+static DEVICE_API(gpio, gpio_ite_driver_api) = {
 	.pin_configure = gpio_ite_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_ite_get_config,

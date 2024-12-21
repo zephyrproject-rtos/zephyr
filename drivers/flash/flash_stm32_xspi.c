@@ -1539,7 +1539,7 @@ static void flash_stm32_xspi_pages_layout(const struct device *dev,
 }
 #endif
 
-static const struct flash_driver_api flash_stm32_xspi_driver_api = {
+static DEVICE_API(flash, flash_stm32_xspi_driver_api) = {
 	.read = flash_stm32_xspi_read,
 	.write = flash_stm32_xspi_write,
 	.erase = flash_stm32_xspi_erase,

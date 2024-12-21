@@ -4,11 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include "common.h"
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include "babblekit/flags.h"
 #include "babblekit/sync.h"
@@ -176,18 +179,18 @@ static void init(void)
 
 static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
 {
-	uint32_t interval_ms;
-	uint16_t pa_timeout;
+	uint32_t interval_us;
 	uint32_t timeout;
 
 	/* Add retries and convert to unit in 10's of ms */
-	interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(pa_interval);
-	timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10U;
+	interval_us = BT_GAP_PER_ADV_INTERVAL_TO_US(pa_interval);
+	timeout =
+		BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(interval_us) * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO;
 
 	/* Enforce restraints */
-	pa_timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
+	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
 
-	return pa_timeout;
+	return timeout;
 }
 
 static void scan_and_sync_pa(struct bt_le_per_adv_sync **out_sync)

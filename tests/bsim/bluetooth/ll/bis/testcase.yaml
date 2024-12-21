@@ -8,11 +8,11 @@ tests:
   bluetooth.ll.bis:
     sysbuild: true
     platform_allow:
-      - nrf52_bsim
+      - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
-      - nrf52_bsim
+      - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpunet
     harness: bsim
@@ -21,10 +21,10 @@ tests:
   bluetooth.ll.bis_ticker_expire_info:
     extra_args: EXTRA_CONF_FILE=overlay-ticker_expire_info.conf
     platform_allow:
-      - nrf52_bsim
+      - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
-      - nrf52_bsim
+      - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
     harness: bsim
     harness_config:
@@ -32,10 +32,10 @@ tests:
   bluetooth.ll.bis_vs_dp:
     extra_args: CONF_FILE=prj_vs_dp.conf
     platform_allow:
-      - nrf52_bsim
+      - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
-      - nrf52_bsim
+      - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
     harness: bsim
     harness_config:
@@ -43,10 +43,10 @@ tests:
   bluetooth.ll.bis_past:
     extra_args: CONF_FILE=prj_past.conf
     platform_allow:
-      - nrf52_bsim
+      - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
-      - nrf52_bsim
+      - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
     harness: bsim
     harness_config:

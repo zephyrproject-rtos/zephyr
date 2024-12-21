@@ -29,9 +29,9 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      mbox_SNIPPET=nordic-ppr
-      mbox_EXTRA_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_cpuppr.overlay"
-      SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuppr.conf
+      - mbox_SNIPPET=nordic-ppr
+      - mbox_EXTRA_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_cpuppr.overlay"
+      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuppr.conf
     sysbuild: true
     harness: console
     harness_config:
@@ -47,9 +47,9 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      mbox_SNIPPET=nordic-flpr
-      mbox_EXTRA_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_cpuflpr.overlay"
-      SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuflpr.conf
+      - mbox_SNIPPET=nordic-flpr
+      - mbox_EXTRA_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_cpuflpr.overlay"
+      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuflpr.conf
     sysbuild: true
     harness: console
     harness_config:
@@ -89,8 +89,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
-    extra_args:
-      mbox_SNIPPET=nordic-flpr
+    extra_args: mbox_SNIPPET=nordic-flpr
     sysbuild: true
     harness: console
     harness_config:
@@ -106,9 +105,9 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
-      mbox_SNIPPET=nordic-flpr
-      mbox_CONFIG_MULTITHREADING=n
-      remote_CONFIG_MULTITHREADING=n
+      - mbox_SNIPPET=nordic-flpr
+      - mbox_CONFIG_MULTITHREADING=n
+      - remote_CONFIG_MULTITHREADING=n
     sysbuild: true
     harness: console
     harness_config:
@@ -124,8 +123,8 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
-      mbox_SNIPPET=nordic-flpr
-      remote_CONFIG_MULTITHREADING=n
+      - mbox_SNIPPET=nordic-flpr
+      - remote_CONFIG_MULTITHREADING=n
     sysbuild: true
     harness: console
     harness_config:

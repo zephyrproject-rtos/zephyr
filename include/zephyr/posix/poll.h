@@ -12,9 +12,12 @@
 extern "C" {
 #endif
 
+typedef	unsigned int nfds_t;
+
 #define pollfd zsock_pollfd
 
 #define POLLIN ZSOCK_POLLIN
+#define POLLPRI ZSOCK_POLLPRI
 #define POLLOUT ZSOCK_POLLOUT
 #define POLLERR ZSOCK_POLLERR
 #define POLLHUP ZSOCK_POLLHUP

@@ -38,3 +38,7 @@ properties:
       - 1
       - 2
       - 3
+
+  etrbuffer:
+    description: phandle to the memory region used for the ETR buffer
+    type: phandle

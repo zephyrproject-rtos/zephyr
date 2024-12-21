@@ -152,7 +152,7 @@ static int mdio_litex_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct mdio_driver_api mdio_litex_driver_api = {
+static DEVICE_API(mdio, mdio_litex_driver_api) = {
 	.read = mdio_litex_read_mmi,
 	.write = mdio_litex_write_mmi,
 };

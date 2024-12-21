@@ -1,7 +1,8 @@
 identifier: nsim_arc_v/rmx100
 name: Synopsys rmx100
-simulation: nsim
-simulation_exec: nsimdrv
+simulation:
+  - name: nsim
+    exec: nsimdrv
 type: sim
 arch: riscv
 toolchain:

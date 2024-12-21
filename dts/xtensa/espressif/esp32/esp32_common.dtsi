@@ -94,23 +94,62 @@
 	};
 
 	soc {
-		sram0: memory@3ffb0000 {
-			compatible = "mmio-sram";
-			reg = <0x3FFB0000 0x2c200>;
+		sram0: memory@40070000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x40070000 DT_SIZE_K(192)>;
+			zephyr,memory-region = "SRAM0";
+		};
+
+		sram1: memory@3ffe0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffe0000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "SRAM1";
+		};
+
+		sram2: memory@3ffae000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffae000 DT_SIZE_K(200)>;
+			zephyr,memory-region = "SRAM2";
 		};
 
 		ipmmem0: memory@3ffe5230 {
 			compatible = "mmio-sram";
-			reg = <0x3FFE5230 0x400>;
+			reg = <0x3ffe5230 0x400>;
 		};
 
 		shm0: memory@3ffe5630 {
 			compatible = "mmio-sram";
-			reg = <0x3FFE5630 0x3C00>;
+			reg = <0x3ffe5630 0x4000>;
+		};
+
+		ipm0: ipm@3ffe9630 {
+			compatible = "espressif,esp32-ipm";
+			reg = <0x3ffe9630 0x8>;
+			status = "disabled";
+			shared-memory = <&ipmmem0>;
+			shared-memory-size = <0x400>;
+			interrupts =
+				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+		};
+
+		mbox0: mbox@3ffe9638 {
+			compatible = "espressif,mbox-esp32";
+			reg = <0x3ffe9638 0x8>;
+			status = "disabled";
+			shared-memory = <&ipmmem0>;
+			shared-memory-size = <0x400>;
+			interrupts =
+				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			#mbox-cells = <1>;
 		};
 
 		intc: interrupt-controller@3ff00104 {
 			#interrupt-cells = <3>;
+			#address-cells = <0>;
 			compatible = "espressif,esp32-intc";
 			interrupt-controller;
 			reg = <0x3ff00104 0x114>;
@@ -156,31 +195,6 @@
 			/* PSRAM size is specified in SOC/SIP dtsi */
 			reg = <0x3f800000 DT_SIZE_M(2)>;
 			status = "disabled";
-		};
-
-		ipm0: ipm@3ffed238 {
-			compatible = "espressif,esp32-ipm";
-			reg = <0x3FFED238 0x8>;
-			status = "disabled";
-			shared-memory = <&ipmmem0>;
-			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-			interrupt-parent = <&intc>;
-		};
-
-		mbox0: mbox@3ffed240 {
-			compatible = "espressif,mbox-esp32";
-			reg = <0x3FFED240 0x8>;
-			status = "disabled";
-			shared-memory = <&ipmmem0>;
-			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-			interrupt-parent = <&intc>;
-			#mbox-cells = <1>;
 		};
 
 		ipi0: ipi@3f4c0058 {
@@ -388,6 +402,7 @@
 		timer0: counter@3ff5f000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3ff5f000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			group = <0>;
 			index = <0>;
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -398,6 +413,7 @@
 		timer1: counter@3ff5f024 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3ff5f024 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			group = <0>;
 			index = <1>;
 			interrupts = <TG0_T1_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -408,6 +424,7 @@
 		timer2: counter@3ff60000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3ff60000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			group = <1>;
 			index = <0>;
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -418,6 +435,7 @@
 		timer3: counter@3ff60024 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3ff60024 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			group = <1>;
 			index = <1>;
 			interrupts = <TG1_T1_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;

@@ -489,7 +489,7 @@ static int bmm150_attr_set(const struct device *dev,
 }
 #endif
 
-static const struct sensor_driver_api bmm150_api_funcs = {
+static DEVICE_API(sensor, bmm150_api_funcs) = {
 #if defined(BMM150_SET_ATTR_REP)
 	.attr_set = bmm150_attr_set,
 #endif

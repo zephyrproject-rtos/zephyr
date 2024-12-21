@@ -4,22 +4,19 @@ Copyright (c) 2024 The Linux Foundation
 SPDX-License-Identifier: Apache-2.0
 """
 
-import os
-from typing import Any, Dict
-
 import concurrent.futures
+import os
+from typing import Any
 
+import doxmlparser
 from docutils import nodes
-
+from doxmlparser.compound import DoxCompoundKind, DoxMemberKind
 from sphinx import addnodes
 from sphinx.application import Sphinx
+from sphinx.domains.c import CXRefRole
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
-from sphinx.domains.c import CXRefRole
-
-import doxmlparser
-from doxmlparser.compound import DoxCompoundKind, DoxMemberKind
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +151,7 @@ def parse_sections(compounddef):
     return cache
 
 
-def parse_compound(inDirName, baseName) -> Dict:
+def parse_compound(inDirName, baseName) -> dict:
     rootObj = doxmlparser.compound.parse(inDirName + "/" + baseName + ".xml", True)
     cache = {}
     group_titles = {}
@@ -218,7 +215,7 @@ def doxygen_parse(app: Sphinx) -> None:
     parse_index(app, str(app.config.doxybridge_dir / "xml"))
 
 
-def setup(app: Sphinx) -> Dict[str, Any]:
+def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("doxybridge_dir", None, "env")
 
     app.add_directive("doxygengroup", DoxygenGroupDirective)

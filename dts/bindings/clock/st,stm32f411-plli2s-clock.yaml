@@ -1,0 +1,46 @@
+# Copyright (c) 2023, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32F411 PLL I2S node binding:
+
+  Fully configurable I2S dedicated PLL.
+
+  1 output clocks supported, the frequency can be computed with the following formula:
+
+    f(PLLI2S_R) = f(VCO clock) / PLLI2S R  --> PLLI2S
+
+      with f(VCO clock) = f(PLL I2S clock input) × (PLLI2S N / PLLI2S M)
+
+
+compatible: "st,stm32f411-plli2s-clock"
+
+include: st,stm32f4-plli2s-clock.yaml
+
+properties:
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for the PLL input clock
+        Valid range: 2 - 63
+
+  div-q:
+    type: int
+    description: |
+        PLLI2S division factor for I2S Clocks to supply USB/SDIO/RNG
+    enum:
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15

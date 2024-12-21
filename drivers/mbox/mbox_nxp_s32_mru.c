@@ -177,7 +177,7 @@ void nxp_s32_mru_isr(const struct device *dev)
 	Mru_Ip_IrqHandler(config->hw_cfg.InstanceId, config->irq_group);
 }
 
-static const struct mbox_driver_api nxp_s32_mru_driver_api = {
+static DEVICE_API(mbox, nxp_s32_mru_driver_api) = {
 	.send = nxp_s32_mru_send,
 	.register_callback = nxp_s32_mru_register_callback,
 	.mtu_get = nxp_s32_mru_mtu_get,

@@ -6,14 +6,13 @@
 Configuration of Zephyr CAN <=> host CAN test suite.
 """
 
-import re
 import logging
+import re
+
 import pytest
-
-from twister_harness import DeviceAdapter, Shell
-
 from can import Bus, BusABC
 from can_shell import CanShellBus
+from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,14 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config BUILD_ONLY_NO_BLOBS
+	bool "Build only mode (do not link firmware blob)"
+	help
+	  Exclude firmware blobs from the build. This will produce a
+	  non-functional application, but allows drivers requiring
+	  blobs to be built for testing purposes. Primarily intended
+	  for CI validation of such drivers.
+
 config TAINT_BLOBS
 	bool
 	select TAINT

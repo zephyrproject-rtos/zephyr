@@ -75,6 +75,7 @@ source "drivers/ethernet/Kconfig.numaker"
 source "drivers/ethernet/Kconfig.lan865x"
 source "drivers/ethernet/Kconfig.xmc4xxx"
 source "drivers/ethernet/Kconfig.test"
+source "drivers/ethernet/Kconfig.lan9250"
 
 source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 
@@ -82,6 +83,7 @@ source "drivers/ethernet/dwc_xgmac/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
 
 source "drivers/ethernet/nxp_enet/Kconfig"
+source "drivers/ethernet/Kconfig.renesas_ra"
 
 endif # "Ethernet Drivers"
 

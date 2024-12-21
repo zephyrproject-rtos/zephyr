@@ -14,6 +14,9 @@
 
 #include <zephyr/net/ieee802154_radio.h>
 
+/** Bit number starting the OpenThread specific capabilities of ieee802154 driver. */
+#define IEEE802154_OPENTHREAD_HW_CAPS_BITS_START IEEE802154_HW_CAPS_BITS_PRIV_START
+
 /**
  *  OpenThread specific capabilities of ieee802154 driver.
  *  This type extends @ref ieee802154_hw_caps.
@@ -22,7 +25,26 @@ enum ieee802154_openthread_hw_caps {
 	/** Capability to transmit with @ref IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA
 	 *  mode.
 	 */
-	IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA = BIT(IEEE802154_HW_CAPS_BITS_PRIV_START),
+	IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA = BIT(IEEE802154_OPENTHREAD_HW_CAPS_BITS_START),
+
+	/** Capability to support CST-related features.
+	 *
+	 * The CST-related features are described by "Specification changes for Thread-in-Mobile"
+	 * Draft version 1, July 11, 2024. The CST allows to transmit a frame with CST Phase and
+	 * CST Period IEs as described by chapter 4.6.6.1 of the Thread-in-Mobile specification
+	 * change. The upper layer implementation (OpenThread) is responsible for preparing
+	 * a frame to be transmitted that contains placeholders where the CST Phase and CST Period
+	 * are to be placed. The implementation of a driver is responsible for injecting
+	 * correct value for CST Phase IE and CST Period IE based on configuration parameters
+	 * @ref IEEE802154_OPENTHREAD_CONFIG_CST_PERIOD and
+	 * @ref IEEE802154_OPENTHREAD_CONFIG_EXPECTED_TX_TIME.
+	 *
+	 * @note The CST transmission in its design is very similar to CSL reception.
+	 * In the CSL reception the receiver side informs its peer about the moment in time
+	 * when it will be able to receive. In the CST transmission the transmitter side informs
+	 * its peer about the moment in time when the next transmission will occur.
+	 */
+	IEEE802154_OPENTHREAD_HW_CST = BIT(IEEE802154_OPENTHREAD_HW_CAPS_BITS_START + 1),
 };
 
 /** @brief TX mode */
@@ -80,7 +102,33 @@ enum ieee802154_openthread_config_type {
 	 *  @ref IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA.
 	 *  Requires IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA capability.
 	 */
-	IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS  = IEEE802154_CONFIG_PRIV_START
+	IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS  = IEEE802154_CONFIG_PRIV_START,
+
+	/** Configures the CST period of a device.
+	 *
+	 *  When a frame containing CST Period IE is about to be transmitted by a driver,
+	 *  the driver SHALL inject the CST Period value to the CST Period IE based on
+	 *  the value of this configuration parameter.
+	 *
+	 *  Requires IEEE802154_OPENTHREAD_HW_CST capability.
+	 */
+	IEEE802154_OPENTHREAD_CONFIG_CST_PERIOD,
+
+	/** Configure a point in time at which a TX frame is expected to be transmitted.
+	 *
+	 *  When a frame containing CST Phase IE is about to be transmitted by a driver,
+	 *  the driver SHALL inject the CST Phase IE value to the CST Phase IE based on
+	 *  the value of this configuration parameter parameter, the time of transmission
+	 *  and the CST Period value.
+	 *
+	 *  This parameter configures the nanosecond resolution timepoint relative to
+	 *  the network subsystem's local clock at which a TX frame's end of SFD
+	 *  (i.e. equivalently its end of SHR, start of PHR) is expected to be transmitted
+	 *  at the local antenna.
+	 *
+	 *  Requires IEEE802154_OPENTHREAD_HW_CST capability.
+	 */
+	IEEE802154_OPENTHREAD_CONFIG_EXPECTED_TX_TIME,
 };
 
 /**
@@ -106,6 +154,18 @@ struct ieee802154_openthread_config {
 		 *  requested with mode @ref IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA.
 		 */
 		uint8_t max_extra_cca_attempts;
+
+		/** ``IEEE802154_OPENTHREAD_CONFIG_CST_PERIOD``
+		 *
+		 *  The CST period (in CPU byte order).
+		 */
+		uint32_t cst_period;
+
+		/** ``IEEE802154_OPENTHREAD_CONFIG_EXPECTED_TX_TIME``
+		 *
+		 *  A point in time at which a TX frame is expected to be transmitted.
+		 */
+		net_time_t expected_tx_time;
 	};
 };
 

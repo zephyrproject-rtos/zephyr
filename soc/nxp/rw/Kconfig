@@ -17,7 +17,7 @@ config SOC_SERIES_RW6XX
 	select HAS_MCUX_FLEXCOMM
 	select HAS_MCUX_CACHE
 	select HAS_PM
-	select HAS_NXP_MONOLITHIC_BT
+	select HAS_NXP_MONOLITHIC_NBU
 	select SOC_EARLY_INIT_HOOK
 
 if SOC_SERIES_RW6XX
@@ -52,5 +52,6 @@ config IMAGE_VECTOR_TABLE_OFFSET
 endif # NXP_RW6XX_BOOT_HEADER
 
 rsource "../common/Kconfig.flexspi_xip"
+rsource "../common/Kconfig.nbu"
 
 endif # SOC_SERIES_RW6XX

@@ -111,7 +111,7 @@ static int ivshmem_ipm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ipm_driver_api ivshmem_ipm_driver_api = {
+static DEVICE_API(ipm, ivshmem_ipm_driver_api) = {
 	.send = ivshmem_ipm_send,
 	.register_callback = ivshmem_ipm_register_callback,
 	.set_enabled = ivshmem_ipm_set_enabled

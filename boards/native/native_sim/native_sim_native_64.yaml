@@ -1,7 +1,8 @@
 identifier: native_sim/native/64
 name: Native Simulation port - 64-bit variant
 type: native
-simulation: native
+simulation:
+  - name: native
 arch: posix
 ram: 65536
 flash: 65536

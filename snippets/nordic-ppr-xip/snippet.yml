@@ -3,9 +3,9 @@ append:
   EXTRA_DTC_OVERLAY_FILE: nordic-ppr-xip.overlay
 
 boards:
-  nrf54h20dk/nrf54h20/cpuapp:
+  /.*/nrf54h20/cpuapp/:
     append:
-      EXTRA_DTC_OVERLAY_FILE: boards/nrf54h20dk_nrf54h20_cpuapp.overlay
-  nrf9280pdk/nrf9280/cpuapp:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54h20_cpuapp.overlay
+  /.*/nrf9280/cpuapp/:
     append:
-      EXTRA_DTC_OVERLAY_FILE: boards/nrf9280pdk_nrf9280_cpuapp.overlay
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf9280_cpuapp.overlay

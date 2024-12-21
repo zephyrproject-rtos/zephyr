@@ -7,6 +7,7 @@
 
 
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest.h>
 
 
@@ -61,7 +62,7 @@ void print_loop(const char *name)
  *
  */
 
-void __attribute__((noinline)) check_input(const char *name, const char *input)
+void __noinline check_input(const char *name, const char *input)
 {
 	/* Stack will overflow when input is more than 16 characters */
 	char buf[16];

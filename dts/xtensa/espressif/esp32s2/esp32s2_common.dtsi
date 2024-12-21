@@ -80,12 +80,20 @@
 		ranges;
 
 		sram0: memory@3ffb0000 {
-			compatible = "mmio-sram";
-			reg = <0x3ffb0000 0x50000>;
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffb0000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAM0";
+		};
+
+		sram1: memory@3ffb8000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffb8000 DT_SIZE_K(288)>;
+			zephyr,memory-region = "SRAM1";
 		};
 
 		intc: interrupt-controller@3f4c2000 {
 			#interrupt-cells = <3>;
+			#address-cells = <0>;
 			compatible = "espressif,esp32-intc";
 			interrupt-controller;
 			reg = <0x3f4c2000 0x114>;
@@ -237,6 +245,7 @@
 		timer0: counter@3f41f000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3f41f000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			group = <0>;
 			index = <0>;
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -247,6 +256,7 @@
 		timer1: counter@3f41f024 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3f41f024 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			group = <0>;
 			index = <1>;
 			interrupts = <TG0_T1_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -257,6 +267,7 @@
 		timer2: counter@3f420000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3f420000 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			group = <1>;
 			index = <0>;
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -267,6 +278,7 @@
 		timer3: counter@3f420024 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3f420024 DT_SIZE_K(4)>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			group = <1>;
 			index = <1>;
 			interrupts = <TG1_T1_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;

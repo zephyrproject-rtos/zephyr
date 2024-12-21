@@ -13,9 +13,8 @@
 	compatible = "nxp,s32z270";
 
 	chosen {
-		zephyr,sram = &sram1;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,sram = &dram1;
+		zephyr,flash = &cram1;
 		zephyr,canbus = &flexcan0;
 	};
 

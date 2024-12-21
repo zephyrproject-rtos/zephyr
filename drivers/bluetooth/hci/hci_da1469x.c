@@ -495,7 +495,7 @@ static int bt_da1469x_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open           = bt_da1469x_open,
 	.close          = bt_da1469x_close,
 	.send           = bt_da1469x_send,

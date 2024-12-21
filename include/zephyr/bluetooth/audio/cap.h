@@ -128,6 +128,22 @@ struct bt_cap_initiator_cb {
 	 */
 	void (*unicast_stop_complete)(int err, struct bt_conn *conn);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	/**
+	 * @brief The Broadcast Source has started and all of the streams are ready for audio data
+	 *
+	 * @param source The started Broadcast Source
+	 */
+	void (*broadcast_started)(struct bt_cap_broadcast_source *source);
+
+	/**
+	 * @brief The Broadcast Source has stopped and none of the streams are ready for audio data
+	 *
+	 * @param source The stopped Broadcast Source
+	 * @param reason The reason why the Broadcast Source stopped (see the BT_HCI_ERR_* values)
+	 */
+	void (*broadcast_stopped)(struct bt_cap_broadcast_source *source, uint8_t reason);
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 };
 
 /**
@@ -820,6 +836,17 @@ struct bt_cap_commander_cb {
 	 *			by bt_cap_commander_cancel().
 	 */
 	void (*broadcast_reception_stop)(struct bt_conn *conn, int err);
+	/**
+	 * @brief Callback for bt_cap_commander_distribute_broadcast_code().
+	 *
+	 * @param conn		Pointer to the connection where the error
+	 *			occurred. NULL if @p err is 0 or if cancelled by
+	 *			bt_cap_commander_cancel()
+	 * @param err		0 on success, BT_GATT_ERR() with a
+	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *			by bt_cap_commander_cancel().
+	 */
+	void (*distribute_broadcast_code)(struct bt_conn *conn, int err);
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 };
 
@@ -918,7 +945,7 @@ struct bt_cap_commander_broadcast_reception_start_member_param {
 	 *
 	 * At least one bit in one of the subgroups bis_sync parameters shall be set.
 	 */
-	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 
 	/** Number of subgroups */
 	size_t num_subgroups;
@@ -948,7 +975,6 @@ int bt_cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
 
 /** Parameters for stopping broadcast reception  */
-
 struct bt_cap_commander_broadcast_reception_stop_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;
@@ -981,6 +1007,49 @@ struct bt_cap_commander_broadcast_reception_stop_param {
  */
 int bt_cap_commander_broadcast_reception_stop(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param);
+
+/** Parameters for distributing broadcast code */
+struct bt_cap_commander_distribute_broadcast_code_member_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
+
+	/** Source ID of the receive state. */
+	uint8_t src_id;
+};
+
+struct bt_cap_commander_distribute_broadcast_code_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The set of devices for this procedure */
+	struct bt_cap_commander_distribute_broadcast_code_member_param *param;
+
+	/** The number of parameters in @p param */
+	size_t count;
+
+	/**
+	 * @brief 16-octet broadcast code.
+	 *
+	 * If the value is a string or a the value is less than 16 octets,
+	 * the remaining octets shall be 0.
+	 *
+	 * Example:
+	 *   The string "Broadcast Code" shall be
+	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
+	 */
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
+};
+
+/**
+ * @brief Distributes the broadcast code on one or more remote Common Audio Profile
+ * Acceptors
+ *
+ * @param param The parameters for distributing the broadcast code
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_distribute_broadcast_code(
+	const struct bt_cap_commander_distribute_broadcast_code_param *param);
 
 /** Parameters for changing absolute volume  */
 struct bt_cap_commander_change_volume_param {

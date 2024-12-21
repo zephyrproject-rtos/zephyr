@@ -29,7 +29,8 @@
 #if defined(CONFIG_SOC_SERIES_EFR32BG22) || \
 	defined(CONFIG_SOC_SERIES_EFR32BG27) || \
 	defined(CONFIG_SOC_SERIES_EFR32MG21) || \
-	defined(CONFIG_SOC_SERIES_EFR32MG24)
+	defined(CONFIG_SOC_SERIES_EFR32MG24) || \
+	defined(CONFIG_SOC_SERIES_EFR32ZG23)
 #define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_PORT_TypeDef)
 #else
 #define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_P_TypeDef)
@@ -358,7 +359,7 @@ static void gpio_gecko_common_isr(const struct device *dev)
 	}
 }
 
-static const struct gpio_driver_api gpio_gecko_driver_api = {
+static DEVICE_API(gpio, gpio_gecko_driver_api) = {
 	.pin_configure = gpio_gecko_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_gecko_get_config,
@@ -372,7 +373,7 @@ static const struct gpio_driver_api gpio_gecko_driver_api = {
 	.manage_callback = gpio_gecko_manage_callback,
 };
 
-static const struct gpio_driver_api gpio_gecko_common_driver_api = {
+static DEVICE_API(gpio, gpio_gecko_common_driver_api) = {
 	.manage_callback = gpio_gecko_manage_callback,
 };
 

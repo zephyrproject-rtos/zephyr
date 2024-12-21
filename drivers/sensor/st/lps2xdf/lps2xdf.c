@@ -141,7 +141,7 @@ static int lps2xdf_sample_fetch(const struct device *dev, enum sensor_channel ch
 	return chip_api->sample_fetch(dev, chan);
 }
 
-static const struct sensor_driver_api lps2xdf_driver_api = {
+static DEVICE_API(sensor, lps2xdf_driver_api) = {
 	.attr_set = lps2xdf_attr_set,
 	.sample_fetch = lps2xdf_sample_fetch,
 	.channel_get = lps2xdf_channel_get,

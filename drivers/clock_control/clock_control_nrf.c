@@ -692,7 +692,7 @@ static int clk_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api clock_control_api = {
+static DEVICE_API(clock_control, clock_control_api) = {
 	.on = api_blocking_start,
 	.off = api_stop,
 	.async_on = api_start,

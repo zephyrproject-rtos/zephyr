@@ -160,7 +160,7 @@ static int ad569x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api ad569x_driver_api = {
+static DEVICE_API(dac, ad569x_driver_api) = {
 	.channel_setup = ad569x_channel_setup,
 	.write_value = ad569x_write_value,
 };

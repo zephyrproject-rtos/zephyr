@@ -144,7 +144,7 @@ static int adt7420_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api adt7420_driver_api = {
+static DEVICE_API(sensor, adt7420_driver_api) = {
 	.attr_set = adt7420_attr_set,
 	.sample_fetch = adt7420_sample_fetch,
 	.channel_get = adt7420_channel_get,

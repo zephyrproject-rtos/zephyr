@@ -1,0 +1,6 @@
+board:
+  name: rzg3s_smarc
+  full_name: RZ/G3S SMARC Evaluation Board Kit
+  vendor: renesas
+  socs:
+  - name: r9a08g045s33gbg

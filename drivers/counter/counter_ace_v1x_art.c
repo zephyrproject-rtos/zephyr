@@ -102,7 +102,7 @@ int counter_ace_v1x_art_get_value(const struct device *dev, uint64_t *value)
 	return 0;
 }
 
-static const struct counter_driver_api ace_v1x_art_counter_apis = {
+static DEVICE_API(counter, ace_v1x_art_counter_apis) = {
 	.get_value_64 = counter_ace_v1x_art_get_value
 };
 

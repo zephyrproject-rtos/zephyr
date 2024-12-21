@@ -46,7 +46,7 @@ static int clock_control_si32_apb_get_rate(const struct device *dev, clock_contr
 	return 0;
 }
 
-static struct clock_control_driver_api clock_control_si32_apb_api = {
+static DEVICE_API(clock_control, clock_control_si32_apb_api) = {
 	.on = clock_control_si32_apb_on,
 	.off = clock_control_si32_apb_off,
 	.get_rate = clock_control_si32_apb_get_rate,

@@ -394,7 +394,7 @@ static int spi_mcux_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_mcux_driver_api = {
+static DEVICE_API(spi, spi_mcux_driver_api) = {
 	.transceive = spi_mcux_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
@@ -439,7 +439,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,			\
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,		\
 				&spi_mcux_flexio_data_##n,		\
 				&spi_mcux_flexio_config_##n, POST_KERNEL, \
 				CONFIG_SPI_INIT_PRIORITY,		\

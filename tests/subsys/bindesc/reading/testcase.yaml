@@ -10,14 +10,23 @@ tests:
       - native_posix
       - native_sim
   bindesc.read.c99:
-    extra_args: CSTD="c99"
+    extra_configs:
+      - CONFIG_STD_C99=y
   bindesc.read.c11:
-    extra_args: CSTD="c11"
+    extra_configs:
+      - CONFIG_STD_C11=y
   bindesc.read.c17:
-    extra_args: CSTD="c17"
+    extra_configs:
+      - CONFIG_STD_C17=y
   bindesc.read.gnu99:
-    extra_args: CSTD="gnu99"
+    extra_configs:
+      - CONFIG_STD_C99=y
+      - CONFIG_GNU_C_EXTENSIONS=y
   bindesc.read.gnu11:
-    extra_args: CSTD="gnu11"
+    extra_configs:
+      - CONFIG_STD_C11=y
+      - CONFIG_GNU_C_EXTENSIONS=y
   bindesc.read.gnu17:
-    extra_args: CSTD="gnu17"
+    extra_configs:
+      - CONFIG_STD_C17=y
+      - CONFIG_GNU_C_EXTENSIONS=y

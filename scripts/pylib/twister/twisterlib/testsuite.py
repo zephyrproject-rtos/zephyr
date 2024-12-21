@@ -1,21 +1,20 @@
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 2018-2022 Intel Corporation
+# Copyright (c) 2018-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-from enum import Enum
-import os
-from pathlib import Path
-import re
-import logging
 import contextlib
-import mmap
 import glob
-from typing import List
+import logging
+import mmap
+import os
+import re
+from enum import Enum
+from pathlib import Path
 
-from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
+from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
@@ -39,12 +38,14 @@ class ScanPathResult:
         ztest_suite_names                Names of found ztest suites
     """
     def __init__(self,
-                 matches: List[str] = None,
+                 matches: list[str] = None,
                  warnings: str = None,
                  has_registered_test_suites: bool = False,
                  has_run_registered_test_suites: bool = False,
                  has_test_main: bool = False,
-                 ztest_suite_names: List[str] = []):
+                 ztest_suite_names: list[str] = None):
+        if ztest_suite_names is None:
+            ztest_suite_names = []
         self.matches = matches
         self.warnings = warnings
         self.has_registered_test_suites = has_registered_test_suites
@@ -106,8 +107,13 @@ def scan_file(inf_name):
         if os.name == 'nt':
             mmap_args = {'fileno': inf.fileno(), 'length': 0, 'access': mmap.ACCESS_READ}
         else:
-            mmap_args = {'fileno': inf.fileno(), 'length': 0, 'flags': mmap.MAP_PRIVATE, 'prot': mmap.PROT_READ,
-                            'offset': 0}
+            mmap_args = {
+                'fileno': inf.fileno(),
+                'length': 0,
+                'flags': mmap.MAP_PRIVATE,
+                'prot': mmap.PROT_READ,
+                'offset': 0
+            }
 
         with contextlib.closing(mmap.mmap(**mmap_args)) as main_c:
             regular_suite_regex_matches = \
@@ -129,13 +135,19 @@ def scan_file(inf_name):
             if regular_suite_regex_matches:
                 ztest_suite_names = \
                     _extract_ztest_suite_names(regular_suite_regex_matches)
-                testcase_names, warnings = \
-                    _find_regular_ztest_testcases(main_c, regular_suite_regex_matches, has_registered_test_suites)
+                testcase_names, warnings = _find_regular_ztest_testcases(
+                    main_c,
+                    regular_suite_regex_matches,
+                    has_registered_test_suites
+                )
             elif registered_suite_regex_matches:
                 ztest_suite_names = \
                     _extract_ztest_suite_names(registered_suite_regex_matches)
-                testcase_names, warnings = \
-                    _find_regular_ztest_testcases(main_c, registered_suite_regex_matches, has_registered_test_suites)
+                testcase_names, warnings = _find_regular_ztest_testcases(
+                    main_c,
+                    registered_suite_regex_matches,
+                    has_registered_test_suites
+                )
             elif new_suite_regex_matches or new_suite_testcase_regex_matches:
                 ztest_suite_names = \
                     _extract_ztest_suite_names(new_suite_regex_matches)
@@ -247,22 +259,31 @@ def _find_ztest_testcases(search_area, testcase_regex):
     """
     testcase_regex_matches = \
         [m for m in testcase_regex.finditer(search_area)]
-    testcase_names = \
-        [m.group("testcase_name") for m in testcase_regex_matches]
-    testcase_names = [name.decode("UTF-8") for name in testcase_names]
+    testcase_names = [
+        (
+            m.group("suite_name") if m.groupdict().get("suite_name") else b'',
+            m.group("testcase_name")
+        ) for m in testcase_regex_matches
+    ]
+    testcase_names = [
+        (ts_name.decode("UTF-8"), tc_name.decode("UTF-8")) for ts_name, tc_name in testcase_names
+    ]
     warnings = None
     for testcase_name in testcase_names:
-        if not testcase_name.startswith("test_"):
+        if not testcase_name[1].startswith("test_"):
             warnings = "Found a test that does not start with test_"
     testcase_names = \
-        [tc_name.replace("test_", "", 1) for tc_name in testcase_names]
+        [(ts_name + '.' if ts_name else '') + f"{tc_name.replace('test_', '', 1)}" \
+         for (ts_name, tc_name) in testcase_names]
 
     return testcase_names, warnings
 
-def find_c_files_in(path: str, extensions: list = ['c', 'cpp', 'cxx', 'cc']) -> list:
+def find_c_files_in(path: str, extensions: list = None) -> list:
     """
     Find C or C++ sources in the directory specified by "path"
     """
+    if extensions is None:
+        extensions = ['c', 'cpp', 'cxx', 'cc']
     if not os.path.isdir(path):
         return []
 
@@ -296,9 +317,8 @@ def scan_testsuite_path(testsuite_path):
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
-                logger.error("%s: %s" % (filename, result.warnings))
-                raise TwisterRuntimeError(
-                    "%s: %s" % (filename, result.warnings))
+                logger.error(f"{filename}: {result.warnings}")
+                raise TwisterRuntimeError(f"{filename}: {result.warnings}")
             if result.matches:
                 subcases += result.matches
             if result.has_registered_test_suites:
@@ -311,7 +331,7 @@ def scan_testsuite_path(testsuite_path):
                 ztest_suite_names += result.ztest_suite_names
 
         except ValueError as e:
-            logger.error("%s: error parsing source file: %s" % (filename, e))
+            logger.error(f"{filename}: error parsing source file: {e}")
 
     src_dir_pathlib_path = Path(src_dir_path)
     for filename in find_c_files_in(testsuite_path):
@@ -323,13 +343,13 @@ def scan_testsuite_path(testsuite_path):
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
-                logger.error("%s: %s" % (filename, result.warnings))
+                logger.error(f"{filename}: {result.warnings}")
             if result.matches:
                 subcases += result.matches
             if result.ztest_suite_names:
                 ztest_suite_names += result.ztest_suite_names
         except ValueError as e:
-            logger.error("%s: can't find: %s" % (filename, e))
+            logger.error(f"{filename}: can't find: {e}")
 
     if (has_registered_test_suites and has_test_main and
             not has_run_registered_test_suites):
@@ -367,6 +387,10 @@ class TestCase(DisablePyTestCollectionMixin):
         self.freeform = False
 
     @property
+    def detailed_name(self) -> str:
+        return TestSuite.get_case_name_(self.testsuite, self.name, detailed=True)
+
+    @property
     def status(self) -> TwisterStatus:
         return self._status
 
@@ -376,14 +400,14 @@ class TestCase(DisablePyTestCollectionMixin):
         try:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
-        except KeyError:
-            raise StatusAttributeError(self.__class__, value)
+        except KeyError as err:
+            raise StatusAttributeError(self.__class__, value) from err
 
     def __lt__(self, other):
         return self.name < other.name
 
     def __repr__(self):
-        return "<TestCase %s with %s>" % (self.name, self.status)
+        return f"<TestCase {self.name} with {self.status}>"
 
     def __str__(self):
         return self.name
@@ -420,7 +444,9 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.id = name
 
         self.source_dir = suite_path
-        self.source_dir_rel = os.path.relpath(os.path.realpath(suite_path), start=canonical_zephyr_base)
+        self.source_dir_rel = os.path.relpath(
+            os.path.realpath(suite_path), start=canonical_zephyr_base
+        )
         self.yamlfile = suite_path
         self.testcases = []
         self.integration_platforms = []
@@ -442,8 +468,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         try:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
-        except KeyError:
-            raise StatusAttributeError(self.__class__, value)
+        except KeyError as err:
+            raise StatusAttributeError(self.__class__, value) from err
 
     def load(self, data):
         for k, v in data.items():
@@ -451,22 +477,35 @@ class TestSuite(DisablePyTestCollectionMixin):
                 setattr(self, k, v)
 
         if self.harness == 'console' and not self.harness_config:
-            raise Exception('Harness config error: console harness defined without a configuration.')
+            raise Exception(
+                'Harness config error: console harness defined without a configuration.'
+            )
+
+    @staticmethod
+    def get_case_name_(test_suite, tc_name, detailed=True) -> str:
+        return f"{test_suite.id}.{tc_name}" \
+            if test_suite and detailed and not test_suite.detailed_test_id else f"{tc_name}"
+
+    @staticmethod
+    def compose_case_name_(test_suite, tc_name) -> str:
+        return f"{test_suite.id}.{tc_name}" \
+            if test_suite and test_suite.detailed_test_id else f"{tc_name}"
+
+    def compose_case_name(self, tc_name) -> str:
+        return self.compose_case_name_(self, tc_name)
 
     def add_subcases(self, data, parsed_subcases=None, suite_names=None):
         testcases = data.get("testcases", [])
         if testcases:
             for tc in testcases:
-                self.add_testcase(name=f"{self.id}.{tc}")
+                self.add_testcase(name=self.compose_case_name(tc))
         else:
             if not parsed_subcases:
                 self.add_testcase(self.id, freeform=True)
             else:
                 # only add each testcase once
-                for sub in set(parsed_subcases):
-                    name = "{}.{}".format(self.id, sub)
-                    self.add_testcase(name)
-
+                for tc in set(parsed_subcases):
+                    self.add_testcase(name=self.compose_case_name(tc))
         if suite_names:
             self.ztest_suite_names = suite_names
 
@@ -488,7 +527,9 @@ class TestSuite(DisablePyTestCollectionMixin):
             relative_ts_root = ""
 
         # workdir can be "."
-        unique = os.path.normpath(os.path.join(relative_ts_root, workdir, name)).replace(os.sep, '/')
+        unique = os.path.normpath(
+            os.path.join(relative_ts_root, workdir, name)
+        ).replace(os.sep, '/')
         return unique
 
     @staticmethod

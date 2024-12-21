@@ -7,6 +7,7 @@ config I2C_XEC
 	bool "XEC Microchip I2C driver"
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enable the Microchip XEC I2C driver.
 
@@ -14,5 +15,6 @@ config I2C_XEC_V2
 	bool "XEC Microchip I2C driver"
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_I2C_V2_ENABLED
+	select PINCTRL
 	help
 	  Enable the Microchip XEC I2C V2 driver.

@@ -1,0 +1,8 @@
+board:
+  name: octopus_io_board
+  full_name: Octopus IO-Board
+  vendor: norik
+  socs:
+  - name: nrf9160
+    variants:
+    - name: 'ns'

@@ -106,7 +106,7 @@
 			caset = [00 01 00 a0];
 			raset = [00 1a 00 69];
 
-			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			mipi-max-frequency = <4000000>;
 		};
 	};

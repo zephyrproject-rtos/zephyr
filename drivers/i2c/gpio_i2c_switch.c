@@ -64,7 +64,7 @@ static int gpio_i2c_switch_transfer(const struct device *dev, struct i2c_msg *ms
 	return res;
 }
 
-static const struct i2c_driver_api gpio_i2c_switch_api_funcs = {
+static DEVICE_API(i2c, gpio_i2c_switch_api_funcs) = {
 	.configure = gpio_i2c_switch_configure,
 	.transfer = gpio_i2c_switch_transfer,
 #ifdef CONFIG_I2C_RTIO
@@ -91,7 +91,7 @@ static int gpio_i2c_switch_init(const struct device *dev)
 		.gpio = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), gpios),                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, gpio_i2c_switch_init, device_pm_control_nop,                   \
+	I2C_DEVICE_DT_INST_DEFINE(inst, gpio_i2c_switch_init, device_pm_control_nop,               \
 			      &gpio_i2c_switch_dev_data_##inst, &gpio_i2c_switch_dev_cfg_##inst,   \
 			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &gpio_i2c_switch_api_funcs);
 

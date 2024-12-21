@@ -10,3 +10,5 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
+    integration_platforms:
+      - nrf52840dk/nrf52840

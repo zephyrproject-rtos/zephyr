@@ -92,7 +92,7 @@ static int apa102_init(const struct device *dev)
 	return 0;
 }
 
-static const struct led_strip_driver_api apa102_api = {
+static DEVICE_API(led_strip, apa102_api) = {
 	.update_rgb = apa102_update_rgb,
 	.length = apa102_length,
 };

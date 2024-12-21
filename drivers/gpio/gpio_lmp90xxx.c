@@ -135,7 +135,7 @@ static int gpio_lmp90xxx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_lmp90xxx_api = {
+static DEVICE_API(gpio, gpio_lmp90xxx_api) = {
 	.pin_configure = gpio_lmp90xxx_config,
 	.port_set_masked_raw = gpio_lmp90xxx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_lmp90xxx_port_set_bits_raw,

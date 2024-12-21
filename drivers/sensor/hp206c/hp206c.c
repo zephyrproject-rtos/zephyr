@@ -275,7 +275,7 @@ static int hp206c_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api hp206c_api = {
+static DEVICE_API(sensor, hp206c_api) = {
 	.attr_set = hp206c_attr_set,
 	.sample_fetch = hp206c_adc_acquire,
 	.channel_get = hp206c_channel_get,

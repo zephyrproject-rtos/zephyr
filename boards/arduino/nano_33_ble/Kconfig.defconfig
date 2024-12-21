@@ -3,9 +3,6 @@
 
 if BOARD_ARDUINO_NANO_33_BLE
 
-config BT_CTLR
-	default BT
-
 config REGULATOR
 	default y if SENSOR
 

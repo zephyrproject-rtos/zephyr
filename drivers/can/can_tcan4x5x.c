@@ -713,7 +713,7 @@ static int tcan4x5x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct can_driver_api tcan4x5x_driver_api = {
+static DEVICE_API(can, tcan4x5x_driver_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,

@@ -328,7 +328,7 @@ static int wdt_npcx_feed(const struct device *dev, int channel_id)
 }
 
 /* WDT driver registration */
-static const struct wdt_driver_api wdt_npcx_driver_api = {
+static DEVICE_API(wdt, wdt_npcx_driver_api) = {
 	.setup = wdt_npcx_setup,
 	.disable = wdt_npcx_disable,
 	.install_timeout = wdt_npcx_install_timeout,

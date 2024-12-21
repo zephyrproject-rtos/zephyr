@@ -877,7 +877,7 @@ static void mcp2515_int_gpio_callback(const struct device *dev,
 	k_sem_give(&dev_data->int_sem);
 }
 
-static const struct can_driver_api can_api_funcs = {
+static DEVICE_API(can, can_api_funcs) = {
 	.get_capabilities = mcp2515_get_capabilities,
 	.set_timing = mcp2515_set_timing,
 	.start = mcp2515_start,

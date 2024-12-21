@@ -57,7 +57,6 @@ config ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
 config ETH_NXP_ENET_HW_ACCELERATION
 	bool "Hardware acceleration"
 	default y
-	depends on !NET_IPV6
 	help
 	  Enable hardware acceleration for the following:
 	  - IPv4, UDP and TCP checksum (both Rx and Tx)

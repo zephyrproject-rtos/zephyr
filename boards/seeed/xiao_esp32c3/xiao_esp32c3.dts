@@ -7,16 +7,16 @@
 /dts-v1/;
 
 #include <espressif/esp32c3/esp32c3_fx4.dtsi>
-#include <espressif/partitions_0x0_amp.dtsi>
 #include "xiao_esp32c3-pinctrl.dtsi"
 #include "seeed_xiao_connector.dtsi"
+#include <espressif/partitions_0x0_default.dtsi>
 
 / {
 	model = "Seeed XIAO ESP32C3";
 	compatible = "seeed,xiao-esp32c3";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;

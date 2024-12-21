@@ -14,6 +14,7 @@ import sys
 import json
 import re
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -23,47 +24,47 @@ class TestFilter:
         (
             'x86',
             [
-                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(it8xxx2_evb/it81302bx).*?(FILTERED: Command line testsuite arch filter)',
             ],
         ),
         (
             'arm',
             [
-                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(qemu_x86/atom).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(hsdk/arc_hsdk).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(it8xxx2_evb/it81302bx).*?(FILTERED: Command line testsuite arch filter)',
+                r'(qemu_x86/atom).*?(FILTERED: Command line testsuite arch filter)',
+                r'(hsdk/arc_hsdk).*?(FILTERED: Command line testsuite arch filter)',
             ]
         ),
         (
             'riscv',
             [
-                r'(qemu_x86/atom).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(hsdk/arc_hsdk).*?(SKIPPED: Command line testsuite arch filter)',            ]
+                r'(qemu_x86/atom).*?(FILTERED: Command line testsuite arch filter)',
+                r'(hsdk/arc_hsdk).*?(FILTERED: Command line testsuite arch filter)',            ]
         )
     ]
     TESTDATA_2 = [
         (
             'nxp',
             [
-                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Not a selected vendor platform)',
-                r'(hsdk/arc_hsdk).*?(SKIPPED: Not a selected vendor platform)',
-                r'(qemu_x86).*?(SKIPPED: Not a selected vendor platform)',
+                r'(it8xxx2_evb/it81302bx).*?(FILTERED: Not a selected vendor platform)',
+                r'(hsdk/arc_hsdk).*?(FILTERED: Not a selected vendor platform)',
+                r'(qemu_x86).*?(FILTERED: Not a selected vendor platform)',
             ],
         ),
         (
             'intel',
             [
-                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Not a selected vendor platform)',
-                r'(qemu_x86/atom).*?(SKIPPED: Not a selected vendor platform)',
+                r'(it8xxx2_evb/it81302bx).*?(FILTERED: Not a selected vendor platform)',
+                r'(qemu_x86/atom).*?(FILTERED: Not a selected vendor platform)',
                 r'(DEBUG\s+- adding intel_adl_crb)'
             ]
         ),
         (
             'ite',
             [
-                r'(qemu_x86/atom).*?(SKIPPED: Not a selected vendor platform)',
-                r'(intel_adl_crb/alder_lake).*?(SKIPPED: Not a selected vendor platform)',
-                r'(hsdk/arc_hsdk).*?(SKIPPED: Not a selected vendor platform)',
+                r'(qemu_x86/atom).*?(FILTERED: Not a selected vendor platform)',
+                r'(intel_adl_crb/alder_lake).*?(FILTERED: Not a selected vendor platform)',
+                r'(hsdk/arc_hsdk).*?(FILTERED: Not a selected vendor platform)',
                 r'(DEBUG\s+- adding it8xxx2_evb)'
             ]
         )
@@ -81,23 +82,27 @@ class TestFilter:
         pass
 
     @pytest.mark.parametrize(
-        'tag, expected_test_count',
+        'tags, expected_test_count',
         [
-            ('device', 5),   # dummy.agnostic.group1.subgroup1.assert
-                             # dummy.agnostic.group1.subgroup2.assert
-                             # dummy.agnostic.group2.assert1
-                             # dummy.agnostic.group2.assert2
-                             # dummy.agnostic.group2.assert3
-            ('agnostic', 1)  # dummy.device.group.assert
+            (['device', 'cpp'], 6),
+                             # dummy.agnostic.group1.subgroup1.a1_1_tests.assert
+                             # dummy.agnostic.group1.subgroup2.a2_2_tests.assert
+                             # dummy.agnostic.group2.a2_tests.assert1
+                             # dummy.agnostic.group2.a2_tests.assert2
+                             # dummy.agnostic.group2.a2_tests.assert3
+                             # dummy.agnostic.group2.a3_tests.assert1
+            (['agnostic'], 1)  # dummy.device.group.assert
         ],
-        ids=['no device', 'no agnostic']
+        ids=['no device, no cpp', 'no agnostic']
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
-    def test_exclude_tag(self, out_path, tag, expected_test_count):
+    def test_exclude_tag(self, out_path, tags, expected_test_count):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
-               ['--exclude-tag', tag] + \
+               [val for pair in zip(
+                   ['--exclude-tag'] * len(tags), tags
+               ) for val in pair] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -144,7 +149,7 @@ class TestFilter:
 
         assert str(sys_exit.value) == '0'
 
-        assert len(filtered_j) == 5
+        assert len(filtered_j) == 6
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_enable_slow_only(self, out_path):
@@ -172,7 +177,7 @@ class TestFilter:
 
         assert str(sys_exit.value) == '0'
 
-        assert len(filtered_j) == 3
+        assert len(filtered_j) == 4
 
     @pytest.mark.parametrize(
         'arch, expected',

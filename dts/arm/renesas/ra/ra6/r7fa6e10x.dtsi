@@ -6,6 +6,9 @@
 
 #include <arm/renesas/ra/ra6/ra6-cm33-common.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
+
+/delete-node/ &adc1;
 
 / {
 	soc {
@@ -88,6 +91,31 @@
 				channel = <4>;
 				status = "disabled";
 			};
+		};
+
+		adc@40170000 {
+			channel-count = <11>;
+			channel-available-mask = <0x31ff>;
+		};
+
+		pwm6: pwm6@40169600 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_6>;
+			clocks = <&pclkd MSTPE 25>;
+			reg = <0x40169600 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm7: pwm7@40169700 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_7>;
+			clocks = <&pclkd MSTPE 24>;
+			reg = <0x40169700 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 	};
 
@@ -213,4 +241,107 @@
 			};
 		};
 	};
+};
+
+&ioport0 {
+	port-irqs = <&port_irq6 &port_irq7 &port_irq8
+	&port_irq9 &port_irq10 &port_irq11
+	&port_irq12 &port_irq13>;
+	port-irq-names = "port-irq6",
+			 "port-irq7",
+			 "port-irq8",
+			 "port-irq9",
+			 "port-irq10",
+			 "port-irq11",
+			 "port-irq12",
+			 "port-irq13";
+	port-irq6-pins = <0>;
+	port-irq7-pins = <1>;
+	port-irq8-pins = <2>;
+	port-irq9-pins = <4>;
+	port-irq10-pins = <5>;
+	port-irq11-pins = <6>;
+	port-irq12-pins = <8>;
+	port-irq13-pins = <15>;
+};
+
+&ioport1 {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq3 &port_irq4>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3",
+			 "port-irq4";
+	port-irq0-pins = <5>;
+	port-irq1-pins = <1 4>;
+	port-irq2-pins = <0>;
+	port-irq3-pins = <10>;
+	port-irq4-pins = <11>;
+};
+
+&ioport2 {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq3>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3";
+	port-irq0-pins = <6>;
+	port-irq1-pins = <5>;
+	port-irq2-pins = <13>;
+	port-irq3-pins = <12>;
+};
+
+&ioport3 {
+	port-irqs = <&port_irq5 &port_irq6
+	&port_irq8 &port_irq9>;
+	port-irq-names = "port-irq5",
+			 "port-irq6",
+			 "port-irq8",
+			 "port-irq9";
+	port-irq5-pins = <2>;
+	port-irq6-pins = <1>;
+	port-irq8-pins = <5>;
+	port-irq9-pins = <4>;
+};
+
+&ioport4 {
+	port-irqs = <&port_irq0 &port_irq4 &port_irq5
+	&port_irq6 &port_irq7 &port_irq8
+	&port_irq9 &port_irq14 &port_irq15>;
+	port-irq-names = "port-irq0",
+			 "port-irq4",
+			 "port-irq5",
+			 "port-irq6",
+			 "port-irq7",
+			 "port-irq8",
+			 "port-irq9",
+			 "port-irq14",
+			 "port-irq15";
+	port-irq0-pins = <0>;
+	port-irq4-pins = <2 11>;
+	port-irq5-pins = <1 10>;
+	port-irq6-pins = <9>;
+	port-irq7-pins = <8>;
+	port-irq8-pins = <15>;
+	port-irq9-pins = <14>;
+	port-irq14-pins = <3>;
+	port-irq15-pins = <4>;
+};
+
+&ioport5 {
+	port-irqs = <&port_irq11 &port_irq12 &port_irq14>;
+	port-irq-names = "port-irq11",
+			 "port-irq12",
+			 "port-irq14";
+	port-irq11-pins = <1>;
+	port-irq12-pins = <2>;
+	port-irq14-pins = <5>;
+};
+
+&ioport7 {
+	port-irqs = <&port_irq11>;
+	port-irq-names = "port-irq11";
+	port-irq11-pins = <8>;
 };

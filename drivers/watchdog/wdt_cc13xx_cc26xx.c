@@ -213,7 +213,7 @@ static int wdt_cc13xx_cc26xx_init(const struct device *dev)
 	return wdt_cc13xx_cc26xx_setup(dev, options);
 }
 
-static const struct wdt_driver_api wdt_cc13xx_cc26xx_api = {
+static DEVICE_API(wdt, wdt_cc13xx_cc26xx_api) = {
 	.setup = wdt_cc13xx_cc26xx_setup,
 	.disable = wdt_cc13xx_cc26xx_disable,
 	.install_timeout = wdt_cc13xx_cc26xx_install_timeout,

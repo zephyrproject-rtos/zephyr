@@ -297,7 +297,18 @@ struct bt_gatt_attr {
 	 *
 	 *  @sa bt_gatt_discover_func_t about this field.
 	 */
-	uint16_t perm;
+	uint16_t perm: 15;
+
+	/** @cond INTERNAL_HIDDEN
+	 *  Indicates if the attribute handle was assigned automatically.
+	 *
+	 *  This flag is set to 1 if the attribute handle was assigned by the stack,
+	 *  and 0 if it was manually set by the application.
+	 *
+	 *  @note Applications must not modify this field.
+	 */
+	bool _auto_assigned_handle: 1;
+	/** @endcond */
 };
 
 /** @brief GATT Service structure */

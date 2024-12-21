@@ -4,6 +4,7 @@
 
 from runners.core import ZephyrBinaryRunner
 
+
 def test_runner_imports():
     # Ensure that all runner modules are imported and returned by
     # get_runners().
@@ -21,6 +22,7 @@ def test_runner_imports():
         'canopen',
         'dediprog',
         'dfu-util',
+        'ecpprog',
         'esp32',
         'ezflashcli',
         'gd32isp',
@@ -31,6 +33,7 @@ def test_runner_imports():
         'linkserver',
         'mdb-hw',
         'mdb-nsim',
+        'minichlink',
         'misc-flasher',
         'native',
         'nios2',

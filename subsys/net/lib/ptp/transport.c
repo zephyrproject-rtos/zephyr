@@ -266,7 +266,7 @@ int ptp_transport_close(struct ptp_port *port)
 
 int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
-	__ASSERT(PTP_SOCKET_CNT <= idx, "Invalid socket index");
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	static const int socket_port[] = {PTP_SOCKET_PORT_EVENT, PTP_SOCKET_PORT_GENERAL};
 	int length = ntohs(msg->header.msg_length);
@@ -276,7 +276,7 @@ int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 
 int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
-	__ASSERT(PTP_SOCKET_CNT <= idx, "Invalid socket index");
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	static const int socket_port[] = {PTP_SOCKET_PORT_EVENT, PTP_SOCKET_PORT_GENERAL};
 	int length = ntohs(msg->header.msg_length);
@@ -286,7 +286,7 @@ int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 
 int ptp_transport_recv(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
-	__ASSERT(PTP_SOCKET_CNT <= idx, "Invalid socket index");
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	int cnt = 0;
 	uint8_t ctrl[CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
@@ -325,13 +325,17 @@ int ptp_transport_protocol_addr(struct ptp_port *port, uint8_t *addr)
 	if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
 		struct in_addr *ip = net_if_ipv4_get_global_addr(port->iface, NET_ADDR_PREFERRED);
 
-		length = NET_IPV4_ADDR_SIZE;
-		*addr = ip->s_addr;
+		if (ip) {
+			length = NET_IPV4_ADDR_SIZE;
+			*addr = ip->s_addr;
+		}
 	} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
 		struct in6_addr *ip = net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &port->iface);
 
-		length = NET_IPV6_ADDR_SIZE;
-		memcpy(addr, ip, length);
+		if (ip) {
+			length = NET_IPV6_ADDR_SIZE;
+			memcpy(addr, ip, length);
+		}
 	}
 
 	return length;

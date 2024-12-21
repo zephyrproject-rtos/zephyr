@@ -51,12 +51,35 @@
 		};
 	};
 
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+
+		orange_pwm_led: orange_pwm_led {
+			pwms = <&pwm4 2 PWM_USEC(100) PWM_POLARITY_NORMAL>;
+		};
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm4 1 PWM_USEC(100) PWM_POLARITY_NORMAL>;
+		};
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm4 3 PWM_USEC(100) PWM_POLARITY_NORMAL>;
+		};
+
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&pwm4 4 PWM_USEC(100) PWM_POLARITY_NORMAL>;
+		};
+	};
+
 	aliases {
 		led0 = &green_led_4;
 		led1 = &orange_led_3;
 		led2 = &red_led_5;
 		led3 = &blue_led_6;
 		sw0 = &user_button;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -110,6 +133,16 @@
 	};
 };
 
+&timers4 {
+	status = "okay";
+
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim4_ch1_pd12 &tim4_ch2_pd13 &tim4_ch3_pd14 &tim4_ch4_pd15>;
+		pinctrl-names = "default";
+	};
+};
+
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
@@ -135,5 +168,22 @@ zephyr_udc0: &usbotg_fs {
 &can2 {
 	pinctrl-0 = <&can2_rx_pb5 &can2_tx_pb13>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc1 {
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

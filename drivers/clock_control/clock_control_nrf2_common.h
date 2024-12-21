@@ -37,6 +37,16 @@ struct clock_onoff {
 	}
 
 /**
+ * @brief Obtain LFOSC accuracy in ppm.
+ *
+ * @param[out] accuracy Accuracy in ppm.
+ *
+ * @retval 0 On success
+ * @retval -EINVAL If accuracy is not configured.
+ */
+int lfosc_get_accuracy(uint16_t *accuracy);
+
+/**
  * @brief Initializes a clock configuration structure.
  *
  * @param clk_cfg pointer to the structure to be initialized.
@@ -74,15 +84,5 @@ uint8_t clock_config_update_begin(struct k_work *work);
 void clock_config_update_end(void *clk_cfg, int status);
 
 int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys);
-
-struct clock_lrcconf_sink {
-	sys_snode_t node;
-};
-
-/**
- * @brief Request or release lrcconf main power domain
- */
-void clock_request_lrcconf_poweron_main(struct clock_lrcconf_sink *sink);
-void clock_release_lrcconf_poweron_main(struct clock_lrcconf_sink *sink);
 
 #endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF2_COMMON_H_ */

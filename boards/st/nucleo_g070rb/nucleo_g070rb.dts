@@ -139,7 +139,7 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;
@@ -155,10 +155,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Set 2KB of storage at the end of 128KB flash */
-		storage_partition: partition@1f800 {
+		/* Set 4KB of storage at the end of 128KB flash */
+		storage_partition: partition@1f000 {
 			label = "storage";
-			reg = <0x0001f800 DT_SIZE_K(2)>;
+			reg = <0x0001f000 DT_SIZE_K(4)>;
 		};
 	};
 };

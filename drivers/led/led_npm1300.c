@@ -62,7 +62,7 @@ static int led_npm1300_off(const struct device *dev, uint32_t led)
 				     1U);
 }
 
-static const struct led_driver_api led_npm1300_api = {
+static DEVICE_API(led, led_npm1300_api) = {
 	.on = led_npm1300_on,
 	.off = led_npm1300_off,
 };

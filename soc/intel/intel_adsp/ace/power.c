@@ -68,11 +68,10 @@ __imr void power_init(void)
  * NOTE: there's no return from this function.
  *
  * @param disable_lpsram        flag if LPSRAM is to be disabled (whole)
- * @param hpsram_pg_mask pointer to memory segments power gating mask
- * (each bit corresponds to one ebb)
+ * @param disable_hpsram        flag if HPSRAM is to be disabled (whole)
  * @param response_to_ipc       flag if ipc response should be send during power down
  */
-void power_down(bool disable_lpsram, bool hpsram_mask, bool response_to_ipc);
+void power_down(bool disable_lpsram, bool disable_hpsram, bool response_to_ipc);
 
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 /**
@@ -274,9 +273,6 @@ __imr void pm_state_imr_restore(void)
 }
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 
-#include "asm_memory_management.h"
-extern uint32_t hpsram_mask[MAX_MEMORY_SEGMENTS];
-
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
@@ -343,16 +339,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 					(void *)rom_entry;
 			sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
-#ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
-			/* turn off all HPSRAM banks - get a full bitmap */
-			uint32_t ebb_banks = ace_hpsram_get_bank_count();
-			hpsram_mask[0] = (1 << ebb_banks) - 1;
-#define HPSRAM_MASK true
-#else
-#define HPSRAM_MASK false
-#endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
 			/* do power down - this function won't return */
-			power_down(true, HPSRAM_MASK, true);
+			power_down(true, CONFIG_ADSP_POWER_DOWN_HPSRAM, true);
 		} else {
 			power_gate_entry(cpu);
 		}

@@ -329,7 +329,7 @@ static int axp192_get_current_limit(const struct device *dev, int32_t *curr_ua)
 	return 0;
 }
 
-static struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = axp192_enable,
 	.disable = axp192_disable,
 	.count_voltages = axp192_count_voltages,

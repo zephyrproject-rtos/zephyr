@@ -13,10 +13,6 @@ config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
-config PINCTRL_IMX
-	default y if HAS_MCUX_IOMUXC
-	depends on PINCTRL
-
 config ADC_MCUX_12B1MSPS_SAR
 	default y if HAS_MCUX_12B1MSPS_SAR
 	depends on ADC
@@ -85,17 +81,12 @@ choice SEGGER_SYSVIEW_SECTION
 	depends on SEGGER_SYSTEMVIEW
 endchoice
 
-config MBEDTLS
-	default y if CSPRNG_ENABLED
-	depends on ENTROPY_GENERATOR
-
 if MBEDTLS
 #
 # MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
 # what the ztest_thread_stack defaults to.
 #
 config TEST_EXTRA_STACK_SIZE
-	int
 	default 1024
 endif # MBEDTLS
 

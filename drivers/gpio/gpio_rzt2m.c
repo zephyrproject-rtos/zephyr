@@ -393,7 +393,7 @@ static int rzt2m_gpio_manage_callback(const struct device *dev, struct gpio_call
 	return gpio_manage_callback(&data->cb, cb, set);
 }
 
-static const struct gpio_driver_api rzt2m_gpio_driver_api = {
+static DEVICE_API(gpio, rzt2m_gpio_driver_api) = {
 	.pin_configure = rzt2m_gpio_configure,
 	.port_get_raw = rzt2m_gpio_get_raw,
 	.port_set_masked_raw = rzt2m_port_set_masked_raw,

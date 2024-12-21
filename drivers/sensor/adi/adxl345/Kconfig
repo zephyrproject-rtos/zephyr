@@ -38,7 +38,7 @@ config ADXL345_STREAM
 	bool "Use FIFO to stream data"
 	select ADXL345_TRIGGER
 	default y
-	depends on SPI_RTIO
+	depends on (SPI_RTIO || I2C_RTIO)
 	depends on SENSOR_ASYNC_API
 	help
 	  Use this configuration option to enable streaming sensor data via RTIO.

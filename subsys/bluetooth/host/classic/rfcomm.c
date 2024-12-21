@@ -17,7 +17,6 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <zephyr/bluetooth/l2cap.h>
 
 #include <zephyr/bluetooth/classic/rfcomm.h>
@@ -37,7 +36,7 @@ LOG_MODULE_REGISTER(bt_rfcomm);
 #define RFCOMM_MIN_MTU		BT_RFCOMM_SIG_MIN_MTU
 #define RFCOMM_DEFAULT_MTU	127
 
-#define RFCOMM_MAX_CREDITS		(CONFIG_BT_BUF_ACL_RX_COUNT - 1)
+#define RFCOMM_MAX_CREDITS		(BT_BUF_ACL_RX_COUNT - 1)
 #define RFCOMM_CREDITS_THRESHOLD	(RFCOMM_MAX_CREDITS / 2)
 #define RFCOMM_DEFAULT_CREDIT		RFCOMM_MAX_CREDITS
 

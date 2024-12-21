@@ -61,7 +61,7 @@
 		st7735: st7735@0 {
 			compatible = "sitronix,st7735r";
 			mipi-max-frequency = <DT_FREQ_M(6)>;
-			mipi-mode = <MIPI_DBI_MODE_SPI_3WIRE>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_3WIRE";
 
 			reg = <0>;
 			width = <130>;
@@ -102,6 +102,13 @@
 	status = "okay";
 };
 
+/*
+ * ERTCO is required for counter RTC
+ */
+&clk_ertco {
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -117,6 +124,10 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&rtc_counter {
 	status = "okay";
 };
 

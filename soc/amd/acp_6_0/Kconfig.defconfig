@@ -1,0 +1,25 @@
+# Copyright (c) 2024 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ACP_6_0
+config DCACHE_LINE_SIZE
+	default 128
+
+config CACHE_MANAGEMENT
+	default n
+
+config XTENSA_TIMER
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 600000000 if XTENSA_TIMER
+
+config MULTI_LEVEL_INTERRUPTS
+	default n
+
+config 2ND_LEVEL_INTERRUPTS
+	default n
+
+config KERNEL_ENTRY
+	default "__start"
+endif

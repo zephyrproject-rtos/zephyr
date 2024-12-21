@@ -26,15 +26,17 @@ Roles
 
 """
 
+import json
 import sys
+from collections.abc import Iterator
 from os import path
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Tuple, Final
+from typing import Any
 
+from anytree import ChildResolverError, Node, PreOrderIter, Resolver, search
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
-
 from sphinx import addnodes
 from sphinx.application import Sphinx
 from sphinx.domains import Domain, ObjType
@@ -51,20 +53,15 @@ from sphinx.util.template import SphinxRenderer
 from zephyr.doxybridge import DoxygenGroupDirective
 from zephyr.gh_utils import gh_link_get_url
 
-
-import json
-
-from anytree import Node, Resolver, ChildResolverError, PreOrderIter, search
-
 __version__ = "0.2.0"
 
-ZEPHYR_BASE = Path(__file__).parents[4]
 
-sys.path.insert(0, str(ZEPHYR_BASE / "scripts/dts/python-devicetree/src"))
+sys.path.insert(0, str(Path(__file__).parents[4] / "scripts/dts/python-devicetree/src"))
 sys.path.insert(0, str(Path(__file__).parents[3] / "_scripts"))
 
 from gen_boards_catalog import get_catalog
 
+ZEPHYR_BASE = Path(__file__).parents[4]
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 RESOURCES_DIR = Path(__file__).parent / "static"
 
@@ -253,6 +250,7 @@ class ConvertBoardNode(SphinxTransform):
             sidebar += field_list
 
             details = [
+                ("Name", nodes.literal(text=node["id"])),
                 ("Vendor", node["vendor"]),
                 ("Architecture", ", ".join(node["archs"])),
                 ("SoC", ", ".join(node["socs"])),
@@ -262,7 +260,10 @@ class ConvertBoardNode(SphinxTransform):
                 field = nodes.field()
                 field_name = nodes.field_name(text=property_name)
                 field_body = nodes.field_body()
-                field_body += nodes.paragraph(text=value)
+                if isinstance(value, nodes.Node):
+                    field_body += value
+                else:
+                    field_body += nodes.paragraph(text=value)
                 field += field_name
                 field += field_body
                 field_list += field
@@ -291,10 +292,10 @@ class CodeSampleCategoriesTocPatching(SphinxPostTransform):
         reference = nodes.reference(
             "",
             "",
+            *[nodes.Text(tree.category["name"])],
             internal=True,
             refuri=docname,
             anchorname="",
-            *[nodes.Text(tree.category["name"])],
             classes=["category-link"],
         )
         compact_paragraph += reference
@@ -324,10 +325,10 @@ class CodeSampleCategoriesTocPatching(SphinxPostTransform):
                 sample_xref = nodes.reference(
                     "",
                     "",
+                    *[nodes.Text(code_sample["name"])],
                     internal=True,
                     refuri=code_sample["docname"],
                     anchorname="",
-                    *[nodes.Text(code_sample["name"])],
                     classes=["code-sample-link"],
                 )
                 sample_xref["reftitle"] = code_sample["description"].astext()
@@ -410,7 +411,8 @@ class ProcessCodeSampleListingNode(SphinxPostTransform):
                     "",
                     """
                     <div class="cs-search-bar">
-                      <input type="text" class="cs-search-input" placeholder="Filter code samples..." onkeyup="filterSamples(this)">
+                      <input type="text" class="cs-search-input"
+                             placeholder="Filter code samples..." onkeyup="filterSamples(this)">
                       <i class="fa fa-search"></i>
                     </div>
                     """,
@@ -428,7 +430,8 @@ class ProcessCodeSampleListingNode(SphinxPostTransform):
 
                 category_node = search.find(
                     code_samples_categories_tree,
-                    lambda node: hasattr(node, "category") and node.category["id"] == category,
+                    lambda node, category=category: hasattr(node, "category")
+                    and node.category["id"] == category,
                 )
                 self.output_sample_categories_sections(category_node, container)
 
@@ -717,13 +720,13 @@ class ZephyrDomain(Domain):
         "board": BoardDirective,
     }
 
-    object_types: Dict[str, ObjType] = {
+    object_types: dict[str, ObjType] = {
         "code-sample": ObjType("code sample", "code-sample"),
         "code-sample-category": ObjType("code sample category", "code-sample-category"),
         "board": ObjType("board", "board"),
     }
 
-    initial_data: Dict[str, Any] = {
+    initial_data: dict[str, Any] = {
         "code-samples": {},  # id -> code sample data
         "code-samples-categories": {},  # id -> code sample category data
         "code-samples-categories-tree": Node("samples"),
@@ -750,11 +753,12 @@ class ZephyrDomain(Domain):
         self.data["has_code_sample_listing"].pop(docname, None)
         self.data["has_board_catalog"].pop(docname, None)
 
-    def merge_domaindata(self, docnames: List[str], otherdata: Dict) -> None:
+    def merge_domaindata(self, docnames: list[str], otherdata: dict) -> None:
         self.data["code-samples"].update(otherdata["code-samples"])
         self.data["code-samples-categories"].update(otherdata["code-samples-categories"])
 
-        # self.data["boards"] contains all the boards right from builder-inited time, but it still # potentially needs merging since a board's docname property is set by BoardDirective to
+        # self.data["boards"] contains all the boards right from builder-inited time, but it still
+        # potentially needs merging since a board's docname property is set by BoardDirective to
         # indicate the board is documented in a specific document.
         for board_name, board in otherdata["boards"].items():
             if "docname" in board:
@@ -815,7 +819,7 @@ class ZephyrDomain(Domain):
                 )
 
     # used by Sphinx Immaterial theme
-    def get_object_synopses(self) -> Iterator[Tuple[Tuple[str, str], str]]:
+    def get_object_synopses(self) -> Iterator[tuple[tuple[str, str], str]]:
         for _, code_sample in self.data["code-samples"].items():
             yield (
                 (code_sample["docname"], code_sample["id"]),
@@ -895,7 +899,7 @@ class ZephyrDomain(Domain):
 class CustomDoxygenGroupDirective(DoxygenGroupDirective):
     """Monkey patch for Breathe's DoxygenGroupDirective."""
 
-    def run(self) -> List[Node]:
+    def run(self) -> list[Node]:
         nodes = super().run()
 
         if self.config.zephyr_breathe_insert_related_samples:

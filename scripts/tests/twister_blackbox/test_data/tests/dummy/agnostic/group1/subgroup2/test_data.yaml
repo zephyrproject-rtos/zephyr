@@ -10,3 +10,4 @@ tests:
     tags:
       - agnostic
       - subgrouped
+      - even

@@ -8,4 +8,4 @@ HCI Drivers
 API Reference
 *************
 
-.. doxygengroup:: bt_hci_driver
+.. doxygengroup:: bt_hci_api

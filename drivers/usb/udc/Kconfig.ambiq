@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_AMBIQ
+	bool "USB device controller driver for ambiq devices"
+	default y
+	depends on DT_HAS_AMBIQ_USB_ENABLED
+	select GPIO
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_USB
+	help
+	  Enable USB Device Controller Driver.
+
+config UDC_AMBIQ_STACK_SIZE
+	int "UDC AMBIQ driver internal thread stack size"
+	depends on UDC_AMBIQ
+	default 2048
+	help
+	  AMBIQ driver internal thread stack size.
+
+config UDC_AMBIQ_THREAD_PRIORITY
+	int "UDC AMBIQ driver thread priority"
+	depends on UDC_AMBIQ
+	default 8
+	help
+	  AMBIQ driver thread priority.
+
+
+config UDC_AMBIQ_MAX_QMESSAGES
+	int "UDC AMBIQ maximum number of ISR event messages"
+	range 4 64
+	default 8
+	help
+	  AMBIQ maximum number of ISR event messages.

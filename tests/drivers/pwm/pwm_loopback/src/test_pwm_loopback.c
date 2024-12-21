@@ -85,6 +85,8 @@ static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit uni
 		ztest_test_fail();
 	}
 
+	pwm_disable_capture(in.dev, in.pwm);
+
 	if (err == -ENOTSUP) {
 		TC_PRINT("capture type not supported\n");
 		ztest_test_skip();

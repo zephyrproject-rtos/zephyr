@@ -11,34 +11,10 @@ config NET_L2_ETHERNET
 
 endif # NETWORKING
 
-if USB_DEVICE_STACK
+if BOARD_ARDUINO_OPTA_STM32H747XX_M7
 
-config USB_DEVICE_PRODUCT
-	default "Arduino Opta"
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
-config USB_DEVICE_PID
-	default 0x0164
-
-config USB_DEVICE_VID
-	default 0x35d1
-
-config USB_DEVICE_INITIALIZE_AT_BOOT
-	default y
-
-if LOG
-
-# Logger cannot use itself to log
-choice USB_CDC_ACM_LOG_LEVEL_CHOICE
-	default USB_CDC_ACM_LOG_LEVEL_OFF
-endchoice
-
-# Set USB log level to error only
-choice USB_DEVICE_LOG_LEVEL_CHOICE
-	default USB_DEVICE_LOG_LEVEL_ERR
-endchoice
-
-endif # LOG
-
-endif # USB_DEVICE_STACK
+endif # BOARD_ARDUINO_OPTA_STM32H747XX_M7
 
 endif # BOARD_ARDUINO_OPTA

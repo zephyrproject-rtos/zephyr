@@ -96,8 +96,8 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 
 		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 
-		LOG_DBG("cmd service %u opcode %u index %u", cmd->hdr.service, cmd->hdr.opcode,
-			cmd->hdr.index);
+		LOG_DBG("cmd service 0x%02x opcode 0x%02x index 0x%02x", cmd->hdr.service,
+			cmd->hdr.opcode, cmd->hdr.index);
 
 		len = sys_le16_to_cpu(cmd->hdr.len);
 
@@ -296,7 +296,8 @@ static void tester_rsp_with_index(uint8_t service, uint8_t opcode, uint8_t index
 {
 	struct btp_status s;
 
-	LOG_DBG("service %u opcode %u index %u status %u", service, opcode, index, status);
+	LOG_DBG("service 0x%02x opcode 0x%02x index 0x%02x status 0x%02x", service, opcode, index,
+		status);
 
 	if (status == BTP_STATUS_SUCCESS) {
 		tester_send_with_index(service, opcode, index, NULL, 0);
@@ -311,7 +312,7 @@ void tester_event(uint8_t service, uint8_t opcode, const void *data, size_t len)
 {
 	__ASSERT_NO_MSG(opcode >= 0x80);
 
-	LOG_DBG("service %u opcode %u", service, opcode);
+	LOG_DBG("service 0x%02x opcode 0x%02x", service, opcode);
 
 	tester_send_with_index(service, opcode, BTP_INDEX, data, len);
 }
@@ -323,7 +324,7 @@ void tester_rsp_full(uint8_t service, uint8_t opcode, const void *rsp, size_t le
 	__ASSERT_NO_MSG(opcode < 0x80);
 	__ASSERT_NO_MSG(delayed_cmd != NULL);
 
-	LOG_DBG("service %u opcode %u", service, opcode);
+	LOG_DBG("service 0x%02x opcode 0x%02x", service, opcode);
 
 	tester_send_with_index(service, opcode, BTP_INDEX, rsp, len);
 
@@ -341,7 +342,7 @@ void tester_rsp(uint8_t service, uint8_t opcode, uint8_t status)
 	__ASSERT_NO_MSG(opcode < 0x80);
 	__ASSERT_NO_MSG(delayed_cmd != NULL);
 
-	LOG_DBG("service %u opcode %u status %u", service, opcode, status);
+	LOG_DBG("service 0x%02x opcode 0x%02x status 0x%02x", service, opcode, status);
 
 	tester_rsp_with_index(service, opcode, BTP_INDEX, status);
 

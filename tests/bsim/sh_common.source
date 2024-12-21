@@ -7,7 +7,7 @@ _process_ids="";
 : "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
 
 #Give a default value to BOARD if it does not have one yet:
-BOARD="${BOARD:-nrf52_bsim}"
+BOARD="${BOARD:-nrf52_bsim/native}"
 
 #The board target full string (with qualifiers):
 BOARD_TS="${BOARD//\//_}"

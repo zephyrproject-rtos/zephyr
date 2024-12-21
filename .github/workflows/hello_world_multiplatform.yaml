@@ -12,8 +12,7 @@ on:
       - v*-branch
       - collab-*
     paths:
-      - 'scripts/build/**'
-      - 'scripts/requirements*.txt'
+      - 'scripts/**'
       - '.github/workflows/hello_world_multiplatform.yaml'
       - 'SDK_VERSION'
 
@@ -45,6 +44,8 @@ jobs:
         run: |
           git config --global user.email "actions@zephyrproject.org"
           git config --global user.name "Github Actions"
+          rm -fr ".git/rebase-apply"
+          rm -fr ".git/rebase-merge"
           git rebase origin/${BASE_REF}
           git clean -f -d
           git log --graph --oneline HEAD...${PR_HEAD}

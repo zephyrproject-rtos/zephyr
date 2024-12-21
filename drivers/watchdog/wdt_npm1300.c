@@ -124,7 +124,7 @@ static int wdt_npm1300_feed(const struct device *dev, int channel_id)
 	return mfd_npm1300_reg_write(config->mfd, TIME_BASE, TIME_OFFSET_WDOG_KICK, 1U);
 }
 
-static const struct wdt_driver_api wdt_npm1300_api = {
+static DEVICE_API(wdt, wdt_npm1300_api) = {
 	.setup = wdt_npm1300_setup,
 	.disable = wdt_npm1300_disable,
 	.install_timeout = wdt_npm1300_install_timeout,

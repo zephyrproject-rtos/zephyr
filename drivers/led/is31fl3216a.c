@@ -222,7 +222,7 @@ static int is31fl3216a_init(const struct device *dev)
 	return is31fl3216a_init_registers(&config->i2c);
 }
 
-static const struct led_driver_api is31fl3216a_led_api = {
+static DEVICE_API(led, is31fl3216a_led_api) = {
 	.set_brightness = is31fl3216a_led_set_brightness,
 	.on = is31fl3216a_led_on,
 	.off = is31fl3216a_led_off,

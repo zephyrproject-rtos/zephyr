@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_lpuart
+#define DT_DRV_COMPAT nxp_lpuart
 
 #include <errno.h>
 #include <zephyr/device.h>
@@ -1235,7 +1235,7 @@ static int mcux_lpuart_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api mcux_lpuart_driver_api = {
+static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 	.poll_in = mcux_lpuart_poll_in,
 	.poll_out = mcux_lpuart_poll_out,
 	.err_check = mcux_lpuart_err_check,

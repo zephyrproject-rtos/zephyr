@@ -1289,7 +1289,7 @@ typedef bool (*stack_trace_callback_fn)(void *cookie, unsigned long addr);
  * ============ ======= ============================================
  * thread	esf
  * ============ ======= ============================================
- * thread	NULL	Stack trace from thread (can be _current)
+ * thread	NULL	Stack trace from thread (can be arch_current_thread())
  * thread	esf	Stack trace starting on esf
  * ============ ======= ============================================
  */

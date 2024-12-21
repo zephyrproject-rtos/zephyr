@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ESP_INTR_ALLOC_H__
-#define ZEPHYR_INCLUDE_DRIVERS_ESP_INTR_ALLOC_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -311,4 +311,4 @@ void esp_intr_noniram_disable(void);
  */
 void esp_intr_noniram_enable(void);
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32_H_ */

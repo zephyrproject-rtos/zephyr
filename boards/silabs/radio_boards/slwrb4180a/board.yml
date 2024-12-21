@@ -1,5 +1,6 @@
-boards:
-  - name: slwrb4180a
-    full_name: EFR32xG21 2.4 GHz 20 dBm (SLWRB4180A)
-    socs:
-      - name: efr32mg21a020f1024im32
+board:
+  name: slwrb4180a
+  full_name: EFR32xG21 2.4 GHz 20 dBm (SLWRB4180A)
+  vendor: silabs
+  socs:
+    - name: efr32mg21a020f1024im32

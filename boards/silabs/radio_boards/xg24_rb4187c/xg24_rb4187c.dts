@@ -17,6 +17,7 @@
 	chosen {
 		zephyr,console = &usart0;
 		zephyr,shell-uart = &usart0;
+		zephyr,uart-pipe = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -35,11 +36,11 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpiob GECKO_PIN(2) GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
 		};
 		led1: led_1 {
-			gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
 			label = "LED 1";
 		};
 	};
@@ -47,12 +48,12 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpiob GECKO_PIN(1) GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
-			gpios = <&gpiob GECKO_PIN(3) GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 1";
 			zephyr,code = <INPUT_KEY_1>;
 		};

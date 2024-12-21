@@ -87,4 +87,62 @@
 			#clock-cells = <0>;
 		};
 	};
+
+	axi {
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		pcie2: pcie@1000120000 {
+			compatible = "brcm,brcmstb-pcie";
+			reg = <0x10 0x120000 0x9310>,
+			      <0x0 0x410000 0x4000>,
+			      <0x0 0x0 0x400000>,
+			      <0x0 0x400000 0x4000>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x02000000 0x0 0x0 0x1f 0x0 0x00 0xfffffffc>,
+				 <0x43000000 0x4 0x0 0x1c 0x0 0x03 0x00000000>,
+				 <0x02000000 0x0 0x0 0x1f 0x0 0x00 0x00400000>;
+			status = "okay";
+
+			rp1 {
+				#address-cells = <2>;
+				#size-cells = <1>;
+
+				gpio0: gpio@1f000d0000 {
+					compatible = "simple-bus";
+					reg = <0x1f 0xd0000 0x30000>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gpio0_0: gpio@0 {
+						compatible = "raspberrypi,rp1-gpio";
+						reg = <0x0 0x10000 0x20000>;
+						#gpio-cells = <2>;
+						gpio-controller;
+						ngpios = <28>;
+						status = "disabled";
+					};
+
+					gpio0_1: gpio@4000 {
+						compatible = "raspberrypi,rp1-gpio";
+						reg = <0x4000 0x14000 0x24000>;
+						#gpio-cells = <2>;
+						gpio-controller;
+						ngpios = <6>;
+						status = "disabled";
+					};
+
+					gpio0_2: gpio@8000 {
+						compatible = "raspberrypi,rp1-gpio";
+						reg = <0x8000 0x18000 0x28000>;
+						#gpio-cells = <2>;
+						gpio-controller;
+						ngpios = <20>;
+						status = "disabled";
+					};
+				};
+			};
+		};
+	};
 };

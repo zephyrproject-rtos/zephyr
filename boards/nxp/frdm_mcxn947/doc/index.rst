@@ -75,6 +75,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| SCTimer   | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 | CTIMER    | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 | USDHC     | on-chip    | sdhc                                |
@@ -82,6 +84,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 | VREF      | on-chip    | regulator                           |
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
 +-----------+------------+-------------------------------------+
 | USBHS     | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+

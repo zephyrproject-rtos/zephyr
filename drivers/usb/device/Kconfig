@@ -37,6 +37,7 @@ config USB_DC_RPI_PICO
 	bool "USB device controller driver for Raspberry Pi Pico devices"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_USBD_ENABLED
+	select PINCTRL
 	help
 	  Enable USB support on the RP2 family of processors.
 
@@ -61,7 +62,7 @@ config USB_DC_STM32
 config USB_DC_STM32_CLOCK_CHECK
 	bool "Runtime USB 48MHz clock check"
 	depends on USB_DC_STM32
-	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X)
+	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32U5X)
 	help
 	  Enable USB clock 48MHz configuration runtime check.
 	  In specific cases, this check might provide wrong verdict and should
@@ -204,6 +205,7 @@ config USB_DC_NUMAKER
 	bool "Nuvoton NuMaker USB 1.1 device controller"
 	default y
 	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED
+	select PINCTRL
 	help
 	  Enable Nuvoton NuMaker USB 1.1 device controller driver
 

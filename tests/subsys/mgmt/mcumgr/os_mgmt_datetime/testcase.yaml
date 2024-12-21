@@ -15,5 +15,7 @@ common:
     - qemu_malta
     - qemu_arc/qemu_arc_hs6x
     - qemu_leon3
+  integration_platforms:
+    - native_sim
 tests:
   mgmt.mcumgr.os.datetime: {}

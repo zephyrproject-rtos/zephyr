@@ -15,6 +15,11 @@
 /** Dummy: Add a specifier when no selection is possible */
 #define NO_SEL			0xFF
 
+#define STM32_CLOCK_DIV_SHIFT	12
+
+/** Clock divider */
+#define STM32_CLOCK_DIV(div)	(((div) - 1) << STM32_CLOCK_DIV_SHIFT)
+
 /** STM32 MCO configuration values */
 #define STM32_MCO_CFGR_REG_MASK     0xFFFFU
 #define STM32_MCO_CFGR_REG_SHIFT    0U

@@ -272,11 +272,11 @@ static void ping_work(struct k_work *work)
 	params.data = NULL;
 	params.data_size = ctx->payload_size;
 
-	ret = net_icmp_send_echo_request(&ctx->icmp,
-					 ctx->iface,
-					 &ctx->addr,
-					 &params,
-					 ctx);
+	ret = net_icmp_send_echo_request_no_wait(&ctx->icmp,
+						 ctx->iface,
+						 &ctx->addr,
+						 &params,
+						 ctx);
 	if (ret != 0) {
 		PR_WARNING("Failed to send ping, err: %d", ret);
 		ping_done(ctx);

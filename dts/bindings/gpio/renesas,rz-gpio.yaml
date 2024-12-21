@@ -1,0 +1,43 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Reneses RZ  GPIO controller node.
+  Sample of usage:
+    gpio-consumer{
+          out-gpio = <&gpio8 2 (GPIO_PULL_UP);
+        };
+    &gpio8{
+          irq = <2 10>, <9 1>;
+          status = "okay";
+        };
+  Example above will configure pin 2 port 8:
+  - Using interrupt TINT10
+  - Set Pullup
+
+
+compatible: "renesas,rz-gpio"
+
+include:
+- name: base.yaml
+  property-allowlist:
+  - status
+  - reg
+  - label
+- name: gpio-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: GPIO port number
+
+  irqs:
+    type: array
+    description: pin-irq pairs
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+- pin
+- flags

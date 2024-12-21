@@ -11,9 +11,9 @@
 };
 
 &sw_sensor_enable {
-	enable-gpios = <&gpioa GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+	enable-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
 };
 
 &sw_mic_enable {
-	enable-gpios = <&gpioa GECKO_PIN(0) GPIO_ACTIVE_HIGH>;
+	enable-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
 };

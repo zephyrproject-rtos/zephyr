@@ -23,7 +23,7 @@ description: |
             status = "okay";
             psel = "AIN0";
             refsel = "VDD_4_8";
-            hyst = "ENABLED";
+            enable-hyst;
     };
 
   To select an external reference, select the "AREF"

@@ -1,7 +1,9 @@
 common:
   min_ram: 16
   depends_on: netif
-  tags: net iface
+  tags:
+    - net
+    - iface
 tests:
   net.conn_mgr.nodad:
     extra_configs:

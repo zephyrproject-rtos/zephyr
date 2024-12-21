@@ -254,12 +254,13 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 	return 0;
 }
 
-static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
-			   struct http_client_ctx *client)
+static int dynamic_get_del_req(struct http_resource_detail_dynamic *dynamic_detail,
+			       struct http_client_ctx *client)
 {
 	int ret, len;
 	char *ptr;
 	enum http_data_status status;
+	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
 	/* Start of GET params */
@@ -269,8 +270,9 @@ static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 
 	do {
 		memset(&response_ctx, 0, sizeof(response_ctx));
+		populate_request_ctx(&request_ctx, ptr, len, &client->header_capture_ctx);
 
-		ret = dynamic_detail->cb(client, status, ptr, len, &response_ctx,
+		ret = dynamic_detail->cb(client, status, &request_ctx, &response_ctx,
 					 dynamic_detail->user_data);
 		if (ret < 0) {
 			return ret;
@@ -296,12 +298,13 @@ static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 	return 0;
 }
 
-static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
-			    struct http_client_ctx *client)
+static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_detail,
+				struct http_client_ctx *client)
 {
 	int ret;
 	char *ptr = client->cursor;
 	enum http_data_status status;
+	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
 	if (ptr == NULL) {
@@ -315,12 +318,18 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 	}
 
 	memset(&response_ctx, 0, sizeof(response_ctx));
+	populate_request_ctx(&request_ctx, ptr, client->data_len, &client->header_capture_ctx);
 
-	ret = dynamic_detail->cb(client, status, ptr, client->data_len, &response_ctx,
+	ret = dynamic_detail->cb(client, status, &request_ctx, &response_ctx,
 				 dynamic_detail->user_data);
 	if (ret < 0) {
 		return ret;
 	}
+
+	/* Only send request headers in first callback to application. This is not strictly
+	 * necessary for http1, but is done for consistency with the http2 behaviour.
+	 */
+	client->header_capture_ctx.status = HTTP_HEADER_STATUS_NONE;
 
 	/* For POST the application might not send a response until all data has been received.
 	 * Don't send a default response until the application has had a chance to respond.
@@ -335,8 +344,9 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 	/* Once all data is transferred to application, repeat cb until response is complete */
 	while (!http_response_is_final(&response_ctx, status) && status == HTTP_SERVER_DATA_FINAL) {
 		memset(&response_ctx, 0, sizeof(response_ctx));
+		populate_request_ctx(&request_ctx, ptr, 0, &client->header_capture_ctx);
 
-		ret = dynamic_detail->cb(client, status, ptr, 0, &response_ctx,
+		ret = dynamic_detail->cb(client, status, &request_ctx, &response_ctx,
 					 dynamic_detail->user_data);
 		if (ret < 0) {
 			return ret;
@@ -450,6 +460,11 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	remaining = file_size;
 	while (remaining > 0) {
 		len = fs_read(&file, http_response, sizeof(http_response));
+		if (len < 0) {
+			LOG_ERR("Filesystem read error (%d)", len);
+			goto close;
+		}
+
 		ret = http_server_sendall(client, http_response, len);
 		if (ret < 0) {
 			goto close;
@@ -511,18 +526,21 @@ static int handle_http1_dynamic_resource(
 		}
 
 	case HTTP_GET:
-		/* For GET request, we do not pass any data to the app but let the app
-		 * send data to the peer.
+	case HTTP_DELETE:
+		/* For GET/DELETE request, we do not pass any data to the app
+		 * but let the app send data to the peer.
 		 */
-		if (user_method & BIT(HTTP_GET)) {
-			return dynamic_get_req(dynamic_detail, client);
+		if (user_method & BIT(client->method)) {
+			return dynamic_get_del_req(dynamic_detail, client);
 		}
 
 		goto not_supported;
 
 	case HTTP_POST:
-		if (user_method & BIT(HTTP_POST)) {
-			return dynamic_post_req(dynamic_detail, client);
+	case HTTP_PUT:
+	case HTTP_PATCH:
+		if (user_method & BIT(client->method)) {
+			return dynamic_post_put_req(dynamic_detail, client);
 		}
 
 		goto not_supported;
@@ -539,7 +557,6 @@ not_supported:
 	return 0;
 }
 
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
 static void check_user_request_headers(struct http_header_capture_ctx *ctx, const char *buf)
 {
 	size_t header_len;
@@ -574,7 +591,6 @@ static void check_user_request_headers(struct http_header_capture_ctx *ctx, cons
 		}
 	}
 }
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 static int on_header_field(struct http_parser *parser, const char *at,
 			   size_t length)
@@ -597,9 +613,10 @@ static int on_header_field(struct http_parser *parser, const char *at,
 			/* This means that the header field is fully parsed,
 			 * and we can use it directly.
 			 */
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
-			check_user_request_headers(&ctx->header_capture_ctx, ctx->header_buffer);
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+			if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+				check_user_request_headers(&ctx->header_capture_ctx,
+							   ctx->header_buffer);
+			}
 
 			if (strcasecmp(ctx->header_buffer, "Upgrade") == 0) {
 				ctx->has_upgrade_header = true;
@@ -616,7 +633,6 @@ static int on_header_field(struct http_parser *parser, const char *at,
 	return 0;
 }
 
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
 static void populate_user_request_header(struct http_header_capture_ctx *ctx, const char *buf)
 {
 	char *dest;
@@ -645,7 +661,6 @@ static void populate_user_request_header(struct http_header_capture_ctx *ctx, co
 	ctx->headers[ctx->count].value = dest;
 	ctx->count++;
 }
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 static int on_header_value(struct http_parser *parser,
 			   const char *at, size_t length)
@@ -659,21 +674,22 @@ static int on_header_value(struct http_parser *parser,
 		LOG_DBG("Header %s too long (by %zu bytes)", "value",
 			offset + length - sizeof(ctx->header_buffer) - 1U);
 		ctx->header_buffer[0] = '\0';
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
-		if (ctx->header_capture_ctx.store_next_value) {
+
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) &&
+		    ctx->header_capture_ctx.store_next_value) {
 			ctx->header_capture_ctx.store_next_value = false;
 			ctx->header_capture_ctx.status = HTTP_HEADER_STATUS_DROPPED;
 		}
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 	} else {
 		memcpy(ctx->header_buffer + offset, at, length);
 		offset += length;
 		ctx->header_buffer[offset] = '\0';
 
 		if (parser->state == s_header_almost_done) {
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
-			populate_user_request_header(&ctx->header_capture_ctx, ctx->header_buffer);
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+			if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+				populate_user_request_header(&ctx->header_capture_ctx,
+							     ctx->header_buffer);
+			}
 
 			if (ctx->has_upgrade_header) {
 				if (strcasecmp(ctx->header_buffer, "h2c") == 0) {
@@ -772,9 +788,9 @@ int enter_http1_request(struct http_client_ctx *client)
 	client->parser_state = HTTP1_INIT_HEADER_STATE;
 	client->http1_headers_sent = false;
 
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
-	client->header_capture_ctx.store_next_value = false;
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+		client->header_capture_ctx.store_next_value = false;
+	}
 
 	memset(client->header_buffer, 0, sizeof(client->header_buffer));
 	memset(client->url_buffer, 0, sizeof(client->url_buffer));

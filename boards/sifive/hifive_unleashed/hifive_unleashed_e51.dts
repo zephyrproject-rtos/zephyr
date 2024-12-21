@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include "hifive_unleashed.dtsi"
+
+/ {
+
+	cpus {
+		cpu@1 {
+			status = "disabled";
+		};
+
+		cpu@2 {
+			status = "disabled";
+		};
+
+		cpu@3 {
+			status = "disabled";
+		};
+
+		cpu@4 {
+			status = "disabled";
+		};
+	};
+
+};

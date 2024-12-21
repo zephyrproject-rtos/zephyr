@@ -39,7 +39,7 @@ int flash_area_open(uint8_t id, const struct flash_area **fap)
 		return -ENOENT;
 	}
 
-	if (!area->fa_dev || !device_is_ready(area->fa_dev)) {
+	if (!device_is_ready(area->fa_dev)) {
 		return -ENODEV;
 	}
 

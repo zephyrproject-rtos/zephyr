@@ -365,7 +365,7 @@ static int can_loopback_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-static const struct can_driver_api can_loopback_driver_api = {
+static DEVICE_API(can, can_loopback_driver_api) = {
 	.get_capabilities = can_loopback_get_capabilities,
 	.start = can_loopback_start,
 	.stop = can_loopback_stop,

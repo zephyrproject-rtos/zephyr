@@ -1,0 +1,13 @@
+common:
+  platform_allow:
+    - qemu_riscv32
+    - qemu_riscv32e
+    - qemu_riscv64
+  filter: CONFIG_RISCV_PMP
+  ignore_faults: true
+
+tests:
+  arch.riscv.pmp.no-mt.isr-stack-guard:
+    extra_args: EXTRA_CFLAGS=-DPMP_TEST_FUNC_IDX=0
+  arch.riscv.pmp.no-mt.main-stack-guard:
+    extra_args: EXTRA_CFLAGS=-DPMP_TEST_FUNC_IDX=1

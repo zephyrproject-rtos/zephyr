@@ -216,7 +216,7 @@ static int uart_rzt2m_irq_update(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api rzt2m_uart_api = {
+static DEVICE_API(uart, rzt2m_uart_api) = {
 	.poll_in = rzt2m_poll_in,
 	.poll_out = rzt2m_poll_out,
 	.err_check = rzt2m_err_check,

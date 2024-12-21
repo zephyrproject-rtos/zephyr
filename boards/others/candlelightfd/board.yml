@@ -1,0 +1,8 @@
+board:
+  name: candlelightfd
+  full_name: candleLightFD
+  vendor: others
+  socs:
+    - name: stm32g0b1xx
+      variants:
+        - name: 'dual'

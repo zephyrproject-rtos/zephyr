@@ -276,7 +276,7 @@ static int stm32_ipcc_mailbox_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ipm_driver_api stm32_ipcc_mailbox_driver_api = {
+static DEVICE_API(ipm, stm32_ipcc_mailbox_driver_api) = {
 	.send = stm32_ipcc_mailbox_ipm_send,
 	.register_callback = stm32_ipcc_mailbox_ipm_register_callback,
 	.max_data_size_get = stm32_ipcc_mailbox_ipm_max_data_size_get,

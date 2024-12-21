@@ -157,7 +157,7 @@ static int wdt_npm6001_feed(const struct device *dev, int channel_id)
 	return i2c_write_dt(&config->bus, buf, sizeof(buf));
 }
 
-static const struct wdt_driver_api wdt_npm6001_api = {
+static DEVICE_API(wdt, wdt_npm6001_api) = {
 	.setup = wdt_npm6001_setup,
 	.disable = wdt_npm6001_disable,
 	.install_timeout = wdt_npm6001_install_timeout,

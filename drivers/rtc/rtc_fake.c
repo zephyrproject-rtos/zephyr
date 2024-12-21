@@ -70,7 +70,7 @@ static void fake_rtc_reset_rule_before(const struct ztest_unit_test *test, void 
 ZTEST_RULE(fake_rtc_reset_rule, fake_rtc_reset_rule_before, NULL);
 #endif /* CONFIG_ZTEST */
 
-static const struct rtc_driver_api rtc_fake_driver_api = {
+static DEVICE_API(rtc, rtc_fake_driver_api) = {
 	.set_time = rtc_fake_set_time,
 	.get_time = rtc_fake_get_time,
 #ifdef CONFIG_RTC_ALARM

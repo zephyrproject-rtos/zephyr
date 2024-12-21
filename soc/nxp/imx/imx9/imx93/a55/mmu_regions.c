@@ -29,7 +29,7 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE(DT_NODELABEL(iomuxc)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 
-	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_kinetis_lpuart,
+	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_lpuart,
 						(MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS))
 
 	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_flexcan,

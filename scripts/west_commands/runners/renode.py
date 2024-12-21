@@ -5,7 +5,8 @@
 '''Runner stub for Renode.'''
 
 import subprocess
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 
 class RenodeRunner(ZephyrBinaryRunner):
@@ -30,7 +31,8 @@ class RenodeRunner(ZephyrBinaryRunner):
         parser.add_argument('--renode-arg',
                             metavar='ARG',
                             action='append',
-                            help='additional argument passed to Renode; `--help` will print all possible arguments')
+                            help='''additional argument passed to Renode;
+                            `--help` will print all possible arguments''')
         parser.add_argument('--renode-command',
                             metavar='COMMAND',
                             action='append',

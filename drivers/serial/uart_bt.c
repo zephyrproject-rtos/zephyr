@@ -289,7 +289,7 @@ static void uart_bt_irq_callback_set(const struct device *dev,
 	dev_data->uart.callback.cb_data = cb_data;
 }
 
-static const struct uart_driver_api uart_bt_driver_api = {
+static DEVICE_API(uart, uart_bt_driver_api) = {
 	.poll_in = uart_bt_poll_in,
 	.poll_out = uart_bt_poll_out,
 	.fifo_fill = uart_bt_fifo_fill,

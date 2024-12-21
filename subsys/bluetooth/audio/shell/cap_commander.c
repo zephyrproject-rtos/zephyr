@@ -114,6 +114,17 @@ static void cap_broadcast_reception_stop_cb(struct bt_conn *conn, int err)
 
 	shell_print(ctx_shell, "Broadcast reception stop completed");
 }
+
+static void cap_distribute_broadcast_code_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		shell_error(ctx_shell, "Distribute broadcast code failed (%d) for conn %p", err,
+			    (void *)conn);
+		return;
+	}
+
+	shell_print(ctx_shell, "Distribute broadcast code completed");
+}
 #endif
 
 static struct bt_cap_commander_cb cbs = {
@@ -134,6 +145,7 @@ static struct bt_cap_commander_cb cbs = {
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 	.broadcast_reception_start = cap_broadcast_reception_start_cb,
 	.broadcast_reception_stop = cap_broadcast_reception_stop_cb,
+	.distribute_broadcast_code = cap_distribute_broadcast_code_cb,
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 };
 
@@ -751,6 +763,84 @@ static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, si
 	return 0;
 }
 
+static int cmd_cap_commander_distribute_broadcast_code(const struct shell *sh, size_t argc,
+						       char *argv[])
+{
+	struct bt_cap_commander_distribute_broadcast_code_member_param
+		member_params[CONFIG_BT_MAX_CONN] = {0};
+	const size_t cap_argc = argc - 1; /* First argument is the command itself */
+	struct bt_cap_commander_distribute_broadcast_code_param param = {
+		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.param = member_params,
+	};
+
+	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
+	size_t conn_cnt = 0U;
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	/* TODO Add support for coordinated sets */
+
+	/* Populate the array of connected connections */
+	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
+	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+		struct bt_conn *conn = connected_conns[i];
+
+		if (conn == NULL) {
+			break;
+		}
+		conn_cnt++;
+	}
+
+	/* The number of cap_args needs to be the number of connections + 1 since the last argument
+	 * is the broadcast code
+	 */
+	if (cap_argc != conn_cnt + 1) {
+		shell_error(sh, "Cannot use %zu arguments for %zu connections", argc, conn_cnt);
+		return -ENOEXEC;
+	}
+
+	/* the last argument is the broadcast code */
+	if (strlen(argv[cap_argc]) > BT_ISO_BROADCAST_CODE_SIZE) {
+		shell_error(sh, "Broadcast code can be maximum %d characters",
+			    BT_ISO_BROADCAST_CODE_SIZE);
+		return -ENOEXEC;
+	}
+
+	for (size_t i = 0; i < conn_cnt; i++) {
+		const char *arg = argv[i + 1];
+		unsigned long src_id;
+
+		src_id = shell_strtoul(arg, 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parce src_id: %d", err);
+			return -ENOEXEC;
+		}
+		if (src_id > UINT8_MAX) {
+			shell_error(sh, "Invalid src_id: %lu", src_id);
+			return -ENOEXEC;
+		}
+
+		member_params[i].src_id = src_id;
+		member_params[i].member.member = connected_conns[i];
+		param.count++;
+	}
+
+	memcpy(param.broadcast_code, argv[cap_argc], strlen(argv[cap_argc]));
+	shell_print(sh, "Distributing broadcast code on %zu connection(s)", param.count);
+	err = bt_cap_commander_distribute_broadcast_code(&param);
+	if (err != 0) {
+		shell_print(sh, "Failed to initiate distribute broadcast code: %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 
 static int cmd_cap_commander(const struct shell *sh, size_t argc, char **argv)
@@ -803,7 +893,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Stop broadcast reception "
 		      "<src_id [...]>",
 		      cmd_cap_commander_broadcast_reception_stop, 2, 0),
-
+	SHELL_CMD_ARG(distribute_broadcast_code, NULL,
+		      "Distribute broadcast code <src_id [...]> <broadcast_code>",
+		      cmd_cap_commander_distribute_broadcast_code, 2, CONFIG_BT_MAX_CONN - 1),
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 	SHELL_SUBCMD_SET_END);
 

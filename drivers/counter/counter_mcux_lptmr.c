@@ -150,7 +150,7 @@ static int mcux_lptmr_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_lptmr_driver_api = {
+static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.start = mcux_lptmr_start,
 	.stop = mcux_lptmr_stop,
 	.get_value = mcux_lptmr_get_value,

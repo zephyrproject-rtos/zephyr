@@ -37,7 +37,7 @@ static int vnd_adc_read_async(const struct device *dev,
 }
 #endif
 
-static const struct adc_driver_api vnd_adc_api = {
+static DEVICE_API(adc, vnd_adc_api) = {
 	.channel_setup = vnd_adc_channel_setup,
 	.read = vnd_adc_read,
 #ifdef CONFIG_ADC_ASYNC

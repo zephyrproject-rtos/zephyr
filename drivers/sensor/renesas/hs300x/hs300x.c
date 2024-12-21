@@ -150,8 +150,10 @@ static int hs300x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api hs300x_driver_api = {.sample_fetch = hs300x_sample_fetch,
-							   .channel_get = hs300x_channel_get};
+static DEVICE_API(sensor, hs300x_driver_api) = {
+	.sample_fetch = hs300x_sample_fetch,
+	.channel_get = hs300x_channel_get,
+};
 
 #define DEFINE_HS300X(n)                                                                           \
 	static struct hs300x_data hs300x_data_##n;                                                 \

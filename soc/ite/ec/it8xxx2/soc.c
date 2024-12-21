@@ -388,6 +388,12 @@ static int ite_it8xxx2_init(void)
 	gctrl_regs->GCTRL_WMCR |= BIT(7);
 
 	/*
+	 * Disable USB debug at default, in order to prevent SoC
+	 * from entering debug mode when there is signal toggling on GPH5/GPH6.
+	 */
+	gctrl_regs->GCTRL_MCCR &= ~IT8XXX2_GCTRL_USB_DEBUG_EN;
+
+	/*
 	 * Disable this feature that can detect pre-define hardware
 	 * target A through I2C0. This is for debugging use, so it
 	 * can be disabled to avoid illegal access.

@@ -11,6 +11,8 @@ tests:
       - native_sim/native/64
       - qemu_riscv32/qemu_virt_riscv32/smp
       - qemu_riscv64
+    integration_platforms:
+      - native_sim
     tags:
       - cb_notifications
       - mcumgr

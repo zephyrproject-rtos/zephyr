@@ -143,7 +143,7 @@ static int f75303_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api f75303_driver_api = {
+static DEVICE_API(sensor, f75303_driver_api) = {
 	.sample_fetch = f75303_sample_fetch,
 	.channel_get = f75303_channel_get,
 };

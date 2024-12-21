@@ -26,6 +26,18 @@
 #include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#include <zephyr/drivers/i3c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c) */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	#define ON_I3C_BUS(cfg)  (cfg->i3c.bus != NULL)
+	#define I3C_INT_PIN(cfg) (cfg->int_en_i3c)
+#else
+	#define ON_I3C_BUS(cfg)  (false)
+	#define I3C_INT_PIN(cfg) (false)
+#endif
+
 #define LSM6DSV16X_EN_BIT					0x01
 #define LSM6DSV16X_DIS_BIT					0x00
 
@@ -34,6 +46,9 @@
 
 /* Gyro sensor sensitivity grain is 4.375 udps/LSB */
 #define GAIN_UNIT_G				(4375LL)
+
+int lsm6dsv16x_calc_accel_gain(uint8_t fs);
+int lsm6dsv16x_calc_gyro_gain(uint8_t fs);
 
 struct lsm6dsv16x_config {
 	stmdev_ctx_t ctx;
@@ -44,6 +59,9 @@ struct lsm6dsv16x_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 		const struct spi_dt_spec spi;
 #endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+		struct i3c_device_desc **i3c;
+#endif
 	} stmemsc_cfg;
 	uint8_t accel_pm;
 	uint8_t accel_odr;
@@ -52,12 +70,29 @@ struct lsm6dsv16x_config {
 	uint8_t gyro_odr;
 	uint8_t gyro_range;
 	uint8_t drdy_pulsed;
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	uint8_t fifo_wtm;
+	uint8_t accel_batch : 4;
+	uint8_t gyro_batch : 4;
+	uint8_t temp_batch : 2;
+#endif
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	const struct gpio_dt_spec int1_gpio;
 	const struct gpio_dt_spec int2_gpio;
 	uint8_t drdy_pin;
 	bool trig_enabled;
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	bool int_en_i3c;
+	lsm6dsv16x_i3c_ibi_time_t bus_act_sel;
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c) */
 #endif /* CONFIG_LSM6DSV16X_TRIGGER */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	struct {
+		const struct device *bus;
+		const struct i3c_device_id dev_id;
+	} i3c;
+#endif
 };
 
 union samples {
@@ -68,6 +103,19 @@ union samples {
 } __aligned(2);
 
 #define LSM6DSV16X_SHUB_MAX_NUM_TARGETS			3
+
+struct lsm6dsv16x_ibi_payload {
+	uint8_t mdb;
+	uint8_t fifo_status1;
+	uint8_t fifo_status2;
+	uint8_t all_int_src;
+	uint8_t status_reg;
+	uint8_t status_reg_ois;
+	uint8_t status_master_main;
+	uint8_t emb_func_status;
+	uint8_t fsm_status;
+	uint8_t mlc_status;
+} __packed;
 
 struct lsm6dsv16x_data {
 	const struct device *dev;
@@ -98,6 +146,21 @@ struct lsm6dsv16x_data {
 	uint8_t gyro_freq;
 	uint8_t gyro_fs;
 
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	struct rtio_iodev_sqe *streaming_sqe;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	uint64_t fifo_timestamp;
+	uint8_t fifo_status[2];
+	uint16_t fifo_count;
+	uint8_t fifo_irq;
+	uint8_t accel_batch_odr : 4;
+	uint8_t gyro_batch_odr : 4;
+	uint8_t temp_batch_odr : 2;
+	uint8_t bus_type : 2; /* I2C is 0, SPI is 1, I3C is 2 */
+	uint8_t reserved : 4;
+#endif
+
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	struct gpio_dt_spec *drdy_gpio;
 
@@ -112,12 +175,31 @@ struct lsm6dsv16x_data {
 #if defined(CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LSM6DSV16X_THREAD_STACK_SIZE);
 	struct k_thread thread;
-	struct k_sem gpio_sem;
+	struct k_sem intr_sem;
 #elif defined(CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 #endif
 #endif /* CONFIG_LSM6DSV16X_TRIGGER */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	struct i3c_device_desc *i3c_dev;
+	struct lsm6dsv16x_ibi_payload ibi_payload;
+#endif
 };
+
+#ifdef CONFIG_LSM6DSV16X_STREAM
+#define BUS_I2C 0
+#define BUS_SPI 1
+#define BUS_I3C 2
+
+static inline uint8_t lsm6dsv16x_bus_reg(struct lsm6dsv16x_data *data, uint8_t x)
+{
+	return (data->bus_type == BUS_SPI) ? x | 0x80 : x;
+}
+
+#define LSM6DSV16X_FIFO_ITEM_LEN 7
+#define LSM6DSV16X_FIFO_SIZE(x) (x * LSM6DSV16X_FIFO_ITEM_LEN)
+#endif
 
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 int lsm6dsv16x_shub_init(const struct device *dev);

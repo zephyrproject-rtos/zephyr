@@ -121,7 +121,7 @@ static __maybe_unused void gpio_kbd_matrix_idle_poll_handler(const struct device
 
 	if (gpio_kbd_matrix_read_row(dev) == 0) {
 		k_work_reschedule(cfg->idle_poll_dwork,
-				  K_USEC(common->poll_period_us));
+				  K_USEC(common->stable_poll_period_us));
 		return;
 	}
 
@@ -137,7 +137,7 @@ static void gpio_kbd_matrix_set_detect_mode(const struct device *dev, bool enabl
 	if (cfg->idle_poll_dwork != NULL) {
 		if (enabled) {
 			k_work_reschedule(cfg->idle_poll_dwork,
-					  K_USEC(common->poll_period_us));
+					  K_USEC(common->stable_poll_period_us));
 		}
 		return;
 	}

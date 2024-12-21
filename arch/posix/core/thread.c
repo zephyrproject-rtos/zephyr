@@ -96,6 +96,25 @@ void posix_arch_thread_entry(void *pa_thread_status)
 	z_thread_entry(ptr->entry_point, ptr->arg1, ptr->arg2, ptr->arg3);
 }
 
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+int arch_float_disable(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+
+	/* Posix always has FPU enabled so cannot be disabled */
+	return -ENOTSUP;
+}
+
+int arch_float_enable(struct k_thread *thread, unsigned int options)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
+
+	/* Posix always has FPU enabled so nothing to do here */
+	return 0;
+}
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+
 #if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 void z_impl_k_thread_abort(k_tid_t thread)
 {
@@ -112,7 +131,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 	key = irq_lock();
 
-	if (_current == thread) {
+	if (arch_current_thread() == thread) {
 		if (tstatus->aborted == 0) { /* LCOV_EXCL_BR_LINE */
 			tstatus->aborted = 1;
 		} else {

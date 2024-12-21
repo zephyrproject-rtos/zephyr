@@ -3,12 +3,6 @@
 
 source "Kconfig.zephyr"
 
-config NRFX_DPPI
-	default $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_DPPIC))
-
-config NRFX_PPI
-	default $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PPI))
-
 config NRFX_GPIOTE0
 	default y if SOC_SERIES_NRF51X || \
 		     SOC_SERIES_NRF52X || \

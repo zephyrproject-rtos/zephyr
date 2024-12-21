@@ -1164,7 +1164,7 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 	uint8_t pri_idx;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	uint8_t sec_idx;
+	uint8_t sec_idx = UINT8_MAX;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	if (adv->own_addr_type != BT_HCI_OWN_ADDR_RPA_OR_PUBLIC &&

@@ -1,5 +1,6 @@
-boards:
-  - name: slwrb4170a
-    full_name: EFR32MG12 2400/868-915 MHz 19 dBm Dual Band (SLWRB4170A)
-    socs:
-      - name: efr32mg12p433f1024gm68
+board:
+  name: slwrb4170a
+  full_name: EFR32MG12 2400/868-915 MHz 19 dBm Dual Band (SLWRB4170A)
+  vendor: silabs
+  socs:
+    - name: efr32mg12p433f1024gm68

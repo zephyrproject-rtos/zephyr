@@ -301,7 +301,7 @@ static void uart_litex_tx_soft_isr(struct k_timer *timer)
 }
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_litex_driver_api = {
+static DEVICE_API(uart, uart_litex_driver_api) = {
 	.poll_in		= uart_litex_poll_in,
 	.poll_out		= uart_litex_poll_out,
 	.err_check		= NULL,

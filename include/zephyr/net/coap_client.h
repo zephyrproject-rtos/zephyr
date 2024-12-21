@@ -53,16 +53,16 @@ typedef void (*coap_client_response_cb_t)(int16_t result_code,
  * @brief Representation of a CoAP client request.
  */
 struct coap_client_request {
-	enum coap_method method;            /**< Method of the request */
-	bool confirmable;	            /**< CoAP Confirmable/Non-confirmable message */
-	const char *path;	            /**< Path of the requested resource */
-	enum coap_content_format fmt;       /**< Content format to be used */
-	uint8_t *payload;	            /**< User allocated buffer for send request */
-	size_t len;		            /**< Length of the payload */
-	coap_client_response_cb_t cb;       /**< Callback when response received */
-	struct coap_client_option *options; /**< Extra options to be added to request */
-	uint8_t num_options;                /**< Number of extra options */
-	void *user_data;	            /**< User provided context */
+	enum coap_method method;                  /**< Method of the request */
+	bool confirmable;                         /**< CoAP Confirmable/Non-confirmable message */
+	const char *path;                         /**< Path of the requested resource */
+	enum coap_content_format fmt;             /**< Content format to be used */
+	const uint8_t *payload;                   /**< User allocated buffer for send request */
+	size_t len;                               /**< Length of the payload */
+	coap_client_response_cb_t cb;             /**< Callback when response received */
+	const struct coap_client_option *options; /**< Extra options to be added to request */
+	uint8_t num_options;                      /**< Number of extra options */
+	void *user_data;                          /**< User provided context */
 };
 
 /**
@@ -157,6 +157,21 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
  * @param client Client instance.
  */
 void coap_client_cancel_requests(struct coap_client *client);
+
+/**
+ * @brief Cancel matching requests.
+ *
+ * This function cancels all CoAP client request that matches the given request.
+ * The request is matched based on the method, path, callback and user_data, if provided.
+ * Any field set to NULL is considered a wildcard.
+ *
+ * (struct coap_client_request){0} cancels all requests.
+ * (struct coap_client_request){.method = COAP_METHOD_GET} cancels all GET requests.
+ *
+ * @param client Pointer to the CoAP client instance.
+ * @param req Pointer to the CoAP client request to be canceled.
+ */
+void coap_client_cancel_request(struct coap_client *client, struct coap_client_request *req);
 
 /**
  * @brief Initialise a Block2 option to be added to a request

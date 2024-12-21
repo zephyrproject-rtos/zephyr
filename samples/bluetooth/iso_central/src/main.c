@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2021 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
@@ -90,6 +91,9 @@ static void iso_timer_timeout(struct k_work *work)
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
+	const struct bt_le_conn_param *conn_param =
+		BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(60), BT_GAP_MS_TO_CONN_INTERVAL(60), 0,
+				 BT_GAP_MS_TO_CONN_TIMEOUT(4000));
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
 
@@ -115,8 +119,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
-				&default_conn);
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, conn_param, &default_conn);
 	if (err) {
 		printk("Create conn to %s failed (%u)\n", addr_str, err);
 		start_scan();

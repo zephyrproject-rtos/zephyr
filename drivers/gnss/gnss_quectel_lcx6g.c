@@ -717,7 +717,7 @@ static int quectel_lcx6g_get_supported_systems(const struct device *dev, gnss_sy
 	return 0;
 }
 
-static const struct gnss_driver_api gnss_api = {
+static DEVICE_API(gnss, gnss_api) = {
 	.set_fix_rate = quectel_lcx6g_set_fix_rate,
 	.get_fix_rate = quectel_lcx6g_get_fix_rate,
 	.set_navigation_mode = quectel_lcx6g_set_navigation_mode,

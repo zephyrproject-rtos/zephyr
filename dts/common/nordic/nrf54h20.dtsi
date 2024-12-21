@@ -31,7 +31,7 @@
 			device_type = "cpu";
 			clocks = <&cpuapp_hsfll>;
 			clock-frequency = <DT_FREQ_M(320)>;
-			cpu-power-states = <&idle &s2ram>;
+			cpu-power-states = <&idle_cache_disabled &s2ram>;
 		};
 
 		cpurad: cpu@3 {
@@ -40,6 +40,7 @@
 			device_type = "cpu";
 			clocks = <&cpurad_hsfll>;
 			clock-frequency = <DT_FREQ_M(256)>;
+			cpu-power-states = <&idle_cache_disabled>;
 		};
 
 		cpuppr: cpu@d {
@@ -128,16 +129,20 @@
 		};
 
 		power-states {
-			idle: idle {
+			// substate-id = <0>; is reserved for "idle", cache powered on
+			// substate-id = <1>; is reserved for "idle-cache-retained"
+			idle_cache_disabled: idle_cache_disabled {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				min-residency-us = <100000>;
+				substate-id = <2>;
+				min-residency-us = <1000>;
+				exit-latency-us = <30>;
 			};
-
 			s2ram: s2ram {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
-				min-residency-us = <800000>;
+				min-residency-us = <2000>;
+				exit-latency-us = <260>;
 			};
 		};
 	};
@@ -177,10 +182,14 @@
 		};
 
 		hsfll120: hsfll120 {
-			compatible = "fixed-clock";
+			compatible = "nordic,nrf-hsfll-global";
 			clocks = <&fll16m>;
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_M(320)>;
+			clock-frequency = <320000000>;
+			supported-clock-frequencies = <64000000
+						       128000000
+						       256000000
+						       320000000>;
 		};
 
 		lfclk: lfclk {
@@ -215,7 +224,15 @@
 		cpuapp_uicr: uicr@fff8000 {
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xfff8000 DT_SIZE_K(2)>;
 			domain = <2>;
+
+			bicr: bicr@7b0 {
+				compatible = "nordic,nrf-bicr";
+				reg = <0x7b0 48>;
+			};
 		};
 
 		cpurad_uicr: uicr@fffa000 {
@@ -252,7 +269,7 @@
 			ranges = <0x0 0x52000000 0x1000000>;
 
 			cpuapp_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -306,7 +323,7 @@
 			ranges = <0x0 0x53000000 0x1000000>;
 
 			cpurad_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -627,6 +644,7 @@
 				reg = <0x8e4000 0x1000>;
 				status = "disabled";
 				interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				#pwm-cells = <3>;
 			};
@@ -889,6 +907,15 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x991000 0x1000>;
 				status = "disabled";
+				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+			};
+
+			pdm0: pdm@993000 {
+				compatible = "nordic,nrf-pdm";
+				reg = <0x993000 0x1000>;
+				status = "disabled";
+				interrupts = <403 NRF_DEFAULT_IRQ_PRIORITY>;
+				nordic,clockpin-enable = <NRF_FUN_PDM_CLK>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
 			};
 

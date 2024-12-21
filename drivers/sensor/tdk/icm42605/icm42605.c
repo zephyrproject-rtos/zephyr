@@ -415,7 +415,7 @@ static int icm42605_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api icm42605_driver_api = {
+static DEVICE_API(sensor, icm42605_driver_api) = {
 #ifdef CONFIG_ICM42605_TRIGGER
 	.trigger_set = icm42605_trigger_set,
 #endif

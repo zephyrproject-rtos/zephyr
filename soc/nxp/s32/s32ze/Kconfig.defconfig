@@ -18,6 +18,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config MAIN_STACK_SIZE
 	default 1024
 
+config CACHE_MANAGEMENT
+	default y
+
 if ETH_DRIVER && NET_L2_ETHERNET
 
 # NETC drops TCP/UDP packets with invalid checksum

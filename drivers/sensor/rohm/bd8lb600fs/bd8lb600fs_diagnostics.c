@@ -45,7 +45,7 @@ static int bd8lb600fs_diagnostics_channel_get(const struct device *dev, enum sen
 	}
 }
 
-static const struct sensor_driver_api bd8lb600fs_diagnostics_driver_api = {
+static DEVICE_API(sensor, bd8lb600fs_diagnostics_driver_api) = {
 	.sample_fetch = bd8lb600fs_diagnostics_sample_fetch,
 	.channel_get = bd8lb600fs_diagnostics_channel_get,
 };

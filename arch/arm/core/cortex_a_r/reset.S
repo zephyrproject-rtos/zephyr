@@ -56,9 +56,12 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
     cmp r0, #MODE_HYP
     bne EL1_Reset_Handler
 
-    /* Init HSCTLR see Armv8-R AArch32 architecture profile */
-    ldr r0, =(HSCTLR_RES1 | SCTLR_I_BIT | SCTLR_C_BIT)
-    mcr p15, 4, r0, c1, c0, 0
+    /*
+     * The HSCTLR register provides top-level control of system operation in Hyp mode.
+     * Since the OS is not running in Hyp mode, and considering the Armv8-R AArch32
+     * architecture profile, there's no need to modify HSCTLR configuration unless
+     * Fast Interrupts need to be enabled.
+     */
 
     /* Init HACTLR: Enable EL1 access to all IMP DEF registers */
     ldr r0, =HACTLR_INIT
@@ -199,6 +202,12 @@ EL1_Reset_Handler:
 #endif /* CONFIG_FPU && CONFIG_CPU_HAS_VFP */
 
 #endif /* CONFIG_DCLS */
+
+#if defined(CONFIG_CPU_CORTEX_R52_CACHE_SEGREGATION)
+    ldr r0, =IMP_CSCTLR(CONFIG_CPU_CORTEX_R52_ICACHE_FLASH_WAY,
+                        CONFIG_CPU_CORTEX_R52_DCACHE_FLASH_WAY)
+    mcr p15, 1, r0, c9, c1, 0
+#endif
 
     ldr r0, =arm_cpu_boot_params
 

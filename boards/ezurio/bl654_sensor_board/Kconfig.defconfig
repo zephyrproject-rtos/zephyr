@@ -5,7 +5,4 @@
 
 if BOARD_BL654_SENSOR_BOARD
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_BL654_SENSOR_BOARD

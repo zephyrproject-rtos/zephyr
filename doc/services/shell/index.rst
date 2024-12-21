@@ -122,6 +122,30 @@ To configure Segger RTT backend, add the following configurations to your build:
 Details on additional configuration settings are captured in:
 :zephyr_file:`samples/subsys/shell/shell_module/prj_minimal_rtt.conf`.
 
+.. _shell_rtt_putty:
+
+Using PuTTY
+-----------
+
+Use following procedure:
+
+* Open debug session and continue running the application.
+
+  .. code-block:: none
+
+     west attach
+
+* Open ``PuTTY``. Use telnet port 19021 and specific Terminal configuration. Set ``Local echo``
+  to ``Force off`` and ``Local line editing`` to ``Force off`` (see image below).
+
+
+.. image:: images/putty_rtt.png
+      :align: center
+      :alt: RTT PuTTY terminal configuration.
+
+* Now you should have a network connection to RTT that will let you enter input
+  to the shell.
+
 Connecting to Segger RTT via TCP (on macOS, for example)
 --------------------------------------------------------
 
@@ -143,7 +167,9 @@ procedure:
      nc localhost 19021
 
 * Now you should have a network connection to RTT that will let you enter input
-  to the shell.
+  to the shell. However, contrary to `PuTTY <shell_rtt_putty_>`_ some features like
+  ``Tab`` completion do not work.
+
 
 Commands
 ********

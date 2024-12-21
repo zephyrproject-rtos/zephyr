@@ -14,6 +14,7 @@
 #include <kernel_internal.h>
 #include <string.h>
 #include <zephyr/cache.h>
+#include <zephyr/platform/hooks.h>
 #include <zephyr/zsr.h>
 
 #ifdef __cplusplus
@@ -25,7 +26,9 @@ K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 void xtensa_switch(void *switch_to, void **switched_from);

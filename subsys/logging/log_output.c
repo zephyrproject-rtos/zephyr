@@ -50,17 +50,6 @@ static const char *const colors[] = {
 static uint32_t freq;
 static log_timestamp_t timestamp_div;
 
-#define SECONDS_IN_DAY			86400U
-
-static uint32_t days_in_month[12] = {31, 28, 31, 30, 31, 30, 31,
-									31, 30, 31, 30, 31};
-
-struct YMD_date {
-	uint32_t year;
-	uint32_t month;
-	uint32_t day;
-};
-
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
  * highest severity and 7 to be the lowest (debugging level) severity.
  *
@@ -150,46 +139,6 @@ static int print_formatted(const struct log_output *output,
 	return length;
 }
 
-static inline bool is_leap_year(uint32_t year)
-{
-	return (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0));
-}
-
-static void __attribute__((unused)) get_YMD_from_seconds(uint64_t seconds,
-			struct YMD_date *output_date)
-{
-	uint64_t tmp;
-	int i;
-
-	output_date->year = 1970;
-	output_date->month = 1;
-	output_date->day = 1;
-
-	/* compute the proper year */
-	while (1) {
-		tmp = (is_leap_year(output_date->year)) ?
-					366*SECONDS_IN_DAY : 365*SECONDS_IN_DAY;
-		if (tmp > seconds) {
-			break;
-		}
-		seconds -= tmp;
-		output_date->year++;
-	}
-	/* compute the proper month */
-	for (i = 0; i < ARRAY_SIZE(days_in_month); i++) {
-		tmp = ((i == 1) && is_leap_year(output_date->year)) ?
-					((uint64_t)days_in_month[i] + 1) * SECONDS_IN_DAY :
-					(uint64_t)days_in_month[i] * SECONDS_IN_DAY;
-		if (tmp > seconds) {
-			output_date->month += i;
-			break;
-		}
-		seconds -= tmp;
-	}
-
-	output_date->day += seconds / SECONDS_IN_DAY;
-}
-
 static int timestamp_print(const struct log_output *output,
 			   uint32_t flags, log_timestamp_t timestamp)
 {
@@ -214,46 +163,38 @@ static int timestamp_print(const struct log_output *output,
 		uint64_t total_seconds;
 #endif
 		uint32_t remainder;
-		uint32_t seconds;
-		uint32_t hours;
-		uint32_t mins;
 		uint32_t ms;
 		uint32_t us;
 
 		timestamp /= timestamp_div;
 		total_seconds = timestamp / freq;
-		seconds = total_seconds;
-		hours = seconds / 3600U;
-		seconds -= hours * 3600U;
-		mins = seconds / 60U;
-		seconds -= mins * 60U;
 
 		remainder = timestamp % freq;
 		ms = (remainder * 1000U) / freq;
 		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
 
 		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) && flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
-#if defined(CONFIG_REQUIRES_FULL_LIBC)
-			char time_str[sizeof("1970-01-01T00:00:00")];
+#if defined(CONFIG_POSIX_C_LANG_SUPPORT_R)
 			struct tm tm_timestamp = {0};
 			time_t time_seconds = total_seconds;
 
 			gmtime_r(&time_seconds, &tm_timestamp);
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+			char time_str[sizeof("1970-01-01T00:00:00")];
 
 			strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
 
 			length = print_formatted(output, "%s.%06uZ ",
 						 time_str, ms * 1000U + us);
-#else
-			struct YMD_date date;
-
-			get_YMD_from_seconds(total_seconds, &date);
-			hours = hours % 24;
+#else /* CONFIG_REQUIRES_FULL_LIBC */
 			length = print_formatted(output,
 					"%04u-%02u-%02uT%02u:%02u:%02u.%06uZ ",
-					date.year, date.month, date.day,
-					hours, mins, seconds, ms * 1000U + us);
-#endif
+					tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1,
+					tm_timestamp.tm_mday, tm_timestamp.tm_hour,
+					tm_timestamp.tm_min, tm_timestamp.tm_sec,
+					ms * 1000U + us);
+#endif /* CONFIG_REQUIRES_FULL_LIBC */
+#endif /* CONFIG_POSIX_C_LANG_SUPPORT_R */
 		} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
 			length = log_custom_timestamp_print(output, timestamp, print_formatted);
 		} else {
@@ -265,51 +206,59 @@ static int timestamp_print(const struct log_output *output,
 							"[%5lu.%06d] ",
 #endif
 							total_seconds, ms * 1000U + us);
+#if defined(CONFIG_POSIX_C_LANG_SUPPORT_R)
 			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP)) {
-#if defined(CONFIG_REQUIRES_FULL_LIBC)
-				char time_str[sizeof("1970-01-01 00:00:00")];
 				struct tm tm_timestamp = {0};
 				time_t time_seconds = total_seconds;
 
 				gmtime_r(&time_seconds, &tm_timestamp);
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+				char time_str[sizeof("1970-01-01 00:00:00")];
 
 				strftime(time_str, sizeof(time_str), "%F %T", &tm_timestamp);
 
 				length = print_formatted(output, "[%s.%03u,%03u] ", time_str, ms,
 							 us);
-#else
-				struct YMD_date date;
-
-				get_YMD_from_seconds(total_seconds, &date);
-				hours = hours % 24;
+#else /* CONFIG_REQUIRES_FULL_LIBC */
 				length = print_formatted(
 					output, "[%04u-%02u-%02u %02u:%02u:%02u.%03u,%03u] ",
-					date.year, date.month, date.day, hours, mins, seconds, ms,
-					us);
-#endif
+					tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1,
+					tm_timestamp.tm_mday, tm_timestamp.tm_hour,
+					tm_timestamp.tm_min, tm_timestamp.tm_sec,
+					ms, us);
+#endif /* CONFIG_REQUIRES_FULL_LIBC */
 			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP)) {
-#if defined(CONFIG_REQUIRES_FULL_LIBC)
-				char time_str[sizeof("1970-01-01T00:00:00")];
 				struct tm tm_timestamp = {0};
 				time_t time_seconds = total_seconds;
 
 				gmtime_r(&time_seconds, &tm_timestamp);
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+				char time_str[sizeof("1970-01-01T00:00:00")];
 
 				strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
 
 				length = print_formatted(output, "[%s,%06uZ] ", time_str,
 							 ms * 1000U + us);
-#else
-				struct YMD_date date;
-
-				get_YMD_from_seconds(total_seconds, &date);
-				hours = hours % 24;
+#else /* CONFIG_REQUIRES_FULL_LIBC */
 				length = print_formatted(output,
 							 "[%04u-%02u-%02uT%02u:%02u:%02u,%06uZ] ",
-							 date.year, date.month, date.day, hours,
-							 mins, seconds, ms * 1000U + us);
-#endif
+							 tm_timestamp.tm_year + 1900,
+							 tm_timestamp.tm_mon + 1,
+							 tm_timestamp.tm_mday, tm_timestamp.tm_hour,
+							 tm_timestamp.tm_min, tm_timestamp.tm_sec,
+							 ms * 1000U + us);
+#endif /* CONFIG_REQUIRES_FULL_LIBC */
+#endif /* CONFIG_POSIX_C_LANG_SUPPORT_R */
 			} else {
+				uint32_t seconds;
+				uint32_t hours;
+				uint32_t mins;
+
+				seconds = total_seconds;
+				hours = seconds / 3600U;
+				seconds -= hours * 3600U;
+				mins = seconds / 60U;
+				seconds -= mins * 60U;
 				length = print_formatted(output,
 							"[%02u:%02u:%02u.%03u,%03u] ",
 							hours, mins, seconds, ms, us);

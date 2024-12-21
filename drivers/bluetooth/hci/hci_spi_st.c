@@ -693,7 +693,7 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 #if defined(CONFIG_BT_BLUENRG_ACI) && !defined(CONFIG_BT_HCI_RAW)
 	.setup          = bt_spi_bluenrg_setup,
 #endif /* CONFIG_BT_BLUENRG_ACI && !CONFIG_BT_HCI_RAW */

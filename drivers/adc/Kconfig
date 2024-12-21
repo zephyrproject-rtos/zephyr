@@ -102,6 +102,8 @@ source "drivers/adc/Kconfig.ads7052"
 
 source "drivers/adc/Kconfig.ads114s0x"
 
+source "drivers/adc/Kconfig.ads131m02"
+
 source "drivers/adc/Kconfig.rpi_pico"
 
 source "drivers/adc/Kconfig.xmc4xxx"
@@ -112,7 +114,7 @@ source "drivers/adc/Kconfig.ifx_cat1"
 
 source "drivers/adc/Kconfig.smartbond"
 
-source "drivers/adc/Kconfig.tla2021"
+source "drivers/adc/Kconfig.tla202x"
 
 source "drivers/adc/Kconfig.nxp_s32"
 

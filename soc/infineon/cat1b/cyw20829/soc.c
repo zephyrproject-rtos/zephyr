@@ -11,9 +11,12 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+
 #include <cy_sysint.h>
 #include <system_cat1b.h>
 #include "cy_pdl.h"
+
+extern int ifx_pm_init(void);
 
 cy_en_sysint_status_t Cy_SysInt_Init(const cy_stc_sysint_t *config, cy_israddress userIsr)
 {
@@ -94,3 +97,10 @@ static int init_cycfg_platform_wrapper(void)
 }
 
 SYS_INIT(init_cycfg_platform_wrapper, PRE_KERNEL_1, 0);
+
+#ifdef CONFIG_PM
+void soc_early_init_hook(void)
+{
+	ifx_pm_init();
+}
+#endif

@@ -17,6 +17,12 @@ tests:
       - CONFIG_SDL_DISPLAY=n
       - CONFIG_TEST=y
     tags: display
+    harness: console
+    harness_config:
+      fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.g1120b0mipi:
     platform_allow: mimxrt595_evk/mimxrt595s/cm33
     tags: display
@@ -26,8 +32,14 @@ tests:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
       - CONFIG_IDLE_STACK_SIZE=400
+      - CONFIG_TEST=y
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_g1120b0mipi
+      type: multi_line
+      regex:
+        - "sample: Display sample for (.*)"
+        - "Display starts"
+        - "Display sample test mode done (.*)"
   sample.display.builtin:
     # This test case is intended to insure that this sample builds & runs
     # correctly for all boards that have a supported built-in display.
@@ -52,11 +64,16 @@ tests:
       - mimxrt1060_evk
       - mimxrt1050_evk
       - mimxrt1040_evk
+    integration_platforms:
+      - mimxrt1040_evk
     tags: display
     harness: console
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.shield:
     # This test case is intended to verify support for shields on boards
     # known to support them. It is not intended to cover all combinations
@@ -66,6 +83,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
     extra_args:
       - platform:lpcxpresso55s69/lpc55s69/cpu0:SHIELD=adafruit_2_8_tft_touch_v2
       - platform:nrf52840dk/nrf52840:SHIELD=ssd1306_128x32

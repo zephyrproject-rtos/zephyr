@@ -5,8 +5,7 @@
 
 """This file contains XML constants defined to be used by generate_vif.py"""
 
-from constants import other_constants
-from constants import vif_element_constants
+from constants import other_constants, vif_element_constants
 
 XML_ENCODING = "utf-8"
 XML_ELEMENT_NAME_PREFIX = "vif"

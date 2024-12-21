@@ -59,11 +59,6 @@ int l2cap_chan_send(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
 	return ret;
 }
 
-struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
-{
-	return net_buf_alloc(&sdu_pool, K_NO_WAIT);
-}
-
 void continue_sending(struct test_ctx *ctx)
 {
 	struct bt_l2cap_chan *chan = &ctx->le_chan.chan;
@@ -137,7 +132,6 @@ void l2cap_chan_disconnected_cb(struct bt_l2cap_chan *chan)
 static struct bt_l2cap_chan_ops ops = {
 	.connected = l2cap_chan_connected_cb,
 	.disconnected = l2cap_chan_disconnected_cb,
-	.alloc_buf = alloc_buf_cb,
 	.seg_recv = recv_cb,
 	.sent = sent_cb,
 };

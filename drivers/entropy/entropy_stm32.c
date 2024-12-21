@@ -763,7 +763,7 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct entropy_driver_api entropy_stm32_rng_api = {
+static DEVICE_API(entropy, entropy_stm32_rng_api) = {
 	.get_entropy = entropy_stm32_rng_get_entropy,
 	.get_entropy_isr = entropy_stm32_rng_get_entropy_isr
 };

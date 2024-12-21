@@ -1418,7 +1418,7 @@ static int ucpd_init(const struct device *dev)
 	return 0;
 }
 
-static const struct tcpc_driver_api driver_api = {
+static DEVICE_API(tcpc, driver_api) = {
 	.init = ucpd_init,
 	.set_alert_handler_cb = ucpd_set_alert_handler_cb,
 	.get_cc = ucpd_get_cc,

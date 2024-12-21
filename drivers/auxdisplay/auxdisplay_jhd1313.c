@@ -205,7 +205,7 @@ static int auxdisplay_jhd1313_backlight_set(const struct device *dev, uint8_t co
 	const struct auxdisplay_jhd1313_config *config = dev->config;
 	struct auxdisplay_jhd1313_data *data = dev->data;
 
-	if (colour > ARRAY_SIZE(colour_define)) {
+	if (colour >= ARRAY_SIZE(colour_define)) {
 		LOG_WRN("Selected colour is too high a value");
 		return -EINVAL;
 	}
@@ -335,7 +335,7 @@ static int auxdisplay_jhd1313_capabilities_get(const struct device *dev,
 	return 0;
 }
 
-static const struct auxdisplay_driver_api auxdisplay_jhd1313_auxdisplay_api = {
+static DEVICE_API(auxdisplay, auxdisplay_jhd1313_auxdisplay_api) = {
 	.display_on = auxdisplay_jhd1313_display_on,
 	.display_off = auxdisplay_jhd1313_display_off,
 	.cursor_set_enabled = auxdisplay_jhd1313_cursor_set_enabled,

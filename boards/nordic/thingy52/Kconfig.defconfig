@@ -5,7 +5,4 @@
 
 if BOARD_THINGY52
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_THINGY52

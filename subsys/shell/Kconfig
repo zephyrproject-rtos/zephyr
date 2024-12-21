@@ -25,6 +25,11 @@ config SHELL_MINIMAL
 	  defaults which favor reduced flash or memory requirements over extra
 	  features.
 
+config SHELL_DEVICE_HELPERS
+	bool "Shell device helpers"
+	imply DEVICE_DT_METADATA
+	default y if !SHELL_MINIMAL
+
 config SHELL_THREAD_PRIORITY_OVERRIDE
 	bool "Override default shell thread priority"
 	help
@@ -109,7 +114,7 @@ config SHELL_ARGC_MAX
 
 config SHELL_TAB
 	bool "The Tab button support in shell"
-	default y if !SHELL_MINIMAL && !SHELL_BACKEND_RTT
+	default y if !SHELL_MINIMAL
 	help
 	  Enable using the Tab button in the shell. The button
 	  can be used for prompting commands, or for autocompletion.
@@ -164,7 +169,7 @@ config SHELL_START_OBSCURED
 
 config SHELL_VT100_COMMANDS
 	bool "VT100 commands in shell"
-	default y if !SHELL_BACKEND_RTT
+	default y
 	help
 	  Enables VT100 commands in shell (e.g. cursor position, clear screen etc.).
 

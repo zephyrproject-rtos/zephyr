@@ -165,7 +165,7 @@ TESTDATA_2 = [
         ),
         ScanPathResult(
             warnings=None,
-            matches=['1a', '1b'],
+            matches=['feature5.1a', 'feature5.1b'],
             has_registered_test_suites=False,
             has_run_registered_test_suites=True,
             has_test_main=False,
@@ -648,7 +648,10 @@ def test_scan_testsuite_path(
 
     def mock_stat(filename, *args, **kwargs):
         result = mock.Mock()
-        type(result).st_size = sizes[filename]
+        # as we may call os.stat in code
+        # some protection need add here
+        if filename in sizes:
+            type(result).st_size = sizes[filename]
 
         return result
 

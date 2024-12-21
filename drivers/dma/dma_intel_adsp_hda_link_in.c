@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_intel_adsp_hda_dma_link_in);
 
-static const struct dma_driver_api intel_adsp_hda_dma_link_in_api = {
+static DEVICE_API(dma, intel_adsp_hda_dma_link_in_api) = {
 	.config = intel_adsp_hda_dma_link_in_config,
 	.reload = intel_adsp_hda_dma_link_reload,
 	.start = intel_adsp_hda_dma_start,

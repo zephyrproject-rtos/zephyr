@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/mesh.h>
 #include "mesh/net.h"
 #include "mesh/keys.h"
+#include "mesh/va.h"
 #include "bsim_args_runner.h"
 #include "common/bt_str.h"
 
@@ -24,8 +25,9 @@ LOG_MODULE_REGISTER(test_brg, LOG_LEVEL_INF);
 /* Bridge address must be less than DEVICE_ADDR_START */
 #define BRIDGE_ADDR       0x0002
 #define DEVICE_ADDR_START 0x0003
+#define GROUP_ADDR        0xc000
 
-#define REMOTE_NODES 2
+#define REMOTE_NODES_MULTICAST 3
 
 static const uint8_t prov_dev_key[16] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 					 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
@@ -34,6 +36,7 @@ static const uint8_t subnet_keys[][16] = {
 	{0xaa, 0xbb, 0xcc},
 	{0xdd, 0xee, 0xff},
 	{0x11, 0x22, 0x33},
+	{0x12, 0x34, 0x56},
 };
 
 static uint8_t prov_uuid[16] = {0x6c, 0x69, 0x6e, 0x67, 0x61, 0xaa};
@@ -53,6 +56,14 @@ enum {
 
 static uint8_t recvd_msgs[10];
 static uint8_t recvd_msgs_cnt;
+
+const struct bt_mesh_va *va_entry;
+
+/*
+ * The number of remote nodes participating in the test. Initialized to 2 because most tests use 2
+ * remote nodes.
+ */
+static int remote_nodes = 2;
 
 BUILD_ASSERT((2 /* opcode */ + 1 /* type */ + 1 /* msgs cnt */ + sizeof(recvd_msgs) +
 	      BT_MESH_MIC_SHORT) <= BT_MESH_RX_SDU_MAX,
@@ -168,7 +179,7 @@ static void tester_setup(void)
 		return;
 	}
 
-	for (int i = 0; i < REMOTE_NODES; i++) {
+	for (int i = 0; i < remote_nodes; i++) {
 		LOG_INF("Creating subnet idx %d", i);
 
 		ASSERT_OK(
@@ -232,14 +243,14 @@ static void bridge_entry_remove(uint16_t src, uint16_t dst, uint16_t net_idx1, u
 	}
 }
 
-static void tester_bridge_configure(int subnets)
+static void tester_bridge_configure(void)
 {
 	uint8_t status;
 	int err;
 
 	LOG_INF("Configuring bridge...");
 
-	for (int i = 0; i < subnets; i++) {
+	for (int i = 0; i < remote_nodes; i++) {
 		err = bt_mesh_cfg_cli_net_key_add(0, BRIDGE_ADDR, i + 1, subnet_keys[i], &status);
 		if (err || status) {
 			FAIL("NetKey add failed (err %d, status %u)", err, status);
@@ -293,7 +304,7 @@ static void tester_device_configure(uint16_t net_key_idx, uint16_t addr)
 	LOG_INF("Device 0x%04x configured", addr);
 }
 
-static void tester_ra_cb(uint8_t *data, size_t length)
+static void tester_data_cb(uint8_t *data, size_t length)
 {
 	uint8_t type = data[0];
 
@@ -309,18 +320,18 @@ static void tester_ra_cb(uint8_t *data, size_t length)
 	k_sem_give(&status_msg_recvd_sem);
 }
 
-static int send_data(uint16_t dst, uint8_t payload)
+static int send_data(uint16_t dst, uint8_t payload, const uint8_t *uuid)
 {
 	uint8_t data[2] = {MSG_TYPE_DATA, payload};
 
-	return bt_mesh_test_send_ra(dst, data, sizeof(data), NULL, NULL);
+	return bt_mesh_test_send_data(dst, uuid, data, sizeof(data), NULL, NULL);
 }
 
-static int send_get(uint16_t dst)
+static int send_get(uint16_t dst, const uint8_t *uuid)
 {
 	uint8_t data[1] = {MSG_TYPE_GET};
 
-	return bt_mesh_test_send_ra(dst, data, sizeof(data), NULL, NULL);
+	return bt_mesh_test_send_data(dst, uuid, data, sizeof(data), NULL, NULL);
 }
 
 struct bridged_addresses_entry {
@@ -363,9 +374,15 @@ static void bridge_table_verify(uint16_t net_idx1, uint16_t net_idx2, uint16_t s
 	}
 }
 
-static void device_ra_cb(uint8_t *data, size_t length)
+static void device_data_cb(uint8_t *data, size_t length)
 {
 	uint8_t type = data[0];
+
+	/* For group/va tests: There is no bridge entry for the subnet that the final device
+	 * belongs to. If it receives a message from the tester, fail.
+	 */
+	ASSERT_TRUE_MSG(get_device_nbr() != REMOTE_NODES_MULTICAST + 1,
+			"Unbridged device received message");
 
 	LOG_HEXDUMP_DBG(data, length, "Device received message");
 
@@ -385,9 +402,9 @@ static void device_ra_cb(uint8_t *data, size_t length)
 
 		memcpy(&test_data[2], recvd_msgs, recvd_msgs_cnt * sizeof(recvd_msgs[0]));
 
-		ASSERT_OK(bt_mesh_test_send_ra(PROV_ADDR, test_data,
-					       2 + recvd_msgs_cnt * sizeof(recvd_msgs[0]), NULL,
-					       NULL));
+		ASSERT_OK(bt_mesh_test_send_data(PROV_ADDR, NULL, test_data,
+						 2 + recvd_msgs_cnt * sizeof(recvd_msgs[0]), NULL,
+						 NULL));
 
 		memset(recvd_msgs, 0, sizeof(recvd_msgs));
 		recvd_msgs_cnt = 0;
@@ -413,12 +430,40 @@ static void tester_workaround(void)
 
 	LOG_INF("Applying subnet's workaround for tester...");
 
-	for (int i = 0; i < REMOTE_NODES; i++) {
+	for (int i = 0; i < remote_nodes; i++) {
 		err = bt_mesh_cfg_cli_net_key_del(0, PROV_ADDR, i + 1, &status);
 		if (err || status) {
 			FAIL("NetKey del failed (err %d, status %u)", err, status);
 			return;
 		}
+	}
+}
+
+static void tester_init_common(void)
+{
+	bt_mesh_device_setup(&tester_prov, &comp);
+	tester_setup();
+
+	for (int i = 0; i < 1 /* bridge */ + remote_nodes; i++) {
+		LOG_INF("Waiting for a device to provision...");
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
+	}
+
+	tester_bridge_configure();
+
+	for (int i = 0; i < remote_nodes; i++) {
+		tester_device_configure(i + 1, DEVICE_ADDR_START + i);
+	}
+
+	bt_mesh_test_data_cb_setup(tester_data_cb);
+}
+
+static void setup_basic_bridge(void)
+{
+	/* Adding devices to bridge table */
+	for (int i = 0; i < remote_nodes; i++) {
+		bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, 0, i + 1,
+				 BT_MESH_BRG_CFG_DIR_TWOWAY);
 	}
 }
 
@@ -428,20 +473,20 @@ static void send_and_receive(void)
 
 	LOG_INF("Sending data...");
 
-	for (int i = 0; i < REMOTE_NODES; i++) {
+	for (int i = 0; i < remote_nodes; i++) {
 		uint8_t payload = i | i << 4;
 
 		for (int j = 0; j < msgs_cnt; j++) {
-			ASSERT_OK(send_data(DEVICE_ADDR_START + i, payload + j));
+			ASSERT_OK(send_data(DEVICE_ADDR_START + i, payload + j, NULL));
 		}
 	}
 
 	LOG_INF("Checking data...");
 
-	for (int i = 0; i < REMOTE_NODES; i++) {
+	for (int i = 0; i < remote_nodes; i++) {
 		uint8_t payload = i | i << 4;
 
-		ASSERT_OK(send_get(DEVICE_ADDR_START + i));
+		ASSERT_OK(send_get(DEVICE_ADDR_START + i, NULL));
 		ASSERT_OK(k_sem_take(&status_msg_recvd_sem, K_SECONDS(5)));
 
 		ASSERT_EQUAL(recvd_msgs_cnt, msgs_cnt);
@@ -457,30 +502,9 @@ static void test_tester_simple(void)
 	int err;
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
-	bt_mesh_device_setup(&tester_prov, &comp);
-
-	tester_setup();
-
-	for (int i = 0; i < 1 /* bridge */ + REMOTE_NODES; i++) {
-		LOG_INF("Waiting for a device to provision...");
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
-	}
-
-	tester_bridge_configure(REMOTE_NODES);
-
-	/* Adding devices to bridge table */
-	for (int i = 0; i < REMOTE_NODES; i++) {
-		bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, 0, i + 1,
-				 BT_MESH_BRG_CFG_DIR_TWOWAY);
-	}
-
-	for (int i = 0; i < REMOTE_NODES; i++) {
-		tester_device_configure(i + 1, DEVICE_ADDR_START + i);
-	}
-
+	tester_init_common();
+	setup_basic_bridge();
 	tester_workaround();
-
-	bt_mesh_test_ra_cb_setup(tester_ra_cb);
 
 	LOG_INF("Step 1: Checking bridging table...");
 
@@ -495,11 +519,11 @@ static void test_tester_simple(void)
 	}
 
 	LOG_INF("Sending data...");
-	for (int i = 0; i < REMOTE_NODES; i++) {
+	for (int i = 0; i < remote_nodes; i++) {
 		uint8_t payload = i | i << 4;
 
 		for (int j = 0; j < 3; j++) {
-			ASSERT_OK(send_data(DEVICE_ADDR_START + i, payload + j));
+			ASSERT_OK(send_data(DEVICE_ADDR_START + i, payload + j, NULL));
 		}
 	}
 
@@ -511,8 +535,8 @@ static void test_tester_simple(void)
 	}
 
 	LOG_INF("Checking data...");
-	for (int i = 0; i < REMOTE_NODES; i++) {
-		ASSERT_OK(send_get(DEVICE_ADDR_START + i));
+	for (int i = 0; i < remote_nodes; i++) {
+		ASSERT_OK(send_get(DEVICE_ADDR_START + i, NULL));
 		ASSERT_OK(k_sem_take(&status_msg_recvd_sem, K_SECONDS(5)));
 
 		ASSERT_EQUAL(recvd_msgs_cnt, 0);
@@ -521,48 +545,154 @@ static void test_tester_simple(void)
 	PASS();
 }
 
+static void tester_simple_multicast(uint16_t addr, const uint8_t *uuid)
+{
+	uint8_t status;
+	int err;
+	const int msgs_cnt = 3;
+
+	/* Adding devices to bridge table */
+	for (int i = 0; i < remote_nodes; i++) {
+		/* Bridge messages from tester to multicast addr, for each subnet expect the last */
+		if (i != remote_nodes - 1) {
+			bridge_entry_add(PROV_ADDR, addr, 0, i + 1, BT_MESH_BRG_CFG_DIR_ONEWAY);
+		}
+
+		/* Bridge messages from remote nodes to tester */
+		bridge_entry_add(DEVICE_ADDR_START + i, PROV_ADDR, i + 1, 0,
+				 BT_MESH_BRG_CFG_DIR_ONEWAY);
+	}
+
+	tester_workaround();
+
+	bt_mesh_test_data_cb_setup(tester_data_cb);
+
+	LOG_INF("Step 1: Checking bridging table...");
+
+	LOG_INF("Sending data...");
+
+	for (int i = 0; i < msgs_cnt; i++) {
+		ASSERT_OK(send_data(addr, i, uuid));
+	}
+
+	LOG_INF("Checking data...");
+
+	ASSERT_OK(send_get(addr, uuid));
+	for (int i = 0; i < remote_nodes - 1; i++) {
+		ASSERT_OK(k_sem_take(&status_msg_recvd_sem, K_SECONDS(5)));
+
+		ASSERT_EQUAL(recvd_msgs_cnt, msgs_cnt);
+		for (int j = 0; j < recvd_msgs_cnt; j++) {
+			ASSERT_EQUAL(recvd_msgs[j], j);
+		}
+	}
+
+	LOG_INF("Step 2: Disabling bridging...");
+
+	err = bt_mesh_brg_cfg_cli_set(0, BRIDGE_ADDR, BT_MESH_BRG_CFG_DISABLED, &status);
+	if (err || status != BT_MESH_BRG_CFG_DISABLED) {
+		FAIL("Subnet bridge set failed (err %d) (status %u)", err, status);
+		return;
+	}
+
+	LOG_INF("Sending data...");
+	for (int i = 0; i < msgs_cnt; i++) {
+		ASSERT_OK(send_data(addr, i, uuid));
+	}
+
+	LOG_INF("Step 3: Enabling bridging...");
+	err = bt_mesh_brg_cfg_cli_set(0, BRIDGE_ADDR, BT_MESH_BRG_CFG_ENABLED, &status);
+	if (err || status != BT_MESH_BRG_CFG_ENABLED) {
+		FAIL("Subnet bridge set failed (err %d) (status %u)", err, status);
+		return;
+	}
+
+	LOG_INF("Checking data...");
+	ASSERT_OK(send_get(addr, uuid));
+	for (int i = 0; i < remote_nodes - 1; i++) {
+		ASSERT_OK(k_sem_take(&status_msg_recvd_sem, K_SECONDS(5)));
+		ASSERT_EQUAL(recvd_msgs_cnt, 0);
+	}
+}
+
+static void test_tester_simple_group(void)
+{
+	int err;
+	uint8_t status;
+
+	remote_nodes = REMOTE_NODES_MULTICAST;
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	tester_init_common();
+
+	for (int i = 0; i < remote_nodes; i++) {
+		err = bt_mesh_cfg_cli_mod_sub_add(i + 1, DEVICE_ADDR_START + i,
+						  DEVICE_ADDR_START + i, GROUP_ADDR, TEST_MOD_ID,
+						  &status);
+		if (err || status) {
+			FAIL("Mod sub add failed (err %d, status %u)", err, status);
+			return;
+		}
+	}
+
+	tester_simple_multicast(GROUP_ADDR, NULL);
+	PASS();
+}
+
+static void test_tester_simple_va(void)
+{
+	int err;
+	uint8_t status;
+	uint16_t vaddr;
+
+	remote_nodes = REMOTE_NODES_MULTICAST;
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	ASSERT_OK(bt_mesh_va_add(test_va_uuid, &va_entry));
+	ASSERT_TRUE(va_entry != NULL);
+
+	tester_init_common();
+
+	for (int i = 0; i < remote_nodes; i++) {
+		err = bt_mesh_cfg_cli_mod_sub_va_add(i + 1, DEVICE_ADDR_START + i,
+						     DEVICE_ADDR_START + i, test_va_uuid,
+						     TEST_MOD_ID, &vaddr, &status);
+		if (err || status) {
+			FAIL("Mod sub VA add failed (err %d, status %u)", err, status);
+			return;
+		}
+		ASSERT_EQUAL(vaddr, va_entry->addr);
+	}
+
+	tester_simple_multicast(va_entry->addr, va_entry->uuid);
+	PASS();
+}
+
 static void test_tester_table_state_change(void)
 {
 	int err;
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
-	bt_mesh_device_setup(&tester_prov, &comp);
-
-	tester_setup();
-
-	for (int i = 0; i < 1 /* bridge */ + REMOTE_NODES; i++) {
-		LOG_INF("Waiting for a device to provision...");
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
-	}
-
-	tester_bridge_configure(REMOTE_NODES);
-
-	for (int i = 0; i < REMOTE_NODES; i++) {
-		tester_device_configure(i + 1, DEVICE_ADDR_START + i);
-	}
-
+	tester_init_common();
 	tester_workaround();
 
-	bt_mesh_test_ra_cb_setup(tester_ra_cb);
-
 	/* Bridge Table is empty, will not get any message back. */
-	ASSERT_OK(send_get(DEVICE_ADDR_START));
+	ASSERT_OK(send_get(DEVICE_ADDR_START, NULL));
 	err = k_sem_take(&status_msg_recvd_sem, K_SECONDS(5));
 	ASSERT_EQUAL(err, -EAGAIN);
 
 	/* DATA and GET messages should reach Device 1, but STATUS message won't be received. */
 	bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START, 0, 1, BT_MESH_BRG_CFG_DIR_ONEWAY);
 
-	ASSERT_OK(send_data(DEVICE_ADDR_START, 0xAA));
+	ASSERT_OK(send_data(DEVICE_ADDR_START, 0xAA, NULL));
 
-	ASSERT_OK(send_get(DEVICE_ADDR_START));
+	ASSERT_OK(send_get(DEVICE_ADDR_START, NULL));
 	err = k_sem_take(&status_msg_recvd_sem, K_SECONDS(5));
 	ASSERT_EQUAL(err, -EAGAIN);
 
 	/* Sending DATA message again before adding a new entry as the previous GET message resets
 	 * received messages counter on Devices
 	 */
-	ASSERT_OK(send_data(DEVICE_ADDR_START, 0xAA));
+	ASSERT_OK(send_data(DEVICE_ADDR_START, 0xAA, NULL));
 	/* Adding a reverse entry. This should be added to the bridge table as a separate entry as
 	 * the addresses and net keys indexs are provided in the opposite order.
 	 */
@@ -581,7 +711,7 @@ static void test_tester_table_state_change(void)
 	k_sleep(K_SECONDS(1));
 
 	/* Now we should receive STATUS message. */
-	ASSERT_OK(send_get(DEVICE_ADDR_START));
+	ASSERT_OK(send_get(DEVICE_ADDR_START, NULL));
 	ASSERT_OK(k_sem_take(&status_msg_recvd_sem, K_SECONDS(5)));
 
 	ASSERT_EQUAL(recvd_msgs_cnt, 1);
@@ -599,7 +729,7 @@ static void test_tester_table_state_change(void)
 			    1);
 	bridge_table_verify(1, 0, 0, NULL, 0);
 
-	ASSERT_OK(send_get(DEVICE_ADDR_START));
+	ASSERT_OK(send_get(DEVICE_ADDR_START, NULL));
 	ASSERT_OK(k_sem_take(&status_msg_recvd_sem, K_SECONDS(5)));
 	ASSERT_EQUAL(recvd_msgs_cnt, 0);
 
@@ -623,33 +753,12 @@ static void test_tester_net_key_remove(void)
 	int err;
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
-	bt_mesh_device_setup(&tester_prov, &comp);
-
-	tester_setup();
-
-	for (int i = 0; i < 1 /* bridge */ + REMOTE_NODES; i++) {
-		LOG_INF("Waiting for a device to provision...");
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
-	}
-
-	tester_bridge_configure(REMOTE_NODES);
-
-	for (int i = 0; i < REMOTE_NODES; i++) {
-		tester_device_configure(i + 1, DEVICE_ADDR_START + i);
-	}
-
+	tester_init_common();
+	setup_basic_bridge();
 	tester_workaround();
 
-	bt_mesh_test_ra_cb_setup(tester_ra_cb);
-
-	/* Adding devices to bridge table */
-	for (int i = 0; i < REMOTE_NODES; i++) {
-		bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, 0, i + 1,
-				 BT_MESH_BRG_CFG_DIR_TWOWAY);
-	}
-
-	ASSERT_OK(send_data(DEVICE_ADDR_START, 0xAA));
-	ASSERT_OK(send_get(DEVICE_ADDR_START));
+	ASSERT_OK(send_data(DEVICE_ADDR_START, 0xAA, NULL));
+	ASSERT_OK(send_get(DEVICE_ADDR_START, NULL));
 	ASSERT_OK(k_sem_take(&status_msg_recvd_sem, K_SECONDS(5)));
 	ASSERT_EQUAL(recvd_msgs_cnt, 1);
 	ASSERT_EQUAL(recvd_msgs[0], 0xAA);
@@ -657,7 +766,7 @@ static void test_tester_net_key_remove(void)
 	/* Removing subnet 1 from Subnet Bridge. */
 	net_key_remove(BRIDGE_ADDR, 0, 1);
 
-	ASSERT_OK(send_get(DEVICE_ADDR_START));
+	ASSERT_OK(send_get(DEVICE_ADDR_START, NULL));
 	err = k_sem_take(&status_msg_recvd_sem, K_SECONDS(5));
 	ASSERT_EQUAL(err, -EAGAIN);
 
@@ -732,10 +841,10 @@ static void test_tester_persistence(void)
 		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
 
 		LOG_INF("Configuring bridge...");
-		tester_bridge_configure(REMOTE_NODES);
+		tester_bridge_configure();
 
 		/* Adding devices to bridge table */
-		for (int i = 0; i < REMOTE_NODES; i++) {
+		for (int i = 0; i < remote_nodes; i++) {
 			bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, 0, i + 1,
 					 BT_MESH_BRG_CFG_DIR_TWOWAY);
 			bridge_entry_add(DEVICE_ADDR_START + i, PROV_ADDR, i + 1, 0,
@@ -760,9 +869,9 @@ static void msg_cache_workaround(void)
 {
 	LOG_INF("Applying Msg Cache workaround...");
 
-	for (int i = 0; i < REMOTE_NODES; i++) {
+	for (int i = 0; i < remote_nodes; i++) {
 		for (int j = 0; j < CONFIG_BT_MESH_MSG_CACHE_SIZE; j++) {
-			ASSERT_OK(send_get(DEVICE_ADDR_START + i));
+			ASSERT_OK(send_get(DEVICE_ADDR_START + i, NULL));
 			/* k_sem_take is needed to not overflow network buffer pool. The result
 			 * of the semaphor is not important as we just need to bump sequence number
 			 * enough to bypass message cache.
@@ -817,31 +926,10 @@ static void propagate_ivi_update_state(void)
 static void test_tester_ivu(void)
 {
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME_IVU_TEST);
-	bt_mesh_device_setup(&tester_prov, &comp);
 	bt_mesh_iv_update_test(true);
-
-	tester_setup();
-
-	for (int i = 0; i < 1 /* bridge */ + REMOTE_NODES; i++) {
-		LOG_INF("Waiting for a device to provision...");
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
-	}
-
-	tester_bridge_configure(REMOTE_NODES);
-
-	/* Adding devices to bridge table */
-	for (int i = 0; i < REMOTE_NODES; i++) {
-		bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, 0, i + 1,
-				 BT_MESH_BRG_CFG_DIR_TWOWAY);
-	}
-
-	for (int i = 0; i < REMOTE_NODES; i++) {
-		tester_device_configure(i + 1, DEVICE_ADDR_START + i);
-	}
-
+	tester_init_common();
+	setup_basic_bridge();
 	tester_workaround();
-
-	bt_mesh_test_ra_cb_setup(tester_ra_cb);
 
 	ASSERT_TRUE(!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == test_ividx);
@@ -880,8 +968,99 @@ static void test_tester_ivu(void)
 
 		propagate_ivi_update_state();
 
+		/* Sleep here to avoid packet collision. */
+		k_sleep(K_MSEC(300));
+
 		send_and_receive();
 	}
+
+	PASS();
+}
+
+static void start_krp(uint16_t addr, const uint8_t *key)
+{
+	uint8_t status;
+	uint16_t net_idx = (addr == PROV_ADDR) ? 0 : (addr - DEVICE_ADDR_START + 1);
+
+	ASSERT_OK(bt_mesh_cfg_cli_net_key_update(0, BRIDGE_ADDR, net_idx, key, &status));
+	if (status) {
+		FAIL("Could not update net key (status %u)", status);
+		return;
+	}
+
+	ASSERT_OK(bt_mesh_cfg_cli_net_key_update(0, addr, net_idx, key, &status));
+	if (status) {
+		FAIL("Could not update net key (status %u)", status);
+		return;
+	}
+}
+
+static void set_krp_phase(uint16_t addr, uint8_t transition)
+{
+	uint8_t status;
+	uint8_t phase;
+	uint16_t net_idx = (addr == PROV_ADDR) ? 0 : (addr - DEVICE_ADDR_START + 1);
+
+	ASSERT_OK(bt_mesh_cfg_cli_krp_set(0, BRIDGE_ADDR, net_idx, transition, &status, &phase));
+	if (status || (phase != (transition == 0x02 ? 0x02 : 0x00))) {
+		FAIL("Could not update KRP (status %u, transition %u, phase %u)", status,
+		     transition, phase);
+		return;
+	}
+
+	ASSERT_OK(bt_mesh_cfg_cli_krp_set(0, addr, net_idx, transition, &status, &phase));
+	if (status || (phase != (transition == 0x02 ? 0x02 : 0x00))) {
+		FAIL("Could not update KRP (status %u, transition %u, phase %u)", status,
+		     transition, phase);
+		return;
+	}
+}
+
+static void test_tester_key_refresh(void)
+{
+	const uint8_t new_net_keys[][16] = {
+		{0x12, 0x34, 0x56},
+		{0x78, 0x9a, 0xbc},
+		{0xde, 0xf0, 0x12},
+		{0x34, 0x56, 0x78}
+	};
+
+	remote_nodes = 1;
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	tester_init_common();
+	setup_basic_bridge();
+	tester_workaround();
+
+	LOG_INF("Step 1: Run KRP for tester net and check messaging");
+	start_krp(PROV_ADDR, new_net_keys[0]);
+	send_and_receive();
+	set_krp_phase(PROV_ADDR, 0x02);
+	send_and_receive();
+	set_krp_phase(PROV_ADDR, 0x03);
+	send_and_receive();
+
+	LOG_INF("Step 2: Run KRP for device net and check messaging");
+	start_krp(DEVICE_ADDR_START, new_net_keys[1]);
+	send_and_receive();
+	set_krp_phase(DEVICE_ADDR_START, 0x02);
+	send_and_receive();
+	set_krp_phase(DEVICE_ADDR_START, 0x03);
+	send_and_receive();
+
+	LOG_INF("Step 3: Run KRP in parallell for both device and tester");
+	start_krp(PROV_ADDR, new_net_keys[2]);
+	send_and_receive();
+	start_krp(DEVICE_ADDR_START, new_net_keys[3]);
+	send_and_receive();
+	set_krp_phase(PROV_ADDR, 0x02);
+	send_and_receive();
+	set_krp_phase(DEVICE_ADDR_START, 0x02);
+	send_and_receive();
+	set_krp_phase(PROV_ADDR, 0x03);
+	send_and_receive();
+	set_krp_phase(DEVICE_ADDR_START, 0x03);
+	send_and_receive();
 
 	PASS();
 }
@@ -929,7 +1108,7 @@ static void device_setup(void)
 	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
 	LOG_INF("Node is provisioned");
 
-	bt_mesh_test_ra_cb_setup(device_ra_cb);
+	bt_mesh_test_data_cb_setup(device_data_cb);
 }
 
 static void test_device_simple(void)
@@ -964,6 +1143,12 @@ static const struct bst_test_instance test_brg[] = {
 	TEST_CASE(tester, simple,
 		  "Tester node: provisions network, exchanges messages with "
 		  "mesh nodes"),
+	TEST_CASE(tester, simple_group,
+		  "Tester node: provisions network, configures group subscription and exchanges "
+		  "messages with mesh nodes"),
+	TEST_CASE(tester, simple_va,
+		  "Tester node: provisions network, configures virtual address subscription "
+		  "and exchanges messages with mesh nodes"),
 	TEST_CASE(tester, table_state_change,
 		  "Tester node: tests changing bridging table "
 		  "state"),
@@ -974,6 +1159,8 @@ static const struct bst_test_instance test_brg[] = {
 	TEST_CASE(tester, persistence, "Tester node: test persistence of subnet bridge states"),
 #endif
 	TEST_CASE(tester, ivu, "Tester node: tests subnet bridge with IV Update procedure"),
+	TEST_CASE(tester, key_refresh,
+		  "Tester node: tests bridge behavior during key refresh procedures"),
 	TEST_CASE(bridge, simple, "Subnet Bridge node"),
 	TEST_CASE(device, simple, "A mesh node"),
 

@@ -188,7 +188,7 @@ static int counter_rpi_pico_timer_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api counter_rpi_pico_driver_api = {
+static DEVICE_API(counter, counter_rpi_pico_driver_api) = {
 	.start = counter_rpi_pico_timer_start,
 	.stop = counter_rpi_pico_timer_stop,
 	.get_value = counter_rpi_pico_timer_get_value,

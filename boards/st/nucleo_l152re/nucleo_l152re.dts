@@ -124,7 +124,7 @@
 &adc1 {
 	pinctrl-0 = <&adc_in0_pa0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
@@ -145,10 +145,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Set 2KB of storage at the end of 512KB flash */
-		storage_partition: partition@7f800 {
+		/* Set 8KB of storage at the end of 512KB flash */
+		storage_partition: partition@7e000 {
 			label = "storage";
-			reg = <0x0007f800 DT_SIZE_K(2)>;
+			reg = <0x0007e000 DT_SIZE_K(8)>;
 		};
 	};
 };

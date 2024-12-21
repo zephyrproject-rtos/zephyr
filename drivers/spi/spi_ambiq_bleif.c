@@ -159,7 +159,7 @@ static int spi_ambiq_release(const struct device *dev, const struct spi_config *
 	return 0;
 }
 
-static struct spi_driver_api spi_ambiq_driver_api = {
+static DEVICE_API(spi, spi_ambiq_driver_api) = {
 	.transceive = spi_ambiq_transceive,
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
@@ -213,7 +213,8 @@ static int spi_ambiq_init(const struct device *dev)
 		.size = DT_INST_REG_SIZE(n),                                                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.pwr_func = pwr_on_ambiq_spi_##n};                                                 \
-	DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, NULL, &spi_ambiq_data##n, &spi_ambiq_config##n,   \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_ambiq_driver_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, NULL, &spi_ambiq_data##n,                     \
+				  &spi_ambiq_config##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
+				  &spi_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_SPI_BLEIF_INIT)

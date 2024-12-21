@@ -281,7 +281,7 @@ static int spi_numaker_release(const struct device *dev, const struct spi_config
 	return 0;
 }
 
-static const struct spi_driver_api spi_numaker_driver_api = {
+static DEVICE_API(spi, spi_numaker_driver_api) = {
 	.transceive = spi_numaker_transceive,
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
@@ -360,7 +360,7 @@ done:
 		.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, spi_numaker_init, NULL, &spi_numaker_data_##inst,              \
+	SPI_DEVICE_DT_INST_DEFINE(inst, spi_numaker_init, NULL, &spi_numaker_data_##inst,          \
 			      &spi_numaker_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
 			      &spi_numaker_driver_api);
 

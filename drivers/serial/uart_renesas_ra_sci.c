@@ -904,7 +904,7 @@ static void uart_ra_sci_tx_timeout_handler(struct k_work *work)
 
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api uart_ra_sci_driver_api = {
+static DEVICE_API(uart, uart_ra_sci_driver_api) = {
 	.poll_in = uart_ra_sci_poll_in,
 	.poll_out = uart_ra_sci_poll_out,
 	.err_check = uart_ra_sci_err_check,

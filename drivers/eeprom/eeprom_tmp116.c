@@ -53,7 +53,7 @@ static int eeprom_tmp116_init(const struct device *dev)
 	return 0;
 }
 
-static const struct eeprom_driver_api eeprom_tmp116_api = {
+static DEVICE_API(eeprom, eeprom_tmp116_api) = {
 	.read = eeprom_tmp116_read,
 	.write = eeprom_tmp116_write,
 	.size = eeprom_tmp116_size,

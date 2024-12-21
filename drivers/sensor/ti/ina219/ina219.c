@@ -269,18 +269,14 @@ static int ina219_init(const struct device *dev)
 	}
 
 	/* Set measurement delay */
-	rc = ina219_set_msr_delay(dev);
-	if (rc) {
-		LOG_ERR("Could not get measurement delay.");
-		return rc;
-	}
+	ina219_set_msr_delay(dev);
 
 	k_sleep(K_USEC(INA219_WAIT_STARTUP));
 
 	return 0;
 }
 
-static const struct sensor_driver_api ina219_api = {
+static DEVICE_API(sensor, ina219_api) = {
 	.sample_fetch = ina219_sample_fetch,
 	.channel_get = ina219_channel_get,
 };

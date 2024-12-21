@@ -1,7 +1,9 @@
 sample:
   name: MBOX IPC negative test cases
 common:
-  tags: drivers mbox
+  tags:
+    - drivers
+    - mbox
   harness: ztest
 tests:
 

@@ -7,7 +7,6 @@
 from argparse import ArgumentParser
 from math import ceil
 
-
 CHUNK = "This is a fragment of generated C string. "
 
 

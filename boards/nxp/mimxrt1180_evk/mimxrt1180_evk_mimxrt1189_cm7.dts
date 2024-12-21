@@ -43,3 +43,11 @@
 &flexcan3 {
 	status = "okay";
 };
+
+&lptmr1 {
+	status = "okay";
+};
+
+&i3c2 {
+	status = "okay";
+};

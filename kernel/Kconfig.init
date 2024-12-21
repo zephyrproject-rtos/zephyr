@@ -38,6 +38,15 @@ config SOC_LATE_INIT_HOOK
 	  A custom SoC hook soc_late_init_hook() is executed after the kernel and
 	  devices are initialized
 
+config SOC_PER_CORE_INIT_HOOK
+	bool "Run SoC per-core initialization hook"
+	help
+	  Run an SoC initialization hook for every core
+
+	  A custom SoC hook soc_per_core_init_hook() is executeds at the end of
+	  arch_kernel_init() for the primary core, and at the end of arch_secondary_cpu_init()
+	  for secondary cores.
+
 config BOARD_EARLY_INIT_HOOK
 	bool "Run early board hook"
 	help

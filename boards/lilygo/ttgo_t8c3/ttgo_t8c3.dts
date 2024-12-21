@@ -8,6 +8,7 @@
 
 #include <espressif/esp32c3/esp32c3_common.dtsi>
 #include "ttgo_t8c3-pinctrl.dtsi"
+#include <espressif/partitions_0x0_default.dtsi>
 
 / {
 	model = "Lilygo TTGO T8-C3";
@@ -20,7 +21,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
@@ -36,6 +37,10 @@
 			label = "Green - LED0";
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
 };
 
 &uart0 {
@@ -96,38 +101,4 @@
 
 &esp32_bt_hci{
 	status = "okay";
-};
-
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x0000F000>;
-			read-only;
-		};
-
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x00010000 0x00100000>;
-		};
-
-		slot1_partition: partition@110000 {
-			label = "image-1";
-			reg = <0x00110000 0x00100000>;
-		};
-
-		scratch_partition: partition@210000 {
-			label = "image-scratch";
-			reg = <0x00210000 0x00040000>;
-		};
-
-		storage_partition: partition@250000 {
-			label = "storage";
-			reg = <0x00250000 0x00006000>;
-		};
-	};
 };

@@ -246,6 +246,7 @@ config MBEDTLS_SOME_CIPHER_ENABLED
 
 config MBEDTLS_CIPHER_AES_ENABLED
 	bool "AES block cipher"
+	default y if PSA_WANT_KEY_TYPE_AES && MBEDTLS_PSA_CRYPTO_C
 
 if MBEDTLS_CIPHER_AES_ENABLED
 
@@ -397,6 +398,7 @@ config MBEDTLS_ENTROPY_C
 
 config MBEDTLS_ENTROPY_POLL_ZEPHYR
 	bool "Provide entropy data to Mbed TLS through entropy driver or random generator"
+	default y
 	depends on MBEDTLS_ENTROPY_C
 	help
 	  Provide entropy data to the Mbed TLS's entropy module through either
@@ -480,10 +482,17 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
+	# The only way to check if there is any entropy driver available on the
+	# platform is to check if the "zephyr,entropy" chosen property exists.
+	# CONFIG_CSPRNG_ENABLED cannot be used for this because it gets enabled by
+	# entropy drivers but these are gated by CONFIG_ENTROPY_GENERATOR which
+	# is disabled by default.
+	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_AVAILABLE
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	bool "Use a cryptographically secure driver as random source"
+	select ENTROPY_GENERATOR
 	help
 	  Use a cryptographically secure random generator to provide random data
 	  instead of legacy Mbed TLS modules. This has a smaller footprint
@@ -498,6 +507,10 @@ config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
 	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
+	# If there is any entropy driver in the system, then the choice would be
+	# CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. If we fall here, then the only
+	# way to get some random data is to enable CONFIG_TEST_RANDOM_GENERATOR.
+	select TEST_RANDOM_GENERATOR
 	help
 	  Use legacy Mbed TLS modules to generate random data. In this
 	  configuration the entropy module is used to gather some data and then
@@ -551,9 +564,10 @@ config MBEDTLS_LMS
 	depends on MBEDTLS_SHA256
 	select PSA_WANT_ALG_SHA_256
 
+if MBEDTLS_PSA_CRYPTO_C
+
 config MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	bool "P256-M driver"
-	depends on MBEDTLS_PSA_CRYPTO_C
 	imply PSA_WANT_ALG_SHA_256
 	help
 	  Enable support for the optimized sofware implementation of the secp256r1
@@ -566,6 +580,35 @@ config MBEDTLS_PSA_P256M_DRIVER_RAW
 	  Allow direct access to the p256-m driver interface.
 	  Warning: Usage of this Kconfig option is prohibited in Zephyr's codebase.
 	           Users can enable it in case of very memory-constrained devices, but be aware that the p256-m interface is absolutely not guaranted to remain stable over time.
+
+config MBEDTLS_PSA_STATIC_KEY_SLOTS
+	bool "Use statically allocated key buffers to store key material"
+	default y if !MBEDTLS_ENABLE_HEAP
+	help
+	  By default Mbed TLS's PSA Crypto core uses heap memory to store the
+	  key material for each key slot. This might impose an undesired
+	  requirement to support heap memory and its management code, affecting
+	  RAM and ROM footprints at the same time.
+	  Enabling this symbol causes Mbed TLS to pre-allocate all the key slot
+	  buffers that are used to store the key material at build time, thus
+	  removing the need for heap memory. Each buffer will be sized to
+	  contain the largest asymmetric/symmetric key type enabled in the build
+	  through PSA_WANT symbols.
+
+config MBEDTLS_PSA_KEY_SLOT_COUNT
+	int "Number of key slots in PSA Crypto core"
+	default 16
+	help
+	  Set the number of key slots that are available in the PSA Crypto core.
+	  Be aware that each slot, even if unused, increases RAM consumption
+	  by ~40 bytes plus:
+	  * the length of the largest asymmetric/symmetric key type enabled in
+	    the build through PSA_WANT symbols, if MBEDTLS_PSA_STATIC_KEY_SLOTS
+	    is set. (This is all defined statically at build time).
+	  * the heap-allocated memory to store the key material of a given slot,
+	    if it is used and MBEDTLS_PSA_STATIC_KEY_SLOTS is not set.
+
+endif # MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"

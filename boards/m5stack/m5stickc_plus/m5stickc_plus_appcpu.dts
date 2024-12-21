@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_appcpu.dtsi>
+#include <espressif/esp32/esp32_pico_d4.dtsi>
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
@@ -13,9 +13,11 @@
 	compatible = "espressif,esp32";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,ipc_shm = &shm0;
 		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
 	};
 };
 

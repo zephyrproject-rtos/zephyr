@@ -1,0 +1,9 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&cpusec_cpuapp_ipc {
+	status = "disabled";
+};
+
+&cpusec_bellboard {
+	status = "disabled";
+};

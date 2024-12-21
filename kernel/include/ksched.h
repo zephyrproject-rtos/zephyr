@@ -143,9 +143,9 @@ static inline bool _is_valid_prio(int prio, void *entry_point)
 static inline void z_sched_lock(void)
 {
 	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 1U, "");
+	__ASSERT(arch_current_thread()->base.sched_locked != 1U, "");
 
-	--_current->base.sched_locked;
+	--arch_current_thread()->base.sched_locked;
 
 	compiler_barrier();
 }

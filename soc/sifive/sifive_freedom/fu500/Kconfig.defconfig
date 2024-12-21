@@ -10,9 +10,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-config RISCV_GP
-	default y
-
 config 2ND_LVL_ISR_TBL_OFFSET
 	default 12
 
@@ -24,5 +21,11 @@ config MAX_IRQ_PER_AGGREGATOR
 
 config NUM_IRQS
 	default 64
+
+config FPU
+	default y if CPU_HAS_FPU
+
+config RISCV_IMPRECISE_FPU_STATE_TRACKING
+	default y if FPU
 
 endif # SOC_SERIES_SIFIVE_FREEDOM_FU500

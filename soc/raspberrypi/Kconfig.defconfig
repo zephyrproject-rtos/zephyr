@@ -7,7 +7,4 @@ if SOC_FAMILY_RPI_PICO
 
 rsource "*/Kconfig.defconfig"
 
-config PINCTRL
-	default y
-
 endif # SOC_FAMILY_RPI_PICO

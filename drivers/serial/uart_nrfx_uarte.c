@@ -30,9 +30,7 @@
 
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
-#if !defined(CONFIG_ARCH_POSIX)
 #define RX_FLUSH_WORKAROUND 1
-#endif
 
 #define UARTE(idx)                DT_NODELABEL(uart##idx)
 #define UARTE_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(UARTE(idx), prop)
@@ -110,6 +108,18 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
 #if UARTE_FOR_EACH_INSTANCE(IS_LOW_POWER, (||), (0))
 #define UARTE_ANY_LOW_POWER 1
+#endif
+
+/* Macro must resolve to literal 0 or 1 */
+#define INSTANCE_IS_FAST(unused, prefix, idx, _)					\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(idx)),				\
+		(COND_CODE_1(UTIL_AND(IS_ENABLED(CONFIG_SOC_NRF54H20_GPD),		\
+			     DT_NODE_HAS_PROP(UARTE(idx), power_domains)),		\
+			    (COND_CODE_0(DT_PHA(UARTE(idx), power_domains, id), (1), (0))),\
+			    (0))), (0))
+
+#if UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_FAST, (||), (0))
+#define UARTE_ANY_FAST 1
 #endif
 
 #ifdef UARTE_ANY_CACHE
@@ -271,6 +281,21 @@ struct uarte_nrfx_data {
 	(IS_ENABLED(UARTE_ANY_LOW_POWER) && \
 	 !IS_ENABLED(CONFIG_PM_DEVICE) && \
 	 (_config->flags & UARTE_CFG_FLAG_LOW_POWER))
+
+/** @brief Check if device has PM that works in ISR safe mode.
+ *
+ * Only fast UARTE instance does not work in that mode so check PM configuration
+ * flags only if there is any fast instance present.
+ *
+ * @retval true if device PM is ISR safe.
+ * @retval false if device PM is not ISR safe.
+ */
+#define IS_PM_ISR_SAFE(dev) \
+	(!IS_ENABLED(UARTE_ANY_FAST) ||\
+	 COND_CODE_1(CONFIG_PM_DEVICE,\
+			((dev->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE))), \
+			(0)))
+
 /**
  * @brief Structure for UARTE configuration.
  */
@@ -353,16 +378,16 @@ static void uarte_nrfx_isr_int(const void *arg)
 	if (txstopped && (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config))) {
 		unsigned int key = irq_lock();
 
-		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&
-		    (data->flags & UARTE_FLAG_POLL_OUT)) {
-			data->flags &= ~UARTE_FLAG_POLL_OUT;
-			pm_device_runtime_put(dev);
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			if (data->flags & UARTE_FLAG_POLL_OUT) {
+				data->flags &= ~UARTE_FLAG_POLL_OUT;
+				pm_device_runtime_put_async(dev, K_NO_WAIT);
+			}
 		} else {
 			nrf_uarte_disable(uarte);
 		}
-
 #ifdef UARTE_INTERRUPT_DRIVEN
-		if (!data->int_driven || data->int_driven->fifo_fill_lock == 0)
+		if (!data->int_driven)
 #endif
 		{
 			nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
@@ -378,15 +403,19 @@ static void uarte_nrfx_isr_int(const void *arg)
 
 	if (txstopped) {
 		data->int_driven->fifo_fill_lock = 0;
-		if (data->int_driven->disable_tx_irq) {
-			nrf_uarte_int_disable(uarte,
-					      NRF_UARTE_INT_TXSTOPPED_MASK);
-			data->int_driven->disable_tx_irq = false;
-			return;
+		if (!data->int_driven->tx_irq_enabled) {
+
+			nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 		}
 
+		if (data->int_driven->disable_tx_irq) {
+			data->int_driven->disable_tx_irq = false;
+			if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+				pm_device_runtime_put_async(dev, K_NO_WAIT);
+			}
+			return;
+		}
 	}
-
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ERROR)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ERROR);
@@ -590,6 +619,9 @@ static void uarte_periph_enable(const struct device *dev)
 
 	(void)data;
 	nrf_uarte_enable(uarte);
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	nrf_gpd_retain_pins_set(config->pcfg, false);
+#endif
 #if UARTE_BAUDRATE_RETENTION_WORKAROUND
 	nrf_uarte_baudrate_set(uarte,
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
@@ -702,6 +734,11 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 	}
 #endif
 
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	const struct uarte_nrfx_config *cfg = dev->config;
+
+	nrf_gpd_retain_pins_set(cfg->pcfg, true);
+#endif
 	nrf_uarte_disable(get_uarte_instance(dev));
 }
 
@@ -863,6 +900,20 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 	}
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (!IS_PM_ISR_SAFE(dev) && k_is_in_isr()) {
+			/* If instance does not support PM from ISR device shall
+			 * already be turned on.
+			 */
+			enum pm_device_state state;
+			int err;
+
+			err = pm_device_state_get(dev, &state);
+			(void)err;
+			__ASSERT_NO_MSG(err == 0);
+			if (state != PM_DEVICE_STATE_ACTIVE) {
+				return -ENOTSUP;
+			}
+		}
 		pm_device_runtime_get(dev);
 	}
 
@@ -931,6 +982,10 @@ static void notify_rx_disable(const struct device *dev)
 	};
 
 	user_callback(dev, (struct uart_event *)&evt);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put_async(dev, K_NO_WAIT);
+	}
 }
 
 #ifdef UARTE_HAS_FRAME_TIMEOUT
@@ -1005,6 +1060,24 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	async_rx->next_buf = NULL;
 	async_rx->next_buf_len = 0;
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (!IS_PM_ISR_SAFE(dev) && k_is_in_isr()) {
+			/* If instance does not support PM from ISR device shall
+			 * already be turned on.
+			 */
+			enum pm_device_state state;
+			int err;
+
+			err = pm_device_state_get(dev, &state);
+			(void)err;
+			__ASSERT_NO_MSG(err == 0);
+			if (state != PM_DEVICE_STATE_ACTIVE) {
+				return -ENOTSUP;
+			}
+		}
+		pm_device_runtime_get(dev);
+	}
+
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(cfg)) {
 		if (async_rx->flush_cnt) {
 			int cpy_len = MIN(len, async_rx->flush_cnt);
@@ -1058,9 +1131,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 
 	async_rx->enabled = true;
 
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(dev);
-	} else if (LOW_POWER_ENABLED(cfg)) {
+	if (LOW_POWER_ENABLED(cfg)) {
 		unsigned int key = irq_lock();
 
 		uarte_enable_locked(dev, UARTE_FLAG_LOW_POWER_RX);
@@ -1521,7 +1592,7 @@ static void rxto_isr(const struct device *dev)
 			async_rx->total_user_byte_cnt += rx_flush(dev);
 		}
 #endif
-	} else {
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config)) {
 		async_rx->flush_cnt = rx_flush(dev);
 	}
 
@@ -1533,9 +1604,7 @@ static void rxto_isr(const struct device *dev)
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXDRDY);
 #endif
 
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(dev);
-	} else if (LOW_POWER_ENABLED(config)) {
+	if (LOW_POWER_ENABLED(config)) {
 		uint32_t key = irq_lock();
 
 		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_RX);
@@ -1560,7 +1629,7 @@ static void txstopped_isr(const struct device *dev)
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 		if (data->flags & UARTE_FLAG_POLL_OUT) {
-			pm_device_runtime_put(dev);
+			pm_device_runtime_put_async(dev, K_NO_WAIT);
 			data->flags &= ~UARTE_FLAG_POLL_OUT;
 		}
 	} else if (LOW_POWER_ENABLED(config)) {
@@ -1623,11 +1692,11 @@ static void txstopped_isr(const struct device *dev)
 	data->async->tx.buf = NULL;
 	data->async->tx.len = 0;
 
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(dev);
-	}
-
 	user_callback(dev, &evt);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put_async(dev, K_NO_WAIT);
+	}
 }
 
 static void rxdrdy_isr(const struct device *dev)
@@ -1814,6 +1883,22 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	}
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (!IS_PM_ISR_SAFE(dev) && k_is_in_isr()) {
+			/* If instance does not support PM from ISR device shall
+			 * already be turned on.
+			 */
+			enum pm_device_state state;
+			int err;
+
+			err = pm_device_state_get(dev, &state);
+			(void)err;
+			__ASSERT_NO_MSG(err == 0);
+			if (state != PM_DEVICE_STATE_ACTIVE) {
+				irq_unlock(key);
+				return;
+			}
+		}
+
 		if (!(data->flags & UARTE_FLAG_POLL_OUT)) {
 			data->flags |= UARTE_FLAG_POLL_OUT;
 			pm_device_runtime_get(dev);
@@ -1892,6 +1977,11 @@ static void uarte_nrfx_irq_tx_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = dev->data;
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(dev);
+	}
+
 	unsigned int key = irq_lock();
 
 	data->int_driven->disable_tx_irq = false;
@@ -2002,7 +2092,7 @@ static void uarte_nrfx_irq_callback_set(const struct device *dev,
 }
 #endif /* UARTE_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_nrfx_uarte_driver_api = {
+static DEVICE_API(uart, uart_nrfx_uarte_driver_api) = {
 	.poll_in		= uarte_nrfx_poll_in,
 	.poll_out		= uarte_nrfx_poll_out,
 	.err_check		= uarte_nrfx_err_check,
@@ -2103,9 +2193,6 @@ static void uarte_pm_resume(const struct device *dev)
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || !LOW_POWER_ENABLED(cfg)) {
 		uarte_periph_enable(dev);
-#ifdef CONFIG_SOC_NRF54H20_GPD
-		nrf_gpd_retain_pins_set(cfg->pcfg, false);
-#endif
 	}
 }
 
@@ -2405,7 +2492,8 @@ static int uarte_instance_init(const struct device *dev,
 	}								       \
 									       \
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action,		       \
-			    PM_DEVICE_ISR_SAFE);			       \
+			    COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _),\
+				    (0), (PM_DEVICE_ISR_SAFE)));	       \
 									       \
 	DEVICE_DT_DEFINE(UARTE(idx),					       \
 		      uarte_##idx##_init,				       \

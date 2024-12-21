@@ -172,7 +172,7 @@ static int xlnx_axi_timer_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static const struct pwm_driver_api xlnx_axi_timer_driver_api = {
+static DEVICE_API(pwm, xlnx_axi_timer_driver_api) = {
 	.set_cycles = xlnx_axi_timer_set_cycles,
 	.get_cycles_per_sec = xlnx_axi_timer_get_cycles_per_sec,
 };

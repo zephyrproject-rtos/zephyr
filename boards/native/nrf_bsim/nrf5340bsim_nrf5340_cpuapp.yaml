@@ -2,14 +2,15 @@ identifier: nrf5340bsim/nrf5340/cpuapp
 name: NRF53 BabbleSim - Application Core target
 type: native
 arch: posix
-simulation: native
+simulation:
+  - name: native
 env:
   - BSIM_OUT_PATH
 toolchain:
   - zephyr
 testing:
   ignore_tags:
-    - gpio
     - modem
-    - uart
     - bsim_skip_CI
+supported:
+  - gpio

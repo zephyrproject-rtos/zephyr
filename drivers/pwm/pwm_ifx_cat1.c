@@ -151,7 +151,7 @@ static int ifx_cat1_pwm_get_cycles_per_sec(const struct device *dev, uint32_t ch
 	return 0;
 }
 
-static const struct pwm_driver_api ifx_cat1_pwm_api = {
+static DEVICE_API(pwm, ifx_cat1_pwm_api) = {
 	.set_cycles = ifx_cat1_pwm_set_cycles,
 	.get_cycles_per_sec = ifx_cat1_pwm_get_cycles_per_sec,
 };

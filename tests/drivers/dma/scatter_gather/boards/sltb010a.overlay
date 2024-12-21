@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Silicon Laboratories, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/ {
+	aliases {
+		dma0 = &dma0;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};

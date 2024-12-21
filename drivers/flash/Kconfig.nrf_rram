@@ -24,7 +24,7 @@ if SOC_FLASH_NRF_RRAM
 config NRF_RRAM_WRITE_BUFFER_SIZE
 	int "Internal write-buffer size"
 	default 32 if !SOC_FLASH_NRF_RADIO_SYNC_NONE
-	default 0
+	default 1
 	range 0 32
 	help
 	  Number of 128-bit words.

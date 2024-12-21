@@ -177,7 +177,7 @@ ZTEST(arm_interrupt, test_arm_esf_collection)
 	 * crashy thread we create below runs to completion before we get
 	 * to the end of this function
 	 */
-	k_thread_priority_set(_current, K_PRIO_PREEMPT(MAIN_PRIORITY));
+	k_thread_priority_set(arch_current_thread(), K_PRIO_PREEMPT(MAIN_PRIORITY));
 
 	TC_PRINT("Testing ESF Reporting\n");
 	k_thread_create(&esf_collection_thread, esf_collection_stack,
@@ -366,9 +366,9 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	uint32_t fp_extra_size =
 		(__get_CONTROL() & CONTROL_FPCA_Msk) ?
 			FPU_STACK_EXTRA_SIZE : 0;
-	__set_PSP(_current->stack_info.start + 0x10 + fp_extra_size);
+	__set_PSP(arch_current_thread()->stack_info.start + 0x10 + fp_extra_size);
 #else
-	__set_PSP(_current->stack_info.start + 0x10);
+	__set_PSP(arch_current_thread()->stack_info.start + 0x10);
 #endif
 
 	__enable_irq();

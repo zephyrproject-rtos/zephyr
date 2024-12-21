@@ -110,6 +110,24 @@ The below features are currently supported on Zephyr OS for EK-RA8D1 board:
 +--------------+------------+------------------+
 | CAN          | on-chip    | canfd            |
 +--------------+------------+------------------+
+| I2C          | on-chip    | i2c              |
++--------------+------------+------------------+
+| USBHS        | on-chip    | udc              |
++--------------+------------+------------------+
+| ETHERNET     | on-chip    | ethernet         |
++--------------+------------+------------------+
+| ADC          | on-chip    | adc              |
++--------------+------------+------------------+
+
+**Note:** for using Ethernet on RA8D1 board please set switch SW1 as following configuration:
+
++-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+| SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
++-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+|     OFF     |      OFF    |      OFF     |     OFF    |     ON     |      OFF   |      OFF    |     OFF   |
++-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+
+**CAUTION:** Do not enable SW1-4 and SW1-5 together
 
 Other hardware features are currently not supported by the port.
 

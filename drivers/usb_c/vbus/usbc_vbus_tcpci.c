@@ -80,10 +80,12 @@ static int tcpci_enable(const struct device *dev, bool enable)
 				 (enable) ? 0 : TCPC_REG_POWER_CTRL_VBUS_VOL_MONITOR_DIS);
 }
 
-static const struct usbc_vbus_driver_api vbus_tcpci_api = {.measure = tcpci_measure,
-							   .check_level = tcpci_check_level,
-							   .discharge = tcpci_discharge,
-							   .enable = tcpci_enable};
+static DEVICE_API(usbc_vbus, vbus_tcpci_api) = {
+	.measure = tcpci_measure,
+	.check_level = tcpci_check_level,
+	.discharge = tcpci_discharge,
+	.enable = tcpci_enable,
+};
 
 static int tcpci_init(const struct device *dev)
 {

@@ -61,7 +61,7 @@ static int esp32_temp_channel_get(const struct device *dev, enum sensor_channel 
 	return sensor_value_from_double(val, data->temp_out);
 }
 
-static const struct sensor_driver_api esp32_temp_driver_api = {
+static DEVICE_API(sensor, esp32_temp_driver_api) = {
 	.sample_fetch = esp32_temp_sample_fetch,
 	.channel_get = esp32_temp_channel_get,
 };

@@ -16,6 +16,7 @@ config SOC_OPENTITAN
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	# OpenTitan Ibex core mtvec mode is read-only / forced to vectored mode.
 	select RISCV_VECTORED_MODE
 	select GEN_IRQ_VECTOR_TABLE

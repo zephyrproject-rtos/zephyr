@@ -6,11 +6,6 @@ common:
     - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
     - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
     # platforms that are always skipped by the runtime filter
-    - qemu_arc/qemu_arc_em
-    - qemu_arc/qemu_arc_hs
-    - qemu_arc/qemu_arc_hs/xip
-    - qemu_arc/qemu_arc_hs5x
-    - qemu_arc/qemu_arc_hs6x
     - qemu_cortex_m0
     - qemu_xtensa/dc233c/mmu
   integration_platforms:
@@ -18,6 +13,7 @@ common:
     - qemu_cortex_r5          # ARM Cortex-R5 (ARMv7-R ISA)
     - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
     - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
+  filter: not CONFIG_HARVARD
   extra_configs:
     - arch:arm64:CONFIG_LLEXT_HEAP_SIZE=128
   extra_conf_files:
@@ -36,7 +32,10 @@ tests:
   # most tests include no_mem_protection.conf, which disables memory protection
   # hardware completely.
   llext.simple.readonly:
-    arch_allow: arm riscv # Xtensa needs writable storage
+    arch_allow:               # Xtensa needs writable storage
+      - arm
+      - riscv
+      - arc
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
@@ -49,7 +48,10 @@ tests:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.readonly_mmu:
-    arch_allow: arm64 arm riscv
+    arch_allow:
+      - arm64
+      - arm
+      - riscv
     filter: CONFIG_MMU or CONFIG_RISCV_PMP
     integration_platforms:
       - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
@@ -57,7 +59,11 @@ tests:
       - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.writable:
-    arch_allow: arm xtensa riscv
+    arch_allow:
+      - arm
+      - xtensa
+      - riscv
+      - arc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -65,7 +71,16 @@ tests:
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
   llext.simple.writable_relocatable:
-    arch_allow: arm xtensa riscv
+    arch_allow:
+      - arm
+      - xtensa
+      - riscv
+      - arc
+    platform_exclude:
+      - qemu_arc/qemu_arc_hs5x     # See #80949
+      - nsim/nsim_hs5x             # See #80949
+      - nsim/nsim_hs5x/smp         # See #80949
+      - nsim/nsim_hs5x/smp/12cores # See #80949
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -77,7 +92,11 @@ tests:
   # Test the Symbol Link Identifier (SLID) linking feature on writable
   # storage to cover both ARM and Xtensa architectures on the same test.
   llext.simple.writable_slid_linking:
-    arch_allow: arm xtensa riscv
+    arch_allow:
+      - arm
+      - xtensa
+      - riscv
+      - arc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -86,7 +105,16 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
   llext.simple.writable_relocatable_slid_linking:
-    arch_allow: arm xtensa riscv
+    arch_allow:
+      - arm
+      - xtensa
+      - riscv
+      - arc
+    platform_exclude:
+      - qemu_arc/qemu_arc_hs5x     # See #80949
+      - nsim/nsim_hs5x             # See #80949
+      - nsim/nsim_hs5x/smp         # See #80949
+      - nsim/nsim_hs5x/smp/12cores # See #80949
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU

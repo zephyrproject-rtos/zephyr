@@ -4,26 +4,25 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-from multiprocessing import Lock, Value
-import re
-
-import platform
-import yaml
-import scl
 import logging
+import os
+import platform
+import re
+from multiprocessing import Lock, Value
 from pathlib import Path
-from natsort import natsorted
 
+import scl
+import yaml
+from natsort import natsorted
 from twisterlib.environment import ZEPHYR_BASE
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
     # It's much faster.
-    from yaml import CSafeLoader as SafeLoader
     from yaml import CDumper as Dumper
+    from yaml import CSafeLoader as SafeLoader
 except ImportError:
-    from yaml import SafeLoader, Dumper
+    from yaml import Dumper, SafeLoader
 
 try:
     from tabulate import tabulate
@@ -34,7 +33,7 @@ logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 
-class DUT(object):
+class DUT:
     def __init__(self,
                  id=None,
                  serial=None,
@@ -121,7 +120,7 @@ class DUT(object):
         d = {}
         exclude = ['_available', '_counter', '_failures', 'match']
         v = vars(self)
-        for k in v.keys():
+        for k in v:
             if k not in exclude and v[k]:
                 d[k] = v[k]
         return d
@@ -235,10 +234,26 @@ class HardwareMap:
         print(tabulate(table, headers=header, tablefmt="github"))
 
 
-    def add_device(self, serial, platform, pre_script, is_pty, baud=None, flash_timeout=60, flash_with_test=False, flash_before=False):
-        device = DUT(platform=platform, connected=True, pre_script=pre_script, serial_baud=baud,
-                     flash_timeout=flash_timeout, flash_with_test=flash_with_test, flash_before=flash_before
-                    )
+    def add_device(
+        self,
+        serial,
+        platform,
+        pre_script,
+        is_pty,
+        baud=None,
+        flash_timeout=60,
+        flash_with_test=False,
+        flash_before=False
+    ):
+        device = DUT(
+            platform=platform,
+            connected=True,
+            pre_script=pre_script,
+            serial_baud=baud,
+            flash_timeout=flash_timeout,
+            flash_with_test=flash_with_test,
+            flash_before=flash_before
+        )
         if is_pty:
             device.serial_pty = serial
         else:
@@ -262,7 +277,13 @@ class HardwareMap:
             flash_before = dut.get('flash_before')
             if flash_before is None:
                 flash_before = self.options.flash_before and (not (flash_with_test or serial_pty))
-            platform  = dut.get('platform')
+            platform = dut.get('platform')
+            if isinstance(platform, str):
+                platforms = platform.split()
+            elif isinstance(platform, list):
+                platforms = platform
+            else:
+                raise ValueError(f"Invalid platform value: {platform}")
             id = dut.get('id')
             runner = dut.get('runner')
             runner_params = dut.get('runner_params')
@@ -270,28 +291,29 @@ class HardwareMap:
             baud = dut.get('baud', None)
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
-            connected= dut.get('connected') and ((serial or serial_pty) is not None)
+            connected = dut.get('connected') and ((serial or serial_pty) is not None)
             if not connected:
                 continue
-            new_dut = DUT(platform=platform,
-                          product=product,
-                          runner=runner,
-                          runner_params=runner_params,
-                          id=id,
-                          serial_pty=serial_pty,
-                          serial=serial,
-                          serial_baud=baud,
-                          connected=connected,
-                          pre_script=pre_script,
-                          flash_before=flash_before,
-                          post_script=post_script,
-                          post_flash_script=post_flash_script,
-                          script_param=script_param,
-                          flash_timeout=flash_timeout,
-                          flash_with_test=flash_with_test)
-            new_dut.fixtures = fixtures
-            new_dut.counter = 0
-            self.duts.append(new_dut)
+            for plat in platforms:
+                new_dut = DUT(platform=plat,
+                              product=product,
+                              runner=runner,
+                              runner_params=runner_params,
+                              id=id,
+                              serial_pty=serial_pty,
+                              serial=serial,
+                              serial_baud=baud,
+                              connected=connected,
+                              pre_script=pre_script,
+                              flash_before=flash_before,
+                              post_script=post_script,
+                              post_flash_script=post_flash_script,
+                              script_param=script_param,
+                              flash_timeout=flash_timeout,
+                              flash_with_test=flash_with_test)
+                new_dut.fixtures = fixtures
+                new_dut.counter = 0
+                self.duts.append(new_dut)
 
     def scan(self, persistent=False):
         from serial.tools import list_ports
@@ -324,7 +346,10 @@ class HardwareMap:
         serial_devices = list_ports.comports()
         logger.info("Scanning connected hardware...")
         for d in serial_devices:
-            if d.manufacturer and d.manufacturer.casefold() in [m.casefold() for m in self.manufacturer]:
+            if (
+                d.manufacturer
+                and d.manufacturer.casefold() in [m.casefold() for m in self.manufacturer]
+            ):
 
                 # TI XDS110 can have multiple serial devices for a single board
                 # assume endpoint 0 is the serial, skip all others
@@ -355,13 +380,13 @@ class HardwareMap:
                 s_dev.lock = None
                 self.detected.append(s_dev)
             else:
-                logger.warning("Unsupported device (%s): %s" % (d.manufacturer, d))
+                logger.warning(f"Unsupported device ({d.manufacturer}): {d}")
 
     def save(self, hwm_file):
         # use existing map
         self.detected = natsorted(self.detected, key=lambda x: x.serial or '')
         if os.path.exists(hwm_file):
-            with open(hwm_file, 'r') as yaml_file:
+            with open(hwm_file) as yaml_file:
                 hwm = yaml.load(yaml_file, Loader=SafeLoader)
                 if hwm:
                     hwm.sort(key=lambda x: x.get('id', ''))
@@ -424,7 +449,11 @@ class HardwareMap:
             logger.info("Detected devices:")
             self.dump(detected=True)
 
-    def dump(self, filtered=[], header=[], connected_only=False, detected=False):
+    def dump(self, filtered=None, header=None, connected_only=False, detected=False):
+        if filtered is None:
+            filtered = []
+        if header is None:
+            header = []
         print("")
         table = []
         if detected:

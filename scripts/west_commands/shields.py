@@ -5,19 +5,18 @@
 
 import argparse
 import os
-from pathlib import Path
 import re
 import sys
 import textwrap
+from pathlib import Path
 
-from west import log
 from west.commands import WestCommand
-
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
 import list_shields
 import zephyr_module
+
 
 class Shields(WestCommand):
 
@@ -83,4 +82,4 @@ class Shields(WestCommand):
         for shield in list_shields.find_shields(args):
             if name_re is not None and not name_re.search(shield.name):
                 continue
-            log.inf(args.format.format(name=shield.name, dir=shield.dir))
+            self.inf(args.format.format(name=shield.name, dir=shield.dir))

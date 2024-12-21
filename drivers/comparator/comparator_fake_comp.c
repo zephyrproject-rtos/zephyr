@@ -31,7 +31,7 @@ DEFINE_FAKE_VALUE_FUNC(int,
 		       comp_fake_comp_trigger_is_pending,
 		       const struct device *);
 
-static const struct comparator_driver_api fake_comp_api = {
+static DEVICE_API(comparator, fake_comp_api) = {
 	.get_output = comp_fake_comp_get_output,
 	.set_trigger = comp_fake_comp_set_trigger,
 	.set_trigger_callback = comp_fake_comp_set_trigger_callback,

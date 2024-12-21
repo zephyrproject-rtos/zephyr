@@ -192,6 +192,30 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 			       void *user_data);
 
 /**
+ * @brief Send ICMP echo request message without waiting during send.
+ *
+ * @details This function can be used to send ICMP Echo-Request from a system
+ *          workqueue handler which should not have any sleeps or waits.
+ *          This variant will do the net_buf allocations with K_NO_WAIT.
+ *          This will avoid a warning message in the log about the timeout.
+ *
+ * @param ctx ICMP context used in this request.
+ * @param iface Network interface, can be set to NULL in which case the
+ *        interface is selected according to destination address.
+ * @param dst IP address of the target host.
+ * @param params Echo-Request specific parameters. May be NULL in which case
+ *        suitable default parameters are used.
+ * @param user_data User supplied opaque data passed to the handler. May be NULL.
+ *
+ * @return Return 0 if the sending succeed, <0 otherwise.
+ */
+int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
+				       struct net_if *iface,
+				       struct sockaddr *dst,
+				       struct net_icmp_ping_params *params,
+				       void *user_data);
+
+/**
  * @brief ICMP offload context structure.
  */
 struct net_icmp_offload {

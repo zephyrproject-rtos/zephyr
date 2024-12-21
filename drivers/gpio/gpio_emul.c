@@ -804,7 +804,7 @@ static int gpio_emul_port_get_direction(const struct device *port, gpio_port_pin
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
-static const struct gpio_driver_api gpio_emul_driver = {
+static DEVICE_API(gpio, gpio_emul_driver) = {
 	.pin_configure = gpio_emul_pin_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_emul_pin_get_config,

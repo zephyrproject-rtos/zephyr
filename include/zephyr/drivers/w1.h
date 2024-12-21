@@ -435,7 +435,7 @@ struct w1_rom {
 	/** @brief The 1-Wire family code identifying the slave device type.
 	 *
 	 * An incomplete list of family codes is available at:
-	 * https://www.maximintegrated.com/en/app-notes/index.mvp/id/155
+	 * https://www.analog.com/en/resources/technical-articles/1wire-software-resource-guide-device-description.html
 	 * others are documented in the respective device data sheet.
 	 */
 	uint8_t family;
@@ -584,7 +584,7 @@ int w1_write_read(const struct device *dev, const struct w1_slave_config *config
  * If a callback is passed, the callback is called for each found slave.
  *
  * The algorithm mostly follows the suggestions of
- * https://pdfserv.maximintegrated.com/en/an/AN187.pdf
+ * https://www.analog.com/en/resources/app-notes/1wire-search-algorithm.html
  *
  * Note: Filtering on families is not supported.
  *
@@ -695,7 +695,7 @@ static inline uint8_t w1_crc8(const uint8_t *src, size_t len)
  * X^16 + X^15 * + X^2 + 1 with the initial value set to 0x0000.
  * See also APPLICATION NOTE 27:
  * "UNDERSTANDING AND USING CYCLIC REDUNDANCY CHECKS WITH MAXIM 1-WIRE AND IBUTTON PRODUCTS"
- * https://www.maximintegrated.com/en/design/technical-documents/app-notes/2/27.html
+ * https://www.analog.com/en/resources/technical-articles/understanding-and-using-cyclic-redundancy-checks-with-maxim-1wire-and-ibutton-products.html
  *
  * @param seed    Init value for the CRC, it is usually set to 0x0000.
  * @param[in] src Input bytes for the computation.

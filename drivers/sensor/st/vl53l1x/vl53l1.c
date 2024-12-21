@@ -408,7 +408,7 @@ static int vl53l1x_attr_set(const struct device *dev,
 	return ret;
 }
 
-static const struct sensor_driver_api vl53l1x_api_funcs = {
+static DEVICE_API(sensor, vl53l1x_api_funcs) = {
 	.sample_fetch = vl53l1x_sample_fetch,
 	.channel_get = vl53l1x_channel_get,
 	.attr_get = vl53l1x_attr_get,

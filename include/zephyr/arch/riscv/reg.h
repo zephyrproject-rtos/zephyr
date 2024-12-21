@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_ARCH_RISCV_REG_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_ARCH_RISCV_REG_H_
 
+#include <zephyr/sys/util.h>
+
 #define reg_read(reg)                                                                              \
 	({                                                                                         \
 		register unsigned long __rv;                                                       \

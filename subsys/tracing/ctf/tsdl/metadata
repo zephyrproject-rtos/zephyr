@@ -787,3 +787,263 @@ event {
 		uint32_t arg1;
 	};
 };
+
+event {
+	name = gpio_pin_configure_interrupt_enter;
+	id = 0x63;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t flags;
+	};
+};
+
+event {
+	name = gpio_pin_configure_interrupt_exit;
+	id = 0x64;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = gpio_pin_configure_enter;
+	id = 0x65;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t flags;
+	};
+};
+
+event {
+	name = gpio_pin_configure_exit;
+	id = 0x66;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = gpio_port_get_direction_enter;
+	id = 0x67;
+	fields := struct {
+		uint32_t port;
+		uint32_t map;
+		uint32_t inputs;
+		uint32_t outputs;
+	};
+};
+
+event {
+	name = gpio_port_get_direction_exit;
+	id = 0x68;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = gpio_pin_get_config_enter;
+	id = 0x69;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+	};
+};
+
+event {
+	name =  gpio_pin_get_config_exit;
+	id = 0x6A;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_get_raw_enter;
+	id = 0x6B;
+	fields := struct {
+		uint32_t port;
+		uint32_t value;
+	};
+};
+
+event {
+	name =  gpio_port_get_raw_exit;
+	id = 0x6C;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_set_masked_raw_enter;
+	id = 0x6D;
+	fields := struct {
+		uint32_t port;
+		uint32_t mask;
+		uint32_t value;
+	};
+};
+
+event {
+	name =  gpio_port_set_masked_raw_exit;
+	id = 0x6E;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_set_bits_raw_enter;
+	id = 0x6F;
+	fields := struct {
+		uint32_t port;
+		uint32_t pins;
+	};
+};
+
+event {
+	name =  gpio_port_set_bits_raw_exit;
+	id = 0x70;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_clear_bits_raw_enter;
+	id = 0x71;
+	fields := struct {
+		uint32_t port;
+		uint32_t pins;
+	};
+};
+
+event {
+	name =  gpio_port_clear_bits_raw_exit;
+	id = 0x72;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_toggle_bits_enter;
+	id = 0x73;
+	fields := struct {
+		uint32_t port;
+		uint32_t pins;
+	};
+};
+
+event {
+	name =  gpio_port_toggle_bits_exit;
+	id = 0x74;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_init_callback_enter;
+	id = 0x75;
+	fields := struct {
+		uint32_t callback;
+		uint32_t handler;
+		uint32_t pin_mask;
+	};
+};
+
+event {
+	name =  gpio_init_callback_exit;
+	id = 0x76;
+	fields := struct {
+		uint32_t callback;
+	};
+};
+
+event {
+	name =  gpio_add_callback_enter;
+	id = 0x77;
+	fields := struct {
+		uint32_t port;
+		uint32_t callback;
+	};
+};
+
+event {
+	name =  gpio_add_callback_exit;
+	id = 0x78;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_remove_callback_enter;
+	id = 0x79;
+	fields := struct {
+		uint32_t port;
+		uint32_t callback;
+	};
+};
+
+event {
+	name =  gpio_remove_callback_exit;
+	id = 0x7A;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_get_pending_int_enter;
+	id = 0x7B;
+	fields := struct {
+		uint32_t dev;
+	};
+};
+
+event {
+	name =  gpio_get_pending_int_exit;
+	id = 0x7C;
+	fields := struct {
+		uint32_t dev;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_fire_callbacks_enter;
+	id = 0x7D;
+	fields := struct {
+		uint32_t list;
+		uint32_t port;
+		uint32_t pins;
+	};
+};
+
+event {
+	name =  gpio_fire_callback;
+	id = 0x7E;
+	fields := struct {
+		uint32_t port;
+		uint32_t cb;
+	};
+};

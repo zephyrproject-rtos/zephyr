@@ -42,7 +42,11 @@ struct ambiq_rtc_data {
 
 static void rtc_time_to_ambiq_time_set(const struct rtc_time *tm, am_hal_rtc_time_t *atm)
 {
-	atm->ui32CenturyBit = ((tm->tm_year <= 99) || (tm->tm_year >= 200));
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	atm->ui32Century = ((tm->tm_year <= 99) || (tm->tm_year >= 200));
+#else
+	atm->ui32CenturyBit = ((tm->tm_year > 99) && (tm->tm_year < 200));
+#endif
 	atm->ui32Year = tm->tm_year;
 	if (tm->tm_year > 99) {
 		atm->ui32Year = tm->tm_year % 100;
@@ -68,11 +72,19 @@ static void rtc_time_to_ambiq_time_set(const struct rtc_time *tm, am_hal_rtc_tim
 static void ambiq_time_to_rtc_time_set(const am_hal_rtc_time_t *atm, struct rtc_time *tm)
 {
 	tm->tm_year = atm->ui32Year;
-	if (atm->ui32CenturyBit == 0) {
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	if (atm->ui32Century == 0) {
 		tm->tm_year += 100;
 	} else {
 		tm->tm_year += 200;
 	}
+#else
+	if (atm->ui32CenturyBit == 0) {
+		tm->tm_year += 200;
+	} else {
+		tm->tm_year += 100;
+	}
+#endif
 	tm->tm_wday = atm->ui32Weekday;
 	tm->tm_mon = atm->ui32Month - 1;
 	tm->tm_mday = atm->ui32DayOfMonth;
@@ -180,8 +192,6 @@ static int ambiq_rtc_alarm_get_supported_fields(const struct device *dev,
 static int ambiq_rtc_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
 		struct rtc_time *timeptr)
 {
-
-	int err = 0;
 	am_hal_rtc_time_t ambiq_time = {0};
 	struct ambiq_rtc_data *data = dev->data;
 
@@ -192,11 +202,11 @@ static int ambiq_rtc_alarm_get_time(const struct device *dev, uint16_t id, uint1
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	err = am_hal_rtc_alarm_get(&ambiq_time, NULL);
-	if (err != 0) {
-		LOG_DBG("Invalid Input Value");
-		return -EINVAL;
-	}
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	am_hal_rtc_alarm_get(&ambiq_time);
+#else
+	am_hal_rtc_alarm_get(&ambiq_time, NULL);
+#endif
 
 	ambiq_time_to_rtc_time_set(&ambiq_time, timeptr);
 
@@ -208,13 +218,12 @@ static int ambiq_rtc_alarm_get_time(const struct device *dev, uint16_t id, uint1
 
 	k_spin_unlock(&data->lock, key);
 
-	return err;
+	return 0;
 }
 
 static int ambiq_rtc_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
 		const struct rtc_time *timeptr)
 {
-	int err = 0;
 	struct ambiq_rtc_data *data = dev->data;
 	am_hal_rtc_time_t ambiq_time = {0};
 	uint16_t mask_available;
@@ -240,8 +249,13 @@ static int ambiq_rtc_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	/* Disable and clear the alarm */
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	am_hal_rtc_int_disable(AM_HAL_RTC_INT_ALM);
+	am_hal_rtc_int_clear(AM_HAL_RTC_INT_ALM);
+#else
 	am_hal_rtc_interrupt_disable(AM_HAL_RTC_INT_ALM);
 	am_hal_rtc_interrupt_clear(AM_HAL_RTC_INT_ALM);
+#endif
 
 	/* When mask is 0 */
 	if (mask == 0) {
@@ -258,18 +272,18 @@ static int ambiq_rtc_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	rtc_time_to_ambiq_time_set(timeptr, &ambiq_time);
 
 	/*  Set RTC ALARM, Ambiq must have interval != AM_HAL_RTC_ALM_RPT_DIS */
-	if (0 != am_hal_rtc_alarm_set(&ambiq_time, AM_HAL_RTC_ALM_RPT_YR)) {
-		LOG_DBG("Invalid Input Value");
-		err = -EINVAL;
-		goto unlock;
-	}
+	am_hal_rtc_alarm_set(&ambiq_time, AM_HAL_RTC_ALM_RPT_YR);
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	am_hal_rtc_int_enable(AM_HAL_RTC_INT_ALM);
+#else
 	am_hal_rtc_interrupt_enable(AM_HAL_RTC_INT_ALM);
+#endif
 
 unlock:
 	k_spin_unlock(&data->lock, key);
 
-	return err;
+	return 0;
 }
 
 static int ambiq_rtc_alarm_is_pending(const struct device *dev, uint16_t id)
@@ -292,7 +306,11 @@ static int ambiq_rtc_alarm_is_pending(const struct device *dev, uint16_t id)
 static void ambiq_rtc_isr(const struct device *dev)
 {
 	/* Clear the RTC alarm interrupt. 8*/
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	am_hal_rtc_int_clear(AM_HAL_RTC_INT_ALM);
+#else
 	am_hal_rtc_interrupt_clear(AM_HAL_RTC_INT_ALM);
+#endif
 
 #if defined(CONFIG_RTC_ALARM)
 	struct ambiq_rtc_data *data = dev->data;
@@ -321,7 +339,11 @@ static int ambiq_rtc_alarm_set_callback(const struct device *dev, uint16_t id,
 		data->alarm_user_callback = callback;
 		data->alarm_user_data = user_data;
 		if ((callback == NULL) && (user_data == NULL)) {
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+			am_hal_rtc_int_disable(AM_HAL_RTC_INT_ALM);
+#else
 			am_hal_rtc_interrupt_disable(AM_HAL_RTC_INT_ALM);
+#endif
 		}
 	}
 
@@ -332,14 +354,16 @@ static int ambiq_rtc_alarm_set_callback(const struct device *dev, uint16_t id,
 static int ambiq_rtc_init(const struct device *dev)
 {
 	const struct ambiq_rtc_config *config = dev->config;
-#
+
 #ifdef CONFIG_RTC_ALARM
 	struct ambiq_rtc_data *data = dev->data;
 #endif
 
-	/* Enable the clock for RTC. */
-	am_hal_clkgen_control(config->clk_src, NULL);
-
+/* Enable the clock for RTC. */
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_XTAL_START + config->clk_src, NULL);
+#endif
+	am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_RTC_SEL_XTAL + config->clk_src, NULL);
 	/* Enable the RTC. */
 	am_hal_rtc_osc_enable();
 
@@ -354,7 +378,7 @@ static int ambiq_rtc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct rtc_driver_api ambiq_rtc_driver_api = {
+static DEVICE_API(rtc, ambiq_rtc_driver_api) = {
 	.set_time = ambiq_rtc_set_time,
 	.get_time = ambiq_rtc_get_time,
 	/* RTC_UPDATE not supported */

@@ -265,7 +265,7 @@ static int psoc6_bless_hci_init(const struct device *dev)
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open = psoc6_bless_open,
 	.send = psoc6_bless_send,
 	.setup = psoc6_bless_setup,

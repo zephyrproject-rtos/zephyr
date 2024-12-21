@@ -11,8 +11,15 @@
 /delete-node/ &quadspi;
 
 / {
+	/* total SRAM 320KB for the stm32L4P5x and stm32L4Q5x */
 	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(320)>;
+		reg = <0x20000000 DT_SIZE_K(128)>;
+	};
+	sram1: memory@10000000 {
+		reg = <0x10000000 DT_SIZE_K(64)>;
+	};
+	sram2: memory@20030000 {
+		reg = <0x20030000 DT_SIZE_K(128)>;
 	};
 
 	clocks {

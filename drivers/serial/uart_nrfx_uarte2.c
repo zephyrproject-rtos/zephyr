@@ -749,7 +749,7 @@ static const struct uart_async_to_irq_async_api a2i_api = {
 	.rx_disable		= api_rx_disable,
 };
 
-static const struct uart_driver_api uart_nrfx_uarte_driver_api = {
+static DEVICE_API(uart, uart_nrfx_uarte_driver_api) = {
 	.poll_in	= api_poll_in,
 	.poll_out	= api_poll_out,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE

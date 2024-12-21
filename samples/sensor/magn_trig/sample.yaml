@@ -12,3 +12,7 @@ tests:
           \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
     integration_platforms:
       - frdm_k64f                       # fxos8700
+    platform_exclude:
+      - sensortile_box
+      - stm32f3_disco
+      - stm32f411e_disco

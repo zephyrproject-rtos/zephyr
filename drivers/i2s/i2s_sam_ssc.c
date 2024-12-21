@@ -990,7 +990,7 @@ static int i2s_sam_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct i2s_driver_api i2s_sam_driver_api = {
+static DEVICE_API(i2s, i2s_sam_driver_api) = {
 	.configure = i2s_sam_configure,
 	.config_get = i2s_sam_config_get,
 	.read = i2s_sam_read,

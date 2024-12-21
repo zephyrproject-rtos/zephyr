@@ -43,6 +43,12 @@ static void print_stats(struct net_if *iface, struct net_stats *data)
 	       GET_STAT(iface, ipv6_nd.sent),
 	       GET_STAT(iface, ipv6_nd.drop));
 #endif /* CONFIG_NET_IPV6_ND */
+#if defined(CONFIG_NET_IPV6_PMTU)
+	printk("IPv6 PMTU recv %d\tsent\t%d\tdrop\t%d\n",
+	       GET_STAT(iface, ipv6_pmtu.recv),
+	       GET_STAT(iface, ipv6_pmtu.sent),
+	       GET_STAT(iface, ipv6_pmtu.drop));
+#endif /* CONFIG_NET_IPV6_PMTU */
 #if defined(CONFIG_NET_STATISTICS_MLD)
 	printk("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d\n",
 	       GET_STAT(iface, ipv6_mld.recv),
@@ -67,6 +73,13 @@ static void print_stats(struct net_if *iface, struct net_stats *data)
 	       GET_STAT(iface, ip_errors.fragerr),
 	       GET_STAT(iface, ip_errors.chkerr),
 	       GET_STAT(iface, ip_errors.protoerr));
+
+#if defined(CONFIG_NET_IPV4_PMTU)
+	printk("IPv4 PMTU recv %d\tsent\t%d\tdrop\t%d\n",
+	       GET_STAT(iface, ipv4_pmtu.recv),
+	       GET_STAT(iface, ipv4_pmtu.sent),
+	       GET_STAT(iface, ipv4_pmtu.drop));
+#endif /* CONFIG_NET_IPV4_PMTU */
 
 	printk("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
 	       GET_STAT(iface, icmp.recv),

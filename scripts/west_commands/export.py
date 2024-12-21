@@ -4,10 +4,8 @@
 
 import argparse
 from pathlib import Path
-from shutil import rmtree
 
 from west.commands import WestCommand
-from west import log
 
 from zcmake import run_cmake
 
@@ -44,25 +42,17 @@ class ZephyrExport(WestCommand):
         # The 'share' subdirectory of the top level zephyr repository.
         share = Path(__file__).parents[2] / 'share'
 
-        run_cmake_export(share / 'zephyr-package' / 'cmake')
-        run_cmake_export(share / 'zephyrunittest-package' / 'cmake')
+        self.run_cmake_export(share / 'zephyr-package' / 'cmake')
+        self.run_cmake_export(share / 'zephyrunittest-package' / 'cmake')
 
-def run_cmake_export(path):
-    # Run a package installation script.
-    #
-    # Filtering out lines that start with -- ignores the normal
-    # CMake status messages and instead only prints the important
-    # information.
+    def run_cmake_export(self, path):
+        # Run a package installation script.
+        #
+        # Filtering out lines that start with -- ignores the normal
+        # CMake status messages and instead only prints the important
+        # information.
 
-    lines = run_cmake(['-P', str(path / 'zephyr_export.cmake')],
-                      capture_output=True)
-    msg = [line for line in lines if not line.startswith('-- ')]
-    log.inf('\n'.join(msg))
-
-def remove_if_exists(pathobj):
-    if pathobj.is_file():
-        log.inf(f'- removing: {pathobj}')
-        pathobj.unlink()
-    elif pathobj.is_dir():
-        log.inf(f'- removing: {pathobj}')
-        rmtree(pathobj)
+        lines = run_cmake(['-P', str(path / 'zephyr_export.cmake')],
+                          capture_output=True)
+        msg = [line for line in lines if not line.startswith('-- ')]
+        self.inf('\n'.join(msg))

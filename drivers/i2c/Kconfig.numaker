@@ -7,6 +7,7 @@ config I2C_NUMAKER
 	bool "Nuvoton NuMaker I2C driver"
 	default y
 	select HAS_NUMAKER_I2C
+	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_I2C_ENABLED
 	help
 	  This option enables I2C driver for Nuvoton NuMaker family of

@@ -548,7 +548,7 @@ int pi3usb9201_set_result_cb(const struct device *dev, bc12_callback_t cb, void 
 	return 0;
 }
 
-static const struct bc12_driver_api pi3usb9201_driver_api = {
+static DEVICE_API(bc12, pi3usb9201_driver_api) = {
 	.set_role = pi3usb9201_set_role,
 	.set_result_cb = pi3usb9201_set_result_cb,
 };

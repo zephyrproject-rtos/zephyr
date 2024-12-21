@@ -7,6 +7,7 @@ config ESPI_XEC
 	bool "XEC Microchip ESPI driver"
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_ESPI_ENABLED
+	select PINCTRL
 	help
 	  Enable the Microchip XEC ESPI driver for MEC15xx family.
 
@@ -14,6 +15,7 @@ config ESPI_XEC_V2
 	bool "XEC Microchip ESPI V2 driver"
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_ESPI_V2_ENABLED
+	select PINCTRL
 	help
 	  Enable the Microchip XEC ESPI driver for MEC172x series.
 

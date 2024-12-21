@@ -1,0 +1,10 @@
+tests:
+  dummy.agnostic_cpp.group1.subgroup1:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - agnostic
+      - cpp
+      - subgrouped

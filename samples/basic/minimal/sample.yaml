@@ -13,7 +13,6 @@ tests:
     extra_args: CONF_FILE='common.conf;mt.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
@@ -25,42 +24,46 @@ tests:
     extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
+    integration_platforms:
+      - frdm_k64f
   sample.minimal.mt-no-preempt-no-timers.arm:
     extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;no-timers.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
+    integration_platforms:
+      - frdm_k64f
   sample.minimal.no-mt.arm:
     extra_args: CONF_FILE='common.conf;no-mt.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
+    integration_platforms:
+      - frdm_k64f
   sample.minimal.no-mt-no-timers.arm:
     extra_args: CONF_FILE='common.conf;no-mt.conf;no-timers.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
+    integration_platforms:
+      - frdm_k64f
   sample.minimal.mt.x86:
     extra_args: CONF_FILE='common.conf;mt.conf;x86.conf'
     build_only: true

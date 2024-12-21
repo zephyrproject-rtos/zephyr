@@ -87,6 +87,7 @@ tests:
     tags: bluetooth
     extra_args:
       - CONF_FILE="nrf5340_cpunet_iso-bt_ll_sw_split.conf"
+      - EXTRA_CONF_FILE="overlay-nrf5340_cpunet_iso_nrf21540_ek-bt_ll_sw_split.conf"
       - DTC_OVERLAY_FILE="./boards/nrf5340_audio_dk_nrf5340_cpunet_nrf21540_ek.overlay"
     platform_allow:
       - nrf5340_audio_dk/nrf5340/cpunet

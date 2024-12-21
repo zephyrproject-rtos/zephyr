@@ -23,5 +23,8 @@ DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_discovery_complete_cb, struct 
 DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_start_complete_cb, int, struct bt_conn *);
 DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_update_complete_cb, int, struct bt_conn *);
 DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_stop_complete_cb, int, struct bt_conn *);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_broadcast_started_cb, struct bt_cap_broadcast_source *);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_broadcast_stopped_cb, struct bt_cap_broadcast_source *,
+		       uint8_t);
 
 #endif /* MOCKS_CAP_INITIATOR_H_ */

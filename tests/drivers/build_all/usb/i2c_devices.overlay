@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_pi3usb9201: pi3usb9201@0 {
+				compatible = "diodes,pi3usb9201";
+				reg = <0x0>;
+				charging-mode = "BC12_TYPE_NONE";
+				intb-gpios = <&test_gpio 0 0>;
+			};
+		};
+	};
+};

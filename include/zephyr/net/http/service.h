@@ -80,7 +80,7 @@ struct http_service_desc {
 
 #define __z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, _res_begin,   \
 				_res_end, ...)                                                     \
-	static const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {                         \
+	const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {				   \
 		.host = _host,                                                                     \
 		.port = (uint16_t *)(_port),                                                       \
 		.detail = (void *)(_detail),                                                       \

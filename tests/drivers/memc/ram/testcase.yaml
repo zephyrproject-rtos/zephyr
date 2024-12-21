@@ -26,4 +26,4 @@ tests:
     tags:
       - drivers
       - memc
-    platform_allow: hifive_unmatched
+    platform_allow: hifive_unmatched/fu740/s7

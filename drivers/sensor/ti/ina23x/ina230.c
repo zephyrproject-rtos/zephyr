@@ -229,7 +229,7 @@ static int ina230_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api ina230_driver_api = {
+static DEVICE_API(sensor, ina230_driver_api) = {
 	.attr_set = ina230_attr_set,
 	.attr_get = ina230_attr_get,
 #ifdef CONFIG_INA230_TRIGGER
@@ -249,7 +249,7 @@ static const struct sensor_driver_api ina230_driver_api = {
 #endif /* CONFIG_INA230_TRIGGER */
 
 #define INA230_DRIVER_INIT(inst, type)                                                             \
-	static struct ina230_data drv_data_##inst;                                                 \
+	static struct ina230_data drv_data_##type##inst;                                           \
 	static const struct ina230_config drv_config_##type##inst = {                              \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.config = (DT_INST_PROP_OR(inst, high_precision, 0) << 12) |                       \
@@ -266,7 +266,7 @@ static const struct sensor_driver_api ina230_driver_api = {
 				  (DT_INST_PROP_OR(inst, high_precision, 0) << 1)),                \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios), (INA230_CFG_IRQ(inst)),      \
 			    ())};   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##inst,                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##type##inst,             \
 				     &drv_config_##type##inst, POST_KERNEL,                        \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ina230_driver_api);
 

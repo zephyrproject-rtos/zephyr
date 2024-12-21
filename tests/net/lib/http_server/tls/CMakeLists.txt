@@ -12,19 +12,19 @@ set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 if (${CONFIG_TLS_CREDENTIALS})
   generate_inc_file_for_target(
     app
-    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/ca.der
+    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/certs/ca_cert.der
     ${gen_dir}/ca.inc
   )
 
   generate_inc_file_for_target(
     app
-    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/server.der
+    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/certs/server_cert.der
     ${gen_dir}/server.inc
   )
 
   generate_inc_file_for_target(
     app
-    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/server_privkey.der
+    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/certs/server_privkey.der
     ${gen_dir}/server_privkey.inc
   )
 
@@ -32,13 +32,13 @@ if (${CONFIG_TLS_CREDENTIALS})
   # since it seems to be the only one that is signed by a ca
   generate_inc_file_for_target(
     app
-    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/server.der
+    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/certs/server_cert.der
     ${gen_dir}/client.inc
   )
 
   generate_inc_file_for_target(
     app
-    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/server_privkey.der
+    ${ZEPHYR_BASE}/samples/net/sockets/http_server/src/certs/server_privkey.der
     ${gen_dir}/client_privkey.inc
   )
 endif()

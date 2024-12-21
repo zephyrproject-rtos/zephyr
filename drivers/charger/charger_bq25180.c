@@ -306,7 +306,7 @@ static int bq25180_set_prop(const struct device *dev, charger_prop_t prop,
 	}
 }
 
-static const struct charger_driver_api bq25180_api = {
+static DEVICE_API(charger, bq25180_api) = {
 	.get_property = bq25180_get_prop,
 	.set_property = bq25180_set_prop,
 	.charge_enable = bq25183_charge_enable,

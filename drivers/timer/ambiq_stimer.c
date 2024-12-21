@@ -27,12 +27,21 @@
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MAX_TICKS    ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
 #define MAX_CYCLES   (MAX_TICKS * CYC_PER_TICK)
-#define MIN_DELAY    1
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+#define MIN_DELAY 1
+#elif defined(CONFIG_SOC_SERIES_APOLLO4X)
+#define MIN_DELAY 4
+#endif
 
-#define TIMER_IRQ (DT_INST_IRQN(0))
+#define COMPARE_INTERRUPT (AM_HAL_STIMER_INT_COMPAREA | AM_HAL_STIMER_INT_COMPAREB)
+
+#define COMPAREA_IRQ (DT_INST_IRQN(0))
+#define COMPAREB_IRQ (COMPAREA_IRQ + 1)
+
+#define TIMER_CLKSRC (DT_INST_PROP(0, clk_source))
 
 #if defined(CONFIG_TEST)
-const int32_t z_sys_timer_irq_for_test = TIMER_IRQ;
+const int32_t z_sys_timer_irq_for_test = COMPAREA_IRQ;
 #endif
 
 /* Elapsed ticks since the previous kernel tick was announced, It will get accumulated every time
@@ -70,14 +79,20 @@ static void update_tick_counter(void)
 	g_tick_elapsed += dticks;
 }
 
+static void ambiq_stimer_delta_set(uint32_t ui32Delta)
+{
+	am_hal_stimer_compare_delta_set(0, ui32Delta);
+	am_hal_stimer_compare_delta_set(1, ui32Delta + 1);
+}
+
 static void stimer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
 	uint32_t irq_status = am_hal_stimer_int_status_get(false);
 
-	if (irq_status & AM_HAL_STIMER_INT_COMPAREA) {
-		am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREA);
+	if (irq_status & COMPARE_INTERRUPT) {
+		am_hal_stimer_int_clear(COMPARE_INTERRUPT);
 
 		k_spinlock_key_t key = k_spin_lock(&g_lock);
 
@@ -102,7 +117,7 @@ static void stimer_isr(const void *arg)
 			uint32_t delta = (now_64 + MIN_DELAY < next) ? (next - now_64) : MIN_DELAY;
 
 			/* Set delta. */
-			am_hal_stimer_compare_delta_set(0, delta);
+			ambiq_stimer_delta_set(delta);
 		}
 
 		k_spin_unlock(&g_lock, key);
@@ -150,9 +165,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	if (delta <= MIN_DELAY) {
 		/*If the delta value is smaller than MIN_DELAY, trigger a interrupt immediately*/
-		am_hal_stimer_int_set(AM_HAL_STIMER_INT_COMPAREA);
+		am_hal_stimer_int_set(COMPARE_INTERRUPT);
 	} else {
-		am_hal_stimer_compare_delta_set(0, delta);
+		ambiq_stimer_delta_set(delta);
 	}
 
 	k_spin_unlock(&g_lock, key);
@@ -180,25 +195,33 @@ static int stimer_init(void)
 {
 	uint32_t oldCfg;
 
-	oldCfg = am_hal_stimer_config(AM_HAL_STIMER_CFG_FREEZE);
+	oldCfg = am_hal_stimer_config(TIMER_CLKSRC | AM_HAL_STIMER_CFG_FREEZE);
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | CTIMER_STCFG_CLKSEL_Msk)) |
-			     AM_HAL_STIMER_XTAL_32KHZ | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
+			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE |
+			     AM_HAL_STIMER_CFG_COMPARE_B_ENABLE);
 #else
 	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | STIMER_STCFG_CLKSEL_Msk)) |
-			     AM_HAL_STIMER_XTAL_32KHZ | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
+			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE |
+			     AM_HAL_STIMER_CFG_COMPARE_B_ENABLE);
 #endif
 	g_last_time_stamp = am_hal_stimer_counter_get();
 
-	NVIC_ClearPendingIRQ(TIMER_IRQ);
-	IRQ_CONNECT(TIMER_IRQ, 0, stimer_isr, 0, 0);
-	irq_enable(TIMER_IRQ);
+	/* A Possible clock glitch could rarely cause the Stimer interrupt to be lost.
+	 * Set up a backup comparator to handle this case
+	 */
+	NVIC_ClearPendingIRQ(COMPAREA_IRQ);
+	NVIC_ClearPendingIRQ(COMPAREB_IRQ);
+	IRQ_CONNECT(COMPAREA_IRQ, 0, stimer_isr, 0, 0);
+	IRQ_CONNECT(COMPAREB_IRQ, 0, stimer_isr, 0, 0);
+	irq_enable(COMPAREA_IRQ);
+	irq_enable(COMPAREB_IRQ);
 
-	am_hal_stimer_int_enable(AM_HAL_STIMER_INT_COMPAREA);
+	am_hal_stimer_int_enable(COMPARE_INTERRUPT);
 	/* Start timer with period CYC_PER_TICK if tickless is not enabled */
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		am_hal_stimer_compare_delta_set(0, CYC_PER_TICK);
+		ambiq_stimer_delta_set(CYC_PER_TICK);
 	}
 	return 0;
 }

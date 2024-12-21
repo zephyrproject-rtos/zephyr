@@ -9,7 +9,6 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/pm/device.h>
 
-extern struct pm_policy_event *next_event;
 extern int32_t max_latency_cyc;
 
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
@@ -29,27 +28,6 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	}
 
 	num_cpu_states = pm_state_cpu_get_all(cpu, &cpu_states);
-
-	if ((next_event) && (next_event->value_cyc >= 0)) {
-		uint32_t cyc_curr = k_cycle_get_32();
-		int64_t cyc_evt = next_event->value_cyc - cyc_curr;
-
-		/* event happening after cycle counter max value, pad */
-		if (next_event->value_cyc <= cyc_curr) {
-			cyc_evt += UINT32_MAX;
-		}
-
-		if (cyc_evt > 0) {
-			/* if there's no system wakeup event always wins,
-			 * otherwise, who comes earlier wins
-			 */
-			if (cyc < 0) {
-				cyc = cyc_evt;
-			} else {
-				cyc = MIN(cyc, cyc_evt);
-			}
-		}
-	}
 
 	for (int16_t i = (int16_t)num_cpu_states - 1; i >= 0; i--) {
 		const struct pm_state_info *state = &cpu_states[i];

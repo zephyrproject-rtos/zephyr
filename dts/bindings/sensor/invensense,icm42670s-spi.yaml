@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICM-42670-S motion tracking device
+
+compatible: "invensense,icm42670s"
+
+include: [spi-device.yaml, "invensense,icm42670.yaml"]

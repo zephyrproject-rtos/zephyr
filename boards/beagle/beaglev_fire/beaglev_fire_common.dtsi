@@ -14,6 +14,28 @@
 	compatible = "beagle,beaglev-fire", "microchip,mpfs";
 	aliases {
 	};
+
+	beaglev {
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		ddr_cached_high: memory@1000000000 {
+			compatible = "mmio-sram";
+			reg = <0x10 0x00000000 0x80000000>; /* 2GB */
+		};
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ddr_cached_high;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <150000000>;
 };
 
 &gpio2 {

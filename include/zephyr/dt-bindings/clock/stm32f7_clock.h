@@ -82,6 +82,14 @@
 #define MCO1_PRE(val)           STM32_MCO_CFGR(val, 0x7, 24, CFGR_REG)
 #define MCO2_SEL(val)           STM32_MCO_CFGR(val, 0x3, 30, CFGR_REG)
 #define MCO2_PRE(val)           STM32_MCO_CFGR(val, 0x7, 27, CFGR_REG)
+
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1 0
+#define MCO_PRE_DIV_2 4
+#define MCO_PRE_DIV_3 5
+#define MCO_PRE_DIV_4 6
+#define MCO_PRE_DIV_5 7
+
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 8, BDCR_REG)
 

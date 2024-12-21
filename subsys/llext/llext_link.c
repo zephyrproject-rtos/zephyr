@@ -33,7 +33,14 @@ __weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
 }
 
 __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
-				    const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset)
+				    const elf_rela_t *rel, const elf_sym_t *sym, uint8_t *rel_addr,
+				    const struct llext_load_param *ldr_parm)
+{
+}
+
+__weak void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext,
+				     const elf_rela_t *rel, const elf_sym_t *sym, uint8_t *rel_addr,
+				     const void *link_addr)
 {
 }
 
@@ -161,7 +168,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			ret = llext_read(ldr, &rela, sizeof(rela));
 		}
 
-		if (ret < 0) {
+		if (ret != 0) {
 			LOG_ERR("PLT: failed to read RELA #%u, trying to continue", i);
 			continue;
 		}
@@ -209,14 +216,15 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 		 * This is valid only when CONFIG_LLEXT_STORAGE_WRITABLE=y
 		 * and peek() is usable on the source ELF file.
 		 */
-		size_t got_offset;
+		uint8_t *rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
+			ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 
 		if (tgt) {
-			got_offset = rela.r_offset + tgt->sh_offset -
-				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+			/* Relocatable / partially linked ELF. */
+			rel_addr += rela.r_offset + tgt->sh_offset;
 		} else {
-			got_offset = llext_file_offset(ldr, rela.r_offset) -
-				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+			/* Shared / dynamically linked ELF */
+			rel_addr += llext_file_offset(ldr, rela.r_offset);
 		}
 
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
@@ -249,16 +257,14 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			}
 
 			/* Resolve the symbol */
-			*(const void **)(text + got_offset) = link_addr;
+			arch_elf_relocate_global(ldr, ext, &rela, &sym, rel_addr, link_addr);
 			break;
 		case STB_LOCAL:
-			if (ldr_parm->relocate_local) {
-				arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset);
-			}
+			arch_elf_relocate_local(ldr, ext, &rela, &sym, rel_addr, ldr_parm);
 		}
 
-		LOG_DBG("symbol %s offset %#zx r-offset %#zx .text offset %#zx stb %u",
-			name, got_offset,
+		LOG_DBG("symbol %s relocation @%p r-offset %#zx .text offset %#zx stb %u",
+			name, (void *)rel_addr,
 			(size_t)rela.r_offset, (size_t)ldr->sects[LLEXT_MEM_TEXT].sh_offset, stb);
 	}
 }
@@ -272,8 +278,8 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 	const char *name;
 	int i, ret;
 
-	for (i = 0; i < ldr->sect_cnt; ++i) {
-		elf_shdr_t *shdr = ldr->sect_hdrs + i;
+	for (i = 0; i < ext->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		/* find proper relocation sections */
 		switch (shdr->sh_type) {
@@ -300,7 +306,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			continue;
 		}
 
-		if (shdr->sh_info >= ldr->sect_cnt ||
+		if (shdr->sh_info >= ext->sect_cnt ||
 		    shdr->sh_size % shdr->sh_entsize != 0) {
 			LOG_ERR("Sanity checks failed for section %d "
 				"(info %zd, size %zd, entsize %zd)", i,
@@ -327,7 +333,12 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			    strcmp(name, ".rela.dyn") == 0) {
 				tgt = NULL;
 			} else {
-				tgt = ldr->sect_hdrs + shdr->sh_info;
+				/*
+				 * Entries in .rel.X and .rela.X sections describe references in
+				 * section .X to local or global symbols. They point to entries
+				 * in the symbol table, describing respective symbols
+				 */
+				tgt = ext->sect_hdrs + shdr->sh_info;
 			}
 
 			llext_link_plt(ldr, ext, shdr, ldr_parm, tgt);
@@ -463,6 +474,20 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 		if (ext->mem[i]) {
 			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
 			sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
+		}
+	}
+
+	/* Detached section caches should be synchronized in place */
+	if (ldr_parm->section_detached) {
+		for (i = 0; i < ext->sect_cnt; ++i) {
+			elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+			if (ldr_parm->section_detached(shdr)) {
+				void *base = llext_peek(ldr, shdr->sh_offset);
+
+				sys_cache_data_flush_range(base, shdr->sh_size);
+				sys_cache_instr_invd_range(base, shdr->sh_size);
+			}
 		}
 	}
 #endif

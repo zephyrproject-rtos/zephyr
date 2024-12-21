@@ -1,6 +1,8 @@
 common:
   depends_on: spi
-  tags: drivers spi
+  tags:
+    - drivers
+    - spi
   harness: ztest
   harness_config:
     fixture: gpio_spi_loopback

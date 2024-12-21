@@ -1,11 +1,15 @@
 tests:
   drivers.uart.async_rx:
     filter: CONFIG_SERIAL_HAS_DRIVER
-    tags: drivers uart
+    tags:
+      - drivers
+      - uart
     integration_platforms:
       - native_sim
   drivers.uart.async_rx.ztress:
-    tags: drivers uart
+    tags:
+      - drivers
+      - uart
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86

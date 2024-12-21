@@ -524,7 +524,7 @@ static void hx8394_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static const struct display_driver_api hx8394_api = {
+static DEVICE_API(display, hx8394_api) = {
 	.blanking_on = hx8394_blanking_on,
 	.blanking_off = hx8394_blanking_off,
 	.write = hx8394_write,

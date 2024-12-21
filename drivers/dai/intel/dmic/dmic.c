@@ -874,7 +874,7 @@ static int dmic_pm_action(const struct device *dev, enum pm_device_action action
 	return 0;
 }
 
-const struct dai_driver_api dai_dmic_ops = {
+DEVICE_API(dai, dai_dmic_ops) = {
 	.probe			= pm_device_runtime_get,
 	.remove			= pm_device_runtime_put,
 	.config_set		= dai_dmic_set_config,
@@ -895,13 +895,8 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		dai_dmic_irq_handler,
 		DEVICE_DT_INST_GET(0),
 		0);
-	if (pm_device_on_power_domain(dev)) {
-		pm_device_init_off(dev);
-	} else {
-		pm_device_init_suspended(dev);
-	}
 
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, dmic_pm_action);
 };
 
 

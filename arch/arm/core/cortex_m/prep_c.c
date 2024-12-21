@@ -45,9 +45,16 @@ void *_vector_table_pointer;
 
 #define VECTOR_ADDRESS ((uintptr_t)_vector_start)
 
+/* In some Cortex-M3 implementations SCB_VTOR bit[29] is called the TBLBASE bit */
+#ifdef SCB_VTOR_TBLBASE_Msk
+#define VTOR_MASK (SCB_VTOR_TBLBASE_Msk | SCB_VTOR_TBLOFF_Msk)
+#else
+#define VTOR_MASK SCB_VTOR_TBLOFF_Msk
+#endif
+
 static inline void relocate_vector_table(void)
 {
-	SCB->VTOR = VECTOR_ADDRESS & SCB_VTOR_TBLOFF_Msk;
+	SCB->VTOR = VECTOR_ADDRESS & VTOR_MASK;
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
 }

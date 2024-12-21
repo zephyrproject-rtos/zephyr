@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # Basic Connected ISO test: multiple peripheral CIS establishment
 simulation_id="connected_iso_peripheral_cis"
 verbosity_level=2
-EXECUTE_TIMEOUT=100
+EXECUTE_TIMEOUT=240
 
 cd ${BSIM_OUT_PATH}/bin
 

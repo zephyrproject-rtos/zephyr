@@ -6,9 +6,9 @@
 
 /dts-v1/;
 #include <renesas/ra/r7fa4m1ab3cfm.dtsi>
-#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r7fa4m1xxxxxx.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 
 / {
 	model = "Mikroe Clicker RA4M1";
@@ -52,7 +52,12 @@
 &pinctrl {
 	sci0_default: sci0_default {
 		group1 {
-			pinmux = <P410_RXD0>, <P411_TXD0>;
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>;
+		};
+		group2 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
 		};
 	};
 };
@@ -79,17 +84,35 @@
 	status = "okay";
 };
 
-&mosc {
+&xtal {
 	status = "okay";
 	clock-frequency = <12000000>;
 };
 
-&cgc {
-	clock-source = <&mosc>;
-	iclk-div = <1>;
-	pclka-div = <1>;
-	pclkb-div = <2>;
-	pclkc-div = <1>;
-	pclkd-div = <1>;
-	fclk-div = <2>;
+&pclkblock {
+	clocks = <&xtal>;
+};
+
+&iclk {
+	div = <1>;
+};
+
+&pclka {
+	div = <1>;
+};
+
+&pclkb {
+	div = <2>;
+};
+
+&pclkc {
+	div = <1>;
+};
+
+&pclkd {
+	div = <1>;
+};
+
+&fclk {
+	div = <2>;
 };

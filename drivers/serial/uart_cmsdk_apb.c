@@ -84,7 +84,7 @@ struct uart_cmsdk_apb_dev_data {
 	const struct arm_clock_control_t uart_cc_dss;
 };
 
-static const struct uart_driver_api uart_cmsdk_apb_driver_api;
+static DEVICE_API(uart, uart_cmsdk_apb_driver_api);
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_isr(const struct device *dev);
 #endif
@@ -454,7 +454,7 @@ void uart_cmsdk_apb_isr(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
-static const struct uart_driver_api uart_cmsdk_apb_driver_api = {
+static DEVICE_API(uart, uart_cmsdk_apb_driver_api) = {
 	.poll_in = uart_cmsdk_apb_poll_in,
 	.poll_out = uart_cmsdk_apb_poll_out,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

@@ -92,6 +92,9 @@ set_compiler_property(PROPERTY coverage)
 
 # Security canaries flags.
 set_compiler_property(PROPERTY security_canaries)
+set_compiler_property(PROPERTY security_canaries_strong)
+set_compiler_property(PROPERTY security_canaries_all)
+set_compiler_property(PROPERTY security_canaries_explicit)
 
 set_compiler_property(PROPERTY security_fortify_compile_time)
 set_compiler_property(PROPERTY security_fortify_run_time)
@@ -143,3 +146,6 @@ set_compiler_property(PROPERTY no_builtin_malloc)
 # Compiler flag for defining specs. Used only by gcc, other compilers may keep
 # this undefined.
 set_compiler_property(PROPERTY specs)
+
+# Compiler flag for defining preinclude files.
+set_compiler_property(PROPERTY include_file)

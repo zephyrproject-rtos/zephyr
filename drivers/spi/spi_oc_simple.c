@@ -180,7 +180,7 @@ int spi_oc_simple_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_oc_simple_api = {
+static DEVICE_API(spi, spi_oc_simple_api) = {
 	.transceive = spi_oc_simple_transceive,
 	.release = spi_oc_simple_release,
 #ifdef CONFIG_SPI_ASYNC
@@ -231,7 +231,7 @@ int spi_oc_simple_init(const struct device *dev)
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx) \
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SPI_DEVICE_DT_INST_DEFINE(inst,					\
 			    spi_oc_simple_init,				\
 			    NULL,					\
 			    &spi_oc_simple_data_##inst,			\

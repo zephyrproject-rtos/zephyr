@@ -143,7 +143,7 @@ static int pwm_gd32_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_gd32_driver_api = {
+static DEVICE_API(pwm, pwm_gd32_driver_api) = {
 	.set_cycles = pwm_gd32_set_cycles,
 	.get_cycles_per_sec = pwm_gd32_get_cycles_per_sec,
 };

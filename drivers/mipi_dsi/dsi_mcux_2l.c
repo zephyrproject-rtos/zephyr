@@ -464,7 +464,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 
 }
 
-static struct mipi_dsi_driver_api dsi_mcux_api = {
+static DEVICE_API(mipi_dsi, dsi_mcux_api) = {
 	.attach = dsi_mcux_attach,
 	.detach = dsi_mcux_detach,
 	.transfer = dsi_mcux_transfer,

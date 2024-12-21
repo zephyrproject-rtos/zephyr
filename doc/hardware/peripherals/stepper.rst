@@ -10,7 +10,7 @@ Configure Stepper Driver
 
 - Configure **micro-stepping resolution** using :c:func:`stepper_set_micro_step_res`
   and :c:func:`stepper_get_micro_step_res`.
-- Configure **actual position a.k.a step count** in microsteps using :c:func:`stepper_set_actual_position`
+- Configure **reference position** in microsteps using :c:func:`stepper_set_reference_position`
   and :c:func:`stepper_get_actual_position`.
 - Set **max velocity** in micro-steps per second using :c:func:`stepper_set_max_velocity`
 - **Enable** the stepper driver using :c:func:`stepper_enable`.
@@ -18,12 +18,12 @@ Configure Stepper Driver
 Control Stepper
 ===============
 
-- **Move by** +/- micro-steps also known as **relative movement** using :c:func:`stepper_move`.
-- **Move to** a specific position also known as **absolute movement**
-  using :c:func:`stepper_set_target_position`.
+- **Move by** +/- micro-steps also known as **relative movement** using :c:func:`stepper_move_by`.
+- **Move to** a specific position also known as **absolute movement** using :c:func:`stepper_move_to`.
 - Run continuously with a **constant velocity** in a specific direction until
-  a stop is detected using :c:func:`stepper_enable_constant_velocity_mode`.
+  a stop is detected using :c:func:`stepper_run`.
 - Check if the stepper is **moving** using :c:func:`stepper_is_moving`.
+- Register an **event callback** using :c:func:`stepper_set_event_callback`.
 
 Device Tree
 ===========
@@ -36,6 +36,7 @@ be used in a boards devicetree to configure a stepper driver to its initial stat
 
 See examples in:
 
+- :dtcompatible:`zephyr,gpio-stepper`
 - :dtcompatible:`adi,tmc5041`
 
 Discord

@@ -89,13 +89,10 @@ properties:
 
 child-binding:
   include:
+    - name: stepper-controller.yaml
     - name: base.yaml
       property-allowlist:
         - reg
-    - name: stepper-controller.yaml
-      property-allowlist:
-        - invert-direction
-        - micro-step-res
     - name: adi,trinamic-ramp-generator.yaml
       property-allowlist:
         - vstart

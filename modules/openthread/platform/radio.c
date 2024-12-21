@@ -11,6 +11,7 @@
  *
  */
 
+#include <openthread/error.h>
 #define LOG_MODULE_NAME net_otPlat_radio
 
 #include <zephyr/logging/log.h>
@@ -802,7 +803,7 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 	return OT_ERROR_NONE;
 }
 
-#if defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
+#if defined(CONFIG_OPENTHREAD_CSL_RECEIVER) || defined(CONFIG_OPENTHREAD_WAKEUP_END_DEVICE)
 otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 			     uint32_t aStart, uint32_t aDuration)
 {
@@ -823,6 +824,7 @@ otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 }
 #endif
 
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 {
 	if (radio_api->continuous_carrier == NULL) {
@@ -845,6 +847,35 @@ otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 
 	return OT_ERROR_NONE;
 }
+
+otError platformRadioTransmitModulatedCarrier(otInstance *aInstance, bool aEnable,
+					      const uint8_t *aData)
+{
+	if (radio_api->modulated_carrier == NULL) {
+		return OT_ERROR_NOT_IMPLEMENTED;
+	}
+
+	if (aEnable && sState == OT_RADIO_STATE_RECEIVE) {
+		if (aData == NULL) {
+			return OT_ERROR_INVALID_ARGS;
+		}
+
+		radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+
+		if (radio_api->modulated_carrier(radio_dev, aData) != 0) {
+			return OT_ERROR_FAILED;
+		}
+		sState = OT_RADIO_STATE_TRANSMIT;
+	} else if ((!aEnable) && sState == OT_RADIO_STATE_TRANSMIT) {
+		return otPlatRadioReceive(aInstance, channel);
+	} else {
+		return OT_ERROR_INVALID_STATE;
+	}
+
+	return OT_ERROR_NONE;
+}
+
+#endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
 
 otRadioState otPlatRadioGetState(otInstance *aInstance)
 {
@@ -1395,6 +1426,65 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
 	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_EXPECTED_RX_TIME, &config);
 }
 #endif /* CONFIG_OPENTHREAD_CSL_RECEIVER */
+
+#if defined(CONFIG_OPENTHREAD_WAKEUP_COORDINATOR)
+otError otPlatRadioEnableCst(otInstance *aInstance, uint32_t aCstPeriod, otShortAddress aShortAddr,
+			     const otExtAddress *aExtAddr)
+{
+	struct ieee802154_config config;
+	int result;
+	uint8_t header_ie[OT_IE_HEADER_SIZE + OT_THREAD_IE_SIZE + OT_CST_IE_SIZE] = { 0 };
+	size_t index = 0;
+
+	ARG_UNUSED(aInstance);
+
+	/* Configure the CST period first to give drivers a chance to validate
+	 * the IE for consistency if they wish to.
+	 */
+	config.cst_period = aCstPeriod;
+	result = radio_api->configure(radio_dev, IEEE802154_OPENTHREAD_CONFIG_CST_PERIOD, &config);
+	if (result) {
+		return OT_ERROR_FAILED;
+	}
+
+	/* Configure the CST IE. */
+	header_ie[index++] = OT_THREAD_IE_SIZE + OT_CST_IE_SIZE;
+	header_ie[index++] = 0;
+	sys_put_le24(THREAD_IE_VENDOR_OUI, &header_ie[index]);
+	index += 3;
+	header_ie[index++] = THREAD_IE_SUBTYPE_CST;
+	/* Leave CST Phase empty intentionally */
+	index += 2;
+	sys_put_le16(aCstPeriod, &header_ie[index]);
+	index += 2;
+
+	config.ack_ie.header_ie = aCstPeriod > 0 ? (struct ieee802154_header_ie *)header_ie : NULL;
+	config.ack_ie.short_addr = aShortAddr;
+	config.ack_ie.ext_addr = aExtAddr != NULL ? aExtAddr->m8 : NULL;
+	config.ack_ie.purge_ie = false;
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
+
+	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
+}
+
+void otPlatRadioUpdateCstSampleTime(otInstance *aInstance, uint32_t aCstSampleTime)
+{
+	int result;
+
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = {
+		.expected_tx_time = convert_32bit_us_wrapped_to_64bit_ns(
+			aCstSampleTime - PHR_DURATION_US),
+	};
+
+	result = radio_api->configure(radio_dev, IEEE802154_OPENTHREAD_CONFIG_EXPECTED_TX_TIME,
+					&config);
+	__ASSERT_NO_MSG(result == 0);
+	(void)result;
+}
+#endif /* CONFIG_OPENTHREAD_WAKEUP_COORDINATOR */
 
 uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 {

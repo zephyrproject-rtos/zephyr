@@ -432,7 +432,7 @@ static int mcux_adc16_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api mcux_adc16_driver_api = {
+static DEVICE_API(adc, mcux_adc16_driver_api) = {
 	.channel_setup = mcux_adc16_channel_setup,
 	.read = mcux_adc16_read,
 #ifdef CONFIG_ADC_ASYNC

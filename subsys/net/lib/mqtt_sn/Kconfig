@@ -14,26 +14,51 @@ if MQTT_SN_LIB
 config MQTT_SN_LIB_MAX_PAYLOAD_SIZE
 	int "Maximum payload size of an MQTT-SN message"
 	default $(UINT8_MAX)
+	range $(UINT8_MAX) $(UINT16_MAX)
 
 config MQTT_SN_LIB_MAX_MSGS
 	int "Number of preallocated messages"
 	default 10
+	range 1 $(UINT8_MAX)
 
 config MQTT_SN_LIB_MAX_TOPICS
 	int "Number of topics that can be managed"
 	default 20
+	range 1 $(UINT8_MAX)
 
 config MQTT_SN_LIB_MAX_TOPIC_SIZE
 	int "Maximum topic length"
 	default 64
+	range 1 $(UINT16_MAX)
+
+config MQTT_SN_LIB_MAX_GATEWAYS
+	int "Maximum number of gateways to store internally"
+	default 2
+	range 1 $(UINT8_MAX)
+
+config MQTT_SN_LIB_MAX_ADDR_SIZE
+	int "Maximum address size for the transport"
+	default 21
+	range 1 $(UINT8_MAX)
+	help
+		The MQTT_SN library stores addresses internally and thus
+		needs to know how long your addresses are. Set this to the maximum
+		length in bytes of the address data structure for your implemented transport.
+
+config MQTT_SN_LIB_BROADCAST_RADIUS
+	int "Radius for broadcast messages"
+	default 1
+	range 1 $(UINT8_MAX)
 
 config MQTT_SN_LIB_MAX_PUBLISH
 	int "Number of publishes that can be in-flight at the same time"
 	default 5
+	range 1 $(UINT8_MAX)
 
 config MQTT_SN_KEEPALIVE
 	int "Maximum number of clients Keep alive time for MQTT-SN (in seconds)"
 	default 60
+	range 1 $(UINT8_MAX)
 	help
 	  Keep alive time for MQTT-SN (in seconds). Sending of Ping Requests to
 	  keep the connection alive are governed by this value.
@@ -50,6 +75,22 @@ config MQTT_SN_LIB_N_RETRY
 config MQTT_SN_LIB_T_RETRY
 	int "Time (seconds) to wait for responses"
 	default 10
+	range 0 $(UINT8_MAX)
+
+config MQTT_SN_LIB_T_SEARCHGW
+	int "Max time (seconds) to wait before sending SEARCHGW"
+	default 10
+	range 0 $(UINT8_MAX)
+
+config MQTT_SN_LIB_T_GWINFO
+	int "Max time (seconds) to wait before sending GWINFO"
+	default 10
+	range 0 $(UINT8_MAX)
+
+config MQTT_SN_LIB_N_ADV
+	int "Number of missed Advertise messages before considering GW lost"
+	default 2
+	range 1 $(UINT8_MAX)
 
 module=MQTT_SN
 module-dep=NET_LOG

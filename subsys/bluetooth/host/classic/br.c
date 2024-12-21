@@ -141,7 +141,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 		return key_size == BT_HCI_ENCRYPTION_KEY_SIZE_MAX;
 	}
 
-	return key_size >= BT_HCI_ENCRYPTION_KEY_SIZE_MIN;
+	return key_size >= CONFIG_BT_BR_MIN_ENC_KEY_SIZE;
 }
 
 bool bt_br_update_sec_level(struct bt_conn *conn)

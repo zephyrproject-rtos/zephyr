@@ -376,7 +376,7 @@ static inline int gpio_pca_series_reg_write(const struct device *dev,
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	if (gpio_pca_series_reg_cache_offset(dev, reg_type) != PCA_REG_INVALID) {
-		gpio_pca_series_reg_cache_update(dev, reg_type, buf);
+		(void)gpio_pca_series_reg_cache_update(dev, reg_type, buf);
 	}
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 
@@ -853,11 +853,11 @@ void gpio_pca_series_cache_test(const struct device *dev)
 		expected_offset += cache_size;
 
 		LOG_WRN("testing reg %d size %d", reg_type,  cache_size);
-		gpio_pca_series_reg_cache_update(dev, reg_type, reset_value_0);
+		(void)gpio_pca_series_reg_cache_update(dev, reg_type, reset_value_0);
 		*buffer_p = 0;
 		gpio_pca_series_reg_cache_read(dev, reg_type, buffer);
 		LOG_WRN("fill 00, result: 0x%16.16x", *buffer_p);
-		gpio_pca_series_reg_cache_update(dev, reg_type, reset_value_1);
+		(void)gpio_pca_series_reg_cache_update(dev, reg_type, reset_value_1);
 		*buffer_p = 0;
 		gpio_pca_series_reg_cache_read(dev, reg_type, buffer);
 		LOG_WRN("fill ff, result: 0x%16.16x", *buffer_p);
@@ -1639,7 +1639,7 @@ static void gpio_pca_series_gpio_int_handler(const struct device *dev,
  * gpio_pca_zephyr_gpio_api
  */
 
-static const struct gpio_driver_api gpio_pca_series_api_funcs_standard = {
+static DEVICE_API(gpio, gpio_pca_series_api_funcs_standard) = {
 	.pin_configure = gpio_pca_series_pin_configure,
 	.port_get_raw = gpio_pca_series_port_read_standard,
 	.port_set_masked_raw = gpio_pca_series_port_set_masked,
@@ -1652,7 +1652,7 @@ static const struct gpio_driver_api gpio_pca_series_api_funcs_standard = {
 #endif
 };
 
-static const struct gpio_driver_api gpio_pca_series_api_funcs_extended = {
+static DEVICE_API(gpio, gpio_pca_series_api_funcs_extended) = {
 	.pin_configure = gpio_pca_series_pin_configure,
 	.port_get_raw = gpio_pca_series_port_read_extended, /* special version used */
 	.port_set_masked_raw = gpio_pca_series_port_set_masked,

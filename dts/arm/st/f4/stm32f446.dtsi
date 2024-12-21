@@ -11,7 +11,7 @@
 / {
 	clocks {
 		plli2s: plli2s {
-			compatible = "st,stm32f412-plli2s-clock";
+			compatible = "st,stm32f411-plli2s-clock";
 		};
 	};
 
@@ -118,8 +118,9 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
-			st,adc-clock-source = <SYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "SYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_NONE";
 		};
 
 		adc3: adc@40012200 {
@@ -134,8 +135,9 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
-			st,adc-clock-source = <SYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "SYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_NONE";
 		};
 
 		dac1: dac@40007400 {

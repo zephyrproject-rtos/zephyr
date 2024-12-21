@@ -273,6 +273,7 @@ int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 
 static void can_sja1000_read_frame(const struct device *dev, struct can_frame *frame)
 {
+	uint32_t id;
 	uint8_t info;
 	int i;
 
@@ -293,14 +294,15 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 	if ((info & CAN_SJA1000_FRAME_INFO_FF) != 0) {
 		frame->flags |= CAN_FRAME_IDE;
 
-		frame->id = FIELD_PREP(GENMASK(28, 21),
+		id = FIELD_PREP(GENMASK(28, 21),
 				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
-		frame->id |= FIELD_PREP(GENMASK(20, 13),
-				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2));
-		frame->id |= FIELD_PREP(GENMASK(12, 5),
-				can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID3));
-		frame->id |= FIELD_PREP(GENMASK(4, 0),
-				can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID4) >> 3);
+		id |= FIELD_PREP(GENMASK(20, 13),
+				 can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2));
+		id |= FIELD_PREP(GENMASK(12, 5),
+				 can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID3));
+		id |= FIELD_PREP(GENMASK(4, 0),
+				 can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID4) >> 3);
+		frame->id = id;
 
 		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
 			for (i = 0; i < frame->dlc; i++) {
@@ -309,10 +311,11 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 			}
 		}
 	} else {
-		frame->id = FIELD_PREP(GENMASK(10, 3),
+		id = FIELD_PREP(GENMASK(10, 3),
 				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
-		frame->id |= FIELD_PREP(GENMASK(2, 0),
-				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2) >> 5);
+		id |= FIELD_PREP(GENMASK(2, 0),
+				 can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2) >> 5);
+		frame->id = id;
 
 		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
 			for (i = 0; i < frame->dlc; i++) {
@@ -325,6 +328,7 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 
 void can_sja1000_write_frame(const struct device *dev, const struct can_frame *frame)
 {
+	uint32_t id;
 	uint8_t info;
 	int i;
 
@@ -341,14 +345,15 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 	can_sja1000_write_reg(dev, CAN_SJA1000_FRAME_INFO, info);
 
 	if ((frame->flags & CAN_FRAME_IDE) != 0) {
+		id = frame->id;
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID1,
-				FIELD_GET(GENMASK(28, 21), frame->id));
+				      FIELD_GET(GENMASK(28, 21), id));
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID2,
-				FIELD_GET(GENMASK(20, 13), frame->id));
+				      FIELD_GET(GENMASK(20, 13), id));
 		can_sja1000_write_reg(dev, CAN_SJA1000_EFF_ID3,
-				FIELD_GET(GENMASK(12, 5), frame->id));
+				      FIELD_GET(GENMASK(12, 5), id));
 		can_sja1000_write_reg(dev, CAN_SJA1000_EFF_ID4,
-				FIELD_GET(GENMASK(4, 0), frame->id) << 3);
+				      FIELD_GET(GENMASK(4, 0), id) << 3);
 
 		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
 			for (i = 0; i < frame->dlc; i++) {
@@ -357,10 +362,11 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 			}
 		}
 	} else {
+		id = frame->id;
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID1,
-				FIELD_GET(GENMASK(10, 3), frame->id));
+				      FIELD_GET(GENMASK(10, 3), id));
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID2,
-				FIELD_GET(GENMASK(2, 0), frame->id) << 5);
+				      FIELD_GET(GENMASK(2, 0), id) << 5);
 
 		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
 			for (i = 0; i < frame->dlc; i++) {

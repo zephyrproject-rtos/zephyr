@@ -294,7 +294,7 @@ static int ft5336_pm_action(const struct device *dev,
 #endif
 
 #define FT5336_INIT(index)								\
-	PM_DEVICE_DT_INST_DEFINE(n, ft5336_pm_action);					\
+	PM_DEVICE_DT_INST_DEFINE(index, ft5336_pm_action);				\
 	static const struct ft5336_config ft5336_config_##index = {			\
 		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),		\
 		.bus = I2C_DT_SPEC_INST_GET(index),					\
@@ -303,7 +303,7 @@ static int ft5336_pm_action(const struct device *dev,
 		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),))			\
 	};										\
 	static struct ft5336_data ft5336_data_##index;					\
-	DEVICE_DT_INST_DEFINE(index, ft5336_init, PM_DEVICE_DT_INST_GET(n),		\
+	DEVICE_DT_INST_DEFINE(index, ft5336_init, PM_DEVICE_DT_INST_GET(index),		\
 			      &ft5336_data_##index, &ft5336_config_##index,		\
 			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 

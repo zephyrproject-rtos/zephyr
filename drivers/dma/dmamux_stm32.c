@@ -290,7 +290,7 @@ static int dmamux_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dma_driver_api dma_funcs = {
+static DEVICE_API(dma, dma_funcs) = {
 	.reload		 = dmamux_stm32_reload,
 	.config		 = dmamux_stm32_configure,
 	.start		 = dmamux_stm32_start,

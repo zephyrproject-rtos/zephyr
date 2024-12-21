@@ -325,7 +325,7 @@ static int mcux_pwt_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api mcux_pwt_driver_api = {
+static DEVICE_API(pwm, mcux_pwt_driver_api) = {
 	.set_cycles = mcux_pwt_set_cycles,
 	.get_cycles_per_sec = mcux_pwt_get_cycles_per_sec,
 	.configure_capture = mcux_pwt_configure_capture,

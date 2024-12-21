@@ -243,7 +243,7 @@ static int lsm9ds0_gyro_attr_set(const struct device *dev,
 }
 #endif
 
-static const struct sensor_driver_api lsm9ds0_gyro_api_funcs = {
+static DEVICE_API(sensor, lsm9ds0_gyro_api_funcs) = {
 	.sample_fetch = lsm9ds0_gyro_sample_fetch,
 	.channel_get = lsm9ds0_gyro_channel_get,
 #if defined(LSM9DS0_GYRO_SET_ATTR)

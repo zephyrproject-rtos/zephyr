@@ -260,7 +260,7 @@ static int ens210_wait_boot(const struct device *dev)
 	return -EIO;
 }
 
-static const struct sensor_driver_api en210_driver_api = {
+static DEVICE_API(sensor, en210_driver_api) = {
 	.sample_fetch = ens210_sample_fetch,
 	.channel_get = ens210_channel_get,
 };

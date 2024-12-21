@@ -418,7 +418,7 @@ static int pwm_xec_pm_action(const struct device *dev, enum pm_device_action act
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct pwm_driver_api pwm_xec_driver_api = {
+static DEVICE_API(pwm, pwm_xec_driver_api) = {
 	.set_cycles = pwm_xec_set_cycles,
 	.get_cycles_per_sec = pwm_xec_get_cycles_per_sec,
 };

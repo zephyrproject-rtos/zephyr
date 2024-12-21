@@ -6,9 +6,6 @@ if SOC_SERIES_RMX
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-config RISCV_GP
-	default y
-
 config MULTI_LEVEL_INTERRUPTS
 	default n
 

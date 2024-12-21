@@ -26,7 +26,7 @@ int vnd_dac_write_value(const struct device *dev, uint8_t channel, uint32_t valu
 	return -ENOTSUP;
 }
 
-static const struct dac_driver_api vnd_dac_driver_api = {
+static DEVICE_API(dac, vnd_dac_driver_api) = {
 	.channel_setup = vnd_dac_channel_setup,
 	.write_value = vnd_dac_write_value,
 };

@@ -3283,6 +3283,8 @@ int bt_ascs_unregister(void)
 
 	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		if (ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE) {
+			LOG_DBG("[%zu] ase %p not in idle state: %s", i, &ascs.ase_pool[i].ep,
+				bt_bap_ep_state_str(ascs.ase_pool[i].ep.status.state));
 			return -EBUSY;
 		}
 	}

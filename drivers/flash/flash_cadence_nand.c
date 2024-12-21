@@ -143,7 +143,7 @@ static const struct flash_parameters *flash_cdns_get_parameters(const struct dev
 
 	return &flash_cdns_parameters;
 }
-static const struct flash_driver_api flash_cdns_nand_api = {
+static DEVICE_API(flash, flash_cdns_nand_api) = {
 	.erase = flash_cdns_nand_erase,
 	.write = flash_cdns_nand_write,
 	.read = flash_cdns_nand_read,

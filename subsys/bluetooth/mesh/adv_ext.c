@@ -108,9 +108,9 @@ static struct bt_mesh_ext_adv advs[] = {
 #if CONFIG_BT_MESH_RELAY_ADV_SETS
 	[1 ... CONFIG_BT_MESH_RELAY_ADV_SETS] = {
 		.tags = (
-#if defined(CONFIG_BT_MESH_RELAY)
+#if (defined(CONFIG_BT_MESH_RELAY) || defined(CONFIG_BT_MESH_BRG_CFG_SRV))
 			BT_MESH_ADV_TAG_BIT_RELAY |
-#endif /* CONFIG_BT_MESH_RELAY */
+#endif /* CONFIG_BT_MESH_RELAY || CONFIG_BT_MESH_BRG_CFG_SRV */
 #if defined(CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS)
 			BT_MESH_ADV_TAG_BIT_PROV |
 #endif /* CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS */

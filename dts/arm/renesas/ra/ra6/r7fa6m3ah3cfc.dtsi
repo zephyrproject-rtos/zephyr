@@ -17,5 +17,10 @@
 				reg = <0x0 DT_SIZE_M(2)>;
 			};
 		};
+
+		trng: trng {
+			compatible = "renesas,ra-sce7-rng";
+			status = "disabled";
+		};
 	};
 };

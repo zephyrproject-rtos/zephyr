@@ -337,7 +337,7 @@ static int video_sw_generator_enum_frmival(const struct device *dev, enum video_
 	return 0;
 }
 
-static const struct video_driver_api video_sw_generator_driver_api = {
+static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_format = video_sw_generator_set_fmt,
 	.get_format = video_sw_generator_get_fmt,
 	.stream_start = video_sw_generator_stream_start,

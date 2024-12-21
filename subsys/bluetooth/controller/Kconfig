@@ -121,37 +121,38 @@ config BT_CTLR_SUBRATING_SUPPORT
 config BT_CTLR_CHANNEL_SOUNDING_SUPPORT
 	bool
 
+# Virtual option that all local LL implemenations should select
+config HAS_BT_CTLR
+	bool
+
 config BT_CTLR
-	bool "Bluetooth Controller"
+	bool "Bluetooth Controller [DEPRECATED]"
+	select HAS_BT_CTLR
+	select DEPRECATED
 	help
-	  Enables support for SoC native controller implementations.
-
-if BT_CTLR
-
-choice BT_LL_CHOICE
-	prompt "Bluetooth Link Layer Selection"
-	help
-	  Select the Bluetooth Link Layer to compile.
-	  The link layer choice list can be extended out of tree.
-	  In the nRF Connect SDK, the SoftDevice Controller is selected
-	  and set as the default Bluetooth Controller.
+	  Enables support for SoC native controller implementations. This option
+	  has been deprecated and should not be used anymore. Instead, the
+	  Kconfig options for specific Link Layer implementations should select
+	  the HAS_BT_CTLR option.
 
 config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer"
+	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
+	select HAS_BT_CTLR
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
-
-endchoice
 
 config BT_CTLR_HCI
 	bool "Host Controller Interface (HCI)"
 	default y
-	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
+	depends on HAS_BT_CTLR
 	help
 	  Enable the Host Controller interface (HCI) in the Controller.
 	  This should almost always be enabled, except in a few special
 	  cases, like for unit testing.
+
+if HAS_BT_CTLR
 
 comment "BLE Controller configuration"
 
@@ -1102,7 +1103,7 @@ config BT_CTLR_VS_SCAN_REQ_RX
 	help
 	  Enables usage of VS Scan Request Reports Command and Scan Request Received Event
 
-endif # BT_CTLR
+endif # HAS_BT_CTLR
 
 config BT_CTLR_DEBUG_PINS_CPUAPP
 	bool "Bluetooth Controller Debug Pins"

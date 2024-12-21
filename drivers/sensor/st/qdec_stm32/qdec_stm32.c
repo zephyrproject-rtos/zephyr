@@ -136,7 +136,7 @@ static int qdec_stm32_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api qdec_stm32_driver_api = {
+static DEVICE_API(sensor, qdec_stm32_driver_api) = {
 	.sample_fetch = qdec_stm32_fetch,
 	.channel_get = qdec_stm32_get,
 };

@@ -29,6 +29,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
+#include "bap_stream_rx.h"
+#include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
@@ -36,11 +38,6 @@
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 #define BAP_STREAM_RETRY_WAIT K_MSEC(100)
-
-#define ENQUEUE_COUNT    2U
-#define TOTAL_BUF_NEEDED (ENQUEUE_COUNT * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT)
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 extern enum bst_result_t bst_result;
 
@@ -105,6 +102,16 @@ static void stream_started(struct bt_bap_stream *stream)
 {
 	printk("Started stream %p\n", stream);
 
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_register(stream);
+		if (err != 0) {
+			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
+
 	SET_FLAG(flag_stream_started);
 }
 
@@ -131,10 +138,6 @@ static void stream_metadata_updated(struct bt_bap_stream *stream)
 
 static void stream_disabled(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
-	test_stream->tx_active = false;
-
 	printk("Disabled stream %p\n", stream);
 
 	SET_FLAG(flag_stream_disabled);
@@ -143,6 +146,16 @@ static void stream_disabled(struct bt_bap_stream *stream)
 static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stopped stream %p with reason 0x%02X\n", stream, reason);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_unregister(stream);
+		if (err != 0) {
+			FAIL("Failed to unregister stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
 
 	SET_FLAG(flag_stream_stopped);
 }
@@ -154,77 +167,6 @@ static void stream_released(struct bt_bap_stream *stream)
 	SET_FLAG(flag_stream_released);
 }
 
-static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
-			   struct net_buf *buf)
-{
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
-	if ((test_stream->rx_cnt % 100U) == 0U) {
-		printk("[%zu]: Incoming audio on stream %p len %u and ts %u\n", test_stream->rx_cnt,
-		       stream, buf->len, info->ts);
-	}
-
-	if (test_stream->rx_cnt > 0U && info->ts == test_stream->last_info.ts) {
-		FAIL("Duplicated timestamp received: %u\n", test_stream->last_info.ts);
-		return;
-	}
-
-	if (test_stream->rx_cnt > 0U && info->seq_num == test_stream->last_info.seq_num) {
-		FAIL("Duplicated PSN received: %u\n", test_stream->last_info.seq_num);
-		return;
-	}
-
-	if (info->flags & BT_ISO_FLAGS_ERROR) {
-		FAIL("ISO receive error\n");
-		return;
-	}
-
-	if (info->flags & BT_ISO_FLAGS_LOST) {
-		FAIL("ISO receive lost\n");
-		return;
-	}
-
-	if (memcmp(buf->data, mock_iso_data, buf->len) == 0) {
-		test_stream->rx_cnt++;
-	} else {
-		FAIL("Unexpected data received\n");
-	}
-}
-
-static void stream_sent_cb(struct bt_bap_stream *stream)
-{
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-	struct net_buf *buf;
-	int ret;
-
-	if (!test_stream->tx_active) {
-		return;
-	}
-
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	if (buf == NULL) {
-		printk("Could not allocate buffer when sending on %p\n", stream);
-		return;
-	}
-
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-	net_buf_add_mem(buf, mock_iso_data, test_stream->tx_sdu_size);
-	ret = bt_bap_stream_send(stream, buf, test_stream->seq_num++);
-	if (ret < 0) {
-		/* This will end broadcasting on this stream. */
-		net_buf_unref(buf);
-
-		/* Only fail if tx is active (may fail if we are disabling the stream) */
-		if (test_stream->tx_active) {
-			FAIL("Unable to send data on %p: %d\n", stream, ret);
-		}
-
-		return;
-	}
-
-	test_stream->tx_cnt++;
-}
-
 static struct bt_bap_stream_ops stream_ops = {
 	.configured = stream_configured,
 	.qos_set = stream_qos_set,
@@ -234,8 +176,8 @@ static struct bt_bap_stream_ops stream_ops = {
 	.disabled = stream_disabled,
 	.stopped = stream_stopped,
 	.released = stream_released,
-	.recv = stream_recv_cb,
-	.sent = stream_sent_cb,
+	.recv = bap_stream_rx_recv_cb,
+	.sent = bap_stream_tx_sent_cb,
 	.connected = stream_connected,
 	.disconnected = stream_disconnected,
 };
@@ -531,6 +473,9 @@ static void init(void)
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return;
 	}
+
+	printk("Bluetooth initialized\n");
+	bap_stream_tx_init();
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_streams); i++) {
 		struct bt_bap_stream *bap_stream =
@@ -882,11 +827,6 @@ static void transceive_streams(void)
 		struct audio_test_stream *test_stream =
 			audio_test_stream_from_bap_stream(sink_stream);
 
-		test_stream->tx_active = true;
-		for (unsigned int i = 0U; i < ENQUEUE_COUNT; i++) {
-			stream_sent_cb(sink_stream);
-		}
-
 		/* Keep sending until we reach the minimum expected */
 		while (test_stream->tx_cnt < MIN_SEND_COUNT) {
 			k_sleep(K_MSEC(100));
@@ -894,13 +834,8 @@ static void transceive_streams(void)
 	}
 
 	if (source_stream != NULL) {
-		const struct audio_test_stream *test_stream =
-			audio_test_stream_from_bap_stream(source_stream);
-
-		/* Keep receiving until we reach the minimum expected */
-		while (test_stream->rx_cnt < MIN_SEND_COUNT) {
-			k_sleep(K_MSEC(100));
-		}
+		printk("Waiting for data\n");
+		WAIT_FOR_FLAG(flag_audio_received);
 	}
 }
 

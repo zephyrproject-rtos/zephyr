@@ -1702,7 +1702,7 @@ static void flash_stm32_ospi_pages_layout(const struct device *dev,
 }
 #endif
 
-static const struct flash_driver_api flash_stm32_ospi_driver_api = {
+static DEVICE_API(flash, flash_stm32_ospi_driver_api) = {
 	.read = flash_stm32_ospi_read,
 	.write = flash_stm32_ospi_write,
 	.erase = flash_stm32_ospi_erase,

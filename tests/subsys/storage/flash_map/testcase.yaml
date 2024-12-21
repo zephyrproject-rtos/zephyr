@@ -22,7 +22,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     tags: flash_map
-  storage.flash_map.mbedtls:
+  storage.flash_map_sha.mbedtls:
     extra_args: EXTRA_CONF_FILE=overlay-mbedtls.conf
     platform_allow:
       - nrf51dk/nrf51822
@@ -33,7 +33,7 @@ tests:
     tags: flash_map
     integration_platforms:
       - native_sim
-  storage.flash_map.psa:
+  storage.flash_map_sha.psa:
     extra_args: EXTRA_CONF_FILE=overlay-psa.conf
     platform_allow:
       - nrf51dk/nrf51822

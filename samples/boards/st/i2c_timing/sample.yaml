@@ -7,7 +7,9 @@ tests:
       - drivers
       - i2c
     filter: dt_compat_enabled("st,stm32-i2c-v2")
-    platform_allow: nucleo_l476rg nucleo_wb55rg
+    platform_allow:
+      - nucleo_l476rg
+      - nucleo_wb55rg
     harness: console
     harness_config:
       type: one_line

@@ -105,6 +105,13 @@
 	status = "okay";
 };
 
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };
@@ -125,7 +132,7 @@
 		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	pinctrl-0 = <&adc1_inp0_pa0>; /* Arduino A0 */
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <8>;
 	status = "okay";
 };

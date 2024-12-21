@@ -5,11 +5,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SPI_DW
-	bool "Designware SPI controller driver"
+	bool "DesignWare SPI controller driver"
 	default y
 	depends on DT_HAS_SNPS_DESIGNWARE_SPI_ENABLED
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_SPI),pinctrl-0)
 	help
-	  Enable support for Designware's SPI controllers.
+	  Enable support for DesignWare SPI controllers.
 
 if SPI_DW
 
@@ -21,7 +22,7 @@ config SPI_DW_ACCESS_WORD_ONLY
 	  exception.
 
 config SPI_DW_HSSI
-	bool "Designware SPI HSSI variant"
+	bool "DesignWare SPI HSSI variant"
 	help
 	  Use register layout compatible with the SPI DW HSSI variant of the
 	  peripheral.

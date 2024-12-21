@@ -285,7 +285,7 @@ static int mc3419_init(const struct device *dev)
 	return ret;
 }
 
-static const struct sensor_driver_api mc3419_api = {
+static DEVICE_API(sensor, mc3419_api) = {
 	.attr_set = mc3419_attr_set,
 #if defined(CONFIG_MC3419_TRIGGER)
 	.trigger_set = mc3419_trigger_set,

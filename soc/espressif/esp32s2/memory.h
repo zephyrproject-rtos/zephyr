@@ -7,8 +7,8 @@
 /* SRAM0 (32k) with adjacted SRAM1 (288k)
  * Ibus and Dbus address space
  */
-#define SRAM_IRAM_START  0x40020000
-#define SRAM_DRAM_START  0x3ffb0000
+#define SRAM_IRAM_START  (SRAM_DRAM_START + IRAM_DRAM_OFFSET)
+#define SRAM_DRAM_START  DT_REG_ADDR(DT_NODELABEL(sram0))
 #define SRAM_CACHE_SIZE  (CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE + CONFIG_ESP32S2_DATA_CACHE_SIZE)
 
 /** Simplified memory map for the bootloader.

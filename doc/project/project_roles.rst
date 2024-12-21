@@ -292,9 +292,6 @@ MAINTAINERS File
 
 Generic guidelines for deciding and filling in the Maintainers' list
 
-* The :zephyr_file:`MAINTAINERS.yml` file shall replace the
-  :zephyr_file:`CODEOWNERS` file and will be used for both setting assignees and
-  reviewers.
 * We should keep the granularity of code maintainership at a manageable level
 * We should be looking for maintainers for areas of code that
   are orphaned (i.e. without an explicit maintainer)
@@ -388,15 +385,13 @@ Merge Criteria
   most of the conditions listed above.
 * All required checks are passing:
 
-  * Codeowners
   * Device Tree
   * Documentation
-  * Gitlint
+  * Code linters (Gitlint, Pylint, Ruff, Sphinx, etc.)
   * Identity/Emails
   * Kconfig
   * License checks
   * Checkpatch (Coding Style)
-  * Pylint
   * Integration Tests (Via twister) on emulation/simulation platforms
   * Simulated Bluetooth Tests
 

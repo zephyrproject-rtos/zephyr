@@ -2,7 +2,8 @@ identifier: mps2/an385
 name: ARM V2M MPS2
 type: mcu
 arch: arm
-simulation: qemu
+simulation:
+  - name: qemu
 toolchain:
   - zephyr
   - gnuarmemb

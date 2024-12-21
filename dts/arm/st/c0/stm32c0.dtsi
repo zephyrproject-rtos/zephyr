@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
@@ -81,7 +82,7 @@
 
 	soc {
 		flash: flash-controller@40022000 {
-			compatible = "st,stm32-flash-controller";
+			compatible = "st,stm32-flash-controller" , "st,stm32g0-flash-controller";
 			reg = <0x40022000 0x400>;
 			interrupts = <3 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 8U)>;
@@ -301,6 +302,16 @@
 			status = "disabled";
 		};
 
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 12U)>;
+			interrupts = <25 0>;
+			status = "disabled";
+		};
+
 		adc1: adc@40012400 {
 			compatible = "st,stm32-adc";
 			reg = <0x40012400 0x400>;
@@ -314,7 +325,8 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <2>;
-			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		dma1: dma@40020000 {

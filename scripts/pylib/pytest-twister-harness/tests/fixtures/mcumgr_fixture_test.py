@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import pytest
 import textwrap
-
 from unittest import mock
+
+import pytest
 from twister_harness.helpers.mcumgr import MCUmgr, MCUmgrException
 
 

@@ -346,7 +346,7 @@ flash_mcux_get_parameters(const struct device *dev)
 
 static struct flash_priv flash_data;
 
-static const struct flash_driver_api flash_mcux_api = {
+static DEVICE_API(flash, flash_mcux_api) = {
 	.erase = flash_mcux_erase,
 	.write = flash_mcux_write,
 	.read = flash_mcux_read,

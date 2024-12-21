@@ -184,3 +184,77 @@ properties:
     description: |
       Selects the pulsed mode for data-ready interrupt when enabled,
       and the latched mode when disabled.
+
+  fifo-watermark:
+    type: int
+    default: 32
+    description: |
+      Specify the default FIFO watermark threshold. Every unit indicates a FIFO row (1 byte of TAG +
+      6 bytes of data). (min 0; max 255)
+      A typical threshold value is 32 which is then used as default.
+
+  accel-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer FIFO batch data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dsv16x_fifo_xl_batch_t enumerative in hal/st
+      module.
+      Default is power-up configuration.
+
+      - 0x0 # LSM6DSV16X_DT_XL_NOT_BATCHED
+      - 0x1 # LSM6DSV16X_DT_XL_BATCHED_AT_1Hz875
+      - 0x2 # LSM6DSV16X_DT_XL_BATCHED_AT_7Hz5
+      - 0x3 # LSM6DSV16X_DT_XL_BATCHED_AT_15Hz
+      - 0x4 # LSM6DSV16X_DT_XL_BATCHED_AT_30Hz
+      - 0x5 # LSM6DSV16X_DT_XL_BATCHED_AT_60Hz
+      - 0x6 # LSM6DSV16X_DT_XL_BATCHED_AT_120Hz
+      - 0x7 # LSM6DSV16X_DT_XL_BATCHED_AT_240Hz
+      - 0x8 # LSM6DSV16X_DT_XL_BATCHED_AT_480Hz
+      - 0x9 # LSM6DSV16X_DT_XL_BATCHED_AT_960Hz
+      - 0xa # LSM6DSV16X_DT_XL_BATCHED_AT_1920Hz
+      - 0xb # LSM6DSV16X_DT_XL_BATCHED_AT_3840Hz
+      - 0xc # LSM6DSV16X_DT_XL_BATCHED_AT_7680Hz
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c]
+
+  gyro-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default gyroscope FIFO batch data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dsv16x_fifo_gy_batch_t enumerative in hal/st
+      module.
+      Default is power-up configuration.
+
+      - 0x0 # LSM6DSV16X_DT_GY_NOT_BATCHED
+      - 0x1 # LSM6DSV16X_DT_GY_BATCHED_AT_1Hz875
+      - 0x2 # LSM6DSV16X_DT_GY_BATCHED_AT_7Hz5
+      - 0x3 # LSM6DSV16X_DT_GY_BATCHED_AT_15Hz
+      - 0x4 # LSM6DSV16X_DT_GY_BATCHED_AT_30Hz
+      - 0x5 # LSM6DSV16X_DT_GY_BATCHED_AT_60Hz
+      - 0x6 # LSM6DSV16X_DT_GY_BATCHED_AT_120Hz
+      - 0x7 # LSM6DSV16X_DT_GY_BATCHED_AT_240Hz
+      - 0x8 # LSM6DSV16X_DT_GY_BATCHED_AT_480Hz
+      - 0x9 # LSM6DSV16X_DT_GY_BATCHED_AT_960Hz
+      - 0xa # LSM6DSV16X_DT_GY_BATCHED_AT_1920Hz
+      - 0xb # LSM6DSV16X_DT_GY_BATCHED_AT_3840Hz
+      - 0xc # LSM6DSV16X_DT_GY_BATCHED_AT_7680Hz
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c]
+
+  temp-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default temperature FIFO batch data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dsv16x_fifo_temp_batch_t enumerative in hal/st
+      module.
+      Default is power-up configuration.
+
+      - 0x0 # LSM6DSV16X_DT_TEMP_NOT_BATCHED
+      - 0x1 # LSM6DSV16X_DT_TEMP_BATCHED_AT_1Hz875
+      - 0x2 # LSM6DSV16X_DT_TEMP_BATCHED_AT_15Hz
+      - 0x3 # LSM6DSV16X_DT_TEMP_BATCHED_AT_60Hz
+
+    enum: [0x00, 0x01, 0x02, 0x03]

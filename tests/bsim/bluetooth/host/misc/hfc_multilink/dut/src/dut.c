@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(dut, CONFIG_APP_LOG_LEVEL);
 #define NUM_TESTERS CONFIG_BT_MAX_CONN
 
 /* Build with the minimum possible amount of RX buffers */
-BUILD_ASSERT(CONFIG_BT_BUF_ACL_RX_COUNT == (CONFIG_BT_MAX_CONN + 1));
+BUILD_ASSERT(BT_BUF_ACL_RX_COUNT >= (CONFIG_BT_MAX_CONN + 1));
 
 struct tester {
 	size_t sdu_count;

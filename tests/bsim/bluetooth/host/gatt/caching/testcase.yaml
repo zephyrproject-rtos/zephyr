@@ -1,0 +1,18 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpunet
+  harness: bsim
+
+tests:
+  bluetooth.host.gatt.caching:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_caching_prj_conf
+  bluetooth.host.gatt.caching_psa_overlay:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_caching_prj_conf_psa_overlay_conf
+    extra_args:
+      EXTRA_CONF_FILE=psa_overlay.conf

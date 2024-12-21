@@ -249,7 +249,7 @@ static int driver_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static const struct bt_hci_driver_api driver_api = {
+static DEVICE_API(bt_hci, driver_api) = {
 	.open = driver_open,
 	.send = driver_send,
 };

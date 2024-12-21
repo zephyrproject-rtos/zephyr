@@ -498,16 +498,18 @@ static int drv2605_reset(const struct device *dev)
 	k_msleep(100);
 
 	while (retries > 0) {
-		i2c_reg_read_byte_dt(&config->i2c, DRV2605_REG_MODE, &value);
+		retries--;
+
+		ret = i2c_reg_read_byte_dt(&config->i2c, DRV2605_REG_MODE, &value);
+		if (ret < 0) {
+			k_usleep(10000);
+			continue;
+		}
 
 		if ((value & DRV2605_DEV_RESET) == 0U) {
 			i2c_reg_update_byte_dt(&config->i2c, DRV2605_REG_MODE, DRV2605_STANDBY, 0);
 			return 0;
 		}
-
-		retries--;
-
-		k_usleep(10000);
 	}
 
 	return -ETIMEDOUT;
@@ -612,7 +614,7 @@ static int drv2605_init(const struct device *dev)
 	return 0;
 }
 
-static const struct haptics_driver_api drv2605_driver_api = {
+static DEVICE_API(haptics, drv2605_driver_api) = {
 	.start_output = &drv2605_start_output,
 	.stop_output = &drv2605_stop_output,
 };

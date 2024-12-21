@@ -249,6 +249,13 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
+static void *stm32_ltdc_get_framebuffer(const struct device *dev)
+{
+	struct display_stm32_ltdc_data *data = dev->data;
+
+	return ((void *)data->front_buf);
+}
+
 static int stm32_ltdc_display_blanking_off(const struct device *dev)
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
@@ -279,7 +286,7 @@ static int stm32_ltdc_display_blanking_on(const struct device *dev)
 		return -ENOSYS;
 	}
 
-	if (!device_is_ready(config->display_controller)) {
+	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Display device %s not ready", display_dev->name);
 		return -ENODEV;
 	}
@@ -459,9 +466,10 @@ static int stm32_ltdc_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct display_driver_api stm32_ltdc_display_api = {
+static DEVICE_API(display, stm32_ltdc_display_api) = {
 	.write = stm32_ltdc_write,
 	.read = stm32_ltdc_read,
+	.get_framebuffer = stm32_ltdc_get_framebuffer,
 	.get_capabilities = stm32_ltdc_get_capabilities,
 	.set_pixel_format = stm32_ltdc_set_pixel_format,
 	.set_orientation = stm32_ltdc_set_orientation,

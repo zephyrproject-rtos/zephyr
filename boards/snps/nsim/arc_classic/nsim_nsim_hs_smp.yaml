@@ -1,8 +1,9 @@
 identifier: nsim/nsim_hs/smp
 name: Multi-core HS nSIM simulator
 type: sim
-simulation: mdb-nsim
-simulation_exec: mdb
+simulation:
+  - name: mdb-nsim
+    exec: mdb
 arch: arc
 toolchain:
   - zephyr

@@ -1,0 +1,9 @@
+sample:
+  name: I2C RTIO loopback sample
+tests:
+  sample.drivers.i2c.rtio_loopback:
+    tags:
+      - rtio
+      - i2c_target
+    platform_allow:
+      - b_u585i_iot02a

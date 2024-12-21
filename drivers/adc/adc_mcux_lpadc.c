@@ -157,6 +157,8 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+#if !(defined(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS) && \
+	(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS == 0U))
 	if (channel_cfg->differential) {
 		/* Channel pairs must match in differential mode */
 		if ((ADC_CMDL_ADCH(channel_cfg->input_positive)) !=
@@ -183,6 +185,7 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	} else {
 		/* Default value for sampleChannelMode is SideA */
 	}
+#endif
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_CSCALE) && FSL_FEATURE_LPADC_HAS_CMDL_CSCALE
 	/*
 	 * The true scaling factor used by the LPADC is 30/64, instead of
@@ -435,6 +438,8 @@ static void mcux_lpadc_isr(const struct device *dev)
 	conv_mode = data->cmd_config[channel].sampleChannelMode;
 	if (data->ctx.sequence.resolution < 15) {
 		result = ((conv_result.convValue >> 3) & 0xFFF);
+#if !(defined(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS) && \
+	(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS == 0U))
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_DIFF) && FSL_FEATURE_LPADC_HAS_CMDL_DIFF
 		if (conv_mode == kLPADC_SampleChannelDiffBothSideAB ||
 		    conv_mode == kLPADC_SampleChannelDiffBothSideBA) {
@@ -447,6 +452,7 @@ static void mcux_lpadc_isr(const struct device *dev)
 			}
 		}
 		*data->buffer++ = result;
+#endif
 	} else {
 		*data->buffer++ = conv_result.convValue;
 	}
@@ -543,7 +549,7 @@ static int mcux_lpadc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api mcux_lpadc_driver_api = {
+static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 	.channel_setup = mcux_lpadc_channel_setup,
 	.read = mcux_lpadc_read,
 #ifdef CONFIG_ADC_ASYNC

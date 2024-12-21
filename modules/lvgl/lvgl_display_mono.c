@@ -14,7 +14,6 @@ void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color
 	uint16_t h = area->y2 - area->y1 + 1;
 	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_drv->user_data;
 	const struct device *display_dev = data->display_dev;
-	struct display_buffer_descriptor desc;
 	const bool is_epd = data->cap.screen_info & SCREEN_INFO_EPD;
 	const bool is_last = lv_disp_flush_is_last(disp_drv);
 
@@ -29,10 +28,14 @@ void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color
 		data->blanking_on = true;
 	}
 
-	desc.buf_size = (w * h) / 8U;
-	desc.width = w;
-	desc.pitch = w;
-	desc.height = h;
+	struct display_buffer_descriptor desc = {
+		.buf_size = (w * h) / 8U,
+		.width = w,
+		.pitch = w,
+		.height = h,
+		.frame_incomplete = !is_last,
+	};
+
 	display_write(display_dev, area->x1, area->y1, &desc, (void *)color_p);
 	if (data->cap.screen_info & SCREEN_INFO_DOUBLE_BUFFER) {
 		display_write(display_dev, area->x1, area->y1, &desc, (void *)color_p);

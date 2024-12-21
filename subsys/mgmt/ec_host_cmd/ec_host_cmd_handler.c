@@ -6,6 +6,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
+#include <zephyr/linker/section_tags.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
@@ -32,12 +33,18 @@ BUILD_ASSERT(NUMBER_OF_CHOSEN_BACKENDS < 2, "Number of chosen backends > 1");
 #define RX_HEADER_SIZE (sizeof(struct ec_host_cmd_request_header))
 #define TX_HEADER_SIZE (sizeof(struct ec_host_cmd_response_header))
 
+#ifdef CONFIG_EC_HOST_CMD_NOCACHE_BUFFERS
+#define BUFFERS_CACHE_ATTR __nocache
+#else
+#define BUFFERS_CACHE_ATTR
+#endif
+
 COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_DEF,
-	    (static uint8_t hc_rx_buffer[CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE] __aligned(4);),
-	    ())
+	    (static uint8_t hc_rx_buffer[CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE] __aligned(4)
+	    BUFFERS_CACHE_ATTR;), ())
 COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_DEF,
-	    (static uint8_t hc_tx_buffer[CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE] __aligned(4);),
-	    ())
+	    (static uint8_t hc_tx_buffer[CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE] __aligned(4)
+	    BUFFERS_CACHE_ATTR;), ())
 
 #ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
 static K_KERNEL_STACK_DEFINE(hc_stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE);

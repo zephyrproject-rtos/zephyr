@@ -17,7 +17,7 @@
 #include "soc_miwu.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(gpio_npcx, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(gpio_npcx, CONFIG_GPIO_LOG_LEVEL);
 
 /* GPIO module instances */
 #define NPCX_GPIO_DEV(inst) DEVICE_DT_INST_GET(inst),
@@ -380,7 +380,7 @@ static int gpio_npcx_manage_callback(const struct device *dev,
 }
 
 /* GPIO driver registration */
-static const struct gpio_driver_api gpio_npcx_driver = {
+static DEVICE_API(gpio, gpio_npcx_driver) = {
 	.pin_configure = gpio_npcx_config,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_npcx_pin_get_config,

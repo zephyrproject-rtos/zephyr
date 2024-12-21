@@ -8,18 +8,8 @@
 
 #include <zephyr/net/prometheus/histogram.h>
 
-struct prometheus_metric test_histogram_metric = {
-	.type = PROMETHEUS_HISTOGRAM,
-	.name = "test_histogram",
-	.description = "Test histogram",
-	.num_labels = 1,
-	.labels = {{
-		.key = "test",
-		.value = "histogram",
-	}},
-};
-
-PROMETHEUS_HISTOGRAM_DEFINE(test_histogram_m, &test_histogram_metric);
+PROMETHEUS_HISTOGRAM_DEFINE(test_histogram_m, "Test histogram",
+			    ({ .key = "test", .value = "histogram" }), NULL);
 
 /**
  * @brief Test prometheus_histogram_observe

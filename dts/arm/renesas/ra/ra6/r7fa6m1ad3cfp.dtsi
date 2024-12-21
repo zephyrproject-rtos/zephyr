@@ -24,6 +24,21 @@
 				reg = <0x0 DT_SIZE_K(512)>;
 			};
 		};
+
+		trng: trng {
+			compatible = "renesas,ra-sce7-rng";
+			status = "disabled";
+		};
+
+		adc@4005c000 {
+			channel-count = <11>;
+			channel-available-mask = <0x1700ef>;
+		};
+
+		adc@4005c200 {
+			channel-count = <8>;
+			channel-available-mask = <0x300e7>;
+		};
 	};
 
 	clocks: clocks {
@@ -152,4 +167,101 @@
 			};
 		};
 	};
+};
+
+&ioport0 {
+	port-irqs = <&port_irq6 &port_irq7 &port_irq8
+	&port_irq9 &port_irq10 &port_irq11
+	&port_irq12 &port_irq13>;
+	port-irq-names = "port-irq6",
+			 "port-irq7",
+			 "port-irq8",
+			 "port-irq9",
+			 "port-irq10",
+			 "port-irq11",
+			 "port-irq12",
+			 "port-irq13";
+	port-irq6-pins = <0>;
+	port-irq7-pins = <1>;
+	port-irq8-pins = <2>;
+	port-irq9-pins = <4>;
+	port-irq10-pins = <5>;
+	port-irq11-pins = <6>;
+	port-irq12-pins = <8>;
+	port-irq13-pins = <15>;
+};
+
+&ioport1 {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq3 &port_irq4>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3",
+			 "port-irq4";
+	port-irq0-pins = <5>;
+	port-irq1-pins = <1 4>;
+	port-irq2-pins = <0>;
+	port-irq3-pins = <10>;
+	port-irq4-pins = <11>;
+};
+
+&ioport2 {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq3>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3";
+	port-irq0-pins = <6>;
+	port-irq1-pins = <5>;
+	port-irq2-pins = <13>;
+	port-irq3-pins = <12>;
+};
+
+&ioport3 {
+	port-irqs = <&port_irq5 &port_irq6
+	&port_irq8 &port_irq9>;
+	port-irq-names = "port-irq5",
+			 "port-irq6",
+			 "port-irq8",
+			 "port-irq9";
+	port-irq5-pins = <2>;
+	port-irq6-pins = <1>;
+	port-irq8-pins = <5>;
+	port-irq9-pins = <4>;
+};
+
+&ioport4 {
+	port-irqs = <&port_irq0 &port_irq4 &port_irq5
+	&port_irq6 &port_irq7 &port_irq8
+	&port_irq9>;
+	port-irq-names = "port-irq0",
+			 "port-irq4",
+			 "port-irq5",
+			 "port-irq6",
+			 "port-irq7",
+			 "port-irq8",
+			 "port-irq9";
+	port-irq0-pins = <0>;
+	port-irq4-pins = <2 11>;
+	port-irq5-pins = <1 10>;
+	port-irq6-pins = <9>;
+	port-irq7-pins = <8>;
+	port-irq8-pins = <15>;
+	port-irq9-pins = <14>;
+};
+
+&ioport5 {
+	port-irqs = <&port_irq11 &port_irq12>;
+	port-irq-names = "port-irq11",
+			 "port-irq12";
+	port-irq11-pins = <1>;
+	port-irq12-pins = <2>;
+};
+
+&ioport7 {
+	port-irqs = <&port_irq11>;
+	port-irq-names = "port-irq11";
+	port-irq11-pins = <8>;
 };

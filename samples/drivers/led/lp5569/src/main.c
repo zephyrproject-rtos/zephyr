@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(app, CONFIG_LED_LOG_LEVEL);
 int main(void)
 {
 	const struct device *const led_dev = DEVICE_DT_GET_ANY(ti_lp5569);
+	uint8_t ch_buf[9] = {0};
 	int i, ret;
 
 	if (!led_dev) {
@@ -32,7 +33,8 @@ int main(void)
 
 	/*
 	 * Display a continuous pattern that turns on 9 LEDs at 1 s one by
-	 * one until it reaches the end and turns off LEDs in reverse order.
+	 * one until it reaches the end and fades off all LEDs.
+	 * Afterwards, all LEDs get blinked once at the same time.
 	 */
 
 	LOG_INF("Testing 9 LEDs ..");
@@ -59,6 +61,26 @@ int main(void)
 
 			k_sleep(DELAY_TIME_BREATHING);
 		}
+
+		k_sleep(DELAY_TIME_ON);
+
+		/* Turn on all LEDs at once to demonstrate write_channels */
+		memset(ch_buf, 255, ARRAY_SIZE(ch_buf));
+		ret = led_write_channels(led_dev, 0, ARRAY_SIZE(ch_buf), ch_buf);
+		if (ret) {
+			return ret;
+		}
+
+		k_sleep(DELAY_TIME_ON);
+
+		/* Turn off all LEDs at once to demonstrate write_channels */
+		memset(ch_buf, 0, ARRAY_SIZE(ch_buf));
+		ret = led_write_channels(led_dev, 0, ARRAY_SIZE(ch_buf), ch_buf);
+		if (ret) {
+			return ret;
+		}
+
+		k_sleep(DELAY_TIME_ON);
 	}
 	return 0;
 }

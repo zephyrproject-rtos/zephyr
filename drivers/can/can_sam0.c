@@ -161,7 +161,7 @@ static int can_sam0_init(const struct device *dev)
 	return ret;
 }
 
-static const struct can_driver_api can_sam0_driver_api = {
+static DEVICE_API(can, can_sam0_driver_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,

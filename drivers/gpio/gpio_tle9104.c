@@ -194,7 +194,7 @@ static int tle9104_gpio_pin_interrupt_configure(const struct device *dev, gpio_p
 	return -ENOTSUP;
 }
 
-static const struct gpio_driver_api api_table = {
+static DEVICE_API(gpio, api_table) = {
 	.pin_configure = tle9104_gpio_pin_configure,
 	.port_get_raw = tle9104_gpio_port_get_raw,
 	.port_set_masked_raw = tle9104_gpio_port_set_masked_raw,

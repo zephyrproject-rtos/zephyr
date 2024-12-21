@@ -12,6 +12,7 @@ supported:
   - adc
   - arduino_gpio
   - counter
+  - flash
   - gpio
   - i2c
   - spi

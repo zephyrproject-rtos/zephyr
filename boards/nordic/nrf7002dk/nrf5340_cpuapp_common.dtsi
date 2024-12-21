@@ -111,6 +111,15 @@
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
 	};
+
+	nrf_radio_coex: coex {
+		status = "okay";
+		compatible = "nordic,nrf7002-coex";
+		req-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		status0-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		grant-gpios = <&gpio0 24 (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
+		swctrl1-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &vregmain {

@@ -89,7 +89,7 @@ static int lsm303dlhc_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lsm303dlhc_magn_driver_api = {
+static DEVICE_API(sensor, lsm303dlhc_magn_driver_api) = {
 	.sample_fetch = lsm303dlhc_sample_fetch,
 	.channel_get = lsm303dlhc_channel_get,
 };

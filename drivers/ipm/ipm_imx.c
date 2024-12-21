@@ -341,7 +341,7 @@ static int imx_mu_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ipm_driver_api imx_mu_driver_api = {
+static DEVICE_API(ipm, imx_mu_driver_api) = {
 	.send = imx_mu_ipm_send,
 	.register_callback = imx_mu_ipm_register_callback,
 	.max_data_size_get = imx_mu_ipm_max_data_size_get,

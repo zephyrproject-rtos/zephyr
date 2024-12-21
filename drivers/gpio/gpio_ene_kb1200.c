@@ -174,7 +174,7 @@ static uint32_t kb1200_gpio_get_pending_int(const struct device *dev)
 	return config->gptd_regs->GPTDPF;
 }
 
-static const struct gpio_driver_api kb1200_gpio_api = {
+static DEVICE_API(gpio, kb1200_gpio_api) = {
 	.pin_configure = kb1200_gpio_pin_configure,
 	.port_get_raw = kb1200_gpio_port_get_raw,
 	.port_set_masked_raw = kb1200_gpio_port_set_masked_raw,

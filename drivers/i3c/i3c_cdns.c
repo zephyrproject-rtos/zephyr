@@ -3281,9 +3281,12 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	return 0;
 }
 
-static struct i3c_driver_api api = {
+static DEVICE_API(i3c, api) = {
 	.i2c_api.configure = cdns_i3c_i2c_api_configure,
 	.i2c_api.transfer = cdns_i3c_i2c_api_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 
 	.configure = cdns_i3c_configure,
 	.config_get = cdns_i3c_config_get,
@@ -3309,6 +3312,10 @@ static struct i3c_driver_api api = {
 	.ibi_enable = cdns_i3c_controller_ibi_enable,
 	.ibi_disable = cdns_i3c_controller_ibi_disable,
 	.ibi_raise = cdns_i3c_target_ibi_raise,
+#endif
+
+#ifdef CONFIG_I3C_RTIO
+	.iodev_submit = i3c_iodev_submit_fallback,
 #endif
 };
 

@@ -325,7 +325,7 @@ static int spi_ambiq_release(const struct device *dev, const struct spi_config *
 	return 0;
 }
 
-static const struct spi_driver_api spi_ambiq_driver_api = {
+static DEVICE_API(spi, spi_ambiq_driver_api) = {
 	.transceive = spi_ambiq_transceive,
 	.release = spi_ambiq_release,
 };
@@ -423,8 +423,8 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.irq_config_func = spi_irq_config_func_##n,                                        \
 		.pwr_func = pwr_on_ambiq_spi_##n};                                                 \
 	PM_DEVICE_DT_INST_DEFINE(n, spi_ambiq_pm_action);                                          \
-	DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, PM_DEVICE_DT_INST_GET(n), &spi_ambiq_data##n,     \
-			      &spi_ambiq_config##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,         \
-			      &spi_ambiq_driver_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, PM_DEVICE_DT_INST_GET(n), &spi_ambiq_data##n, \
+				  &spi_ambiq_config##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
+				  &spi_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_SPID_INIT)

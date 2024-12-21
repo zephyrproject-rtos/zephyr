@@ -570,7 +570,7 @@ static void counter_stm32_alarm_irq_handle(const struct device *dev, uint32_t id
 	}
 }
 
-static const struct counter_driver_api counter_stm32_driver_api = {
+static DEVICE_API(counter, counter_stm32_driver_api) = {
 	.start = counter_stm32_start,
 	.stop = counter_stm32_stop,
 	.get_value = counter_stm32_get_value,

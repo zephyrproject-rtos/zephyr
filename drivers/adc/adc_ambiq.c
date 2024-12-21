@@ -386,7 +386,7 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 
 #ifdef CONFIG_ADC_ASYNC
 #define ADC_AMBIQ_DRIVER_API(n)                                                                    \
-	static const struct adc_driver_api adc_ambiq_driver_api_##n = {                            \
+	static DEVICE_API(adc, adc_ambiq_driver_api_##n) = {                                       \
 		.channel_setup = adc_ambiq_channel_setup,                                          \
 		.read = adc_ambiq_read,                                                            \
 		.read_async = adc_ambiq_read_async,                                                \
@@ -394,7 +394,7 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	};
 #else
 #define ADC_AMBIQ_DRIVER_API(n)                                                                    \
-	static const struct adc_driver_api adc_ambiq_driver_api_##n = {                            \
+	static DEVICE_API(adc, adc_ambiq_driver_api_##n) = {                                       \
 		.channel_setup = adc_ambiq_channel_setup,                                          \
 		.read = adc_ambiq_read,                                                            \
 		.ref_internal = DT_INST_PROP(n, internal_vref_mv),                                 \

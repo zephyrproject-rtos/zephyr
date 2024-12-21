@@ -290,7 +290,7 @@ static int max32_counter_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api counter_max32_driver_api = {
+static DEVICE_API(counter, counter_max32_driver_api) = {
 	.start = api_start,
 	.stop = api_stop,
 	.get_value = api_get_value,

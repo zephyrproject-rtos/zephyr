@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -646,11 +646,21 @@ flash_at45_get_parameters(const struct device *dev)
 	return &flash_at45_parameters;
 }
 
-static const struct flash_driver_api spi_flash_at45_api = {
+static int spi_flash_at45_get_size(const struct device *dev, uint64_t *size)
+{
+	const struct spi_flash_at45_config *cfg = dev->config;
+
+	*size = (uint64_t)cfg->chip_size;
+
+	return 0;
+}
+
+static DEVICE_API(flash, spi_flash_at45_api) = {
 	.read = spi_flash_at45_read,
 	.write = spi_flash_at45_write,
 	.erase = spi_flash_at45_erase,
 	.get_parameters = flash_at45_get_parameters,
+	.get_size = spi_flash_at45_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_flash_at45_pages_layout,
 #endif

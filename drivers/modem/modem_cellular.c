@@ -1464,6 +1464,7 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 
 	case MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT:
 		modem_cellular_run_shutdown_script_event_handler(data, evt);
+		break;
 
 	case MODEM_CELLULAR_STATE_POWER_OFF_PULSE:
 		modem_cellular_power_off_pulse_event_handler(data, evt);
@@ -1668,7 +1669,7 @@ static int modem_cellular_get_registration_status(const struct device *dev,
 	return ret;
 }
 
-const static struct cellular_driver_api modem_cellular_api = {
+static DEVICE_API(cellular, modem_cellular_api) = {
 	.get_signal = modem_cellular_get_signal,
 	.get_modem_info = modem_cellular_get_modem_info,
 	.get_registration_status = modem_cellular_get_registration_status,

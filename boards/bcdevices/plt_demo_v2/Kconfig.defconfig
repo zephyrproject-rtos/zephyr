@@ -5,9 +5,6 @@
 
 if BOARD_BLUECLOVER_PLT_DEMO_V2_NRF52832
 
-config BT_CTLR
-	default BT
-
 config I2C
 	default SENSOR
 

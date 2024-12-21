@@ -293,7 +293,7 @@ static int mcux_snvs_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_snvs_driver_api = {
+static DEVICE_API(counter, mcux_snvs_driver_api) = {
 	.start = mcux_snvs_start,
 	.stop = mcux_snvs_stop,
 	.get_value = mcux_snvs_get_value,

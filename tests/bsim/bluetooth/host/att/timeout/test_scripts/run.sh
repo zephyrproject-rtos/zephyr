@@ -5,6 +5,7 @@
 set -eu -x
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+EXECUTE_TIMEOUT=120
 
 simulation_id="timeout"
 dev_exe=bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf

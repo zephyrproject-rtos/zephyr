@@ -82,6 +82,13 @@ int bt_apollo_spi_rcv(uint8_t *data, uint16_t *len, bt_spi_transceive_fun transc
 int bt_apollo_controller_init(spi_transmit_fun transmit);
 
 /**
+ * @brief Deinitialize the BLE controller.
+ *
+ * @return 0 on success or negative error number on failure.
+ */
+int bt_apollo_controller_deinit(void);
+
+/**
  * @brief Vendor specific setup before general HCI command sequence for
  * Bluetooth application.
  *

@@ -37,7 +37,7 @@ config UART_NRFX_UARTE_ENHANCED_RX
 	bool "Enhanced RX handling"
 	depends on UART_ASYNC_API
 	depends on UART_NRFX_UARTE_LEGACY_SHIM
-	default y if !(UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC)
+	default y
 	help
 	  Enable RX handling mode which is switching buffers on timeout. This is an
 	  enhancement compared to other two modes (default and hardware assisted).

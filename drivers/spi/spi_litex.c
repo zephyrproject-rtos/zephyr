@@ -223,7 +223,7 @@ static int spi_litex_release(const struct device *dev, const struct spi_config *
 }
 
 /* Device Instantiation */
-static const struct spi_driver_api spi_litex_api = {
+static DEVICE_API(spi, spi_litex_api) = {
 	.transceive = spi_litex_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_litex_transceive_async,
@@ -251,7 +251,7 @@ static const struct spi_driver_api spi_litex_api = {
 		.data_width = DT_INST_PROP(n, data_width),                                         \
 		.max_cs = DT_INST_PROP(n, max_cs),                                                 \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n,                                                                   \
+	SPI_DEVICE_DT_INST_DEFINE(n,                                                               \
 			NULL,                                                                      \
 			NULL,                                                                      \
 			&spi_litex_data_##n,                                                       \

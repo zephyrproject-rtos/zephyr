@@ -10,14 +10,6 @@
 #define ADV_OPT_USE_IDENTITY 0
 #endif
 
-#define ADV_SLOW_INT                                                           \
-	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,                               \
-	.interval_max = BT_GAP_ADV_SLOW_INT_MAX
-
-#define ADV_FAST_INT                                                           \
-	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,                             \
-	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
-
 #define BT_MESH_ID_TYPE_NET	  0x00
 #define BT_MESH_ID_TYPE_NODE	  0x01
 #define BT_MESH_ID_TYPE_PRIV_NET  0x02

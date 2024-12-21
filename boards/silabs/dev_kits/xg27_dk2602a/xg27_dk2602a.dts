@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <silabs/efr32bg27.dtsi>
-#include <silabs/efr32bg2x-pinctrl.dtsi>
+#include "xg27_dk2602a-pinctrl.dtsi"
 #include "thunderboard.dtsi"
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
@@ -106,25 +106,25 @@
 };
 
 &led0 {
-	gpios = <&gpioa GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+	gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
 };
 
 &sw_sensor_enable {
-	enable-gpios = <&gpioc GECKO_PIN(6) GPIO_ACTIVE_HIGH>;
+	enable-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 };
 
 
 &sw_mic_enable {
-	enable-gpios = <&gpioc GECKO_PIN(7) GPIO_ACTIVE_HIGH>;
+	enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 };
 
 
 &sw_imu_enable {
-	enable-gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+	enable-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
 };
 
 &button0 {
-	gpios = <&gpiob GECKO_PIN(3) GPIO_ACTIVE_LOW>;
+	gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
 };
 
 &bt_hci_silabs {

@@ -482,7 +482,7 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	return ret;
 }
 
-static const struct uart_driver_api ifx_cat1_uart_driver_api = {
+static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 	.poll_in = ifx_cat1_uart_poll_in,
 	.poll_out = ifx_cat1_uart_poll_out,
 	.err_check = ifx_cat1_uart_err_check,

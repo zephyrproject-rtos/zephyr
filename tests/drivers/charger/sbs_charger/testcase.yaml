@@ -10,15 +10,16 @@ tests:
   drivers.charger.sbs.emulated:
     filter: dt_compat_enabled("sbs,sbs-charger")
     extra_args:
-      CONF_FILE="prj.conf;boards/emulated_board.conf"
-      DTC_OVERLAY_FILE="boards/emulated_board.overlay"
+      - CONF_FILE="prj.conf;boards/emulated_board.conf"
+      - DTC_OVERLAY_FILE="boards/emulated_board.overlay"
     platform_exclude:
       - qemu_cortex_a53
       - qemu_cortex_a53/qemu_cortex_a53/smp
       - qemu_kvm_arm64
       - xenvm
       - xenvm/xenvm/gicv3
-      - hifive_unmatched
+      - hifive_unmatched/fu740/s7
+      - hifive_unmatched/fu740/u74
       - rcar_h3ulcb/r8a77951/a57
       - rcar_salvator_xs
       - numaker_pfm_m467
@@ -30,6 +31,8 @@ tests:
       - qemu_kvm_arm64
       - xenvm
       - xenvm/xenvm/gicv3
+    integration_platforms:
+      - qemu_cortex_a53
     extra_args:
-      CONF_FILE="prj.conf;boards/qemu_cortex_a53.conf"
-      DTC_OVERLAY_FILE="boards/qemu_cortex_a53.overlay"
+      - CONF_FILE="prj.conf;boards/qemu_cortex_a53.conf"
+      - DTC_OVERLAY_FILE="boards/qemu_cortex_a53.overlay"

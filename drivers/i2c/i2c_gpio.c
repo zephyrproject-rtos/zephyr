@@ -140,7 +140,7 @@ static int i2c_gpio_recover_bus(const struct device *dev)
 	return rc;
 }
 
-static const struct i2c_driver_api api = {
+static DEVICE_API(i2c, api) = {
 	.configure = i2c_gpio_configure,
 	.get_config = i2c_gpio_get_config,
 	.transfer = i2c_gpio_transfer,

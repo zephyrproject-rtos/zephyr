@@ -146,11 +146,6 @@ You can use following targets:
 Check the :zephyr:code-sample:`ble_direction_finding_connectionless_rx` and the
 :zephyr:code-sample:`ble_direction_finding_connectionless_tx` for more details.
 
-Using a USB CDC ACM UART
-========================
-
-The sample can be configured to use a USB UART instead. See :zephyr_file:`samples/bluetooth/hci_uart_3wire/boards/nrf52840dongle_nrf52840.conf`.
-
 Using the controller with the Zephyr host
 =========================================
 
@@ -178,7 +173,7 @@ driver instead of the built-in controller:
 .. code-block:: cfg
 
    CONFIG_BT_HCI=y
-   CONFIG_BT_CTLR=n
+   CONFIG_BT_LL_SW_SPLIT=n
 
 Similarly, the ``zephyr,bt-hci`` DTS property selects which HCI instance to use.
 The UART needs to have as its child node a HCI UART node:

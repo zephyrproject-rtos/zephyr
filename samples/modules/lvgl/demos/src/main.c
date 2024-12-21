@@ -7,7 +7,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/display.h>
 #include <lvgl.h>
+#include <lvgl_mem.h>
 #include <lv_demos.h>
+#include <stdio.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
@@ -38,9 +40,15 @@ int main(void)
 
 	lv_task_handler();
 	display_blanking_off(display_dev);
-
+#ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
+	lvgl_print_heap_info(false);
+#else
+	printf("lvgl in malloc mode\n");
+#endif
 	while (1) {
-		k_msleep(lv_task_handler());
+		uint32_t sleep_ms = lv_task_handler();
+
+		k_msleep(MIN(sleep_ms, INT32_MAX));
 	}
 
 	return 0;

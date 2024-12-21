@@ -116,7 +116,7 @@ static void disable_tx_events(const struct uart_xmc4xxx_config *config)
 		XMC_USIC_CH_TXFIFO_DisableEvent(config->uart,
 					       XMC_USIC_CH_TXFIFO_EVENT_CONF_STANDARD);
 	} else {
-		XMC_USIC_CH_DisableEvent(config->uart, XMC_USIC_CH_EVENT_TRANSMIT_BUFFER);
+		XMC_USIC_CH_DisableEvent(config->uart, XMC_USIC_CH_EVENT_TRANSMIT_SHIFT);
 	}
 }
 #endif
@@ -131,7 +131,7 @@ static void enable_tx_events(const struct uart_xmc4xxx_config *config)
 		XMC_USIC_CH_TXFIFO_EnableEvent(config->uart,
 					       XMC_USIC_CH_TXFIFO_EVENT_CONF_STANDARD);
 	} else {
-		XMC_USIC_CH_EnableEvent(config->uart, XMC_USIC_CH_EVENT_TRANSMIT_BUFFER);
+		XMC_USIC_CH_EnableEvent(config->uart, XMC_USIC_CH_EVENT_TRANSMIT_SHIFT);
 	}
 }
 
@@ -189,7 +189,7 @@ static void uart_xmc4xxx_configure_service_requests(const struct device *dev)
 			data->service_request_tx);
 	} else {
 		XMC_USIC_CH_SetInterruptNodePointer(
-			config->uart, XMC_USIC_CH_INTERRUPT_NODE_POINTER_TRANSMIT_BUFFER,
+			config->uart, XMC_USIC_CH_INTERRUPT_NODE_POINTER_TRANSMIT_SHIFT,
 			data->service_request_tx);
 	}
 
@@ -338,7 +338,7 @@ static void uart_xmc4xxx_irq_tx_disable(const struct device *dev)
 		XMC_USIC_CH_TXFIFO_DisableEvent(config->uart,
 						XMC_USIC_CH_TXFIFO_EVENT_CONF_STANDARD);
 	} else {
-		XMC_USIC_CH_DisableEvent(config->uart, XMC_USIC_CH_EVENT_TRANSMIT_BUFFER);
+		XMC_USIC_CH_DisableEvent(config->uart, XMC_USIC_CH_EVENT_TRANSMIT_SHIFT);
 	}
 }
 
@@ -940,7 +940,7 @@ static int uart_xmc4xxx_init(const struct device *dev)
 	return ret;
 }
 
-static const struct uart_driver_api uart_xmc4xxx_driver_api = {
+static DEVICE_API(uart, uart_xmc4xxx_driver_api) = {
 	.poll_in = uart_xmc4xxx_poll_in,
 	.poll_out = uart_xmc4xxx_poll_out,
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)

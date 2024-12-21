@@ -91,7 +91,7 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 	return 0;
 }
 
-static const struct sensor_driver_api mcp970x_api = {
+static DEVICE_API(sensor, mcp970x_api) = {
 	.sample_fetch = fetch,
 	.channel_get = get,
 };

@@ -843,7 +843,7 @@ static int bq274xx_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_BQ274XX_PM */
 
-static const struct sensor_driver_api bq274xx_battery_driver_api = {
+static DEVICE_API(sensor, bq274xx_battery_driver_api) = {
 	.sample_fetch = bq274xx_sample_fetch,
 	.channel_get = bq274xx_channel_get,
 #ifdef CONFIG_BQ274XX_TRIGGER

@@ -261,6 +261,15 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 	return ret;
 }
 
+static int flash_nrf_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = (uint64_t)nrfx_nvmc_flash_size_get();
+
+	return 0;
+}
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static struct flash_pages_layout dev_layout;
 
@@ -281,11 +290,12 @@ flash_nrf_get_parameters(const struct device *dev)
 	return &flash_nrf_parameters;
 }
 
-static const struct flash_driver_api flash_nrf_api = {
+static DEVICE_API(flash, flash_nrf_api) = {
 	.read = flash_nrf_read,
 	.write = flash_nrf_write,
 	.erase = flash_nrf_erase,
 	.get_parameters = flash_nrf_get_parameters,
+	.get_size = flash_nrf_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_nrf_pages_layout,
 #endif

@@ -83,6 +83,16 @@ The below features are currently supported on Zephyr OS for FPB-RA6E1 board:
 +-----------+------------+----------------------+
 | FLASH     | on-chip    | flash                |
 +-----------+------------+----------------------+
+| I2C       | on-chip    | i2c                  |
++-----------+------------+----------------------+
+| SPI       | on-chip    | spi                  |
++-----------+------------+----------------------+
+| COUNTER   | on-chip    | counter              |
++-----------+------------+----------------------+
+| ADC       | on-chip    | adc                  |
++-----------+------------+----------------------+
+| PWM       | on-chip    | pwm                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 

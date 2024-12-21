@@ -14,10 +14,8 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
-from runners.core import (BuildConfiguration, RunnerCaps, RunnerConfig,
-                          ZephyrBinaryRunner)
+from runners.core import BuildConfiguration, RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
 NXP_S32DBG_USB_CLASS = 'NXP Probes'
 NXP_S32DBG_USB_VID = 0x15a2
@@ -31,7 +29,7 @@ class NXPS32DebugProbeConfig:
     server_port: int = 45000
     speed: int = 16000
     remote_timeout: int = 30
-    reset_type: Optional[str] = 'default'
+    reset_type: str | None = 'default'
     reset_delay: int = 0
 
 
@@ -45,18 +43,18 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
                  soc_name: str,
                  soc_family_name: str,
                  start_all_cores: bool,
-                 s32ds_path: Optional[str] = None,
-                 tool_opt: Optional[List[str]] = None) -> None:
-        super(NXPS32DebugProbeRunner, self).__init__(runner_cfg)
+                 s32ds_path: str | None = None,
+                 tool_opt: list[str] | None = None) -> None:
+        super().__init__(runner_cfg)
         self.elf_file: str = runner_cfg.elf_file or ''
         self.probe_cfg: NXPS32DebugProbeConfig = probe_cfg
         self.core_name: str = core_name
         self.soc_name: str = soc_name
         self.soc_family_name: str = soc_family_name
         self.start_all_cores: bool = start_all_cores
-        self.s32ds_path_override: Optional[str] = s32ds_path
+        self.s32ds_path_override: str | None = s32ds_path
 
-        self.tool_opt: List[str] = []
+        self.tool_opt: list[str] = []
         if tool_opt:
             for opt in tool_opt:
                 self.tool_opt.extend(shlex.split(opt))
@@ -128,7 +126,7 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
                                       s32ds_path=args.s32ds_path, tool_opt=args.tool_opt)
 
     @staticmethod
-    def find_usb_probes() -> List[str]:
+    def find_usb_probes() -> list[str]:
         """Return a list of debug probe serial numbers connected via USB to this host."""
         # use system's native commands to enumerate and retrieve the USB serial ID
         # to avoid bloating this runner with third-party dependencies that often
@@ -144,10 +142,10 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
         try:
             outb = subprocess.check_output(shlex.split(cmd), stderr=subprocess.DEVNULL)
             out = outb.decode('utf-8').strip().lower()
-        except subprocess.CalledProcessError:
-            raise RuntimeError('error while looking for debug probes connected')
+        except subprocess.CalledProcessError as err:
+            raise RuntimeError('error while looking for debug probes connected') from err
 
-        devices: List[str] = []
+        devices: list[str] = []
         if out and 'no devices were found' not in out:
             devices = re.findall(serialid_pattern, out)
 
@@ -190,7 +188,7 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
             return probes_snr[value - 1]
 
     @property
-    def runtime_environment(self) -> Optional[Dict[str, str]]:
+    def runtime_environment(self) -> dict[str, str] | None:
         """Execution environment used for the client process."""
         if platform.system() == 'Windows':
             python_lib = (self.s32ds_path / 'S32DS' / 'build_tools' / 'msys32'
@@ -203,7 +201,7 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
         return None
 
     @property
-    def script_globals(self) -> Dict[str, Optional[Union[str, int]]]:
+    def script_globals(self) -> dict[str, str | int | None]:
         """Global variables required by the debugger scripts."""
         return {
             '_PROBE_IP': self.probe_cfg.conn_str,
@@ -220,14 +218,14 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
             '_SECURE_KEY': None,    # not supported
         }
 
-    def server_commands(self) -> List[str]:
+    def server_commands(self) -> list[str]:
         """Get launch commands to start the GTA server."""
         server_exec = str(self.s32ds_path / 'S32DS' / 'tools' / 'S32Debugger'
                           / 'Debugger' / 'Server' / 'gta' / 'gta')
         cmd = [server_exec, '-p', str(self.probe_cfg.server_port)]
         return cmd
 
-    def client_commands(self) -> List[str]:
+    def client_commands(self) -> list[str]:
         """Get launch commands to start the GDB client."""
         if self.arch == 'arm':
             client_exec_name = 'arm-none-eabi-gdb-py'
@@ -288,7 +286,7 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
 
         :param command: command name to execute
         """
-        gdb_script: List[str] = []
+        gdb_script: list[str] = []
 
         # setup global variables required for the scripts before sourcing them
         for name, val in self.script_globals.items():

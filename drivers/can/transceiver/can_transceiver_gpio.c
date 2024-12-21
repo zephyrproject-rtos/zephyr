@@ -110,7 +110,7 @@ static int can_transceiver_gpio_init(const struct device *dev)
 	return 0;
 }
 
-static const struct can_transceiver_driver_api can_transceiver_gpio_driver_api = {
+static DEVICE_API(can_transceiver, can_transceiver_gpio_driver_api) = {
 	.enable = can_transceiver_gpio_enable,
 	.disable = can_transceiver_gpio_disable,
 };

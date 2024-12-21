@@ -1257,7 +1257,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	return 0;
 }
 
-__maybe_unused static const struct can_driver_api mcux_flexcan_driver_api = {
+static DEVICE_API(can, mcux_flexcan_driver_api) __maybe_unused = {
 	.get_capabilities = mcux_flexcan_get_capabilities,
 	.start = mcux_flexcan_start,
 	.stop = mcux_flexcan_stop,
@@ -1299,7 +1299,7 @@ __maybe_unused static const struct can_driver_api mcux_flexcan_driver_api = {
 };
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
-static const struct can_driver_api mcux_flexcan_fd_driver_api = {
+static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 	.get_capabilities = mcux_flexcan_get_capabilities,
 	.start = mcux_flexcan_start,
 	.stop = mcux_flexcan_stop,

@@ -804,7 +804,7 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_nxp_fs26_api = {
+static DEVICE_API(wdt, wdt_nxp_fs26_api) = {
 	.setup = wdt_nxp_fs26_setup,
 	.disable = wdt_nxp_fs26_disable,
 	.install_timeout = wdt_nxp_fs26_install_timeout,

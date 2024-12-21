@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Norik Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf9160ns_sica.dtsi>
+#include "octopus_io_board_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0_ns;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
+
+/* Disable UART1, because it is used by default in TF-M */
+
+&uart1 {
+	status = "disabled";
+};

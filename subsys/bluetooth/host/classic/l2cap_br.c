@@ -17,7 +17,6 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #include "host/buf_view.h"
 #include "host/hci_core.h"
@@ -25,6 +24,8 @@
 #include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
+#include "avctp_internal.h"
+#include "avrcp_internal.h"
 #include "rfcomm_internal.h"
 #include "sdp_internal.h"
 
@@ -312,7 +313,7 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 	hdr->cid = sys_cpu_to_le16(cid);
 
 	if (buf->user_data_size < sizeof(struct closure)) {
-		LOG_DBG("not enough room in user_data %d < %d pool %u",
+		LOG_WRN("not enough room in user_data %d < %d pool %u",
 			buf->user_data_size,
 			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
 			buf->pool_id);
@@ -2074,9 +2075,17 @@ void bt_l2cap_br_init(void)
 		bt_avdtp_init();
 	}
 
+	if (IS_ENABLED(CONFIG_BT_AVCTP)) {
+		bt_avctp_init();
+	}
+
 	bt_sdp_init();
 
 	if (IS_ENABLED(CONFIG_BT_A2DP)) {
 		bt_a2dp_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AVRCP)) {
+		bt_avrcp_init();
 	}
 }

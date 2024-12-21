@@ -730,7 +730,7 @@ if(CONFIG_CMSIS_DSP)
       ${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_selection_sort_f32.c
       ${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_sort_f32.c
       ${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_sort_init_f32.c
-      ${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_weighted_sum_f32.c
+      ${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_weighted_average_f32.c
     )
 
     if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
@@ -740,7 +740,7 @@ if(CONFIG_CMSIS_DSP)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_q15_to_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_float_to_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_f16_to_float.c)
-      zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_weighted_sum_f16.c)
+      zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_weighted_average_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_barycenter_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_f16_to_f64.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_f64_to_f16.c)

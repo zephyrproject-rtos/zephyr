@@ -169,6 +169,8 @@ The Zephyr nucleo_h533re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB full-speed host/device bus      |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -206,7 +208,7 @@ Default Zephyr Peripheral Mapping:
 
 - ADC1 channel 0 input: PA0
 - USART1 TX/RX : PB14/PB15 (Arduino USART1)
-- SPI1 SCK/MISO/MOSI/NSS: PA5/PA6/PA7/PA4
+- SPI1 SCK/MISO/MOSI/NSS: PA5/PA6/PA7/PC9
 - UART2 TX/RX : PA2/PA3 (VCP)
 - USER_PB : PC13
 

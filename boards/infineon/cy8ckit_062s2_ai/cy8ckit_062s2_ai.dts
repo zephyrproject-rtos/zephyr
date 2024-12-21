@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2024 Arrow Electronics.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/cat1a/mpns/CY8C624ABZI_S2D44.dtsi>
+#include <infineon/cat1a/system_clocks.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "CY8CKIT-062S2-AI PSOC 6 AI Evaluation Kit";
+	compatible = "infineon,cy8ckit_062s2_ai", "cypress,PSOC6";
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &user_led0;
+		sw0 = &user_bt;
+		watchdog0 = &watchdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led0: led_0 {
+			label = "LED_0";
+			gpios = <&gpio_prt5 3 GPIO_ACTIVE_HIGH>;
+		};
+		user_led1: led_1 {
+			label = "LED_1";
+			gpios = <&gpio_prt5 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_bt: button_0 {
+			label = "SW_0";
+			gpios = <&gpio_prt5 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&fll0 {
+	status = "okay";
+	clock-frequency = <100000000>;
+};
+
+&clk_hf0 {
+	clock-div = <1>;
+	clocks = <&fll0>;
+};
+
+/* CM4 core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_fast clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_fast {
+	clock-div = <1>;
+};
+
+/* CM0+ core clock = 50MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_slow clock-div = 100MHz / 1 / 2 = 50MHz
+ */
+&clk_slow {
+	clock-div = <2>;
+};
+
+/* PERI core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_peri clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_peri {
+	clock-div = <1>;
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
+
+&gpio_prt10 {
+	status = "okay";
+};
+
+/* UART connected to KitProg3 */
+uart5: &scb5 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+};
+
+uart1: &scb1 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&p10_0_scb1_uart_rx &p10_1_scb1_uart_tx>;
+	pinctrl-names = "default";
+};
+
+&p5_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p5_0_scb5_uart_rx {
+	input-enable;
+};
+
+&p10_1_scb1_uart_tx {
+	drive-push-pull;
+};
+
+&p10_0_scb1_uart_rx {
+	input-enable;
+};
+
+&watchdog0 {
+	status = "okay";
+};

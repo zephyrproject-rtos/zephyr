@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/ztest.h>
+#include <zephyr/sys/util.h>
 #include <psa/crypto.h>
 #include <psa/internal_trusted_storage.h>
 #include <psa/protected_storage.h>
@@ -87,7 +88,7 @@ ZTEST(secure_storage_psa_crypto, test_persistent_key_usage)
 	psa_status_t ret;
 	psa_key_attributes_t key_attributes;
 	psa_key_id_t key_id;
-	uint8_t key_material[KEY_BITS / 8];
+	uint8_t key_material[KEY_BITS / BITS_PER_BYTE];
 
 	fill_key_attributes(&key_attributes);
 	fill_data(key_material, sizeof(key_material));

@@ -74,6 +74,10 @@
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		suit_storage_partition: memory@e6b7000 {
+			reg = <0xe6b7000 DT_SIZE_K(40)>;
+		};
 	};
 
 	clocks {
@@ -149,7 +153,7 @@
 			ranges = <0x0 0x52000000 0x1000000>;
 
 			cpuapp_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -201,7 +205,7 @@
 			ranges = <0x0 0x53000000 0x1000000>;
 
 			cpurad_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -669,16 +673,6 @@
 				port = <9>;
 			};
 
-			gpio10: gpio@939400 {
-				compatible = "nordic,nrf-gpio";
-				reg = <0x939400 0x200>;
-				status = "disabled";
-				#gpio-cells = <2>;
-				gpio-controller;
-				ngpios = <8>;
-				port = <10>;
-			};
-
 			gpio11: gpio@939600 {
 				compatible = "nordic,nrf-gpio";
 				reg = <0x939600 0x200>;
@@ -688,28 +682,6 @@
 				gpiote-instance = <&gpiote131>;
 				ngpios = <8>;
 				port = <11>;
-			};
-
-			gpio12: gpio@939800 {
-				compatible = "nordic,nrf-gpio";
-				reg = <0x939800 0x200>;
-				status = "disabled";
-				#gpio-cells = <2>;
-				gpio-controller;
-				gpiote-instance = <&gpiote131>;
-				ngpios = <3>;
-				port = <12>;
-			};
-
-			gpio13: gpio@939a00 {
-				compatible = "nordic,nrf-gpio";
-				reg = <0x939a00 0x200>;
-				status = "disabled";
-				#gpio-cells = <2>;
-				gpio-controller;
-				gpiote-instance = <&gpiote131>;
-				ngpios = <4>;
-				port = <13>;
 			};
 
 			dppic131: dppic@981000 {

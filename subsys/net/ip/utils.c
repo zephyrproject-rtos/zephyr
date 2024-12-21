@@ -864,8 +864,8 @@ static bool parse_ipv4(const char *str, size_t str_len,
 		return true;
 	}
 
-	memcpy(ipaddr, ptr + 1, str_len - end);
-	ipaddr[str_len - end] = '\0';
+	memcpy(ipaddr, ptr + 1, str_len - end - 1);
+	ipaddr[str_len - end - 1] = '\0';
 
 	ret = convert_port(ipaddr, &port);
 	if (!ret) {

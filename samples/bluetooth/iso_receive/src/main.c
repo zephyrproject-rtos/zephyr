@@ -42,9 +42,8 @@ static K_SEM_DEFINE(sem_big_sync_lost, 0, BIS_ISO_CHAN_COUNT);
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
-#if DT_NODE_HAS_STATUS_OKAY(LED0_NODE)
+#ifdef CONFIG_ISO_BLINK_LED0
 static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
-#define HAS_LED     1
 #define BLINK_ONOFF K_MSEC(500)
 
 static struct k_work_delayable blink_work;
@@ -303,7 +302,7 @@ int main(void)
 
 	printk("Starting Synchronized Receiver Demo\n");
 
-#if defined(HAS_LED)
+#ifdef CONFIG_ISO_BLINK_LED0
 	printk("Get reference to LED device...");
 
 	if (!gpio_is_ready_dt(&led_gpio)) {
@@ -320,7 +319,7 @@ int main(void)
 	printk("done.\n");
 
 	k_work_init_delayable(&blink_work, blink_timeout);
-#endif /* HAS_LED */
+#endif /* CONFIG_ISO_BLINK_LED0 */
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(NULL);
@@ -349,13 +348,13 @@ int main(void)
 		}
 		printk("success.\n");
 
-#if defined(HAS_LED)
+#ifdef CONFIG_ISO_BLINK_LED0
 		printk("Start blinking LED...\n");
 		led_is_on = false;
 		blink = true;
 		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 		k_work_reschedule(&blink_work, BLINK_ONOFF);
-#endif /* HAS_LED */
+#endif /* CONFIG_ISO_BLINK_LED0 */
 
 		printk("Waiting for periodic advertising...\n");
 		per_adv_found = false;
@@ -456,7 +455,7 @@ big_sync_create:
 		}
 		printk("BIG sync established.\n");
 
-#if defined(HAS_LED)
+#ifdef CONFIG_ISO_BLINK_LED0
 		printk("Stop blinking LED.\n");
 		blink = false;
 		/* If this fails, we'll exit early in the handler because blink
@@ -467,7 +466,7 @@ big_sync_create:
 		/* Keep LED on */
 		led_is_on = true;
 		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
-#endif /* HAS_LED */
+#endif /* CONFIG_ISO_BLINK_LED0 */
 
 		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
 			printk("Waiting for BIG sync lost chan %u...\n", chan);

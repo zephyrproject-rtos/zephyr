@@ -458,7 +458,7 @@ static int bmp388_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct sensor_driver_api bmp388_api = {
+static DEVICE_API(sensor, bmp388_api) = {
 	.attr_set = bmp388_attr_set,
 #ifdef CONFIG_BMP388_TRIGGER
 	.trigger_set = bmp388_trigger_set,

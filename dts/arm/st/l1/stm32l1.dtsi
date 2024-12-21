@@ -226,8 +226,9 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <4 9 16 24 48 96 192 384>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_NONE";
 		};
 
 		dac1: dac@40007400 {

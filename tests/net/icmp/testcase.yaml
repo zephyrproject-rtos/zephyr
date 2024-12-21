@@ -1,6 +1,8 @@
 common:
   depends_on: netif
-  tags: net icmp
+  tags:
+    - net
+    - icmp
 tests:
   net.icmp.offloaded:
     extra_configs:

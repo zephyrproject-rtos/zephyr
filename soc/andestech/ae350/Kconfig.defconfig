@@ -21,9 +21,6 @@ config RISCV_GENERIC_TOOLCHAIN
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-config RISCV_GP
-	default y
-
 config 2ND_LVL_ISR_TBL_OFFSET
 	default 12
 

@@ -886,7 +886,7 @@ static int rv3028_init(const struct device *dev)
 	return 0;
 }
 
-static const struct rtc_driver_api rv3028_driver_api = {
+static DEVICE_API(rtc, rv3028_driver_api) = {
 	.set_time = rv3028_set_time,
 	.get_time = rv3028_get_time,
 #ifdef CONFIG_RTC_ALARM

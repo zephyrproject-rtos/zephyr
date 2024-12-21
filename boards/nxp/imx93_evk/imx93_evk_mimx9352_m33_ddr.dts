@@ -1,0 +1,23 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "imx93_evk_mimx9352_m33.dts"
+
+/ {
+	model = "NXP i.MX93 EVK board DDR variant";
+
+	chosen {
+		zephyr,sram = &ddr;
+		/delete-property/ zephyr,flash;
+	};
+
+	ddr: memory@84000000 {
+		device_type = "memory";
+		reg = <0x84000000 DT_SIZE_M(4)>;
+	};
+};

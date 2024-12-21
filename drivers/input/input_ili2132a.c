@@ -44,8 +44,14 @@ static void ili2132a_process(const struct device *dev)
 	const struct ili2132a_config *dev_cfg = dev->config;
 	uint8_t buf[8];
 	uint16_t x, y;
+	int ret;
 
-	i2c_read_dt(&dev_cfg->i2c, buf, sizeof(buf));
+	ret = i2c_read_dt(&dev_cfg->i2c, buf, sizeof(buf));
+	if (ret < 0) {
+		LOG_ERR("Failed to read data: %d", ret);
+		return;
+	}
+
 	if (buf[TIP] & IS_TOUCHED_BIT) {
 		x = sys_get_le16(&buf[X_COORD]);
 		y = sys_get_le16(&buf[Y_COORD]);

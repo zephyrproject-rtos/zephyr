@@ -28,6 +28,7 @@ struct tca954x_root_data {
 struct tca954x_channel_config {
 	const struct device *root;
 	uint8_t chan_mask;
+	bool has_enable;
 };
 
 static inline struct tca954x_root_data *
@@ -143,7 +144,8 @@ static int tca954x_channel_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (chan_cfg->chan_mask >= BIT(root_cfg->nchans)) {
+	if ((chan_cfg->chan_mask >= BIT(root_cfg->nchans) && !chan_cfg->has_enable) ||
+	    (chan_cfg->chan_mask > (BIT(2) | (root_cfg->nchans - 1)) && chan_cfg->has_enable)) {
 		LOG_ERR("Wrong DTS address provided for %s", dev->name);
 		return -EINVAL;
 	}
@@ -151,7 +153,7 @@ static int tca954x_channel_init(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api tca954x_api_funcs = {
+static DEVICE_API(i2c, tca954x_api_funcs) = {
 	.configure = tca954x_configure,
 	.transfer = tca954x_transfer,
 #ifdef CONFIG_I2C_RTIO
@@ -162,11 +164,13 @@ static const struct i2c_driver_api tca954x_api_funcs = {
 BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT_PRIO,
 	     "I2C multiplexer channels must be initialized after their root");
 
-#define TCA954x_CHILD_DEFINE(node_id, n)				    \
+#define TCA954x_CHILD_DEFINE(node_id, n, has_enable_bit)				    \
 	static const struct tca954x_channel_config			    \
 		tca##n##a_down_config_##node_id = {			    \
-		.chan_mask = BIT(DT_REG_ADDR(node_id)),			    \
+		.chan_mask = has_enable_bit ? BIT(2) | DT_REG_ADDR(node_id)                        \
+					    : BIT(DT_REG_ADDR(node_id)),                           \
 		.root = DEVICE_DT_GET(DT_PARENT(node_id)),		    \
+		.has_enable = has_enable_bit,                                                      \
 	};								    \
 	DEVICE_DT_DEFINE(node_id,					    \
 			 tca954x_channel_init,				    \
@@ -176,7 +180,7 @@ BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT
 			 POST_KERNEL, CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO, \
 			 &tca954x_api_funcs);
 
-#define TCA954x_ROOT_DEFINE(n, inst, ch)				          \
+#define TCA954x_ROOT_DEFINE(n, inst, ch, has_enable_bit)				          \
 	static const struct tca954x_root_config tca##n##a_cfg_##inst = {          \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),				  \
 		.nchans = ch,							  \
@@ -191,20 +195,29 @@ BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT
 			      &tca##n##a_data_##inst, &tca##n##a_cfg_##inst,	  \
 			      POST_KERNEL, CONFIG_I2C_TCA954X_ROOT_INIT_PRIO,	  \
 			      NULL);						  \
-	DT_FOREACH_CHILD_VARGS(DT_INST(inst, ti_tca##n##a), TCA954x_CHILD_DEFINE, n);
+	DT_FOREACH_CHILD_VARGS(DT_INST(inst, ti_tca##n##a), TCA954x_CHILD_DEFINE, n,               \
+			      has_enable_bit);
 
 /*
- * TCA9546A: 4 channels
+ * TCA9544A: 4 channels mux
  */
-#define TCA9546A_INIT(n) TCA954x_ROOT_DEFINE(9546, n, 4)
+#define TCA9544A_INIT(n) TCA954x_ROOT_DEFINE(9544, n, 4, true)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_tca9544a
+DT_INST_FOREACH_STATUS_OKAY(TCA9544A_INIT)
+
+/*
+ * TCA9546A: 4 channels switch
+ */
+#define TCA9546A_INIT(n) TCA954x_ROOT_DEFINE(9546, n, 4, false)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_tca9546a
 DT_INST_FOREACH_STATUS_OKAY(TCA9546A_INIT)
 
 /*
- * TCA9548A: 8 channels
+ * TCA9548A: 8 channels switch
  */
-#define TCA9548A_INIT(n) TCA954x_ROOT_DEFINE(9548, n, 8)
+#define TCA9548A_INIT(n) TCA954x_ROOT_DEFINE(9548, n, 8, false)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_tca9548a
 DT_INST_FOREACH_STATUS_OKAY(TCA9548A_INIT)

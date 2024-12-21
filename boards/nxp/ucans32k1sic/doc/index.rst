@@ -60,7 +60,7 @@ This board has 5 GPIO ports named from ``gpioa`` to ``gpioe``.
 Pin control can be further configured from your application overlay by adding
 children nodes with the desired pinmux configuration to the singleton node
 ``pinctrl``. Supported properties are described in
-:zephyr_file:`dts/bindings/pinctrl/nxp,kinetis-pinctrl.yaml`.
+:zephyr_file:`dts/bindings/pinctrl/nxp,port-pinctrl.yaml`.
 
 LEDs
 ----

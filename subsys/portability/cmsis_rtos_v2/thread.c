@@ -39,7 +39,7 @@ static inline int _is_thread_cmsis_inactive(struct k_thread *thread)
 {
 	uint8_t state = thread->base.thread_state;
 
-	return state & (_THREAD_PRESTART | _THREAD_DEAD);
+	return state & _THREAD_DEAD;
 }
 
 static inline uint32_t zephyr_to_cmsis_priority(uint32_t z_prio)
@@ -308,13 +308,11 @@ osThreadState_t osThreadGetState(osThreadId_t thread_id)
 	case _THREAD_DUMMY:
 		state = osThreadError;
 		break;
-	case _THREAD_PRESTART:
-		state = osThreadInactive;
-		break;
 	case _THREAD_DEAD:
 		state = osThreadTerminated;
 		break;
 	case _THREAD_SUSPENDED:
+	case _THREAD_SLEEPING:
 	case _THREAD_PENDING:
 		state = osThreadBlocked;
 		break;

@@ -1,3 +1,6 @@
+common:
+  integration_platforms:
+    - esp32c3_devkitm
 tests:
   esp.wifi.sec.none:
     tags: wifi

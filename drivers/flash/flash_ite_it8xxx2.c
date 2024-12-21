@@ -499,7 +499,7 @@ static void flash_it8xxx2_pages_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_driver_api flash_it8xxx2_api = {
+static DEVICE_API(flash, flash_it8xxx2_api) = {
 	.erase = flash_it8xxx2_erase,
 	.write = flash_it8xxx2_write,
 	.read = flash_it8xxx2_read,

@@ -199,7 +199,7 @@ static const struct counter_config_info info = {
 	.freq = 1
 };
 
-static const struct counter_driver_api api = {
+static DEVICE_API(counter, api) = {
 	.get_value = get_value
 };
 

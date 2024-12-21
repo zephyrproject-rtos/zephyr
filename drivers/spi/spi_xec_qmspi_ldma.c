@@ -986,7 +986,7 @@ static int qmspi_xec_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_qmspi_xec_driver_api = {
+static DEVICE_API(spi, spi_qmspi_xec_driver_api) = {
 	.transceive = qmspi_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = qmspi_transceive_async,
@@ -1071,7 +1071,7 @@ static const struct spi_driver_api spi_qmspi_xec_driver_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),		\
 	};								\
 	PM_DEVICE_DT_INST_DEFINE(i, qmspi_xec_pm_action);		\
-	DEVICE_DT_INST_DEFINE(i, qmspi_xec_init,			\
+	SPI_DEVICE_DT_INST_DEFINE(i, qmspi_xec_init,			\
 		PM_DEVICE_DT_INST_GET(i),				\
 		&qmspi_xec_data_##i, &qmspi_xec_config_##i,		\
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,			\

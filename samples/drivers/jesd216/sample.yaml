@@ -15,8 +15,10 @@ tests:
   sample.drivers.jesd216:
     platform_exclude:
       - hifive1
-      - hifive_unleashed
-      - hifive_unmatched
+      - hifive_unleashed/fu540/e51
+      - hifive_unleashed/fu540/u54
+      - hifive_unmatched/fu740/s7
+      - hifive_unmatched/fu740/u74
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm4
     filter: dt_compat_enabled("jedec,spi-nor")
@@ -24,7 +26,6 @@ tests:
   sample.drivers.jesd216.nrf52840dk_spi:
     extra_args:
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_spi.overlay
-      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_spi.conf
     platform_allow: nrf52840dk/nrf52840
     integration_platforms:
       - nrf52840dk/nrf52840

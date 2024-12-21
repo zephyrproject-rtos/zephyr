@@ -4,7 +4,8 @@
  */
 
 #include "clock_control_nrf2_common.h"
-#include <hal/nrf_lrcconf.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <hal/nrf_bicr.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -19,14 +20,20 @@ LOG_MODULE_REGISTER(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 		 (idx * sizeof(array[0])) - \
 		 offsetof(type, array[0]))
 
+#define BICR (NRF_BICR_Type *)DT_REG_ADDR(DT_NODELABEL(bicr))
+
 /*
  * Definition of `struct clock_config_generic`.
  * Used to access `clock_config_*` structures in a common way.
  */
 STRUCT_CLOCK_CONFIG(generic, ONOFF_CNT_MAX);
 
-static sys_slist_t poweron_main_list;
-static struct k_spinlock poweron_main_lock;
+/* Structure used for synchronous clock request. */
+struct sync_req {
+	struct onoff_client cli;
+	struct k_sem sem;
+	int res;
+};
 
 static void update_config(struct clock_config_generic *cfg)
 {
@@ -77,6 +84,40 @@ static void onoff_stop_option(struct onoff_manager *mgr,
 static inline uint8_t get_index_of_highest_bit(uint32_t value)
 {
 	return value ? (uint8_t)(31 - __builtin_clz(value)) : 0;
+}
+
+int lfosc_get_accuracy(uint16_t *accuracy)
+{
+	switch (nrf_bicr_lfosc_accuracy_get(BICR)) {
+	case NRF_BICR_LFOSC_ACCURACY_500PPM:
+		*accuracy = 500U;
+		break;
+	case NRF_BICR_LFOSC_ACCURACY_250PPM:
+		*accuracy = 250U;
+		break;
+	case NRF_BICR_LFOSC_ACCURACY_150PPM:
+		*accuracy = 150U;
+		break;
+	case NRF_BICR_LFOSC_ACCURACY_100PPM:
+		*accuracy = 100U;
+		break;
+	case NRF_BICR_LFOSC_ACCURACY_75PPM:
+		*accuracy = 75U;
+		break;
+	case NRF_BICR_LFOSC_ACCURACY_50PPM:
+		*accuracy = 50U;
+		break;
+	case NRF_BICR_LFOSC_ACCURACY_30PPM:
+		*accuracy = 30U;
+		break;
+	case NRF_BICR_LFOSC_ACCURACY_20PPM:
+		*accuracy = 20U;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 int clock_config_init(void *clk_cfg, uint8_t onoff_cnt, k_work_handler_t update_work_handler)
@@ -164,33 +205,38 @@ int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys)
 	return -ENOSYS;
 }
 
-void clock_request_lrcconf_poweron_main(struct clock_lrcconf_sink *sink)
+static void sync_cb(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state, int res)
 {
-	K_SPINLOCK(&poweron_main_lock) {
-		if (sys_slist_len(&poweron_main_list) == 0) {
-			LOG_DBG("%s forced on", "main domain");
-			NRF_LRCCONF010->POWERON &= ~LRCCONF_POWERON_MAIN_Msk;
-			NRF_LRCCONF010->POWERON |= LRCCONF_POWERON_MAIN_AlwaysOn;
-		}
+	struct sync_req *req = CONTAINER_OF(cli, struct sync_req, cli);
 
-		sys_slist_find_and_remove(&poweron_main_list, &sink->node);
-		sys_slist_append(&poweron_main_list, &sink->node);
-	}
+	req->res = res;
+	k_sem_give(&req->sem);
 }
 
-void clock_release_lrcconf_poweron_main(struct clock_lrcconf_sink *sink)
+int nrf_clock_control_request_sync(const struct device *dev,
+				   const struct nrf_clock_spec *spec,
+				   k_timeout_t timeout)
 {
-	K_SPINLOCK(&poweron_main_lock) {
-		if (!sys_slist_find_and_remove(&poweron_main_list, &sink->node)) {
-			K_SPINLOCK_BREAK;
-		}
+	struct sync_req req = {
+		.sem = Z_SEM_INITIALIZER(req.sem, 0, 1)
+	};
+	int err;
 
-		if (sys_slist_len(&poweron_main_list) > 0) {
-			K_SPINLOCK_BREAK;
-		}
-
-		LOG_DBG("%s automatic", "main domain");
-		NRF_LRCCONF010->POWERON &= ~LRCCONF_POWERON_MAIN_Msk;
-		NRF_LRCCONF010->POWERON |= LRCCONF_POWERON_MAIN_Automatic;
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
 	}
+
+	sys_notify_init_callback(&req.cli.notify, sync_cb);
+
+	err = nrf_clock_control_request(dev, spec, &req.cli);
+	if (err < 0) {
+		return err;
+	}
+
+	err = k_sem_take(&req.sem, timeout);
+	if (err < 0) {
+		return err;
+	}
+
+	return req.res;
 }

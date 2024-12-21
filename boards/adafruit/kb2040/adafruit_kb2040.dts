@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <rpi_pico/rp2040.dtsi>
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
 #include "adafruit_kb2040-pinctrl.dtsi"
 #include "sparkfun_pro_micro_connector.dtsi"
 #include <freq.h>
@@ -54,11 +54,6 @@
 			read-only;
 		};
 	};
-};
-
-&clocks {
-	pinctrl-0 = <&clocks_default>;
-	pinctrl-names = "default";
 };
 
 &uart0 {
@@ -126,4 +121,8 @@ zephyr_udc0: &usbd {
 &vreg {
 	regulator-always-on;
 	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+};
+
+&xosc {
+	startup-delay-multiplier = <64>;
 };

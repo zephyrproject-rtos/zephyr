@@ -7,8 +7,9 @@ Status classes to be used instead of str statuses.
 """
 from __future__ import annotations
 
-from colorama import Fore
 from enum import Enum
+
+from colorama import Fore
 
 
 class TwisterStatus(str, Enum):
@@ -34,7 +35,7 @@ class TwisterStatus(str, Enum):
             TwisterStatus.STARTED: Fore.MAGENTA,
             TwisterStatus.NONE: Fore.MAGENTA
         }
-        return status2color[status] if status in status2color else Fore.RESET
+        return status2color.get(status, Fore.RESET)
 
     # All statuses below this comment can be used for TestCase
     BLOCK = 'blocked'

@@ -127,3 +127,17 @@ Build a SystemView-tracing image with the :ref:`snippet-rtt-tracing`:
 	:compact:
 
 After the application has run for a while, check the trace output file.
+
+Usage for GPIO Tracing Backend
+*******************************
+
+Build a GPIO-tracing image with:
+
+.. zephyr-app-commands::
+	:zephyr-app: samples/subsys/tracing
+	:board: native_sim
+	:conf: "prj_gpio.conf"
+	:goals: build
+	:compact:
+
+After the application has run for a while, check the trace output file.

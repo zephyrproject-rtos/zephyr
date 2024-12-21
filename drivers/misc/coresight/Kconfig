@@ -23,6 +23,7 @@ config NRF_ETR_DECODE
 	select CS_TRACE_DEFMT
 	select LOG_FRONTEND_STMESP_DEMUX
 	select LOG_OUTPUT
+	imply LOG_BACKEND_SHOW_COLOR
 	imply CBPRINTF_FP_SUPPORT
 	help
 	  In this mode, log messages stored by Coresight STM logging frontends are

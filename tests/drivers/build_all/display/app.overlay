@@ -60,7 +60,7 @@
 			test_mipi_dbi_st7735r: st7735t@2 {
 				compatible = "sitronix,st7735r";
 				mipi-max-frequency = <250000000>;
-				mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 				reg = <2>;
 				/* Arbitrary values */
 				x-offset = <0>;
@@ -71,7 +71,7 @@
 				height = <128>;
 			};
 
-			st7789v: st7789v@3 {
+			test_st7789v: st7789v@3 {
 				compatible = "sitronix,st7789v";
 				reg = <3>;
 				mipi-max-frequency = <25000000>;
@@ -96,7 +96,7 @@
 				nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
 				ram-param = [00 E0];
 				rgb-param = [40 02 14];
-				mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
 
 			test_mipi_dbi_ssd1680: ssd1680@4 {
@@ -108,7 +108,7 @@
 				busy-gpios = <&test_gpio 0 0>;
 			};
 
-			uc8176_waveshare_epaper_gdew042t2: uc8176@5 {
+			test_uc8176_waveshare_epaper_gdew042t2: uc8176@5 {
 				compatible = "ultrachip,uc8176";
 				mipi-max-frequency = <4000000>;
 				reg = <5>;
@@ -158,6 +158,28 @@
 				width =	<128>;
 				height = <64>;
 				column-offset =	<28>;
+			};
+		};
+
+		test_mipi_dbi_xfr_16bit_write_only {
+			compatible = "zephyr,mipi-dbi-spi";
+			status = "okay";
+			dc-gpios = <&test_gpio 0 0>;
+			spi-dev = <&test_spi>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			xfr-min-bits = <MIPI_DBI_SPI_XFR_16BIT>;
+			write-only;
+
+			test_mipi_dbi_xfr_16bit_ili9342c: ili9342c@0 {
+				compatible = "ilitek,ili9342c";
+				reg = <0>;
+				mipi-max-frequency = <25000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				pixel-format = <0>;
+				rotation = <270>;
+				width = <320>;
+				height = <240>;
 			};
 		};
 

@@ -6,7 +6,7 @@
 
 from os import path
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 
 class XtensaBinaryRunner(ZephyrBinaryRunner):

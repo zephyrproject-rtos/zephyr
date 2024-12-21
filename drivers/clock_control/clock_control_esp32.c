@@ -47,6 +47,7 @@
 #include <hal/clk_tree_ll.h>
 #include <hal/usb_serial_jtag_ll.h>
 #include <esp_private/esp_pmu.h>
+#include <esp_private/esp_modem_clock.h>
 #include <ocode_init.h>
 #endif
 
@@ -87,6 +88,20 @@ static bool reset_reason_is_cpu_reset(void)
 #if defined(CONFIG_SOC_SERIES_ESP32C6)
 static void esp32_clock_perip_init(void)
 {
+	soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
+	modem_clock_lpclk_src_t modem_lpclk_src =
+		(modem_clock_lpclk_src_t)((rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW)
+						  ? MODEM_CLOCK_LPCLK_SRC_RC_SLOW
+					  : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)
+						  ? MODEM_CLOCK_LPCLK_SRC_XTAL32K
+					  : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K)
+						  ? MODEM_CLOCK_LPCLK_SRC_RC32K
+					  : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)
+						  ? MODEM_CLOCK_LPCLK_SRC_EXT32K
+						  : SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
+
+	modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
+
 	soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
 
 	if ((rst_reason != RESET_REASON_CPU0_MWDT0) && (rst_reason != RESET_REASON_CPU0_MWDT1) &&
@@ -146,6 +161,7 @@ static void esp32_clock_perip_init(void)
 	}
 }
 #else
+#if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
 static void esp32_clock_perip_init(void)
 {
 	uint32_t common_perip_clk;
@@ -153,10 +169,6 @@ static void esp32_clock_perip_init(void)
 	uint32_t wifi_bt_sdio_clk;
 #if !defined(CONFIG_SOC_SERIES_ESP32)
 	uint32_t common_perip_clk1;
-#endif
-	/* Avoid APPCPU to mess with the clocks. */
-#if defined(CONFIG_SOC_ESP32_APPCPU) || defined(CONFIG_SOC_ESP32S3_APPCPU)
-	return;
 #endif
 	/* For reason that only reset CPU, do not disable the clocks
 	 * that have been enabled before reset.
@@ -472,6 +484,7 @@ static void esp32_clock_perip_init(void)
 #endif
 }
 #endif
+#endif
 
 static enum clock_control_status clock_control_esp32_get_status(const struct device *dev,
 								clock_control_subsys_t sys)
@@ -767,6 +780,8 @@ static int clock_control_esp32_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Prevent APPCPU from interfering with the clock setup */
+#if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
 	rtc_clk_fast_src_set(cfg->rtc.rtc_fast_clock_src);
 
 	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src);
@@ -776,11 +791,12 @@ static int clock_control_esp32_init(const struct device *dev)
 	}
 
 	esp32_clock_perip_init();
+#endif
 
 	return 0;
 }
 
-static const struct clock_control_driver_api clock_control_esp32_api = {
+static DEVICE_API(clock_control, clock_control_esp32_api) = {
 	.on = clock_control_esp32_on,
 	.off = clock_control_esp32_off,
 	.get_rate = clock_control_esp32_get_rate,

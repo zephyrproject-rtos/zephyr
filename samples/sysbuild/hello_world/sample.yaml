@@ -18,16 +18,14 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
-    extra_args:
-      SB_CONF_FILE=sysbuild/nrf5340dk_nrf5340_cpunet.conf
+    extra_args: SB_CONF_FILE=sysbuild/nrf5340dk_nrf5340_cpunet.conf
 
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpurad:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
-    extra_args:
-      SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpurad.conf
+    extra_args: SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpurad.conf
 
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuppr:
     platform_allow:
@@ -35,41 +33,41 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuppr.conf
-      hello_world_SNIPPET=nordic-ppr
 
+      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuppr.conf
+      - hello_world_SNIPPET=nordic-ppr
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuppr_xip:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuppr_xip.conf
-      hello_world_SNIPPET=nordic-ppr-xip
 
+      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuppr_xip.conf
+      - hello_world_SNIPPET=nordic-ppr-xip
   sample.sysbuild.hello_world.nrf54l15dk_nrf54l15_cpuflpr:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
-      SB_CONF_FILE=sysbuild/nrf54l15dk_nrf54l15_cpuflpr.conf
-      hello_world_SNIPPET=nordic-flpr
 
+      - SB_CONF_FILE=sysbuild/nrf54l15dk_nrf54l15_cpuflpr.conf
+      - hello_world_SNIPPET=nordic-flpr
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuflpr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuflpr.conf
-      hello_world_SNIPPET=nordic-flpr
 
+      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuflpr.conf
+      - hello_world_SNIPPET=nordic-flpr
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuflpr_xip:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuflpr_xip.conf
-      hello_world_SNIPPET=nordic-flpr-xip
+      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuflpr_xip.conf
+      - hello_world_SNIPPET=nordic-flpr-xip

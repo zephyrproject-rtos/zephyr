@@ -15,7 +15,4 @@ config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 config REGULATOR
 	default DISK_DRIVER_SDMMC
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_MG100

@@ -1,4 +1,5 @@
 # Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menu "RISCV Options"
@@ -15,9 +16,13 @@ config FLOAT_HARD
 	help
 	  This option enables the hard-float calling convention.
 
+choice RISCV_GP_PURPOSE
+	prompt "Purpose of the global pointer (GP) register"
+	default RISCV_GP if RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+
 config RISCV_GP
 	bool "RISC-V global pointer relative addressing"
-	default n
+	depends on RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	help
 	  Use global pointer relative addressing for small globals declared
 	  anywhere in the executable. It can benefit performance and reduce
@@ -26,6 +31,17 @@ config RISCV_GP
 	  Note: To support this feature, RISC-V SoC needs to initialize
 	  global pointer at program start or earlier than any instruction
 	  using GP relative addressing.
+
+config RISCV_CURRENT_VIA_GP
+	bool "Store current thread into the global pointer (GP) register"
+	depends on MP_MAX_NUM_CPUS > 1
+	select ARCH_HAS_CUSTOM_CURRENT_IMPL
+	help
+	  Store the current thread's pointer into the global pointer (GP) register.
+	  When is enabled, calls to `arch_current_thread()` & `k_sched_current_thread_query()` will
+	  be reduced to a single register read.
+
+endchoice # RISCV_GP_PURPOSE
 
 config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	bool "Do not use mret outside a trap handler context"
@@ -36,6 +52,31 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  balanced with an ecall. This is not required by the RISC-V spec
 	  and most people should say n here to minimize context switching
 	  overhead.
+
+choice RISCV_SMP_IPI_IMPL
+	prompt "RISC-V SMP IPI implementation"
+	depends on SMP
+	default RISCV_SMP_IPI_CLINT if DT_HAS_SIFIVE_CLINT0_ENABLED
+	default RISCV_SMP_IPI_CUSTOM
+
+config RISCV_SMP_IPI_CLINT
+	bool "CLINT-based IPI"
+	depends on DT_HAS_SIFIVE_CLINT0_ENABLED
+	help
+	  Use CLINT-based IPI implementation.
+
+config RISCV_SMP_IPI_CUSTOM
+	bool "Custom IPI implementation"
+	help
+	  Allow custom IPI implementation.
+
+	  When this is selected, the following functions must be provided:
+	   - arch_sched_directed_ipi()
+	   - arch_flush_fpu_ipi() if CONFIG_FPU_SHARING
+	   - arch_spin_relax() if CONFIG_FPU_SHARING
+	   - arch_smp_init()
+
+endchoice # RISCV_SMP_IPI_IMPL
 
 menu "RISCV Processor Options"
 
@@ -111,6 +152,12 @@ config RISCV_SOC_HAS_CUSTOM_SYS_IO
 	  Enable this hidden option and specialize the z_soc_* functions when
 	  the RISC-V SoC needs to do something different and more than reading and
 	  writing the registers.
+
+config RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	bool
+	help
+	  Selected when SoC has implemented the initialization of global pointer (GP)
+	  at program start, or earlier than any instruction using GP relative addressing.
 
 config RISCV_SOC_CONTEXT_SAVE
 	bool "SOC-based context saving in IRQ handlers"
@@ -311,7 +358,6 @@ endif #RISCV_PMP
 
 config PMP_STACK_GUARD
 	def_bool y
-	depends on MULTITHREADING
 	depends on HW_STACK_PROTECTION
 
 config PMP_STACK_GUARD_MIN_SIZE
@@ -349,6 +395,15 @@ config NULL_POINTER_EXCEPTION_REGION_SIZE
 	  Minimum is 4 bytes.
 
 endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
+
+config RISCV_IMPRECISE_FPU_STATE_TRACKING
+	bool "Imprecise implementation of FPU state tracking"
+	depends on FPU
+	help
+	  According to the RISC-V Instruction Set Manual: Volume II, Version 20240411
+	  (Section 3.1.6.6), some implementations may choose to track the dirtiness of
+	  the floating-point register state imprecisely by reporting the state to be
+	  dirty even when it has not been modified. This option reflects that.
 
 endmenu
 

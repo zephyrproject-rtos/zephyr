@@ -269,7 +269,7 @@ static int grgpio_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api driver_api = {
+static DEVICE_API(gpio, driver_api) = {
 	.pin_configure                  = pin_configure,
 	.port_get_raw                   = port_get_raw,
 	.port_set_masked_raw            = port_set_masked_raw,

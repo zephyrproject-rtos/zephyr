@@ -118,7 +118,7 @@ static int gpio_ads114s0x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_ads114s0x_api = {
+static DEVICE_API(gpio, gpio_ads114s0x_api) = {
 	.pin_configure = gpio_ads114s0x_config,
 	.port_set_masked_raw = gpio_ads114s0x_port_set_masked_raw,
 	.port_set_bits_raw = gpio_ads114s0x_port_set_bits_raw,

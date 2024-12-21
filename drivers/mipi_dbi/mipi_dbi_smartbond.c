@@ -338,8 +338,8 @@ static int mipi_dbi_smartbond_write_display(const struct device *dev,
 	lcdc_smartbond_mipi_dbi_cfg mipi_dbi_cfg;
 	uint8_t layer_color = lcdc_smartbond_pixel_to_lcm(pixfmt);
 
-	if (desc->width * desc->height * (DISPLAY_BITS_PER_PIXEL(pixfmt) / 8) !=
-		desc->buf_size) {
+	if (desc->width * desc->height * (DISPLAY_BITS_PER_PIXEL(pixfmt) / BITS_PER_BYTE) !=
+	    desc->buf_size) {
 		LOG_ERR("Incorrect buffer size for given width and height");
 		return -EINVAL;
 	}
@@ -536,7 +536,7 @@ static int mipi_dbi_smartbond_init(const struct device *dev)
 	return ret;
 }
 
-static const struct mipi_dbi_driver_api mipi_dbi_smartbond_driver_api = {
+static DEVICE_API(mipi_dbi, mipi_dbi_smartbond_driver_api) = {
 #if MIPI_DBI_SMARTBOND_IS_RESET_AVAILABLE
 	.reset = mipi_dbi_smartbond_reset,
 #endif

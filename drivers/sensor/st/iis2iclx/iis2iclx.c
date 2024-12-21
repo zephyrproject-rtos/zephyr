@@ -517,7 +517,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api iis2iclx_driver_api = {
+static DEVICE_API(sensor, iis2iclx_driver_api) = {
 	.attr_set = iis2iclx_attr_set,
 #if CONFIG_IIS2ICLX_TRIGGER
 	.trigger_set = iis2iclx_trigger_set,

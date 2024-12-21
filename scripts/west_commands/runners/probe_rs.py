@@ -3,7 +3,7 @@
 
 '''Runner for probe-rs.'''
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 
 class ProbeRsBinaryRunner(ZephyrBinaryRunner):

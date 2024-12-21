@@ -1,28 +1,41 @@
 /* main.c - Application main entry point */
 
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "bluetooth.h"
+#include "bap_broadcast_source.h"
+#include "bap_stream.h"
 #include "bap_stream_expects.h"
+#include "bluetooth.h"
+#include "expects_util.h"
+#include "ztest_assert.h"
+#include "ztest_test.h"
 
 DEFINE_FFF_GLOBALS;
 
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
+	mock_bap_broadcast_source_init();
 	mock_bap_stream_init();
 }
 
@@ -136,8 +149,13 @@ static void *bap_broadcast_source_test_suite_setup(void)
 
 static void bap_broadcast_source_test_suite_before(void *f)
 {
+	int err;
+
 	memset(f, 0, sizeof(struct bap_broadcast_source_test_suite_fixture));
 	bap_broadcast_source_test_suite_fixture_init(f);
+
+	err = bt_bap_broadcast_source_register_cb(&mock_bap_broadcast_source_cb);
+	zassert_equal(0, err, "Unexpected return value %d", err);
 }
 
 static void bap_broadcast_source_test_suite_after(void *f)
@@ -164,6 +182,8 @@ static void bap_broadcast_source_test_suite_after(void *f)
 	free(param->params);
 	free(param->qos);
 	free(param);
+
+	bt_bap_broadcast_source_unregister_cb(&mock_bap_broadcast_source_cb);
 }
 
 static void bap_broadcast_source_test_suite_teardown(void *f)
@@ -224,6 +244,8 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 			   mock_bap_stream_connected_cb_fake.call_count);
 	zexpect_call_count("bt_bap_stream_ops.started", fixture->stream_cnt,
 			   mock_bap_stream_started_cb_fake.call_count);
+	zexpect_call_count("bt_bap_broadcast_source_cb.started", 1,
+			   mock_bap_broadcast_source_started_cb_fake.call_count);
 
 	for (size_t i = 0U; i < create_param->params_count; i++) {
 		for (size_t j = 0U; j < create_param->params[i].params_count; j++) {
@@ -260,6 +282,8 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 			   mock_bap_stream_disconnected_cb_fake.call_count);
 	zexpect_call_count("bt_bap_stream_ops.stopped", fixture->stream_cnt,
 			   mock_bap_stream_stopped_cb_fake.call_count);
+	zexpect_call_count("bt_bap_broadcast_source_cb.stopped", 1,
+			   mock_bap_broadcast_source_stopped_cb_fake.call_count);
 
 	err = bt_bap_broadcast_source_delete(fixture->source);
 	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);

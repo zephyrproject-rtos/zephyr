@@ -16,7 +16,7 @@ sequence:
         type: str
         required: false
       "platform":
-        type: str
+        type: any
         required: true
       "probe_id":
         type: str

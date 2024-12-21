@@ -222,7 +222,7 @@ static int entropy_npcx_drbg_pm_action(const struct device *dev, enum pm_device_
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct entropy_driver_api entropy_npcx_drbg_api = {
+static DEVICE_API(entropy, entropy_npcx_drbg_api) = {
 	.get_entropy = entropy_npcx_drbg_get_entropy,
 };
 

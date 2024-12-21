@@ -338,7 +338,7 @@ static int lp50xx_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct led_driver_api lp50xx_led_api = {
+static DEVICE_API(led, lp50xx_led_api) = {
 	.on		= lp50xx_on,
 	.off		= lp50xx_off,
 	.get_info	= lp50xx_get_info,

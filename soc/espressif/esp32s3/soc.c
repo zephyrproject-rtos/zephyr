@@ -97,7 +97,7 @@ void IRAM_ATTR __esp_platform_start(void)
 	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
 
 	/* Initialize the architecture CPU pointer.  Some of the
-	 * initialization code wants a valid _current before
+	 * initialization code wants a valid arch_current_thread() before
 	 * arch_kernel_init() is invoked.
 	 */
 	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
@@ -176,5 +176,5 @@ void sys_arch_reboot(int type)
 
 #if defined(CONFIG_SOC_ENABLE_APPCPU) && !defined(CONFIG_MCUBOOT)
 extern int esp_appcpu_init(void);
-SYS_INIT(esp_appcpu_init, POST_KERNEL, 50);
+SYS_INIT(esp_appcpu_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif

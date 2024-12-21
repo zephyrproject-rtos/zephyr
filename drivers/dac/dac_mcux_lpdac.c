@@ -91,7 +91,7 @@ static int mcux_lpdac_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api mcux_lpdac_driver_api = {
+static DEVICE_API(dac, mcux_lpdac_driver_api) = {
 	.channel_setup = mcux_lpdac_channel_setup,
 	.write_value = mcux_lpdac_write_value,
 };

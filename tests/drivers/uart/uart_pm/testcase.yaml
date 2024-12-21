@@ -6,11 +6,16 @@ common:
   platform_allow:
     - nrf52840dk/nrf52840
     - nrf54l15dk/nrf54l15/cpuapp
+    - nrf54l20pdk/nrf54l20/cpuapp
+    - nrf54l15bsim/nrf54l15/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf52_bsim
+    - nrf5340bsim/nrf5340/cpuapp
   harness_config:
     fixture: gpio_loopback
   depends_on: gpio
+  integration_platforms:
+    - nrf52840dk/nrf52840
 tests:
   drivers.uart.pm:
     extra_configs:
@@ -28,6 +33,8 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_rx_disable.overlay"
     platform_exclude:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.enhanced_poll:
@@ -38,6 +45,7 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.int_driven:
@@ -57,6 +65,7 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.async:
@@ -64,9 +73,6 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_0_ASYNC=y
-      - CONFIG_UART_0_NRF_HW_ASYNC=y
-      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
-      - CONFIG_NRFX_TIMER2=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
 
@@ -75,11 +81,9 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_0_ASYNC=y
-      - CONFIG_UART_0_NRF_HW_ASYNC=y
-      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
-      - CONFIG_NRFX_TIMER2=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp

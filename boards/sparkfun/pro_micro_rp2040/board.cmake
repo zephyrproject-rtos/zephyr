@@ -16,7 +16,7 @@
 # The value must be the 'stem' part of the name of one of the files
 # in the openocd interface configuration file.
 # The setting is store to CMakeCache.txt.
-if ("${RPI_PICO_DEBUG_ADAPTER}" STREQUAL "")
+if("${RPI_PICO_DEBUG_ADAPTER}" STREQUAL "")
 	set(RPI_PICO_DEBUG_ADAPTER "cmsis-dap")
 endif()
 

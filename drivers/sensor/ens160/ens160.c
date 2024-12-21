@@ -175,7 +175,7 @@ static int ens160_attr_set(const struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
-static const struct sensor_driver_api ens160_driver_api = {
+static DEVICE_API(sensor, ens160_driver_api) = {
 	.sample_fetch = ens160_sample_fetch,
 	.channel_get = ens160_channel_get,
 	.attr_set = ens160_attr_set,

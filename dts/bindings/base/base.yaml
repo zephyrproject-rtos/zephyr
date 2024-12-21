@@ -46,11 +46,11 @@ properties:
     type: phandle
     description: phandle to interrupt controller node
 
+  # description of label should be given in bindings inheriting base.yaml
+  # label property is included here to help enforce its type being string
   label:
     type: string
-    deprecated: true
-    description: |
-      Human readable string describing the device (used as device_get_binding() argument)
+    description: No description provided for this label
 
   clocks:
     type: phandle-array

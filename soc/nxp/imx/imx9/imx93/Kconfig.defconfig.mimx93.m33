@@ -12,11 +12,9 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config NUM_IRQS
-	int
 	default 268
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 200000000
 
 endif

@@ -2398,7 +2398,7 @@ static int ptp_clock_sam_gmac_rate_adjust(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct ptp_clock_driver_api ptp_api = {
+static DEVICE_API(ptp_clock, ptp_api) = {
 	.set = ptp_clock_sam_gmac_set,
 	.get = ptp_clock_sam_gmac_get,
 	.adjust = ptp_clock_sam_gmac_adjust,

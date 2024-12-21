@@ -13,8 +13,8 @@
  * the Standard-mode and Fast-mode speeds and doesn't support optional
  * protocol feature like 10-bit addresses or clock stretching.
  *
- * Timings and protocol are based Rev. 6 of the I2C specification:
- * http://www.nxp.com/documents/user_manual/UM10204.pdf
+ * Timings and protocol are based Rev. 7 of the I2C specification:
+ * https://www.nxp.com/docs/en/user-guide/UM10204.pdf
  */
 
 #include <errno.h>

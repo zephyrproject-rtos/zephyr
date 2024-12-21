@@ -4,19 +4,18 @@
 
 import argparse
 import os
-from pathlib import Path
 import re
 import sys
 import textwrap
+from pathlib import Path
 
-from west import log
 from west.commands import WestCommand
-
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
 import list_boards
 import zephyr_module
+
 
 class Boards(WestCommand):
 
@@ -94,13 +93,13 @@ class Boards(WestCommand):
         for board in list_boards.find_boards(args):
             if name_re is not None and not name_re.search(board.name):
                 continue
-            log.inf(args.format.format(name=board.name, arch=board.arch,
-                                       dir=board.dir, hwm=board.hwm, qualifiers=''))
+            self.inf(args.format.format(name=board.name, arch=board.arch,
+                                        dir=board.dir, hwm=board.hwm, qualifiers=''))
 
         for board in list_boards.find_v2_boards(args).values():
             if name_re is not None and not name_re.search(board.name):
                 continue
-            log.inf(
+            self.inf(
                 args.format.format(
                     name=board.name,
                     full_name=board.full_name,

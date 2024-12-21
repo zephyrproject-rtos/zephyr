@@ -27,8 +27,17 @@
 #define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
 #define pllr(v) z_pllr(v)
 
+#if defined(RCC_PLLI2SCFGR_PLLI2SM)
+/* Some stm32F4 devices have a dedicated PLL I2S with M divider */
 #define z_plli2s_m(v) LL_RCC_PLLI2SM_DIV_ ## v
+#else
+/* Some stm32F4 devices (typ. stm32F401) have a dedicated PLL I2S with PLL M divider */
+#define z_plli2s_m(v) LL_RCC_PLLM_DIV_ ## v
+#endif /* RCC_PLLI2SCFGR_PLLI2SM */
 #define plli2sm(v) z_plli2s_m(v)
+
+#define z_plli2s_q(v) LL_RCC_PLLI2SQ_DIV_ ## v
+#define plli2sq(v) z_plli2s_q(v)
 
 #define z_plli2s_r(v) LL_RCC_PLLI2SR_DIV_ ## v
 #define plli2sr(v) z_plli2s_r(v)
@@ -51,6 +60,10 @@ void config_plli2s(void);
 void config_enable_default_clocks(void);
 void config_regulator_voltage(uint32_t hclk_freq);
 int enabled_clock(uint32_t src_clk);
+
+#if defined(STM32_CK48_ENABLED)
+uint32_t get_ck48_frequency(void);
+#endif
 
 /* functions exported to the soc power.c */
 int stm32_clock_control_init(const struct device *dev);

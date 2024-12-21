@@ -5,4 +5,6 @@ tests:
     harness: sensor
     tags: sensors
     filter: dt_compat_enabled("festo,veaa-x-3")
-    depends_on: adc dac
+    depends_on:
+      - adc
+      - dac

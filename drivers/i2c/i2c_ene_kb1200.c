@@ -293,7 +293,7 @@ static int i2c_kb1200_transfer(const struct device *dev, struct i2c_msg *msgs, u
 }
 
 /* I2C Master driver registration */
-static const struct i2c_driver_api i2c_kb1200_api = {
+static DEVICE_API(i2c, i2c_kb1200_api) = {
 	.configure = i2c_kb1200_configure,
 	.get_config = i2c_kb1200_get_config,
 	.transfer = i2c_kb1200_transfer,
@@ -352,7 +352,7 @@ static int i2c_kb1200_init(const struct device *dev)
 		.fsmbm = (struct fsmbm_regs *)DT_INST_REG_ADDR(inst),                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &i2c_kb1200_init, NULL, &i2c_kb1200_data_##inst,               \
+	I2C_DEVICE_DT_INST_DEFINE(inst, &i2c_kb1200_init, NULL, &i2c_kb1200_data_##inst,           \
 			      &i2c_kb1200_config_##inst, PRE_KERNEL_1,                             \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &i2c_kb1200_api);
 

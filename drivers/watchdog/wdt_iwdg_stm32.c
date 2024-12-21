@@ -179,7 +179,7 @@ static int iwdg_stm32_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static const struct wdt_driver_api iwdg_stm32_api = {
+static DEVICE_API(wdt, iwdg_stm32_api) = {
 	.setup = iwdg_stm32_setup,
 	.disable = iwdg_stm32_disable,
 	.install_timeout = iwdg_stm32_install_timeout,

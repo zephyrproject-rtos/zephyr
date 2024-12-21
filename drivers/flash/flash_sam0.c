@@ -454,6 +454,13 @@ flash_sam0_get_parameters(const struct device *dev)
 	return &flash_sam0_parameters;
 }
 
+static int flash_sam0_get_size(const struct device *dev, uint64_t *size)
+{
+	*size = (uint64_t)CONFIG_FLASH_SIZE;
+
+	return 0;
+}
+
 static int flash_sam0_init(const struct device *dev)
 {
 #if defined(CONFIG_MULTITHREADING)
@@ -480,11 +487,12 @@ static int flash_sam0_init(const struct device *dev)
 	return flash_sam0_write_protection(dev, false);
 }
 
-static const struct flash_driver_api flash_sam0_api = {
+static DEVICE_API(flash, flash_sam0_api) = {
 	.erase = flash_sam0_erase,
 	.write = flash_sam0_write,
 	.read = flash_sam0_read,
 	.get_parameters = flash_sam0_get_parameters,
+	.get_size = flash_sam0_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam0_page_layout,
 #endif

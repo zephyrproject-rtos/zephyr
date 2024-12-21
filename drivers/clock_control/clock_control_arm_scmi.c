@@ -68,7 +68,7 @@ static int scmi_clock_get_rate(const struct device *dev,
 	return scmi_clock_rate_get(proto, clk_id, rate);
 }
 
-static struct clock_control_driver_api scmi_clock_api = {
+static DEVICE_API(clock_control, scmi_clock_api) = {
 	.on = scmi_clock_on,
 	.off = scmi_clock_off,
 	.get_rate = scmi_clock_get_rate,

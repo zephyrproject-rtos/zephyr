@@ -417,7 +417,7 @@ static int flexio_lcdif_init(const struct device *dev)
 	return 0;
 }
 
-static struct mipi_dbi_driver_api mipi_dbi_lcdif_driver_api = {
+static DEVICE_API(mipi_dbi, mipi_dbi_lcdif_driver_api) = {
 	.reset = mipi_dbi_flexio_lcdif_reset,
 	.command_write = mipi_dbi_flexio_lcdif_command_write,
 	.write_display = mipi_dbi_flexio_ldcif_write_display,

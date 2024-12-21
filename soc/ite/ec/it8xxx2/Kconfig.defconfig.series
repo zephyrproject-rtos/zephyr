@@ -3,9 +3,6 @@
 
 if SOC_SERIES_IT8XXX2
 
-config RISCV_GP
-	default y
-
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 

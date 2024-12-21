@@ -11,6 +11,7 @@ from west import log
 from zspdx.licenses import LICENSES
 from zspdx.util import getHashes
 
+
 # ScannerConfig contains settings used to configure how the SPDX
 # Document scanning should occur.
 class ScannerConfig:
@@ -36,6 +37,7 @@ class ScannerConfig:
         # should we calculate MD5 hashes for each Package's Files?
         self.doMD5 = False
 
+
 def parseLineForExpression(line):
     """Return parsed SPDX expression if tag found in line, or None otherwise."""
     p = line.partition("SPDX-License-Identifier:")
@@ -46,6 +48,7 @@ def parseLineForExpression(line):
     expression = expression.rstrip("/*")
     expression = expression.strip()
     return expression
+
 
 def getExpressionData(filePath, numLines):
     """
@@ -77,6 +80,7 @@ def getExpressionData(filePath, numLines):
     # if we get here, we didn't find an expression
     return None
 
+
 def splitExpression(expression):
     """
     Parse a license expression into its constituent identifiers.
@@ -96,6 +100,7 @@ def splitExpression(expression):
 
     return sorted(e4)
 
+
 def calculateVerificationCode(pkg):
     """
     Calculate the SPDX Package Verification Code for all files in the package.
@@ -114,6 +119,7 @@ def calculateVerificationCode(pkg):
     hSHA1.update(filelist.encode('utf-8'))
     return hSHA1.hexdigest()
 
+
 def checkLicenseValid(lic, doc):
     """
     Check whether this license ID is a valid SPDX license ID, and add it
@@ -125,6 +131,7 @@ def checkLicenseValid(lic, doc):
     """
     if lic not in LICENSES:
         doc.customLicenseIDs.add(lic)
+
 
 def getPackageLicenses(pkg):
     """
@@ -142,6 +149,7 @@ def getPackageLicenses(pkg):
         for licInfo in f.licenseInfoInFile:
             licsFromFiles.add(licInfo)
     return sorted(list(licsConcluded)), sorted(list(licsFromFiles))
+
 
 def normalizeExpression(licsConcluded):
     """
@@ -169,6 +177,7 @@ def normalizeExpression(licsConcluded):
         else:
             revised.append(lic)
     return " AND ".join(revised)
+
 
 def scanDocument(cfg, doc):
     """

@@ -16,8 +16,9 @@ ram: 128
 flash: 128
 supported:
   - dma
-  - i2c
+  - flash
   - gpio
+  - i2c
   - pwm
   - uart
 vendor: nxp

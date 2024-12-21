@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define BROADCAST_CODE "BroadcastCode"
+#define RANDOM_SRC_ID  0x55
+
 void test_mocks_init(void);
 void test_mocks_cleanup(void);
 

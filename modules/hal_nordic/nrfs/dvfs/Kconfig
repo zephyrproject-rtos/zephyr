@@ -30,6 +30,8 @@ config NRFS_LOCAL_DOMAIN_DOWNSCALE_FINISH_DELAY_TIMEOUT_US
 	int "Additional delay to let secdom finish dowscale procedure in us"
 	range 1 10000000
 	default 1000
+	help
+	  This value depends on the secdom core performance and shouldn't be touched by the user.
 
 config NRFS_LOCAL_DOMAIN_DVFS_HANDLER_TASK_STACK_SIZE
 	int "Stack size used for DVFS handling task"

@@ -272,7 +272,7 @@ static int mcux_flexio_pwm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_nxp_flexio_driver_api = {
+static DEVICE_API(pwm, pwm_nxp_flexio_driver_api) = {
 	.set_cycles = pwm_nxp_flexio_set_cycles,
 	.get_cycles_per_sec = pwm_nxp_flexio_get_cycles_per_sec,
 };

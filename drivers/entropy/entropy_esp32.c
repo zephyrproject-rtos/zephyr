@@ -88,7 +88,7 @@ static int entropy_esp32_init(const struct device *dev)
 	return ret;
 }
 
-static const struct entropy_driver_api entropy_esp32_api_funcs = {
+static DEVICE_API(entropy, entropy_esp32_api_funcs) = {
 	.get_entropy = entropy_esp32_get_entropy
 };
 

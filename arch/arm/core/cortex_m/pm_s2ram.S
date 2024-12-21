@@ -14,6 +14,145 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 
+/**
+ * Macro expanding to an integer literal equal to the offset of
+ * field `sr_name` in `struct __cpu_context`. This macro has to
+ * be implemented in C, because GEN_OFFSET_SYM provides offsets
+ * as C preprocessor definitions - there are not visible to the
+ * assembler.
+ *
+ * See also: `arch/arm/core/offsets/offsets_aarch32.c`
+ */
+#define CPU_CTX_SR_OFFSET(sr_name) \
+	___cpu_context_t_ ## sr_name ## _OFFSET
+
+/**
+ * Macros used to save / load a special register in __cpu_context.
+ * These also have to be implemented in C due to CPU_CTX_SR_OFFSET.
+ */
+#define SAVE_SPECIAL_REG(sr_name, cpu_ctx_reg, tmp_reg)	\
+	mrs	tmp_reg, sr_name;			\
+	str	tmp_reg, [cpu_ctx_reg, # CPU_CTX_SR_OFFSET(sr_name)];
+
+#define RESTORE_SPECIAL_REG(sr_name, cpu_ctx_reg, tmp_reg)		\
+	ldr	tmp_reg, [cpu_ctx_reg, # CPU_CTX_SR_OFFSET(sr_name)];	\
+	msr	sr_name, tmp_reg;
+
+/*
+ * The following macros could be written as assembler macros, but C is used
+ * for portability (assembler macro syntax may differ between toolchains).
+ */
+
+/*
+ * Pushes registers r4~r12 and lr on the stack.
+ * r0 is unmodified but other GPRs may be overwritten.
+ */
+#if !defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* `push` on ARMv6-M / ARMv8-M Baseline:
+ * only r0~r7 and lr may be pushed
+ */
+#define PUSH_GPRS							\
+	push	{r4-r7};						\
+	mov	r1, r8;							\
+	mov	r2, r9;							\
+	mov	r3, r10;						\
+	mov	r4, r11;						\
+	mov	r5, r12;						\
+	push	{r1-r5, lr}
+#else
+/* `push` on ARMv7-M and ARMv8-M Mainline: no limitation */
+#define PUSH_GPRS							\
+	push	{r4-r12, lr}
+#endif /* !CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+/*
+ * Pops registers r4~r12 and lr from the stack
+ * r0 is unmodified but other GPRs may be overwritten.
+ */
+#if !defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* `pop` on ARMv6-M / ARMv8-M Baseline:
+ * can only pop to r0~r7 and pc (not lr!)
+ */
+#define POP_GPRS							\
+	pop	{r1-r6};						\
+	mov 	lr, r6;							\
+	mov 	r12, r5;						\
+	mov 	r11, r4;						\
+	mov 	r10, r3;						\
+	mov 	r9, r2;							\
+	mov 	r8, r1;							\
+	pop	{r4-r7}
+#else
+/* `pop` on ARMv7-M and ARMv8-M Mainline: no limitation */
+#define POP_GPRS							\
+	pop	{r4-r12, lr}
+#endif /* !CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* Registers present only on ARMv7-M and ARMv8-M Mainline */
+#define SAVE_FM_BP_REGS(cpu_ctx, tmp_reg)				\
+	SAVE_SPECIAL_REG(faultmask,	cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(basepri,	cpu_ctx, tmp_reg)
+
+#define RESTORE_FM_BP_REGS(cpu_ctx, tmp_reg)				\
+	RESTORE_SPECIAL_REG(faultmask,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(basepri,	cpu_ctx, tmp_reg)
+#else
+/* Registers not present: do nothing */
+#define SAVE_FM_BP_REGS(cpu_ctx, tmp_reg)
+#define RESTORE_FM_BP_REGS(cpu_ctx, tmp_reg)
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+/* Registers present only on certain ARMv8-M implementations */
+#define SAVE_SPLIM_REGS(cpu_ctx, tmp_reg)				\
+	SAVE_SPECIAL_REG(msplim,	cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(psplim,	cpu_ctx, tmp_reg)
+
+#define RESTORE_SPLIM_REGS(cpu_ctx, tmp_reg)				\
+	RESTORE_SPECIAL_REG(msplim,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(psplim,	cpu_ctx, tmp_reg)
+#else
+/* Registers not present: do nothing */
+#define SAVE_SPLIM_REGS(cpu_ctx, tmp_reg)
+#define RESTORE_SPLIM_REGS(cpu_ctx, tmp_reg)
+#endif /* CONFIG_CPU_CORTEX_M_HAS_SPLIM */
+
+/*
+ * Saves the CPU's special registers in the `struct __cpu_context`
+ * pointed to by the `cpu_ctx` register.
+ * The `tmp_reg` register is overwritten as part of this process.
+ */
+#define SAVE_SPECIAL_REGISTERS(cpu_ctx, tmp_reg)			\
+	SAVE_SPECIAL_REG(msp,		cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(psp,		cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(primask,	cpu_ctx, tmp_reg)		\
+	SAVE_SPLIM_REGS(		cpu_ctx, tmp_reg)		\
+	SAVE_FM_BP_REGS(		cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(control,	cpu_ctx, tmp_reg)
+
+/*
+ * Restores the CPU's special registers from the `struct __cpu_context`
+ * pointed to by the `cpu_ctx` register.
+ * The `tmp_reg` register is overwritten as part of this process.
+ *
+ * N.B.: ISB at the end is required because "Software must use an ISB
+ * barrier instruction to ensure a write to the CONTROL register takes
+ * effect before the next instruction is executed."
+ *
+ * If this macro is modified, make sure CONTROL is always the last
+ * restored register, and that an ISB follows the MSR instruction.
+ */
+#define RESTORE_SPECIAL_REGISTERS(cpu_ctx, tmp_reg)			\
+	RESTORE_SPECIAL_REG(msp,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(psp,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(primask,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPLIM_REGS(		cpu_ctx, tmp_reg)		\
+	RESTORE_FM_BP_REGS(		cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(control,	cpu_ctx, tmp_reg)		\
+	isb
+
 _ASM_FILE_PROLOGUE
 
 GTEXT(pm_s2ram_mark_set)
@@ -26,7 +165,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	 *
 	 * r0: address of the system_off function
 	 */
-	push	{r4-r12, lr}
+	PUSH_GPRS
 
 	/* Move system_off to protected register. */
 	mov 	r4, r0
@@ -34,38 +173,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/* Store CPU context */
 	ldr	r1, =_cpu_context
 
-	mrs	r2, msp
-	str	r2, [r1, #___cpu_context_t_msp_OFFSET]
-
-	mrs	r2, msplim
-	str	r2, [r1, #___cpu_context_t_msplim_OFFSET]
-
-	mrs	r2, psp
-	str	r2, [r1, #___cpu_context_t_psp_OFFSET]
-
-	mrs	r2, psplim
-	str	r2, [r1, #___cpu_context_t_psplim_OFFSET]
-
-	mrs	r2, apsr
-	str	r2, [r1, #___cpu_context_t_apsr_OFFSET]
-
-	mrs	r2, ipsr
-	str	r2, [r1, #___cpu_context_t_ipsr_OFFSET]
-
-	mrs	r2, epsr
-	str	r2, [r1, #___cpu_context_t_epsr_OFFSET]
-
-	mrs	r2, primask
-	str	r2, [r1, #___cpu_context_t_primask_OFFSET]
-
-	mrs	r2, faultmask
-	str	r2, [r1, #___cpu_context_t_faultmask_OFFSET]
-
-	mrs	r2, basepri
-	str	r2, [r1, #___cpu_context_t_basepri_OFFSET]
-
-	mrs	r2, control
-	str	r2, [r1, #___cpu_context_t_control_OFFSET]
+	SAVE_SPECIAL_REGISTERS(/* ctx: */ r1, /* tmp: */ r2)
 
 	/*
 	 * Mark entering suspend to RAM.
@@ -95,7 +203,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/* Move system_off back to r0 as return value */
 	mov	r0, r4
 
-	pop	{r4-r12, lr}
+	POP_GPRS
 	bx	lr
 
 
@@ -117,44 +225,12 @@ resume:
 	 */
 	ldr	r0, =_cpu_context
 
-	ldr	r1, [r0, #___cpu_context_t_msp_OFFSET]
-	msr	msp, r1
+	RESTORE_SPECIAL_REGISTERS(/* ctx: */ r0, /* tmp: */ r1)
 
-	ldr	r1, [r0, #___cpu_context_t_msplim_OFFSET]
-	msr	msplim, r1
-
-	ldr	r1, [r0, #___cpu_context_t_psp_OFFSET]
-	msr	psp, r1
-
-	ldr	r1, [r0, #___cpu_context_t_psplim_OFFSET]
-	msr	psplim, r1
-
-	ldr	r1, [r0, #___cpu_context_t_apsr_OFFSET]
-	msr	apsr_nzcvq, r1
-
-	ldr	r1, [r0, #___cpu_context_t_ipsr_OFFSET]
-	msr	ipsr, r1
-
-	ldr	r1, [r0, #___cpu_context_t_epsr_OFFSET]
-	msr	epsr, r1
-
-	ldr	r1, [r0, #___cpu_context_t_primask_OFFSET]
-	msr	primask, r1
-
-	ldr	r1, [r0, #___cpu_context_t_faultmask_OFFSET]
-	msr	faultmask, r1
-
-	ldr	r1, [r0, #___cpu_context_t_basepri_OFFSET]
-	msr	basepri, r1
-
-	ldr	r1, [r0, #___cpu_context_t_control_OFFSET]
-	msr	control, r1
-	isb
-
-	pop	{r4-r12, lr}
+	POP_GPRS
 
 	/*
 	 * Set the return value and return
 	 */
-	mov	r0, #0
+	movs	r0, #0
 	bx	lr

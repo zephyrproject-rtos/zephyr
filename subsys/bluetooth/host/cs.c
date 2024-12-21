@@ -304,7 +304,7 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
-		LOG_INF("Read Remote Supported Capabilities failed (status 0x%02X)", evt->status);
+		LOG_WRN("Read Remote Supported Capabilities failed (status 0x%02X)", evt->status);
 		return;
 	}
 
@@ -464,7 +464,7 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
-		LOG_INF("Read Remote FAE Table failed with status 0x%02X", evt->status);
+		LOG_WRN("Read Remote FAE Table failed with status 0x%02X", evt->status);
 		return;
 	}
 
@@ -804,7 +804,7 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
-		LOG_INF("CS Config failed (status 0x%02X)", evt->status);
+		LOG_WRN("CS Config failed (status 0x%02X)", evt->status);
 		return;
 	}
 
@@ -1171,7 +1171,7 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
 				    NULL);
 }
 
-int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, uint8_t remote_fae_table[72])
+int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_fae_table[72])
 {
 	struct bt_hci_cp_le_write_cached_remote_fae_table *cp;
 	struct net_buf *buf;
@@ -1202,7 +1202,7 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
-		LOG_INF("Security Enable failed with status 0x%02X", evt->status);
+		LOG_WRN("Security Enable failed with status 0x%02X", evt->status);
 		return;
 	}
 
@@ -1231,7 +1231,7 @@ void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
-		LOG_INF("Procedure Enable failed with status 0x%02X", evt->status);
+		LOG_WRN("Procedure Enable failed with status 0x%02X", evt->status);
 		return;
 	}
 
@@ -1291,7 +1291,7 @@ void bt_hci_le_cs_test_end_complete(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 	if (evt->status) {
-		LOG_INF("CS Test End failed with status 0x%02X", evt->status);
+		LOG_WRN("CS Test End failed with status 0x%02X", evt->status);
 		return;
 	}
 

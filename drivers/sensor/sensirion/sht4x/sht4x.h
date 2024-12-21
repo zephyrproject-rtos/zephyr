@@ -41,7 +41,7 @@ static const uint8_t measure_cmd[3] = {
 };
 
 static const uint16_t measure_wait_us[3] = {
-	1700, 4500, 8200
+	1600, 4500, 8300
 };
 
 /*

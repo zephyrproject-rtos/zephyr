@@ -3,7 +3,4 @@
 
 if BOARD_WE_OPHELIA1EV
 
-config BT_CTLR
-	default BT
-
 endif

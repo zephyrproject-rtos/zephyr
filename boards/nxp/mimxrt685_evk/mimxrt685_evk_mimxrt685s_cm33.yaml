@@ -21,15 +21,16 @@ supported:
   - arduino_spi
   - counter
   - dma
-  - pwm
+  - flash
   - gpio
   - hwinfo
   - i2c
-  - i3c
   - i2s
+  - i3c
+  - pwm
   - sdhc
   - spi
-  - watchdog
   - usb_device
   - usbd
+  - watchdog
 vendor: nxp

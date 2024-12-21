@@ -58,8 +58,8 @@ endif # BT_VCP_VOL_REND
 
 config BT_VCP_VOL_CTLR
 	bool "Volume Control Profile Volume Controller Support"
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
 	help
 	  This option enables support for Volume Control Profile Volume
 	  Controller.

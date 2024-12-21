@@ -90,7 +90,7 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <2>;
 	status = "okay";
 };
@@ -194,18 +194,24 @@ zephyr_udc0: &usbotg_fs {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* 64KB for bootloader */
+		/* 32KB for bootloader */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(64)>;
+			reg = <0x00000000 DT_SIZE_K(32)>;
 			read-only;
 		};
 
-		/* storage: 64KB for settings */
-		storage_partition: partition@10000 {
-			label = "storage";
-			reg = <0x00010000 DT_SIZE_K(64)>;
-		};
+		/*
+		 * nvs subsystem requires 2 sectors with a max total of 32K
+		 * On F4 series, the only option is to use the following
+		 * partition, which is compatible with mcuboot usage.
+		 * Keep it commented in order it is not used by CI.
+		 *
+		 * storage_partition: partition@8000 {
+		 *	label = "storage";
+		 *	reg = <0x0008000 DT_SIZE_K(32)>;
+		 * };
+		 */
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@20000 {

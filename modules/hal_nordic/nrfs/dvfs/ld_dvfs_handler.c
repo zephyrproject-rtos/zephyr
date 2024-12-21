@@ -139,9 +139,19 @@ static void dvfs_service_handler_scaling_background_job(enum dvfs_frequency_sett
 	}
 }
 
+/* Update MDK variable which is used by nrfx_coredep_delay_us (k_busy_wait). */
+static void dvfs_service_update_core_clock(enum dvfs_frequency_setting oppoint_freq)
+{
+	extern uint32_t SystemCoreClock;
+
+	SystemCoreClock = oppoint_freq == DVFS_FREQ_HIGH ? 320000000 :
+			  oppoint_freq == DVFS_FREQ_MEDLOW ? 128000000 : 64000000;
+}
+
 /* Perform scaling finnish procedure. */
 static void dvfs_service_handler_scaling_finish(enum dvfs_frequency_setting oppoint_freq)
 {
+
 	LOG_DBG("Scaling finnish oppoint freq %d", oppoint_freq);
 	ld_dvfs_scaling_finish(dvfs_service_handler_is_downscaling(oppoint_freq));
 	if (!dvfs_service_handler_is_downscaling(oppoint_freq)) {
@@ -153,6 +163,7 @@ static void dvfs_service_handler_scaling_finish(enum dvfs_frequency_setting oppo
 	}
 	dvfs_service_handler_clear_state_bit(DVFS_SERV_HDL_FREQ_CHANGE_REQ_PENDING_BIT_POS);
 	current_freq_setting = oppoint_freq;
+	dvfs_service_update_core_clock(oppoint_freq);
 	LOG_DBG("Current LD freq setting: %d", current_freq_setting);
 	if (dvfs_frequency_change_applied_clb) {
 		dvfs_frequency_change_applied_clb(current_freq_setting);
@@ -178,10 +189,9 @@ static void dvfs_service_handler_set_initial_hsfll_config(void)
 
 static void dvfs_service_handler_scaling_finish_delay_timeout(struct k_timer *timer)
 {
-	if (timer) {
-		dvfs_service_handler_scaling_finish(
-			*(enum dvfs_frequency_setting *)timer->user_data);
-	}
+
+	dvfs_service_handler_scaling_finish(
+		*(enum dvfs_frequency_setting *)k_timer_user_data_get(timer));
 }
 
 K_TIMER_DEFINE(dvfs_service_scaling_finish_delay_timer,
@@ -216,6 +226,7 @@ static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 		dvfs_service_handler_clear_state_bit(DVFS_SERV_HDL_FREQ_CHANGE_REQ_PENDING_BIT_POS);
 		LOG_DBG("DVFS handler EVT_OPPOINT_REQ_CONFIRMED %d", (uint32_t)p_evt->freq);
 		if (dvfs_service_handler_get_requested_oppoint() == p_evt->freq) {
+			dvfs_service_update_core_clock(p_evt->freq);
 			if (dvfs_frequency_change_applied_clb) {
 				dvfs_frequency_change_applied_clb(p_evt->freq);
 			}
@@ -237,7 +248,8 @@ static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 			static enum dvfs_frequency_setting freq;
 
 			freq = p_evt->freq;
-			dvfs_service_scaling_finish_delay_timer.user_data = (void *)&freq;
+			k_timer_user_data_set(&dvfs_service_scaling_finish_delay_timer,
+					      (void *)&freq);
 			k_timer_start(&dvfs_service_scaling_finish_delay_timer,
 				      SCALING_FINISH_DELAY_TIMEOUT_US, K_NO_WAIT);
 		} else {

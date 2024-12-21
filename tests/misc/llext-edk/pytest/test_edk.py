@@ -4,12 +4,12 @@
 
 import logging
 import os
-import pytest
 import shutil
 import tempfile
-
 from pathlib import Path
 from subprocess import check_output
+
+import pytest
 from twister_harness import DeviceAdapter
 
 logger = logging.getLogger(__name__)

@@ -137,8 +137,8 @@ static void test_tx_immediate_replay_attack(void)
 		is_tx_succeeded = false;
 
 		memset(test_data, i, sizeof(test_data));
-		ASSERT_OK(bt_mesh_test_send_ra(rx_cfg.addr, test_data,
-			sizeof(test_data), &send_cb, &sem));
+		ASSERT_OK(bt_mesh_test_send_data(rx_cfg.addr, NULL, test_data, sizeof(test_data),
+						 &send_cb, &sem));
 
 		if (k_sem_take(&sem, K_SECONDS(TEST_DATA_WAITING_TIME))) {
 			LOG_ERR("Send timed out");
@@ -155,8 +155,8 @@ static void test_tx_immediate_replay_attack(void)
 		is_tx_succeeded = true;
 
 		memset(test_data, i, sizeof(test_data));
-		ASSERT_OK(bt_mesh_test_send_ra(rx_cfg.addr, test_data,
-			sizeof(test_data), &send_cb, &sem));
+		ASSERT_OK(bt_mesh_test_send_data(rx_cfg.addr, NULL, test_data, sizeof(test_data),
+						 &send_cb, &sem));
 
 		if (k_sem_take(&sem, K_SECONDS(TEST_DATA_WAITING_TIME))) {
 			LOG_ERR("Send timed out");
@@ -174,7 +174,7 @@ static void test_rx_immediate_replay_attack(void)
 {
 	bt_mesh_test_setup();
 	rx_sar_conf();
-	bt_mesh_test_ra_cb_setup(rx_ended);
+	bt_mesh_test_data_cb_setup(rx_ended);
 
 	k_sleep(K_SECONDS(6 * TEST_DATA_WAITING_TIME));
 
@@ -200,8 +200,8 @@ static void test_tx_power_replay_attack(void)
 		is_tx_succeeded = true;
 
 		memset(test_data, i, sizeof(test_data));
-		ASSERT_OK(bt_mesh_test_send_ra(rx_cfg.addr, test_data,
-			sizeof(test_data), &send_cb, &sem));
+		ASSERT_OK(bt_mesh_test_send_data(rx_cfg.addr, NULL, test_data, sizeof(test_data),
+						 &send_cb, &sem));
 
 		if (k_sem_take(&sem, K_SECONDS(TEST_DATA_WAITING_TIME))) {
 			LOG_ERR("Send timed out");
@@ -216,8 +216,8 @@ static void test_tx_power_replay_attack(void)
 		is_tx_succeeded = false;
 
 		memset(test_data, i, sizeof(test_data));
-		ASSERT_OK(bt_mesh_test_send_ra(rx_cfg.addr, test_data,
-			sizeof(test_data), &send_cb, &sem));
+		ASSERT_OK(bt_mesh_test_send_data(rx_cfg.addr, NULL, test_data, sizeof(test_data),
+						 &send_cb, &sem));
 
 		if (k_sem_take(&sem, K_SECONDS(TEST_DATA_WAITING_TIME))) {
 			LOG_ERR("Send timed out");
@@ -235,7 +235,7 @@ static void test_rx_power_replay_attack(void)
 {
 	bt_mesh_test_setup();
 	rx_sar_conf();
-	bt_mesh_test_ra_cb_setup(rx_ended);
+	bt_mesh_test_data_cb_setup(rx_ended);
 
 	k_sleep(K_SECONDS(6 * TEST_DATA_WAITING_TIME));
 

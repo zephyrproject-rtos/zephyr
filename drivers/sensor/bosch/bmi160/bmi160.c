@@ -1009,7 +1009,7 @@ static int bmi160_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api bmi160_api = {
+static DEVICE_API(sensor, bmi160_api) = {
 	.attr_set = bmi160_attr_set,
 	.attr_get = bmi160_attr_get,
 #ifdef CONFIG_BMI160_TRIGGER

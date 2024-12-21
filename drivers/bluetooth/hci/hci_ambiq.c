@@ -396,6 +396,21 @@ static int bt_apollo_open(const struct device *dev, bt_hci_recv_t recv)
 	return ret;
 }
 
+static int bt_apollo_close(const struct device *dev)
+{
+	int ret;
+	struct bt_apollo_data *hci = dev->data;
+
+	ret = bt_apollo_controller_deinit();
+	if (ret) {
+		return ret;
+	}
+
+	hci->recv = NULL;
+
+	return ret;
+}
+
 static int bt_apollo_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	ARG_UNUSED(params);
@@ -407,8 +422,9 @@ static int bt_apollo_setup(const struct device *dev, const struct bt_hci_setup_p
 	return ret;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open = bt_apollo_open,
+	.close = bt_apollo_close,
 	.send = bt_apollo_send,
 	.setup = bt_apollo_setup,
 };

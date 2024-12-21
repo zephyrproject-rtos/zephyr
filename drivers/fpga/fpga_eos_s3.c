@@ -140,7 +140,7 @@ static int eos_s3_fpga_init(const struct device *dev)
 
 static struct quickfeather_fpga_data fpga_data;
 
-static const struct fpga_driver_api eos_s3_api = {
+static DEVICE_API(fpga, eos_s3_api) = {
 	.reset = eos_s3_fpga_reset,
 	.load = eos_s3_fpga_load,
 	.get_status = eos_s3_fpga_get_status,

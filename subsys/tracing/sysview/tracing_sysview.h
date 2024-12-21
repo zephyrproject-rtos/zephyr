@@ -180,6 +180,17 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_work_queue_start_exit(queue)                                              \
 	SEGGER_SYSVIEW_RecordEndCall(TID_WORK_QUEUE_START)
 
+#define sys_port_trace_k_work_queue_stop_enter(queue, timeout)                                     \
+	SEGGER_SYSVIEW_RecordU32x2(TID_WORK_QUEUE_STOP, (uint32_t)(uintptr_t)queue,                \
+				   (uint32_t)timeout.ticks)
+
+#define sys_port_trace_k_work_queue_stop_blocking(queue, timeout)                                  \
+	SEGGER_SYSVIEW_RecordU32x2(TID_WORK_QUEUE_STOP, (uint32_t)(uintptr_t)queue,                \
+				   (uint32_t)timeout.ticks)
+
+#define sys_port_trace_k_work_queue_stop_exit(queue, timeout, ret)                                 \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_WORK_QUEUE_STOP, (uint32_t)ret)
+
 #define sys_port_trace_k_work_queue_drain_enter(queue)                                             \
 	SEGGER_SYSVIEW_RecordU32(TID_WORK_QUEUE_DRAIN, (uint32_t)(uintptr_t)queue)
 
@@ -724,6 +735,35 @@ void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1);
 #define sys_port_trace_net_send_data_exit(pkt, ret)
 #define sys_port_trace_net_rx_time(pkt, end_time)
 #define sys_port_trace_net_tx_time(pkt, end_time)
+
+#define sys_port_trace_gpio_pin_interrupt_configure_enter(port, pin, flags)
+#define sys_port_trace_gpio_pin_interrupt_configure_exit(port, pin, ret)
+#define sys_port_trace_gpio_pin_configure_enter(port, pin, flags)
+#define sys_port_trace_gpio_pin_configure_exit(port, pin, ret)
+#define sys_port_trace_gpio_port_get_direction_enter(port, map, inputs, outputs)
+#define sys_port_trace_gpio_port_get_direction_exit(port, map, ret)
+#define sys_port_trace_gpio_pin_get_config_enter(port, pin, flags)
+#define sys_port_trace_gpio_pin_get_config_exit(port, pin, ret)
+#define sys_port_trace_gpio_port_get_raw_enter(port, value)
+#define sys_port_trace_gpio_port_get_raw_exit(port, ret)
+#define sys_port_trace_gpio_port_set_masked_raw_enter(port, mask, value)
+#define sys_port_trace_gpio_port_set_masked_raw_exit(port, ret)
+#define sys_port_trace_gpio_port_set_bits_raw_enter(port, pins)
+#define sys_port_trace_gpio_port_set_bits_raw_exit(port, ret)
+#define sys_port_trace_gpio_port_clear_bits_raw_enter(port, pins)
+#define sys_port_trace_gpio_port_clear_bits_raw_exit(port, ret)
+#define sys_port_trace_gpio_port_toggle_bits_enter(port, pins)
+#define sys_port_trace_gpio_port_toggle_bits_exit(port, ret)
+#define sys_port_trace_gpio_init_callback_enter(callback, handler, pin_mask)
+#define sys_port_trace_gpio_init_callback_exit(callback)
+#define sys_port_trace_gpio_add_callback_enter(port, callback)
+#define sys_port_trace_gpio_add_callback_exit(port, ret)
+#define sys_port_trace_gpio_remove_callback_enter(port, callback)
+#define sys_port_trace_gpio_remove_callback_exit(port, ret)
+#define sys_port_trace_gpio_get_pending_int_enter(dev)
+#define sys_port_trace_gpio_get_pending_int_exit(dev, ret)
+#define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)
+#define sys_port_trace_gpio_fire_callback(port, cb)
 
 #ifdef __cplusplus
 }

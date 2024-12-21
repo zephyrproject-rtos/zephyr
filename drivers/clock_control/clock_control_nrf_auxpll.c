@@ -99,7 +99,7 @@ static enum clock_control_status clock_control_nrf_auxpll_get_status(const struc
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
-static const struct clock_control_driver_api clock_control_nrf_auxpll_api = {
+static DEVICE_API(clock_control, clock_control_nrf_auxpll_api) = {
 	.on = clock_control_nrf_auxpll_on,
 	.off = clock_control_nrf_auxpll_off,
 	.get_rate = clock_control_nrf_auxpll_get_rate,

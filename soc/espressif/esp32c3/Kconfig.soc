@@ -7,11 +7,23 @@ config SOC_SERIES_ESP32C3
 	help
 	  ESP32C3
 
-config SOC_ESP32C3_FX4
+config SOC_ESP32C3_FN4
 	bool
 	select SOC_ESP32C3
 	help
-	  ESP32C3_FX4
+	  ESP32C3_FN4
+
+config SOC_ESP32C3_FH4
+	bool
+	select SOC_ESP32C3
+	help
+	  ESP32C3_FH4
+
+config SOC_ESP32C3_FH4X
+	bool
+	select SOC_ESP32C3
+	help
+	  ESP32C3_FH4X
 
 config SOC_ESP32C3_MINI_N4
 	bool
@@ -44,7 +56,9 @@ config SOC
 	default "esp32c3" if SOC_SERIES_ESP32C3
 
 config SOC_PART_NUMBER
-	default "ESP32C3_FX4" if SOC_ESP32C3_FX4
+	default "ESP32C3_FN4" if SOC_ESP32C3_FN4
+	default "ESP32C3_FH4" if SOC_ESP32C3_FH4
+	default "ESP32C3_FH4X" if SOC_ESP32C3_FH4X
 	default "ESP32C3_MINI_N4" if SOC_ESP32C3_MINI_N4
 	default "ESP32C3_WROOM_02_N4" if SOC_ESP32C3_WROOM_02_N4
 	default "ESP32C3_WROOM_02_N8" if SOC_ESP32C3_WROOM_02_N8

@@ -336,7 +336,7 @@ static int gnss_emul_api_get_supported_systems(const struct device *dev, gnss_sy
 	return 0;
 }
 
-static const struct gnss_driver_api api = {
+static DEVICE_API(gnss, api) = {
 	.set_fix_rate = gnss_emul_api_set_fix_rate,
 	.get_fix_rate = gnss_emul_api_get_fix_rate,
 	.set_navigation_mode = gnss_emul_api_set_navigation_mode,

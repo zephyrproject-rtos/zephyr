@@ -49,7 +49,7 @@ static const uint32_t shim_nrf_lpcomp_ain_map[] = {
 	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
 	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
 	NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-#elif defined(CONFIG_SOC_NRF54L15)
+#elif defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) ||  defined(CONFIG_SOC_NRF54L15)
 	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
 	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
 	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
@@ -418,7 +418,7 @@ static int shim_nrf_lpcomp_trigger_is_pending(const struct device *dev)
 	return atomic_test_and_clear_bit(&shim_nrf_lpcomp_data0.triggered, 0);
 }
 
-static const struct comparator_driver_api shim_nrf_lpcomp_api = {
+static DEVICE_API(comparator, shim_nrf_lpcomp_api) = {
 	.get_output = shim_nrf_lpcomp_get_output,
 	.set_trigger = shim_nrf_lpcomp_set_trigger,
 	.set_trigger_callback = shim_nrf_lpcomp_set_trigger_callback,

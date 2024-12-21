@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,12 @@
 	};
 
 	soc {
+		/* Accessing code RAM over AXIF - a read-only flash memory bus */
+		cram0: memory@79900000 {
+			compatible = "mmio-sram";
+			reg = <0x79900000 DT_SIZE_M(7)>;
+		};
+
 		stm0: stm@76200000 {
 			compatible = "nxp,s32-sys-timer";
 			reg = <0x76200000 0x10000>;

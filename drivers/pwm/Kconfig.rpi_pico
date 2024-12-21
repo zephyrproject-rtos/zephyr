@@ -7,5 +7,6 @@ config PWM_RPI_PICO
 	depends on DT_HAS_RASPBERRYPI_PICO_PWM_ENABLED
 	depends on RESET
 	select PICOSDK_USE_PWM
+	select PINCTRL
 	help
 	  Enable PWM driver for RPi Pico family of MCUs

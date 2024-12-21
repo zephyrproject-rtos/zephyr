@@ -122,7 +122,7 @@ err:
 	return res;
 }
 
-static const struct mdio_driver_api mdio_esp32_driver_api = {
+static DEVICE_API(mdio, mdio_esp32_driver_api) = {
 	.read = mdio_esp32_read,
 	.write = mdio_esp32_write,
 };

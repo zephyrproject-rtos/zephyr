@@ -7,7 +7,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/uart.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor/grow_r502a.h>
 #include <zephyr/drivers/led.h>
 

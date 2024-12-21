@@ -41,6 +41,12 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_BT_BAP_BASS_MAX_SUBGROUPS)
+#define BT_BAP_BASS_MAX_SUBGROUPS CONFIG_BT_BAP_BASS_MAX_SUBGROUPS
+#else
+#define BT_BAP_BASS_MAX_SUBGROUPS 0
+#endif /* CONFIG_BT_BAP_BASS_MAX_SUBGROUPS*/
+
 /** An invalid Broadcast ID */
 #define BT_BAP_INVALID_BROADCAST_ID 0xFFFFFFFFU
 
@@ -582,7 +588,7 @@ struct bt_bap_scan_delegator_recv_state {
 	 * If the @ref bt_bap_bass_subgroup.bis_sync value is @ref BT_BAP_BIS_SYNC_FAILED then it
 	 * indicates that the BIG sync failed.
 	 */
-	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /**
@@ -676,7 +682,7 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	int (*bis_sync_req)(struct bt_conn *conn,
 			    const struct bt_bap_scan_delegator_recv_state *recv_state,
-			    const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]);
+			    const uint32_t bis_sync_req[BT_BAP_BASS_MAX_SUBGROUPS]);
 	/**
 	 * @brief Broadcast Assistant scanning state callback
 	 *
@@ -1995,6 +2001,53 @@ int bt_bap_base_subgroup_bis_codec_to_codec_cfg(const struct bt_bap_base_subgrou
  * @{
  */
 
+/**
+ * @brief Struct to hold the Broadcast Source callbacks
+ *
+ * These can be registered for usage with bt_bap_broadcast_source_register_cb().
+ */
+struct bt_bap_broadcast_source_cb {
+	/**
+	 * @brief The Broadcast Source has started and all of the streams are ready for audio data
+	 *
+	 * @param source The started Broadcast Source
+	 */
+	void (*started)(struct bt_bap_broadcast_source *source);
+
+	/**
+	 * @brief The Broadcast Source has stopped and none of the streams are ready for audio data
+	 *
+	 * @param source The stopped Broadcast Source
+	 * @param reason The reason why the Broadcast Source stopped (see the BT_HCI_ERR_* values)
+	 */
+	void (*stopped)(struct bt_bap_broadcast_source *source, uint8_t reason);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+/**
+ * @brief Registers callbacks for Broadcast Sources
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EEXIST if @p cb is already registered
+ */
+int bt_bap_broadcast_source_register_cb(struct bt_bap_broadcast_source_cb *cb);
+
+/**
+ * @brief Unregisters callbacks for Broadcast Sources
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -ENOENT if @p cb is not registered
+ */
+int bt_bap_broadcast_source_unregister_cb(struct bt_bap_broadcast_source_cb *cb);
+
 /** Broadcast Source stream parameters */
 struct bt_bap_broadcast_source_stream_param {
 	/** Audio stream */
@@ -2239,6 +2292,22 @@ struct bt_bap_broadcast_sink_cb {
 	 */
 	void (*syncable)(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo);
 
+	/**
+	 * @brief The Broadcast Sink has started and audio data may be received from all of the
+	 * streams
+	 *
+	 * @param sink The started Broadcast Sink
+	 */
+	void (*started)(struct bt_bap_broadcast_sink *sink);
+
+	/**
+	 * @brief The Broadcast Sink has stopped and none of the streams will receive audio data
+	 *
+	 * @param sink The stopped Broadcast Sink
+	 * @param reason The reason why the Broadcast Sink stopped (see the BT_HCI_ERR_* values)
+	 */
+	void (*stopped)(struct bt_bap_broadcast_sink *sink, uint8_t reason);
+
 	/** @internal Internally used list node */
 	sys_snode_t _node;
 };
@@ -2249,11 +2318,12 @@ struct bt_bap_broadcast_sink_cb {
  * It is possible to register multiple struct of callbacks, but a single struct can only be
  * registered once.
  * Registering the same callback multiple times is undefined behavior and may break the stack.
- *
+
  * @param cb  Broadcast sink callback structure.
  *
- * @retval 0 in case of success
+ * @retval 0 on success
  * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was already registered
  */
 int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb);
 
@@ -2377,9 +2447,8 @@ int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,
  *                       subgroup.
  * @return int           Error value. 0 on success, ERRNO on fail.
  */
-int bt_bap_scan_delegator_set_bis_sync_state(
-	uint8_t src_id,
-	uint32_t bis_synced[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]);
+int bt_bap_scan_delegator_set_bis_sync_state(uint8_t src_id,
+					     uint32_t bis_synced[BT_BAP_BASS_MAX_SUBGROUPS]);
 
 /** Parameters for bt_bap_scan_delegator_add_src() */
 struct bt_bap_scan_delegator_add_src_param {
@@ -2399,7 +2468,7 @@ struct bt_bap_scan_delegator_add_src_param {
 	uint8_t num_subgroups;
 
 	/** Subgroup specific information */
-	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /**
@@ -2437,7 +2506,7 @@ struct bt_bap_scan_delegator_mod_src_param {
 	 * If a subgroup's metadata_len is set to 0, the existing metadata
 	 * for the subgroup will remain unchanged
 	 */
-	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /**

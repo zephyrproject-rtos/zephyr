@@ -508,7 +508,7 @@ static void peci_xec_isr(const void *arg)
 }
 #endif
 
-static const struct peci_driver_api peci_xec_driver_api = {
+static DEVICE_API(peci, peci_xec_driver_api) = {
 	.config = peci_xec_configure,
 	.enable = peci_xec_enable,
 	.disable = peci_xec_disable,

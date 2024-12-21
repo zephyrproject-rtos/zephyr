@@ -13,12 +13,16 @@
 	compatible = "espressif,esp32s3";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,ipc_shm = &shm0;
 		zephyr,ipc = &ipm0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_appcpu_partition;
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
 };
 
 &trng0 {

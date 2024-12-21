@@ -320,7 +320,7 @@ static int lis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static const struct sensor_driver_api lis2dh_driver_api = {
+static DEVICE_API(sensor, lis2dh_driver_api) = {
 	.attr_set = lis2dh_attr_set,
 #if CONFIG_LIS2DH_TRIGGER
 	.trigger_set = lis2dh_trigger_set,

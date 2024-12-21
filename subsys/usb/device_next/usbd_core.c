@@ -251,6 +251,8 @@ int usbd_device_shutdown_core(struct usbd_context *const uds_ctx)
 		LOG_ERR("Failed to cleanup descriptors, %d", ret);
 	}
 
+	usbd_device_unregister_all_vreq(uds_ctx);
+
 	return udc_shutdown(uds_ctx->dev);
 }
 

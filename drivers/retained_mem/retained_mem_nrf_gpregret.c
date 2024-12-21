@@ -107,7 +107,7 @@ static int nrf_gpregret_clear(const struct device *dev)
 	return 0;
 }
 
-static const struct retained_mem_driver_api nrf_gpregret_api = {
+static DEVICE_API(retained_mem, nrf_gpregret_api) = {
 	.size = nrf_gpregret_size,
 	.read = nrf_gpregret_read,
 	.write = nrf_gpregret_write,

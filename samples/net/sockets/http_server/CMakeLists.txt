@@ -20,6 +20,20 @@ if(CONFIG_NET_SOCKETS_SOCKOPT_TLS AND
   add_dependencies(app development_psk)
 endif()
 
+set(CERTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/certs)
+
+add_custom_target(sample_ca_cert
+  WORKING_DIRECTORY ${CERTS_DIR}
+  COMMAND sh gen_ca_cert.sh
+  COMMENT "Generating sample CA certificate"
+)
+
+add_custom_target(sample_server_cert
+  WORKING_DIRECTORY ${CERTS_DIR}
+  COMMAND sh gen_server_cert.sh
+  COMMENT "Generating sample server certificate"
+)
+
 option(INCLUDE_HTML_CONTENT "Include the HTML content" ON)
 
 target_sources(app PRIVATE src/main.c)
@@ -54,15 +68,12 @@ foreach(web_resource
 endforeach()
 
 foreach(inc_file
-	ca.der
-	server.der
+	server_cert.der
 	server_privkey.der
-	https-server-cert.der
-	https-server-key.der
     )
   generate_inc_file_for_target(
     app
-    src/${inc_file}
+    src/certs/${inc_file}
     ${gen_dir}/${inc_file}.inc
     )
 endforeach()

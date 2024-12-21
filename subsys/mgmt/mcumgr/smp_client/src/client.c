@@ -112,7 +112,7 @@ static void smp_client_transport_work_fn(struct k_work *work)
 			entry->retry_cnt--;
 			entry->timestamp = time_stamp_ref + CONFIG_SMP_CMD_RETRY_TIME;
 			k_fifo_put(&entry->smp_client->tx_fifo, entry->nb);
-			smp_tx_req(&entry->smp_client->work);
+			k_work_submit_to_queue(smp_get_wq(), &entry->smp_client->work);
 			continue;
 		}
 
@@ -126,7 +126,8 @@ static void smp_client_transport_work_fn(struct k_work *work)
 
 	if (!sys_slist_is_empty(&smp_client_data.cmd_list)) {
 		/* Re-schedule new timeout to next */
-		k_work_reschedule(&smp_client_data.work_delay, K_MSEC(backoff_ms));
+		k_work_reschedule_for_queue(smp_get_wq(), &smp_client_data.work_delay,
+					    K_MSEC(backoff_ms));
 	}
 }
 
@@ -160,7 +161,8 @@ static void smp_cmd_add_to_list(struct smp_client_cmd_req *cmd_req)
 {
 	if (sys_slist_is_empty(&smp_client_data.cmd_list)) {
 		/* Enable timer */
-		k_work_reschedule(&smp_client_data.work_delay, K_MSEC(CONFIG_SMP_CMD_RETRY_TIME));
+		k_work_reschedule_for_queue(smp_get_wq(), &smp_client_data.work_delay,
+					    K_MSEC(CONFIG_SMP_CMD_RETRY_TIME));
 	}
 	sys_slist_append(&smp_client_data.cmd_list, &cmd_req->node);
 }
@@ -320,7 +322,7 @@ int smp_client_send_cmd(struct smp_client_object *smp_client, struct net_buf *nb
 	nb = net_buf_ref(nb);
 	smp_cmd_add_to_list(cmd_req);
 	k_fifo_put(&smp_client->tx_fifo, nb);
-	smp_tx_req(&smp_client->work);
+	k_work_submit_to_queue(smp_get_wq(), &smp_client->work);
 	return MGMT_ERR_EOK;
 }
 

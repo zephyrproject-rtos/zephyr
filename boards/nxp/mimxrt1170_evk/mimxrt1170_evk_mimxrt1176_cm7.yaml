@@ -16,10 +16,11 @@ ram: 256
 flash: 16384
 supported:
   - adc
-  - counter
   - can
+  - counter
   - display
   - dma
+  - flash
   - gpio
   - hwinfo
   - i2c
@@ -28,7 +29,7 @@ supported:
   - pwm
   - spi
   - usb_device
-  - watchdog
-  - video
   - usbd
+  - video
+  - watchdog
 vendor: nxp

@@ -187,7 +187,7 @@ static void mdio_adin2111_bus_disable(const struct device *dev)
 	eth_adin2111_unlock(cfg->adin);
 }
 
-static const struct mdio_driver_api mdio_adin2111_api = {
+static DEVICE_API(mdio, mdio_adin2111_api) = {
 	.read = mdio_adin2111_read,
 	.write = mdio_adin2111_write,
 	.read_c45 = mdio_adin2111_read_c45,

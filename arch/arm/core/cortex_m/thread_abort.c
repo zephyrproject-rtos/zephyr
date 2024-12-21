@@ -27,7 +27,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
 
-	if (_current == thread) {
+	if (arch_current_thread() == thread) {
 		if (arch_is_in_isr()) {
 			/* ARM is unlike most arches in that this is true
 			 * even for non-peripheral interrupts, even though

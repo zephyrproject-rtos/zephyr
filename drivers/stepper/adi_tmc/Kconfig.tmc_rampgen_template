@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_$(module)_RAMPSTAT_POLL
+	bool "$(module-str) poll ramp status"
+	depends on STEPPER_ADI_$(module)
+	default y
+	help
+	  When enabled, the ramp status will be polled on TMC, to check for events:
+	  - TMC_POS_REACHED_EVENT
+	  - TMC_STOP_SG_EVENT
+	  - TMC_STOP_LEFT_EVENT
+	  - TMC_STOP_RIGHT_EVENT
+
+config STEPPER_ADI_$(module)_RAMPSTAT_POLL_INTERVAL_IN_MSEC
+	int "$(module-str) poll ramp status interval in ms"
+	depends on STEPPER_ADI_$(module)_RAMPSTAT_POLL
+	default 100
+	help
+	  The interval in ms to poll the ramp status on TMC.
+
+config STEPPER_ADI_$(module)_RAMP_GEN
+	bool "Use $(module-str) with Ramp Generator"
+	depends on STEPPER_ADI_$(module)
+	default y
+	help
+	  Enable ramp generator for trinamic stepper controller

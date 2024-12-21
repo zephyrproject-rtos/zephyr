@@ -844,17 +844,17 @@ static int ov5640_set_ctrl_power_line_freq(const struct device *dev, int value)
 static int ov5640_set_ctrl(const struct device *dev, unsigned int cid, void *value)
 {
 	switch (cid) {
-	case VIDEO_CID_CAMERA_TEST_PATTERN:
+	case VIDEO_CID_TEST_PATTERN:
 		return ov5640_set_ctrl_test_pattern(dev, (int)value);
-	case VIDEO_CID_CAMERA_HUE:
+	case VIDEO_CID_HUE:
 		return ov5640_set_ctrl_hue(dev, (int)value);
-	case VIDEO_CID_CAMERA_SATURATION:
+	case VIDEO_CID_SATURATION:
 		return ov5640_set_ctrl_saturation(dev, (int)(value));
-	case VIDEO_CID_CAMERA_BRIGHTNESS:
+	case VIDEO_CID_BRIGHTNESS:
 		return ov5640_set_ctrl_brightness(dev, (int)(value));
-	case VIDEO_CID_CAMERA_CONTRAST:
+	case VIDEO_CID_CONTRAST:
 		return ov5640_set_ctrl_contrast(dev, (int)value);
-	case VIDEO_CID_CAMERA_GAIN:
+	case VIDEO_CID_GAIN:
 		return ov5640_set_ctrl_gain(dev, (int)(value));
 	case VIDEO_CID_HFLIP:
 		return ov5640_set_ctrl_hflip(dev, (int)(value));
@@ -903,8 +903,7 @@ static int ov5640_enum_frmival(const struct device *dev, enum video_endpoint_id 
 			break;
 		}
 	}
-
-	if (i == ARRAY_SIZE(modes) || fie->index > ARRAY_SIZE(ov5640_frame_rates) ||
+	if (i == ARRAY_SIZE(modes) || fie->index >= ARRAY_SIZE(ov5640_frame_rates) ||
 	    ov5640_frame_rates[fie->index] > modes[i].max_frmrate) {
 		return -EINVAL;
 	}
@@ -916,7 +915,7 @@ static int ov5640_enum_frmival(const struct device *dev, enum video_endpoint_id 
 	return 0;
 }
 
-static const struct video_driver_api ov5640_driver_api = {
+static DEVICE_API(video, ov5640_driver_api) = {
 	.set_format = ov5640_set_fmt,
 	.get_format = ov5640_get_fmt,
 	.get_caps = ov5640_get_caps,

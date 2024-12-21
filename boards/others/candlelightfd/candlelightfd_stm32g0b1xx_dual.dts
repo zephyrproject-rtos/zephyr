@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2024 Sean Nyekjaer <sean@geanix.com>
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "candlelightfd.dtsi"
+
+/ {
+	model = "candleLight FD Dual";
+	compatible = "candlelightfd";
+
+	transceiver1: can-phy1 {
+		compatible = "nxp,tja1051", "can-transceiver-gpio";
+		enable-gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+};
+
+&fdcan2 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan2_rx_pb0 &fdcan2_tx_pb1>;
+	pinctrl-names = "default";
+	phys = <&transceiver1>;
+	status = "okay";
+};

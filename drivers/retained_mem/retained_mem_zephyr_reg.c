@@ -109,7 +109,7 @@ static int zephyr_retained_mem_reg_clear(const struct device *dev)
 	return 0;
 }
 
-static const struct retained_mem_driver_api zephyr_retained_mem_reg_api = {
+static DEVICE_API(retained_mem, zephyr_retained_mem_reg_api) = {
 	.size = zephyr_retained_mem_reg_size,
 	.read = zephyr_retained_mem_reg_read,
 	.write = zephyr_retained_mem_reg_write,

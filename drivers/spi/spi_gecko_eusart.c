@@ -82,11 +82,6 @@ static int spi_eusart_config(const struct device *dev, const struct spi_config *
 		return -ENOTSUP;
 	}
 
-	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
-		return -ENOTSUP;
-	}
-
 	if (config->operation & SPI_OP_MODE_SLAVE) {
 		LOG_ERR("Slave mode not supported");
 		return -ENOTSUP;
@@ -133,6 +128,8 @@ static int spi_eusart_config(const struct device *dev, const struct spi_config *
 		eusartAdvancedSpiInit.csPolarity = eusartCsActiveLow;
 	}
 
+	eusartAdvancedSpiInit.msbFirst = !(config->operation & SPI_TRANSFER_LSB);
+	eusartAdvancedSpiInit.autoCsEnable = !spi_cs_is_gpio(config);
 	eusartInit.databits = eusartDataBits8;
 	eusartInit.advancedSettings = &eusartAdvancedSpiInit;
 
@@ -291,7 +288,7 @@ static int spi_gecko_eusart_release(const struct device *dev, const struct spi_c
 }
 
 /* Device Instantiation */
-static const struct spi_driver_api spi_gecko_eusart_api = {
+static DEVICE_API(spi, spi_gecko_eusart_api) = {
 	.transceive = spi_gecko_eusart_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_gecko_eusart_transceive_async,
@@ -312,7 +309,7 @@ static const struct spi_driver_api spi_gecko_eusart_api = {
 		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(n),                                      \
 		.clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000)                \
 	};                                                                                 \
-	DEVICE_DT_INST_DEFINE(n, spi_gecko_eusart_init, NULL, &spi_gecko_eusart_data_##n,  \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_gecko_eusart_init, NULL, &spi_gecko_eusart_data_##n,  \
 			      &spi_gecko_eusart_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,    \
 			      &spi_gecko_eusart_api);
 

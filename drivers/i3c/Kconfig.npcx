@@ -31,6 +31,7 @@ config I3C_NPCX
 config I3C_NPCX_DMA
 	bool "Nuvoton NPCX embedded controller (EC) serial driver DMA support"
 	depends on I3C_NPCX && "$(dt_node_reg_addr_hex,$(DT_I3C_NPCX),1)" != 0
+	select I3C_TARGET_BUFFER_MODE
 	default y
 	help
 	  Enable support for npcx I3C DMA mode.

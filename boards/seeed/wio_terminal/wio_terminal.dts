@@ -18,8 +18,6 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &wio_terminal_console;
-		zephyr,shell-uart = &wio_terminal_console;
 		zephyr,code-partition = &code_partition;
 		zephyr,display = &ili9341;
 	};
@@ -300,8 +298,6 @@ zephyr_udc0: &usb0 {
 	status = "okay";
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
-
-	wio_terminal_console: wio_terminal_console {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>

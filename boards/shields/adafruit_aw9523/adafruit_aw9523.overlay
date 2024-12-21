@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&stemma_qt_i2c {
+	status = "okay";
+
+	adafruit_aw9523: aw9523b@58 {
+		status = "okay";
+		reg = <0x58>;
+		compatible = "awinic,aw9523b";
+
+		adafruit_aw9523_gpio: aw9523b-gpio {
+			status = "okay";
+			compatible = "awinic,aw9523b-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+};

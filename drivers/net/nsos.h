@@ -14,17 +14,22 @@
 #define NSOS_MID_PF_UNSPEC       0          /**< Unspecified protocol family.  */
 #define NSOS_MID_PF_INET         1          /**< IP protocol family version 4. */
 #define NSOS_MID_PF_INET6        2          /**< IP protocol family version 6. */
+#define NSOS_MID_PF_UNIX         6          /**< Unix protocol.                */
+#define NSOS_MID_PF_PACKET       3          /**< Packet family.                */
 
 /* Address families. */
 #define NSOS_MID_AF_UNSPEC      NSOS_MID_PF_UNSPEC   /**< Unspecified address family.   */
 #define NSOS_MID_AF_INET        NSOS_MID_PF_INET     /**< IP protocol family version 4. */
 #define NSOS_MID_AF_INET6       NSOS_MID_PF_INET6    /**< IP protocol family version 6. */
+#define NSOS_MID_AF_UNIX        NSOS_MID_PF_UNIX     /**< Unix protocol.                */
+#define NSOS_MID_AF_PACKET      NSOS_MID_PF_PACKET   /**< Packet family.                */
 
 /** Protocol numbers from IANA/BSD */
 enum nsos_mid_net_ip_protocol {
 	NSOS_MID_IPPROTO_IP = 0,            /**< IP protocol (pseudo-val for setsockopt() */
 	NSOS_MID_IPPROTO_ICMP = 1,          /**< ICMP protocol   */
 	NSOS_MID_IPPROTO_IGMP = 2,          /**< IGMP protocol   */
+	NSOS_MID_IPPROTO_ETH_P_ALL = 3,     /**< Every packet. from linux if_ether.h  */
 	NSOS_MID_IPPROTO_IPIP = 4,          /**< IPIP tunnels    */
 	NSOS_MID_IPPROTO_TCP = 6,           /**< TCP protocol    */
 	NSOS_MID_IPPROTO_UDP = 17,          /**< UDP protocol    */
@@ -63,10 +68,28 @@ struct nsos_mid_sockaddr_in6 {
 	uint32_t sin6_scope_id;  /* Set of interfaces for a scope */
 };
 
+#define UNIX_PATH_MAX 108
+struct nsos_mid_sockaddr_un {
+	sa_family_t sun_family;              /* AF_UNIX */
+	char        sun_path[UNIX_PATH_MAX]; /* pathname */
+};
+
+struct nsos_mid_sockaddr_ll {
+	sa_family_t sll_family;   /**< Always AF_PACKET                   */
+	uint16_t    sll_protocol; /**< Physical-layer protocol            */
+	int         sll_ifindex;  /**< Interface number                   */
+	uint16_t    sll_hatype;   /**< ARP hardware type                  */
+	uint8_t     sll_pkttype;  /**< Packet type                        */
+	uint8_t     sll_halen;    /**< Length of address                  */
+	uint8_t     sll_addr[8];  /**< Physical-layer address, big endian */
+};
+
 struct nsos_mid_sockaddr_storage {
 	union {
 		struct nsos_mid_sockaddr_in sockaddr_in;
 		struct nsos_mid_sockaddr_in6 sockaddr_in6;
+		struct nsos_mid_sockaddr_un sockaddr_un;
+		struct nsos_mid_sockaddr_ll sockaddr_ll;
 	};
 };
 

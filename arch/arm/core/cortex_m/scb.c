@@ -23,7 +23,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/arch/cache.h>
 
-#if defined(CONFIG_CPU_HAS_NXP_MPU)
+#if defined(CONFIG_CPU_HAS_NXP_SYSMPU)
 #include <fsl_sysmpu.h>
 #endif
 
@@ -62,7 +62,7 @@ void z_arm_clear_arm_mpu_config(void)
 		ARM_MPU_ClrRegion(i);
 	}
 }
-#elif CONFIG_CPU_HAS_NXP_MPU
+#elif CONFIG_CPU_HAS_NXP_SYSMPU
 void z_arm_clear_arm_mpu_config(void)
 {
 	int i;
@@ -76,7 +76,7 @@ void z_arm_clear_arm_mpu_config(void)
 		SYSMPU_RegionEnable(SYSMPU, i, false);
 	}
 }
-#endif /* CONFIG_CPU_HAS_NXP_MPU */
+#endif /* CONFIG_CPU_HAS_NXP_SYSMPU */
 #endif /* CONFIG_ARM_MPU */
 
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)

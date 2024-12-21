@@ -167,7 +167,7 @@ static int entropy_sam_init(const struct device *dev)
 	return 0;
 }
 
-static const struct entropy_driver_api entropy_sam_api = {
+static DEVICE_API(entropy, entropy_sam_api) = {
 	.get_entropy = entropy_sam_get_entropy,
 	.get_entropy_isr = entropy_sam_get_entropy_isr
 };

@@ -101,7 +101,7 @@ static size_t eeprom_lpc11u6x_size(const struct device *dev)
 	return config->size;
 }
 
-static const struct eeprom_driver_api eeprom_lpc11u6x_api = {
+static DEVICE_API(eeprom, eeprom_lpc11u6x_api) = {
 	.read = eeprom_lpc11u6x_read,
 	.write = eeprom_lpc11u6x_write,
 	.size = eeprom_lpc11u6x_size,

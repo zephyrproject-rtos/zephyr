@@ -316,6 +316,20 @@ __net_socket struct net_context {
 			socklen_t addrlen;
 		} proxy;
 #endif
+#if defined(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)
+		/** Restrict local port range between these values.
+		 * The option takes an uint32_t value with the high 16 bits
+		 * set to the upper range bound, and the low 16 bits set to
+		 * the lower range bound.  Range bounds are inclusive. The
+		 * 16-bit values should be in host byte order.
+		 * The lower bound has to be less than the upper bound when
+		 * both bounds are not zero. Otherwise, setting the option
+		 * fails with EINVAL.
+		 * If either bound is outside of the global local port range,
+		 * or is zero, then that bound has no effect.
+		 */
+		uint32_t port_range;
+#endif
 #if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
 		/** Receive timeout */
 		k_timeout_t rcvtimeo;
@@ -362,6 +376,22 @@ __net_socket struct net_context {
 		 */
 		uint16_t addr_preferences;
 #endif
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+		union {
+			/**
+			 * IPv6 multicast output network interface for this context/socket.
+			 * Only allowed for SOCK_DGRAM or SOCK_RAW type sockets.
+			 */
+			uint8_t ipv6_mcast_ifindex;
+
+			/**
+			 * IPv4 multicast output network interface for this context/socket.
+			 * Only allowed for SOCK_DGRAM type sockets.
+			 */
+			uint8_t ipv4_mcast_ifindex;
+		};
+#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
+
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
 		/** Enable RX, TX or both timestamps of packets send through sockets. */
 		uint8_t timestamping;
@@ -1292,6 +1322,9 @@ enum net_context_option {
 	NET_OPT_TTL               = 16, /**< IPv4 unicast TTL */
 	NET_OPT_ADDR_PREFERENCES  = 17, /**< IPv6 address preference */
 	NET_OPT_TIMESTAMPING      = 18, /**< Packet timestamping */
+	NET_OPT_MCAST_IFINDEX     = 19, /**< IPv6 multicast output network interface index */
+	NET_OPT_MTU               = 20, /**< IPv4 socket path MTU */
+	NET_OPT_LOCAL_PORT_RANGE  = 21, /**< Clamp local port range */
 };
 
 /**

@@ -1,7 +1,8 @@
 identifier: native_posix
 name: Native 32-bit POSIX port
 type: native
-simulation: native
+simulation:
+  - name: native
 arch: posix
 ram: 65536
 flash: 65536

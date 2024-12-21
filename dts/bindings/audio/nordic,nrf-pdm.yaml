@@ -5,7 +5,7 @@ description: Nordic PDM (Pulse Density Modulation interface)
 
 compatible: "nordic,nrf-pdm"
 
-include: [base.yaml, pinctrl-device.yaml]
+include: ["base.yaml", "pinctrl-device.yaml", "memory-region.yaml", "nordic-clockpin.yaml"]
 
 properties:
   reg:

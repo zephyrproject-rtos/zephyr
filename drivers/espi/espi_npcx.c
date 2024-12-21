@@ -872,8 +872,11 @@ static int espi_npcx_receive_vwire(const struct device *dev,
 
 			val = GET_FIELD(inst->VWEVMS[reg_idx],
 							NPCX_VWEVMS_WIRE);
-			val &= GET_FIELD(inst->VWEVMS[reg_idx],
+
+			if (IS_ENABLED(CONFIG_ESPI_VWIRE_VALID_BIT_CHECK)) {
+				val &= GET_FIELD(inst->VWEVMS[reg_idx],
 							NPCX_VWEVMS_VALID);
+			}
 
 			*level = !!(val & bitmask);
 			return 0;
@@ -888,8 +891,12 @@ static int espi_npcx_receive_vwire(const struct device *dev,
 
 			val = GET_FIELD(inst->VWEVSM[reg_idx],
 							NPCX_VWEVSM_WIRE);
-			val &= GET_FIELD(inst->VWEVSM[reg_idx],
+
+			if (IS_ENABLED(CONFIG_ESPI_VWIRE_VALID_BIT_CHECK)) {
+				val &= GET_FIELD(inst->VWEVSM[reg_idx],
 							NPCX_VWEVSM_VALID);
+			}
+
 			*level = !!(val & bitmask);
 			return 0;
 		}
@@ -1340,7 +1347,7 @@ void npcx_espi_disable_interrupts(const struct device *dev)
 /* eSPI driver registration */
 static int espi_npcx_init(const struct device *dev);
 
-static const struct espi_driver_api espi_npcx_driver_api = {
+static DEVICE_API(espi, espi_npcx_driver_api) = {
 	.config = espi_npcx_configure,
 	.get_channel_status = espi_npcx_channel_ready,
 	.send_vwire = espi_npcx_send_vwire,

@@ -1,0 +1,81 @@
+/* Copyright 2024 The ChromiumOS Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+
+/dts-v1/;
+/ {
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sram0: memory@4e100000 {
+		 device_type = "memory";
+		 compatible = "mmio-sram";
+		 reg = <0x4e100000 DT_SIZE_K(512)>;
+	};
+
+	dram0: memory@60000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x60000000 DT_SIZE_M(15)>;
+	};
+
+	dram1: memory@61000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x61000000 DT_SIZE_K(1024)>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0 4>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		intc2: intc@10b80010 {
+			compatible = "mediatek,adsp_intc";
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			reg = <0x10b80010 4>;
+			status-reg = <0x10b80050>;
+			interrupts = <2 0 0>;
+			mask = <0x3f>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		ostimer64: ostimer64@10b83080 {
+			compatible = "mediatek,ostimer64";
+			reg = <0x10b83080 28>;
+		};
+
+		ostimer0: ostimer@10b83000 {
+			compatible = "mediatek,ostimer";
+			reg = <0x10b83000 16>;
+			interrupt-parent = <&core_intc>;
+			interrupts = <18 0 0>;
+		};
+
+		mbox0: mbox@10b86100 {
+			compatible = "mediatek,mbox";
+			reg = <0x10b86100 16>;
+			interrupt-parent = <&intc2>;
+			interrupts = <1 0 0>;
+		};
+
+		mbox1: mbox@10b87100 {
+			compatible = "mediatek,mbox";
+			reg = <0x10b87100 16>;
+			interrupt-parent = <&intc2>;
+			interrupts = <2 0 0>;
+		};
+	}; /* soc */
+
+	chosen { };
+	aliases { };
+};

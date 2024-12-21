@@ -8,10 +8,10 @@ Overview
 ********
 
 This sample shows how to use the Zephyr :ref:`sensor` API driver for the
-`Maxim DS18B20`_ temperature sensor.
+`DS18B20`_ 1-Wire temperature sensor.
 
-.. _Maxim DS18B20:
-   https://www.maximintegrated.com/en/products/sensors/DS18B20.html
+.. _DS18B20:
+   https://www.analog.com/en/products/ds18b20.html
 
 The sample periodically reads temperature data from the
 first available DS18B20 device discovered in the system. The sample checks the
@@ -28,7 +28,7 @@ as shown in the Figure Hardware Configuration of the `DS18B20 datasheet`_ at
 page 10.
 
 .. _DS18B20 datasheet:
-   https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf
+   https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf
 
 Boards with a built-in DS18B20 or a board-specific overlay
 ==========================================================

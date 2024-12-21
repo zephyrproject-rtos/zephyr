@@ -219,7 +219,7 @@ static int iis2dh_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api iis2dh_driver_api = {
+static DEVICE_API(sensor, iis2dh_driver_api) = {
 	.attr_set = iis2dh_attr_set,
 #if CONFIG_IIS2DH_TRIGGER
 	.trigger_set = iis2dh_trigger_set,

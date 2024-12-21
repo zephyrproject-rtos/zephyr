@@ -10,8 +10,10 @@ you're willing to handle requests for help. E.g. if your "board" is a
 core on a special-purpose SoC which requires a complicated script to
 network boot.'''
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
 import argparse
+
+from runners.core import RunnerCaps, ZephyrBinaryRunner
+
 
 class MiscFlasher(ZephyrBinaryRunner):
     '''Runner for handling special purpose flashing commands.'''

@@ -99,6 +99,7 @@ static int mmc56x3_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec
 		} else {
 			return -ENODATA;
 		}
+		break;
 	case SENSOR_CHAN_MAGN_Y:
 		if (edata->has_magn_y) {
 			struct sensor_q31_data *out = data_out;
@@ -110,6 +111,7 @@ static int mmc56x3_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec
 		} else {
 			return -ENODATA;
 		}
+		break;
 	case SENSOR_CHAN_MAGN_Z:
 		if (edata->has_magn_z) {
 			struct sensor_q31_data *out = data_out;
@@ -121,6 +123,7 @@ static int mmc56x3_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec
 		} else {
 			return -ENODATA;
 		}
+		break;
 	case SENSOR_CHAN_MAGN_XYZ: {
 		if (edata->has_magn_x && edata->has_magn_y && edata->has_magn_z) {
 			struct sensor_three_axis_data *out_3 = data_out;

@@ -25,6 +25,22 @@ choice RNG_GENERATOR_CHOICE
 	default XOSHIRO_RANDOM_GENERATOR
 endchoice
 
+# The flash option register (FOPT) boot options
+# 1111 1011 - Set NMI pin/interrupts to disabled.
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0xFB
+	depends on KINETIS_FLASH_CONFIG
+
 endif # SOC_MKW40Z4 || SOC_MKW41Z4
+
+if SOC_MKW22D5 || SOC_MKW24D5
+
+# The flash option register (FOPT) boot options
+# 1111 1001 - Set NMI pin/interrupts and EzPort reset default to disabled
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0xF9
+	depends on KINETIS_FLASH_CONFIG
+
+endif # SOC_MKW22D5 || SOC_MKW24D5
 
 endif # SOC_SERIES_KINETIS_KWX

@@ -7,6 +7,14 @@
 #include <st/f4/stm32f401.dtsi>
 
 / {
+	clocks {
+		plli2s: plli2s {
+			#clock-cells = <0>;
+			compatible = "st,stm32f411-plli2s-clock";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32f411", "st,stm32f4", "simple-bus";
 

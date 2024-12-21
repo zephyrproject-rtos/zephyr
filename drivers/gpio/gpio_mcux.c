@@ -390,7 +390,7 @@ static int gpio_mcux_port_get_direction(const struct device *dev, gpio_port_pins
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
-static const struct gpio_driver_api gpio_mcux_driver_api = {
+static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 	.pin_configure = gpio_mcux_configure,
 	.port_get_raw = gpio_mcux_port_get_raw,
 	.port_set_masked_raw = gpio_mcux_port_set_masked_raw,

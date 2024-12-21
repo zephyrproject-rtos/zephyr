@@ -659,7 +659,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_set_lang)
 	struct bt_audio_codec_cfg codec_cfg = BT_AUDIO_CODEC_CFG(
 		BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
 		{BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_LANG, 'e', 'n', 'g')});
-	char new_expected_data[] = "deu";
+	const uint8_t new_expected_data[] = "deu";
 	char expected_data[] = "eng";
 	const uint8_t *lang;
 	int ret;
@@ -1701,7 +1701,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_set_lang)
 	struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP(
 		BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
 		{BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_LANG, 'e', 'n', 'g')});
-	char new_expected_data[] = "deu";
+	const uint8_t new_expected_data[] = "deu";
 	char expected_data[] = "eng";
 	const uint8_t *lang;
 	int ret;

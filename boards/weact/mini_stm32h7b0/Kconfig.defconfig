@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# WeAct Studio MiniSTM32H7B0 board configuration
+
+if BOARD_MINI_STM32H7B0
+
+if DISPLAY
+
+config INPUT
+	default y
+
+if LVGL
+
+configdefault LV_COLOR_16_SWAP
+	default y
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+endif # LVGL
+
+endif # DISPLAY
+
+if USB_DEVICE_STACK
+
+config UART_CONSOLE
+	default CONSOLE
+
+config USB_DEVICE_INITIALIZE_AT_BOOT
+	default y
+
+endif # USB_DEVICE_STACK
+
+endif # BOARD_MINI_STM32H7B0

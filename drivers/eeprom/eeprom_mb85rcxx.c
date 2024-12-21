@@ -206,7 +206,7 @@ static size_t mb85rcxx_get_size(const struct device *dev)
 	return cfg->size;
 }
 
-static const struct eeprom_driver_api mb85rcxx_driver_api = {
+static DEVICE_API(eeprom, mb85rcxx_driver_api) = {
 	.read = &mb85rcxx_read,
 	.write = &mb85rcxx_write,
 	.size = &mb85rcxx_get_size,

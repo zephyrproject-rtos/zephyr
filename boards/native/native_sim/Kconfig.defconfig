@@ -32,5 +32,4 @@ config UART_CONSOLE
 
 endif # CONSOLE
 
-
 endif # BOARD_NATIVE_SIM

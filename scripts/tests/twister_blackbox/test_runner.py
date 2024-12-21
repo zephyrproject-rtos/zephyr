@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -54,9 +54,9 @@ class TestRunner:
                 'built_configurations': 0,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
-                'executed_test_cases': 8,
+                'executed_test_cases': 10,
                 'skipped_test_cases': 0,
-                'platform_count': 0,
+                'platform_count': 2,
                 'executed_on_platform': 4,
                 'only_built': 0
             }
@@ -128,9 +128,9 @@ class TestRunner:
             os.path.join(TEST_DATA, 'tests', 'dummy'),
             ['qemu_x86/atom'],
             ['device'],
-            ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
-             'dummy.agnostic.group1.subgroup2 SKIPPED: Command line testsuite tag filter',
-             'dummy.agnostic.group1.subgroup1 SKIPPED: Command line testsuite tag filter',
+            ['dummy.agnostic.group2 FILTERED: Command line testsuite tag filter',
+             'dummy.agnostic.group1.subgroup2 FILTERED: Command line testsuite tag filter',
+             'dummy.agnostic.group1.subgroup1 FILTERED: Command line testsuite tag filter',
              r'0 of 0 executed test configurations passed \(0.00%\), 0 built \(not run\), 0 failed, 0 errored'
              ]
         ),
@@ -138,7 +138,7 @@ class TestRunner:
             os.path.join(TEST_DATA, 'tests', 'dummy'),
             ['qemu_x86/atom'],
             ['subgrouped'],
-            ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
+            ['dummy.agnostic.group2 FILTERED: Command line testsuite tag filter',
              r'1 of 2 executed test configurations passed \(50.00%\), 1 built \(not run\), 0 failed, 0 errored'
              ]
         ),
@@ -591,7 +591,7 @@ class TestRunner:
         sys.stderr.write(err)
 
         for line in expected:
-            assert re.search(line, err)
+            assert re.search(line, err), f"no expected:'{line}' in '{err}'"
 
         assert str(sys_exit.value) == '0'
 

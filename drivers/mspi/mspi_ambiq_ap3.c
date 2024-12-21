@@ -1320,7 +1320,7 @@ static int mspi_ambiq_init(const struct device *controller)
 	return mspi_ambiq_config(&spec);
 }
 
-static struct mspi_driver_api mspi_ambiq_driver_api = {
+static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 	.config                = mspi_ambiq_config,
 	.dev_config            = mspi_ambiq_dev_config,
 	.xip_config            = mspi_ambiq_xip_config,

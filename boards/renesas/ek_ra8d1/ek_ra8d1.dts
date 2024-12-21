@@ -7,7 +7,8 @@
 
 #include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
 #include <dt-bindings/gpio/gpio.h>
-
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra8d1-pinctrl.dtsi"
 
 / {
@@ -40,8 +41,24 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: s2 {
+			gpios = <&ioport0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
 	};
 };
 
@@ -81,6 +98,10 @@
 &canfdclk {
 	clocks = <&pll>;
 	div = <5>;
+	status = "okay";
+};
+
+&ioport0 {
 	status = "okay";
 };
 
@@ -151,4 +172,60 @@
 		rx-max-filters = <16>;
 		status = "okay";
 	};
+};
+
+&iic1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+};
+
+&eth {
+	local-mac-address = [74 90 50 B0 5D E9];
+	status = "okay";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@5 {
+		compatible = "ethernet-phy";
+		reg = <5>;
+		status = "okay";
+	};
+};
+
+&usbhs {
+	pinctrl-0 = <&usbhs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "high-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+&usbhs_phy {
+	phys-clock-src = "xtal";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&port_irq12 {
+	interrupts = <88 12>;
+	status = "okay";
+};
+
+&port_irq13 {
+	interrupts = <89 12>;
+	status = "okay";
 };

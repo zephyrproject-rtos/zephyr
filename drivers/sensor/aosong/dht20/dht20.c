@@ -307,8 +307,10 @@ static int dht20_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api dht20_driver_api = {.sample_fetch = dht20_sample_fetch,
-							  .channel_get = dht20_channel_get};
+static DEVICE_API(sensor, dht20_driver_api) = {
+	.sample_fetch = dht20_sample_fetch,
+	.channel_get = dht20_channel_get,
+};
 
 #define DT_DRV_COMPAT aosong_dht20
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)

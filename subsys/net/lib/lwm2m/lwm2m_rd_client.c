@@ -849,6 +849,9 @@ static int sm_bootstrap_trans_done(void)
 	client.ctx->sec_obj_inst = -1;
 	client.use_bootstrap = false;
 
+	/* reset server timestamps */
+	lwm2m_server_reset_timestamps();
+
 	set_sm_state(ENGINE_DO_REGISTRATION);
 
 	return 0;

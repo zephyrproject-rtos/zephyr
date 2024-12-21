@@ -2,13 +2,18 @@ sample:
   description: MQTT sample app to AWS IoT Core
   name: aws_iot_mqtt
 common:
-  tags: net mqtt cloud
+  tags:
+    - net
+    - mqtt
+    - cloud
   harness: net
   filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   extra_args: USE_DUMMY_CREDS=1
 tests:
   sample.net.cloud.aws_iot_mqtt:
     depends_on: netif
-    platform_allow: qemu_x86 nucleo_f429zi
+    platform_allow:
+      - qemu_x86
+      - nucleo_f429zi
     integration_platforms:
       - qemu_x86

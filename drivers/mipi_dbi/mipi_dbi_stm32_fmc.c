@@ -172,7 +172,7 @@ static int mipi_dbi_stm32_fmc_init(const struct device *dev)
 	return 0;
 }
 
-static struct mipi_dbi_driver_api mipi_dbi_stm32_fmc_driver_api = {
+static DEVICE_API(mipi_dbi, mipi_dbi_stm32_fmc_driver_api) = {
 	.reset = mipi_dbi_stm32_fmc_reset,
 	.command_write = mipi_dbi_stm32_fmc_command_write,
 	.write_display = mipi_dbi_stm32_fmc_write_display,

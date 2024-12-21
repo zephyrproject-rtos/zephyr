@@ -157,7 +157,7 @@ static int sbs_charger_init(const struct device *dev)
 	return 0;
 }
 
-static const struct charger_driver_api sbs_charger_driver_api = {
+static DEVICE_API(charger, sbs_charger_driver_api) = {
 	.get_property = &sbs_charger_get_prop,
 	.set_property = &sbs_charger_set_prop,
 	.charge_enable = &sbs_charger_charge_enable,

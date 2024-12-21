@@ -16,7 +16,7 @@ tests:
     integration_platforms:
       - native_sim
   testing.ztest.base.verbose_0_userspace:
-    filter: CONFIG_USERSPACE
+    filter: CONFIG_ARCH_HAS_USERSPACE
     extra_args: CONF_FILE=prj_verbose_0.conf
     tags:
       - userspace

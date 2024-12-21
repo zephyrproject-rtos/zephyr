@@ -6,7 +6,6 @@
 if SOC_STM32L152XC
 
 config NUM_IRQS
-	int
 	default 57
 
 endif # SOC_STM32L152XC

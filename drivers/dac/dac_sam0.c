@@ -105,7 +105,7 @@ static int dac_sam0_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api api_sam0_driver_api = {
+static DEVICE_API(dac, api_sam0_driver_api) = {
 	.channel_setup = dac_sam0_channel_setup,
 	.write_value = dac_sam0_write_value
 };

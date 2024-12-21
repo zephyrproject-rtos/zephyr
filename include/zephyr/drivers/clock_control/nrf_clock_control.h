@@ -117,6 +117,13 @@ int z_nrf_clock_calibration_count(void);
  */
 int z_nrf_clock_calibration_skips_count(void);
 
+
+/** @brief Returns information if LF clock calibration is in progress.
+ *
+ * @return True if calibration is in progress, false otherwise.
+ */
+bool z_nrf_clock_calibration_is_in_progress(void);
+
 /** @brief Get onoff service for given clock subsystem.
  *
  * @param sys Subsystem.
@@ -236,6 +243,24 @@ int nrf_clock_control_request(const struct device *dev,
 }
 
 /**
+ * @brief Synchronously request a reservation to use a given clock with specified attributes.
+ *
+ * Function can only be called from thread context as it blocks until request is completed.
+ * @see nrf_clock_control_request().
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec See nrf_clock_control_request().
+ * @param timeout Request timeout.
+ *
+ * @retval 0 if request is fulfilled.
+ * @retval -EWOULDBLOCK if request is called from the interrupt context.
+ * @retval negative See error codes returned by nrf_clock_control_request().
+ */
+int nrf_clock_control_request_sync(const struct device *dev,
+				   const struct nrf_clock_spec *spec,
+				   k_timeout_t timeout);
+
+/**
  * @brief Release a reserved use of a clock.
  *
  * @param dev pointer to the clock device structure.
@@ -291,6 +316,30 @@ int nrf_clock_control_cancel_or_release(const struct device *dev,
 
 	return api->cancel_or_release(dev, spec, cli);
 }
+
+/** @brief Request the HFXO from Zero Latency Interrupt context.
+ *
+ * Function is optimized for use in Zero Latency Interrupt context.
+ * It does not give notification when the HFXO is ready, so each
+ * user must put the request early enough to make sure the HFXO
+ * ramp-up has finished on time.
+ *
+ * This function uses reference counting so the caller must ensure
+ * that every nrf_clock_control_hfxo_request() call has a matching
+ * nrf_clock_control_hfxo_release() call.
+ */
+void nrf_clock_control_hfxo_request(void);
+
+/** @brief Release the HFXO from Zero Latency Interrupt context.
+ *
+ * Function is optimized for use in Zero Latency Interrupt context.
+ *
+ * Calls to this function must be coupled with prior calls
+ * to nrf_clock_control_hfxo_request(), because it uses basic
+ * reference counting to make sure the HFXO is released when
+ * there are no more pending requests.
+ */
+void nrf_clock_control_hfxo_release(void);
 
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
 

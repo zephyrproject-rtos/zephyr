@@ -21,4 +21,10 @@ static inline void soc_secure_read_deviceid(uint32_t deviceid[2])
 	deviceid[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
 }
 
+static inline int soc_secure_mem_read(void *dst, void *src, size_t len)
+{
+	(void)memcpy(dst, src, len);
+	return 0;
+}
+
 #endif /* BOARDS_POSIX_NRF52_BSIM_SOC_SECURE_H */

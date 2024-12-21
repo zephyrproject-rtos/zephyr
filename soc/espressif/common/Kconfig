@@ -58,6 +58,7 @@ config ESP32_PHY_MAX_TX_POWER
 
 endif
 
+rsource "Kconfig.amp"
 rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"

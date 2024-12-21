@@ -143,14 +143,6 @@ config CPP_RTTI
 
 endif # !MINIMAL_LIBCPP
 
-config CPP_STATIC_INIT_GNU
-	bool
-	select STATIC_INIT_GNU
-	select DEPRECATED
-	help
-	  GNU-compatible initialization of CPP static objects.
-	  This option is deprecated in favour of STATIC_INIT_GNU
-
 endif # CPP
 
 endmenu

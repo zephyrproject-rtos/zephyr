@@ -447,6 +447,23 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 
 	LOG_DBG("%s, link type 0x%02x", bt_addr_str(&evt->bdaddr), evt->key_type);
 
+	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY) && (evt->key_type != BT_LK_AUTH_COMBINATION_P256)) {
+		/*
+		 * When in Secure Connections Only mode, all services
+		 * (except those allowed to have Security Mode 4, Level 0)
+		 * available on the BR/EDR physical transport require Security
+		 * Mode 4, Level 4.
+		 * Link key type should be P-256 based Secure Simple Pairing
+		 * and Secure Authentication.
+		 */
+		LOG_WRN("For SC only mode, link key type should be %d",
+			BT_LK_AUTH_COMBINATION_P256);
+		ssp_pairing_complete(conn, bt_security_err_get(BT_HCI_ERR_AUTH_FAIL));
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+		bt_conn_unref(conn);
+		return;
+	}
+
 	if (!conn->br.link_key) {
 		conn->br.link_key = bt_keys_get_link_key(&evt->bdaddr);
 	}
@@ -649,6 +666,19 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
+
+#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
+	if (bt_auth && bt_auth->pairing_accept) {
+		enum bt_security_err err;
+
+		err = bt_auth->pairing_accept(conn, NULL);
+		if (err != BT_SECURITY_ERR_SUCCESS) {
+			io_capa_neg_reply(&evt->bdaddr,
+					  BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			return;
+		}
+	}
+#endif
 
 	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY,
 				     sizeof(*cp));

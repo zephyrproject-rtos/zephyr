@@ -935,7 +935,7 @@ static int nxp_s32_qspi_init(const struct device *dev)
 	return ret;
 }
 
-static const struct flash_driver_api nxp_s32_qspi_api = {
+static DEVICE_API(flash, nxp_s32_qspi_api) = {
 	.erase = nxp_s32_qspi_erase,
 	.write = nxp_s32_qspi_write,
 	.read = nxp_s32_qspi_read,

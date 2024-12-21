@@ -9,6 +9,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # interval
 simulation_id="basic_conn_split_1ms"
 verbosity_level=2
+EXECUTE_TIMEOUT=120
 
 cd ${BSIM_OUT_PATH}/bin
 

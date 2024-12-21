@@ -1,5 +1,7 @@
 tests:
   benchmark.kernel.core:
+    platform_key:
+      - arch
     tags:
       - kernel
       - benchmark

@@ -5,6 +5,6 @@ config INPUT_GPIO_KEYS
 	bool "GPIO Keys input driver"
 	default y
 	depends on DT_HAS_GPIO_KEYS_ENABLED
-	depends on GPIO
+	select GPIO
 	help
 	  Enable support for GPIO Keys input driver.

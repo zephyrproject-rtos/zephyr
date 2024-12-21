@@ -16,6 +16,7 @@ supported:
   - adc
   - arduino_gpio
   - gpio
+  - flash
   - i2c
   - usb_device
 vendor: nxp

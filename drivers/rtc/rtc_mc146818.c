@@ -495,7 +495,7 @@ static void rtc_mc146818_isr(const struct device *dev)
 #endif
 }
 
-static const struct rtc_driver_api rtc_mc146818_driver_api = {
+static DEVICE_API(rtc, rtc_mc146818_driver_api) = {
 	.set_time = rtc_mc146818_set_time,
 	.get_time = rtc_mc146818_get_time,
 #if defined(CONFIG_RTC_ALARM)

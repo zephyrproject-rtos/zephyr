@@ -65,7 +65,7 @@ static int isl29035_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api isl29035_api = {
+static DEVICE_API(sensor, isl29035_api) = {
 #if CONFIG_ISL29035_TRIGGER
 	.attr_set = &isl29035_attr_set,
 	.trigger_set = &isl29035_trigger_set,

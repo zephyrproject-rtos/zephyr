@@ -1,0 +1,31 @@
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+    - signals
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
+  min_flash: 64
+  min_ram: 32
+tests:
+  portability.posix.signals: {}
+  portability.posix.signals.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  portability.posix.signals.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.signals.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  portability.posix.signals.strginal_no_desc:
+    extra_configs:
+      - CONFIG_POSIX_SIGNAL_STRING_DESC=n
+  portability.posix.signals.big_nsig:
+    extra_configs:
+      - CONFIG_POSIX_RTSIG_MAX=1024

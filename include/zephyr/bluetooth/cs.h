@@ -88,24 +88,14 @@ enum bt_le_cs_test_cs_sync_antenna_selection {
 	BT_LE_CS_TEST_CS_SYNC_ANTENNA_SELECTION_FOUR = BT_HCI_OP_LE_CS_ANTENNA_SEL_FOUR,
 };
 
-/** CS Test Initiator SNR control options */
-enum bt_le_cs_initiator_snr_control {
-	BT_LE_CS_INITIATOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_18,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_21,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_24,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_27,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_30,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_INITIATOR_SNR_NOT_USED,
-};
-
-/** CS Test Reflector SNR control options */
-enum bt_le_cs_reflector_snr_control {
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_18,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_21,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_24,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_27,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_30,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_REFLECTOR_SNR_NOT_USED,
+/** CS SNR control options */
+enum bt_le_cs_snr_control {
+	BT_LE_CS_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_SNR_18,
+	BT_LE_CS_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_SNR_21,
+	BT_LE_CS_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_SNR_24,
+	BT_LE_CS_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_SNR_27,
+	BT_LE_CS_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_SNR_30,
+	BT_LE_CS_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_SNR_NOT_USED,
 };
 
 /** CS Test Override 3 T_PM Tone Extension */
@@ -215,7 +205,7 @@ enum bt_le_cs_test_override_4_tone_antenna_permutation {
 	BT_LE_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_21 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_21,
 	BT_LE_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_22 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_22,
 	BT_LE_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_23 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_23,
-	/** Loop through all valid Antenna Permuation Indices starting
+	/** Loop through all valid Antenna Permutation Indices starting
 	 *  from the lowest index.
 	 */
 	BT_LE_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_LOOP =
@@ -364,9 +354,9 @@ struct bt_le_cs_test_param {
 	 */
 	enum bt_conn_le_cs_tone_antenna_config_selection tone_antenna_config_selection;
 	/** Initiator SNR control options */
-	enum bt_le_cs_initiator_snr_control initiator_snr_control;
+	enum bt_le_cs_snr_control initiator_snr_control;
 	/** Reflector SNR control options */
-	enum bt_le_cs_reflector_snr_control reflector_snr_control;
+	enum bt_le_cs_snr_control reflector_snr_control;
 	/** Determines octets 14 and 15 of the initial value of the DRBG nonce. */
 	uint16_t drbg_nonce;
 
@@ -638,7 +628,7 @@ int bt_le_cs_test_cb_register(struct bt_le_cs_test_cb cs_test_cb);
  * of either the initiator or reflector.
  *
  * The first mode-0 channel in the list is used as the starting channel for
- * the test. At the beginning of any test, the IUT in the flector role shall
+ * the test. At the beginning of any test, the IUT in the reflector role shall
  * listen on the first mode-0 channel until it receives the first transmission
  * from the initiator. Similarly, with the IUT in the initiator role, the tester
  * will start by listening on the first mode-0 channel and the IUT shall transmit
@@ -718,7 +708,7 @@ void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
 
 /** @brief CS Security Enable
  *
- * This commmand is used to start or restart the Channel Sounding Security
+ * This command is used to start or restart the Channel Sounding Security
  * Start procedure in the local Controller for the ACL connection identified
  * in the conn parameter.
  *
@@ -753,7 +743,7 @@ int bt_le_cs_procedure_enable(struct bt_conn *conn,
 
 enum bt_le_cs_procedure_phy {
 	BT_LE_CS_PROCEDURE_PHY_1M = BT_HCI_OP_LE_CS_PROCEDURE_PHY_1M,
-	BT_LE_CS_PROCEUDRE_PHY_2M = BT_HCI_OP_LE_CS_PROCEDURE_PHY_2M,
+	BT_LE_CS_PROCEDURE_PHY_2M = BT_HCI_OP_LE_CS_PROCEDURE_PHY_2M,
 	BT_LE_CS_PROCEDURE_PHY_CODED_S8 = BT_HCI_OP_LE_CS_PROCEDURE_PHY_CODED_S8,
 	BT_LE_CS_PROCEDURE_PHY_CODED_S2 = BT_HCI_OP_LE_CS_PROCEDURE_PHY_CODED_S2,
 };
@@ -803,10 +793,10 @@ struct bt_le_cs_set_procedure_parameters_param {
 	uint8_t preferred_peer_antenna;
 
 	/* Initiator SNR control adjustment */
-	enum bt_le_cs_initiator_snr_control snr_control_initiator;
+	enum bt_le_cs_snr_control snr_control_initiator;
 
 	/* Reflector SNR control adjustment */
-	enum bt_le_cs_reflector_snr_control snr_control_reflector;
+	enum bt_le_cs_snr_control snr_control_reflector;
 };
 
 /** @brief CS Set Procedure Parameters
@@ -886,7 +876,7 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
  *
  * @return Zero on success or (negative) error code on failure.
  */
-int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, uint8_t remote_fae_table[72]);
+int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_fae_table[72]);
 
 #ifdef __cplusplus
 }

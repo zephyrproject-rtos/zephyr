@@ -87,6 +87,6 @@
 #define CLK48_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 26, CCIPR_REG)
 #define ADC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 28, CCIPR_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 8, CSR_REG)
+#define RTC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 8, BDCR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U0_CLOCK_H_ */

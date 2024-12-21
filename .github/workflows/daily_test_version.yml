@@ -25,7 +25,7 @@ jobs:
 
     - name: install-pip
       run: |
-        pip3 install gitpython
+        pip install gitpython
 
     - name: checkout
       uses: actions/checkout@v4

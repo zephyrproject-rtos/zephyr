@@ -59,7 +59,7 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 }
 
 static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
-			      enum llext_mem mem_idx)
+			      enum llext_mem mem_idx, const struct llext_load_param *ldr_parm)
 {
 	int ret;
 
@@ -68,16 +68,29 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 	}
 	ext->mem_size[mem_idx] = ldr->sects[mem_idx].sh_size;
 
-	if (ldr->sects[mem_idx].sh_type != SHT_NOBITS &&
-	    IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
-		/* Directly use data from the ELF buffer if peek() is supported */
-		ext->mem[mem_idx] = llext_peek(ldr, ldr->sects[mem_idx].sh_offset);
-		if (ext->mem[mem_idx]) {
-			llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
-				ldr->sects[mem_idx].sh_size);
+	if (IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
+		if (ldr->sects[mem_idx].sh_type != SHT_NOBITS) {
+			/* Directly use data from the ELF buffer if peek() is supported */
+			ext->mem[mem_idx] = llext_peek(ldr, ldr->sects[mem_idx].sh_offset);
+			if (ext->mem[mem_idx]) {
+				llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
+						    ldr->sects[mem_idx].sh_size);
+				ext->mem_on_heap[mem_idx] = false;
+				return 0;
+			}
+		} else if (ldr_parm && ldr_parm->pre_located) {
+			/*
+			 * ldr_parm cannot be NULL here with the current flow, but
+			 * we add a check to make it future-proof
+			 */
+			ext->mem[mem_idx] = NULL;
 			ext->mem_on_heap[mem_idx] = false;
 			return 0;
 		}
+	}
+
+	if (ldr_parm && ldr_parm->pre_located) {
+		return -EFAULT;
 	}
 
 	/* On ARM with an MPU a pow(2, N)*32 sized and aligned region is needed,
@@ -132,16 +145,17 @@ err:
 
 int llext_copy_strings(struct llext_loader *ldr, struct llext *ext)
 {
-	int ret = llext_copy_section(ldr, ext, LLEXT_MEM_SHSTRTAB);
+	int ret = llext_copy_section(ldr, ext, LLEXT_MEM_SHSTRTAB, NULL);
 
 	if (!ret) {
-		ret = llext_copy_section(ldr, ext, LLEXT_MEM_STRTAB);
+		ret = llext_copy_section(ldr, ext, LLEXT_MEM_STRTAB, NULL);
 	}
 
 	return ret;
 }
 
-int llext_copy_regions(struct llext_loader *ldr, struct llext *ext)
+int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
+		       const struct llext_load_param *ldr_parm)
 {
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
 		/* strings have already been copied */
@@ -149,7 +163,7 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext)
 			continue;
 		}
 
-		int ret = llext_copy_section(ldr, ext, mem_idx);
+		int ret = llext_copy_section(ldr, ext, mem_idx, ldr_parm);
 
 		if (ret < 0) {
 			return ret;

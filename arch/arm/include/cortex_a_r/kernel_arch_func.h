@@ -20,6 +20,8 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_A_R_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_A_R_KERNEL_ARCH_FUNC_H_
 
+#include <zephyr/platform/hooks.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,9 +30,27 @@ extern "C" {
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 #ifndef CONFIG_USE_SWITCH
+
+static ALWAYS_INLINE int arch_swap(unsigned int key)
+{
+	/* store off key and return value */
+	arch_current_thread()->arch.basepri = key;
+	arch_current_thread()->arch.swap_return_value = -EAGAIN;
+
+	z_arm_cortex_r_svc();
+	irq_unlock(key);
+
+	/* Context switch is performed here. Returning implies the
+	 * thread has been context-switched-in again.
+	 */
+	return arch_current_thread()->arch.swap_return_value;
+}
 
 static ALWAYS_INLINE void
 arch_thread_return_value_set(struct k_thread *thread, unsigned int value)

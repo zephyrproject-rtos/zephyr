@@ -229,7 +229,7 @@ static uint32_t counter_ambiq_get_top_value(const struct device *dev)
 	return config->counter_info.max_top_value;
 }
 
-static const struct counter_driver_api counter_api = {
+static DEVICE_API(counter, counter_api) = {
 	.start = counter_ambiq_start,
 	.stop = counter_ambiq_stop,
 	.get_value = counter_ambiq_get_value,

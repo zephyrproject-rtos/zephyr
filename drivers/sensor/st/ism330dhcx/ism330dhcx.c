@@ -677,7 +677,7 @@ static int ism330dhcx_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api ism330dhcx_api_funcs = {
+static DEVICE_API(sensor, ism330dhcx_api_funcs) = {
 	.attr_set = ism330dhcx_attr_set,
 #if CONFIG_ISM330DHCX_TRIGGER
 	.trigger_set = ism330dhcx_trigger_set,

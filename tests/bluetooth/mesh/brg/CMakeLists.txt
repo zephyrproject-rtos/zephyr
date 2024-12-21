@@ -12,11 +12,12 @@ target_sources(app
 
 target_include_directories(app
 	PRIVATE
-	${ZEPHYR_BASE}/subsys/bluetooth/mesh)
+	${ZEPHYR_BASE}/subsys/bluetooth/mesh
+	${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
 
 target_compile_options(app
 	PRIVATE
 	-DCONFIG_BT_SETTINGS
 	-DCONFIG_BT_MESH_BRG_CFG_SRV
 	-DCONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX=16
-	-DCONFIG_BT_MESH_USES_TINYCRYPT)
+	-DCONFIG_BT_MESH_USES_MBEDTLS_PSA)

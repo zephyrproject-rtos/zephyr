@@ -152,7 +152,7 @@ static int wdog_cmsdk_apb_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static const struct wdt_driver_api wdog_cmsdk_apb_api = {
+static DEVICE_API(wdt, wdog_cmsdk_apb_api) = {
 	.setup = wdog_cmsdk_apb_setup,
 	.disable = wdog_cmsdk_apb_disable,
 	.install_timeout = wdog_cmsdk_apb_install_timeout,

@@ -22,9 +22,9 @@ config SAMPLE_UNICAST
 config SAMPLE_BROADCAST
 	bool "Whether or not to search for CAP acceptors for unicast audio"
 	default y if !SAMPLE_UNICAST
-	select BT_ISO_SYNC_RECEIVER
 	select BT_BAP_SCAN_DELEGATOR
 	select BT_OBSERVER
+	select BT_ISO_SYNC_RECEIVER
 	select BT_BAP_BROADCAST_SINK
 	select BT_PAC_SNK
 	select BT_PAC_SNK_LOC

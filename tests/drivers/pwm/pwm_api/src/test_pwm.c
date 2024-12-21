@@ -53,8 +53,8 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
 #define PWM_DEV_NODE DT_INST(0, intel_blinky_pwm)
 
-#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra8_pwm)
-#define PWM_DEV_NODE DT_INST(0, renesas_ra8_pwm)
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_pwm)
+#define PWM_DEV_NODE DT_INST(0, renesas_ra_pwm)
 
 #else
 #error "Define a PWM device"
@@ -77,6 +77,11 @@
 #define DEFAULT_PULSE_CYCLE 32000
 #define DEFAULT_PERIOD_NSEC 2000000
 #define DEFAULT_PULSE_NSEC 1000000
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_fake_pwm)
+#include <zephyr/fff.h>
+DEFINE_FFF_GLOBALS;
 #endif
 
 #if defined CONFIG_BOARD_SAM_E70_XPLAINED

@@ -112,7 +112,7 @@ static int silabs_clock_control_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api silabs_clock_control_api = {
+static DEVICE_API(clock_control, silabs_clock_control_api) = {
 	.on = silabs_clock_control_on,
 	.off = silabs_clock_control_off,
 	.get_rate = silabs_clock_control_get_rate,

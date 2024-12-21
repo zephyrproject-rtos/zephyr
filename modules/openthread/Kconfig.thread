@@ -195,6 +195,12 @@ config OPENTHREAD_DEFAULT_TX_POWER
 	help
 	  Set the default TX output power [dBm] in radio driver for OpenThread purpose.
 
+config OPENTHREAD_TCAT_MULTIRADIO_CAPABILITIES
+	bool "Openthread multiradio capability"
+	default y if OPENTHREAD_BLE_TCAT
+	help
+	  Openthread multiradio capability.
+
 config OPENTHREAD_BLE_TCAT_THREAD_STACK_SIZE
 	int "Openthread default TCAT stack size"
 	default 5120 if OPENTHREAD_CRYPTO_PSA
@@ -223,3 +229,24 @@ config OPENTHREAD_STORE_FRAME_COUNTER_AHEAD
 	default 100000
 	help
 	  Openthread value ahead of the current frame counter for persistent storage.
+
+config OPENTHREAD_CHILD_SUPERVISION_CHECK_TIMEOUT
+	int "Openthread child supervision check timeout in seconds"
+	default 190
+	help
+	  The supervision check timeout interval in seconds used by a device in child state.
+	  Set to zero to disable the supervision check process on the child.
+
+config OPENTHREAD_CHILD_SUPERVISION_INTERVAL
+	int "Openthread child supervision interval in seconds"
+	default 129
+	help
+	  The supervision interval used by a parent device to send a supervision message
+	  to the child, if there is no transmission to the child within this interval.
+	  Set to zero to disable the supervision check process on the child.
+
+config OPENTHREAD_MLE_CHILD_TIMEOUT
+	int "Openthread MLE child timeout in seconds"
+	default 240
+	help
+	  The value of MLE child timeout in seconds.

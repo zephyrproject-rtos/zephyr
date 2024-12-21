@@ -40,13 +40,30 @@ Requirements
 Build and Running
 *****************
 
-Currently, this sample application only supports static IP addresses.
-Open the :file:`prj.conf` file and set the IP addresses according
-to the LAN environment.
+This sample application supports both static IP addresses and the Gateway Discovery process.
+Open the :zephyr_file:`samples/net/mqtt_sn_publisher/prj.conf` file and set the IP addresses according
+to the LAN environment. CONFIG_NET_SAMPLE_MQTT_SN_STATIC_GATEWAY can be used to select the
+static IP or Gateway discovery process.
 
-You will also need to start an MQTT-SN gateway. With Paho, you can either
-build it from source - see `PAHO MQTT-SN Gateway`_ - or run an unofficial
-docker image, like `kyberpunk/paho`_.
+You will also need to start an MQTT-SN gateway. A convenience Docker Compose specification file
+is provided in :zephyr_file:`samples/net/mqtt_sn_publisher/compose/compose.yaml`.
+First, Start the net-tools configuration from[here](https://github.com/zephyrproject-rtos/net-tools)
+with:
+
+.. code-block:: console
+
+	$ ./net-setup.sh --config docker.conf
+
+Then bring up the Docker environment in a separate terminal window with:
+
+.. code-block:: console
+
+	$ cd ./compose
+	$ docker compose up
+
+You can also set up this environment manually.With Paho, you can either build it
+from source - see `PAHO MQTT-SN Gateway`_ - or run an unofficial docker image, l
+ike `kyberpunk/paho`_.
 
 .. _PAHO MQTT-SN Gateway: https://www.eclipse.org/paho/index.php?page=components/mqtt-sn-transparent-gateway/index.php
 .. _kyberpunk/paho: https://hub.docker.com/r/kyberpunk/paho

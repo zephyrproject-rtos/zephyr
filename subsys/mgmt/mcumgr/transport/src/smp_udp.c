@@ -41,12 +41,6 @@ BUILD_ASSERT(0, "Either IPv4 or IPv6 SMP must be enabled for the MCUmgr UDP SMP 
 BUILD_ASSERT(sizeof(struct sockaddr) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE,
 	     "CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE must be >= sizeof(struct sockaddr)");
 
-#define IS_THREAD_RUNNING(thread)					\
-	(thread.base.thread_state & (_THREAD_PENDING |			\
-				     _THREAD_PRESTART |			\
-				     _THREAD_SUSPENDED |		\
-				     _THREAD_QUEUED) ? true : false)
-
 enum proto_type {
 	PROTOCOL_IPV4 = 0,
 	PROTOCOL_IPV6,
@@ -76,6 +70,8 @@ struct configs {
 #endif
 #endif
 };
+
+static bool threads_created;
 
 static struct configs smp_udp_configs;
 
@@ -168,6 +164,7 @@ static int create_socket(enum proto_type proto, int *sock)
 	int tmp_sock;
 	int err;
 	struct sockaddr *addr;
+	socklen_t addr_len = 0;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	struct sockaddr_in addr4;
@@ -179,6 +176,7 @@ static int create_socket(enum proto_type proto, int *sock)
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	if (proto == PROTOCOL_IPV4) {
+		addr_len = sizeof(struct sockaddr_in);
 		memset(&addr4, 0, sizeof(addr4));
 		addr4.sin_family = AF_INET;
 		addr4.sin_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
@@ -189,6 +187,7 @@ static int create_socket(enum proto_type proto, int *sock)
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
 	if (proto == PROTOCOL_IPV6) {
+		addr_len = sizeof(struct sockaddr_in6);
 		memset(&addr6, 0, sizeof(addr6));
 		addr6.sin6_family = AF_INET6;
 		addr6.sin6_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
@@ -207,7 +206,7 @@ static int create_socket(enum proto_type proto, int *sock)
 		return -err;
 	}
 
-	if (zsock_bind(tmp_sock, addr, sizeof(*addr)) < 0) {
+	if (zsock_bind(tmp_sock, addr, addr_len) < 0) {
 		err = errno;
 		LOG_ERR("Could not bind to receive socket (%s), err: %i",
 			smp_udp_proto_to_name(proto), err);
@@ -276,14 +275,14 @@ static void smp_udp_open_iface(struct net_if *iface, void *user_data)
 	if (net_if_is_up(iface)) {
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 		if (net_if_flag_is_set(iface, NET_IF_IPV4) &&
-		    IS_THREAD_RUNNING(smp_udp_configs.ipv4.thread)) {
+		    k_thread_join(&smp_udp_configs.ipv4.thread, K_NO_WAIT) == -EBUSY) {
 			k_sem_give(&smp_udp_configs.ipv4.network_ready_sem);
 		}
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
 		if (net_if_flag_is_set(iface, NET_IF_IPV6) &&
-		    IS_THREAD_RUNNING(smp_udp_configs.ipv6.thread)) {
+		    k_thread_join(&smp_udp_configs.ipv6.thread, K_NO_WAIT) == -EBUSY) {
 			k_sem_give(&smp_udp_configs.ipv6.network_ready_sem);
 		}
 #endif
@@ -316,7 +315,8 @@ int smp_udp_open(void)
 	bool started = false;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	if (!IS_THREAD_RUNNING(smp_udp_configs.ipv4.thread)) {
+	if (k_thread_join(&smp_udp_configs.ipv4.thread, K_NO_WAIT) == 0 ||
+	    threads_created == false) {
 		(void)k_sem_reset(&smp_udp_configs.ipv4.network_ready_sem);
 		create_thread(&smp_udp_configs.ipv4, "smp_udp4");
 		started = true;
@@ -326,7 +326,8 @@ int smp_udp_open(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	if (!IS_THREAD_RUNNING(smp_udp_configs.ipv6.thread)) {
+	if (k_thread_join(&smp_udp_configs.ipv6.thread, K_NO_WAIT) == 0 ||
+	    threads_created == false) {
 		(void)k_sem_reset(&smp_udp_configs.ipv6.network_ready_sem);
 		create_thread(&smp_udp_configs.ipv6, "smp_udp6");
 		started = true;
@@ -337,6 +338,7 @@ int smp_udp_open(void)
 
 	if (started) {
 		/* One or more threads were started, check existing interfaces */
+		threads_created = true;
 		net_if_foreach(smp_udp_open_iface, NULL);
 	}
 
@@ -346,7 +348,7 @@ int smp_udp_open(void)
 int smp_udp_close(void)
 {
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	if (IS_THREAD_RUNNING(smp_udp_configs.ipv4.thread)) {
+	if (k_thread_join(&smp_udp_configs.ipv4.thread, K_NO_WAIT) == -EBUSY) {
 		k_thread_abort(&(smp_udp_configs.ipv4.thread));
 
 		if (smp_udp_configs.ipv4.sock >= 0) {
@@ -359,7 +361,7 @@ int smp_udp_close(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	if (IS_THREAD_RUNNING(smp_udp_configs.ipv6.thread)) {
+	if (k_thread_join(&smp_udp_configs.ipv6.thread, K_NO_WAIT) == -EBUSY) {
 		k_thread_abort(&(smp_udp_configs.ipv6.thread));
 
 		if (smp_udp_configs.ipv6.sock >= 0) {
@@ -377,6 +379,8 @@ int smp_udp_close(void)
 static void smp_udp_start(void)
 {
 	int rc;
+
+	threads_created = false;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	smp_udp_configs.ipv4.proto = PROTOCOL_IPV4;

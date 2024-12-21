@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2020-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -85,7 +85,8 @@ def test_get_all_testsuites_short(class_testplan, all_testsuites_dict):
                       'test_b.check_1', 'test_b.check_2', 'test_c.check_1',
                       'test_c.check_2', 'test_d.check_1.unit_1a',
                       'test_d.check_1.unit_1b',
-                      'test_e.check_1.1a', 'test_e.check_1.1b',
+                      'test_e.check_1.feature5.1a',
+                      'test_e.check_1.feature5.1b',
                       'test_config.main']
 
     assert sorted(plan.get_all_tests()) == sorted(expected_tests)
@@ -1308,19 +1309,35 @@ def test_testplan_get_all_tests():
 
 
 TESTDATA_9 = [
-    ([], False, 7),
-    ([], True, 5),
-    (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], False, 3),
-    (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], True, 0),
+    ([], False, True, 11, 1),
+    ([], False, False, 7, 2),
+    ([], True, False, 9, 1),
+    ([], True, True, 9, 1),
+    ([], True, False, 9, 1),
+    (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], False, True, 3, 1),
+    (['good_test/dummy.common.1', 'good_test/dummy.common.2',
+      'duplicate_test/dummy.common.1', 'duplicate_test/dummy.common.2'], False, True, 4, 1),
+    (['dummy.common.1', 'dummy.common.2'], False, False, 2, 1),
+    (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], True, True, 0, 1),
 ]
 
 @pytest.mark.parametrize(
-    'testsuite_filter, use_alt_root, expected_suite_count',
+    'testsuite_filter, use_alt_root, detailed_id, expected_suite_count, expected_errors',
     TESTDATA_9,
-    ids=['no testsuite filter', 'no testsuite filter, alt root',
-         'testsuite filter', 'testsuite filter, alt root']
+    ids=[
+        'no testsuite filter, detailed id',
+        'no testsuite filter, short id',
+        'no testsuite filter, alt root, detailed id',
+        'no filter, alt root, detailed id',
+        'no filter, alt root, short id',
+        'testsuite filter',
+        'testsuite filter and valid duplicate',
+        'testsuite filter, short id and duplicate',
+        'testsuite filter, alt root',
+    ]
 )
-def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, expected_suite_count):
+def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, detailed_id,
+                                 expected_errors, expected_suite_count):
     # tmp_path
     # ├ tests  <- test root
     # │ ├ good_test
@@ -1329,6 +1346,8 @@ def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, expec
     # │ │ └ testcase.yaml
     # │ ├ good_sample
     # │ │ └ sample.yaml
+    # │ ├ duplicate_test
+    # │ │ └ testcase.yaml
     # │ └ others
     # │   └ other.txt
     # └ other_tests  <- alternate test root
@@ -1380,6 +1399,25 @@ tests:
     samplefile_1 = tmp_good_sample_dir / 'sample.yaml'
     samplefile_1.write_text(samplecase_yaml_1)
 
+    tmp_duplicate_test_dir = tmp_test_root_dir / 'duplicate_test'
+    tmp_duplicate_test_dir.mkdir()
+    # The duplicate needs to have the same number of tests as these configurations
+    # can be read either with duplicate_test first, or good_test first, so number
+    # of selected tests needs to be the same in both situations.
+    testcase_yaml_4 = """\
+tests:
+  dummy.common.1:
+    build_on_all: true
+  dummy.common.2:
+    build_on_all: true
+  dummy.common.3:
+    build_on_all: true
+  dummy.special:
+    build_on_all: false
+"""
+    testfile_4 = tmp_duplicate_test_dir / 'testcase.yaml'
+    testfile_4.write_text(testcase_yaml_4)
+
     tmp_other_dir = tmp_test_root_dir / 'others'
     tmp_other_dir.mkdir()
     _ = tmp_other_dir / 'other.txt'
@@ -1401,6 +1439,7 @@ tests:
 
     env = mock.Mock(
         test_roots=[tmp_test_root_dir],
+        options=mock.Mock(detailed_test_id=detailed_id),
         alt_config_root=[tmp_alt_test_root_dir] if use_alt_root else []
     )
 
@@ -1409,6 +1448,7 @@ tests:
     res = testplan.add_testsuites(testsuite_filter)
 
     assert res == expected_suite_count
+    assert testplan.load_errors == expected_errors
 
 
 def test_testplan_str():
@@ -1698,27 +1738,31 @@ def test_testplan_add_instances():
     }
 
 
-def test_testplan_get_testsuite():
+def test_testplan_get_testcase():
     testplan = TestPlan(env=mock.Mock())
     testplan.testsuites = {
-        'testsuite0': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
-        'testsuite1': mock.Mock(testcases=[mock.Mock()]),
-        'testsuite2': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
-        'testsuite3': mock.Mock(testcases=[])
+        'test1.suite0': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
+        'test1.suite1': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
+        'test1.suite2': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
+        'test1.suite3': mock.Mock(testcases=[])
     }
-    testplan.testsuites['testsuite0'].testcases[0].name = 'testcase name 0'
-    testplan.testsuites['testsuite0'].testcases[1].name = 'testcase name 1'
-    testplan.testsuites['testsuite1'].testcases[0].name = 'sample id'
-    testplan.testsuites['testsuite2'].testcases[0].name = 'dummy id'
-    testplan.testsuites['testsuite2'].testcases[1].name = 'sample id'
 
-    id = 'sample id'
+    testplan.testsuites['test1.suite0'].testcases[0].name = 'test1.suite0.case0'
+    testplan.testsuites['test1.suite0'].testcases[1].name = 'test1.suite0.case1'
+    #
+    testplan.testsuites['test1.suite1'].testcases[0].name = 'test1.suite1.case0'
+    testplan.testsuites['test1.suite1'].testcases[1].name = 'test1.suite1.case0'  # in suite duplicate
+    #
+    testplan.testsuites['test1.suite2'].testcases[0].name = 'test1.suite2.case0'
+    testplan.testsuites['test1.suite2'].testcases[1].name = 'test1.suite1.case0'  # out suite duplicate
 
-    res = testplan.get_testsuite(id)
+    id = 'test1.suite1.case0'
 
-    assert len(res) == 2
-    assert testplan.testsuites['testsuite1'] in res
-    assert testplan.testsuites['testsuite2'] in res
+    res = testplan.get_testcase(id)
+
+    assert len(res) == 3
+    assert testplan.testsuites['test1.suite1'] in res
+    assert testplan.testsuites['test1.suite2'] in res
 
 
 def test_testplan_verify_platforms_existence(caplog):

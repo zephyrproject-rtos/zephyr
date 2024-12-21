@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/kernel.h>
@@ -2462,7 +2463,10 @@ void test_main(void)
 		bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
 		printk("Connected: %s\n", addr);
 
-		bt_conn_le_param_update(default_conn, BT_LE_CONN_PARAM(0x06U, 0x10U, 0U, 400U));
+		bt_conn_le_param_update(default_conn,
+					BT_LE_CONN_PARAM(BT_GAP_US_TO_CONN_INTERVAL(7500),
+							 BT_GAP_US_TO_CONN_INTERVAL(20000), 0U,
+							 BT_GAP_MS_TO_CONN_TIMEOUT(4000U)));
 		WAIT_FOR_FLAG(flag_conn_updated);
 
 		test_discover();

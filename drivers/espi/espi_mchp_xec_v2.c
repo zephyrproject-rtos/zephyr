@@ -1250,7 +1250,7 @@ const struct espi_vw_isr m2s_vwires_isr[] = {
 
 static int espi_xec_init(const struct device *dev);
 
-static const struct espi_driver_api espi_xec_driver_api = {
+static DEVICE_API(espi, espi_xec_driver_api) = {
 	.config = espi_xec_configure,
 	.get_channel_status = espi_xec_channel_ready,
 	.send_vwire = espi_xec_send_vwire,

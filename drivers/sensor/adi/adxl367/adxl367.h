@@ -14,13 +14,34 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#define DT_DRV_COMPAT  adi_adxl367
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <zephyr/drivers/spi.h>
+#define ADXL367_BUS_SPI
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <zephyr/drivers/i2c.h>
+#define ADXL367_BUS_I2C
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT  adi_adxl366
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define ADXL367_BUS_SPI
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#define ADXL367_BUS_I2C
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
+#undef DT_DRV_COMPAT
+
+#ifdef ADXL367_BUS_SPI
+#include <zephyr/drivers/spi.h>
+#endif /* ADXL367_BUS_SPI */
+
+#ifdef ADXL367_BUS_I2C
+#include <zephyr/drivers/i2c.h>
+#endif /* ADXL367_BUS_I2C */
+
+#define ADXL367_CHIP_ID		0
+#define ADXL366_CHIP_ID		1
 
 /*
  * ADXL367 registers definition
@@ -102,6 +123,7 @@
 #define ADXL367_TO_REG(x)				((x) >> 1)
 #define ADXL367_SPI_WRITE_REG				0x0Au
 #define ADXL367_SPI_READ_REG				0x0Bu
+#define ADXL367_SPI_READ_FIFO				0x0Du
 
 #define ADXL367_ABSOLUTE				0x00
 #define ADXL367_REFERENCED				0x01
@@ -201,10 +223,19 @@
 /* Max change = 270mg. Sensitivity = 4LSB / mg */
 #define ADXL367_SELF_TEST_MAX	(270 * 100 / 25)
 
+/* ADXL367 get fifo sample header */
+#define ADXL367_FIFO_HDR_GET_ACCEL_AXIS(x)	(((x) & 0xC000) >> 14)
+#define ADXL367_FIFO_HDR_CHECK_TEMP(x)	((((x) & 0xC000) >> 14) == 0x3)
+
+/* ADXL362 scale factors from specifications */
+#define ADXL367_ACCEL_2G_LSB_PER_G	4000
+#define ADXL367_ACCEL_4G_LSB_PER_G	2000
+#define ADXL367_ACCEL_8G_LSB_PER_G	1000
+
 enum adxl367_axis {
-	ADXL367_X_AXIS,
-	ADXL367_Y_AXIS,
-	ADXL367_Z_AXIS
+	ADXL367_X_AXIS = 0x0,
+	ADXL367_Y_AXIS = 0x1,
+	ADXL367_Z_AXIS = 0x2
 };
 
 enum adxl367_op_mode {
@@ -279,6 +310,16 @@ struct adxl367_xyz_accel_data {
 	int16_t x;
 	int16_t y;
 	int16_t z;
+	enum adxl367_range range;
+};
+
+struct adxl367_sample_data {
+#ifdef CONFIG_ADXL367_STREAM
+	uint8_t is_fifo: 1;
+	uint8_t res: 7;
+#endif /*CONFIG_ADXL367_STREAM*/
+	struct adxl367_xyz_accel_data xyz;
+	int16_t raw_temp;
 };
 
 struct adxl367_transfer_function {
@@ -316,15 +357,29 @@ struct adxl367_data {
 	struct k_work work;
 #endif
 #endif /* CONFIG_ADXL367_TRIGGER */
+#ifdef CONFIG_ADXL367_STREAM
+	uint8_t status;
+	uint8_t fifo_ent[2];
+	struct rtio_iodev_sqe *sqe;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	uint64_t timestamp;
+	struct rtio *r_cb;
+	uint8_t fifo_full_irq: 1;
+	uint8_t fifo_wmark_irq: 1;
+	uint8_t res: 6;
+	enum adxl367_odr odr;
+	uint8_t pwr_reg;
+#endif /* CONFIG_ADXL367_STREAM */
 };
 
 struct adxl367_dev_config {
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#ifdef ADXL367_BUS_I2C
 	struct i2c_dt_spec i2c;
-#endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#endif /* ADXL367_BUS_I2C */
+#ifdef ADXL367_BUS_SPI
 	struct spi_dt_spec spi;
-#endif
+#endif /* ADXL367_BUS_SPI */
 	int (*bus_init)(const struct device *dev);
 
 #ifdef CONFIG_ADXL367_TRIGGER
@@ -347,7 +402,29 @@ struct adxl367_dev_config {
 
 	uint16_t inactivity_time;
 	uint8_t activity_time;
+	uint8_t chip_id;
 };
+
+struct adxl367_fifo_data {
+	uint8_t is_fifo: 1;
+	uint8_t res: 7;
+	uint8_t packet_size;
+	uint8_t fifo_read_mode;
+	uint8_t has_tmp: 1;
+	uint8_t has_adc: 1;
+	uint8_t has_x: 1;
+	uint8_t has_y: 1;
+	uint8_t has_z: 1;
+	uint8_t res1: 3;
+	uint8_t int_status;
+	uint8_t accel_odr: 4;
+	uint8_t range: 4;
+	uint16_t fifo_byte_count;
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+BUILD_ASSERT(sizeof(struct adxl367_fifo_data) % 4 == 0,
+	     "adxl367_fifo_data struct should be word aligned");
 
 int adxl367_spi_init(const struct device *dev);
 int adxl367_i2c_init(const struct device *dev);
@@ -356,5 +433,29 @@ int adxl367_trigger_set(const struct device *dev,
 			sensor_trigger_handler_t handler);
 
 int adxl367_init_interrupt(const struct device *dev);
+void adxl367_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void adxl367_stream_irq_handler(const struct device *dev);
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+void adxl367_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+int adxl367_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+int adxl367_get_accel_data(const struct device *dev,
+			   struct adxl367_xyz_accel_data *accel_data);
+int adxl367_get_temp_data(const struct device *dev, int16_t *raw_temp);
+void adxl367_accel_convert(struct sensor_value *val, int16_t value,
+				enum adxl367_range range);
+void adxl367_temp_convert(struct sensor_value *val, int16_t value);
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
+#ifdef CONFIG_ADXL367_STREAM
+int adxl367_fifo_setup(const struct device *dev,
+		       enum adxl367_fifo_mode mode,
+		       enum adxl367_fifo_format format,
+		       enum adxl367_fifo_read_mode read_mode,
+		       uint8_t sets_nb);
+int adxl367_set_op_mode(const struct device *dev,
+			       enum adxl367_op_mode op_mode);
+size_t adxl367_get_packet_size(const struct adxl367_dev_config *cfg);
+#endif /* CONFIG_ADXL367_STREAM */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL367_ADXL367_H_ */

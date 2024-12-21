@@ -63,6 +63,7 @@ static struct net_if *iface1;
 static struct net_if *iface2;
 static struct net_if *iface3;
 static struct net_if *iface4;
+static struct net_if *eth_iface;
 
 static bool test_failed;
 static bool test_started;
@@ -303,6 +304,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		if (api->get_capabilities ==
 		    eth_fake_api_funcs.get_capabilities) {
 			iface4 = iface;
+			eth_iface = iface;
 		}
 	} else {
 		switch (if_count) {
@@ -1329,6 +1331,67 @@ ZTEST(net_iface, test_interface_name)
 #else
 	ret = net_if_get_name(NULL, NULL, -1);
 	zassert_equal(ret, -ENOTSUP, "Invalid value returned");
+#endif
+}
+
+static void generate_iid(struct net_if *iface,
+			 struct in6_addr *expected_addr,
+			 struct in6_addr *iid_addr)
+{
+	const struct in6_addr prefix = { { { 0x20, 0x01, 0x1b, 0x98, 0x24, 0xb8, 0x7e, 0xbb,
+					     0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct net_linkaddr *lladdr = net_if_get_link_addr(iface);
+	uint8_t *mac;
+	int ret;
+
+	(void)net_iface_get_mac(net_if_get_device(iface));
+
+	lladdr = net_if_get_link_addr(eth_iface);
+	mac = lladdr->addr;
+
+	memcpy(expected_addr, &prefix, sizeof(struct in6_addr));
+	memcpy(&expected_addr->s6_addr[8], &mac[0], 3);
+	expected_addr->s6_addr[11] = 0xff;
+	expected_addr->s6_addr[12] = 0xfe;
+	memcpy(&expected_addr->s6_addr[13], &mac[3], 3);
+
+	expected_addr->s6_addr[8] ^= 0x02; /* Universal bit toggle */
+
+	ret = net_ipv6_addr_generate_iid(iface, &prefix, NULL, 0, 0, iid_addr,
+					 net_if_get_link_addr(eth_iface));
+	zassert_equal(ret, 0, "Unexpected value (%d) returned", ret);
+}
+
+ZTEST(net_iface, test_ipv6_iid_eui64)
+{
+#if defined(CONFIG_NET_IPV6_IID_EUI_64)
+	struct in6_addr iid_addr = { };
+	struct in6_addr expected_addr = { };
+
+	generate_iid(eth_iface, &expected_addr, &iid_addr);
+
+	zassert_mem_equal(&expected_addr, &iid_addr, sizeof(struct in6_addr));
+#else
+	ztest_test_skip();
+#endif
+}
+
+ZTEST(net_iface, test_ipv6_iid_stable)
+{
+#if defined(CONFIG_NET_IPV6_IID_STABLE)
+	struct in6_addr iid_addr = { };
+	struct in6_addr expected_addr = { };
+
+	generate_iid(eth_iface, &expected_addr, &iid_addr);
+
+	/* Make sure that EUI-64 bytes are not there */
+	zassert_not_equal(iid_addr.s6_addr[11], 0xff);
+	zassert_not_equal(iid_addr.s6_addr[12], 0xfe);
+
+	zassert_true(memcmp(&expected_addr, &iid_addr, sizeof(struct in6_addr)) != 0,
+		     "IID is EUI-64 instead of randomized");
+#else
+	ztest_test_skip();
 #endif
 }
 

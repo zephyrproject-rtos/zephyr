@@ -220,7 +220,7 @@ static void flash_b91_pages_layout(const struct device *dev,
 
 static struct flash_b91_data flash_data;
 
-static const struct flash_driver_api flash_b91_api = {
+static DEVICE_API(flash, flash_b91_api) = {
 	.erase = flash_b91_erase,
 	.write = flash_b91_write,
 	.read = flash_b91_read,

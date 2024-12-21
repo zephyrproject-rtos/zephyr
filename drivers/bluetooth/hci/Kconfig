@@ -97,9 +97,23 @@ config BT_STM32WBA
 	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
 	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
 	select HAS_STM32LIB
-	select BT_HCI_SET_PUBLIC_ADDR
+	select BT_HCI_SET_PUBLIC_ADDR if !BT_HCI_RAW
 	help
 	  ST STM32WBA HCI Bluetooth interface
+
+config BT_STM32WB0
+	bool "STM32WB0 HCI driver"
+	default y
+	depends on DT_HAS_ST_HCI_STM32WB0_ENABLED
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
+	select HAS_STM32LIB
+	select USE_STM32_HAL_PKA
+	select USE_STM32_HAL_CORTEX
+	select USE_STM32_HAL_GPIO
+	select USE_STM32_HAL_RADIO
+	select USE_STM32_HAL_RADIO_TIMER
+	help
+	  ST STM32WB0 HCI Bluetooth interface
 
 config BT_SILABS_EFR32
 	bool
@@ -108,11 +122,17 @@ config BT_SILABS_EFR32
 	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS
 	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
 	select SOC_GECKO_USE_RAIL
-	select ENTROPY_GENERATOR
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
 	select MBEDTLS_ENTROPY_C
-	select MBEDTLS_ENTROPY_POLL_ZEPHYR
+	select HAS_BT_CTLR
+	select BT_CTLR_PHY_UPDATE_SUPPORT
+	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
+	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_CONN_RSSI_SUPPORT
+	select BT_CTLR_ADV_EXT_SUPPORT
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
@@ -146,6 +166,15 @@ config BT_PSOC6_BLESS
 	help
 	  PSOC 6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
+
+config BT_DA1453X
+	bool "DA1453x HCI driver"
+	default y
+	depends on DT_HAS_RENESAS_BT_HCI_DA1453X_ENABLED
+	select GPIO
+	help
+	  Bluetooth HCI driver for communication with controller
+	  running on DA1453x MCU.
 
 config BT_DA1469X
 	bool
@@ -281,6 +310,7 @@ config BT_H4_NXP_CTLR
 	select GPIO
 	depends on BT_H4
 	select CRC
+	select BT_HCI_SETUP
 	default y
 	depends on DT_HAS_NXP_BT_HCI_UART_ENABLED
 	help
@@ -303,5 +333,12 @@ config BT_H4_NXP_CTLR_WAIT_TIME_AFTER_UPLOAD
 	default 1000
 	help
 	  Waiting time after firmware is uploaded. Unit is millisecond.
+
+config BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE
+	int "Waiting time after controller baudrate is updated"
+	range 500 5000
+	default 500
+	help
+	  Waiting time after controller baudrate is updated. Unit is millisecond.
 
 endif #BT_H4_NXP_CTLR

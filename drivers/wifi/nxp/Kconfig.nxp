@@ -8,7 +8,7 @@ menuconfig WIFI_NXP
 	select NET_L2_ETHERNET_MGMT if NETWORKING && NET_L2_ETHERNET
 	select SDHC if !SOC_SERIES_RW6XX
 	select SDIO_STACK if !SOC_SERIES_RW6XX
-	select WIFI_NM if WIFI_NM_WPA_SUPPLICANT
+	select WIFI_NM
 	depends on DT_HAS_NXP_WIFI_ENABLED
 	help
 	  Enable NXP SoC Wi-Fi support.
@@ -17,15 +17,12 @@ if WIFI_NXP
 
 module = WIFI_NXP
 
+config HEAP_MEM_POOL_ADD_SIZE_NXP_WIFI
+	def_int 25984 if WIFI_NM_WPA_SUPPLICANT
+	def_int 51200
+
 config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
 	default 50
-
-config NXP_WIFI_BUILD_ONLY_MODE
-	bool "Build only mode (do not link wireless firmware blob)"
-	help
-	  Skip linking the firmware blob into the Wi-Fi build. This will
-	  not result in a functional application, but allows the Wi-Fi
-	  driver to be built without binary blobs
 
 config NXP_WIFI_CUSTOM
 	bool "Custom NXP Wi-Fi part"
@@ -316,7 +313,8 @@ menu "Wi-Fi driver Stack configurations"
 
 config NXP_WIFI_MON_TASK_STACK_SIZE
 	int "Mon thread stack size"
-	default 1152
+	depends on NXP_RW610
+	default 3072
 	help
 	  This option specifies the size of the stack used by the mon task.
 
@@ -328,7 +326,7 @@ config NXP_WIFI_WLCMGR_TASK_STACK_SIZE
 
 config NXP_WIFI_POWERSAVE_TASK_STACK_SIZE
 	int "Wifi powersave task stack size"
-	default 512
+	default 1024
 	help
 	  This option specifies the size of the stack used by the wifi powersave task.
 
@@ -350,6 +348,51 @@ config NXP_WIFI_SCAN_TASK_STACK_SIZE
 	default 2048
 	help
 	  This option specifies the size of the stack used by the wifi scan task.
+
+endmenu
+
+menu "Wi-Fi thread priority configurations"
+
+config NXP_WIFI_MON_TASK_PRIO
+	int "Mon task priority"
+	depends on NXP_RW610
+	default 4
+	help
+	  This option specifies the priority of the mon task.
+
+config NXP_WIFI_WLCMGR_TASK_PRIO
+	int "Wlcmgr task priority"
+	default 2
+	help
+	  This option specifies the priority of the wlcmgr task.
+
+config NXP_WIFI_POWERSAVE_TASK_PRIO
+	int "Wifi powersave task priority"
+	default 4
+	help
+	  This option specifies the priority of the wifi powersave task.
+
+config NXP_WIFI_TX_TASK_PRIO
+	int "Wifi driver TX task priority"
+	default 3
+	depends on NXP_WIFI_WMM
+	help
+	  This option specifies the priority of the wifi driver TX task,
+	  and better to keep all the TX/RX tasks having same priority to
+	  get higher throughput. The relative priorities of different tasks
+	  need to remain the same as the current ones, which are tuned.
+
+config NXP_WIFI_DRIVER_TASK_PRIO
+	int "Wifi driver task priority"
+	default 2
+	help
+	  This option specifies the priority of the wifi driver task.
+
+config NXP_WIFI_SCAN_TASK_PRIO
+	int "Wifi scan task priority"
+	default 4
+	help
+	  This option specifies the priority of the wifi scan task.
 
 endmenu
 
@@ -442,6 +485,8 @@ config NXP_WIFI_WMM_UAPSD
 config NXP_WIFI_ROAMING
 	bool "Wi-Fi Soft Roaming"
 	default y
+	select WIFI_NM_WPA_SUPPLICANT_ROAMING if WIFI_NM_WPA_SUPPLICANT
+	select WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING if WIFI_NM_WPA_SUPPLICANT
 	help
 	  This option enables Soft Roaming support in the Wi-Fi driver.
 
@@ -464,10 +509,17 @@ config NXP_WIFI_11V
 
 config NXP_WIFI_11R
 	bool "802.11R Support"
+	default n if (NXP_RW610 && !WIFI_NM_WPA_SUPPLICANT)
 	default y
 	depends on NXP_88W8987 || NXP_IW416 || NXP_RW610 || NXP_WIFI_CUSTOM
 	help
 	  This option enables the use of 802.11r support.
+
+config NXP_WIFI_RTS_THRESHOLD
+	bool "Set RTS Threshold Support"
+	default y
+	help
+	  This option enables the set of rts threshold support.
 
 config NXP_WIFI_INACTIVITY_TIMEOUT_EXT
 	bool "Inactivity Timeout Ext Support"
@@ -486,7 +538,7 @@ config NXP_WIFI_MAX_PRIO
 config NXP_WIFI_SOFTAP_SUPPORT
 	bool "Wi-Fi SoftAP Support"
 	select NET_DHCPV4_SERVER
-	select WIFI_NM_WPA_SUPPLICANT_AP if WIFI_NM_WPA_SUPPLICANT
+	select WIFI_NM_HOSTAPD_AP if WIFI_NM_WPA_SUPPLICANT
 	default y
 	help
 	  Option to enable Wi-Fi SoftAP functions in the Wi-Fi driver.
@@ -791,6 +843,13 @@ config NXP_WIFI_11AX_TWT
 	depends on NXP_WIFI_11AX
 	help
 	  This option enables 11ax TWT in the Wi-Fi driver.
+
+config NXP_WIFI_PKT_FWD
+	bool "Wi-Fi packet forward"
+	default y if NXP_RW610
+	depends on NXP_WIFI_SOFTAP_SUPPORT
+	help
+	  This option enables Wi-Fi packet forward on SoftAP.
 
 config NXP_WIFI_DTIM_PERIOD
 	bool "Wi-Fi DTIM period"

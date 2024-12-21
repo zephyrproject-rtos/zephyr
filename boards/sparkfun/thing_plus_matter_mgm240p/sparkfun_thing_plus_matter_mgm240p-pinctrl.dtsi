@@ -5,34 +5,40 @@
  */
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <dt-bindings/pinctrl/gecko-pinctrl.h>
+#include <dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
 
 &pinctrl {
 	/* configuration for uart0 device, default state */
 	usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PA5>;
+			drive-push-pull;
+			output-high;
+		};
 		group1 {
-			/* configure PA.6 as UART_RX and PA.5 as UART_TX */
-			psels = <GECKO_PSEL(UART_TX, A, 5)>,
-				<GECKO_PSEL(UART_RX, A, 6)>,
-				<GECKO_LOC(UART, 0)>;
+			pins = <USART0_RX_PA6>;
+			input-enable;
+			silabs,input-filter;
 		};
 	};
 
 	eusart1_default: eusart1_default {
+		group0 {
+			pins = <EUSART1_TX_PC6>, <EUSART1_SCLK_PC2>, <EUSART1_CS_PA7>;
+			drive-push-pull;
+			output-high;
+		};
 		group1 {
-			psels = <GECKO_PSEL(SPI_SCK, C, 2)>,
-				<GECKO_PSEL(SPI_MISO, C, 3)>,
-				<GECKO_PSEL(SPI_MOSI, C, 6)>,
-				<GECKO_PSEL(SPI_CSN, A, 7)>;
+			pins = <EUSART1_RX_PC3>;
+			input-enable;
 		};
 	};
 
 	i2c0_default: i2c0_default {
-		group1 {
-			psels = <GECKO_PSEL(I2C_SDA, B, 3)>,
-				<GECKO_PSEL(I2C_SCL, B, 4)>,
-				<GECKO_LOC(I2C_SDA, 5)>,
-				<GECKO_LOC(I2C_SCL, 5)>;
+		group0 {
+			pins = <I2C0_SDA_PB3>, <I2C0_SCL_PB4>;
+			drive-open-drain;
+			bias-pull-up;
 		};
 	};
 

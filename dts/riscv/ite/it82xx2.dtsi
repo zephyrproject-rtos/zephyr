@@ -1017,5 +1017,15 @@
 			reg = <0x00f03c00 0x5>;
 			status = "disabled";
 		};
+
+		spi0: spi@f02600  {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "ite,it8xxx2-spi";
+			reg = <0x00f02600 0x34>;
+			interrupt-parent = <&intc>;
+			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
+			status = "disabled";
+		};
 	};
 };

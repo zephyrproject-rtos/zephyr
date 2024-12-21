@@ -8,6 +8,7 @@
 #include <zephyr/toolchain.h>
 #include <mmu.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/cache.h>
 
 #ifdef CONFIG_DEMAND_PAGING
 #include <zephyr/kernel/mm/demand_paging.h>
@@ -56,8 +57,18 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_rw)
 {
 	uint8_t *mapped_rw, *mapped_ro;
 	uint8_t *buf = test_page + BUF_OFFSET;
+	uintptr_t aligned_addr;
+	size_t aligned_size;
+	size_t aligned_offset;
 
 	expect_fault = false;
+
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		/* Flush everything and invalidating all addresses to
+		 * prepare fot comparison test below.
+		 */
+		sys_cache_data_flush_and_invd_all();
+	}
 
 	/* Map in a page that allows writes */
 	k_mem_map_phys_bare(&mapped_rw, k_mem_phys_addr(buf),
@@ -70,6 +81,17 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_rw)
 	/* Initialize read-write buf with some bytes */
 	for (int i = 0; i < BUF_SIZE; i++) {
 		mapped_rw[i] = (uint8_t)(i % 256);
+	}
+
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		/* Flush the data to memory after write. */
+		aligned_offset =
+			k_mem_region_align(&aligned_addr, &aligned_size, (uintptr_t)mapped_rw,
+					   BUF_SIZE, CONFIG_MMU_PAGE_SIZE);
+		zassert_equal(aligned_offset, BUF_OFFSET,
+			      "unexpected mapped_rw aligned offset: %u != %u", aligned_offset,
+			      BUF_OFFSET);
+		sys_cache_data_flush_and_invd_range((void *)aligned_addr, aligned_size);
 	}
 
 	/* Check that the backing buffer contains the expected data. */
@@ -288,6 +310,10 @@ ZTEST(mem_map_api, test_k_mem_map_unmap)
 		}
 		last_mapped = mapped;
 
+		if (IS_ENABLED(CONFIG_DCACHE)) {
+			sys_cache_data_flush_and_invd_range((void *)mapped, CONFIG_MMU_PAGE_SIZE);
+		}
+
 		/* Page should be zeroed */
 		for (i = 0; i < CONFIG_MMU_PAGE_SIZE; i++) {
 			zassert_equal(mapped[i], '\x00', "page not zeroed");
@@ -300,6 +326,11 @@ ZTEST(mem_map_api, test_k_mem_map_unmap)
 
 		/* Show we can write to page without exploding */
 		(void)memset(mapped, '\xFF', CONFIG_MMU_PAGE_SIZE);
+
+		if (IS_ENABLED(CONFIG_DCACHE)) {
+			sys_cache_data_flush_and_invd_range((void *)mapped, CONFIG_MMU_PAGE_SIZE);
+		}
+
 		for (i = 0; i < CONFIG_MMU_PAGE_SIZE; i++) {
 			zassert_true(mapped[i] == '\xFF',
 				"incorrect value 0x%hhx read at index %d",
@@ -560,5 +591,18 @@ void *mem_map_env_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(mem_map, NULL, NULL, NULL, NULL, NULL);
-ZTEST_SUITE(mem_map_api, NULL, mem_map_env_setup, NULL, NULL, NULL);
+/* For CPUs with incoherent cache under SMP, the tests to read/write
+ * buffer (... majority of tests here) may not work correctly if
+ * the test thread jumps between CPUs. So use the test infrastructure
+ * to limit the test to 1 CPU.
+ */
+#ifdef CONFIG_CPU_CACHE_INCOHERENT
+#define FUNC_BEFORE ztest_simple_1cpu_before
+#define FUNC_AFTER  ztest_simple_1cpu_after
+#else
+#define FUNC_BEFORE NULL
+#define FUNC_AFTER  NULL
+#endif
+
+ZTEST_SUITE(mem_map, NULL, NULL, FUNC_BEFORE, FUNC_AFTER, NULL);
+ZTEST_SUITE(mem_map_api, NULL, mem_map_env_setup, FUNC_BEFORE, FUNC_AFTER, NULL);

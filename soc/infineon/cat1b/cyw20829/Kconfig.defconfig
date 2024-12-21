@@ -6,6 +6,12 @@
 
 if SOC_DIE_CYW20829
 
+config INFINEON_CAT1_LP_TIMER
+	bool
+
+config CORTEX_M_SYSTICK
+	default n if INFINEON_CAT1_LP_TIMER
+
 config NUM_IRQS
 	default 70
 

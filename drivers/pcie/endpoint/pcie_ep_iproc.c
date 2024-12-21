@@ -486,7 +486,7 @@ static const struct iproc_pcie_ep_config iproc_pcie_ep_config_0 = {
 #endif
 };
 
-static const struct pcie_ep_driver_api iproc_pcie_ep_api = {
+static DEVICE_API(pcie_ep, iproc_pcie_ep_api) = {
 	.conf_read = iproc_pcie_conf_read,
 	.conf_write = iproc_pcie_conf_write,
 	.map_addr = iproc_pcie_map_addr,

@@ -5,7 +5,10 @@ common:
     - mmu
 tests:
   kernel.memory_protection.mem_map:
-    filter: CONFIG_MMU and not CONFIG_X86_64
+    arch_allow:
+      - arm
+      - x86
+    filter: CONFIG_MMU and not CONFIG_X86_64 and not CONFIG_SOC_FAMILY_INTEL_ADSP
     extra_sections: _TRANSPLANTED_FUNC
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
@@ -18,7 +21,7 @@ tests:
   kernel.memory_protection.mem_map.x86_64:
     filter: CONFIG_MMU and CONFIG_X86_64 and not CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
-    integration_platforms:
+    platform_allow:
       - qemu_x86_64
   kernel.memory_protection.mem_map.x86_64.coverage:
     filter: CONFIG_MMU and CONFIG_X86_64 and CONFIG_COVERAGE
@@ -43,3 +46,4 @@ tests:
     extra_args: EXTRA_CFLAGS=-DSKIP_EXECUTE_TESTS
     platform_allow:
       - intel_adsp/ace30/ptl
+      - intel_adsp/ace30/ptl/sim

@@ -3,7 +3,8 @@ tests:
     platform_exclude:
       - m2gl025_miv
       - qemu_cortex_a9
-      - hifive_unleashed
+      - hifive_unleashed/fu540/e51
+      - hifive_unleashed/fu540/u54
       - fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
     tags: zbus
     integration_platforms:

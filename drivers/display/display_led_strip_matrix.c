@@ -203,7 +203,7 @@ static void led_strip_matrix_get_capabilities(const struct device *dev,
 	caps->screen_info = 0;
 }
 
-static const struct display_driver_api led_strip_matrix_api = {
+static DEVICE_API(display, led_strip_matrix_api) = {
 	.write = led_strip_matrix_write,
 	.read = led_strip_matrix_read,
 	.get_capabilities = led_strip_matrix_get_capabilities,

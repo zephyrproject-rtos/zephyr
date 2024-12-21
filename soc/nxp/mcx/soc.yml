@@ -30,6 +30,20 @@ runners:
       - qualifiers:
         - mcxn947/cpu0
         - mcxn947/cpu1
+      - qualifiers:
+        - mcxn236
+      - qualifiers:
+        - mcxc141
+      - qualifiers:
+        - mcxc142
+      - qualifiers:
+        - mcxc242
+      - qualifiers:
+        - mcxc444
+      - qualifiers:
+        - mcxa156
+      - qualifiers:
+        - mcxw716c
     '--reset':
     - run: last
       runners:
@@ -38,3 +52,17 @@ runners:
       - qualifiers:
         - mcxn947/cpu0
         - mcxn947/cpu1
+      - qualifiers:
+        - mcxn236
+      - qualifiers:
+        - mcxc141
+      - qualifiers:
+        - mcxc142
+      - qualifiers:
+        - mcxc242
+      - qualifiers:
+        - mcxc444
+      - qualifiers:
+        - mcxa156
+      - qualifiers:
+        - mcxw716c

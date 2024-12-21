@@ -18,6 +18,11 @@ LOG_MODULE_REGISTER(net_stats, NET_LOG_LEVEL);
 #include <stdlib.h>
 #include <errno.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/prometheus/collector.h>
+#include <zephyr/net/prometheus/counter.h>
+#include <zephyr/net/prometheus/gauge.h>
+#include <zephyr/net/prometheus/histogram.h>
+#include <zephyr/net/prometheus/summary.h>
 
 #include "net_stats.h"
 #include "net_private.h"
@@ -91,6 +96,12 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, ipv6_nd.sent),
 			 GET_STAT(iface, ipv6_nd.drop));
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+		NET_INFO("IPv6 PMTU recv %d\tsent\t%d\tdrop\t%d",
+			 GET_STAT(iface, ipv6_pmtu.recv),
+			 GET_STAT(iface, ipv6_pmtu.sent),
+			 GET_STAT(iface, ipv6_pmtu.drop));
+#endif /* CONFIG_NET_STATISTICS_IPV6_PMTU */
 #if defined(CONFIG_NET_STATISTICS_MLD)
 		NET_INFO("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(iface, ipv6_mld.recv),
@@ -115,6 +126,13 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, ip_errors.fragerr),
 			 GET_STAT(iface, ip_errors.chkerr),
 			 GET_STAT(iface, ip_errors.protoerr));
+
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+		NET_INFO("IPv4 PMTU recv %d\tsent\t%d\tdrop\t%d",
+			 GET_STAT(iface, ipv4_pmtu.recv),
+			 GET_STAT(iface, ipv4_pmtu.sent),
+			 GET_STAT(iface, ipv4_pmtu.drop));
+#endif /* CONFIG_NET_STATISTICS_IPV4_PMTU */
 
 		NET_INFO("ICMP recv      %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(iface, icmp.recv),
@@ -279,6 +297,18 @@ static int net_stats_get(uint32_t mgmt_request, struct net_if *iface,
 		src = GET_STAT_ADDR(iface, ipv6_nd);
 		break;
 #endif
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+	case NET_REQUEST_STATS_CMD_GET_IPV6_PMTU:
+		len_chk = sizeof(struct net_stats_ipv6_pmtu);
+		src = GET_STAT_ADDR(iface, ipv6_pmtu);
+		break;
+#endif
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+	case NET_REQUEST_STATS_CMD_GET_IPV4_PMTU:
+		len_chk = sizeof(struct net_stats_ipv4_pmtu);
+		src = GET_STAT_ADDR(iface, ipv4_pmtu);
+		break;
+#endif
 #if defined(CONFIG_NET_STATISTICS_ICMP)
 	case NET_REQUEST_STATS_CMD_GET_ICMP:
 		len_chk = sizeof(struct net_stats_icmp);
@@ -341,6 +371,16 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_ND,
 				  net_stats_get);
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_PMTU,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4_PMTU,
+				  net_stats_get);
+#endif
+
 #if defined(CONFIG_NET_STATISTICS_ICMP)
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ICMP,
 				  net_stats_get);
@@ -373,3 +413,161 @@ void net_stats_reset(struct net_if *iface)
 	net_if_stats_reset_all();
 	memset(&net_stats, 0, sizeof(net_stats));
 }
+
+#if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
+static void register_prometheus_metrics(struct net_if *iface)
+{
+	int total_count = 0;
+
+	/* Find the correct collector for this interface */
+	STRUCT_SECTION_FOREACH(prometheus_collector, entry) {
+		if (entry->user_data == (void *)iface) {
+			iface->collector = entry;
+			break;
+		}
+	}
+
+	if (iface->collector == NULL) {
+		NET_DBG("No collector found for interface %d",
+			net_if_get_by_iface(iface));
+		return;
+	}
+
+	STRUCT_SECTION_FOREACH(prometheus_counter, entry) {
+		if (entry->base.collector != iface->collector) {
+			continue;
+		}
+
+		prometheus_collector_register_metric(iface->collector,
+						     &entry->base);
+		total_count++;
+	}
+
+	STRUCT_SECTION_FOREACH(prometheus_gauge, entry) {
+		if (entry->base.collector != iface->collector) {
+			continue;
+		}
+
+		prometheus_collector_register_metric(iface->collector,
+						     &entry->base);
+		total_count++;
+	}
+
+	STRUCT_SECTION_FOREACH(prometheus_summary, entry) {
+		if (entry->base.collector != iface->collector) {
+			continue;
+		}
+
+		prometheus_collector_register_metric(iface->collector,
+						     &entry->base);
+		total_count++;
+	}
+
+	STRUCT_SECTION_FOREACH(prometheus_histogram, entry) {
+		if (entry->base.collector != iface->collector) {
+			continue;
+		}
+
+		prometheus_collector_register_metric(iface->collector,
+						     &entry->base);
+		total_count++;
+	}
+
+	NET_DBG("Registered %d metrics for interface %d", total_count,
+		net_if_get_by_iface(iface));
+}
+
+/* Do not update metrics one by one as that would require searching
+ * each individual metric from the collector. Instead, let the
+ * Prometheus API scrape the data from net_stats stored in net_if when
+ * needed.
+ */
+int net_stats_prometheus_scrape(struct prometheus_collector *collector,
+				struct prometheus_metric *metric,
+				void *user_data)
+{
+	struct net_if *iface = user_data;
+	net_stats_t value;
+
+	if (!iface) {
+		return -EINVAL;
+	}
+
+	if (iface->collector != collector) {
+		return -EINVAL;
+	}
+
+	/* Update the metrics */
+	if (metric->type == PROMETHEUS_COUNTER) {
+		struct prometheus_counter *counter =
+			CONTAINER_OF(metric, struct prometheus_counter, base);
+
+		if (counter->user_data == NULL) {
+			return -EAGAIN;
+		}
+
+		value = *((net_stats_t *)counter->user_data);
+
+		prometheus_counter_set(counter, (uint64_t)value);
+
+	} else if (metric->type == PROMETHEUS_GAUGE) {
+		struct prometheus_gauge *gauge =
+			CONTAINER_OF(metric, struct prometheus_gauge, base);
+
+		if (gauge->user_data == NULL) {
+			return -EAGAIN;
+		}
+
+		value = *((net_stats_t *)gauge->user_data);
+
+		prometheus_gauge_set(gauge, (double)value);
+
+	} else if (metric->type == PROMETHEUS_HISTOGRAM) {
+		struct prometheus_histogram *histogram =
+			CONTAINER_OF(metric, struct prometheus_histogram, base);
+
+		if (histogram->user_data == NULL) {
+			return -EAGAIN;
+		}
+
+	} else if (metric->type == PROMETHEUS_SUMMARY) {
+		struct prometheus_summary *summary =
+			CONTAINER_OF(metric, struct prometheus_summary, base);
+
+		if (summary->user_data == NULL) {
+			return -EAGAIN;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) &&
+		    strstr(metric->name, "_tx_time_summary") == 0) {
+			IF_ENABLED(CONFIG_NET_PKT_TXTIME_STATS,
+				   (struct net_stats_tx_time *tx_time =
+				    (struct net_stats_tx_time *)summary->user_data;
+
+				    prometheus_summary_observe_set(
+					    summary,
+					    (double)tx_time->sum,
+					    (unsigned long)tx_time->count)));
+		} else if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) &&
+			   strstr(metric->name, "_rx_time_summary") == 0) {
+			IF_ENABLED(CONFIG_NET_PKT_RXTIME_STATS,
+				   (struct net_stats_rx_time *rx_time =
+				    (struct net_stats_rx_time *)summary->user_data;
+
+				    prometheus_summary_observe_set(
+					    summary,
+					    (double)rx_time->sum,
+					    (unsigned long)rx_time->count)));
+		}
+	} else {
+		NET_DBG("Unknown metric type %d", metric->type);
+	}
+
+	return 0;
+}
+
+void net_stats_prometheus_init(struct net_if *iface)
+{
+	register_prometheus_metrics(iface);
+}
+#endif /* CONFIG_NET_STATISTICS_VIA_PROMETHEUS */

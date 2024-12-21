@@ -81,7 +81,7 @@ static int gnss_nmea_generic_resume(const struct device *dev)
 	return ret;
 }
 
-static const struct gnss_driver_api gnss_api = {
+static DEVICE_API(gnss, gnss_api) = {
 };
 
 static int gnss_nmea_generic_init_nmea0183_match(const struct device *dev)

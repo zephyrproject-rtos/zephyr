@@ -34,6 +34,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +68,8 @@ extern "C" {
 /** Value to set the ISO data path over HCi. */
 #define BT_ISO_DATA_PATH_HCI        0x00
 
+/** Unknown SDU interval */
+#define BT_ISO_SDU_INTERVAL_UNKNOWN 0x000000U
 /** Minimum interval value in microseconds */
 #define BT_ISO_SDU_INTERVAL_MIN     0x0000FFU
 /** Maximum interval value in microseconds */
@@ -139,6 +142,10 @@ extern "C" {
 #define BT_ISO_PTO_MIN              0x00U
 /** Maximum pre-transmission offset */
 #define BT_ISO_PTO_MAX              0x0FU
+/** No subinterval */
+#define BT_ISO_SUBINTERVAL_NONE         0x00000000U
+/** Unknown subinterval */
+#define BT_ISO_SUBINTERVAL_UNKNOWN      0xFFFFFFFFU
 
 /**
  * @brief Check if ISO BIS bitfield is valid (BT_ISO_BIS_INDEX_BIT(1)|..|BT_ISO_BIS_INDEX_BIT(31))
@@ -966,6 +973,18 @@ struct bt_iso_unicast_tx_info {
 
 	/** The burst number */
 	uint8_t  bn;
+
+	/** The maximum SDU size in octets
+	 *
+	 * May be set to @ref bt_iso_unicast_tx_info.max_pdu for peripherals if unknown
+	 */
+	uint16_t max_sdu;
+
+	/** The SDU interval in microseconds
+	 *
+	 * May be set to  @ref BT_ISO_SDU_INTERVAL_UNKNOWN for if unknown.
+	 */
+	uint32_t sdu_interval;
 };
 
 /** @brief ISO Unicast Info Structure */
@@ -975,6 +994,14 @@ struct bt_iso_unicast_info {
 
 	/** The maximum time in us for all PDUs of this CIS in a CIG event */
 	uint32_t cis_sync_delay;
+
+	/**
+	 * @brief The subinterval in microseconds
+	 *
+	 * Will be @ref BT_ISO_SUBINTERVAL_NONE if there is no subinterval (NSE = 1).
+	 * Will be @ref BT_ISO_SUBINTERVAL_UNKNOWN if unknown.
+	 */
+	uint32_t subinterval;
 
 	/** @brief TX information for the central to peripheral data path */
 	struct bt_iso_unicast_tx_info central;
@@ -1101,6 +1128,42 @@ int bt_iso_chan_get_info(const struct bt_iso_chan *chan, struct bt_iso_info *inf
  * @return Zero on success or (negative) error code on failure.
  */
 int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_info *info);
+
+/**
+ * @brief Struct to hold the Broadcast Isochronous Group callbacks
+ *
+ * These can be registered for usage with bt_iso_big_register_cb().
+ */
+struct bt_iso_big_cb {
+	/**
+	 * @brief The BIG has started and all of the streams are ready for data
+	 *
+	 * @param big The started BIG
+	 */
+	void (*started)(struct bt_iso_big *big);
+
+	/**
+	 * @brief The BIG has stopped and none of the streams are ready for data
+	 *
+	 * @param big The stopped BIG
+	 * @param reason The reason why the BIG stopped (see the BT_HCI_ERR_* values)
+	 */
+	void (*stopped)(struct bt_iso_big *big, uint8_t reason);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+/**
+ * @brief Registers callbacks for Broadcast Sources
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EEXIST if @p cb is already registered
+ */
+int bt_iso_big_register_cb(struct bt_iso_big_cb *cb);
 
 /**
  * @brief Creates a BIG as a broadcaster

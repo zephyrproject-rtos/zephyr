@@ -109,7 +109,7 @@ static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t 
 			break;
 		default:
 			/* unreachable: mapping already tested in is31fl3194_check_config */
-			continue;
+			return -EINVAL;
 		}
 
 		ret = i2c_reg_write_byte_dt(&config->bus, led_channels[i], value);
@@ -313,7 +313,7 @@ static int is31fl3194_init(const struct device *dev)
 	return i2c_reg_write_byte_dt(&config->bus, IS31FL3194_CONF_REG, IS31FL3194_CONF_ENABLE);
 }
 
-static const struct led_driver_api is31fl3194_led_api = {
+static DEVICE_API(led, is31fl3194_led_api) = {
 	.set_brightness = is31fl3194_set_brightness,
 	.on = is31fl3194_led_on,
 	.off = is31fl3194_led_off,

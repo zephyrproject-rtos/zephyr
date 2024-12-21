@@ -5,7 +5,4 @@
 
 if BOARD_UBX_EVKNINAB3
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_UBX_EVKNINAB3

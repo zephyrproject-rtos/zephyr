@@ -440,24 +440,6 @@
 			status = "disabled";
 		};
 
-		spi0: spi@f02600  {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "ite,it8xxx2-sspi";
-			reg = <0x00f02600 0x40>;
-			interrupt-parent = <&intc>;
-			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
-			clock-frequency = <115200>;
-		};
-		spi1: spi@f02640  {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "ite,it8xxx2-sspi";
-			reg = <0x00f02640 0x40>;
-			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
-			interrupt-parent = <&intc>;
-			status = "okay";
-		};
 		shi0: shi@f03a00 {
 			compatible = "ite,it8xxx2-shi";
 			reg = <0x00f03a00 0x30>;

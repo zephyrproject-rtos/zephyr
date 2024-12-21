@@ -295,7 +295,7 @@ static int vl53l0x_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api vl53l0x_api_funcs = {
+static DEVICE_API(sensor, vl53l0x_api_funcs) = {
 	.sample_fetch = vl53l0x_sample_fetch,
 	.channel_get = vl53l0x_channel_get,
 };

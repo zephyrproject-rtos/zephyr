@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stddef.h>
-#include <errno.h>
+#include <stdint.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/sys/printk.h>
@@ -38,7 +38,7 @@ static bool scan_enabled;
 static bool sync_wait;
 static bool sync_terminated;
 static uint8_t per_sid;
-static uint32_t sync_create_timeout_ms;
+static uint16_t sync_create_timeout;
 
 static K_SEM_DEFINE(sem_per_adv, 0, 1);
 static K_SEM_DEFINE(sem_per_sync, 0, 1);
@@ -78,9 +78,19 @@ static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv,
 };
 
-static uint32_t sync_create_timeout_get(uint16_t interval)
+static uint16_t sync_create_timeout_get(uint16_t interval)
 {
-	return BT_GAP_PER_ADV_INTERVAL_TO_MS(interval) * SYNC_CREATE_TIMEOUT_INTERVAL_NUM;
+	uint32_t interval_us;
+	uint32_t timeout;
+
+	/* Add retries and convert to unit in 10's of ms */
+	interval_us = BT_GAP_PER_ADV_INTERVAL_TO_US(interval);
+	timeout = BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(interval_us) * SYNC_CREATE_TIMEOUT_INTERVAL_NUM;
+
+	/* Enforce restraints */
+	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
+
+	return (uint16_t)timeout;
 }
 
 static const char *phy2str(uint8_t phy)
@@ -244,7 +254,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       info->interval, info->interval * 5 / 4, info->sid);
 
 	if (!per_adv_found && info->interval != 0) {
-		sync_create_timeout_ms = sync_create_timeout_get(info->interval);
+		sync_create_timeout = sync_create_timeout_get(info->interval);
 		per_adv_found = true;
 		per_sid = info->sid;
 		bt_addr_le_copy(&per_addr, info->addr);
@@ -263,7 +273,7 @@ static void create_sync(void)
 	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT;
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
-	sync_create_param.timeout = sync_create_timeout_ms / 10;
+	sync_create_param.timeout = sync_create_timeout;
 	err = bt_le_per_adv_sync_create(&sync_create_param, &adv_sync);
 	if (err != 0) {
 		printk("failed (err %d)\n", err);
@@ -398,7 +408,7 @@ int main(void)
 		create_sync();
 
 		printk("Waiting for periodic sync...\n");
-		err = k_sem_take(&sem_per_sync, K_MSEC(sync_create_timeout_ms));
+		err = k_sem_take(&sem_per_sync, K_MSEC(sync_create_timeout));
 		if (err != 0 || sync_terminated) {
 			if (err != 0) {
 				printk("failed (err %d)\n", err);

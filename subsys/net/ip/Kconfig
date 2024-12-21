@@ -48,6 +48,22 @@ config NET_NATIVE_IPV4
 	depends on NET_NATIVE
 	default y if NET_IPV4
 
+config NET_PMTU
+	bool
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	default y
+	depends on NET_IPV6_PMTU || NET_IPV4_PMTU
+
+if NET_PMTU
+module = NET_PMTU
+module-dep = NET_LOG
+module-str = Log level for PMTU
+module-help = Enables PMTU to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_PMTU
+
 config NET_NATIVE_TCP
 	bool
 	depends on NET_NATIVE
@@ -251,6 +267,11 @@ config NET_SHELL_PKT_ALLOC_SUPPORTED
 	bool "Packet allocation monitoring"
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_DEBUG_NET_PKT_ALLOC
+
+config NET_SHELL_PMTU_SUPPORTED
+	bool "PMTU config"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_PMTU
 
 config NET_SHELL_PPP_SUPPORTED
 	bool "PPP config"
@@ -736,6 +757,15 @@ config NET_CONTEXT_TIMESTAMPING
 	  Allow to set the TIMESTAMPING option on a socket. This way timestamp for a network
 	  packet will be added to the net_pkt structure.
 
+config NET_CONTEXT_CLAMP_PORT_RANGE
+	bool "Allow clamping down the global local port range for net_context"
+	depends on NET_UDP || NET_TCP
+	help
+	  Set or get the per-context default local port range. This
+	  option can be used to clamp down the global local UDP/TCP port
+	  range for a given context. The port range is typically set by
+	  IP_LOCAL_PORT_RANGE socket option.
+
 endif # NET_RAW_MODE
 
 config NET_SLIP_TAP
@@ -821,18 +851,10 @@ config NET_BUF_DATA_SIZE
 	help
 	  This value tells what is the fixed size of each network buffer.
 
-config NET_BUF_DATA_POOL_SIZE
-	int "[DEPRECATED] Size of the memory pool where buffers are allocated from"
-	default 4096 if NET_L2_ETHERNET
-	default 2048
-	depends on NET_BUF_VARIABLE_DATA_SIZE
-	help
-	  This config is deprecated, use NET_PKT_BUF_RX_DATA_POOL_SIZE and
-	  NET_PKT_BUF_TX_DATA_POOL_SIZE instead.
-
 config NET_PKT_BUF_RX_DATA_POOL_SIZE
 	int "Size of the RX memory pool where buffers are allocated from"
-	default NET_BUF_DATA_POOL_SIZE
+	default 4096 if NET_L2_ETHERNET
+	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
 	  This value tell what is the size of the RX memory pool where each
@@ -840,7 +862,8 @@ config NET_PKT_BUF_RX_DATA_POOL_SIZE
 
 config NET_PKT_BUF_TX_DATA_POOL_SIZE
 	int "Size of the TX memory pool where buffers are allocated from"
-	default NET_BUF_DATA_POOL_SIZE
+	default 4096 if NET_L2_ETHERNET
+	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
 	  This value tell what is the size of the TX memory pool where each

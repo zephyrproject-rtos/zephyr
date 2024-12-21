@@ -1096,7 +1096,7 @@ static void uart_xlnx_ps_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_xlnx_ps_driver_api = {
+static DEVICE_API(uart, uart_xlnx_ps_driver_api) = {
 	.poll_in = uart_xlnx_ps_poll_in,
 	.poll_out = uart_xlnx_ps_poll_out,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE

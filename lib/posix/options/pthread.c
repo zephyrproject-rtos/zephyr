@@ -81,6 +81,7 @@ BUILD_ASSERT((PTHREAD_CANCEL_ENABLE == 0 || PTHREAD_CANCEL_DISABLE == 0) &&
 BUILD_ASSERT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS + CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS <=
 	     32);
 
+int64_t timespec_to_timeoutms(const struct timespec *abstime);
 static void posix_thread_recycle(void);
 static sys_dlist_t posix_thread_q[] = {
 	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_READY_Q]),
@@ -458,18 +459,41 @@ static void posix_thread_recycle_work_handler(struct k_work *work)
 }
 static K_WORK_DELAYABLE_DEFINE(posix_thread_recycle_work, posix_thread_recycle_work_handler);
 
+extern struct sys_sem pthread_key_lock;
+
 static void posix_thread_finalize(struct posix_thread *t, void *retval)
 {
-	sys_snode_t *node_l;
+	sys_snode_t *node_l, *node_s;
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
+	sys_snode_t *node_key_data, *node_key_data_s, *node_key_data_prev = NULL;
+	struct pthread_key_data *key_data;
 
-	SYS_SLIST_FOR_EACH_NODE(&t->key_list, node_l) {
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&t->key_list, node_l, node_s) {
 		thread_spec_data = (pthread_thread_data *)node_l;
 		if (thread_spec_data != NULL) {
 			key_obj = thread_spec_data->key;
 			if (key_obj->destructor != NULL) {
 				(key_obj->destructor)(thread_spec_data->spec_data);
+			}
+
+			SYS_SEM_LOCK(&pthread_key_lock) {
+				SYS_SLIST_FOR_EACH_NODE_SAFE(
+					&key_obj->key_data_l,
+					node_key_data,
+					node_key_data_s) {
+					key_data = (struct pthread_key_data *)node_key_data;
+					if (&key_data->thread_data == thread_spec_data) {
+						sys_slist_remove(
+							&key_obj->key_data_l,
+							node_key_data_prev,
+							node_key_data
+						);
+						k_free(key_data);
+						break;
+					}
+					node_key_data_prev = node_key_data;
+				}
 			}
 		}
 	}
@@ -1038,12 +1062,7 @@ void pthread_exit(void *retval)
 	CODE_UNREACHABLE;
 }
 
-/**
- * @brief Wait for a thread termination.
- *
- * See IEEE 1003.1
- */
-int pthread_join(pthread_t pthread, void **status)
+static int pthread_timedjoin_internal(pthread_t pthread, void **status, k_timeout_t timeout)
 {
 	int ret = ESRCH;
 	struct posix_thread *t = NULL;
@@ -1092,8 +1111,19 @@ int pthread_join(pthread_t pthread, void **status)
 		break;
 	}
 
-	ret = k_thread_join(&t->thread, K_FOREVER);
-	/* other possibilities? */
+	ret = k_thread_join(&t->thread, timeout);
+	if (ret != 0) {
+		/* when joining failed, ensure that the thread can be joined later */
+		SYS_SEM_LOCK(&pthread_pool_lock) {
+			t->attr.detachstate = PTHREAD_CREATE_JOINABLE;
+		}
+	}
+	if (ret == -EBUSY) {
+		return EBUSY;
+	} else if (ret == -EAGAIN) {
+		return ETIMEDOUT;
+	}
+	/* Can only be ok or -EDEADLK, which should never occur for pthreads */
 	__ASSERT_NO_MSG(ret == 0);
 
 	LOG_DBG("Joined pthread %p", &t->thread);
@@ -1106,6 +1136,44 @@ int pthread_join(pthread_t pthread, void **status)
 	posix_thread_recycle();
 
 	return 0;
+}
+
+/**
+ * @brief Await a thread termination with timeout.
+ *
+ * Non-portable GNU extension of IEEE 1003.1
+ */
+int pthread_timedjoin_np(pthread_t pthread, void **status, const struct timespec *abstime)
+{
+	if (abstime == NULL) {
+		return EINVAL;
+	}
+
+	if (abstime->tv_sec < 0 || abstime->tv_nsec < 0 || abstime->tv_nsec >= NSEC_PER_SEC) {
+		return EINVAL;
+	}
+
+	return pthread_timedjoin_internal(pthread, status, K_MSEC(timespec_to_timeoutms(abstime)));
+}
+
+/**
+ * @brief Check a thread for termination.
+ *
+ * Non-portable GNU extension of IEEE 1003.1
+ */
+int pthread_tryjoin_np(pthread_t pthread, void **status)
+{
+	return pthread_timedjoin_internal(pthread, status, K_NO_WAIT);
+}
+
+/**
+ * @brief Await a thread termination.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_join(pthread_t pthread, void **status)
+{
+	return pthread_timedjoin_internal(pthread, status, K_FOREVER);
 }
 
 /**

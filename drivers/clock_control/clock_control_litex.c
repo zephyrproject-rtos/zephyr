@@ -1605,7 +1605,7 @@ static inline int litex_clk_off(const struct device *dev,
 	return litex_clk_change_value(ZERO_REG, ZERO_REG, POWER_REG);
 }
 
-static const struct clock_control_driver_api litex_clk_api = {
+static DEVICE_API(clock_control, litex_clk_api) = {
 	.on = litex_clk_on,
 	.off = litex_clk_off,
 	.get_rate = litex_clk_get_subsys_rate,

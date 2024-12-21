@@ -62,7 +62,7 @@ static inline bool k_is_in_user_syscall(void)
 	 * calls from supervisor mode bypass everything directly to
 	 * the implementation function.
 	 */
-	return !k_is_in_isr() && (_current->syscall_frame != NULL);
+	return !k_is_in_isr() && (arch_current_thread()->syscall_frame != NULL);
 }
 
 /**
@@ -350,7 +350,7 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 #define K_OOPS(expr) \
 	do { \
 		if (expr) { \
-			arch_syscall_oops(_current->syscall_frame); \
+			arch_syscall_oops(arch_current_thread()->syscall_frame); \
 		} \
 	} while (false)
 

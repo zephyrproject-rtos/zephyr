@@ -337,7 +337,7 @@ static void ps2_xec_isr(const struct device *dev)
 	regs->CTRL = MCHP_PS2_CTRL_EN;
 }
 
-static const struct ps2_driver_api ps2_xec_driver_api = {
+static DEVICE_API(ps2, ps2_xec_driver_api) = {
 	.config = ps2_xec_configure,
 	.read = NULL,
 	.write = ps2_xec_write,

@@ -44,7 +44,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
-#if defined(CONFIG_PINCTRL_NXP_KINETIS)
+#if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_SERIES_MCXA)
 	case MCUX_PORT0_CLK:
@@ -82,7 +82,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	default:
 		break;
 	}
-#endif /* defined(CONFIG_PINCTRL_NXP_KINETIS) */
+#endif /* defined(CONFIG_PINCTRL_NXP_PORT) */
 
 #ifdef CONFIG_ETH_NXP_ENET_QOS
 	if ((uint32_t)sub_system == MCUX_ENET_QOS_CLK) {
@@ -428,6 +428,21 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetLpuartClkFreq(4);
 		break;
 #endif /* defined(CONFIG_UART_MCUX_LPUART) */
+
+#if (defined(CONFIG_I2C_MCUX_LPI2C) && CONFIG_SOC_SERIES_MCXA)
+	case MCUX_LPI2C0_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(0);
+		break;
+	case MCUX_LPI2C1_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(1);
+		break;
+	case MCUX_LPI2C2_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(2);
+		break;
+	case MCUX_LPI2C3_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(3);
+		break;
+#endif /* defined(CONFIG_I2C_MCUX_LPI2C) */
 	}
 
 	return 0;
@@ -486,7 +501,7 @@ static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 	}
 }
 
-static const struct clock_control_driver_api mcux_lpc_syscon_api = {
+static DEVICE_API(clock_control, mcux_lpc_syscon_api) = {
 	.on = mcux_lpc_syscon_clock_control_on,
 	.off = mcux_lpc_syscon_clock_control_off,
 	.get_rate = mcux_lpc_syscon_clock_control_get_subsys_rate,

@@ -103,5 +103,7 @@ int main(void)
 	timing_report(t_tpd, rpt_tp, "tracepoint_d32");
 #endif
 
+	/* Needed in coverage run to separate STM logs from printk() */
+	k_msleep(400);
 	return 0;
 }

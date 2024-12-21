@@ -657,7 +657,7 @@ def test_hardwaremap_save(mocked_hm, hwm, expected_dump):
     read_mock = mock.mock_open(read_data=hwm)
     write_mock = mock.mock_open()
 
-    def mock_open(filename, mode):
+    def mock_open(filename, mode='r'):
         if mode == 'r':
             return read_mock()
         elif mode == 'w':

@@ -47,6 +47,7 @@ identifier, ``DATA_SECTIONS`` for RAM structures and ``SECTIONS`` for ROM ones.
 .. code-block:: c
 
    # iterables.ld
+   #include <zephyr/linker/iterable_sections.h>
    ITERABLE_SECTION_RAM(my_data, 4)
 
 The data can then be accessed using :c:macro:`STRUCT_SECTION_FOREACH`.

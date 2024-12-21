@@ -164,7 +164,7 @@ static int mdio_xmc4xxx_initialize(const struct device *dev)
 	return ret;
 }
 
-static const struct mdio_driver_api mdio_xmc4xxx_driver_api = {
+static DEVICE_API(mdio, mdio_xmc4xxx_driver_api) = {
 	.read = mdio_xmc4xxx_read,
 	.write = mdio_xmc4xxx_write,
 	.bus_enable = mdio_xmc4xxx_bus_enable,

@@ -89,7 +89,7 @@ static int jc42_channel_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static const struct sensor_driver_api jc42_api_funcs = {
+static DEVICE_API(sensor, jc42_api_funcs) = {
 	.sample_fetch = jc42_sample_fetch,
 	.channel_get = jc42_channel_get,
 #ifdef CONFIG_JC42_TRIGGER

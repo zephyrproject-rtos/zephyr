@@ -6,6 +6,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 #include <dt-bindings/pinctrl/esp32c6-pinctrl.h>
@@ -56,15 +57,27 @@
 		status = "okay";
 	};
 
+	wifi: wifi {
+		compatible = "espressif,esp32-wifi";
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
 
-		sram0: memory@40800000 {
-			compatible = "mmio-sram";
-			reg = <0x40800000 0x50000>;
+		sramhp: memory@40800000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x40800000 DT_SIZE_K(512)>;
+			zephyr,memory-region = "SRAMHP";
+		};
+
+		sramlp: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(16)>;
+			zephyr,memory-region = "SRAMLP ";
 		};
 
 		intc: interrupt-controller@60010000 {
@@ -149,6 +162,7 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <4>;
+				/* Flash size is specified in SOC/SIP dtsi */
 			};
 		};
 
@@ -178,6 +192,17 @@
 			interrupts = <GPIO_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			ngpios = <30>;   /* 0..29 */
+		};
+
+		i2c0: i2c@60004000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60004000 0x1000>;
+			interrupts = <I2C_EXT0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2C0_MODULE>;
+			status = "disabled";
 		};
 
 		uart0: uart@60000000 {
@@ -214,6 +239,16 @@
 			#pwm-cells = <3>;
 			reg = <0x60007000 0x1000>;
 			clocks = <&rtc ESP32_LEDC_MODULE>;
+			status = "disabled";
+		};
+
+		mcpwm0: mcpwm@60014000 {
+			compatible = "espressif,esp32-mcpwm";
+			reg = <0x60014000 DT_SIZE_K(4)>;
+			interrupts = <MCPWM0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_MCPWM0_MODULE>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};

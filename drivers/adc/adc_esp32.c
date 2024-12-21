@@ -706,7 +706,7 @@ static int adc_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api api_esp32_driver_api = {
+static DEVICE_API(adc, api_esp32_driver_api) = {
 	.channel_setup = adc_esp32_channel_setup,
 	.read          = adc_esp32_read,
 #ifdef CONFIG_ADC_ASYNC

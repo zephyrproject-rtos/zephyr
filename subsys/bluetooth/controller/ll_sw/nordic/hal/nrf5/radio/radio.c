@@ -1724,11 +1724,15 @@ uint32_t radio_tmr_start_get(void)
 void radio_tmr_stop(void)
 {
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_STOP);
+#if defined(TIMER_TASKS_SHUTDOWN_TASKS_SHUTDOWN_Msk)
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_SHUTDOWN);
+#endif
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP);
+#if defined(TIMER_TASKS_SHUTDOWN_TASKS_SHUTDOWN_Msk)
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_SHUTDOWN);
+#endif
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)

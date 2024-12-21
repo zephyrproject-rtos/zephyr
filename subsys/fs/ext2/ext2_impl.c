@@ -611,6 +611,7 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, si
 	int rc = 0;
 	ssize_t read = 0;
 	uint32_t block_size = inode->i_fs->block_size;
+	size_t nbytes_to_read = nbytes;
 
 	while (read < nbytes && offset < inode->i_size) {
 
@@ -624,11 +625,12 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, si
 
 		uint32_t left_on_blk = block_size - block_off;
 		uint32_t left_in_file = inode->i_size - offset;
-		size_t to_read = MIN(nbytes, MIN(left_on_blk, left_in_file));
+		size_t to_read = MIN(nbytes_to_read, MIN(left_on_blk, left_in_file));
 
 		memcpy((uint8_t *)buf + read, inode_current_block_mem(inode) + block_off, to_read);
 
 		read += to_read;
+		nbytes_to_read -= read;
 		offset += to_read;
 	}
 

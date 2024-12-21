@@ -408,12 +408,12 @@ ZTEST(log_frontend_stmesp_demux_test, test_trace_point)
 	err = write_trace_point(&m_id1, &c_id1, NULL, t1);
 	zassert_equal(err, 1);
 
-	CLAIM_TRACE_POINT(m_id0, id0, t0, NULL);
-	CLAIM_TRACE_POINT(m_id0, id0, t0, NULL);
-	CLAIM_TRACE_POINT(m_id0, id0, t0, &data);
-	CLAIM_TRACE_POINT(m_id0, id1, t1, &data);
-	CLAIM_TRACE_POINT(m_id1, id0, t0, NULL);
-	CLAIM_TRACE_POINT(m_id1, id1, t1, NULL);
+	CLAIM_TRACE_POINT(m_id0, c_id0, t0, NULL);
+	CLAIM_TRACE_POINT(m_id0, c_id0, t0, NULL);
+	CLAIM_TRACE_POINT(m_id0, c_id0, t0, &data);
+	CLAIM_TRACE_POINT(m_id0, c_id1, t1, &data);
+	CLAIM_TRACE_POINT(m_id1, c_id0, t0, NULL);
+	CLAIM_TRACE_POINT(m_id1, c_id1, t1, NULL);
 
 	DEMUX_EMPTY();
 }

@@ -118,6 +118,15 @@ enum wifi_suiteb_type {
 	WIFI_SUITEB_192,
 };
 
+enum wifi_eap_tls_cipher_type {
+	/** EAP TLS with NONE */
+	WIFI_EAP_TLS_NONE,
+	/** EAP TLS with ECDH & ECDSA with p384 */
+	WIFI_EAP_TLS_ECC_P384,
+	/** EAP TLS with ECDH & RSA with > 3K */
+	WIFI_EAP_TLS_RSA_3K,
+};
+
 /** @brief Group cipher and pairwise cipher types. */
 enum wifi_cipher_type {
 	/** AES in counter mode with CBC-MAC (CCMP-128). */
@@ -222,6 +231,27 @@ enum wifi_frequency_bands {
 
 /** Helper function to get user-friendly frequency band name. */
 const char *wifi_band_txt(enum wifi_frequency_bands band);
+
+/**
+ * @brief IEEE 802.11 operational frequency bandwidths (not exhaustive).
+ */
+enum wifi_frequency_bandwidths {
+	/** 20 MHz. */
+	WIFI_FREQ_BANDWIDTH_20MHZ = 1,
+	/** 40 MHz. */
+	WIFI_FREQ_BANDWIDTH_40MHZ,
+	/** 80 MHz. */
+	WIFI_FREQ_BANDWIDTH_80MHZ,
+
+	/** Number of frequency bandwidths available. */
+	__WIFI_FREQ_BANDWIDTH_AFTER_LAST,
+	/** Highest frequency bandwidth available. */
+	WIFI_FREQ_BANDWIDTH_MAX = __WIFI_FREQ_BANDWIDTH_AFTER_LAST - 1,
+	/** Invalid frequency bandwidth */
+	WIFI_FREQ_BANDWIDTH_UNKNOWN
+};
+
+const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 
 /** Max SSID length */
 #define WIFI_SSID_MAX_LEN 32
@@ -547,7 +577,7 @@ static inline const char *wifi_twt_get_err_code_str(int16_t err_no)
 enum wifi_ps_param_type {
 	/** Power save state. */
 	WIFI_PS_PARAM_STATE,
-	/** Power save listen interval. */
+	/** Power save listen interval (units: (short) beacon intervals). */
 	WIFI_PS_PARAM_LISTEN_INTERVAL,
 	/** Power save wakeup mode. */
 	WIFI_PS_PARAM_WAKEUP_MODE,
@@ -586,7 +616,7 @@ enum wifi_ps_exit_strategy {
 };
 
 /** Helper function to get user-friendly ps exit strategy name. */
-const char * const wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy);
+const char *wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy);
 
 /** @brief Wi-Fi power save error codes. */
 enum wifi_config_ps_param_fail_reason {
@@ -655,6 +685,12 @@ enum wifi_ap_config_param {
 	WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY = BIT(0),
 	/** Used for AP mode configuration parameter max_num_sta */
 	WIFI_AP_CONFIG_PARAM_MAX_NUM_STA = BIT(1),
+	/** Used for AP mode configuration parameter bandwidth */
+	WIFI_AP_CONFIG_PARAM_BANDWIDTH = BIT(2),
+	/** Used for AP mode configuration parameter ht_capab */
+	WIFI_AP_CONFIG_PARAM_HT_CAPAB = BIT(3),
+	/** Used for AP mode configuration parameter vht_capab */
+	WIFI_AP_CONFIG_PARAM_VHT_CAPAB = BIT(4),
 };
 
 #ifdef __cplusplus

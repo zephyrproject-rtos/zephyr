@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/sys/printk.h>
@@ -20,6 +21,9 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/hrs.h>
+
+BUILD_ASSERT(IS_ENABLED(CONFIG_BT_HAS_HCI_VS),
+	     "This app requires Zephyr-specific HCI vendor extensions");
 
 static struct bt_conn *default_conn;
 static uint16_t default_conn_handle;
@@ -42,8 +46,8 @@ static K_THREAD_STACK_DEFINE(pwr_thread_stack, 512);
 
 static const int8_t txpower[DEVICE_BEACON_TXPOWER_NUM] = {4, 0, -3, -8,
 							  -15, -18, -23, -30};
-static const struct bt_le_adv_param *param =
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN, 0x0020, 0x0020, NULL);
+static const struct bt_le_adv_param *param = BT_LE_ADV_PARAM(
+	BT_LE_ADV_OPT_CONN, BT_GAP_MS_TO_ADV_INTERVAL(20), BT_GAP_MS_TO_ADV_INTERVAL(20), NULL);
 
 static void read_conn_rssi(uint16_t handle, int8_t *rssi)
 {

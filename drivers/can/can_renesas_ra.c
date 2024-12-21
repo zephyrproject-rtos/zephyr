@@ -969,7 +969,7 @@ static int can_renesas_ra_init(const struct device *dev)
 	return 0;
 }
 
-static const struct can_driver_api can_renesas_ra_driver_api = {
+static DEVICE_API(can, can_renesas_ra_driver_api) = {
 	.get_capabilities = can_renesas_ra_get_capabilities,
 	.start = can_renesas_ra_start,
 	.stop = can_renesas_ra_stop,

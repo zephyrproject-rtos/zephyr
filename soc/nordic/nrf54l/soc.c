@@ -30,6 +30,7 @@
 #endif
 #include <soc/nrfx_coredep.h>
 
+#include <nrf_erratas.h>
 #include <system_nrf54l.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -153,12 +154,16 @@ static int nordicsemi_nrf54l_init(void)
 	}
 
 #if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
+#if NRF54L_ERRATA_31_ENABLE_WORKAROUND
+	/* Workaround for Errata 31 */
+	if (nrf54l_errata_31()) {
+		*((volatile uint32_t *)0x50120624ul) = 20 | 1<<5;
+		*((volatile uint32_t *)0x5012063Cul) &= ~(1<<19);
+	}
+#endif
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
 #endif
 
-#if defined(CONFIG_ELV_GRTC_LFXO_ALLOWED)
-	nrf_regulators_elv_mode_allow_set(NRF_REGULATORS, NRF_REGULATORS_ELV_ELVGRTCLFXO_MASK);
-#endif /* CONFIG_ELV_GRTC_LFXO_ALLOWED */
 #endif /* NRF_APPLICATION */
 
 	return 0;

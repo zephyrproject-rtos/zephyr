@@ -1,0 +1,21 @@
+# Copyright (c) 2024, Jan Fäh
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion SCD4x temperature sensor
+
+compatible: "sensirion,scd41"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  mode:
+    type: int
+    required: true
+    description: |
+      - 0: Normal periodic measurement. Default interval of 5sec
+      - 1: Low power periodic measurement. Interval of 30sec
+      - 2: Singleshot measurement for low power usage.
+    enum:
+      - 0
+      - 1
+      - 2

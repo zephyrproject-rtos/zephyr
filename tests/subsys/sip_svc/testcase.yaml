@@ -4,7 +4,9 @@
 tests:
   sip_svc.stress_test.ztest:
     build_only: true
-    platform_allow: intel_socfpga_agilex_socdk  intel_socfpga_agilex5_socdk
+    platform_allow:
+      - intel_socfpga_agilex_socdk
+      - intel_socfpga_agilex5_socdk
     integration_platforms:
       - intel_socfpga_agilex_socdk
       - intel_socfpga_agilex5_socdk

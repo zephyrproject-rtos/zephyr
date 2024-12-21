@@ -506,6 +506,12 @@ config USE_STM32_HAL_SDADC
 	help
 	  Enable STM32Cube SDADC HAL module driver
 
+config USE_STM32_HAL_SDIO
+	bool
+	help
+	  Enable STM32Cube Secure digital input/output interface (SDIO)
+	  HAL module driver
+
 config USE_STM32_HAL_SDRAM
 	bool
 	help

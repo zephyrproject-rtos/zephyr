@@ -48,7 +48,7 @@ out:
 	return ret;
 }
 
-static const struct dma_driver_api dw_dma_driver_api = {
+static DEVICE_API(dma, dw_dma_driver_api) = {
 	.config = dw_dma_config,
 	.start = dw_dma_start,
 	.stop = dw_dma_stop,

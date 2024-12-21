@@ -5,7 +5,8 @@ import logging
 from collections import namedtuple
 from pathlib import Path
 
-import list_boards, list_hardware
+import list_boards
+import list_hardware
 import yaml
 import zephyr_module
 from gen_devicetree_rest import VndLookup
@@ -96,7 +97,7 @@ def get_catalog():
         pattern = f"{board.name}*.yaml"
         for twister_file in board.dir.glob(pattern):
             try:
-                with open(twister_file, "r") as f:
+                with open(twister_file) as f:
                     board_data = yaml.safe_load(f)
                     archs.add(board_data.get("arch"))
             except Exception as e:

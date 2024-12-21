@@ -134,7 +134,7 @@ static int ti_hdc20xx_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api ti_hdc20xx_api_funcs = {
+static DEVICE_API(sensor, ti_hdc20xx_api_funcs) = {
 	.sample_fetch = ti_hdc20xx_sample_fetch,
 	.channel_get = ti_hdc20xx_channel_get,
 };

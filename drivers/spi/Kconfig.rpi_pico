@@ -7,5 +7,6 @@ config SPI_RPI_PICO_PIO
 	depends on DT_HAS_RASPBERRYPI_PICO_SPI_PIO_ENABLED
 	select PICOSDK_USE_PIO
 	select PICOSDK_USE_CLAIM
+	select PINCTRL
 	help
 	  Enable driving SPI via PIO on the PICO

@@ -9,6 +9,7 @@ import subprocess
 
 from runners.core import ZephyrBinaryRunner
 
+
 class TeensyBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for teensy.'''
 
@@ -47,16 +48,16 @@ class TeensyBinaryRunner(ZephyrBinaryRunner):
             fname = self.hex_name
         else:
             raise ValueError(
-                'Cannot flash; no hex ({}) file found. '.format(self.hex_name))
+                f'Cannot flash; no hex ({self.hex_name}) file found. ')
 
         cmd = ([self.teensy_loader] +
                self.mcu_args +
                [fname])
 
-        self.logger.info('Flashing file: {}'.format(fname))
+        self.logger.info(f'Flashing file: {fname}')
 
         try:
             self.check_output(cmd)
             self.logger.info('Success')
         except subprocess.CalledProcessError as grepexc:
-            self.logger.error("Failure %i" % grepexc.returncode)
+            self.logger.error(f"Failure {grepexc.returncode}")

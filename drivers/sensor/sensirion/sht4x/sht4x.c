@@ -202,7 +202,7 @@ static int sht4x_init(const struct device *dev)
 }
 
 
-static const struct sensor_driver_api sht4x_api = {
+static DEVICE_API(sensor, sht4x_api) = {
 	.sample_fetch = sht4x_sample_fetch,
 	.channel_get = sht4x_channel_get,
 	.attr_set = sht4x_attr_set,

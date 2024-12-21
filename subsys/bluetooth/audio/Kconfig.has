@@ -6,7 +6,7 @@
 
 menuconfig BT_HAS
 	bool "Hearing Access Service support"
-	select UTF8
+	depends on UTF8
 	depends on BT_GATT_DYNAMIC_DB
 	depends on BT_BAP_UNICAST_SERVER
 	help
@@ -56,9 +56,9 @@ endif # BT_HAS
 
 config BT_HAS_CLIENT
 	bool "Hearing Access Service Client support"
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
-	select BT_GATT_AUTO_UPDATE_MTU
-	select UTF8
+	depends on UTF8
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_AUTO_UPDATE_MTU
 	help
 	  This option enables support for Hearing Access Service Client.

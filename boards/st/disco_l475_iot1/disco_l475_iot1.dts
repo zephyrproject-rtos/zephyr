@@ -224,23 +224,18 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(64)>;
+			reg = <0x0 DT_SIZE_K(64)>;
 			read-only;
 		};
 
-		/*
-		 * The flash starting at offset 0x10000 and ending at
-		 * offset 0x1ffff is reserved for use by the application.
-		 */
-
-		slot0_partition: partition@20000 {
+		slot0_partition: partition@1000 {
 			label = "image-0";
-			reg = <0x00020000 DT_SIZE_K(864)>;
+			reg = <0x1000 DT_SIZE_K(928)>;
 		};
 
-		scratch_partition: partition@f8000 {
-			label = "image-scratch";
-			reg = <0x000F8000 DT_SIZE_K(16)>;
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0xf8000 DT_SIZE_K(32)>;
 		};
 	};
 };
@@ -298,7 +293,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&adc1_in3_pc2 &adc1_in4_pc3
 		     &adc1_in13_pc4 &adc1_in14_pc5>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
@@ -343,8 +338,8 @@ zephyr_udc0: &usbotg_fs {
 				reg = <0x00000000 DT_SIZE_K(864)>;
 				};
 
-			storage_partition: partition@d8000 {
-				label = "storage";
+			slot2_partition: partition@d8000 {
+				label = "image-3";
 				reg = <0x000d8000 DT_SIZE_M(7)>;
 			};
 		};

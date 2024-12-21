@@ -1,0 +1,15 @@
+identifier: ctcc/nrf9161
+name: CTHINGS.CO Connectivity Card nRF9161
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 88
+flash: 1024
+supported:
+  - gpio
+  - watchdog
+  - counter
+vendor: ct

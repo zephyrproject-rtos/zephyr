@@ -335,6 +335,11 @@ ZTEST(mheap_api, test_multi_heap)
 		zassert_true(blocks[i] >= &heap_mem[i][0] &&
 			     blocks[i] < &heap_mem[i+1][0],
 			     "allocation not in correct heap");
+
+		void *ptr = sys_multi_heap_realloc(&multi_heap, (void *)(long)i,
+			blocks[i], MHEAP_BYTES / 2);
+
+		zassert_equal(ptr, blocks[i], "realloc moved pointer");
 	}
 
 	/* Make sure all heaps fail to allocate another */
@@ -355,5 +360,25 @@ ZTEST(mheap_api, test_multi_heap)
 		blocks[i] = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
 						 MHEAP_BYTES / 2);
 		zassert_not_null(blocks[i], "final re-allocation failed");
+
+		/* Allocating smaller buffer should stay within */
+		void *ptr = sys_multi_heap_realloc(&multi_heap, (void *)(long)i,
+						   blocks[i], MHEAP_BYTES / 4);
+		zassert_equal(ptr, blocks[i], "realloc should return same value");
+
+		ptr = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
+					   MHEAP_BYTES / 4);
+		zassert_between_inclusive((uintptr_t)ptr, (uintptr_t)blocks[i] + MHEAP_BYTES / 4,
+			(uintptr_t)blocks[i] + MHEAP_BYTES / 2 - 1,
+			"realloc failed to shrink prev buffer");
 	}
+
+	/* Test realloc special cases */
+	void *ptr = sys_multi_heap_realloc(&multi_heap, (void *)0L,
+		blocks[0], /* size = */ 0);
+	zassert_is_null(ptr);
+
+	ptr = sys_multi_heap_realloc(&multi_heap, (void *)0L,
+		/* ptr = */ NULL, MHEAP_BYTES / 4);
+	zassert_not_null(ptr);
 }

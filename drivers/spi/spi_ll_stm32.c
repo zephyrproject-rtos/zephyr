@@ -1146,7 +1146,7 @@ static int spi_stm32_transceive_async(const struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static const struct spi_driver_api api_funcs = {
+static DEVICE_API(spi, api_funcs) = {
 	.transceive = spi_stm32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_stm32_transceive_async,
@@ -1396,7 +1396,7 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 									\
 PM_DEVICE_DT_INST_DEFINE(id, spi_stm32_pm_action);			\
 									\
-DEVICE_DT_INST_DEFINE(id, spi_stm32_init, PM_DEVICE_DT_INST_GET(id),	\
+SPI_DEVICE_DT_INST_DEFINE(id, spi_stm32_init, PM_DEVICE_DT_INST_GET(id),\
 		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
 		    &api_funcs);					\

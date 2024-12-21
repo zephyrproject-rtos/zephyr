@@ -84,17 +84,33 @@ used. An example configuration for UDP transport is shown below:
 
    mqtt_sn_client_init(&client, &client_id, &tp.tp, evt_cb, tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf));
 
-After the configuration is set up, the MQTT-SN client can connect to the gateway.
-While the MQTT-SN protocol offers functionality to discover gateways through an
-advertisement mechanism, this is not implemented yet in the library.
+After the configuration is set up, the network address for the gateway to
+connect to must be defined. The MQTT-SN protocol offers functionality to
+discover gateways through an advertisement or a search mechanism. A user
+should do at least one of the following steps to define a Gateway for the library:
 
-Call the ``mqtt_sn_connect`` function, which will send a ``CONNECT`` message.
-The application should periodically call the ``mqtt_sn_input`` function to process
-the response received. The application does not have to call ``mqtt_sn_input`` if it
-knows that no data has been received (e.g. when using Bluetooth). Note that
-``mqtt_sn_input`` is a non-blocking function, if the transport struct contains a
-``poll`` compatible function pointer.
-If the connection was successful, ``MQTT_SN_EVT_CONNECTED`` will be notified to the
+* Call the :c:func:`mqtt_sn_add_gw` function to manually define a Gateway address.
+* Wait for an :c:enumerator:`MQTT_SN_EVT_ADVERTISE`.
+* Call the :c:func:`mqtt_sn_search` function and wait for an :c:enumerator:`MQTT_SN_EVT_GWINFO` callback.
+  Make sure to call the :c:func:`mqtt_sn_input` function periodically to process incoming messages.
+
+Example :c:func:`mqtt_sn_search` function call:
+
+.. code-block:: c
+
+	err = mqtt_sn_search(&mqtt_client, 1);
+	k_sleep(K_SECONDS(10));
+	err = mqtt_sn_input(&mqtt_client);
+	__ASSERT(err == 0, "mqtt_sn_search() failed %d", err);
+
+After the Gateway address has been defined or found, the MQTT-SN client can
+connect to the gateway. Call the :c:func:`mqtt_sn_connect` function, which will send a
+``CONNECT`` MQTT-SN message. The application should periodically call the :c:func:`mqtt_sn_input`
+function to process the response received. The application does not have to call
+:c:func:`mqtt_sn_input` if it knows that no data has been received (e.g. when using Bluetooth).
+Note that :c:func:`mqtt_sn_input` is a non-blocking function, if the transport struct contains a
+:c:func:`poll` compatible function pointer.
+If the connection was successful, :c:enumerator:`MQTT_SN_EVT_CONNECTED` will be notified to the
 application through the callback function.
 
 .. code-block:: c
@@ -110,19 +126,19 @@ application through the callback function.
 		k_sleep(K_MSEC(500));
 	}
 
-In the above code snippet, the event handler function should set the ``connected``
-flag upon a successful connection. If the connection fails at the MQTT level
-or a timeout occurs, the connection will be aborted.
+In the above code snippet, the gateway is connected to before publishing messages.
+If the connection fails at the MQTT level or a timeout occurs, the connection will be aborted and
+an error returned.
 
-After the connection is established, an application needs to call ``mqtt_input``
+After the connection is established, an application needs to call :c:func:`mqtt_input`
 function periodically to process incoming data. Connection upkeep, on the other hand,
 is done automatically using a k_work item.
 If a MQTT message is received, an MQTT callback function will be called and an
 appropriate event notified.
 
-The connection can be closed by calling the ``mqtt_sn_disconnect`` function. This
+The connection can be closed by calling the :c:func:`mqtt_sn_disconnect` function. This
 has no effect on the transport, however. If you want to close the transport (e.g.
-the socket), call ``mqtt_sn_client_deinit``, which will deinit the transport as well.
+the socket), call :c:func:`mqtt_sn_client_deinit`, which will deinit the transport as well.
 
 Zephyr provides sample code utilizing the MQTT-SN client API. See
 :zephyr:code-sample:`mqtt-sn-publisher` for more information.
@@ -134,7 +150,6 @@ Certain parts of the protocol are not yet supported in the library.
 
 * Pre-defined topic IDs
 * QoS -1 - it's most useful with predefined topics
-* Gateway discovery using ADVERTISE, SEARCHGW and GWINFO messages.
 * Setting the will topic and message after the initial connect
 * Forwarder Encapsulation
 

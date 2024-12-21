@@ -136,7 +136,6 @@ static struct vlan_context *get_vlan_ctx(struct net_if *main_iface,
 		}
 
 		ctx = net_if_get_device(vctx->virtual_iface)->data;
-		NET_ASSERT(vctx != NULL);
 
 		if (any_tag) {
 			if (ctx->tag != NET_VLAN_TAG_UNSPEC) {
@@ -609,6 +608,22 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 	}
 
 	return NET_OK;
+}
+
+int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt,
+		      size_t size, uint16_t proto, k_timeout_t timeout)
+{
+	enum virtual_interface_caps caps;
+	int ret = 0;
+
+	caps = net_virtual_get_iface_capabilities(iface);
+	if (caps & VIRTUAL_INTERFACE_VLAN) {
+		ret = net_pkt_alloc_buffer_with_reserve(pkt, size,
+							sizeof(struct net_eth_vlan_hdr),
+							proto, timeout);
+	}
+
+	return ret;
 }
 
 static int vlan_interface_attach(struct net_if *vlan_iface,

@@ -257,8 +257,10 @@ void log_core_init(void)
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_init();
 
-		for (uint16_t s = 0; s < log_src_cnt_get(0); s++) {
-			log_frontend_filter_set(s, CONFIG_LOG_MAX_LEVEL);
+		if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
+			for (uint16_t s = 0; s < log_src_cnt_get(0); s++) {
+				log_frontend_filter_set(s, CONFIG_LOG_MAX_LEVEL);
+			}
 		}
 
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {

@@ -510,7 +510,7 @@ prevent you from implementing a hardware-clone firmware. Instead, if possible,
 the host driver implementation should be fixed to use values from the interface
 and endpoint descriptor.
 
-Testing over USPIP in native_sim
+Testing over USBIP in native_sim
 ********************************
 
 A virtual USB controller implemented through USBIP might be used to test the USB
@@ -596,7 +596,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`bluetooth_hci_usb`            | 0x000B |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`bluetooth_hci_usb_h4`         | 0x000C |
+| Reserved (previously: bluetooth_hci_usb_h4)        | 0x000C |
 +----------------------------------------------------+--------+
 | Reserved (previously: wpan-usb)                    | 0x000D |
 +----------------------------------------------------+--------+

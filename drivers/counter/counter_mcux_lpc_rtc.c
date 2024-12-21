@@ -219,7 +219,7 @@ static int mcux_lpc_rtc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_rtc_driver_api = {
+static DEVICE_API(counter, mcux_rtc_driver_api) = {
 	.start = mcux_lpc_rtc_start,
 	.stop = mcux_lpc_rtc_stop,
 	.get_value = mcux_lpc_rtc_get_value,
@@ -413,7 +413,7 @@ static int mcux_lpc_rtc_highres_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_rtc_highres_driver_api = {
+static DEVICE_API(counter, mcux_rtc_highres_driver_api) = {
 	.start = mcux_lpc_rtc_highres_start,
 	.stop = mcux_lpc_rtc_highres_stop,
 	.get_value = mcux_lpc_rtc_highres_get_value,

@@ -116,7 +116,7 @@
 	};
 
 	lpuart3: serial@42570000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x42570000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
@@ -125,7 +125,7 @@
 	};
 
 	lpuart4: serial@42580000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x42580000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
@@ -134,7 +134,7 @@
 	};
 
 	lpuart5: serial@42590000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x42590000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
@@ -143,7 +143,7 @@
 	};
 
 	lpuart6: serial@425a0000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x425a0000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
@@ -152,7 +152,7 @@
 	};
 
 	lpuart7: serial@42690000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x42690000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
@@ -161,7 +161,7 @@
 	};
 
 	lpuart8: serial@426a0000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x426a0000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
@@ -179,7 +179,7 @@
 	};
 
 	lpuart1: serial@44380000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x44380000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
@@ -188,7 +188,7 @@
 	};
 
 	lpuart2: serial@44390000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x44390000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";

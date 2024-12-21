@@ -1,0 +1,9 @@
+# Copyright 2022, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_NXP_PORT
+	bool "Pin controller driver for NXP PORT peripheral"
+	default y
+	depends on DT_HAS_NXP_PORT_PINMUX_ENABLED
+	help
+	  Enable pin controller driver for NXP PORT peripheral

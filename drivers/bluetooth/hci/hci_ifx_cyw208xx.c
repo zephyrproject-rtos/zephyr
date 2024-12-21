@@ -299,7 +299,7 @@ done:
 	return ret ? -EIO : 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open = cyw208xx_open,
 	.close = cyw208xx_close,
 	.send = cyw208xx_send,

@@ -364,10 +364,10 @@ config HAS_MCUX_XBARA
 	help
 	  Set if the XBARA module is present on the SoC.
 
-config HAS_NXP_MONOLITHIC_BT
+config HAS_NXP_MONOLITHIC_NBU
 	bool
 	help
-	  Set if the platform supports the monolithic build for BT applications.
+	  Set if the platform supports the monolithic build for BT/15.4 applications.
 
 config NXP_FW_LOADER
 	bool "Include firmware loader component"
@@ -381,11 +381,11 @@ config NXP_MONOLITHIC_WIFI
 	   If enabled, the WiFi firmware used by the device will be linked with the
 	   application directly.
 
-config NXP_MONOLITHIC_BT
-	bool "BT firmware monolithic build"
-	depends on HAS_NXP_MONOLITHIC_BT
+config NXP_MONOLITHIC_NBU
+	bool "Narrowband Unit (BT/15.4) firmware monolithic build"
+	depends on HAS_NXP_MONOLITHIC_NBU
 	help
-	   If enabled, the BT firmware used by the device will be linked with the
+	   If enabled, the NBU firmware used by the device will be linked with the
 	   application directly.
 
 config NXP_RF_IMU

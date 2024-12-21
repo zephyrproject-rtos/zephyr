@@ -34,7 +34,7 @@ static int entropy_prbs_get_entropy(const struct device *dev, uint8_t *buffer,
 	return 0;
 }
 
-static const struct entropy_driver_api entropy_prbs_api = {
+static DEVICE_API(entropy, entropy_prbs_api) = {
 	.get_entropy = entropy_prbs_get_entropy
 };
 

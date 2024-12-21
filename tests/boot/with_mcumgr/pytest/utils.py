@@ -5,9 +5,8 @@ from __future__ import annotations
 
 import logging
 
-from twister_harness import Shell, MCUmgr
+from twister_harness import MCUmgr, Shell
 from twister_harness.helpers.shell import ShellMCUbootCommandParsed
-
 
 logger = logging.getLogger(__name__)
 

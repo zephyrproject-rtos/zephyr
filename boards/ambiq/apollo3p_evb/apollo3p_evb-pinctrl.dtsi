@@ -17,6 +17,11 @@
 			input-enable;
 		};
 	};
+	itm_default: itm_default {
+		group1 {
+			pinmux = <SWO_P41>;
+		};
+	};
 	i2c0_default: i2c0_default {
 		group1 {
 			pinmux = <M0SCL_P5>, <M0SDAWIR3_P6>;

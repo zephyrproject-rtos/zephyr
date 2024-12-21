@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 if platform.system() == 'Darwin':
     DEFAULT_BOSSAC_PORT = None
@@ -76,19 +76,13 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
     def supports(self, flag):
         """Check if bossac supports a flag by searching the help"""
-        for line in self.read_help():
-            if flag in line:
-                return True
-        return False
+        return any(flag in line for line in self.read_help())
 
     def is_extended_samba_protocol(self):
         ext_samba_versions = ['CONFIG_BOOTLOADER_BOSSA_ARDUINO',
                               'CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2']
 
-        for x in ext_samba_versions:
-            if self.build_conf.getboolean(x):
-                return True
-        return False
+        return any(self.build_conf.getboolean(x) for x in ext_samba_versions)
 
     def is_partition_enabled(self):
         return self.build_conf.getboolean('CONFIG_USE_DT_CODE_PARTITION')
@@ -102,8 +96,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         b = pathlib.Path(self.cfg.build_dir)
         edt_pickle = b / 'zephyr' / 'edt.pickle'
         if not edt_pickle.is_file():
-            error_msg = "can't load devicetree; expected to find:" \
-	                + str(edt_pickle)
+            error_msg = "can't load devicetree; expected to find:" + str(edt_pickle)
 
             raise RuntimeError(error_msg)
 
@@ -111,10 +104,10 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         try:
             with open(edt_pickle, 'rb') as f:
                 edt = pickle.load(f)
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as err:
             error_msg = "could not load devicetree, something may be wrong " \
                     + "with the python environment"
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from err
 
         return edt.chosen_node('zephyr,code-partition')
 
@@ -151,7 +144,9 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
     def is_gnu_coreutils_stty(self):
         try:
-            result = subprocess.run(['stty', '--version'], capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                ['stty', '--version'], capture_output=True, text=True, check=True
+            )
             return 'coreutils' in result.stdout
         except subprocess.CalledProcessError:
             return False
@@ -200,7 +195,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
             offset = self.get_image_offset(self.supports('--offset'))
 
             if offset is not None and int(str(offset), 16) > 0:
-                cmd_flash += ['-o', '%s' % offset]
+                cmd_flash += ['-o', str(offset)]
 
         elif dt_chosen_code_partition_nd is not None:
             error_msg = 'There is no CONFIG_USE_DT_CODE_PARTITION Kconfig' \

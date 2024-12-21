@@ -388,6 +388,7 @@
 			status = "disabled";
 			#address-cells = <3>;
 			#size-cells = <0>;
+			instance-id = <0x00>;
 		};
 
 		i3c1: i3c@400f2000 {
@@ -413,6 +414,7 @@
 			status = "disabled";
 			#address-cells = <3>;
 			#size-cells = <0>;
+			instance-id = <0x10>;
 		};
 
 		i3c2: i3c@400f4000 {
@@ -438,6 +440,7 @@
 			status = "disabled";
 			#address-cells = <3>;
 			#size-cells = <0>;
+			instance-id = <0x20>;
 		};
 	};
 

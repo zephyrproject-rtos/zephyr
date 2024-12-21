@@ -5,6 +5,6 @@ config SLG471X5_FPGA
 	bool "Renesas SLG47105/SLG47115 GreenPAK Configurable Mixed-Signal IC"
 	default y
 	depends on DT_HAS_RENESAS_SLG47105_ENABLED || DT_HAS_RENESAS_SLG47115_ENABLED
-	select SPI
+	select I2C
 	help
 	  Enable Renesas SLG47105/SLG47115 driver support.

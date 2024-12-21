@@ -500,7 +500,7 @@ static int spi_esp32_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_api = {
+static DEVICE_API(spi, spi_api) = {
 	.transceive = spi_esp32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_esp32_transceive_async,
@@ -559,7 +559,7 @@ static const struct spi_driver_api spi_api = {
 		.clock_source = SPI_CLK_SRC_DEFAULT,	\
 	};	\
 		\
-	DEVICE_DT_INST_DEFINE(idx, spi_esp32_init,	\
+	SPI_DEVICE_DT_INST_DEFINE(idx, spi_esp32_init,	\
 			      NULL, &spi_data_##idx,	\
 			      &spi_config_##idx, POST_KERNEL,	\
 			      CONFIG_SPI_INIT_PRIORITY, &spi_api);

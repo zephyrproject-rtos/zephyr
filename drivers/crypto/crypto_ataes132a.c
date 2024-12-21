@@ -875,7 +875,7 @@ static const struct ataes132a_device_config ataes132a_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
 };
 
-static struct crypto_driver_api crypto_enc_funcs = {
+static DEVICE_API(crypto, crypto_enc_funcs) = {
 	.cipher_begin_session = ataes132a_session_setup,
 	.cipher_free_session = ataes132a_session_free,
 	.cipher_async_callback_set = NULL,

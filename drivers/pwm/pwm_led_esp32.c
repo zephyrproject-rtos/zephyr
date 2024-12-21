@@ -354,7 +354,7 @@ int pwm_led_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_led_esp32_api = {
+static DEVICE_API(pwm, pwm_led_esp32_api) = {
 	.set_cycles = pwm_led_esp32_set_cycles,
 	.get_cycles_per_sec = pwm_led_esp32_get_cycles_per_sec,
 };

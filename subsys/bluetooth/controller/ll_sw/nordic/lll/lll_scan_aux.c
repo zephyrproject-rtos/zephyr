@@ -676,7 +676,10 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 	LL_ASSERT(e);
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 	e->lll = param;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 
 	lll_done(param);
 }
@@ -716,7 +719,10 @@ static void isr_done(void *param)
 
 		e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 		LL_ASSERT(e);
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 		e->lll = param;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	}
 
 	lll_isr_cleanup(param);
@@ -1209,6 +1215,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			lll_aux->state = 1U;
 		} else {
 			ftr->param = lll;
+			ftr->lll_aux = lll->lll_aux;
 			radio_isr_set(isr_tx_scan_req_lll_schedule,
 				      node_rx);
 			lll->lll_aux->state = 1U;
@@ -1278,6 +1285,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			 * LLL scheduling in the reception of this current PDU.
 			 */
 			ftr->param = lll;
+			ftr->lll_aux = lll->lll_aux;
 			ftr->scan_rsp = lll->lll_aux->state;
 
 			/* Further auxiliary PDU reception will be chain PDUs */
@@ -1661,7 +1669,10 @@ static void isr_early_abort(void *param)
 
 	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 	LL_ASSERT(e);
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 	e->lll = param;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 
 	lll_isr_early_abort(param);
 }

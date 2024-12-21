@@ -4,19 +4,36 @@
 
 menuconfig WIFI_AIROC
 	bool "Infineon AIROC SoC Wi-Fi support"
+	depends on DT_HAS_INFINEON_AIROC_WIFI_ENABLED
+	default y
 	select THREAD_CUSTOM_DATA
 	select WIFI_OFFLOAD
+	select NET_L2_ETHERNET
 	select NET_L2_WIFI_MGMT
-	select SDIO_STACK
-	select SDHC
 	select GPIO
 	select WIFI_USE_NATIVE_NETWORKING
 	select USE_INFINEON_ABSTRACTION_RTOS
-	depends on DT_HAS_INFINEON_AIROC_WIFI_ENABLED
 	help
 	  Enable Infineon AIROC SoC Wi-Fi support.
 
 if WIFI_AIROC
+
+config AIROC_WIFI_BUS_SDIO
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_INFINEON_AIROC_WIFI),sd)
+	select SDHC
+	select SDIO_STACK
+	help
+	  Enable SDIO bus support.
+
+config AIROC_WIFI_BUS_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_INFINEON_AIROC_WIFI),spi)
+	select SPI
+	help
+	  Enable SPI bus support
 
 config AIROC_WIFI_EVENT_TASK_STACK_SIZE
 	int "Event Task Stack Size"

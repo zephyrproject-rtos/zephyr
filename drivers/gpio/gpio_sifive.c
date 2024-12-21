@@ -306,7 +306,7 @@ static int gpio_sifive_port_get_dir(const struct device *dev, gpio_port_pins_t m
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
-static const struct gpio_driver_api gpio_sifive_driver = {
+static DEVICE_API(gpio, gpio_sifive_driver) = {
 	.pin_configure           = gpio_sifive_config,
 	.port_get_raw            = gpio_sifive_port_get_raw,
 	.port_set_masked_raw     = gpio_sifive_port_set_masked_raw,

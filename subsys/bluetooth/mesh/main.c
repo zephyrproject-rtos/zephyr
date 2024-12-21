@@ -524,6 +524,13 @@ int bt_mesh_resume(void)
 		return err;
 	}
 
+	err = bt_mesh_scan_enable();
+	if (err) {
+		LOG_WRN("Re-enabling scanning failed (err %d)", err);
+		atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+		return err;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) && bt_mesh_is_provisioned()) {
 		err = bt_mesh_proxy_gatt_enable();
 		if (err) {
@@ -540,13 +547,6 @@ int bt_mesh_resume(void)
 		}
 	}
 
-	err = bt_mesh_scan_enable();
-	if (err) {
-		LOG_WRN("Re-enabling scanning failed (err %d)", err);
-		atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
-		return err;
-	}
-
 	bt_mesh_hb_resume();
 
 	if (bt_mesh_beacon_enabled() ||
@@ -556,12 +556,7 @@ int bt_mesh_resume(void)
 
 	bt_mesh_model_foreach(model_resume, NULL);
 
-	err = bt_mesh_adv_gatt_send();
-	if (err && (err != -ENOTSUP)) {
-		LOG_WRN("GATT send failed (err %d)", err);
-		return err;
-	}
-
+	bt_mesh_adv_gatt_update();
 	return 0;
 }
 
@@ -635,6 +630,10 @@ int bt_mesh_start(void)
 		bt_mesh_beacon_enable();
 	}
 
+	if (!IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		bt_mesh_scan_enable();
+	}
+
 	if (!IS_ENABLED(CONFIG_BT_MESH_PROV) || !bt_mesh_prov_active() ||
 	    bt_mesh_prov_link.bearer->type == BT_MESH_PROV_ADV) {
 		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
@@ -652,8 +651,6 @@ int bt_mesh_start(void)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_init();
-	} else {
-		bt_mesh_scan_enable();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {

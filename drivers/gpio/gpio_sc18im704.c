@@ -251,7 +251,7 @@ static int gpio_sc18im_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_sc18im_driver_api = {
+static DEVICE_API(gpio, gpio_sc18im_driver_api) = {
 	.pin_configure = gpio_sc18im_pin_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_sc18im_pin_get_config,

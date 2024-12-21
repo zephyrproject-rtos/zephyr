@@ -195,8 +195,8 @@
 #define INPUT_BTN_7 0x107               /**< 7 button */
 #define INPUT_BTN_8 0x108               /**< 8 button */
 #define INPUT_BTN_9 0x109               /**< 9 button */
-#define INPUT_BTN_A BTN_SOUTH           /**< A button */
-#define INPUT_BTN_B BTN_EAST            /**< B button */
+#define INPUT_BTN_A INPUT_BTN_SOUTH     /**< A button */
+#define INPUT_BTN_B INPUT_BTN_EAST      /**< B button */
 #define INPUT_BTN_BACK 0x116		/**< Back button */
 #define INPUT_BTN_C 0x132               /**< C button */
 #define INPUT_BTN_DPAD_DOWN 0x221       /**< Directional pad Down */
@@ -226,8 +226,8 @@
 #define INPUT_BTN_TR 0x137              /**< Right trigger (R1) */
 #define INPUT_BTN_TR2 0x139             /**< Right trigger 2 (R2) */
 #define INPUT_BTN_WEST 0x134            /**< West button */
-#define INPUT_BTN_X BTN_NORTH           /**< X button */
-#define INPUT_BTN_Y BTN_WEST            /**< Y button */
+#define INPUT_BTN_X INPUT_BTN_NORTH     /**< X button */
+#define INPUT_BTN_Y INPUT_BTN_WEST      /**< Y button */
 #define INPUT_BTN_Z 0x135               /**< Z button */
 /** @} */
 

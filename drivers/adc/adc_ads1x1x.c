@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(ADS1X1X, CONFIG_ADC_LOG_LEVEL);
 	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1015, alert_rdy_gpios) || \
 	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1014, alert_rdy_gpios)
 
-#define ADC_ADS1X1X_TRIGGER
+#define ADC_ADS1X1X_TRIGGER 1
 
 #endif
 
@@ -786,7 +786,7 @@ static int ads1x1x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api ads1x1x_api = {
+static DEVICE_API(adc, ads1x1x_api) = {
 	.channel_setup = ads1x1x_channel_setup,
 	.read = ads1x1x_read,
 	.ref_internal = 2048,

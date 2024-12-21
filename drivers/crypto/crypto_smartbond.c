@@ -921,7 +921,7 @@ crypto_smartbond_hash_set_async_callback(const struct device *dev, hash_completi
 }
 #endif
 
-static const struct crypto_driver_api crypto_smartbond_driver_api = {
+static DEVICE_API(crypto, crypto_smartbond_driver_api) = {
 	.cipher_begin_session = crypto_smartbond_cipher_begin_session,
 	.cipher_free_session = crypto_smartbond_cipher_free_session,
 #if defined(CONFIG_CRYPTO_ASYNC)

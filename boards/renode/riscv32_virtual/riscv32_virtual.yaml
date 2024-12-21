@@ -6,8 +6,9 @@ toolchain:
   - zephyr
 ram: 4096
 flash: 4096
-simulation: renode
-simulation_exec: renode
+simulation:
+  - name: renode
+    exec: renode
 testing:
   ignore_tags:
     - net

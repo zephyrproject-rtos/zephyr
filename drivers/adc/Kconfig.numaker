@@ -7,6 +7,7 @@ config ADC_NUMAKER
 	bool "Nuvoton NuMaker MCU ADC driver"
 	default y
 	select HAS_NUMAKER_ADC
+	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_ADC_ENABLED
 	help
 	  This option enables the ADC driver for Nuvoton NuMaker family of

@@ -80,7 +80,7 @@ static int nxp_gau_dac_write_value(const struct device *dev,
 	return 0;
 };
 
-static const struct dac_driver_api nxp_gau_dac_driver_api = {
+static DEVICE_API(dac, nxp_gau_dac_driver_api) = {
 	.channel_setup = nxp_gau_dac_channel_setup,
 	.write_value = nxp_gau_dac_write_value,
 };

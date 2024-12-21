@@ -898,7 +898,7 @@ static int spi_max32_init(const struct device *dev)
 }
 
 /* SPI driver APIs structure */
-static const struct spi_driver_api spi_max32_api = {
+static DEVICE_API(spi, spi_max32_api) = {
 	.transceive = api_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = api_transceive_async,
@@ -965,7 +965,7 @@ static const struct spi_driver_api spi_max32_api = {
 		SPI_CONTEXT_INIT_SYNC(max32_spi_data_##_num, ctx),                                 \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(_num), ctx)                            \
 		IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &max32_spi_rtio_##_num))};                \
-	DEVICE_DT_INST_DEFINE(_num, spi_max32_init, NULL, &max32_spi_data_##_num,                  \
+	SPI_DEVICE_DT_INST_DEFINE(_num, spi_max32_init, NULL, &max32_spi_data_##_num,              \
 			      &max32_spi_config_##_num, PRE_KERNEL_2, CONFIG_SPI_INIT_PRIORITY,    \
 			      &spi_max32_api);
 

@@ -65,11 +65,14 @@ def test_testsuite_config_files():
 
         # CONF_FILE, DTC_OVERLAY_FILE, OVERLAY_CONFIG fields should be stripped out
         # of extra_args. Other fields should remain untouched.
-        warn_mock.assert_called_once_with("Do not specify CONF_FILE, OVERLAY_CONFIG, or "
-                                          "DTC_OVERLAY_FILE in extra_args. This feature is "
-                                          "deprecated and will soon result in an error. Use "
-                                          "extra_conf_files, extra_overlay_confs or "
-                                          "extra_dtc_overlay_files YAML fields instead", DeprecationWarning)
+        warn_mock.assert_called_once_with(
+            "Do not specify CONF_FILE, OVERLAY_CONFIG, or DTC_OVERLAY_FILE in extra_args."
+            " This feature is deprecated and will soon result in an error."
+            " Use extra_conf_files, extra_overlay_confs"
+            " or extra_dtc_overlay_files YAML fields instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
 
     assert scenario["extra_args"] == ["UNRELATED1=abc", "UNRELATED2=xyz"]
 

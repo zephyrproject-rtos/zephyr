@@ -27,6 +27,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,uart-mcumgr = &lpuart0;
 	};
 
 	user_led {
@@ -89,21 +90,20 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
+		 */
 		boot_partition: partition@0 {
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
-
 		slot0_partition: partition@10000 {
-			reg = <0x10000 DT_SIZE_K(416)>;
+			reg = <0x10000 (DT_SIZE_K(416) + DT_SIZE_K(16))>;
 		};
-
-		slot1_partition: partition@78000 {
-			reg = <0x78000 DT_SIZE_K(416)>;
+		slot1_partition: partition@7C000 {
+			reg = <0x7C000 DT_SIZE_K(416)>;
 		};
-
-		storage_partition: partition@e0000 {
-			reg = <0xe0000 DT_SIZE_K(128)>;
+		storage_partition: partition@E4000 {
+			reg = <0xE4000 DT_SIZE_K(112)>;
 		};
 	};
 };
@@ -136,4 +136,9 @@
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&nbu {
+	status = "okay";
+	wakeup-source;
 };

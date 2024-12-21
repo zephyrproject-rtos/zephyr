@@ -77,6 +77,7 @@ static int subnets_list(const struct bt_mesh_model *model, struct bt_mesh_msg_ct
 
 	net_idx_filter = net_buf_simple_pull_le16(buf);
 	subnets_list.net_idx_filter.filter = net_idx_filter & BIT_MASK(2);
+	subnets_list.net_idx_filter.prohibited = (net_idx_filter >> 2) & BIT_MASK(2);
 	subnets_list.net_idx_filter.net_idx = (net_idx_filter >> 4) & BIT_MASK(12);
 	subnets_list.start_idx = net_buf_simple_pull_u8(buf);
 

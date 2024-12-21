@@ -348,7 +348,7 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 	}
 
 	/* Set default values */
-	disabled_until[i] = sys_timepoint_calc(K_NO_WAIT);
+	disabled_until[index] = sys_timepoint_calc(K_NO_WAIT);
 	server_flag_store_notify[index] = 0U;
 	server_id[index] = index + 1;
 	lifetime[index] = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;

@@ -1,0 +1,6 @@
+board:
+  name: candlelight
+  full_name: candleLight
+  vendor: others
+  socs:
+    - name: stm32f072xb

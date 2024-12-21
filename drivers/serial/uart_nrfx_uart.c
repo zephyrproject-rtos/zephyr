@@ -1044,7 +1044,7 @@ static int uart_nrfx_init(const struct device *dev)
 /* Common function: uart_nrfx_irq_tx_ready_complete is used for two API entries
  * because Nordic hardware does not distinguish between them.
  */
-static const struct uart_driver_api uart_nrfx_uart_driver_api = {
+static DEVICE_API(uart, uart_nrfx_uart_driver_api) = {
 #ifdef CONFIG_UART_0_ASYNC
 	.callback_set	  = uart_nrfx_callback_set,
 	.tx		  = uart_nrfx_tx,

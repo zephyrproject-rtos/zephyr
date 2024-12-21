@@ -585,10 +585,12 @@ static int veml7700_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api veml7700_api = {.sample_fetch = veml7700_sample_fetch,
-						      .channel_get = veml7700_channel_get,
-						      .attr_set = veml7700_attr_set,
-						      .attr_get = veml7700_attr_get};
+static DEVICE_API(sensor, veml7700_api) = {
+	.sample_fetch = veml7700_sample_fetch,
+	.channel_get = veml7700_channel_get,
+	.attr_set = veml7700_attr_set,
+	.attr_get = veml7700_attr_get,
+};
 
 #define VEML7700_INIT(n)                                                                           \
 	static struct veml7700_data veml7700_data_##n;                                             \

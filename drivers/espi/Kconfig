@@ -46,6 +46,15 @@ config ESPI_VWIRE_CHANNEL
 	help
 	  eSPI Controller supports virtual wires channel.
 
+config ESPI_VWIRE_VALID_BIT_CHECK
+	bool "eSPI virtual wire valid bit check"
+	default y
+	depends on ESPI_VWIRE_CHANNEL
+	help
+	  Enable the checking of the eSPI virtual wire valid bit. If this
+	  configuration is not set, treat the new values as the previously
+	  retained valid values and return the received virtual wire level.
+
 config ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
 	bool "Automatic acknowledge for eSPI HOST warnings"
 	default y

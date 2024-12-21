@@ -17,6 +17,22 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Get the major part of the littlefs disk version
+ *
+ * @param disk_version The disk version of littlefs partition
+ * @return The major part of the littlefs disk version.
+ */
+#define FS_LITTLEFS_DISK_VERSION_MAJOR_GET(disk_version) FIELD_GET(GENMASK(31, 16), disk_version)
+
+/**
+ * @brief Get the minor part of the littlefs disk version
+ *
+ * @param disk_version The disk version of littlefs partition
+ * @return The minor part of the littlefs disk version.
+ */
+#define FS_LITTLEFS_DISK_VERSION_MINOR_GET(disk_version) FIELD_GET(GENMASK(15, 0), disk_version)
+
 /** @brief Filesystem info structure for LittleFS mount */
 struct fs_littlefs {
 	/* Defaulted in driver, customizable before mount. */

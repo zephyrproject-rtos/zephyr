@@ -11,6 +11,7 @@ choice EVICTION_CHOICE
 
 config EVICTION_CUSTOM
 	bool "Custom eviction algorithm"
+	imply EVICTION_TRACKING
 	help
 	  This option is chosen when the eviction algorithm will be implemented
 	  by the application, instead of using one included in Zephyr.
@@ -30,6 +31,7 @@ config EVICTION_NRU
 
 config EVICTION_LRU
 	bool "Least Recently Used (LRU) page eviction algorithm"
+	select EVICTION_TRACKING
 	help
 	  This implements a Least Recently Used page eviction algorithm.
 	  Usage is tracked based on MMU protection making pages unaccessible
@@ -49,3 +51,11 @@ config EVICTION_NRU_PERIOD
 	  pages that are capable of being paged out. At eviction time, if a page
 	  still has the accessed property, it will be considered as recently used.
 endif # EVICTION_NRU
+
+config EVICTION_TRACKING
+	bool
+	depends on ARCH_SUPPORTS_EVICTION_TRACKING
+	help
+	  Selected by eviction algorithms which needs page tracking and need to
+	  implement the following functions: k_mem_paging_eviction_add(),
+	  k_mem_paging_eviction_remove() and k_mem_paging_eviction_accessed().

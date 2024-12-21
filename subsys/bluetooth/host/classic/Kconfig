@@ -18,6 +18,15 @@ config BT_CLASSIC
 	  This option enables Bluetooth BR/EDR support
 
 if BT_CLASSIC
+config BT_BR_MIN_ENC_KEY_SIZE
+	int
+	prompt "Minimum encryption key size accepted in octets" if !BT_SMP_SC_ONLY
+	default BT_SMP_MIN_ENC_KEY_SIZE
+	range 7 16
+	help
+	  This option sets the minimum encryption key size accepted during pairing
+	  for classic.
+
 config BT_MAX_SCO_CONN
 	int "Maximum number of simultaneous SCO connections"
 	default 1
@@ -177,6 +186,33 @@ config BT_A2DP_SINK
 	  This option enables the A2DP profile sink function
 
 endif # BT_A2DP
+
+config BT_AVCTP
+	bool "Bluetooth AVCTP protocol support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth AVCTP support
+
+config BT_AVRCP
+	bool "Bluetooth AVRCP Profile [EXPERIMENTAL]"
+	select BT_AVCTP
+	select EXPERIMENTAL
+	help
+	  This option enables the AVRCP profile
+
+if BT_AVRCP
+
+config BT_AVRCP_TARGET
+	bool "Bluetooth AVRCP Profile Target Function"
+	help
+	  This option enables the AVRCP profile target function
+
+config BT_AVRCP_CONTROLLER
+	bool "Bluetooth AVRCP Profile Controller Function"
+	help
+	  This option enables the AVRCP profile controller function
+
+endif # BT_AVRCP
 
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"

@@ -43,18 +43,17 @@ Configuration options
 
 import filecmp
 import hashlib
-from pathlib import Path
 import re
 import shlex
 import shutil
-from subprocess import Popen, PIPE, STDOUT
 import tempfile
-from typing import List, Dict, Optional, Any
+from pathlib import Path
+from subprocess import PIPE, STDOUT, Popen
+from typing import Any
 
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util import logging
-
 
 __version__ = "0.1.0"
 
@@ -77,7 +76,7 @@ def hash_file(file: Path) -> str:
 
     return sha256.hexdigest()
 
-def get_doxygen_option(doxyfile: str, option: str) -> List[str]:
+def get_doxygen_option(doxyfile: str, option: str) -> list[str]:
     """Obtain the value of a Doxygen option.
 
     Args:
@@ -133,9 +132,9 @@ def process_doxyfile(
     outdir: Path,
     silent: bool,
     fmt: bool = False,
-    fmt_pattern: Optional[str] = None,
-    fmt_vars: Optional[Dict[str, str]] = None,
-    outdir_var: Optional[str] = None,
+    fmt_pattern: str | None = None,
+    fmt_vars: dict[str, str] | None = None,
+    outdir_var: str | None = None,
 ) -> str:
     """Process Doxyfile.
 
@@ -270,11 +269,11 @@ def run_doxygen(doxygen: str, doxyfile: str, silent: bool = False) -> None:
         silent: If Doxygen output should be logged or not.
     """
 
-    f_doxyfile = tempfile.NamedTemporaryFile("w", delete=False)
-    f_doxyfile.write(doxyfile)
-    f_doxyfile.close()
+    with tempfile.NamedTemporaryFile("w", delete=False) as f_doxyfile:
+        f_doxyfile.write(doxyfile)
+        f_doxyfile_name = f_doxyfile.name
 
-    p = Popen([doxygen, f_doxyfile.name], stdout=PIPE, stderr=STDOUT, encoding="utf-8")
+    p = Popen([doxygen, f_doxyfile_name], stdout=PIPE, stderr=STDOUT, encoding="utf-8")
     while True:
         line = p.stdout.readline()  # type: ignore
         if line:
@@ -282,10 +281,10 @@ def run_doxygen(doxygen: str, doxyfile: str, silent: bool = False) -> None:
         if p.poll() is not None:
             break
 
-    Path(f_doxyfile.name).unlink()
+    Path(f_doxyfile_name).unlink()
 
     if p.returncode:
-        raise IOError(f"Doxygen process returned non-zero ({p.returncode})")
+        raise OSError(f"Doxygen process returned non-zero ({p.returncode})")
 
 
 def sync_doxygen(doxyfile: str, new: Path, prev: Path) -> None:
@@ -380,7 +379,7 @@ def doxygen_build(app: Sphinx) -> None:
     shutil.rmtree(tmp_outdir)
 
 
-def setup(app: Sphinx) -> Dict[str, Any]:
+def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("doxyrunner_doxygen", "doxygen", "env")
     app.add_config_value("doxyrunner_doxyfile", None, "env")
     app.add_config_value("doxyrunner_outdir", None, "env")

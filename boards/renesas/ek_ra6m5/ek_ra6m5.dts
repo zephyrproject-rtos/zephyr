@@ -7,6 +7,8 @@
 
 #include <renesas/ra/ra6/r7fa6m5bh3cfc.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 #include "ek_ra6m5-pinctrl.dtsi"
 
@@ -37,8 +39,24 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: s2 {
+			gpios = <&ioport0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
 	};
 };
 
@@ -50,6 +68,23 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&iic1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ioport0 {
@@ -71,5 +106,43 @@
 	clocks = <&xtal>;
 	div = <3>;
 	mul = <25 0>;
+	status = "okay";
+};
+
+&usbhs {
+	pinctrl-0 = <&usbhs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "high-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+&usbhs_phy {
+	phys-clock-src = "xtal";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&port_irq9 {
+	interrupts = <41 12>;
+	status = "okay";
+};
+
+&port_irq10 {
+	interrupts = <42 12>;
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <63 1>, <64 1>;
+	interrupt-names = "gtioca", "overflow";
 	status = "okay";
 };

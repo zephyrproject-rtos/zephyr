@@ -19,6 +19,7 @@
 
 	chosen {
 		zephyr,bt-hci = &hci;
+		zephyr,nbu = &nbu;
 	};
 
 	cpus {
@@ -39,6 +40,23 @@
 	};
 
 	soc {
+		fmu: memory-controller@50020000 {
+			ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "nxp,msf1";
+			reg = <0x50020000 0x1000>;
+			interrupts = <27 0>;
+			status = "disabled";
+
+			flash: flash@0 {
+				reg = <0x0 DT_SIZE_M(1)>;
+				compatible = "soc-nv-flash";
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+			};
+		};
+
 		ctcm: sram@14000000 {
 			ranges = <0x0 0x14000000 DT_SIZE_K(16)>;
 			#address-cells = <1>;
@@ -82,23 +100,6 @@
 				reg = <0x0 0x4b000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-
-				fmu: memory-controller@20000 {
-					ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
-					#address-cells = <1>;
-					#size-cells = <1>;
-					compatible = "nxp,msf1";
-					reg = <0x20000 0x1000>;
-					interrupts = <27 0>;
-					status = "disabled";
-
-					flash: flash@0 {
-						reg = <0x0 DT_SIZE_M(1)>;
-						compatible = "soc-nv-flash";
-						write-block-size = <16>;
-						erase-block-size = <8192>;
-					};
-				};
 			};
 
 			fast_peripheral0: fast_peripherals0@8000000 {
@@ -116,7 +117,7 @@
 	};
 
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 	};
 };
 
@@ -147,31 +148,31 @@
 	};
 
 	porta: pinctrl@42000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x42000 0xe0>;
 		clocks = <&scg SCG_K4_SLOW_CLK 0x108>;
 	};
 
 	portb: pinctrl@43000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x43000 0xe0>;
 		clocks = <&scg SCG_K4_SLOW_CLK 0x10c>;
 	};
 
 	portc: pinctrl@44000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x44000 0xe0>;
 		clocks = <&scg SCG_K4_SLOW_CLK 0x110>;
 	};
 
 	portd: pinctrl@45000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x45000 0xe0>;
 		clocks = <&scg SCG_K4_SLOW_CLK 0>;
 	};
 
 	lpuart0: serial@38000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x38000 0x34>;
 		interrupts = <44 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe0>;
@@ -179,7 +180,7 @@
 	};
 
 	lpuart1: serial@39000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x39000 0x34>;
 		interrupts = <45 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
@@ -187,7 +188,7 @@
 	};
 
 	lpi2c0: i2c@33000 {
-		compatible = "nxp,imx-lpi2c";
+		compatible = "nxp,lpi2c";
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -198,7 +199,7 @@
 	};
 
 	lpi2c1: i2c@34000 {
-		compatible = "nxp,imx-lpi2c";
+		compatible = "nxp,lpi2c";
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -209,7 +210,7 @@
 	};
 
 	lpspi0: spi@36000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x36000 0x800>;
 		interrupts = <42 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xd8>;
@@ -219,7 +220,7 @@
 	};
 
 	lpspi1: spi@37000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x37000 0x800>;
 		interrupts = <43 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xdc>;
@@ -248,6 +249,7 @@
 		reg = <0x31000 0x100>;
 		interrupts = <37 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xc4>;
+		prescaler = <16>;
 		status = "disabled";
 		#pwm-cells = <3>;
 	};
@@ -257,12 +259,13 @@
 		reg = <0x32000 0x100>;
 		interrupts = <38 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xc8>;
+		prescaler = <16>;
 		status = "disabled";
 		#pwm-cells = <3>;
 	};
 
 	wdog0: watchdog@1a000 {
-		compatible = "nxp,kinetis-wdog32";
+		compatible = "nxp,wdog32";
 		reg = <0x1a000 16>;
 		interrupts = <23 0>;
 		clocks = <&scg SCG_K4_SYSOSC_CLK 0x68>;
@@ -272,7 +275,7 @@
 	};
 
 	wdog1: watchdog@1b000 {
-		compatible = "nxp,kinetis-wdog32";
+		compatible = "nxp,wdog32";
 		reg = <0x1b000 16>;
 		interrupts = <24 0>;
 		clocks = <&scg SCG_K4_SYSOSC_CLK 0x6c>;
@@ -303,10 +306,14 @@
 		status = "disabled";
 	};
 
+	nbu: nbu {
+		compatible = "nxp,nbu";
+		interrupts = <48 2>;
+		interrupt-names = "nbu_rx_int";
+	};
+
 	hci: hci_ble {
 		compatible = "nxp,hci-ble";
-		interrupts = <48 2>;
-		interrupt-names = "hci_int";
 	};
 
 	flexcan0: can@3b000 {

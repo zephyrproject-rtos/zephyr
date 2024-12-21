@@ -734,7 +734,7 @@ static void spi_pw_isr(const void *arg)
 }
 #endif
 
-static const struct spi_driver_api pw_spi_api = {
+static DEVICE_API(spi, pw_spi_api) = {
 	.transceive = spi_pw_transceive,
 	.release = spi_pw_release,
 #ifdef CONFIG_SPI_ASYNC
@@ -871,7 +871,7 @@ static int spi_pw_init(const struct device *dev)
 		.clock_freq = DT_INST_PROP(n, clock_frequency),	     \
 		INIT_PCIE(n)					     \
 	};							     \
-	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
 			      &spi_##n##_data, &spi_##n##_config,    \
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
 			      &pw_spi_api);
@@ -891,7 +891,7 @@ static int spi_pw_init(const struct device *dev)
 		.clock_freq = DT_INST_PROP(n, clock_frequency),	     \
 		INIT_PCIE(n)					     \
 	};							     \
-	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
 			      &spi_##n##_data, &spi_##n##_config,    \
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
 			      &pw_spi_api);

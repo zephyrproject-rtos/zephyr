@@ -138,11 +138,8 @@ static uint64_t sqrt_u64(uint64_t square)
 	return square;
 }
 
-
-static void compute_and_report_stats(unsigned int num_threads,
-				     unsigned int num_iterations,
-				     uint64_t *cycles,
-				     const char *str)
+static void compute_and_report_stats(unsigned int num_threads, unsigned int num_iterations,
+				     uint64_t *cycles, const char *tag, const char *str)
 {
 	uint64_t minimum = cycles[0];
 	uint64_t maximum = cycles[0];
@@ -180,17 +177,38 @@ static void compute_and_report_stats(unsigned int num_threads,
 	std_dev /= num_threads;
 	std_dev = sqrt_u64(std_dev);
 
+#ifdef CONFIG_BENCHMARK_RECORDING
+	int tag_len = strlen(tag);
+	int descr_len = strlen(str);
+	int stag_len = strlen(".stddev");
+	int sdescr_len = strlen(", stddev.");
+
+	stag_len = (tag_len + stag_len < 40) ? 40 - tag_len : stag_len;
+	sdescr_len = (descr_len + sdescr_len < 50) ? 50 - descr_len : sdescr_len;
+
+	printk("REC: %s%-*s - %s%-*s : %7llu cycles , %7u ns :\n", tag, stag_len, ".min", str,
+	       sdescr_len, ", min.", minimum, (uint32_t)timing_cycles_to_ns(minimum));
+	printk("REC: %s%-*s - %s%-*s : %7llu cycles , %7u ns :\n", tag, stag_len, ".max", str,
+	       sdescr_len, ", max.", maximum, (uint32_t)timing_cycles_to_ns(maximum));
+	printk("REC: %s%-*s - %s%-*s : %7llu cycles , %7u ns :\n", tag, stag_len, ".avg", str,
+	       sdescr_len, ", avg.", average, (uint32_t)timing_cycles_to_ns(average));
+	printk("REC: %s%-*s - %s%-*s : %7llu cycles , %7u ns :\n", tag, stag_len, ".stddev", str,
+	       sdescr_len, ", stddev.", std_dev, (uint32_t)timing_cycles_to_ns(std_dev));
+#else
+	ARG_UNUSED(tag);
+
+	printk("------------------------------------\n");
 	printk("%s\n", str);
 
-	printk("    Minimum : %7llu cycles (%7u nsec)\n",
-	       minimum, (uint32_t)timing_cycles_to_ns(minimum));
-	printk("    Maximum : %7llu cycles (%7u nsec)\n",
-	       maximum, (uint32_t)timing_cycles_to_ns(maximum));
-	printk("    Average : %7llu cycles (%7u nsec)\n",
-	       average, (uint32_t)timing_cycles_to_ns(average));
-	printk("    Std Deviation: %7llu cycles (%7u nsec)\n",
-	       std_dev, (uint32_t)timing_cycles_to_ns(std_dev));
-
+	printk("    Minimum : %7llu cycles (%7u nsec)\n", minimum,
+	       (uint32_t)timing_cycles_to_ns(minimum));
+	printk("    Maximum : %7llu cycles (%7u nsec)\n", maximum,
+	       (uint32_t)timing_cycles_to_ns(maximum));
+	printk("    Average : %7llu cycles (%7u nsec)\n", average,
+	       (uint32_t)timing_cycles_to_ns(average));
+	printk("    Std Deviation: %7llu cycles (%7u nsec)\n", std_dev,
+	       (uint32_t)timing_cycles_to_ns(std_dev));
+#endif
 }
 
 int main(void)
@@ -225,28 +243,23 @@ int main(void)
 		test_decreasing_priority(&wait_q, CONFIG_BENCHMARK_NUM_THREADS);
 	}
 
-	compute_and_report_stats(CONFIG_BENCHMARK_NUM_THREADS,
-				 CONFIG_BENCHMARK_NUM_ITERATIONS,
-				 add_cycles,
+	compute_and_report_stats(CONFIG_BENCHMARK_NUM_THREADS, CONFIG_BENCHMARK_NUM_ITERATIONS,
+				 add_cycles, "sched.add.thread.WaitQ_tail",
 				 "Add threads of decreasing priority");
 
 #ifdef CONFIG_BENCHMARK_VERBOSE
 	for (i = 0; i < CONFIG_BENCHMARK_NUM_THREADS; i++) {
 		snprintf(tag, sizeof(tag),
 			 "WaitQ.add.to.tail.%04u.waiters", i);
-		snprintf(description, sizeof(description),
-			 "%-40s - Add thread of priority %u",
-			 tag, dummy_thread[i].prio);
+		snprintf(description, sizeof(description), "%-40s - Add thread of priority %u", tag,
+			 dummy_thread[i].prio);
 		PRINT_STATS_AVG(description, (uint32_t)add_cycles[i],
 				CONFIG_BENCHMARK_NUM_ITERATIONS);
 	}
 #endif
 
-	printk("------------------------------------\n");
-
-	compute_and_report_stats(CONFIG_BENCHMARK_NUM_THREADS,
-				 CONFIG_BENCHMARK_NUM_ITERATIONS,
-				 remove_cycles,
+	compute_and_report_stats(CONFIG_BENCHMARK_NUM_THREADS, CONFIG_BENCHMARK_NUM_ITERATIONS,
+				 remove_cycles, "sched.remove.thread.WaitQ_head",
 				 "Remove threads of decreasing priority");
 
 #ifdef CONFIG_BENCHMARK_VERBOSE
@@ -262,17 +275,14 @@ int main(void)
 	}
 #endif
 
-	printk("------------------------------------\n");
-
 	cycles_reset(CONFIG_BENCHMARK_NUM_THREADS);
 
 	for (i = 0; i < CONFIG_BENCHMARK_NUM_ITERATIONS; i++) {
 		test_increasing_priority(&wait_q, CONFIG_BENCHMARK_NUM_THREADS);
 	}
 
-	compute_and_report_stats(CONFIG_BENCHMARK_NUM_THREADS,
-				 CONFIG_BENCHMARK_NUM_ITERATIONS,
-				add_cycles,
+	compute_and_report_stats(CONFIG_BENCHMARK_NUM_THREADS, CONFIG_BENCHMARK_NUM_ITERATIONS,
+				 add_cycles, "sched.add.thread.WaitQ_head",
 				 "Add threads of increasing priority");
 
 #ifdef CONFIG_BENCHMARK_VERBOSE
@@ -289,11 +299,8 @@ int main(void)
 	}
 #endif
 
-	printk("------------------------------------\n");
-
-	compute_and_report_stats(CONFIG_BENCHMARK_NUM_THREADS,
-				 CONFIG_BENCHMARK_NUM_ITERATIONS,
-				 remove_cycles,
+	compute_and_report_stats(CONFIG_BENCHMARK_NUM_THREADS, CONFIG_BENCHMARK_NUM_ITERATIONS,
+				 remove_cycles, "sched.remove.thread.WaitQ_tail",
 				 "Remove threads of increasing priority");
 
 #ifdef CONFIG_BENCHMARK_VERBOSE

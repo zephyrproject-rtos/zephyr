@@ -1,0 +1,30 @@
+/* Enable the PLLI2s and set it as clock source for the MCO2 (with prescaler 2) : 25MHz */
+
+&plli2s {
+	div-m = <8>;
+	mul-n = <100>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+/* see RefMan RM0390 */
+&mco1 {
+	/* Select One of the line below for clock source */
+/*	clocks = <&rcc STM32_SRC_HSI MCO1_SEL(0)>; */
+/*	clocks = <&rcc STM32_SRC_LSE MCO1_SEL(1)>; */
+	clocks = <&rcc STM32_SRC_HSE MCO1_SEL(2)>;
+/*	clocks = <&rcc STM32_SRC_PLL_P MCO1_SEL(3)>;*/
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
+	pinctrl-0 = <&rcc_mco_1_pa8>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mco2 {
+	clocks = <&rcc STM32_SRC_PLLI2S_R MCO2_SEL(1)>;
+	prescaler = <MCO2_PRE(MCO_PRE_DIV_2)>;
+	pinctrl-0 = <&rcc_mco_2_pc9>;
+	pinctrl-names = "default";
+	status = "okay";
+};

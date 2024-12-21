@@ -414,7 +414,7 @@ static int gpio_mcux_lpc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
+static DEVICE_API(gpio, gpio_mcux_lpc_driver_api) = {
 	.pin_configure = gpio_mcux_lpc_configure,
 	.port_get_raw = gpio_mcux_lpc_port_get_raw,
 	.port_set_masked_raw = gpio_mcux_lpc_port_set_masked_raw,

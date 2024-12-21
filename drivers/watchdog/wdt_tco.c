@@ -230,7 +230,7 @@ static int tco_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static const struct wdt_driver_api tco_driver_api = {
+static DEVICE_API(wdt, tco_driver_api) = {
 	.setup = tco_setup,
 	.disable = tco_disable,
 	.install_timeout = tco_install_timeout,

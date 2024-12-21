@@ -97,6 +97,7 @@
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
 			compatible = "st,stm32h7-hsi-clock";
+			hsi-div = <1>;	/* HSI RC: 64MHz, hsi_clk = 64MHz */
 			clock-frequency = <DT_FREQ_M(64)>;
 			status = "disabled";
 		};
@@ -748,7 +749,8 @@
 					STM32_ADC_RES(8, 0x2)
 					STM32_ADC_RES(6, 0x3)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		adc2: adc@40022100 {
@@ -763,7 +765,8 @@
 					STM32_ADC_RES(8, 0x02)
 					STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		rng: rng@48020000 {

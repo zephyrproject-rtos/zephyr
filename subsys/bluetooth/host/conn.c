@@ -24,7 +24,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/direction.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/att.h>
 
 #include "common/assert.h"
@@ -1254,6 +1254,11 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		switch (old_state) {
 		case BT_CONN_DISCONNECT_COMPLETE:
+			/* Any previously scheduled deferred work now becomes invalid
+			 * so cancel it here, before we yield to tx thread.
+			 */
+			k_work_cancel_delayable(&conn->deferred_work);
+
 			bt_conn_tx_notify(conn, true);
 
 			bt_conn_reset_rx_state(conn);
@@ -1716,15 +1721,12 @@ static bool can_initiate_feature_exchange(struct bt_conn *conn)
 	 * controller, as we know at compile time whether it supports or not
 	 * peripheral feature exchange.
 	 */
-	bool onboard_controller = IS_ENABLED(CONFIG_BT_CTLR);
-	bool supports_peripheral_feature_exchange = IS_ENABLED(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG);
-	bool is_central = IS_ENABLED(CONFIG_BT_CENTRAL) && conn->role == BT_HCI_ROLE_CENTRAL;
 
-	if (is_central) {
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && (conn->role == BT_HCI_ROLE_CENTRAL)) {
 		return true;
 	}
 
-	if (onboard_controller && supports_peripheral_feature_exchange) {
+	if (IS_ENABLED(CONFIG_HAS_BT_CTLR) && IS_ENABLED(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)) {
 		return true;
 	}
 
@@ -1851,18 +1853,6 @@ static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
-	/* Disconnection is initiated by us, so auto connection shall
-	 * be disabled. Otherwise the passive scan would be enabled
-	 * and we could send LE Create Connection as soon as the remote
-	 * starts advertising.
-	 */
-#if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
-	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    conn->type == BT_CONN_TYPE_LE) {
-		bt_le_set_auto_conn(&conn->le.dst, NULL);
-	}
-#endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
-
 	switch (conn->state) {
 	case BT_CONN_SCAN_BEFORE_INITIATING:
 		conn->err = reason;
@@ -3745,6 +3735,12 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	conn = conn_le_create_helper(peer, conn_param);
 	if (!conn) {
 		return -ENOMEM;
+	}
+
+	if (BT_LE_STATES_SCAN_INIT(bt_dev.le.states) &&
+	    bt_le_explicit_scanner_running() &&
+	    !bt_le_explicit_scanner_uses_same_params(create_param)) {
+		LOG_WRN("Use same scan and connection create params to obtain best performance");
 	}
 
 	create_param_setup(create_param);

@@ -536,11 +536,6 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 #endif /* CONFIG_LIBLC3 */
 
 	k_sem_give(&sem_stream_started);
-	if (k_sem_count_get(&sem_stream_started) == stream_count) {
-		big_synced = true;
-		printk("BIG synced\n");
-		k_sem_give(&sem_big_synced);
-	}
 }
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
@@ -552,11 +547,6 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 	err = k_sem_take(&sem_stream_started, K_NO_WAIT);
 	if (err != 0) {
 		printk("Failed to take sem_stream_started: %d\n", err);
-	}
-
-	if (k_sem_count_get(&sem_stream_started) != stream_count) {
-		printk("BIG sync terminated\n");
-		big_synced = false;
 	}
 }
 
@@ -818,9 +808,27 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 	}
 }
 
+static void broadcast_sink_started_cb(struct bt_bap_broadcast_sink *sink)
+{
+	printk("Broadcast sink %p started\n", sink);
+
+	big_synced = true;
+	k_sem_give(&sem_big_synced);
+}
+
+static void broadcast_sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_t reason)
+{
+	printk("Broadcast sink %p stopped with reason 0x%02X\n", sink, reason);
+
+	big_synced = false;
+	k_sem_give(&sem_broadcast_sink_stopped);
+}
+
 static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 	.base_recv = base_recv_cb,
 	.syncable = syncable_cb,
+	.started = broadcast_sink_started_cb,
+	.stopped = broadcast_sink_stopped_cb,
 };
 
 static void pa_timer_handler(struct k_work *work)
@@ -851,12 +859,13 @@ static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
 		/* Use maximum value to maximize chance of success */
 		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
 	} else {
-		uint32_t interval_ms;
+		uint32_t interval_us;
 		uint32_t timeout;
 
 		/* Add retries and convert to unit in 10's of ms */
-		interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(pa_interval);
-		timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
+		interval_us = BT_GAP_PER_ADV_INTERVAL_TO_US(pa_interval);
+		timeout = BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(interval_us) *
+			  PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO;
 
 		/* Enforce restraints */
 		pa_timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
@@ -1026,8 +1035,6 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 			return err;
 		}
-
-		k_sem_give(&sem_broadcast_sink_stopped);
 	}
 
 	broadcaster_broadcast_id = recv_state->broadcast_id;
@@ -1241,7 +1248,7 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 		if (info->reason != BT_HCI_ERR_LOCALHOST_TERM_CONN && req_recv_state != NULL) {
 			int err;
 
-			if (k_sem_count_get(&sem_stream_connected) > 0) {
+			if (big_synced) {
 				err = bt_bap_broadcast_sink_stop(broadcast_sink);
 				if (err != 0) {
 					printk("Failed to stop Broadcast Sink: %d\n", err);
@@ -1256,8 +1263,6 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 
 				return;
 			}
-
-			k_sem_give(&sem_broadcast_sink_stopped);
 		}
 	}
 }

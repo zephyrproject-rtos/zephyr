@@ -419,7 +419,6 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
-	struct eeprom_at2x_data *data = dev->data;
 	size_t cmd_len = 1 + config->addr_width / 8;
 	uint8_t cmd[4] = { EEPROM_AT25_READ, 0, 0, 0 };
 	uint8_t *paddr;
@@ -474,7 +473,6 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 	err = eeprom_at25_wait_for_idle(dev);
 	if (err) {
 		LOG_ERR("EEPROM idle wait failed (err %d)", err);
-		k_mutex_unlock(&data->lock);
 		return err;
 	}
 
@@ -593,7 +591,7 @@ static int eeprom_at2x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct eeprom_driver_api eeprom_at2x_api = {
+static DEVICE_API(eeprom, eeprom_at2x_api) = {
 	.read = eeprom_at2x_read,
 	.write = eeprom_at2x_write,
 	.size = eeprom_at2x_size,
@@ -648,7 +646,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 		.write_fn = eeprom_at##t##_write, \
 	}; \
 	static struct eeprom_at2x_data eeprom_at##t##_data_##n; \
-	DEVICE_DT_DEFINE(INST_DT_AT2X(n, t), &eeprom_at2x_init, \
+	DEVICE_DT_DEFINE(INST_DT_AT2X(n, t), eeprom_at2x_init, \
 			    NULL, &eeprom_at##t##_data_##n, \
 			    &eeprom_at##t##_config_##n, POST_KERNEL, \
 			    CONFIG_EEPROM_AT2X_INIT_PRIORITY, \

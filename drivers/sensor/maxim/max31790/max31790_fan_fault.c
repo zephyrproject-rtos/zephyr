@@ -49,7 +49,7 @@ static int max31790_fan_fault_channel_get(const struct device *dev, enum sensor_
 	return 0;
 }
 
-static const struct sensor_driver_api max31790_fan_fault_api = {
+static DEVICE_API(sensor, max31790_fan_fault_api) = {
 	.sample_fetch = max31790_fan_fault_sample_fetch,
 	.channel_get = max31790_fan_fault_channel_get,
 };

@@ -16,11 +16,9 @@
 		compatible = "silabs,efr32mg24b220f1536im48",
 					 "silabs,efr32mg24", "silabs,efr32",
 					 "simple-bus";
-
-		flash-controller@50030000 {
-			flash0: flash@0 {
-				reg = <0 DT_SIZE_K(1536)>;
-			};
-		};
 	};
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(1536)>;
 };

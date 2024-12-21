@@ -20,7 +20,7 @@ bool k_is_in_isr(void)
 int32_t z_impl_k_sleep(k_timeout_t timeout)
 {
 	k_ticks_t ticks;
-	uint32_t expected_wakeup_ticks;
+	uint32_t ticks_to_wait;
 
 	__ASSERT(!arch_is_in_isr(), "");
 
@@ -37,12 +37,20 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	ticks = timeout.ticks;
 	if (Z_TICK_ABS(ticks) <= 0) {
-		expected_wakeup_ticks = ticks + sys_clock_tick_get_32();
+		/* ticks is delta timeout */
+		ticks_to_wait = ticks;
 	} else {
-		expected_wakeup_ticks = Z_TICK_ABS(ticks);
+		/* ticks is absolute timeout expiration */
+		uint32_t curr_ticks = sys_clock_tick_get_32();
+
+		if (Z_TICK_ABS(ticks) > curr_ticks) {
+			ticks_to_wait = Z_TICK_ABS(ticks) - curr_ticks;
+		} else {
+			ticks_to_wait = 0;
+		}
 	}
 	/* busy wait to be time coherent since subsystems may depend on it */
-	z_impl_k_busy_wait(k_ticks_to_us_ceil32(expected_wakeup_ticks));
+	z_impl_k_busy_wait(k_ticks_to_us_ceil32(ticks_to_wait));
 
 	int32_t ret = k_ticks_to_ms_ceil64(0);
 

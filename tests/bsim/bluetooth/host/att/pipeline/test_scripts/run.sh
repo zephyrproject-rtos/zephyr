@@ -10,6 +10,7 @@ tester_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_pipeline_tester_prj_con
 simulation_id="att_pipeline"
 verbosity_level=2
 sim_length_us=100e6
+EXECUTE_TIMEOUT=240
 
 cd ${BSIM_OUT_PATH}/bin
 

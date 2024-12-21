@@ -74,8 +74,9 @@
 				       STM32_ADC_RES(10, 0x02)
 				       STM32_ADC_RES(8, 0x03)>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		/*
@@ -94,8 +95,9 @@
 				       STM32_ADC_RES(10, 0x02)
 				       STM32_ADC_RES(8, 0x03)>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		usbotg_hs: otghs@42040000 {
@@ -106,16 +108,16 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "high-speed";
-			clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
-				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 14U)>;
 			phys = <&otghs_phy>;
 			status = "disabled";
 		};
 	};
 
 	otghs_phy: otghs_phy {
-		/* Clock source defined by USBPHYC_SEL in */
-		compatible = "usb-nop-xceiv";
+		compatible = "st,stm32u5-otghs-phy";
+		clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+			 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
 		#phy-cells = <0>;
 	};
 

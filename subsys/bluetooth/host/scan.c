@@ -2414,3 +2414,20 @@ bool bt_le_explicit_scanner_running(void)
 {
 	return atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
 }
+
+bool bt_le_explicit_scanner_uses_same_params(const struct bt_conn_le_create_param *create_param)
+{
+	if (scan_state.explicit_scan_param.window != create_param->window ||
+	    scan_state.explicit_scan_param.interval != create_param->interval){
+		return false;
+	}
+
+	if (scan_state.explicit_scan_param.options & BT_LE_SCAN_OPT_CODED) {
+		if (scan_state.explicit_scan_param.window_coded != create_param->window_coded ||
+		    scan_state.explicit_scan_param.interval_coded != create_param->interval_coded){
+			return false;
+		}
+	}
+
+	return true;
+}

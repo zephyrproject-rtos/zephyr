@@ -80,7 +80,7 @@ static int cmd_spi_conf(const struct shell *ctx, size_t argc, char **argv)
 
 	/* warning: initialization discards 'const' qualifier from pointer */
 	/* target type */
-	struct device *dev = (struct device *)device_get_binding(argv[CONF_ARGV_DEV]);
+	struct device *dev = (struct device *)shell_device_get_binding(argv[CONF_ARGV_DEV]);
 
 	if (dev == NULL) {
 		shell_error(ctx, "device %s not found.", argv[CONF_ARGV_DEV]);

@@ -78,6 +78,12 @@ hardware features:
 +-----------+------------+-------------------------------+
 | UART      | on-chip    | uart                          |
 +-----------+------------+-------------------------------+
+| SPI       | on-chip    | spi                           |
++-----------+------------+-------------------------------+
+| COUNTER   | on-chip    | counter                       |
++-----------+------------+-------------------------------+
+| PWM       | on-chip    | pwm                           |
++-----------+------------+-------------------------------+
 
 The default configuration can be found in
 :zephyr_file:`boards/renesas/ek_ra2a1/ek_ra2a1_defconfig`

@@ -148,7 +148,7 @@ static int entropy_gecko_trng_init(const struct device *dev)
 	return 0;
 }
 
-static struct entropy_driver_api entropy_gecko_trng_api_funcs = {
+static DEVICE_API(entropy, entropy_gecko_trng_api_funcs) = {
 	.get_entropy = entropy_gecko_trng_get_entropy,
 	.get_entropy_isr = entropy_gecko_trng_get_entropy_isr
 };

@@ -168,7 +168,8 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 		return;
 	}
 
-	if (setup->bRequest == USB_SREQ_SET_ADDRESS) {
+	if ((setup->bmRequestType == 0) &&
+	    (setup->bRequest == USB_SREQ_SET_ADDRESS)) {
 		/* HAL requires we set the address before submitting status */
 		HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
 	}

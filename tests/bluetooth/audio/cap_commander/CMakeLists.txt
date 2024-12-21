@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
 
-project(bluetooth_ascs)
+project(bluetooth_cap_commander)
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/audio/cap_commander/uut uut)
 
@@ -19,4 +19,5 @@ target_sources(testbinary
     src/test_vcp.c
     src/test_micp.c
     src/test_broadcast_reception.c
+    src/test_distribute_broadcast_code.c
 )

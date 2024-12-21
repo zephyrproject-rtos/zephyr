@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # Copyright (c) 2022 Rodrigo Peixoto <rodrigopex@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
-import serial
-import json
 import argparse
+import json
+
+import serial
 
 j = """
 [

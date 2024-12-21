@@ -52,15 +52,19 @@ struct native_uart_status {
 
 static struct native_uart_status native_uart_status_0;
 
-static struct uart_driver_api np_uart_driver_api_0 = {
+static DEVICE_API(uart, np_uart_driver_api_0) = {
 	.poll_out = np_uart_poll_out,
+#if defined(CONFIG_NATIVE_UART_0_ON_OWN_PTY)
 	.poll_in = np_uart_tty_poll_in,
+#else
+	.poll_in = np_uart_stdin_poll_in,
+#endif
 };
 
 #if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
 static struct native_uart_status native_uart_status_1;
 
-static struct uart_driver_api np_uart_driver_api_1 = {
+static DEVICE_API(uart, np_uart_driver_api_1) = {
 	.poll_out = np_uart_poll_out,
 	.poll_in = np_uart_tty_poll_in,
 };
@@ -89,11 +93,9 @@ static int np_uart_0_init(const struct device *dev)
 
 		d->in_fd = tty_fn;
 		d->out_fd = tty_fn;
-		np_uart_driver_api_0.poll_in = np_uart_tty_poll_in;
 	} else { /* NATIVE_UART_0_ON_STDINOUT */
 		d->in_fd  = np_uart_ptty_get_stdin_fileno();
 		d->out_fd = np_uart_ptty_get_stdout_fileno();
-		np_uart_driver_api_0.poll_in = np_uart_stdin_poll_in;
 	}
 
 	return 0;
@@ -160,8 +162,7 @@ static void np_uart_poll_out(const struct device *dev,
  * @retval 0 If a character arrived and was stored in p_char
  * @retval -1 If no character was available to read
  */
-static int np_uart_stdin_poll_in(const struct device *dev,
-				 unsigned char *p_char)
+static int __maybe_unused np_uart_stdin_poll_in(const struct device *dev, unsigned char *p_char)
 {
 	int in_f = ((struct native_uart_status *)dev->data)->in_fd;
 	static bool disconnected;
@@ -189,8 +190,7 @@ static int np_uart_stdin_poll_in(const struct device *dev,
  * @retval 0 If a character arrived and was stored in p_char
  * @retval -1 If no character was available to read
  */
-static int np_uart_tty_poll_in(const struct device *dev,
-			       unsigned char *p_char)
+static int __maybe_unused np_uart_tty_poll_in(const struct device *dev, unsigned char *p_char)
 {
 	int n = -1;
 	int in_f = ((struct native_uart_status *)dev->data)->in_fd;

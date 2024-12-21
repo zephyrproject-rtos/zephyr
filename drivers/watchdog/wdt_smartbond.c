@@ -114,7 +114,7 @@ static int wdg_smartbond_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static const struct wdt_driver_api wdg_smartbond_api = {
+static DEVICE_API(wdt, wdg_smartbond_api) = {
 	.setup = wdg_smartbond_setup,
 	.disable = wdg_smartbond_disable,
 	.install_timeout = wdg_smartbond_install_timeout,

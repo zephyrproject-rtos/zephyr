@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 #include "fpga_altera_agilex_bridge.h"
 
-LOG_MODULE_REGISTER(fpga_altera);
+LOG_MODULE_REGISTER(fpga_altera, CONFIG_FPGA_LOG_LEVEL);
 
 struct fpga_bridge_dev_data {
 	/* SiP SVC controller */
@@ -465,7 +465,7 @@ static int altera_fpga_init(const struct device *dev)
 	return 0;
 }
 
-static const struct fpga_driver_api altera_fpga_api = {
+static DEVICE_API(fpga, altera_fpga_api) = {
 	.on = altera_fpga_on,
 	.off = altera_fpga_off,
 };

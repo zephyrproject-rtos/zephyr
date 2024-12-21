@@ -11,6 +11,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/toolchain.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -49,7 +50,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 #define DO_BARRIERS() do { } while (0)
 #endif
 
-static int __attribute__((noinline)) add_one(int i)
+static int __noinline add_one(int i)
 {
 	return (i + 1);
 }

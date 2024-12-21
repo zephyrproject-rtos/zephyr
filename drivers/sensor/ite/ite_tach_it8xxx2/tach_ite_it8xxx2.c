@@ -213,7 +213,7 @@ static int tach_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api tach_it8xxx2_driver_api = {
+static DEVICE_API(sensor, tach_it8xxx2_driver_api) = {
 	.sample_fetch = tach_it8xxx2_sample_fetch,
 	.channel_get = tach_it8xxx2_channel_get,
 };

@@ -8,12 +8,22 @@ config HAS_RENESAS_RA_FSP
 	help
 	  Enable Renesas RA FSP support
 
+config HAS_RENESAS_RZ_FSP
+	bool
+	help
+	  Enable Renesas RZ FSP support
+
 if HAS_RENESAS_RA_FSP
 
 config USE_RA_FSP_SCI_B_UART
 	bool
 	help
 	  Enable RA FSP SCI-B UART driver
+
+config USE_RA_FSP_SPI
+	bool
+	help
+	  Enable RA FSP SPI driver
 
 config USE_RA_FSP_DTC
 	bool
@@ -45,9 +55,23 @@ if USE_RA_FSP_SCE
 config HAS_RENESAS_RA_RSIP_E51A
 	bool
 	default y
-	depends on ENTROPY_RENESAS_RA_RSIP_E51A_TRNG
+	depends on DT_HAS_RENESAS_RA_RSIP_E51A_TRNG_ENABLED
 	help
 	  Includes RSIP-E51A implementation for SCE driver
+
+config HAS_RENESAS_RA_SCE7
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_SCE7_RNG_ENABLED
+	help
+	  Includes SCE7 implementation for SCE driver
+
+config HAS_RENESAS_RA_SCE5
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_SCE5_RNG_ENABLED
+	help
+	  Includes SCE5 implementation for SCE driver
 
 endif
 
@@ -76,4 +100,33 @@ config USE_RA_FSP_CANFD
 	help
 	  Enable RA FSP CANFD driver
 
+config USE_RA_FSP_ETHER_PHY
+	bool
+	help
+	  Enable RA FSP Ethernet phy driver
+
+config USE_RA_FSP_ETHER
+	bool
+	help
+	  Enable RA FSP Ethernet driver
+
+config USE_RA_FSP_USB_DEVICE
+	bool
+	help
+	  Enable RA FSP USB Device Controller driver
+
 endif # HAS_RENESAS_RA_FSP
+
+if HAS_RENESAS_RZ_FSP
+
+config USE_RZ_FSP_IOPORT
+	bool
+	help
+	  Enable RZ FSP IOPORT driver
+
+config USE_RZ_FSP_SCIF_UART
+	bool
+	help
+	  Enable RZ FSP SCIF UART driver
+
+endif

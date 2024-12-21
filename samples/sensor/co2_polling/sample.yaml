@@ -5,4 +5,6 @@ tests:
     harness: sensor
     tags: sensors
     filter: dt_alias_exists("co2")
-    depends_on: serial uart_interrupt_driven
+    depends_on:
+      - serial
+      - uart_interrupt_driven

@@ -39,7 +39,6 @@ config SEGGER_RTT_BUFFER_SIZE_UP
 
 config SEGGER_RTT_BUFFER_SIZE_DOWN
 	int "Size of the buffer for terminal input of target, from host"
-	default 32 if SHELL_BACKEND_RTT
 	default 16
 
 config SEGGER_RTT_PRINTF_BUFFER_SIZE
@@ -106,7 +105,7 @@ endif
 choice SEGGER_RTT_INIT_MODE
 	prompt "RTT Initialization mode"
 	help
-		RTT inizialization function can avoid re-init of Cntrol Block
+		RTT initialization function can avoid re-init of Control Block
 		if another program (e.g. bootloader) has already initialized it.
 	default SEGGER_RTT_INIT_MODE_STRONG_CHECK if SEGGER_RTT_SECTION_CUSTOM
 	default SEGGER_RTT_INIT_MODE_STRONG_CHECK

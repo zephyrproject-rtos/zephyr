@@ -115,11 +115,10 @@ config BT_GATT_CACHING
 	bool "GATT Caching support"
 	default y
 	depends on BT_GATT_SERVICE_CHANGED
-	select TINYCRYPT if !BT_USE_PSA_API
-	select TINYCRYPT_AES if !BT_USE_PSA_API
-	select TINYCRYPT_AES_CMAC if !BT_USE_PSA_API
-	select PSA_WANT_KEY_TYPE_AES if BT_USE_PSA_API
-	select PSA_WANT_ALG_CMAC if BT_USE_PSA_API
+	depends on PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CMAC
+	select MBEDTLS_AES_ROM_TABLES if MBEDTLS_PSA_CRYPTO_C
 	help
 	  This option enables support for GATT Caching. When enabled the stack
 	  will register Client Supported Features and Database Hash

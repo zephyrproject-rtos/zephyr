@@ -1,0 +1,17 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.security.ccc_update:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_security_ccc_update_prj_conf
+  bluetooth.host.security.ccc_update_2:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_security_ccc_update_prj_2_conf
+    extra_args:
+      EXTRA_CONF_FILE=prj_2.conf

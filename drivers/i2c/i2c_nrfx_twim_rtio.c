@@ -148,7 +148,7 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 	i2c_nrfx_twim_rtio_complete(dev, status);
 }
 
-static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
+static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 	.configure = i2c_nrfx_twim_rtio_configure,
 	.transfer = i2c_nrfx_twim_rtio_transfer,
 	.recover_bus = i2c_nrfx_twim_rtio_recover_bus,
@@ -210,7 +210,7 @@ int i2c_nrfx_twim_rtio_init(const struct device *dev)
 			},                                                                         \
 		.ctx = &_i2c##idx##_twim_rtio,                                                     \
 	};                                                                                         \
-	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action);                                        \
+	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action, PM_DEVICE_ISR_SAFE);                    \
 	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_nrfx_twim_rtio_init, PM_DEVICE_DT_GET(I2C(idx)), NULL,  \
 			     &twim_##idx##z_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,         \
 			     &i2c_nrfx_twim_driver_api)

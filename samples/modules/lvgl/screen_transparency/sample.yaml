@@ -1,0 +1,18 @@
+sample:
+  description: Demonstrating Screen Transparency using LVGL
+  name: LVGL screen transparency
+tests:
+  sample.modules.lvgl.screen_transparency:
+    filter: dt_chosen_enabled("zephyr,display")
+    min_flash: 250
+    min_ram: 32
+    harness: none
+    tags:
+      - samples
+      - display
+      - gui
+      - lvgl
+    modules:
+      - lvgl
+    integration_platforms:
+      - native_sim/native/64

@@ -12,4 +12,12 @@ choice NULL_POINTER_EXCEPTION_DETECTION
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE
 endchoice
 
+# BT relies on PSA Crypto API to perform crypto operations and, on this platform,
+# these APIs are provided thougth Mbed TLS. Unfortunately this platform is not
+# provided with a true random number generator which is required to properly
+# initialize the PSA Crypto core, so we need to enable the fake TEST_RANDOM_GENERATOR.
+config TEST_RANDOM_GENERATOR
+	bool
+	default y if BT
+
 endif # BOARD_QEMU_CORTEX_M3

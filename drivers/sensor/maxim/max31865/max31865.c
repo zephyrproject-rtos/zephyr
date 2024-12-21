@@ -99,9 +99,9 @@ static double calculate_temperature(double resistance, double resistance_0)
 	}
 	resistance /= resistance_0;
 	resistance *= 100.0;
-	temperature = A[0] + A[1] * resistance + A[2] * pow(resistance, 2) -
-		      A[3] * pow(resistance, 3) - A[4] * pow(resistance, 4) +
-		      A[5] * pow(resistance, 5);
+	temperature = RTD_C[0] + RTD_C[1] * resistance + RTD_C[2] * pow(resistance, 2) -
+		      RTD_C[3] * pow(resistance, 3) - RTD_C[4] * pow(resistance, 4) +
+		      RTD_C[5] * pow(resistance, 5);
 	return temperature;
 }
 
@@ -302,7 +302,7 @@ static int max31865_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static const struct sensor_driver_api max31865_api_funcs = {
+static DEVICE_API(sensor, max31865_api_funcs) = {
 	.sample_fetch = max31865_sample_fetch,
 	.channel_get = max31865_channel_get,
 	.attr_set = max31865_attr_set,

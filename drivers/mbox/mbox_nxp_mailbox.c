@@ -180,7 +180,7 @@ static int nxp_mailbox_set_enabled(const struct device *dev, uint32_t channel, b
 	return 0;
 }
 
-static const struct mbox_driver_api nxp_mailbox_driver_api = {
+static DEVICE_API(mbox, nxp_mailbox_driver_api) = {
 	.send = nxp_mailbox_send,
 	.register_callback = nxp_mailbox_register_callback,
 	.mtu_get = nxp_mailbox_mtu_get,

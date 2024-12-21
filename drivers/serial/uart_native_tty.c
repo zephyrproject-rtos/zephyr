@@ -366,7 +366,7 @@ static int native_tty_serial_init(const struct device *dev)
 	return 0;
 }
 
-static struct uart_driver_api native_tty_uart_driver_api = {
+static DEVICE_API(uart, native_tty_uart_driver_api) = {
 	.poll_out = native_tty_uart_poll_out,
 	.poll_in = native_tty_uart_poll_in,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE

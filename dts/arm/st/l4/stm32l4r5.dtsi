@@ -8,10 +8,18 @@
 #include <st/l4/stm32l4p5.dtsi>
 
 /delete-node/ &sdmmc2;
+/delete-node/ &sram2; /* different memory address */
 
 / {
+	/* total SRAM 640KB for the stm32L4R5x and stm32L4S5x */
 	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(640)>;
+		reg = <0x20000000 DT_SIZE_K(192)>;
+	};
+	sram1: memory@10000000 {
+		reg = <0x10000000 DT_SIZE_K(64)>;
+	};
+	sram2: memory@20040000 {
+		reg = <0x20040000 DT_SIZE_K(384)>;
 	};
 
 	soc {

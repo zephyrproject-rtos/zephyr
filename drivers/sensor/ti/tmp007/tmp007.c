@@ -95,7 +95,7 @@ static int tmp007_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api tmp007_driver_api = {
+static DEVICE_API(sensor, tmp007_driver_api) = {
 #ifdef CONFIG_TMP007_TRIGGER
 	.attr_set = tmp007_attr_set,
 	.trigger_set = tmp007_trigger_set,

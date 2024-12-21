@@ -1387,11 +1387,12 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t dxepctl_reg;
 	uint32_t dxepctl;
+	const bool is_iso = dwc2_ep_is_iso(cfg);
 
 	dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
 	dxepctl = sys_read32(dxepctl_reg);
 
-	if (dxepctl & USB_DWC2_DEPCTL_NAKSTS) {
+	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS)) {
 		/* Endpoint already sends forced NAKs. STALL if necessary. */
 		if (stall) {
 			dxepctl |= USB_DWC2_DEPCTL_STALL;
@@ -1400,6 +1401,19 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 
 		return;
 	}
+
+	/* FIXME: This function needs to be changed to not synchronously wait
+	 * for the events to happen because the actions here are racing against
+	 * the USB host packets. It is possible that the IN token or OUT DATA
+	 * gets sent shortly before this function disables the endpoint. If this
+	 * happens, the XferCompl would be set and driver will incorrectly think
+	 * that either:
+	 *   * never queued transfer finished, OR
+	 *   * transfer queued in incompisoin handler finished (before it really
+	 *     does and then it'll "double"-finish when it actually finishes)
+	 *
+	 * For the time being XferCompl is cleared as a workaround.
+	 */
 
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
 		mem_addr_t dctl_reg, gintsts_reg, doepint_reg;
@@ -1439,7 +1453,7 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 		}
 
 		/* Clear Endpoint Disabled interrupt */
-		sys_write32(USB_DWC2_DIEPINT_EPDISBLD, doepint_reg);
+		sys_write32(USB_DWC2_DOEPINT_EPDISBLD | USB_DWC2_DOEPINT_XFERCOMPL, doepint_reg);
 
 		dctl |= USB_DWC2_DCTL_CGOUTNAK;
 		sys_write32(dctl, dctl_reg);
@@ -1463,7 +1477,7 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 		dwc2_wait_for_bit(dev, diepint_reg, USB_DWC2_DIEPINT_EPDISBLD);
 
 		/* Clear Endpoint Disabled interrupt */
-		sys_write32(USB_DWC2_DIEPINT_EPDISBLD, diepint_reg);
+		sys_write32(USB_DWC2_DIEPINT_EPDISBLD | USB_DWC2_DIEPINT_XFERCOMPL, diepint_reg);
 
 		/* TODO: Read DIEPTSIZn here? Programming Guide suggest it to
 		 * let application know how many bytes of interrupted transfer
@@ -2571,7 +2585,11 @@ static void dwc2_handle_incompisoin(const struct device *dev)
 
 				buf = udc_buf_get(dev, cfg->addr);
 				if (buf) {
+					/* Data is no longer relevant */
 					udc_submit_ep_event(dev, buf, 0);
+
+					/* Try to queue next packet before SOF */
+					dwc2_handle_xfer_next(dev, cfg);
 				}
 			}
 		}

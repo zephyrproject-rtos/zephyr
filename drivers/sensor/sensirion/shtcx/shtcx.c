@@ -183,7 +183,7 @@ static int shtcx_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api shtcx_driver_api = {
+static DEVICE_API(sensor, shtcx_driver_api) = {
 	.sample_fetch = shtcx_sample_fetch,
 	.channel_get = shtcx_channel_get,
 };

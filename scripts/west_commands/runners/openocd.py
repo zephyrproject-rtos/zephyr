@@ -1,4 +1,5 @@
 # Copyright (c) 2017 Linaro Limited.
+# Copyright (c) 2024 Tenstorrent AI ULC
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -7,20 +8,18 @@
 '''Runner for openocd.'''
 
 import re
-import socket
 import subprocess
-import time
-
 from os import path
 from pathlib import Path
+
 from zephyr_ext_common import ZEPHYR_BASE
 
-try:
+try:  # noqa SIM105
     from elftools.elf.elffile import ELFFile
 except ImportError:
     pass
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444
@@ -28,6 +27,18 @@ DEFAULT_OPENOCD_GDB_PORT = 3333
 DEFAULT_OPENOCD_RTT_PORT = 5555
 DEFAULT_OPENOCD_RESET_HALT_CMD = 'reset init'
 DEFAULT_OPENOCD_TARGET_HANDLE = "_TARGETNAME"
+
+def to_num(number):
+    dev_match = re.search(r"^\d*\+dev", number)
+    dev_version = dev_match is not None
+
+    num_match = re.search(r"^\d*", number)
+    num = int(num_match.group(0))
+
+    if dev_version:
+        num += 1
+
+    return num
 
 class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for openocd.'''
@@ -117,7 +128,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='''if given, override default config file;
                             may be given multiple times''')
         parser.add_argument('--serial', default="",
-                            help='if given, selects FTDI instance by its serial number, defaults to empty')
+                            help='''if given, selects FTDI instance by its serial number,
+                            defaults to empty''')
         parser.add_argument('--use-elf', default=False, action='store_true',
                             help='if given, Elf file will be used for loading instead of HEX image')
         # Options for flashing:
@@ -200,18 +212,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.logger.info('OpenOCD GDB server running on port '
                          f'{self.gdb_port}{thread_msg}')
 
-    # pylint: disable=R0201
-    def to_num(self, number):
-        dev_match = re.search(r"^\d*\+dev", number)
-        dev_version = not dev_match is None
-
-        num_match = re.search(r"^\d*", number)
-        num = int(num_match.group(0))
-
-        if dev_version:
-            num += 1
-
-        return num
+    def print_rttserver_message(self):
+        self.logger.info(f'OpenOCD RTT server running on port {self.rtt_port}')
 
     def read_version(self):
         self.require(self.openocd_cmd[0])
@@ -223,7 +225,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         version_match = re.search(r"Open On-Chip Debugger (\d+.\d+.\d+)", out)
         version = version_match.group(1).split('.')
 
-        return [self.to_num(i) for i in version]
+        return [to_num(i) for i in version]
 
     def supports_thread_info(self):
         # Zephyr rtos was introduced after 0.11.0
@@ -246,12 +248,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             self.do_flash_elf(**kwargs)
         elif command == 'flash':
             self.do_flash(**kwargs)
-        elif command in ('attach', 'debug'):
-            self.do_attach_debug(command, **kwargs)
+        elif command in ('attach', 'debug', 'rtt'):
+            self.do_attach_debug_rtt(command, **kwargs)
         elif command == 'load':
             self.do_load(**kwargs)
-        elif command == 'rtt':
-            self.do_rtt(**kwargs)
         else:
             self.do_debugserver(**kwargs)
 
@@ -344,7 +344,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
         self.check_call(cmd)
 
-    def do_attach_debug(self, command, **kwargs):
+    def do_attach_debug_rtt(self, command, **kwargs):
         if self.gdb_cmd is None:
             raise ValueError('Cannot debug; no gdb specified')
         if self.elf_name is None:
@@ -375,10 +375,44 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             for i in self.gdb_init:
                 gdb_cmd.append("-ex")
                 gdb_cmd.append(i)
+        if command == 'rtt':
+            rtt_address = self.get_rtt_address()
+            if rtt_address is None:
+                raise ValueError("RTT Control block not be found")
+
+            # cannot prompt the user to press return for automation purposes
+            gdb_cmd.extend(['-ex', 'set pagination off'])
+            # start the internal openocd rtt service via gdb monitor commands
+            gdb_cmd.extend(
+                ['-ex', f'monitor rtt setup 0x{rtt_address:x} 0x10 "SEGGER RTT"'])
+            gdb_cmd.extend(['-ex', 'monitor reset run'])
+            gdb_cmd.extend(['-ex', 'monitor rtt start'])
+            gdb_cmd.extend(
+                ['-ex', f'monitor rtt server start {self.rtt_port} 0'])
+            # detach from the target and quit the gdb client session
+            gdb_cmd.extend(['-ex', 'detach', '-ex', 'quit'])
 
         self.require(gdb_cmd[0])
         self.print_gdbserver_message()
-        self.run_server_and_client(server_cmd, gdb_cmd)
+
+        if command in ('attach', 'debug'):
+            server_proc = self.popen_ignore_int(server_cmd, stderr=subprocess.DEVNULL)
+            try:
+                self.run_client(gdb_cmd)
+            finally:
+                server_proc.terminate()
+                server_proc.wait()
+        elif command == 'rtt':
+            self.print_rttserver_message()
+            server_proc = self.popen_ignore_int(server_cmd)
+            try:
+                # run the binary with gdb, set up the rtt server (runs to completion)
+                subprocess.run(gdb_cmd)
+                # run the rtt client in the foreground
+                self.run_telnet_client('localhost', self.rtt_port)
+            finally:
+                server_proc.terminate()
+                server_proc.wait()
 
     def do_debugserver(self, **kwargs):
         pre_init_cmd = []
@@ -399,61 +433,3 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                ['-c', self.reset_halt_cmd])
         self.print_gdbserver_message()
         self.check_call(cmd)
-
-    def do_rtt(self, **kwargs):
-        pre_init_cmd = []
-        for i in self.pre_init:
-            pre_init_cmd.append("-c")
-            pre_init_cmd.append(i)
-
-        if self.thread_info_enabled and self.supports_thread_info():
-            pre_init_cmd.append("-c")
-            rtos_command = f'${self.target_handle} configure -rtos Zephyr'
-            pre_init_cmd.append(rtos_command)
-
-        rtt_address = self.get_rtt_address()
-        if rtt_address is None:
-            raise ValueError("RTT Control block not be found")
-
-        rtt_cmds = [
-            '-c', f'rtt setup 0x{rtt_address:x} 0x10 "SEGGER RTT"',
-            '-c', f'rtt server start {self.rtt_port} 0',
-            '-c', 'rtt start',
-        ]
-
-        server_cmd = (self.openocd_cmd + self.cfg_cmd +
-                      ['-c', f'tcl_port {self.tcl_port}',
-                       '-c', f'telnet_port {self.telnet_port}',
-                       '-c', f'gdb_port {self.gdb_port}'] +
-                      pre_init_cmd + self.init_arg + self.targets_arg +
-                       ['-c', self.reset_halt_cmd] +
-                       rtt_cmds
-                      )
-        self.print_gdbserver_message()
-        server_proc = self.popen_ignore_int(server_cmd)
-        # The target gets halted after all commands passed on the commandline are run.
-        # The only way to run resume here, to not have to connect a GDB, is to connect
-        # to the tcl port and run the command. When the TCL port comes up, initialization
-        # is done.
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # As long as the server process is still running, keep retrying the connection
-            while server_proc.poll() is None:
-                try:
-                    sock.connect(('localhost', self.tcl_port))
-                    break
-                except ConnectionRefusedError:
-                    time.sleep(0.1)
-            # \x1a is the command terminator for the openocd tcl rpc
-            sock.send(b'resume\x1a')
-            sock.shutdown(socket.SHUT_RDWR)
-            # Run the client. Since rtt is initialized before the tcl rpc comes up,
-            # the port is open now.
-            self.logger.info("Opening RTT")
-            time.sleep(0.1) # Give the server a moment to output log messages first
-            self.run_telnet_client('localhost', self.rtt_port)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            server_proc.terminate()
-            server_proc.wait()

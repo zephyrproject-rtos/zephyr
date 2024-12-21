@@ -150,7 +150,7 @@ static const struct lpd880x_config lpd880x_config = {
 	.length = DT_INST_PROP(0, chain_length),
 };
 
-static const struct led_strip_driver_api lpd880x_strip_api = {
+static DEVICE_API(led_strip, lpd880x_strip_api) = {
 	.update_rgb = lpd880x_strip_update_rgb,
 	.update_channels = lpd880x_strip_update_channels,
 	.length = lpd880x_strip_length,

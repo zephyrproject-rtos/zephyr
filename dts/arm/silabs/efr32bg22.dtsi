@@ -54,6 +54,10 @@
 	clocks = <&cmu CLOCK_GPIO CLOCK_BRANCH_PCLK>;
 };
 
+&dma0 {
+	interrupts = <21 0>;
+};
+
 &i2c0 {
 	interrupts = <27 0>;
 	clocks = <&cmu CLOCK_I2C0 CLOCK_BRANCH_LSPCLK>;

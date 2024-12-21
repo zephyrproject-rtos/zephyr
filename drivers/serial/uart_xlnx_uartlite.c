@@ -354,7 +354,7 @@ static int xlnx_uartlite_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api xlnx_uartlite_driver_api = {
+static DEVICE_API(uart, xlnx_uartlite_driver_api) = {
 	.poll_in = xlnx_uartlite_poll_in,
 	.poll_out = xlnx_uartlite_poll_out,
 	.err_check = xlnx_uartlite_err_check,

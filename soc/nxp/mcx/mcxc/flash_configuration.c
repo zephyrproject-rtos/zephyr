@@ -29,7 +29,7 @@ uint8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
 	/* Flash security register (FSEC) enables/disables backdoor key access,
 	 * mass erase, factory access, and flash security
 	 */
-	DT_PROP_OR(DT_NODELABEL(ftfa), fsec, 0xFF),
+	DT_PROP_OR(DT_NODELABEL(ftfa), fsec, 0xFE),
 
 	/* Flash nonvolatile option register (FOPT) enables/disables NMI,
 	 * EzPort, and boot options

@@ -132,7 +132,6 @@ struct net_buf *cdc_acm_buf_alloc(const uint8_t ep)
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	return buf;
@@ -488,7 +487,6 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
 
-	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
 
@@ -1048,7 +1046,7 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api cdc_acm_uart_api = {
+static DEVICE_API(uart, cdc_acm_uart_api) = {
 	.irq_tx_enable = cdc_acm_irq_tx_enable,
 	.irq_tx_disable = cdc_acm_irq_tx_disable,
 	.irq_tx_ready = cdc_acm_irq_tx_ready,

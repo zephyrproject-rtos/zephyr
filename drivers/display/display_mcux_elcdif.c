@@ -247,7 +247,7 @@ static int mcux_elcdif_set_pixel_format(const struct device *dev,
 	}
 
 	dev_data->pixel_format = pixel_format;
-	dev_data->pixel_bytes = DISPLAY_BITS_PER_PIXEL(pixel_format) / 8;
+	dev_data->pixel_bytes = DISPLAY_BITS_PER_PIXEL(pixel_format) / BITS_PER_BYTE;
 	dev_data->fb_bytes =
 		config->rgb_mode.panelWidth * config->rgb_mode.panelHeight * dev_data->pixel_bytes;
 
@@ -354,7 +354,7 @@ static int mcux_elcdif_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api mcux_elcdif_api = {
+static DEVICE_API(display, mcux_elcdif_api) = {
 	.blanking_on = mcux_elcdif_display_blanking_on,
 	.blanking_off = mcux_elcdif_display_blanking_off,
 	.write = mcux_elcdif_write,

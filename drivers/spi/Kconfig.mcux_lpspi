@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_MCUX_LPSPI
-	bool "MCUX SPI driver"
+	bool "MCUX LPSPI driver"
 	default y
-	depends on DT_HAS_NXP_IMX_LPSPI_ENABLED
+	depends on DT_HAS_NXP_LPSPI_ENABLED
 	depends on CLOCK_CONTROL
 	select PINCTRL
 	help
-	  Enable support for mcux spi driver.
+	  Enable support for MCUX LPSPI driver.
 
 if SPI_MCUX_LPSPI
 config SPI_MCUX_LPSPI_DMA

@@ -47,8 +47,7 @@ config LOG_FRONTEND_STMESP_DICT
 config LOG_FRONTEND_STMESP_FSC
 	bool "Send fully self-contained messages"
 	select LOG_MSG_APPEND_RO_STRING_LOC if !(NRF_ETR || \
-			SOC_NRF54H20_CPUPPR || SOC_NRF54H20_ENGB_CPUPPR || \
-			SOC_NRF54H20_CPUFLPR || SOC_NRF54H20_ENGB_CPUFLPR)
+			SOC_NRF54H20_CPUPPR || SOC_NRF54H20_CPUFLPR)
 
 config LOG_FRONTEND_STMESP_FLUSH_COUNT
 	int "Number of flushing words"
@@ -68,11 +67,41 @@ config LOG_FRONTEND_STMESP_EARLY_BUF_SIZE
 config LOG_FRONTEND_STMESP_DICT_VER
 	def_int 0
 
+config LOG_FRONTEND_STMESP_TURBO_LOG
+	bool "Optimize short_logs"
+	select LOG_CUSTOM_HEADER
+	default y if (NRF_ETR || SOC_NRF54H20_CPUPPR || SOC_NRF54H20_CPUFLPR) \
+		     && LOG_FRONTEND_STMESP_FSC
+	help
+	  When enabled, then logging messages with 0 and 1 numeric argument are
+	  optimized and handled much faster than others.
+
+config LOG_FRONTEND_STMESP_TURBO_DROP_OTHERS
+	bool "Drop all logs except turbo logs"
+	help
+	  Option can be enabled for memory constraint cases to remove all logging
+	  related code except turbo logs.
+
+config LOG_FRONTEND_STMESP_TURBO_LOG_BASE
+	def_int 32768
+
+config LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID
+	def_int 65535
+	depends on LOG_FRONTEND_STMESP_TURBO_LOG
+
 config LOG_FRONTEND_STMESP_GUARANTEED_ACCESS
 	bool "Use STMESP guaranteed access"
 	help
 	  When enabled, accessing STMESP registers will stall if write cannot be
 	  performed (e.g. ETR buffer is full).
+
+config LOG_FRONTEND_STMESP_MSG_END_TIMESTAMP
+	bool "Generate timestamp and marker at message end"
+	help
+	  Generate a zero data byte with timestamp and marker at message end,
+	  instead of generating a timestamp and marker at message start and
+	  a flag at end. This can be used to maintain compatibility with
+	  certain decoders.
 
 endif # LOG_FRONTEND_STMESP
 

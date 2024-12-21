@@ -111,18 +111,15 @@ int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 {
 	int ret;
 
-	__disable_irq();
 	nvic_suspend(&backup_data.nvic_context);
 	mpu_suspend(&backup_data.mpu_context);
 	ret = arch_pm_s2ram_suspend(system_off);
 	if (ret < 0) {
-		__enable_irq();
 		return ret;
 	}
 
 	mpu_resume(&backup_data.mpu_context);
 	nvic_resume(&backup_data.nvic_context);
-	__enable_irq();
 
 	return ret;
 }

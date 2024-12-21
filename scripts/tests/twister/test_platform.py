@@ -14,7 +14,7 @@ import pytest
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from twisterlib.platform import Platform
+from twisterlib.platform import Platform, Simulator
 
 
 TESTDATA_1 = [
@@ -38,8 +38,7 @@ arch: arc
             'vendor': '',
             'tier': -1,
             'type': 'na',
-            'simulation': 'na',
-            'simulation_exec': None,
+            'simulators': [],
             'supported_toolchains': [],
             'env': [],
             'env_satisfied': True
@@ -71,8 +70,9 @@ supported:
 vendor: vendor1
 tier: 1
 type: unit
-simulation: nsim
-simulation_exec: nsimdrv
+simulation:
+- name: nsim
+  exec: nsimdrv
 toolchain:
   - zephyr
   - llvm
@@ -94,8 +94,7 @@ env:
             'vendor': 'vendor1',
             'tier': 1,
             'type': 'unit',
-            'simulation': 'nsim',
-            'simulation_exec': 'nsimdrv',
+            'simulators': [Simulator({'name': 'nsim', 'exec': 'nsimdrv'})],
             'supported_toolchains': ['zephyr', 'llvm', 'cross-compile'],
             'env': ['dummynonexistentvar'],
             'env_satisfied': False

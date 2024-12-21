@@ -22,6 +22,7 @@ endif()
 
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_NET_STATISTICS_VIA_PROMETHEUS app PRIVATE src/stats.c)
 
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 

@@ -146,7 +146,7 @@ driver instead of the built-in controller:
 .. code-block:: cfg
 
    CONFIG_BT_HCI=y
-   CONFIG_BT_CTLR=n
+   CONFIG_BT_LL_SW_SPLIT=n
 
 Similarly, the ``zephyr,bt-hci`` DTS property selects which HCI instance to use.
 The UART needs to have as its child node a HCI UART node:

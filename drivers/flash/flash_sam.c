@@ -464,7 +464,7 @@ static void sam_flash_api_pages_layout(const struct device *dev,
 	*layout_size = config->pages_layouts_size;
 }
 
-static struct flash_driver_api sam_flash_api = {
+static DEVICE_API(flash, sam_flash_api) = {
 	.read = sam_flash_read,
 	.write = sam_flash_write,
 	.erase = sam_flash_erase,

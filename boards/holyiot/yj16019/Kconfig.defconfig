@@ -5,7 +5,4 @@
 
 if BOARD_HOLYIOT_YJ16019
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_HOLYIOT_YJ16019

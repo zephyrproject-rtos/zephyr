@@ -530,9 +530,16 @@ static void before(void *not_used)
 	k_sem_init(&tdata.sem, 0, 1);
 }
 
+static void after(void *not_used)
+{
+	ARG_UNUSED(not_used);
+
+	k_work_cancel_delayable(&tdata.test_work);
+}
+
 static void *suite_setup(void)
 {
 	return NULL;
 }
 
-ZTEST_SUITE(spi_controller_peripheral, NULL, suite_setup, before, NULL, NULL);
+ZTEST_SUITE(spi_controller_peripheral, NULL, suite_setup, before, after, NULL);

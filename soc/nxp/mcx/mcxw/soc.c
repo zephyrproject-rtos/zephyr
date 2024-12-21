@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include <fsl_clock.h>
 
 extern uint32_t SystemCoreClock;
+extern void nxp_nbu_init(void);
 
 static ALWAYS_INLINE void clock_init(void)
 {
@@ -40,8 +41,12 @@ static ALWAYS_INLINE void clock_init(void)
 	CCM32K_Set32kOscConfig(CCM32K, kCCM32K_Enable32kHzCrystalOsc, &ccm32k_osc_config);
 	/* Disable ROSC Monitor, because switching the source would generate an expected error */
 	CLOCK_SetRoscMonitorMode(kSCG_RoscMonitorDisable);
+
 	/* Select the Real Time Clock (RTC) source as OSC32K */
+	while ((CCM32K_GetStatusFlag(CCM32K) & CCM32K_STATUS_OSC32K_RDY_MASK) == 0UL) {
+	}
 	CCM32K_SelectClockSource(CCM32K, kCCM32K_ClockSourceSelectOsc32k);
+
 	/* Wait for RTC Oscillator to be Valid */
 	while (!CLOCK_IsRoscValid())
 		;
@@ -49,6 +54,8 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRoscMonitorMode(kSCG_RoscMonitorInt);
 	/* Disable the FRO32K to save power */
 	CCM32K_Enable32kFro(CCM32K, false);
+
+	CLOCK_SetXtal32Freq(32768U);
 
 	/* Configuration to set FIRC to maximum frequency */
 	scg_firc_config_t scg_firc_config = {
@@ -90,7 +97,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* OSC-RF / System Oscillator Configuration */
 	scg_sosc_config_t sosc_config = {
-		.freq = 32000U,
+		.freq = 32000000U,
 		.monitorMode = kSCG_SysOscMonitorDisable,
 		.enableMode = kSCG_SoscEnable,
 	};
@@ -125,11 +132,19 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpadc0, kSCG_SysClkDivBy10);
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_lpc_lpuart, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioa), nxp_kinetis_gpio, okay)) {
+		CLOCK_EnableClock(kCLOCK_PortA);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioc), nxp_kinetis_gpio, okay)) {
+		CLOCK_EnableClock(kCLOCK_PortC);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_kinetis_lpuart, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpuart0);
 	}
 
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), nxp_lpc_lpuart, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), nxp_kinetis_lpuart, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpuart1);
 	}
 
@@ -141,19 +156,19 @@ static ALWAYS_INLINE void clock_init(void)
 		CLOCK_EnableClock(kCLOCK_Tpm1);
 	}
 
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c0), nxp_imx_lpi2c, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c0), nxp_lpi2c, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpi2c0);
 	}
 
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c1), nxp_imx_lpi2c, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c1), nxp_lpi2c, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpi2c1);
 	}
 
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi0), nxp_imx_lpspi, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi0), nxp_lpspi, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpspi0);
 	}
 
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi1), nxp_imx_lpspi, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi1), nxp_lpspi, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpspi1);
 	}
 
@@ -200,4 +215,8 @@ void soc_early_init_hook(void)
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
+
+#if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
+	nxp_nbu_init();
+#endif
 }

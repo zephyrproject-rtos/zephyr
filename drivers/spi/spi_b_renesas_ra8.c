@@ -92,7 +92,9 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 		return 0;
 	}
 
-	fsp_err = R_SPI_B_Close(&data->spi);
+	if (data->spi.open != 0) {
+		R_SPI_B_Close(&data->spi);
+	}
 
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
 		return -ENOTSUP;
@@ -398,7 +400,7 @@ static int ra_spi_b_release(const struct device *dev, const struct spi_config *c
 	return 0;
 }
 
-static const struct spi_driver_api ra_spi_driver_api = {.transceive = ra_spi_b_transceive,
+static DEVICE_API(spi, ra_spi_driver_api) = {.transceive = ra_spi_b_transceive,
 #ifdef CONFIG_SPI_ASYNC
 							.transceive_async =
 								ra_spi_b_transceive_async,
@@ -764,8 +766,8 @@ static void ra_spi_eri_isr(const struct device *dev)
 		return 0;                                                                          \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, spi_b_ra_init##index, PM_DEVICE_DT_INST_GET(index),           \
-			      &ra_spi_data_##index, &ra_spi_config_##index, POST_KERNEL,           \
-			      CONFIG_SPI_INIT_PRIORITY, &ra_spi_driver_api);
+	SPI_DEVICE_DT_INST_DEFINE(index, spi_b_ra_init##index, PM_DEVICE_DT_INST_GET(index),       \
+				  &ra_spi_data_##index, &ra_spi_config_##index, POST_KERNEL,       \
+				  CONFIG_SPI_INIT_PRIORITY, &ra_spi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RA_SPI_INIT)

@@ -1,0 +1,8 @@
+family:
+  - name: renesas_rz
+    series:
+      - name: rzg3s
+        socs:
+          - name: r9a08g045s33gbg
+            cpuclusters:
+              - name: cm33

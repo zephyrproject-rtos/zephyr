@@ -271,7 +271,7 @@ static int sof_host_dma_get_attribute(const struct device *dev, uint32_t type, u
 	return 0;
 }
 
-static const struct dma_driver_api sof_host_dma_api = {
+static DEVICE_API(dma, sof_host_dma_api) = {
 	.reload = sof_host_dma_reload,
 	.config = sof_host_dma_config,
 	.start = sof_host_dma_start,

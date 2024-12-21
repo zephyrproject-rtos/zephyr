@@ -503,7 +503,9 @@ static void pmc1_it8xxx2_init(const struct device *dev)
 	pmc_reg->PM1CTL |= PMC_PM1CTL_IBFIE;
 	IRQ_CONNECT(IT8XXX2_PMC1_IBF_IRQ, 0, pmc1_it8xxx2_ibf_isr,
 			DEVICE_DT_INST_GET(0), 0);
-	irq_enable(IT8XXX2_PMC1_IBF_IRQ);
+	if (!IS_ENABLED(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)) {
+		irq_enable(IT8XXX2_PMC1_IBF_IRQ);
+	}
 }
 #endif
 
@@ -579,7 +581,9 @@ static void pmc2_it8xxx2_init(const struct device *dev)
 	pmc_reg->PM2CTL |= PMC_PM2CTL_IBFIE;
 	IRQ_CONNECT(IT8XXX2_PMC2_IBF_IRQ, 0, pmc2_it8xxx2_ibf_isr,
 			DEVICE_DT_INST_GET(0), 0);
-	irq_enable(IT8XXX2_PMC2_IBF_IRQ);
+	if (!IS_ENABLED(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)) {
+		irq_enable(IT8XXX2_PMC2_IBF_IRQ);
+	}
 }
 #endif
 
@@ -730,15 +734,41 @@ static int espi_it8xxx2_receive_vwire(const struct device *dev,
 		return -EIO;
 	}
 
-	if (vw_reg->VW_INDEX[vw_index] & valid_mask) {
-		*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
+	if (IS_ENABLED(CONFIG_ESPI_VWIRE_VALID_BIT_CHECK)) {
+		if (vw_reg->VW_INDEX[vw_index] & valid_mask) {
+			*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
+		} else {
+			/* Not valid */
+			*level = 0;
+		}
 	} else {
-		/* Not valid */
-		*level = 0;
+		*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
 	}
 
 	return 0;
 }
+
+#ifdef CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE
+static void host_custom_opcode_enable_interrupts(void)
+{
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO)) {
+		irq_enable(IT8XXX2_PMC1_IBF_IRQ);
+	}
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		irq_enable(IT8XXX2_PMC2_IBF_IRQ);
+	}
+}
+
+static void host_custom_opcode_disable_interrupts(void)
+{
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO)) {
+		irq_disable(IT8XXX2_PMC1_IBF_IRQ);
+	}
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		irq_disable(IT8XXX2_PMC2_IBF_IRQ);
+	}
+}
+#endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
 
 static int espi_it8xxx2_manage_callback(const struct device *dev,
 				    struct espi_callback *callback, bool set)
@@ -917,12 +947,12 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			(struct pmc_regs *)config->base_pmc;
 
 		switch (op) {
-		/* Enable/Disable PMC1 (port 62h/66h) interrupt */
+		/* Enable/Disable PMCx interrupt */
 		case ECUSTOM_HOST_SUBS_INTERRUPT_EN:
 			if (*data) {
-				irq_enable(IT8XXX2_PMC1_IBF_IRQ);
+				host_custom_opcode_enable_interrupts();
 			} else {
-				irq_disable(IT8XXX2_PMC1_IBF_IRQ);
+				host_custom_opcode_disable_interrupts();
 			}
 			break;
 		case ECUSTOM_HOST_CMD_SEND_RESULT:
@@ -1306,7 +1336,7 @@ static void espi_it8xxx2_flash_init(const struct device *dev)
 /* eSPI driver registration */
 static int espi_it8xxx2_init(const struct device *dev);
 
-static const struct espi_driver_api espi_it8xxx2_driver_api = {
+static DEVICE_API(espi, espi_it8xxx2_driver_api) = {
 	.config = espi_it8xxx2_configure,
 	.get_channel_status = espi_it8xxx2_channel_ready,
 	.send_vwire = espi_it8xxx2_send_vwire,

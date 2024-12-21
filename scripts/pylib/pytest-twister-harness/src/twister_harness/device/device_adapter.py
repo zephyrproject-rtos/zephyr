@@ -67,6 +67,8 @@ class DeviceAdapter(abc.ABC):
 
         if not self.command:
             self.generate_command()
+            if self.device_config.extra_test_args:
+                self.command.extend(self.device_config.extra_test_args.split())
 
         if self.device_config.type != 'hardware':
             self._flash_and_run()

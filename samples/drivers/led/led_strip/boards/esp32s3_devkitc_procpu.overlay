@@ -20,10 +20,10 @@ i2s_led: &i2s0 {
 	dmas = <&dma 3>;
 	dma-names = "tx";
 
-	led_strip: ws2812 {
+	led_strip: ws2812@0 {
 		compatible = "worldsemi,ws2812-i2s";
 
-		i2s-dev = <&i2s_led>;
+		reg = <0>;
 		chain-length = <46>;
 		color-mapping = <LED_COLOR_ID_GREEN
 				 LED_COLOR_ID_RED
@@ -39,7 +39,7 @@ i2s_led: &i2s0 {
 &pinctrl {
 	i2s0_pinconf: i2s0_pinconf {
 		group1 {
-			pinmux = <I2S0_O_SD_GPIO39>;
+			pinmux = <I2S0_O_SD_GPIO38>;
 			output-enable;
 		};
 	};

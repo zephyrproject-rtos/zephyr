@@ -405,7 +405,7 @@ static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
-static const struct bt_hci_driver_api uc_drv_api = {
+static DEVICE_API(bt_hci, uc_drv_api) = {
 	.open = uc_open,
 	.send = uc_send,
 };

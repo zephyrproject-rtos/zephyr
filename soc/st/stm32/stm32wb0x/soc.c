@@ -41,6 +41,17 @@ uint32_t SystemCoreClock = 16000000U;
 Z_GENERIC_SECTION("stm32wb0_RAM_VR")
 __used RAM_VR_TypeDef RAM_VR;
 
+#if defined(CONFIG_BT)
+/**
+ * SRAM0 memory reserved for usage by the MR_BLE Radio hardware.
+ *
+ * N.B.: radio driver defines CFG_BLE_NUM_RADIO_TASKS.
+ */
+Z_GENERIC_SECTION("stm32wb0_BLUE_RAM")
+static uint8_t __used __blue_RAM[sizeof(GLOBALSTATMACH_TypeDef) +
+				 CFG_BLE_NUM_RADIO_TASKS * sizeof(STATMACH_TypeDef)];
+#endif /* CONFIG_BT */
+
 /** Power Controller node (shorthand for upcoming macros) */
 #define PWRC DT_INST(0, st_stm32wb0_pwr)
 

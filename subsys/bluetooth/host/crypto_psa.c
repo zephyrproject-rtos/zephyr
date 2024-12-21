@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(bt_host_crypto);
 int prng_init(void)
 {
 	if (psa_crypto_init() != PSA_SUCCESS) {
+		LOG_ERR("psa_crypto_init() failed");
 		return -EIO;
 	}
 	return 0;
@@ -42,6 +43,7 @@ int bt_rand(void *buf, size_t len)
 		return 0;
 	}
 
+	LOG_ERR("psa_generate_random() failed");
 	return -EIO;
 }
 #else /* !CONFIG_BT_HOST_CRYPTO_PRNG */

@@ -25,18 +25,17 @@
 #define PERIPHCLK_ADC		RCC_PERIPHCLK_ADC12
 #define ADC_IS_CLK_ENABLED	__HAL_RCC_ADC12_IS_CLK_ENABLED
 #define GET_ADC_SOURCE		__HAL_RCC_GET_ADC12_SOURCE
-#define ADC_SOURCE_SYSCLK	RCC_ADC12CLKSOURCE_SYSCLK
 #elif defined(__HAL_RCC_GET_ADC_SOURCE)
 #define PERIPHCLK_ADC		RCC_PERIPHCLK_ADC
 #define ADC_IS_CLK_ENABLED	__HAL_RCC_ADC_IS_CLK_ENABLED
 #define GET_ADC_SOURCE		__HAL_RCC_GET_ADC_SOURCE
-#define ADC_SOURCE_SYSCLK	RCC_ADCCLKSOURCE_SYSCLK
 #else
 #define PERIPHCLK_ADC		(-1)
 #define ADC_IS_CLK_ENABLED	__HAL_RCC_ADC1_IS_CLK_ENABLED
 #define GET_ADC_SOURCE()	(-1);
 #endif
 
+/* Not all the stm32 series have all the clock sources */
 #if defined(RCC_ADC12CLKSOURCE_PLL)
 #define ADC_SOURCE_PLL		RCC_ADC12CLKSOURCE_PLL
 #elif defined(RCC_ADCCLKSOURCE_PLLADC)
@@ -45,6 +44,14 @@
 #define ADC_SOURCE_PLL		RCC_ADCCLKSOURCE_PLL
 #else
 #define ADC_SOURCE_PLL		(-1)
+#endif
+
+#if defined(RCC_ADC12CLKSOURCE_SYSCLK)
+#define ADC_SOURCE_SYSCLK	RCC_ADC12CLKSOURCE_SYSCLK
+#elif defined(RCC_ADCCLKSOURCE_SYSCLK)
+#define ADC_SOURCE_SYSCLK	RCC_ADCCLKSOURCE_SYSCLK
+#else
+#define ADC_SOURCE_SYSCLK	(-1)
 #endif
 
 ZTEST(stm32_common_devices_clocks, test_adc_clk_config)
@@ -87,13 +94,20 @@ ZTEST(stm32_common_devices_clocks, test_adc_clk_config)
 		dev_actual_clk_src = GET_ADC_SOURCE();
 
 		switch (pclken[1].bus) {
+#if defined(STM32_SRC_SYSCLK)
+		case STM32_SRC_SYSCLK:
+			zassert_equal(dev_actual_clk_src, ADC_SOURCE_SYSCLK,
+					"Expected ADC1 src: SYSCLK (0x%lx). Actual ADC1 src: 0x%x",
+					ADC_SOURCE_SYSCLK, dev_actual_clk_src);
+			break;
+#endif /* STM32_SRC_SYSCLK */
 #if defined(STM32_SRC_PLL_P)
 		case STM32_SRC_PLL_P:
 			zassert_equal(dev_actual_clk_src, ADC_SOURCE_PLL,
 					"Expected ADC1 src: PLL (0x%lx). Actual ADC1 src: 0x%x",
 					ADC_SOURCE_PLL, dev_actual_clk_src);
 			break;
-#endif
+#endif /* STM32_SRC_PLL_P */
 		default:
 			zassert_true(0, "Unexpected src clk (%d)", dev_actual_clk_src);
 		}

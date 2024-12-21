@@ -854,7 +854,7 @@ static int dma_mcux_lpc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dma_driver_api dma_mcux_lpc_api = {
+static DEVICE_API(dma, dma_mcux_lpc_api) = {
 	.config = dma_mcux_lpc_configure,
 	.start = dma_mcux_lpc_start,
 	.stop = dma_mcux_lpc_stop,

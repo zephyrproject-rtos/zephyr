@@ -453,7 +453,7 @@ static int counter_smartbond_pm_action(const struct device *dev, enum pm_device_
 }
 #endif
 
-static const struct counter_driver_api counter_smartbond_driver_api = {
+static DEVICE_API(counter, counter_smartbond_driver_api) = {
 	.start = counter_smartbond_start,
 	.stop = counter_smartbond_stop,
 	.get_value = counter_smartbond_get_value,

@@ -483,7 +483,7 @@ static int i2s_stm32_write(const struct device *dev, void *mem_block,
 	return queue_put(&dev_data->tx.mem_block_queue, mem_block, size);
 }
 
-static const struct i2s_driver_api i2s_stm32_driver_api = {
+static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 	.configure = i2s_stm32_configure,
 	.read = i2s_stm32_read,
 	.write = i2s_stm32_write,

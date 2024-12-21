@@ -449,9 +449,22 @@ static int interface_attach(struct net_if *iface, struct net_if *lower_iface)
 		if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->family == AF_INET6) {
 			struct net_if_addr *ifaddr;
 			struct in6_addr iid;
+			int ret;
 
 			/* RFC4213 chapter 3.7 */
-			net_ipv6_addr_create_iid(&iid, net_if_get_link_addr(iface));
+			ret = net_ipv6_addr_generate_iid(iface, NULL,
+				 COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+					     ((uint8_t *)&iface->config.ip.ipv6->network_counter),
+					     (NULL)),
+				 COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+					     (sizeof(iface->config.ip.ipv6->network_counter)),
+					     (0U)),
+				 0,
+				 &iid,
+				 net_if_get_link_addr(iface));
+			if (ret < 0) {
+				NET_WARN("IPv6 IID generation issue (%d)", ret);
+			}
 
 			ifaddr = net_if_ipv6_addr_add(iface, &iid, NET_ADDR_AUTOCONF, 0);
 			if (!ifaddr) {

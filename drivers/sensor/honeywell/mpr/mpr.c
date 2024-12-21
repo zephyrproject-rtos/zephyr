@@ -127,7 +127,7 @@ static int mpr_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api mpr_api_funcs = {
+static DEVICE_API(sensor, mpr_api_funcs) = {
 	.sample_fetch = mpr_sample_fetch,
 	.channel_get = mpr_channel_get,
 };

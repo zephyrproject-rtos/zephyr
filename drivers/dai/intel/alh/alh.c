@@ -194,7 +194,7 @@ static int dai_alh_remove(const struct device *dev)
 	return 0;
 }
 
-static const struct dai_driver_api dai_intel_alh_api_funcs = {
+static DEVICE_API(dai, dai_intel_alh_api_funcs) = {
 	.probe			= dai_alh_probe,
 	.remove			= dai_alh_remove,
 	.config_set		= dai_alh_config_set,

@@ -362,7 +362,13 @@ static int bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, ui
 	struct bt_bap_ep *ep;
 	int ret;
 
-	if (stream == NULL || stream->ep == NULL) {
+	if (stream == NULL) {
+		LOG_DBG("stream is NULL");
+		return -EINVAL;
+	}
+
+	if (stream->ep == NULL) {
+		LOG_DBG("stream->ep %p is NULL", stream);
 		return -EINVAL;
 	}
 

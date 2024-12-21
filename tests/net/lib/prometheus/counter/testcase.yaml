@@ -1,6 +1,6 @@
 tests:
   # section.subsection
-  prometheus.counter:
+  net.prometheus.counter:
     depends_on: netif
     integration_platforms:
       - native_sim

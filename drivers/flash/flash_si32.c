@@ -197,7 +197,7 @@ static int flash_si32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct flash_driver_api flash_si32_driver_api = {
+static DEVICE_API(flash, flash_si32_driver_api) = {
 	.read = flash_si32_read,
 	.write = flash_si32_write,
 	.erase = flash_si32_erase,

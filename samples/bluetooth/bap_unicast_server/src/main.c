@@ -509,8 +509,7 @@ static void stream_recv_lc3_codec(struct bt_bap_stream *stream,
 				  const struct bt_iso_recv_info *info,
 				  struct net_buf *buf)
 {
-	const uint8_t *in_buf;
-	uint8_t err = -1;
+	const bool valid_data = (info->flags & BT_ISO_FLAGS_VALID) == 0;
 	const int octets_per_frame = buf->len / frames_per_sdu;
 
 	if (lc3_decoder == NULL) {
@@ -518,40 +517,24 @@ static void stream_recv_lc3_codec(struct bt_bap_stream *stream,
 		return;
 	}
 
-	if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
+	if (!valid_data) {
 		printk("Bad packet: 0x%02X\n", info->flags);
-
-		in_buf = NULL;
-	} else {
-		in_buf = buf->data;
 	}
 
-	/* This code is to demonstrate the use of the LC3 codec. On an actual implementation
-	 * it might be required to offload the processing to another task to avoid blocking the
-	 * BT stack.
-	 */
 	for (int i = 0; i < frames_per_sdu; i++) {
+		/* Passing NULL performs PLC */
+		const int err = lc3_decode(
+			lc3_decoder, valid_data ? net_buf_pull_mem(buf, octets_per_frame) : NULL,
+			octets_per_frame, LC3_PCM_FORMAT_S16, audio_buf, 1);
 
-		int offset = 0;
-
-		err = lc3_decode(lc3_decoder, in_buf + offset, octets_per_frame,
-				 LC3_PCM_FORMAT_S16, audio_buf, 1);
-
-		if (in_buf != NULL) {
-			offset += octets_per_frame;
+		if (err == 1) {
+			printk("[%d]: Decoder performed PLC\n", i);
+		} else if (err < 0) {
+			printk("[%d]: Decoder failed - wrong parameters?: %d\n", i, err);
 		}
 	}
 
 	printk("RX stream %p len %u\n", stream, buf->len);
-
-	if (err == 1) {
-		printk("  decoder performed PLC\n");
-		return;
-
-	} else if (err < 0) {
-		printk("  decoder failed - wrong parameters?\n");
-		return;
-	}
 }
 
 #else

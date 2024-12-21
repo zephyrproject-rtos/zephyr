@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2024 Toradex
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: verdin_imx8mm/mimx8mm6/m4
+name: Toradex Verdin iMX8M Mini
+type: mcu
+arch: arm
+ram: 128
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: toradex

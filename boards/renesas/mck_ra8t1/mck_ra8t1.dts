@@ -7,7 +7,7 @@
 
 #include <renesas/ra/ra8/r7fa8t1ahecbd.dtsi>
 #include <dt-bindings/gpio/gpio.h>
-
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "mck_ra8t1-pinctrl.dtsi"
 
 / {
@@ -144,4 +144,37 @@
 		rx-max-filters = <16>;
 		status = "okay";
 	};
+};
+
+&iic1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+};
+
+&eth {
+	local-mac-address = [74 90 50 6D 81 75];
+	status = "okay";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@5 {
+		compatible = "ethernet-phy";
+		reg = <5>;
+		status = "okay";
+	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	average-count = <4>;
 };

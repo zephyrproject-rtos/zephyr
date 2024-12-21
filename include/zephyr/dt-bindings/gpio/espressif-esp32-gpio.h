@@ -32,4 +32,24 @@
 
 /** @} */
 
+/**
+ * @name GPIO pin input/output enable flags
+ *
+ * These flags allow configuring a pin as input or output while keeping untouched
+ * its complementary configuration. By instance, if we configure a GPIO pin as an
+ * input and pass the flag ESP32_GPIO_PIN_OUT_EN, the driver will not disable the
+ * pin's output buffer. This functionality can be useful to render a pin both an
+ * input and output, for diagnose or testing purposes.
+ *
+ * @{
+ */
+
+/** Keep GPIO pin enabled as output */
+#define ESP32_GPIO_PIN_OUT_EN (1 << 12)
+
+/** Keep GPIO pin enabled as input */
+#define ESP32_GPIO_PIN_IN_EN (1 << 13)
+
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ESPRESSIF_ESP32_GPIO_H_ */

@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+source "Kconfig.zephyr"
+
+menu "NRF70 Buslib test sample"
+
+config NRF70BUS_MEMTEST_LENGTH
+	int "Memory test length"
+	default 1024
+	help
+	  This option sets the default length for the memory test.
+endmenu

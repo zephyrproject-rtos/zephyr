@@ -366,7 +366,7 @@ def extract_string_variables(elf):
                     # its address in memory.
                     loc_attr = die.attributes['DW_AT_location']
                     if loc_parser.attribute_has_location(loc_attr, die.cu['version']):
-                        loc = loc_parser.parse_from_attribute(loc_attr, die.cu['version'])
+                        loc = loc_parser.parse_from_attribute(loc_attr, die.cu['version'], die)
                         if isinstance(loc, LocationExpr):
                             try:
                                 addr = describe_DWARF_expr(loc.loc_expr,

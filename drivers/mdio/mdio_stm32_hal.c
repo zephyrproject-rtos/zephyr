@@ -99,7 +99,7 @@ static int mdio_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct mdio_driver_api mdio_stm32_api = {
+static DEVICE_API(mdio, mdio_stm32_api) = {
 	.read = mdio_stm32_read,
 	.write = mdio_stm32_write,
 	.bus_enable = mdio_stm32_bus_enable,

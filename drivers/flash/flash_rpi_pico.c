@@ -306,7 +306,7 @@ void flash_rpi_page_layout(const struct device *dev, const struct flash_pages_la
 
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_driver_api flash_rpi_driver_api = {
+static DEVICE_API(flash, flash_rpi_driver_api) = {
 	.read = flash_rpi_read,
 	.write = flash_rpi_write,
 	.erase = flash_rpi_erase,

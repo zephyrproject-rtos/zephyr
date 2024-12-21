@@ -367,7 +367,7 @@ static int uart_mcux_pm_action(const struct device *dev, enum pm_device_action a
 }
 #endif /*CONFIG_PM_DEVICE*/
 
-static const struct uart_driver_api uart_mcux_driver_api = {
+static DEVICE_API(uart, uart_mcux_driver_api) = {
 	.poll_in = uart_mcux_poll_in,
 	.poll_out = uart_mcux_poll_out,
 	.err_check = uart_mcux_err_check,

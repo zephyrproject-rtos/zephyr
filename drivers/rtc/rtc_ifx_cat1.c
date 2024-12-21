@@ -324,7 +324,7 @@ static int ifx_cat1_get_calibration(const struct device *dev, int32_t *calibrati
 }
 #endif /* CONFIG_RTC_CALIBRATION */
 
-static const struct rtc_driver_api ifx_cat1_rtc_driver_api = {
+static DEVICE_API(rtc, ifx_cat1_rtc_driver_api) = {
 	.set_time = ifx_cat1_rtc_set_time,
 	.get_time = ifx_cat1_rtc_get_time,
 #ifdef CONFIG_RTC_CALIBRATION

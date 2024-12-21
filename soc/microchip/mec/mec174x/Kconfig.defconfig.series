@@ -11,8 +11,6 @@ config NUM_IRQS
 	# All NVIC external sources.
 	default 194
 
-rsource "Kconfig.defconfig.mec174*"
-
 config CORTEX_M_SYSTICK
 	depends on !RTOS_TIMER
 

@@ -14,7 +14,4 @@ config MODEM_HL7800
 config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	default 4096
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_PINNACLE_100_DVK

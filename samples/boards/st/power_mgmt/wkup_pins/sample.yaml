@@ -10,3 +10,5 @@ tests:
       - nucleo_u575zi_q
       - nucleo_u5a5zj_q
       - nucleo_wl55jc
+    integration_platforms:
+      - nucleo_l4r5zi

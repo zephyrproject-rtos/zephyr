@@ -6,18 +6,19 @@
 
 import json
 import os
-from pathlib import Path
-import sys
 import subprocess
+import sys
+from pathlib import Path
 
 from runners.core import _DRY_RUN
 from runners.nrf_common import NrfBinaryRunner
+
 
 class NrfUtilBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfutil.'''
 
     def __init__(self, cfg, family, softreset, dev_id, erase=False,
-                 reset=True, tool_opt=[], force=False, recover=False,
+                 reset=True, tool_opt=None, force=False, recover=False,
                  suit_starter=False):
 
         super().__init__(cfg, family, softreset, dev_id, erase, reset,
@@ -108,7 +109,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
                             indent=4) + '\n'
 
         hex_dir = Path(self.hex_).parent
-        json_file = os.fspath(hex_dir / f'generated_nrfutil_batch.json')
+        json_file = os.fspath(hex_dir / 'generated_nrfutil_batch.json')
 
         with open(json_file, "w") as f:
             f.write(batch)

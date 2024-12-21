@@ -134,7 +134,7 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 	 *
 	 * See RFC-1035 4.1.3. Resource record format
 	 */
-	rem_size = dns_msg->msg_size - dname_len;
+	rem_size = dns_msg->msg_size - dns_msg->answer_offset - dname_len;
 	if (rem_size < 2 + 2 + 4 + 2) {
 		return -EINVAL;
 	}
@@ -394,7 +394,7 @@ int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
 		/* validate that the label (i.e. size + elements),
 		 * fits the current msg buffer
 		 */
-		if (DNS_LABEL_LEN_SIZE + lb_size > size - *len) {
+		if (DNS_LABEL_LEN_SIZE + lb_size > MIN(size - *len, msg_size - pos)) {
 			rc = -ENOMEM;
 			break;
 		}

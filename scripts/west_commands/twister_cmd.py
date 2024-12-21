@@ -6,8 +6,7 @@ import argparse
 import os
 import sys
 
-from west import log
-from west.commands import WestCommand
+from west.commands import Verbosity, WestCommand
 
 from zephyr_ext_common import ZEPHYR_SCRIPTS
 
@@ -53,8 +52,8 @@ class Twister(WestCommand):
         return parser
 
     def do_run(self, args, remainder):
-        log.dbg(
-            "args: {} remainder: {}".format(args, remainder), level=log.VERBOSE_EXTREME
+        self.dbg(
+            "args: {} remainder: {}".format(args, remainder), level=Verbosity.DBG_EXTREME
         )
 
         options = parse_arguments(self.parser, args=remainder, options=args)

@@ -74,6 +74,7 @@ enum net_event_ipv6_cmd {
 	NET_EVENT_IPV6_CMD_PE_DISABLED,
 	NET_EVENT_IPV6_CMD_PE_FILTER_ADD,
 	NET_EVENT_IPV6_CMD_PE_FILTER_DEL,
+	NET_EVENT_IPV6_CMD_PMTU_CHANGED,
 };
 
 /* IPv4 Events*/
@@ -99,6 +100,7 @@ enum net_event_ipv4_cmd {
 	NET_EVENT_IPV4_CMD_ACD_SUCCEED,
 	NET_EVENT_IPV4_CMD_ACD_FAILED,
 	NET_EVENT_IPV4_CMD_ACD_CONFLICT,
+	NET_EVENT_IPV4_CMD_PMTU_CHANGED,
 };
 
 /* L4 network events */
@@ -237,6 +239,10 @@ enum net_event_l4_cmd {
 #define NET_EVENT_IPV6_PE_FILTER_DEL				\
 	(_NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_PE_FILTER_DEL)
 
+/** IPv6 Path MTU is changed. */
+#define NET_EVENT_IPV6_PMTU_CHANGED				\
+	(_NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_PMTU_CHANGED)
+
 /** Event emitted when an IPv4 address is added to the system. */
 #define NET_EVENT_IPV4_ADDR_ADD					\
 	(_NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ADDR_ADD)
@@ -295,6 +301,10 @@ enum net_event_l4_cmd {
  */
 #define NET_EVENT_IPV4_ACD_CONFLICT				\
 	(_NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ACD_CONFLICT)
+
+/** IPv4 Path MTU is changed. */
+#define NET_EVENT_IPV4_PMTU_CHANGED				\
+	(_NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_PMTU_CHANGED)
 
 /** Event emitted when the system is considered to be connected.
  * The connected in this context means that the network interface is up,
@@ -439,6 +449,34 @@ struct net_event_ipv6_pe_filter {
 	struct in6_addr prefix;
 	/** IPv6 filter deny or allow list */
 	bool is_deny_list;
+};
+
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network event
+ *   NET_EVENT_IPV4_PMTU_CHANGED
+ * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
+ * information.
+ */
+struct net_event_ipv4_pmtu_info {
+	/** IPv4 address */
+	struct in_addr dst;
+	/** New MTU */
+	uint16_t mtu;
+};
+
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network event
+ *   NET_EVENT_IPV6_PMTU_CHANGED
+ * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
+ * information.
+ */
+struct net_event_ipv6_pmtu_info {
+	/** IPv6 address */
+	struct in6_addr dst;
+	/** New MTU */
+	uint32_t mtu;
 };
 
 #ifdef __cplusplus

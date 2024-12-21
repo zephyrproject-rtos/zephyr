@@ -25,8 +25,7 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        sudo pip3 install -U setuptools wheel pip
-        pip3 install -U pygithub
+        pip install -U pygithub
 
     - name: Snapshot bugs
       env:

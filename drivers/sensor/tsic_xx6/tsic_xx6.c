@@ -161,7 +161,8 @@ static void tsic_xx6_get_value(const struct tsic_xx6_config *config, struct tsic
 	int64_t tmp;
 
 	/* Apply the datasheet formula scaled to micro celcius */
-	tmp = data_bits * (config->higher_temperature_limit - config->lower_temperature_limit);
+	tmp = (int64_t)data_bits *
+	      (config->higher_temperature_limit - config->lower_temperature_limit);
 	tmp = tmp * 1000000 / (BIT(config->data_bits) - 1);
 	tmp += (int64_t)config->lower_temperature_limit * 1000000;
 
@@ -211,8 +212,10 @@ static int tsic_xx6_channel_get(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
-static const struct sensor_driver_api tsic_xx6_driver_api = {.sample_fetch = tsic_xx6_sample_fetch,
-							     .channel_get = tsic_xx6_channel_get};
+static DEVICE_API(sensor, tsic_xx6_driver_api) = {
+	.sample_fetch = tsic_xx6_sample_fetch,
+	.channel_get = tsic_xx6_channel_get,
+};
 
 static int tsic_xx6_get_frame_cycles(const struct tsic_xx6_config *config, uint64_t *frame_cycles)
 {

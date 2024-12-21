@@ -241,7 +241,7 @@ static int tcs3400_sensor_setup(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api tcs3400_api = {
+static DEVICE_API(sensor, tcs3400_api) = {
 	.sample_fetch = tcs3400_sample_fetch,
 	.channel_get = tcs3400_channel_get,
 	.attr_set = tcs3400_attr_set,

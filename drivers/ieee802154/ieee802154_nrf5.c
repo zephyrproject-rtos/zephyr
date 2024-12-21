@@ -259,6 +259,9 @@ static void nrf5_get_capabilities_at_boot(void)
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
 		| IEEE802154_HW_SELECTIVE_TXCHANNEL
 #endif
+#if defined(CONFIG_IEEE802154_NRF5_CST_ENDPOINT)
+		| IEEE802154_OPENTHREAD_HW_CST
+#endif
 		;
 }
 
@@ -727,7 +730,7 @@ static int nrf5_stop(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 static int nrf5_continuous_carrier(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -740,6 +743,23 @@ static int nrf5_continuous_carrier(const struct device *dev)
 	}
 
 	LOG_DBG("Continuous carrier wave transmission started (channel: %d)",
+		nrf_802154_channel_get());
+
+	return 0;
+}
+
+static int nrf_modulated_carrier(const struct device *dev, const uint8_t *data)
+{
+	ARG_UNUSED(dev);
+
+	nrf_802154_tx_power_set(nrf5_data.txpwr);
+
+	if (!nrf_802154_modulated_carrier(data)) {
+		LOG_ERR("Failed to enter modulated carrier state");
+		return -EIO;
+	}
+
+	LOG_DBG("Modulated carrier wave transmission started (channel: %d)",
 		nrf_802154_channel_get());
 
 	return 0;
@@ -1028,6 +1048,17 @@ static int nrf5_configure(const struct device *dev,
 		}
 		break;
 
+#if defined(CONFIG_IEEE802154_NRF5_CST_ENDPOINT)
+	case IEEE802154_OPENTHREAD_CONFIG_CST_PERIOD:
+		nrf_802154_cst_writer_period_set(config->cst_period);
+		break;
+
+	case IEEE802154_OPENTHREAD_CONFIG_EXPECTED_TX_TIME:
+		nrf_802154_cst_writer_anchor_time_set(nrf_802154_timestamp_phr_to_mhr_convert(
+			config->expected_tx_time / NSEC_PER_USEC));
+		break;
+#endif /* CONFIG_IEEE802154_NRF5_CST_ENDPOINT */
+
 	default:
 		return -EINVAL;
 	}
@@ -1257,15 +1288,16 @@ static const struct ieee802154_radio_api nrf5_radio_api = {
 	.set_txpower = nrf5_set_txpower,
 	.start = nrf5_start,
 	.stop = nrf5_stop,
-#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 	.continuous_carrier = nrf5_continuous_carrier,
+	.modulated_carrier = nrf_modulated_carrier,
 #endif
 	.tx = nrf5_tx,
 	.ed_scan = nrf5_energy_scan_start,
 	.get_time = nrf5_get_time,
 	.get_sch_acc = nrf5_get_acc,
 	.configure = nrf5_configure,
-	.attr_get = nrf5_attr_get
+	.attr_get = nrf5_attr_get,
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)

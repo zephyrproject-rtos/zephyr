@@ -199,6 +199,7 @@ rsource "Kconfig.ql_usbserialport_s3b"
 rsource "Kconfig.rcar"
 rsource "Kconfig.renesas_ra"
 rsource "Kconfig.renesas_ra8"
+rsource "Kconfig.renesas_rz"
 rsource "Kconfig.rpi_pico"
 rsource "Kconfig.rtt"
 rsource "Kconfig.rv32m1_lpuart"
@@ -220,5 +221,7 @@ rsource "Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
 source "drivers/serial/Kconfig.si32"
+
+source "drivers/serial/Kconfig.wch_usart"
 
 endif # SERIAL

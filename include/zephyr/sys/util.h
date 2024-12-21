@@ -30,7 +30,7 @@
 #include <stdint.h>
 
 /** @brief Number of bits that make up a type */
-#define NUM_BITS(t) (sizeof(t) * 8)
+#define NUM_BITS(t) (sizeof(t) * BITS_PER_BYTE)
 
 #ifdef __cplusplus
 extern "C" {
@@ -366,9 +366,10 @@ extern "C" {
  *
  * @return The result of @p n / @p d, rounded to the nearest integer.
  */
-#define DIV_ROUND_CLOSEST(n, d)	\
-	((((n) < 0) ^ ((d) < 0)) ? ((n) - ((d) / 2)) / (d) : \
-	((n) + ((d) / 2)) / (d))
+#define DIV_ROUND_CLOSEST(n, d)                                                                    \
+	(((((__typeof__(n))-1) < 0) && (((__typeof__(d))-1) < 0) && ((n) < 0) ^ ((d) < 0))         \
+		 ? ((n) - ((d) / 2)) / (d)                                                         \
+		 : ((n) + ((d) / 2)) / (d))
 
 #ifndef MAX
 /**
@@ -711,7 +712,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  *
  * @return ceil(log2(x)) when 1 <= x <= max(type(x)), 0 when x < 1
  */
-#define LOG2CEIL(x) ((x) < 1 ?  0 : __z_log2((x)-1) + 1)
+#define LOG2CEIL(x) ((x) <= 1 ?  0 : __z_log2((x)-1) + 1)
 
 /**
  * @brief Compute next highest power of two

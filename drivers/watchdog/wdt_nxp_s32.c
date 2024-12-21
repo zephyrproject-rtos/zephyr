@@ -363,7 +363,7 @@ static int swt_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api swt_nxp_s32_driver_api = {
+static DEVICE_API(wdt, swt_nxp_s32_driver_api) = {
 	.setup = swt_nxp_s32_setup,
 	.disable = swt_nxp_s32_disable,
 	.install_timeout = swt_nxp_s32_install_timeout,

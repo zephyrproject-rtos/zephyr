@@ -90,13 +90,14 @@ if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
 endif()
 
 if(CONFIG_SOC_FLASH_STM32)
+  zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_stm32_ex_op.c)
   if(CONFIG_SOC_SERIES_STM32H7X)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED flash_stm32h7x.c)
   elseif(CONFIG_SOC_SERIES_STM32H7RSX)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED flash_stm32h7x.c)
   elseif(CONFIG_SOC_SERIES_STM32WBAX)
     if(CONFIG_BT_STM32WBA)
-      # BLE is enabled. Use implementation over Flash Manager for coexistence wit RF activities
+      # BLE is enabled. Use implementation over Flash Manager for coexistence with RF activities
       zephyr_library_sources(flash_stm32wba_fm.c)
     else()
       zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32_FLASH_CONTROLLER_ENABLED flash_stm32.c flash_stm32wbax.c)
@@ -106,7 +107,6 @@ if(CONFIG_SOC_FLASH_STM32)
   else()
     if(CONFIG_DT_HAS_ST_STM32_FLASH_CONTROLLER_ENABLED)
       zephyr_library_sources(flash_stm32.c)
-      zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_stm32_ex_op.c)
 
 # zephyr-keep-sorted-start
       zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F1_FLASH_CONTROLLER_ENABLED flash_stm32f1x.c)

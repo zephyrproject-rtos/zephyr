@@ -93,7 +93,7 @@ static int iaqcore_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api iaq_core_driver_api = {
+static DEVICE_API(sensor, iaq_core_driver_api) = {
 	.sample_fetch = iaqcore_sample_fetch,
 	.channel_get = iaqcore_channel_get,
 };

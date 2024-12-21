@@ -5,12 +5,10 @@
  */
 
 /**
- * Driver for DS18B20 1-Wire temperature sensors
- * A datasheet is available at:
- * https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf
- *
- * Driver also support the older DS18S20 1-Wire temperature sensors.
- * https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf
+ * Driver for DS18B20 and DS18S20 1-Wire temperature sensors
+ * Datasheets for the compatible sensors are available at:
+ * - https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf
+ * - https://www.analog.com/media/en/technical-documentation/data-sheets/ds18s20.pdf
  *
  * Parasite power configuration is not supported by the driver.
  */
@@ -312,7 +310,7 @@ int ds18b20_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static const struct sensor_driver_api ds18b20_driver_api = {
+static DEVICE_API(sensor, ds18b20_driver_api) = {
 	.attr_set = ds18b20_attr_set,
 	.sample_fetch = ds18b20_sample_fetch,
 	.channel_get = ds18b20_channel_get,

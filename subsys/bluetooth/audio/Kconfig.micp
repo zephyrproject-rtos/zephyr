@@ -40,8 +40,8 @@ endif # BT_MICP_MIC_DEV
 
 config BT_MICP_MIC_CTLR
 	bool "Microphone Control Profile Microphone Controller Support"
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
 	depends on BT_BONDABLE
 	help
 	  This option enables support for the Microphone Control Profile

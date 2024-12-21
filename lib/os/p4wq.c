@@ -87,10 +87,10 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 				= CONTAINER_OF(r, struct k_p4wq_work, rbnode);
 
 			rb_remove(&queue->queue, r);
-			w->thread = _current;
+			w->thread = arch_current_thread();
 			sys_dlist_append(&queue->active, &w->dlnode);
-			set_prio(_current, w);
-			thread_clear_requeued(_current);
+			set_prio(arch_current_thread(), w);
+			thread_clear_requeued(arch_current_thread());
 
 			k_spin_unlock(&queue->lock, k);
 
@@ -101,7 +101,7 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 			/* Remove from the active list only if it
 			 * wasn't resubmitted already
 			 */
-			if (!thread_was_requeued(_current)) {
+			if (!thread_was_requeued(arch_current_thread())) {
 				sys_dlist_remove(&w->dlnode);
 				w->thread = NULL;
 				k_sem_give(&w->done_sem);
@@ -168,10 +168,6 @@ static int static_init(void)
 					  &pp->stacks[ssz * i],
 					  pp->stack_size);
 
-			if (pp->flags & K_P4WQ_DELAYED_START) {
-				z_mark_thread_as_suspended(&pp->threads[i]);
-			}
-
 #ifdef CONFIG_SCHED_CPU_MASK
 			if (pp->flags & K_P4WQ_USER_CPU_MASK) {
 				int ret = k_thread_cpu_mask_clear(&pp->threads[i]);
@@ -206,7 +202,6 @@ void k_p4wq_enable_static_thread(struct k_p4wq *queue, struct k_thread *thread,
 #endif
 
 	if (queue->flags & K_P4WQ_DELAYED_START) {
-		z_mark_thread_as_not_suspended(thread);
 		k_thread_start(thread);
 	}
 }
@@ -228,9 +223,9 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	item->deadline += k_cycle_get_32();
 
 	/* Resubmission from within handler?  Remove from active list */
-	if (item->thread == _current) {
+	if (item->thread == arch_current_thread()) {
 		sys_dlist_remove(&item->dlnode);
-		thread_set_requeued(_current);
+		thread_set_requeued(arch_current_thread());
 		item->thread = NULL;
 	} else {
 		k_sem_init(&item->done_sem, 0, 1);

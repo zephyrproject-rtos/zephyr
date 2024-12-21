@@ -28,7 +28,7 @@ K_MEM_SLAB_DEFINE_STATIC(msg_pool, sizeof(struct bt_mesh_test_msg),
 static K_QUEUE_DEFINE(recv);
 struct bt_mesh_test_stats test_stats;
 struct bt_mesh_msg_ctx test_send_ctx;
-static void (*ra_cb)(uint8_t *, size_t);
+static void (*data_cb)(uint8_t *, size_t);
 
 static int msg_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		   struct net_buf_simple *buf)
@@ -78,8 +78,8 @@ static int msg_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int ra_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
-		 struct net_buf_simple *buf)
+static int data_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+		   struct net_buf_simple *buf)
 {
 	LOG_INF("\tlen: %d bytes", buf->len);
 	LOG_INF("\tsrc: 0x%04x", ctx->addr);
@@ -87,18 +87,15 @@ static int ra_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	LOG_INF("\tttl: %u", ctx->recv_ttl);
 	LOG_INF("\trssi: %d", ctx->recv_rssi);
 
-	if (ra_cb) {
-		ra_cb(buf->data, buf->len);
+	if (data_cb) {
+		data_cb(buf->data, buf->len);
 	}
 
 	return 0;
 }
 
 static const struct bt_mesh_model_op model_op[] = {
-	{ TEST_MSG_OP_1, 0, msg_rx },
-	{ TEST_MSG_OP_2, 0, ra_rx },
-	BT_MESH_MODEL_OP_END
-};
+	{TEST_MSG_OP_1, 0, msg_rx}, {TEST_MSG_OP_2, 0, data_rx}, BT_MESH_MODEL_OP_END};
 
 int __weak test_model_pub_update(const struct bt_mesh_model *mod)
 {
@@ -534,15 +531,15 @@ int bt_mesh_test_send(uint16_t addr, const uint8_t *uuid, size_t len,
 	return 0;
 }
 
-int bt_mesh_test_send_ra(uint16_t addr, uint8_t *data, size_t len,
-			 const struct bt_mesh_send_cb *send_cb,
-			 void *cb_data)
+int bt_mesh_test_send_data(uint16_t addr, const uint8_t *uuid, uint8_t *data, size_t len,
+			   const struct bt_mesh_send_cb *send_cb, void *cb_data)
 {
 	int err;
 
 	test_send_ctx.addr = addr;
 	test_send_ctx.send_rel = 0;
 	test_send_ctx.send_ttl = BT_MESH_TTL_DEFAULT;
+	test_send_ctx.uuid = uuid;
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP_2, BT_MESH_TX_SDU_MAX);
 	bt_mesh_model_msg_init(&buf, TEST_MSG_OP_2);
@@ -558,9 +555,9 @@ int bt_mesh_test_send_ra(uint16_t addr, uint8_t *data, size_t len,
 	return 0;
 }
 
-void bt_mesh_test_ra_cb_setup(void (*cb)(uint8_t *, size_t))
+void bt_mesh_test_data_cb_setup(void (*cb)(uint8_t *, size_t))
 {
-	ra_cb = cb;
+	data_cb = cb;
 }
 
 uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr)

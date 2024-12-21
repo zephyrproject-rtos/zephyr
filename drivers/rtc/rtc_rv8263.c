@@ -163,7 +163,7 @@ static void rv8263c8_interrupt_worker(struct k_work *p_work)
 	struct rv8263c8_data *data = CONTAINER_OF(p_work, struct rv8263c8_data, interrupt_work);
 	const struct rv8263c8_config *config = data->dev->config;
 
-	i2c_reg_read_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, &reg);
+	(void)i2c_reg_read_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, &reg);
 
 #if CONFIG_RTC_ALARM
 	/* An alarm interrupt occurs. Clear the timer flag, */
@@ -680,7 +680,7 @@ int rv8263c8_calibration_get(const struct device *dev, int32_t *calibration)
 }
 #endif
 
-static const struct rtc_driver_api rv8263c8_driver_api = {
+static DEVICE_API(rtc, rv8263c8_driver_api) = {
 	.set_time = rv8263c8_time_set,
 	.get_time = rv8263c8_time_get,
 #if CONFIG_RTC_ALARM

@@ -292,7 +292,7 @@ static int i2c_emul_target_unregister(const struct device *dev, struct i2c_targe
 
 /* Device instantiation */
 
-static const struct i2c_driver_api i2c_emul_api = {
+static DEVICE_API(i2c, i2c_emul_api) = {
 	.configure = i2c_emul_configure,
 	.get_config = i2c_emul_get_config,
 	.transfer = i2c_emul_transfer,

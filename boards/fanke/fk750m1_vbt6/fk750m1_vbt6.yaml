@@ -1,0 +1,14 @@
+identifier: fk750m1_vbt6
+name: FANKE FK750M1-VBT6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 1024
+flash: 128
+supported:
+  - uart
+  - gpio
+vendor: fanke

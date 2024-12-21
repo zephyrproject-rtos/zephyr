@@ -296,7 +296,7 @@ static void adc_max32_isr(const struct device *dev)
 	}
 }
 
-static const struct adc_driver_api adc_max32_driver_api = {
+static DEVICE_API(adc, adc_max32_driver_api) = {
 	.channel_setup = adc_max32_channel_setup,
 	.read = adc_max32_read,
 #ifdef CONFIG_ADC_ASYNC

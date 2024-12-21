@@ -377,7 +377,7 @@ static void uart_numaker_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_numaker_driver_api = {
+static DEVICE_API(uart, uart_numaker_driver_api) = {
 	.poll_in = uart_numaker_poll_in,
 	.poll_out = uart_numaker_poll_out,
 	.err_check = uart_numaker_err_check,

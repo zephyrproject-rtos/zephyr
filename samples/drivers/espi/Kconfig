@@ -11,4 +11,10 @@ config ESPI_VIRTUAL_WIRE_TIMEOUT
 	help
 	  Timeout for virtual wires
 
+config ESPI_USE_BOARD_POWER
+	bool "Use board power"
+	depends on $(dt_nodelabel_enabled,board_power)
+	select GPIO
+	default y
+
 source "Kconfig.zephyr"

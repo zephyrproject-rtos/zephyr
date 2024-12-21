@@ -20,15 +20,12 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 
-#include <zephyr/usb/usb_device.h>
-
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define LOG_MODULE_NAME hci_uart_3wire
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -751,13 +748,6 @@ static void rx_thread(void *p1, void *p2, void *p3)
 static int hci_uart_init(void)
 {
 	LOG_DBG("");
-
-	if (IS_ENABLED(CONFIG_USB_CDC_ACM)) {
-		if (usb_enable(NULL)) {
-			LOG_ERR("Failed to enable USB");
-			return -EINVAL;
-		}
-	}
 
 	if (!device_is_ready(h5_dev)) {
 		LOG_ERR("HCI UART %s is not ready", h5_dev->name);

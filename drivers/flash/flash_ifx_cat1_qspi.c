@@ -326,7 +326,7 @@ static int ifx_cat1_flash_init(const struct device *dev)
 	return 0;
 }
 
-static const struct flash_driver_api ifx_cat1_flash_driver_api = {
+static DEVICE_API(flash, ifx_cat1_flash_driver_api) = {
 	.read = ifx_cat1_flash_read,
 	.write = ifx_cat1_flash_write,
 	.erase = ifx_cat1_flash_erase,

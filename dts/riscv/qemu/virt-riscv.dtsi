@@ -181,7 +181,7 @@
 			#interrupt-cells = < 0x02 >;
 		};
 
-		clint@2000000 {
+		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			reg = <0x2000000 0x10000>;
 			interrupts-extended = <&hlic0 0x03 &hlic0 0x07

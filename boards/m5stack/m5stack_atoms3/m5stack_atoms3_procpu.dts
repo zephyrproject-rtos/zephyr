@@ -17,7 +17,7 @@
 	compatible = "m5stack,atoms3";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
@@ -85,7 +85,7 @@
 			nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
 			ram-param = [00 E0];
 			rgb-param = [40 02 14];
-			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 		};
 
 	};

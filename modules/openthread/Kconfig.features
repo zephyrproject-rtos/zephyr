@@ -128,6 +128,14 @@ config OPENTHREAD_DEVICE_PROP_LEADER_WEIGHT
 config OPENTHREAD_DATASET_UPDATER
 	bool "Dataset updater"
 
+config OPENTHREAD_WAKEUP_COORDINATOR
+	bool "Wake-up Coordinator support"
+	select OPENTHREAD_CSL_RECEIVER
+
+config OPENTHREAD_WAKEUP_END_DEVICE
+	bool "Wake-up End Device support"
+	imply OPENTHREAD_CSL_RECEIVER
+
 config OPENTHREAD_DHCP6_CLIENT
 	bool "DHCPv6 client support"
 

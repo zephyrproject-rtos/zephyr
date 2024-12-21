@@ -6,6 +6,8 @@
 
 #include "dma_nxp_edma.h"
 
+#define EDMA_ACTIVE_TIMEOUT 50
+
 /* TODO list:
  * 1) Support for requesting a specific channel.
  * 2) Support for checking if DMA transfer is pending when attempting config. (?)
@@ -27,6 +29,11 @@ static void edma_isr(const void *parameter)
 	chan = (struct edma_channel *)parameter;
 	cfg = chan->dev->config;
 	data = chan->dev->data;
+
+	if (chan->state == CHAN_STATE_RELEASING || chan->state == CHAN_STATE_INIT) {
+		/* skip, not safe to access channel register space */
+		return;
+	}
 
 	if (!EDMA_ChannelRegRead(data->hal_cfg, chan->id, EDMA_TCD_CH_INT)) {
 		/* skip, interrupt was probably triggered by another channel */
@@ -270,11 +277,11 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 		chan->cyclic_buffer = false;
 	}
 
-	/* change channel's state to CONFIGURED */
-	ret = channel_change_state(chan, CHAN_STATE_CONFIGURED);
-	if (ret < 0) {
-		LOG_ERR("failed to change channel %d state to CONFIGURED", chan_id);
-		return ret;
+	/* check if transition to CONFIGURED is allowed */
+	if (!channel_allows_transition(chan, CHAN_STATE_CONFIGURED)) {
+		LOG_ERR("chan %d transition from %d to CONFIGURED not allowed",
+			chan_id, chan->state);
+		return -EPERM;
 	}
 
 	ret = get_transfer_type(dma_cfg->channel_direction, &transfer_type);
@@ -335,6 +342,8 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	/* dump register status - for debugging purposes */
 	edma_dump_channel_registers(data, chan_id);
 
+	chan->state = CHAN_STATE_CONFIGURED;
+
 	return 0;
 }
 
@@ -389,7 +398,6 @@ static int edma_suspend(const struct device *dev, uint32_t chan_id)
 	struct edma_data *data;
 	const struct edma_config *cfg;
 	struct edma_channel *chan;
-	int ret;
 
 	data = dev->data;
 	cfg = dev->config;
@@ -403,11 +411,11 @@ static int edma_suspend(const struct device *dev, uint32_t chan_id)
 
 	edma_dump_channel_registers(data, chan_id);
 
-	/* change channel's state to SUSPENDED */
-	ret = channel_change_state(chan, CHAN_STATE_SUSPENDED);
-	if (ret < 0) {
-		LOG_ERR("failed to change channel %d state to SUSPENDED", chan_id);
-		return ret;
+	/* check if transition to SUSPENDED is allowed */
+	if (!channel_allows_transition(chan, CHAN_STATE_SUSPENDED)) {
+		LOG_ERR("chan %d transition from %d to SUSPENDED not allowed",
+			chan_id, chan->state);
+		return -EPERM;
 	}
 
 	LOG_DBG("suspending channel %u", chan_id);
@@ -415,6 +423,8 @@ static int edma_suspend(const struct device *dev, uint32_t chan_id)
 	/* disable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
 			      EDMA_TCD_CH_CSR, 0, EDMA_TCD_CH_CSR_ERQ_MASK);
+
+	chan->state = CHAN_STATE_SUSPENDED;
 
 	return 0;
 }
@@ -439,11 +449,11 @@ static int edma_stop(const struct device *dev, uint32_t chan_id)
 
 	prev_state = chan->state;
 
-	/* change channel's state to STOPPED */
-	ret = channel_change_state(chan, CHAN_STATE_STOPPED);
-	if (ret < 0) {
-		LOG_ERR("failed to change channel %d state to STOPPED", chan_id);
-		return ret;
+	/* check if transition to STOPPED is allowed */
+	if (!channel_allows_transition(chan, CHAN_STATE_STOPPED)) {
+		LOG_ERR("chan %d transition from %d to STOPPED not allowed",
+			chan_id, chan->state);
+		return -EPERM;
 	}
 
 	LOG_DBG("stopping channel %u", chan_id);
@@ -459,10 +469,7 @@ static int edma_stop(const struct device *dev, uint32_t chan_id)
 	/* disable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR, 0,
 			      EDMA_TCD_CH_CSR_ERQ_MASK);
-
 out_release_channel:
-
-	irq_disable(chan->irq);
 
 	/* clear the channel MUX so that it can used by a different peripheral.
 	 *
@@ -482,6 +489,8 @@ out_release_channel:
 
 	edma_dump_channel_registers(data, chan_id);
 
+	chan->state = CHAN_STATE_STOPPED;
+
 	return 0;
 }
 
@@ -490,7 +499,6 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 	struct edma_data *data;
 	const struct edma_config *cfg;
 	struct edma_channel *chan;
-	int ret;
 
 	data = dev->data;
 	cfg = dev->config;
@@ -502,20 +510,20 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 		return -EINVAL;
 	}
 
-	/* change channel's state to STARTED */
-	ret = channel_change_state(chan, CHAN_STATE_STARTED);
-	if (ret < 0) {
-		LOG_ERR("failed to change channel %d state to STARTED", chan_id);
-		return ret;
+	/* check if transition to STARTED is allowed */
+	if (!channel_allows_transition(chan, CHAN_STATE_STARTED)) {
+		LOG_ERR("chan %d transition from %d to STARTED not allowed",
+			chan_id, chan->state);
+		return -EPERM;
 	}
 
 	LOG_DBG("starting channel %u", chan_id);
 
-	irq_enable(chan->irq);
-
 	/* enable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
 			      EDMA_TCD_CH_CSR, EDMA_TCD_CH_CSR_ERQ_MASK, 0);
+
+	chan->state = CHAN_STATE_STARTED;
 
 	return 0;
 }
@@ -577,22 +585,83 @@ static int edma_get_attribute(const struct device *dev, uint32_t type, uint32_t 
 
 static bool edma_channel_filter(const struct device *dev, int chan_id, void *param)
 {
-	int *requested_channel;
+	struct edma_channel *chan;
+	int ret;
 
 	if (!param) {
 		return false;
 	}
 
-	requested_channel = param;
-
-	if (*requested_channel == chan_id && lookup_channel(dev, chan_id)) {
-		return true;
+	if (*(int *)param != chan_id) {
+		return false;
 	}
 
-	return false;
+	chan = lookup_channel(dev, chan_id);
+	if (!chan) {
+		return false;
+	}
+
+	if (chan->pd_dev) {
+		ret = pm_device_runtime_get(chan->pd_dev);
+		if (ret < 0) {
+			LOG_ERR("failed to PM get channel %d PD dev: %d",
+				chan_id, ret);
+			return false;
+		}
+	}
+
+	irq_enable(chan->irq);
+
+	return true;
 }
 
-static const struct dma_driver_api edma_api = {
+static void edma_channel_release(const struct device *dev, uint32_t chan_id)
+{
+	struct edma_channel *chan;
+	struct edma_data *data;
+	int ret;
+
+	chan = lookup_channel(dev, chan_id);
+	if (!chan) {
+		return;
+	}
+
+	data = dev->data;
+
+	if (!channel_allows_transition(chan, CHAN_STATE_RELEASING)) {
+		LOG_ERR("chan %d transition from %d to RELEASING not allowed",
+			chan_id, chan->state);
+		return;
+	}
+
+	/* channel needs to be INACTIVE before transitioning */
+	if (!WAIT_FOR(!EDMA_CHAN_IS_ACTIVE(data, chan),
+		      EDMA_ACTIVE_TIMEOUT, k_busy_wait(1))) {
+		LOG_ERR("timed out while waiting for chan %d to become inactive",
+			chan->id);
+		return;
+	}
+
+	/* start the process of disabling IRQ and PD */
+	chan->state = CHAN_STATE_RELEASING;
+
+#ifdef CONFIG_NXP_IRQSTEER
+	irq_disable(chan->irq);
+#endif /* CONFIG_NXP_IRQSTEER */
+
+	if (chan->pd_dev) {
+		ret = pm_device_runtime_put(chan->pd_dev);
+		if (ret < 0) {
+			LOG_ERR("failed to PM put channel %d PD dev: %d",
+				chan_id, ret);
+		}
+	}
+
+	/* done, proceed with next state */
+	chan->state = CHAN_STATE_INIT;
+}
+
+static DEVICE_API(dma, edma_api) = {
 	.reload = edma_reload,
 	.config = edma_config,
 	.start = edma_start,
@@ -602,7 +671,21 @@ static const struct dma_driver_api edma_api = {
 	.get_status = edma_get_status,
 	.get_attribute = edma_get_attribute,
 	.chan_filter = edma_channel_filter,
+	.chan_release = edma_channel_release,
 };
+
+static edma_config_t *edma_hal_cfg_get(const struct edma_config *cfg)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(s_edmaConfigs); i++) {
+		if (cfg->regmap_phys == s_edmaConfigs[i].regmap) {
+			return s_edmaConfigs + i;
+		}
+	}
+
+	return NULL;
+}
 
 static int edma_init(const struct device *dev)
 {
@@ -612,6 +695,11 @@ static int edma_init(const struct device *dev)
 
 	data = dev->data;
 	cfg = dev->config;
+
+	data->hal_cfg = edma_hal_cfg_get(cfg);
+	if (!data->hal_cfg) {
+		return -ENODEV;
+	}
 
 	/* map instance MMIO */
 	device_map(&regmap, cfg->regmap_phys, cfg->regmap_size, K_MEM_CACHE_NONE);
@@ -678,7 +766,6 @@ static struct edma_config edma_config_##inst = {				\
 static struct edma_data edma_data_##inst = {					\
 	.channels = channels_##inst,						\
 	.ctx.magic = DMA_MAGIC,							\
-	.hal_cfg = &EDMA_HAL_CFG_GET(inst),					\
 };										\
 										\
 DEVICE_DT_INST_DEFINE(inst, &edma_init, NULL,					\

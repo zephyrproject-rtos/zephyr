@@ -94,9 +94,18 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 #define NRF_PSEL_QSPI(reg, line) ((NRF_QSPI_Type *)reg)->PSEL.line
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twis) || defined(CONFIG_NRFX_TWIS)
+#include <hal/nrf_twis.h>
+#define NRF_PSEL_TWIS(reg, line) ((NRF_TWIS_Type *)reg)->PSEL.line
+#endif
+
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	bool gpd_requested = false;
+#endif
+
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		nrf_gpio_pin_drive_t drive;
 		uint8_t drive_idx = NRF_GET_DRIVE(pins[i]);
@@ -347,6 +356,24 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_can) */
+#if defined(NRF_PSEL_TWIS)
+		case NRF_FUN_TWIS_SCL:
+			NRF_PSEL_TWIS(reg, SCL) = psel;
+			if (drive == NRF_GPIO_PIN_S0S1) {
+				drive = NRF_GPIO_PIN_S0D1;
+			}
+			dir = NRF_GPIO_PIN_DIR_INPUT;
+			input = NRF_GPIO_PIN_INPUT_CONNECT;
+			break;
+		case NRF_FUN_TWIS_SDA:
+			NRF_PSEL_TWIS(reg, SDA) = psel;
+			if (drive == NRF_GPIO_PIN_S0S1) {
+				drive = NRF_GPIO_PIN_S0D1;
+			}
+			dir = NRF_GPIO_PIN_DIR_INPUT;
+			input = NRF_GPIO_PIN_INPUT_CONNECT;
+			break;
+#endif /* defined(NRF_PSEL_TWIS) */
 		default:
 			return -ENOTSUP;
 		}
@@ -357,16 +384,17 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
 			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				int ret;
-				uint32_t d_pin = pin;
-				NRF_GPIO_Type *port = nrf_gpio_pin_port_decode(&d_pin);
+				if (!gpd_requested) {
+					int ret;
 
-				ret = nrf_gpd_request(NRF_GPD_SLOW_ACTIVE);
-				if (ret < 0) {
-					return ret;
+					ret = nrf_gpd_request(NRF_GPD_SLOW_ACTIVE);
+					if (ret < 0) {
+						return ret;
+					}
+					gpd_requested = true;
 				}
 
-				port->RETAINCLR = BIT(d_pin);
+				nrf_gpio_pin_retain_disable(pin);
 			}
 #endif /* CONFIG_SOC_NRF54H20_GPD */
 
@@ -387,20 +415,22 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #endif
 #ifdef CONFIG_SOC_NRF54H20_GPD
 			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				int ret;
-				uint32_t d_pin = pin;
-				NRF_GPIO_Type *port = nrf_gpio_pin_port_decode(&d_pin);
-
-				port->RETAINSET = BIT(d_pin);
-
-				ret = nrf_gpd_release(NRF_GPD_SLOW_ACTIVE);
-				if (ret < 0) {
-					return ret;
-				}
+				nrf_gpio_pin_retain_enable(pin);
 			}
 #endif /* CONFIG_SOC_NRF54H20_GPD */
 		}
 	}
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	if (gpd_requested) {
+		int ret;
+
+		ret = nrf_gpd_release(NRF_GPD_SLOW_ACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif
 
 	return 0;
 }

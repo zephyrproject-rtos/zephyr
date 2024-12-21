@@ -89,7 +89,7 @@ m2_hci_uart: &lpuart2 {
 			compatible = "nxp,bt-hci-uart";
 			sdio-reset-gpios = <&gpio9 15 GPIO_ACTIVE_HIGH>;
 			w-disable-gpios = <&gpio9 30 GPIO_ACTIVE_HIGH>;
-			hci-operation-speed = <115200>;
+			hci-operation-speed = <3000000>;
 			hw-flow-control;
 			fw-download-primary-speed = <115200>;
 			fw-download-secondary-speed = <3000000>;

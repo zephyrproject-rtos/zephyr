@@ -735,6 +735,10 @@ static int print_object_instance(const struct shell *sh, struct lwm2m_engine_obj
 					lwm2m_get_engine_obj_field(obj, re->res_id);
 				char path[LWM2M_MAX_PATH_STR_SIZE];
 
+				if (field == NULL) {
+					continue;
+				}
+
 				if (re->multi_res_inst) {
 					snprintf(path, sizeof(path), "%hu/%hu/%hu/%hu", obj->obj_id,
 						 oi->obj_inst_id, re->res_id, ri->res_inst_id);

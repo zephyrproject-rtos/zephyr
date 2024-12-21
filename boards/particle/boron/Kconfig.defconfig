@@ -5,9 +5,6 @@
 
 if BOARD_PARTICLE_BORON
 
-config BT_CTLR
-	default BT
-
 if MODEM
 
 config MODEM_UBLOX_SARA

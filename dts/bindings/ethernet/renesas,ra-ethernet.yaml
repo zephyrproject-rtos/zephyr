@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Ethernet
+
+compatible: "renesas,ra-ethernet"
+
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  phy-handle:
+    required: true

@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/reset/stm32u0_reset.h>
 #include <freq.h>
@@ -19,6 +20,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &flash;
+		zephyr,entropy = &rng;
 	};
 
 	cpus {
@@ -213,6 +215,38 @@
 			status = "disabled";
 		};
 
+		lpuart1: serial@40008000 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x40008000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20U)>;
+			resets = <&rctl STM32_RESET(APB1L, 20U)>;
+			interrupts = <28 0>;
+			status = "disabled";
+		};
+
+		lpuart2: serial@40008400 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x40008400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 7U)>;
+			resets = <&rctl STM32_RESET(APB1L, 7U)>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		iwdg: watchdog@40003000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x40003000 0x400>;
+			status = "disabled";
+		};
+
+		wwdg: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 11U)>;
+			interrupts = <0 7>;
+			status = "disabled";
+		};
+
 		adc1: adc@40012400 {
 			compatible = "st,stm32-adc";
 			reg = <0x40012400 0x400>;
@@ -226,7 +260,8 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <2>;
-			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		dac1: dac@40007400 {
@@ -273,6 +308,86 @@
 			status = "disabled";
 		};
 
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x400>;
+			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 0U)>;
+			dma-requests = <7>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <3>;
+			reg = <0x40020800 0x400>;
+			interrupts = <11 0>;
+			dma-channels = <7>;
+			dma-generators = <4>;
+			dma-requests= <76>;
+			status = "disabled";
+		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 12U)>;
+			interrupts = <25 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
+			interrupts = <26 0>;
+			status = "disabled";
+		};
+
+		spi3: spi@40003c00 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15U)>;
+			interrupts = <26 0>;
+			status = "disabled";
+		};
+
+		rng: rng@40025000 {
+			compatible = "st,stm32-rng";
+			reg = <0x40025000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 18U)>;
+			interrupts = <31 0>;
+			status = "disabled";
+		};
+
+		aes: aes@40026000 {
+			compatible = "st,stm32-aes";
+			reg = <0x40026000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 16U)>;
+			resets = <&rctl STM32_RESET(AHB1, 16U)>;
+			interrupts = <31 0>;
+			interrupt-names = "aes";
+			status = "disabled";
+		};
+
+		rtc: rtc@40002800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40002800 0x400>;
+			interrupts = <2 0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 10U)>;
+			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <28>;
+			status = "disabled";
+		};
 
 		timers1: timers@40012c00 {
 			compatible = "st,stm32-timers";
@@ -404,6 +519,29 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+		};
+
+		lptim1: timers@40007c00 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK(APB1, 31U)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40007c00 0x400>;
+			interrupts = <17 1>;
+			interrupt-names = "combined";
+			status = "disabled";
+
+		};
+
+		lptim2: timers@40009400 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK(APB1, 30U)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009400 0x400>;
+			interrupts = <18 1>;
+			interrupt-names = "combined";
+			status = "disabled";
 		};
 	};
 };

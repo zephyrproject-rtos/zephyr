@@ -249,7 +249,7 @@ static void serial_esp32_usb_isr(void *arg)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const DRAM_ATTR struct uart_driver_api serial_esp32_usb_api = {
+static DEVICE_API(uart, serial_esp32_usb_api) = {
 	.poll_in = serial_esp32_usb_poll_in,
 	.poll_out = serial_esp32_usb_poll_out,
 	.err_check = serial_esp32_usb_err_check,

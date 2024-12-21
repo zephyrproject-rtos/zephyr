@@ -87,7 +87,7 @@
 				st7789v: lcd-panel@0 {
 					compatible = "sitronix,st7789v";
 					reg = <0>;
-					mipi-mode = <MIPI_DBI_MODE_8080_BUS_16_BIT>;
+					mipi-mode = "MIPI_DBI_MODE_8080_BUS_16_BIT";
 					/* A write cycle should be 68ns */
 					mipi-max-frequency = <14705882>;
 					width = <240>;
@@ -277,7 +277,7 @@ stm32_lp_tick_source: &lptim1 {
 &adc1 {
 	pinctrl-0 = <&adc1_in13_pc4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };

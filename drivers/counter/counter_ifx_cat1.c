@@ -485,7 +485,7 @@ static int ifx_cat1_counter_set_guard_period(const struct device *dev, uint32_t 
 	return 0;
 }
 
-static const struct counter_driver_api counter_api = {
+static DEVICE_API(counter, counter_api) = {
 	.start = ifx_cat1_counter_start,
 	.stop = ifx_cat1_counter_stop,
 	.get_value = ifx_cat1_counter_get_value,

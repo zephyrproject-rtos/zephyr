@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include "common/assert.h"
 
 struct net_buf *bt_hci_evt_create(uint8_t evt, uint8_t len)

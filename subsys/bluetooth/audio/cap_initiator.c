@@ -119,7 +119,7 @@ static bool cap_initiator_valid_metadata(const uint8_t meta[], size_t meta_len)
 	};
 	int err;
 
-	LOG_DBG("meta %p len %zu", meta, meta_len);
+	LOG_DBG("meta %p len %zu", (void *)meta, meta_len);
 
 	err = bt_audio_data_parse(meta, meta_len, data_func_cb, &metadata_param);
 	if (err != 0 && err != -ECANCELED) {
@@ -257,9 +257,54 @@ int bt_cap_initiator_broadcast_audio_create(
 					      &(*broadcast_source)->bap_broadcast);
 }
 
+static struct bt_cap_broadcast_source *get_cap_broadcast_source_by_bap_broadcast_source(
+	const struct bt_bap_broadcast_source *bap_broadcast_source)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sources); i++) {
+		if (broadcast_sources[i].bap_broadcast == bap_broadcast_source) {
+			return &broadcast_sources[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void broadcast_source_started_cb(struct bt_bap_broadcast_source *bap_broadcast_source)
+{
+	if (cap_cb && cap_cb->broadcast_started) {
+		struct bt_cap_broadcast_source *source =
+			get_cap_broadcast_source_by_bap_broadcast_source(bap_broadcast_source);
+
+		if (source == NULL) {
+			/* Not one of ours */
+			return;
+		}
+
+		cap_cb->broadcast_started(source);
+	}
+}
+
+static void broadcast_source_stopped_cb(struct bt_bap_broadcast_source *bap_broadcast_source,
+					uint8_t reason)
+{
+	if (cap_cb && cap_cb->broadcast_stopped) {
+		struct bt_cap_broadcast_source *source =
+			get_cap_broadcast_source_by_bap_broadcast_source(bap_broadcast_source);
+
+		if (source == NULL) {
+			/* Not one of ours */
+			return;
+		}
+
+		cap_cb->broadcast_stopped(source, reason);
+	}
+}
+
 int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source,
 					   struct bt_le_ext_adv *adv)
 {
+	static bool broadcast_source_cbs_registered;
+
 	CHECKIF(adv == NULL) {
 		LOG_DBG("adv is NULL");
 		return -EINVAL;
@@ -268,6 +313,21 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
 	CHECKIF(broadcast_source == NULL) {
 		LOG_DBG("broadcast_source is NULL");
 		return -EINVAL;
+	}
+
+	if (!broadcast_source_cbs_registered) {
+		static struct bt_bap_broadcast_source_cb broadcast_source_cb = {
+			.started = broadcast_source_started_cb,
+			.stopped = broadcast_source_stopped_cb,
+		};
+		const int err = bt_bap_broadcast_source_register_cb(&broadcast_source_cb);
+
+		if (err != 0) {
+			__ASSERT(false, "Failed to register BAP broadcast source callbacks: %d",
+				 err);
+		}
+
+		broadcast_source_cbs_registered = true;
 	}
 
 	return bt_bap_broadcast_source_start(broadcast_source->bap_broadcast, adv);

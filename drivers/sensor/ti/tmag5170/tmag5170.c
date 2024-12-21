@@ -517,7 +517,7 @@ static int tmag5170_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct sensor_driver_api tmag5170_driver_api = {
+static DEVICE_API(sensor, tmag5170_driver_api) = {
 	.sample_fetch = tmag5170_sample_fetch,
 	.channel_get = tmag5170_channel_get,
 #if defined(CONFIG_TMAG5170_TRIGGER)

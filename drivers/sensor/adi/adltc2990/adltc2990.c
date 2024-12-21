@@ -505,7 +505,7 @@ static int adltc2990_channel_get(const struct device *dev, enum sensor_channel c
 	return 0;
 }
 
-static const struct sensor_driver_api adltc2990_driver_api = {
+static DEVICE_API(sensor, adltc2990_driver_api) = {
 	.sample_fetch = adltc2990_sample_fetch,
 	.channel_get = adltc2990_channel_get,
 };

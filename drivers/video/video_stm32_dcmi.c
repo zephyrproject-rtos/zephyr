@@ -372,7 +372,7 @@ static inline int video_stm32_dcmi_get_ctrl(const struct device *dev, unsigned i
 	return ret;
 }
 
-static const struct video_driver_api video_stm32_dcmi_driver_api = {
+static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_format = video_stm32_dcmi_set_fmt,
 	.get_format = video_stm32_dcmi_get_fmt,
 	.stream_start = video_stm32_dcmi_stream_start,

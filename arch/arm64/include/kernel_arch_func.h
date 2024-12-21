@@ -22,19 +22,20 @@
 
 #include <kernel_arch_data.h>
 
+#include <zephyr/platform/hooks.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
 
-extern void xen_enlighten_init(void);
-
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-#ifdef CONFIG_XEN
-	xen_enlighten_init();
-#endif
+
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 static inline void arch_switch(void *switch_to, void **switched_from)

@@ -104,7 +104,7 @@ static void temp_nrf5_isr(const void *arg)
 	k_sem_give(&data->device_sync_sem);
 }
 
-static const struct sensor_driver_api temp_nrf5_driver_api = {
+static DEVICE_API(sensor, temp_nrf5_driver_api) = {
 	.sample_fetch = temp_nrf5_sample_fetch,
 	.channel_get = temp_nrf5_channel_get,
 };

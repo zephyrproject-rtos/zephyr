@@ -14,10 +14,10 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000 if MCUX_OS_TIMER
 	default 260000000 if CORTEX_M_SYSTICK
 
-if BT
+config NXP_MONOLITHIC_NBU
+	default y if (BT || IEEE802154)
 
-config NXP_MONOLITHIC_BT
-	default y
+if BT
 
 config HCI_NXP_ENABLE_AUTO_SLEEP
 	default y
@@ -34,9 +34,9 @@ config NXP_MONOLITHIC_WIFI
 	default y if WIFI
 
 config NXP_FW_LOADER
-	default y if (BT || WIFI)
+	default y if (BT || WIFI || IEEE802154)
 
 config NXP_RF_IMU
-	default y if (BT || WIFI)
+	default y if (BT || WIFI || IEEE802154)
 
 endif # SOC_SERIES_RW6XX

@@ -16,7 +16,7 @@
  * @brief Video Interface
  * @defgroup video_interface Video Interface
  * @since 2.1
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -732,19 +732,21 @@ static inline int video_set_signal(const struct device *dev, enum video_endpoint
  *
  * @param size Size of the video buffer (in bytes).
  * @param align Alignment of the requested memory, must be a power of two.
+ * @param timeout Timeout duration or K_NO_WAIT
  *
  * @retval pointer to allocated video buffer
  */
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align);
+struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout);
 
 /**
  * @brief Allocate video buffer.
  *
  * @param size Size of the video buffer (in bytes).
+ * @param timeout Timeout duration or K_NO_WAIT
  *
  * @retval pointer to allocated video buffer
  */
-struct video_buffer *video_buffer_alloc(size_t size);
+struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
 
 /**
  * @brief Release a video buffer.
@@ -752,6 +754,63 @@ struct video_buffer *video_buffer_alloc(size_t size);
  * @param buf Pointer to the video buffer to release.
  */
 void video_buffer_release(struct video_buffer *buf);
+
+/**
+ * @brief Search for a format that matches in a list of capabilities
+ *
+ * @param fmts The format capability list to search.
+ * @param fmt The format to find in the list.
+ * @param idx The pointer to a number of the first format that matches.
+ *
+ * @return 0 when a format is found.
+ * @return -ENOENT when no matching format is found.
+ */
+int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
+			    size_t *idx);
+
+/**
+ * @brief Compute the difference between two frame intervals
+ *
+ * @param frmival Frame interval to turn into microseconds.
+ *
+ * @return The frame interval value in microseconds.
+ */
+static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
+{
+	return (uint64_t)NSEC_PER_SEC * frmival->numerator / frmival->denominator;
+}
+
+/**
+ * @brief Find the closest match to a frame interval value within a stepwise frame interval.
+ *
+ * @param stepwise The stepwise frame interval range to search
+ * @param desired The frame interval for which find the closest match
+ * @param match The resulting frame interval closest to @p desired
+ */
+void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
+				    const struct video_frmival *desired,
+				    struct video_frmival *match);
+
+/**
+ * @brief Find the closest match to a frame interval value within a video device.
+ *
+ * To compute the closest match, fill @p match with the following fields:
+ *
+ * - @c match->format to the @ref video_format of interest.
+ * - @c match->type to @ref VIDEO_FRMIVAL_TYPE_DISCRETE.
+ * - @c match->discrete to the desired frame interval.
+ *
+ * The result will be loaded into @p match, with the following fields set:
+ *
+ * - @c match->discrete to the value of the closest frame interval.
+ * - @c match->index to the index of the closest frame interval.
+ *
+ * @param dev Video device to query.
+ * @param ep Video endpoint ID to query.
+ * @param match Frame interval enumerator with the query, and loaded with the result.
+ */
+void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
+			   struct video_frmival_enum *match);
 
 /* fourcc - four-character-code */
 #define video_fourcc(a, b, c, d)                                                                   \

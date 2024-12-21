@@ -46,6 +46,18 @@ config NET_IPV6_MTU
 	  The value should normally be 1280 which is the minimum IPv6 packet
 	  size that implementations need to support without fragmentation.
 
+config NET_IPV6_PMTU
+	bool "IPv6 Path MTU Discovery"
+	help
+	  Enables IPv6 Path MTU Discovery (see RFC 8201)
+
+config NET_IPV6_PMTU_DESTINATION_CACHE_ENTRIES
+	int "Number of IPv6 PMTU destination cache entries"
+	default 3
+	depends on NET_IPV6_PMTU
+	help
+	  How many PMTU entries we can track for each destination address.
+
 config NET_INITIAL_HOP_LIMIT
 	int "Initial IPv6 hop limit value for unicast packets"
 	default 64
@@ -173,6 +185,46 @@ config NET_IPV6_RA_RDNSS
 	help
 	  Support Router Advertisement Recursive DNS Server option.
 	  See RFC 6106 for details. The value depends on your network needs.
+
+choice NET_IPV6_IID_GENERATION
+	prompt "IPv6 Interface Identifier (IID) generation"
+	default NET_IPV6_IID_EUI_64
+	help
+	  Determines how the IPv6 Interface Identifier (IID) is generated.
+	  By default the legacy format using EUI-64 (MAC address) specified in
+	  RFC 4291 chapter 2.5.1 is used.
+	  User can also choose to use stable IID specified in RFC 7217 in which
+	  case a randomized IID is generated for each network interface.
+	  The stable IID enhances privacy by having a different IID for each
+	  network interface.
+
+config NET_IPV6_IID_EUI_64
+	bool "Generate IID using EUI-64"
+	help
+	  Generate IID from modified EUI-64 a.k.a MAC address. This is the
+	  legacy way described in RFC 4291 chapter 2.5.1
+
+config NET_IPV6_IID_STABLE
+	bool "Generate stable IID [EXPERIMENTAL]"
+	select MBEDTLS
+	select MBEDTLS_MD
+	select EXPERIMENTAL
+	depends on !NET_6LO
+	help
+	  Generate a stable IID described in RFC 7217. This option specifies a
+	  method for generating IPv6 Interface Identifiers to be used with
+	  IPv6 Stateless Address Autoconfiguration (SLAAC), such that an IPv6
+	  address configured using this method is stable within each subnet,
+	  but the corresponding Interface Identifier changes when the host
+	  moves from one network to another. This method is meant to be an
+	  alternative to generating Interface Identifiers based on hardware
+	  addresses (e.g., IEEE LAN Media Access Control (MAC) addresses),
+	  such that the benefits of stable addresses can be achieved without
+	  sacrificing the security and privacy of users.
+	  Currently the stable IID generation is disabled for 6lo networks
+	  because of header compression.
+
+endchoice
 
 config NET_IPV6_PE
 	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"

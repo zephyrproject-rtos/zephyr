@@ -283,7 +283,7 @@ static void kb1200_uart_poll_out(const struct device *dev, unsigned char c)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 }
 
-static const struct uart_driver_api kb1200_uart_api = {
+static DEVICE_API(uart, kb1200_uart_api) = {
 	.poll_in = kb1200_uart_poll_in,
 	.poll_out = kb1200_uart_poll_out,
 	.err_check = kb1200_uart_err_check,

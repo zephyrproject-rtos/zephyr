@@ -18,6 +18,7 @@ supported:
   - counter
   - dac
   - dma
+  - flash
   - gpio
   - i2c
   - netif:eth

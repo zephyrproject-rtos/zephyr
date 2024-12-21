@@ -608,14 +608,13 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 	/* Reset all function before clock configuring */
 	reset_block(~(RESETS_RESET_IO_QSPI_BITS | RESETS_RESET_PADS_QSPI_BITS |
 		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_USBCTRL_BITS |
-		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_SYSCFG_BITS |
-		      RESETS_RESET_PLL_SYS_BITS));
+		      RESETS_RESET_SYSCFG_BITS | RESETS_RESET_PLL_SYS_BITS));
 
 	unreset_block_wait(RESETS_RESET_BITS &
 			   ~(RESETS_RESET_ADC_BITS | RESETS_RESET_RTC_BITS |
 			     RESETS_RESET_SPI0_BITS | RESETS_RESET_SPI1_BITS |
 			     RESETS_RESET_UART0_BITS | RESETS_RESET_UART1_BITS |
-			     RESETS_RESET_USBCTRL_BITS | RESETS_RESET_PWM_BITS));
+			     RESETS_RESET_USBCTRL_BITS));
 
 	/* Start tick in watchdog */
 	watchdog_hw->tick = ((CLOCK_FREQ_xosc/1000000) | WATCHDOG_TICK_ENABLE_BITS);
@@ -714,14 +713,14 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOENT) {
 		return ret;
 	}
 
 	return 0;
 }
 
-static const struct clock_control_driver_api clock_control_rpi_pico_api = {
+static DEVICE_API(clock_control, clock_control_rpi_pico_api) = {
 	.on = clock_control_rpi_pico_on,
 	.off = clock_control_rpi_pico_off,
 	.get_rate = clock_control_rpi_pico_get_rate,
