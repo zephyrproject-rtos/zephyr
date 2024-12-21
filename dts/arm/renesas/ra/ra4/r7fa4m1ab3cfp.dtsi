@@ -6,57 +6,64 @@
 
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra4/ra4-cm4-common.dtsi>
-#include <zephyr/dt-bindings/pwm/ra_pwm.h>
-
-/delete-node/ &adc1;
 
 / {
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(96)>;
+			reg = <0x20000000 DT_SIZE_K(32)>;
 		};
 
 		flash-controller@407e0000 {
+			reg = <0x407e0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				reg = <0x0 DT_SIZE_K(512)>;
+				reg = <0x0 DT_SIZE_K(256)>;
 			};
 		};
 
-		sci4: sci4@40070080  {
+		ioport6: gpio@400400c0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400400c0 0x20>;
+			port = <6>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport7: gpio@400400e0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400400e0 0x20>;
+			port = <7>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport8: gpio@40040100 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40040100 0x20>;
+			port = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		sci2: sci2@40070040 {
 			compatible = "renesas,ra-sci";
-			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x40070080 0x20>;
-			clocks = <&pclka MSTPB 26>;
+			reg = <0x40070040 0x20>;
+			clocks = <&pclka MSTPB 29>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra-sci-uart";
-				channel = <4>;
+				channel = <2>;
 				status = "disabled";
 			};
-		};
-
-		trng: trng {
-			compatible = "renesas,ra-sce5-rng";
-			status = "disabled";
-		};
-
-		adc@4005c000 {
-			interrupts = <20 1>;
-			channel-count = <8>;
-			channel-available-mask = <0x1a0670>;
-		};
-
-		pwm8: pwm8@40169800 {
-			compatible = "renesas,ra-pwm";
-			divider = <RA_PWM_SOURCE_DIV_1>;
-			channel = <RA_PWM_CHANNEL_8>;
-			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40169800 0x100>;
-			#pwm-cells = <3>;
-			status = "disabled";
 		};
 	};
 
@@ -66,14 +73,14 @@
 
 		xtal: clock-main-osc {
 			compatible = "renesas,ra-cgc-external-clock";
-			clock-frequency = <DT_FREQ_M(8)>;
+			clock-frequency = <DT_FREQ_M(12)>;
 			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		hoco: clock-hoco {
 			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_M(48)>;
+			clock-frequency = <DT_FREQ_M(24)>;
 			#clock-cells = <0>;
 		};
 
@@ -103,22 +110,24 @@
 			/* PLL */
 			clocks = <&xtal>;
 			div = <2>;
-			mul = <12 0>;
+			mul = <8 0>;
 			status = "disabled";
 		};
 
-		pclkblock: pclkblock@4001e01c {
+		pclkblock: pclkblock@40047000 {
 			compatible = "renesas,ra-cgc-pclk-block";
-			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
-			      <0x40047008 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
-				    "MSTPD";
+			reg = <0x40047000 4>,
+				  <0x40047004 4>,
+				  <0x40047008 4>;
+			reg-names = "MSTPB","MSTPC",
+						"MSTPD";
 			#clock-cells = <0>;
-			clocks = <&hoco>;
+			clocks = <&pll>;
 			status = "okay";
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <48000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -167,67 +176,9 @@
 
 			uclk: uclk {
 				compatible = "renesas,ra-cgc-pclk";
-				div = <1>;
 				#clock-cells = <2>;
-				status = "okay";
+				status = "disabled";
 			};
 		};
 	};
-};
-
-&ioport0 {
-	port-irqs = <&port_irq3 &port_irq7 &port_irq14
-	&port_irq15>;
-	port-irq-names = "port-irq3",
-			 "port-irq7",
-			 "port-irq14",
-			 "port-irq15";
-	port-irq3-pins = <4>;
-	port-irq7-pins = <15>;
-	port-irq14-pins = <10>;
-	port-irq15-pins = <11>;
-};
-
-&ioport1 {
-	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4>;
-	port-irq-names = "port-irq0",
-			 "port-irq1",
-			 "port-irq2",
-			 "port-irq3",
-			 "port-irq4";
-	port-irq0-pins = <5>;
-	port-irq1-pins = <1 4>;
-	port-irq2-pins = <0>;
-	port-irq3-pins = <10>;
-	port-irq4-pins = <11>;
-};
-
-&ioport2 {
-	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
-	port-irq-names = "port-irq0",
-			 "port-irq1",
-			 "port-irq2",
-			 "port-irq3";
-	port-irq0-pins = <6>;
-	port-irq1-pins = <5>;
-	port-irq2-pins = <13>;
-	port-irq3-pins = <12>;
-};
-
-&ioport4 {
-	port-irqs = <&port_irq4 &port_irq6 &port_irq9>;
-	port-irq-names = "port-irq4",
-			 "port-irq6",
-			 "port-irq9";
-	port-irq4-pins = <2>;
-	port-irq6-pins = <9>;
-	port-irq9-pins = <14>;
-};
-
-&ioport5 {
-	port-irqs = <&port_irq11>;
-	port-irq-names = "port-irq11";
-	port-irq11-pins = <1>;
 };
