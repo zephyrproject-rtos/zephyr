@@ -96,6 +96,12 @@ config FILE_SYSTEM_MKFS
 	help
 	  Enables function fs_mkfs that can be used to format a storage device.
 
+config FILE_SYSTEM_MOUNT_USE_COUNT
+	bool "Optional mount point use count"
+	help
+	  Enables a use counter that protects a mountpoint from being unmounted
+	  while active.
+
 config FUSE_FS_ACCESS
 	bool "FUSE based access to file system partitions"
 	depends on ARCH_POSIX
