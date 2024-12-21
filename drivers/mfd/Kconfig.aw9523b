@@ -5,6 +5,6 @@ config MFD_AW9523B
 	bool "Awinic AW9523B GPIO/LED controller device driver"
 	default y
 	depends on DT_HAS_AWINIC_AW9523B_ENABLED
-	select I2C
+	depends on I2C
 	help
 	  Enable the Awinic AW9523B GPIO/LED controller device driver
