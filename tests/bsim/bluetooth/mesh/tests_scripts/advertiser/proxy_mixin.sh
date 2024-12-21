@@ -21,8 +21,14 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 overlay=overlay_gatt_conf
 RunTest mesh_adv_proxy_mixin adv_tx_proxy_mixin adv_rx_proxy_mixin
 
+overlay=overlay_gatt_separate_conf
+RunTest mesh_adv_proxy_mixin_separate adv_tx_proxy_mixin adv_rx_proxy_mixin
+
 overlay=overlay_gatt_conf_overlay_workq_sys_conf
 RunTest mesh_adv_proxy_mixin_workq adv_tx_proxy_mixin adv_rx_proxy_mixin
+
+overlay="overlay_gatt_conf_overlay_multi_adv_sets_conf"
+RunTest mesh_adv_proxy_mixin_multi_adv_sets adv_tx_proxy_mixin adv_rx_proxy_mixin
 
 overlay="overlay_gatt_conf_overlay_psa_conf"
 RunTest mesh_adv_proxy_mixin_psa adv_tx_proxy_mixin adv_rx_proxy_mixin
