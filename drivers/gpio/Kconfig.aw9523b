@@ -5,7 +5,6 @@ config GPIO_AW9523B
 	bool "AW9523B GPIO driver"
 	default y
 	depends on DT_HAS_AWINIC_AW9523B_GPIO_ENABLED
-	select I2C
-	select MFD
+	depends on MFD_AW9523B
 	help
 	  Enable the AW9523B GPIO controller.
