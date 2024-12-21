@@ -87,5 +87,68 @@
 			status = "okay";
 		};
 
+		spi0: spi@1a102180 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102180>;
+			instance = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+		};
+
+		spi1: spi@1a102200 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102200>;
+			instance = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@1a102280 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102280>;
+			instance = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi3: spi@1a102300 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102300>;
+			instance = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi4: spi@1a102380 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102380>;
+			instance = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi5: spi@1a102400 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102400>;
+			instance = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi6: spi@1a102480 {
+			compatible = "sensry,sy1xx-spi";
+			reg = <0x1a102480>;
+			instance = <6>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 	};
 };
