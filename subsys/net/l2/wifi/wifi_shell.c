@@ -1167,26 +1167,25 @@ static int cmd_wifi_ap_status(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	switch (status.state) {
-	case WIFI_SAP_IFACE_UNINITIALIZED:
-		PR("State: %s\n", "UNINITIALIZED");
+	case WIFI_HAPD_IFACE_UNINITIALIZED:
+		PR("State: %s\n", "HAPD_IFACE_UNINITIALIZED");
 		return 0;
-	case WIFI_SAP_IFACE_DISABLED:
-		PR("State: %s\n", "DISABLED");
+	case WIFI_HAPD_IFACE_DISABLED:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
 		return 0;
-	case WIFI_SAP_IFACE_COUNTRY_UPDATE:
-		PR("State: %s\n", "COUNTRY_UPDATE");
+	case WIFI_HAPD_IFACE_COUNTRY_UPDATE:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
 		return 0;
-	case WIFI_SAP_IFACE_ACS:
-		PR("State: %s\n", "ACS");
+	case WIFI_HAPD_IFACE_ACS:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
 		return 0;
-	case WIFI_SAP_IFACE_HT_SCAN:
-		PR("State: %s\n", "HT_SCAN");
+	case WIFI_HAPD_IFACE_HT_SCAN:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
 		return 0;
-	case WIFI_SAP_IFACE_DFS:
-		PR("State: %s\n", "DFS");
+	case WIFI_HAPD_IFACE_DFS:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
 		break;
-	case WIFI_SAP_IFACE_ENABLED:
-		PR("State: %s\n", "ENABLED");
+	case WIFI_HAPD_IFACE_ENABLED:
 		break;
 	default:
 		return 0;
