@@ -192,6 +192,12 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
+	/** Game Rotation Vector (unit quaternion components X/Y/Z/W) */
+	SENSOR_CHAN_GAME_ROTATION_VECTOR,
+	/** Gravity Vector (X/Y/Z components in m/s^2) */
+	SENSOR_CHAN_GRAVITY_VECTOR,
+	/** Gyroscope bias (X/Y/Z components in radians/s) */
+	SENSOR_CHAN_GBIAS_XYZ,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
