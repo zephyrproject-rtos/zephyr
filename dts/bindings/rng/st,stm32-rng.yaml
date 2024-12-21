@@ -21,6 +21,12 @@ properties:
          sampling clock detection mechanism to behave properly.
          In the provided example, MSI should be configured to provide 48Mhz clock.
 
+  generation-delay-ns:
+    type: int
+    description: |
+      Amount of time (in nanoseconds) the RNG takes to generate a new random sample after
+      one sample has been read. This property is required if the TRNG has no interrupt line.
+
   nist-config:
     type: int
     description: |
