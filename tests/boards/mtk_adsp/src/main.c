@@ -3,6 +3,7 @@
  */
 #include <stdlib.h>
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 #include <zephyr/ztest.h>
 #include <soc.h>
 
@@ -31,6 +32,81 @@ static uint32_t cpu_hz(void)
 
 	printk("(measured %u Hz CPU clock vs. %d Hz timer)\n", hz, NOM_HZ);
 	return hz;
+}
+
+#define MEM_LAT_WORDS 1024
+
+uint32_t data_lat_buf[MEM_LAT_WORDS] = { 1, 2, 3 };
+const uint32_t rodata_lat_buf[MEM_LAT_WORDS] = { 1, 2, 3 };
+uint32_t bss_lat_buf[MEM_LAT_WORDS];
+#ifdef CONFIG_NOCACHE_MEMORY
+__nocache uint32_t nocache_lat_buf[MEM_LAT_WORDS];
+#endif
+
+extern void z_cstart(void);
+
+struct { const char *name; const uint32_t *buf; } lat_regions[] = {
+	{ "    .data", data_lat_buf },
+	{ "  .rodata", rodata_lat_buf },
+	{ "     .bss", bss_lat_buf },
+	{ "    .text",  (void *)&z_cstart },
+#ifdef CONFIG_NOCACHE_MEMORY
+	{ "__nocache", nocache_lat_buf },
+#endif
+};
+
+/* Returns "millicycles per load" */
+static uint32_t measure_lat(const void *buf)
+{
+	const int iter = 1024, loads = 16;
+	uint32_t start, end, ptr = (uint32_t)buf, scratch, tot = 0;
+
+	for (int i = 0; i < iter; i++) {
+		__asm__ volatile("rsr %0, CCOUNT;"
+				 "l32i %3, %2, 0; l32i %3, %2, 0;"
+				 "l32i %3, %2, 0; l32i %3, %2, 0;"
+				 "l32i %3, %2, 0; l32i %3, %2, 0;"
+				 "l32i %3, %2, 0; l32i %3, %2, 0;"
+				 "l32i %3, %2, 0; l32i %3, %2, 0;"
+				 "l32i %3, %2, 0; l32i %3, %2, 0;"
+				 "l32i %3, %2, 0; l32i %3, %2, 0;"
+				 "l32i %3, %2, 0; l32i %3, %2, 0;"
+				 "rsr %1, CCOUNT"
+				 : "=r"(start), "=r"(end), "+r"(ptr), "=r"(scratch));
+
+		tot += end - start - 1; /* subtract final CCOUNT read */
+	}
+
+	return (tot * 1000ULL) / (iter * loads);
+}
+
+/* Test of load latency of different memory regions */
+ZTEST(mtk_adsp, mem_lat)
+{
+	uint32_t cyc, memctl0;
+
+	__asm__ volatile("rsr %0, MEMCTL" : "=r"(memctl0));
+
+	for (int pass = 0; pass < 2; pass++) {
+		printk("Measuring estimated load latency (dcache %sabled):\n",
+		       pass ? "en" : "dis");
+
+		/* Cadence doesn't really document memctl, see the HAL
+		 * source (c.f. corebits.h, and the DCWU/DCWA fields)
+		 */
+		uint32_t memctl = pass == 0 ? 0x7c0001 : memctl0;
+
+		sys_cache_data_flush_all();
+		__asm__ volatile("wsr %0, MEMCTL" :: "r"(memctl) : "memory");
+		sys_cache_data_flush_and_invd_all();
+
+		for (int i = 0; i < ARRAY_SIZE(lat_regions); i++) {
+			uint32_t mcyc = measure_lat(lat_regions[i].buf);
+
+			printk("  %s: %3d.%03d cyc\n", lat_regions[i].name,
+			       mcyc / 1000, mcyc % 1000);
+		}
+	}
 }
 
 ZTEST(mtk_adsp, cpu_freq)
