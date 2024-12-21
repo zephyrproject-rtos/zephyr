@@ -21,6 +21,17 @@ config USBD_CDC_ACM_STACK_SIZE
 	help
 	  USB CDC ACM workqueue stack size.
 
+config USBD_CDC_ACM_TX_ZLP_ENABLED
+	bool "USB CDC ACM transmission always end with short packet"
+	default y
+	help
+	  If the length of the CDC ACM TX payload enqueued to the
+	  BULK-IN endpoint is a multiple of the endpoint's Maximum
+	  Packet Size, a zero length packet will be enqueued at
+	  the end of the transmission if no new data is available.
+	  This ensures proper short packet termination on the
+	  BULK-IN endpoint.
+
 module = USBD_CDC_ACM
 module-str = usbd cdc_acm
 default-count = 1
