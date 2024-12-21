@@ -93,7 +93,8 @@ function(yaml_context)
     )
   endif()
 
-  if(TARGET ${ARG_YAML_NAME}_scope)
+  zephyr_scope_exists(scope_defined ${ARG_YAML_NAME})
+  if(scope_defined)
     list(POP_FRONT ARG_YAML_UNPARSED_ARGUMENTS out-var)
     set(${out-var} TRUE PARENT_SCOPE)
   else()
@@ -183,7 +184,7 @@ function(yaml_get out_var)
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} ARG_YAML NAME KEY)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
 
   # We specify error variable to avoid a fatal error.
   # If key is not found, then type becomes '-NOTFOUND' and value handling is done below.
@@ -224,7 +225,7 @@ function(yaml_length out_var)
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} ARG_YAML NAME KEY)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
 
   string(JSON type ERROR_VARIABLE error TYPE "${json_content}" ${ARG_YAML_KEY})
   if(type STREQUAL ARRAY)
@@ -262,7 +263,7 @@ function(yaml_set)
   zephyr_check_arguments_exclusive(${CMAKE_CURRENT_FUNCTION} ARG_YAML VALUE LIST)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
 
   set(yaml_key_undefined ${ARG_YAML_KEY})
   foreach(k ${yaml_key_undefined})
@@ -335,7 +336,7 @@ function(yaml_remove)
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} ARG_YAML NAME KEY)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
   string(JSON json_content REMOVE "${json_content}" ${ARG_YAML_KEY})
 
   zephyr_set(JSON "${json_content}" SCOPE ${ARG_YAML_NAME})
@@ -359,18 +360,18 @@ function(yaml_save)
   zephyr_check_arguments_required(${CMAKE_CURRENT_FUNCTION} ARG_YAML NAME)
   internal_yaml_context_required(NAME ${ARG_YAML_NAME})
 
-  get_target_property(yaml_file ${ARG_YAML_NAME}_scope FILE)
+  zephyr_get_scoped(yaml_file ${ARG_YAML_NAME} FILE)
   if(NOT yaml_file)
     zephyr_check_arguments_required(${CMAKE_CURRENT_FUNCTION} ARG_YAML FILE)
   endif()
 
-  get_property(json_content TARGET ${ARG_YAML_NAME}_scope PROPERTY JSON)
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
   to_yaml("${json_content}" 0 yaml_out)
 
   if(DEFINED ARG_YAML_FILE)
     set(yaml_file ${ARG_YAML_FILE})
   else()
-    get_property(yaml_file TARGET ${ARG_YAML_NAME}_scope PROPERTY FILE)
+    zephyr_get_scoped(yaml_file ${ARG_YAML_NAME} FILE)
   endif()
   if(EXISTS ${yaml_file})
     FILE(RENAME ${yaml_file} ${yaml_file}.bak)
