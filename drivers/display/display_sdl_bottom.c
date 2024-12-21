@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "display_sdl_bottom.h"
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -66,9 +64,10 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 	return 0;
 }
 
-void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
-			      const uint16_t y, void *renderer, void *mutex, void *texture,
-			      uint8_t *buf, bool display_on, bool frame_incomplete)
+void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
+			      const uint16_t x, const uint16_t y,
+			      void *renderer, void *mutex, void *texture,
+			      uint8_t *buf, bool display_on)
 {
 	SDL_Rect rect;
 	int err;
@@ -86,7 +85,7 @@ void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const
 
 	SDL_UpdateTexture(texture, &rect, buf, 4 * rect.w);
 
-	if (display_on && !frame_incomplete) {
+	if (display_on) {
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, texture, NULL, NULL);
 		SDL_RenderPresent(renderer);
