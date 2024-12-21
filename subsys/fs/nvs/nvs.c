@@ -781,10 +781,23 @@ static int nvs_startup(struct nvs_fs *fs)
 			}
 		}
 	}
-	/* all sectors are closed, this is not a nvs fs */
+	/* all sectors are closed, this is not a nvs fs or irreparably corrupted */
 	if (closed_sectors == fs->sector_count) {
+#ifdef CONFIG_NVS_INIT_BAD_MEMORY_REGION
+		LOG_WRN("All sectors closed, erasing all sectors...");
+		rc = flash_flatten(fs->flash_device, fs->offset,
+				   fs->sector_size * fs->sector_count);
+		if (rc) {
+			goto end;
+		}
+
+		i = fs->sector_count;
+		addr = ((fs->sector_count - 1) << ADDR_SECT_SHIFT) +
+		       (uint16_t)(fs->sector_size - ate_size);
+#else
 		rc = -EDEADLK;
 		goto end;
+#endif
 	}
 
 	if (i == fs->sector_count) {
