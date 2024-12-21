@@ -12,6 +12,8 @@ import shutil
 import subprocess
 import sys
 
+from elftools.elf.elffile import ELFFile
+
 from west import manifest
 from west.commands import Verbosity
 from west.util import quote_sh_list
@@ -474,6 +476,7 @@ class RimageSigner(Signer):
         kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
         bootloader = None
+        cold = None
         kernel = str(b / 'zephyr' / f'{kernel_name}.elf')
         out_bin = str(b / 'zephyr' / f'{kernel_name}.ri')
         out_xman = str(b / 'zephyr' / f'{kernel_name}.ri.xman')
@@ -484,6 +487,11 @@ class RimageSigner(Signer):
         # zephyr.elf directly.
         if os.path.exists(str(b / 'zephyr' / 'boot.mod')):
             bootloader = str(b / 'zephyr' / 'boot.mod')
+        if os.path.exists(str(b / 'zephyr' / 'cold.mod')):
+            cold = str(b / 'zephyr' / 'cold.mod')
+            elf = ELFFile(open(cold, 'rb'))
+            if elf.get_section_by_name('.cold') is None:
+                cold = None
         if os.path.exists(str(b / 'zephyr' / 'main.mod')):
             kernel = str(b / 'zephyr' / 'main.mod')
 
@@ -556,7 +564,10 @@ class RimageSigner(Signer):
         if not args.quiet and args.verbose:
             sign_base += ['-v'] * args.verbose
 
+        # Order is important
         components = [ ] if bootloader is None else [ bootloader ]
+        if cold is not None:
+            components += [ cold ]
         components += [ kernel ]
 
         sign_config_extra_args = command.config_get_words('rimage.extra-args', [])
