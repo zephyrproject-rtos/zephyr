@@ -565,6 +565,7 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 		random_mac_addr,
 		WIFI_MAC_ADDR_LEN);
 #elif CONFIG_WIFI_OTP_MAC_ADDRESS
+#ifndef CONFIG_NRF71_ON_IPC
 	status = nrf_wifi_fmac_otp_mac_addr_get(fmac_dev_ctx,
 				vif_ctx_zep->vif_idx,
 				vif_ctx_zep->mac_addr.addr);
@@ -573,6 +574,15 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 			__func__);
 		goto unlock;
 	}
+#else
+	/* Set dummy MAC address */
+	vif_ctx_zep->mac_addr.addr[0] = 0x00;
+	vif_ctx_zep->mac_addr.addr[1] = 0x00;
+	vif_ctx_zep->mac_addr.addr[2] = 0x5E;
+	vif_ctx_zep->mac_addr.addr[3] = 0x00;
+	vif_ctx_zep->mac_addr.addr[4] = 0x10;
+	vif_ctx_zep->mac_addr.addr[5] = 0x00;
+#endif /* !CONFIG_NRF71_ON_IPC */
 #endif
 
 	if (!nrf_wifi_utils_is_mac_addr_valid(vif_ctx_zep->mac_addr.addr)) {
