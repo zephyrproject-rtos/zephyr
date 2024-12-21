@@ -5,6 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# TODO: Use DTS generated Kconfig once the board support is added
+DT_COMPAT_NORDIC_WIFI71 := nordic,wifi71
+
 menuconfig WIFI_NRF70
 	bool "nRF70 driver"
 	select NET_L2_WIFI_MGMT if NETWORKING
@@ -16,7 +19,8 @@ menuconfig WIFI_NRF70
 	depends on \
 		DT_HAS_NORDIC_NRF7002_SPI_ENABLED || DT_HAS_NORDIC_NRF7002_QSPI_ENABLED || \
 		DT_HAS_NORDIC_NRF7001_SPI_ENABLED || DT_HAS_NORDIC_NRF7001_QSPI_ENABLED || \
-		DT_HAS_NORDIC_NRF7000_SPI_ENABLED || DT_HAS_NORDIC_NRF7000_QSPI_ENABLED
+		DT_HAS_NORDIC_NRF7000_SPI_ENABLED || DT_HAS_NORDIC_NRF7000_QSPI_ENABLED || \
+		$(dt_compat_enabled,$(DT_COMPAT_NORDIC_WIFI71))
 	help
 	  Nordic Wi-Fi Driver
 
@@ -24,7 +28,7 @@ if WIFI_NRF70
 # Hidden symbols for internal use
 config WIFI_NRF7002
 	bool
-	default y if DT_HAS_NORDIC_NRF7002_SPI_ENABLED || DT_HAS_NORDIC_NRF7002_QSPI_ENABLED
+	default y if DT_HAS_NORDIC_NRF7002_SPI_ENABLED || DT_HAS_NORDIC_NRF7002_QSPI_ENABLED || $(dt_compat_enabled,$(DT_COMPAT_NORDIC_WIFI71))
 
 config WIFI_NRF7001
 	bool
@@ -151,6 +155,7 @@ endchoice
 config NRF_WIFI_LOW_POWER
 	bool "Low power mode in nRF Wi-Fi chipsets"
 	depends on !NRF70_RADIO_TEST && !NRF70_AP_MODE
+	depends on !NRF71_ON_IPC
 	default y
 
 config NRF70_TCP_IP_CHECKSUM_OFFLOAD
@@ -202,6 +207,7 @@ config NRF70_SR_COEX_RF_SWITCH
 
 config NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL
 	bool "Configuration of GPIO control for coexistence"
+	depends on !NRF71_ON_IPC
 	default y
 
 config NRF70_SR_COEX_SWCTRL1_OUTPUT

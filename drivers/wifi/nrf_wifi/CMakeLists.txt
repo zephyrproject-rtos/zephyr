@@ -27,9 +27,11 @@ zephyr_library_sources_ifndef(CONFIG_NRF70_OFFLOADED_RAW_TX
   src/fmac_main.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_NRF_WIFI_PATCHES_BUILTIN
-  src/fw_load.c
-)
+if(NOT CONFIG_NRF71_ON_IPC)
+  zephyr_library_sources_ifdef(CONFIG_NRF_WIFI_PATCHES_BUILTIN
+    src/fw_load.c
+  )
+endif()
 
 if(NOT CONFIG_NRF70_RADIO_TEST AND NOT CONFIG_NRF70_OFFLOADED_RAW_TX)
   zephyr_library_sources(
