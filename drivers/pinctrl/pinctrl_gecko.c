@@ -21,10 +21,10 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	I2C_TypeDef *i2c_base = (I2C_TypeDef *)reg;
 #endif
 
-#ifdef CONFIG_UART_GECKO
+#if defined(CONFIG_UART_GECKO) || defined(CONFIG_EUSART_GECKO)
 	struct soc_gpio_pin rxpin = {0, 0, 0, 0};
 	struct soc_gpio_pin txpin = {0, 0, 0, 0};
-#endif /* CONFIG_UART_GECKO */
+#endif /* CONFIG_UART_GECKO || CONFIG_EUSART_GECKO */
 
 	struct soc_gpio_pin pin_config = {0, 0, 0, 0};
 
@@ -34,7 +34,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		loc = GECKO_GET_LOC(pins[i]);
 
 		switch (GECKO_GET_FUN(pins[i])) {
-#ifdef CONFIG_UART_GECKO
+#if defined(CONFIG_UART_GECKO) || defined(CONFIG_EUSART_GECKO)
 		case GECKO_FUN_UART_RX:
 			rxpin.port = GECKO_GET_PORT(pins[i]);
 			rxpin.pin = GECKO_GET_PIN(pins[i]);
@@ -140,7 +140,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 #endif /* UART_GECKO_HW_FLOW_CONTROL */
 			break;
 #endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
-#endif /* CONFIG_UART_GECKO */
+#endif /* CONFIG_UART_GECKO || CONFIG_EUSART_GECKO */
 
 #ifdef CONFIG_SPI_GECKO_USART
 #ifdef CONFIG_SOC_FAMILY_SILABS_S1
