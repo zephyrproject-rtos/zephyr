@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/gpio.h>
 
 #include <stm32_ll_usart.h>
 
@@ -53,6 +54,13 @@ struct uart_stm32_config {
 	bool fifo_enable;
 	/* pin muxing */
 	const struct pinctrl_dev_config *pcfg;
+#if defined CONFIG_SERIAL_SUPPORT_RS485
+	struct gpio_dt_spec de_pin;
+	/* de signal assertion time in nanoseconds */
+	uint32_t de_assert_time_us;
+	/* de signal deassertion time in nanoseconds */
+	uint32_t de_deassert_time_us;
+#endif
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
 	defined(CONFIG_PM)
 	uart_irq_config_func_t irq_config_func;
@@ -94,7 +102,6 @@ struct uart_stm32_data {
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
 #endif
-
 #ifdef CONFIG_UART_ASYNC_API
 	const struct device *uart_dev;
 	uart_callback_t async_cb;
@@ -108,6 +115,9 @@ struct uart_stm32_data {
 	bool tx_poll_stream_on;
 	bool tx_int_stream_on;
 	bool pm_policy_state_on;
+#endif
+#if defined CONFIG_SERIAL_SUPPORT_RS485
+	struct k_timer rs485_timer;
 #endif
 };
 
