@@ -14,3 +14,9 @@ properties:
     type: boolean
     description: |
       UARTE has RX frame timeout HW feature.
+  pin-retention:
+    type: boolean
+    description: |
+      UARTE pin states must be retained when peripheral is disabled.
+      It is required when CTRLSEL is used to route UARTE pins. It is always the
+      case for fast peripheral and in special cases for slow peripherals.
