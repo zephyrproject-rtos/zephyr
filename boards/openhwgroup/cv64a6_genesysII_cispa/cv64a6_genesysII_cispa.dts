@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2024 CISPA Helmholtz Center for Information Security gGmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <openhwgroup/cv64a6.dtsi>
+
+/ {
+	model = "CV64A6 on Genesys II (CISPA fork with Xilinx AXI Ethernet, https://github.com/cispa/CVA6-Vivado-Project-with-Xilinx-AXI-Ethernet/tree/main)";
+	compatible = "ariane,cv64a6_genesysII";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &memory0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&clint{
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+
+
+&mdio0{
+	status = "okay";
+
+	phy0: phy@1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "ethernet-phy";
+		reg = <1 1>;
+		status="okay";
+	};
+};
+
+&eth0 {
+	status = "okay";
+	phy-handle=<&phy0>;
+};
