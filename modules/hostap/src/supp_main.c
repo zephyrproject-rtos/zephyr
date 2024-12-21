@@ -90,6 +90,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.ap_enable = supplicant_ap_enable,
 	.ap_disable = supplicant_ap_disable,
 	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
+	.ap_bandwidth = supplicant_ap_bandwidth,
 #endif /* CONFIG_AP */
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = supplicant_dpp_dispatch,
@@ -114,6 +115,7 @@ static const struct wifi_mgmt_ops mgmt_ap_ops = {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = hapd_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+	.ap_bandwidth = supplicant_ap_bandwidth,
 	.ap_config_params = supplicant_ap_config_params,
 	.set_rts_threshold = supplicant_set_rts_threshold,
 #if defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE

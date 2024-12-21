@@ -307,6 +307,14 @@ int supplicant_wps_config(const struct device *dev, struct wifi_wps_config_param
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params);
+/**
+ * @brief Set/Get Wi-Fi AP Bandwidth
+ *
+ * @param dev Wi-Fi device
+ * @param params AP parameters
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_params *params);
 #endif
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
