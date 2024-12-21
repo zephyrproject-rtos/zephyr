@@ -50,6 +50,10 @@ struct video_esp32_config {
 	const struct device *source_dev;
 	uint32_t cam_clk;
 	uint8_t rx_dma_channel;
+#ifdef CONFIG_VIDEO_ESP32_VSYNC_INTERRUPT
+	int irq_source;
+	int irq_priority;
+#endif
 	uint8_t data_width;
 	uint8_t invert_de;
 	uint8_t invert_byte_order;
@@ -72,6 +76,21 @@ struct video_esp32_data {
 	struct k_poll_signal *signal_out;
 #endif
 };
+
+#ifdef CONFIG_VIDEO_ESP32_VSYNC_INTERRUPT
+static void video_esp32_irq_handler(void *arg)
+{
+	const struct device *dev = (const struct device *)arg;
+	struct video_esp32_data *data = dev->data;
+	uint32_t status = cam_ll_get_interrupt_status(data->hal.hw);
+
+	cam_ll_clear_interrupt_status(data->hal.hw, status);
+
+	if (data->is_streaming && status & VIDEO_ESP32_VSYNC_MASK) {
+		video_notify_event(dev, VIDEO_EVENT_SOF);
+	}
+}
+#endif
 
 static int video_esp32_reload_dma(struct video_esp32_data *data)
 {
@@ -378,6 +397,19 @@ static void video_esp32_cam_ctrl_init(const struct device *dev)
 	cam_ll_enable_invert_hsync(data->hal.hw, cfg->invert_hsync);
 }
 
+#ifdef CONFIG_VIDEO_ESP32_VSYNC_INTERRUPT
+static int video_esp32_enable_interrupt(const struct device *dev)
+{
+	const struct video_esp32_config *cfg = dev->config;
+	struct video_esp32_data *data = dev->data;
+
+	cam_ll_clear_interrupt_status(data->hal.hw, VIDEO_ESP32_VSYNC_MASK);
+	cam_ll_enable_interrupt(data->hal.hw, VIDEO_ESP32_VSYNC_MASK, true);
+	return esp_intr_alloc(cfg->irq_source, cfg->irq_priority,
+			      (intr_handler_t)video_esp32_irq_handler, (void *)dev, NULL);
+}
+#endif
+
 static int video_esp32_init(const struct device *dev)
 {
 	const struct video_esp32_config *cfg = dev->config;
@@ -392,6 +424,15 @@ static int video_esp32_init(const struct device *dev)
 		LOG_ERR("DMA device not ready");
 		return -ENODEV;
 	}
+
+#ifdef CONFIG_VIDEO_ESP32_VSYNC_INTERRUPT
+	int ret;
+	ret = video_esp32_enable_interrupt(dev);
+	if (ret) {
+		LOG_ERR("Failed to enable interrupt");
+		return ret;
+	}
+#endif
 
 	return 0;
 }
@@ -422,6 +463,10 @@ static const struct video_esp32_config esp32_config = {
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(0, rx),
 	.rx_dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
 	.data_width = DT_INST_PROP_OR(0, data_width, 8),
+#ifdef CONFIG_VIDEO_ESP32_VSYNC_INTERRUPT
+	.irq_source = DT_INST_IRQN(0),
+	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
+#endif
 	.invert_bit_order = DT_INST_PROP(0, invert_bit_order),
 	.invert_byte_order = DT_INST_PROP(0, invert_byte_order),
 	.invert_pclk = DT_INST_PROP(0, invert_pclk),
