@@ -72,7 +72,7 @@ class TestInstance:
         else:
             # if suite is not in zephyr,
             # keep only the part after ".." in reconstructed dir structure
-            source_dir_rel = testsuite.source_dir_rel.rsplit(os.pardir+os.path.sep, 1)[-1]
+            source_dir_rel = testsuite.source_dir_rel.get_rel_after_dots()
             self.build_dir = os.path.join(
                 outdir,
                 platform.normalized_name,
