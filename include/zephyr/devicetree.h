@@ -425,6 +425,8 @@
  */
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
 
+#define DT_CHILD_BY_IDX(node_id, idx) UTIL_CAT(UTIL_CAT(node_id, _CHILD_IDX_), idx)
+
 /**
  * @brief Get a node identifier for a status `okay` node with a compatible
  *
