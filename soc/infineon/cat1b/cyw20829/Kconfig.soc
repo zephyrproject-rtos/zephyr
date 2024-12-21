@@ -26,6 +26,26 @@ config SOC_PACKAGE_CYW20829_40_QFN
 config SOC_PACKAGE_CYW20829_77_BGA
 	bool
 
+config CYW20829_FLASH_SAHB_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,flash_sahb)
+
+config CYW20829_FLASH_CBUS_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,flash_cbus)
+
+config CYW20829_SRAM_SAHB_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,sram_sahb)
+
+config CYW20829_SRAM_CBUS_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,sram_cbus)
+
+config CYW20829_ROM_START_OFFSET
+	hex
+	default 0x0
+
 # MPN
 config SOC_CYW20829A0LKML
 	bool
