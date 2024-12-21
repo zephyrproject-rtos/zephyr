@@ -47,3 +47,17 @@ properties:
       - "NPCX_RD_MODE_NORMAL" # Direct read access by command code 03h
       - "NPCX_RD_MODE_FAST" # Direct read access by command code 0bh
       - "NPCX_RD_MODE_FAST_DUAL" # Direct read access by command code bbh
+  spi-dev-size:
+    type: string
+    description: |
+      Select the size of the address space allocated for SPI device. This affects
+      the address space for any direct flash access.
+    enum:
+      - "NPCX_SPI_DEV_SIZE_1M"
+      - "NPCX_SPI_DEV_SIZE_2M"
+      - "NPCX_SPI_DEV_SIZE_4M"
+      - "NPCX_SPI_DEV_SIZE_8M"
+      - "NPCX_SPI_DEV_SIZE_16M"
+      - "NPCX_SPI_DEV_SIZE_32M"
+      - "NPCX_SPI_DEV_SIZE_64M"
+      - "NPCX_SPI_DEV_SIZE_128M"

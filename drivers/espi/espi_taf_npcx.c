@@ -13,12 +13,18 @@
 #ifdef CONFIG_ESPI_TAF_NPCX_RPMC_SUPPORT
 #include <zephyr/drivers/flash/npcx_flash_api_ex.h>
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(taf_flash1))
+#include <zephyr/dt-bindings/flash_controller/npcx_fiu_qspi.h>
+#endif
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(espi_taf, CONFIG_ESPI_LOG_LEVEL);
 
 static const struct device *const spi_dev = DEVICE_DT_GET(DT_ALIAS(taf_flash));
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(taf_flash1))
+static const struct device *const spi_dev1 = DEVICE_DT_GET(DT_ALIAS(taf_flash1));
+#endif
 
 enum ESPI_TAF_ERASE_LEN {
 	NPCX_ESPI_TAF_ERASE_LEN_4KB,
@@ -52,6 +58,11 @@ struct espi_taf_npcx_data {
 	uint32_t src[16];
 	uint8_t read_buf[MAX_TX_PAYLOAD_SIZE];
 	struct k_work work;
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(taf_flash1))
+	const struct device *low_dev_ptr;
+	const struct device *high_dev_ptr;
+	uint32_t low_dev_size;
+#endif
 };
 
 static struct espi_taf_npcx_data npcx_espi_taf_data;
@@ -236,6 +247,11 @@ static bool espi_taf_npcx_channel_ready(const struct device *dev)
 	if (!device_is_ready(spi_dev)) {
 		return false;
 	}
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(taf_flash1))
+	if (!device_is_ready(spi_dev1)) {
+		return false;
+	}
+#endif
 
 	return true;
 }
@@ -362,7 +378,34 @@ static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_saf_pa
 	}
 
 	do {
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(taf_flash1))
+		if ((addr + len) <= npcx_espi_taf_data.low_dev_size) {
+			rc = flash_read(npcx_espi_taf_data.low_dev_ptr, addr,
+					npcx_espi_taf_data.read_buf, len);
+		} else if (addr >= npcx_espi_taf_data.low_dev_size) {
+			rc = flash_read(npcx_espi_taf_data.high_dev_ptr,
+					(addr - npcx_espi_taf_data.low_dev_size),
+					npcx_espi_taf_data.read_buf, len);
+		} else {
+			rc = flash_read(npcx_espi_taf_data.low_dev_ptr, addr,
+					npcx_espi_taf_data.read_buf,
+					(npcx_espi_taf_data.low_dev_size.low_dev_size - addr));
+
+			if (rc) {
+				LOG_ERR("flash read fail 0x%x", rc);
+				return -EIO;
+			}
+
+			uint32_t index = low_dev_size - addr;
+
+			rc = flash_read(
+				npcx_espi_taf_data.high_dev_ptr, 0x0,
+				&npcx_espi_taf_data.read_buf[index],
+				(addr + len - npcx_espi_taf_data.low_dev_size.low_dev_size));
+		}
+#else
 		rc = flash_read(spi_dev, addr, npcx_espi_taf_data.read_buf, len);
+#endif
 		if (rc) {
 			LOG_ERR("flash read fail 0x%x", rc);
 			return -EIO;
@@ -394,6 +437,8 @@ static int espi_taf_npcx_flash_write(const struct device *dev, struct espi_saf_p
 {
 	struct espi_taf_npcx_pckt *taf_data_ptr = (struct espi_taf_npcx_pckt *)pckt->buf;
 	uint8_t *data_ptr = (uint8_t *)(taf_data_ptr->data);
+	uint32_t addr = pckt->flash_addr;
+	uint32_t len = pckt->len;
 	int rc;
 
 	if (espi_taf_check_write_protect(dev, pckt->flash_addr,
@@ -402,7 +447,19 @@ static int espi_taf_npcx_flash_write(const struct device *dev, struct espi_saf_p
 		return -EINVAL;
 	}
 
-	rc = flash_write(spi_dev, pckt->flash_addr, data_ptr, pckt->len);
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(taf_flash1))
+	if ((addr + len) <= npcx_espi_taf_data.low_dev_size) {
+		rc = flash_write(npcx_espi_taf_data.low_dev_ptr, addr, data_ptr, len);
+	} else if (addr >= npcx_espi_taf_data.low_dev_size) {
+		rc = flash_write(npcx_espi_taf_data.high_dev_ptr,
+				 (addr - npcx_espi_taf_data.low_dev_size), data_ptr, len);
+	} else {
+		LOG_ERR("Write across two flashes");
+		return -EINVAL;
+	}
+#else
+	rc = flash_write(spi_dev, addr, data_ptr, len);
+#endif
 	if (rc) {
 		LOG_ERR("flash write fail 0x%x", rc);
 		return -EIO;
@@ -438,7 +495,19 @@ static int espi_taf_npcx_flash_erase(const struct device *dev, struct espi_saf_p
 		return -EINVAL;
 	}
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(taf_flash1))
+	if ((addr + len) <= npcx_espi_taf_data.low_dev_size) {
+		rc = flash_erase(npcx_espi_taf_data.low_dev_ptr, addr, len);
+	} else if (addr >= npcx_espi_taf_data.low_dev_size) {
+		rc = flash_erase(npcx_espi_taf_data.high_dev_ptr,
+				 (addr - npcx_espi_taf_data.low_dev_size), len);
+	} else {
+		LOG_ERR("Erase across two flashes");
+		return -EINVAL;
+	}
+#else
 	rc = flash_erase(spi_dev, addr, len);
+#endif
 	if (rc) {
 		LOG_ERR("flash erase fail");
 		return -EIO;
@@ -619,6 +688,20 @@ static int espi_taf_npcx_init(const struct device *dev)
 	SET_FIELD(inst->FLASHCFG, NPCX_FLASHCFG_FLREQSUP,
 		  config->max_rd_sz);
 	inst->FLASHBASE = config->mapped_addr;
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(taf_flash1))
+	if (IS_ENABLED(CONFIG_FLASH_NPCX_FIU_SUPP_LOW_DEV_SWAP)) {
+		npcx_espi_taf_data.low_dev_ptr = spi_dev1;
+		npcx_espi_taf_data.high_dev_ptr = spi_dev;
+		npcx_espi_taf_data.low_dev_size =
+			MB(1) << DT_STRING_TOKEN(DT_ALIAS(taf_flash1), spi_dev_size);
+	} else {
+		npcx_espi_taf_data.low_dev_ptr = spi_dev;
+		npcx_espi_taf_data.high_dev_ptr = spi_dev1;
+		npcx_espi_taf_data.low_dev_size =
+			MB(1) << DT_STRING_TOKEN(DT_ALIAS(taf_flash), spi_dev_size);
+	}
+#endif
 
 #ifdef CONFIG_ESPI_TAF_NPCX_RPMC_SUPPORT
 	uint8_t count_num = 0;
