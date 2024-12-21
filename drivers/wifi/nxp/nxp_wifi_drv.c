@@ -546,17 +546,6 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 		wlan_uap_set_hidden_ssid(params->ignore_broadcast_ssid);
 	}
 
-	switch (params->bandwidth) {
-	case WIFI_FREQ_BANDWIDTH_20MHZ:
-	case WIFI_FREQ_BANDWIDTH_40MHZ:
-	case WIFI_FREQ_BANDWIDTH_80MHZ:
-		wlan_uap_set_bandwidth(params->bandwidth);
-		break;
-	default:
-		LOG_ERR("Invalid bandwidth");
-		return -EAGAIN;
-	}
-
 	ret = wlan_add_network(&nxp_wlan_uap_network);
 	if (ret != WM_SUCCESS) {
 		status = NXP_WIFI_RET_FAIL;
@@ -924,6 +913,17 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
 		LOG_ERR("Failed to connect to Wi-Fi access point");
+		return -EAGAIN;
+	}
+
+	switch (params->bandwidth) {
+	case WIFI_FREQ_BANDWIDTH_20MHZ:
+	case WIFI_FREQ_BANDWIDTH_40MHZ:
+	case WIFI_FREQ_BANDWIDTH_80MHZ:
+		wlan_uap_set_bandwidth(params->bandwidth);
+		break;
+	default:
+		LOG_ERR("Invalid bandwidth");
 		return -EAGAIN;
 	}
 
