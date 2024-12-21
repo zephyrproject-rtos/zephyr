@@ -32,6 +32,7 @@ rsource "Kconfig.timer"
 
 menu "X/Open system interfaces"
 
+rsource "Kconfig.xsi_realtime"
 rsource "Kconfig.xsi_single_process"
 rsource "Kconfig.xsi_streams"
 rsource "Kconfig.xsi_system_logging"

@@ -228,7 +228,13 @@
 #define _XOPEN_VERSION 700
 /* #define _XOPEN_CRYPT (-1L) */
 /* #define _XOPEN_ENH_I18N (-1L) */
-/* #define _XOPEN_REALTIME (-1L) */
+#if defined(CONFIG_XSI_REALTIME) ||                                                                \
+	(defined(CONFIG_POSIX_FSYNC) && defined(CONFIG_POSIX_MEMLOCK) &&                           \
+	 defined(CONFIG_POSIX_MEMLOCK_RANGE) && defined(CONFIG_POSIX_MESSAGE_PASSING) &&           \
+	 defined(CONFIG_POSIX_PRIORITY_SCHEDULING) &&                                              \
+	 defined(CONFIG_POSIX_SHARED_MEMORY_OBJECTS) && defined(CONFIG_POSIX_SYNCHRONIZED_IO))
+#define _XOPEN_REALTIME _XOPEN_VERSION
+#endif
 /* #define _XOPEN_REALTIME_THREADS (-1L) */
 /* #define _XOPEN_SHM (-1L) */
 

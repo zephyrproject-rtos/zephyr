@@ -75,10 +75,6 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_FILE_SYSTEM_R)
   zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM_R file_system_r.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_POSIX_FSYNC fsync.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_MEMLOCK mlockall.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_MEMLOCK_RANGE mlock.c)
-
 if (NOT CONFIG_TC_PROVIDES_POSIX_MEMORY_PROTECTION)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MEMORY_PROTECTION mprotect.c)
 endif()
@@ -86,8 +82,6 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_POSIX_MAPPED_FILES)
   zephyr_library_sources_ifdef(CONFIG_POSIX_MAPPED_FILES mmap.c)
 endif()
-
-zephyr_library_sources_ifdef(CONFIG_POSIX_MESSAGE_PASSING mqueue.c)
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_MULTI_PROCESS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_MULTI_PROCESS
@@ -98,10 +92,6 @@ endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_NETWORKING)
   zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
-endif()
-
-if (NOT CONFIG_TC_PROVIDES_POSIX_SHARED_MEMORY_OBJECTS)
-  zephyr_library_sources_ifdef(CONFIG_POSIX_SHARED_MEMORY_OBJECTS shm.c)
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_SIGNALS)
@@ -129,8 +119,6 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
   )
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
-
 if (NOT CONFIG_TC_PROVIDES_POSIX_READER_WRITER_LOCKS)
   # Note: the Option is _POSIX_READER_WRITER_LOCKS, while the Option Group is POSIX_RW_LOCKS.
   # We have opted to use POSIX_READER_WRITER_LOCKS here to match the Option name.
@@ -152,6 +140,15 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_THREADS)
     pthread.c
     pwd.c
   )
+endif()
+
+if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_FSYNC fsync.c)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_MEMLOCK mlockall.c)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_MEMLOCK_RANGE mlock.c)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_MESSAGE_PASSING mqueue.c)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_SHARED_MEMORY_OBJECTS shm.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
