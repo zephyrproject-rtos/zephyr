@@ -6,6 +6,7 @@ config UDC_STM32
 	depends on DT_HAS_ST_STM32_OTGFS_ENABLED \
 		|| DT_HAS_ST_STM32_OTGHS_ENABLED \
 		|| DT_HAS_ST_STM32_USB_ENABLED
+	depends on !USB_DC_STM32
 	select USE_STM32_LL_USB
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
@@ -13,3 +14,25 @@ config UDC_STM32
 	default y
 	help
 	  STM32 USB device controller driver.
+
+
+config UDC_STM32_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	depends on UDC_STM32
+	default 512
+	help
+	  STM32 USB device controller driver internal thread stack size.
+
+config UDC_STM32_THREAD_PRIORITY
+	int "STM32 USB controller driver thread priority"
+	depends on UDC_STM32
+	default 8
+	help
+	  STM32 USB device controller driver thread priority.
+
+config UDC_STM32_MAX_QMESSAGES
+	int "STM32 UDC driver maximum number of ISR event messages"
+	range 4 64
+	default 8
+	help
+	  Maximum number of messages for handling of STM32 USBD ISR events.
