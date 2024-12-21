@@ -18,6 +18,7 @@ on:
       - "include/zephyr/arch/posix/**"
       - "scripts/native_simulator/**"
       - "samples/net/sockets/echo_*/**"
+      - "modules/hal_nordic/**"
       - "modules/mbedtls/**"
       - "modules/openthread/**"
       - "subsys/net/l2/openthread/**"
@@ -106,6 +107,7 @@ jobs:
             boards/nordic/nrf5*/*dt*
             dts/*/nordic/
             modules/mbedtls/**
+            modules/hal_nordic/**
 
       - name: Check if Bluethooth files changed
         uses: tj-actions/changed-files@v45
