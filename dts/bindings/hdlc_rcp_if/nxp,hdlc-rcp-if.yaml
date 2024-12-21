@@ -1,8 +1,0 @@
-# Copyright (c) 2024, NXP
-# SPDX-License-Identifier: Apache-2.0
-
-description: NXP HDLC RCP interface node
-
-compatible: "nxp,hdlc-rcp-if"
-
-include: base.yaml
