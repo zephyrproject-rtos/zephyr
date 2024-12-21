@@ -1,0 +1,17 @@
+:name: Myra SiP Baseboard
+:description: This script is prepared to run Zephyr on the Myra SiP Baseboard.
+
+$name?="Myra SiP Baseboard"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription $ORIGIN/myra_sip_baseboard.repl
+
+showAnalyzer lpuart1
+
+macro reset
+"""
+    sysbus LoadELF $elf
+    cpu0 VectorTableOffset `sysbus GetSymbolAddress "_vector_table"`
+"""
+runMacro $reset
