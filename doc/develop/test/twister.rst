@@ -560,6 +560,7 @@ harness: <string>
     - pytest
     - gtest
     - robot
+    - ctest
 
     Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
     output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
@@ -724,6 +725,12 @@ harness_config: <harness configuration options>
         The scope for which ``dut`` and ``shell`` pytest fixtures are shared.
         If the scope is set to ``function``, DUT is launched for every test case
         in python script. For ``session`` scope, DUT is launched only once.
+
+    ctest_args: <list of arguments> (default empty)
+        Specify a list of additional arguments to pass to ``ctest`` e.g.:
+        ``ctest_args: [‘--repeat until-pass:5’]``. Note that
+        ``--ctest-args`` can be passed multiple times to pass several arguments
+        to the ctest.
 
     robot_testsuite: <robot file path> (default empty)
         Specify one or more paths to a file containing a Robot Framework test suite to be run.
