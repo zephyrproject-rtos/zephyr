@@ -482,7 +482,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset, const
 	return rc;
 }
 
-static int flash_stm32h7_write_protection(const struct device *dev, bool enable)
+static int flash_stm32h7_cr_lock(const struct device *dev, bool enable)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
@@ -561,7 +561,7 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset, size_t le
 
 	LOG_DBG("Erase offset: %ld, len: %zu", (long)offset, len);
 
-	rc = flash_stm32h7_write_protection(dev, false);
+	rc = flash_stm32h7_cr_lock(dev, false);
 	if (rc) {
 		goto done;
 	}
@@ -577,7 +577,7 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset, size_t le
 	}
 #endif /* CONFIG_CPU_CORTEX_M7 */
 done:
-	rc2 = flash_stm32h7_write_protection(dev, true);
+	rc2 = flash_stm32h7_cr_lock(dev, true);
 
 	if (!rc) {
 		rc = rc2;
@@ -605,12 +605,12 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset, const voi
 
 	LOG_DBG("Write offset: %ld, len: %zu", (long)offset, len);
 
-	rc = flash_stm32h7_write_protection(dev, false);
+	rc = flash_stm32h7_cr_lock(dev, false);
 	if (!rc) {
 		rc = flash_stm32_write_range(dev, offset, data, len);
 	}
 
-	int rc2 = flash_stm32h7_write_protection(dev, true);
+	int rc2 = flash_stm32h7_cr_lock(dev, true);
 
 	if (!rc) {
 		rc = rc2;
@@ -767,7 +767,7 @@ static int stm32h7_flash_init(const struct device *dev)
 	}
 #endif
 
-	return flash_stm32h7_write_protection(dev, false);
+	return flash_stm32h7_cr_lock(dev, true);
 }
 
 DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
