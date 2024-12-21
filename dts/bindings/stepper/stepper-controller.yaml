@@ -25,6 +25,11 @@ properties:
     description: |
       micro-step resolution to be set while initializing the device driver.
 
+  en-gpios:
+    type: phandle-array
+    description: |
+      GPIO pins used to control the enable signal of the motor driver.
+
   step-gpios:
     type: phandle-array
     description: |
