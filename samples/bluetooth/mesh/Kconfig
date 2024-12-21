@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Andreas Kurz
+# SPDX-License-Identifier: Apache-2.0
+
+menu "BLE Mesh sample settings"
+
+config BLE_MESH_SAMPLE_ENABLE_SELF_PROVISIONING
+	bool "Enable self provisioning"
+	default y
+	help
+	  This will allow self provisioning with arbitrary keys
+	  on button press if not already provisioned.
+
+endmenu
+
+source "Kconfig.zephyr"
