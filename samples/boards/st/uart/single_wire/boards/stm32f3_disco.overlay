@@ -6,8 +6,8 @@
 
 / {
 	 aliases {
-		single-line-uart1 = &usart2;
-		single-line-uart2 = &uart4;
+		singlelineuart1 = &usart2;
+		singlelineuart1 = &uart4;
 	};
 };
 
