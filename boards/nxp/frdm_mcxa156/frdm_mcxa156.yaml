@@ -22,6 +22,7 @@ supported:
   - dac
   - i2c
   - pwm
+  - spi
   - usb_device
   - usbd
 vendor: nxp
