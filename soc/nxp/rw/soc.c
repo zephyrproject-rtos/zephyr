@@ -382,25 +382,6 @@ __ramfunc void clock_init(void)
 #endif
 
 #endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
-
-/* I2S flexcomm */
-#ifdef CONFIG_I2S
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2s, okay))
-	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM0);
-#endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2s, okay))
-	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM1);
-#endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2s, okay))
-	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM2);
-#endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2s, okay))
-	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM3);
-#endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_i2s, okay))
-	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM14);
-#endif
-#endif /* CONFIG_I2S */
 }
 
 extern void nxp_rw6xx_power_init(void);
