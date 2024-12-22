@@ -506,6 +506,7 @@ parade	Parade Technologies Inc.
 parallax	Parallax Inc.
 particle	Particle.io
 pda	Precision Design Associates, Inc.
+peregrine	Peregrine Consultoria e Servicos
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
 phicomm	PHICOMM Co., Ltd.
