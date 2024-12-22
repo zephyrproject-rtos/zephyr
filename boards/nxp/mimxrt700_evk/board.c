@@ -318,6 +318,12 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Gpio10);
 	RESET_ClearPeripheralReset(kGPIO10_RST_SHIFT_RSTn);
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay)
+	CLOCK_AttachClk(kFRO1_DIV1_to_SENSE_MAIN);
+	CLOCK_AttachClk(kSENSE_BASE_to_ADC);
+	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1U);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
