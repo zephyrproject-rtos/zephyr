@@ -79,6 +79,8 @@ the hardware features below.
 +-----------+------------+-------------------------------------+
 | MRT       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
