@@ -5215,6 +5215,8 @@ struct k_pipe {
 	_wait_q_t data;
 	_wait_q_t space;
 	uint8_t flags;
+
+	Z_DECL_POLL_EVENT
 };
 
 /**
@@ -5227,6 +5229,7 @@ struct k_pipe {
 	.space = Z_WAIT_Q_INIT(&obj.space),			\
 	.flags = PIPE_FLAG_OPEN,				\
 	.waiting = 0,						\
+	Z_POLL_EVENT_OBJ_INIT(obj)				\
 }
 /**
  * INTERNAL_HIDDEN @endcond
@@ -6010,9 +6013,7 @@ struct k_poll_event {
 		struct k_fifo *fifo, *typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
 		struct k_queue *queue, *typed_K_POLL_TYPE_DATA_AVAILABLE;
 		struct k_msgq *msgq, *typed_K_POLL_TYPE_MSGQ_DATA_AVAILABLE;
-#ifdef CONFIG_PIPES
 		struct k_pipe *pipe, *typed_K_POLL_TYPE_PIPE_DATA_AVAILABLE;
-#endif
 	};
 };
 
