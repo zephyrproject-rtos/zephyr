@@ -10,6 +10,8 @@
 #include <kthread.h>
 #include <wait_q.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(os_pipe, LOG_LEVEL_DBG);
 #ifdef CONFIG_OBJ_CORE_PIPE
 static struct k_obj_type obj_type_pipe;
 #endif /* CONFIG_OBJ_CORE_PIPE */
