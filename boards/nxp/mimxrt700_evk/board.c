@@ -398,6 +398,12 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer7), okay)
 	SET_UP_CTIMER_CLOCK(7);
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay)
+	CLOCK_AttachClk(kFRO1_DIV1_to_SENSE_MAIN);
+	CLOCK_AttachClk(kSENSE_BASE_to_ADC);
+	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1U);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
