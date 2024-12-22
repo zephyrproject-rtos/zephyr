@@ -184,3 +184,11 @@
 &vbat {
 	status = "okay";
 };
+
+usb2: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pm12 &usb_otg_fs_dp_pm11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usb2 {};
