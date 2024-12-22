@@ -49,7 +49,7 @@ config POSIX_MEMLOCK
 
 config POSIX_MEMLOCK_RANGE
 	bool "POSIX range memory locking"
-	imply MMU
+	imply MMU if (CPU_HAS_MMU && ARCH_HAS_DEMAND_PAGING)
 	imply DEMAND_PAGING
 	help
 	  Select 'y' here and Zephyr will provide support for mlock() and munlock().
