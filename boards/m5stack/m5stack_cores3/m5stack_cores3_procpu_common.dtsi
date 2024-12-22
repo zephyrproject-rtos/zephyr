@@ -84,7 +84,7 @@
 		status = "okay";
 	};
 
-	aw9523b@58 {
+	aw9523b: aw9523b@58 {
 		compatible = "awinic,aw9523b";
 		reg = <0x58>;
 		status = "okay";
