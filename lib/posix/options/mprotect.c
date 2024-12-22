@@ -9,6 +9,7 @@
 #include <sys/types.h>
 
 #include <zephyr/posix/sys/mman.h>
+#include <zephyr/toolchain.h>
 
 int mprotect(void *addr, size_t len, int prot)
 {
