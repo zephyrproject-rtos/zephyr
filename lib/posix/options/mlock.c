@@ -13,18 +13,28 @@
 
 int mlock(const void *addr, size_t len)
 {
-	void *const _addr = (void *)addr;
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING)) {
+		void *const _addr = (void *)addr;
 
-	k_mem_pin(_addr, len);
+		k_mem_pin(_addr, len);
 
-	return 0;
+		return 0;
+	}
+
+	errno = ENOTSUP;
+	return -1;
 }
 
 int munlock(const void *addr, size_t len)
 {
-	void *const _addr = (void *)addr;
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING)) {
+		void *const _addr = (void *)addr;
 
-	k_mem_unpin(_addr, len);
+		k_mem_unpin(_addr, len);
 
-	return 0;
+		return 0;
+	}
+
+	errno = ENOTSUP;
+	return -1;
 }
