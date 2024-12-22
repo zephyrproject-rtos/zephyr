@@ -76,6 +76,10 @@ void z_impl_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size
 	z_waitq_init(&pipe->data);
 	z_waitq_init(&pipe->space);
 	k_object_init(pipe);
+
+#ifdef CONFIG_POLL
+	sys_dlist_init(&pipe->poll_events);
+#endif /* CONFIG_POLL */
 }
 
 int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_timeout_t timeout)
@@ -122,6 +126,10 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 		rc = ring_buf_put(&pipe->buf, &data[written], len - written);
 		if (likely(rc != 0)) {
 			notify_waiter(&pipe->data);
+#ifdef CONFIG_POLL
+			z_handle_obj_poll_events(&pipe->poll_events,
+			    K_POLL_STATE_PIPE_DATA_AVAILABLE);
+#endif /* CONFIG_POLL */
 		}
 		k_spin_unlock(&pipe->lock, key);
 		written += rc;
