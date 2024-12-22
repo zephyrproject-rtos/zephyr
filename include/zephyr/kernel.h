@@ -5217,6 +5217,9 @@ struct k_pipe {
 	uint8_t flags;
 
 	Z_DECL_POLL_EVENT
+#ifdef CONFIG_OBJ_CORE_PIPE
+	struct k_obj_core  obj_core;
+#endif
 };
 
 /**

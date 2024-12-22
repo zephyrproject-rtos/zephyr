@@ -10,6 +10,10 @@
 #include <kthread.h>
 #include <wait_q.h>
 
+#ifdef CONFIG_OBJ_CORE_PIPE
+static struct k_obj_type obj_type_pipe;
+#endif /* CONFIG_OBJ_CORE_PIPE */
+
 static inline bool pipe_closed(struct k_pipe *pipe)
 {
 	return (pipe->flags & PIPE_FLAG_OPEN) == 0;
@@ -80,6 +84,9 @@ void z_impl_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size
 #ifdef CONFIG_POLL
 	sys_dlist_init(&pipe->poll_events);
 #endif /* CONFIG_POLL */
+#ifdef CONFIG_OBJ_CORE_PIPE
+	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+#endif /* CONFIG_OBJ_CORE_PIPE */
 }
 
 int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_timeout_t timeout)
@@ -257,3 +264,22 @@ void z_vrfy_k_pipe_close(struct k_pipe *pipe)
 }
 #include <zephyr/syscalls/k_pipe_close_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_OBJ_CORE_PIPE
+static int init_pipe_obj_core_list(void)
+{
+	/* Initialize pipe object type */
+	z_obj_type_init(&obj_type_pipe, K_OBJ_TYPE_PIPE_ID,
+			offsetof(struct k_pipe, obj_core));
+
+	/* Initialize and link statically defined pipes */
+	STRUCT_SECTION_FOREACH(k_pipe, pipe) {
+		k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_pipe_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif /* CONFIG_OBJ_CORE_PIPE */
