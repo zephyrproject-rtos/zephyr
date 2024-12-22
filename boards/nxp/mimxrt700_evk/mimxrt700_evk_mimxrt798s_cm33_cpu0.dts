@@ -111,6 +111,12 @@
 	status = "okay";
 };
 
+&lpadc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
 &blue_led {
 	status = "okay";
 };

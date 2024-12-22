@@ -65,4 +65,14 @@
 			slew-rate = "slow";
 		};
 	};
+
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_CH0_PIO10_0>,
+				<ADC0_CH1_PIO10_2>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			nxp,analog-mode;
+		};
+	};
 };
