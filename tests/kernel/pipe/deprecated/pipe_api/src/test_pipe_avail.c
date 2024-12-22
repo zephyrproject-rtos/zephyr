@@ -9,7 +9,6 @@
  * @ingroup kernel_pipe_tests
  * @{
  */
-
 #include <zephyr/ztest.h>
 
 static ZTEST_DMEM unsigned char __aligned(4) data[] = "abcdefgh";

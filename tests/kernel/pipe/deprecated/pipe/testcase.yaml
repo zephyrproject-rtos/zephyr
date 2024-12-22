@@ -1,0 +1,7 @@
+tests:
+  kernel.deprecated.pipe:
+    tags:
+      - kernel
+      - userspace
+    ignore_faults: true
+    extra_args: CMAKE_C_FLAGS="-D__deprecated='' -D__DEPRECATED_MACRO=''"
