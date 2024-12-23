@@ -1,7 +1,7 @@
-.. _arceli_eth_w5500:
+.. _esp_threadbr_zigbeegw_ethernet:
 
-ARCELI W5500 ETH
-################
+ESP Thread BR / Zigbee GW Ethernet
+##################################
 
 Overview
 ********
@@ -10,7 +10,7 @@ ARCELI W5500 Ethernet is breakout board with SPI bus access over 10 pin header.
 `W5500`_ is 10/100 MBPS stand alone Ethernet controller with on-board MAC & PHY,
 16 KiloBytes for FIFO buffer and SPI serial interface.
 
-Pins Assignment of the W5500 Shield
+Pins Assignment of the ETH Shield
 ===================================
 
 +-----------------------+---------------------------------------------+
@@ -33,18 +33,18 @@ Pins Assignment of the W5500 Shield
 Requirements
 ************
 
-This shield/breakout board can be used with any board with SPI interfaces in
-Arduino header or custom header (by adjusting the overlay).
+This shield/breakout board can be used with ESP Thread BR / Zigbee GW board
+or any board that interfaces the W5500 ethernet chip.
 
 Programming
 ***********
 
-Set ``--shield arceli_eth_w5500`` when you invoke ``west build``. For example:
+Set ``--shield esp_threadbr_zigbeegw_ethernet`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/dhcpv4_client
-   :board: nrf52840dk/nrf52840
-   :shield: arceli_eth_w5500
+   :board: esp_threadbr_zigbeegw/esp32s3/procpu
+   :shield: esp_threadbr_zigbeegw_ethernet
    :goals: build
 
 References
