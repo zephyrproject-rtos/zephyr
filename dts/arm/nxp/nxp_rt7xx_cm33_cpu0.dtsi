@@ -155,6 +155,66 @@
 		#clock-cells = <1>;
 	};
 
+	ctimer0: ctimer@28000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x28000 0x1000>;
+		interrupts = <3 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER0_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer1: ctimer@29000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x29000 0x1000>;
+		interrupts = <4 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER1_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer2: ctimer@2a000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2a000 0x1000>;
+		interrupts = <32 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER2_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer3: ctimer@2b000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2b000 0x1000>;
+		interrupts = <6 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER3_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer4: ctimer@2c000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2c000 0x1000>;
+		interrupts = <33 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER4_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
 	edma0: dma-controller@140000 {
 		#dma-cells = <2>;
 		compatible = "nxp,mcux-edma";
