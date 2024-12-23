@@ -8,7 +8,7 @@
 	status = "okay";
 	cs-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 
-	esp_tz_router_eth: sub_eth@0 {
+	esp_sub_eth: esp-sub-eth@0 {
 		compatible = "wiznet,w5500";
 		reg = <0x0>;
 		spi-max-frequency = <20000000>;
