@@ -15,7 +15,6 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
   endif()
   zephyr_compile_definitions(BOOT_HEADER_ENABLE=1)
   zephyr_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
-  zephyr_library()
   zephyr_library_sources(MX25U51245GZ4I00_FCB.c)
 endif()
 
