@@ -21,6 +21,7 @@
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		pwm-0 = &flexpwm0_pwm0;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
@@ -137,4 +138,8 @@
 zephyr_udc0: &usb {
 	status = "okay";
 	num-bidir-endpoints = <8>;
+};
+
+&wwdt0 {
+	status = "okay";
 };
