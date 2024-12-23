@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../step_dir_stepper_common.h"
+#include "../step_dir/step_dir_stepper_common.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc22xx, CONFIG_STEPPER_LOG_LEVEL);
