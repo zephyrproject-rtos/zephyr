@@ -33,6 +33,20 @@
 		CLOCK_EnableClock(kCLOCK_LPFlexComm##x);                                           \
 	} while (0)
 
+#ifdef CONFIG_SOC_MIMXRT798S_CM33_CPU0
+#define SET_UP_CTIMER_CLOCK(x)                                       \
+	do {                                                             \
+		CLOCK_AttachClk(kFRO0_DIV1_to_CTIMER##x);				     \
+		CLOCK_SetClkDiv(kCLOCK_DivCtimer##x##Clk, 1U);               \
+	} while (0)
+#elif CONFIG_SOC_MIMXRT798S_CM33_CPU1
+#define SET_UP_CTIMER_CLOCK(x)                                       \
+	do {                                                             \
+		CLOCK_AttachClk(kFRO2_DIV1_to_CTIMER##x);					 \
+		CLOCK_SetClkDiv(kCLOCK_DivCtimer##x##Clk, 1U);               \
+	} while (0)
+#endif
+
 const clock_main_pll_config_t g_mainPllConfig_clock_init = {
 	.main_pll_src = kCLOCK_MainPllOscClk, /* OSC clock */
 	.numerator = 0,   /* Numerator of the SYSPLL0 fractional loop divider is 0 */
@@ -351,6 +365,38 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio10), okay)
 	CLOCK_EnableClock(kCLOCK_Gpio10);
 	RESET_ClearPeripheralReset(kGPIO10_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay)
+	SET_UP_CTIMER_CLOCK(0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer1), okay)
+	SET_UP_CTIMER_CLOCK(1);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer2), okay)
+	SET_UP_CTIMER_CLOCK(2);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer3), okay)
+	SET_UP_CTIMER_CLOCK(3);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer4), okay)
+	SET_UP_CTIMER_CLOCK(4);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer5), okay)
+	SET_UP_CTIMER_CLOCK(5);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer6), okay)
+	SET_UP_CTIMER_CLOCK(6);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer7), okay)
+	SET_UP_CTIMER_CLOCK(7);
 #endif
 }
 
