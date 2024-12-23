@@ -72,6 +72,8 @@ The FRDM-MCXA156 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
