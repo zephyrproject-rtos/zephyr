@@ -56,6 +56,10 @@
 	};
 };
 
+&ctimer0 {
+	status = "okay";
+};
+
 &systick {
 	status = "okay";
 };
