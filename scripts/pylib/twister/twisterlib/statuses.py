@@ -10,7 +10,7 @@ from __future__ import annotations
 from enum import Enum, EnumMeta
 
 from colorama import Fore
-from twisterlib.error import StatusAttributeError, StatusInitError, StatusKeyError
+from pylib.twister.twisterlib.error import StatusAttributeError, StatusInitError, StatusKeyError
 
 
 class TwisterStatusEnumMeta(EnumMeta):

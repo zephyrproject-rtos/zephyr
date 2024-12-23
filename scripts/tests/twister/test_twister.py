@@ -17,8 +17,8 @@ from pathlib import Path
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
+from pylib.twister.twisterlib.error import ConfigurationError
 import scl
-from twisterlib.error import ConfigurationError
 from twisterlib.testplan import TwisterConfigParser
 
 def test_yamlload():

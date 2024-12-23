@@ -16,10 +16,10 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from enum import Enum
 
+from pylib.twister.twisterlib.error import ConfigurationError, StatusAssignmentError
 from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
-from twisterlib.error import ConfigurationError, StatusAssignmentError
 from twisterlib.handlers import Handler, terminate_process
 from twisterlib.reports import ReportStatus
 from twisterlib.statuses import TwisterStatus

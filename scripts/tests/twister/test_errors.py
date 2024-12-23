@@ -11,7 +11,7 @@ import re
 import pytest
 
 from pathlib import Path
-from twisterlib.error import (
+from pylib.twister.twisterlib.error import (
     StatusAttributeError,
     StatusAssignmentError,
     StatusInitError,

@@ -26,9 +26,7 @@ from colorama import Fore
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from packaging import version
-from twisterlib.cmakecache import CMakeCache
-from twisterlib.environment import canonical_zephyr_base
-from twisterlib.error import (
+from pylib.twister.twisterlib.error import (
     BuildError,
     ConfigurationError,
     StatusAssignmentError,
@@ -36,6 +34,8 @@ from twisterlib.error import (
     StatusInitError,
     StatusKeyError,
 )
+from twisterlib.cmakecache import CMakeCache
+from twisterlib.environment import canonical_zephyr_base
 from twisterlib.statuses import TwisterStatus
 
 if version.parse(elftools.__version__) < version.parse('0.24'):

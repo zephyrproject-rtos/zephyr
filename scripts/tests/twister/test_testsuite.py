@@ -17,6 +17,7 @@ from contextlib import nullcontext
 ZEPHYR_BASE = os.getenv('ZEPHYR_BASE')
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'twister'))
 
+from pylib.twister.twisterlib.error import TwisterException, TwisterRuntimeError
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import (
     _find_src_dir_path,
@@ -28,7 +29,6 @@ from twisterlib.testsuite import (
     TestCase,
     TestSuite
 )
-from twisterlib.error import TwisterException, TwisterRuntimeError
 
 
 TESTDATA_1 = [

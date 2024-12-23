@@ -15,13 +15,13 @@ import os
 import random
 from enum import Enum
 
+from pylib.twister.twisterlib.error import BuildError, StatusAssignmentError
 from twisterlib.constants import (
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
     SUPPORTED_SIMS_WITH_EXEC,
 )
 from twisterlib.environment import TwisterEnv
-from twisterlib.error import BuildError, StatusAssignmentError
 from twisterlib.handlers import (
     BinaryHandler,
     DeviceHandler,
