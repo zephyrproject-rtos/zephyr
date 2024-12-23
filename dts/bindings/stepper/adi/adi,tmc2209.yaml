@@ -24,6 +24,7 @@ include:
       - step-gpios
       - dir-gpios
       - en-gpios
+      - counter
 
 properties:
   msx-gpios:
