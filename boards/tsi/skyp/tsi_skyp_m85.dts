@@ -89,7 +89,7 @@
 		zephyr,memory-region = "SRAM1";
 	};
 
-	soc {
+	/*soc {
 		peripheral@71000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -97,7 +97,7 @@
 
 			 #include "tsi_skyp_m85-common.dtsi"
 		};
-	};
+	};*/
 };
 
 &jtag_uart {
