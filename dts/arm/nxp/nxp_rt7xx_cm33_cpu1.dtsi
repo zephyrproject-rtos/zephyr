@@ -138,6 +138,42 @@
 		#clock-cells = <1>;
 	};
 
+	ctimer5: ctimer@48000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x48000 0x1000>;
+		interrupts = <7 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER5_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer6: ctimer@49000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x49000 0x1000>;
+		interrupts = <8 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER6_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer7: ctimer@4a000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x4a000 0x1000>;
+		interrupts = <9 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER7_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
 	syscon1: syscon@42000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x42000 0x1000>;
