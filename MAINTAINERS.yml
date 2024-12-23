@@ -337,7 +337,6 @@ Bluetooth Controller:
   collaborators:
     - carlescufi
     - thoh-ot
-    - kruithofa
     - ppryga
     - mtpr-ot
     - wopu-ot
@@ -467,7 +466,6 @@ Bluetooth Audio:
     - sjanc
     - asbjornsabo
     - fredrikdanebjer
-    - kruithofa
     - larsgk
     - pin-zephyr
     - niym-ot
@@ -518,7 +516,6 @@ Bluetooth ISO:
     - Thalley
   collaborators:
     - jhedberg
-    - kruithofa
     - rugeGerritsen
     - cvinayak
   files:
