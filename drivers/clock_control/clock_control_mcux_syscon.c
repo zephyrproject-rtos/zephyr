@@ -92,12 +92,18 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 
 #if defined(CONFIG_CAN_MCUX_FLEXCAN)
 	switch ((uint32_t)sub_system) {
+#if defined(CONFIG_SOC_SERIES_MCXA)
+	case MCUX_FLEXCAN0_CLK:
+		CLOCK_EnableClock(kCLOCK_GateFLEXCAN0);
+		break;
+#else
 	case MCUX_FLEXCAN0_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexcan0);
 		break;
 	case MCUX_FLEXCAN1_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexcan1);
 		break;
+#endif /* defined(CONFIG_SOC_SERIES_MCXA) */
 	default:
 		break;
 	}
@@ -391,12 +397,18 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif /* CONFIG_ADC_MCUX_LPADC */
 
 #if defined(CONFIG_CAN_MCUX_FLEXCAN)
+#if defined(CONFIG_SOC_SERIES_MCXA)
+	case MCUX_FLEXCAN0_CLK:
+		*rate = CLOCK_GetFlexcanClkFreq();
+		break;
+#else
 	case MCUX_FLEXCAN0_CLK:
 		*rate = CLOCK_GetFlexcanClkFreq(0);
 		break;
 	case MCUX_FLEXCAN1_CLK:
 		*rate = CLOCK_GetFlexcanClkFreq(1);
 		break;
+#endif /* defined(CONFIG_SOC_SERIES_MCXA) */
 #endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
 
 #if defined(CONFIG_MCUX_FLEXIO)
