@@ -18,9 +18,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
-//LOG_MODULE_REGISTER(npcm_i3c, CONFIG_I3C_LOG_LEVEL);
-
-LOG_MODULE_REGISTER(npcm_i3c, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(npcm_i3c, CONFIG_I3C_LOG_LEVEL);
 
 #define NPCM_I3C_CHK_TIMEOUT_US 10000 /* Timeout for checking register status */
 #define I3C_SCL_PP_FREQ_MAX_MHZ 12500000
