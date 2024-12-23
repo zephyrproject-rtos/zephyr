@@ -18,6 +18,7 @@ supported:
   - adc
   - flash
   - gpio
+  - can
   - counter
   - dac
   - i2c

@@ -29,6 +29,7 @@
 		zephyr,flash-controller = &fmu;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,canbus = &flexcan0;
 	};
 
 	leds {
@@ -97,6 +98,12 @@
 &dac0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan0>;
 	pinctrl-names = "default";
 };
 
