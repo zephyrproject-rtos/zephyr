@@ -606,3 +606,7 @@
 	port-irq5-pins = <9>;
 	port-irq6-pins = <8>;
 };
+
+&dac_global {
+	has-output-amplifier;
+};
