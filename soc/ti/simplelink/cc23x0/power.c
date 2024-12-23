@@ -7,6 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/reboot.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
 
@@ -228,6 +229,22 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 #endif /* CONFIG_PM */
+
+#ifdef CONFIG_REBOOT
+
+void sys_arch_reboot(int type)
+{
+	switch(type)
+	{
+		case SYS_REBOOT_WARM:
+			Power_reset();
+			break;
+		case SYS_REBOOT_COLD:
+			break;
+	}
+}
+
+#endif /* CONFIG_REBOOT */
 
 static int power_initialize(void)
 {
