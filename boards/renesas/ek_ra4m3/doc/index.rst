@@ -114,6 +114,8 @@ The below features are currently supported on Zephyr OS for EK-RA4M3 board:
 +-----------+------------+----------------------+
 | ENTROPY   | on-chip    | entropy              |
 +-----------+------------+----------------------+
+| DAC       | on-chip    | dac                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
