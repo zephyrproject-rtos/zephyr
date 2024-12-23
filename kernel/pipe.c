@@ -74,6 +74,7 @@ void z_impl_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size
 #ifdef CONFIG_OBJ_CORE_PIPE
 	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
 #endif /* CONFIG_OBJ_CORE_PIPE */
+	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe, buffer, buffer_size);
 }
 
 int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_timeout_t timeout)
@@ -83,22 +84,28 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 	k_spinlock_key_t key;
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, write, pipe, data, len, timeout);
 	while (written < len) {
 		key = k_spin_lock(&pipe->lock);
 		if (unlikely(pipe_full(pipe))) {
 			timeout = sys_timepoint_timeout(end);
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, write, pipe, timeout);
 			rc = wait_for(&pipe->space, pipe, &key, pipe_full, timeout);
 			if (rc == -EAGAIN) {
 				k_spin_unlock(&pipe->lock, key);
-				return written ? written : -EAGAIN;
+				rc = written ? written : -EAGAIN;
+				SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, write, pipe, rc);
+				return rc;
 			} else if (rc) {
 				k_spin_unlock(&pipe->lock, key);
+				SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, write, pipe, rc);
 				return rc;
 			}
 		}
 
 		if (!(pipe->flags & PIPE_FLAG_OPEN)) {
 			k_spin_unlock(&pipe->lock, key);
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, write, pipe, -EPIPE);
 			return -EPIPE;
 		}
 
@@ -113,6 +120,7 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 		k_spin_unlock(&pipe->lock, key);
 		written += rc;
 	}
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, write, pipe, written);
 	return written;
 }
 
@@ -123,23 +131,30 @@ int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout
 	k_spinlock_key_t key;
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, read, pipe, data, len, timeout);
 	while (read < len) {
 		key = k_spin_lock(&pipe->lock);
 		if (pipe_empty(pipe) && pipe->flags & PIPE_FLAG_OPEN) {
 			timeout = sys_timepoint_timeout(end);
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, read, pipe, timeout);
 			rc = wait_for(&pipe->data, pipe, &key, pipe_empty, timeout);
 			if (rc == -EAGAIN) {
 				k_spin_unlock(&pipe->lock, key);
-				return read ? read : -EAGAIN;
+				rc = read ? read : -EAGAIN;
+				SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, read, pipe, rc);
+				return rc;
 			} else if (rc && rc != -EPIPE) {
 				k_spin_unlock(&pipe->lock, key);
+				SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, read, pipe, rc);
 				return rc;
 			}
 		}
 
 		if (pipe_empty(pipe) && !(pipe->flags & PIPE_FLAG_OPEN)) {
 			k_spin_unlock(&pipe->lock, key);
-			return read ? read : -EPIPE;
+			rc = read ? read : -EPIPE;
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, read, pipe, rc);
+			return rc;
 		}
 
 		rc = ring_buf_get(&pipe->buf, &data[read], len - read);
@@ -150,11 +165,13 @@ int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout
 		k_spin_unlock(&pipe->lock, key);
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, read, pipe, read);
 	return read;
 }
 
 void z_impl_k_pipe_flush(struct k_pipe *pipe)
 {
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, flush, pipe);
 	K_SPINLOCK(&pipe->lock) {
 		ring_buf_reset(&pipe->buf);
 		if (pipe->waiting) {
@@ -163,15 +180,18 @@ void z_impl_k_pipe_flush(struct k_pipe *pipe)
 			z_unpend_all(&pipe->space);
 		}
 	}
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, flush, pipe);
 }
 
 void z_impl_k_pipe_close(struct k_pipe *pipe)
 {
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, close, pipe);
 	K_SPINLOCK(&pipe->lock) {
 		pipe->flags = 0;
 		z_unpend_all(&pipe->data);
 		z_unpend_all(&pipe->space);
 	}
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, close, pipe);
 }
 
 #ifdef CONFIG_USERSPACE

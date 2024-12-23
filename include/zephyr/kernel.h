@@ -5217,6 +5217,7 @@ struct k_pipe {
 #ifdef CONFIG_OBJ_CORE_PIPE
 	struct k_obj_core  obj_core;
 #endif
+	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
 };
 
 /**
