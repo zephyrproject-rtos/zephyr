@@ -112,8 +112,14 @@
 			num-bidir-endpoints = <10>;
 			phys = <&usbhs_phy>;
 			status = "disabled";
+
 			udc {
 				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+
+			uhc {
+				compatible = "renesas,ra-uhc";
 				status = "disabled";
 			};
 		};
