@@ -17,6 +17,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/counter.h>
+
+#include "step_dir_stepper_timing_source.h"
 
 /**
  * @brief Common step direction stepper config.
@@ -27,18 +30,26 @@ struct step_dir_stepper_common_config {
 	const struct gpio_dt_spec step_pin;
 	const struct gpio_dt_spec dir_pin;
 	bool dual_edge;
+	const struct stepper_timing_source_api *timing_source;
+	const struct device *counter;
 };
 
 /**
  * @brief Initialize common step direction stepper config from devicetree instance.
+ *        If the counter property is set, the timing source will be set to the counter timing
+ *        source.
  *
  * @param node_id The devicetree node identifier.
  */
 #define STEP_DIR_STEPPER_DT_COMMON_CONFIG_INIT(node_id)                                            \
 	{                                                                                          \
 		.step_pin = GPIO_DT_SPEC_GET(node_id, step_gpios),                                 \
-		.dir_pin = GPIO_DT_SPEC_GET(node_id, dir_gpios),	                           \
-		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
+		.dir_pin = GPIO_DT_SPEC_GET(node_id, dir_gpios),                                   \
+		.dual_edge = DT_PROP(node_id, dual_edge_step),                                     \
+		.counter = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, counter)),                    \
+		.timing_source = COND_CODE_1(DT_NODE_HAS_PROP(node_id, counter),                   \
+						(&step_counter_timing_source_api),                 \
+						(&step_work_timing_source_api)),                   \
 	}
 
 /**
@@ -58,12 +69,25 @@ struct step_dir_stepper_common_data {
 	struct k_spinlock lock;
 	enum stepper_direction direction;
 	enum stepper_run_mode run_mode;
-	struct k_work_delayable stepper_dwork;
 	int32_t actual_position;
-	uint32_t delay_in_us;
+	uint32_t max_velocity;
 	int32_t step_count;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
+
+	struct k_work_delayable stepper_dwork;
+
+#ifdef CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING
+	struct counter_top_cfg counter_top_cfg;
+	bool counter_running;
+#endif /* CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING */
+
+#ifdef CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS
+	struct k_work event_callback_work;
+	struct k_msgq event_msgq;
+	uint8_t event_msgq_buffer[CONFIG_STEPPER_STEP_DIR_EVENT_QUEUE_LEN *
+				  sizeof(enum stepper_event)];
+#endif /* CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS */
 };
 
 /**
@@ -185,6 +209,12 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
  */
 int step_dir_stepper_common_set_event_callback(const struct device *dev,
 					       stepper_event_callback_t callback, void *user_data);
+
+/**
+ * @brief Handle a timing signal and update the stepper position.
+ * @param dev Pointer to the device structure.
+ */
+void stepper_handle_timing_signal(const struct device *dev);
 
 /** @} */
 
