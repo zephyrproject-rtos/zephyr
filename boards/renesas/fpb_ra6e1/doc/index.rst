@@ -95,6 +95,8 @@ The below features are currently supported on Zephyr OS for FPB-RA6E1 board:
 +-----------+------------+----------------------+
 | ENTROPY   | on-chip    | entropy              |
 +-----------+------------+----------------------+
+| DAC       | on-chip    | dac                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
