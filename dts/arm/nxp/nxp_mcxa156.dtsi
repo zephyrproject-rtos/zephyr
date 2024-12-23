@@ -421,6 +421,14 @@
 			status = "disabled";
 			no-voltage-regulator;
 		};
+
+		wwdt0: watchdog@4000c000 {
+			compatible = "nxp,lpc-wwdt";
+			reg = <0x4000c000 0x1000>;
+			interrupts = <60 0>;
+			status = "disabled";
+			clk-divider = <1>;
+		};
 	};
 };
 
