@@ -2408,14 +2408,10 @@ static const struct stm32_pclken pclken_##index[] =			\
 					    STM32_DT_INST_CLOCKS(index);\
 									\
 static struct uart_config uart_cfg_##index = {				\
-	.baudrate  = DT_INST_PROP_OR(index, current_speed,		\
-				     STM32_UART_DEFAULT_BAUDRATE),	\
-	.parity    = DT_INST_ENUM_IDX_OR(index, parity,			\
-					 STM32_UART_DEFAULT_PARITY),	\
-	.stop_bits = DT_INST_ENUM_IDX_OR(index, stop_bits,		\
-					 STM32_UART_DEFAULT_STOP_BITS),	\
-	.data_bits = DT_INST_ENUM_IDX_OR(index, data_bits,		\
-					 STM32_UART_DEFAULT_DATA_BITS),	\
+	.baudrate = DT_INST_PROP(index, current_speed),			\
+	.parity = DT_INST_ENUM_IDX(index, parity),			\
+	.stop_bits = DT_INST_ENUM_IDX(index, stop_bits),		\
+	.data_bits = DT_INST_ENUM_IDX(index, data_bits),		\
 	.flow_ctrl = DT_INST_PROP(index, hw_flow_control)		\
 					? UART_CFG_FLOW_CTRL_RTS_CTS	\
 					: UART_CFG_FLOW_CTRL_NONE,	\
