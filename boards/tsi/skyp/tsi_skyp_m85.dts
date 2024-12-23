@@ -24,9 +24,9 @@
 		zephyr,flash = &sram0;
 	};
 
-	jtag_uart: uart@95003000 {
+	jtag_uart: uart@85003000 {
 		compatible = "altr,jtag-uart";
-		reg = <0x95003000 0x8>;
+		reg = <0x85003000 0x8>;
 		status = "enabled";
 	};
 
@@ -75,25 +75,25 @@
 		zephyr,memory-region = "DTCM";
 	};
 
-	isram: sram@60600000 {/* alias @ 0x60600000 */
+	isram: sram@60200000 {/* alias @ 0x60200000, lower 1MB of 2 MB SRAM1 */
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x60600000 DT_SIZE_M(1)>;
+		reg = <0x60200000 DT_SIZE_M(1)>;
 		zephyr,memory-region = "ISRAM";
 	};
 
-	/* DDR4 - 2G, alternates non-secure/secure every 256M */
-	ddr4: memory@60700000 {
+	/* Higher 1 MB of 2MB high SRAM */
+	sram1: memory@60300000 {
 		device_type = "memory";
 		compatible = "zephyr,memory-region";
-		reg = <0x60700000 DT_SIZE_M(1)>;
-		zephyr,memory-region = "DDR4";
+		reg = <0x60300000 DT_SIZE_M(1)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	soc {
-		peripheral@81000000 {
+		peripheral@71000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x81000000 0x1effffff>;
+			ranges = <0x0 0x71000000 0x1effffff>;
 
 			 #include "tsi_skyp_m85-common.dtsi"
 		};
