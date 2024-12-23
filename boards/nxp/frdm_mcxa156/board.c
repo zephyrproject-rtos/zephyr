@@ -212,6 +212,10 @@ static int frdm_mcxa156_init(void)
 	CLOCK_EnableUsbfsClock();
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	CLOCK_SetClockDiv(kCLOCK_DivWWDT0, 1u);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
