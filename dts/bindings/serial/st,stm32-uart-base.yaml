@@ -25,6 +25,18 @@ properties:
   interrupts:
     required: true
 
+  current-speed:
+    default: 115200
+
+  parity:
+    default: "none"
+
+  stop-bits:
+    default: "1"
+
+  data-bits:
+    default: 8
+
   single-wire:
     type: boolean
     description: |
