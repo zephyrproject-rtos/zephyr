@@ -578,6 +578,59 @@ static inline enum uart_config_flow_control uart_gecko_ll2cfg_hwctrl(
 }
 #endif
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int uart_gecko_configure(const struct device *dev,
+				const struct uart_config *cfg)
+{
+	const struct uart_gecko_config *config = dev->config;
+	USART_TypeDef *base = config->base;
+	struct uart_gecko_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
+
+	if (uart_cfg->parity != cfg->parity) {
+		return -ENOTSUP;
+	}
+
+	if (uart_cfg->stop_bits != cfg->stop_bits) {
+		return -ENOTSUP;
+	}
+
+	if (uart_cfg->data_bits != cfg->data_bits) {
+		return -ENOTSUP;
+	}
+
+	if (uart_cfg->flow_ctrl != cfg->flow_ctrl) {
+		return -ENOTSUP;
+	}
+
+	USART_BaudrateAsyncSet(base, 0, cfg->baudrate, usartOVS16);
+
+	/* Upon successful configuration, persist the syscall-passed
+	 * uart_config.
+	 * This allows restoring it, should the device return from a low-power
+	 * mode in which register contents are lost.
+	 */
+	*uart_cfg = *cfg;
+
+	return 0;
+};
+
+static int uart_gecko_config_get(const struct device *dev,
+				 struct uart_config *cfg)
+{
+	struct uart_gecko_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
+
+	cfg->baudrate = uart_cfg->baudrate;
+	cfg->parity = uart_cfg->parity;
+	cfg->stop_bits = uart_cfg->stop_bits;
+	cfg->data_bits = uart_cfg->data_bits;
+	cfg->flow_ctrl = uart_cfg->flow_ctrl;
+
+	return 0;
+}
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
+
 /**
  * @brief Main initializer for UART
  *
@@ -663,6 +716,10 @@ static DEVICE_API(uart, uart_gecko_driver_api) = {
 	.poll_in = uart_gecko_poll_in,
 	.poll_out = uart_gecko_poll_out,
 	.err_check = uart_gecko_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_gecko_configure,
+	.config_get = uart_gecko_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_gecko_fifo_fill,
 	.fifo_read = uart_gecko_fifo_read,
