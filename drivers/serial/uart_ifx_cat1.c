@@ -519,9 +519,9 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 											     \
 	static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {			     \
 		.dt_cfg.baudrate = DT_INST_PROP(n, current_speed),			     \
-		.dt_cfg.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	     \
-		.dt_cfg.stop_bits = DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1), \
-		.dt_cfg.data_bits = DT_INST_ENUM_IDX_OR(n, data_bits, UART_CFG_DATA_BITS_8), \
+		.dt_cfg.parity = DT_INST_ENUM_IDX(n, parity),				     \
+		.dt_cfg.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),			     \
+		.dt_cfg.data_bits = DT_INST_ENUM_IDX(n, data_bits),			     \
 		.dt_cfg.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				     \
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),				     \
