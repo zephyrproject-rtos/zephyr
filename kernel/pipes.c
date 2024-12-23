@@ -46,7 +46,7 @@ void z_impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	pipe->lock = (struct k_spinlock){};
 	z_waitq_init(&pipe->wait_q.writers);
 	z_waitq_init(&pipe->wait_q.readers);
-	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe);
+	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe, buffer, size);
 
 	pipe->flags = 0;
 

@@ -1558,8 +1558,80 @@
 /**
  * @brief Trace initialization of Pipe
  * @param pipe Pipe object
+ * @param buffer data buffer
+ * @param size data buffer size
  */
-#define sys_port_trace_k_pipe_init(pipe)
+#define sys_port_trace_k_pipe_init(pipe, buffer, size)
+
+/**
+ * @brief Trace Pipe reset entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_reset_enter(pipe)
+
+/**
+ * @brief Trace Pipe reset exit
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_reset_exit(pipe)
+
+/**
+ * @brief Trace Pipe close entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_close_enter(pipe)
+
+/**
+ * @brief Trace Pipe close exit
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_close_exit(pipe)
+
+/**
+ * @brief Trace Pipe write attempt entry
+ * @param pipe Pipe object
+ * @param data pointer to data
+ * @param len length of data
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_pipe_write_enter(pipe, data, len, timeout)
+
+/**
+ * @brief Trace Pipe write attempt blocking
+ * @param pipe Pipe object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_pipe_write_blocking(pipe, timeout)
+
+/**
+ * @brief Trace Pipe write attempt outcome
+ * @param pipe Pipe object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_pipe_write_exit(pipe, ret)
+
+/**
+ * @brief Trace Pipe read attempt entry
+ * @param pipe Pipe object
+ * @param data Pointer to data
+ * @param len Length of data
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_pipe_read_enter(pipe, data, len, timeout)
+
+/**
+ * @brief Trace Pipe read attempt blocking
+ * @param pipe Pipe object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_pipe_read_blocking(pipe, timeout)
+
+/**
+ * @brief Trace Pipe read attempt outcome
+ * @param pipe Pipe object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_pipe_read_exit(pipe, ret)
 
 /**
  * @brief Trace Pipe cleanup entry
