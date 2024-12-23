@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
 /delete-node/ &adc1;
+/delete-node/ &dac1;
 
 / {
 	soc {
@@ -349,4 +350,8 @@
 	port-irqs = <&port_irq11>;
 	port-irq-names = "port-irq11";
 	port-irq11-pins = <8>;
+};
+
+&dac_global {
+	has-output-amplifier;
 };
