@@ -221,6 +221,16 @@
 			#io-channel-cells = <1>;
 		};
 
+		flexcan0: can@400cc000 {
+			compatible = "nxp,flexcan";
+			reg = <0x400cc000 0x1000>;
+			interrupts = <19 0>;
+			interrupt-names = "common";
+			clocks = <&syscon MCUX_FLEXCAN0_CLK>;
+			clk-source = <0>;
+			status = "disabled";
+		};
+
 		flexpwm0: flexpwm@400a9000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x400a9000 0x1000>;
