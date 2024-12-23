@@ -340,6 +340,15 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	case MCUX_CTIMER4_CLK:
 		*rate = CLOCK_GetCTimerClkFreq(4);
 		break;
+	case MCUX_CTIMER5_CLK:
+		*rate = CLOCK_GetCTimerClkFreq(5);
+		break;
+	case MCUX_CTIMER6_CLK:
+		*rate = CLOCK_GetCTimerClkFreq(6);
+		break;
+	case MCUX_CTIMER7_CLK:
+		*rate = CLOCK_GetCTimerClkFreq(7);
+		break;
 #endif
 
 #if defined(CONFIG_COUNTER_NXP_MRT)
