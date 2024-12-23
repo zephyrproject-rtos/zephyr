@@ -1,6 +1,0 @@
-shield:
-  name: esp_tz_router_eth
-  full_name: ESP Thread Border Router Sub Ethernet
-  vendor: espressif
-  supported_features:
-    - ethernet

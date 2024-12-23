@@ -1,0 +1,22 @@
+identifier: esp_threadbr_zigbeegw/esp32s3/procpu
+name: ESP Thread Border Router / ZigBee Gateway PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - input
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: espressif

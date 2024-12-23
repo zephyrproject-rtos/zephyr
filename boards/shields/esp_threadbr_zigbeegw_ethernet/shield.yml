@@ -1,0 +1,6 @@
+shield:
+  name: esp_threadbr_zigbeegw_ethernet
+  full_name: ESP Thread BR / Zigbee GW Sub Ethernet
+  vendor: espressif
+  supported_features:
+    - ethernet
