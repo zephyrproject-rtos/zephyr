@@ -826,6 +826,18 @@ out:
 }
 #endif
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+static void wpas_remove_certs(struct wpa_supplicant *wpa_s)
+{
+	wpa_config_remove_blob(wpa_s->conf, "ca_cert");
+	wpa_config_remove_blob(wpa_s->conf, "client_cert");
+	wpa_config_remove_blob(wpa_s->conf, "private_key");
+	wpa_config_remove_blob(wpa_s->conf, "ca_cert2");
+	wpa_config_remove_blob(wpa_s->conf, "client_cert2");
+	wpa_config_remove_blob(wpa_s->conf, "private_key2");
+}
+#endif
+
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				       struct wifi_connect_req_params *params,
 				       bool mode_ap)
@@ -844,6 +856,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	char phase1[128] = {0};
 	char *phase2 = NULL;
 	unsigned int index;
+
+	wpas_remove_certs(wpa_s);
 #endif
 
 	if (!wpa_cli_cmd_v("remove_network all")) {
@@ -1364,6 +1378,10 @@ out:
 #endif /* CONFIG_AP */
 		wifi_mgmt_raise_disconnect_complete_event(iface, ret);
 	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	wpas_remove_certs(wpa_s);
+#endif
 
 	if (!wpa_cli_cmd_v("remove_network all")) {
 		wpa_printf(MSG_ERROR, "Failed to remove all networks");
