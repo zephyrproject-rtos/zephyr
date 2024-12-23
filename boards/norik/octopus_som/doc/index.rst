@@ -121,5 +121,5 @@ References
 
 .. target-notes::
 
-.. _Octopus SoM Product Page: https://www.norik.com/2024/09/16/octopus-som/
+.. _Octopus SoM Product Page: https://www.norik.com/octopus-som/
 .. _Octopus SoM Documentation: https://www.norik.com/wp-content/uploads/2024/09/Octopus_SoM_Datasheet.pdf
