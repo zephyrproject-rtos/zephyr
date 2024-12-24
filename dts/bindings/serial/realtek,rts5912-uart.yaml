@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+description: Realtek Rts5912 Uart
+
+compatible: "realtek,rts5912-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port:
+    type: int
+    required: true
+
+  uart-dev:
+    type: phandle
+    required: true
+    description: Get the handle of the UART device
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
