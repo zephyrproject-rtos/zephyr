@@ -434,9 +434,7 @@ set(mps3_an547_DEPRECATED
 set(mps3_an547_ns_DEPRECATED
     mps3/an547/ns
 )
-set(mps3_an547_tsv_DEPRECATED
-    mps3/an547/tsv
-)
+
 set(native_posix_64_DEPRECATED
     native_posix/native/64
 )
