@@ -15,5 +15,6 @@ supported:
   - pwm
   - rtc_counter
   - spi
+  - i3c
 ram: 192
 flash: 576
