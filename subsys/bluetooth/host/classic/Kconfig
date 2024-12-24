@@ -86,7 +86,65 @@ config BT_HFP_AG
 	help
 	  This option enables Bluetooth AG support
 
+if BT_HFP_HF
+config BT_HFP_HF_CLI
+	bool "CLI presentation capability for HFP HF [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables CLI presentation capability for HFP HF
+
+config BT_HFP_HF_VOLUME
+	bool "Remote audio volume control for HFP HF [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables Remote audio volume control for HFP HF
+
+config BT_HFP_HF_CODEC_NEG
+	bool "Codec Negotiation for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Codec Negotiation for HFP HF
+
+config BT_HFP_HF_ECNR
+	bool "EC and/or NR function for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables EC and/or NR function for HFP HF
+
+if BT_HFP_HF_CODEC_NEG
+config BT_HFP_HF_CODEC_MSBC
+	bool "Support Codec mSBC for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Codec mSBC for HFP HF
+
+config BT_HFP_HF_CODEC_LC3_SWB
+	bool "Support Codec LC3 SWB for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Codec LC3 SWB for HFP HF
+endif # BT_HFP_HF_CODEC_NEG
+
+endif # BT_HFP_HF
+
 if BT_HFP_AG
+config BT_HFP_AG_EXT_ERR
+	bool "Extended Error Result Codes for HFP AG [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables Extended Error Result Codes for HFP AG
+
+config BT_HFP_AG_CODEC_NEG
+	bool "Codec Negotiation for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Codec Negotiation for HFP AG
+
+config BT_HFP_AG_ECNR
+	bool "EC and/or NR function for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables EC and/or NR function for HFP AG
+
+config BT_HFP_AG_ECS
+	bool "Enhanced call status for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Enhanced call status for HFP AG
+
 config BT_HFP_AG_TX_BUF_COUNT
 	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
 	default BT_RFCOMM_TX_MAX
