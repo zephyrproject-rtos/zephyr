@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_USB_CDC_ACM ${ZEPHYR_BASE}/misc/empty_file.c
 # zephyr-keep-sorted-stop
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_EUSART_GECKO eusart_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_LEUART_GECKO leuart_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_SERIAL_ESP32_USB serial_esp32_usb.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ALTERA uart_altera.c)
