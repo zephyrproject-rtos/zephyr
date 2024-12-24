@@ -200,4 +200,12 @@ config PICOLIBC_GLOBAL_ERRNO
 
 endif # PICOLIBC_USE_MODULE
 
+if ZVFS
+
+config ZVFS_LIBC_FILE_SIZE
+	default 144 if 64BIT
+	default 80
+
+endif # ZVFS
+
 endif # PICOLIBC

@@ -11,6 +11,8 @@ zephyr_library_sources(
   stdio.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_ZVFS zvfs_libc.c)
+
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,prohibit_lto>)
 
 # define __LINUX_ERRNO_EXTENSIONS__ so we get errno defines like -ESHUTDOWN
