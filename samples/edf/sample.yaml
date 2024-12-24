@@ -1,0 +1,14 @@
+sample:
+  description: A basic Earliest Deadline First (EDF) example
+  name: Earliest Deadline First (EDF) sample
+common:
+  tags: EDF
+tests:
+  sample.subsys.basic.edf:
+    build_only: true
+    platform_allow:
+      - native_sim
+      - qemu_x86
+      - qemu_riscv32
+      - qemu_cortex_a53
+    tags: edf
