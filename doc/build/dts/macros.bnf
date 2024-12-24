@@ -96,6 +96,9 @@ node-macro =/ %s"DT_N" path-id %s"_FOREACH_NODELABEL" [ %s"_VARGS" ]
 node-macro =/ %s"DT_N" path-id %s"_NODELABEL_NUM"
 ; The node's zero-based index in the list of it's parent's child nodes.
 node-macro =/ %s"DT_N" path-id %s"_CHILD_IDX"
+; Identifies child nodes by ordinal number.
+node-macro =/ %s"DT_N" path-id %s"_CHILD_IDX_" *DIGIT
+node-macro =/ %s"DT_N" path-id %s"_CHILD_IDX_" *DIGIT "_EXISTS"
 ; The node's status macro; dt-name in this case is something like "okay"
 ; or "disabled".
 node-macro =/ %s"DT_N" path-id %s"_STATUS_" dt-name
