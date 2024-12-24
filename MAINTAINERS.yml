@@ -3918,6 +3918,18 @@ nRF Platforms:
   labels:
     - "platform: nRF"
 
+Octavo Systems Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - kgugala
+    - tgorochowik
+  files:
+    - boards/oct/
+    - soc/oct/
+  labels:
+    - "platform: Octavo Systems"
+
 OpenTitan Platforms:
   status: maintained
   maintainers:
