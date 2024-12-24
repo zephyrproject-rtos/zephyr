@@ -12,6 +12,9 @@
  */
 
 #include <errno.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/types.h>
 #include <ctype.h>
 #include <stddef.h>
@@ -3247,10 +3250,17 @@ static int cmd_subrate_request(const struct shell *sh, size_t argc, char *argv[]
 #if defined(CONFIG_BT_CENTRAL)
 static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 {
+	struct bt_le_conn_param conn_param;
 	int err;
 	bt_addr_le_t addr;
 	struct bt_conn *conn = NULL;
 	uint32_t options = 0;
+
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST) || IS_ENABLED(CONFIG_BT_BAP_BROADCAST_ASSISTANT)) {
+		conn_param = *BT_BAP_CONN_PARAM_RELAXED;
+	} else {
+		conn_param = *BT_LE_CONN_PARAM_DEFAULT;
+	}
 
 	*ercd = 0;
 
@@ -3288,7 +3298,7 @@ static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 					BT_GAP_SCAN_FAST_INTERVAL,
 					BT_GAP_SCAN_FAST_INTERVAL);
 
-	err = bt_conn_le_create(&addr, create_params, BT_LE_CONN_PARAM_DEFAULT, &conn);
+	err = bt_conn_le_create(&addr, create_params, &conn_param, &conn);
 	if (err) {
 		*ercd = err;
 		return -ENOEXEC;
