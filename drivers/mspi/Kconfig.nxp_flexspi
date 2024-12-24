@@ -1,0 +1,11 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_NXP_FLEXSPI
+	bool "NXP FlexSPI MSPI driver"
+	default y
+	depends on DT_HAS_NXP_FLEXSPI_ENABLED
+	select MSPI_XIP
+	select GPIO
+	help
+	  Enable MSPI driver for NXP FlexSPI
