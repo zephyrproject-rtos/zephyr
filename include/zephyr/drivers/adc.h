@@ -695,14 +695,15 @@ typedef int (*adc_api_read_async)(const struct device *dev,
 				  struct k_poll_signal *async);
 
 /**
- * @brief ADC driver API
- *
- * This is the mandatory API any ADC driver needs to expose.
+ * @driver_api{ADC}
  */
 __subsystem struct adc_driver_api {
+	/** @copydoc adc_channel_setup */
 	adc_api_channel_setup channel_setup;
+	/** @copydoc adc_read */
 	adc_api_read          read;
-#ifdef CONFIG_ADC_ASYNC
+#ifdef CONFIG_ADC_ASYNC || __DOXYGEN__
+	/** @copydoc adc_read_async */
 	adc_api_read_async    read_async;
 #endif
 	uint16_t ref_internal;	/* mV */
@@ -795,8 +796,7 @@ static inline int adc_read_dt(const struct adc_dt_spec *spec,
 /**
  * @brief Set an asynchronous read request.
  *
- * @note This function is available only if @kconfig{CONFIG_ADC_ASYNC}
- * is selected.
+ * @kconfig_dep{CONFIG_ADC_ASYNC}
  *
  * If invoked from user mode, any sequence struct options for callback must
  * be NULL.
