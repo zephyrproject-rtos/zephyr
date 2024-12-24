@@ -471,7 +471,7 @@
 			rxdma = <11>;
 			txdma = <10>;
 			lines = <1>;
-			chip_select = <0>;
+			chip-select = <0>;
 			dcsckon = <6>;
 			dckcsoff = <4>;
 			dldh = <6>;

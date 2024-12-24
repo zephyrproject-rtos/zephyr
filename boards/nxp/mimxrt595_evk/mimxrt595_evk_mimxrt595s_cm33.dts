@@ -376,8 +376,8 @@ zephyr_udc0: &usbhs {
 	};
 	pinctrl-0 = <&pinmux_usdhc>;
 	pinctrl-names = "default";
-	mmc-hs200-1_8v;
-	mmc-hs400-1_8v;
+	mmc-hs200-1-8v;
+	mmc-hs400-1-8v;
 };
 
 &wwdt0 {
