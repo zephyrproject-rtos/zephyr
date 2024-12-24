@@ -33,6 +33,7 @@ from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.quarantine import Quarantine
+from twisterlib.scripting import Scripting
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
@@ -93,6 +94,10 @@ class TestPlan:
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
 
+    scripting_schema = scl.yaml_load(
+        os.path.join(ZEPHYR_BASE,
+                     "scripts", "schemas", "twister", "scripting-schema.yaml"))
+
     tc_schema_path = os.path.join(
         ZEPHYR_BASE,
         "scripts",
@@ -112,6 +117,7 @@ class TestPlan:
         # Keep track of which test cases we've filtered out and why
         self.testsuites = {}
         self.quarantine = None
+        self.scripting = None
         self.platforms = []
         self.platform_names = []
         self.selected_platforms = []
@@ -224,6 +230,11 @@ class TestPlan:
                     logger.debug(f'Quarantine file {quarantine_file} is empty')
             self.quarantine = Quarantine(ql)
 
+        # handle extra scripts
+        sl = self.options.scripting_list
+        if sl:
+            self.scripting = Scripting(sl, self.scripting_schema)
+
     def load(self):
 
         if self.options.report_suffix:
@@ -263,6 +274,21 @@ class TestPlan:
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         else:
             self.apply_filters()
+
+        if self.scripting:
+            # Check if at least one provided script met the conditions.
+            # Summarize logs for all calls.
+            was_script_matched = False
+            for instance in self.instances.values():
+                was_script_matched = (
+                    was_script_matched
+                    or self.handle_additional_scripts(instance.platform.name, instance)
+                )
+
+            if not was_script_matched:
+                logger.info(
+                    "Scripting list was provided, none of the specified conditions were met"
+                )
 
         if self.options.subset:
             s =  self.options.subset
@@ -1292,6 +1318,67 @@ class TestPlan:
         instance.build_dir = link_path
 
         self.link_dir_counter += 1
+
+    def handle_additional_scripts(
+        self, platform_name: str, testsuite: TestInstance
+    ) -> bool:
+        logger.debug(testsuite.testsuite.id)
+        matched_scripting = self.scripting.get_matched_scripting(
+            testsuite.testsuite.id, platform_name
+        )
+        if matched_scripting:
+            # Define a function to validate
+            # if the platform is supported by the matched scripting
+            def validate_boards(platform_scope, platform_from_yaml):
+                return any(board in platform_scope for board in platform_from_yaml)
+
+            # Define the types of scripts we are interested in as a set
+            script_types = {
+                "pre_script": "pre_script_timeout",
+                "post_flash_script": "post_flash_timeout",
+                "post_script": "post_script_timeout",
+            }
+
+            # Iterate over all DUTs to set the appropriate scripts
+            # if they match the platform and are supported
+            for dut in self.env.hwm.duts:
+                # Check if the platform matches and if the platform
+                # is supported by the matched scripting
+                if dut.platform in platform_name and validate_boards(
+                    platform_name, matched_scripting.platforms
+                ):
+                    for script_type, script_timeout in script_types.items():
+                        # Get the script object from matched_scripting
+                        script_obj = getattr(matched_scripting, script_type, None)
+                        # If a script object is provided, check if the script path is a valid file
+                        if script_obj and script_obj.path:
+                            # Check if there's an existing script and if override is not allowed
+                            if not script_obj.override_script:
+                                logger.info(
+                                    f"{script_type} will not be overridden on {platform_name}."
+                                )
+                                continue
+                            # Check if the script path is a valid file and set it on the DUT
+                            if Path(script_obj.path).is_file():
+                                setattr(dut, script_type, script_obj.path)
+                                # Check if the script timeout is provided and set it on the DUT
+                                if script_obj.timeout is not None:
+                                    setattr(dut, script_timeout, script_obj.timeout)
+                                    logger.info(
+                                        f"{script_type} {script_obj.path} will be executed on "
+                                        f"{platform_name} with timeout {script_obj.timeout}"
+                                    )
+                                else:
+                                    logger.info(
+                                        f"{script_type} {script_obj.path} will be executed on "
+                                        f"{platform_name} with no timeout specified"
+                                    )
+                            else:
+                                raise TwisterRuntimeError(
+                                    f"{script_type} script not found under path: {script_obj.path}"
+                                )
+            return True
+        return False
 
 
 def change_skip_to_error_if_integration(options, instance):
