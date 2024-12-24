@@ -8,6 +8,7 @@ ram: 128
 supported:
   - flash
   - gpio
+  - i2c
   - pinctrl
   - pm
   - uart
