@@ -8,6 +8,6 @@
 #define __DT_FREQ_H
 
 #define DT_FREQ_K(x) ((x) * 1000)
-#define DT_FREQ_M(x) ((x) * 1000 * 1000)
+#define DT_FREQ_M(x) (DT_FREQ_K(x) * 1000)
 
 #endif /* __DT_FREQ_H */
