@@ -92,7 +92,8 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		transfer.txData = NULL;
 	}
 
-	transfer.dataSize = data->dfs;
+	/* Burst length is set in the configure step */
+	transfer.dataSize = 1;
 
 	status = ECSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
