@@ -540,34 +540,6 @@ static void avdtp_set_configuration_rsp(struct bt_avdtp *session, struct net_buf
 	avdtp_process_configuration_rsp(session, buf, msg_type, false);
 }
 
-static void avdtp_get_configuration_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid)
-{
-	/* todo: is not supported now, reply reject */
-	struct net_buf *rsp_buf;
-	int err;
-
-	rsp_buf = avdtp_create_reply_pdu(BT_AVDTP_REJECT, BT_AVDTP_PACKET_TYPE_SINGLE,
-					 BT_AVDTP_GET_CONFIGURATION, tid);
-	if (!rsp_buf) {
-		LOG_ERR("Error: No Buff available");
-		return;
-	}
-
-	err = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
-	if (err < 0) {
-		net_buf_unref(rsp_buf);
-		LOG_ERR("Error:L2CAP send fail - result = %d", err);
-		return;
-	}
-}
-
-static void avdtp_get_configuration_rsp(struct bt_avdtp *session, struct net_buf *buf,
-					uint8_t msg_type)
-{
-	/* todo: is not supported now */
-	return;
-}
-
 static void avdtp_re_configure_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid)
 {
 	avdtp_process_configuration_cmd(session, buf, tid, true);
@@ -1080,43 +1052,45 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	session->ops->disconnected(session);
 }
 
-static const struct {
-	uint8_t sig_id;
-	void (*func)(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid);
-} cmd_handler[] = {
-	{BT_AVDTP_DISCOVER, avdtp_discover_cmd},
-	{BT_AVDTP_GET_CAPABILITIES, avdtp_get_capabilities_cmd},
-	{BT_AVDTP_SET_CONFIGURATION, avdtp_set_configuration_cmd},
-	{BT_AVDTP_GET_CONFIGURATION, avdtp_get_configuration_cmd},
-	{BT_AVDTP_RECONFIGURE, avdtp_re_configure_cmd},
-	{BT_AVDTP_OPEN, avdtp_open_cmd},
-	{BT_AVDTP_START, avdtp_start_cmd},
-	{BT_AVDTP_CLOSE, avdtp_close_cmd},
-	{BT_AVDTP_SUSPEND, avdtp_suspend_cmd},
-	{BT_AVDTP_ABORT, avdtp_abort_cmd},
+void (*cmd_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid) = {
+	avdtp_discover_cmd,          /* BT_AVDTP_DISCOVER */
+	avdtp_get_capabilities_cmd,  /* BT_AVDTP_GET_CAPABILITIES */
+	avdtp_set_configuration_cmd, /* BT_AVDTP_SET_CONFIGURATION */
+	NULL,                        /* BT_AVDTP_GET_CONFIGURATION */
+	avdtp_re_configure_cmd,      /* BT_AVDTP_RECONFIGURE */
+	avdtp_open_cmd,              /* BT_AVDTP_OPEN */
+	avdtp_start_cmd,             /* BT_AVDTP_START */
+	avdtp_close_cmd,             /* BT_AVDTP_CLOSE */
+	avdtp_suspend_cmd,           /* BT_AVDTP_SUSPEND */
+	avdtp_abort_cmd,             /* BT_AVDTP_ABORT */
+	NULL,                        /* BT_AVDTP_SECURITY_CONTROL */
+	NULL,                        /* BT_AVDTP_GET_ALL_CAPABILITIES */
+	NULL,                        /* BT_AVDTP_DELAYREPORT */
 };
 
-static const struct {
-	uint8_t sig_id;
-	void (*func)(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg_type);
-} rsp_handler[] = {
-	{BT_AVDTP_DISCOVER, avdtp_discover_rsp},
-	{BT_AVDTP_GET_CAPABILITIES, avdtp_get_capabilities_rsp},
-	{BT_AVDTP_SET_CONFIGURATION, avdtp_set_configuration_rsp},
-	{BT_AVDTP_GET_CONFIGURATION, avdtp_get_configuration_rsp},
-	{BT_AVDTP_RECONFIGURE, avdtp_re_configure_rsp},
-	{BT_AVDTP_OPEN, avdtp_open_rsp},
-	{BT_AVDTP_START, avdtp_start_rsp},
-	{BT_AVDTP_CLOSE, avdtp_close_rsp},
-	{BT_AVDTP_SUSPEND, avdtp_suspend_rsp},
-	{BT_AVDTP_ABORT, avdtp_abort_rsp},
+void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg_type) = {
+	avdtp_discover_rsp,          /* BT_AVDTP_DISCOVER */
+	avdtp_get_capabilities_rsp,  /* BT_AVDTP_GET_CAPABILITIES */
+	avdtp_set_configuration_rsp, /* BT_AVDTP_SET_CONFIGURATION */
+	NULL,                        /* BT_AVDTP_GET_CONFIGURATION */
+	avdtp_re_configure_rsp,      /* BT_AVDTP_RECONFIGURE */
+	avdtp_open_rsp,              /* BT_AVDTP_OPEN */
+	avdtp_start_rsp,             /* BT_AVDTP_START */
+	avdtp_close_rsp,             /* BT_AVDTP_CLOSE */
+	avdtp_suspend_rsp,           /* BT_AVDTP_SUSPEND */
+	avdtp_abort_rsp,             /* BT_AVDTP_ABORT */
+	NULL,                        /* BT_AVDTP_SECURITY_CONTROL */
+	NULL,                        /* BT_AVDTP_GET_ALL_CAPABILITIES */
+	NULL,                        /* BT_AVDTP_DELAYREPORT */
 };
 
 int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_avdtp_single_sig_hdr *hdr;
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
-	uint8_t i, msgtype, pack_type, sigid, tid;
+	uint8_t msgtype, pack_type, sigid, tid;
+	struct net_buf *rsp_buf;
+	int err;
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Recvd Wrong AVDTP Header");
@@ -1135,30 +1109,26 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* TODO: only support single packet now */
 	if (pack_type != BT_AVDTP_PACKET_TYPE_SINGLE) {
 		if (pack_type == BT_AVDTP_PACKET_TYPE_START) {
-			struct net_buf *rsp_buf;
-			int err;
-
 			if (buf->len < 1U) {
 				return -EINVAL;
 			}
 			sigid = net_buf_pull_u8(buf);
-			rsp_buf = avdtp_create_reply_pdu(BT_AVDTP_REJECT,
-							 BT_AVDTP_PACKET_TYPE_SINGLE, sigid, tid);
-			if (!rsp_buf) {
-				LOG_ERR("Error: No Buff available");
-				return -EINVAL;
-			}
-			err = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
-			if (err < 0) {
-				net_buf_unref(rsp_buf);
-				LOG_ERR("Error:L2CAP send fail - result = %d", err);
-			}
+			goto send_reject;
 		}
-		return 0;
+
+		/* discard the continue packet and end packet */
+		return -EINVAL;
 	}
 
-	/* validate if there is an outstanding resp expected*/
-	if (msgtype != BT_AVDTP_CMD) {
+	if (msgtype == BT_AVDTP_CMD) {
+		if (sigid != 0U && sigid <= BT_AVDTP_DELAYREPORT &&
+		    cmd_handler[sigid - 1U] != NULL) {
+			cmd_handler[sigid - 1U](session, buf, tid);
+			return 0;
+		}
+		/* goto send_reject; */
+	} else {
+		/* validate if the response is expected*/
 		if (session->req == NULL) {
 			LOG_DBG("Unexpected peer response");
 			return -EINVAL;
@@ -1170,25 +1140,31 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 				session->req->sig, session->req->tid);
 			return -EINVAL;
 		}
+
+		if (sigid != 0U && sigid <= BT_AVDTP_DELAYREPORT &&
+		    cmd_handler[sigid - 1U] != NULL) {
+			rsp_handler[sigid - 1U](session, buf, msgtype);
+			return 0;
+		}
+
+		/* discard unsupported response packet */
+		return -EINVAL;
 	}
 
-	if (msgtype == BT_AVDTP_CMD) {
-		for (i = 0U; i < ARRAY_SIZE(cmd_handler); i++) {
-			if (sigid == cmd_handler[i].sig_id) {
-				cmd_handler[i].func(session, buf, tid);
-				return 0;
-			}
-		}
-	} else {
-		for (i = 0U; i < ARRAY_SIZE(rsp_handler); i++) {
-			if (sigid == rsp_handler[i].sig_id) {
-				rsp_handler[i].func(session, buf, msgtype, tid);
-				return 0;
-			}
-		}
+send_reject:
+	rsp_buf = avdtp_create_reply_pdu(BT_AVDTP_GEN_REJECT, BT_AVDTP_PACKET_TYPE_SINGLE, sigid,
+					 tid);
+	if (!rsp_buf) {
+		LOG_ERR("Error: No Buff available");
+		return -EINVAL;
+	}
+	err = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
+	if (err < 0) {
+		net_buf_unref(rsp_buf);
+		LOG_ERR("Error:L2CAP send fail - result = %d", err);
 	}
 
-	return 0;
+	return err;
 }
 
 static const struct bt_l2cap_chan_ops signal_chan_ops = {
