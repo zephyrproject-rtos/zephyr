@@ -132,6 +132,8 @@ void __attribute__((naked)) pm_s2ram_mark_set(void)
 
 bool __attribute__((naked)) pm_s2ram_mark_check_and_clear(void)
 {
+	register uint32_t link_reg __asm__("r14");
+
 	__asm__ volatile(
 		/* Set return value to 0 */
 		"mov	r0, #0\n"
@@ -159,13 +161,14 @@ bool __attribute__((naked)) pm_s2ram_mark_check_and_clear(void)
 		"mov	r0, #1\n"
 
 		"exit:\n"
-		"bx	lr\n"
+		"bx	%[link_reg]\n"
 		:
 		: [resetinfo_addr] "r"(NRF_RESETINFO),
 		  [resetreas_offs] "r"(offsetof(NRF_RESETINFO_Type, RESETREAS.LOCAL)),
 		  [resetreas_unretained_mask] "r"(NRF_RESETINFO_RESETREAS_LOCAL_UNRETAINED_MASK),
 		  [restorevalid_offs] "r"(offsetof(NRF_RESETINFO_Type, RESTOREVALID)),
-		  [restorevalid_present_mask] "r"(RESETINFO_RESTOREVALID_RESTOREVALID_Msk)
+		  [restorevalid_present_mask] "r"(RESETINFO_RESTOREVALID_RESTOREVALID_Msk),
+		  [link_reg] "r"(link_reg)
 
-		: "r0", "r1", "r3", "r4", "memory");
+		: "r0", "r1", "r3", "r4", "cc", "memory");
 }
