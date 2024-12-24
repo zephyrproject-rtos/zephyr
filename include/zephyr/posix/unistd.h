@@ -48,6 +48,10 @@ int rmdir(const char *path);
 
 FUNC_NORETURN void _exit(int status);
 
+#ifdef CONFIG_POSIX_PIPE
+int pipe(int fildes[2]);
+#endif
+
 #ifdef CONFIG_NETWORKING
 static inline int gethostname(char *buf, size_t len)
 {
