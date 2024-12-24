@@ -190,6 +190,27 @@ config STACK_USAGE
 	  Generate an extra file that specifies the maximum amount of stack used,
 	  on a per-function basis.
 
+config SYSCALL_STACK_USAGE
+	bool "Generate syscall stack usage information"
+	depends on STACK_USAGE
+	depends on USERSPACE
+	default n
+	help
+		Generate an extra text file that specifies the maximum
+		stack usage of each syscall found in the ELF file.
+
+		Optional flags can be passed through CONFIG_SYSCALL_STACK_USAGE_OPTIONS.
+
+		Requires CONFIG_STACK_USAGE and CONFIG_USERSPACE to be enabled.
+
+config SYSCALL_STACK_USAGE_OPTIONS
+	string "Flags for syscall stack usage analysis"
+	depends on SYSCALL_STACK_USAGE
+	default ""
+	help
+	  This allows users to pass additional options to the stack usage
+	  analysis tool. Currently the only available option is "-v" for verbose output.
+
 config STACK_SENTINEL
 	bool "Stack sentinel"
 	select THREAD_STACK_INFO
