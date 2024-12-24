@@ -74,29 +74,11 @@ config ETH_SAM_GMAC_BUF_RX_COUNT
 	  fit at least two Ethernet frames: one being received by the GMAC module
 	  and the other being processed by the higher layer networking stack.
 
-config ETH_SAM_GMAC_MAC_I2C_EEPROM
-	bool "Read from an I2C EEPROM"
+config ETH_SAM_GMAC_MAC_EEPROM
+	bool "MAC eeprom"
+	select EEPROM
 	help
-	  Read MAC address from an I2C EEPROM.
-
-if ETH_SAM_GMAC_MAC_I2C_EEPROM
-
-config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS
-	hex "I2C EEPROM internal address"
-	range 0 0xffffffff
-	help
-	  Internal address of the EEPROM chip where the MAC address is stored.
-	  Chips with 1 to 4 byte internal address size are supported. Address
-	  size has to be configured in a separate Kconfig option.
-
-config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
-	int "I2C EEPROM internal address size"
-	default 1
-	range 1 4
-	help
-	  Size (in bytes) of the internal EEPROM address.
-
-endif # ETH_SAM_GMAC_MAC_I2C_EEPROM
+	  Enable reading MAC address from external flash memory.
 
 config PTP_CLOCK_SAM_GMAC
 	bool "SAM GMAC PTP clock driver support"
