@@ -3,7 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_IFX_CAT1_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_IFX_CAT1_PINCTRL_H_
 /**
  * @brief Pin control binding helper.
  */
@@ -105,3 +106,5 @@
 		DT_REG_ADDR_BY_IDX(DT_NODELABEL(gpio_prt0), 1),			   \
 		DT_PHA_BY_IDX(node, gpios_prop, 0, pin)				   \
 		)
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_IFX_CAT1_PINCTRL_H_ */
