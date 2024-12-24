@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		ambient-temp0 = &temp_sensor;
+	};
+};
+
+&owm_io_p0_6 {
+	power-source=<MAX32_VSEL_VDDIOH>;
+};
+
+w1_0: &w1 {
+	status = "okay";
+	pinctrl-0 = <&owm_io_p0_6>;
+	internal-pullup = <1>;
+
+	temp_sensor: max31825 {
+		compatible = "adi,max31825";
+		resolution = <12>;
+		/* 0 means no automatic conversion */
+		conversions-per-second = "0";
+		status = "okay";
+	};
+};
