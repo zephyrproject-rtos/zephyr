@@ -32,19 +32,48 @@
 #include <zephyr/sys/barrier.h>
 #include "stm32_hsem.h"
 
+#if DT_INST_NUM_IRQS(0) > 0
+#define TRNG_HAS_IRQ_LINE	1
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
+#else /* DT_INST_NUM_IRQS(0) == 0 */
+/* DT_PROP_OR is used to remove noise from error message */
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, generation_delay_ns),
+	"RNG '" DT_NODE_FULL_NAME(DT_DRV_INST(0)) "' has no interrupt line "
+	"but lacks the mandatory 'generation-delay-ns' property");
+#define TRNG_GENERATION_DELAY	K_NSEC(DT_INST_PROP_OR(0, generation_delay_ns, 0))
+#endif /* DT_INST_NUM_IRQS(0) > 0 */
 
 #if defined(RNG_CR_CONDRST)
 #define STM32_CONDRST_SUPPORT
 #endif
+
+/**
+ * HSEM is supported on several series, but not all series use the RNG HSEM.
+ * Wrap this in RNG-specific macros to make driver more readable.
+ */
+#if defined(CFG_HW_RNG_SEMID)
+	#define _try_lock_rng_hsem()	z_stm32_hsem_try_lock(CFG_HW_RNG_SEMID)
+	#define _lock_rng_hsem()	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER)
+	#define _unlock_rng_hsem()	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID)
+	#define _rng_hsem_owned()	z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID)
+#else
+	/**
+	 * Placeholder values for try_lock() and owned() match the values
+	 * returned by dummy z_stm32_hsem_try_lock and z_stm32_hsem_is_owned
+	 */
+	#define _try_lock_rng_hsem()	0
+	#define _lock_rng_hsem()
+	#define _unlock_rng_hsem()
+	#define _rng_hsem_owned()	false
+#endif /* CFG_HW_RNG_SEMID */
 
 /*
  * This driver need to take into account all STM32 family:
  *  - simple rng without hardware fifo and no DMA.
  *  - Variable delay between two consecutive random numbers
  *    (depending on family and clock settings)
- *
+ *  - IRQ-less TRNG instances
  *
  * Due to the first byte in a stream of bytes being more costly on
  * some platforms a "water system" inspired algorithm is used to
@@ -57,6 +86,9 @@
  * The entropy level is checked at the end of every consumption of
  * entropy.
  *
+ * For TRNG instances with no IRQ, a delayable work item is scheduled
+ * on the system work queue and used to "simulate" device-generated
+ * interrupts - this is done to reduce polling to a minimum.
  */
 
 struct rng_pool {
@@ -78,6 +110,15 @@ BUILD_ASSERT((CONFIG_ENTROPY_STM32_THR_POOL_SIZE &
 	      (CONFIG_ENTROPY_STM32_THR_POOL_SIZE - 1)) == 0,
 	     "The CONFIG_ENTROPY_STM32_THR_POOL_SIZE must be a power of 2!");
 
+/**
+ * RM0505 §14.4 "TRNG functional description":
+ *  To use the TRNG peripheral the system clock frequency must be
+ *  at least 32 MHz. See also: §6.2.2 "Peripheral clock details".
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_STM32WB09XX) ||
+		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= (32 * 1000 * 1000),
+	"STM32WB09: TRNG requires system clock frequency >= 32MHz");
+
 struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken *pclken;
 };
@@ -88,6 +129,10 @@ struct entropy_stm32_rng_dev_data {
 	struct k_sem sem_lock;
 	struct k_sem sem_sync;
 	struct k_work filling_work;
+#if !defined(TRNG_HAS_IRQ_LINE)
+	/* work item that polls TRNG to refill pools */
+	struct k_work_delayable refill_work;
+#endif
 	bool filling_pools;
 
 	RNG_POOL_DEFINE(isr, CONFIG_ENTROPY_STM32_ISR_POOL_SIZE);
@@ -104,6 +149,86 @@ static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 
+/* Cross-series LL compatibility wrappers */
+#if defined(TRNG_HAS_IRQ_LINE)
+static void ll_rng_EnableIT(RNG_TypeDef *RNGx)
+{
+#if defined(CONFIG_SOC_STM32WB09XX)
+	LL_RNG_EnableEnErrorIrq(RNGx);
+	LL_RNG_EnableEnFfFullIrq(RNGx);
+#else
+	LL_RNG_EnableIT(RNGx);
+#endif /* CONFIG_SOC_STM32WB09XX */
+}
+#endif /* TRNG_HAS_IRQ_LINE */
+
+static uint32_t ll_rng_IsActiveFlag_SEIS(RNG_TypeDef *RNGx)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if defined(CONFIG_SOC_STM32WB09XX)
+	return LL_RNG_IsActiveFlag_ENTROPY_ERR(RNGx);
+#else /* CONFIG_SOC_STM32WB09XX */
+	return LL_RNG_IsActiveFlag_FAULT(RNGx);
+#endif
+#else /* CONFIG_SOC_SERIES_STM32WB0X */
+	return LL_RNG_IsActiveFlag_SEIS(RNGx);
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+}
+
+static void ll_rng_ClearFlag_SEIS(RNG_TypeDef *RNGx)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if defined(CONFIG_SOC_STM32WB09XX)
+	LL_RNG_SetResetHealthErrorFlags(RNGx, 1);
+#else /* CONFIG_SOC_STM32WB09XX */
+	LL_RNG_ClearFlag_FAULT(RNGx);
+#endif
+#else /* CONFIG_SOC_SERIES_STM32WB0X */
+	LL_RNG_ClearFlag_SEIS(RNGx);
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+}
+
+static uint32_t ll_rng_IsActiveFlag_SECS(RNG_TypeDef *RNGx)
+{
+#if !defined(CONFIG_SOC_SERIES_STM32WB0X)
+	return LL_RNG_IsActiveFlag_SECS(RNGx);
+#else
+	/**
+	 * STM32WB0x RNG has no equivalent of SECS.
+	 * Since this flag is always checked in conjunction
+	 * with FAULT (the SEIS equivalent), returning 0 is OK.
+	 */
+	return 0;
+#endif /* !CONFIG_SOC_SERIES_STM32WB0X */
+}
+
+static uint32_t ll_rng_IsActiveFlag_DRDY(RNG_TypeDef *RNGx)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if defined(CONFIG_SOC_STM32WB09XX)
+	return LL_RNG_IsActiveFlag_VAL_READY(RNGx);
+#else /* CONFIG_SOC_STM32WB09XX */
+	return LL_RNG_IsActiveFlag_RNGRDY(RNGx);
+#endif
+#else /* CONFIG_SOC_SERIES_STM32WB0X */
+	return LL_RNG_IsActiveFlag_DRDY(RNGx);
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+}
+
+static uint16_t ll_rng_ReadRandData(RNG_TypeDef *RNGx)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if defined(CONFIG_SOC_STM32WB09XX)
+	return LL_RNG_GetRndVal(RNGx);
+#else /* CONFIG_SOC_STM32WB09XX */
+	return LL_RNG_ReadRandData16(RNGx);
+#endif
+#else /* CONFIG_SOC_SERIES_STM32WB0X */
+	return (uint16_t)LL_RNG_ReadRandData32(RNGx);
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+}
+
+
 static int entropy_stm32_suspend(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
@@ -112,11 +237,18 @@ static int entropy_stm32_suspend(void)
 	RNG_TypeDef *rng = dev_data->rng;
 	int res;
 
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	/* Prevent concurrent access with PM */
-	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
-#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
+	_lock_rng_hsem();
+
 	LL_RNG_Disable(rng);
+#if defined(CONFIG_SOC_STM32WB09XX)
+	/* RM0505 Rev.2 §14.4:
+	 * "After the TRNG IP is disabled by setting CR.DISABLE, in order to
+	 * properly restart the TRNG IP, the AES_RESET bit must be set to 1
+	 * (that is, resetting the AES core and restarting all health tests)."
+	 */
+	LL_RNG_SetAesReset(rng, 1);
+#endif /* CONFIG_SOC_STM32WB09XX */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
@@ -140,9 +272,7 @@ static int entropy_stm32_suspend(void)
 	res = clock_control_off(dev_data->clock,
 			(clock_control_subsys_t)&dev_cfg->pclken[0]);
 
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
-	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
-#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
+	_unlock_rng_hsem();
 
 	return res;
 }
@@ -158,7 +288,9 @@ static int entropy_stm32_resume(void)
 	res = clock_control_on(dev_data->clock,
 			(clock_control_subsys_t)&dev_cfg->pclken[0]);
 	LL_RNG_Enable(rng);
-	LL_RNG_EnableIT(rng);
+#if defined(TRNG_HAS_IRQ_LINE)
+	ll_rng_EnableIT(rng);
+#endif
 
 	return res;
 }
@@ -212,15 +344,18 @@ static void configure_rng(void)
 #endif /* STM32_CONDRST_SUPPORT */
 
 	LL_RNG_Enable(rng);
-	LL_RNG_EnableIT(rng);
+#if defined(TRNG_HAS_IRQ_LINE)
+	ll_rng_EnableIT(rng);
+#endif
 }
 
 static void acquire_rng(void)
 {
 	entropy_stm32_resume();
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
+
 	/* Lock the RNG to prevent concurrent access */
-	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
+	_lock_rng_hsem();
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	/* RNG configuration could have been changed by the other core */
 	configure_rng();
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
@@ -229,20 +364,20 @@ static void acquire_rng(void)
 static void release_rng(void)
 {
 	entropy_stm32_suspend();
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
-	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
-#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
+	_unlock_rng_hsem();
 }
 
 static int entropy_stm32_got_error(RNG_TypeDef *rng)
 {
 	__ASSERT_NO_MSG(rng != NULL);
 
+#if defined(STM32_CONDRST_SUPPORT)
 	if (LL_RNG_IsActiveFlag_CECS(rng)) {
 		return 1;
 	}
+#endif
 
-	if (LL_RNG_IsActiveFlag_SEIS(rng)) {
+	if (ll_rng_IsActiveFlag_SEIS(rng)) {
 		return 1;
 	}
 
@@ -262,8 +397,8 @@ static int recover_seed_error(RNG_TypeDef *rng)
 	 */
 
 	while (LL_RNG_IsEnabledCondReset(rng) ||
-		LL_RNG_IsActiveFlag_SEIS(rng) ||
-		LL_RNG_IsActiveFlag_SECS(rng)) {
+		ll_rng_IsActiveFlag_SEIS(rng) ||
+		ll_rng_IsActiveFlag_SECS(rng)) {
 		count_timeout++;
 		if (count_timeout == 10) {
 			return -ETIMEDOUT;
@@ -277,13 +412,13 @@ static int recover_seed_error(RNG_TypeDef *rng)
 /* SOCS w/o soft-reset support: flush pipeline */
 static int recover_seed_error(RNG_TypeDef *rng)
 {
-	LL_RNG_ClearFlag_SEIS(rng);
+	ll_rng_ClearFlag_SEIS(rng);
 
 	for (int i = 0; i < 12; ++i) {
-		LL_RNG_ReadRandData32(rng);
+		(void)ll_rng_ReadRandData(rng);
 	}
 
-	if (LL_RNG_IsActiveFlag_SEIS(rng) != 0) {
+	if (ll_rng_IsActiveFlag_SEIS(rng) != 0) {
 		return -EIO;
 	}
 
@@ -299,7 +434,8 @@ static int random_byte_get(void)
 
 	key = irq_lock();
 
-	if (IS_ENABLED(CONFIG_ENTROPY_STM32_CLK_CHECK) && !k_is_pre_kernel()) {
+#if defined(CONFIG_ENTROPY_STM32_CLK_CHECK)
+	if (!k_is_pre_kernel()) {
 		/* CECS bit signals that a clock configuration issue is detected,
 		 * which may lead to generation of non truly random data.
 		 */
@@ -307,19 +443,20 @@ static int random_byte_get(void)
 			 "CECS = 1: RNG domain clock is too slow.\n"
 			 "\tSee ref man and update target clock configuration.");
 	}
+#endif /* CONFIG_ENTROPY_STM32_CLK_CHECK */
 
-	if (LL_RNG_IsActiveFlag_SEIS(rng) && (recover_seed_error(rng) < 0)) {
+	if (ll_rng_IsActiveFlag_SEIS(rng) && (recover_seed_error(rng) < 0)) {
 		retval = -EIO;
 		goto out;
 	}
 
-	if ((LL_RNG_IsActiveFlag_DRDY(rng) == 1)) {
+	if (ll_rng_IsActiveFlag_DRDY(rng) == 1) {
 		if (entropy_stm32_got_error(rng)) {
 			retval = -EIO;
 			goto out;
 		}
 
-		retval = LL_RNG_ReadRandData32(rng);
+		retval = ll_rng_ReadRandData(rng);
 		if (retval == 0) {
 			/* A seed error could have occurred between RNG_SR
 			 * polling and RND_DR output reading.
@@ -342,34 +479,46 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 {
 	uint16_t remaining_len = len;
 
+#if defined(TRNG_HAS_IRQ_LINE)
 	__ASSERT_NO_MSG(!irq_is_enabled(IRQN));
+#endif
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
+	/**
+	 * Checking only defined(CFG_HW_RNG_SEMID) is not correct,
+	 * as the dummy z_stm32_hsem_is_owned function returns false.
+	 */
 	__ASSERT_NO_MSG(z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID));
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
 	/* do not proceed if a Seed error occurred */
-	if (LL_RNG_IsActiveFlag_SECS(entropy_stm32_rng_data.rng) ||
-		LL_RNG_IsActiveFlag_SEIS(entropy_stm32_rng_data.rng)) {
+	if (ll_rng_IsActiveFlag_SECS(entropy_stm32_rng_data.rng) ||
+		ll_rng_IsActiveFlag_SEIS(entropy_stm32_rng_data.rng)) {
 
 		(void)random_byte_get(); /* this will recover the error */
 
 		return 0; /* return cnt is null : no random data available */
 	}
 
+#if defined(TRNG_HAS_IRQ_LINE)
 	/* Clear NVIC pending bit. This ensures that a subsequent
 	 * RNG event will set the Cortex-M single-bit event register
 	 * to 1 (the bit is set when NVIC pending IRQ status is
 	 * changed from 0 to 1)
 	 */
 	NVIC_ClearPendingIRQ(IRQN);
+#endif
 
 	do {
 		int byte;
 
-		while (LL_RNG_IsActiveFlag_DRDY(
+		while (ll_rng_IsActiveFlag_DRDY(
 				entropy_stm32_rng_data.rng) != 1) {
+#if defined(TRNG_HAS_IRQ_LINE)
 			/*
+			 * Enter low-power mode while waiting for event
+			 * generated by TRNG interrput becoming pending.
+			 *
 			 * To guarantee waking up from the event, the
 			 * SEV-On-Pend feature must be enabled (enabled
 			 * during ARCH initialization).
@@ -381,10 +530,13 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 			__WFE();
 			__SEV();
 			__WFE();
+#endif
 		}
 
 		byte = random_byte_get();
+#if defined(TRNG_HAS_IRQ_LINE)
 		NVIC_ClearPendingIRQ(IRQN);
+#endif
 
 		if (byte < 0) {
 			continue;
@@ -402,15 +554,12 @@ static int start_pool_filling(bool wait)
 	bool already_filling;
 
 	key = irq_lock();
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
+
 	/* In non-blocking mode, return immediately if the RNG is not available */
-	if (!wait && z_stm32_hsem_try_lock(CFG_HW_RNG_SEMID) != 0) {
+	if (!wait && _try_lock_rng_hsem() != 0) {
 		irq_unlock(key);
 		return -EAGAIN;
 	}
-#else
-	ARG_UNUSED(wait);
-#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
 	already_filling = entropy_stm32_rng_data.filling_pools;
 	entropy_stm32_rng_data.filling_pools = true;
@@ -430,8 +579,11 @@ static int start_pool_filling(bool wait)
 	}
 
 	acquire_rng();
+#if defined(TRNG_HAS_IRQ_LINE)
 	irq_enable(IRQN);
-
+#else
+	k_work_schedule(&entropy_stm32_rng_data.refill_work, TRNG_GENERATION_DELAY);
+#endif
 	return 0;
 }
 
@@ -498,8 +650,11 @@ static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf,
 		 * Avoid starting pool filling from ISR as it might require
 		 * blocking if RNG is not available and a race condition could
 		 * also occur if this ISR has interrupted the RNG ISR.
+		 *
+		 * If the TRNG has no IRQ line, always schedule the work item,
+		 * as this is what fills the RNG pools instead of the ISR.
 		 */
-		if (k_is_in_isr()) {
+		if (k_is_in_isr() || !IS_ENABLED(TRNG_HAS_IRQ_LINE)) {
 			k_work_submit(&entropy_stm32_rng_data.filling_work);
 		} else {
 			start_pool_filling(true);
@@ -536,15 +691,13 @@ static void rng_pool_init(struct rng_pool *rngp, uint16_t size,
 	rngp->threshold	  = threshold;
 }
 
-static void stm32_rng_isr(const void *arg)
+static int perform_pool_refill(void)
 {
 	int byte, ret;
 
-	ARG_UNUSED(arg);
-
 	byte = random_byte_get();
 	if (byte < 0) {
-		return;
+		return -EIO;
 	}
 
 	ret = rng_pool_put((struct rng_pool *)(entropy_stm32_rng_data.isr),
@@ -554,7 +707,9 @@ static void stm32_rng_isr(const void *arg)
 				(struct rng_pool *)(entropy_stm32_rng_data.thr),
 				byte);
 		if (ret < 0) {
+#if defined(TRNG_HAS_IRQ_LINE)
 			irq_disable(IRQN);
+#endif
 			release_rng();
 			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
@@ -565,7 +720,51 @@ static void stm32_rng_isr(const void *arg)
 
 		k_sem_give(&entropy_stm32_rng_data.sem_sync);
 	}
+
+	return ret;
 }
+
+#if defined(TRNG_HAS_IRQ_LINE)
+static void stm32_rng_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	(void)perform_pool_refill();
+}
+#else
+static void pool_refill_work_item(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
+
+	/* Seed error occurred: reset TRNG and try again */
+	if (ll_rng_IsActiveFlag_SECS(entropy_stm32_rng_data.rng) ||
+		ll_rng_IsActiveFlag_SEIS(entropy_stm32_rng_data.rng)) {
+
+		(void)random_byte_get(); /* this will recover the error */
+	} else if (ll_rng_IsActiveFlag_DRDY(rng)) {
+		/* Entropy available: read it and fill pools */
+		int res = perform_pool_refill();
+
+		if (res == -ENOBUFS) {
+			/**
+			 * All RNG pools are full - no more work needed.
+			 * Exit early to stop the work item from re-scheduling
+			 * itself. The RNG peripheral has already been released
+			 * by perform_pool_refill().
+			 */
+			return;
+		}
+	} else {
+		/**
+		 * No entropy available - try again later
+		 */
+	}
+
+	/* Schedule ourselves for next cycle */
+	k_work_schedule(dwork, TRNG_GENERATION_DELAY);
+}
+#endif /* TRNG_HAS_IRQ_LINE */
 
 static int entropy_stm32_rng_get_entropy(const struct device *dev,
 					 uint8_t *buf,
@@ -613,20 +812,25 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 	}
 
 	if (len) {
-		unsigned int key;
+		bool rng_already_acquired = false;
 		int irq_enabled;
-		bool rng_already_acquired;
 
-		key = irq_lock();
+#if defined(TRNG_HAS_IRQ_LINE)
+		unsigned int key = irq_lock();
+
 		irq_enabled = irq_is_enabled(IRQN);
+		rng_already_acquired = !!irq_enabled;
 		irq_disable(IRQN);
 		irq_unlock(key);
+#else
+		ARG_UNUSED(irq_enabled);
+#endif
 
 		/* Do not release if IRQ is enabled. RNG will be released in ISR
-		 * when the pools are full.
+		 * when the pools are full. If TRNG has no IRQ line, the default
+		 * value of false ensures we always release it either.
 		 */
-		rng_already_acquired = z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID) ||
-				       irq_enabled;
+		rng_already_acquired = _rng_hsem_owned() || rng_already_acquired;
 		acquire_rng();
 
 		cnt = generate_from_isr(buf, len);
@@ -636,9 +840,11 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 			release_rng();
 		}
 
+#if defined(TRNG_HAS_IRQ_LINE)
 		if (irq_enabled) {
 			irq_enable(IRQN);
 		}
+#endif
 	}
 
 	return cnt;
@@ -684,6 +890,10 @@ static int entropy_stm32_rng_init(const struct device *dev)
 
 	k_work_init(&dev_data->filling_work, pool_filling_work_handler);
 
+#if !defined(TRNG_HAS_IRQ_LINE)
+	k_work_init_delayable(&dev_data->refill_work, pool_refill_work_item);
+#endif
+
 	rng_pool_init((struct rng_pool *)(dev_data->thr),
 		      CONFIG_ENTROPY_STM32_THR_POOL_SIZE,
 		      CONFIG_ENTROPY_STM32_THR_THRESHOLD);
@@ -691,7 +901,9 @@ static int entropy_stm32_rng_init(const struct device *dev)
 		      CONFIG_ENTROPY_STM32_ISR_POOL_SIZE,
 		      CONFIG_ENTROPY_STM32_ISR_THRESHOLD);
 
+#if defined(TRNG_HAS_IRQ_LINE)
 	IRQ_CONNECT(IRQN, IRQ_PRIO, stm32_rng_isr, &entropy_stm32_rng_data, 0);
+#endif
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBX) && !defined(CONFIG_STM32H7_DUAL_CORE)
 	/* For multi-core MCUs, RNG configuration is automatically performed
@@ -718,11 +930,10 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 		/* Lock to Prevent concurrent access with PM */
-		z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
-	/* Call release_rng instead of entropy_stm32_suspend to avoid double hsem_unlock */
-#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
+		_lock_rng_hsem();
+
+		/* Call release_rng instead of entropy_stm32_suspend to avoid double hsem_unlock */
 		release_rng();
 		break;
 	case PM_DEVICE_ACTION_RESUME:
@@ -737,14 +948,12 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 				entropy_stm32_rng_init(dev);
 			} else if (!entropy_stm32_rng_data.filling_pools) {
 				/* Resume RNG only if it was suspended during filling pool */
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 				/* Lock to Prevent concurrent access with PM */
-				z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
+				_lock_rng_hsem();
 				/*
 				 * Call release_rng instead of entropy_stm32_suspend
 				 * to avoid double hsem_unlock
 				 */
-#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 				release_rng();
 			}
 #endif /* health_test_config */
