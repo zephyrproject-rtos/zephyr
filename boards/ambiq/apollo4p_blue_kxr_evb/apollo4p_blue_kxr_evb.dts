@@ -26,6 +26,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		rtc = &rtc0;
 	};
 
 	leds {
@@ -77,6 +78,11 @@
 
 &counter0 {
 	status = "okay";
+};
+
+&rtc0 {
+	status = "okay";
+	clock = "XTAL";
 };
 
 &wdt0 {

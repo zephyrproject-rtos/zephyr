@@ -38,6 +38,10 @@ Security
 Boards
 ******
 
+* Shield ``mikroe_weather_click`` now supports both I2C and SPI interfaces. Users should select
+  the required configuration by using ``mikroe_weather_click_i2c`` or ``mikroe_weather_click_spi``
+  instead of ``mikroe_weather_click``.
+
 Devicetree
 **********
 
@@ -53,13 +57,17 @@ Devicetree
   the devicetree property ``poll-interval-ms``.
   In interrupt mode, the devicetree property ``repeat`` is supported.
 
+Raspberry Pi
+============
+
+* ``CONFIG_SOC_SERIES_RP2XXX`` is renamed to :kconfig:option:`CONFIG_SOC_SERIES_RP2040`.
+
 STM32
 =====
 
 * MCO clock source and prescaler are now exclusively configured by the DTS
   as it was introduced earlier.
   The Kconfig method for configuration is now removed.
-
 
 Modules
 *******

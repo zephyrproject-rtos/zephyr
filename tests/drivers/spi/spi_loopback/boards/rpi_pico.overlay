@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/dma/rpi_pico_dma.h>
+#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2040.h>
 
 &dma {
 	status = "okay";

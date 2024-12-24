@@ -42,6 +42,12 @@
 		reg = <0x92c00000 DT_SIZE_K(512)>;
 	};
 
+	mclk1: mclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <12288000>;
+	};
+
 	soc {
 		irqsteer: interrupt-controller@30a80000 {
 			compatible = "nxp,irqsteer-intc";
@@ -79,6 +85,32 @@
 			compatible = "nxp,imx-ccm";
 			reg = <0x30380000 DT_SIZE_K(64)>;
 			#clock-cells = <3>;
+		};
+
+		sdma3: dma@30e00000 {
+			compatible = "nxp,sdma";
+			reg = <0x30e00000 DT_SIZE_K(64)>;
+			interrupt-parent = <&master1>;
+			interrupts = <2 0 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		sai3: dai@30c30000 {
+			compatible = "nxp,dai-sai";
+			reg = <0x30c30000 DT_SIZE_K(64)>;
+
+			mclk-is-output;
+			clocks = <&mclk1>;
+			clock-names = "mclk1";
+
+			interrupt-parent = <&master1>;
+			interrupts = <18>;
+			dai-index = <3>;
+			/* DMA event source, peripheral type */
+			dmas = <&sdma3 5 5>, <&sdma3 4 5>;
+			dma-names = "tx", "rx";
+			status = "disabled";
 		};
 
 		iomuxc: iomuxc@30330000 {

@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_SOC_ARM_RPI_PICO_RP2_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM_RPI_PICO_RP2_PINCTRL_SOC_H_
 
-#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-pinctrl-common.h>
 
 /**
  * @brief Type to hold a pin's pinctrl configuration.
@@ -16,7 +16,7 @@ struct rpi_pinctrl_soc_pin {
 	/** Pin number 0..29 */
 	uint32_t pin_num : 5;
 	/** Alternative function (UART, SPI, etc.) */
-	uint32_t alt_func : 4;
+	uint32_t alt_func : 5;
 	/** Maximum current used by a pin, in mA */
 	uint32_t drive_strength : 4;
 	/** Slew rate, may be either false (slow) or true (fast) */

@@ -33,16 +33,12 @@ include:
       - micro-step-res
       - step-gpios
       - dir-gpios
+      - en-gpios
 
 properties:
-
   fault-gpios:
     type: phandle-array
     description: Fault pin.
-
-  en-gpios:
-    type: phandle-array
-    description: Enable pin.
 
   sleep-gpios:
     type: phandle-array
