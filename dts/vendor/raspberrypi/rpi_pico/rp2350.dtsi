@@ -21,6 +21,10 @@
 		die-temp0 = &die_temp;
 	};
 
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -457,6 +461,12 @@
 			interrupts = <19 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
 				     <20 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "irq0", "irq1";
+			status = "disabled";
+		};
+
+		rng: rng@400f0000 {
+			compatible = "raspberrypi,pico-rng";
+			reg = <0x400f0000 DT_SIZE_K(4)>;
 			status = "disabled";
 		};
 	};
