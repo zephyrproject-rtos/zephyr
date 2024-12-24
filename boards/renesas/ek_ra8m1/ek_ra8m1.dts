@@ -140,6 +140,8 @@
 	};
 
 	pllq {
+		div = <4>;
+		freq = <DT_FREQ_M(240)>;
 		status = "okay";
 	};
 
@@ -157,6 +159,12 @@
 
 &canfdclk {
 	clocks = <&pll>;
+	div = <5>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pllq>;
 	div = <5>;
 	status = "okay";
 };
@@ -346,4 +354,10 @@ pmod_header: &pmod1_header {};
 &port_irq13 {
 	interrupts = <89 12>;
 	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
 };

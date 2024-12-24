@@ -118,3 +118,19 @@
 	interrupt-names = "gtioca", "overflow";
 	status = "okay";
 };
+
+&uclk {
+	clocks = <&pll>;
+	div = <5>;
+	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};

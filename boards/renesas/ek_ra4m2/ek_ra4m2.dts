@@ -77,6 +77,19 @@
 	status = "okay";
 };
 
+&pll2 {
+	clocks = <&xtal>;
+	div = <2>;
+	mul = <20 0>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pll2>;
+	div = <5>;
+	status = "okay";
+};
+
 &sci0 {
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
@@ -123,4 +136,14 @@
 	interrupts = <63 1>, <64 1>;
 	interrupt-names = "gtioca", "overflow";
 	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
 };
