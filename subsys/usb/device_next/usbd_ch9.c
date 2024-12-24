@@ -937,13 +937,13 @@ static int vendor_device_request(struct usbd_context *const uds_ctx,
 	}
 
 	if (reqtype_is_to_device(setup) && vreq_nd->to_dev != NULL) {
-		LOG_ERR("Vendor request 0x%02x to device", setup->bRequest);
+		LOG_DBG("Vendor request 0x%02x to device", setup->bRequest);
 		errno = vreq_nd->to_dev(uds_ctx, setup, buf);
 		return 0;
 	}
 
 	if (reqtype_is_to_host(setup) && vreq_nd->to_host != NULL) {
-		LOG_ERR("Vendor request 0x%02x to host", setup->bRequest);
+		LOG_DBG("Vendor request 0x%02x to host", setup->bRequest);
 		errno = vreq_nd->to_host(uds_ctx, setup, buf);
 		return 0;
 	}
