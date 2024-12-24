@@ -28,6 +28,7 @@ rsource "Kconfig.semaphore"
 rsource "Kconfig.signal"
 rsource "Kconfig.spinlock"
 rsource "Kconfig.sync_io"
+rsource "Kconfig.system_database_r"
 rsource "Kconfig.timer"
 rsource "Kconfig.xsi"
 
