@@ -13,6 +13,13 @@ extern FUNC_NORETURN void z_cstart(void);
 /* defined by the SoC in case of CONFIG_SOC_HAS_RUNTIME_NUM_CPUS=y */
 extern void soc_num_cpus_init(void);
 
+/* Make sure the platform configuration matches what the toolchain
+ * thinks the hardware is doing.
+ */
+#ifdef CONFIG_DCACHE_LINE_SIZE
+BUILD_ASSERT(CONFIG_DCACHE_LINE_SIZE == XCHAL_DCACHE_LINESIZE);
+#endif
+
 /**
  *
  * @brief Prepare to and run C code
