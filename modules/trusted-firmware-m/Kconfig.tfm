@@ -310,6 +310,17 @@ config TFM_MCUBOOT_PATH_DOWNLOAD
 
 endchoice
 
+config TFM_ETHOS_DRIVER_PATH_LOCAL
+	string "Path to a locally available Ethos-U driver or an empty string"
+	default "${ZEPHYR_HAL_ETHOS_U_MODULE_DIR}"
+	help
+	  Path to a locally available Ethos-U driver to be used for TF-M builds or
+	  an empty string to allow TF-M to automatically fetch the Ethos-U
+	  driver from an external repository at build time.
+	  By default Zephyr's Ethos-U driver will be used. It is present in
+	  the hal_ethos_u module.
+	  Alternatively, applications can point to their own paths for Ethos-U driver.
+
 config TFM_QCBOR_PATH
 	string
 	prompt "Path to QCBOR or DOWNLOAD to fetch automatically"
