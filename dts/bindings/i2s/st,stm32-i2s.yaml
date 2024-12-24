@@ -6,3 +6,11 @@ description: STM32 I2S controller
 compatible: "st,stm32-i2s"
 
 include: st,stm32-i2s-common.yaml
+
+properties:
+
+  no-divider:
+    type: boolean
+    description: |
+      Specifies whether master clock will be divided or not.
+      An mck pin must be listed within pinctrl-0 when enabling this property.
