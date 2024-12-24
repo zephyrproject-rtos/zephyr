@@ -122,6 +122,15 @@ static int ite_it51xxx_init(void)
 	gpio_regs->GPIO_GCR1 |=
 		IT51XXX_GPIO_U1CTRL_SIN0_SOUT0_EN | IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN;
 
+	/*
+	 * Disable this feature that can detect pre-define hardware target A, B, C through
+	 * I2C0, I2C1, I2C2 respectively. This is for debugging use, so it can be disabled
+	 * to avoid illegal access.
+	 */
+	sys_write8(sys_read8(SMB_SADFPCTL) & ~SMB_HSAPE, SMB_SADFPCTL);
+	sys_write8(sys_read8(SMB_SBDFPCTL) & ~SMB_HSAPE, SMB_SBDFPCTL);
+	sys_write8(sys_read8(SMB_SCDFPCTL) & ~SMB_HSAPE, SMB_SCDFPCTL);
+
 	return 0;
 }
 SYS_INIT(ite_it51xxx_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
