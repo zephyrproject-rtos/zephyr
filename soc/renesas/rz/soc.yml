@@ -20,3 +20,8 @@ family:
       - name: rzt2l
         socs:
           - name: r9a07g074m04gbg
+      - name: rzt2m
+        socs:
+          - name: r9a07g075m24gbg
+            cpuclusters:
+              - name: cr520
