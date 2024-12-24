@@ -53,8 +53,8 @@ do {\
  * z_check_stack_sentinel call if it is not stacked before the svc.
  */
 #define ARCH_EXCEPT(reason_p) \
-register uint32_t r0 __asm__("r0") = reason_p; \
 do { \
+	register uint32_t r0 __asm__("r0") = reason_p; \
 	__asm__ volatile ( \
 		"push {lr}\n\t" \
 		"cpsie i\n\t" \
