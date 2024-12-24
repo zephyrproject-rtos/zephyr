@@ -3,11 +3,9 @@
 # Only v1 model has choice for SoC selection, therefore the optional source
 # Sourced here and not in Kconfig.v1 to keep current SoC/CPU selection menu
 # side-by-side with "Hardware Configuration" in the menu structure.
-orsource "Kconfig.$(HWM_SCHEME).choice"
-
 menu "Hardware Configuration"
 
-rsource "Kconfig.$(HWM_SCHEME)"
+rsource "Kconfig.v2"
 
 # Source Zephyr Kconfig specifics from SoC roots.
 osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig"
