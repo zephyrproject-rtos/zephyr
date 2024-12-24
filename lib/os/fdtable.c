@@ -274,6 +274,7 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;
 	fdtable[fd].mode = mode;
+	fdtable[fd].offset = 0;
 
 	/* Let the object know about the lock just in case it needs it
 	 * for something. For BSD sockets, the lock is used with condition
