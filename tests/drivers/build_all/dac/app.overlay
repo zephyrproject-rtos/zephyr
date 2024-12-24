@@ -124,6 +124,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_dac60508: dac60508@0 {
@@ -286,6 +287,19 @@
 				test_spi_ad559x_dac: dac-controller {
 					compatible = "adi,ad559x-dac";
 					#io-channel-cells = <1>;
+				};
+			};
+
+			test_spi_max22017_mfd: max22017_mfd@11 {
+				compatible = "adi,max22017";
+				status = "okay";
+				spi-max-frequency = <1000000>;
+				reg = <0x11>;
+
+				test_spi_max22017_dac0: dac-controller {
+					compatible = "adi,max22017-dac";
+					#io-channel-cells = <2>;
+					status = "okay";
 				};
 			};
 		};
