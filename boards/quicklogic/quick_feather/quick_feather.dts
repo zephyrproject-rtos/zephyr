@@ -83,4 +83,5 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart_rx_default &uart_tx_default>;
 	pinctrl-names = "default";
+	fifo-enable;
 };
