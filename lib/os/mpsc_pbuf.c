@@ -373,7 +373,7 @@ union mpsc_pbuf_generic *mpsc_pbuf_alloc(struct mpsc_pbuf_buffer *buffer,
 			add_skip_item(buffer, free_wlen);
 			cont = true;
 		} else if (IS_ENABLED(CONFIG_MULTITHREADING) && !K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-			   !k_is_in_isr()) {
+			   !k_is_in_isr() && arch_irq_unlocked(key.key)) {
 			int err;
 
 			k_spin_unlock(&buffer->lock, key);
