@@ -111,6 +111,7 @@ Boards & SoC Support
 * Added support for these boards:
 
    * :zephyr:board:`Raspberry Pi Pico 2 <rpi_pico2>`: ``rpi_pico2``
+   * :zephyr:board:`Adafruit QT Py ESP32-S3 <adafruit_qt_py_esp32s3>`: ``adafruit_qt_py_esp32s3``
 
 * Made these board changes:
 
