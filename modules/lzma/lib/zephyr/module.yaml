@@ -1,4 +1,0 @@
-name: lzma
-build:
-  cmake: ..
-  kconfig: ../Kconfig

@@ -4,6 +4,6 @@
 manifest:
   projects:
     - name: lzma
-      url: https://github.com/xz-mirror/xz
-      revision: 74c3449d8b816a724b12ebce7417e00fb597309a
-      path: zephyr/modules/lzma/lib
+      url: https://github.com/telink-semi/xz
+      revision: dcf34d7ced3a7fffb4ad4862881e0e92c62287d0
+      path: modules/lib/lzma

@@ -110,7 +110,6 @@ config TELINK_TLX_MCUBOOT_STARTUP
 config COMPRESS_LZMA
 	bool "Support LZMA compression"
 	default n
-	select LZMA
 	select BOOT_IMAGE_ACCESS_HOOKS
 	help
 		This option enables LZMA compression with MCUBoot
