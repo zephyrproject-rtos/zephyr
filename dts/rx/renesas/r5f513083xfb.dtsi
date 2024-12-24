@@ -155,24 +155,25 @@
 			reg = <0x0 DT_SIZE_K(48)>;
 		};
 
-		fcu: flash-controller@7e0000 {
+		flash: flash-controller@7fc090 {
 			#address-cells = <1>;
 			#size-cells = <1>;
-			compatible = "renesas,rx-flash.yaml";
-			reg = <0x007e0000 0x1000>;
-
+			compatible = "renesas,rx-flash";
+			reg = <0x7fc090 0x3f24>;
+			interrupts = <23 1>;
+			interrupt-names = "frdyi";
 			code_flash: flash@fff80000 {
-				compatible = "renesas,rx-nv-flash.yaml";
+				compatible = "renesas,rx-nv-flash";
 				reg = <0xfff80000 DT_SIZE_K(512)>;
 				write-block-size = <4>;
 				erase-block-size = <1024>;
 			};
 
 			data_flash: flash@100000 {
-				compatible = "renesas,rx-nv-flash.yaml";
-				erased_undefined;
+				compatible = "renesas,rx-nv-flash";
+				bgo-enable;
 				reg = <0x00100000 DT_SIZE_K(8)>;
-				write_block_size = <1>;
+				write-block-size = <1>;
 				erase-block-size = <1024>;
 			};
 		};
