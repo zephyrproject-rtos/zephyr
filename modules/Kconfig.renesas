@@ -321,4 +321,9 @@ config USE_RX_RDP_I2C
 	help
 	  Enable RX RDP I2C driver
 
+config USE_RX_RDP_FLASH
+	bool
+	help
+	  Enable RX RDP Flash driver
+
 endif # HAS_RENESAS_RX_RDP
