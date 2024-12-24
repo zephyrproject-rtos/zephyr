@@ -111,6 +111,8 @@ The below features are currently supported on Zephyr OS for EK-RA6M4 board:
 +-----------+------------+----------------------+
 | PWM       | on-chip    | pwm                  |
 +-----------+------------+----------------------+
+| FLASH     | on-chip    | flash                |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
