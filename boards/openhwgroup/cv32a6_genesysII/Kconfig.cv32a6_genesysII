@@ -1,0 +1,5 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+config BOARD_CV32A6_GENESYSII
+	select SOC_CV32A6
+	select SOC_FAMILY_CVA6_PROVIDE_FPGA_POWEROFF
