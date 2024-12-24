@@ -151,6 +151,15 @@ schema;scenario-schema:
         "bsim_exe_name":
           type: str
           required: false
+        "ztest_suite_repeat":
+          type: int
+          required: false
+        "ztest_test_repeat":
+          type: int
+          required: false
+        "ztest_test_shuffle":
+          type: bool
+          required: false
     "min_ram":
       type: int
       required: false
