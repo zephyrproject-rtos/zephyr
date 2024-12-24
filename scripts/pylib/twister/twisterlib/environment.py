@@ -21,9 +21,9 @@ from importlib import metadata
 from pathlib import Path
 
 import zephyr_module
+from pylib.twister.twisterlib.error import TwisterRuntimeError
 from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
-from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')

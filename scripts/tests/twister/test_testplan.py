@@ -16,13 +16,13 @@ from contextlib import nullcontext
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
+from pylib.twister.twisterlib.error import TwisterRuntimeError
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan, change_skip_to_error_if_integration
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite
 from twisterlib.platform import Platform
 from twisterlib.quarantine import Quarantine
-from twisterlib.error import TwisterRuntimeError
 
 
 def test_testplan_add_testsuites_short(class_testplan):

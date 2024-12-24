@@ -29,8 +29,8 @@ except ImportError:
 
 import list_boards
 import scl
+from pylib.twister.twisterlib.error import TwisterRuntimeError
 from twisterlib.config_parser import TwisterConfigParser
-from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
