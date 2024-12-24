@@ -350,8 +350,8 @@
 			max-bus-freq = <200000000>;
 			min-bus-freq = <400000>;
 			power-delay-ms = <500>;
-			mmc-hs400-1_8v;
-			mmc-hs200-1_8v;
+			mmc-hs400-1-8v;
+			mmc-hs200-1-8v;
 
 			mmc {
 				compatible = "zephyr,mmc-disk";

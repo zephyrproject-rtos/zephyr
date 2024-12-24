@@ -1711,13 +1711,13 @@ Modified bindings:
 
     - :dtcompatible:`nxp,imx-usdhc`:
 
-        - new property: ``mmc-hs200-1_8v``
-        - new property: ``mmc-hs400-1_8v``
+        - new property: ``mmc-hs200-1-8v``
+        - new property: ``mmc-hs400-1-8v``
 
     - :dtcompatible:`nxp,lpc-sdif`:
 
-        - new property: ``mmc-hs200-1_8v``
-        - new property: ``mmc-hs400-1_8v``
+        - new property: ``mmc-hs200-1-8v``
+        - new property: ``mmc-hs400-1-8v``
 
   - QEMU, a generic and open source machine emulator and virtualizer (qemu):
 
