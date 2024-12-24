@@ -9,9 +9,13 @@
 #include "common.h"
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
+#include <babblekit/testcase.h>
 #include <testlib/conn.h>
 
 extern enum bst_result_t bst_result;
@@ -72,7 +76,62 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	struct bt_iso_info info;
+	int err;
+
 	printk("ISO Channel %p connected\n", chan);
+
+	err = bt_iso_chan_get_info(chan, &info);
+	TEST_ASSERT(err == 0, "Failed to get CIS info: %d", err);
+
+	TEST_ASSERT(info.type == BT_ISO_CHAN_TYPE_CONNECTED);
+	TEST_ASSERT(IN_RANGE(info.iso_interval, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX),
+		    "Invalid ISO interval 0x%04x", info.iso_interval);
+	TEST_ASSERT(IN_RANGE(info.max_subevent, BT_ISO_NSE_MIN, BT_ISO_NSE_MAX),
+		    "Invalid subevent number 0x%02x", info.max_subevent);
+	TEST_ASSERT(IN_RANGE(info.unicast.cig_sync_delay, BT_HCI_LE_CIG_SYNC_DELAY_MIN,
+			     BT_HCI_LE_CIG_SYNC_DELAY_MAX),
+		    "Invalid CIG sync delay 0x%06x", info.unicast.cig_sync_delay);
+	TEST_ASSERT(IN_RANGE(info.unicast.cis_sync_delay, BT_HCI_LE_CIS_SYNC_DELAY_MIN,
+			     BT_HCI_LE_CIS_SYNC_DELAY_MAX),
+		    "Invalid CIS sync delay 0x%06x", info.unicast.cis_sync_delay);
+
+	if (info.can_send) {
+		const struct bt_iso_unicast_tx_info *peripheral = &info.unicast.peripheral;
+
+		TEST_ASSERT(IN_RANGE(peripheral->latency, BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MIN,
+				     BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MAX),
+			    "Invalid transport latency 0x%06x", peripheral->latency);
+		TEST_ASSERT((peripheral->flush_timeout % info.iso_interval) == 0U,
+			    "Flush timeout in ms %u shall be a multiple of the ISO interval %u",
+			    peripheral->flush_timeout, info.iso_interval);
+		TEST_ASSERT(IN_RANGE(peripheral->max_pdu, BT_ISO_CONNECTED_PDU_MIN, BT_ISO_PDU_MAX),
+			    "Invalid max PDU 0x%04x", peripheral->max_pdu);
+		TEST_ASSERT(peripheral->phy == BT_GAP_LE_PHY_1M ||
+				    peripheral->phy == BT_GAP_LE_PHY_2M ||
+				    peripheral->phy == BT_GAP_LE_PHY_CODED,
+			    "Invalid PHY 0x%02x", peripheral->phy);
+		TEST_ASSERT(IN_RANGE(peripheral->bn, BT_ISO_BN_MIN, BT_ISO_BN_MAX),
+			    "Invalid BN 0x%02x", peripheral->bn);
+	}
+
+	if (info.can_recv) {
+		const struct bt_iso_unicast_tx_info *central = &info.unicast.central;
+
+		TEST_ASSERT(IN_RANGE(central->latency, BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MIN,
+				     BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MAX),
+			    "Invalid transport latency 0x%06x", central->latency);
+		TEST_ASSERT((central->flush_timeout % info.iso_interval) == 0U,
+			    "Flush timeout in ms %u shall be a multiple of the ISO interval %u",
+			    central->flush_timeout, info.iso_interval);
+		TEST_ASSERT(IN_RANGE(central->max_pdu, BT_ISO_CONNECTED_PDU_MIN, BT_ISO_PDU_MAX),
+			    "Invalid max PDU 0x%04x", central->max_pdu);
+		TEST_ASSERT(central->phy == BT_GAP_LE_PHY_1M || central->phy == BT_GAP_LE_PHY_2M ||
+				    central->phy == BT_GAP_LE_PHY_CODED,
+			    "Invalid PHY 0x%02x", central->phy);
+		TEST_ASSERT(IN_RANGE(central->bn, BT_ISO_BN_MIN, BT_ISO_BN_MAX),
+			    "Invalid BN 0x%02x", central->bn);
+	}
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
