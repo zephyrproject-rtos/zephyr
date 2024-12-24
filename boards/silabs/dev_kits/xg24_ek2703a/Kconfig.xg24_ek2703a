@@ -1,0 +1,5 @@
+# Copyright (c) 2021, Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XG24_EK2703A
+	select SOC_PART_NUMBER_EFR32MG24B210F1536IM48
