@@ -435,4 +435,12 @@
 		compatible = "raspberrypi,pico-temp";
 		status = "disabled";
 	};
+
+	id_code: id_code@10000000 {
+		compatible = "zephyr,memory-region";
+		zephyr,memory-region = "IMAGE_DEF_FLASH";
+		zephyr,memory-region-flags = "r";
+		reg = <0x10000000 0x80>;
+		status = "okay";
+	};
 };
