@@ -117,6 +117,10 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_SPIN_LOCKS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SPIN_LOCKS spinlock.c)
 endif()
 
+if (NOT CONFIG_TC_PROVIDES_POSIX_SYSTEM_DATABASE)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_SYSTEM_DATABASE system_database.c)
+endif()
+
 if (NOT CONFIG_TC_PROVIDES_POSIX_SYSTEM_DATABASE_R)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SYSTEM_DATABASE_R system_database_r.c)
 endif()
