@@ -8,11 +8,11 @@ include: [base.yaml, soc-nv-flash.yaml]
 compatible: "renesas,rx-nv-flash"
 
 properties:
-  renesas,programming-enable:
+  programming-enable:
     type: boolean
     description: Enable flash programming configuration for code flash
 
-  renesas,bgo-enable:
+  bgo-enable:
     type: boolean
     description: |
       Enable module in BGO (background operations) mode for data flash.
