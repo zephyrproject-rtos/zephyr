@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
 
-CONFIG_MAX_THREAD_BYTES=3
+CONFIG_MAX_THREAD_BYTES=13
 CONFIG_THREAD_STACK_INFO=y
 
 CONFIG_GPIO=y
