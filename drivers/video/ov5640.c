@@ -146,6 +146,7 @@ struct ov5640_data {
 	uint32_t cur_pixrate;
 	uint16_t cur_frmrate;
 	const struct ov5640_mode_config *cur_mode;
+	bool auto_gain;
 };
 
 static const struct ov5640_reg init_params_common[] = {
@@ -997,25 +998,34 @@ static int ov5640_set_ctrl_contrast(const struct device *dev, int value)
 static int ov5640_set_ctrl_gain(const struct device *dev, int value)
 {
 	const struct ov5640_config *cfg = dev->config;
+	struct ov5640_data *data = dev->data;
 
-	if (!IN_RANGE(value, 0, UINT16_MAX)) {
+	if (data->auto_gain) {
+		return -ENOTSUP;
+	}
+
+	if (!IN_RANGE(value, 0, 1023)) {
 		return -EINVAL;
 	}
 
-	if (value) {
-		int ret = ov5640_modify_reg(&cfg->i2c, AEC_PK_MANUAL, BIT(1), BIT(0));
+	int ret = ov5640_modify_reg(&cfg->i2c, AEC_PK_REAL_GAIN, 0x03, (value >> 8) & 0x03);
 
-		if (ret) {
-			return ret;
-		}
-
-		struct ov5640_reg gain_params[] = {{AEC_PK_REAL_GAIN, value >> 8},
-						   {AEC_PK_REAL_GAIN + 1, value & 0xff}};
-
-		return ov5640_write_multi_regs(&cfg->i2c, gain_params, ARRAY_SIZE(gain_params));
-	} else {
-		return ov5640_write_reg(&cfg->i2c, AEC_PK_MANUAL, 0);
+	if (ret) {
+		return ret;
 	}
+
+	ret = ov5640_write_reg(&cfg->i2c, AEC_PK_REAL_GAIN + 1, value & 0xff);
+	return ret;
+}
+
+static int ov5640_set_ctrl_autogain(const struct device *dev, bool value)
+{
+	const struct ov5640_config *cfg = dev->config;
+	struct ov5640_data *data = dev->data;
+
+	data->auto_gain = value;
+
+	return ov5640_modify_reg(&cfg->i2c, AEC_PK_MANUAL, BIT(1), data->auto_gain ? 0 : BIT(1));
 }
 
 static int ov5640_set_ctrl_hflip(const struct device *dev, int value)
@@ -1073,6 +1083,8 @@ static int ov5640_set_ctrl(const struct device *dev, unsigned int cid, void *val
 		return ov5640_set_ctrl_brightness(dev, (int)(value));
 	case VIDEO_CID_CONTRAST:
 		return ov5640_set_ctrl_contrast(dev, (int)value);
+	case VIDEO_CID_AUTOGAIN:
+		return ov5640_set_ctrl_autogain(dev, (bool)(value));
 	case VIDEO_CID_GAIN:
 		return ov5640_set_ctrl_gain(dev, (int)(value));
 	case VIDEO_CID_HFLIP:
