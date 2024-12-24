@@ -161,10 +161,11 @@ static void process_log_msg(const struct shell *sh,
 			     bool locked, bool colors)
 {
 	unsigned int key = 0;
-	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL |
-		      LOG_OUTPUT_FLAG_TIMESTAMP |
-		      (IS_ENABLED(CONFIG_SHELL_LOG_FORMAT_TIMESTAMP) ?
-			LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP : 0);
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_THREAD;
+
+	if (IS_ENABLED(CONFIG_SHELL_LOG_FORMAT_TIMESTAMP)) {
+		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+	}
 
 	if (colors) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;
