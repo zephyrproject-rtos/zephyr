@@ -212,7 +212,7 @@
 				 <&rcc STM32_SRC_CK48 SDIO_SEL(0)>;
 		};
 
-		quadspi: quadspi@a0001000 {
+		quadspi: spi@a0001000 {
 			compatible = "st,stm32-qspi";
 			#address-cells = <0x1>;
 			#size-cells = <0x0>;
