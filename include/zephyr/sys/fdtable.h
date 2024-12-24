@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_SYS_FDTABLE_H_
 
 #include <stdarg.h>
+#include <stdio.h>
 #include <time.h>
 
 /* FIXME: For native_posix ssize_t, off_t. */
@@ -260,6 +261,12 @@ __syscall int zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 			  struct zvfs_fd_set *ZRESTRICT writefds,
 			  struct zvfs_fd_set *ZRESTRICT errorfds,
 			  const struct timespec *ZRESTRICT timeout, const void *ZRESTRICT sigmask);
+
+void zvfs_libc_file_alloc_cb(int fd, const char *mode, FILE *fp);
+int zvfs_libc_file_alloc(int fd, const char *mode, FILE **fp, k_timeout_t timeout);
+void zvfs_libc_file_free(FILE *fp);
+int zvfs_libc_file_get_fd(FILE *fp);
+FILE *zvfs_libc_file_from_fd(int fd);
 
 /**
  * Request codes for fd_op_vtable.ioctl().
