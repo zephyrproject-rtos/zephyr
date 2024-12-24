@@ -1159,8 +1159,6 @@ static void test_main_cap_commander_broadcast_reception(void)
 
 	backchannel_sync_wait_any(); /* wait for the acceptor to receive data */
 
-	backchannel_sync_wait_any(); /* wait for the acceptor to receive a metadata update */
-
 	test_broadcast_reception_stop(acceptor_count);
 
 	backchannel_sync_wait_any(); /* wait for the acceptor to stop reception */
