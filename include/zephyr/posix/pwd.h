@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Meta Platforms
+ * Copyright (c) 2024 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,9 +26,18 @@ struct passwd {
 	char *pw_shell;
 };
 
-int getpwnam_r(const char *nam, struct passwd *pwd, char *buffer, size_t bufsize,
+#if defined(_XOPEN_SOURCE)
+void endpwent(void);
+struct passwd *getpwent(void);
+#endif
+struct passwd *getpwnam(const char *name);
+int getpwnam_r(const char *name, struct passwd *pwd, char *buffer, size_t bufsize,
 	       struct passwd **result);
+struct passwd *getpwuid(uid_t uid);
 int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, struct passwd **result);
+#if defined(_XOPEN_SOURCE)
+void setpwent(void);
+#endif
 
 #ifdef __cplusplus
 }
