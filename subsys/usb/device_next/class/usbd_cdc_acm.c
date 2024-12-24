@@ -1026,6 +1026,7 @@ static int usbd_cdc_acm_init_wq(void)
 	k_work_queue_start(&cdc_acm_work_q, cdc_acm_stack,
 			   K_KERNEL_STACK_SIZEOF(cdc_acm_stack),
 			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
+	k_thread_name_set(&cdc_acm_work_q.thread, "cdc_acm_work_q");
 
 	return 0;
 }
@@ -1036,8 +1037,6 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 
 	ring_buf_reset(data->tx_fifo.rb);
 	ring_buf_reset(data->rx_fifo.rb);
-
-	k_thread_name_set(&cdc_acm_work_q.thread, "cdc_acm_work_q");
 
 	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
