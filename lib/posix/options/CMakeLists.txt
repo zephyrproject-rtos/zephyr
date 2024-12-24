@@ -121,6 +121,13 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_SPIN_LOCKS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SPIN_LOCKS spinlock.c)
 endif()
 
+if (NOT CONFIG_TC_PROVIDES_POSIX_SYSTEM_DATABASE_R)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_SYSTEM_DATABASE_R
+    system_database_priv.c
+    system_database_r.c
+  )
+endif()
+
 if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_TIMERS
     clock.c
@@ -146,11 +153,9 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_THREADS)
   # We have opted to use POSIX_THREADS here to match the Option name.
   zephyr_library_sources_ifdef(CONFIG_POSIX_THREADS
     cond.c
-    grp.c
     key.c
     mutex.c
     pthread.c
-    pwd.c
   )
 endif()
 
