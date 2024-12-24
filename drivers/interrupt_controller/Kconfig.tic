@@ -1,0 +1,14 @@
+# Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if CPU_CORTEX_R5
+
+config TIC
+	bool "Telechips Interrupt Controller"
+	default y
+	depends on DT_HAS_TCC_TIC_ENABLED
+	help
+	  The Telechips Interrupt Controller provides hardware assistance for prioritizing
+	  and aggregating the interrupt sources for ARM Cortex-R5 processor cores.
+
+endif
