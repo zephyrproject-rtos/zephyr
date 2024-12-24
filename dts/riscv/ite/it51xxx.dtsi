@@ -10,6 +10,8 @@
 #include <zephyr/dt-bindings/dt-util.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/it51xxx-i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-intc.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-wuc.h>
 #include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
@@ -602,9 +604,9 @@
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01630 8     /* GPCR */
 			       NO_FUNC    1>;
-			func3-gcr =     <0xf016f3 NO_FUNC  NO_FUNC  NO_FUNC
+			func3-gcr =     <0xf016f3 0xf016ed 0xf016ed 0xf016ed
 					 NO_FUNC  0xf016f0 0xf016fe 0xf016fe>;
-			func3-en-mask = <BIT(0)   0        0        0
+			func3-en-mask = <BIT(0)   BIT(5)   BIT(6)   BIT(6)
 					 0        BIT(3)   BIT(7)   BIT(4)  >;
 			func4-gcr =     <0xf016fe NO_FUNC  NO_FUNC  NO_FUNC
 					 NO_FUNC  NO_FUNC  0xf016f5 NO_FUNC >;
@@ -622,9 +624,9 @@
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01638 8     /* GPCR */
 			       NO_FUNC    1>;
-			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+			func3-gcr =     <0xf016d1 0xf016d1 NO_FUNC  NO_FUNC
 					 NO_FUNC  NO_FUNC  0xf016f1 NO_FUNC>;
-			func3-en-mask = <0        0        0        0
+			func3-en-mask = <BIT(2)   BIT(2)   0        0
 					 0        0        BIT(4)   0      >;
 			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
@@ -702,10 +704,10 @@
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01658 8     /* GPCR */
 			       NO_FUNC    1>;
-			func3-gcr =     <0xf016f1 0xf016fe NO_FUNC  NO_FUNC
-					 NO_FUNC  NO_FUNC  0xf016f4 0xf016d1>;
-			func3-en-mask = <BIT(7)   BIT(3)   0        0
-					 0        0        BIT(1)   BIT(3)  >;
+			func3-gcr =     <0xf016f1 0xf016fe NO_FUNC  0xf016ed
+					 0xf016ed 0xf016ed 0xf016f4 0xf016d1>;
+			func3-en-mask = <BIT(7)   BIT(3)   0        BIT(4)
+					 BIT(4)   BIT(5)   BIT(1)   BIT(3)  >;
 			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
 					 NO_FUNC  NO_FUNC  0xf016ed 0xf016f0>;
 			func4-en-mask = <0        0        0        0
@@ -925,6 +927,165 @@
 			       0 1
 			       0 1>;
 			#wuc-cells = <1>;
+		};
+
+		i2cbase: i2cbase@f04100 {
+			compatible = "ite,it51xxx-i2cbase";
+			reg = <0x00f04100 1
+			       0x00f01c00 1>;
+		};
+
+		i2c0: i2c@f04100 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04100 0x0028
+			       0x00f04200 0x0020>;
+			interrupts = <IT51XXX_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_SMB_SA IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiof 2 0>;
+			sda-gpios = <&gpiof 3 0>;
+			port-num = <SMB_CHANNEL_A>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE0>;
+			fifo-enable;   /* FIFO1 */
+		};
+
+		i2c1: i2c@f04128 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04128 0x0028
+			       0x00f04220 0x0020>;
+			interrupts = <IT51XXX_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_SMB_SB IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpioc 1 0>;
+			sda-gpios = <&gpioc 2 0>;
+			port-num = <SMB_CHANNEL_B>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE1>;
+			fifo-enable;   /* FIFO2 */
+		};
+
+		i2c2: i2c@f04150 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04150 0x0028
+			       0x00f04240 0x0020>;
+			interrupts = <IT51XXX_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_SMB_SC IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiof 6 0>;
+			sda-gpios = <&gpiof 7 0>;
+			port-num = <SMB_CHANNEL_C>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE2>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c3: i2c@f04178 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04178 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpioh 1 0>;
+			sda-gpios = <&gpioh 2 0>;
+			port-num = <SMB_CHANNEL_D>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE3>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c4: i2c@f041a0 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f041a0 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpioe 0 0>;
+			sda-gpios = <&gpioe 7 0>;
+			port-num = <SMB_CHANNEL_E>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE4>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c5: i2c@f041c8 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f041c8 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpioa 4 0>;
+			sda-gpios = <&gpioa 5 0>;
+			port-num = <SMB_CHANNEL_F>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE5>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c6: i2c@f04260 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04260 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_G IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiod 0 0>;
+			sda-gpios = <&gpiod 1 0>;
+			port-num = <SMB_CHANNEL_G>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE6>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c7: i2c@f04288 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04288 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_H IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiob 2 0>;
+			sda-gpios = <&gpioh 0 0>;
+			port-num = <SMB_CHANNEL_H>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE7>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c8: i2c@f042b0 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f042b0 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_I IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiob 5 0>;
+			sda-gpios = <&gpioj 6 0>;
+			port-num = <SMB_CHANNEL_I>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE8>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
 		};
 
 		ecpm: clock-controller@f01e00 {
