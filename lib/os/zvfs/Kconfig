@@ -7,12 +7,32 @@ menuconfig ZVFS
 	bool "Zephyr virtual filesystem (ZVFS) support [EXPERIMENTAL]"
 	select FDTABLE
 	select EXPERIMENTAL
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  ZVFS is a central, Zephyr-native library that provides a common interoperable API for all
 	  types of file descriptors such as those from the non-virtual FS, sockets, eventfds, FILE *'s
 	  and more. It is designed to be used by all Zephyr subsystems that need to work with files.
 
 if ZVFS
+
+config ZVFS_LIBC_FILE_SIZE
+	int
+	default -1
+	help
+	  Size of C library FILE objects, in bytes. All C libraries must specify this value via
+	  Kconfig.
+
+	  Beyond that, all C libraries must also provide the following two functions:
+
+	  - void zvfs_libc_file_alloc_cb(int fd, const char *mode, FILE *fp);
+	  - void zvfs_libc_file_get_fd(int fd, const char *mode, FILE *fp);
+
+config ZVFS_LIBC_FILE_ALIGN
+	int
+	default 8 if 64BIT
+	default 4
+	help
+	  Alignment of C library FILE objects, in bytes.
 
 config ZVFS_EVENTFD
 	bool "ZVFS event file descriptor support"
