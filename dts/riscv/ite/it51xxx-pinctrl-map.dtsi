@@ -113,6 +113,39 @@
 		pinmuxs = <&pinctrlj 6 IT8XXX2_ALT_FUNC_4>;
 	};
 
+	/* I2C switch to interface */
+	i2c9_clk_gpj3_default: i2c9_clk_gpj3_default {
+		pinmuxs = <&pinctrlj 3 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	i2c9_data_gpj4_default: i2c9_data_gpj4_default {
+		pinmuxs = <&pinctrlj 4 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	i2c10_clk_gpj5_default: i2c10_clk_gpj5_default {
+		pinmuxs = <&pinctrlj 5 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	i2c10_data_gpe1_default: i2c10_data_gpe1_default {
+		pinmuxs = <&pinctrle 1 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	i2c11_clk_gpe2_default: i2c11_clk_gpe2_default {
+		pinmuxs = <&pinctrle 2 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	i2c11_data_gpe3_default: i2c11_data_gpe3_default {
+		pinmuxs = <&pinctrle 3 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	i2c12_clk_gpf0_default: i2c12_clk_gpf0_default {
+		pinmuxs = <&pinctrlf 0 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	i2c12_data_gpf1_default: i2c12_data_gpf1_default {
+		pinmuxs = <&pinctrlf 1 IT8XXX2_ALT_FUNC_3>;
+	};
+
 	/* I3C alternate function */
 	i3c0_clk_gpj3_default: i3c0_clk_gpj3_default {
 		pinmuxs = <&pinctrlj 3 IT8XXX2_ALT_FUNC_1>;
