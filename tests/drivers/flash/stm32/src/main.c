@@ -81,6 +81,7 @@ static void *flash_stm32_setup(void)
 	if (wp_status.protected_mask & sector_mask) {
 		TC_PRINT("Removing write protection\n");
 		wp_request.disable_mask = sector_mask;
+		wp_request.enable_mask = 0;
 
 		rc = flash_ex_op(flash_dev, FLASH_STM32_EX_OP_SECTOR_WP,
 				 (uintptr_t)&wp_request, NULL);
