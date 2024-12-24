@@ -310,6 +310,31 @@ config TFM_MCUBOOT_PATH_DOWNLOAD
 
 endchoice
 
+choice TFM_ETHOS_DRIVER_PATH
+	prompt "Path to ETHOS driver or DOWNLOAD to fetch automatically"
+	default TFM_ETHOS_DRIVER_PATH_LOCAL
+	help
+	   Path to ETHOS driver for TF-M builds. The default option
+	   is to use Zephyr's HAL_ETHOS module. As an alternative,
+	   users may switch to the 'download' version; in that
+	   case ETHOS driver will be fetched by the TF-M build during
+	   build time. The default option ensures that Zephyr builds
+	   with TF-M do not fetch external trees.
+
+config TFM_ETHOS_DRIVER_PATH_LOCAL
+	bool "TF-M to use Zephyr's HAL_ETHOS_U"
+	help
+	  TF-M will use the Zephyr's ETHOS driver,
+	  which is present in the HAL_ETHOS module.
+
+config TFM_ETHOS_DRIVER_PATH_DOWNLOAD
+	bool "TF-M to automatically download ETHOS driver during build"
+	help
+	  TF-M build will automatically fetch ETHOS driver from external
+	  repository.
+
+endchoice
+
 config TFM_QCBOR_PATH
 	string
 	prompt "Path to QCBOR or DOWNLOAD to fetch automatically"
