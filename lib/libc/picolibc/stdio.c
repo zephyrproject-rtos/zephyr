@@ -52,3 +52,45 @@ void __stdin_hook_install(unsigned char (*hook)(void))
 	__stdin.get = (int (*)(FILE *)) hook;
 	__stdin.flags |= _FDEV_SETUP_READ;
 }
+
+#include "stdio-bufio.h"
+
+#include <fcntl.h>
+#include <unistd.h>
+
+#define FDEV_SETUP_POSIX(fd, buf, size, rwflags, bflags)                                           \
+	FDEV_SETUP_BUFIO(fd, buf, size, read, write, lseek, close, rwflags, bflags)
+
+int __posix_sflags(const char *mode, int *optr);
+
+FILE *z_libc_file_alloc(int fd, const char *mode)
+{
+	int stdio_flags;
+	int open_flags;
+	struct __file_bufio *bf;
+	char *buf;
+
+	stdio_flags = __posix_sflags(mode, &open_flags);
+	if (stdio_flags == 0) {
+		return NULL;
+	}
+
+	/* Allocate file structure and necessary buffers */
+	bf = calloc(1, sizeof(struct __file_bufio) + BUFSIZ);
+
+	if (bf == NULL) {
+		close(fd);
+		return NULL;
+	}
+	buf = (char *)(bf + 1);
+
+	*bf = (struct __file_bufio)FDEV_SETUP_POSIX(fd, buf, BUFSIZ, stdio_flags, __BFALL);
+
+	__bufio_lock_init(&(bf->xfile.cfile.file));
+
+	if (open_flags & O_APPEND) {
+		(void)fseeko(&(bf->xfile.cfile.file), 0, SEEK_END);
+	}
+
+	return &(bf->xfile.cfile.file);
+}

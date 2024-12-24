@@ -25,6 +25,10 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
 
+#ifndef CONFIG_MINIMAL_LIBC
+extern FILE *z_libc_file_alloc(int fd, const char *mode);
+#endif
+
 struct stat;
 
 struct fd_entry {
@@ -75,6 +79,15 @@ static struct fd_entry fdtable[CONFIG_ZVFS_OPEN_MAX] = {
 };
 
 static K_MUTEX_DEFINE(fdtable_lock);
+
+#ifdef CONFIG_MINIMAL_LIBC
+static ALWAYS_INLINE inline FILE *z_libc_file_alloc(int fd, const char *mode)
+{
+	ARG_UNUSED(mode);
+
+	return (FILE *)&fdtable[fd];
+}
+#endif
 
 static int z_fd_ref(int fd)
 {
@@ -274,6 +287,7 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;
 	fdtable[fd].mode = mode;
+	fdtable[fd].offset = 0;
 
 	/* Let the object know about the lock just in case it needs it
 	 * for something. For BSD sockets, the lock is used with condition
@@ -307,6 +321,7 @@ static bool supports_pread_pwrite(uint32_t mode)
 {
 	switch (mode & ZVFS_MODE_IFMT) {
 	case ZVFS_MODE_IFSHM:
+	case ZVFS_MODE_IFREG:
 		return true;
 	default:
 		return false;
@@ -407,13 +422,18 @@ int zvfs_close(int fd)
 
 FILE *zvfs_fdopen(int fd, const char *mode)
 {
-	ARG_UNUSED(mode);
+	FILE *ret;
 
 	if (_check_fd(fd) < 0) {
 		return NULL;
 	}
 
-	return (FILE *)&fdtable[fd];
+	ret = z_libc_file_alloc(fd, mode);
+	if (ret == NULL) {
+		errno = ENOMEM;
+	}
+
+	return ret;
 }
 
 int zvfs_fileno(FILE *file)
