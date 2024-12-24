@@ -65,3 +65,12 @@
 &wdt0 {
 	status = "okay";
 };
+
+&i3c0 {
+	status = "okay";
+	pinctrl-0  = <&i3c_scl_p0_0 &i3c_sda_p0_1>;
+	pinctrl-names = "default";
+	i2c-scl-hz = <DT_FREQ_K(200)>;
+	i3c-scl-hz = <DT_FREQ_K(800)>;
+	i3c-od-scl-hz = <DT_FREQ_K(400)>;
+};
