@@ -17,6 +17,8 @@
 #define __fallthrough __attribute__((fallthrough))
 #endif
 
+#define __deallocate_with(d, i)
+
 #define TOOLCHAIN_CLANG_VERSION \
 	((__clang_major__ * 10000) + (__clang_minor__ * 100) + \
 	  __clang_patchlevel__)
