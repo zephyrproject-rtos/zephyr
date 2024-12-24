@@ -797,7 +797,7 @@ int hawkbit_set_config(struct hawkbit_runtime_config *config)
 			LOG_DBG("configured %s: %d", "hawkbit/tls_tag", hb_cfg.tls_tag);
 		}
 #endif /* CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG */
-		settings_save();
+		settings_save_subtree("hawkbit");
 		k_sem_give(&probe_sem);
 	} else {
 		LOG_WRN("failed setting config");
