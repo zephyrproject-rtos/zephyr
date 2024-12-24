@@ -1,0 +1,20 @@
+# Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CH32V20X
+	bool
+
+config SOC_CH32V208
+	bool
+	select SOC_SERIES_CH32V20X
+
+config SOC_CH32V203
+	bool
+	select SOC_SERIES_CH32V20X
+
+config SOC_SERIES
+	default "ch32v20x" if SOC_SERIES_CH32V20X
+
+config SOC
+	default "ch32v203" if SOC_CH32V203
+	default "ch32v208" if SOC_CH32V208
