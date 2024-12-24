@@ -9,12 +9,6 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_TCC_CCU_H_
 
 /*
- * DEFINITIONS
- */
-
-#define CKC_MHZ(x) (uint32_t)((x) * 1000000)
-
-/*
  * FUNCTION PROTOTYPES
  */
 
