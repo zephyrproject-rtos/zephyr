@@ -992,9 +992,13 @@ static int ov5640_set_ctrl_hue(const struct device *dev, int value)
 		sign = 0x02;
 	}
 
-	struct ov5640_reg hue_params[] = {{SDE_CTRL8_REG, sign},
-					  {SDE_CTRL1_REG, abs(cos_coef)},
-					  {SDE_CTRL2_REG, abs(sin_coef)}};
+	struct ov5640_reg hue_params[] = {{SDE_CTRL1_REG, abs(cos_coef) & 0xFF},
+					  {SDE_CTRL2_REG, abs(sin_coef) & 0xFF}};
+
+	ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL8_REG, 0x7F, sign);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return ov5640_write_multi_regs(&cfg->i2c, hue_params, ARRAY_SIZE(hue_params));
 }
