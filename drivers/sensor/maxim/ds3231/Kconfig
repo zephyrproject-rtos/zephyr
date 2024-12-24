@@ -1,0 +1,13 @@
+# DS3231 temperature sensor configuration options
+
+# Copyright (c) 2024 Gergo Vari
+# SPDX-License-Identifier: Apache-2.0
+
+config DS3231
+	bool "DS3231 sensor"
+	default y
+	depends on DT_HAS_MAXIM_DS3231_ENABLED
+	depends on I2C
+	# select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Enable driver for DS3231 I2C-based temperature sensor.

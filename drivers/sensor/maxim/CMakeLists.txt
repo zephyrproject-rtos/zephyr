@@ -3,6 +3,7 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_DS18B20 ds18b20)
+add_subdirectory_ifdef(CONFIG_DS3231 ds3231)
 add_subdirectory_ifdef(CONFIG_MAX17055 max17055)
 add_subdirectory_ifdef(CONFIG_MAX17262 max17262)
 add_subdirectory_ifdef(CONFIG_MAX30101 max30101)
