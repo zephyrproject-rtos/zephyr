@@ -11,3 +11,4 @@ New USB device support APIs
    usbd_hid_device.rst
    uac2_device.rst
    usbd_msc_device.rst
+   usb_midi.rst
