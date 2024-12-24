@@ -116,7 +116,8 @@ struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 	}
 	/* doc add string descriptor end */
 
-	if (usbd_caps_speed(&sample_usbd) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_caps_speed(&sample_usbd) == USBD_SPEED_HS) {
 		err = usbd_add_configuration(&sample_usbd, USBD_SPEED_HS,
 					     &sample_hs_config);
 		if (err) {
