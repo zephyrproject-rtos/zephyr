@@ -249,6 +249,7 @@ int zvfs_reserve_fd(void)
 		(void)z_fd_ref(fd);
 		fdtable[fd].obj = NULL;
 		fdtable[fd].vtable = NULL;
+		fdtable[fd].offset = 0;
 		k_mutex_init(&fdtable[fd].lock);
 		k_condvar_init(&fdtable[fd].cond);
 	}
