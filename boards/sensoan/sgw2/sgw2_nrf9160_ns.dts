@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Sensoan Oy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf9160ns_sica.dtsi>
+#include "sgw2_nrf9160_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0_ns;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
+
+/* Disable Zephyr driver for UART1. The nrfx driver is used for interfacing with UART1
+ * for sending modem traces.
+ */
+&uart1 {
+	status = "disabled";
+};
