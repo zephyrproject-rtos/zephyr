@@ -27,13 +27,12 @@ static K_SEM_DEFINE(sem_iso_data, CONFIG_BT_ISO_TX_BUF_COUNT,
 
 #define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
-static uint16_t seq_num;
+#define SOURCE_DRIFT_COMP_TIMEOUT_US 20000 /* Drift compensate every 20 ms */
+#define SOURCE_DRIFT_COMP_COUNTDOWN  ((SOURCE_DRIFT_COMP_TIMEOUT_US / BIG_SDU_INTERVAL_US) - 1U)
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
-
-	seq_num = 0U;
 
 	k_sem_give(&sem_big_cmplt);
 }
@@ -175,7 +174,17 @@ int main(void)
 		printk("BIG create complete chan %u.\n", chan);
 	}
 
+	uint16_t seq_num[BIS_ISO_CHAN_COUNT];
+	bool is_first_iso_data_send = true;
+	int64_t drift_comp_us = 0;
+	int64_t delta = 0;
+	uint32_t ts = 0U;
+
+	uint32_t ts_prev = k_ticks_to_us_floor32(sys_clock_tick_get());
+
 	while (true) {
+		struct bt_iso_tx_info tx_info;
+
 		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
 			struct net_buf *buf;
 			int ret;
@@ -197,7 +206,18 @@ int main(void)
 			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 			sys_put_le32(iso_send_count, iso_data);
 			net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-			ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, seq_num);
+
+			/* Send ISO data with timestamp, use sequence number 0 for first ISO data on
+			 * any stream.
+			 */
+			if (!is_first_iso_data_send) {
+				ret = bt_iso_chan_send_ts(&bis_iso_chan[chan], buf, seq_num[chan],
+							  ts);
+			} else {
+				seq_num[chan] = 0U;
+				ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, 0U);
+			}
+
 			if (ret < 0) {
 				printk("Unable to broadcast data on channel %u"
 				       " : %d", chan, ret);
@@ -205,15 +225,98 @@ int main(void)
 				return 0;
 			}
 
+			/* Get Tx Sync, to verify that all streams have their ISO data at the same
+			 * timestamp.
+			 */
+			ret = bt_iso_chan_get_tx_sync(&bis_iso_chan[chan], &tx_info);
+			if (ret) {
+				printk("Failed to get tx sync after send (%d)\n", ret);
+				return 0;
+			}
+
+			/* Timestamp delta with the Controller */
+			if (!delta) {
+				delta = (int64_t)tx_info.ts - ts;
+
+			/* Use one channel timestamp to accumulate relative drift */
+			} else if (chan == 0U) {
+				/* NOTE: Change in delta (drift) for a duration of SDU intervals can
+				 *       be used to synchronize the clock with the Controller.
+				 */
+				static uint8_t countdown = SOURCE_DRIFT_COMP_COUNTDOWN;
+				static int64_t drift_us;
+
+				/* Accumulate relative drift */
+				drift_us += delta - tx_info.ts + ts;
+
+				/* Transfer the accumulated drift to compensate sampling interval */
+				if (!countdown--) {
+					countdown = SOURCE_DRIFT_COMP_COUNTDOWN;
+					drift_comp_us = drift_us;
+					drift_us = 0U;
+
+					printk("Compensate %lld us drift\n", drift_comp_us);
+				}
+			}
+
+			/* Permit a reasonable clock jitter (at least Bluetooth active clock
+			 * jitter), in the verification of timestamp.
+			 *
+			 * Let's consider that the source clock is allowed to drift up to half the
+			 * BIG SDU interval duration before drift compensation is applied.
+			 */
+			uint32_t jitter_us = BIG_SDU_INTERVAL_US / 2U;
+
+			/* Validate ISO data being enqueued at the required timestamp.
+			 * Ignore checking first ISO data sent.
+			 */
+			if (!is_first_iso_data_send &&
+			    !IN_RANGE(tx_info.ts, (ts + delta - jitter_us),
+				      (ts + delta + jitter_us))) {
+				printk("Mismatch in tx sync timestamp! (%llu != %u)\n",
+				       (ts + delta), tx_info.ts);
+				return 0;
+			}
+
+			seq_num[chan]++;
 		}
+
+		is_first_iso_data_send = false;
 
 		if ((iso_send_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
 			printk("Sending value %u\n", iso_send_count);
 		}
 
 		iso_send_count++;
-		seq_num++;
 
+
+		/* NOTE: Here we are simulating a drift compensated sleep for
+		 *       BIG_SDU_INTERVAL_US
+		 */
+		uint32_t sleep_us;
+
+		if (drift_comp_us < BIG_SDU_INTERVAL_US) {
+			sleep_us = BIG_SDU_INTERVAL_US - drift_comp_us;
+		} else {
+			sleep_us = 0U;
+		}
+
+		/* Reset drift compensation value */
+		drift_comp_us = 0;
+
+		/* Sleep, simulating source ISO data sampling */
+		uint32_t ts_curr;
+
+		do {
+			k_sleep(K_USEC(10));
+			ts_curr = k_ticks_to_us_floor32(sys_clock_tick_get());
+		} while ((ts_curr - ts_prev) < sleep_us);
+
+		/* Increment the application timestamp by the simulated sampling duration */
+		ts += (ts_curr - ts_prev);
+		ts_prev = ts_curr;
+
+		/* Count down to iterate BIG terminate and BIG create */
 		timeout_counter--;
 		if (!timeout_counter) {
 			timeout_counter = INITIAL_TIMEOUT_COUNTER;
@@ -258,6 +361,13 @@ int main(void)
 				}
 				printk("BIG create complete chan %u.\n", chan);
 			}
+
+			/* Reset as we start over with new BIG created */
+			ts = 0U;
+			delta = 0U;
+			is_first_iso_data_send = true;
+
+			ts_prev = k_ticks_to_us_floor32(sys_clock_tick_get());
 		}
 	}
 }
