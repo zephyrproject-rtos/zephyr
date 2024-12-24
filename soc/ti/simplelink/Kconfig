@@ -12,4 +12,10 @@ config HAS_TI_CCFG
 	  Selected when CCFG (Customer Configuration) registers
 	  appear at the end of flash
 
+config TI_SIMPLELINK_DYNAMIC_DPL_OBJECTS
+	bool
+	help
+	  Turn on dynamic memory allocation for DPL objects. Reserves
+	  extra memory for this.
+
 endif # SOC_FAMILY_TI_SIMPLELINK
