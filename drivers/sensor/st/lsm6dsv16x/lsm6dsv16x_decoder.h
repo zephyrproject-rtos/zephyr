@@ -30,7 +30,8 @@ struct lsm6dsv16x_fifo_data {
 	uint16_t gyro_batch_odr: 4;
 	uint16_t accel_batch_odr: 4;
 	uint16_t temp_batch_odr: 4;
-	uint16_t reserved_2: 4;
+	uint16_t sflp_batch_odr: 3;
+	uint16_t reserved_2: 1;
 } __attribute__((__packed__));
 
 struct lsm6dsv16x_rtio_data {

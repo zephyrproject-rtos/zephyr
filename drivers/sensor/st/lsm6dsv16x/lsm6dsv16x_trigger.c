@@ -177,16 +177,13 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 	int ret;
 
 	while (1) {
-		if (IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
-			break;
-		}
-
 		if (lsm6dsv16x_flag_data_ready_get(ctx, &status) < 0) {
 			LOG_DBG("failed reading status reg");
 			return;
 		}
 
-		if ((status.drdy_xl == 0) && (status.drdy_gy == 0)) {
+		if (((status.drdy_xl == 0) && (status.drdy_gy == 0)) ||
+		    IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
 			break;
 		}
 
