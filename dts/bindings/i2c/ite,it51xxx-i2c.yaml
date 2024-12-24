@@ -1,0 +1,201 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE it51xxx I2C
+
+compatible: "ite,it51xxx-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  scl-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The SCL pin for the selected port.
+
+  sda-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The SDA pin for the selected port.
+
+  transfer-timeout-ms:
+    type: int
+    default: 500
+    description: |
+      Maximum time allowed for an I2C transfer.
+
+  port-num:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+    description: Ordinal identifying the port
+      0 = SMB_CHANNEL_A,
+      1 = SMB_CHANNEL_B,
+      2 = SMB_CHANNEL_C,
+      3 = SMB_CHANNEL_D,
+      4 = SMB_CHANNEL_E,
+      5 = SMB_CHANNEL_F,
+      6 = SMB_CHANNEL_G,
+      7 = SMB_CHANNEL_H,
+      8 = SMB_CHANNEL_I,
+
+  channel-switch-sel:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+    description: |
+      The default setting is as described below
+      1 = SMB_SWITCH_INTERFACE0: Switch to interface0 SMCLK0/SMDAT0
+      2 = SMB_SWITCH_INTERFACE1: Switch to interface1 SMCLK1/SMDAT1
+      3 = SMB_SWITCH_INTERFACE2: Switch to interface2 SMCLK2/SMDAT2
+      4 = SMB_SWITCH_INTERFACE3: Switch to interface3 SMCLK3/SMDAT3
+      5 = SMB_SWITCH_INTERFACE4: Switch to interface4 SMCLK4/SMDAT4
+      6 = SMB_SWITCH_INTERFACE5: Switch to interface5 SMCLK5/SMDAT5
+      7 = SMB_SWITCH_INTERFACE6: Switch to interface6 SMCLK6/SMDAT6
+      8 = SMB_SWITCH_INTERFACE7: Switch to interface7 SMCLK7/SMDAT7
+      9 = SMB_SWITCH_INTERFACE8: Switch to interface8 SMCLK8/SMDAT8
+      10 = SMB_SWITCH_INTERFACE9: Switch to interface9 SMCLK9/SMDAT9
+      11 = SMB_SWITCH_INTERFACE10: Switch to interface10 SMCLK10/SMDAT10
+      12 = SMB_SWITCH_INTERFACE11: Switch to interface11 SMCLK11/SMDAT11
+      13 = SMB_SWITCH_INTERFACE12: Switch to interface12 SMCLK12/SMDAT12
+
+      The following is an example of the 'channel-switch-sel' property
+      being swapped between node &i2c0 and &i2c2 in the application:
+      Note: The property of 'port-num' cannot be changed in the
+            application.
+
+            If the property of 'channel-switch-sel' is changed, the pinctrl
+            setting and recovery pin in &i2c0 and &i2c2 nodes must also be
+            modified accordingly.
+
+      Valid example(Host):
+
+      Channel A switches to interface2:
+      &i2c0 {
+             status = "okay";
+             pinctrl-0 = <&i2c2_clk_gpf6_default
+                          &i2c2_data_gpf7_default>;
+             pinctrl-names = "default";
+             scl-gpios = <&gpiof 6 0>;
+             sda-gpios = <&gpiof 7 0>;
+             channel-switch-sel = <SMB_SWITCH_INTERFACE2>;
+      };
+
+      Channel C switches to interface0:
+      &i2c2 {
+             status = "okay";
+             pinctrl-0 = <&i2c0_clk_gpf2_default
+                          &i2c0_data_gpf3_default>;
+             pinctrl-names = "default";
+             scl-gpios = <&gpiof 2 0>;
+             sda-gpios = <&gpiof 3 0>;
+             channel-switch-sel = <SMB_SWITCH_INTERFACE0>;
+      };
+
+      Invalid example(Host):
+
+      Channel A switches to interface2:
+      &i2c0 {
+             status = "okay";
+             pinctrl-0 = <&i2c2_clk_gpf6_default
+                          &i2c2_data_gpf7_default>;
+             pinctrl-names = "default";
+             scl-gpios = <&gpiof 6 0>;
+             sda-gpios = <&gpiof 7 0>;
+             channel-switch-sel = <SMB_SWITCH_INTERFACE2>;
+      };
+
+      Channel C maintains the original configuration:
+      &i2c2 {
+             status = "okay";
+             pinctrl-0 = <&i2c2_clk_gpf6_default
+                          &i2c2_data_gpf7_default>;
+             pinctrl-names = "default";
+      };
+
+      Valid example(Target):
+
+      Channel A switches to interface5:
+      &i2c0 {
+             status = "okay";
+             pinctrl-0 = <&i2c5_clk_gpa4_default
+                          &i2c5_data_gpa5_default>;
+             pinctrl-names = "default";
+             scl-gpios = <&gpioa 4 0>;
+             sda-gpios = <&gpioa 5 0>;
+             channel-switch-sel = <SMB_SWITCH_INTERFACE5>;
+
+             target-enable;
+             i2c0_target: target@52 {
+                 compatible = "ite,target-i2c";
+                 reg = <0x52>;
+             };
+      };
+
+  target-enable:
+    type: boolean
+    description: |
+      This option is used when the I2C target is enabled. It is
+      necessary to prevent the target port from being configured
+      with I2C host related initialization.
+
+  target-fifo-mode:
+    type: boolean
+    description: |
+      Only supports write or read mode and the maximum buffer size
+      is 256 bytes. Support dedicated FIFO mode 16 bytes.
+
+  target-shared-fifo-mode:
+    type: boolean
+    description: |
+      This option is used to support non-FIFO write to shared FIFO
+      read mode. The maximum supported shared FIFO is 256 bytes.
+
+  fifo-enable:
+    type: boolean
+    description: |
+      The I2C controller supports two 32-bytes FIFOs,
+      FIFO1 supports I2C port 0. FIFO2 only supports one port among
+      1~8. The default is I2C port 1.
+
+  push-pull-recovery:
+    type: boolean
+    description: |
+      This property is enabled when selecting the push-pull GPIO output
+      type to drive the I2C recovery. The default is open-drain.
