@@ -25,6 +25,9 @@ extern "C" {
 #define NPCX_DEV_NUM_ADDR_3BYTE 3
 #define NPCX_DEV_NUM_ADDR_4BYTE 4
 
+#define NPCX_SPI_F_CS0 0
+#define NPCX_SPI_F_CS1 1
+
 /* UMA operation configuration for a SPI device */
 struct npcx_uma_cfg {
 	uint8_t opcode;
@@ -48,6 +51,8 @@ struct npcx_qspi_cfg {
 	uint8_t enter_4ba;
 	/* SPI read access type of Direct Read Access mode */
 	uint8_t rd_mode;
+	bool is_logical_low_dev;
+	uint8_t spi_dev_sz;
 	/* Configurations for the Quad-SPI peripherals */
 	int flags;
 };
@@ -80,6 +85,16 @@ void qspi_npcx_fiu_mutex_lock_configure(const struct device *dev,
  * @param dev Pointer to the device structure for qspi bus controller instance.
  */
 void qspi_npcx_fiu_mutex_unlock(const struct device *dev);
+
+#if defined(CONFIG_FLASH_NPCX_FIU_DRA_V2)
+/**
+ * @brief Set the size of the address space allocated for SPI device.
+ *
+ * @param dev Pointer to the device structure for qspi bus controller instance.
+ * @param cfg Pointer to the configuration for the device on qspi bus.
+ */
+void qspi_npcx_fiu_set_spi_size(const struct device *dev, const struct npcx_qspi_cfg *cfg);
+#endif
 
 #ifdef __cplusplus
 }
