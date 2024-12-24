@@ -1,0 +1,37 @@
+# Renesas RX Family
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_RENESAS_RX
+	bool "RX flash driver"
+	depends on DT_HAS_RENESAS_RX_FLASH_ENABLED
+	default y
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_PAGE_LAYOUT
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select USE_RX_RDP_FLASH
+	help
+	  Flash driver for RX series
+
+if SOC_FLASH_RENESAS_RX
+
+config FLASH_RENESAS_RX_BGO_ENABLED
+	bool "RX flash BGO feature"
+	default $(dt_nodelabel_bool_prop,data_flash,bgo-enable)
+	help
+	  Renesas RX flash BGO (Background Operation) feature
+	  for RX series. This feature allows the flash driver to
+	  perform background operations, such as erase and write,
+	  while the CPU is executing other tasks. This only applies
+	  to the data flash region.
+
+config RX_FLASH_TYPE1
+	bool
+	depends on SOC_SERIES_RX130
+	default y
+	help
+	  RX flash driver type 1
+
+endif
