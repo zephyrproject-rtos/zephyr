@@ -1,0 +1,5 @@
+board:
+  name: mbv32
+  vendor: amd
+  socs:
+  - name: mbv32
