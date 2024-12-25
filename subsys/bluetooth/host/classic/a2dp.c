@@ -456,13 +456,13 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req)
 		struct bt_a2dp_ep_info *info = &a2dp->discover_cb_param->info;
 
 		info->codec_type = codec_type;
-		info->sep_info = a2dp->discover_cb_param->seps_info[a2dp->get_cap_index];
+		info->sep_info = &a2dp->discover_cb_param->seps_info[a2dp->get_cap_index];
 		memcpy(&info->codec_cap.codec_ie, codec_info_element, codec_info_element_len);
 		info->codec_cap.len = codec_info_element_len;
 		user_ret = a2dp->discover_cb_param->cb(a2dp, info, &ep);
 		if (ep != NULL) {
 			ep->codec_type = info->codec_type;
-			ep->sep.sep_info = info->sep_info;
+			ep->sep.sep_info = *info->sep_info;
 			*ep->codec_cap = info->codec_cap;
 			ep->stream = NULL;
 		}
