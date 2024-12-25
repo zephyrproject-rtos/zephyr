@@ -122,6 +122,12 @@
 	status ="okay";
 };
 
+&uclk {
+	clocks = <&pll>;
+	div = <5>;
+	status = "okay";
+};
+
 &usbhs {
 	pinctrl-0 = <&usbhs_default>;
 	pinctrl-names = "default";
@@ -158,4 +164,10 @@
 	interrupts = <63 1>, <64 1>;
 	interrupt-names = "gtioca", "overflow";
 	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
 };

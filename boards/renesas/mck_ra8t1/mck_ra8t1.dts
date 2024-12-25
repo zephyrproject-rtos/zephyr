@@ -67,6 +67,8 @@
 	};
 
 	pllq {
+		div = <4>;
+		freq = <DT_FREQ_M(240)>;
 		status = "okay";
 	};
 
@@ -83,6 +85,12 @@
 
 &canfdclk {
 	clocks = <&pll>;
+	div = <5>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pllq>;
 	div = <5>;
 	status = "okay";
 };
@@ -177,4 +185,14 @@
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 	average-count = <4>;
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
 };
