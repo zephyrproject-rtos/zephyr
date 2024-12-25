@@ -56,5 +56,6 @@ zephyr_library_sources_ifdef(CONFIG_WDT_INTEL_ADSP wdt_intel_adsp.c wdt_dw_commo
 zephyr_library_sources_ifdef(CONFIG_WDT_ANDES_ATCWDT200 wdt_andes_atcwdt200.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NXP_FS26 wdt_nxp_fs26.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_SHELL wdt_shell.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_RENESAS_RA wdt_renesas_ra.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE wdt_handlers.c)
