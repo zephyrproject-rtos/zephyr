@@ -226,6 +226,13 @@
 			zephyr,memory-region = "ID_CODE";
 			status = "okay";
 		};
+
+		wdt: wdt@40044200 {
+			compatible = "renesas,ra-wdt";
+			reg = <0x40044200 0x200>;
+			clocks = <&pclkb 0 0>;
+			status = "disabled";
+		};
 	};
 };
 

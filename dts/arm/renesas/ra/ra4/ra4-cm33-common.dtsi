@@ -526,6 +526,13 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		wdt: wdt@40083400 {
+			compatible = "renesas,ra-wdt";
+			reg = <0x40083400 0x200>;
+			clocks = <&pclkb 0 0>;
+			status = "disabled";
+		};
 	};
 
 	usbfs_phy: usbfs-phy {

@@ -771,6 +771,13 @@
 			status = "disabled";
 		};
 
+		wdt: wdt@40083400 {
+			compatible = "renesas,ra-wdt";
+			reg = <0x40083400 0x200>;
+			clocks = <&pclkb 0 0>;
+			status = "disabled";
+		};
+
 		usbfs: usbfs@40250000 {
 			compatible = "renesas,ra-usbfs";
 			reg = <0x40250000 0x2000>;
