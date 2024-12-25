@@ -127,6 +127,15 @@ SECTIONS
 		*(.jcr)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#if DT_PROP(DT_NODELABEL(code_flash), programming_enable)
+	SECTION_PROLOGUE(.pfram,ALIGN(4),)
+	{
+		_PFRAM_start = .;
+		. += _RPFRAM_end - _RPFRAM_start;
+		_PFRAM_end = .;
+	} > ROMABLE_REGION
+#endif
+
 	/* TODO: is this section necessary? There is a similar section
 	 * (_CTOR_SECTION_NAME) in common-rom.ld. This seems to be for
 	 * C++ Constructors/Destructors? */
@@ -182,6 +191,18 @@ SECTIONS
 #include <zephyr/linker/common-ram.ld>
 
 	_edata = .;
+
+#if DT_PROP(DT_NODELABEL(code_flash), programming_enable)
+
+	.rpfram ALIGN(4): AT(_PFRAM_start)
+	{
+		_RPFRAM_start = .;
+		*(PFRAM)
+		. = ALIGN(4);
+		_RPFRAM_end = .;
+	} > RAMABLE_REGION
+
+#endif
 
 	SECTION_PROLOGUE(_BSS_SECTION_NAME,,)
 	{
