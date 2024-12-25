@@ -105,7 +105,7 @@ static inline void hal_event_timer_start_ppi_config(void)
 	nrf_grtc_publish_set(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_RADIO,
 			     HAL_EVENT_TIMER_START_PPI);
 
-	/* Enable same DPPI in Global domain */
+	/* Enable same DPPI in Peripheral domain */
 	nrf_dppi_channels_enable(NRF_DPPIC20,
 				 BIT(HAL_EVENT_TIMER_START_PPI));
 
@@ -148,8 +148,8 @@ static inline void hal_radio_ready_time_capture_ppi_config(void)
 static inline void hal_trigger_crypt_ppi_config(void)
 {
 	nrf_radio_publish_set(NRF_RADIO,
-			      NRF_RADIO_EVENT_ADDRESS, HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI);
-	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_START, HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI);
+			      NRF_RADIO_EVENT_ADDRESS, HAL_TRIGGER_CRYPT_PPI);
+	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_START, HAL_TRIGGER_CRYPT_PPI);
 }
 
 /*******************************************************************************
@@ -160,6 +160,7 @@ static inline void hal_trigger_crypt_ppi_disable(void)
 	nrf_ccm_subscribe_clear(NRF_CCM, NRF_CCM_TASK_START);
 }
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 /*******************************************************************************
  * Trigger automatic address resolution on Bit counter match:
  * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
@@ -169,6 +170,7 @@ static inline void hal_trigger_aar_ppi_config(void)
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
 	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
 }
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 /* When hardware does not support Coded PHY we still allow the Controller
  * implementation to accept Coded PHY flags, but the Controller will use 1M
