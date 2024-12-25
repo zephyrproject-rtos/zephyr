@@ -4870,8 +4870,11 @@ sub process {
 				    s/\(\s+/\(/;
 			}
 		}
+		# exception: COND_CODE_1(DT_INST_PROP_OR(n, io_mapped, 0), (.port = DT_INST_REG_ADDR(n), ),
+		#                                                              clang-format do this way ^
 		if ($line =~ /(\s+)\)/ && $line !~ /^.\s*\)/ &&
 		    $line !~ /for\s*\(.*;\s+\)/ &&
+		    $line !~ /,\s\)/ &&
 		    $line !~ /:\s+\)/) {
 			if (ERROR("SPACING",
 				  "space prohibited before that close parenthesis ')'\n" . $herecurr) &&
