@@ -9,12 +9,18 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
-  - bluetooth
+  - clock_control
+  - counter
+  - entropy
+  - flash
   - gpio
+  - i2c
+  - led
+  - pinctrl
+  - spi
   - uart
   - watchdog
 testing:
   ignore_tags:
     - pm
-    - hwinfo
 vendor: silabs
