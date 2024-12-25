@@ -30,7 +30,7 @@ static unsigned int div_round_closest(uint32_t dividend, uint32_t divisor)
 	return (dividend + (divisor / 2U)) / divisor;
 }
 
-static bool queue_is_empty(struct ring_buf *rb)
+static bool queue_is_empty(struct ring_buffer *rb)
 {
 	unsigned int key;
 
@@ -50,7 +50,7 @@ static bool queue_is_empty(struct ring_buf *rb)
 /*
  * Get data from the queue
  */
-static int queue_get(struct ring_buf *rb, void **mem_block, size_t *size)
+static int queue_get(struct ring_buffer *rb, void **mem_block, size_t *size)
 {
 	unsigned int key;
 
@@ -73,7 +73,7 @@ static int queue_get(struct ring_buf *rb, void **mem_block, size_t *size)
 /*
  * Put data in the queue
  */
-static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
+static int queue_put(struct ring_buffer *rb, void *mem_block, size_t size)
 {
 	uint16_t head_next;
 	unsigned int key;
