@@ -147,4 +147,6 @@ source "drivers/watchdog/Kconfig.litex"
 
 source "drivers/watchdog/Kconfig.rts5912"
 
+source "drivers/watchdog/Kconfig.renesas_ra"
+
 endif # WATCHDOG
