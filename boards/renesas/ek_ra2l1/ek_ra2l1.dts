@@ -38,6 +38,7 @@
 
 	aliases {
 		led0 = &led1;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -54,4 +55,8 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&wdt {
+	status = "okay";
 };
