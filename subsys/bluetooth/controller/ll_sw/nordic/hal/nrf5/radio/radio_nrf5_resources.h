@@ -50,8 +50,12 @@
 /* Radio ISR Latency to be considered with single timer used so that the PPI/
  * DPPI is disabled in time when the timer is cleared on radio end, so that
  * the timer compare should not trigger TXEN/RXEN immediately on radio end.
+ * This value will be used as minimum turnaround time in setting up Rx to Tx
+ * using radio_tmr_start_us under single timer use.
+ * The value of 80 us is used considering 150 us TIFS minus the maximum rx
+ * chain delay ~30 us, and minus the radio ramp up delay ~40 us.
  */
-#define HAL_RADIO_ISR_LATENCY_MAX_US 150U
+#define HAL_RADIO_ISR_LATENCY_MAX_US 80U
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #define SW_SWITCH_TIMER_EVTS_COMP_BASE 3
