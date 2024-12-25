@@ -611,7 +611,14 @@ uint32_t radio_is_address(void)
 }
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+static uint32_t last_pdu_end_latency_us;
 static uint32_t last_pdu_end_us;
+
+static void last_pdu_end_us_init(uint32_t latency_us)
+{
+	last_pdu_end_latency_us = latency_us;
+	last_pdu_end_us = 0U;
+}
 
 uint32_t radio_is_done(void)
 {
@@ -1388,7 +1395,11 @@ void radio_tmr_tifs_set(uint32_t tifs)
 
 uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 {
+	uint32_t remainder_us;
+
+	/* Convert jitter to positive offset remainder in microseconds */
 	hal_ticker_remove_jitter(&ticks_start, &remainder);
+	remainder_us = remainder;
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* When using single timer for software tIFS switching, ensure that
@@ -1401,18 +1412,18 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	uint32_t latency_ticks;
 	uint32_t latency_us;
 
-	latency_us = MAX(remainder, HAL_RADIO_ISR_LATENCY_MAX_US) - remainder;
+	latency_us = MAX(remainder_us, HAL_RADIO_ISR_LATENCY_MAX_US) - remainder_us;
 	latency_ticks = HAL_TICKER_US_TO_TICKS(latency_us);
 	ticks_start -= latency_ticks;
-	remainder += latency_us;
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	remainder_us += latency_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	EVENT_TIMER->MODE = 0;
 	EVENT_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
 	EVENT_TIMER->BITMODE = 2;	/* 24 - bit */
 
-	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, remainder);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, remainder_us);
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
@@ -1479,7 +1490,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	last_pdu_end_us = 0U;
+	last_pdu_end_us_init(latency_us);
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
@@ -1506,7 +1517,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 #endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
-	return remainder;
+	return remainder_us;
 }
 
 uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
@@ -1514,7 +1525,7 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	uint32_t remainder_us;
 
 	/* Setup compare event with min. 1 us offset */
-	remainder_us = 1;
+	remainder_us = 1U;
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* When using single timer for software tIFS switching, ensure that
@@ -1531,7 +1542,7 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	latency_ticks = HAL_TICKER_US_TO_TICKS(latency_us);
 	ticks_start -= latency_ticks;
 	remainder_us += latency_us;
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_STOP);
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
@@ -1603,7 +1614,7 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	last_pdu_end_us = 0U;
+	last_pdu_end_us_init(latency_us);
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #if defined(CONFIG_SOC_COMPATIBLE_NRF53X) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
@@ -1630,7 +1641,10 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	last_pdu_end_us = 0U;
+	/* As timer is reset on every radio end, remove the accumulated
+	 * last_pdu_end_us in the given start_us.
+	 */
+	start_us -= last_pdu_end_us;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #if defined(CONFIG_SOC_COMPATIBLE_NRF53X) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
@@ -1672,7 +1686,7 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 
 		latency_us = MAX(actual_us, HAL_RADIO_ISR_LATENCY_MAX_US) - actual_us;
 		actual_us += latency_us;
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 		nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_TRX_EVENT);
 		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, actual_us);
@@ -1683,6 +1697,10 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 		now_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 	} while ((now_us > start_us) &&
 		 (EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_TRX_CC_OFFSET] == 0U));
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	actual_us += last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	return actual_us;
 }
@@ -1697,8 +1715,25 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
 	start_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* As timer is reset on every radio end, add the accumulated
+	 * last_pdu_end_us to the captured current time.
+	 */
+	start_us += last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
 	/* Setup radio start at current time */
 	start_us = radio_tmr_start_us(trx, start_us);
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* Remove the single timer start latency used to mitigate use of too
+	 * small compare register value. Thus, start_us returned be always
+	 * the value corresponding to the captured radio ready timestamp.
+	 * This is used in the calculation of aux_offset in subsequent
+	 * ADV_EXT_IND PDUs.
+	 */
+	start_us -= last_pdu_end_latency_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	return start_us;
 }
@@ -1721,18 +1756,29 @@ uint32_t radio_tmr_start_get(void)
 	return start_ticks;
 }
 
+uint32_t radio_tmr_start_latency_get(void)
+{
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	return last_pdu_end_latency_us;
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	return 0U;
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+}
+
 void radio_tmr_stop(void)
 {
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_STOP);
 #if defined(TIMER_TASKS_SHUTDOWN_TASKS_SHUTDOWN_Msk)
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_SHUTDOWN);
-#endif
+#endif /* TIMER_TASKS_SHUTDOWN_TASKS_SHUTDOWN_Msk */
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP);
 #if defined(TIMER_TASKS_SHUTDOWN_TASKS_SHUTDOWN_Msk)
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_SHUTDOWN);
-#endif
+#endif /* TIMER_TASKS_SHUTDOWN_TASKS_SHUTDOWN_Msk */
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
@@ -1740,15 +1786,27 @@ void radio_tmr_stop(void)
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
 }
 
-void radio_tmr_hcto_configure(uint32_t hcto)
+void radio_tmr_hcto_configure(uint32_t hcto_us)
 {
-	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_HCTO_CC_OFFSET, hcto);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_HCTO_CC_OFFSET, hcto_us);
 
 	hal_radio_recv_timeout_cancel_ppi_config();
 	hal_radio_disable_on_hcto_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(
 		BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) |
 		BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI));
+}
+
+void radio_tmr_hcto_configure_abs(uint32_t hcto_from_start_us)
+{
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* As timer is reset on every radio end, remove the accumulated
+	 * last_pdu_end_us in the given hcto_us.
+	 */
+	hcto_from_start_us -= last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+	radio_tmr_hcto_configure(hcto_from_start_us);
 }
 
 void radio_tmr_aa_capture(void)
@@ -1825,7 +1883,11 @@ uint32_t radio_tmr_end_get(void)
 
 uint32_t radio_tmr_tifs_base_get(void)
 {
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	return 0U;
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	return radio_tmr_end_get();
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
