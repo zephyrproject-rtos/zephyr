@@ -82,6 +82,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		mipi-dsi = &mipi_dsi;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -312,4 +313,8 @@ pmod_sd_shield: &sdhc1 {};
 	pinctrl-0 = <&usbfs_default>;
 	pinctrl-names = "default";
 	maximum-speed = "full-speed";
+};
+
+&wdt {
+	status = "okay";
 };
