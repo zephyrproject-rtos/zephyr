@@ -1165,8 +1165,18 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 	isr_radio_tmr_cb_param = param;
 	isr_radio_tmr_cb = cb;
 
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* As timer is reset on every radio end, remove the accumulated
+	 * last_pdu_end_us in the given start_us.
+	 */
+	start_us -= last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
 	/* start_us could be the current count in the timer */
 	uint32_t now_us = start_us;
+	uint32_t actual_us;
 
 	/* Setup timer compare while determining the latency in doing so */
 	do {
@@ -1174,9 +1184,11 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 		start_us = (now_us << 1) - start_us;
 
 		/* Setup compare event with min. 1 us offset */
+		actual_us = start_us + 1U;
+
+		/* Setup compare event with min. 1 us offset */
 		nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
-		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET,
-				 start_us + 1U);
+		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET, actual_us);
 
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
@@ -1191,7 +1203,7 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 
 	irq_enable(TIMER0_IRQn);
 
-	return start_us + 1U;
+	return actual_us;
 }
 #endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 
