@@ -207,9 +207,9 @@ static void shell_a2dp_print_capabilities(struct bt_a2dp_ep_info *ep_info)
 	codec_type = ep_info->codec_type;
 	codec_ie = ep_info->codec_cap.codec_ie;
 	codec_ie_len = ep_info->codec_cap.len;
-	shell_print(ctx_shell, "endpoint id: %d, %s, %s:", ep_info->sep_info.id,
-			(ep_info->sep_info.tsep == BT_AVDTP_SINK) ? "(sink)" : "(source)",
-			(ep_info->sep_info.inuse) ? "(in use)" : "(idle)");
+	shell_print(ctx_shell, "endpoint id: %d, %s, %s:", ep_info->sep_info->id,
+			(ep_info->sep_info->tsep == BT_AVDTP_SINK) ? "(sink)" : "(source)",
+			(ep_info->sep_info->inuse) ? "(in use)" : "(idle)");
 	if (BT_A2DP_SBC == codec_type) {
 		shell_print(ctx_shell, "  codec type: SBC");
 
