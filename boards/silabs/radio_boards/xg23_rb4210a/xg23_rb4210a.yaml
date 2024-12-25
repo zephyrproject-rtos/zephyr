@@ -19,6 +19,7 @@ supported:
   - pinctrl
   - spi
   - uart
+  - dma
   - watchdog
 testing:
   ignore_tags:
