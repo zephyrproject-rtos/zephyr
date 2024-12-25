@@ -285,3 +285,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&c2h {
+	status = "okay";
+};

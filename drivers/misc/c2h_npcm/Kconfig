@@ -1,0 +1,14 @@
+# NPCM misc. driver options
+
+# Copyright (c) 2024 Nuvoton
+# SPDX-License-Identifier: Apache-2.0
+
+
+config C2H_NPCM
+	bool "NPCM core access to host modules driver"
+	depends on DT_HAS_NUVOTON_NPCM_C2H_ENABLED
+	help
+	  This option enables the c2h driver for NPCM
+	  SoCs.
+	  Say y if you wish to access host modules
+	  on NPCM SMC.

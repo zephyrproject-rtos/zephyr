@@ -3658,4 +3658,234 @@ struct emac_reg {
 /* DMACHRBAR fields */
 #define NPCM_DMACHRBAR_HRBAP                         (0U)
 
+typedef enum {
+	/* 1: Configuration */
+	SIB_DEV_CFG = 1,
+	/* 2: Print port */
+	SIB_DEV_PRT,
+	/* 3: UARTA */
+	SIB_DEV_UARTA,
+	/* 4: UARTB */
+	SIB_DEV_UARTB,
+	/* 5: Mailbox */
+	SIB_DEV_MAILBOX,
+	/* 6: CIR */
+	SIB_DEV_CIR,
+	/* 7: RTC */
+	SIB_DEV_RTC,
+	/* 8: Extend RAM */
+	SIB_DEV_HRAM,
+	/* 9: Mobile System Wake-Up Control */
+	SIB_DEV_MSWC,
+	/* 10: Shared Memory Core Access 2 */
+	SIB_DEV_SHM2,
+	/* 11: Shared Memory Core Access */
+	SIB_DEV_SHM,
+	/* 12: KBC */
+	SIB_DEV_KBC,
+	/* 13: Power Management Channel 1 */
+	SIB_DEV_PMCHAN1,
+	/* 14: Power Management Channel 2 */
+	SIB_DEV_PMCHAN2,
+	/* 15: Power Management Channel 3 */
+	SIB_DEV_PMCHAN3,
+	/* 16: Power Management Channel 4 */
+	SIB_DEV_PMCHAN4,
+	/* 17: UARTC */
+	SIB_DEV_UARTC,
+	/* 18: UARTD */
+	SIB_DEV_UARTD,
+	/* 19: UARTE */
+	SIB_DEV_UARTE,
+	/* 20: UARTF */
+	SIB_DEV_UARTF,
+} SIB_DEVICE_T;
+
+typedef enum {
+	/* means port 2E or 4E */
+	CFG_INDEX   = 0x00,
+	/* means port 2F or 4F */
+	CFG_DATA    = 0x01,
+} SIB_DEV_CFG_Enum;
+
+typedef enum {
+	RTC_INDEX   = 0x00,
+	RTC_DATA    = 0x01,
+} SIB_DEV_RTC_Enum;
+
+typedef enum {
+	RTC_SEC             = 0x00,
+	RTC_SEC_ALARM       = 0x01,
+	RTC_MIN             = 0x02,
+	RTC_MIN_ALARM       = 0x03,
+	RTC_HOUR            = 0x04,
+	RTC_HOUR_ALARM      = 0x05,
+	RTC_WEEKDAY         = 0x06,
+	RTC_DAY             = 0x07,
+	RTC_MONTH           = 0x08,
+	RTC_YEAR            = 0x09,
+	/* Timer Configuration */
+	RTC_CFG             = 0x0A,
+	/* Control */
+	RTC_CTL             = 0x0B,
+	/* Alarm Interrupt Flag */
+	RTC_ALMFLG          = 0x0C,
+	/* Control and Status */
+	RTC_CTS             = 0x0D,
+	RTC_WEEKDAY_ALARM   = 0x0E,
+	RTC_DAY_ALARM       = 0x0F,
+	RTC_MONTH_ALARM     = 0x10,
+	RTC_YEAR_ALARM      = 0x11,
+} SIB_RTC_OFFSET_Enum;
+
+/*--------------------------*/
+/* RTC_SECOND fields        */
+/*--------------------------*/
+#define RTC_SECOND_Pos                                     (0)
+#define RTC_SECOND_Msk                                     (0x7F << RTC_SECOND_Pos)
+
+/*--------------------------*/
+/* RTC_SECONDALARM fields   */
+/*--------------------------*/
+#define RTC_SECONDALARM_Pos                                (0)
+#define RTC_SECONDALARM_Msk                                (0x7F << RTC_SECONDALARM_Pos)
+
+#define RTC_SECONDALARM_AENS_Pos                           (7)
+#define RTC_SECONDALARM_AENS_Msk                           (0x01 << RTC_SECONDALARM_AENS_Pos)
+
+/*--------------------------*/
+/* RTC_MINUT fields         */
+/*--------------------------*/
+#define RTC_MINUT_Pos                                      (0)
+#define RTC_MINUT_Msk                                      (0x7F << RTC_MINUT_Pos)
+
+/*--------------------------*/
+/* RTC_MINUTALARM fields    */
+/*--------------------------*/
+#define RTC_MINUTALARM_MINUTALARM_Pos                      (0)
+#define RTC_MINUTALARM_MINUTALARM_Msk                      (0x7F << RTC_MINUTALARM_MINUTALARM_Pos)
+
+#define RTC_MINUTALARM_AENM_Pos                            (7)
+#define RTC_MINUTALARM_AENM_Msk                            (0x01 << RTC_MINUTALARM_AENM_Pos)
+
+/*--------------------------*/
+/* RTC_HOUR fields          */
+/*--------------------------*/
+#define RTC_HOUR_Pos                                       (0)
+#define RTC_HOUR_Msk                                       (0x3F << RTC_HOUR_Pos)
+
+/*--------------------------*/
+/* RTC_HOURALARM fields     */
+/*--------------------------*/
+#define RTC_HOURALARM_HOURALARM_Pos                        (0)
+#define RTC_HOURALARM_HOURALARM_Msk                        (0x3F << RTC_HOURALARM_HOURALARM_Pos)
+
+#define RTC_HOURALARM_AMPM_Pos                             (7)
+#define RTC_HOURALARM_AMPM_Msk                             (0x01 << RTC_HOURALARM_AMPM_Pos)
+
+/*--------------------------*/
+/* RTC_WEEKDAY fields       */
+/*--------------------------*/
+#define RTC_WEEKDAY_Pos                                    (0)
+#define RTC_WEEKDAY_Msk                                    (0x07 << RTC_WEEKDAY_Pos)
+
+/*--------------------------*/
+/* RTC_DAY fields           */
+/*--------------------------*/
+#define RTC_DAY_Pos                                        (0)
+#define RTC_DAY_Msk                                        (0x3F << RTC_DAY_Pos)
+
+/*--------------------------*/
+/* RTC_MONTH fields         */
+/*--------------------------*/
+#define RTC_MONTH_Pos                                      (0)
+#define RTC_MONTH_Msk                                      (0x1F << RTC_MONTH_Pos)
+
+/*--------------------------*/
+/* RTC_YEAR fields          */
+/*--------------------------*/
+#define RTC_YEAR_Pos                                       (0)
+#define RTC_YEAR_Msk                                       (0xFF << RTC_YEAR_Pos)
+
+/*--------------------------*/
+/* RTC_CFG fields           */
+/*--------------------------*/
+#define RTC_CFG_ENRTCTIME_Pos                              (0)
+#define RTC_CFG_ENRTCTIME_Msk                              (0x01 << RTC_CFG_ENRTCTIME_Pos)
+
+#define RTC_CFG_1224MODE_Pos                               (1)
+#define RTC_CFG_1224MODE_Msk                               (0x01 << RTC_CFG_1224MODE_Pos)
+
+#define RTC_CFG_dstMODE_Pos                                (2)
+#define RTC_CFG_dstMODE_Msk                                (0x01 << RTC_CFG_dstMODE_Pos)
+
+#define RTC_CFG_ENRTCPAD_Pos                               (3)
+#define RTC_CFG_ENRTCPAD_Msk                               (0x01 << RTC_CFG_ENRTCPAD_Pos)
+
+#define RTC_CFG_RTC2PME_Pos                                (5)
+#define RTC_CFG_RTC2PME_Msk                                (0x01 << RTC_CFG_RTC2PME_Pos)
+
+/*--------------------------*/
+/* RTC_CTRL fields          */
+/*--------------------------*/
+#define RTC_CTRL_AIE_Pos                                   (0)
+#define RTC_CTRL_AIE_Msk                                   (0x01 << RTC_CTRL_AIE_Pos)
+
+/*--------------------------*/
+/* RTC_ALMFLG fields        */
+/*--------------------------*/
+#define RTC_ALMFLG_AF_Pos                                  (0)
+#define RTC_ALMFLG_AF_Msk                                  (0x01 << RTC_ALMFLG_AF_Pos)
+
+/*--------------------------*/
+/* RTC_CTS fields           */
+/*--------------------------*/
+#define RTC_CTS_AENY_Pos                                   (0)
+#define RTC_CTS_AENY_Msk                                   (0x01 << RTC_CTS_AENY_Pos)
+
+#define RTC_CTS_AENH_Pos                                   (1)
+#define RTC_CTS_AENH_Msk                                   (0x01 << RTC_CTS_AENH_Pos)
+
+#define RTC_CTS_ENRTCTIMESTS_Pos                           (5)
+#define RTC_CTS_ENRTCTIMESTS_Msk                           (0x01 << RTC_CTS_ENRTCTIMESTS_Pos)
+
+#define RTC_CTS_RTCPAD05STS_Pos                            (6)
+#define RTC_CTS_RTCPAD05STS_Msk                            (0x01 << RTC_CTS_RTCPAD05STS_Pos)
+
+#define RTC_CTS_PADSTS_Pos                                 (7)
+#define RTC_CTS_PADSTS_Msk                                 (0x01 << RTC_CTS_PADSTS_Pos)
+
+/*--------------------------*/
+/* RTC_WEEKDAYALARM fields  */
+/*--------------------------*/
+#define RTC_WEEKDAYALARM_WEEKALARM_Pos                     (0)
+#define RTC_WEEKDAYALARM_WEEKALARM_Msk                     (0x07 << RTC_WEEKDAYALARM_WEEKALARM_Pos)
+
+#define RTC_WEEKDAYALARM_AENW_Pos                          (7)
+#define RTC_WEEKDAYALARM_AENW_Msk                          (0x01 << RTC_WEEKDAYALARM_AENW_Pos)
+
+/*--------------------------*/
+/* RTC_DAYALARM fields      */
+/*--------------------------*/
+#define RTC_DAYALARM_Pos                                   (0)
+#define RTC_DAYALARM_Msk                                   (0x3F << RTC_DAYALARM_Pos)
+
+#define RTC_DAYALARM_AEND_Pos                              (7)
+#define RTC_DAYALARM_AEND_Msk                              (0x01 << RTC_DAYALARM_AEND_Pos)
+
+/*--------------------------*/
+/* RTC_MONTHALARM fields    */
+/*--------------------------*/
+#define RTC_MONTHALARM_Pos                                 (0)
+#define RTC_MONTHALARM_Msk                                 (0x1F << RTC_MONTHALARM_Pos)
+
+#define RTC_MONTHALARM_AENMON_Pos                          (7)
+#define RTC_MONTHALARM_AENMON_Msk                          (0x01 << RTC_MONTHALARM_AENMON_Pos)
+
+/*--------------------------*/
+/* RTC_YEARALARM fields     */
+/*--------------------------*/
+#define RTC_YEARALARM_Pos                                  (0)
+#define RTC_YEARALARM_Msk                                  (0xFF << RTC_YEARALARM_Pos)
+
 #endif /* _NUVOTON_NPCM_REG_DEF_H */
