@@ -43,6 +43,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -113,5 +114,9 @@
 &dac0 {
 	pinctrl-0 = <&dac0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&wdt {
 	status = "okay";
 };
