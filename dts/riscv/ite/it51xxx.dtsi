@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/ite-it51xxx-clock.h>
 #include <zephyr/dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/i2c/it51xxx-i2c.h>
@@ -68,6 +69,16 @@
 		ilm: ilm@f01040 {
 			compatible = "ite,it8xxx2-ilm";
 			reg = <0xf01040 3>;	/* SCAR0 */
+		};
+
+		adc0: adc@f04500 {
+			compatible = "ite,it51xxx-adc";
+			reg = <0xf04500 0xc1>;
+			channel-count = <8>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		gpiogcr: gpio-gcr@f01600 {

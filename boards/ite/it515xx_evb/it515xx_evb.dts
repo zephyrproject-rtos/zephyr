@@ -141,3 +141,9 @@
 	pinctrl-0 = <&tach0a_gpd6_default>;
 	pinctrl-names = "default";
 };
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_ch3_gpi3_default>;
+	pinctrl-names = "default";
+};
