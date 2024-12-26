@@ -39,6 +39,10 @@ static int gpio_rpi_configure(const struct device *dev,
 {
 	struct gpio_rpi_data *data = dev->data;
 
+	if ((flags & GPIO_DIR_MASK) == GPIO_DISCONNECTED) {
+		return -ENOTSUP;
+	}
+
 	gpio_set_pulls(pin,
 		(flags & GPIO_PULL_UP) != 0U,
 		(flags & GPIO_PULL_DOWN) != 0U);
