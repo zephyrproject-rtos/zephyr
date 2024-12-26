@@ -62,6 +62,10 @@
 #define B9x_PIN_MSK      0xFFFF
 #define B9x_PIN_ID_MSK   0xFF
 
+#define B91_PULL_NONE    (B9x_PULL_NONE << (B9x_PULL_POS - B9x_FUNC_POS))
+#define B91_PULL_DOWN    (B9x_PULL_DOWN << (B9x_PULL_POS - B9x_FUNC_POS))
+#define B91_PULL_UP      (B9x_PULL_UP << (B9x_PULL_POS - B9x_FUNC_POS))
+
 /* Setters and getters */
 
 #define B9x_PINMUX_SET(port, pin, func)   ((func << B9x_FUNC_POS) | \

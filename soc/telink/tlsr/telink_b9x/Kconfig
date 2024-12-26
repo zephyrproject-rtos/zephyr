@@ -105,6 +105,8 @@ if BOOTLOADER_MCUBOOT || MCUBOOT
 config TELINK_B9X_MCUBOOT_STARTUP
 	bool "Telink B9x MCUBoot startup handler"
 	depends on MCUBOOT
+	select CRC
+	select UART_DRV_CMD
 	help
 		Run Telink specific vendor code before MCUBoot
 		main process

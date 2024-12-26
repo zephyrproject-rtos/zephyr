@@ -18,13 +18,15 @@
 		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_0, TL321X_FUNC_UART0_TX)>;
 	};
 	uart0_rx_pe1_default: uart0_rx_pe1_default {
-		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_1, TL321X_FUNC_UART0_RTX_IO)>;
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_1,
+				(TL321X_FUNC_UART0_RTX_IO | TL321X_PULL_UP))>;
 	};
 	uart0_rts_pe2_default: uart0_rts_pe2_default {
 		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_2, TL321X_FUNC_UART0_RTS)>;
 	};
 	uart0_cts_pe3_default: uart0_cts_pe3_default {
-		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_3, TL321X_FUNC_UART0_CTS_I)>;
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_3,
+				(TL321X_FUNC_UART0_CTS_I | TL321X_PULL_UP))>;
 	};
 
 	/* UART1: TX(PC6), RX(PC7), RTS(PC5), CTS(PC4) */
@@ -33,13 +35,15 @@
 		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_6, TL321X_FUNC_UART1_TX)>;
 	};
 	uart1_rx_pc7_default: uart1_rx_pc7_default {
-		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_7, TL321X_FUNC_UART1_RTX_IO)>;
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_7,
+				(TL321X_FUNC_UART1_RTX_IO | TL321X_PULL_UP))>;
 	};
 	uart1_rts_pc5_default: uart1_rts_pc5_default {
 		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_5, TL321X_FUNC_UART1_RTS)>;
 	};
 	uart1_cts_pc4_default: uart1_cts_pc4_default {
-		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_4, TL321X_FUNC_UART1_CTS_I)>;
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_4,
+				(TL321X_FUNC_UART1_CTS_I | TL321X_PULL_UP))>;
 	};
 
 	/* PWM Channel 0 (PE4) */

@@ -318,18 +318,18 @@ static int uart_tlx_driver_init(const struct device *dev)
 	const struct uart_tlx_config *cfg = dev->config;
 	struct uart_tlx_data *data = dev->data;
 
+	/* configure pins */
+	status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		return status;
+	}
+
 	/* Reset Tx, Rx status before usage */
 #if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
 	uart->txrx_status |= FLD_UART_RX_BUF_IRQ | FLD_UART_TX_BUF_IRQ;
 #endif
 	data->rx_byte_index = 0;
 	data->tx_byte_index = 0;
-
-	/* configure pins */
-	status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (status < 0) {
-		return status;
-	}
 
 	uart_tlx_cal_div_and_bwpc(cfg->baud_rate, sys_clk.pclk * 1000 * 1000, &divider, &bwpc);
 	uart_tlx_init(uart, divider, bwpc, UART_PARITY_NONE, UART_STOP_BIT_1);
@@ -572,6 +572,41 @@ static void uart_tlx_irq_callback_set(const struct device *dev,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_UART_DRV_CMD
+#include <gpio.h>
+
+int uart_tlx_drv_cmd(const struct device *dev, uint32_t cmd, uint32_t p)
+{
+	int result = -ENOTSUP;
+
+	if (cmd == 0) {
+		/* CMD 0: Get logical zero level UART pins count */
+		ARG_UNUSED(p);
+		const struct uart_tlx_config *cfg = dev->config;
+		const struct pinctrl_dev_config *pcfg = cfg->pcfg;
+
+		result = 0;
+		for (uint8_t i = 0; i < pcfg->state_cnt; i++) {
+			const struct pinctrl_state *state = &pcfg->states[i];
+
+			if (state->id == PINCTRL_STATE_DEFAULT) {
+				for (uint8_t j = 0; j < state->pin_cnt; j++) {
+					const pinctrl_soc_pin_t *pin = &state->pins[j];
+					bool level = gpio_get_level(TLX_PINMUX_GET_PIN(*pin));
+
+					if (!level) {
+						result++;
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	return result;
+}
+#endif /* CONFIG_UART_DRV_CMD */
+
 #ifdef CONFIG_PM_DEVICE
 
 static int uart_tlx_pm_action(const struct device *dev, enum pm_device_action action)
@@ -633,6 +668,9 @@ static const struct uart_driver_api uart_tlx_driver_api = {
 	.irq_is_pending = uart_tlx_irq_is_pending,
 	.irq_update = uart_tlx_irq_update,
 	.irq_callback_set = uart_tlx_irq_callback_set,
+#endif
+#ifdef CONFIG_UART_DRV_CMD
+	.drv_cmd = uart_tlx_drv_cmd,
 #endif
 };
 

@@ -91,7 +91,12 @@ jobs:
     - name: Build B92 bootloader/mcuboot/boot
       run: |
         cd ..
-        west build -b tlsr9528a                  -d build_mcuboot_b92                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_BOOT_MAX_IMG_SECTORS=4096
+        west build -b tlsr9528a                  -d build_mcuboot_b92                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_LOG_DEFAULT_LEVEL=3
+
+    - name: Build B92 bootloader/mcuboot/boot - chip id
+      run: |
+        cd ..
+        west build -b tlsr9528a                  -d build_mcuboot_chip_id_b92           bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_TELINK_B9X_MCUBOOT_STARTUP=y
 
     - name: Build B92 subsys/mgmt/mcumgr/smp_svr for Bluetooth
       run: |
@@ -156,6 +161,7 @@ jobs:
         cp ../build_ot_echo_client_b92/zephyr/zephyr.bin            telink_build_artifacts/b92_ot_echo_client.bin
         cp ../build_ot_echo_client_pm_b92/zephyr/zephyr.bin         telink_build_artifacts/b92_ot_echo_client_pm.bin
         cp ../build_mcuboot_b92/zephyr/zephyr.bin                   telink_build_artifacts/b92_mcuboot.bin
+        cp ../build_mcuboot_chip_id_b92/zephyr/zephyr.bin           telink_build_artifacts/b92_mcuboot_chip_id.bin
         cp ../build_bt_smp_svr_b92/zephyr/zephyr.signed.bin         telink_build_artifacts/b92_bt_smp_svr.signed.bin
         cp ../build_usb_console_b92/zephyr/zephyr.bin               telink_build_artifacts/b92_usb_console.bin
         cp ../build_ot_coprocessor_rcp_usb_b92/zephyr/zephyr.bin    telink_build_artifacts/b92_ot_coprocessor_rcp_usb.bin

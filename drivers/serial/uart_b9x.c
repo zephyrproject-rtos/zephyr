@@ -320,6 +320,12 @@ static int uart_b9x_driver_init(const struct device *dev)
 	const struct uart_b9x_config *cfg = dev->config;
 	struct uart_b9x_data *data = dev->data;
 
+	/* configure pins */
+	status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		return status;
+	}
+
 	/* Reset Tx, Rx status before usage */
 #if CONFIG_SOC_RISCV_TELINK_B91
 	uart->status |= UART_RX_RESET_BIT | UART_TX_RESET_BIT;
@@ -328,12 +334,6 @@ static int uart_b9x_driver_init(const struct device *dev)
 #endif
 	data->rx_byte_index = 0;
 	data->tx_byte_index = 0;
-
-	/* configure pins */
-	status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (status < 0) {
-		return status;
-	}
 
 	uart_b9x_cal_div_and_bwpc(cfg->baud_rate, sys_clk.pclk * 1000 * 1000, &divider, &bwpc);
 	uart_b9x_init(uart, divider, bwpc, UART_PARITY_NONE, UART_STOP_BIT_1);
@@ -592,6 +592,41 @@ static void uart_b9x_irq_callback_set(const struct device *dev,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_UART_DRV_CMD
+#include <gpio.h>
+
+int uart_b9x_drv_cmd(const struct device *dev, uint32_t cmd, uint32_t p)
+{
+	int result = -ENOTSUP;
+
+	if (cmd == 0) {
+		/* CMD 0: Get logical zero level UART pins count */
+		ARG_UNUSED(p);
+		const struct uart_b9x_config *cfg = dev->config;
+		const struct pinctrl_dev_config *pcfg = cfg->pcfg;
+
+		result = 0;
+		for (uint8_t i = 0; i < pcfg->state_cnt; i++) {
+			const struct pinctrl_state *state = &pcfg->states[i];
+
+			if (state->id == PINCTRL_STATE_DEFAULT) {
+				for (uint8_t j = 0; j < state->pin_cnt; j++) {
+					const pinctrl_soc_pin_t *pin = &state->pins[j];
+					bool level = gpio_get_level(B9x_PINMUX_GET_PIN(*pin));
+
+					if (!level) {
+						result++;
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	return result;
+}
+#endif /* CONFIG_UART_DRV_CMD */
+
 #ifdef CONFIG_PM_DEVICE
 
 static int uart_b9x_pm_action(const struct device *dev, enum pm_device_action action)
@@ -655,6 +690,9 @@ static const struct uart_driver_api uart_b9x_driver_api = {
 	.irq_is_pending = uart_b9x_irq_is_pending,
 	.irq_update = uart_b9x_irq_update,
 	.irq_callback_set = uart_b9x_irq_callback_set,
+#endif
+#ifdef CONFIG_UART_DRV_CMD
+	.drv_cmd = uart_b9x_drv_cmd,
 #endif
 };
 
