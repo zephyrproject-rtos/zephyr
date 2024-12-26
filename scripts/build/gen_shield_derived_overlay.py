@@ -81,7 +81,7 @@ def process_shield_file(shield_overlay, shield_optstr, output_dir):
     with open(f"{derived_overlay}.new", "w") as file:
         file.write(overlay_content)
 
-    os.replace(f"{derived_overlay}.new", derived_overlay)
+    os.replace(f"{derived_overlay}.new", derived_overlay + "x")
 
 
 def main():
