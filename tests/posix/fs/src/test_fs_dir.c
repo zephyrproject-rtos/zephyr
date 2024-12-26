@@ -57,10 +57,10 @@ static int test_mkdir(void)
 static struct dirent *readdir_wrap(DIR *dirp, bool thread_safe)
 {
 	if (thread_safe) {
-		struct dirent *entry = NULL;
+		struct dirent entry;
 		struct dirent *result = NULL;
 
-		zassert_ok(readdir_r(dirp, entry, &result));
+		zassert_ok(readdir_r(dirp, &entry, &result));
 
 		return result;
 	} else {
