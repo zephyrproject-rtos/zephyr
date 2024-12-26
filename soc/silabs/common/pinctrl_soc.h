@@ -94,7 +94,9 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param prop Property name.
  * @param idx Property entry index.
  */
-#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx) (DT_PROP_BY_IDX(node_id, prop, idx)),
+#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx) (DT_PROP_BY_IDX(node_id, prop, idx) | \
+		((GECKO_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << GECKO_LP_POS) \
+		),
 
 /**
  * @brief Utility macro to initialize state pins contained in a given property.
@@ -142,6 +144,13 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param pincfg speed configuration bit field.
  */
 #define GECKO_GET_SPEED(pincfg) (((pincfg) >> GECKO_SPEED_POS) & GECKO_SPEED_MSK)
+
+/**
+ * @brief Utility macro to obtain pin low power flag.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define GECKO_GET_LP(pincfg) (((pincfg) >> GECKO_LP_POS) & GECKO_LP_MSK)
 
 #endif /* CONFIG_PINCTRL_SILABS_DBUS */
 
