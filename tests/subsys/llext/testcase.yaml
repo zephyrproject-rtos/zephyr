@@ -24,14 +24,14 @@ tests:
   # without actually running it to load some extension, let's keep it in
   # good shape and ready to be used by additional architectures in the
   # future.
-  llext.simple.loader_build:
+  llext.loader_build:
     build_only: true
 
   # Run the suite with all combinations of core Kconfig options for the LLEXT
   # subsystem (storage type, ELF type, MPU/MMU etc). To focus on LLEXT issues,
   # most tests include no_mem_protection.conf, which disables memory protection
   # hardware completely.
-  llext.simple.readonly:
+  llext.readonly:
     arch_allow:               # Xtensa needs writable storage
       - arm
       - riscv
@@ -40,14 +40,14 @@ tests:
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
-  llext.simple.readonly_mpu:
+  llext.readonly_mpu:
     min_ram: 128
     arch_allow: arm # Xtensa needs writable storage, currently not supported on RISC-V
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
-  llext.simple.readonly_mmu:
+  llext.readonly_mmu:
     arch_allow:
       - arm64
       - arm
@@ -58,7 +58,7 @@ tests:
     extra_configs:
       - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
-  llext.simple.writable:
+  llext.writable:
     arch_allow:
       - arm
       - xtensa
@@ -70,7 +70,7 @@ tests:
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
-  llext.simple.writable_relocatable:
+  llext.writable_relocatable:
     arch_allow:
       - arm
       - xtensa
@@ -91,7 +91,7 @@ tests:
 
   # Test the Symbol Link Identifier (SLID) linking feature on writable
   # storage to cover both ARM and Xtensa architectures on the same test.
-  llext.simple.writable_slid_linking:
+  llext.writable_slid_linking:
     arch_allow:
       - arm
       - xtensa
@@ -104,7 +104,7 @@ tests:
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
-  llext.simple.writable_relocatable_slid_linking:
+  llext.writable_relocatable_slid_linking:
     arch_allow:
       - arm
       - xtensa

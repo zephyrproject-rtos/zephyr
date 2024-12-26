@@ -23,7 +23,7 @@
 #include "threads_kernel_objects_ext.h"
 
 
-LOG_MODULE_REGISTER(test_llext_simple);
+LOG_MODULE_REGISTER(test_llext);
 
 
 #ifdef CONFIG_LLEXT_STORAGE_WRITABLE
