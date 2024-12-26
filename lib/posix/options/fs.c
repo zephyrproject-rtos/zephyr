@@ -6,6 +6,9 @@
 
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
+
+#include "fs_priv.h"
+
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <limits.h>
@@ -20,15 +23,6 @@
 int zvfs_fstat(int fd, struct stat *buf);
 
 BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
-
-struct posix_fs_desc {
-	union {
-		struct fs_file_t file;
-		struct fs_dir_t dir;
-	};
-	bool is_dir;
-	bool used;
-};
 
 static struct posix_fs_desc desc_array[CONFIG_POSIX_OPEN_MAX];
 
