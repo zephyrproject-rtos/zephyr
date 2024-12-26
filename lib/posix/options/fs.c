@@ -331,40 +331,6 @@ struct dirent *readdir(DIR *dirp)
 	return &pdirent;
 }
 
-#ifdef CONFIG_POSIX_FILE_SYSTEM_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
-{
-	struct dirent *dir;
-
-	errno = 0;
-
-	dir = readdir(dirp);
-	if (dir == NULL) {
-		int error = errno;
-
-		if (error != 0) {
-			if (result != NULL) {
-				*result = NULL;
-			}
-
-			return 0;
-		} else {
-			return error;
-		}
-	}
-
-	if (entry != NULL) {
-		memcpy(entry, dir, sizeof(struct dirent));
-	}
-
-	if (result != NULL) {
-		*result = entry;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_POSIX_FILE_SYSTEM_R */
-
 /**
  * @brief Rename a file.
  *
