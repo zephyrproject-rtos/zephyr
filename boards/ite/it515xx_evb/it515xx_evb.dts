@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <ite/it51xxx.dtsi>
+#include <ite/it51xxx-pinctrl-map.dtsi>
+
+/ {
+	model = "IT515XX EV-Board";
+	compatible = "ite,it515xx-evb";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_ch3_gpi3_default>;
+	pinctrl-names = "default";
+};

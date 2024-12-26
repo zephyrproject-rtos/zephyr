@@ -1,0 +1,5 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# ADC Driver
+CONFIG_ADC=y
