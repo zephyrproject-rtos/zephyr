@@ -71,6 +71,10 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_FILE_SYSTEM)
   zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM fs.c)
 endif()
 
+if (NOT CONFIG_TC_PROVIDES_POSIX_FILE_SYSTEM_R)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM_R file_system_r.c)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_POSIX_FSYNC fsync.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MEMLOCK mlockall.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MEMLOCK_RANGE mlock.c)
