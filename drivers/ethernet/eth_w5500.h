@@ -158,6 +158,18 @@ struct w5500_config {
 	int32_t timeout;
 };
 
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+struct w5500_socket_listening_context {
+	bool in_use;
+	bool listening_sock_nonblock;
+	uint8_t backlog;
+	uint8_t listening_socknum;
+	uint8_t backlog_socknum_bitmask;
+	uint8_t accepted_socknum_bitmask;
+	struct k_sem incoming_sem;
+};
+#endif
+
 struct w5500_socket {
 	enum w5500_transport_type type;
 	enum w5500_socket_state state;
@@ -169,6 +181,7 @@ struct w5500_socket {
 	struct sockaddr_in peer_addr;
 	uint16_t lport;
 	bool nonblock;
+	uint8_t listen_ctx_ind;
 #endif
 };
 
@@ -265,6 +278,10 @@ void w5500_hw_net_config(const struct device *dev);
 int w5500_socket_offload_init(const struct device *w5500_dev);
 
 int w5500_socket_create(int family, int type, int proto);
+
+void __w5500_handle_incoming_conn_established(uint8_t socknum);
+
+void __w5500_handle_incoming_conn_closed(uint8_t socknum);
 #endif
 
 #endif /*_W5500_*/

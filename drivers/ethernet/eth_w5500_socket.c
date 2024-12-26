@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(eth_w5500_socket, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 const static struct device *w5500_dev;
 static struct w5500_socket_lookup_entry w5500_socket_lut[W5500_SOCKET_LUT_MAX_ENTRIES];
+static struct w5500_socket_listening_context w5500_listen_ctxs[W5500_MAX_SOCK_NUM];
 
 static int w5500_hw_socket_status_wait_until(uint8_t sn, uint8_t status)
 {
@@ -163,10 +164,48 @@ static int w5500_socket_open(uint8_t socknum)
 	return 0;
 }
 
+static int w5500_socket_close(uint8_t socknum);
+
+static void w5500_reset_listen_ctx(uint8_t listen_ctx_ind)
+{
+	struct w5500_runtime *ctx = w5500_dev->data;
+	struct w5500_socket *sock;
+	struct w5500_socket_listening_context *listen_ctx;
+	uint8_t sn, bitmask;
+
+	listen_ctx = &w5500_listen_ctxs[listen_ctx_ind];
+
+	// close all sockets on w5500 waiting to be accepted (backlog)
+	bitmask = listen_ctx->backlog_socknum_bitmask;
+	for (sn = 0; bitmask; sn++, bitmask >>= 1) {
+		if (bitmask & 1) {
+			w5500_socket_close(sn);
+		}
+	}
+
+	// for accepted sockets, disassociate it with this listen_ctx
+	bitmask = listen_ctx->accepted_socknum_bitmask;
+	for (sn = 0; bitmask; sn++, bitmask >>= 1) {
+		if (bitmask & 1) {
+			sock = &ctx->sockets[sn];
+			sock->listen_ctx_ind = W5500_SOCKET_LISTEN_CTX_UNASSIGNED;
+		}
+	}
+
+	listen_ctx->backlog_socknum_bitmask = 0;
+	listen_ctx->accepted_socknum_bitmask = 0;
+	k_sem_reset(&listen_ctx->incoming_sem);
+	listen_ctx->in_use = false;
+	listen_ctx->listening_sock_nonblock = false;
+	listen_ctx->backlog = 0;
+	listen_ctx->listening_socknum = W5500_MAX_SOCK_NUM;
+}
+
 static int w5500_socket_close(uint8_t socknum)
 {
 	struct w5500_runtime *ctx = w5500_dev->data;
 	struct w5500_socket *sock = &ctx->sockets[socknum];
+	int lutind;
 	int retval = 0;
 
 	sock = &ctx->sockets[socknum];
@@ -180,15 +219,68 @@ static int w5500_socket_close(uint8_t socknum)
 		retval = -1;
 	}
 
-	sock->type = W5500_TRANSPORT_UNSPECIFIED;
 	sock->state = W5500_SOCKET_STATE_CLOSED;
-	memset(&sock->peer_addr, 0, sizeof(struct sockaddr_in));
 	k_sem_reset(&sock->sint_sem);
+
+	/* if this socket is listening, or is derived from a listening socket */
+	if (sock->listen_ctx_ind < W5500_MAX_SOCK_NUM) {
+		struct w5500_socket_listening_context *listen_ctx =
+			&w5500_listen_ctxs[sock->listen_ctx_ind];
+
+		if (listen_ctx->listening_socknum == W5500_MAX_SOCK_NUM) {
+			/* no socket is listening to this port anymore due to backlog overflow, */
+			/* then re-open this socket as a new listening socket */
+
+			if (w5500_socket_open(socknum) < 0) {
+				errno = EIO;
+				retval = -1;
+
+				goto socket_struct_cleanup;
+			}
+
+			w5500_socket_command(w5500_dev, socknum, W5500_Sn_CR_LISTEN);
+
+			if (w5500_hw_socket_status_wait_until(socknum, W5500_SOCK_LISTEN) < 0) {
+				errno = EIO;
+				retval = -1;
+
+				goto socket_struct_cleanup;
+			}
+
+			memset(&sock->peer_addr, 0, sizeof(struct sockaddr_in));
+			sock->nonblock = listen_ctx->listening_sock_nonblock;
+			sock->state = W5500_SOCKET_STATE_LISTENING;
+			listen_ctx->listening_socknum = socknum;
+
+			/* remap lut to point to this socket */
+			for (lutind = 0; lutind < W5500_SOCKET_LUT_MAX_ENTRIES; lutind++) {
+				if (w5500_socket_lut[lutind].socknum ==
+					    W5500_SOCKET_LUT_LISTENING_OVERFLOWN &&
+				    w5500_socket_lut[lutind].listen_ctx_ind ==
+					    sock->listen_ctx_ind) {
+					w5500_socket_lut[lutind].socknum = socknum;
+					break;
+				}
+			}
+
+			LOG_DBG("Reuse w5500 socket %d for listening", socknum);
+			return 0;
+		}
+
+		if (listen_ctx->listening_socknum == socknum) {
+			w5500_reset_listen_ctx(sock->listen_ctx_ind);
+		}
+	}
+
+socket_struct_cleanup:
+	sock->type = W5500_TRANSPORT_UNSPECIFIED;
+	memset(&sock->peer_addr, 0, sizeof(struct sockaddr_in));
 	sock->nonblock = false;
 	sock->lport = 0;
 	sock->ir = 0;
+	sock->listen_ctx_ind = W5500_SOCKET_LISTEN_CTX_UNASSIGNED;
 
-	LOG_INF("Closed w5500 socket %d", socknum);
+	LOG_DBG("Closed w5500 socket %d", socknum);
 	return retval;
 }
 
@@ -212,6 +304,144 @@ static void w5500_get_peer_sockaddr(uint8_t socknum, struct sockaddr_in *addr)
 	}
 }
 
+void __w5500_handle_incoming_conn_established(uint8_t socknum)
+{
+	/* Handling incoming TCP connections to a LISTENING socket.
+	 * Upon receiving an incoming connection, W5500 establishes the connection
+	 * with the listening socket *in place*.
+	 * Here two things are done:
+	 *   1. changing the state of LISTENING socket to ESTABLISHED to reflect the
+	 *      change in the role of this socket on W5500,
+	 *   2. trying to open a new socket on W5500 to keep listening going, if the
+	 *      backlog has not been exceeded and there exists a free socket. */
+
+	struct w5500_runtime *ctx = w5500_dev->data;
+	struct w5500_socket *sock = &ctx->sockets[socknum];
+	struct w5500_socket *newsock;
+	struct w5500_socket_lookup_entry *lut_entry;
+	struct w5500_socket_listening_context *listen_ctx;
+	uint8_t lutind, new_socknum, backlog_cnt, bitmask;
+	int ret;
+
+	__ASSERT((sock->ir & W5500_Sn_IR_CON) && sock->state == W5500_SOCKET_STATE_LISTENING,
+		 "wrong socket state");
+	__ASSERT(w5500_socket_status(w5500_dev, socknum) == W5500_SOCK_ESTABLISHED,
+		 "wrong socket status on w5500");
+
+	sock->ir &= ~(W5500_Sn_IR_CON);
+
+	listen_ctx = &w5500_listen_ctxs[sock->listen_ctx_ind];
+	listen_ctx->backlog_socknum_bitmask |= BIT(socknum);
+	w5500_get_peer_sockaddr(socknum, NULL);
+
+	LOG_DBG("Incoming connection to w5500 socket %d: %d.%d.%d.%d:%d", socknum,
+		((uint8_t *)&sock->peer_addr.sin_addr.s_addr)[0],
+		((uint8_t *)&sock->peer_addr.sin_addr.s_addr)[1],
+		((uint8_t *)&sock->peer_addr.sin_addr.s_addr)[2],
+		((uint8_t *)&sock->peer_addr.sin_addr.s_addr)[3], ntohs(sock->peer_addr.sin_port));
+
+	sock->nonblock = false;
+	sock->state = W5500_SOCKET_STATE_ESTABLISHED;
+
+	/* find lut entry pointing to this socket */
+	for (lutind = 0; lutind < W5500_SOCKET_LUT_MAX_ENTRIES; lutind++) {
+		if (w5500_socket_lut[lutind].socknum == socknum) {
+			break;
+		}
+	}
+	lut_entry = &w5500_socket_lut[lutind];
+
+	/* find how many sockets are yet to be accepted (backlog) */
+	backlog_cnt = 0;
+	bitmask = listen_ctx->backlog_socknum_bitmask;
+	for (; bitmask; bitmask >>= 1) {
+		backlog_cnt += (bitmask & 1);
+	}
+
+	if (backlog_cnt >= listen_ctx->backlog) {
+		goto no_available_sock;
+	}
+
+	/* find a new socket to resume listening */
+	for (new_socknum = 0; new_socknum < W5500_MAX_SOCK_NUM; new_socknum++) {
+		if (ctx->sockets[new_socknum].state == W5500_SOCKET_STATE_CLOSED) {
+			break;
+		}
+	}
+
+	if (new_socknum < W5500_MAX_SOCK_NUM) {
+		newsock = &ctx->sockets[new_socknum];
+		newsock->type = W5500_TRANSPORT_TCP;
+		newsock->lport = sock->lport;
+
+		ret = w5500_socket_open(new_socknum);
+
+		if (ret < 0) {
+			/* could not open new socket for listening */
+			w5500_socket_close(new_socknum);
+			goto no_available_sock;
+		}
+
+		w5500_socket_command(w5500_dev, new_socknum, W5500_Sn_CR_LISTEN);
+
+		if (w5500_hw_socket_status_wait_until(new_socknum, W5500_SOCK_LISTEN) < 0) {
+			w5500_socket_close(new_socknum);
+			goto no_available_sock;
+		}
+
+		newsock->nonblock = listen_ctx->listening_sock_nonblock;
+		newsock->listen_ctx_ind = sock->listen_ctx_ind;
+		newsock->state = W5500_SOCKET_STATE_LISTENING;
+		listen_ctx->listening_socknum = new_socknum;
+
+		/* reassign lut to new socknum, complete the remapping of fd */
+		lut_entry->socknum = new_socknum;
+		LOG_DBG("LUT index %d: remapped to listening w5500 socket %d", lutind, new_socknum);
+
+		k_sem_give(&listen_ctx->incoming_sem);
+
+		return;
+	}
+
+no_available_sock:
+	LOG_DBG("LUT index %d: No available socket to keep listening, mark lut as overflown",
+		lutind);
+
+	listen_ctx->listening_socknum = W5500_MAX_SOCK_NUM;
+	/* reassign lut to a value indicating that listening socket doesn't really exist on W5500,
+	 * (a "overflown" listening socket) but preserving the listen ctx and the fd.
+	 * a listen socket will be reopened when backlog is processed and free sockets
+	 * become available. */
+
+	/* remap the fd to the listen ctx */
+
+	lut_entry->socknum = W5500_SOCKET_LUT_LISTENING_OVERFLOWN;
+	lut_entry->listen_ctx_ind = sock->listen_ctx_ind;
+
+	k_sem_give(&listen_ctx->incoming_sem);
+}
+
+void __w5500_handle_incoming_conn_closed(uint8_t socknum)
+{
+	struct w5500_runtime *ctx = w5500_dev->data;
+	struct w5500_socket *sock = &ctx->sockets[socknum];
+	struct w5500_socket_listening_context *listen_ctx =
+		&w5500_listen_ctxs[sock->listen_ctx_ind];
+
+	if (sock->state != W5500_SOCKET_STATE_ESTABLISHED) {
+		return;
+	}
+
+	if (listen_ctx->backlog_socknum_bitmask & BIT(socknum)) {
+		/* this incoming socket is in the backlog and
+		 * has not yet been assigned a fd */
+		listen_ctx->backlog_socknum_bitmask &= ~BIT(socknum);
+		w5500_socket_close(socknum);
+	} else {
+		sock->state = W5500_SOCKET_STATE_ASSIGNED;
+	}
+}
+
 int w5500_socket_poll_prepare(struct w5500_socket_lookup_entry *lut_entry, struct zsock_pollfd *pfd,
 			      struct k_poll_event **pev, struct k_poll_event *pev_end)
 {
@@ -219,6 +449,7 @@ int w5500_socket_poll_prepare(struct w5500_socket_lookup_entry *lut_entry, struc
 	struct w5500_runtime *ctx = w5500_dev->data;
 	uint8_t socknum = lut_entry->socknum;
 	struct w5500_socket *sock;
+	struct w5500_socket_listening_context *listen_ctx;
 
 	if (pfd->events & ZSOCK_POLLIN) {
 		if (*pev == pev_end) {
@@ -234,6 +465,10 @@ int w5500_socket_poll_prepare(struct w5500_socket_lookup_entry *lut_entry, struc
 
 			k_poll_event_init(*pev, K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
 					  &sock->sint_sem);
+		} else if (socknum == W5500_SOCKET_LUT_LISTENING_OVERFLOWN) {
+			listen_ctx = &w5500_listen_ctxs[lut_entry->listen_ctx_ind];
+			k_poll_event_init(*pev, K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
+					  &listen_ctx->incoming_sem);
 		} else {
 			__ASSERT(false, "impossible socknum in lut");
 			errno = EINVAL;
@@ -293,6 +528,7 @@ static int w5500_ioctl(void *obj, unsigned int request, va_list args)
 	struct w5500_socket_lookup_entry *lut_entry = (struct w5500_socket_lookup_entry *)obj;
 	uint8_t socknum = lut_entry->socknum;
 	struct w5500_socket *sock;
+	struct w5500_socket_listening_context *listen_ctx;
 	int retval = 0;
 
 	struct zsock_pollfd *pfd;
@@ -323,6 +559,11 @@ static int w5500_ioctl(void *obj, unsigned int request, va_list args)
 			if (sock->nonblock) {
 				retval |= O_NONBLOCK;
 			}
+		} else if (socknum == W5500_SOCKET_LUT_LISTENING_OVERFLOWN) {
+			listen_ctx = &w5500_listen_ctxs[lut_entry->listen_ctx_ind];
+			if (listen_ctx->listening_sock_nonblock) {
+				retval |= O_NONBLOCK;
+			}
 		}
 		break;
 	case F_SETFL:
@@ -330,7 +571,14 @@ static int w5500_ioctl(void *obj, unsigned int request, va_list args)
 			sock = &ctx->sockets[socknum];
 			if ((va_arg(args, int) & O_NONBLOCK) != 0) {
 				sock->nonblock = true;
+
+				if (sock->listen_ctx_ind != W5500_SOCKET_LISTEN_CTX_UNASSIGNED) {
+					listen_ctx = &w5500_listen_ctxs[lut_entry->listen_ctx_ind];
+					listen_ctx->listening_sock_nonblock = true;
+				}
 			}
+		} else if (socknum == W5500_SOCKET_LUT_LISTENING_OVERFLOWN) {
+			w5500_listen_ctxs[lut_entry->listen_ctx_ind].listening_sock_nonblock = true;
 		}
 		break;
 	default:
@@ -353,7 +601,9 @@ static ssize_t w5500_recvfrom(void *obj, void *buf, size_t len, int flags, struc
 	int ret;
 
 	if (socknum >= W5500_MAX_SOCK_NUM) {
-		errno = EINVAL;
+		/* this fd points to invalid socket or a overflown listening socket
+		 * that is not actually on w5500 */
+		errno = ENOTCONN;
 		return -1;
 	}
 
@@ -386,12 +636,17 @@ static ssize_t w5500_recvfrom(void *obj, void *buf, size_t len, int flags, struc
 		}
 
 		sock->ir &= ~(W5500_Sn_IR_RECV);
-		k_sem_reset(&sock->sint_sem);
 
 		while (true) {
 			ret = k_sem_take(&sock->sint_sem, RECV_TIMEOUT);
 
 			if (ret != 0) {
+				if (sock->state == W5500_SOCKET_STATE_CLOSED &&
+				    sock->state == W5500_SOCKET_STATE_ASSIGNED) {
+					errno = EPIPE;
+					return -1;
+				}
+
 				LOG_DBG("w5500 socket %d: Timeout waiting for IR", socknum);
 				errno = ETIMEDOUT;
 				return -1;
@@ -549,7 +804,6 @@ static ssize_t w5500_sendto(void *obj, const void *buf, size_t len, int flags,
 	len = (len < freesize) ? len : freesize;
 
 	sock->ir &= ~(W5500_Sn_IR_SENDOK);
-	k_sem_reset(&sock->sint_sem);
 
 	w5500_socket_tx(w5500_dev, socknum, buf, len);
 
@@ -557,6 +811,12 @@ static ssize_t w5500_sendto(void *obj, const void *buf, size_t len, int flags,
 		ret = k_sem_take(&sock->sint_sem, SEND_TIMEOUT);
 
 		if (ret != 0) {
+			if (sock->state == W5500_SOCKET_STATE_CLOSED &&
+			    sock->state == W5500_SOCKET_STATE_ASSIGNED) {
+				errno = EPIPE;
+				return -1;
+			}
+
 			LOG_DBG("w5500 socket %d: Timeout waiting for IR", socknum);
 			errno = ETIMEDOUT;
 			return -1;
@@ -786,7 +1046,151 @@ static int w5500_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 	return 0;
 }
 
+static int w5500_listen(void *obj, int backlog)
+{
+	struct w5500_runtime *ctx = w5500_dev->data;
+	struct w5500_socket_lookup_entry *lut_entry = (struct w5500_socket_lookup_entry *)obj;
+	uint8_t socknum = lut_entry->socknum;
+	struct w5500_socket *sock;
+	struct w5500_socket_listening_context *listen_ctx;
+	int ret, listen_ctx_ind;
+
+	if (socknum >= W5500_MAX_SOCK_NUM) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	sock = &ctx->sockets[socknum];
+
+	if (sock->state != W5500_SOCKET_STATE_OPEN || !sock->lport) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	w5500_socket_command(w5500_dev, socknum, W5500_Sn_CR_LISTEN);
+
+	ret = w5500_hw_socket_status_wait_until(socknum, W5500_SOCK_LISTEN);
+	if (ret < 0) {
+		errno = ret;
+		return -1;
+	}
+
+	/* find first available listen ctx */
+	for (listen_ctx_ind = 0; listen_ctx_ind < W5500_MAX_SOCK_NUM; listen_ctx_ind++) {
+		if (!w5500_listen_ctxs[listen_ctx_ind].in_use) {
+			break;
+		}
+	}
+	__ASSERT(listen_ctx_ind < W5500_MAX_SOCK_NUM, "no available listen ctx");
+
+	/* bind listening context to socket and initialize listening context */
+	sock->listen_ctx_ind = listen_ctx_ind;
+	lut_entry->listen_ctx_ind = listen_ctx_ind;
+	listen_ctx = &w5500_listen_ctxs[listen_ctx_ind];
+	listen_ctx->in_use = true;
+	listen_ctx->backlog = (backlog < W5500_MAX_SOCK_NUM) ? backlog : W5500_MAX_SOCK_NUM;
+	listen_ctx->listening_socknum = socknum;
+	listen_ctx->listening_sock_nonblock = sock->nonblock;
+	listen_ctx->backlog_socknum_bitmask = 0;
+	listen_ctx->accepted_socknum_bitmask = 0;
+	k_sem_init(&listen_ctx->incoming_sem, 0, 1);
+
+	sock->state = W5500_SOCKET_STATE_LISTENING;
+
+	return 0;
+}
+
 static const struct socket_op_vtable w5500_socket_fd_op_vtable;
+
+static int w5500_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
+{
+	struct w5500_runtime *ctx = w5500_dev->data;
+	struct w5500_socket_lookup_entry *lut_entry = (struct w5500_socket_lookup_entry *)obj;
+	uint8_t socknum = lut_entry->socknum;
+	struct w5500_socket_listening_context *listen_ctx;
+	uint8_t backlog_bitmask, listen_ctx_ind, lutind;
+	struct w5500_socket *income_sock;
+	int fd;
+
+	if (socknum >= W5500_MAX_SOCK_NUM) {
+		if (socknum == W5500_SOCKET_LUT_LISTENING_OVERFLOWN) {
+			listen_ctx_ind = lut_entry->listen_ctx_ind;
+		} else {
+			errno = EINVAL;
+			return -1;
+		}
+	} else {
+		struct w5500_socket *sock = &ctx->sockets[socknum];
+
+		if (sock->state != W5500_SOCKET_STATE_LISTENING) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		listen_ctx_ind = sock->listen_ctx_ind;
+	}
+
+	listen_ctx = &w5500_listen_ctxs[listen_ctx_ind];
+
+	if (!listen_ctx->backlog_socknum_bitmask) {
+		if (listen_ctx->listening_sock_nonblock) {
+			errno = EAGAIN;
+			return -1;
+		}
+
+		k_sem_reset(&listen_ctx->incoming_sem);
+		k_sem_take(&listen_ctx->incoming_sem, K_FOREVER);
+	}
+
+	backlog_bitmask = listen_ctx->backlog_socknum_bitmask;
+
+	if (!backlog_bitmask) {
+		errno = ECONNABORTED;
+		return -1;
+	}
+
+	for (socknum = 0; backlog_bitmask; ++socknum, backlog_bitmask >>= 1) {
+		if (backlog_bitmask & 1) {
+			break;
+		}
+	}
+
+	income_sock = &ctx->sockets[socknum];
+
+	fd = zvfs_reserve_fd();
+
+	if (fd < 0) {
+		return -1;
+	}
+
+	for (lutind = 0; lutind < W5500_SOCKET_LUT_MAX_ENTRIES; lutind++) {
+		if (w5500_socket_lut[lutind].socknum == W5500_SOCKET_LUT_UNASSIGNED) {
+			break;
+		}
+	}
+
+	if (lutind == W5500_MAX_SOCK_NUM) {
+		LOG_ERR("Out of available offload sockets lut entries.");
+		zvfs_free_fd(fd);
+		return -1;
+	}
+
+	w5500_socket_lut[lutind].socknum = socknum;
+	w5500_socket_lut[lutind].listen_ctx_ind = listen_ctx_ind;
+	listen_ctx->accepted_socknum_bitmask |= BIT(socknum);
+	listen_ctx->backlog_socknum_bitmask &= ~BIT(socknum);
+
+	if (addr != NULL) {
+		memcpy(addr, &income_sock->peer_addr, sizeof(struct sockaddr_in));
+		*addrlen = sizeof(struct sockaddr_in);
+	}
+
+	zvfs_finalize_typed_fd(fd, (void *)(&w5500_socket_lut[lutind]),
+			       (const struct fd_op_vtable *)&w5500_socket_fd_op_vtable,
+			       ZVFS_MODE_IFSOCK);
+
+	return fd;
+}
 
 static int w5500_close(void *obj)
 {
@@ -795,6 +1199,11 @@ static int w5500_close(void *obj)
 	int ret;
 
 	if (socknum >= W5500_MAX_SOCK_NUM) {
+		if (socknum == W5500_SOCKET_LUT_LISTENING_OVERFLOWN) {
+			w5500_reset_listen_ctx(lut_entry->listen_ctx_ind);
+
+			goto reset_lut;
+		}
 		errno = EBADF;
 		return -1;
 	}
@@ -806,7 +1215,9 @@ static int w5500_close(void *obj)
 		return -1;
 	}
 
+reset_lut:
 	lut_entry->socknum = W5500_SOCKET_LUT_UNASSIGNED;
+	lut_entry->listen_ctx_ind = W5500_SOCKET_LISTEN_CTX_UNASSIGNED;
 
 	return 0;
 }
@@ -1007,6 +1418,7 @@ int w5500_socket_create(int family, int type, int proto)
 	sock->nonblock = false;
 	sock->lport = 0;
 	sock->ir = 0;
+	sock->listen_ctx_ind = W5500_SOCKET_LISTEN_CTX_UNASSIGNED;
 
 	zvfs_finalize_typed_fd(fd, (void *)(&w5500_socket_lut[lutind]),
 			       (const struct fd_op_vtable *)&w5500_socket_fd_op_vtable,
@@ -1024,6 +1436,7 @@ int w5500_socket_offload_init(const struct device *_w5500_dev)
 	struct w5500_runtime *ctx = w5500_dev->data;
 
 	for (i = 0; i < W5500_MAX_SOCK_NUM; i++) {
+		w5500_listen_ctxs[i].in_use = false;
 		k_sem_init(&ctx->sockets[i].sint_sem, 0, 1);
 	}
 
@@ -1044,6 +1457,8 @@ static const struct socket_op_vtable w5500_socket_fd_op_vtable = {
 		},
 	.bind = w5500_bind,
 	.connect = w5500_connect,
+	.listen = w5500_listen,
+	.accept = w5500_accept,
 	.sendto = w5500_sendto,
 	.sendmsg = w5500_sendmsg,
 	.recvfrom = w5500_recvfrom,

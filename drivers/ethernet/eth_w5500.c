@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT wiznet_w5500
+#define DT_DRV_COMPAT	wiznet_w5500
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
@@ -462,9 +462,22 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 						k_sem_give(&ctx->sockets[socknum].sint_sem);
 
 						if (ir & W5500_Sn_IR_DISCON) {
-							ctx->sockets[socknum].state =
-								W5500_SOCKET_STATE_ASSIGNED;
+							if (ctx->sockets[socknum].listen_ctx_ind !=
+							    W5500_MAX_SOCK_NUM) {
+								__w5500_handle_incoming_conn_closed(
+									socknum);
+							} else {
+								ctx->sockets[socknum].state =
+									W5500_SOCKET_STATE_ASSIGNED;
+							}
+						} else if (ir & W5500_Sn_IR_CON) {
+							if (ctx->sockets[socknum].state ==
+							    W5500_SOCKET_STATE_LISTENING) {
+								__w5500_handle_incoming_conn_established(
+									socknum);
+							}
 						}
+
 						k_sem_give(&ctx->sockets[socknum].sint_sem);
 					}
 				}
