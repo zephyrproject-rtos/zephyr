@@ -143,9 +143,9 @@ static int st7789v_write(const struct device *dev,
 	uint16_t write_h;
 	enum display_pixel_format pixfmt;
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
+	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT((desc->pitch * ST7789V_PIXEL_SIZE * desc->height) <= desc->buf_size,
-			"Input buffer to small");
+			"Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
 		desc->width, desc->height, x, y);

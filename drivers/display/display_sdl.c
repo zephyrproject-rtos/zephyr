@@ -100,7 +100,7 @@ static void sdl_display_write_argb8888(void *disp_buf,
 		const struct display_buffer_descriptor *desc, const void *buf)
 {
 	__ASSERT((desc->pitch * 4U * desc->height) <= desc->buf_size,
-			"Input buffer to small");
+			"Input buffer too small");
 
 	memcpy(disp_buf, buf, desc->pitch * 4U * desc->height);
 }
@@ -114,7 +114,7 @@ static void sdl_display_write_rgb888(uint8_t *disp_buf,
 	const uint8_t *byte_ptr;
 
 	__ASSERT((desc->pitch * 3U * desc->height) <= desc->buf_size,
-			"Input buffer to small");
+			"Input buffer too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
@@ -139,7 +139,7 @@ static void sdl_display_write_rgb565(uint8_t *disp_buf,
 	uint16_t rgb565;
 
 	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
-			"Input buffer to small");
+			"Input buffer too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
@@ -164,7 +164,7 @@ static void sdl_display_write_bgr565(uint8_t *disp_buf,
 	const uint16_t *pix_ptr;
 
 	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
-			"Input buffer to small");
+			"Input buffer too small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
@@ -192,7 +192,7 @@ static void sdl_display_write_mono(uint8_t *disp_buf,
 	uint8_t *disp_buf_start;
 
 	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U),
-			"Input buffer to small");
+			"Input buffer too small");
 	__ASSERT((desc->height % 8) == 0U,
 			"Input buffer height not aligned per 8 pixels");
 
@@ -234,7 +234,7 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 	LOG_DBG("Writing %dx%d (w,h) bitmap @ %dx%d (x,y)", desc->width,
 			desc->height, x, y);
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
+	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT(desc->pitch <= config->width,
 		"Pitch in descriptor is larger than screen size");
 	__ASSERT(desc->height <= config->height,

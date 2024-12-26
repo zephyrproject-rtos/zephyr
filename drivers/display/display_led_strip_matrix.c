@@ -88,7 +88,7 @@ static struct led_rgb *pixel_address(const struct led_strip_matrix_config *confi
 static inline int check_descriptor(const struct led_strip_matrix_config *config, const uint16_t x,
 				   const uint16_t y, const struct display_buffer_descriptor *desc)
 {
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
+	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT(desc->pitch <= config->width, "Pitch in descriptor is larger than screen size");
 	__ASSERT(desc->height <= config->height, "Height in descriptor is larger than screen size");
 	__ASSERT(x + desc->pitch <= config->width,

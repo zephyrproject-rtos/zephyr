@@ -306,7 +306,7 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 	size_t buf_len;
 
 	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller then width");
+		LOG_ERR("Pitch is smaller than width");
 		return -1;
 	}
 
