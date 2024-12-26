@@ -8,7 +8,10 @@
 #include <zephyr/irq.h>
 #include <kswap.h>
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/arch/rx/sw_nmi_table.h>
+#ifndef CONFIG_SOC_SERIES_RX62N
 #include <ofsm.h>
+#endif
 
 typedef void (*fp)(void);
 extern void _start(void);
@@ -108,9 +111,9 @@ static void __ISR__ INT_Excep_FloatingPoint(void)
 static void __ISR__ INT_NonMaskableInterrupt(void)
 {
 	REGISTER_SAVE();
-	ISR_DIRECT_HEADER();
-	z_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
-	ISR_DIRECT_FOOTER(1);
+	int nmi_vector = get_nmi_request();
+
+	handle_nmi(nmi_vector);
 	REGISTER_RESTORE_EXIT();
 }
 
