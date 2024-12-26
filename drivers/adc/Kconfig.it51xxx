@@ -1,0 +1,27 @@
+# ADC configuration options
+
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ITE_IT51XXX
+	bool "ITE IT51XXX ADC driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_ADC_ENABLED
+	select PINCTRL
+	help
+	  This option enables the ADC driver for IT51XXX
+	  family of processors.
+	  Voltage range 0 to 3300mV.
+	  Support 12-bit resolution.
+	  Support 8 channels: ch0~ch7.
+
+if ADC_ITE_IT51XXX
+
+config ADC_IT51XXX_VOL_FULL_SCALE
+	bool "ADC internal voltage as full-scale"
+	default y
+	help
+	  This option enables ADC internal reference
+	  voltage as full-scale 3300mV.
+
+endif # ADC_ITE_IT51XXX
