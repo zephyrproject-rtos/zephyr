@@ -383,7 +383,7 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 
 	buf_len = MIN(desc->buf_size,
 		      desc->height * desc->width / UC81XX_PIXELS_PER_BYTE);
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
+	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT(buf != NULL, "Buffer is not available");
 	__ASSERT(buf_len != 0U, "Buffer of length zero");
 	__ASSERT(!(desc->width % UC81XX_PIXELS_PER_BYTE),
