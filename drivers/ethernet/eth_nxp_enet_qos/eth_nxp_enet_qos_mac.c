@@ -375,8 +375,8 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base,
 					data->mac_addr.addr[1] << 8  |
 					data->mac_addr.addr[0]);
 
-	/* permit multicast packets regardles if there is no space in hash table for mac addresses */
-	if((base->MAC_HW_FEAT[1] & ENET_MAC_HW_FEAT_HASHTBLSZ_MASK) == 0) {
+	/* permit multicast packets if there is no space in hash table for mac addresses */
+	if ((base->MAC_HW_FEAT[1] & ENET_MAC_HW_FEAT_HASHTBLSZ_MASK) == 0) {
 		base->MAC_PACKET_FILTER |= ENET_MAC_PACKET_FILTER_PM_MASK;
 	}
 
