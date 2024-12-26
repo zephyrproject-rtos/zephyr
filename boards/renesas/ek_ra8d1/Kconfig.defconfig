@@ -17,7 +17,7 @@ config MEMC
 
 if LVGL
 
-config LV_Z_VBD_CUSTOM_SECTION
+config LV_Z_VDB_CUSTOM_SECTION
 	default y
 
 endif # LVGL

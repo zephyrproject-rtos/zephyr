@@ -53,14 +53,14 @@ struct lvgl_disp_data disp_data = {
  * prevent unaligned memory accesses.
  */
 static uint8_t buf0[BUFFER_SIZE]
-#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
 	Z_GENERIC_SECTION(.lvgl_buf)
 #endif
 		__aligned(CONFIG_LV_Z_VDB_ALIGN);
 
 #ifdef CONFIG_LV_Z_DOUBLE_VDB
 static uint8_t buf1[BUFFER_SIZE]
-#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
 	Z_GENERIC_SECTION(.lvgl_buf)
 #endif
 		__aligned(CONFIG_LV_Z_VDB_ALIGN);
@@ -68,7 +68,7 @@ static uint8_t buf1[BUFFER_SIZE]
 
 #if ALLOC_MONOCHROME_CONV_BUFFER
 static uint8_t mono_vtile_buf[BUFFER_SIZE]
-#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
 	Z_GENERIC_SECTION(.lvgl_buf)
 #endif
 		__aligned(CONFIG_LV_Z_VDB_ALIGN);
