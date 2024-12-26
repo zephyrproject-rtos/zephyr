@@ -7,11 +7,9 @@
 #include "fs_priv.h"
 
 #include <errno.h>
-#include <limits.h>
 #include <string.h>
 
 #include <zephyr/fs/fs.h>
-#include <zephyr/posix/posix_features.h>
 #include <zephyr/posix/dirent.h>
 #include <zephyr/sys/util.h>
 
