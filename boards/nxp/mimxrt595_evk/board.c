@@ -344,7 +344,7 @@ static int mimxrt595_evk_init(void)
 }
 
 
-#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
 extern char __flexspi2_start[];
 extern char __flexspi2_end[];
 
@@ -358,14 +358,14 @@ static int init_psram_framebufs(void)
 	return 0;
 }
 
-#endif /* CONFIG_LV_Z_VBD_CUSTOM_SECTION */
+#endif /* CONFIG_LV_Z_VDB_CUSTOM_SECTION */
 
 #if CONFIG_REGULATOR
 /* PMIC setup is dependent on the regulator API */
 SYS_INIT(board_config_pmic, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
 #endif
 
-#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
 /* Framebuffers should be setup after PSRAM is initialized but before
  * Graphics framework init
  */
