@@ -175,7 +175,7 @@ static void w5500_reset_listen_ctx(uint8_t listen_ctx_ind)
 
 	listen_ctx = &w5500_listen_ctxs[listen_ctx_ind];
 
-	// close all sockets on w5500 waiting to be accepted (backlog)
+	/* close all sockets on w5500 waiting to be accepted (backlog) */
 	bitmask = listen_ctx->backlog_socknum_bitmask;
 	for (sn = 0; bitmask; sn++, bitmask >>= 1) {
 		if (bitmask & 1) {
@@ -183,7 +183,7 @@ static void w5500_reset_listen_ctx(uint8_t listen_ctx_ind)
 		}
 	}
 
-	// for accepted sockets, disassociate it with this listen_ctx
+	/* for accepted sockets, disassociate it with this listen_ctx */
 	bitmask = listen_ctx->accepted_socknum_bitmask;
 	for (sn = 0; bitmask; sn++, bitmask >>= 1) {
 		if (bitmask & 1) {
@@ -313,7 +313,8 @@ void __w5500_handle_incoming_conn_established(uint8_t socknum)
 	 *   1. changing the state of LISTENING socket to ESTABLISHED to reflect the
 	 *      change in the role of this socket on W5500,
 	 *   2. trying to open a new socket on W5500 to keep listening going, if the
-	 *      backlog has not been exceeded and there exists a free socket. */
+	 *      backlog has not been exceeded and there exists a free socket.
+	 */
 
 	struct w5500_runtime *ctx = w5500_dev->data;
 	struct w5500_socket *sock = &ctx->sockets[socknum];
@@ -411,7 +412,8 @@ no_available_sock:
 	/* reassign lut to a value indicating that listening socket doesn't really exist on W5500,
 	 * (a "overflown" listening socket) but preserving the listen ctx and the fd.
 	 * a listen socket will be reopened when backlog is processed and free sockets
-	 * become available. */
+	 * become available.
+	 */
 
 	/* remap the fd to the listen ctx */
 
@@ -433,8 +435,7 @@ void __w5500_handle_incoming_conn_closed(uint8_t socknum)
 	}
 
 	if (listen_ctx->backlog_socknum_bitmask & BIT(socknum)) {
-		/* this incoming socket is in the backlog and
-		 * has not yet been assigned a fd */
+		/* this incoming socket is in the backlog and has not yet been assigned a fd */
 		listen_ctx->backlog_socknum_bitmask &= ~BIT(socknum);
 		w5500_socket_close(socknum);
 	} else {
@@ -602,7 +603,8 @@ static ssize_t w5500_recvfrom(void *obj, void *buf, size_t len, int flags, struc
 
 	if (socknum >= W5500_MAX_SOCK_NUM) {
 		/* this fd points to invalid socket or a overflown listening socket
-		 * that is not actually on w5500 */
+		 * that is not actually on w5500
+		 */
 		errno = ENOTCONN;
 		return -1;
 	}
@@ -655,7 +657,8 @@ static ssize_t w5500_recvfrom(void *obj, void *buf, size_t len, int flags, struc
 			if (sock->ir &
 			    (W5500_Sn_IR_RECV | W5500_Sn_IR_TIMEOUT | W5500_Sn_IR_DISCON)) {
 				/* sometimes SENDOK ir will be asserted if another thread sends
-				 * packets when this thread is receiving, need to filter that out */
+				 * packets when this thread is receiving, need to filter that out
+				 */
 				ir = sock->ir;
 				sock->ir &= ~(W5500_Sn_IR_RECV | W5500_Sn_IR_TIMEOUT |
 					      W5500_Sn_IR_DISCON);
@@ -679,7 +682,9 @@ static ssize_t w5500_recvfrom(void *obj, void *buf, size_t len, int flags, struc
 					LOG_DBG("w5500 socket %d: Timeout IR received", socknum);
 					errno = ETIMEDOUT;
 					return -1;
-				} else {
+				}
+
+				if (ir & W5500_Sn_IR_DISCON) {
 					sock->state = W5500_SOCKET_STATE_ASSIGNED;
 					errno = EPIPE;
 					return -1;
@@ -789,7 +794,8 @@ static ssize_t w5500_sendto(void *obj, const void *buf, size_t len, int flags,
 		do {
 			/* wait for free space in the send buffer
 			 * this should not take too long once the ir SENDOK of last send
-			 * operation is asserted */
+			 * operation is asserted
+			 */
 			if (w5500_socket_status(w5500_dev, socknum) == W5500_SOCK_CLOSED) {
 				sock->state = W5500_SOCKET_STATE_ASSIGNED;
 				errno = EPIPE;
@@ -824,7 +830,8 @@ static ssize_t w5500_sendto(void *obj, const void *buf, size_t len, int flags,
 
 		if (sock->ir & (W5500_Sn_IR_SENDOK | W5500_Sn_IR_TIMEOUT | W5500_Sn_IR_DISCON)) {
 			/* sometimes RECV ir will be asserted if socket receives packets when
-			 * sending, need to filter that out */
+			 * sending, need to filter that out
+			 */
 			ir = sock->ir;
 			sock->ir &=
 				~(W5500_Sn_IR_SENDOK | W5500_Sn_IR_TIMEOUT | W5500_Sn_IR_DISCON);
@@ -835,7 +842,7 @@ static ssize_t w5500_sendto(void *obj, const void *buf, size_t len, int flags,
 				LOG_DBG("w5500 socket %d: Timeout IR received", socknum);
 				errno = ETIMEDOUT;
 				return -1;
-			} else {
+			} else if (ir & W5500_Sn_IR_DISCON) {
 				sock->state = W5500_SOCKET_STATE_ASSIGNED;
 				errno = EPIPE;
 				return -1;
@@ -889,11 +896,11 @@ static int w5500_connect(void *obj, const struct sockaddr *addr, socklen_t addrl
 			}
 			errno = EALREADY;
 			return -1;
-		} else {
-			sock->ir = 0;
-			sock->state = W5500_SOCKET_STATE_ESTABLISHED;
-			return 0;
 		}
+
+		sock->ir = 0;
+		sock->state = W5500_SOCKET_STATE_ESTABLISHED;
+		return 0;
 	}
 
 	if (sock->state != W5500_SOCKET_STATE_ASSIGNED && sock->state != W5500_SOCKET_STATE_OPEN) {
@@ -903,7 +910,8 @@ static int w5500_connect(void *obj, const struct sockaddr *addr, socklen_t addrl
 
 	if (!ctx->local_ip_addr.s_addr) {
 		/* sometimes connect might be called before the driver has a chance to update the
-		 * local ip */
+		 * local ip
+		 */
 		w5500_hw_net_config(w5500_dev);
 	}
 
@@ -937,6 +945,7 @@ static int w5500_connect(void *obj, const struct sockaddr *addr, socklen_t addrl
 
 		if (ret == 0) { /* semaphore taken */
 			uint8_t ir = sock->ir;
+
 			sock->ir = 0;
 
 			if (ir & W5500_Sn_IR_CON) {
@@ -948,16 +957,16 @@ static int w5500_connect(void *obj, const struct sockaddr *addr, socklen_t addrl
 				}
 
 				sock->state = W5500_SOCKET_STATE_ESTABLISHED;
+				return 0;
 			} else if (ir & W5500_Sn_IR_TIMEOUT) {
 				sock->state = W5500_SOCKET_STATE_ASSIGNED;
 				errno = ETIMEDOUT;
 				return -1;
-			} else {
-				sock->state = W5500_SOCKET_STATE_ASSIGNED;
-				errno = EPIPE;
-				return -1;
 			}
 
+			sock->state = W5500_SOCKET_STATE_ASSIGNED;
+			errno = EPIPE;
+			return -1;
 		} else if (ret == -EAGAIN) {
 			LOG_DBG("w5500 socket %d: Timeout waiting for IR", socknum);
 			sock->state = W5500_SOCKET_STATE_ASSIGNED;
@@ -1007,8 +1016,9 @@ static int w5500_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 	}
 
 	if (!ctx->local_ip_addr.s_addr) {
-		/* sometimes connect might be called before the driver has a chance to update the
-		 * local ip */
+		/* sometimes connect might be called before the driver has
+		 * a chance to update the local ip
+		 */
 		w5500_hw_net_config(w5500_dev);
 	}
 
@@ -1448,13 +1458,12 @@ int w5500_socket_offload_init(const struct device *_w5500_dev)
 }
 
 static const struct socket_op_vtable w5500_socket_fd_op_vtable = {
-	.fd_vtable =
-		{
-			.read = w5500_read,
-			.write = w5500_write,
-			.close = w5500_close,
-			.ioctl = w5500_ioctl,
-		},
+	.fd_vtable = {
+		.read = w5500_read,
+		.write = w5500_write,
+		.close = w5500_close,
+		.ioctl = w5500_ioctl,
+	},
 	.bind = w5500_bind,
 	.connect = w5500_connect,
 	.listen = w5500_listen,

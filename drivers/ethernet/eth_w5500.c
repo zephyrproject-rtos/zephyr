@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT	wiznet_w5500
+#define DT_DRV_COMPAT wiznet_w5500
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
@@ -421,71 +421,66 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 
 		res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 
-		if (res == 0) {
-			/* semaphore taken, update link status and receive packets */
-			if (ctx->link_up != true) {
-				w5500_update_link_status(dev);
-			}
-
-			while (gpio_pin_get_dt(&(config->interrupt))) {
-#ifdef CONFIG_NET_SOCKETS_OFFLOAD
-				sir = w5500_spi_read_byte(dev, W5500_SIR);
-
-				if (sir & BIT(0)) {
-#else
-				{
-#endif
-					ir = w5500_socket_interrupt_status(dev, 0);
-
-					if (ir) {
-						w5500_socket_interrupt_clear(dev, 0, ir);
-
-						if (ir & W5500_Sn_IR_RECV) {
-							w5500_l2_rx(dev);
-						}
-					}
-				}
-
-#ifdef CONFIG_NET_SOCKETS_OFFLOAD
-				uint8_t socknum;
-
-				for (socknum = 1; socknum < W5500_MAX_SOCK_NUM; socknum++) {
-					if (!(sir & BIT(socknum))) {
-						continue;
-					}
-
-					ir = w5500_socket_interrupt_status(dev, socknum);
-					if (ir) {
-						w5500_socket_interrupt_clear(dev, socknum, ir);
-
-						ctx->sockets[socknum].ir |= ir;
-						k_sem_give(&ctx->sockets[socknum].sint_sem);
-
-						if (ir & W5500_Sn_IR_DISCON) {
-							if (ctx->sockets[socknum].listen_ctx_ind !=
-							    W5500_MAX_SOCK_NUM) {
-								__w5500_handle_incoming_conn_closed(
-									socknum);
-							} else {
-								ctx->sockets[socknum].state =
-									W5500_SOCKET_STATE_ASSIGNED;
-							}
-						} else if (ir & W5500_Sn_IR_CON) {
-							if (ctx->sockets[socknum].state ==
-							    W5500_SOCKET_STATE_LISTENING) {
-								__w5500_handle_incoming_conn_established(
-									socknum);
-							}
-						}
-
-						k_sem_give(&ctx->sockets[socknum].sint_sem);
-					}
-				}
-#endif
-			}
-		} else if (res == -EAGAIN) {
+		if (res == -EAGAIN) {
 			/* semaphore timeout period expired, check link status */
 			w5500_update_link_status(dev);
+		}
+
+		/* semaphore taken, update link status and receive packets */
+		if (ctx->link_up != true) {
+			w5500_update_link_status(dev);
+		}
+
+		while (gpio_pin_get_dt(&(config->interrupt))) {
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+			sir = w5500_spi_read_byte(dev, W5500_SIR);
+
+			if (sir & BIT(0)) {
+#else
+			{
+#endif
+				ir = w5500_socket_interrupt_status(dev, 0);
+
+				w5500_socket_interrupt_clear(dev, 0, ir);
+
+				if (ir & W5500_Sn_IR_RECV) {
+					w5500_l2_rx(dev);
+				}
+			}
+
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+			uint8_t socknum;
+
+			for (socknum = 1; socknum < W5500_MAX_SOCK_NUM; socknum++) {
+				if (!(sir & BIT(socknum))) {
+					continue;
+				}
+
+				ir = w5500_socket_interrupt_status(dev, socknum);
+
+				w5500_socket_interrupt_clear(dev, socknum, ir);
+
+				ctx->sockets[socknum].ir |= ir;
+				k_sem_give(&ctx->sockets[socknum].sint_sem);
+
+				if (ir & W5500_Sn_IR_DISCON) {
+					if (ctx->sockets[socknum].listen_ctx_ind !=
+					    W5500_MAX_SOCK_NUM) {
+						__w5500_handle_incoming_conn_closed(socknum);
+					} else {
+						ctx->sockets[socknum].state =
+							W5500_SOCKET_STATE_ASSIGNED;
+					}
+				} else if (ir & W5500_Sn_IR_CON) {
+					if (ctx->sockets[socknum].state ==
+					    W5500_SOCKET_STATE_LISTENING) {
+						__w5500_handle_incoming_conn_established(socknum);
+					}
+				}
+
+				k_sem_give(&ctx->sockets[socknum].sint_sem);
+			}
+#endif
 		}
 	}
 }
@@ -717,6 +712,7 @@ static int w5500_init(const struct device *dev)
 #else
 	/* Configure RX & TX memory to 16K for Socket 0 */
 	uint8_t mem_sz[8] = {16, 0, 0, 0, 0, 0, 0, 0};
+
 	ctx->sockets[0].tx_buf_size = mem_sz[0];
 	ctx->sockets[0].rx_buf_size = mem_sz[0];
 #endif

@@ -42,4 +42,4 @@ struct w5500_socket_lookup_entry {
 	uint8_t listen_ctx_ind;
 };
 
-#endif // _W5500_SOCKET_H_
+#endif /* _W5500_SOCKET_H_ */
