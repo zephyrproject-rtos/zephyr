@@ -199,15 +199,32 @@ rfcomm_sessions_lookup_bt_conn(struct bt_conn *conn)
 
 int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
 {
-	if (server->channel < RFCOMM_CHANNEL_START ||
-	    server->channel > RFCOMM_CHANNEL_END || !server->accept) {
+	if (server->channel > RFCOMM_CHANNEL_END || !server->accept) {
 		return -EINVAL;
 	}
 
-	/* Check if given channel is already in use */
-	if (rfcomm_server_lookup_channel(server->channel)) {
-		LOG_DBG("Channel already registered");
-		return -EADDRINUSE;
+	if (!server->channel) {
+		uint8_t chan = (uint8_t)BT_RFCOMM_CHAN_DYNAMIC_START;
+
+		for (; chan <= RFCOMM_CHANNEL_END; chan++) {
+			/* Check if given channel is already in use */
+			if (!rfcomm_server_lookup_channel(chan)) {
+				server->channel = chan;
+				LOG_DBG("Allocated channel 0x%02x for new server", chan);
+				break;
+			}
+		}
+
+		if (!server->channel) {
+			LOG_WRN("No free dynamic rfcomm channels available");
+			return -EADDRNOTAVAIL;
+		}
+	} else {
+		/* Check if given channel is already in use */
+		if (rfcomm_server_lookup_channel(server->channel)) {
+			LOG_WRN("Channel already registered");
+			return -EADDRINUSE;
+		}
 	}
 
 	LOG_DBG("Channel 0x%02x", server->channel);
