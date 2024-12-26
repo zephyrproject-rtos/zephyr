@@ -1087,7 +1087,7 @@ static void test_sink_encrypted_incorrect_code(void)
 	/* Wait for all to be started */
 	printk("Waiting for streams to be started\n");
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_started, K_FOREVER);
+		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
 
 	printk("Waiting for data\n");
