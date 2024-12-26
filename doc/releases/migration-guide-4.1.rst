@@ -99,6 +99,9 @@ LVGL
   :kconfig:option:`CONFIG_LV_Z_FLUSH_THREAD_PRIORITY` and its value is now interpreted as an
   absolute priority instead of a cooperative one.
 
+* The config option :kconfig:option:`CONFIG_LV_Z_VBD_CUSTOM_SECTION` is now called
+  :kconfig:option:`CONFIG_LV_Z_VDB_CUSTOM_SECTION`.
+
 Device Drivers and Devicetree
 *****************************
 
