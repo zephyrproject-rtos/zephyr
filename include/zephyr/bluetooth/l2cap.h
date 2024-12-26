@@ -490,13 +490,29 @@ struct bt_l2cap_chan_ops {
 struct bt_l2cap_server {
 	/** @brief Server PSM.
 	 *
-	 *  Possible values:
+	 *  For LE, possible values:
 	 *  0               A dynamic value will be auto-allocated when
 	 *                  bt_l2cap_server_register() is called.
 	 *
 	 *  0x0001-0x007f   Standard, Bluetooth SIG-assigned fixed values.
 	 *
 	 *  0x0080-0x00ff   Dynamically allocated. May be pre-set by the
+	 *                  application before server registration (not
+	 *                  recommended however), or auto-allocated by the
+	 *                  stack if the app gave 0 as the value.
+	 *
+	 *  For BR, possible values:
+	 *
+	 *  The PSM field is at least two octets in length. All PSM values shall have the least
+	 *  significant bit of the most significant octet equal to 0 and the least significant bit
+	 *  of all other octets equal to 1.
+	 *
+	 *  0               A dynamic value will be auto-allocated when
+	 *                  bt_l2cap_br_server_register() is called.
+	 *
+	 *  0x0001-0x0eff   Standard, Bluetooth SIG-assigned fixed values.
+	 *
+	 *  > 0x1000        Dynamically allocated. May be pre-set by the
 	 *                  application before server registration (not
 	 *                  recommended however), or auto-allocated by the
 	 *                  stack if the app gave 0 as the value.
@@ -555,6 +571,15 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server);
  *  Register L2CAP server for a PSM, each new connection is authorized using
  *  the accept() callback which in case of success shall allocate the channel
  *  structure to be used by the new connection.
+ *
+ *  For fixed, SIG-assigned PSMs (in the range 0x0001-0x0eff) the PSM should
+ *  be assigned to server->psm before calling this API. For dynamic PSMs
+ *  (in the range 0x1000-0xffff) server->psm may be pre-set to a given value
+ *  (this is however not recommended) or be left as 0, in which case upon
+ *  return a newly allocated value will have been assigned to it. For
+ *  dynamically allocated values the expectation is that it's exposed through
+ *  a SDP record, and that's how L2CAP clients discover how to connect to
+ *  the server.
  *
  *  @param server Server structure.
  *
