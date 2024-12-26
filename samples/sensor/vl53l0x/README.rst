@@ -9,7 +9,7 @@ Overview
 
 This sample periodically measures distance between vl53l0x sensor
 and target. The result is displayed on the console.
-It also shows how we can use the vl53l0x as a proximity sensor.
+It shows the usage of all available channels including private ones.
 
 Requirements
 ************
@@ -24,24 +24,33 @@ References
 Building and Running
 ********************
 
- This project outputs sensor data to the console. It requires a VL53L0X
- sensor, which is present on the disco_l475_iot1 board.
+This project outputs sensor data to the console. It requires a VL53L0X
+sensor, which is present on the disco_l475_iot1 board.
 
- .. zephyr-app-commands::
-    :zephyr-app: samples/sensor/vl53l0x/
-    :goals: build flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/vl53l0x/
+   :goals: build flash
 
 
 Sample Output
 =============
 
- .. code-block:: console
+.. code-block:: console
 
-    prox is 0
-    distance is 1938
-    prox is 1
-    distance is 70
-    prox is 0
-    distance is 1995
+   prox is 0
+   distance is 1874 mm
+   Max distance is 000 mm
+   Signal rate is 33435 Cps
+   Ambient rate is 17365 Cps
+   SPADs used: 195
+   Status: OK
 
-    <repeats endlessly every second>
+   prox is 0
+   distance is 1888 mm
+   Max distance is 000 mm
+   Signal rate is 20846 Cps
+   Ambient rate is 25178 Cps
+   SPADs used: 195
+   Status: OK
+
+   <repeats endlessly every 5 seconds>
