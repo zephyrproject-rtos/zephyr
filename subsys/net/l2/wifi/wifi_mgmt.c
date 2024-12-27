@@ -83,8 +83,6 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "EAP-TTLS-MSCHAPV2";
 	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
 		return "EAP-PEAP-TLS";
-	case WIFI_SECURITY_TYPE_EAP_TLS_SHA256:
-		return "EAP-TLS-SHA256";
 	case WIFI_SECURITY_TYPE_FT_PSK:
 		return "FT-PSK";
 	case WIFI_SECURITY_TYPE_FT_SAE:
