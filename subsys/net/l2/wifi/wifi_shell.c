@@ -580,7 +580,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"bandwidth", required_argument, 0, 'B'},
 		{"key1-pwd", required_argument, 0, 'K'},
 		{"key2-pwd", required_argument, 0, 'K'},
-		{"suiteb-type", required_argument, 0, 'S'},
+		{"wpa3-enterprise", required_argument, 0, 'S'},
 		{"TLS-cipher", required_argument, 0, 'T'},
 		{"use-ca", required_argument, 0, 'A'},
 		{"eap-version", required_argument, 0, 'V'},
@@ -788,7 +788,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			key_passwd_cnt++;
 			break;
 		case 'S':
-			params->suiteb_type = atoi(state->optarg);
+			params->wpa3_ent_mode = atoi(state->optarg);
 			break;
 		case 'T':
 			params->TLS_cipher = atoi(state->optarg);
@@ -3679,7 +3679,9 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		  "[-a, --anon-id]: Anonymous identity for enterprise mode.\n"
 		  "[-K, --key1-pwd for eap phase1 or --key2-pwd for eap phase2]:\n"
 		  "Private key passwd for enterprise mode. Default no password for private key.\n"
-		  "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192. Default 0: not suiteb mode.\n"
+		  "[-S, --wpa3-enterprise]: WPA3 enterprise mode:\n"
+		  "Default 0: not suiteb mode.\n"
+		  "1:Suite B, 2:Suite B 192-bit, 3:WPA3-enterprise only mode.\n"
 		  "[-T, --TLS-cipher]: 0:TLS-NONE, 1:TLS-ECC-P384, 2:TLS-RSA-3K.\n"
 		  "[-A, --use-ca]: apply for EAP-PEAP-MSCHAPv2 and EAP-TTLS-MSCHAPv2\n"
 		  "Default 0. 0:not use ca to verify peer, 1:use ca to verify peer.\n"
