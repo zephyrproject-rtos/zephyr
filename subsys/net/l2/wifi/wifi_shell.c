@@ -3683,7 +3683,7 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		  "[-R, --ieee-80211r]: Use IEEE80211R fast BSS transition connect."
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
-		 2, 19);
+		 2, 40);
 
 SHELL_SUBCMD_ADD((wifi), disconnect, NULL,
 		 "Disconnect from the Wi-Fi AP.\n",
