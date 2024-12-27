@@ -915,8 +915,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
-	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ||
-	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256) {
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
 		cmd_wifi_set_enterprise_creds(sh, iface);
 	}
 #endif
@@ -1924,8 +1923,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
-	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ||
-	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256) {
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
 		cmd_wifi_set_enterprise_creds(sh, iface);
 	}
 #endif
@@ -3407,7 +3405,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
 		      "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
 		      "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2,\n"
-		      "15: EAP-PEAP-TLS, 16:EAP_TLS_SHA256\n"
+		      "15: EAP-PEAP-TLS\n"
 		      "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
 		      "0:Disable, 1:Optional, 2:Required\n"
 		      "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
@@ -3650,7 +3648,7 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
 		  "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
 		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2,\n"
-		  "15: EAP-PEAP-TLS, 16:EAP_TLS_SHA256\n"
+		  "15: EAP-PEAP-TLS\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
