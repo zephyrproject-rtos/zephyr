@@ -107,8 +107,9 @@ if(EXISTS ${APP_DIR}/Kconfig.sysbuild)
 endif()
 
 # Apply any EXTRA_CONF_FILE variables from snippets
-if(TARGET snippets_scope)
-  get_property(snippets_EXTRA_CONF_FILE TARGET snippets_scope PROPERTY SB_EXTRA_CONF_FILE)
+zephyr_scope_exists(scope_defined snippets)
+if(scope_defined)
+  zephyr_get_scoped(snippets_EXTRA_CONF_FILE snippets SB_EXTRA_CONF_FILE)
   list(APPEND EXTRA_CONF_FILE ${snippets_EXTRA_CONF_FILE})
 endif()
 
