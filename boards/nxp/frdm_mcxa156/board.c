@@ -116,6 +116,11 @@ static int frdm_mcxa156_init(void)
 	CLOCK_AttachClk(kFRO12M_to_LPUART0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
+	CLOCK_SetClockDiv(kCLOCK_DivLPUART1, 1u);
+	CLOCK_AttachClk(kFRO12M_to_LPUART1);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_CTIMER0);
