@@ -152,7 +152,7 @@ if(DEFINED SHIELD)
     zephyr_file_copy(${derived_overlay}.new ${derived_overlay})
     file(REMOVE ${derived_overlay}.new)
 
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} ${GEN_SHIELD_DERIVED_OVERLAY_SCRIPT} "${SHIELD_DIR_${s}}/${s}.overlay" --shield-options=${shld_opts} --output-dir=${GENERATED_SHIELDS_DIR})
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ${GEN_SHIELD_DERIVED_OVERLAY_SCRIPT} "${SHIELD_DIR_${s}}/${s}.overlay" "--shield-options=${shld}" --output-dir=${GENERATED_SHIELDS_DIR})
 
     # Add generated <shield>@<conn_name>.overlay to the shield_dts_files output variable.
     list(APPEND
