@@ -379,7 +379,7 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base,
 	if ((base->MAC_HW_FEAT[1] & ENET_MAC_HW_FEAT_HASHTBLSZ_MASK) == 0) {
 		base->MAC_PACKET_FILTER |= ENET_MAC_PACKET_FILTER_PM_MASK;
 	}
-	
+
 	/* Set the reference for 1 microsecond of ENET QOS CSR clock cycles */
 	base->MAC_ONEUS_TIC_COUNTER =
 		ENET_QOS_REG_PREP(MAC_ONEUS_TIC_COUNTER, TIC_1US_CNTR,
