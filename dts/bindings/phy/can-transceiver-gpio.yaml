@@ -21,3 +21,9 @@ properties:
       GPIO to use to put the CAN transceiver into standby. This GPIO is driven
       inactive when the CAN transceiver is enabled and active when the CAN
       transceiver is disabled.
+
+  termination-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to enable/disable the CAN transceiver termination resistor.
+      This GPIO will be not changed during CAN transceiver initialzation phase.

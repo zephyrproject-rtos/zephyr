@@ -21,6 +21,10 @@ LOG_MODULE_REGISTER(can_transceiver_gpio, CONFIG_CAN_LOG_LEVEL);
 #define INST_HAS_STANDBY_GPIOS_OR(inst) DT_INST_NODE_HAS_PROP(inst, standby_gpios) ||
 #define ANY_INST_HAS_STANDBY_GPIOS DT_INST_FOREACH_STATUS_OKAY(INST_HAS_STANDBY_GPIOS_OR) 0
 
+/* Does any devicetree instance have a term-gpios property? */
+#define INST_HAS_TERM_GPIOS_OR(inst) DT_INST_NODE_HAS_PROP(inst, termination_gpios) ||
+#define ANY_INST_HAS_TERM_GPIOS DT_INST_FOREACH_STATUS_OKAY(INST_HAS_TERM_GPIOS_OR) 0
+
 struct can_transceiver_gpio_config {
 #if ANY_INST_HAS_ENABLE_GPIOS
 	struct gpio_dt_spec enable_gpio;
@@ -28,6 +32,9 @@ struct can_transceiver_gpio_config {
 #if ANY_INST_HAS_STANDBY_GPIOS
 	struct gpio_dt_spec standby_gpio;
 #endif /* ANY_INST_HAS_STANDBY_GPIOS */
+#if ANY_INST_HAS_TERM_GPIOS
+	struct gpio_dt_spec termination_gpio;
+#endif /* ANY_INST_HAS_TERM_GPIOS */
 };
 
 static int can_transceiver_gpio_set_state(const struct device *dev, bool enabled)
@@ -110,9 +117,37 @@ static int can_transceiver_gpio_init(const struct device *dev)
 	return 0;
 }
 
+static int can_transceiver_gpio_set_termination(const struct device *dev,
+												bool enabled)
+{
+#if ANY_INST_HAS_TERM_GPIOS
+	if (config->termination_gpio.port != NULL) {
+		err = gpio_pin_set_dt(&config->termination_gpio, enabled ? 0 : 1);
+		if (err != 0) {
+			LOG_ERR("failed to set termination GPIO pin (err %d)", err);
+			return -EIO;
+		}
+	}
+#endif /* ANY_INST_HAS_TERM_GPIOS */
+
+	return 0;
+}
+
+static int can_transceiver_gpio_termination_enable(const struct device *dev)
+{
+	return can_transceiver_gpio_set_termination(dev, true);
+}
+
+static int can_transceiver_gpio_termination_disable(const struct device *dev)
+{
+	return can_transceiver_gpio_set_termination(dev, false);
+}
+
 static DEVICE_API(can_transceiver, can_transceiver_gpio_driver_api) = {
 	.enable = can_transceiver_gpio_enable,
 	.disable = can_transceiver_gpio_disable,
+	.termination_enable = can_transceiver_gpio_termination_enable,
+	.termination_disable = can_transceiver_gpio_termination_disable,
 };
 
 #define CAN_TRANSCEIVER_GPIO_COND(inst, name)				\
@@ -121,13 +156,16 @@ static DEVICE_API(can_transceiver, can_transceiver_gpio_driver_api) = {
 
 #define CAN_TRANSCEIVER_GPIO_INIT(inst)					\
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, enable_gpios) ||	\
-		     DT_INST_NODE_HAS_PROP(inst, standby_gpios),	\
+		     DT_INST_NODE_HAS_PROP(inst, standby_gpios),		\
+		     DT_INST_NODE_HAS_PROP(inst, termination_gpios),	\
 		     "Missing GPIO property on "			\
 		     DT_NODE_FULL_NAME(DT_DRV_INST(inst)));		\
 									\
 	static const struct can_transceiver_gpio_config	can_transceiver_gpio_config_##inst = { \
 		CAN_TRANSCEIVER_GPIO_COND(inst, enable)			\
 		CAN_TRANSCEIVER_GPIO_COND(inst, standby)		\
+		CAN_TRANSCEIVER_GPIO_COND(inst, termination_enable)		\
+		CAN_TRANSCEIVER_GPIO_COND(inst, termination_disable)	\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst, &can_transceiver_gpio_init,		\
