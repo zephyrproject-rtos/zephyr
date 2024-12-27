@@ -481,7 +481,6 @@ static struct wifi_eap_config eap_config[] = {
 	 "auth=MSCHAPV2"},
 	{WIFI_SECURITY_TYPE_EAP_PEAP_TLS, WIFI_EAP_TYPE_PEAP, WIFI_EAP_TYPE_TLS, "PEAP",
 	 "auth=TLS"},
-	{WIFI_SECURITY_TYPE_EAP_TLS_SHA256, WIFI_EAP_TYPE_TLS, WIFI_EAP_TYPE_NONE, "TLS", NULL},
 };
 
 int process_cipher_config(struct wifi_connect_req_params *params,
@@ -515,10 +514,6 @@ int process_cipher_config(struct wifi_connect_req_params *params,
 		} else {
 			cipher_config->key_mgmt = "WPA-EAP";
 		}
-	}
-
-	if (params->security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256) {
-		cipher_config->key_mgmt = "WPA-EAP-SHA256";
 	}
 
 	for (index = 0; index < ARRAY_SIZE(ciphers); index++) {
@@ -557,8 +552,7 @@ static int is_eap_valid_security(int security)
 		    security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
 		    security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 		    security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
-		    security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ||
-		    security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256);
+		    security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS);
 }
 #endif
 
