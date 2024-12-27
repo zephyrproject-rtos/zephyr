@@ -97,6 +97,20 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	}
 }
 
+const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent)
+{
+	switch (wpa3_ent) {
+	case WIFI_WPA3_ENTERPRISE_SUITEB:
+		return "WPA3-SuiteB";
+	case WIFI_WPA3_ENTERPRISE_SUITEB_192:
+		return "WPA3-SuiteB-192";
+	case WIFI_WPA3_ENTERPRISE_ONLY:
+		return "WPA3-Enterprise-Only";
+	default:
+		return "";
+	}
+}
+
 const char *wifi_mfp_txt(enum wifi_mfp_options mfp)
 {
 	switch (mfp) {

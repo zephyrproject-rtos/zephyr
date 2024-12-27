@@ -684,6 +684,8 @@ struct wifi_iface_status {
 	enum wifi_iface_mode iface_mode;
 	/** Link mode, see enum wifi_link_mode */
 	enum wifi_link_mode link_mode;
+	/** WPA3 enterprise type */
+	enum wifi_wpa3_enterprise_type wpa3_ent_type;
 	/** Security type, see enum wifi_security_type */
 	enum wifi_security_type security;
 	/** MFP options, see enum wifi_mfp_options */
