@@ -51,7 +51,7 @@ struct spi_atcspi200_cfg {
 	uint32_t base;
 	uint32_t irq_num;
 	uint32_t f_sys;
-	bool xip;
+	bool spi_cfg_rom;
 };
 
 /* API Functions */
@@ -681,7 +681,7 @@ int spi_atcspi200_init(const struct device *dev)
 	int err = 0;
 
 	/* we should not configure the device we are running on */
-	if (cfg->xip) {
+	if (cfg->spi_cfg_rom) {
 		return -EINVAL;
 	}
 
@@ -769,7 +769,6 @@ static void spi_atcspi200_irq_handler(void *arg)
 			spi_context_update_tx(ctx, dfs, 1);
 
 			data->tx_cnt--;
-
 			if (data->tx_cnt == 0) {
 				/* Have already sent a chunk of data, so stop
 				 * sending data!
@@ -803,7 +802,6 @@ static void spi_atcspi200_irq_handler(void *arg)
 			}
 
 			data->rx_cnt--;
-
 			if (data->rx_cnt == 0) {
 				/* Have already sent a chunk of data, so stop
 				 * sending data!
@@ -914,10 +912,20 @@ static void spi_atcspi200_irq_handler(void *arg)
 #define SPI_BUSY_INIT .busy = false,
 
 #if (CONFIG_XIP)
-#define SPI_ROM_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_BUS(DT_CHOSEN(zephyr_flash)))
+#define SPI_FLASH_BASE DT_REG_ADDR_BY_IDX(DT_PARENT(DT_CHOSEN(zephyr_flash)), 1)
+#define SPI_FLASH_SIZE DT_REG_SIZE_BY_IDX(DT_PARENT(DT_CHOSEN(zephyr_flash)), 1)
+#define SPI_FLASH_END (SPI_FLASH_BASE + SPI_FLASH_SIZE)
+
+#if ((SPI_FLASH_BASE <= CONFIG_FLASH_BASE_ADDRESS) && \
+	(CONFIG_FLASH_BASE_ADDRESS <= SPI_FLASH_END))
+#define SPI_CFG_ROM(node_id) DT_SAME_NODE(node_id, DT_BUS(DT_CHOSEN(zephyr_flash)))
 #else
-#define SPI_ROM_CFG_XIP(node_id) false
+#define SPI_CFG_ROM(node_id) false
 #endif
+
+#else /* CONFIG_XIP */
+#define SPI_CFG_ROM(node_id) false
+#endif /* CONFIG_XIP */
 
 #define SPI_INIT(n)							\
 	static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = { \
@@ -934,10 +942,10 @@ static void spi_atcspi200_irq_handler(void *arg)
 		.base = DT_INST_REG_ADDR(n),				\
 		.irq_num = DT_INST_IRQN(n),				\
 		.f_sys = DT_INST_PROP(n, clock_frequency),		\
-		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),			\
+		.spi_cfg_rom = SPI_CFG_ROM(DT_DRV_INST(n)),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	SPI_DEVICE_DT_INST_DEFINE(n,					\
 		spi_atcspi200_init,					\
 		NULL,							\
 		&spi_atcspi200_dev_data_##n,				\
