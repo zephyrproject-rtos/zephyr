@@ -863,6 +863,16 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		return -EINVAL;
 	}
 
+	if (params->security == WIFI_SECURITY_TYPE_SAE_HNP
+		|| params->security == WIFI_SECURITY_TYPE_SAE_H2E
+		|| params->security == WIFI_SECURITY_TYPE_SAE_AUTO
+		|| params->wpa3_ent_mode != WIFI_WPA3_ENTERPRISE_NA) {
+		if (params->mfp != WIFI_MFP_REQUIRED) {
+			PR_ERROR("MFP is required for WPA3 mode\n");
+			return -EINVAL;
+		}
+	}
+
 	if (iface_mode == WIFI_MODE_AP && params->channel == WIFI_CHANNEL_ANY) {
 		PR_ERROR("Channel not provided\n");
 		return -EINVAL;
