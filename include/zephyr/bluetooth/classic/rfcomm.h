@@ -144,11 +144,13 @@ struct bt_rfcomm_server {
 	 *  authorization.
 	 *
 	 *  @param conn The connection that is requesting authorization
+	 *  @param server Pointer to the server structure this callback relates to
 	 *  @param dlc Pointer to received the allocated dlc
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*accept)(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc);
+	int (*accept)(struct bt_conn *conn, struct bt_rfcomm_server *server,
+		      struct bt_rfcomm_dlc **dlc);
 
 	struct bt_rfcomm_server	*_next;
 };

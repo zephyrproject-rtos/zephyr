@@ -716,7 +716,8 @@ static void hfp_hf_sent(struct bt_rfcomm_dlc *dlc, int err)
 	LOG_DBG("DLC %p sent cb (err %d)", dlc, err);
 }
 
-static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
+static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
+			    struct bt_rfcomm_dlc **dlc)
 {
 	int i;
 	static struct bt_rfcomm_dlc_ops ops = {
