@@ -490,13 +490,13 @@ int process_cipher_config(struct wifi_connect_req_params *params,
 	unsigned int gropu_mgmt_cipher_capa;
 	unsigned int index;
 
-	if (params->suiteb_type == WIFI_SUITEB) {
+	if (params->wpa3_ent_mode == WIFI_WPA3_ENTERPRISE_SUITEB) {
 		cipher_capa = WPA_CAPA_ENC_GCMP;
 		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_128;
 		cipher_config->key_mgmt = "WPA-EAP-SUITE-B";
 		cipher_config->openssl_ciphers = "SUITEB128";
 		cipher_config->tls_flags = "[SUITEB]";
-	} else if (params->suiteb_type == WIFI_SUITEB_192) {
+	} else if (params->wpa3_ent_mode == WIFI_WPA3_ENTERPRISE_SUITEB_192) {
 		cipher_capa = WPA_CAPA_ENC_GCMP_256;
 		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_256;
 		if (params->ft_used) {
@@ -506,6 +506,10 @@ int process_cipher_config(struct wifi_connect_req_params *params,
 		}
 		cipher_config->openssl_ciphers = "SUITEB192";
 		cipher_config->tls_flags = "[SUITEB]";
+	} else if (params->wpa3_ent_mode == WIFI_WPA3_ENTERPRISE_ONLY) {
+		cipher_capa = WPA_CAPA_ENC_CCMP;
+		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP;
+		cipher_config->key_mgmt = "WPA-EAP-SHA256";
 	} else {
 		cipher_capa = WPA_CAPA_ENC_CCMP;
 		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP;
@@ -1062,7 +1066,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (params->suiteb_type == WIFI_SUITEB_192) {
+			if (params->wpa3_ent_mode == WIFI_WPA3_ENTERPRISE_SUITEB_192) {
 				if (params->TLS_cipher == WIFI_EAP_TLS_ECC_P384) {
 					if (!wpa_cli_cmd_v("set_network %d openssl_ciphers \"%s\"",
 							resp.network_id,
