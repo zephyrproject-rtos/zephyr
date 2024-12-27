@@ -156,7 +156,7 @@ static void tx_dma_done(struct k_work *work)
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
 {
-	return ETHERNET_LINK_100BASE_T | ETHERNET_LINK_10BASE_T;
+	return ETHERNET_LINK_100BASE_T | ETHERNET_LINK_10BASE_T | ENET_MAC_PACKET_FILTER_PM_MASK;
 }
 
 static void eth_nxp_enet_qos_rx(struct k_work *work)
@@ -374,6 +374,11 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base,
 					data->mac_addr.addr[2] << 16 |
 					data->mac_addr.addr[1] << 8  |
 					data->mac_addr.addr[0]);
+
+	/* permit multicast packets if there is no space in hash table for mac addresses */
+	if ((base->MAC_HW_FEAT[1] & ENET_MAC_HW_FEAT_HASHTBLSZ_MASK) == 0) {
+		base->MAC_PACKET_FILTER |= ENET_MAC_PACKET_FILTER_PM_MASK;
+	}
 
 	/* Set the reference for 1 microsecond of ENET QOS CSR clock cycles */
 	base->MAC_ONEUS_TIC_COUNTER =
