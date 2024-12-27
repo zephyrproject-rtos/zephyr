@@ -505,6 +505,8 @@ struct wifi_scan_result {
 	uint8_t channel;
 	/** Security type */
 	enum wifi_security_type security;
+	/** WPA3 enterprise type */
+	enum wifi_wpa3_enterprise_type wpa3_ent_type;
 	/** MFP options */
 	enum wifi_mfp_options mfp;
 	/** RSSI */
