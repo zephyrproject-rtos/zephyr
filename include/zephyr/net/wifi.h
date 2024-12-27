@@ -203,6 +203,9 @@ struct wifi_eap_config {
 /** Helper function to get user-friendly security type name. */
 const char *wifi_security_txt(enum wifi_security_type security);
 
+/** Helper function to get user-friendly wpa3 enterprise security type name. */
+const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent);
+
 /** @brief IEEE 802.11w - Management frame protection. */
 enum wifi_mfp_options {
 	/** MFP disabled. */
