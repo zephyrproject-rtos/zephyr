@@ -708,6 +708,17 @@ static int nxp_wifi_process_results(unsigned int count)
 			res.security = WIFI_SECURITY_TYPE_SAE;
 		}
 
+		if (scan_result.wpa3_entp) {
+			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_ONLY;
+			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+		} else if (scan_result.wpa3_1x_sha256) {
+			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB;
+			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+		} else if (scan_result.wpa3_1x_sha384) {
+			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB_192;
+			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+		}
+
 		if (scan_result.ap_mfpr) {
 			res.mfp = WIFI_MFP_REQUIRED;
 		} else if (scan_result.ap_mfpc) {
