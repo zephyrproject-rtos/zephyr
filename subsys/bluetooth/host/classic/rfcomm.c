@@ -495,7 +495,7 @@ static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session
 		return NULL;
 	}
 
-	if (server->accept(session->br_chan.chan.conn, &dlc) < 0) {
+	if (server->accept(session->br_chan.chan.conn, server, &dlc) < 0) {
 		LOG_DBG("Incoming connection rejected");
 		return NULL;
 	}
