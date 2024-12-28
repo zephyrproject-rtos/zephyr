@@ -221,6 +221,9 @@
 				   FLASH_TICKER_NODES + \
 				   COEX_TICKER_NODES)
 
+/* Ticker implementation supports up to 255 ticker node count value */
+BUILD_ASSERT(TICKER_NODES <= UINT8_MAX);
+
 /* When both central and peripheral are supported, one each Rx node will be
  * needed by connectable advertising and the initiator to generate connection
  * complete event, hence conditionally set the count.
