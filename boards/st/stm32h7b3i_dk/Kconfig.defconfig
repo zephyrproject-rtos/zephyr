@@ -9,9 +9,6 @@ if BOARD_STM32H7B3I_DK
 config INPUT
 	default y if LVGL
 
-config INPUT_FT5336_INTERRUPT
-	default y if INPUT_FT5336
-
 # MEMC needs to be enabled in order to store
 # display buffer to external SDRAM connected to FMC
 config MEMC
