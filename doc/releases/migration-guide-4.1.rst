@@ -56,6 +56,9 @@ Devicetree
   The :kconfig:option:`CONFIG_INPUT_CAP1203_PERIOD` has been replaced with
   the devicetree property ``poll-interval-ms``.
   In interrupt mode, the devicetree property ``repeat`` is supported.
+* In devicetree and bindings, property names use hyphens(``-``) to
+  replace underscores(``_``). If the property comes from Linux or another
+  authoritative source, this rule can be ignored.
 
 Raspberry Pi
 ============
