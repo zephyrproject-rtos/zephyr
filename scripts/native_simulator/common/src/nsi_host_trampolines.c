@@ -48,7 +48,14 @@ int nsi_host_open(const char *pathname, int flags)
 
 long nsi_host_random(void)
 {
-	return random();
+	long ret = 0;
+	size_t bits = 8 * sizeof(ret);
+
+	/* Each call to random() returns 31 bits of randomness. */
+	for (size_t shift = 0; shift < bits; shift += 31) {
+		ret |= random() << shift;
+	}
+	return ret;
 }
 
 long nsi_host_read(int fd, void *buffer, unsigned long size)
