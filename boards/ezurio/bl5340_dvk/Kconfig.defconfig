@@ -72,9 +72,6 @@ config BT_HCI_VS
 # https://www.buydisplay.com/2-8-inch-tft-touch-shield-for-arduino-w-capacitive-touch-screen-module
 if DISPLAY
 
-config INPUT_FT5336_INTERRUPT
-	default y
-
 if LVGL
 
 config LV_Z_VDB_SIZE
