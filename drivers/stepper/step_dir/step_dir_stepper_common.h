@@ -45,7 +45,7 @@ struct step_dir_stepper_common_config {
 	{                                                                                          \
 		.step_pin = GPIO_DT_SPEC_GET(node_id, step_gpios),                                 \
 		.dir_pin = GPIO_DT_SPEC_GET(node_id, dir_gpios),                                   \
-		.dual_edge = DT_PROP(node_id, dual_edge_step),                                     \
+		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
 		.counter = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, counter)),                    \
 		.timing_source = COND_CODE_1(DT_NODE_HAS_PROP(node_id, counter),                   \
 						(&step_counter_timing_source_api),                 \
