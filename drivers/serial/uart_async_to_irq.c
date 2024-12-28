@@ -56,6 +56,8 @@ static uint32_t get_rx_timeout(const struct device *dev)
 		baudrate = get_config(dev)->baudrate;
 	}
 
+	__ASSERT_NO_MSG(baudrate != 0);
+
 	uint32_t us = (CONFIG_UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT * 1000000) / baudrate;
 
 	return us;
