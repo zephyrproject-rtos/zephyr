@@ -34,6 +34,7 @@ include:
       - step-gpios
       - dir-gpios
       - en-gpios
+      - counter
 
 properties:
   fault-gpios:
@@ -53,8 +54,3 @@ properties:
     required: true
     type: phandle-array
     description: Microstep configuration pin 1.
-
-  counter:
-    required: true
-    type: phandle
-    description: Counter used for generating step-accurate pulse signals.
