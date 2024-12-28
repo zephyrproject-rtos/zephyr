@@ -20,8 +20,9 @@ import re
 import string
 import sys
 import textwrap
-from typing import Any, Dict, Iterable, List, \
-    NamedTuple, NoReturn, Optional, Set, Tuple, TYPE_CHECKING, Union
+from typing import (Any, Dict, Iterable, List,
+                    NamedTuple, NoReturn, Optional,
+                    Set, Tuple, TYPE_CHECKING, Union)
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -353,8 +354,8 @@ class Property:
         if types == [_MarkerType.PATH]:
             return Type.PATH
 
-        if types == [_MarkerType.UINT32, _MarkerType.PHANDLE] and \
-                len(self.value) == 4:
+        if (types == [_MarkerType.UINT32, _MarkerType.PHANDLE]
+            and len(self.value) == 4):
             return Type.PHANDLE
 
         if set(types) == {_MarkerType.UINT32, _MarkerType.PHANDLE}:
@@ -608,9 +609,10 @@ class Property:
 
                     pos += elm_size
 
-                if pos != 0 and \
-                   (not next_marker or
-                    next_marker[1] not in (_MarkerType.PHANDLE, _MarkerType.LABEL)):
+                if (pos != 0
+                    and (not next_marker
+                         or next_marker[1]
+                         not in (_MarkerType.PHANDLE, _MarkerType.LABEL))):
 
                     s += _N_BYTES_TO_END_STR[elm_size]
                     if pos != len(self.value):
@@ -620,8 +622,8 @@ class Property:
 
 
     def __repr__(self):
-        return f"<Property '{self.name}' at '{self.node.path}' in " \
-            f"'{self.node.dt.filename}'>"
+        return (f"<Property '{self.name}' at '{self.node.path}' in "
+                f"'{self.node.dt.filename}'>")
 
     #
     # Internal functions
@@ -914,8 +916,8 @@ class DT:
         the DT instance is evaluated.
         """
         if self.filename:
-            return f"DT(filename='{self.filename}', " \
-                f"include_path={self._include_path})"
+            return (f"DT(filename='{self.filename}', "
+                    f"include_path={self._include_path})")
         return super().__repr__()
 
     def __deepcopy__(self, memo):
@@ -1634,8 +1636,8 @@ class DT:
 
             # State handling
 
-            if tok_id in (_T.DEL_PROP, _T.DEL_NODE, _T.OMIT_IF_NO_REF) or \
-               tok_val in ("{", ";"):
+            if (tok_id in (_T.DEL_PROP, _T.DEL_NODE, _T.OMIT_IF_NO_REF)
+                or tok_val in ("{", ";")):
 
                 self._lexer_state = _EXPECT_PROPNODENAME
 
@@ -1709,8 +1711,8 @@ class DT:
     def _leave_file(self):
         # Leaves an /include/d file, returning to the file that /include/d it
 
-        self.filename, self._lineno, self._file_contents, self._tok_end_i = \
-            self._filestack.pop()
+        self.filename, self._lineno, self._file_contents, self._tok_end_i = (
+            self._filestack.pop())
 
     def _next_ref2node(self):
         # Checks that the next token is a label/path reference and returns the
@@ -2067,10 +2069,10 @@ def _decode_and_escape(b):
     # 'backslashreplace' bytes.translate() can't map to more than a single
     # byte, but str.translate() can map to more than one character, so it's
     # nice here. There's probably a nicer way to do this.
-    return b.decode("utf-8", "surrogateescape") \
-            .translate(_escape_table) \
-            .encode("utf-8", "surrogateescape") \
-            .decode("utf-8", "backslashreplace")
+    return (b.decode("utf-8", "surrogateescape")
+            .translate(_escape_table)
+            .encode("utf-8", "surrogateescape")
+            .decode("utf-8", "backslashreplace"))
 
 def _root_and_path_to_node(cur, path, fullpath):
     # Returns the node pointed at by 'path', relative to the Node 'cur'. For
