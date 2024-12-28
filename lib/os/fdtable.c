@@ -280,8 +280,14 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 	 * variables to avoid keeping the lock for a long period of time.
 	 */
 	if (vtable && vtable->ioctl) {
+		int prev_errno = errno;
+
 		(void)zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK,
 					   &fdtable[fd].lock);
+		if ((prev_errno != EOPNOTSUPP) && (errno == EOPNOTSUPP)) {
+			/* restore backed-up errno value if the backend does not support locking */
+			errno = prev_errno;
+		}
 	}
 }
 
