@@ -48,7 +48,7 @@
 	buttons {
 		compatible = "gpio-keys";
 		user_sw: user_sw {
-			gpios = <&gpio0 45 (GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio0_hi 13 (GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
@@ -125,7 +125,7 @@
 	pinctrl-names = "default";
 };
 
-&gpio0_lo {
+gpio0_lo: &gpio0 {
 	status = "okay";
 };
 

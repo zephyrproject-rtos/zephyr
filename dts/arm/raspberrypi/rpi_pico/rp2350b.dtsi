@@ -1,6 +1,6 @@
 #include <arm/raspberrypi/rpi_pico/rp2350.dtsi>
 
-&gpio0_lo {
+&gpio0 {
 	ngpios = <32>;
 };
 
