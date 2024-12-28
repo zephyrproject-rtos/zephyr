@@ -62,11 +62,11 @@ include:
   - name: spi-device.yaml
   - name: adi,trinamic-gconf.yaml
     property-allowlist:
-      - poscmp_enable
+      - poscmp-enable
       - shaft1
       - shaft2
-      - test_mode
-      - lock_gconf
+      - test-mode
+      - lock-gconf
 
 properties:
   "#address-cells":
