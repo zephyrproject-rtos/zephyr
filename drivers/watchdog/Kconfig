@@ -69,9 +69,11 @@ source "drivers/watchdog/Kconfig.stm32"
 
 source "drivers/watchdog/Kconfig.cmsdk_apb"
 
+source "drivers/watchdog/Kconfig.esp32"
+
 source "drivers/watchdog/Kconfig.sam"
 
-source "drivers/watchdog/Kconfig.esp32"
+source "drivers/watchdog/Kconfig.sam4l"
 
 source "drivers/watchdog/Kconfig.sam0"
 

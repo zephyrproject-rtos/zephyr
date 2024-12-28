@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,33 +15,6 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/sys/util.h>
-
-/** Watchdog control register first write keys */
-#define WDT_FIRST_KEY     0x55ul
-/** Watchdog control register second write keys */
-#define WDT_SECOND_KEY    0xAAul
-
-/**
- * @brief Sets the WatchDog Timer Control register to the \a ctrl value thanks
- *        to the WatchDog Timer key.
- *
- * @param ctrl  Value to set the WatchDog Timer Control register to.
- */
-static ALWAYS_INLINE void wdt_set_ctrl(uint32_t ctrl)
-{
-	volatile uint32_t dly;
-
-	/** Calculate delay for internal synchronization
-	 *    see 45.1.3 WDT errata
-	 */
-	dly = DIV_ROUND_UP(48000000 * 2, 115000);
-	dly >>= 3; /* ~8 cycles for one while loop */
-	while (dly--) {
-		;
-	}
-	WDT->CTRL = ctrl | WDT_CTRL_KEY(WDT_FIRST_KEY);
-	WDT->CTRL = ctrl | WDT_CTRL_KEY(WDT_SECOND_KEY);
-}
 
 #define XTAL_FREQ 12000000
 #define NR_PLLS 1
@@ -255,13 +228,6 @@ static ALWAYS_INLINE void clock_init(void)
 
 void soc_reset_hook(void)
 {
-#if defined(CONFIG_WDT_DISABLE_AT_BOOT)
-	wdt_set_ctrl(WDT->CTRL & ~WDT_CTRL_EN);
-	while (WDT->CTRL & WDT_CTRL_EN) {
-		;
-	}
-#endif
-
 	/* Setup system clocks. */
 	clock_init();
 }
