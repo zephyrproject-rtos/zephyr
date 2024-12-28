@@ -1337,6 +1337,16 @@ int net_pkt_alloc_buffer_with_reserve(struct net_pkt *pkt,
 	return 0;
 }
 
+static bool is_pkt_tx(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	if ((pkt->context != NULL) && (get_tx_slab(pkt->context) != NULL)) {
+		return pkt->slab == get_tx_slab(pkt->context);
+	}
+#endif
+	return pkt->slab == &tx_pkts;
+}
+
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 			       size_t size,
@@ -1364,7 +1374,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 
 	iface = net_pkt_iface(pkt);
 
-	if (iface != NULL && net_if_l2(iface)->alloc != NULL) {
+	if (iface != NULL && is_pkt_tx(pkt) && net_if_l2(iface)->alloc != NULL) {
 		ret = net_if_l2(iface)->alloc(iface, pkt, size, proto, timeout);
 		if (ret != -ENOTSUP) {
 			return ret;
