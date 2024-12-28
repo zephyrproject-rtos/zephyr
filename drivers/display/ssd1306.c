@@ -18,9 +18,19 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 
 #include "ssd1306_regs.h"
 
+#define SSD1306_VCOM_DESEL_LEVEL       74
+#define SSD1306_VCOM_DESEL_LEVEL_MIN   64
+#define SSD1306_VCOM_DESEL_LEVEL_MAX   84
+
+#if 0
+#define SSD1306_VCOM_DESEL_LEVEL_CONV(LEVEL) ((((LEVEL - SSD1306_VCOM_DESEL_LEVEL_MIN) * 0x03) / (SSD1306_VCOM_DESEL_LEVEL_MAX - SSD1306_VCOM_DESEL_LEVEL_MIN)) << 3)
+#else
+#define SSD1306_VCOM_DESEL_LEVEL_CONV(LEVEL) ((((LEVEL - SSD1306_VCOM_DESEL_LEVEL_MIN) * 0x0F) / (SSD1306_VCOM_DESEL_LEVEL_MAX - SSD1306_VCOM_DESEL_LEVEL_MIN)) << 2)
+#endif
+
 #define SSD1306_CLOCK_DIV_RATIO		0x0
 #define SSD1306_CLOCK_FREQUENCY		0x8
-#define SSD1306_PANEL_VCOM_DESEL_LEVEL	0x20
+#define SSD1306_PANEL_VCOM_DESEL_LEVEL	SSD1306_VCOM_DESEL_LEVEL_CONV(SSD1306_VCOM_DESEL_LEVEL)
 #define SSD1306_PANEL_PUMP_VOLTAGE	SSD1306_SET_PUMP_VOLTAGE_90
 
 #ifndef SSD1306_ADDRESSING_MODE
@@ -427,7 +437,7 @@ static int ssd1306_init_device(const struct device *dev)
 	if (ssd1306_set_panel_orientation(dev)) {
 		return -EIO;
 	}
-
+#if 0
 	if (ssd1306_set_charge_pump(dev)) {
 		return -EIO;
 	}
@@ -435,7 +445,7 @@ static int ssd1306_init_device(const struct device *dev)
 	if (ssd1306_set_iref_mode(dev)) {
 		return -EIO;
 	}
-
+#endif
 	if (ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true)) {
 		return -EIO;
 	}
