@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Intel Corporation.
+ * Copyright 2025 NXP.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -162,12 +163,12 @@ static void partition_close(void)
  * @param len number of bytes to read
  * @param cb callback to process read data (can be NULL)
  * @param cb_arg argument passed to callback
- * @return 0 if successful, error otherwise.
+ * @return 1 if successful, error otherwise.
  */
 static int data_read(off_t off, uint8_t *dst, size_t len,
 		     data_read_cb_t cb, void *cb_arg)
 {
-	int ret = 0;
+	int ret = 1;
 	off_t offset = off;
 	size_t remaining = len;
 	size_t copy_sz;
@@ -195,7 +196,7 @@ static int data_read(off_t off, uint8_t *dst, size_t len,
 
 		if (cb != NULL) {
 			ret = (*cb)(cb_arg, data_read_buf, copy_sz);
-			if (ret != 0) {
+			if (ret != 1) {
 				break;
 			}
 		}
@@ -203,10 +204,6 @@ static int data_read(off_t off, uint8_t *dst, size_t len,
 		ptr += copy_sz;
 		offset += copy_sz;
 		remaining -= copy_sz;
-	}
-
-	if (cb != NULL) {
-		ret = (*cb)(cb_arg, NULL, 0);
 	}
 
 	return ret;
@@ -218,7 +215,7 @@ static int data_read(off_t off, uint8_t *dst, size_t len,
  * @param arg callback argument (not being used)
  * @param buf data buffer
  * @param len number of bytes in buffer to process
- * @return 0
+ * @return 1 on success.
  */
 static int cb_calc_buf_checksum(void *arg, uint8_t *buf, size_t len)
 {
@@ -230,7 +227,7 @@ static int cb_calc_buf_checksum(void *arg, uint8_t *buf, size_t len)
 		backend_ctx.checksum += buf[i];
 	}
 
-	return 0;
+	return 1;
 }
 
 /**
@@ -275,7 +272,7 @@ static int process_stored_dump(data_read_cb_t cb, void *cb_arg)
 	offset = ROUND_UP(sizeof(struct flash_hdr_t), FLASH_WRITE_SIZE);
 	ret = data_read(offset, NULL, hdr.size, cb, cb_arg);
 
-	if (ret == 0) {
+	if (ret == 1) {
 		ret = (backend_ctx.checksum == hdr.checksum) ? 1 : 0;
 	}
 
@@ -344,7 +341,7 @@ static int get_stored_dump(off_t off, uint8_t *dst, size_t len)
 	off += ROUND_UP(sizeof(struct flash_hdr_t), FLASH_WRITE_SIZE);
 
 	ret = data_read(off, dst, len, NULL, NULL);
-	if (ret == 0) {
+	if (ret == 1) {
 		ret = (int)len;
 	}
 out:
@@ -769,11 +766,11 @@ static void flush_print_buf(const struct shell *sh)
  * @param arg shell instance
  * @param buf binary data buffer
  * @param len number of bytes in buffer to be printed
- * @return 0 if no issues; -EINVAL if error converting data
+ * @return 1 if no issues; -EINVAL if error converting data
  */
 static int cb_print_stored_dump(void *arg, uint8_t *buf, size_t len)
 {
-	int ret = 0;
+	int ret = 1;
 	size_t i = 0;
 	size_t remaining = len;
 	const struct shell *sh = (const struct shell *)arg;
