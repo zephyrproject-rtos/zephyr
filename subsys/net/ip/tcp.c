@@ -1537,6 +1537,24 @@ err:
 	tcp_pkt_unref(rst);
 }
 
+static size_t tcp_get_reserve_header_size(struct tcp *conn, struct net_pkt *pkt)
+{
+	size_t hdr_len = sizeof(struct tcphdr);
+
+	/* Family header */
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		hdr_len += NET_IPV6H_LEN;
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		hdr_len += NET_IPV4H_LEN;
+	}
+
+	if (conn->send_options.mss_found) {
+		hdr_len += sizeof(uint32_t);
+	}
+
+	return hdr_len;
+}
+
 static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		       uint32_t seq)
 {
@@ -1548,16 +1566,17 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		alloc_len += sizeof(uint32_t);
 	}
 
-	pkt = tcp_pkt_alloc(conn, alloc_len);
-	if (!pkt) {
-		ret = -ENOBUFS;
-		goto out;
-	}
-
 	if (data) {
-		/* Append the data buffer to the pkt */
-		net_pkt_append_buffer(pkt, data->buffer);
-		data->buffer = NULL;
+		pkt = data;
+		net_buf_cancel_reserve(pkt->buffer,
+							   tcp_get_reserve_header_size(conn, pkt));
+		net_pkt_cursor_init(pkt);
+	} else {
+		pkt = tcp_pkt_alloc(conn, alloc_len);
+		if (!pkt) {
+			ret = -ENOBUFS;
+			goto out;
+		}
 	}
 
 	ret = ip_header_add(conn, pkt);
@@ -1759,6 +1778,8 @@ static int tcp_send_data(struct tcp *conn)
 		goto out;
 	}
 
+	net_buf_reserve(pkt->buffer, tcp_get_reserve_header_size(conn, pkt));
+
 	ret = tcp_pkt_peek(pkt, conn->send_data, conn->unacked_len, len);
 	if (ret < 0) {
 		tcp_pkt_unref(pkt);
@@ -1778,12 +1799,6 @@ static int tcp_send_data(struct tcp *conn)
 			net_stats_update_tcp_seg_sent(conn->iface);
 		}
 	}
-
-	/* The data we want to send, has been moved to the send queue so we
-	 * can unref the head net_pkt. If there was an error, we need to remove
-	 * the packet anyway.
-	 */
-	tcp_pkt_unref(pkt);
 
 	conn_send_data_dump(conn);
 

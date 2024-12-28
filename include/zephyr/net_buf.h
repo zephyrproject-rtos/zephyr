@@ -1607,6 +1607,19 @@ static inline void net_buf_reserve(struct net_buf *buf, size_t reserve)
 }
 
 /**
+ * @brief Prepare to use the reserved headroom.
+ *
+ * The start of data goes back to the beginning of reserved headroom.
+ *
+ * @param buf Buffer to update.
+ * @param reserve How much headroom to cancel reserve.
+ */
+static inline void net_buf_cancel_reserve(struct net_buf *buf, size_t reserve)
+{
+	buf->data -= reserve;
+}
+
+/**
  * @brief Prepare data to be added at the end of the buffer
  *
  * Increments the data length of a buffer to account for more data
