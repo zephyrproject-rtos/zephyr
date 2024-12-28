@@ -503,17 +503,27 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_uap_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_uap_network.security.psk, params->psk, params->psk_length);
-		}
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-		else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2;
-			nxp_wlan_uap_network.security.key_mgmt |= WLAN_KEY_MGMT_PSK_SHA256;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_uap_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_uap_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_uap_network.security.pwe_derivation = 1;
+			nxp_wlan_uap_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_uap_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_uap_network.security.pwe_derivation = 2;
+			nxp_wlan_uap_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_uap_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2_WPA3_SAE_MIXED;
 			nxp_wlan_uap_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_uap_network.security.psk, params->psk, params->psk_length);
-		}
-#endif
-		else if (params->security == WIFI_SECURITY_TYPE_SAE) {
-			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA3_SAE;
 			nxp_wlan_uap_network.security.password_len = params->psk_length;
 			strncpy(nxp_wlan_uap_network.security.password, params->psk,
 				params->psk_length);
@@ -899,17 +909,27 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
-		}
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-		else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
-			nxp_wlan_network.security.key_mgmt |= WLAN_KEY_MGMT_PSK_SHA256;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_network.security.pwe_derivation = 1;
+			nxp_wlan_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_network.security.pwe_derivation = 2;
+			nxp_wlan_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
+			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2_WPA3_SAE_MIXED;
 			nxp_wlan_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
-		}
-#endif
-		else if (params->security == WIFI_SECURITY_TYPE_SAE) {
-			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
 			nxp_wlan_network.security.password_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.password, params->psk,
 				params->psk_length);
