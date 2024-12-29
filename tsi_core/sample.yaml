@@ -1,0 +1,15 @@
+sample:
+  description: TSI Core platform - M85 
+  name: m85 
+common:
+  tags: introduction
+  integration_platforms:
+    - ek_tsi_skyp 
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Welcome to TSI!"
+tests:
+  sample.m85:
+    tags: introduction
