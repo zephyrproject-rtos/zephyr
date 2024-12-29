@@ -1152,7 +1152,7 @@ isr_rx_next_subevent:
 	hcto += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 
 	/* setup absolute PDU header reception timeout */
-	radio_tmr_hcto_configure(hcto);
+	radio_tmr_hcto_configure_abs(hcto);
 
 	/* setup capture of PDU end timestamp */
 	radio_tmr_end_capture();
