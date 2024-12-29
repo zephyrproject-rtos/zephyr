@@ -462,8 +462,6 @@ static void isr_rx(void *param)
 	struct pdu_cis *pdu_tx;
 	uint64_t payload_count;
 	uint8_t payload_index;
-	uint32_t subevent_us;
-	uint32_t start_us;
 	uint8_t trx_done;
 	uint8_t crc_ok;
 	uint8_t cie;
@@ -807,6 +805,12 @@ static void isr_rx(void *param)
 		se_curr = 0U;
 	}
 
+	radio_isr_set(isr_tx, cis_lll);
+
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	uint32_t subevent_us;
+	uint32_t start_us;
+
 	/* Schedule next subevent reception */
 	subevent_us = radio_tmr_aa_restore();
 	subevent_us += cis_lll->offset - cis_offset_first +
@@ -825,8 +829,7 @@ static void isr_rx(void *param)
 
 	start_us = radio_tmr_start_us(0U, subevent_us);
 	LL_ASSERT(start_us == (subevent_us + 1U));
-
-	radio_isr_set(isr_tx, cis_lll);
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
 static void isr_tx(void *param)
@@ -923,8 +926,14 @@ static void isr_tx(void *param)
 	subevent_us -= radio_rx_chain_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	start_us = radio_tmr_start_us(0U, subevent_us);
+	LL_ASSERT(start_us == (subevent_us + 1U));
+
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	/* Compensate for the 1 us added by radio_tmr_start_us() */
 	start_us = subevent_us + 1U;
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	hcto = start_us +
 	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
@@ -941,7 +950,7 @@ static void isr_tx(void *param)
 	hcto += radio_rx_chain_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
-	radio_tmr_hcto_configure(hcto);
+	radio_tmr_hcto_configure_abs(hcto);
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
@@ -1172,7 +1181,7 @@ static void isr_prepare_subevent_common(void *param)
 	hcto += radio_rx_chain_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
-	radio_tmr_hcto_configure(hcto);
+	radio_tmr_hcto_configure_abs(hcto);
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
