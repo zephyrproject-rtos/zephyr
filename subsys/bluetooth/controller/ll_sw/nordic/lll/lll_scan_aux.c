@@ -365,7 +365,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	hcto += window_size_us;
 	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
-	radio_tmr_hcto_configure(hcto);
+	radio_tmr_hcto_configure_abs(hcto);
 
 	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
 	 * channel chaining, create connection or to create periodic sync.
