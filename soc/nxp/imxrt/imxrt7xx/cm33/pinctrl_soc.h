@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,7 +74,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 #define Z_PINCTRL_IOCON_I_PIN_MASK (0)
 
 #define Z_PINCTRL_STATE_PIN_INIT(group, pin_prop, idx)                                             \
-	DT_PROP_BY_IDX(group, pin_prop, idx),
+	DT_PROP_BY_IDX(group, pin_prop, idx) | Z_PINCTRL_IOPCTL_PINCFG(group),
 
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)                                                   \
 	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop), DT_FOREACH_PROP_ELEM, pinmux,           \
