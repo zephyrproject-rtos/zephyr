@@ -1045,6 +1045,11 @@ static int ov5640_set_ctrl_contrast(const struct device *dev, int value)
 		return ret;
 	}
 
+	ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL6_REG, BIT(2), value >= 0 ? 0 : BIT(2));
+	if (ret < 0) {
+		return ret;
+	}
+
 	return ov5640_write_reg(&cfg->i2c, SDE_CTRL6_REG, value & 0xff);
 }
 
