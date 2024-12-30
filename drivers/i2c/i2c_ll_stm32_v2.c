@@ -192,6 +192,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8
 				if (configure_dma(&cfg->rx_dma, &data->dma_rx_cfg,
 						  &data->dma_rx_blk_cfg) != 0) {
 					k_sem_give(&data->dma_rx_sem);
+					LOG_ERR("Problem setting up RX DMA");
 					return;
 				}
 				data->current.buf += msg->len;
@@ -209,6 +210,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8
 					if (configure_dma(&cfg->tx_dma, &data->dma_tx_cfg,
 							  &data->dma_tx_blk_cfg) != 0) {
 						k_sem_give(&data->dma_tx_sem);
+						LOG_ERR("Problem setting up TX DMA");
 						return;
 					}
 					data->current.buf += data->current.len;
