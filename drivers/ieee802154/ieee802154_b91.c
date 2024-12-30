@@ -260,7 +260,7 @@ static void b91_send_ack(uint8_t seq_num)
 /* RX IRQ handler */
 static void b91_rf_rx_isr(void)
 {
-	uint8_t status;
+	int status;
 	uint8_t length;
 	uint8_t *payload;
 	struct net_pkt *pkt;
