@@ -8,7 +8,8 @@ common:
   tags:
     - psa.secure_storage
 tests:
-  secure_storage.psa.its.secure_storage.zms:
+  secure_storage.psa.its.secure_storage.store.zms:
+    filter: CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
     # DT-based filtering is not possible for this test scenario.
     # Platforms with a storage_partition must be manually added here.
     platform_allow:
@@ -25,16 +26,16 @@ tests:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=zms.overlay
       - EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-transform_default.conf
-      - CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS=y
 
-  secure_storage.psa.its.secure_storage.settings.nvs:
+  secure_storage.psa.its.secure_storage.store.settings:
     filter: CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
     extra_args: "EXTRA_CONF_FILE=\
-      overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_settings.conf"
+      overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_default.conf"
 
   secure_storage.psa.its.secure_storage.custom.transform:
     filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
-    extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-transform_custom.conf
+    extra_args: "EXTRA_CONF_FILE=\
+      overlay-secure_storage.conf;overlay-transform_custom.conf;overlay-store_default.conf"
 
   secure_storage.psa.its.secure_storage.custom.store:
     filter: CONFIG_SECURE_STORAGE
