@@ -1,15 +1,19 @@
 sample:
-  description: TSI Core platform - M85 
-  name: m85 
+  description: TSI Core platform - M85
+  name: m85
 common:
   tags: introduction
   integration_platforms:
-    - ek_tsi_skyp 
+    - tsi/skyp/m85
   harness: console
   harness_config:
     type: one_line
     regex:
-      - "Welcome to TSI!"
+      - "Tsavorite Scalable Intelligence"
+      - [00:00:00.016 000] <inf> m85: Test Platform: tsi/skyp/m85
+      - [00:00:00.018 000] <wrn> m85: Testing on FPGA
+      - TSI Logging enabled and printk is functional
+      - TSI Shell
 tests:
   sample.m85:
     tags: introduction
