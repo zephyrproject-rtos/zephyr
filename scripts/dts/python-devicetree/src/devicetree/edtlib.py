@@ -493,7 +493,9 @@ class PropertySpec:
 
     path:
       The file where this property was defined. In case a binding includes
-      other bindings, this is the file where the property was last modified.
+      other bindings, this is the including binding file.
+      Generally this means that this will be the binding file specifying
+      the devicetree node of which this is a property.
 
     type:
       The type of the property as a string, as given in the binding.
