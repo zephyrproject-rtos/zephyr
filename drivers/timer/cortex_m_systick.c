@@ -17,10 +17,22 @@
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
 
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
-		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
+
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+extern unsigned int z_clock_hw_cycles_per_sec;
+#define CYC_PER_TICK (z_clock_hw_cycles_per_sec/CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#else
+#define CYC_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC/CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#endif
+
+/* add MAX_TICKS protection */
+#define _MAX_TICKS (int)((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
+#define MAX_TICKS ((_MAX_TICKS > 0) ? _MAX_TICKS : 1)
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
+
+#if (COUNTER_MAX / CYC_PER_TICK) == 1
+#pragma message("tickless does nothing as CONFIG_SYS_CLOCK_TICKS_PER_SEC too low")
+#endif
 
 /* Minimum cycles in the future to try to program.  Note that this is
  * NOT simply "enough cycles to get the counter read and reprogrammed
