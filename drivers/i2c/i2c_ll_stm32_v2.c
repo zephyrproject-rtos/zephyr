@@ -183,13 +183,13 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8
 		if (msg->len) {
 			if (msg->flags & I2C_MSG_READ) {
 				/* Configure RX DMA */
-				data->dma_rx_blk_cfg.source_address = LL_I2C_DMA_GetRegAddr(
+				data->dma_blk_cfg.source_address = LL_I2C_DMA_GetRegAddr(
 					cfg->i2c, LL_I2C_DMA_REG_DATA_RECEIVE);
-				data->dma_rx_blk_cfg.dest_address = (uint32_t)msg->buf;
-				data->dma_rx_blk_cfg.block_size = msg->len;
+				data->dma_blk_cfg.dest_address = (uint32_t)msg->buf;
+				data->dma_blk_cfg.block_size = msg->len;
 
-				if (configure_dma(&cfg->rx_dma, &data->dma_rx_cfg,
-						  &data->dma_rx_blk_cfg) != 0) {
+				if (configure_dma(&cfg->rx_dma, &data->dma_cfg,
+						  &data->dma_blk_cfg) != 0) {
 					LOG_ERR("Problem setting up RX DMA");
 					return;
 				}
@@ -199,13 +199,13 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8
 			} else {
 				if (data->current.len) {
 					/* Configure TX DMA */
-					data->dma_tx_blk_cfg.source_address =
+					data->dma_blk_cfg.source_address =
 						(uint32_t)data->current.buf;
-					data->dma_tx_blk_cfg.dest_address = LL_I2C_DMA_GetRegAddr(
+					data->dma_blk_cfg.dest_address = LL_I2C_DMA_GetRegAddr(
 						cfg->i2c, LL_I2C_DMA_REG_DATA_TRANSMIT);
-					data->dma_tx_blk_cfg.block_size = msg->len;
-					if (configure_dma(&cfg->tx_dma, &data->dma_tx_cfg,
-							  &data->dma_tx_blk_cfg) != 0) {
+					data->dma_blk_cfg.block_size = msg->len;
+					if (configure_dma(&cfg->tx_dma, &data->dma_cfg,
+							  &data->dma_blk_cfg) != 0) {
 						LOG_ERR("Problem setting up TX DMA");
 						return;
 					}
