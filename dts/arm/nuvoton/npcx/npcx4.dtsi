@@ -522,7 +522,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x40>;
+			port = <NPCX_I2C_CTRL_PORT(4, 0)>;
 			controller = <&i2c_ctrl4>;
 			status = "disabled";
 		};
@@ -531,7 +531,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x71>;
+			port = <NPCX_I2C_CTRL_PORT(7, 1)>;
 			controller = <&i2c_ctrl7>;
 			status = "disabled";
 		};

@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/flash_controller/npcx_fiu_qspi.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/npcx-i2c.h>
 #include <zephyr/dt-bindings/pinctrl/npcx-pinctrl.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/sensor/npcx_tach.h>
@@ -484,7 +485,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x00>;
+			port = <NPCX_I2C_CTRL_PORT(0, 0)>;
 			controller = <&i2c_ctrl0>;
 			status = "disabled";
 		};
@@ -493,7 +494,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x10>;
+			port = <NPCX_I2C_CTRL_PORT(1, 0)>;
 			controller = <&i2c_ctrl1>;
 			status = "disabled";
 		};
@@ -502,7 +503,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x20>;
+			port = <NPCX_I2C_CTRL_PORT(2, 0)>;
 			controller = <&i2c_ctrl2>;
 			status = "disabled";
 		};
@@ -511,7 +512,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x30>;
+			port = <NPCX_I2C_CTRL_PORT(3, 0)>;
 			controller = <&i2c_ctrl3>;
 			status = "disabled";
 		};
@@ -520,7 +521,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x41>;
+			port = <NPCX_I2C_CTRL_PORT(4, 1)>;
 			controller = <&i2c_ctrl4>;
 			status = "disabled";
 		};
@@ -529,7 +530,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x50>;
+			port = <NPCX_I2C_CTRL_PORT(5, 0)>;
 			controller = <&i2c_ctrl5>;
 			status = "disabled";
 		};
@@ -538,7 +539,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x51>;
+			port = <NPCX_I2C_CTRL_PORT(5, 1)>;
 			controller = <&i2c_ctrl5>;
 			status = "disabled";
 		};
@@ -547,7 +548,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x60>;
+			port = <NPCX_I2C_CTRL_PORT(6, 0)>;
 			controller = <&i2c_ctrl6>;
 			status = "disabled";
 		};
@@ -556,7 +557,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x61>;
+			port = <NPCX_I2C_CTRL_PORT(6, 1)>;
 			controller = <&i2c_ctrl6>;
 			status = "disabled";
 		};
@@ -565,7 +566,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <0x70>;
+			port = <NPCX_I2C_CTRL_PORT(7, 0)>;
 			controller = <&i2c_ctrl7>;
 			status = "disabled";
 		};
