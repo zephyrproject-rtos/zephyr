@@ -61,3 +61,9 @@ Usage
 
 See :ref:`zperf library documentation <zperf>` for more information about
 the library usage.
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.
