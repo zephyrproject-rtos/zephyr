@@ -226,6 +226,133 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg, uin
 	return ret;
 }
 
+#ifdef CONFIG_I2C_CALLBACK
+
+static void i2c_stm32_async_done(const struct device *dev, int result)
+{
+	struct i2c_stm32_data *data = dev->data;
+	i2c_callback_t cb = data->cb;
+	void *userdata = data->userdata;
+
+	data->cb = NULL;
+	data->userdata = NULL;
+
+	k_sem_give(&data->bus_mutex);
+
+	/* Callback may wish to start another transfer */
+	cb(dev, result, userdata);
+}
+
+static int i2c_stm32_async_iter(const struct device *dev, struct i2c_msg msg,
+				uint8_t *next_msg_flags, uint16_t slave)
+{
+	int ret;
+
+	if (msg.len > 0) {
+		i2c_stm32_async_done(dev, 0);
+		return 0;
+	}
+
+	ret = stm32_i2c_transaction(dev, msg, next_msg_flags, slave);
+	if (ret < 0) {
+		i2c_stm32_async_done(dev, ret);
+	}
+
+	return ret;
+}
+
+static int i2c_stm32_transfer_cb(const struct device *dev, struct i2c_msg *msg, uint8_t num_msgs,
+				 uint16_t slave, i2c_callback_t cb, void *userdata)
+{
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_msg *current;
+	struct i2c_msg *next = NULL;
+	int ret = 0;
+
+	/* Check for validity of all messages, to prevent having to abort
+	 * in the middle of a transfer
+	 */
+	current = msg;
+
+	/*
+	 * Set I2C_MSG_RESTART flag on first message in order to send start
+	 * condition
+	 */
+	current->flags |= I2C_MSG_RESTART;
+
+	for (uint8_t i = 1; i <= num_msgs; i++) {
+
+		if (i < num_msgs) {
+			next = current + 1;
+
+			/*
+			 * Restart condition between messages
+			 * of different directions is required
+			 */
+			if (OPERATION(current) != OPERATION(next)) {
+				if (!(next->flags & I2C_MSG_RESTART)) {
+					ret = -EINVAL;
+					break;
+				}
+			}
+
+			/* Stop condition is only allowed on last message */
+			if (current->flags & I2C_MSG_STOP) {
+				ret = -EINVAL;
+				break;
+			}
+		}
+
+		current++;
+	}
+
+	if (ret) {
+		return ret;
+	}
+
+	/* Send out messages */
+	k_sem_take(&data->bus_mutex, K_FOREVER);
+
+	/* Prevent driver from being suspended by PM until I2C transaction is complete */
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#endif
+
+	/* Prevent the clocks to be stopped during the i2c transaction */
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+	current = msg;
+	data->cb = cb;
+	data->userdata = userdata;
+
+	while (num_msgs > 0) {
+		uint8_t *next_msg_flags = NULL;
+
+		if (num_msgs > 1) {
+			next = current + 1;
+			next_msg_flags = &(next->flags);
+		}
+		ret = i2c_stm32_async_iter(dev, *current, next_msg_flags, slave);
+		if (ret < 0) {
+			break;
+		}
+		current++;
+		num_msgs--;
+	}
+
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_put(dev);
+#endif
+
+	k_sem_give(&data->bus_mutex);
+
+	return 0;
+}
+
+#endif /* CONFIG_I2C_CALLBACK */
+
 #if CONFIG_I2C_STM32_BUS_RECOVERY
 static void i2c_stm32_bitbang_set_scl(void *io_context, int state)
 {
@@ -313,6 +440,9 @@ restore:
 static DEVICE_API(i2c, api_funcs) = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
+#ifdef CONFIG_I2C_CALLBACK
+	.transfer_cb = i2c_stm32_transfer_cb,
+#endif /* CONFIG_I2C_CALLBACK */
 	.get_config = i2c_stm32_get_config,
 #if CONFIG_I2C_STM32_BUS_RECOVERY
 	.recover_bus = i2c_stm32_recover_bus,
