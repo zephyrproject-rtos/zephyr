@@ -107,10 +107,8 @@ struct i2c_stm32_data {
 #ifdef I2C_STM32_V2_DMA
 	struct dma_config dma_tx_cfg;
 	struct dma_block_config dma_tx_blk_cfg;
-	struct k_sem dma_tx_sem;
 	struct dma_config dma_rx_cfg;
 	struct dma_block_config dma_rx_blk_cfg;
-	struct k_sem dma_rx_sem;
 #endif /* I2C_STM32_V2_DMA */
 };
 

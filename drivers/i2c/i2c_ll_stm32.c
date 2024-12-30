@@ -389,11 +389,6 @@ static int i2c_stm32_init(const struct device *dev)
 	cfg->irq_config_func(dev);
 #endif
 
-#ifdef I2C_STM32_V2_DMA
-	k_sem_init(&data->dma_rx_sem, 1, K_SEM_MAX_LIMIT);
-	k_sem_init(&data->dma_tx_sem, 1, K_SEM_MAX_LIMIT);
-#endif /* I2C_STM32_V2_DMA */
-
 	data->is_configured = false;
 	data->mode = I2CSTM32MODE_I2C;
 
