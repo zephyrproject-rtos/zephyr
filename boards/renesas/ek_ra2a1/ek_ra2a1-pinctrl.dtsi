@@ -26,4 +26,21 @@
 			<RA_PSEL(RA_PSEL_SPI, 1, 2)>;
 		};
 	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			/* GTIOC0A GTIOC0B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 4, 8)>,
+				<RA_PSEL(RA_PSEL_GPT1, 4, 7)>;
+		};
+	};
+
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL0 SDA0 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 0, 0)>,
+			<RA_PSEL(RA_PSEL_I2C, 4, 1)>;
+			drive-strength = "medium";
+		};
+	};
 };

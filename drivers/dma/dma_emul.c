@@ -513,7 +513,7 @@ static bool dma_emul_chan_filter(const struct device *dev, int channel, void *fi
 	return success;
 }
 
-static const struct dma_driver_api dma_emul_driver_api = {
+static DEVICE_API(dma, dma_emul_driver_api) = {
 	.config = dma_emul_configure,
 	.reload = dma_emul_reload,
 	.start = dma_emul_start,

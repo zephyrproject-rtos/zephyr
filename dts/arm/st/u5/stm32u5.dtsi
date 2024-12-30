@@ -791,8 +791,9 @@
 				       STM32_ADC_RES(10, 0x02)
 				       STM32_ADC_RES(8, 0x03)>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		adc4: adc@46021000 {
@@ -809,8 +810,9 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 4 8 13 20 40 80 815>;
 			num-sampling-time-common-channels = <2>;
-			st,adc-clock-source = <ASYNC>;
-			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+			st,adc-clock-source = "ASYNC";
+			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		fdcan1: can@4000a400 {

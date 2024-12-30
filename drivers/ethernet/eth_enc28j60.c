@@ -683,6 +683,13 @@ static int eth_enc28j60_rx(const struct device *dev)
 
 	k_sem_give(&context->tx_rx_sem);
 
+	/* Clear a potential Receive Error Interrupt Flag bit (RX buffer full).
+	 * PKTIF was automatically cleared in eth_enc28j60_rx() when EPKTCNT
+	 * reached zero, so no need to clear it.
+	 */
+	eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
+				   ENC28J60_BIT_EIR_RXERIF);
+
 	return 0;
 }
 
@@ -698,14 +705,13 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&context->int_sem, K_FOREVER);
 
+		/* Disable interrupts during processing, otherwise there's a small race
+		 * window where we can miss one!
+		 */
+		eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_INTIE);
+
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &int_stat);
-		if (int_stat & ENC28J60_BIT_EIR_PKTIF) {
-			eth_enc28j60_rx(dev);
-			/* Clear rx interruption flag */
-			eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
-						   ENC28J60_BIT_EIR_PKTIF
-						   | ENC28J60_BIT_EIR_RXERIF);
-		} else if (int_stat & ENC28J60_BIT_EIR_LINKIF) {
+		if (int_stat & ENC28J60_BIT_EIR_LINKIF) {
 			uint16_t phir;
 			uint16_t phstat2;
 			/* Clear link change interrupt flag by PHIR reg read */
@@ -729,6 +735,14 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 				}
 			}
 		}
+
+		/* We cannot rely on the PKTIF flag because of errata 6. Call
+		 * eth_enc28j60_rx() unconditionally. It will check EPKTCNT instead.
+		 */
+		eth_enc28j60_rx(dev);
+
+		/* Now that the IRQ line was released, enable interrupts back */
+		eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_INTIE);
 	}
 }
 

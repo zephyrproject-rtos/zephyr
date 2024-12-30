@@ -12,7 +12,8 @@ zephyr_interface_library_named(mbedTLS)
     endif()
 
     if(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
-      if(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG)
+      if(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG OR
+         CONFIG_TEST_CSPRNG_GENERATOR)
         message(WARNING "
           Non cryptographycally secure sources are enabled for psa_generate_random().
           This is meant to be used only for tests, not in production!")

@@ -589,12 +589,9 @@ ZTEST(phy_periph, test_phy_update_periph_loc_invalid_central)
 {
 	uint8_t err;
 	struct node_tx *tx;
-	struct node_rx_pdu *ntf;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	uint16_t instant;
 	struct pdu_data_llctrl_conn_param_req conn_param_req = {  };
-
-	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = { .c_to_p_phy = PHY_2M,
 							      .p_to_c_phy = PHY_2M };

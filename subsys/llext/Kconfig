@@ -5,6 +5,7 @@ menuconfig LLEXT
 	bool "Linkable loadable extensions"
 	select CACHE_MANAGEMENT if DCACHE
 	select KERNEL_WHOLE_ARCHIVE
+	depends on !HARVARD
 	help
 	  Enable the linkable loadable extension subsystem
 

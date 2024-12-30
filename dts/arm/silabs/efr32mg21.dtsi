@@ -329,6 +329,15 @@
 			status = "okay";
 		};
 
+		dma0: dma@40040000{
+			compatible = "silabs,ldma";
+			reg = <0x40040000 0x4000>;
+			interrupts = <21 0>;
+			#dma-cells = <3>;
+			dma_channels = <8>;
+			status = "disabled";
+		};
+
 		wdog0: wdog@5a018000 {
 			compatible = "silabs,gecko-wdog";
 			reg = <0x5a018000 0x2C>;

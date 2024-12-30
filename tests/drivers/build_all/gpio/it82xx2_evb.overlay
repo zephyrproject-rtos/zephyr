@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+it8801_i2c: &i2c4 {
+	status = "okay";
+};
+
+#include <ite/it8801-common-cfg.dtsi>
+
+&it8801_mfd {
+	irq-gpios = <&gpioa 1 0>;
+};

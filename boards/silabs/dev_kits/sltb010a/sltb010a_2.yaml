@@ -14,5 +14,6 @@ supported:
   - gpio
   - uart
   - i2c
+  - dma
   - spi
 vendor: silabs

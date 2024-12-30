@@ -37,6 +37,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RA_CGC      clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AMBIQ               clock_control_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_PWM                 clock_control_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RPI_PICO            clock_control_rpi_pico.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL   clock_control_nrf2_global_hsfll.c)
 
 if(CONFIG_CLOCK_CONTROL_NRF2)
   zephyr_library_sources(clock_control_nrf2_common.c)

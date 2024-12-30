@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Yishai Jaffe
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32ZG23
+	bool
+	select SOC_FAMILY_SILABS_S2
+	help
+	  Silicon Labs EFR32ZG23 Series MCU
+
+config SOC_PART_NUMBER_EFR32ZG23B020F512IM48
+	bool
+	select SOC_SERIES_EFR32ZG23
+
+config SOC_SERIES
+	default "efr32zg23" if SOC_SERIES_EFR32ZG23
+
+config SOC
+	default "efr32zg23b020f512im48" if SOC_PART_NUMBER_EFR32ZG23B020F512IM48
+
+config SOC_PART_NUMBER
+	default "EFR32ZG23B020F512IM48" if SOC_PART_NUMBER_EFR32ZG23B020F512IM48

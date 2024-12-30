@@ -732,7 +732,7 @@ static void i2c_atciic100_irq_handler(void *arg)
 	}
 }
 
-static const struct i2c_driver_api i2c_atciic100_driver = {
+static DEVICE_API(i2c, i2c_atciic100_driver) = {
 	.configure = (i2c_api_configure_t)i2c_atciic100_configure,
 	.transfer = (i2c_api_full_io_t)i2c_atciic100_transfer,
 #if defined(CONFIG_I2C_TARGET)

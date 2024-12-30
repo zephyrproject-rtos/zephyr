@@ -473,7 +473,7 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 		clk_cfg->brl_value, clk_cfg->brh_value, clk_cfg->cks_value);
 }
 
-static const struct i2c_driver_api i2c_ra_iic_driver_api = {
+static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
 	.configure = i2c_ra_iic_configure,
 	.get_config = i2c_ra_iic_get_config,
 	.transfer = i2c_ra_iic_transfer,

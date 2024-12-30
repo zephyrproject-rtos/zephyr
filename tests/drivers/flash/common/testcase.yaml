@@ -39,7 +39,7 @@ tests:
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
     integration_platforms:
       - qemu_x86
-      - mimxrt1060_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
   drivers.flash.common.no_explicit_erase:
     platform_allow:
       - nrf54l15dk/nrf54l05/cpuapp
@@ -55,7 +55,7 @@ tests:
   drivers.flash.common.mx25r_high_perf:
     platform_allow: nrf52840dk/nrf52840
     extra_configs:
-      - CONFIG_TEST_DRIVER_FLASH_SIZE=216142092
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=8388608
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25r_high_perf.overlay

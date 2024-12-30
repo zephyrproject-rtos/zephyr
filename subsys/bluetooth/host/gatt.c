@@ -1743,9 +1743,17 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 
 int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 {
+	uint16_t sc_start_handle;
+	uint16_t sc_end_handle;
 	int err;
 
 	__ASSERT(svc, "invalid parameters\n");
+
+	/* gatt_unregister() clears handles when those were auto-assigned
+	 * by host
+	 */
+	sc_start_handle = svc->attrs[0].handle;
+	sc_end_handle = svc->attrs[svc->attr_count - 1].handle;
 
 	k_sched_lock();
 
@@ -1761,8 +1769,7 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 		return 0;
 	}
 
-	sc_indicate(svc->attrs[0].handle,
-		    svc->attrs[svc->attr_count - 1].handle);
+	sc_indicate(sc_start_handle, sc_end_handle);
 
 	db_changed();
 
@@ -6402,7 +6409,7 @@ static int bt_gatt_clear_cf(uint8_t id, const bt_addr_le_t *addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		return bt_settings_delete_ccc(id, addr);
+		return bt_settings_delete_cf(id, addr);
 	}
 
 	return 0;

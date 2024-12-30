@@ -146,7 +146,7 @@ zephyr_udc0: &usbotg_fs {
 	status ="okay";
 	pinctrl-0 = <&adc1_in2_pa2 &adc1_in3_pa3>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <2>;
 };
 

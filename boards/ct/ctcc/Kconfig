@@ -1,9 +1,0 @@
-# CTHINGS.CO Connectivity Card board configuration
-
-# Copyright (c) 2024 CTHINGS.CO
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_SERIAL_BACKEND_CDC_ACM
-	bool "USB CDC"
-	default y
-	depends on BOARD_CTCC_NRF52840

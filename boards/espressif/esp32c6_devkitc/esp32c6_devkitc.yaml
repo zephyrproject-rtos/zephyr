@@ -10,10 +10,8 @@ supported:
   - watchdog
   - uart
   - dma
+  - pwm
   - spi
+  - counter
   - entropy
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
-    - tracing
+  - i2c

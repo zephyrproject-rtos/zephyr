@@ -435,6 +435,64 @@ ZTEST(llext, test_find_section)
 	zassert_equal(symbol_ptr, section_ptr,
 		      "symbol at %p != .data section at %p (%zd bytes in the ELF)",
 		      symbol_ptr, section_ptr, section_ofs);
+
+	llext_unload(&ext);
+}
+
+static LLEXT_CONST uint8_t test_detached_ext[] ELF_ALIGN = {
+	#include "detached_fn.inc"
+};
+
+static struct llext_loader *detached_loader;
+static struct llext *detached_llext;
+static elf_shdr_t detached_shdr;
+
+static bool test_section_detached(const elf_shdr_t *shdr)
+{
+	if (!detached_shdr.sh_addr) {
+		int res = llext_get_section_header(detached_loader, detached_llext,
+						   ".detach", &detached_shdr);
+
+		zassert_ok(res, "get_section_header should succeed");
+	}
+
+	return shdr->sh_name == detached_shdr.sh_name;
+}
+
+ZTEST(llext, test_detached)
+{
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(test_detached_ext, sizeof(test_detached_ext));
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	int res;
+
+	ldr_parm.section_detached = test_section_detached;
+	detached_loader = &buf_loader.loader;
+
+	res = llext_load(detached_loader, "test_detached", &detached_llext, &ldr_parm);
+	zassert_ok(res, "load should succeed");
+
+	/*
+	 * Verify that the detached section is outside of the .text region.
+	 * This only works with the shared ELF type, because with other types
+	 * section addresses aren't "real," e.g. they can be 0.
+	 */
+	elf_shdr_t *text_region = detached_loader->sects + LLEXT_MEM_TEXT;
+
+	zassert_true(text_region->sh_offset >= detached_shdr.sh_offset + detached_shdr.sh_size ||
+		     detached_shdr.sh_offset >= text_region->sh_offset + text_region->sh_size);
+
+	void (*test_entry_fn)() = llext_find_sym(&detached_llext->exp_tab, "test_entry");
+
+	zassert_not_null(test_entry_fn, "test_entry should be an exported symbol");
+	test_entry_fn();
+
+	test_entry_fn = llext_find_sym(&detached_llext->exp_tab, "detached_entry");
+
+	zassert_not_null(test_entry_fn, "detached_entry should be an exported symbol");
+	test_entry_fn();
+
+	llext_unload(&detached_llext);
 }
 #endif
 

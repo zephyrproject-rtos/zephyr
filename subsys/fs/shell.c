@@ -20,6 +20,7 @@
 #define STORAGE_PARTITION	storage_partition
 #define STORAGE_PARTITION_ID	FIXED_PARTITION_ID(STORAGE_PARTITION)
 
+#ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
 /* FAT */
 #ifdef CONFIG_FAT_FILESYSTEM_ELM
 #include <ff.h>
@@ -70,6 +71,7 @@ static struct fs_mount_t littlefs_mnt = {
 	.fs_data = &lfs_data,
 	.storage_dev = (void *)STORAGE_PARTITION_ID,
 };
+#endif
 #endif
 #endif
 
@@ -745,8 +747,8 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char **argv
 }
 #endif
 
-#if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
-	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+#ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
+
 static char *mntpt_prepare(char *mntpt)
 {
 	char *cpy_mntpt;
@@ -757,7 +759,6 @@ static char *mntpt_prepare(char *mntpt)
 	}
 	return cpy_mntpt;
 }
-#endif
 
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
@@ -790,7 +791,6 @@ static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
-
 static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 {
 	if (littlefs_mnt.mnt_point != NULL) {
@@ -819,8 +819,6 @@ static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 }
 #endif
 
-#if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
-	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD_ARG(fat, NULL,
@@ -842,8 +840,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 	SHELL_CMD(cd, NULL, "Change working directory", cmd_cd),
 	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
 	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
-#if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
-	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+#ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
 	SHELL_CMD(mount, &sub_fs_mount,
 		  "<Mount fs, syntax:- fs mount <fs type> <mount-point>", NULL),
 #endif

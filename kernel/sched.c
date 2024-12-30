@@ -498,8 +498,6 @@ void z_impl_k_thread_suspend(k_tid_t thread)
 		return;
 	}
 
-	(void)z_abort_thread_timeout(thread);
-
 	k_spinlock_key_t  key = k_spin_lock(&_sched_spinlock);
 
 	if ((thread->base.thread_state & _THREAD_SUSPENDED) != 0U) {
@@ -631,7 +629,7 @@ void z_sched_wake_thread(struct k_thread *thread, bool is_timeout)
 			if (thread->base.pended_on != NULL) {
 				unpend_thread_no_timeout(thread);
 			}
-			z_mark_thread_as_not_suspended(thread);
+			z_mark_thread_as_not_sleeping(thread);
 			ready_thread(thread);
 		}
 	}
@@ -1052,6 +1050,24 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_SCHED_DEADLINE */
 
+void z_impl_k_reschedule(void)
+{
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&_sched_spinlock);
+
+	update_cache(0);
+
+	z_reschedule(&_sched_spinlock, key);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_reschedule(void)
+{
+	z_impl_k_reschedule();
+}
+#endif /* CONFIG_USERSPACE */
+
 bool k_can_yield(void)
 {
 	return !(k_is_pre_kernel() || k_is_in_isr() ||
@@ -1111,11 +1127,9 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 #endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
 	unready_thread(arch_current_thread());
 	z_add_thread_timeout(arch_current_thread(), timeout);
-	z_mark_thread_as_suspended(arch_current_thread());
+	z_mark_thread_as_sleeping(arch_current_thread());
 
 	(void)z_swap(&_sched_spinlock, key);
-
-	__ASSERT(!z_is_thread_state_set(arch_current_thread(), _THREAD_SUSPENDED), "");
 
 	/* We require a 32 bit unsigned subtraction to care a wraparound */
 	uint32_t left_ticks = expected_wakeup_ticks - sys_clock_tick_get_32();
@@ -1137,20 +1151,12 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_thread, sleep, timeout);
 
-	/* in case of K_FOREVER, we suspend */
-	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-
-		k_thread_suspend(arch_current_thread());
-		SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, (int32_t) K_TICKS_FOREVER);
-
-		return (int32_t) K_TICKS_FOREVER;
-	}
-
 	ticks = timeout.ticks;
 
 	ticks = z_tick_sleep(ticks);
 
-	int32_t ret = k_ticks_to_ms_ceil64(ticks);
+	int32_t ret = K_TIMEOUT_EQ(timeout, K_FOREVER) ? K_TICKS_FOREVER :
+		      k_ticks_to_ms_ceil64(ticks);
 
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ret);
 
@@ -1193,24 +1199,18 @@ void z_impl_k_wakeup(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, wakeup, thread);
 
-	if (z_is_thread_pending(thread)) {
-		return;
-	}
-
-	if (z_abort_thread_timeout(thread) < 0) {
-		/* Might have just been sleeping forever */
-		if (thread->base.thread_state != _THREAD_SUSPENDED) {
-			return;
-		}
-	}
+	(void)z_abort_thread_timeout(thread);
 
 	k_spinlock_key_t  key = k_spin_lock(&_sched_spinlock);
 
-	z_mark_thread_as_not_suspended(thread);
-
-	if (thread_active_elsewhere(thread) == NULL) {
-		ready_thread(thread);
+	if (!z_is_thread_sleeping(thread)) {
+		k_spin_unlock(&_sched_spinlock, key);
+		return;
 	}
+
+	z_mark_thread_as_not_sleeping(thread);
+
+	ready_thread(thread);
 
 	if (arch_is_in_isr()) {
 		k_spin_unlock(&_sched_spinlock, key);

@@ -14,6 +14,7 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
     harness: console
     harness_config:
       type: multi_line
@@ -22,32 +23,18 @@ tests:
         - "system off demo"
         - "Retained data not supported"
         - "Entering system off; press sw0 to restart"
-  sample.boards.nrf.system_off.nrf_retained:
+  sample.boards.nrf.system_off.retained_mem:
     integration_platforms:
       - nrf52840dk/nrf52840
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
-    extra_configs:
-      - CONFIG_APP_USE_NRF_RETENTION=y
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: true
-      regex:
-        - "system off demo"
-        - "Retained data: INVALID"
-        - "Boot count: 1"
-        - "Off count: 0"
-        - "Active Ticks:"
-        - "Entering system off; press sw0 to restart"
-  sample.boards.nrf.system_off.retained_mem:
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_retained_mem.overlay"
-    platform_allow:
+      - nrf54l15dk/nrf54l05/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
     extra_configs:
       - CONFIG_APP_USE_RETAINED_MEM=y
-      - CONFIG_RETAINED_MEM=y
     harness: console
     harness_config:
       type: multi_line
@@ -61,9 +48,13 @@ tests:
         - "Entering system off; press sw0 to restart"
   sample.boards.nrf.system_off.grtc_wakeup:
     platform_allow:
+      - nrf54l15dk/nrf54l05/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
     extra_configs:
       - CONFIG_GRTC_WAKEUP_ENABLE=y
+      - CONFIG_GPIO_WAKEUP_ENABLE=n
     harness: console
     harness_config:
       type: multi_line
@@ -79,13 +70,15 @@ tests:
         - "Retained data not supported"
         - "Entering system off; wait 2 seconds to restart"
   sample.boards.nrf.system_off.retained_mem.grtc_wakeup:
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_retained_mem.overlay"
     platform_allow:
+      - nrf54l15dk/nrf54l05/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
     extra_configs:
       - CONFIG_APP_USE_RETAINED_MEM=y
       - CONFIG_GRTC_WAKEUP_ENABLE=y
-      - CONFIG_RETAINED_MEM=y
+      - CONFIG_GPIO_WAKEUP_ENABLE=n
     harness: console
     harness_config:
       type: multi_line
@@ -103,3 +96,55 @@ tests:
         - "Off count: 1"
         - "Active Ticks:"
         - "Entering system off; wait 2 seconds to restart"
+  sample.boards.nrf.system_off.lpcomp_wakeup:
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_comparator.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_configs:
+      - CONFIG_LPCOMP_WAKEUP_ENABLE=y
+      - CONFIG_GPIO_WAKEUP_ENABLE=n
+      - CONFIG_COMPARATOR=y
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "system off demo"
+        - "Retained data not supported"
+        - "Entering system off; change signal level at comparator input to restart"
+        - "system off demo"
+        - "Retained data not supported"
+        - "Entering system off; change signal level at comparator input to restart"
+        - "system off demo"
+        - "Retained data not supported"
+        - "Entering system off; change signal level at comparator input to restart"
+  sample.boards.nrf.system_off.retained_mem.lpcomp_wakeup:
+    extra_args:
+      - "DTC_OVERLAY_FILE=
+         boards/nrf54l15dk_nrf54l15_cpuapp_comparator.overlay;
+         boards/nrf54l15dk_nrf54l15_cpuapp.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_configs:
+      - CONFIG_APP_USE_RETAINED_MEM=y
+      - CONFIG_GPIO_WAKEUP_ENABLE=n
+      - CONFIG_LPCOMP_WAKEUP_ENABLE=y
+      - CONFIG_RETAINED_MEM=y
+      - CONFIG_COMPARATOR=y
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "system off demo"
+        - "Retained data: INVALID"
+        - "Boot count: 1"
+        - "Off count: 0"
+        - "Active Ticks:"
+        - "Entering system off; change signal level at comparator input to restart"
+        - "system off demo"
+        - "Retained data: valid"
+        - "Boot count: 2"
+        - "Off count: 1"
+        - "Active Ticks:"
+        - "Entering system off; change signal level at comparator input to restart"

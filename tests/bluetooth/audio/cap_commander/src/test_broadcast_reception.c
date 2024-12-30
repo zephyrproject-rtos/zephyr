@@ -9,7 +9,6 @@
 #include <stdlib.h>
 
 #include <zephyr/bluetooth/audio/cap.h>
-#include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/fff.h>
 
 #include "bluetooth.h"
@@ -20,8 +19,6 @@
 #include "test_common.h"
 
 #include <zephyr/logging/log.h>
-
-int bt_cap_common_proc_is_active(void);
 
 LOG_MODULE_REGISTER(bt_broadcast_reception_test, CONFIG_BT_CAP_COMMANDER_LOG_LEVEL);
 
@@ -104,13 +101,12 @@ static void cap_commander_test_broadcast_reception_before(void *f)
 static void cap_commander_test_broadcast_reception_after(void *f)
 {
 	struct cap_commander_test_broadcast_reception_fixture *fixture = f;
-	int err;
 
 	bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
 	bt_bap_broadcast_assistant_unregister_cb(&fixture->broadcast_assistant_cb);
 
 	/* We need to cleanup since the CAP commander remembers state */
-	err = bt_cap_commander_cancel();
+	(void)bt_cap_commander_cancel();
 
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);

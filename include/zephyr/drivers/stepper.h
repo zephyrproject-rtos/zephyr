@@ -233,6 +233,7 @@ static inline int z_impl_stepper_enable(const struct device *dev, const bool ena
  * @param dev pointer to the stepper motor controller instance
  * @param micro_steps target micro_steps to be moved from the current position
  *
+ * @retval -ECANCELED If the stepper is disabled
  * @retval -EIO General input / output error
  * @retval	0 Success
  */
@@ -374,6 +375,7 @@ static inline int z_impl_stepper_get_actual_position(const struct device *dev, i
  * @param dev pointer to the stepper motor controller instance
  * @param micro_steps target position to set in micro_steps
  *
+ * @retval -ECANCELED If the stepper is disabled
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
@@ -425,6 +427,7 @@ static inline int z_impl_stepper_is_moving(const struct device *dev, bool *is_mo
  *                 - > 0: Run the stepper with the given velocity in a given direction
  *                 - 0: Stop the stepper
  *
+ * @retval -ECANCELED If the stepper is disabled
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success

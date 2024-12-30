@@ -20,13 +20,13 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         working-directory: zephyrproject/zephyr
         run: |
-          pip3 install west
+          pip install west
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
           west init -l . || true
 
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@v1.5.0
+        uses: zephyrproject-rtos/action-manifest@v1.7.0
         with:
           github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
           manifest-path: 'west.yml'

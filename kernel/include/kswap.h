@@ -78,7 +78,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 					  struct k_spinlock *lock,
 					  bool is_spinlock)
 {
-	ARG_UNUSED(lock);
 	struct k_thread *new_thread, *old_thread;
 
 #ifdef CONFIG_SPIN_VALIDATE

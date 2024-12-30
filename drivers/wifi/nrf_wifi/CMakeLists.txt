@@ -75,14 +75,7 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_ON_QSPI
 
 target_link_libraries(nrf_wifi PRIVATE nrf70-buslib)
 
-if (CONFIG_NRF_WIFI_BUILD_ONLY_MODE)
-  message(WARNING "
-  ------------------------------------------------------------------------
-  Building only the nRF70 driver, skipping firmware patch.
-  This is only for building (CI) purposes and will not work on a real device.
-  ------------------------------------------------------------------------
-  ")
-elseif(CONFIG_NRF_WIFI_PATCHES_BUILTIN)
+if (CONFIG_NRF_WIFI_PATCHES_BUILTIN)
   zephyr_blobs_verify(MODULE nrf_wifi REQUIRED)
   # RPU FW patch binaries based on the selected configuration
   if(CONFIG_NRF70_SYSTEM_MODE)

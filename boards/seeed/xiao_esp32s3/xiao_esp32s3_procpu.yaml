@@ -15,8 +15,4 @@ supported:
   - entropy
   - pwm
   - dma
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: seeed

@@ -103,3 +103,7 @@
 &dcdc {
 	interrupts = <8 0>;
 };
+
+&dma0 {
+	interrupts = <26 0>;
+};

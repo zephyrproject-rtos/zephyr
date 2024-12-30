@@ -111,7 +111,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF92X  ${MDK_DIR}/system_nrf92.c
 
 zephyr_library_sources(nrfx_glue.c)
 zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)
-zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_NRF_RAM_CTRL ${HELPERS_DIR}/nrfx_ram_ctrl.c)
+zephyr_library_sources_ifdef(CONFIG_HAS_NORDIC_RAM_CTRL       ${HELPERS_DIR}/nrfx_ram_ctrl.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_GPPI                 ${HELPERS_DIR}/nrfx_gppi_dppi.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_GPPI                 ${HELPERS_DIR}/nrfx_gppi_ppi.c)
 

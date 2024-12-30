@@ -482,11 +482,17 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
-	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_ENABLED
+	# The only way to check if there is any entropy driver available on the
+	# platform is to check if the "zephyr,entropy" chosen property exists.
+	# CONFIG_CSPRNG_ENABLED cannot be used for this because it gets enabled by
+	# entropy drivers but these are gated by CONFIG_ENTROPY_GENERATOR which
+	# is disabled by default.
+	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_AVAILABLE
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	bool "Use a cryptographically secure driver as random source"
+	select ENTROPY_GENERATOR
 	help
 	  Use a cryptographically secure random generator to provide random data
 	  instead of legacy Mbed TLS modules. This has a smaller footprint
@@ -501,6 +507,10 @@ config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
 	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
+	# If there is any entropy driver in the system, then the choice would be
+	# CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. If we fall here, then the only
+	# way to get some random data is to enable CONFIG_TEST_RANDOM_GENERATOR.
+	select TEST_RANDOM_GENERATOR
 	help
 	  Use legacy Mbed TLS modules to generate random data. In this
 	  configuration the entropy module is used to gather some data and then

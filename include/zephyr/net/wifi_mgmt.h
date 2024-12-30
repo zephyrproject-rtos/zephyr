@@ -75,6 +75,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_ENABLE,
 	/** Disable AP mode */
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
+	/** Set AP RTS threshold */
+	NET_REQUEST_WIFI_CMD_AP_RTS_THRESHOLD,
 	/** Get interface status */
 	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
 	/** Set or get 11k status */
@@ -167,6 +169,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_DISABLE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE);
+
+/** Request a Wi-Fi RTS threshold */
+#define NET_REQUEST_WIFI_AP_RTS_THRESHOLD				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_RTS_THRESHOLD)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_RTS_THRESHOLD);
 
 /** Request a Wi-Fi network interface status */
 #define NET_REQUEST_WIFI_IFACE_STATUS				\
@@ -1261,6 +1269,15 @@ enum wifi_sap_iface_state {
 	WIFI_SAP_IFACE_ENABLED
 };
 
+/* Extended Capabilities */
+enum wifi_ext_capab {
+	WIFI_EXT_CAPAB_20_40_COEX = 0,
+	WIFI_EXT_CAPAB_GLK = 1,
+	WIFI_EXT_CAPAB_EXT_CHAN_SWITCH = 2,
+	WIFI_EXT_CAPAB_TIM_BROADCAST = 18,
+	WIFI_EXT_CAPAB_BSS_TRANSITION = 19,
+};
+
 #include <zephyr/net/net_if.h>
 
 /** Scan result callback
@@ -1454,6 +1471,23 @@ struct wifi_mgmt_ops {
 	 */
 	int (*btm_query)(const struct device *dev, uint8_t reason);
 #endif
+	/** Judge ap whether support the capability
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param capab is the capability to judge
+	 *
+	 * @return 1 if support, 0 if not support
+	 */
+	int (*bss_ext_capab)(const struct device *dev, int capab);
+
+	/** Send legacy scan
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*legacy_roam)(const struct device *dev);
+
 	/** Get Version of WiFi driver and Firmware
 	 *
 	 * The driver that implements the get_version function must not use stack to allocate the

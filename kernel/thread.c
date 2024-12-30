@@ -236,6 +236,7 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 	} state_string[] = {
 		SS_ENT(DUMMY),
 		SS_ENT(PENDING),
+		SS_ENT(SLEEPING),
 		SS_ENT(DEAD),
 		SS_ENT(SUSPENDED),
 		SS_ENT(ABORTING),
@@ -542,7 +543,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_waitq_init(&new_thread->join_queue);
 
 	/* Initialize various struct k_thread members */
-	z_init_thread_base(&new_thread->base, prio, _THREAD_SUSPENDED, options);
+	z_init_thread_base(&new_thread->base, prio, _THREAD_SLEEPING, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
 #ifdef CONFIG_KERNEL_COHERENCE

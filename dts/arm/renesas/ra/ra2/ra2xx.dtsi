@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
 #include <freq.h>
 
 / {
@@ -225,6 +226,20 @@
 			status = "disabled";
 		};
 
+		iic0: iic0@40053000 {
+			compatible = "renesas,ra-iic";
+			channel = <0>;
+			reg = <0x40053000 0x100>;
+			status = "disabled";
+		};
+
+		iic1: iic1@40053100 {
+			compatible = "renesas,ra-iic";
+			channel = <1>;
+			reg = <0x40053100 0x100>;
+			status = "disabled";
+		};
+
 		flash-controller@407e0000 {
 			reg = <0x407e0000 0x10000>;
 			#address-cells = <1>;
@@ -266,6 +281,88 @@
 			reg = <0x01010018 0x20>;
 			zephyr,memory-region = "ID_CODE";
 			status = "okay";
+		};
+
+		port_irq0: external-interrupt@40006000 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006000 0x1>;
+			channel = <0>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq1: external-interrupt@40006001 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006001 0x1>;
+			channel = <1>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq2: external-interrupt@40006002 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006002 0x1>;
+			channel = <2>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq3: external-interrupt@40006003 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006003 0x1>;
+			channel = <3>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq4: external-interrupt@40006004 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006004 0x1>;
+			channel = <4>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq5: external-interrupt@40006005 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006005 0x1>;
+			channel = <5>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq6: external-interrupt@40006006 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006006 0x1>;
+			channel = <6>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq7: external-interrupt@40006007 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006007 0x1>;
+			channel = <7>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		pwm0: pwm0@40078000 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_0>;
+			clocks = <&pclkd MSTPD 5>;
+			reg = <0x40078000 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 	};
 };

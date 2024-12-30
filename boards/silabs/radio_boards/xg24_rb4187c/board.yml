@@ -1,5 +1,6 @@
-boards:
-  - name: xg24_rb4187c
-    full_name: EFR32xG24 2.4 GHz 20 dBm (xG24-RB4187C)
-    socs:
-      - name: efr32mg24b220f1536im48
+board:
+  name: xg24_rb4187c
+  full_name: EFR32xG24 2.4 GHz 20 dBm (xG24-RB4187C)
+  vendor: silabs
+  socs:
+    - name: efr32mg24b220f1536im48

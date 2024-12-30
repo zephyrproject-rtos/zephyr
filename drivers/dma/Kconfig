@@ -72,6 +72,8 @@ source "drivers/dma/Kconfig.sedi"
 
 source "drivers/dma/Kconfig.si32"
 
+source "drivers/dma/Kconfig.silabs"
+
 source "drivers/dma/Kconfig.smartbond"
 
 source "drivers/dma/Kconfig.nxp_sof_host_dma"
@@ -82,5 +84,7 @@ source "drivers/dma/Kconfig.nxp_edma"
 
 source "drivers/dma/Kconfig.dw_axi_dmac"
 source "drivers/dma/Kconfig.xilinx_axi_dma"
+
+source "drivers/dma/Kconfig.nxp_sdma"
 
 endif # DMA

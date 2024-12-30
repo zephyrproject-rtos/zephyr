@@ -204,7 +204,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	return i2c_nrfx_twim_common_init(dev);
 }
 
-static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
+static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 	.configure = i2c_nrfx_twim_configure,
 	.transfer = i2c_nrfx_twim_transfer,
 #ifdef CONFIG_I2C_RTIO
@@ -258,7 +258,8 @@ static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
 		.max_transfer_size = BIT_MASK(				       \
 				DT_PROP(I2C(idx), easydma_maxcnt_bits)),       \
 	};								       \
-	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action);		       \
+	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action,                     \
+			PM_DEVICE_ISR_SAFE);                                   \
 	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
 		      i2c_nrfx_twim_init,				       \
 		      PM_DEVICE_DT_GET(I2C(idx)),			       \

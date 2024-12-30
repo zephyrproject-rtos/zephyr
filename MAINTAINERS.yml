@@ -1787,7 +1787,6 @@ Release Notes:
   maintainers:
     - simonguinot
   collaborators:
-    - mbolivar-ampere
     - soburi
     - thedjnK
   files:
@@ -2037,6 +2036,7 @@ Release Notes:
     - tristan-google
     - ubieda
     - jeppenodgaard
+    - asemjonovs
   files:
     - drivers/sensor/
     - include/zephyr/drivers/sensor.h
@@ -4026,6 +4026,7 @@ STM32 Platforms:
     - GeorgeCGV
     - marwaiehm-st
     - mathieuchopstm
+    - djiatsaf-st
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -4513,12 +4514,13 @@ VFS:
     - filesystem
 
 West:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - pdgendt
   collaborators:
-    - mbolivar-ampere
+    - mbolivar
     - carlescufi
     - swinslow
-    - pdgendt
   files:
     - scripts/west-commands.yml
     - scripts/west_commands/
@@ -4954,6 +4956,17 @@ West:
     - modules/Kconfig.stm32
   labels:
     - "platform: STM32"
+
+"West project: hal_tdk":
+  status: maintained
+  maintainers:
+    - afontaine-invn
+  collaborators:
+    - rbuisson-invn
+    - gjabouley-invn
+    - sriccardi-invn
+  files:
+    - modules/hal_tdk/Kconfig
 
 "West project: hal_telink":
   status: maintained

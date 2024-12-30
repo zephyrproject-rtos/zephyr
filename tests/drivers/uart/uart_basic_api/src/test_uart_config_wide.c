@@ -26,7 +26,7 @@
 
 #include "test_uart.h"
 const struct uart_config uart_cfg_wide = {
-		.baudrate = 115200,
+		.baudrate = DT_PROP_OR(DT_NODELABEL(dut), current_speed, 115200),
 		.parity = UART_CFG_PARITY_NONE,
 		.stop_bits = UART_CFG_STOP_BITS_1,
 		.data_bits = UART_CFG_DATA_BITS_9,

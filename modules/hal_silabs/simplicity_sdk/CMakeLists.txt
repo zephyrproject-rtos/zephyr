@@ -27,11 +27,13 @@ string(SUBSTRING ${CONFIG_SOC_SERIES} 7 2 SILABS_DEVICE_FAMILY_NUMBER)
 set(SILABS_DEVICE_PART_NUMBER ${CONFIG_SOC_PART_NUMBER})
 
 function(add_prebuilt_library lib_name prebuilt_path)
-  add_library(${lib_name} STATIC IMPORTED GLOBAL)
-  set_target_properties(${lib_name} PROPERTIES
-    IMPORTED_LOCATION ${BLOBS_DIR}/${prebuilt_path}
-  )
-  zephyr_link_libraries(${lib_name})
+  if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+    add_library(${lib_name} STATIC IMPORTED GLOBAL)
+    set_target_properties(${lib_name} PROPERTIES
+      IMPORTED_LOCATION ${BLOBS_DIR}/${prebuilt_path}
+    )
+    zephyr_link_libraries(${lib_name})
+  endif()
 endfunction()
 
 if(CONFIG_SOC_GECKO_HAS_RADIO)
@@ -196,6 +198,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_I2C          ${EMLIB_DIR}/src/em_i
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LETIMER      ${EMLIB_DIR}/src/em_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LEUART       ${EMLIB_DIR}/src/em_leuart.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_MSC          ${EMLIB_DIR}/src/em_msc.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMLIB_DIR}/src/em_ldma.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_PRS          ${EMLIB_DIR}/src/em_prs.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RMU          ${EMLIB_DIR}/src/em_rmu.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTC          ${EMLIB_DIR}/src/em_rtc.c)
@@ -222,3 +225,8 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE
 )
 
 zephyr_library_sources(src/sl_memory_manager_shim.c)
+
+zephyr_library_sources_ifdef(
+  CONFIG_BUILD_ONLY_NO_BLOBS
+  src/blob_stubs.c
+)

@@ -94,19 +94,33 @@ Bluetooth
 
 * HCI Drivers
 
+* Mesh
+
+  * Introduced a :c:member:`bt_mesh_health_cli::update` callback which is used to update the message
+    published periodically.
+
 Boards & SoC Support
 ********************
 
 * Added support for these SoC series:
 
+  * Added Raspberry Pi RP2350
+
 * Made these changes in other SoC series:
 
 * Added support for these boards:
+
+   * :zephyr:board:`Raspberry Pi Pico 2 <rpi_pico2>`: ``rpi_pico2``
+   * :zephyr:board:`Adafruit QT Py ESP32-S3 <adafruit_qt_py_esp32s3>`: ``adafruit_qt_py_esp32s3``
 
 * Made these board changes:
 
   * All HWMv1 board name aliases which were added as deprecated in v3.7 are now removed
     (:github:`82247`).
+  * ``mimxrt1050_evk`` and ``mimxrt1060_evk`` revisions for ``qspi`` and ``hyperflash`` have been
+    converted into variants. ``mimxrt1060_evkb`` has been converted into revision ``B`` of
+    ``mimxrt1060_evk``.
+  * Enabled USB, RTC on NXP ``frdm_mcxn236``
 
 * Added support for the following shields:
 
@@ -230,7 +244,8 @@ Drivers and Sensors
 
 * Stepper
 
-  * Added driver for ADI TMC2209. :dtcompatible:`adi,tmc2209`
+  * Added driver for ADI TMC2209. :dtcompatible:`adi,tmc2209`.
+  * Added driver for TI DRV8424. :dtcompatible:`ti,drv8424`.
   * Added :kconfig:option:`CONFIG_STEP_DIR_STEPPER` to enable common functions for step/dir steppers.
 
 * USB
@@ -359,6 +374,10 @@ Libraries / Subsystems
 * State Machine Framework
 
 * Storage
+
+  * Shell: :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND` was added,
+    allowing the mount subcommand to be optionally disabled. This can reduce
+    flash and RAM usage since it requires the heap to be present.
 
 * Task Watchdog
 

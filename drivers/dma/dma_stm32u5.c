@@ -707,7 +707,7 @@ static int dma_stm32_get_status(const struct device *dev,
 	return 0;
 }
 
-static const struct dma_driver_api dma_funcs = {
+static DEVICE_API(dma, dma_funcs) = {
 	.reload		 = dma_stm32_reload,
 	.config		 = dma_stm32_configure,
 	.start		 = dma_stm32_start,

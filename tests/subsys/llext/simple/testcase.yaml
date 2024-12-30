@@ -13,6 +13,7 @@ common:
     - qemu_cortex_r5          # ARM Cortex-R5 (ARMv7-R ISA)
     - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
     - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
+  filter: not CONFIG_HARVARD
   extra_configs:
     - arch:arm64:CONFIG_LLEXT_HEAP_SIZE=128
   extra_conf_files:

@@ -117,6 +117,18 @@
 				reg = <0xa>;
 				#io-channel-cells = <1>;
 			};
+
+			test_i2c_tla2022: tla2022@b {
+				compatible = "ti,tla2022";
+				reg = <0xb>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_tla2024: tla2024@c {
+				compatible = "ti,tla2024";
+				reg = <0xc>;
+				#io-channel-cells = <1>;
+			};
 		};
 
 		test_spi: spi@33334444 {
@@ -129,6 +141,7 @@
 
 			/* one entry for every devices at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
@@ -349,6 +362,14 @@
 					compatible = "adi,ad559x-adc";
 					#io-channel-cells = <1>;
 				};
+			};
+
+			test_spi_ads131m02: ads131m02@17 {
+				compatible = "ti,ads131m02";
+				reg = <0x17>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				drdy-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};

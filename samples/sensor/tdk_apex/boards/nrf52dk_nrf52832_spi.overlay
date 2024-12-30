@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2024, TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Get a node identifier for TDK IMU sensor supporting APEX feature.
+ */
+/ {
+	aliases {
+		tdk-apex-sensor0 = &icm42670p;
+	};
+};
+
+/*
+ * Example configuration of a ICM42670-P device on spi2 compatible with an Arduino SPI bus.
+ */
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+	icm42670p: icm42670p@0 {
+		compatible = "invensense,icm42670p";
+		reg = <0>;
+		spi-max-frequency = <1000000>; /* conservatively set to 1MHz */
+		int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>; /* D2 */
+		accel-hz = <50>;
+		gyro-hz = <50>;
+		accel-fs = <16>;
+		gyro-fs = <2000>;
+		apex = "pedometer";
+	};
+};

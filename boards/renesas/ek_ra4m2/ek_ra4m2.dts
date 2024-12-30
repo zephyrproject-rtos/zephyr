@@ -7,6 +7,8 @@
 
 #include <renesas/ra/ra4/r7fa4m2ad3cfp.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra4m2-pinctrl.dtsi"
 
 / {
@@ -36,8 +38,24 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: s2 {
+			gpios = <&ioport0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
 	};
 };
 
@@ -69,6 +87,10 @@
 	};
 };
 
+&ioport0 {
+	status = "okay";
+};
+
 &ioport4 {
 	status = "okay";
 };
@@ -76,5 +98,40 @@
 &spi0 {
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&port_irq10 {
+	interrupts = <41 12>;
+	status = "okay";
+};
+
+&port_irq11 {
+	interrupts = <42 12>;
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <63 1>, <64 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&iic0 {
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <87 1>, <88 1>, <89 1>, <90 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 };

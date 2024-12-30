@@ -17,11 +17,13 @@ zephyr_library_sources(
 # headers for different SoCs.
 set(dt_binding_includes ${DTS_INCLUDE_FILES})
 list(FILTER dt_binding_includes INCLUDE REGEX "/dt-bindings/.*\.h$")
-list(TRANSFORM dt_binding_includes PREPEND "-include;")
+
+set(include_flag $<TARGET_PROPERTY:compiler,include_file>$<SEMICOLON>)
+
 set_source_files_properties(
   validate_binding_headers.c
   DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  PROPERTIES COMPILE_OPTIONS "${dt_binding_includes}"
+  PROPERTIES COMPILE_OPTIONS "${include_flag}$<JOIN:${dt_binding_includes},;${include_flag}>"
 )
 
 if(CONFIG_SOC_HAS_TIMING_FUNCTIONS AND NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)

@@ -207,8 +207,7 @@ typedef int16_t device_handle_t;
 			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,    \
 			level, prio, api,                                      \
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),     \
-			__VA_ARGS__)                                           \
-	IF_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES, (Z_DEVICE_EXPORT(node_id);))
+			__VA_ARGS__)
 
 /**
  * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
@@ -1172,12 +1171,15 @@ device_get_dt_nodelabels(const struct device *dev)
 			      (Z_DEVICE_DT_METADATA_DEFINE(node_id, dev_id);))))\
                                                                                 \
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,    \
-		prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));                   \
+		prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));                  \
 	COND_CODE_1(DEVICE_DT_DEFER(node_id),                                   \
 		    (Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id,          \
 						      init_fn)),                \
 		    (Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn,       \
-						level, prio)));
+						level, prio)));                 \
+	IF_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES,                                 \
+		(IF_ENABLED(DT_NODE_EXISTS(node_id),                            \
+				(Z_DEVICE_EXPORT(node_id);))))
 
 /**
  * @brief Declare a device for each status "okay" devicetree node.

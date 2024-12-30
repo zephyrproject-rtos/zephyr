@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+
 #include <zephyr/settings/settings.h>
 
 /* Max settings key length (with all components) */
@@ -20,6 +25,9 @@
 int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, const void *value,
 		      size_t val_len);
 int bt_settings_delete(const char *key, uint8_t id, const bt_addr_le_t *addr);
+
+void bt_testing_settings_store_hook(const char *key, const void *value, size_t val_len);
+void bt_testing_settings_delete_hook(const char *key);
 
 /* Helpers for keys containing a bdaddr */
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,

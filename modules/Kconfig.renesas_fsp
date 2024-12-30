@@ -73,6 +73,13 @@ config HAS_RENESAS_RA_SCE5
 	help
 	  Includes SCE5 implementation for SCE driver
 
+config HAS_RENESAS_RA_TRNG
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_TRNG_ENABLED
+	help
+	  Includes TRNG implementation for SCE driver
+
 endif
 
 config USE_RA_FSP_SPI_B
@@ -114,6 +121,26 @@ config USE_RA_FSP_USB_DEVICE
 	bool
 	help
 	  Enable RA FSP USB Device Controller driver
+
+config USE_RA_FSP_SDRAM
+	bool
+	help
+	  Enable RA FSP SDRAM support
+
+config USE_RA_FSP_DISPLAY
+	bool
+	help
+	  Enable RA FSP Display driver
+
+config USE_RA_FSP_MIPI_DSI
+	bool
+	help
+	  Enable RA FSP MIPI DSI driver
+
+config USE_RA_FSP_SDHI
+	bool
+	help
+	  Enable RA FSP SDHI driver
 
 endif # HAS_RENESAS_RA_FSP
 

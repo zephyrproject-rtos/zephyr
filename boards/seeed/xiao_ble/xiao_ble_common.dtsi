@@ -12,11 +12,6 @@
 
 / {
 	chosen {
-		zephyr,console = &usb_cdc_acm_uart;
-		zephyr,shell-uart = &usb_cdc_acm_uart;
-		zephyr,uart-mcumgr = &usb_cdc_acm_uart;
-		zephyr,bt-mon-uart = &usb_cdc_acm_uart;
-		zephyr,bt-c2h-uart = &usb_cdc_acm_uart;
 		zephyr,ieee802154 = &ieee802154;
 	};
 
@@ -146,8 +141,6 @@
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
-
-	usb_cdc_acm_uart: cdc-acm-uart {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>

@@ -182,10 +182,14 @@
 		};
 
 		hsfll120: hsfll120 {
-			compatible = "fixed-clock";
+			compatible = "nordic,nrf-hsfll-global";
 			clocks = <&fll16m>;
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_M(320)>;
+			clock-frequency = <320000000>;
+			supported-clock-frequencies = <64000000
+						       128000000
+						       256000000
+						       320000000>;
 		};
 
 		lfclk: lfclk {
@@ -220,7 +224,15 @@
 		cpuapp_uicr: uicr@fff8000 {
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xfff8000 DT_SIZE_K(2)>;
 			domain = <2>;
+
+			bicr: bicr@7b0 {
+				compatible = "nordic,nrf-bicr";
+				reg = <0x7b0 48>;
+			};
 		};
 
 		cpurad_uicr: uicr@fffa000 {
@@ -257,7 +269,7 @@
 			ranges = <0x0 0x52000000 0x1000000>;
 
 			cpuapp_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -311,7 +323,7 @@
 			ranges = <0x0 0x53000000 0x1000000>;
 
 			cpurad_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -644,6 +656,7 @@
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				easydma-maxcnt-bits = <15>;
 				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
 				max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -670,6 +683,7 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <231 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
@@ -895,6 +909,15 @@
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x991000 0x1000>;
 				status = "disabled";
+				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+			};
+
+			pdm0: pdm@993000 {
+				compatible = "nordic,nrf-pdm";
+				reg = <0x993000 0x1000>;
+				status = "disabled";
+				interrupts = <403 NRF_DEFAULT_IRQ_PRIORITY>;
+				nordic,clockpin-enable = <NRF_FUN_PDM_CLK>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
 			};
 

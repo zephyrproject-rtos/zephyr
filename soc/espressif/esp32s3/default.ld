@@ -68,7 +68,10 @@ MEMORY
    * A dummy section is used to avoid overlap. See `.ext_ram.dummy` in `sections.ld.in`
    */
 #if defined(CONFIG_ESP_SPIRAM)
-  ext_ram_seg(RWX): org = DROM_SEG_ORG, len = CONFIG_ESP_SPIRAM_SIZE - 0x40
+  /* `ext_[id]ram_seg` and `drom0_0_seg` share the same bus and the address region.
+   * A dummy section is used to avoid overlap. See `.ext_ram.dummy` */
+  ext_dram_seg(RW): org = DROM_SEG_ORG, len = (CONFIG_ESP_SPIRAM_SIZE)
+  ext_iram_seg(RX): org = IROM_SEG_ORG, len = (CONFIG_ESP_SPIRAM_SIZE)
 #endif
 
   /* RTC fast memory (executable). Persists over deep sleep.
@@ -702,6 +705,31 @@ SECTIONS
     _data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+  .dram0.noinit (NOLOAD):
+  {
+    . = ALIGN(4);
+    __dram_noinit_start = ABSOLUTE(.);
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit)
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit.*)
+#else
+    *(.noinit)
+    *(.noinit.*)
+#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+    __dram_noinit_end = ABSOLUTE(.);
+    . = ALIGN(4) ;
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
@@ -732,14 +760,6 @@ SECTIONS
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
     __bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(RAMABLE_REGION)
-
-  .dram0.noinit (NOLOAD):
-  {
-    . = ALIGN(4);
-    *(.noinit)
-    *(.noinit.*)
-    . = ALIGN(4) ;
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
@@ -823,7 +843,7 @@ SECTIONS
 
   .flash.rodata : ALIGN(CACHE_ALIGN)
   {
-    _flash_rodata_start = ABSOLUTE(.);
+    _image_rodata_start = ABSOLUTE(.);
     _rodata_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata start, this can be used for mmu driver to maintain virtual address */
     _rodata_start = ABSOLUTE(.);
     __rodata_region_start = ABSOLUTE(.);
@@ -898,25 +918,41 @@ SECTIONS
    */
 #if defined(CONFIG_ESP_SPIRAM)
 
+  /* This section is required to skip flash rodata sections, because `ext_[id]ram_seg`
+   * and `drom0_0_seg` are on the same bus */
   .ext_ram.dummy (NOLOAD):
   {
-    . = ORIGIN(ext_ram_seg) + (_rodata_reserved_end - _flash_rodata_dummy_start);
+    . = ADDR(.flash.rodata_end) - ORIGIN(ext_dram_seg);
     . = ALIGN (CACHE_ALIGN);
-  } GROUP_LINK_IN(ext_ram_seg)
+  } GROUP_LINK_IN(ext_dram_seg)
 
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
   .ext_ram.bss (NOLOAD) :
   {
+    _ext_ram_start = ABSOLUTE(.);
+    _ext_ram_noinit_start = ABSOLUTE(.);
+
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
+    *libdrivers__wifi.a:(.noinit .noinit.*)
+    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
+    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
+    *libsubsys__net__ip.a:(.noinit .noinit.*)
+    *libsubsys__net.a:(.noinit .noinit.*)
+#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+    . = ALIGN(16);
+    _ext_ram_noinit_end = ABSOLUTE(.);
+
     _ext_ram_bss_start = ABSOLUTE(.);
     *(.ext_ram.bss*)
-    . = ALIGN(4);
+    . = ALIGN(16);
+    _ext_ram_bss_end = ABSOLUTE(.);
 
     _spiram_heap_start = ABSOLUTE(.);
     . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE - (_spiram_heap_start - _ext_ram_bss_start);
     . = ALIGN(4);
 
-    _ext_ram_bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(ext_ram_seg)
+    _ext_ram_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(ext_dram_seg)
 
 #endif /* CONFIG_ESP_SPIRAM */
 
@@ -967,7 +1003,13 @@ SECTIONS
 
   /* --- XTENSA GLUE AND DEBUG END --- */
 
+ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+          "IRAM0 segment data does not fit.")
+
+ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+          "DRAM segment data does not fit.")
+
 #if defined(CONFIG_ESP_SPIRAM)
-ASSERT(((_ext_ram_bss_end - _ext_ram_bss_start) <= CONFIG_ESP_SPIRAM_SIZE),
+ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_ESP_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
 #endif

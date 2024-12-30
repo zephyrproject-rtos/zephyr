@@ -234,7 +234,7 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(rfcomm_cmds,
-	SHELL_CMD_ARG(register, NULL, "<channel>", cmd_register, 2, 0),
+	SHELL_CMD_ARG(register, NULL, HELP_NONE, cmd_register, 1, 0),
 	SHELL_CMD_ARG(connect, NULL, "<channel>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(send, NULL, "<number of packets>", cmd_send, 2, 0),

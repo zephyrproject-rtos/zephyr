@@ -42,9 +42,10 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
       - mimxrt1040_evk
-      - mimxrt1060_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
       - frdm_ke17z512
       - frdm_mcxn236
+      - frdm_mcxa156
       - max32655evkit/max32655/m4
       - max32662evkit
       - max32666evkit/max32666/cpu0

@@ -680,10 +680,27 @@ SECTIONS
 
   .dram0.noinit (NOLOAD) :
   {
-    . = ALIGN (8);
+    . = ALIGN (4);
+    __dram_noinit_start = ABSOLUTE(.);
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit)
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit.*)
+#else
     *(.noinit)
     *(.noinit.*)
-    . = ALIGN (8);
+#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+    __dram_noinit_end = ABSOLUTE(.);
+    . = ALIGN (4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
@@ -700,7 +717,8 @@ SECTIONS
 #ifdef CONFIG_ESP_SPIRAM
   .ext_ram.bss (NOLOAD):
   {
-    _ext_ram_data_start = ABSOLUTE(.);
+    _ext_ram_start = ABSOLUTE(.);
+    _ext_ram_noinit_start = ABSOLUTE(.);
 
 #ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
     *libdrivers__wifi.a:(.noinit .noinit.*)
@@ -709,14 +727,19 @@ SECTIONS
     *libsubsys__net__ip.a:(.noinit .noinit.*)
     *libsubsys__net.a:(.noinit .noinit.*)
 #endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+    . = ALIGN(16);
+    _ext_ram_noinit_end = ABSOLUTE(.);
 
     _ext_ram_bss_start = ABSOLUTE(.);
     *(.ext_ram.bss*)
+    . = ALIGN(16);
     _ext_ram_bss_end = ABSOLUTE(.);
+
     _spiram_heap_start = ABSOLUTE(.);
     . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . = ALIGN(4);
 
-    _ext_ram_data_end = ABSOLUTE(.);
+    _ext_ram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(ext_ram_seg)
 #endif /* CONFIG_ESP_SPIRAM */
 
@@ -900,6 +923,6 @@ SECTIONS
   /* --- XTENSA GLUE AND DEBUG END --- */
 
 #ifdef CONFIG_ESP_SPIRAM
-ASSERT(((_ext_ram_data_end - _ext_ram_data_start) <= CONFIG_ESP_SPIRAM_SIZE),
+ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_ESP_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
 #endif /* CONFIG_ESP_SPIRAM */

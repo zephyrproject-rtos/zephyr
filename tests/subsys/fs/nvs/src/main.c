@@ -959,3 +959,40 @@ ZTEST_F(nvs, test_nvs_cache_hash_quality)
 
 #endif
 }
+
+/*
+ * Test NVS bad region initialization recovery.
+ */
+ZTEST_F(nvs, test_nvs_init_bad_memory_region)
+{
+	int err;
+	uint32_t data;
+
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Write bad ATE to each sector */
+	for (uint16_t i = 0; i < TEST_SECTOR_COUNT; i++) {
+		data = 0xdeadbeef;
+		err = flash_write(fixture->fs.flash_device,
+				  fixture->fs.offset + (fixture->fs.sector_size * (i + 1)) -
+					  sizeof(struct nvs_ate),
+				  &data, sizeof(data));
+		zassert_true(err == 0, "flash_write failed: %d", err);
+	}
+
+	/* Reinitialize the NVS. */
+	memset(&fixture->fs, 0, sizeof(fixture->fs));
+	(void)setup();
+
+#ifdef CONFIG_NVS_INIT_BAD_MEMORY_REGION
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Ensure that the NVS is able to store new content. */
+	execute_long_pattern_write(TEST_DATA_ID, &fixture->fs);
+#else
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == -EDEADLK, "nvs_mount call ok, expect fail: %d", err);
+#endif
+}

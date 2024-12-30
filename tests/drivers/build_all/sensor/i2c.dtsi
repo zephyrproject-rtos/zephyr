@@ -1041,8 +1041,8 @@ test_i2c_lsm9ds1: lsm9ds1@92 {
 	reg = <0x92>;
 };
 
-test_i2c_icm42670: icm42670@93 {
-	compatible = "invensense,icm42670";
+test_i2c_icm42670p: icm42670p@93 {
+	compatible = "invensense,icm42670p";
 	reg = <0x93>;
 	int-gpios = <&test_gpio 0 0>;
 	accel-hz = <800>;
@@ -1184,4 +1184,20 @@ test_i2c_lsm6dso32: lsm6dso32@a5 {
 	gyro-pm = <LSM6DSO_DT_GY_NORMAL_MODE>;
 	gyro-range = <LSM6DSO_DT_FS_2000DPS>;
 	gyro-odr = <LSM6DSO_DT_ODR_6667Hz>;
+};
+
+test_i2c_hs400x: hs400x@a6 {
+	compatible = "renesas,hs400x";
+	reg = <0xa6>;
+};
+
+test_i2c_lis2duxs12: lis2duxs12@a7 {
+	compatible = "st,lis2duxs12";
+	reg = <0xa7>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <LIS2DUX12_DT_FS_16G>;
+	odr = <LIS2DUX12_DT_ODR_100Hz>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
+	status = "okay";
 };

@@ -47,14 +47,14 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(xlnx_xps_timer_1_00_a_pwm)
 #define PWM_DEV_NODE DT_INST(0, xlnx_xps_timer_1_00_a_pwm)
 
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_ftm_pwm)
-#define PWM_DEV_NODE DT_INST(0, nxp_kinetis_ftm_pwm)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_ftm_pwm)
+#define PWM_DEV_NODE DT_INST(0, nxp_ftm_pwm)
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
 #define PWM_DEV_NODE DT_INST(0, intel_blinky_pwm)
 
-#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra8_pwm)
-#define PWM_DEV_NODE DT_INST(0, renesas_ra8_pwm)
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_pwm)
+#define PWM_DEV_NODE DT_INST(0, renesas_ra_pwm)
 
 #else
 #error "Define a PWM device"

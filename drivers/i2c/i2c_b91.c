@@ -147,7 +147,7 @@ static int i2c_b91_init(const struct device *dev)
 }
 
 /* I2C driver APIs structure */
-static const struct i2c_driver_api i2c_b91_api = {
+static DEVICE_API(i2c, i2c_b91_api) = {
 	.configure = i2c_b91_configure,
 	.transfer = i2c_b91_transfer,
 #ifdef CONFIG_I2C_RTIO

@@ -112,6 +112,7 @@ target_compile_options(test_interface INTERFACE
   ${EXTRA_CFLAGS_AS_LIST}
   $<$<COMPILE_LANGUAGE:CXX>:${EXTRA_CXXFLAGS_AS_LIST}>
   $<$<COMPILE_LANGUAGE:ASM>:${EXTRA_AFLAGS_AS_LIST}>
+  -Wno-format-zero-length
   )
 
 target_link_options(testbinary PRIVATE
@@ -128,6 +129,10 @@ if(CONFIG_COVERAGE)
   target_compile_options(test_interface INTERFACE $<TARGET_PROPERTY:compiler,coverage>)
 
   target_link_libraries(testbinary PRIVATE $<TARGET_PROPERTY:linker,coverage>)
+endif()
+
+if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+  target_compile_options(test_interface INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
 endif()
 
 if(LIBS)

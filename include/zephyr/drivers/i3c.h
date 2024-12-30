@@ -29,6 +29,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/rtio/rtio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -867,6 +868,21 @@ __subsystem struct i3c_driver_api {
 	 */
 	int (*target_tx_write)(const struct device *dev,
 				 uint8_t *buf, uint16_t len, uint8_t hdr_mode);
+
+#ifdef CONFIG_I3C_RTIO
+	/**
+	 * RTIO
+	 *
+	 * @see i3c_iodev_submit()
+	 *
+	 * @param dev Pointer to the controller device driver instance.
+	 * @param iodev_sqe Pointer to the
+	 *
+	 * @return See i3c_iodev_submit()
+	 */
+	void (*iodev_submit)(const struct device *dev,
+				 struct rtio_iodev_sqe *iodev_sqe);
+#endif
 };
 
 /**
@@ -2129,6 +2145,80 @@ bool i3c_bus_has_sec_controller(const struct device *dev);
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_deftgts(const struct device *dev);
+
+#if defined(CONFIG_I3C_RTIO) || defined(__DOXYGEN__)
+
+struct i3c_iodev_data {
+	const struct device *bus;
+	const struct i3c_device_id dev_id;
+};
+
+/**
+ * @brief Fallback submit implementation
+ *
+ * This implementation will schedule a blocking I3C transaction on the bus via the RTIO work
+ * queue. It is only used if the I3C driver did not implement the iodev_submit function.
+ *
+ * @param dev Pointer to the device structure for an I3C controller driver.
+ * @param iodev_sqe Prepared submissions queue entry connected to an iodev
+ *                  defined by I3C_DT_IODEV_DEFINE.
+ */
+void i3c_iodev_submit_fallback(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+/**
+ * @brief Submit request(s) to an I3C device with RTIO
+ *
+ * @param iodev_sqe Prepared submissions queue entry connected to an iodev
+ *                  defined by I3C_DT_IODEV_DEFINE.
+ */
+static inline void i3c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct i3c_iodev_data *data =
+		(const struct i3c_iodev_data *)iodev_sqe->sqe.iodev->data;
+	const struct i3c_driver_api *api = (const struct i3c_driver_api *)data->bus->api;
+
+	if (api->iodev_submit == NULL) {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOSYS);
+		return;
+	}
+	api->iodev_submit(data->bus, iodev_sqe);
+}
+
+extern const struct rtio_iodev_api i3c_iodev_api;
+
+/**
+ * @brief Define an iodev for a given dt node on the bus
+ *
+ * These do not need to be shared globally but doing so
+ * will save a small amount of memory.
+ *
+ * @param name Symbolic name of the iodev to define
+ * @param node_id Devicetree node identifier
+ */
+#define I3C_DT_IODEV_DEFINE(name, node_id)					\
+	const struct i3c_iodev_data _i3c_iodev_data_##name = {			\
+		.bus = DEVICE_DT_GET(DT_BUS(node_id)),				\
+		.dev_id = I3C_DEVICE_ID_DT(node_id),				\
+	};									\
+	RTIO_IODEV_DEFINE(name, &i3c_iodev_api, (void *)&_i3c_iodev_data_##name)
+
+/**
+ * @brief Copy the i3c_msgs into a set of RTIO requests
+ *
+ * @param r RTIO context
+ * @param iodev RTIO IODev to target for the submissions
+ * @param msgs Array of messages
+ * @param num_msgs Number of i3c msgs in array
+ *
+ * @retval sqe Last submission in the queue added
+ * @retval NULL Not enough memory in the context to copy the requests
+ */
+struct rtio_sqe *i3c_rtio_copy(struct rtio *r,
+			       struct rtio_iodev *iodev,
+			       const struct i3c_msg *msgs,
+			       uint8_t num_msgs);
+
+#endif /* CONFIG_I3C_RTIO */
 
 /*
  * This needs to be after declaration of struct i3c_driver_api,

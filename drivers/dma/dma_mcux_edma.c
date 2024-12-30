@@ -91,7 +91,7 @@ struct dma_mcux_channel_transfer_edma_settings {
 	/* These parameters are for cyclic mode only.
 	 * Next empty TCD idx which can be used for transfer
 	 */
-	volatile int8_t write_idx;
+	volatile uint8_t write_idx;
 	/* How many TCDs in TCD pool is emtpy(can be used to write transfer parameters) */
 	volatile uint8_t empty_tcds;
 };
@@ -613,6 +613,7 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 	edma_tcd_t *tcd = NULL;
 	edma_tcd_t *pre_tcd = NULL;
 	uint32_t hw_id, sw_id;
+	uint8_t pre_idx;
 
 	/* Lock the channel configuration */
 	const unsigned int key = irq_lock();
@@ -634,10 +635,14 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 		/* Convert size into major loop count */
 		size = size / data->transfer_settings.dest_data_size;
 
+		/* Previous TCD index in circular list */
+		pre_idx = data->transfer_settings.write_idx - 1;
+		if (pre_idx >= CONFIG_DMA_TCD_QUEUE_SIZE)
+			pre_idx = CONFIG_DMA_TCD_QUEUE_SIZE - 1;
+
 		/* Configure a TCD for the transfer */
 		tcd = &(DEV_CFG(dev)->tcdpool[channel][data->transfer_settings.write_idx]);
-		pre_tcd = &(DEV_CFG(dev)->tcdpool[channel][(data->transfer_settings.write_idx - 1) %
-							   CONFIG_DMA_TCD_QUEUE_SIZE]);
+		pre_tcd = &(DEV_CFG(dev)->tcdpool[channel][pre_idx]);
 
 		EDMA_TCD_SADDR(tcd, kEDMA_EDMA4Flag) = src;
 		EDMA_TCD_DADDR(tcd, kEDMA_EDMA4Flag) = dst;
@@ -799,7 +804,7 @@ static bool dma_mcux_edma_channel_filter(const struct device *dev,
 	return true;
 }
 
-static const struct dma_driver_api dma_mcux_edma_api = {
+static DEVICE_API(dma, dma_mcux_edma_api) = {
 	.reload = dma_mcux_edma_reload,
 	.config = dma_mcux_edma_configure,
 	.start = dma_mcux_edma_start,

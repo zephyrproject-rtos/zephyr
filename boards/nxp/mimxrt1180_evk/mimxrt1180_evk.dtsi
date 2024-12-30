@@ -144,3 +144,11 @@
 	pinctrl-0 = <&pinmux_tpm5>;
 	pinctrl-names = "default";
 };
+
+&i3c2 {
+	pinctrl-0 = <&pinmux_i3c2>;
+	pinctrl-names = "default";
+};
+
+p3t1755dp_ard_i3c_interface: &i3c2 {};
+p3t1755dp_ard_i2c_interface: &lpi2c2 {};

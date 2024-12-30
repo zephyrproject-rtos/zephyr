@@ -735,7 +735,7 @@ ZTEST(smp, test_smp_ipi)
 {
 #ifndef CONFIG_TRACE_SCHED_IPI
 	ztest_test_skip();
-#endif
+#else
 
 	TC_PRINT("cpu num=%d", arch_num_cpus());
 
@@ -755,6 +755,7 @@ ZTEST(smp, test_smp_ipi)
 				"did not receive IPI.(%d)",
 				sched_ipi_has_called);
 	}
+#endif
 }
 #endif
 

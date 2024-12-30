@@ -107,7 +107,7 @@ static const struct gpio_dt_spec empty_gpio = {.port = NULL, .pin = 0, .dt_flags
 /* wkup_pin idx starts from 1 */
 #define WKUP_PIN_CFG_DT_BY_IDX(idx) WKUP_PIN_CFG_DT(WKUP_PIN_NODE_ID_BY_IDX(idx))
 
-#define PWR_STM32_WKUP_PIN_DEF(i, _) LL_PWR_WAKEUP_PIN##i
+#define PWR_STM32_WKUP_PIN_LOOKUP_MEMBER(i, _) CONCAT(LL_PWR_WAKEUP_PIN, UTIL_INC(i))
 
 #define WKUP_PIN_CFG_DT_COMMA(wkup_pin_id) WKUP_PIN_CFG_DT(wkup_pin_id),
 
@@ -133,7 +133,9 @@ struct wkup_pin_cfg_t {
  * @brief LookUp Table to store LL_PWR_WAKEUP_PINx for each wake-up pin.
  */
 static const uint32_t table_wakeup_pins[PWR_STM32_MAX_NB_WKUP_PINS + 1] = {
-	LISTIFY(PWR_STM32_MAX_NB_WKUP_PINS, PWR_STM32_WKUP_PIN_DEF, (,))};
+	0,
+	LISTIFY(PWR_STM32_MAX_NB_WKUP_PINS, PWR_STM32_WKUP_PIN_LOOKUP_MEMBER, (,)),
+};
 
 static struct wkup_pin_dt_cfg_t wkup_pins_cfgs[] = {
 	DT_FOREACH_CHILD(STM32_PWR_NODE, WKUP_PIN_CFG_DT_COMMA)};

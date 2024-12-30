@@ -24,11 +24,11 @@ static const struct device *const flash_dev = TEST_AREA_DEVICE;
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 static const struct flash_parameters *flash_params;
-static uint32_t sector_mask;
+static uint64_t sector_mask;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 
 static int sector_mask_from_offset(const struct device *dev, off_t offset,
-				   size_t size, uint32_t *mask)
+				   size_t size, uint64_t *mask)
 {
 	struct flash_pages_info start_page, end_page;
 
@@ -67,7 +67,7 @@ static void *flash_stm32_setup(void)
 				     &sector_mask);
 	zassert_equal(rc, 0, "Cannot get sector mask");
 
-	TC_PRINT("Sector mask for offset 0x%x size 0x%x is 0x%x\n",
+	TC_PRINT("Sector mask for offset 0x%x size 0x%x is 0x%llx\n",
 	       TEST_AREA_OFFSET, EXPECTED_SIZE, sector_mask);
 
 	/* Check if region is not write protected. */
@@ -75,12 +75,13 @@ static void *flash_stm32_setup(void)
 			 (uintptr_t)NULL, &wp_status);
 	zassert_equal(rc, 0, "Cannot get write protect status");
 
-	TC_PRINT("Protected sectors: 0x%x\n", wp_status.protected_mask);
+	TC_PRINT("Protected sectors: 0x%llx\n", wp_status.protected_mask);
 
 	/* Remove protection if needed. */
 	if (wp_status.protected_mask & sector_mask) {
 		TC_PRINT("Removing write protection\n");
 		wp_request.disable_mask = sector_mask;
+		wp_request.enable_mask = 0;
 
 		rc = flash_ex_op(flash_dev, FLASH_STM32_EX_OP_SECTOR_WP,
 				 (uintptr_t)&wp_request, NULL);

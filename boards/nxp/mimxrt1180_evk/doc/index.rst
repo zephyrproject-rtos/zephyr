@@ -118,6 +118,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | tpm                                 |
 +-----------+------------+-------------------------------------+
+| I3C       | on-chip    | i3c                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1180_evk/mimxrt1180_evk_mimxrt1189_cm33_defconfig`

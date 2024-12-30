@@ -2058,6 +2058,9 @@ static void i3c_stm32_dma_rs_cb(const struct device *dma_dev, void *user_data, u
 static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 	.i2c_api.configure = i3c_stm32_i2c_configure,
 	.i2c_api.transfer = i3c_stm32_i2c_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 	.configure = i3c_stm32_configure,
 	.config_get = i3c_stm32_config_get,
 	.i3c_device_find = i3c_stm32_device_find,
@@ -2067,6 +2070,9 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 #ifdef CONFIG_I3C_USE_IBI
 	.ibi_enable = i3c_stm32_ibi_enable,
 	.ibi_disable = i3c_stm32_ibi_disable,
+#endif
+#ifdef CONFIG_I3C_RTIO
+	.iodev_submit = i3c_iodev_submit_fallback,
 #endif
 };
 

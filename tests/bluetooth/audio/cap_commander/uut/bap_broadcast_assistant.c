@@ -182,13 +182,10 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
 	struct bt_conn *conn, uint8_t src_id,
 	const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
-	struct bap_broadcast_assistant_instance *inst;
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
 	int err;
 
 	zassert_not_null(conn, "conn is NULL");
-
-	inst = inst_by_conn(conn);
 
 	zassert_equal(src_id, RANDOM_SRC_ID, "Invalid src_id");
 

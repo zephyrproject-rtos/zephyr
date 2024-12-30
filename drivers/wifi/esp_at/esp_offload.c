@@ -37,6 +37,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	struct sockaddr src;
 	struct sockaddr dst;
 	int ret;
+	int mode;
 
 	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED | EDF_AP_ENABLED)) {
 		return -ENETUNREACH;
@@ -65,11 +66,39 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 			net_addr_ntop(src.sa_family,
 				      &net_sin(&src)->sin_addr,
 				      src_addr_str, sizeof(src_addr_str));
+			/* <mode>: In the UDP Wi-Fi passthrough
+			 *
+			 * 0: After UDP data is received, the parameters <"remote host">
+			 * and <remote port> will stay unchanged (default).
+			 * 1: Only the first time that UDP data is received from an IP
+			 * address and port that are different from the initially set
+			 * value of parameters <remote host> and <remote port>, will
+			 * they be changed to the IP address and port of the device that
+			 * sends the data.
+			 * 2: Each time UDP data is received, the <"remote host"> and
+			 * <remote port> will be changed to the IP address and port of the
+			 * device that sends the data.
+			 *
+			 * When remote IP and port are both 0, it means that the socket is
+			 * being used as a server, and you need to set the connection mode
+			 * to 2.
+			 */
+			if ((net_sin(&dst)->sin_addr.s_addr == 0) &&
+			    (ntohs(net_sin(&dst)->sin_port) == 0)) {
+				mode = 2;
+				/* Port 0 is reserved and a valid port needs to be provided when
+				 * connecting.
+				 */
+				net_sin(&dst)->sin_port = 65535;
+			} else {
+				mode = 0;
+			}
+
 			snprintk(connect_msg, sizeof(connect_msg),
-				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,0,\"%s\"",
+				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,%d,\"%s\"",
 				 sock->link_id, dst_addr_str,
 				 ntohs(net_sin(&dst)->sin_port), ntohs(net_sin(&src)->sin_port),
-				 src_addr_str);
+				 mode, src_addr_str);
 		} else {
 			snprintk(connect_msg, sizeof(connect_msg),
 				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d",

@@ -92,7 +92,9 @@ static __imr void parse_module(struct sof_man_fw_header *hdr,
 		switch (mod->segment[i].flags.r.type) {
 		case SOF_MAN_SEGMENT_TEXT:
 		case SOF_MAN_SEGMENT_DATA:
-			if (mod->segment[i].flags.r.load == 0) {
+			if (mod->segment[i].flags.r.load == 0 ||
+			    mod->segment[i].v_base_addr >= L2_SRAM_BASE + L2_SRAM_SIZE ||
+			    mod->segment[i].v_base_addr < L2_SRAM_BASE) {
 				continue;
 			}
 

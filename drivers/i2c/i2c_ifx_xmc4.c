@@ -425,7 +425,7 @@ static void i2c_xmc4_isr(const struct device *dev)
 
 
 /* I2C API structure */
-static const struct i2c_driver_api i2c_xmc4_driver_api = {
+static DEVICE_API(i2c, i2c_xmc4_driver_api) = {
 	.configure = ifx_xmc4_i2c_configure,
 	.transfer = ifx_xmc4_i2c_transfer,
 	.get_config = ifx_xmc4_i2c_get_config,

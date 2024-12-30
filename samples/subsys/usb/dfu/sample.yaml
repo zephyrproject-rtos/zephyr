@@ -6,13 +6,13 @@ common:
   arch_exclude: posix
   platform_exclude:
     - mimxrt1010_evk
-    - mimxrt1050_evk@qspi
     - mimxrt1020_evk
     - mimxrt1015_evk
-    - mimxrt1060_evk
+    - mimxrt1060_evk/mimxrt1062/qspi
     - sam4l_ek
-    - mimxrt1050_evk
-    - mimxrt1060_evk@hyperflash
+    - mimxrt1050_evk/mimxrt1052/hyperflash
+    - mimxrt1050_evk/mimxrt1052/qspi
+    - mimxrt1060_evk/mimxrt1062/hyperflash
     - nucleo_f207zg
     - teensy40
     - teensy41

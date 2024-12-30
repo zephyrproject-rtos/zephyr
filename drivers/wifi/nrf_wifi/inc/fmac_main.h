@@ -142,7 +142,7 @@ void nrf_wifi_rpu_recovery_cb(void *vif_ctx,
 		unsigned int event_len);
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 #endif /* !CONFIG_NRF70_OFFLOADED_RAW_TX */
-#ifdef CONFIG_NRF_WIFI_BUILD_ONLY_MODE
+#ifdef CONFIG_BUILD_ONLY_NO_BLOBS
 inline enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 {
 	(void)rpu_ctx;
@@ -151,5 +151,5 @@ inline enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 }
 #else
 enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx);
-#endif /* CONFIG_NRF_WIFI_BUILD_ONLY_MODE */
+#endif /* CONFIG_BUILD_ONLY_NO_BLOBS */
 #endif /* __ZEPHYR_FMAC_MAIN_H__ */

@@ -1,0 +1,41 @@
+# Copyright (c) 2023 Caspar Friedrich <c.s.w.friedrich@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_TLA202X
+	bool "Texas Instruments TLA202x Low-Power ADC"
+	default y
+	depends on DT_HAS_TI_TLA2021_ENABLED \
+		|| DT_HAS_TI_TLA2022_ENABLED \
+		|| DT_HAS_TI_TLA2024_ENABLED
+	select I2C
+	select ADC_CONFIGURABLE_INPUTS if DT_HAS_TI_TLA2024_ENABLED
+	help
+	  TLA202x Cost-Optimized, Ultra-Small, 12-Bit, System-Monitoring ADCs
+
+if ADC_TLA202X
+
+config ADC_TLA202X_INIT_PRIORITY
+	int "Priority for the driver initialization"
+	default 80
+	help
+	  Fine tune the priority for the driver initialization. Make sure it's
+	  higher (-> lower priority) than I2C_INIT_PRIORITY.
+
+if ADC_ASYNC
+
+config ADC_TLA202X_ACQUISITION_THREAD_PRIORITY
+	int "Priority for the data acquisition thread"
+	default 0
+	help
+	  Execution priority for the internal data acquisition thread.
+
+config ADC_TLA202X_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the data acquisition thread"
+	default 512
+	help
+	  Stack size for the internal data acquisition thread. Requires room
+	  for I2C operations.
+
+endif # ADC_ASYNC
+
+endif # ADC_TLA202X

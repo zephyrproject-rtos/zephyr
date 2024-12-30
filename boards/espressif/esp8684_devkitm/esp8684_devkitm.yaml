@@ -12,8 +12,4 @@ supported:
   - entropy
   - pwm
   - spi
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: espressif

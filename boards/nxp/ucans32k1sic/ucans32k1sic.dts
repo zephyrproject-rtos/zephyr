@@ -150,7 +150,7 @@
 };
 
 &ftm0 {
-	compatible = "nxp,kinetis-ftm-pwm";
+	compatible = "nxp,ftm-pwm";
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
 	clock-source = "system";
@@ -160,7 +160,7 @@
 };
 
 &ftm1 {
-	compatible = "nxp,kinetis-ftm-pwm";
+	compatible = "nxp,ftm-pwm";
 	pinctrl-0 = <&ftm1_default>;
 	pinctrl-names = "default";
 	clock-source = "system";
@@ -170,7 +170,7 @@
 };
 
 &ftm2 {
-	compatible = "nxp,kinetis-ftm-pwm";
+	compatible = "nxp,ftm-pwm";
 	pinctrl-0 = <&ftm2_default>;
 	pinctrl-names = "default";
 	clock-source = "system";

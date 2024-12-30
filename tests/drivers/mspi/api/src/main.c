@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/mspi_emul.h>
 #include <zephyr/ztest.h>

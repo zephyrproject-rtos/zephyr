@@ -13,6 +13,8 @@
 #include "includes.h"
 #include "common.h"
 #include "common/defs.h"
+#include "common/ieee802_11_defs.h"
+#include "common/ieee802_11_common.h"
 #include "wpa_supplicant/config.h"
 #include "wpa_supplicant_i.h"
 #include "driver_i.h"
@@ -26,6 +28,7 @@
 #include "ap_drv_ops.h"
 #endif
 #include "supp_events.h"
+#include "wpa_supplicant/bss.h"
 
 extern struct k_sem wpa_supplicant_ready_sem;
 extern struct wpa_global *global;
@@ -823,6 +826,18 @@ out:
 }
 #endif
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+static void wpas_remove_certs(struct wpa_supplicant *wpa_s)
+{
+	wpa_config_remove_blob(wpa_s->conf, "ca_cert");
+	wpa_config_remove_blob(wpa_s->conf, "client_cert");
+	wpa_config_remove_blob(wpa_s->conf, "private_key");
+	wpa_config_remove_blob(wpa_s->conf, "ca_cert2");
+	wpa_config_remove_blob(wpa_s->conf, "client_cert2");
+	wpa_config_remove_blob(wpa_s->conf, "private_key2");
+}
+#endif
+
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				       struct wifi_connect_req_params *params,
 				       bool mode_ap)
@@ -841,6 +856,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	char phase1[128] = {0};
 	char *phase2 = NULL;
 	unsigned int index;
+
+	wpas_remove_certs(wpa_s);
 #endif
 
 	if (!wpa_cli_cmd_v("remove_network all")) {
@@ -1361,6 +1378,10 @@ out:
 #endif /* CONFIG_AP */
 		wifi_mgmt_raise_disconnect_complete_event(iface, ret);
 	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	wpas_remove_certs(wpa_s);
+#endif
 
 	if (!wpa_cli_cmd_v("remove_network all")) {
 		wpa_printf(MSG_ERROR, "Failed to remove all networks");
@@ -1944,6 +1965,41 @@ int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_thr
 	return wifi_mgmt_api->get_rts_threshold(dev, rts_threshold);
 }
 
+int supplicant_bss_ext_capab(const struct device *dev, int capab)
+{
+	struct wpa_supplicant *wpa_s;
+	int is_support = 0;
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		return 0;
+	}
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	is_support = wpa_bss_ext_capab(wpa_s->current_bss, capab);
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return is_support;
+}
+
+int supplicant_legacy_roam(const struct device *dev)
+{
+	int ret = -1;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	if (!wpa_cli_cmd_v("scan")) {
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
+}
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 int supplicant_btm_query(const struct device *dev, uint8_t reason)
 {
@@ -2275,11 +2331,11 @@ int hapd_config_network(struct hostapd_iface *iface,
 				goto out;
 			}
 
-			if (!hostapd_cli_cmd_v("set wpa_passphrase \"%s\"", params->psk)) {
+			if (!hostapd_cli_cmd_v("set wpa_passphrase %s", params->psk)) {
 				goto out;
 			}
 
-			if (!hostapd_cli_cmd_v("set sae_password \"%s\"",
+			if (!hostapd_cli_cmd_v("set sae_password %s",
 					       params->sae_password ? params->sae_password
 								    : params->psk)) {
 				goto out;

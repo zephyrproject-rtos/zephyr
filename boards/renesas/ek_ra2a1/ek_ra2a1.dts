@@ -7,6 +7,7 @@
 
 #include <renesas/ra/ra2/r7fa2a1ab3cfm.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "ek_ra2a1-pinctrl.dtsi"
 
@@ -19,6 +20,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -29,8 +31,18 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport2 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
 	};
 };
 
@@ -67,5 +79,33 @@
 };
 
 &ioport1 {
+	status = "okay";
+};
+
+&port_irq6 {
+	interrupts = <29 3>;
+	status = "okay";
+};
+
+&pwm0 {
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+	interrupts = <28 1>, <31 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&iic0 {
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 };
