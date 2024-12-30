@@ -1021,15 +1021,18 @@ static int ov5640_set_ctrl_brightness(const struct device *dev, int value)
 {
 	const struct ov5640_config *cfg = dev->config;
 
-	struct ov5640_reg brightness_params[] = {{SDE_CTRL8_REG, value >= 0 ? 0x01 : 0x09},
-						 {SDE_CTRL7_REG, abs(value) & 0xff}};
 	int ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL0_REG, BIT(2), BIT(2));
 
 	if (ret) {
 		return ret;
 	}
 
-	return ov5640_write_multi_regs(&cfg->i2c, brightness_params, ARRAY_SIZE(brightness_params));
+	ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL8_REG, BIT(3), value >= 0 ? 0 : BIT(3));
+	if (ret < 0) {
+		return ret;
+	}
+
+	return ov5640_write_reg(&cfg->i2c, SDE_CTRL7_REG, (abs(value) << 4) & 0xf0);
 }
 
 static int ov5640_set_ctrl_contrast(const struct device *dev, int value)
