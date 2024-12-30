@@ -91,4 +91,6 @@ source "drivers/dma/Kconfig.xilinx_axi_dma"
 
 source "drivers/dma/Kconfig.nxp_sdma"
 
+source "drivers/dma/Kconfig.wch"
+
 endif # DMA
