@@ -36,7 +36,7 @@ config SHELL_BACKEND_SERIAL_INIT_PRIORITY
 
 config SHELL_PROMPT_UART
 	string "Displayed prompt name"
-	default "uart:~$ "
+	default "TSI:~$ "
 	help
 	  Displayed prompt name for UART backend. If prompt is set, the shell will
 	  send two newlines during initialization.
