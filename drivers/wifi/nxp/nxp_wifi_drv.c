@@ -575,6 +575,9 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 		return -ENOENT;
 	}
 
+	nxp_wlan_uap_network.beacon_period = NXP_WIFI_SAP_BEACON_PERIOD_DEFAULT;
+	nxp_wlan_uap_network.dtim_period = NXP_WIFI_SAP_DTIM_PERIOD_DEFAULT;
+
 	ret = wlan_add_network(&nxp_wlan_uap_network);
 	if (ret != WM_SUCCESS) {
 		status = NXP_WIFI_RET_FAIL;
@@ -1084,6 +1087,10 @@ static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_statu
 			status->beacon_interval = nxp_wlan_uap_network.beacon_period;
 
 			status->dtim_period = nxp_wlan_uap_network.dtim_period;
+
+#ifdef CONFIG_NXP_WIFI_11AX_TWT
+			status->twt_capable = true;
+#endif
 
 			if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
 				status->iface_mode = WIFI_MODE_INFRA;
