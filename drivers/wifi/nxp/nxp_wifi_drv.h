@@ -48,6 +48,9 @@
 #define NXP_WIFI_SYNC_PS_GROUP                                                                     \
 	NXP_WIFI_EVENT_BIT(WLAN_REASON_PS_ENTER) | NXP_WIFI_EVENT_BIT(WLAN_REASON_PS_EXIT)
 
+#define NXP_WIFI_SAP_BEACON_PERIOD_DEFAULT 100
+#define NXP_WIFI_SAP_DTIM_PERIOD_DEFAULT 1
+
 enum nxp_wifi_ret {
 	NXP_WIFI_RET_SUCCESS,
 	NXP_WIFI_RET_FAIL,
