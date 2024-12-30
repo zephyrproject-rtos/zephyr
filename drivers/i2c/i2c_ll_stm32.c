@@ -226,6 +226,64 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg, uin
 	return ret;
 }
 
+#ifdef CONFIG_I2C_CALLBACK
+
+static void i2c_stm32_async_done(const struct device *dev, struct i2c_stm32_data *data, int result)
+{
+	i2c_callback_t cb = data->cb;
+	void *userdata = data->userdata;
+
+	data->cb = NULL;
+	data->userdata = NULL;
+
+	k_sem_give(&data->bus_mutex);
+
+	/* Callback may wish to start another transfer */
+	cb(dev, result, userdata);
+}
+
+static void i2c_stm32_async_iter(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_msg *msg = &data->msgs[data->msg];
+	uint8_t *next_msg_flags = NULL;
+	int ret;
+
+	if (data->msg == data->num_msgs) {
+		i2c_stm32_async_done(dev, data, 0);
+		return;
+	}
+
+	if (data->msg < data->num_msgs - 1) {
+		next_msg_flags = &(data->msgs[data->msg + 1].flags);
+	}
+
+	ret = stm32_i2c_transaction(dev, *msg, next_msg_flags, data->addr);
+	if (ret < 0) {
+		i2c_stm32_async_done(dev, data, ret);
+	}
+}
+
+static int i2c_stm32_transfer_cb(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+				   uint16_t addr, i2c_callback_t cb, void *userdata)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+	int ret = k_sem_take(&data->lock, K_NO_WAIT);
+
+	if (ret != 0) {
+		return -EWOULDBLOCK;
+	}
+
+	data->cb = cb;
+	data->userdata = userdata;
+
+	i2c_stm32_async_iter(dev);
+
+	return 0;
+}
+#endif /* CONFIG_I2C_CALLBACK */
+
 #if CONFIG_I2C_STM32_BUS_RECOVERY
 static void i2c_stm32_bitbang_set_scl(void *io_context, int state)
 {
@@ -313,6 +371,9 @@ restore:
 static DEVICE_API(i2c, api_funcs) = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
+#ifdef CONFIG_I2C_CALLBACK
+	.transfer_cb = i2c_stm32_transfer_cb,
+#endif /* CONFIG_I2C_CALLBACK */
 	.get_config = i2c_stm32_get_config,
 #if CONFIG_I2C_STM32_BUS_RECOVERY
 	.recover_bus = i2c_stm32_recover_bus,

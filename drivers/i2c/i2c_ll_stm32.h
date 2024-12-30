@@ -88,6 +88,11 @@ struct i2c_stm32_data {
 		struct i2c_msg *msg;
 		unsigned int len;
 		uint8_t *buf;
+#ifdef CONFIG_I2C_CALLBACK
+	uint32_t num_msgs;
+	i2c_callback_t cb;
+	void *userdata;
+#endif /* CONFIG_I2C_CALLBACK */
 	} current;
 #ifdef CONFIG_I2C_TARGET
 	bool master_active;
