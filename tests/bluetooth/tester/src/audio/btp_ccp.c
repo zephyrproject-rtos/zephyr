@@ -899,6 +899,7 @@ static uint8_t tbs_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 	tester_set_bit(rp->data, BTP_TBS_REMOTE_HOLD);
 	tester_set_bit(rp->data, BTP_TBS_ORIGINATE);
 	tester_set_bit(rp->data, BTP_TBS_SET_SIGNAL_STRENGTH);
+	tester_set_bit(rp->data, BTP_TBS_TERMINATE_CALL);
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -1091,6 +1092,22 @@ static uint8_t tbs_set_signal_strength(const void *cmd, uint16_t cmd_len, void *
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t tbs_terminate_call(const void *cmd, uint16_t cmd_len, void *rsp,
+				  uint16_t *rsp_len)
+{
+	const struct btp_tbs_terminate_call_cmd *cp = cmd;
+	int err;
+
+	LOG_DBG("TBS Terminate Call");
+
+	err = bt_tbs_terminate(cp->index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static bool btp_tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index, const char *uri)
 {
 	LOG_DBG("TBS Originate Call cb");
@@ -1103,9 +1120,15 @@ static void btp_tbs_call_change_cb(struct bt_conn *conn, uint8_t call_index)
 	LOG_DBG("TBS Call Status Changed cb");
 }
 
+static void btp_tbs_terminate_call_cb(struct bt_conn *conn, uint8_t call_index, uint8_t reason)
+{
+	LOG_DBG("TBS Terminate Call cb");
+}
+
 static struct bt_tbs_cb tbs_cbs = {
 	.originate_call = btp_tbs_originate_call_cb,
 	.hold_call = btp_tbs_call_change_cb,
+	.terminate_call = btp_tbs_terminate_call_cb,
 };
 
 static const struct btp_handler tbs_handlers[] = {
@@ -1159,6 +1182,11 @@ static const struct btp_handler tbs_handlers[] = {
 		.opcode = BTP_TBS_SET_SIGNAL_STRENGTH,
 		.expect_len = sizeof(struct btp_tbs_set_signal_strength_cmd),
 		.func = tbs_set_signal_strength,
+	},
+	{
+		.opcode = BTP_TBS_TERMINATE_CALL,
+		.expect_len = sizeof(struct btp_tbs_terminate_call_cmd),
+		.func = tbs_terminate_call,
 	},
 };
 
