@@ -29,3 +29,6 @@ CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
 CONFIG_CLOCK_CONTROL=y
+
+# GIC Safe Configuration to run multiple OSes on Cortex-A Core
+CONFIG_GIC_SAFE_CONFIG=y
