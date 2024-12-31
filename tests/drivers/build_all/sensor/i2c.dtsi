@@ -1201,3 +1201,13 @@ test_i2c_lis2duxs12: lis2duxs12@a7 {
 	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
 	status = "okay";
 };
+
+test_i2c_tmag3001: tmag3001@a8 {
+	compatible = "ti,tmag3001";
+	status = "okay";
+	reg = <0xa8>;
+	int-gpios = <&test_gpio 15 1>;
+
+	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
+	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
+};
