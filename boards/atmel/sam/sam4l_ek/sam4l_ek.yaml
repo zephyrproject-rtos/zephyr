@@ -17,4 +17,5 @@ supported:
   - spi
   - uart
   - usb_device
+  - watchdog
 vendor: atmel
