@@ -330,10 +330,10 @@ static int lp50xx_pm_action(const struct device *dev,
 		return lp50xx_enable(dev, false);
 	case PM_DEVICE_ACTION_RESUME:
 		return lp50xx_enable(dev, true);
-    case PM_DEVICE_ACTION_TURN_ON:
-        return lp50xx_init(dev);
-    case PM_DEVICE_ACTION_TURN_OFF:
-        return lp50xx_hw_enable(dev, false);
+	case PM_DEVICE_ACTION_TURN_ON:
+		return lp50xx_init(dev);
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return lp50xx_hw_enable(dev, false);
 	default:
 		return -ENOTSUP;
 	}
