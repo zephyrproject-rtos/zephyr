@@ -664,8 +664,6 @@ ZTEST(userspace, test_user_mode_enter)
 
 /* Define and initialize pipe. */
 K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
-K_APP_BMEM(default_part) static size_t bytes_written_read;
-
 /**
  * @brief Test to write to kobject using pipe
  *
@@ -679,8 +677,7 @@ ZTEST_USER(userspace, test_write_kobject_user_pipe)
 	 */
 	set_fault(K_ERR_KERNEL_OOPS);
 
-	k_pipe_get(&kpipe, &test_revoke_sem, BYTES_TO_READ_WRITE,
-		   &bytes_written_read, 1, K_NO_WAIT);
+	k_pipe_read(&kpipe, (uint8_t *)&test_revoke_sem, BYTES_TO_READ_WRITE, K_NO_WAIT);
 
 	zassert_unreachable("System call memory write validation "
 			    "did not fault");
@@ -699,8 +696,7 @@ ZTEST_USER(userspace, test_read_kobject_user_pipe)
 	 */
 	set_fault(K_ERR_KERNEL_OOPS);
 
-	k_pipe_put(&kpipe, &test_revoke_sem, BYTES_TO_READ_WRITE,
-		   &bytes_written_read, 1, K_NO_WAIT);
+	k_pipe_write(&kpipe, (uint8_t *)&test_revoke_sem, BYTES_TO_READ_WRITE, K_NO_WAIT);
 
 	zassert_unreachable("System call memory read validation "
 			    "did not fault");
