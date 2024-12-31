@@ -859,7 +859,7 @@ int handle_http1_request(struct http_client_ctx *client)
 
 		if (client->websocket_upgrade) {
 			if (IS_ENABLED(CONFIG_HTTP_SERVER_WEBSOCKET)) {
-				detail = get_resource_detail(client->url_buffer,
+				detail = get_resource_detail(client->service, client->url_buffer,
 							     &path_len, true);
 				if (detail == NULL) {
 					goto not_found;
@@ -900,7 +900,7 @@ upgrade_not_found:
 		}
 	}
 
-	detail = get_resource_detail(client->url_buffer, &path_len, false);
+	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
 	if (detail != NULL) {
 		detail->path_len = path_len;
 
