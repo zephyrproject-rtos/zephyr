@@ -400,6 +400,9 @@ struct http_client_ctx {
 	/** Socket descriptor associated with the server. */
 	int fd;
 
+	/** HTTP service on which the client is connected */
+	const struct http_service_desc *service;
+
 	/** Client data buffer.  */
 	unsigned char buffer[HTTP_SERVER_CLIENT_BUFFER_SIZE];
 
