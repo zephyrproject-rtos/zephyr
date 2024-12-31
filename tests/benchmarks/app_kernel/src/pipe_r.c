@@ -36,7 +36,7 @@ void piperecvtask(void)
 	/* matching (ALL_N) */
 
 	for (getsize = 8; getsize <= MESSAGE_SIZE_PIPE; getsize <<= 1) {
-		for (pipe = 0; pipe < 3; pipe++) {
+		for (pipe = 0; pipe < 2; pipe++) {
 			getcount = NR_OF_PIPE_RUNS;
 			pipeget(test_pipes[pipe], _ALL_N, getsize,
 				getcount, &gettime);
@@ -52,7 +52,7 @@ void piperecvtask(void)
 		/* non-matching (1_TO_N) */
 		for (getsize = (MESSAGE_SIZE_PIPE); getsize >= 8; getsize >>= 1) {
 			getcount = MESSAGE_SIZE_PIPE / getsize;
-			for (pipe = 0; pipe < 3; pipe++) {
+			for (pipe = 0; pipe < 2; pipe++) {
 				/* size*count == MESSAGE_SIZE_PIPE */
 				pipeget(test_pipes[pipe], _1_TO_N,
 						getsize, getcount, &gettime);
@@ -95,12 +95,9 @@ int pipeget(struct k_pipe *pipe, enum pipe_options option, int size, int count,
 	for (i = 0; option == _1_TO_N || (i < count); i++) {
 		size_t sizexferd = 0;
 		size_t size2xfer = MIN(size, size2xfer_total - sizexferd_total);
-		int ret;
 
-		ret = k_pipe_get(pipe, data_recv, size2xfer,
-				 &sizexferd, option, K_FOREVER);
-
-		if (ret != 0) {
+		sizexferd = k_pipe_read(pipe, data_recv, size2xfer, K_FOREVER);
+		if (sizexferd  < 0) {
 			return 1;
 		}
 
