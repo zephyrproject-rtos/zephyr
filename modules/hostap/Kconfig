@@ -73,6 +73,15 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 	  runtime filtering can also be configured in addition to the compile-time
 	  filtering.
 
+if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
+# hostap debug is very verbose and despite large log buffer sizes
+# log messages can be lost. So, we set the log mode to immediate
+# to avoid losing any debug messages.
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
+endif # WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
+
 # Memory optimizations
 config WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
 	bool "Advanced features"
