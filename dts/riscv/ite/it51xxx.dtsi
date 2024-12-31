@@ -1204,6 +1204,28 @@
 			status = "disabled";
 		};
 
+		i3c0: i3c@f03c00 {
+			compatible = "ite,it51xxx-i3cm";
+			reg = <0x00f03c00 0x0053>;
+			status = "disabled";
+			interrupts = <IT51XXX_IRQ_I3C_M0 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			io-channel = <0>;
+		};
+
+		i3c1: i3c@f03c80 {
+			compatible = "ite,it51xxx-i3cm";
+			reg = <0x00f03c80 0x0053>;
+			status = "disabled";
+			interrupts = <IT51XXX_IRQ_I3C_M1 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			io-channel = <1>;
+		};
+
 		i3c2: i3c@f03d00 {
 			compatible = "ite,it51xxx-i3cs";
 			reg = <0x00f03d00 0x007a>;
