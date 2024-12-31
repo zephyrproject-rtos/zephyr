@@ -259,10 +259,33 @@ static bool adxl345_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigg
 	}
 }
 
+static int adxl345_get_size_info(struct sensor_chan_spec channel, size_t *base_size,
+				 size_t *frame_size)
+{
+	__ASSERT_NO_MSG(base_size != NULL);
+	__ASSERT_NO_MSG(frame_size != NULL);
+
+	if (channel.chan_type >= SENSOR_CHAN_ALL) {
+		return -ENOTSUP;
+	}
+
+	switch (channel.chan_type) {
+	case SENSOR_CHAN_ACCEL_XYZ:
+		*base_size = sizeof(struct sensor_three_axis_data);
+		*frame_size = sizeof(struct sensor_three_axis_sample_data);
+		return 0;
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
 SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_frame_count = adxl345_decoder_get_frame_count,
 	.decode = adxl345_decoder_decode,
 	.has_trigger = adxl345_decoder_has_trigger,
+	.get_size_info = adxl345_get_size_info,
 };
 
 int adxl345_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
