@@ -281,6 +281,7 @@ int adxl345_read_sample(const struct device *dev,
 {
 	int16_t raw_x, raw_y, raw_z;
 	uint8_t axis_data[6], status1;
+	struct adxl345_dev_data *data = dev->data;
 
 	if (!IS_ENABLED(CONFIG_ADXL345_TRIGGER)) {
 		do {
@@ -302,6 +303,9 @@ int adxl345_read_sample(const struct device *dev,
 	sample->x = raw_x;
 	sample->y = raw_y;
 	sample->z = raw_z;
+
+	sample->selected_range = data->selected_range;
+	sample->is_full_res = data->is_full_res;
 
 	return 0;
 }
