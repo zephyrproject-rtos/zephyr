@@ -205,6 +205,7 @@ struct adxl345_sample {
 	uint8_t res: 7;
 #endif /* CONFIG_ADXL345_STREAM */
 	uint8_t selected_range;
+	bool is_full_res;
 	int16_t x;
 	int16_t y;
 	int16_t z;
