@@ -47,7 +47,7 @@ __net_socket struct spair {
 	int remote; /**< the remote endpoint file descriptor */
 	uint32_t flags; /**< status and option bits */
 	struct k_sem sem; /**< semaphore for exclusive structure access */
-	struct k_pipe recv_q; /**< receive queue of local endpoint */
+	struct ring_buf recv_q;
 	/** indicates local @a recv_q isn't empty */
 	struct k_poll_signal readable;
 	/** indicates local @a recv_q isn't full */
@@ -106,7 +106,7 @@ static inline size_t spair_write_avail(struct spair *spair)
 		return 0;
 	}
 
-	return k_pipe_write_avail(&remote->recv_q);
+	return ring_buf_space_get(&remote->recv_q);
 }
 
 /**
@@ -117,7 +117,7 @@ static inline size_t spair_write_avail(struct spair *spair)
  */
 static inline size_t spair_read_avail(struct spair *spair)
 {
-	return k_pipe_read_avail(&spair->recv_q);
+	return ring_buf_size_get(&spair->recv_q);
 }
 
 /** Swap two 32-bit integers */
@@ -250,7 +250,7 @@ static struct spair *spair_new(void)
 	spair->flags = SPAIR_FLAGS_DEFAULT;
 
 	k_sem_init(&spair->sem, 1, 1);
-	k_pipe_init(&spair->recv_q, spair->buf, sizeof(spair->buf));
+	ring_buf_init(&spair->recv_q, sizeof(spair->buf), spair->buf);
 	k_poll_signal_init(&spair->readable);
 	k_poll_signal_init(&spair->writeable);
 
@@ -550,10 +550,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 		}
 	}
 
-	res = k_pipe_put(&remote->recv_q, (void *)buffer, count,
-			 &bytes_written, 1, K_NO_WAIT);
-	__ASSERT(res == 0, "k_pipe_put() failed: %d", res);
-
+	bytes_written = ring_buf_put(&remote->recv_q, (void *)buffer, count);
 	if (spair_write_avail(spair) == 0) {
 		k_poll_signal_reset(&remote->writeable);
 	}
@@ -724,10 +721,7 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 		}
 	}
 
-	res = k_pipe_get(&spair->recv_q, (void *)buffer, count, &bytes_read,
-			 1, K_NO_WAIT);
-	__ASSERT(res == 0, "k_pipe_get() failed: %d", res);
-
+	bytes_read = ring_buf_get(&spair->recv_q, (void *)buffer, count);
 	if (spair_read_avail(spair) == 0 && !sock_is_eof(spair)) {
 		k_poll_signal_reset(&spair->readable);
 	}
