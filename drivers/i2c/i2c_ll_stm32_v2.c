@@ -21,6 +21,12 @@
 #include <zephyr/pm/device_runtime.h>
 #include "i2c_ll_stm32.h"
 
+#ifdef CONFIG_DCACHE
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#endif /* CONFIG_DCACHE */
+
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
@@ -667,6 +673,34 @@ void stm32_i2c_error_isr(void *arg)
 }
 #endif
 
+#ifdef CONFIG_DCACHE
+static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+{
+    bool buf_within_nocache = false;
+
+    uintptr_t buf_start = align_down(buf, CONFIG_DCACHE_LINE_SIZE);
+    uintptr_t buf_end = align_up(buf + len_bytes, CONFIG_DCACHE_LINE_SIZE) - 1;
+
+#ifdef CONFIG_NOCACHE_MEMORY
+    if ((buf_start >= (uintptr_t)_nocache_ram_start) &&
+        (buf_end <= (uintptr_t)_nocache_ram_end)) {
+        return true;
+    }
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+    if (mem_attr_check_buf((void *)buf_start, len_bytes, DT_MEM_ARM_MPU_RAM_NOCACHE) == 0) {
+        return true;
+    }
+
+    if ((buf_start >= (uintptr_t)__rodata_region_start) &&
+        (buf_end <= (uintptr_t)__rodata_region_end)) {
+        return true;
+    }
+
+    return false;
+}
+#endif /* CONFIG_DCACHE */
+
 static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			       uint8_t *next_msg_flags, uint16_t slave)
 {
@@ -681,6 +715,18 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	data->current.is_nack = 0U;
 	data->current.is_err = 0U;
 	data->current.msg = msg;
+
+#ifdef CONFIG_DCACHE
+    if (!buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+#ifdef STRICT_MEMORY_CHECK
+        LOG_ERR("Tx buffer at %p (len %zu) is in cached memory", msg->buf, msg->len);
+        return -EFAULT;
+#else
+        LOG_DBG("Tx buffer at %p (len %zu) is in cached memory; cleaning cache", msg->buf, msg->len);
+        SCB_CleanDCache_by_Addr((void *)msg->buf, msg->len);
+#endif
+    }
+#endif /* CONFIG_DCACHE */
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 
@@ -729,6 +775,13 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	bool is_timeout = false;
 
+#ifdef CONFIG_DCACHE && ifdef STRICT_MEMORY_CHECK
+    if (!buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+        LOG_ERR("Rx buffer at %p (len %zu) is in cached memory", msg->buf, msg->len);
+        return -EFAULT;
+    }
+#endif /* CONFIG_DCACHE */
+
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
 	data->current.is_write = 0U;
@@ -747,6 +800,13 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
+
+#ifdef CONFIG_DCACHE
+    if (!buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+        LOG_DBG("Rx buffer at %p (len %zu) is in cached memory; invalidating cache", msg->buf, msg->len);
+        SCB_InvalidateDCache_by_Addr((void *)msg->buf, msg->len);
+    }
+#endif /* CONFIG_DCACHE */
 
 	if (data->current.is_nack || data->current.is_err || data->current.is_arlo || is_timeout) {
 		goto error;
