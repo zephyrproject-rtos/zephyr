@@ -364,23 +364,6 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 		size_t frame_size;
 		uint16_t frame_count;
 
-		/* Channels with multi-axis equivalents are skipped */
-		switch (ch.chan_type) {
-		case SENSOR_CHAN_ACCEL_X:
-		case SENSOR_CHAN_ACCEL_Y:
-		case SENSOR_CHAN_ACCEL_Z:
-		case SENSOR_CHAN_GYRO_X:
-		case SENSOR_CHAN_GYRO_Y:
-		case SENSOR_CHAN_GYRO_Z:
-		case SENSOR_CHAN_MAGN_X:
-		case SENSOR_CHAN_MAGN_Y:
-		case SENSOR_CHAN_MAGN_Z:
-		case SENSOR_CHAN_POS_DX:
-		case SENSOR_CHAN_POS_DY:
-		case SENSOR_CHAN_POS_DZ:
-			continue;
-		}
-
 		rc = decoder->get_size_info(ch, &base_size, &frame_size);
 		if (rc != 0) {
 			LOG_DBG("skipping unsupported channel %s:%d",
