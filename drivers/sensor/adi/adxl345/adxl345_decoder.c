@@ -208,7 +208,10 @@ static int adxl345_decode_sample(const struct adxl345_sample *data,
 				 struct sensor_chan_spec chan_spec, uint32_t *fit,
 				 uint16_t max_count, void *data_out)
 {
-	struct sensor_value *out = (struct sensor_value *)data_out;
+	struct sensor_three_axis_data *out = (struct sensor_three_axis_data *)data_out;
+
+	memset(out, 0, sizeof(struct sensor_three_axis_data));
+	out->header.reading_count = 1;
 
 	if (*fit > 0) {
 		return -ENOTSUP;
@@ -216,9 +219,9 @@ static int adxl345_decode_sample(const struct adxl345_sample *data,
 
 	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl345_accel_convert(out++, data->x);
-		adxl345_accel_convert(out++, data->y);
-		adxl345_accel_convert(out, data->z);
+		adxl345_accel_convert_q31(out->readings->x, data->x, data->selected_range, false);
+		adxl345_accel_convert_q31(out->readings->y, data->y, data->selected_range, false);
+		adxl345_accel_convert_q31(out->readings->z, data->z, data->selected_range, false);
 		break;
 	default:
 		return -ENOTSUP;
