@@ -5,6 +5,31 @@ module = I3C_IT51XXX
 module-str = i3c-it51xxx
 source "subsys/logging/Kconfig.template.log_config"
 
+config I3CM_IT51XXX
+	bool "it51xxx i3cm driver"
+	depends on DT_HAS_ITE_IT51XXX_I3CM_ENABLED
+	select PINCTRL
+	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	select SOC_IT51XXX_CPU_IDLE_GATING
+	default y
+	help
+	  Enable it51xxx i3c controller driver.
+
+if I3CM_IT51XXX
+
+config I3CM_IT51XXX_TRANSFER_TIMEOUT_MS
+	int "Set the transfer timeout in milliseconds"
+	default 1000
+
+config I3CM_IT51XXX_DLM_SIZE
+	int "it51xxx i3cm dlm data size"
+	depends on I3CM_IT51XXX
+	default 256
+	help
+	  Set i3cm data-local-memory(DLM) size.
+
+endif # I3CM_IT51XXX
+
 config I3CS_IT51XXX
 	bool "it51xxx i3cs driver"
 	depends on DT_HAS_ITE_IT51XXX_I3CS_ENABLED
