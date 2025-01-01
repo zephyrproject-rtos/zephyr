@@ -432,7 +432,7 @@ static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t compare_reg_index,
 	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(compare_reg_index) =
 		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(radio_enable_ppi);
 
-	uint8_t prev_ppi_idx = (compare_reg_index + 0x01) & 0x01;
+	uint8_t prev_ppi_idx = (compare_reg_index + 0x01 - SW_SWITCH_TIMER_EVTS_COMP_BASE) & 0x01;
 
 	radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, radio_enable_ppi);
@@ -464,7 +464,7 @@ static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t compare_reg_index,
 	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(compare_reg_index) =
 		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(radio_enable_ppi);
 
-	uint8_t prev_ppi_idx = (compare_reg_index + 0x01) & 0x01;
+	uint8_t prev_ppi_idx = (compare_reg_index + 0x01 - SW_SWITCH_TIMER_EVTS_COMP_BASE) & 0x01;
 
 	radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, radio_enable_ppi);
@@ -492,7 +492,7 @@ static inline void hal_radio_sw_switch_b2b_tx_disable(uint8_t compare_reg_index)
 {
 	hal_radio_sw_switch_disable();
 
-	uint8_t prev_ppi_idx = (compare_reg_index + 0x01) & 0x01;
+	uint8_t prev_ppi_idx = (compare_reg_index + 0x01 - SW_SWITCH_TIMER_EVTS_COMP_BASE) & 0x01;
 	uint8_t radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
 
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, radio_enable_ppi);
@@ -502,7 +502,7 @@ static inline void hal_radio_sw_switch_b2b_rx_disable(uint8_t compare_reg_index)
 {
 	hal_radio_sw_switch_disable();
 
-	uint8_t prev_ppi_idx = (compare_reg_index + 0x01) & 0x01;
+	uint8_t prev_ppi_idx = (compare_reg_index + 0x01 - SW_SWITCH_TIMER_EVTS_COMP_BASE) & 0x01;
 	uint8_t radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
 
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, radio_enable_ppi);
