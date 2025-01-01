@@ -342,7 +342,7 @@ release it when done.
     static int ws_socket;
     static uint8_t ws_recv_buffer[1024];
 
-    int ws_setup(int sock, void *user_data)
+    int ws_setup(int sock, struct http_request_ctx *request_ctx, void *user_data)
     {
         ws_socket = sock;
         return 0;
