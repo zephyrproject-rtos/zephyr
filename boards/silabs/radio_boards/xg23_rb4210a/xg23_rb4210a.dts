@@ -58,6 +58,12 @@
 		};
 	};
 
+	sensor_disp_enable: sensor_disp_enable {
+		compatible = "regulator-fixed";
+		regulator-name = "sensor_disp_enable";
+		enable-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
 };
 
 &cpu0 {
@@ -126,6 +132,7 @@
 	si7021: si7021@40 {
 		compatible = "silabs,si7006";
 		reg = <0x40>;
+		vin-supply = <&sensor_disp_enable>;
 		status = "okay";
 	};
 };
