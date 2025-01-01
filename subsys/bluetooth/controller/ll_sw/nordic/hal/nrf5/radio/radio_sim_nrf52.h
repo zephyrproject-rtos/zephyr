@@ -345,12 +345,26 @@
 #endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 
 /* HAL abstraction of Radio bitfields */
-#define HAL_RADIO_INTENSET_DISABLED_Msk         RADIO_INTENSET_DISABLED_Msk
-#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk    RADIO_SHORTS_END_DISABLE_Msk
-#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_NRF_RADIO_EVENT_END                   NRF_RADIO_EVENT_END
+#define HAL_RADIO_EVENTS_END                      EVENTS_END
+#define HAL_NRF_RADIO_EVENT_PHYEND                NRF_RADIO_EVENT_PHYEND
+#define HAL_RADIO_EVENTS_PHYEND                   EVENTS_PHYEND
+#define HAL_RADIO_INTENSET_DISABLED_Msk           RADIO_INTENSET_DISABLED_Msk
+#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk      RADIO_SHORTS_END_DISABLE_Msk
+#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk   RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_RADIO_CLEARPATTERN_CLEARPATTERN_Clear RADIO_CLEARPATTERN_CLEARPATTERN_Clear
 
 /* HAL abstraction of Radio IRQ number */
 #define HAL_RADIO_IRQn                          RADIO_IRQn
+
+/* SoC specific NRF_RADIO power-on reset value. Refer to Product Specification,
+ * RADIO Registers section for the documented reset values.
+ *
+ * NOTE: Only implementation used values defined here.
+ *       In the future if MDK or nRFx header include these, use them instead.
+ */
+#define HAL_RADIO_RESET_VALUE_DFEMODE       0x00000000UL
+#define HAL_RADIO_RESET_VALUE_CTEINLINECONF 0x00002800UL
 
 static inline void hal_radio_reset(void)
 {
