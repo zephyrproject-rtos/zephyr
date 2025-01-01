@@ -62,8 +62,8 @@ struct shell_websocket {
 };
 
 extern const struct shell_transport_api shell_websocket_transport_api;
-extern int shell_websocket_setup(int ws_socket, void *user_data);
-extern int shell_websocket_enable(const struct shell *sh);
+int shell_websocket_setup(int ws_socket, struct http_request_ctx *request_ctx, void *user_data);
+int shell_websocket_enable(const struct shell *sh);
 
 #define GET_WS_NAME(_service) ws_ctx_##_service
 #define GET_WS_SHELL_NAME(_name) shell_websocket_##_name
