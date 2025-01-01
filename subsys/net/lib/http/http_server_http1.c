@@ -865,6 +865,7 @@ int handle_http1_request(struct http_client_ctx *client)
 					goto not_found;
 				}
 
+				detail->path_len = path_len;
 				client->current_detail = detail;
 				return handle_http1_to_websocket_upgrade(client);
 			}
