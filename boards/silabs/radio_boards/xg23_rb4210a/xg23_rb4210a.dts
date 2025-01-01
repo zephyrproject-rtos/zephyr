@@ -124,6 +124,7 @@
 	si7021: si7021@40 {
 		compatible = "silabs,si7006";
 		reg = <0x40>;
+		supply-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };
