@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Alex Bucknall
+# SPDX-License-Identifier: Apache-2.0
+
+description: Plantower PMSA003I particulate matter sensor
+
+compatible: "plantower,pmsa003i"
+
+include: [sensor-device.yaml, i2c-device.yaml]

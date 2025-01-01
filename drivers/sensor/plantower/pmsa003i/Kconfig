@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Alex Bucknall
+# SPDX-License-Identifier: Apache-2.0
+
+config PMSA003I
+	bool "PMSA003I Particulate Matter Sensor"
+	default y
+	depends on DT_HAS_PLANTOWER_PMSA003I_ENABLED
+	depends on I2C
+	help
+	  Enable driver for the PMSA003I particulate matter sensor. This driver
+	  depends on the I2C subsystem being enabled.
