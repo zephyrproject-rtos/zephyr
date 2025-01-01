@@ -622,7 +622,7 @@ static void last_pdu_end_us_init(uint32_t latency_us)
 
 uint32_t radio_is_done(void)
 {
-	if (NRF_RADIO->NRF_RADIO_TRX_END_EVENT != 0) {
+	if (NRF_RADIO->HAL_RADIO_TRX_EVENTS_END != 0) {
 		/* On packet END event increment last packet end time value.
 		 * Note: this depends on the function being called exactly once
 		 * in the ISR function.
@@ -637,7 +637,7 @@ uint32_t radio_is_done(void)
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 uint32_t radio_is_done(void)
 {
-	return (NRF_RADIO->NRF_RADIO_TRX_END_EVENT != 0);
+	return (NRF_RADIO->HAL_RADIO_TRX_EVENTS_END != 0);
 }
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
