@@ -367,6 +367,11 @@ Networking
   rather than directly in the :c:struct:`http_client_ctx` to correctly handle concurrent requests
   on different HTTP/2 streams.
 
+* The HTTP server public API function signature for the :c:type:`http_resource_websocket_cb_t` has
+  changed, a :c:struct:`http_request_ctx` parameter has been added. The application may use this to
+  access the request headers of the HTTP upgrade request, which may be useful in deciding whether
+  to accept or reject a websocket connection.
+
 * The :kconfig:option:`CONFIG_NET_L2_OPENTHREAD` symbol no longer implies the
   :kconfig:option:`CONFIG_NVS` Kconfig option. Platforms using OpenThread must explicitly enable
   either the :kconfig:option:`CONFIG_NVS` or :kconfig:option:`CONFIG_ZMS` Kconfig option.
