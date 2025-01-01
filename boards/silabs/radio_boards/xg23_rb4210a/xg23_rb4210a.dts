@@ -29,6 +29,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
+		dht0 = &si7021;
 	};
 
 	leds {
@@ -115,6 +116,18 @@
 	pinctrl-0 = <&eusart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		status = "okay";
+	};
 };
 
 &gpio {
