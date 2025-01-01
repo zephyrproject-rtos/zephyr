@@ -94,16 +94,16 @@
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.
  *
- * Note: In case of HW TIFS support or single timer configuration we do not need
- * an additional PPI, since we have already set up a PPI to publish RADIO END
- * event. In other case separate PPI is used because packet end is marked by
- * PHYEND event while last bit or CRC is marked by END event.
+ * Note: In case of single timer configuration we do not need an additional PPI,
+ * since we have already set up a PPI to publish RADIO END event. In other case
+ * separate PPI is used because packet end is marked by PHYEND event while last
+ * bit or CRC is marked by END event.
  */
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-#define HAL_SW_SWITCH_TIMER_CLEAR_PPI 24
-#else /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI HAL_RADIO_END_TIME_CAPTURE_PPI
-#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#define HAL_SW_SWITCH_TIMER_CLEAR_PPI 24
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
