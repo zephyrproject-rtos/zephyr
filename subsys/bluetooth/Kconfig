@@ -94,7 +94,7 @@ config BT_OBSERVER
 	help
 	  Select this for LE Observer role support.
 
-rsource "Kconfig.adv"
+rsource "Kconfig_adv"
 
 config BT_CONN
 	bool
@@ -225,13 +225,13 @@ config BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_CNT
 
 endif # BT_CONN
 
-rsource "Kconfig.iso"
+rsource "Kconfig_iso"
 rsource "common/Kconfig"
 rsource "host/Kconfig"
 rsource "controller/Kconfig"
 rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
-rsource "Kconfig.logging"
+rsource "Kconfig_logging"
 
 config BT_SHELL
 	bool "Bluetooth shell"
