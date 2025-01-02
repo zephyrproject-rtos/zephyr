@@ -1107,6 +1107,7 @@
 		compatible = "st,stm32-vref";
 		vrefint-cal-addr = <0x1FF1E860>;
 		vrefint-cal-mv = <3300>;
+		vrefint-cal-resolution = <16>;
 		status = "disabled";
 	};
 
