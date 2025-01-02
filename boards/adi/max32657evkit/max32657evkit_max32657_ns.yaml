@@ -13,6 +13,7 @@ supported:
   - dma
   - counter
   - pwm
+  - rtc_counter
   - spi
 ram: 192
 flash: 576

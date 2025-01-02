@@ -50,8 +50,3 @@
 &trng {
 	status = "okay";
 };
-
-&rtc_counter {
-	status = "okay";
-	clock-source = <ADI_MAX32_PRPH_CLK_SRC_INRO>;
-};
