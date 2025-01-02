@@ -1006,6 +1006,13 @@ Doxygen API documentation
 
       .. doxygengroup:: can_interface
 
+
+   Doxygen project can optionally be specified using the ``:project:`` option.
+   This can be useful when multiple Doxygen projects are configured. Example::
+
+      .. doxygengroup:: can_interface
+         :project: zephyr
+
 .. rst:role:: c:group
 
    This role is used to reference a Doxygen group in the Zephyr tree. In the HTML documentation,
