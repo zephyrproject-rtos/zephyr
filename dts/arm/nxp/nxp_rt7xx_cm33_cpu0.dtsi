@@ -830,6 +830,39 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	mrt0: mrt@2d000 {
+		compatible = "nxp,mrt";
+		reg = <0x2d000 0x100>;
+		interrupts = <2 0>;
+		num-channels = <4>;
+		num-bits = <24>;
+		clocks = <&clkctl2 MCUX_MRT_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 26)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		mrt0_channel0: mrt_channel@0 {
+			compatible = "nxp,mrt-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+		mrt0_channel1: mrt_channel@1 {
+			compatible = "nxp,mrt-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+		mrt0_channel2: mrt_channel@2 {
+			compatible = "nxp,mrt-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+		mrt0_channel3: mrt_channel@3 {
+			compatible = "nxp,mrt-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
 };
 
 &xspi0 {
