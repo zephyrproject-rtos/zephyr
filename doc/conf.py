@@ -249,7 +249,11 @@ doxyrunner_doxygen = os.environ.get("DOXYGEN_EXECUTABLE", "doxygen")
 doxyrunner_doxyfile = ZEPHYR_BASE / "doc" / "zephyr.doxyfile.in"
 doxyrunner_outdir = ZEPHYR_BUILD / "doxygen"
 doxyrunner_fmt = True
-doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
+doxyrunner_fmt_vars = {
+    "ZEPHYR_BASE": str(ZEPHYR_BASE),
+    "CMAKE_BINARY_DIR": str(ZEPHYR_BUILD.parent),
+    "ZEPHYR_VERSION": version,
+}
 doxyrunner_outdir_var = "DOXY_OUT"
 
 # -- Options for zephyr.doxybridge plugin ---------------------------------
