@@ -1,21 +1,11 @@
 sample:
   name: Temperature Sensor
+common:
+  filter: dt_alias_exists("ambient-temp0")
+  harness: console
 tests:
   sample.sensor.thermometer:
     tags: sensors
-    filter: dt_alias_exists("ambient-temp0")
-    integration_platforms:
-      - nrf52840dk/nrf52840   # mcp9700a
-      - frdm_k22f             # tcn75a
-      - robokit1              # ntc_thermistor
-      - adi_eval_adin1110ebz  # adt7420
-      - frdm_mcxn947/mcxn947/cpu0 # p3t1755
-    extra_args:
-      - platform:mimxrt1180_evk/mimxrt1189/cm33:SHIELD=p3t1755dp_ard_i2c
-      - platform:mimxrt1180_evk/mimxrt1189/cm7:SHIELD=p3t1755dp_ard_i2c
-      - platform:mimxrt1180_evk/mimxrt1189/cm33:SHIELD=p3t1755dp_ard_i3c
-      - platform:mimxrt1180_evk/mimxrt1189/cm7:SHIELD=p3t1755dp_ard_i3c
-    harness: console
     harness_config:
       fixture: sensor_ambient_temp
       type: multi_line
@@ -23,3 +13,30 @@ tests:
         - "Thermometer Example (.*)"
         - "Temperature device is 0x[0-9|a-z]+, name is [a-z|0-9]+@[a-z|0-9]+"
         - "Temperature is [0-9|.]+°C"
+    integration_platforms:
+      - nrf52840dk/nrf52840   # mcp9700a
+      - frdm_k22f             # tcn75a
+      - robokit1              # ntc_thermistor
+      - adi_eval_adin1110ebz  # adt7420
+    extra_args:
+      - platform:mimxrt1180_evk/mimxrt1189/cm33:SHIELD=p3t1755dp_ard_i2c
+      - platform:mimxrt1180_evk/mimxrt1189/cm7:SHIELD=p3t1755dp_ard_i2c
+      - platform:frdm_mcxn236/mcxn236:SHIELD=p3t1755dp_ard_i2c
+  sample.sensor.thermometer_i3c:
+    tags: sensors
+    harness_config:
+      fixture: sensor_ambient_temp_i3c
+      type: multi_line
+      regex:
+        - "Thermometer Example (.*)"
+        - "Temperature device is 0x[0-9|a-z]+, name is [a-z|0-9]+@[a-z|0-9]+"
+        - "Temperature is [0-9|.]+°C"
+    integration_platforms:
+      - frdm_mcxn947/mcxn947/cpu0 # p3t1755
+    depends_on:
+      - i3c
+    filter: dt_alias_exists("ambient-temp0")
+    extra_args:
+      - platform:mimxrt1180_evk/mimxrt1189/cm33:SHIELD=p3t1755dp_ard_i3c
+      - platform:mimxrt1180_evk/mimxrt1189/cm7:SHIELD=p3t1755dp_ard_i3c
+      - platform:frdm_mcxn236/mcxn236:SHIELD=p3t1755dp_ard_i3c
