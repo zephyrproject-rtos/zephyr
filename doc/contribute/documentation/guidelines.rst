@@ -1006,6 +1006,15 @@ Doxygen API documentation
 
       .. doxygengroup:: can_interface
 
+
+   .. rubric:: Options
+
+   .. rst:directive:option:: project
+      :type: project name (optional)
+
+      Associated Doxygen project. This can be useful when multiple Doxygen
+      projects are configured.
+
 .. rst:role:: c:group
 
    This role is used to reference a Doxygen group in the Zephyr tree. In the HTML documentation,
