@@ -9,16 +9,32 @@
 #include <zephyr/kernel.h>
 #include <zephyr/posix/sys/mman.h>
 
+#include <zephyr/kernel/mm/demand_paging.h>
+
 int mlock(const void *addr, size_t len)
 {
-	k_mem_pin(addr, len);
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING)) {
+		void *const _addr = (void *)addr;
 
-	return 0;
+		k_mem_pin(_addr, len);
+
+		return 0;
+	}
+
+	errno = ENOTSUP;
+	return -1;
 }
 
 int munlock(const void *addr, size_t len)
 {
-	k_mem_unpin(addr, len);
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING)) {
+		void *const _addr = (void *)addr;
 
-	return 0;
+		k_mem_unpin(_addr, len);
+
+		return 0;
+	}
+
+	errno = ENOTSUP;
+	return -1;
 }
