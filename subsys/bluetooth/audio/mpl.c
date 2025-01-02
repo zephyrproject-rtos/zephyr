@@ -2526,8 +2526,7 @@ void mpl_debug_dump_state(void)
 }
 #endif /* CONFIG_BT_MPL_LOG_LEVEL_DBG */
 
-#if defined(CONFIG_BT_MPL_LOG_LEVEL_DBG) &&                                                        \
-	defined(CONFIG_BT_TESTING) /* Special commands for testing */
+#if defined(CONFIG_BT_TESTING) /* Special commands for testing */
 
 #if CONFIG_BT_MPL_OBJECTS
 void mpl_test_unset_parent_group(void)
@@ -2626,4 +2625,4 @@ void mpl_test_search_results_changed_cb(void)
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
-#endif /* CONFIG_BT_MPL_LOG_LEVEL_DBG && CONFIG_BT_TESTING */
+#endif /* CONFIG_BT_TESTING */
