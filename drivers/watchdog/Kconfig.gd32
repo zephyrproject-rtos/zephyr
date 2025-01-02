@@ -14,6 +14,7 @@ config WWDGT_GD32
 	bool "GD32 Window watchdog timer (WWDGT) Driver"
 	default y
 	depends on DT_HAS_GD_GD32_WWDGT_ENABLED
+	select HAS_WDT_NO_CALLBACKS
 	select USE_GD32_WWDGT
 	help
 	  Enable the Window watchdog timer (WWDGT) driver for GD32 SoCs.
