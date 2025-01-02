@@ -21,8 +21,9 @@ LOG_MODULE_REGISTER(adc_tlx, CONFIG_ADC_LOG_LEVEL);
 #include <adc.h>
 #include <zephyr/drivers/pinctrl.h>
 
-#if CONFIG_SOC_RISCV_TELINK_TL721X  || CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 #define adc_input_pin_def_e     adc_input_pin_e
+#endif
 
 /* Set ADC resolution value */
 static inline void adc_set_resolution(adc_res_e res)
@@ -30,7 +31,6 @@ static inline void adc_set_resolution(adc_res_e res)
 	analog_write_reg8(areg_adc_res_m, (analog_read_reg8
 		(areg_adc_res_m)&(~FLD_ADC_RES_M)) | res);
 }
-#endif
 
 
 /* ADC tlx defines */
@@ -103,7 +103,7 @@ static adc_input_pin_def_e adc_tlx_get_pin(uint8_t dt_pin)
 	adc_input_pin_def_e adc_pin;
 
 	switch (dt_pin) {
-#if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 	case DT_ADC_GPIO_PB0:
 		adc_pin = ADC_GPIO_PB0;
 		break;
@@ -129,12 +129,14 @@ static adc_input_pin_def_e adc_tlx_get_pin(uint8_t dt_pin)
 	case DT_ADC_GPIO_PB7:
 		adc_pin = ADC_GPIO_PB7;
 		break;
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 	case DT_ADC_GPIO_PD0:
 		adc_pin = ADC_GPIO_PD0;
 		break;
 	case DT_ADC_GPIO_PD1:
 		adc_pin = ADC_GPIO_PD1;
 		break;
+#endif
 	case DT_ADC_VBAT:
 		adc_pin = ADC_VBAT;
 		break;
@@ -316,12 +318,18 @@ static int adc_tlx_channel_setup(const struct device *dev,
 
 	/* Check internal reference */
 	switch (config->vref_internal_mv) {
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 	case 900:
 		vref_internal_mv = ADC_VREF_0P9V;
 		break;
 	case 1200:
 		vref_internal_mv = ADC_VREF_1P2V;
 		break;
+#elif CONFIG_SOC_RISCV_TELINK_TL721X
+	case 1200:
+		vref_internal_mv = ADC_VREF_VBAT_1P2V;
+		break;
+#endif
 	default:
 		LOG_ERR("Selected reference voltage is not supported.");
 		return -EINVAL;

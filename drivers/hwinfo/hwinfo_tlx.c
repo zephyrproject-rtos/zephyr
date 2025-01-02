@@ -8,6 +8,10 @@
 #include <string.h>
 #include <flash.h>
 
+#if CONFIG_SOC_RISCV_TELINK_TL721X
+#include <flash/flash_common.h>
+#endif
+
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint32_t flash_mid = 0;
