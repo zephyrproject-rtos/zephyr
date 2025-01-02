@@ -1,0 +1,23 @@
+sample:
+  description: Demonstration of the SiLabs Gecko ACMP driver
+  name: SiLabs Gecko ACMP sample
+common:
+  platform_allow:
+    - xg24_dk2601b
+  integration_platforms:
+    - xg24_dk2601b
+  tags:
+    - drivers
+    - sensor
+tests:
+  sample.sensor.gecko_acmp:
+    harness: console
+    harness_config:
+      type: one_line
+      ordered: true
+      regex:
+        - "ACMP input [a-z]* threshold"
+  sample.sensor.gecko_acmp.no_trigger:
+    build_only: true
+    extra_configs:
+      - CONFIG_GECKO_ACMP_TRIGGER=n
