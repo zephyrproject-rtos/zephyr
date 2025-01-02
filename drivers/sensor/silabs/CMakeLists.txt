@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
+add_subdirectory_ifdef(CONFIG_GECKO_ACMP gecko_acmp)
 add_subdirectory_ifdef(CONFIG_SI7006 si7006)
 add_subdirectory_ifdef(CONFIG_SI7055 si7055)
 add_subdirectory_ifdef(CONFIG_SI7060 si7060)

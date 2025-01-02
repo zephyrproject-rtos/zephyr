@@ -1,0 +1,127 @@
+# Copyright 2025 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiLabs Gecko Analog Comparator (ACMP)
+
+  This schema describes the properties available for configuring the Analog Comparator (ACMP) peripheral
+  on SiLabs Gecko devices. The ACMP supports flexible positive and negative input channel selection, hysteresis
+  settings, and configurable interrupt modes.
+
+compatible: "silabs,gecko-acmp"
+
+include: [sensor-device.yaml, pinctrl-device.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  reg:
+    required: true
+
+  positive-input:
+    type: string
+    description: |
+      Specifies the positive input channel for the comparator.
+      The input channels determine the source signal for comparison.
+    enum:
+      - "VSS"               # acmpInputVSS: VSS
+      - "VREFDIVAVDD"       # acmpInputVREFDIVAVDD: Divided AVDD
+      - "VREFDIVAVDDLP"     # acmpInputVREFDIVAVDDLP: Low-power Divided AVDD
+      - "VREFDIV1V25"       # acmpInputVREFDIV1V25: Divided 1.25V reference
+      - "VREFDIV1V25LP"     # acmpInputVREFDIV1V25LP: Low-power Divided 1.25V reference
+      - "VREFDIV2V5"        # acmpInputVREFDIV2V5: Divided 2.5V reference
+      - "VREFDIV2V5LP"      # acmpInputVREFDIV2V5LP: Low-power Divided 2.5V reference
+      - "VSENSE01DIV4"      # acmpInputVSENSE01DIV4: VSENSE0 divided by 4
+      - "VSENSE01DIV4LP"    # acmpInputVSENSE01DIV4LP: Low-power VSENSE0 divided by 4
+      - "VSENSE11DIV4"      # acmpInputVSENSE11DIV4: VSENSE1 divided by 4
+      - "VSENSE11DIV4LP"    # acmpInputVSENSE11DIV4LP: Low-power VSENSE1 divided by 4
+
+  negative-input:
+    type: string
+    description: |
+      Specifies the negative input channel for the comparator.
+      The input channels determine the source signal for comparison.
+    enum:
+      - "VSS"
+      - "VREFDIVAVDD"
+      - "VREFDIVAVDDLP"
+      - "VREFDIV1V25"
+      - "VREFDIV1V25LP"
+      - "VREFDIV2V5"
+      - "VREFDIV2V5LP"
+      - "VSENSE01DIV4"
+      - "VSENSE01DIV4LP"
+      - "VSENSE11DIV4"
+      - "VSENSE11DIV4LP"
+
+  hysteresis-level:
+    type: string
+    description: |
+      Configures the ACMP hysteresis mode. Hysteresis reduces the effect of noise near the threshold.
+    enum:
+      - "Disabled"     # No hysteresis: acmpHysteresis10Sym
+      - "10Sym"        # 10mV symmetric: acmpHysteresis10Sym
+      - "20Sym"        # 20mV symmetric: acmpHysteresis20Sym
+      - "30Sym"        # 30mV symmetric: acmpHysteresis30Sym
+      - "10Pos"        # 10mV positive: acmpHysteresis10Pos
+      - "20Pos"        # 20mV positive: acmpHysteresis20Pos
+      - "30Pos"        # 30mV positive: acmpHysteresis30Pos
+      - "10Neg"        # 10mV negative: acmpHysteresis10Neg
+      - "20Neg"        # 20mV negative: acmpHysteresis20Neg
+      - "30Neg"        # 30mV negative: acmpHysteresis30Neg
+    default: "Disabled"
+
+  input-range:
+    type: string
+    description: |
+      Configures the input range for the ACMP.
+      This determines the acceptable voltage range for the negative input channel.
+    enum:
+      - "Reduced"      # Input voltage range is reduced (0 to VDD-0.7): acmpInputRangeReduced
+      - "Full"         # Full input voltage range (0 to VDD): acmpInputRangeFull
+    default: "Full"
+
+  accuracy:
+    type: string
+    description: |
+      Configures the accuracy of the ACMP.
+      Higher accuracy consumes more current but provides better precision.
+    enum:
+      - "Low"            # Low accuracy, reduced power consumption: acmpAccuracyLow
+      - "High"           # High accuracy, higher power consumption: acmpAccuracyHigh
+    default: "Low"
+
+  bias-level:
+    type: int
+    description: |
+      Configures the bias level of the ACMP. This affects the power consumption and response time.
+    enum:
+      - 0                            # Lowest bias level
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7                            # Highest bias level
+    default: 0
+
+  vrefdiv:
+    type: int
+    description: |
+      Configures the reference voltage division factor.
+      VREFOUT = VREFIN * (VREFDIV / 63).
+    default: 0
+
+  interrupt-mode:
+    type: string
+    description: |
+      Configures the interrupt mode for the ACMP.
+      Determines whether interrupts are generated on a falling edge, rising edge, or both.
+    enum:
+      - "Off"                        # No interrupts
+      - "FallingEdge"                # Interrupt on falling edge
+      - "RisingEdge"                 # Interrupt on rising edge
+      - "BothEdge"                   # Interrupt on both edges
+    default: "Off"
