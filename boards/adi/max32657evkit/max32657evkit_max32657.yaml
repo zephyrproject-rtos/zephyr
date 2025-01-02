@@ -12,5 +12,6 @@ supported:
   - trng
   - watchdog
   - dma
+  - counter
 ram: 256
 flash: 960
