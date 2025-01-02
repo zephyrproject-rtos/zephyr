@@ -63,11 +63,11 @@ static void uart_sedi_cb(struct device *port);
 	};							      \
 								      \
 	static struct uart_sedi_drv_data drv_data_##n;		      \
-	PM_DEVICE_DT_DEFINE(DT_NODELABEL(uart##n),                    \
+	PM_DEVICE_DT_INST_DEFINE(n,                                   \
 			    uart_sedi_pm_action);		      \
-	DEVICE_DT_DEFINE(DT_NODELABEL(uart##n),		              \
+	DEVICE_DT_INST_DEFINE(n,			              \
 		      &uart_sedi_init,				      \
-		      PM_DEVICE_DT_GET(DT_NODELABEL(uart##n)),        \
+		      PM_DEVICE_DT_INST_GET(n),			      \
 		      &drv_data_##n, &config_info_##n,		      \
 		      PRE_KERNEL_1,				      \
 		      CONFIG_SERIAL_INIT_PRIORITY, &api);	      \
