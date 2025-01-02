@@ -364,6 +364,7 @@ linkcheck_anchors = False
 # -- Options for zephyr.api_overview --------------------------------------
 
 api_overview_doxygen_out_dir = str(doxyrunner_projects["zephyr"]["outdir"])
+api_overview_base_url = "https://github.com/zephyrproject-rtos/zephyr"
 
 def setup(app):
     # theme customizations
