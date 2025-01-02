@@ -11,5 +11,6 @@ supported:
   - gpio
   - watchdog
   - dma
+  - counter
 ram: 192
 flash: 576
