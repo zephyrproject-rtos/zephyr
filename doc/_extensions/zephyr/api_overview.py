@@ -14,9 +14,9 @@ from sphinx.util.docutils import SphinxDirective
 def get_group(innergroup, all_groups):
     try:
         return [
-            g
-            for g in all_groups
-            if g.get_compounddef()[0].get_id() == innergroup.get_refid()
+            group
+            for group in all_groups
+            if group.get_compounddef()[0].get_id() == innergroup.get_refid()
         ][0]
     except IndexError as e:
         raise Exception(f"Unexpected group {innergroup.get_refid()}") from e
@@ -49,15 +49,10 @@ class ApiOverview(SphinxDirective):
     def run(self):
         groups = parse_xml_dir(self.config.api_overview_doxygen_out_dir + "/xml")
 
+        inners = [group.get_compounddef()[0].get_innergroup() for group in groups]
+        inner_ids = [i.get_refid() for inner in inners for i in inner]
         toplevel = [
-            g
-            for g in groups
-            if g.get_compounddef()[0].get_id()
-            not in [
-                i.get_refid()
-                for h in [j.get_compounddef()[0].get_innergroup() for j in groups]
-                for i in h
-            ]
+            group for group in groups if group.get_compounddef()[0].get_id() not in inner_ids
         ]
 
         return [self.generate_table(toplevel, groups)]
