@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash {
+	partitions {
+		factory_partition: partition@207000 {
+			label = "factory-data";
+			reg = <0x207000 0x1000>;
+		};
+	};
+};

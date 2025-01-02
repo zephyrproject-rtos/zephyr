@@ -118,6 +118,11 @@ jobs:
         cd ..
         west build -b tlsr9528a_retention        -d build_retention_basic_b92           zephyr/samples/boards/tlsr9x/basic                       -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_SOC_SERIES_RISCV_TELINK_B9X_NON_RETENTION_RAM_CODE=y
 
+    - name: Build B92 FactoryData verifier (boards/tlsr9x/factorydata)
+      run: |
+        cd ..
+        west build -b tlsr9528a        -d build_factorydata_b92           zephyr/samples/boards/tlsr9x/factorydata                               -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+
     - name: Build B92 net/sockets/echo_client for OpenThread with PM deep-sleep
       run: |
         cd ..
