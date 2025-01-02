@@ -147,8 +147,13 @@ int z_abort_timeout(struct _timeout *to)
 
 	K_SPINLOCK(&timeout_lock) {
 		if (sys_dnode_is_linked(&to->node)) {
+			bool is_first = (to == first());
+
 			remove_timeout(to);
 			ret = 0;
+			if (is_first) {
+				sys_clock_set_timeout(next_timeout(), false);
+			}
 		}
 	}
 
