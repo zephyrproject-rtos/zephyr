@@ -10,6 +10,7 @@ menuconfig IWDG_STM32
 	default y
 	depends on DT_HAS_ST_STM32_WATCHDOG_ENABLED
 	select HAS_WDT_DISABLE_AT_BOOT
+	select HAS_WDT_NO_CALLBACKS
 	help
 	  Enable IWDG driver for STM32 line of MCUs
 
