@@ -229,6 +229,22 @@ config BT_COD
 	  consult the following link:
 	  https://www.bluetooth.com/specifications/assigned-numbers
 
+config BT_GOEP
+	bool "Bluetooth GOEP Profile [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the GOEP profile
+
+if BT_GOEP
+config BT_OEBX_RSP_CODE_TO_STR
+	bool "Print OBEX response code as strings"
+	help
+	  This configuration enables printing of OBEX response
+	  codes represented as strings.
+	  See bt_obex_rsp_code_to_str() for more details.
+
+endif # BT_GOEP
+
 endif # BT_CLASSIC
 
 endmenu
