@@ -16,6 +16,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/posix/posix_features.h>
 #include <zephyr/posix/dirent.h>
+#include <zephyr/sys/util.h>
 
 int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 {
