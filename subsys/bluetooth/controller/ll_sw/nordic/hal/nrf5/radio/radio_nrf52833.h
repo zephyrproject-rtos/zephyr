@@ -373,6 +373,7 @@ static inline void hal_radio_stop(void)
 
 static inline void hal_radio_ram_prio_setup(void)
 {
+#if defined(CONFIG_SOC_NRF52833)
 	struct {
 		uint32_t volatile reserved_0[0x5a0 >> 2];
 		uint32_t volatile bridge_type;
@@ -409,6 +410,7 @@ static inline void hal_radio_ram_prio_setup(void)
 	NRF_AMLI->RAMPRI.I2S     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PDM     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PWM     = 0xFFFFFFFFUL;
+#endif /* CONFIG_SOC_NRF52833 */
 }
 
 static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
