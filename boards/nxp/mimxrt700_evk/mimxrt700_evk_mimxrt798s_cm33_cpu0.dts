@@ -111,6 +111,10 @@
 	status = "okay";
 };
 
+&mrt0_channel0 {
+	status = "okay";
+};
+
 &xspi0 {
 	status = "okay";
 
