@@ -86,7 +86,7 @@ class ApiOverview(SphinxDirective):
 
     def visit_group(self, group, all_groups, rows, indent=0):
         version = since = ""
-        github_uri = "https://github.com/zephyrproject-rtos/zephyr/releases/tag/"
+        github_uri = self.config.api_overview_base_url + "/releases/tag/"
         cdef = group.get_compounddef()[0]
 
         ssects = [
@@ -150,6 +150,7 @@ class ApiOverview(SphinxDirective):
 
 def setup(app) -> dict[str, Any]:
     app.add_config_value("api_overview_doxygen_out_dir", "", "env")
+    app.add_config_value("api_overview_base_url", "", "env")
 
     app.add_directive("api-overview-table", ApiOverview)
 
