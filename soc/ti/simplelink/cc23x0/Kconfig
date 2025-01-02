@@ -20,6 +20,7 @@ config SOC_SERIES_CC23X0
 	select BUILD_OUTPUT_HEX
 	select HAS_PM
 	select PM_DEVICE if PM
+	select HAS_POWEROFF
 
 menu "Bootloader Configuration"
 depends on SOC_SERIES_CC23X0
