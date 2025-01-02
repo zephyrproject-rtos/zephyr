@@ -399,6 +399,10 @@ module = BT_SDP
 module-str = "Bluetooth Service Discovery Protocol (SDP)"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
+module = BT_GOEP
+module-str = "Bluetooth Generic Object Exchange Profile (GOEP)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 endmenu # Bluetooth Classic
 endif # BT_CLASSIC
 
