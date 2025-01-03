@@ -20,18 +20,14 @@
  *
  */
 
-/* driver data */
-struct iwdg_stm32_data {
+struct iwdg_stm32_config {
 	/* IWDG peripheral instance. */
-	IWDG_TypeDef *Instance;
+	IWDG_TypeDef *instance;
+};
+
+struct iwdg_stm32_data {
 	uint32_t prescaler;
 	uint32_t reload;
 };
-
-#define IWDG_STM32_DATA(dev)					\
-	((struct iwdg_stm32_data * const)(dev)->data)
-
-#define IWDG_STM32_STRUCT(dev)					\
-	((IWDG_TypeDef *)(IWDG_STM32_DATA(dev))->Instance)
 
 #endif	/* ZEPHYR_DRIVERS_WATCHDOG_IWDG_STM32_H_ */
