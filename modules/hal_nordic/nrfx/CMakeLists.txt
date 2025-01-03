@@ -196,7 +196,7 @@ if(CONFIG_SOC_NRF54L20_ENGA_CPUAPP)
   zephyr_compile_definitions(NRF_SKIP_TAMPC_SETUP)
 endif()
 
-if(CONFIG_SOC_SERIES_NRF54LX AND CONFIG_NRFX_GPPI)
+if(CONFIG_SOC_COMPATIBLE_NRF54LX AND CONFIG_NRFX_GPPI)
   zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib_lumos.c)
   zephyr_library_sources(${NRFX_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
 endif()
