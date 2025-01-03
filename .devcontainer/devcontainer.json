@@ -1,0 +1,23 @@
+{
+    "name": "Zephyr basic",
+    "build": {"dockerfile": "Dockerfile"},
+
+    "containerEnv": {
+        "HISTCONTROL": "ignoredups:erasedups",
+        "ZEPHYR_BASE": "/workspaces/zephyr",
+        "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr"
+    },
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "xaver.clang-format",
+                "EditorConfig.EditorConfig"
+            ]
+        }
+    },
+
+    "onCreateCommand": "git config --global --add safe.directory '*'",
+    "updateContentCommand": "${ZEPHYR_BASE}/.devcontainer/scripts/setup-env.sh",
+}
