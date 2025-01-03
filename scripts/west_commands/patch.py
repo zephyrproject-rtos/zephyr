@@ -114,6 +114,18 @@ class Patch(WestCommand):
             default=_WEST_TOPDIR,
             type=Path,
         )
+        parser.add_argument(
+            "-m",
+            "--module",
+            action="append",
+            dest="modules",
+            metavar="DIR",
+            type=Path,
+            help="Zephyr module directory to run the 'patch' command for. "
+            "Option can be passed multiple times. "
+            "If this option is not given, the 'patch' command will run for Zephyr "
+            "and all modules.",
+        )
 
         subparsers = parser.add_subparsers(
             dest="subcommand",
@@ -215,9 +227,9 @@ class Patch(WestCommand):
             "list": self.list,
         }
 
-        method[args.subcommand](args, yml)
+        method[args.subcommand](args, yml, args.modules)
 
-    def apply(self, args, yml):
+    def apply(self, args, yml, mods=None):
         patches = yml.get("patches", [])
         if not patches:
             return
@@ -227,6 +239,10 @@ class Patch(WestCommand):
         patched_mods = set()
 
         for patch_info in patches:
+            mod = Path(patch_info["module"])
+            if mods and mod not in mods:
+                continue
+
             pth = patch_info["path"]
             patch_path = os.path.realpath(Path(args.patch_base) / pth)
 
@@ -262,7 +278,6 @@ class Patch(WestCommand):
             patch_count += 1
             patch_file_data = None
 
-            mod = patch_info["module"]
             mod_path = Path(args.west_workspace) / mod
             patched_mods.add(mod)
 
@@ -331,12 +346,14 @@ class Patch(WestCommand):
 
         os.chdir(origdir)
 
-    def list(self, args, yml):
+    def list(self, args, yml, mods=None):
         patches = yml.get("patches", [])
         if not patches:
             return
 
         for patch_info in patches:
+            if mods and Path(patch_info["module"]) not in mods:
+                continue
             self.inf(patch_info)
 
     @staticmethod
@@ -347,7 +364,7 @@ class Patch(WestCommand):
 
         mod_paths = {}
         for patch_info in patches:
-            mod = patch_info["module"]
+            mod = Path(patch_info["module"])
             mod_path = os.path.realpath(Path(args.west_workspace) / mod)
             mod_paths[mod] = mod_path
 
