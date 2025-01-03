@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1193 188">
+  <style>
+
+    .terminal-1779317065-matrix {
+        font-family: Source Code Pro, monospace;
+        font-size: 20px;
+        line-height: 24.4px;
+    }
+    .terminal-1779317065-r1 { fill: #c5c8c6 }
+.terminal-1779317065-r2 { fill: #00afaf;font-weight: bold }
+.terminal-1779317065-r3 { fill: #d7afff }
+.terminal-1779317065-r4 { fill: #afaf5f }
+
+</style>
+  <defs>
+    <clipPath id="terminal-1779317065-clip-terminal">
+      <rect x="0" y="0" width="1175.0" height="169.79999999999998"/>
+    </clipPath>
+    <clipPath id="terminal-1779317065-line-0">
+      <rect x="0" y="1.5" width="1176" height="24.65"/>
+    </clipPath>
+    <clipPath id="terminal-1779317065-line-1">
+      <rect x="0" y="25.9" width="1176" height="24.65"/>
+    </clipPath>
+    <clipPath id="terminal-1779317065-line-2">
+      <rect x="0" y="50.3" width="1176" height="24.65"/>
+    </clipPath>
+    <clipPath id="terminal-1779317065-line-3">
+      <rect x="0" y="74.7" width="1176" height="24.65"/>
+    </clipPath>
+    <clipPath id="terminal-1779317065-line-4">
+      <rect x="0" y="99.1" width="1176" height="24.65"/>
+    </clipPath>
+    <clipPath id="terminal-1779317065-line-5">
+      <rect x="0" y="123.5" width="1176" height="24.65"/>
+    </clipPath>
+  </defs>
+  <!-- :chrome: -->
+  <rect fill="#292929" stroke="rgba(255,255,255,0.35)" stroke-width="1" x="1" y="1" width="1192" height="187" rx="8"/>
+  <!-- :gterm_begin: -->
+  <g transform="translate(9, 9)" clip-path="url(#terminal-1779317065-clip-terminal)">
+    <g class="terminal-1779317065-matrix">
+      <text class="terminal-1779317065-r1" x="252" y="20" textLength="204" clip-path="url(#terminal-1779317065-line-0)">Registers&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="terminal-1779317065-r1" x="480" y="20" textLength="696" clip-path="url(#terminal-1779317065-line-0)">Binding&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="terminal-1779317065-r1" x="1176" y="20" textLength="12" clip-path="url(#terminal-1779317065-line-0)">
+</text>
+      <text class="terminal-1779317065-r1" x="252" y="44.4" textLength="924" clip-path="url(#terminal-1779317065-line-1)">&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</text>
+      <text class="terminal-1779317065-r1" x="1176" y="44.4" textLength="12" clip-path="url(#terminal-1779317065-line-1)">
+</text>
+      <text class="terminal-1779317065-r1" x="0" y="68.8" textLength="228" clip-path="url(#terminal-1779317065-line-2)">partitions&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="terminal-1779317065-r1" x="252" y="68.8" textLength="204" clip-path="url(#terminal-1779317065-line-2)">&#x2026;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="terminal-1779317065-r2" x="480" y="68.8" textLength="192" clip-path="url(#terminal-1779317065-line-2)">fixed-partitions</text>
+      <text class="terminal-1779317065-r1" x="1176" y="68.8" textLength="12" clip-path="url(#terminal-1779317065-line-2)">
+</text>
+      <text class="terminal-1779317065-r1" x="0" y="93.2" textLength="48" clip-path="url(#terminal-1779317065-line-3)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="terminal-1779317065-r1" x="48" y="93.2" textLength="180" clip-path="url(#terminal-1779317065-line-3)">partition@0&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="terminal-1779317065-r3" x="252" y="93.2" textLength="36" clip-path="url(#terminal-1779317065-line-3)">0x0</text>
+      <text class="terminal-1779317065-r1" x="288" y="93.2" textLength="36" clip-path="url(#terminal-1779317065-line-3)">&#xA0;&#x2192;&#xA0;</text>
+      <text class="terminal-1779317065-r3" x="324" y="93.2" textLength="72" clip-path="url(#terminal-1779317065-line-3)">0xbfff</text>
+      <text class="terminal-1779317065-r1" x="480" y="93.2" textLength="24" clip-path="url(#terminal-1779317065-line-3)">&#x21B3;&#xA0;</text>
+      <text class="terminal-1779317065-r4" x="504" y="93.2" textLength="672" clip-path="url(#terminal-1779317065-line-3)">Each&#xA0;child&#xA0;node&#xA0;of&#xA0;the&#xA0;fixed-partitions&#xA0;node&#xA0;represents&#x2026;</text>
+      <text class="terminal-1779317065-r1" x="1176" y="93.2" textLength="12" clip-path="url(#terminal-1779317065-line-3)">
+</text>
+      <text class="terminal-1779317065-r1" x="0" y="117.6" textLength="48" clip-path="url(#terminal-1779317065-line-4)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="terminal-1779317065-r1" x="48" y="117.6" textLength="180" clip-path="url(#terminal-1779317065-line-4)">partition@c000&#xA0;</text>
+      <text class="terminal-1779317065-r3" x="252" y="117.6" textLength="72" clip-path="url(#terminal-1779317065-line-4)">0xc000</text>
+      <text class="terminal-1779317065-r1" x="324" y="117.6" textLength="36" clip-path="url(#terminal-1779317065-line-4)">&#xA0;&#x2192;&#xA0;</text>
+      <text class="terminal-1779317065-r3" x="360" y="117.6" textLength="84" clip-path="url(#terminal-1779317065-line-4)">0x81fff</text>
+      <text class="terminal-1779317065-r1" x="480" y="117.6" textLength="24" clip-path="url(#terminal-1779317065-line-4)">&#x21B3;&#xA0;</text>
+      <text class="terminal-1779317065-r4" x="504" y="117.6" textLength="672" clip-path="url(#terminal-1779317065-line-4)">Each&#xA0;child&#xA0;node&#xA0;of&#xA0;the&#xA0;fixed-partitions&#xA0;node&#xA0;represents&#x2026;</text>
+      <text class="terminal-1779317065-r1" x="1176" y="117.6" textLength="12" clip-path="url(#terminal-1779317065-line-4)">
+</text>
+      <text class="terminal-1779317065-r1" x="0" y="142" textLength="48" clip-path="url(#terminal-1779317065-line-5)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="terminal-1779317065-r1" x="48" y="142" textLength="180" clip-path="url(#terminal-1779317065-line-5)">partition@82000</text>
+      <text class="terminal-1779317065-r3" x="252" y="142" textLength="84" clip-path="url(#terminal-1779317065-line-5)">0x82000</text>
+      <text class="terminal-1779317065-r1" x="336" y="142" textLength="36" clip-path="url(#terminal-1779317065-line-5)">&#xA0;&#x2192;&#xA0;</text>
+      <text class="terminal-1779317065-r3" x="372" y="142" textLength="84" clip-path="url(#terminal-1779317065-line-5)">0xf7fff</text>
+      <text class="terminal-1779317065-r1" x="480" y="142" textLength="24" clip-path="url(#terminal-1779317065-line-5)">&#x21B3;&#xA0;</text>
+      <text class="terminal-1779317065-r4" x="504" y="142" textLength="672" clip-path="url(#terminal-1779317065-line-5)">Each&#xA0;child&#xA0;node&#xA0;of&#xA0;the&#xA0;fixed-partitions&#xA0;node&#xA0;represents&#x2026;</text>
+      <text class="terminal-1779317065-r1" x="1176" y="142" textLength="12" clip-path="url(#terminal-1779317065-line-5)">
+</text>
+      <text class="terminal-1779317065-r1" x="0" y="166.4" textLength="48" clip-path="url(#terminal-1779317065-line-6)">&#x2514;&#x2500;&#x2500;&#xA0;</text>
+      <text class="terminal-1779317065-r1" x="48" y="166.4" textLength="180" clip-path="url(#terminal-1779317065-line-6)">partition@f8000</text>
+      <text class="terminal-1779317065-r3" x="252" y="166.4" textLength="84" clip-path="url(#terminal-1779317065-line-6)">0xf8000</text>
+      <text class="terminal-1779317065-r1" x="336" y="166.4" textLength="36" clip-path="url(#terminal-1779317065-line-6)">&#xA0;&#x2192;&#xA0;</text>
+      <text class="terminal-1779317065-r3" x="372" y="166.4" textLength="84" clip-path="url(#terminal-1779317065-line-6)">0xfffff</text>
+      <text class="terminal-1779317065-r1" x="480" y="166.4" textLength="24" clip-path="url(#terminal-1779317065-line-6)">&#x21B3;&#xA0;</text>
+      <text class="terminal-1779317065-r4" x="504" y="166.4" textLength="672" clip-path="url(#terminal-1779317065-line-6)">Each&#xA0;child&#xA0;node&#xA0;of&#xA0;the&#xA0;fixed-partitions&#xA0;node&#xA0;represents&#x2026;</text>
+      <text class="terminal-1779317065-r1" x="1176" y="166.4" textLength="12" clip-path="url(#terminal-1779317065-line-6)">
+</text>
+    </g>
+  </g>
+  <!-- :gterm_end: -->
+</svg>
