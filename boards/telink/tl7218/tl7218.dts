@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "tl7218-common.dtsi"
+
+/ {
+	led_pool {
+		compatible = "gpio-leds";
+
+		out {
+			gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwm_pool {
+		compatible = "pwm-leds";
+		out {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>,
+				<&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>,
+				<&pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&pwm0 {
+	/* On board RGB LEDs */
+	pinctrl-ch0 = <&pwm_ch0_pc1_default>;
+	pinctrl-ch1 = <&pwm_ch1_pc2_default>;
+	pinctrl-ch2 = <&pwm_ch2_pc0_default>;
+};
+
+&pinctrl {
+	pwm_ch0_pc1_default: pwm_ch0_pc1_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_1, TL721X_FUNC_PWM0)>;
+	};
+	pwm_ch1_pc2_default: pwm_ch1_pc2_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_2, TL721X_FUNC_PWM1)>;
+	};
+	pwm_ch2_pc0_default: pwm_ch2_pc0_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_0, TL721X_FUNC_PWM2)>;
+	};
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&wdt {
+	status = "okay";
+};

@@ -1,47 +1,52 @@
-.. _tl3218:
+.. _tl7218:
 
-Telink TL3218
+Telink TL7218
 #####################
 
 Overview
 ********
 
-The TL3218 Generic Starter Kit is a hardware platform which
-can be used to verify the Telink TLx series chipset and develop applications
-for several 2.4 GHz air interface standards including Bluetooth LE, Zigbee, RF4CE,
-Thread, Matter, and 2.4GHz proprietary standard.
+The TL7218 Generic Starter Kit is a hardware platform which
+can be used to verify the `Telink TLX series chipset`_ and develop applications
+for several 2.4 GHz air interface standards including Bluetooth low energy,
+Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
 
-.. figure:: img/tl3218x.jpg
+.. figure:: img/tl7218x.jpg
      :align: center
-     :alt: TL3218
+     :alt: TL7218
 
-.. More information about the board can be found at the `Telink B92 Generic Starter Kit Hardware Guide`_ website.
+More information about the board can be found at the `Telink TL7218 Generic Starter Kit Hardware Guide`_ website.
 
 Hardware
 ********
 
-The TL3218 SoC integrates a powerful 32-bit RISC-V MCU, DSP, 2.4 GHz ISM Radio, 128 KB SRAM
-including 96 KB retention feature SRAM, external Flash memory, 12-bit AUX ADC, PWM, flexible
-IO interfaces, and other peripheral blocks required for advanced IoTapplications.
+TL7218 is a single chip SoC for Bluetooth low energy and 802.15.4. The embedded 2.4GHz transceiver
+supports Bluetooth low energy, 802.15.4 as well as 2.4GHz proprietary operation.
+The TL7218 integrates a powerful 32-bit RISC-V MCU, 512 or 256 KB SRAM including up to 256 KB retention SRAM,
+2 MB or 1 MB embedded flash, 12-bit ADC, PWM, flexible IO interfaces, and other peripheral blocks for IoT
+applications.
 
-.. figure:: img/tl3218_block_diagram.png
+.. figure:: img/tl7218_block_diagram.png
      :align: center
-     :alt: TL3218_SOC
+     :alt: TL7218_SOC
 
-The TL3218 default board configuration provides the following hardware components:
+The TL7218 default board configuration provides the following hardware components:
 
 - RF conducted antenna
 - 2 MB External SPI Flash memory with reset button. (Possible to mount 1/2/4 MB)
 - Chip reset button
-- Mini USB interface
+- USB type-C interface
 - 4-wire JTAG
-- 4 LEDs, Key matrix up to 4 keys
-- Stereo line-out
+- Key matrix up to 4 keys
+- 4 LEDs
+- 1 infra-red LED
+- 1 analogue microphone with line-in function (switching by a jumper in microphone path)
+- Dual Digital microphone
 
 Supported Features
 ==================
 
-The Zephyr TL3218 board configuration supports the following hardware features:
+The Zephyr TL7218 board configuration supports the following hardware features:
 
 +----------------+------------+------------------------------+
 | Interface      | Controller | Driver/Component             |
@@ -74,19 +79,12 @@ The Zephyr TL3218 board configuration supports the following hardware features:
 +----------------+------------+------------------------------+
 | USB (device)   | on-chip    | usb_dc                       |
 +----------------+------------+------------------------------+
-| AES            | on-chip    | mbedtls                      |
-+----------------+------------+------------------------------+
 | PKE            | on-chip    | mbedtls                      |
 +----------------+------------+------------------------------+
 
-.. Board supports power-down modes: suspend and deep-sleep. For deep-sleep mode only 96KB of retention memory is available.
-
-Board supports HW cryptography acceleration (AES and ECC till 256 bits). MbedTLS interface is used as cryptography front-end.
-
-.. note::
-   To support "button" example project PD6-KEY3 (J5-13, J5-14) jumper needs to be removed and KEY3 (J5-13) should be connected to GND (J3-30) externally.
-
-   For the rest example projects use the default jumpers configuration.
+Board includes power management module: Embedded LDO and DCDC, Battery monitor for low battery voltage detection,
+Brownout detection/shutdown and Power-On-Reset, Deep sleep with external wakeup (without SRAM retention),
+Deep sleep with RTC and SRAM retention (32 KB SRAM retention).
 
 Limitations
 -----------
@@ -106,42 +104,45 @@ Default configuration and IOs
 System Clock
 ------------
 
-The TL3218 board is configured to use the 24 MHz external crystal oscillator
-with the on-chip PLL/DIV generating the 96 MHz system clock.
+The TL7218 board is configured to use the 24 MHz external crystal oscillator
+with the on-chip PLL/DIV generating the 60 MHz system clock.
 The following values also could be assigned to the system clock in the board DTS file
-(``boards/telink/tl3218/tl3218-common.dtsi``):
+(``boards/telink/tl7218/tl7218-common.dtsi``):
 
-- 24000000
+- 40000000
 - 48000000
-- 96000000
+- 60000000
+- 80000000
+- 120000000
 
 .. code-block::
 
    &cpu0 {
-       clock-frequency = <96000000>;
+       clock-frequency = <60000000>;
    };
 
 PINs Configuration
 ------------------
 
-The TL3218 SoC has five GPIO controllers (PORT_A to PORT_F), and the next are
+The TL7218 SoC has five GPIO controllers (PORT_A to PORT_F), and the next are
 currently enabled:
 
-- LED0 (white): PD0, LED1 (green): PB0, LED2 (red): PB1, LED3 (blue): PB2
-- Key Matrix SW3: PB3_PB6, SW4: PB3_PB7, SW5: PB5_PB6, SW6: PB5_PB7
+- LED0 (blue): PC0, LED1 (green): PC2, LED2 (white): PC3, LED3 (red): PC1
+- Key Matrix SW3: PD4_PD5, SW4: PD4_PD7, SW5: PD6_PD5, SW6: PD6_PD7
 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
-``boards/telink/tl3218/tl3218-common.dtsi`` file:
+``boards/telink/tl7218/tl7218-common.dtsi`` file:
 
-- UART0 TX: PE0, RX: PE1
-- PWM Channel 0: PB2
-- GSPI CLK: PE5, MISO: PE6, MOSI: PE7
-- I2C SCL: PC3, SDA: PC2
+- UART0 TX: PB2, RX: PB3
+- PWM Channel 0: PB7
+- LSPI CLK: PE1, MISO: PE3, MOSI: PE2
+- GSPI CLK: PF4, MISO: PF6, MOSI: PF7
+- I2C SCL: PE6, SDA: PE7
 
 Serial Port
 -----------
 
-The TL3218 SoC has 1 UART. The Zephyr console output is assigned to UART0.
+The Zephyr console output is assigned to UART0.
 The default settings are 115200 8N1.
 
 Programming and debugging
@@ -161,7 +162,7 @@ Here is an example for the "hello_world" application.
 .. code-block:: console
 
    # From the root of the zephyr repository
-   west build -b tl3218 samples/hello_world
+   west build -b tl7218 samples/hello_world
 
 Open a serial terminal with the following settings:
 
@@ -176,30 +177,30 @@ serial port:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v3.3.0-xxxx-xxxxxxxxxxxxx  ***
-   Hello World! tl3218
+   Hello World! tl7218
 
 
 Flashing
 ========
 
-To flash the TL3218 board see the sources below:
+To flash the TL7218 board see the sources below:
 
 - `Burning and Debugging Tools for all Series`_
 
-.. It is also possible to use the west flash command. Download BDT tool for Linux `Burning and Debugging Tools for Linux`_ or
-.. `Burning and Debugging Tools for Windows`_ and extract archive into some directory you wish TELINK_BDT_BASE_DIR
+It is also possible to use the west flash command. Download BDT tool for Linux `Burning and Debugging Tool for Linux`_ or
+`Burning and Debugging Tool for Windows`_ and extract archive into some directory you wish TELINK_BDT_BASE_DIR
 
-.. - Now you should be able to run the west flash command with the BDT path specified (TELINK_BDT_BASE_DIR).
+- Now you should be able to run the west flash command with the BDT path specified (TELINK_BDT_BASE_DIR).
 
-.. .. code-block:: console
+.. code-block:: console
 
-..    west flash --bdt-path=$TELINK_BDT_BASE_DIR --erase
+   west flash --bdt-path=$TELINK_BDT_BASE_DIR --erase
 
-.. - You can also run the west flash command without BDT path specification if TELINK_BDT_BASE_DIR is in your environment (.bashrc).
+- You can also run the west flash command without BDT path specification if TELINK_BDT_BASE_DIR is in your environment (.bashrc).
 
-.. .. code-block:: console
+.. code-block:: console
 
-..    export TELINK_BDT_BASE_DIR="/opt/telink_bdt/"
+   export TELINK_BDT_BASE_DIR="/opt/telink_bdt/"
 
 
 References
@@ -208,6 +209,6 @@ References
 .. target-notes::
 
 .. _Burning and Debugging Tools for all Series: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
-.. _Burning and Debugging Tools for Linux: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/Telink_libusb_BDT-Linux-X64-V1.6.0.zip
-.. _Burning and Debugging Tools for Windows: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/BDT.zip
+.. _Burning and Debugging Tool for Linux: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/Telink_libusb_BDT-Linux-X64-V1.6.0.zip
+.. _Burning and Debugging Tool for Windows: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/BDT.zip
 .. _Zephyr Getting Started Guide: https://docs.zephyrproject.org/latest/getting_started/index.html

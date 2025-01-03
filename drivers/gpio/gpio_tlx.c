@@ -105,10 +105,11 @@
 
 /* Supported IRQ numbers */
 #if CONFIG_SOC_RISCV_TELINK_TL721X
-#define IRQ_GPIO                 ((uint8_t)25u)
 #define IRQ_GPIO2_RISC0          ((uint8_t)26u)
 #define IRQ_GPIO2_RISC1          ((uint8_t)27u)
-#elif CONFIG_SOC_RISCV_TELINK_TL321X
+#endif
+
+#if CONFIG_SOC_RISCV_TELINK_TL721X || CONFIG_SOC_RISCV_TELINK_TL321X
 #define IRQ_GPIO0                ((uint8_t)34u)
 #define IRQ_GPIO1                ((uint8_t)35u)
 #define IRQ_GPIO2                ((uint8_t)36u)

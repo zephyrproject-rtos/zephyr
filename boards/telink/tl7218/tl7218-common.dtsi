@@ -7,18 +7,18 @@
 /dts-v1/;
 
 #include <freq.h>
-#include <telink/telink_tl321x.dtsi>
-#include "tl3218-pinctrl.dtsi"
+#include <telink/telink_tl721x.dtsi>
+#include "tl7218-pinctrl.dtsi"
 
 / {
-	model = "telink,tl321x";
-	compatible = "telink,tl3218x";
+	model = "telink,tl721x";
+	compatible = "telink,tl7218x";
 
 	aliases {
-		led0 = &led_white;
+		led0 = &led_blue;
 		led1 = &led_green;
-		led2 = &led_red;
-		led3 = &led_blue;
+		led2 = &led_white;
+		led3 = &led_red;
 		sw0 = &key_1;
 		sw1 = &key_2;
 		sw2 = &key_3;
@@ -33,24 +33,24 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_white: led_0 {
-			gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
-			label = "LED White";
+		led_blue: led_0 {
+			gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+			label = "LED Blue";
 		};
 
 		led_green: led_1 {
-			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
 			label = "LED Green";
 		};
 
-		led_red: led_2 {
-			gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
-			label = "LED Red";
+		led_white: led_2 {
+			gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
+			label = "LED White";
 		};
 
-		led_blue: led_3 {
-			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
-			label = "LED Blue";
+		led_red: led_3 {
+			gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+			label = "LED Red";
 		};
 	};
 
@@ -67,33 +67,33 @@
 		compatible = "gpio-keys";
 		key_1: button_1 {
 			label = "User KEY1";
-			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiod 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_2: button_2 {
 			label = "User KEY2";
-			gpios = <&gpiob 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiod 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_3: button_3 {
 			label = "User KEY3";
-			gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiod 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_4: button_4 {
 			label = "User KEY4";
-			gpios = <&gpiob 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiod 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_dfu: button_dfu {
 			label = "USB DFU";
-			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiob 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
 
-	/* Short TL_Key3 (J6 pin 21) to ground */
+	/* Short TL_Key3 (J6 pin 31) to ground */
 	key_pool {
 		compatible = "gpio-keys";
 
 		inp {
-			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
-				<&gpiob 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiod 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+				<&gpiod 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
 
@@ -101,20 +101,20 @@
 		compatible = "gpio-keys";
 
 		col {
-			gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>,
-				<&gpiob 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>,
+				<&gpiod 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		row {
-			gpios = <&gpiob 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-				<&gpiob 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			gpios = <&gpiod 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+				<&gpiod 6 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		};
 	};
 
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,sram = &ram_ilm;
+		zephyr,sram = &ram_dlm;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &flash_mspi;
 		zephyr,entropy = &trng0;
@@ -125,11 +125,15 @@
 };
 
 &cpu0 {
-	clock-frequency = <96000000>;
+	clock-frequency = <60000000>;
 };
 
 &ram_ilm {
-	reg = <0x00068000 0x00020000>;
+	reg = <0x00040000 0x00040000>;
+};
+
+&ram_dlm {
+	reg = <0x00080000 0x00040000>;
 };
 
 &flash {
@@ -174,7 +178,6 @@
 };
 
 &gpiob {
-	interrupts = <35 1>;
 	status = "okay";
 };
 
@@ -183,23 +186,27 @@
 };
 
 &gpiod {
+	interrupts = <25 1>;
 	status = "okay";
 };
 
 &gpioe {
-	interrupts = <36 1>;
 	status = "okay";
 };
 
 &gpiof {
-	interrupts = <37 1>;
+	interrupts = <26 1>;
+	status = "okay";
+};
+
+&gpiog {
 	status = "okay";
 };
 
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&uart0_tx_pe0_default &uart0_rx_pe1_default>;
+	pinctrl-0 = <&uart0_tx_pb2_default &uart0_rx_pb3_default>;
 	pinctrl-names = "default";
 };
 
@@ -214,20 +221,27 @@
 &pwm0 {
 	status = "okay";
 	clock-frequency = <300000>;
-	pinctrl-ch0 = <&pwm_ch0_pb2_default>;
+	pinctrl-ch0 = <&pwm_ch0_pb7_default>;
+};
+
+&lspi {
+	status = "okay";
+	cs0-pin = "LSPI_CSN_PE0_PIN";
+	pinctrl-0 = <&lspi_clk_pe1_default &lspi_miso_pe3_default &lspi_mosi_pe2_default>;
+	pinctrl-names = "default";
 };
 
 &gspi {
 	status = "okay";
-	cs0-pin = "GPIO_PE4";
-	pinctrl-0 = <&gspi_clk_pe5_default &gspi_miso_pe6_default &gspi_mosi_pe7_default>;
+	cs0-pin = "GPIO_PF3";
+	pinctrl-0 = <&gspi_clk_pf4_default &gspi_miso_pf6_default &gspi_mosi_pf7_default>;
 	pinctrl-names = "default";
 };
 
 &i2c {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	pinctrl-0 = <&i2c_scl_pc3_default &i2c_sda_pc2_default>;
+	pinctrl-0 = <&i2c_scl_pe6_default &i2c_sda_pe7_default>;
 	pinctrl-names = "default";
 };
 
@@ -235,7 +249,7 @@
 	status = "okay";
 	vref-internal-mv = <1200>;
 	sample-freq = <DT_FREQ_K(96)>;
-	pinctrl-0 = <&adc_pd1_default>;
+	pinctrl-0 = <&adc_pb1_default>;
 	pinctrl-names = "default";
 };
 

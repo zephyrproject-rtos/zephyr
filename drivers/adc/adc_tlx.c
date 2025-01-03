@@ -152,7 +152,7 @@ static signed short adc_tlx_get_code(void)
 {
 	signed short adc_code;
 
-#if  CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X || CONFIG_SOC_RISCV_TELINK_TL721X
 	extern unsigned char g_adc_rx_fifo_index;
 
 	if (g_adc_rx_fifo_index == 0) {
@@ -162,14 +162,6 @@ static signed short adc_tlx_get_code(void)
 		adc_code = reg_adc_rxfifo_dat(g_adc_rx_fifo_index);
 		g_adc_rx_fifo_index = 0;
 	}
-#elif CONFIG_SOC_RISCV_TELINK_TL721X
-	analog_write_reg8(areg_adc_data_sample_control,
-		analog_read_reg8(areg_adc_data_sample_control) | FLD_NOT_SAMPLE_ADC_DATA);
-
-	adc_code = analog_read_reg16(areg_adc_misc_l);
-
-	analog_write_reg8(areg_adc_data_sample_control,
-		analog_read_reg8(areg_adc_data_sample_control) & (~FLD_NOT_SAMPLE_ADC_DATA));
 #endif
 	return adc_code;
 }
@@ -247,15 +239,10 @@ static void adc_tlx_acquisition_thread(const struct device *dev)
 	while (true) {
 		/* Wait for Acquisition semaphore */
 		k_sem_take(&data->acq_sem, K_FOREVER);
-#if  CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X || CONFIG_SOC_RISCV_TELINK_TL721X
 		adc_start_sample_nodma();
 		while (((reg_adc_rxfifo_trig_num & FLD_BUF_CNT) >> 4)
 				== 0){
-		}
-#elif CONFIG_SOC_RISCV_TELINK_TL721X
-		/* Wait for ADC data ready */
-		while ((analog_read_reg8(AREG_ADC_DATA_STATUS) & ADC_DATA_READY)
-				!= ADC_DATA_READY) {
 		}
 #endif
 		/* Perform read */

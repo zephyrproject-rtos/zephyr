@@ -102,11 +102,6 @@ jobs:
         cd ..
         west build -b tl3218      -d build_ot_coprocessor_rcp_uart_tl3218     zephyr/samples/net/openthread/coprocessor     -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-rcp.conf
 
-    - name: Build TL321X net/openthread/coprocessor in RCP configuration with USB interface
-      run: |
-        cd ..
-        west build -b tl3218     -d build_ot_coprocessor_rcp_usb_tl3218      zephyr/samples/net/openthread/coprocessor     -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DDTC_OVERLAY_FILE="usb.overlay boards/tl3218-dongle.overlay" -DOVERLAY_CONFIG=overlay-rcp-usb-telink.conf
-
     - name: Build TL321x subsys/usb/console for USB driver
       run: |
         cd ..
@@ -142,7 +137,6 @@ jobs:
         cp ../build_peripheral_ht_tl3218/zephyr/zephyr.bin              telink_build_artifacts/tl3218_peripheral_ht.bin
         cp ../build_ot_cli_tl3218/zephyr/zephyr.bin                     telink_build_artifacts/tl3218_ot_cli.bin
         cp ../build_ot_coprocessor_rcp_uart_tl3218/zephyr/zephyr.bin    telink_build_artifacts/tl3218_ot_coprocessor_rcp_uart.bin
-        cp ../build_ot_coprocessor_rcp_usb_tl3218/zephyr/zephyr.bin     telink_build_artifacts/tl3218_ot_coprocessor_rcp_usb.bin
         cp ../build_usb_console_tl3218/zephyr/zephyr.bin                telink_build_artifacts/tl3218_usb_console.bin
         cp ../build_crypto_mbedtls_tl3218/zephyr/zephyr.bin             telink_build_artifacts/tl3218_mbedtls.bin
         cp ../build_mcuboot_chip_id_tl3218/zephyr/zephyr.bin            telink_build_artifacts/tl3218_mcuboot_chip_id.bin

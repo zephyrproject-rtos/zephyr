@@ -4,6 +4,6 @@
 config SPI_TELINK_TLX
 	bool "Telink Semiconductor TLx SPI driver"
 	default y
-	depends on DT_HAS_TELINK_TL321X_SPI_ENABLED
+	depends on DT_HAS_TELINK_TL321X_SPI_ENABLED || DT_HAS_TELINK_TL721X_SPI_ENABLED
 	help
 	  Enables Telink TLx SPI driver.

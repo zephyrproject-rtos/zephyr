@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c {
+	pinctrl-0 = <&i2c_scl_pe6_default &i2c_sda_pe7_default>;
+
+	sht3xd@44 {
+		compatible = "sensirion,sht3xd";
+		reg = <0x44>;
+	};
+};

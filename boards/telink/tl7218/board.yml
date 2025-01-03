@@ -1,0 +1,10 @@
+boards:
+- name: tl7218
+  vendor: telink
+  socs:
+  - name: telink_tl721x
+
+- name: tl7218_retention
+  vendor: telink
+  socs:
+  - name: telink_tl721x

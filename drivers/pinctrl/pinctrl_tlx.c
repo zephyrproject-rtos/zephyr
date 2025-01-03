@@ -6,10 +6,10 @@
 
 #include "analog.h"
 #include <zephyr/drivers/pinctrl.h>
-#if CONFIG_SOC_RISCV_TELINK_TL721X
-#include <zephyr/dt-bindings/pinctrl/b95-pinctrl.h>
-#elif CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 #include <zephyr/dt-bindings/pinctrl/tl321x-pinctrl.h>
+#elif CONFIG_SOC_RISCV_TELINK_TL721X
+#include <zephyr/dt-bindings/pinctrl/tl721x-pinctrl.h>
 #endif
 #include <zephyr/pm/device.h>
 
@@ -197,7 +197,8 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pinctrl)
 
 	/* set func value */
 #if CONFIG_SOC_RISCV_TELINK_TL721X
-	reg_pin_mux(pin) = (reg_pin_mux(pin) & (~B95_PIN_FUNC_POS)) | (func & B95_PIN_FUNC_POS);
+	reg_pin_mux(pin) =
+		(reg_pin_mux(pin) & (~TL721X_PIN_FUNC_POS)) | (func & TL721X_PIN_FUNC_POS);
 #elif CONFIG_SOC_RISCV_TELINK_TL321X
 	reg_pin_mux(pin) =
 		(reg_pin_mux(pin) & (~TL321X_PIN_FUNC_POS)) | (func & TL321X_PIN_FUNC_POS);

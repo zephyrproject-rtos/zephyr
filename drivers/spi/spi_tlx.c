@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 #define DT_DRV_COMPAT telink_tl321x_spi
+#elif CONFIG_SOC_RISCV_TELINK_TL721X
+#define DT_DRV_COMPAT telink_tl721x_spi
+#endif
 
 /*  Redefine 'spi_read' and 'spi_write' functions names from HAL */
 #define spi_read    hal_spi_read
@@ -123,7 +127,7 @@ static bool spi_tlx_config_cs(const struct device *dev,
 				/* Note: lspi_cs_pin_en has not added to SPI driver for B92,
 				 * lspi_cs_pin_en must call lspi_set_pin_mux
 				 */
-				lspi_set_pin_mux(cs_pin);
+				lspi_set_pin_mux(cs_pin, LSPI_CN_IO);
 			} else {
 				gspi_cs_pin_en(cs_pin);
 			}
