@@ -26,7 +26,7 @@
 int _fstat(int fd, struct stat *st);
 int _read(int fd, void *buf, int nbytes);
 int _write(int fd, const void *buf, int nbytes);
-int _open(const char *name, int mode);
+int _open(const char *name, int mode, ...);
 int _close(int file);
 int _lseek(int file, int ptr, int dir);
 int _kill(int pid, int sig);
@@ -239,11 +239,11 @@ int _write(int fd, const void *buf, int nbytes)
 }
 __weak FUNC_ALIAS(_write, write, int);
 
-int _open(const char *name, int mode)
+int _open(const char *name, int mode, ...)
 {
 	return -1;
 }
-__weak FUNC_ALIAS(_open, open, int);
+__weak int open(const char *name, int mode, ...) ALIAS_OF(_open);
 
 int _close(int file)
 {
