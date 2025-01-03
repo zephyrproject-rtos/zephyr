@@ -236,6 +236,22 @@ extern "C" {
  *  will take place in consecutive send()/recv() call.
  */
 #define TLS_DTLS_HANDSHAKE_ON_CONNECT 18
+/** Socket option to configure certificate extension callback for the socket.
+ *  The option accepts a pointer to @ref tls_cert_ext_cb structure, containing
+ *  pointers to the actual callback function and application-defined context.
+ *
+ *  If set, the registered callback is called whenever an unknown certificate
+ *  extension is encountered when parsing DER certificates during socket
+ *  operation.
+ *
+ *  Note, that due to mbed TLS limitation this option only works with DER
+ *  certificates, i. e. the callback won't be called for certificates provided
+ *  in PEM format.
+ *
+ *  The option is only available if CONFIG_NET_SOCKETS_TLS_CERT_EXT_CALLBACK
+ *  Kconfig option is enabled.
+ */
+#define TLS_CERT_EXT_CALLBACK 19
 
 /* Valid values for @ref TLS_PEER_VERIFY option */
 #define TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
@@ -264,6 +280,19 @@ extern "C" {
 #define TLS_DTLS_CID_STATUS_DOWNLINK		1 /**< CID is in use by us */
 #define TLS_DTLS_CID_STATUS_UPLINK		2 /**< CID is in use by peer */
 #define TLS_DTLS_CID_STATUS_BIDIRECTIONAL	3 /**< CID is in use by us and peer */
+
+/** Data structure used with @ref TLS_CERT_EXT_CALLBACK socket option. */
+struct tls_cert_ext_cb {
+	/** A pointer to the certificate extension callback function.
+	 *
+	 * The actual callback function type is defined by mbed TLS, i. e.
+	 * see @ref mbedtls_x509_crt_ext_cb_t.
+	 */
+	void *cb;
+
+	/** A pointer to an opaque context passed to the callback. */
+	void *ctx;
+};
 /** @} */ /* for @name */
 /** @} */ /* for @defgroup */
 
