@@ -1092,6 +1092,9 @@ isr_rx_next_subevent:
 		/* Setup radio packet timer header complete timeout for
 		 * subsequent subevent PDU.
 		 */
+		uint32_t jitter_max_us;
+		uint32_t overhead_us;
+		uint32_t jitter_us;
 
 		/* Calculate the radio start with consideration of the drift
 		 * based on the access address capture timestamp.
@@ -1102,7 +1105,17 @@ isr_rx_next_subevent:
 		hcto -= radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
-		hcto -= (EVENT_CLOCK_JITTER_US << 1) * nse;
+		overhead_us = radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+		overhead_us += addr_us_get(lll->phy);
+		overhead_us += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
+		overhead_us += (EVENT_CLOCK_JITTER_US << 1);
+		jitter_max_us = (EVENT_IFS_US - overhead_us) >> 1;
+		jitter_max_us -= RANGE_DELAY_US + HAL_RADIO_TMR_START_DELAY_US;
+		jitter_us = (EVENT_CLOCK_JITTER_US << 1) * nse;
+		if (jitter_us > jitter_max_us) {
+			jitter_us = jitter_max_us;
+		}
+		hcto -= jitter_us;
 
 		start_us = hcto;
 		hcto = radio_tmr_start_us(0U, start_us);
@@ -1112,8 +1125,8 @@ isr_rx_next_subevent:
 		 * 4 us early and subevents could have a 4 us drift each until
 		 * the current subevent we are listening.
 		 */
-		hcto += (((EVENT_CLOCK_JITTER_US << 1) * nse) << 1) +
-			RANGE_DELAY_US + HAL_RADIO_TMR_START_DELAY_US;
+		hcto += (jitter_us << 1);
+		hcto += RANGE_DELAY_US + HAL_RADIO_TMR_START_DELAY_US;
 	} else {
 		/* First subevent PDU was not received, hence setup radio packet
 		 * timer header complete timeout from where the first subevent
