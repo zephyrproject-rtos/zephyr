@@ -821,6 +821,90 @@ int test_header_cr_no_lf_error(int req)
 	return TC_FAIL;
 }
 
+int test_content_range_supplied(int req)
+{
+	struct http_parser parser = { 0 };
+	const char *buf;
+	size_t parsed;
+	size_t buflen;
+
+	http_parser_init(&parser, req ? HTTP_REQUEST : HTTP_RESPONSE);
+	buf = req ? "GET / HTTP/1.1\r\n" : "HTTP/1.1 200 OK\r\n";
+	parsed = http_parser_execute(&parser, &settings_null, buf, strlen(buf));
+
+	/**TESTPOINTS: Check http_parser_execute*/
+	zassert_equal(parsed, strlen(buf),
+			"http_parser_execute error");
+
+	buf = "Content-Range: bytes 100-150/200\r\n\r\n";
+	buflen = strlen(buf);
+	parsed = http_parser_execute(&parser, &settings_null, buf, buflen);
+
+	zassert_equal(parsed, strlen(buf), "http_parser_execute error");
+	zassert_equal(parser.content_range.start, 100, "http_parser_execute error");
+	zassert_equal(parser.content_range.end, 150, "http_parser_execute error");
+	zassert_equal(parser.content_range.total, 200, "http_parser_execute error");
+
+	return TC_PASS;
+}
+
+int test_content_range_asterisk_total(int req)
+{
+	struct http_parser parser = { 0 };
+	const char *buf;
+	size_t parsed;
+	size_t buflen;
+
+	http_parser_init(&parser, req ? HTTP_REQUEST : HTTP_RESPONSE);
+	buf = req ? "GET / HTTP/1.1\r\n" : "HTTP/1.1 200 OK\r\n";
+	parsed = http_parser_execute(&parser, &settings_null, buf, strlen(buf));
+
+	/**TESTPOINTS: Check http_parser_execute*/
+	zassert_equal(parsed, strlen(buf),
+			"http_parser_execute error");
+
+	buf = "Content-Range: bytes 32-64/*\r\n\r\n";
+	buflen = strlen(buf);
+	parsed = http_parser_execute(&parser, &settings_null, buf, buflen);
+
+	zassert_equal(parsed, strlen(buf), "http_parser_execute error");
+	zassert_equal(parser.content_range.start, 32, "http_parser_execute error");
+	zassert_equal(parser.content_range.end, 64, "http_parser_execute error");
+	zassert_equal(parser.content_range.total, 0, "http_parser_execute error");
+
+	return TC_PASS;
+}
+
+int test_double_content_range_error(int req)
+{
+	struct http_parser parser = { 0 };
+	const char *buf;
+	size_t parsed;
+	size_t buflen;
+
+	http_parser_init(&parser, req ? HTTP_REQUEST : HTTP_RESPONSE);
+	buf = req ? "GET / HTTP/1.1\r\n" : "HTTP/1.1 200 OK\r\n";
+	parsed = http_parser_execute(&parser, &settings_null, buf, strlen(buf));
+
+	/**TESTPOINTS: Check http_parser_execute*/
+	zassert_equal(parsed, strlen(buf),
+			"http_parser_execute error");
+
+	buf = "Content-Range: 0-100/200\r\nContent-Range: 100-150/200\r\n\r\n";
+	buflen = strlen(buf);
+	parsed = http_parser_execute(&parser, &settings_null, buf, buflen);
+	if (parsed != buflen) {
+		int error = HTTP_PARSER_ERRNO(&parser);
+
+		zassert_equal(error, HPE_UNEXPECTED_CONTENT_RANGE,
+			"http_parser_execute error");
+
+		return TC_PASS;
+	}
+
+	return TC_FAIL;
+}
+
 ZTEST(http_header_fields_fn, test_http_header_fields)
 {
 	int rc;
@@ -851,6 +935,21 @@ ZTEST(http_header_fields_fn, test_http_header_fields)
 	/**TESTPOINT: Check test_invalid_header_field_content_error*/
 	zassert_false(rc, "test_invalid_header_field_content_error failed");
 
+	rc = test_content_range_supplied(HTTP_REQUEST);
+
+	/**TESTPOINT: Check test_content_range_supplied*/
+	zassert_false(rc, "test_content_range_supplied failed");
+
+	rc = test_content_range_asterisk_total(HTTP_REQUEST);
+
+	/**TESTPOINT: Check test_content_range_asterisk_total*/
+	zassert_false(rc, "test_content_range_asterisk_total failed");
+
+	rc = test_double_content_range_error(HTTP_REQUEST);
+
+	/**TESTPOINT: Check test_double_content_range_error*/
+	zassert_false(rc, "test_double_content_range_error failed");
+
 	rc = test_double_content_length_error(HTTP_RESPONSE);
 
 	/**TESTPOINT: Check test_double_content_length_error*/
@@ -875,6 +974,21 @@ ZTEST(http_header_fields_fn, test_http_header_fields)
 
 	/**TESTPOINT: Check test_invalid_header_field_content_error*/
 	zassert_false(rc, "test_invalid_header_field_content_error failed");
+
+	rc = test_content_range_supplied(HTTP_RESPONSE);
+
+	/**TESTPOINT: Check test_content_range_supplied*/
+	zassert_false(rc, "test_content_range_supplied failed");
+
+	rc = test_content_range_asterisk_total(HTTP_RESPONSE);
+
+	/**TESTPOINT: Check test_content_range_asterisk_total*/
+	zassert_false(rc, "test_content_range_asterisk_total failed");
+
+	rc = test_double_content_range_error(HTTP_RESPONSE);
+
+	/**TESTPOINT: Check test_double_content_range_error*/
+	zassert_false(rc, "test_double_content_range_error failed");
 }
 
 ZTEST_SUITE(http_header_fields_fn, NULL, NULL, NULL, NULL, NULL);
