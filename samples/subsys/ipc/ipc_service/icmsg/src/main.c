@@ -40,6 +40,11 @@ static void ep_bound(void *priv)
 	LOG_INF("Ep bounded");
 }
 
+static void ep_unbound(void *priv)
+{
+	LOG_INF("Ep unbounded");
+}
+
 static void ep_recv(const void *data, size_t len, void *priv)
 {
 #if defined(CONFIG_ASSERT)
@@ -66,6 +71,11 @@ static void ep_recv(const void *data, size_t len, void *priv)
 	if (expected_len > sizeof(struct data_packet)) {
 		expected_len = PACKET_SIZE_START;
 	}
+}
+
+static void ep_error(const char *message, void *priv)
+{
+	LOG_ERR("ICMsg error: %s", message);
 }
 
 static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
@@ -122,8 +132,10 @@ static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
 
 static struct ipc_ept_cfg ep_cfg = {
 	.cb = {
-		.bound    = ep_bound,
+		.bound = ep_bound,
+		.unbound = ep_unbound,
 		.received = ep_recv,
+		.error = ep_error,
 	},
 };
 
@@ -137,7 +149,7 @@ int main(void)
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 	LOG_INF("Run network core");
-	nrf53_cpunet_enable(true);
+	//nrf53_cpunet_enable(true); printk("sample");
 #endif
 
 	ipc0_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
@@ -180,6 +192,14 @@ int main(void)
 	LOG_INF("Stop network core");
 	nrf53_cpunet_enable(false);
 
+	LOG_INF("Run network core");
+	nrf53_cpunet_enable(true); printk("sample 2");
+
+	k_msleep(500);
+
+	LOG_INF("Stop network core");
+	nrf53_cpunet_enable(false);
+
 	LOG_INF("Reset IPC service");
 
 	ret = ipc_service_deregister_endpoint(&ep);
@@ -206,7 +226,7 @@ int main(void)
 	}
 
 	LOG_INF("Run network core");
-	nrf53_cpunet_enable(true);
+	nrf53_cpunet_enable(true); printk("sample 2");
 
 	k_sem_take(&bound_sem, K_FOREVER);
 
