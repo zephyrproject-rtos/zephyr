@@ -13,19 +13,8 @@
 
 LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 
-static void on_latency_changed(int32_t latency)
-{
-	if (latency == SYS_FOREVER_US) {
-		LOG_INF("Latency constraint changed: none");
-	} else {
-		LOG_INF("Latency constraint changed: %" PRId32 "ms",
-			latency / USEC_PER_MSEC);
-	}
-}
-
 int main(void)
 {
-	struct pm_policy_latency_subscription subs;
 	struct pm_policy_latency_request req;
 	const struct device *dev;
 
@@ -34,8 +23,6 @@ int main(void)
 		LOG_ERR("Device not ready");
 		return 0;
 	}
-
-	pm_policy_latency_changed_subscribe(&subs, on_latency_changed);
 
 	/* test without any latency constraint */
 	LOG_INF("Sleeping for 1.1 seconds, we should enter RUNTIME_IDLE");
@@ -100,8 +87,6 @@ int main(void)
 	/* remove application level constraint and terminate */
 	LOG_INF("Removing latency constraints");
 	pm_policy_latency_request_remove(&req);
-
-	pm_policy_latency_changed_unsubscribe(&subs);
 
 	LOG_INF("Finished, we should now enter STANDBY");
 	return 0;
