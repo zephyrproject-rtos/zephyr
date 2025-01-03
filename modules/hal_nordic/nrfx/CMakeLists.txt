@@ -48,6 +48,8 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05            NRF54L05_XXAA
                                                                 DEVELOP_IN_NRF54L15)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05_CPUAPP     NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05_CPUFLPR    NRF_FLPR)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L09_ENGA       NRF54L09_ENGA_XXAA)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L09_ENGA_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L10            NRF54L10_XXAA
                                                                 DEVELOP_IN_NRF54L15)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L10_CPUAPP     NRF_APPLICATION)
@@ -190,9 +192,9 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG NRF_SKIP_C
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF NRF_DISABLE_FICR_TRIMCNF)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE NRF_SKIP_GLITCHDETECTOR_DISABLE)
 
-# Inject code to skip TAMPC setup for nRF54L20. It is not supported for now.
+# Inject code to skip TAMPC setup for nRF54L20 and nRF54L09. It is not supported for now.
 # It needs to be removed when support is provided.
-if(CONFIG_SOC_NRF54L20_ENGA_CPUAPP)
+if(CONFIG_SOC_NRF54L20_ENGA_CPUAPP OR CONFIG_SOC_NRF54L09_ENGA_CPUAPP)
   zephyr_compile_definitions(NRF_SKIP_TAMPC_SETUP)
 endif()
 
@@ -230,6 +232,7 @@ mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUFLPR     nrf54h20_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPURAD      nrf54h20_radiocore.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L05_CPUAPP      nrf54l05_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L05_CPUFLPR     nrf54l05_flpr.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54L09_ENGA_CPUAPP nrf54l09_enga_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L10_CPUAPP      nrf54l10_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L10_CPUFLPR     nrf54l10_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L15_CPUAPP      nrf54l15_application.svd)
