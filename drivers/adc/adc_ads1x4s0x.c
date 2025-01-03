@@ -6,10 +6,10 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
-#include <zephyr/drivers/adc/ads114s0x.h>
+#include <zephyr/drivers/adc/ads1x4s0x.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/dt-bindings/adc/ads114s0x_adc.h>
+#include <zephyr/dt-bindings/adc/ads1x4s0x_adc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>

@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief GPIO driver for the ADS114S0x AFE.
+ * @brief GPIO driver for the ADS1X4S0X AFE.
  */
 
 #define DT_DRV_COMPAT ti_ads1x4s0x_gpio
@@ -18,7 +18,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_ads1x4s0x);
 
-#include <zephyr/drivers/adc/ads114s0x.h>
+#include <zephyr/drivers/adc/ads1x4s0x.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
