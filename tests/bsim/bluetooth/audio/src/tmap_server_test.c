@@ -50,6 +50,7 @@ static void test_main(void)
 	/* Initialize TMAP */
 	err = bt_tmap_register(BT_TMAP_ROLE_CT | BT_TMAP_ROLE_UMR);
 	if (err != 0) {
+		FAIL("Failed to register TMAP (err %d)\n", err);
 		return;
 	}
 	printk("TMAP initialized. Start advertising...\n");
