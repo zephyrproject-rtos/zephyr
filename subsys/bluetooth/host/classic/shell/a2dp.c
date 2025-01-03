@@ -25,6 +25,7 @@
 #include <zephyr/shell/shell.h>
 
 #include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 struct bt_a2dp *default_a2dp;
 static uint8_t a2dp_sink_sdp_registered;
@@ -207,82 +208,82 @@ static void shell_a2dp_print_capabilities(struct bt_a2dp_ep_info *ep_info)
 	codec_type = ep_info->codec_type;
 	codec_ie = ep_info->codec_cap.codec_ie;
 	codec_ie_len = ep_info->codec_cap.len;
-	shell_print(ctx_shell, "endpoint id: %d, %s, %s:", ep_info->sep_info.id,
-			(ep_info->sep_info.tsep == BT_AVDTP_SINK) ? "(sink)" : "(source)",
-			(ep_info->sep_info.inuse) ? "(in use)" : "(idle)");
+	bt_shell_print("endpoint id: %d, %s, %s:", ep_info->sep_info.id,
+		       (ep_info->sep_info.tsep == BT_AVDTP_SINK) ? "(sink)" : "(source)",
+		       (ep_info->sep_info.inuse) ? "(in use)" : "(idle)");
 	if (BT_A2DP_SBC == codec_type) {
-		shell_print(ctx_shell, "  codec type: SBC");
+		bt_shell_print("  codec type: SBC");
 
 		if (BT_A2DP_SBC_IE_LENGTH != codec_ie_len) {
-			shell_error(ctx_shell, "  wrong sbc codec ie");
+			bt_shell_error("  wrong sbc codec ie");
 			return;
 		}
 
-		shell_print(ctx_shell, "  sample frequency:");
+		bt_shell_print("  sample frequency:");
 		if (0U != (codec_ie[0U] & A2DP_SBC_SAMP_FREQ_16000)) {
-			shell_print(ctx_shell, "	16000 ");
+			bt_shell_print("	16000 ");
 		}
 		if (0U != (codec_ie[0U] & A2DP_SBC_SAMP_FREQ_32000)) {
-			shell_print(ctx_shell, "	32000 ");
+			bt_shell_print("	32000 ");
 		}
 		if (0U != (codec_ie[0U] & A2DP_SBC_SAMP_FREQ_44100)) {
-			shell_print(ctx_shell, "	44100 ");
+			bt_shell_print("	44100 ");
 		}
 		if (0U != (codec_ie[0U] & A2DP_SBC_SAMP_FREQ_48000)) {
-			shell_print(ctx_shell, "	48000");
+			bt_shell_print("	48000");
 		}
 
-		shell_print(ctx_shell, "  channel mode:");
+		bt_shell_print("  channel mode:");
 		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_MONO)) {
-			shell_print(ctx_shell, "	Mono ");
+			bt_shell_print("	Mono ");
 		}
 		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_DUAL)) {
-			shell_print(ctx_shell, "	Dual ");
+			bt_shell_print("	Dual ");
 		}
 		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_STREO)) {
-			shell_print(ctx_shell, "	Stereo ");
+			bt_shell_print("	Stereo ");
 		}
 		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_JOINT)) {
-			shell_print(ctx_shell, "	Joint-Stereo");
+			bt_shell_print("	Joint-Stereo");
 		}
 
-		 /* Decode Support for Block Length */
-		shell_print(ctx_shell, "  Block Length:");
+		/* Decode Support for Block Length */
+		bt_shell_print("  Block Length:");
 		if (0U != (codec_ie[1U] & A2DP_SBC_BLK_LEN_4)) {
-			shell_print(ctx_shell, "	4 ");
+			bt_shell_print("	4 ");
 		}
 		if (0U != (codec_ie[1U] & A2DP_SBC_BLK_LEN_8)) {
-			shell_print(ctx_shell, "	8 ");
+			bt_shell_print("	8 ");
 		}
 		if (0U != (codec_ie[1U] & A2DP_SBC_BLK_LEN_12)) {
-			shell_print(ctx_shell, "	12 ");
+			bt_shell_print("	12 ");
 		}
 		if (0U != (codec_ie[1U] & A2DP_SBC_BLK_LEN_16)) {
-			shell_print(ctx_shell, "	16");
+			bt_shell_print("	16");
 		}
 
 		/* Decode Support for Subbands */
-		shell_print(ctx_shell, "  Subbands:");
+		bt_shell_print("  Subbands:");
 		if (0U != (codec_ie[1U] & A2DP_SBC_SUBBAND_4)) {
-			shell_print(ctx_shell, "	4 ");
+			bt_shell_print("	4 ");
 		}
 		if (0U != (codec_ie[1U] & A2DP_SBC_SUBBAND_8)) {
-			shell_print(ctx_shell, "	8");
+			bt_shell_print("	8");
 		}
 
 		/* Decode Support for Allocation Method */
-		shell_print(ctx_shell, "  Allocation Method:");
+		bt_shell_print("  Allocation Method:");
 		if (0U != (codec_ie[1U] & A2DP_SBC_ALLOC_MTHD_SNR)) {
-			shell_print(ctx_shell, "	SNR ");
+			bt_shell_print("	SNR ");
 		}
 		if (0U != (codec_ie[1U] & A2DP_SBC_ALLOC_MTHD_LOUDNESS)) {
-			shell_print(ctx_shell, "	Loudness");
+			bt_shell_print("	Loudness");
 		}
 
-		shell_print(ctx_shell, "  Bitpool Range: %d - %d",
-					codec_ie[2U], codec_ie[3U]);
+		bt_shell_print("  Bitpool Range: %d - %d",
+			       codec_ie[2U], codec_ie[3U]);
 	} else {
-		shell_print(ctx_shell, "  not SBC codecs");
+		bt_shell_print("  not SBC codecs");
 	}
 }
 
@@ -290,16 +291,16 @@ void app_connected(struct bt_a2dp *a2dp, int err)
 {
 	if (!err) {
 		default_a2dp = a2dp;
-		shell_print(ctx_shell, "a2dp connected");
+		bt_shell_print("a2dp connected");
 	} else {
-		shell_print(ctx_shell, "a2dp connecting fail");
+		bt_shell_print("a2dp connecting fail");
 	}
 }
 
 void app_disconnected(struct bt_a2dp *a2dp)
 {
 	found_peer_sbc_endpoint = NULL;
-	shell_print(ctx_shell, "a2dp disconnected");
+	bt_shell_print("a2dp disconnected");
 }
 
 int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
@@ -312,10 +313,10 @@ int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
 	*stream = &sbc_stream;
 	*rsp_err_code = 0;
 
-	shell_print(ctx_shell, "receive requesting config and accept");
+	bt_shell_print("receive requesting config and accept");
 	sample_rate = bt_a2dp_sbc_get_sampling_frequency(
 		(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
-	shell_print(ctx_shell, "sample rate %dHz", sample_rate);
+	bt_shell_print("sample rate %dHz", sample_rate);
 
 	return 0;
 }
@@ -326,10 +327,10 @@ int app_reconfig_req(struct bt_a2dp_stream *stream,
 	uint32_t sample_rate;
 
 	*rsp_err_code = 0;
-	shell_print(ctx_shell, "receive requesting reconfig and accept");
+	bt_shell_print("receive requesting reconfig and accept");
 	sample_rate = bt_a2dp_sbc_get_sampling_frequency(
 		(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
-	shell_print(ctx_shell, "sample rate %dHz", sample_rate);
+	bt_shell_print("sample rate %dHz", sample_rate);
 
 	return 0;
 }
@@ -337,104 +338,104 @@ int app_reconfig_req(struct bt_a2dp_stream *stream,
 void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
-		shell_print(ctx_shell, "success to configure");
+		bt_shell_print("success to configure");
 	} else {
-		shell_print(ctx_shell, "fail to configure");
+		bt_shell_print("fail to configure");
 	}
 }
 
 int app_establish_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
-	shell_print(ctx_shell, "receive requesting establishment and accept");
+	bt_shell_print("receive requesting establishment and accept");
 	return 0;
 }
 
 void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
-		shell_print(ctx_shell, "success to establish");
+		bt_shell_print("success to establish");
 	} else {
-		shell_print(ctx_shell, "fail to establish");
+		bt_shell_print("fail to establish");
 	}
 }
 
 int app_release_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
-	shell_print(ctx_shell, "receive requesting release and accept");
+	bt_shell_print("receive requesting release and accept");
 	return 0;
 }
 
 void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
-		shell_print(ctx_shell, "success to release");
+		bt_shell_print("success to release");
 	} else {
-		shell_print(ctx_shell, "fail to release");
+		bt_shell_print("fail to release");
 	}
 }
 
 int app_start_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
-	shell_print(ctx_shell, "receive requesting start and accept");
+	bt_shell_print("receive requesting start and accept");
 	return 0;
 }
 
 void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
-		shell_print(ctx_shell, "success to start");
+		bt_shell_print("success to start");
 	} else {
-		shell_print(ctx_shell, "fail to start");
+		bt_shell_print("fail to start");
 	}
 }
 
 int app_suspend_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
-	shell_print(ctx_shell, "receive requesting suspend and accept");
+	bt_shell_print("receive requesting suspend and accept");
 	return 0;
 }
 
 void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
-		shell_print(ctx_shell, "success to suspend");
+		bt_shell_print("success to suspend");
 	} else {
-		shell_print(ctx_shell, "fail to suspend");
+		bt_shell_print("fail to suspend");
 	}
 }
 
 void stream_configured(struct bt_a2dp_stream *stream)
 {
-	shell_print(ctx_shell, "stream configured");
+	bt_shell_print("stream configured");
 }
 
 void stream_established(struct bt_a2dp_stream *stream)
 {
-	shell_print(ctx_shell, "stream established");
+	bt_shell_print("stream established");
 }
 
 void stream_released(struct bt_a2dp_stream *stream)
 {
-	shell_print(ctx_shell, "stream released");
+	bt_shell_print("stream released");
 }
 
 void stream_started(struct bt_a2dp_stream *stream)
 {
-	shell_print(ctx_shell, "stream started");
+	bt_shell_print("stream started");
 }
 
 void stream_suspended(struct bt_a2dp_stream *stream)
 {
-	shell_print(ctx_shell, "stream suspended");
+	bt_shell_print("stream suspended");
 }
 
 void stream_aborted(struct bt_a2dp_stream *stream)
 {
-	shell_print(ctx_shell, "stream aborted");
+	bt_shell_print("stream aborted");
 }
 
 void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
@@ -446,9 +447,9 @@ void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
 		return;
 	}
 	sbc_hdr = net_buf_pull_u8(buf);
-	shell_print(ctx_shell, "received, num of frames: %d, data length:%d",
-		(uint8_t)BT_A2DP_SBC_MEDIA_HDR_NUM_FRAMES_GET(sbc_hdr), buf->len);
-	shell_print(ctx_shell, "data: %d, %d, %d, %d, %d, %d ......", buf->data[0],
+	bt_shell_print("received, num of frames: %d, data length:%d",
+		       (uint8_t)BT_A2DP_SBC_MEDIA_HDR_NUM_FRAMES_GET(sbc_hdr), buf->len);
+	bt_shell_print("data: %d, %d, %d, %d, %d, %d ......", buf->data[0],
 		buf->data[1], buf->data[2], buf->data[3], buf->data[4], buf->data[5]);
 }
 
@@ -584,7 +585,7 @@ static int cmd_disconnect(const struct shell *sh, int32_t argc, char *argv[])
 void app_configured(int err)
 {
 	if (err) {
-		shell_print(ctx_shell, "configure fail");
+		bt_shell_print("configure fail");
 	}
 }
 
@@ -655,7 +656,7 @@ static uint8_t bt_a2dp_discover_peer_endpoint_cb(struct bt_a2dp *a2dp,
 		struct bt_a2dp_ep_info *info, struct bt_a2dp_ep **ep)
 {
 	if (info != NULL) {
-		shell_print(ctx_shell, "find one endpoint");
+		bt_shell_print("find one endpoint");
 		shell_a2dp_print_capabilities(info);
 		if ((info->codec_type == BT_A2DP_SBC) &&
 		    (ep != NULL)) {
