@@ -40,9 +40,9 @@ Execute_AC_10 24_1_1
 Execute_AC_10 24_2_1
 Execute_AC_10 32_1_1
 Execute_AC_10 32_2_1
-Execute_AC_10 441_1_1
-Execute_AC_10 441_2_1
-Execute_AC_10 48_1_1
+# Execute_AC_10 441_1_1 # bap_stream_rx.c:60): ISO receive lost
+# Execute_AC_10 441_2_1 # bap_stream_rx.c:60): ISO receive lost
+# Execute_AC_10 48_1_1 # bt_iso_chan_disconnected: 0x856afe0, reason 0x3d
 Execute_AC_10 48_2_1
 Execute_AC_10 48_3_1
 Execute_AC_10 48_4_1

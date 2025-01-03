@@ -73,3 +73,20 @@ void bap_stream_rx_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 		FAIL("Unexpected data received\n");
 	}
 }
+
+bool bap_stream_rx_can_recv(const struct bt_bap_stream *stream)
+{
+	struct bt_bap_ep_info info;
+	int err;
+
+	if (stream == NULL || stream->ep == NULL) {
+		return false;
+	}
+
+	err = bt_bap_ep_get_info(stream->ep, &info);
+	if (err != 0) {
+		return false;
+	}
+
+	return info.can_recv;
+}

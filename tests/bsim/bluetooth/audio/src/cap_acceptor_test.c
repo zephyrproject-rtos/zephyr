@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@
 #include <zephyr/sys/util_macro.h>
 
 #include "bap_stream_rx.h"
+#include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
@@ -57,6 +58,7 @@ extern enum bst_result_t bst_result;
 	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_MEDIA |                         \
 	 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL)
 #define SOURCE_CONTEXT (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS)
+#define CAP_INITIATOR_DEV_ID 0 /* CAP initiator shall be ID 0 for these tests */
 
 CREATE_FLAG(flag_broadcaster_found);
 CREATE_FLAG(flag_broadcast_code);
@@ -75,6 +77,7 @@ static bt_addr_le_t broadcaster_addr;
 static struct bt_le_per_adv_sync *pa_sync;
 static uint32_t broadcaster_broadcast_id;
 static struct audio_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static bool expect_rx;
 
 static const struct bt_bap_qos_cfg_pref unicast_qos_pref =
 	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
@@ -88,8 +91,8 @@ static uint32_t bis_index_bitfield;
 
 #define UNICAST_CHANNEL_COUNT_1 BIT(0)
 
-static struct bt_cap_stream unicast_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT +
-					    CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
+static struct audio_test_stream
+	unicast_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 
 static bool subgroup_data_func_cb(struct bt_data *data, void *user_data)
 {
@@ -335,8 +338,51 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 	}
 }
 
+static void unicast_stream_started(struct bt_bap_stream *stream)
+{
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
+	test_stream->rx_cnt = 0U;
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
+
+	printk("Started stream %p\n", stream);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_register(stream);
+		if (err != 0) {
+			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	} else if (bap_stream_rx_can_recv(stream)) {
+		expect_rx = true;
+	}
+}
+
+static void unicast_stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
+{
+	printk("Stopped stream %p with reason 0x%02X\n", stream, reason);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_unregister(stream);
+		if (err != 0) {
+			FAIL("Failed to unregister stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
+}
+
 static struct bt_bap_stream_ops unicast_stream_ops = {
 	.enabled = unicast_stream_enabled_cb,
+	.started = unicast_stream_started,
+	.stopped = unicast_stream_stopped,
+	.sent = bap_stream_tx_sent_cb,
+	.recv = bap_stream_rx_recv_cb,
 };
 
 static int pa_sync_req_cb(struct bt_conn *conn,
@@ -441,7 +487,8 @@ static struct bt_csip_set_member_svc_inst *csip_set_member;
 static struct bt_bap_stream *unicast_stream_alloc(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
-		struct bt_bap_stream *stream = &unicast_streams[i].bap_stream;
+		struct bt_bap_stream *stream =
+			bap_stream_from_audio_test_stream(&unicast_streams[i]);
 
 		if (!stream->conn) {
 			return stream;
@@ -706,6 +753,7 @@ static void init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+	bap_stream_tx_init();
 
 	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)) {
 		err = bt_cap_acceptor_register(&csip_set_member_param, &csip_set_member);
@@ -751,7 +799,9 @@ static void init(void)
 		}
 
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
-			bt_cap_stream_ops_register(&unicast_streams[i], &unicast_stream_ops);
+			bt_cap_stream_ops_register(
+				cap_stream_from_audio_test_stream(&unicast_streams[i]),
+				&unicast_stream_ops);
 		}
 	}
 
@@ -867,6 +917,17 @@ static void init(void)
 	}
 }
 
+static void wait_for_data(void)
+{
+	if (expect_rx) {
+		printk("Waiting for data\n");
+		WAIT_FOR_FLAG(flag_audio_received);
+		printk("Data received\n");
+	}
+	/* let initiator know we have received what we wanted */
+	backchannel_sync_send(CAP_INITIATOR_DEV_ID);
+}
+
 static void test_cap_acceptor_unicast(void)
 {
 	init();
@@ -875,9 +936,12 @@ static void test_cap_acceptor_unicast(void)
 
 	auto_start_sink_streams = true;
 
-	/* TODO: wait for audio stream to pass */
-
 	WAIT_FOR_FLAG(flag_connected);
+
+	/* Wait until initiator is done starting streams */
+	backchannel_sync_wait(CAP_INITIATOR_DEV_ID);
+
+	wait_for_data();
 
 	PASS("CAP acceptor unicast passed\n");
 }
@@ -889,8 +953,6 @@ static void test_cap_acceptor_unicast_timeout(void)
 	test_start_adv();
 
 	auto_start_sink_streams = false; /* Cause unicast_audio_start timeout */
-
-	/* TODO: wait for audio stream to pass */
 
 	WAIT_FOR_FLAG(flag_connected);
 
@@ -987,13 +1049,6 @@ static void create_and_sync_sink(struct bt_bap_stream *bap_streams[], size_t *st
 	}
 }
 
-static void sink_wait_for_data(void)
-{
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_audio_received);
-	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
-}
-
 static void base_wait_for_metadata_update(void)
 {
 	printk("Waiting for meta update\n");
@@ -1033,7 +1088,7 @@ static void test_cap_acceptor_broadcast(void)
 
 	create_and_sync_sink(bap_streams, &stream_count);
 
-	sink_wait_for_data();
+	wait_for_data();
 
 	wait_for_streams_stop(stream_count);
 
@@ -1058,7 +1113,7 @@ static void test_cap_acceptor_broadcast_reception(void)
 	create_and_sync_sink(bap_streams, &stream_count);
 
 	wait_for_broadcast_code();
-	sink_wait_for_data();
+	wait_for_data();
 
 	/* Since we are re-using the BAP broadcast source test
 	 * we get a metadata update
