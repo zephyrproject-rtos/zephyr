@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 ML!PA Consulting GmbH
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,17 +89,25 @@
 		};
 
 		mclk: mclk@40000800 {
-			compatible = "atmel,samd5x-mclk";
+			compatible = "atmel,sam0-mclk";
 			reg = <0x40000800 0x400>;
 
 			#clock-cells = <2>;
 		};
 
+		osc32kctrl: osc32kctrl@40001400 {
+			compatible = "atmel,sam0-osc32kctrl";
+			reg = <0x40001400 0x400>;
+			#clock-cells = <0>;
+			#atmel,assigned-clock-cells = <1>;
+		};
+
 		gclk: gclk@40001c00 {
-			compatible = "atmel,samd5x-gclk";
+			compatible = "atmel,sam0-gclk";
 			reg = <0x40001c00 0x400>;
 
 			#clock-cells = <1>;
+			#atmel,assigned-clock-cells = <1>;
 		};
 
 		nvmctrl: nvmctrl@41004000  {
@@ -168,6 +177,8 @@
 			interrupts = <46 0>, <47 0>, <48 0>, <49 0>;
 			clocks = <&gclk 7>, <&mclk 0x14 12>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -177,6 +188,8 @@
 			interrupts = <50 0>, <51 0>, <52 0>, <53 0>;
 			clocks = <&gclk 8>, <&mclk 0x14 13>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -186,6 +199,8 @@
 			interrupts = <54 0>, <55 0>, <56 0>, <57 0>;
 			clocks = <&gclk 23>, <&mclk 0x18 9>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -195,6 +210,8 @@
 			interrupts = <58 0>, <59 0>, <60 0>, <61 0>;
 			clocks = <&gclk 24>, <&mclk 0x18 10>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -204,6 +221,8 @@
 			interrupts = <62 0>, <63 0>, <64 0>, <65 0>;
 			clocks = <&gclk 34>, <&mclk 0x20 0>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -213,6 +232,8 @@
 			interrupts = <66 0>, <67 0>, <68 0>, <69 0>;
 			clocks = <&gclk 35>, <&mclk 0x20 1>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -222,6 +243,8 @@
 			interrupts = <70 0>, <71 0>, <72 0>, <73 0>;
 			clocks = <&gclk 36>, <&mclk 0x20 2>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -231,6 +254,8 @@
 			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
 			clocks = <&gclk 37>, <&mclk 0x20 3>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -299,11 +324,13 @@
 
 		rtc: rtc@40002400 {
 			compatible = "atmel,sam0-rtc";
-			reg = <0x40002400 0x1C>;
+			reg = <0x40002400 0x40>;
 			interrupts = <11 0>;
+			clocks = <&osc32kctrl>, <&mclk 0x14 9>;
+			clock-names = "OSC32KCTRL", "MCLK";
+			atmel,assigned-clocks = <&osc32kctrl 0>;
+			atmel,assigned-clock-names = "OSC32KCTRL";
 			status = "disabled";
-
-			clock-generator = <0>;
 		};
 
 		adc0: adc@43001c00 {
@@ -313,17 +340,20 @@
 			interrupt-names = "overrun", "resrdy";
 			clocks = <&gclk 40>, <&mclk 0x20 7>;
 			clock-names = "GCLK", "MCLK";
+			/*
+			 * 16 MHz is ADC max clock, source clock must not exceed 100 MHz.
+			 *	- table 54-8, section 54.6, page 2020
+			 *	- table 54-24, section 54.10.4, page 2031
+			 * 48 MHz GCLK / 4 = 12 MHz
+			 * Generator 2: DFLL48M / 4
+			 */
+			atmel,assigned-clocks = <&gclk 2>;
+			atmel,assigned-clock-names = "GCLK";
+
 			status = "disabled";
 
 			#io-channel-cells = <1>;
 
-			/*
-			 * 16 MHz max, source clock must not exceed 100 MHz.
-			 *	- table 54-8, section 54.6, page 2020
-			 *	- table 54-24, section 54.10.4, page 2031
-			 * -> 48 MHz GCLK(2) / 4 = 12 MHz
-			 */
-			gclk = <2>;
 			prescaler = <4>;
 			calib-offset = <0>;
 		};
@@ -335,17 +365,19 @@
 			interrupt-names = "overrun", "resrdy";
 			clocks = <&gclk 41>, <&mclk 0x20 8>;
 			clock-names = "GCLK", "MCLK";
+			/*
+			 * 16 MHz is ADC max clock, source clock must not exceed 100 MHz.
+			 *	- table 54-8, section 54.6, page 2020
+			 *	- table 54-24, section 54.10.4, page 2031
+			 * 48 MHz GCLK / 4 = 12 MHz
+			 * Generator 2: DFLL48M / 4
+			 */
+			atmel,assigned-clocks = <&gclk 2>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			#io-channel-cells = <1>;
 
-			/*
-			 * 16 MHz max, source clock must not exceed 100 MHz.
-			 *	- table 54-8, section 54.6, page 2020
-			 *	- table 54-24, section 54.10.4, page 2031
-			 * -> 48 MHz GCLK(2) / 4 = 12 MHz
-			 */
-			gclk = <2>;
 			prescaler = <4>;
 			calib-offset = <14>;
 		};
@@ -356,6 +388,8 @@
 			interrupts = <107 0>;
 			clocks = <&gclk 9>, <&mclk 0x14 14>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -365,6 +399,8 @@
 			interrupts = <109 0>;
 			clocks = <&gclk 26>, <&mclk 0x18 13>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -374,6 +410,8 @@
 			interrupts = <111 0>;
 			clocks = <&gclk 30>, <&mclk 0x1c 5>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -383,6 +421,8 @@
 			interrupts = <113 0>;
 			clocks = <&gclk 39>, <&mclk 0x20 5>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -393,6 +433,8 @@
 				     <90 0>, <91 0>;
 			clocks = <&gclk 25>, <&mclk 0x18 11>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <6>;
@@ -405,6 +447,8 @@
 			interrupts = <92 0>, <93 0>, <94 0>, <95 0>, <96 0>;
 			clocks = <&gclk 25>, <&mclk 0x18 12>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <4>;
@@ -417,6 +461,8 @@
 			interrupts = <97 0>, <98 0>, <99 0>, <100 0>;
 			clocks = <&gclk 29>, <&mclk 0x1c 3>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <3>;
@@ -429,6 +475,8 @@
 			interrupts = <101 0>, <102 0>, <103 0>;
 			clocks = <&gclk 29>, <&mclk 0x1c 4>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <2>;
@@ -441,6 +489,8 @@
 			interrupts = <104 0>, <105 0>, <106 0>;
 			clocks = <&gclk 38>, <&mclk 0x20 4>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <2>;
