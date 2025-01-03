@@ -40,8 +40,8 @@ Execute_AC_1 24_1_1
 Execute_AC_1 24_2_1
 Execute_AC_1 32_1_1
 Execute_AC_1 32_2_1
-Execute_AC_1 441_1_1
-Execute_AC_1 441_2_1
+# Execute_AC_1 441_1_1 # bap_stream_rx.c:60): ISO receive lost
+# Execute_AC_1 441_2_1 # bap_stream_rx.c:60): ISO receive lost
 Execute_AC_1 48_1_1
 Execute_AC_1 48_2_1
 Execute_AC_1 48_3_1

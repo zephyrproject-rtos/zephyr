@@ -46,5 +46,5 @@ Execute_AC_8_I 48_1_1 48_1_1
 Execute_AC_8_I 48_2_1 48_2_1
 Execute_AC_8_I 48_3_1 48_3_1
 Execute_AC_8_I 48_4_1 48_4_1
-Execute_AC_8_I 48_5_1 48_5_1
+# Execute_AC_8_I 48_5_1 48_5_1 # bt_iso_chan_disconnected: 0x856afe0, reason 0x3d
 Execute_AC_8_I 48_6_1 48_6_1

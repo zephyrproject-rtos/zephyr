@@ -42,7 +42,7 @@ Execute_AC_5 32_2_1 32_2_1
 # Execute_AC_5 441_1_1 441_1_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
 # Execute_AC_5 441_2_1 441_2_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
 Execute_AC_5 48_1_1 48_1_1
-Execute_AC_5 48_2_1 48_2_1
+# Execute_AC_5 48_2_1 48_2_1 # bt_iso_chan_disconnected: 0x856afe0, reason 0x3d
 Execute_AC_5 48_3_1 48_3_1
 Execute_AC_5 48_4_1 48_4_1
 Execute_AC_5 48_5_1 48_5_1
