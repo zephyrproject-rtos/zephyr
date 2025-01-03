@@ -419,7 +419,7 @@ execute_process(
   )
 
 if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "dtc failed with return code: ${ret}")
+  message(FATAL_ERROR "dtc failed with return code: ${ret}\n${stderr}")
 elseif(stderr)
   # dtc printed warnings on stderr but did not fail.
   # Display them as CMake warnings to draw attention.
