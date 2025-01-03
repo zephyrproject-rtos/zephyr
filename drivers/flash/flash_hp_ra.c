@@ -33,38 +33,10 @@ static volatile struct event_flash g_event_flash = {
 	.write_complete = false,
 };
 
+static struct flash_pages_layout flash_ra_layout[5];
+
 void fcu_frdyi_isr(void);
 void fcu_fiferr_isr(void);
-
-static int flash_controller_ra_init(const struct device *dev);
-static int flash_ra_init(const struct device *dev);
-static int flash_ra_erase(const struct device *dev, off_t offset, size_t len);
-static int flash_ra_read(const struct device *dev, off_t offset, void *data, size_t len);
-static int flash_ra_write(const struct device *dev, off_t offset, const void *data, size_t len);
-static const struct flash_parameters *flash_ra_get_parameters(const struct device *dev);
-#ifdef CONFIG_FLASH_PAGE_LAYOUT
-void flash_ra_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
-			  size_t *layout_size);
-#endif
-
-#ifdef CONFIG_FLASH_EX_OP_ENABLED
-static int flash_ra_ex_op(const struct device *dev, uint16_t code, const uintptr_t in, void *out);
-#endif
-
-static DEVICE_API(flash, flash_ra_api) = {
-	.erase = flash_ra_erase,
-	.write = flash_ra_write,
-	.read = flash_ra_read,
-	.get_parameters = flash_ra_get_parameters,
-#ifdef CONFIG_FLASH_PAGE_LAYOUT
-	.page_layout = flash_ra_page_layout,
-#endif
-#ifdef CONFIG_FLASH_EX_OP_ENABLED
-	.ex_op = flash_ra_ex_op,
-#endif
-};
-
-static struct flash_pages_layout flash_ra_layout[5];
 
 void bgo_callback(flash_callback_args_t *p_args)
 {
@@ -75,12 +47,31 @@ void bgo_callback(flash_callback_args_t *p_args)
 	}
 }
 
-static bool flash_ra_valid_range(off_t area_size, off_t offset, size_t len)
+static bool flash_ra_valid_range(struct flash_hp_ra_data *flash_data, off_t offset, size_t len)
 {
-	if ((offset < 0) || (offset >= area_size) || ((area_size - offset) < len)) {
+#if defined(CONFIG_DUAL_BANK_MODE)
+	if (flash_data->FlashRegion == DATA_FLASH) {
+		if ((offset < 0) || (offset >= flash_data->area_size) ||
+		    (flash_data->area_size - offset < len) || (len > UINT32_MAX - offset)) {
+			return false;
+		}
+	} else {
+		if ((offset < 0) || (offset >= FLASH_HP_CF_DUAL_HIGH_END_ADDRESS) ||
+		    (offset >= FLASH_HP_CF_DUAL_LOW_END_ADDRESS &&
+		     offset < FLASH_HP_BANK2_OFFSET) ||
+		    ((len + offset) > FLASH_HP_CF_DUAL_HIGH_END_ADDRESS) ||
+		    ((len + offset) > FLASH_HP_CF_DUAL_LOW_END_ADDRESS &&
+		     (len + offset) < FLASH_HP_BANK2_OFFSET) ||
+		    (len > UINT32_MAX - offset)) {
+			return false;
+		}
+	}
+#else
+	if ((offset < 0) || (offset >= flash_data->area_size) ||
+	    (flash_data->area_size - offset < len) || (len > UINT32_MAX - offset)) {
 		return false;
 	}
-
+#endif
 	return true;
 }
 
@@ -88,7 +79,7 @@ static int flash_ra_read(const struct device *dev, off_t offset, void *data, siz
 {
 	struct flash_hp_ra_data *flash_data = dev->data;
 
-	if (!flash_ra_valid_range(flash_data->area_size, offset, len)) {
+	if (!flash_ra_valid_range(flash_data, offset, len)) {
 		return -EINVAL;
 	}
 
@@ -108,11 +99,13 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 	struct flash_hp_ra_data *flash_data = dev->data;
 	struct flash_hp_ra_controller *dev_ctrl = flash_data->controller;
 	static struct flash_pages_info page_info_off, page_info_len;
-	fsp_err_t err = FSP_ERR_ASSERTION;
+	fsp_err_t err;
 	uint32_t block_num;
 	int rc, rc2;
+	int key = 0;
+	bool is_contain_end_block = false;
 
-	if (!flash_ra_valid_range(flash_data->area_size, offset, len)) {
+	if (!flash_ra_valid_range(flash_data, offset, len)) {
 		return -EINVAL;
 	}
 
@@ -132,35 +125,54 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 		return -EINVAL;
 	}
 
-	rc2 = flash_get_page_info_by_offs(dev, (offset + len), &page_info_len);
-	if (rc2 != 0) {
-		return -EINVAL;
-	}
-
+	if (flash_data->FlashRegion == CODE_FLASH) {
 #if defined(CONFIG_DUAL_BANK_MODE)
-	/* Invalid offset in dual bank mode, this is reversed area. */
-	if ((page_info_off.index > FLASH_HP_CF_BLOCK_32KB_DUAL_LOW_END &&
-	     page_info_off.index < FLASH_HP_CF_BLOCK_8KB_HIGH_START) ||
-	    (page_info_len.index > FLASH_HP_CF_BLOCK_32KB_DUAL_LOW_END &&
-	     page_info_len.index < FLASH_HP_CF_BLOCK_8KB_HIGH_START)) {
-		return -EIO;
-	}
+		if ((offset + len) == (uint32_t)FLASH_HP_CF_DUAL_HIGH_END_ADDRESS) {
+			page_info_len.index = FLASH_HP_CF_BLOCK_32KB_DUAL_HIGH_END + 1;
+			is_contain_end_block = true;
+		}
+#else
+		if ((offset + len) == (uint32_t)DT_REG_SIZE(DT_NODELABEL(flash0))) {
+			page_info_len.index = FLASH_HP_CF_BLOCK_32KB_LINEAR_END + 1;
+			is_contain_end_block = true;
+		}
 #endif
+	} else {
+		if ((offset + len) == (uint32_t)DT_REG_SIZE(DT_NODELABEL(flash1))) {
+			page_info_len.index = FLASH_HP_DF_BLOCK_END;
+			is_contain_end_block = true;
+		}
+	}
 
-	if ((offset + len) != (page_info_len.start_offset)) {
-		return -EIO;
+	if (!is_contain_end_block) {
+		rc2 = flash_get_page_info_by_offs(dev, (offset + len), &page_info_len);
+		if (rc2 != 0) {
+			return -EINVAL;
+		}
+		if ((offset + len) != (page_info_len.start_offset)) {
+			return -EIO;
+		}
 	}
 
 	block_num = (uint32_t)((page_info_len.index) - page_info_off.index);
 
 	if (block_num > 0) {
-		k_sem_take(&dev_ctrl->ctrl_sem, K_FOREVER);
+		if (flash_data->FlashRegion == CODE_FLASH) {
+			/* Disable interrupts during code flash operations */
+			key = irq_lock();
+		} else {
+			k_sem_take(&dev_ctrl->ctrl_sem, K_FOREVER);
+		}
 
 		err = R_FLASH_HP_Erase(&dev_ctrl->flash_ctrl,
 				       (long)(flash_data->area_address + offset), block_num);
 
 		if (err != FSP_SUCCESS) {
-			k_sem_give(&dev_ctrl->ctrl_sem);
+			if (flash_data->FlashRegion == CODE_FLASH) {
+				irq_unlock(key);
+			} else {
+				k_sem_give(&dev_ctrl->ctrl_sem);
+			}
 			return -EIO;
 		}
 
@@ -174,7 +186,11 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 			}
 		}
 
-		k_sem_give(&dev_ctrl->ctrl_sem);
+		if (flash_data->FlashRegion == CODE_FLASH) {
+			irq_unlock(key);
+		} else {
+			k_sem_give(&dev_ctrl->ctrl_sem);
+		}
 	}
 
 	return 0;
@@ -182,11 +198,12 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 
 static int flash_ra_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
-	fsp_err_t err = FSP_ERR_ASSERTION;
+	fsp_err_t err;
 	struct flash_hp_ra_data *flash_data = dev->data;
 	struct flash_hp_ra_controller *dev_ctrl = flash_data->controller;
+	int key = 0;
 
-	if (!flash_ra_valid_range(flash_data->area_size, offset, len)) {
+	if (!flash_ra_valid_range(flash_data, offset, len)) {
 		return -EINVAL;
 	}
 
@@ -196,13 +213,22 @@ static int flash_ra_write(const struct device *dev, off_t offset, const void *da
 
 	LOG_DBG("flash: write 0x%lx, len: %u", (long)(offset + flash_data->area_address), len);
 
-	k_sem_take(&dev_ctrl->ctrl_sem, K_FOREVER);
+	if (flash_data->FlashRegion == CODE_FLASH) {
+		/* Disable interrupts during code flash operations */
+		key = irq_lock();
+	} else {
+		k_sem_take(&dev_ctrl->ctrl_sem, K_FOREVER);
+	}
 
 	err = R_FLASH_HP_Write(&dev_ctrl->flash_ctrl, (uint32_t)data,
 			       (long)(offset + flash_data->area_address), len);
 
 	if (err != FSP_SUCCESS) {
-		k_sem_give(&dev_ctrl->ctrl_sem);
+		if (flash_data->FlashRegion == CODE_FLASH) {
+			irq_unlock(key);
+		} else {
+			k_sem_give(&dev_ctrl->ctrl_sem);
+		}
 		return -EIO;
 	}
 
@@ -216,11 +242,24 @@ static int flash_ra_write(const struct device *dev, off_t offset, const void *da
 		}
 	}
 
-	k_sem_give(&dev_ctrl->ctrl_sem);
+	if (flash_data->FlashRegion == CODE_FLASH) {
+		irq_unlock(key);
+	} else {
+		k_sem_give(&dev_ctrl->ctrl_sem);
+	}
 
 	return 0;
 }
 
+static int flash_ra_get_size(const struct device *dev, uint64_t *size)
+{
+	struct flash_hp_ra_data *flash_data = dev->data;
+	*size = (uint64_t)flash_data->area_size;
+
+	return 0;
+}
+
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
 void flash_ra_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			  size_t *layout_size)
 {
@@ -242,12 +281,12 @@ void flash_ra_page_layout(const struct device *dev, const struct flash_pages_lay
 						 1;
 		flash_ra_layout[1].pages_size = FLASH_HP_CF_BLOCK_32KB_SIZE;
 
-		flash_ra_layout[2].pages_count = FLASH_RESERVED_AREA_NUM;
+		flash_ra_layout[2].pages_count = FLASH_HP_CF_NUM_BLOCK_RESERVED;
 		flash_ra_layout[2].pages_size =
 			(FLASH_HP_BANK2_OFFSET -
 			 (flash_ra_layout[0].pages_count * flash_ra_layout[0].pages_size) -
 			 (flash_ra_layout[1].pages_count * flash_ra_layout[1].pages_size)) /
-			FLASH_RESERVED_AREA_NUM;
+			FLASH_HP_CF_NUM_BLOCK_RESERVED;
 
 		flash_ra_layout[3].pages_count =
 			(FLASH_HP_CF_BLOCK_8KB_HIGH_END - FLASH_HP_CF_BLOCK_8KB_HIGH_START) + 1;
@@ -275,6 +314,7 @@ void flash_ra_page_layout(const struct device *dev, const struct flash_pages_lay
 
 	*layout = flash_ra_layout;
 }
+#endif
 
 static const struct flash_parameters *flash_ra_get_parameters(const struct device *dev)
 {
@@ -354,7 +394,7 @@ static void flash_controller_ra_irq_config_func(const struct device *dev)
 
 static int flash_controller_ra_init(const struct device *dev)
 {
-	fsp_err_t err = FSP_SUCCESS;
+	fsp_err_t err;
 	const struct flash_hp_ra_controller_config *cfg = dev->config;
 	struct flash_hp_ra_controller *data = dev->data;
 
@@ -374,6 +414,20 @@ static int flash_controller_ra_init(const struct device *dev)
 
 static struct flash_hp_ra_controller_config flash_hp_ra_controller_config = {
 	.irq_config = flash_controller_ra_irq_config_func,
+};
+
+static DEVICE_API(flash, flash_ra_api) = {
+	.erase = flash_ra_erase,
+	.write = flash_ra_write,
+	.read = flash_ra_read,
+	.get_parameters = flash_ra_get_parameters,
+	.get_size = flash_ra_get_size,
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+	.page_layout = flash_ra_page_layout,
+#endif
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+	.ex_op = flash_ra_ex_op,
+#endif
 };
 
 #define RA_FLASH_INIT(index)                                                                       \
