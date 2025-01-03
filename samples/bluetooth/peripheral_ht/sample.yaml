@@ -17,12 +17,15 @@ tests:
     platform_allow:
       - mimxrt1020_evk
       - mimxrt1050_evk/mimxrt1052/hyperflash
-      - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1060_evk@A/mimxrt1062/qspi
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
       - frdm_k64f
     tags: bluetooth
     extra_args: SHIELD=frdm_kw41z
     integration_platforms:
       - mimxrt1020_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
   sample.bluetooth.peripheral_ht.nxp:
     # Disabling monolithic since CI environment doesn't use blobs
     build_only: true
