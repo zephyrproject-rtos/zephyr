@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#undef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200809L
-
 #include <stdio.h>
 #include <fcntl.h>
 #include <zephyr/posix/unistd.h>
@@ -57,7 +54,8 @@ static int test_mkdir(void)
 static struct dirent *readdir_wrap(DIR *dirp, bool thread_safe)
 {
 	if (thread_safe) {
-		struct dirent entry;
+		/* cannot declare on stack otherwise this test fails for qemu_x86/atom */
+		static struct dirent entry;
 		struct dirent *result = NULL;
 
 		zassert_ok(readdir_r(dirp, &entry, &result));
