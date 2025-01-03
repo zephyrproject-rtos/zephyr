@@ -485,7 +485,9 @@ class PropertySpec:
 
     path:
       The file where this property was defined. In case a binding includes
-      other bindings, this is the file where the property was last modified.
+      other bindings, this is the including binding file.
+      Generally this means that this will be the binding file specifying
+      the devicetree node of which this is a property.
 
     type:
       The type of the property as a string, as given in the binding.
@@ -946,8 +948,9 @@ class Node:
 
     props:
       A dict that maps property names to Property objects.
-      Property objects are created for all devicetree properties on the node
-      that are mentioned in 'properties:' in the binding.
+      Property objects are created for the devicetree properties
+      defined by the node's binding and that have a default value
+      or for which a value is set in the DTS.
 
     aliases:
       A list of aliases for the node. This is fetched from the /aliases node.
