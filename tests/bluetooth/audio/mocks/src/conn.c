@@ -1,10 +1,14 @@
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #include "conn.h"
 
@@ -27,7 +31,15 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 
 void bt_conn_unref(struct bt_conn *conn)
 {
+}
 
+void mock_bt_conn_connected(struct bt_conn *conn, uint8_t err)
+{
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->connected) {
+			cb->connected(conn, err);
+		}
+	}
 }
 
 void mock_bt_conn_disconnected(struct bt_conn *conn, uint8_t err)
