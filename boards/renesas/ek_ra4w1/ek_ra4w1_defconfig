@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32000000
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=48000000
 
 # Enable GPIO
 CONFIG_GPIO=y
