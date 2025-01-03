@@ -13,8 +13,13 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/can_mcan.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
+
+/* maximum time for HSFLL settings to be applied */
+#define HSFLL_MAX_CONFIG_TIME_MS 1000
 
 /* nRF CAN wrapper offsets */
 #define CAN_TASKS_START	  offsetof(NRF_CAN_Type, TASKS_START)
@@ -27,10 +32,15 @@ struct can_nrf_config {
 	uint32_t mcan;
 	uint32_t mrba;
 	uint32_t mram;
-	const struct device *clock;
+	const struct device *auxpll;
+	const struct device *hsfll;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_configure)(void);
 	uint16_t irq;
+};
+
+struct can_nrf_data {
+	struct onoff_client cli;
 };
 
 static void can_nrf_irq_handler(const struct device *dev)
@@ -54,7 +64,7 @@ static int can_nrf_get_core_clock(const struct device *dev, uint32_t *rate)
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_nrf_config *config = mcan_config->custom;
 
-	return clock_control_get_rate(config->clock, NULL, rate);
+	return clock_control_get_rate(config->auxpll, NULL, rate);
 }
 
 static DEVICE_API(can, can_nrf_api) = {
@@ -131,17 +141,58 @@ static const struct can_mcan_ops can_mcan_nrf_ops = {
 	.clear_mram = can_nrf_clear_mram,
 };
 
+static int configure_hsfll(const struct device *dev, bool on)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_nrf_config *config = mcan_config->custom;
+	struct can_mcan_data *mcan_data = dev->data;
+	struct can_nrf_data *data = mcan_data->custom;
+	int ret;
+	bool completed;
+	struct nrf_clock_spec spec = { 0 };
+
+	/* If CAN is on, HSFLL frequency >= AUXPLL frequency */
+	if (on) {
+		ret = clock_control_get_rate(dev, NULL, &spec.frequency);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	sys_notify_init_spinwait(&data->cli.notify);
+
+	ret = nrf_clock_control_request(config->hsfll, &spec, &data->cli);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = -ETIMEDOUT;
+	completed = WAIT_FOR(sys_notify_fetch_result(&data->cli.notify, &ret) == 0,
+			     HSFLL_MAX_CONFIG_TIME_MS, k_msleep(1));
+
+	if (!completed || (ret < 0)) {
+		return ret;
+	}
+
+	return 0;
+}
+
 static int can_nrf_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_nrf_config *config = mcan_config->custom;
 	int ret;
 
-	if (!device_is_ready(config->clock)) {
+	if (!device_is_ready(config->auxpll) || !device_is_ready(config->hsfll)) {
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock, NULL);
+	ret = configure_hsfll(dev, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = clock_control_on(config->auxpll, NULL);
 	if (ret < 0) {
 		return ret;
 	}
@@ -186,8 +237,9 @@ static int can_nrf_init(const struct device *dev)
 		.mcan = CAN_MCAN_DT_INST_MCAN_ADDR(n),                                             \
 		.mrba = CAN_MCAN_DT_INST_MRBA(n),                                                  \
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),                                             \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                    \
+		.auxpll = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, auxpll)),                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.hsfll = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, hsfll)),                     \
 		.irq = DT_INST_IRQN(n),                                                            \
 		.irq_configure = can_nrf_irq_configure##n,                                         \
 	};                                                                                         \
@@ -197,7 +249,10 @@ static int can_nrf_init(const struct device *dev)
 	static const struct can_mcan_config can_mcan_nrf_config##n = CAN_MCAN_DT_CONFIG_INST_GET(  \
 		n, &can_nrf_config##n, &can_mcan_nrf_ops, &can_mcan_nrf_cbs##n);                   \
                                                                                                    \
-	static struct can_mcan_data can_mcan_nrf_data##n = CAN_MCAN_DATA_INITIALIZER(NULL);        \
+	static struct can_nrf_data can_nrf_data##n;                                                \
+                                                                                                   \
+	static struct can_mcan_data can_mcan_nrf_data##n =                                         \
+		CAN_MCAN_DATA_INITIALIZER(&can_nrf_data##n);                                       \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, can_nrf_init, NULL, &can_mcan_nrf_data##n,                        \
 			      &can_mcan_nrf_config##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,      \
