@@ -16,6 +16,7 @@
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/storage/flash_map.h>
 
+#include "common/bt_shell_private.h"
 #include "utils.h"
 #include "blob.h"
 #include "../dfu_slot.h"
@@ -24,30 +25,28 @@
  * Implementation of models' instances
  **************************************************************************************************/
 
-extern const struct shell *bt_mesh_shell_ctx_shell;
-
 #if defined(CONFIG_BT_MESH_SHELL_DFU_CLI)
 
 static void dfu_cli_ended(struct bt_mesh_dfu_cli *cli,
 			  enum bt_mesh_dfu_status reason)
 {
-	shell_print(bt_mesh_shell_ctx_shell, "DFU ended: %u", reason);
+	bt_shell_print("DFU ended: %u", reason);
 }
 
 static void dfu_cli_applied(struct bt_mesh_dfu_cli *cli)
 {
-	shell_print(bt_mesh_shell_ctx_shell, "DFU applied.");
+	bt_shell_print("DFU applied.");
 }
 
 static void dfu_cli_lost_target(struct bt_mesh_dfu_cli *cli,
 				struct bt_mesh_dfu_target *target)
 {
-	shell_print(bt_mesh_shell_ctx_shell, "DFU target lost: 0x%04x", target->blob.addr);
+	bt_shell_print("DFU target lost: 0x%04x", target->blob.addr);
 }
 
 static void dfu_cli_confirmed(struct bt_mesh_dfu_cli *cli)
 {
-	shell_print(bt_mesh_shell_ctx_shell, "DFU confirmed");
+	bt_shell_print("DFU confirmed");
 }
 
 const struct bt_mesh_dfu_cli_cb dfu_cli_cb = {
@@ -86,7 +85,7 @@ static int dfu_start(struct bt_mesh_dfu_srv *srv,
 		     struct net_buf_simple *metadata,
 		     const struct bt_mesh_blob_io **io)
 {
-	shell_print(bt_mesh_shell_ctx_shell, "DFU setup");
+	bt_shell_print("DFU setup");
 
 	*io = bt_mesh_shell_blob_io;
 
@@ -96,7 +95,7 @@ static int dfu_start(struct bt_mesh_dfu_srv *srv,
 static void dfu_end(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_dfu_img *img, bool success)
 {
 	if (!success) {
-		shell_print(bt_mesh_shell_ctx_shell, "DFU failed");
+		bt_shell_print("DFU failed");
 		return;
 	}
 
@@ -115,7 +114,7 @@ static int dfu_apply(struct bt_mesh_dfu_srv *srv,
 		return -EINVAL;
 	}
 
-	shell_print(bt_mesh_shell_ctx_shell, "Applying DFU transfer...");
+	bt_shell_print("Applying DFU transfer...");
 
 	return 0;
 }
@@ -620,10 +619,10 @@ static enum bt_mesh_dfu_iter dfu_img_cb(struct bt_mesh_dfu_cli *cli,
 	len = bin2hex(img->fwid, img->fwid_len, fwid, sizeof(fwid));
 	fwid[len] = '\0';
 
-	shell_print(bt_mesh_shell_ctx_shell, "Image %u:", idx);
-	shell_print(bt_mesh_shell_ctx_shell, "\tFWID: %s", fwid);
+	bt_shell_print("Image %u:", idx);
+	bt_shell_print("\tFWID: %s", fwid);
 	if (img->uri) {
-		shell_print(bt_mesh_shell_ctx_shell, "\tURI:  %s", img->uri);
+		bt_shell_print("\tURI:  %s", img->uri);
 	}
 
 	return BT_MESH_DFU_ITER_CONTINUE;
