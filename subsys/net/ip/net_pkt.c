@@ -1364,7 +1364,8 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 
 	iface = net_pkt_iface(pkt);
 
-	if (iface != NULL && net_if_l2(iface)->alloc != NULL) {
+	if (iface != NULL && pkt->slab == &tx_pkts
+		&& net_if_l2(iface)->alloc != NULL) {
 		ret = net_if_l2(iface)->alloc(iface, pkt, size, proto, timeout);
 		if (ret != -ENOTSUP) {
 			return ret;

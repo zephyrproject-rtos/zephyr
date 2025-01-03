@@ -1098,6 +1098,9 @@ struct net_buf_pool {
 	/** Total size of the pool. */
 	const uint16_t pool_size;
 
+	/** Maximum count of used buffers. */
+	uint16_t max_used;
+
 	/** Name of the pool. Used when printing pool information. */
 	const char *name;
 #endif /* CONFIG_NET_BUF_POOL_USAGE */
@@ -1115,6 +1118,7 @@ struct net_buf_pool {
 /** @cond INTERNAL_HIDDEN */
 #define NET_BUF_POOL_USAGE_INIT(_pool, _count) \
 	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.avail_count = ATOMIC_INIT(_count),)) \
+	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.max_used = 0,)) \
 	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.name = STRINGIFY(_pool),))
 
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
@@ -1600,6 +1604,19 @@ int net_buf_user_data_copy(struct net_buf *dst, const struct net_buf *src);
 static inline void net_buf_reserve(struct net_buf *buf, size_t reserve)
 {
 	net_buf_simple_reserve(&buf->b, reserve);
+}
+
+/**
+ * @brief Prepare to use the reserved headroom.
+ *
+ * The start of data goes back to the beginning of reserved headroom.
+ *
+ * @param buf Buffer to update.
+ * @param reserve How much headroom to cancel reserve.
+ */
+static inline void net_buf_cancel_reserve(struct net_buf *buf, size_t reserve)
+{
+	buf->data -= reserve;
 }
 
 /**
