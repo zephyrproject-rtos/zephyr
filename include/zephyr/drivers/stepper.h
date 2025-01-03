@@ -29,29 +29,33 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Macro to calculate the index of the microstep resolution
+ * @param res Microstep resolution
+ */
 #define MICRO_STEP_RES_INDEX(res) LOG2(res)
 
 /**
- * @brief Stepper Motor micro step resolution options
+ * @brief Stepper Motor microstep resolution options
  */
 enum stepper_micro_step_resolution {
 	/** Full step resolution */
 	STEPPER_MICRO_STEP_1 = 1,
-	/** 2 micro steps per full step */
+	/** 2 microsteps per full step */
 	STEPPER_MICRO_STEP_2 = 2,
-	/** 4 micro steps per full step */
+	/** 4 microsteps per full step */
 	STEPPER_MICRO_STEP_4 = 4,
-	/** 8 micro steps per full step */
+	/** 8 microsteps per full step */
 	STEPPER_MICRO_STEP_8 = 8,
-	/** 16 micro steps per full step */
+	/** 16 microsteps per full step */
 	STEPPER_MICRO_STEP_16 = 16,
-	/** 32 micro steps per full step */
+	/** 32 microsteps per full step */
 	STEPPER_MICRO_STEP_32 = 32,
-	/** 64 micro steps per full step */
+	/** 64 microsteps per full step */
 	STEPPER_MICRO_STEP_64 = 64,
-	/** 128 micro steps per full step */
+	/** 128 microsteps per full step */
 	STEPPER_MICRO_STEP_128 = 128,
-	/** 256 micro steps per full step */
+	/** 256 microsteps per full step */
 	STEPPER_MICRO_STEP_256 = 256,
 };
 
@@ -81,7 +85,7 @@ enum stepper_run_mode {
  * @brief Stepper Events
  */
 enum stepper_event {
-	/** Steps set using move or set_target_position have been executed */
+	/** Steps set using move_by or move_to have been executed */
 	STEPPER_EVENT_STEPS_COMPLETED = 0,
 	/** Stall detected */
 	STEPPER_EVENT_STALL_DETECTED = 1,
@@ -106,14 +110,14 @@ enum stepper_event {
 typedef int (*stepper_enable_t)(const struct device *dev, const bool enable);
 
 /**
- * @brief Move the stepper motor relatively by a given number of micro_steps.
+ * @brief Move the stepper motor relatively by a given number of microsteps.
  *
  * @see stepper_move_by() for details.
  */
 typedef int (*stepper_move_by_t)(const struct device *dev, const int32_t micro_steps);
 
 /**
- * @brief Set the max velocity in micro_steps per seconds.
+ * @brief Set the max velocity in microsteps per seconds.
  *
  * @see stepper_set_max_velocity() for details.
  */
@@ -150,7 +154,7 @@ typedef int (*stepper_set_reference_position_t)(const struct device *dev, const 
 typedef int (*stepper_get_actual_position_t)(const struct device *dev, int32_t *value);
 
 /**
- * @brief Move the stepper motor absolutely by a given number of micro_steps.
+ * @brief Move the stepper motor to an absolute position in microsteps.
  *
  * @see stepper_move_to() for details.
  */
@@ -207,7 +211,7 @@ __subsystem struct stepper_driver_api {
  */
 
 /**
- * @brief Enable or Disable Motor Controller
+ * @brief Enable or disable motor controller
  *
  * @param dev pointer to the stepper motor controller instance
  * @param enable Input enable or disable motor controller
@@ -225,13 +229,13 @@ static inline int z_impl_stepper_enable(const struct device *dev, const bool ena
 }
 
 /**
- * @brief Set the micro_steps to be moved from the current position i.e. relative movement
+ * @brief Set the microsteps to be moved from the current position i.e. relative movement
  *
- * @details The motor will move by the given number of micro_steps from the current position.
+ * @details The motor will move by the given number of microsteps from the current position.
  * This function is non-blocking.
  *
  * @param dev pointer to the stepper motor controller instance
- * @param micro_steps target micro_steps to be moved from the current position
+ * @param micro_steps target microsteps to be moved from the current position
  *
  * @retval -ECANCELED If the stepper is disabled
  * @retval -EIO General input / output error
@@ -256,7 +260,7 @@ static inline int z_impl_stepper_move_by(const struct device *dev, const int32_t
  * and move is required to set the motor into motion.
  *
  * @param dev pointer to the stepper motor controller instance
- * @param micro_steps_per_second speed in micro_steps per second
+ * @param micro_steps_per_second speed in microsteps per second
  *
  * @retval -EIO General input / output error
  * @retval -EINVAL If the requested velocity is not supported
@@ -348,7 +352,7 @@ static inline int z_impl_stepper_set_reference_position(const struct device *dev
  * @brief Get the actual a.k.a reference position of the stepper
  *
  * @param dev pointer to the stepper motor controller instance
- * @param value The actual position to get in micro_steps
+ * @param value The actual position to get in microsteps
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
@@ -369,11 +373,11 @@ static inline int z_impl_stepper_get_actual_position(const struct device *dev, i
 /**
  * @brief Set the absolute target position of the stepper
  *
- * @details The motor will move to the given micro_steps position from the reference position.
+ * @details The motor will move to the given microsteps position from the reference position.
  * This function is non-blocking.
  *
  * @param dev pointer to the stepper motor controller instance
- * @param micro_steps target position to set in micro_steps
+ * @param micro_steps target position to set in microsteps
  *
  * @retval -ECANCELED If the stepper is disabled
  * @retval -EIO General input / output error
