@@ -67,6 +67,7 @@ struct http_resource_desc {
 struct http_service_desc {
 	const char *host;
 	uint16_t *port;
+	int *fd;
 	void *detail;
 	size_t concurrent;
 	size_t backlog;
@@ -80,9 +81,11 @@ struct http_service_desc {
 
 #define __z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, _res_begin,   \
 				_res_end, ...)                                                     \
-	const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {				   \
+	static int _name##_fd = -1;                                                                \
+	const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {                                \
 		.host = _host,                                                                     \
 		.port = (uint16_t *)(_port),                                                       \
+		.fd = &_name##_fd,                                                                 \
 		.detail = (void *)(_detail),                                                       \
 		.concurrent = (_concurrent),                                                       \
 		.backlog = (_backlog),                                                             \

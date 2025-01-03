@@ -37,7 +37,8 @@ int enter_http2_request(struct http_client_ctx *client);
 int enter_http_done_state(struct http_client_ctx *client);
 
 /* Others */
-struct http_resource_detail *get_resource_detail(const char *path, int *len, bool is_ws);
+struct http_resource_detail *get_resource_detail(const struct http_service_desc *service,
+						 const char *path, int *len, bool is_ws);
 int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t len);
 void http_server_get_content_type_from_extension(char *url, char *content_type,
 						 size_t content_type_size);
