@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+config UART_RTS5912
+	bool "UART driver for Realtek RTS5912 EC"
+	default y if DT_HAS_REALTEK_RTS5912_UART_ENABLED
+	select PINCTRL
+	select CLOCK_CONTROL
+	help
+	  This option enables the RTS5912 UART wrapper driver.
+
+config UART_RTS5912_INIT_PRIORITY
+	int "RTS5912 UART wrapper init priority"
+	default 49
+	depends on UART_RTS5912
+	help
+	  Initialization priority for Realtek RTS5912 UART wrapper driver.
