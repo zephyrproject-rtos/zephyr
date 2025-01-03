@@ -5,4 +5,4 @@
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
-	default 2048
+	default 4096
