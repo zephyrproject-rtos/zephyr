@@ -957,16 +957,16 @@
 &memory {
 	#address-cells = <1>;
 	#size-cells = <1>;
-	ocram1: ocram@484000 {
+	ocram1: ocram@0 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "OCRAM1";
 		/* OCRAM1 first 16K access is blocked by TRDC */
-		reg = <0x484000 DT_SIZE_K(496)>;
+		reg = <0x0 DT_SIZE_K(496)>;
 	};
 
-	ocram2: ocram@500000 {
+	ocram2: ocram@7c000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "OCRAM2";
-		reg = <0x500000 DT_SIZE_K(256)>;
+		reg = <0x7c000 DT_SIZE_K(256)>;
 	};
 };
