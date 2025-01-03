@@ -147,6 +147,10 @@ Build system and Infrastructure
     Twister XML reports have full testsuite name as ``testcase.classname property`` resolving
     possible duplicate testcase elements in ``twister_report.xml`` testsuite container.
 
+* West
+
+  * Added support for the ``--erase`` option on the OpenOCD runner for boards which specify ``--cmd-erase``.
+
 Drivers and Sensors
 *******************
 
