@@ -8,3 +8,10 @@ config GPIO_SI32
 	depends on DT_HAS_SILABS_SI32_GPIO_ENABLED
 	help
 	  Enable GPIO driver for Si32 line of MCUs
+
+config GPIO_HD_SI32
+	bool "High drive GPIO driver for Si32 family of MCUs"
+	default y
+	depends on DT_HAS_SILABS_SI32_HD_GPIO_ENABLED
+	help
+	  Enable high drive GPIO driver for Si32 line of MCUs
