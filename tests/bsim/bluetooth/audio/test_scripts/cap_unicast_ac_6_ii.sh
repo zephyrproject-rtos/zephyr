@@ -44,8 +44,8 @@ Execute_AC_6_II 24_1_1
 Execute_AC_6_II 24_2_1
 Execute_AC_6_II 32_1_1
 Execute_AC_6_II 32_2_1
-# Execute_AC_6_II 441_1_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
-# Execute_AC_6_II 441_2_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
+Execute_AC_6_II 441_1_1
+Execute_AC_6_II 441_2_1
 Execute_AC_6_II 48_1_1
 Execute_AC_6_II 48_2_1
 Execute_AC_6_II 48_3_1
