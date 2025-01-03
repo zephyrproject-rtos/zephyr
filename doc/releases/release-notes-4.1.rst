@@ -257,6 +257,9 @@ Drivers and Sensors
 
 * Watchdog
 
+  * Added :kconfig:option:`CONFIG_HAS_WDT_NO_CALLBACKS` which drivers select when they do not support
+    a callback being provided in :c:struct:`wdt_timeout_cfg`.
+
 * Wi-Fi
 
 Networking
