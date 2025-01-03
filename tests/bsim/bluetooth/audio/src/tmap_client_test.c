@@ -149,6 +149,7 @@ static void test_main(void)
 	/* Initialize TMAP */
 	err = bt_tmap_register(BT_TMAP_ROLE_CG | BT_TMAP_ROLE_UMS);
 	if (err != 0) {
+		FAIL("Failed to register TMAP (err %d)\n", err);
 		return;
 	}
 
