@@ -133,6 +133,8 @@ enum http_errno {
 	HPE_INVALID_CONTENT_LENGTH,
 	HPE_UNEXPECTED_CONTENT_LENGTH,
 	HPE_INVALID_CHUNK_SIZE,
+	HPE_INVALID_CONTENT_RANGE,
+	HPE_UNEXPECTED_CONTENT_RANGE,
 	HPE_INVALID_CONSTANT,
 	HPE_INVALID_INTERNAL_STATE,
 	HPE_STRICT,
@@ -143,6 +145,11 @@ enum http_errno {
 /* Get an http_errno value from an http_parser */
 #define HTTP_PARSER_ERRNO(p)            ((enum http_errno) (p)->http_errno)
 
+struct http_content_range {
+	uint64_t start;
+	uint64_t end;
+	uint64_t total;
+};
 
 struct http_parser {
 	/** PRIVATE **/
@@ -160,6 +167,8 @@ struct http_parser {
 	uint64_t content_length; /* # bytes in body (0 if no Content-Length
 				  * header)
 				  */
+	uint8_t content_range_present;
+	struct http_content_range content_range;
 	/** READ-ONLY **/
 	unsigned short http_major;
 	unsigned short http_minor;
