@@ -241,6 +241,7 @@ config BT_AIROC
 source "drivers/bluetooth/hci/Kconfig.esp32"
 source "drivers/bluetooth/hci/Kconfig.infineon"
 source "drivers/bluetooth/hci/Kconfig.nxp"
+source "drivers/bluetooth/hci/Kconfig.silabs"
 
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
@@ -296,14 +297,6 @@ config BT_DRV_RX_STACK_SIZE
 	default 256
 	help
 	  Stack size for the HCI driver's RX thread.
-
-config BT_SILABS_EFR32_BUFFER_MEMORY
-	int "Silicon Labs Bluetooth Library memory buffer size"
-	depends on BT_SILABS_EFR32
-	default 6144
-	help
-	  Select the size of allocated memory buffer for the Silicon Labs
-	  Bluetooth Library.
 
 config BT_H4_NXP_CTLR
 	bool "NXP Bluetooth Controller"
