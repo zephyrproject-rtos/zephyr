@@ -95,6 +95,22 @@ struct bt_hfp_ag_cb {
 	 */
 	int (*memory_dial)(struct bt_hfp_ag *ag, const char *location, char **number);
 
+	/** HF phone number calling request Callback
+	 *
+	 *  If this callback is provided it will be called whenever a
+	 *  new call is requested with specific phone number from HFP unit.
+	 *  When the callback is triggered, the application needs to start
+	 *  dialing the number with the passed phone number.
+	 *  If the callback is invalid, the phone number dialing from HFP unit
+	 *  cannot be supported.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param number Dialing number
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*number_call)(struct bt_hfp_ag *ag, const char *number);
+
 	/** HF outgoing Callback
 	 *
 	 *  If this callback is provided it will be called whenever a
@@ -114,6 +130,15 @@ struct bt_hfp_ag_cb {
 	 *  @param number Incoming number
 	 */
 	void (*incoming)(struct bt_hfp_ag *ag, const char *number);
+
+	/** HF incoming call is held Callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  incoming call is held but not accepted.
+	 *
+	 *  @param ag HFP AG object.
+	 */
+	void (*incoming_held)(struct bt_hfp_ag *ag);
 
 	/** HF ringing Callback
 	 *
@@ -160,6 +185,65 @@ struct bt_hfp_ag_cb {
 	 *  @param ag HFP AG object.
 	 */
 	void (*codec)(struct bt_hfp_ag *ag, uint32_t ids);
+
+	/** Codec negotiate callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  codec negotiation succeeded or failed.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param err Result of codec negotiation.
+	 */
+	void (*codec_negotiate)(struct bt_hfp_ag *ag, int err);
+
+	/** Audio connection request callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  audio conenction request is triggered by HF.
+	 *  When AT+BCC AT command received, it means the procedure of
+	 *  establishment of audio connection is triggered by HF.
+	 *  If the callback is provided by application, AG needs to
+	 *  start the codec connection procedure by calling
+	 *  function `bt_hfp_ag_audio_connect` in application layer.
+	 *  Or, the codec conenction procedure will be started with
+	 *  default codec id `BT_HFP_AG_CODEC_CVSD`.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param err Result of codec negotiation.
+	 */
+	void (*audio_connect_req)(struct bt_hfp_ag *ag);
+
+	/** HF VGM setting callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  VGM gain setting is informed from HF.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param gain HF microphone gain value.
+	 */
+	void (*vgm)(struct bt_hfp_ag *ag, uint8_t gain);
+
+	/** HF VGS setting callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  VGS gain setting is informed from HF.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param gain HF speaker gain value.
+	 */
+	void (*vgs)(struct bt_hfp_ag *ag, uint8_t gain);
+
+	/** HF ECNR turns off callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  ECNR turning off request is received from HF.
+	 *  If the callback is NULL or @kconfig{CONFIG_BT_HFP_AG_ECNR}
+	 *  is not enabled, the response result code of AT command
+	 *  will be an AT ERROR.
+	 *
+	 *  @param ag HFP AG object.
+	 */
+	void (*ecnr_turn_off)(struct bt_hfp_ag *ag);
 };
 
 /** @brief Register HFP AG profile
@@ -205,6 +289,16 @@ int bt_hfp_ag_disconnect(struct bt_hfp_ag *ag);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_ag_remote_incoming(struct bt_hfp_ag *ag, const char *number);
+
+/** @brief Put the incoming call on hold
+ *
+ *  Put the incoming call on hold.
+ *
+ *  @param ag HFP AG object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_hold_incoming(struct bt_hfp_ag *ag);
 
 /** @brief Reject the incoming call
  *
@@ -286,6 +380,76 @@ int bt_hfp_ag_remote_accept(struct bt_hfp_ag *ag);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_ag_remote_terminate(struct bt_hfp_ag *ag);
+
+/** @brief Set the HF microphone gain
+ *
+ *  Set the HF microphone gain
+ *
+ *  @param ag HFP AG object.
+ *  @param vgm Microphone gain value.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_vgm(struct bt_hfp_ag *ag, uint8_t vgm);
+
+/** @brief Set the HF speaker gain
+ *
+ *  Set the HF speaker gain
+ *
+ *  @param ag HFP AG object.
+ *  @param vgs Speaker gain value.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_vgs(struct bt_hfp_ag *ag, uint8_t vgs);
+
+/** @brief Set currently network operator
+ *
+ *  Set currently network operator.
+ *
+ *  @param ag HFP AG object.
+ *  @param mode Current mode and provides no information with regard
+ *              to the name of the operator.
+ *  @param name A string in alphanumeric format representing the
+ *                  name of the network operator. This string shall
+ *                  not exceed 16 characters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, uint8_t mode, char *name);
+
+/** @brief Create audio connection
+ *
+ *  Create audio conenction by HFP AG. There are two setups included,
+ *  Codec connection and audio connection.
+ *  The codec connection will be established firstly if the codec
+ *  negotiation are supported by both side. If the passed codec id
+ *  is not same as the last codec connection, the codec connection
+ *  procedure will be triggered.
+ *  After the codec conenction is established, the audio conenction
+ *  will be started.
+ *  The passed codec id could be one of BT_HFP_AG_CODEC_XXX. If the
+ *  codec negotiation feature is supported by both side, the codec id
+ *  could be one of the bitmaps of `ids` notified by callback `codec`.
+ *  Or, the `id` should be BT_HFP_AG_CODEC_CVSD.
+ *
+ *  @param ag HFP AG object.
+ *  @param id Codec Id.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id);
+
+/** @brief Set In-Band Ring Tone
+ *
+ *  Set In-Band Ring Tone.
+ *
+ *  @param ag HFP AG object.
+ *  @param inband In-band or no in-band.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_inband_ringtone(struct bt_hfp_ag *ag, bool inband);
 
 #ifdef __cplusplus
 }
