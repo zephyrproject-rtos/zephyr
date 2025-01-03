@@ -12,4 +12,5 @@ supported:
   - uart
   - watchdog
   - usbd
+  - display
 vendor: renesas
