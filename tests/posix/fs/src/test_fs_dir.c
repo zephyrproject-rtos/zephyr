@@ -54,7 +54,8 @@ static int test_mkdir(void)
 static struct dirent *readdir_wrap(DIR *dirp, bool thread_safe)
 {
 	if (thread_safe) {
-		struct dirent entry;
+		/* cannot declare on stack otherwise this test fails for qemu_x86/atom */
+		static struct dirent entry;
 		struct dirent *result = NULL;
 
 		zassert_ok(readdir_r(dirp, &entry, &result));
