@@ -3,6 +3,7 @@ sample:
     application
   name: hello world
 common:
+  min_ram: 2
   tags: introduction
   integration_platforms:
     - native_sim
