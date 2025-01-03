@@ -5,9 +5,11 @@
 import argparse
 import hashlib
 import os
+import re
 import shlex
 import subprocess
 import textwrap
+import urllib.request
 from pathlib import Path
 
 import pykwalify.core
@@ -15,9 +17,10 @@ import yaml
 from west.commands import WestCommand
 
 try:
+    from yaml import CSafeDumper as SafeDumper
     from yaml import CSafeLoader as SafeLoader
 except ImportError:
-    from yaml import SafeLoader
+    from yaml import SafeDumper, SafeLoader
 
 WEST_PATCH_SCHEMA_PATH = Path(__file__).parents[1] / "schemas" / "patch-schema.yml"
 with open(WEST_PATCH_SCHEMA_PATH) as f:
@@ -162,6 +165,51 @@ class Patch(WestCommand):
             ),
         )
 
+        gh_fetch_arg_parser = subparsers.add_parser(
+            "gh-fetch",
+            help="Fetch patch from Github",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=textwrap.dedent(
+                """
+            Fetching Patches from Github:
+
+                TODO
+            """
+            ),
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-o",
+            "--owner",
+            action="store",
+            default="zephyrproject-rtos",
+            help="Github repository owner",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-r",
+            "--repo",
+            action="store",
+            default="zephyr",
+            help="Github repository",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-pr",
+            "--pull-request",
+            metavar="ID",
+            action="store",
+            required=True,
+            type=int,
+            help="Github Pull Request ID",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-m",
+            "--module",
+            metavar="DIR",
+            action="store",
+            required=True,
+            type=Path,
+            help="Module path",
+        )
+
         subparsers.add_parser(
             "list",
             help="List patches",
@@ -224,6 +272,7 @@ class Patch(WestCommand):
             "apply": self.apply,
             "clean": self.clean,
             "list": self.list,
+            "gh-fetch": self.gh_fetch,
         }
 
         method[args.subcommand](args, yml, args.modules)
@@ -346,6 +395,39 @@ class Patch(WestCommand):
             if mods and patch_info["module"].rstrip('/') not in mods:
                 continue
             self.inf(patch_info)
+
+    def gh_fetch(self, args, yml, mods=None):
+        try:
+            from github import Github
+        except ImportError:
+            self.die("PyGithub not installed")
+
+        gh = Github()
+        pr = gh.get_repo(f"{args.owner}/{args.repo}").get_pull(args.pull_request)
+
+        filename = "-".join(re.split("[^a-zA-Z0-9]+", pr.title)) + ".patch"
+        urllib.request.urlretrieve(pr.patch_url, args.patch_base / filename)
+
+        with open(args.patch_base / filename, "rb") as fp:
+            hasher = hashlib.sha256()
+            hasher.update(fp.read())
+            pr_sha256 = hasher.hexdigest()
+
+        patch_info = {
+            "path": filename,
+            "sha256sum": pr_sha256,
+            "module": str(args.module),
+            "author": pr.user.name or "Hidden",
+            "email": pr.user.email or "hidden@github.com",
+            "date": pr.created_at.strftime("%Y-%m-%d"),
+            "upstreamable": True,
+            "merge-pr": pr.html_url,
+            "merge-status": pr.merged,
+        }
+
+        yml.setdefault("patches", []).append(patch_info)
+        with open(args.patch_yml, "w") as f:
+            yaml.dump(yml, f, Dumper=SafeDumper)
 
     @staticmethod
     def get_mod_paths(args, yml):
