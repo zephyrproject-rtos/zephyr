@@ -9,36 +9,44 @@
 #include <lvgl.h>
 #include "lvgl_display.h"
 #include "lvgl_common_input.h"
+#include "lvgl_zephyr.h"
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
 #include "lvgl_fs.h"
 #endif
 #ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
 #include "lvgl_mem.h"
 #endif
-#include LV_MEM_CUSTOM_INCLUDE
+#include LV_STDLIB_INCLUDE
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
-static lv_disp_drv_t disp_drv;
+static lv_display_t *display;
 struct lvgl_disp_data disp_data = {
 	.blanking_on = false,
 };
 
-#define DISPLAY_NODE DT_CHOSEN(zephyr_display)
+#define DISPLAY_NODE          DT_CHOSEN(zephyr_display)
+#define IS_MONOCHROME_DISPLAY ((CONFIG_LV_Z_BITS_PER_PIXEL == 1) || (CONFIG_LV_COLOR_DEPTH_1 == 1))
+#define ALLOC_MONOCHROME_CONV_BUFFER                                                               \
+	((IS_MONOCHROME_DISPLAY == 1) && (CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER == 1))
 
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
-
-static lv_disp_draw_buf_t disp_buf;
 
 #define DISPLAY_WIDTH  DT_PROP(DISPLAY_NODE, width)
 #define DISPLAY_HEIGHT DT_PROP(DISPLAY_NODE, height)
 
+#if IS_MONOCHROME_DISPLAY
+/* monochrome buffers are expected to have 8 preceding bytes for the color palette */
+#define BUFFER_SIZE                                                                                \
+	(((CONFIG_LV_Z_VDB_SIZE * ROUND_UP(DISPLAY_WIDTH, 8) * ROUND_UP(DISPLAY_HEIGHT, 8)) /      \
+	  100) / 8 +                                                                               \
+	 8)
+#else
 #define BUFFER_SIZE                                                                                \
 	(CONFIG_LV_Z_BITS_PER_PIXEL *                                                              \
 	 ((CONFIG_LV_Z_VDB_SIZE * DISPLAY_WIDTH * DISPLAY_HEIGHT) / 100) / 8)
-
-#define NBR_PIXELS_IN_BUFFER (BUFFER_SIZE * 8 / CONFIG_LV_Z_BITS_PER_PIXEL)
+#endif /* IS_MONOCHROME_DISPLAY */
 
 /* NOTE: depending on chosen color depth buffer may be accessed using uint8_t *,
  * uint16_t * or uint32_t *, therefore buffer needs to be aligned accordingly to
@@ -58,40 +66,34 @@ static uint8_t buf1[BUFFER_SIZE]
 		__aligned(CONFIG_LV_Z_VDB_ALIGN);
 #endif /* CONFIG_LV_Z_DOUBLE_VDB */
 
+#if ALLOC_MONOCHROME_CONV_BUFFER
+static uint8_t mono_vtile_buf[BUFFER_SIZE]
+#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+	Z_GENERIC_SECTION(.lvgl_buf)
+#endif
+		__aligned(CONFIG_LV_Z_VDB_ALIGN);
+#endif /* ALLOC_MONOCHROME_CONV_BUFFER */
+
 #endif /* CONFIG_LV_Z_BUFFER_ALLOC_STATIC */
 
 #if CONFIG_LV_Z_LOG_LEVEL != 0
-/*
- * In LVGLv8 the signature of the logging callback has changes and it no longer
- * takes the log level as an integer argument. Instead, the log level is now
- * already part of the buffer passed to the logging callback. It's not optimal
- * but we need to live with it and parse the buffer manually to determine the
- * level and then truncate the string we actually pass to the logging framework.
- */
-static void lvgl_log(const char *buf)
+static void lvgl_log(lv_log_level_t level, const char *buf)
 {
-	/*
-	 * This is ugly and should be done in a loop or something but as it
-	 * turned out, Z_LOG()'s first argument (that specifies the log level)
-	 * cannot be an l-value...
-	 *
-	 * We also assume lvgl is sane and always supplies the level string.
-	 */
-	switch (buf[1]) {
-	case 'E':
-		LOG_ERR("%s", buf + strlen("[Error] "));
+	switch (level) {
+	case LV_LOG_LEVEL_ERROR:
+		LOG_ERR("%s", buf + (sizeof("[Error] ") - 1));
 		break;
-	case 'W':
-		LOG_WRN("%s", buf + strlen("[Warn] "));
+	case LV_LOG_LEVEL_WARN:
+		LOG_WRN("%s", buf + (sizeof("[Warn] ") - 1));
 		break;
-	case 'I':
-		LOG_INF("%s", buf + strlen("[Info] "));
+	case LV_LOG_LEVEL_INFO:
+		LOG_INF("%s", buf + (sizeof("[Info] ") - 1));
 		break;
-	case 'T':
-		LOG_DBG("%s", buf + strlen("[Trace] "));
+	case LV_LOG_LEVEL_TRACE:
+		LOG_DBG("%s", buf + (sizeof("[Trace] ") - 1));
 		break;
-	case 'U':
-		LOG_INF("%s", buf + strlen("[User] "));
+	case LV_LOG_LEVEL_USER:
+		LOG_INF("%s", buf + (sizeof("[User] ") - 1));
 		break;
 	}
 }
@@ -99,52 +101,39 @@ static void lvgl_log(const char *buf)
 
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
 
-static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_driver)
+static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 {
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_driver->user_data;
 	int err = 0;
 
-	if (data->cap.x_resolution <= DISPLAY_WIDTH) {
-		disp_driver->hor_res = data->cap.x_resolution;
-	} else {
-		LOG_ERR("Horizontal resolution is larger than maximum");
-		err = -ENOTSUP;
-	}
-
-	if (data->cap.y_resolution <= DISPLAY_HEIGHT) {
-		disp_driver->ver_res = data->cap.y_resolution;
-	} else {
-		LOG_ERR("Vertical resolution is larger than maximum");
-		err = -ENOTSUP;
-	}
-
-	disp_driver->draw_buf = &disp_buf;
 #ifdef CONFIG_LV_Z_DOUBLE_VDB
-	lv_disp_draw_buf_init(disp_driver->draw_buf, &buf0, &buf1, NBR_PIXELS_IN_BUFFER);
+	lv_display_set_buffers(display, &buf0, &buf1, BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
 #else
-	lv_disp_draw_buf_init(disp_driver->draw_buf, &buf0, NULL, NBR_PIXELS_IN_BUFFER);
+	lv_display_set_buffers(display, &buf0, NULL, BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
 #endif /* CONFIG_LV_Z_DOUBLE_VDB  */
+
+#if ALLOC_MONOCHROME_CONV_BUFFER
+	lvgl_set_mono_conversion_buffer(mono_vtile_buf, BUFFER_SIZE);
+#endif /* ALLOC_MONOCHROME_CONV_BUFFER */
 
 	return err;
 }
 
 #else
 
-static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_driver)
+static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 {
 	void *buf0 = NULL;
 	void *buf1 = NULL;
 	uint16_t buf_nbr_pixels;
 	uint32_t buf_size;
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_driver->user_data;
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
+	uint16_t hor_res = lv_display_get_horizontal_resolution(display);
+	uint16_t ver_res = lv_display_get_vertical_resolution(display);
 
-	disp_driver->hor_res = data->cap.x_resolution;
-	disp_driver->ver_res = data->cap.y_resolution;
-
-	buf_nbr_pixels = (CONFIG_LV_Z_VDB_SIZE * disp_driver->hor_res * disp_driver->ver_res) / 100;
+	buf_nbr_pixels = (CONFIG_LV_Z_VDB_SIZE * hor_res * ver_res) / 100;
 	/* one horizontal line is the minimum buffer requirement for lvgl */
-	if (buf_nbr_pixels < disp_driver->hor_res) {
-		buf_nbr_pixels = disp_driver->hor_res;
+	if (buf_nbr_pixels < hor_res) {
+		buf_nbr_pixels = hor_res;
 	}
 
 	switch (data->cap.current_pixel_format) {
@@ -159,42 +148,80 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_driver)
 		break;
 	case PIXEL_FORMAT_MONO01:
 	case PIXEL_FORMAT_MONO10:
-		buf_size = buf_nbr_pixels / 8;
+		buf_size = buf_nbr_pixels / 8 + 8;
 		buf_size += (buf_nbr_pixels % 8) == 0 ? 0 : 1;
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	buf0 = LV_MEM_CUSTOM_ALLOC(buf_size);
+	buf0 = lv_malloc(buf_size);
 	if (buf0 == NULL) {
 		LOG_ERR("Failed to allocate memory for rendering buffer");
 		return -ENOMEM;
 	}
 
 #ifdef CONFIG_LV_Z_DOUBLE_VDB
-	buf1 = LV_MEM_CUSTOM_ALLOC(buf_size);
+	buf1 = lv_malloc(buf_size);
 	if (buf1 == NULL) {
-		LV_MEM_CUSTOM_FREE(buf0);
+		lv_free(buf0);
 		LOG_ERR("Failed to allocate memory for rendering buffer");
 		return -ENOMEM;
 	}
 #endif
 
-	disp_driver->draw_buf = LV_MEM_CUSTOM_ALLOC(sizeof(lv_disp_draw_buf_t));
-	if (disp_driver->draw_buf == NULL) {
-		LV_MEM_CUSTOM_FREE(buf0);
-		LV_MEM_CUSTOM_FREE(buf1);
-		LOG_ERR("Failed to allocate memory to store rendering buffers");
+#if ALLOC_MONOCHROME_CONV_BUFFER
+	void *vtile_buf = lv_malloc(buf_size);
+
+	if (vtile_buf == NULL) {
+		lv_free(buf0);
+		lv_free(buf1);
+		LOG_ERR("Failed to allocate memory for vtile buffer");
 		return -ENOMEM;
 	}
+	lvgl_set_mono_conversion_buffer(vtile_buf, buf_size);
+#endif /* ALLOC_MONOCHROME_CONV_BUFFER */
 
-	lv_disp_draw_buf_init(disp_driver->draw_buf, buf0, buf1, buf_nbr_pixels);
+	lv_display_set_buffers(display, buf0, buf1, buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
 	return 0;
 }
 #endif /* CONFIG_LV_Z_BUFFER_ALLOC_STATIC */
 
-static int lvgl_init(void)
+void lv_mem_init(void)
+{
+#ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
+	lvgl_heap_init();
+#endif /* CONFIG_LV_Z_MEM_POOL_SYS_HEAP */
+}
+
+void lv_mem_deinit(void)
+{
+	/* Reinitializing the heap clears all allocations, no action needed */
+}
+
+void lv_mem_monitor_core(lv_mem_monitor_t *mon_p)
+{
+	memset(mon_p, 0, sizeof(lv_mem_monitor_t));
+
+#if CONFIG_LV_Z_MEM_POOL_SYS_HEAP
+	struct sys_memory_stats stats;
+
+	lvgl_heap_stats(&stats);
+	mon_p->used_pct =
+		(stats.allocated_bytes * 100) / (stats.allocated_bytes + stats.free_bytes);
+	mon_p->max_used = stats.max_allocated_bytes;
+#else
+	LOG_WRN_ONCE("Memory statistics only supported for CONFIG_LV_Z_MEM_POOL_SYS_HEAP");
+#endif /* CONFIG_LV_Z_MEM_POOL_SYS_HEAP */
+}
+
+lv_result_t lv_mem_test_core(void)
+{
+	/* Not supported for now */
+	return LV_RESULT_OK;
+}
+
+int lvgl_init(void)
 {
 	const struct device *display_dev = DEVICE_DT_GET(DISPLAY_NODE);
 
@@ -205,15 +232,12 @@ static int lvgl_init(void)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
-	lvgl_heap_init();
-#endif
-
 #if CONFIG_LV_Z_LOG_LEVEL != 0
 	lv_log_register_print_cb(lvgl_log);
 #endif
 
 	lv_init();
+	lv_tick_set_cb(k_uptime_get_32);
 
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
 	lvgl_fs_init();
@@ -222,27 +246,25 @@ static int lvgl_init(void)
 	disp_data.display_dev = display_dev;
 	display_get_capabilities(display_dev, &disp_data.cap);
 
-	lv_disp_drv_init(&disp_drv);
-	disp_drv.user_data = (void *)&disp_data;
-
-#ifdef CONFIG_LV_Z_FULL_REFRESH
-	disp_drv.full_refresh = 1;
-#endif
-
-	err = lvgl_allocate_rendering_buffers(&disp_drv);
-	if (err != 0) {
-		return err;
+	display = lv_display_create(disp_data.cap.x_resolution, disp_data.cap.y_resolution);
+	if (!display) {
+		return -ENOMEM;
 	}
+	lv_display_set_user_data(display, &disp_data);
 
-	if (set_lvgl_rendering_cb(&disp_drv) != 0) {
+	if (set_lvgl_rendering_cb(display) != 0) {
 		LOG_ERR("Display not supported.");
 		return -ENOTSUP;
 	}
 
-	if (lv_disp_drv_register(&disp_drv) == NULL) {
-		LOG_ERR("Failed to register display device.");
-		return -EPERM;
+	err = lvgl_allocate_rendering_buffers(display);
+	if (err != 0) {
+		return err;
 	}
+
+#ifdef CONFIG_LV_Z_FULL_REFRESH
+	lv_display_set_render_mode(display, LV_DISPLAY_RENDER_MODE_FULL);
+#endif
 
 	err = lvgl_init_input_devices();
 	if (err < 0) {
@@ -253,4 +275,6 @@ static int lvgl_init(void)
 	return 0;
 }
 
-SYS_INIT(lvgl_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+#ifdef CONFIG_LV_Z_AUTO_INIT
+SYS_INIT(lvgl_init, APPLICATION, CONFIG_LV_Z_INIT_PRIORITY);
+#endif /* CONFIG_LV_Z_AUTO_INIT */

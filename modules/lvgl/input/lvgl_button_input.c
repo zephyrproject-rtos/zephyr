@@ -17,7 +17,7 @@ struct lvgl_button_input_config {
 	struct lvgl_common_input_config common_config; /* Needs to be first member */
 	const uint16_t *input_codes;
 	uint8_t num_codes;
-	const lv_coord_t *coordinates;
+	const int32_t *coordinates;
 };
 
 static void lvgl_button_process_event(struct input_event *evt, void *user_data)
@@ -39,7 +39,7 @@ static void lvgl_button_process_event(struct input_event *evt, void *user_data)
 	}
 
 	data->pending_event.btn_id = i;
-	data->pending_event.state = evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+	data->pending_event.state = evt->value ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 
 	if (k_msgq_put(cfg->common_config.event_msgq, &data->pending_event, K_NO_WAIT) != 0) {
 		LOG_WRN("Could not put input data into queue");
@@ -72,8 +72,7 @@ int lvgl_button_input_init(const struct device *dev)
 	LVGL_INPUT_DEFINE(inst, button, CONFIG_LV_Z_BUTTON_INPUT_MSGQ_COUNT,                       \
 			  lvgl_button_process_event);                                              \
 	static const uint16_t lvgl_button_input_codes_##inst[] = DT_INST_PROP(inst, input_codes);  \
-	static const lv_coord_t lvgl_button_coordinates_##inst[] =                                 \
-		DT_INST_PROP(inst, coordinates);                                                   \
+	static const int32_t lvgl_button_coordinates_##inst[] = DT_INST_PROP(inst, coordinates);   \
 	static const struct lvgl_button_input_config lvgl_button_input_config_##inst = {           \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, button),                  \
 		.input_codes = lvgl_button_input_codes_##inst,                                     \
