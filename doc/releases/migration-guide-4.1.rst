@@ -214,6 +214,7 @@ GPIO
 * Renamed the device tree property ``bit_per_gpio`` to ``bit-per-gpio``.
 * Renamed the device tree property ``off_val`` to ``off-val``.
 * Renamed the device tree property ``on_val`` to ``on-val``.
+* Renamed the ``compatible`` from ``ti,ads114s0x-gpio`` to :dtcompatible:`ti,ads1x4s0x-gpio`.
 
 HWSPINLOCK
 ==========
