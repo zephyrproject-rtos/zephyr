@@ -23,8 +23,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_mcp23xxx);
 
-#define MCP23XXX_RESET_TIME_US 1
-
 /**
  * @brief Reads given register from mcp23xxx.
  *
@@ -507,7 +505,7 @@ int gpio_mcp23xxx_init(const struct device *dev)
 			return -EIO;
 		}
 
-		k_usleep(MCP23XXX_RESET_TIME_US);
+		k_usleep(CONFIG_GPIO_MCP23XXX_RESET_TIME_US);
 
 		err = gpio_pin_set_dt(&config->gpio_reset, 0);
 		if (err != 0) {
