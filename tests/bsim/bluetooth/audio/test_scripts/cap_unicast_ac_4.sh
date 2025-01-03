@@ -38,8 +38,14 @@ Execute_AC_4 24_1_1
 Execute_AC_4 24_2_1
 Execute_AC_4 32_1_1
 Execute_AC_4 32_2_1
-Execute_AC_4 441_1_1
-Execute_AC_4 441_2_1
+# ASSERTION FAIL [err == ((isoal_status_t) 0x00)] @
+# zephyr/subsys/bluetooth/controller/hci/hci_driver.c:489
+# https://github.com/zephyrproject-rtos/zephyr/issues/83586
+# Execute_AC_4 441_1_1
+# ASSERTION FAIL [err == ((isoal_status_t) 0x00)] @
+# zephyr/subsys/bluetooth/controller/hci/hci_driver.c:489
+# https://github.com/zephyrproject-rtos/zephyr/issues/83586
+# Execute_AC_4 441_2_1
 Execute_AC_4 48_1_1
 Execute_AC_4 48_2_1
 Execute_AC_4 48_3_1
