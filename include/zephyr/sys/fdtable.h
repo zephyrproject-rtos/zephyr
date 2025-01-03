@@ -14,6 +14,27 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#ifdef CONFIG_PICOLIBC
+#define ZVFS_O_APPEND 0x0400
+#define ZVFS_O_CREAT  0x0040
+#define ZVFS_O_TRUNC  0x0200
+#else
+#define ZVFS_O_APPEND 0x0008
+#define ZVFS_O_CREAT  0x0200
+#define ZVFS_O_TRUNC  0x0400
+#endif
+
+#define ZVFS_O_RDONLY 00
+#define ZVFS_O_WRONLY 01
+#define ZVFS_O_RDWR   02
+
+#define ZVFS_O_EXCL     0x0800
+#define ZVFS_O_NONBLOCK 0x4000
+
+#define ZVFS_F_DUPFD 0
+#define ZVFS_F_GETFL 3
+#define ZVFS_F_SETFL 4
+
 /* File mode bits */
 #define ZVFS_MODE_IFMT   0170000
 #define ZVFS_MODE_UNSPEC 0000000
