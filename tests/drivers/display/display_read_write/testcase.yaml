@@ -76,3 +76,10 @@ tests:
       - SHIELD=rtkmipilcdb00000be
     platform_allow:
       - ek_ra8d1
+  drivers.display.read_write.rtk7eka6m3b00001bu:
+    tags:
+      - shield
+    extra_args:
+      - SHIELD=rtk7eka6m3b00001bu
+    platform_allow:
+      - ek_ra8d1
