@@ -5,6 +5,7 @@ common:
   harness: ztest
   platform_allow:
     - nrf52840dk/nrf52840
+    - nrf54l09pdk/nrf54l09/cpuapp
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54l20pdk/nrf54l20/cpuapp
     - nrf54l15bsim/nrf54l15/cpuapp
@@ -32,6 +33,7 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_rx_disable.overlay"
     platform_exclude:
+      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54l15bsim/nrf54l15/cpuapp
@@ -44,6 +46,7 @@ tests:
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
+      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
@@ -64,6 +67,7 @@ tests:
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
+      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
@@ -84,6 +88,7 @@ tests:
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
+      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
