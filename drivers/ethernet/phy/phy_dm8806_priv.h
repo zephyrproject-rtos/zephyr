@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* PHY read opcode as part of the MDIO frame in Clause 22 */
+#define PHY_READ  0x2u
+/* PHY write opcode as part of the MDIO frame in Clause 22 */
+#define PHY_WRITE 0x1u
+
 /* Port 0~4 PHY Control Register. */
 #define PORTX_PHY_CONTROL_REGISTER 0x0u
 /* 10 Mbit/s transfer with half duplex mask. */

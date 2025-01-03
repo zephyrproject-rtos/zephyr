@@ -42,6 +42,196 @@ struct phy_dm8806_data {
 #endif
 };
 
+#ifdef CONFIG_PHY_DM8806_SMI_BUS_CHECK
+static uint16_t phy_crc_check(uint16_t data, uint16_t reg_addr, uint8_t opcode)
+{
+	uint16_t csum[8];
+	uint16_t checksum = 0;
+
+	/* Checksum calculated formula proposed by Davicom on datasheed:
+	 * 7.2.1 Host SMI Bus Error Check Function page 84.
+	 */
+	csum[0] = ((data & 0x1) ^ ((data & 0x100) >> 8) ^ (reg_addr & 0x1) ^
+		   ((reg_addr & 0x100) >> 8));
+	csum[1] = (((data & 0x2) >> 1) ^ ((data & 0x200) >> 9) ^ ((reg_addr & 0x2) >> 1) ^
+		   ((reg_addr & 0x200) >> 9));
+	csum[2] = (((data & 0x4) >> 2) ^ ((data & 0x400) >> 10) ^ ((reg_addr & 0x4) >> 2) ^
+		   (opcode & 0x1));
+	csum[3] = (((data & 0x8) >> 3) ^ ((data & 0x800) >> 11) ^ ((reg_addr & 0x8) >> 3) ^
+		   ((opcode & 0x2) >> 1));
+	csum[4] = (((data & 0x10) >> 4) ^ ((data & 0x1000) >> 12) ^ ((reg_addr & 0x10) >> 4));
+	csum[5] = (((data & 0x20) >> 5) ^ ((data & 0x2000) >> 13) ^ ((reg_addr & 0x20) >> 5));
+	csum[6] = (((data & 0x40) >> 6) ^ ((data & 0x4000) >> 14) ^ ((reg_addr & 0x40) >> 6));
+	csum[7] = (((data & 0x80) >> 7) ^ ((data & 0x8000) >> 15) ^ ((reg_addr & 0x80) >> 7));
+	for (int cnt = 0; cnt < 8; cnt++) {
+		checksum |= (csum[cnt] << cnt);
+	}
+	return checksum;
+}
+#endif
+
+static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t regad,
+				uint16_t data)
+{
+	int res = 0;
+	const struct phy_dm8806_config *cfg = dev->config;
+
+#ifdef CONFIG_PHY_DM8806_SMI_BUS_CHECK
+	uint16_t checksum_status;
+	uint16_t sw_checksum = 0;
+	uint16_t abs_reg;
+	int repetition = 0;
+
+	do {
+		/* Set register 33AH.[0] = 1 to enable SMI Bus Error Check function. */
+		res = mdio_write(cfg->mdio, SMI_BUS_CTRL_PHY_ADDRESS, SMI_BUS_CTRL_REG_ADDRESS,
+				 SMI_ECE);
+		if (res != 0) {
+			LOG_ERR("Failed to write data to PHY register: SMI_BUS_CTRL_REG_ADDRESS, "
+				"error code: %d",
+				res);
+			return res;
+		}
+#endif
+		res = mdio_write(cfg->mdio, phyad, regad, data);
+		if (res != 0) {
+			LOG_ERR("Failed to read data from PHY, error code: %d", res);
+			return res;
+		}
+#ifdef CONFIG_PHY_DM8806_SMI_BUS_CHECK
+		/* Calculate checksum */
+		abs_reg = (phyad << 5);
+		abs_reg |= (regad & 0x1f);
+		sw_checksum = phy_crc_check(data, abs_reg, PHY_WRITE);
+		sw_checksum &= 0xffu;
+		/* Write calculated checksum to the PHY register 339H.[7:0] */
+		res = mdio_write(cfg->mdio, SMI_BUS_ERR_CHK_PHY_ADDRESS,
+				 SMI_BUS_ERR_CHK_REG_ADDRESS, sw_checksum);
+		if (res != 0) {
+			LOG_ERR("Failed to write calculated checksum to the PHY register, "
+				"error code: %d",
+				res);
+			return res;
+		}
+
+		/* Read status of the checksum from Serial Bus Error Check Register
+		 * 339H.[8].
+		 */
+		res = mdio_read(cfg->mdio, SMI_BUS_ERR_CHK_PHY_ADDRESS, SMI_BUS_ERR_CHK_REG_ADDRESS,
+				&checksum_status);
+		if (res != 0) {
+			LOG_ERR("Failed to read hardware calculated checksum from PHY, error code: "
+				"%d",
+				res);
+			return res;
+		}
+		/* Checksum status is present on the 8-th bit of the Serial Bus Error
+		 * Check Register (339h) [8].
+		 */
+		checksum_status &= 0x100;
+
+		/* Repeat the writing procedure for the number of attempts defined in
+		 * KConfig after which the transfer will failed.
+		 */
+		if (CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION > 0) {
+			repetition++;
+			if (checksum_status) {
+				LOG_WRN("%d repeat of PHY read procedure due to CRC error.",
+					repetition);
+				if (repetition == CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
+					LOG_ERR("Maximum number of PHY write repetition exceed.");
+					res = (-EIO);
+				}
+			} else {
+				break;
+			}
+			/* Do not repeat the transfer if repetition number is set to 0. Just check
+			 * the CRC in this case and report the error in case of wrong CRC sum.
+			 */
+		} else {
+			if (checksum_status) {
+				LOG_ERR("Wrong checksum, during PHY write procedure.");
+				res = (-EIO);
+				break;
+			}
+		}
+	} while (repetition < CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION);
+#endif
+
+	return res;
+}
+
+static int phy_dm8806_read_reg(const struct device *dev, uint8_t phyad, uint8_t regad,
+			       uint16_t *data)
+{
+	int res = 0;
+	const struct phy_dm8806_config *cfg = dev->config;
+
+#ifdef CONFIG_PHY_DM8806_SMI_BUS_CHECK
+	uint16_t hw_checksum;
+	uint16_t sw_checksum = 0;
+	uint16_t abs_reg;
+	int repetition = 0;
+
+	do {
+		/* Set register 33AH.[0] = 1 to enable SMI Bus Error Check function. */
+		res = mdio_write(cfg->mdio, SMI_BUS_CTRL_PHY_ADDRESS, SMI_BUS_CTRL_REG_ADDRESS,
+				 SMI_ECE);
+		if (res != 0) {
+			LOG_ERR("Failed to write data to PHY register: SMI_BUS_CTRL_REG_ADDRESS, "
+				"error code: %d",
+				res);
+			return res;
+		}
+#endif
+		res = mdio_read(cfg->mdio, phyad, regad, data);
+		if (res != 0) {
+			LOG_ERR("Failed to read data from PHY, error code: %d", res);
+			return res;
+		}
+#ifdef CONFIG_PHY_DM8806_SMI_BUS_CHECK
+		/* Read hardware calculated checksum from Serial Bus Error Check Register. */
+		res = mdio_read(cfg->mdio, SMI_BUS_ERR_CHK_PHY_ADDRESS, SMI_BUS_ERR_CHK_REG_ADDRESS,
+				&hw_checksum);
+		if (res != 0) {
+			LOG_ERR("Failed to read hardware calculated checksum from PHY, error code: "
+				"%d",
+				res);
+			return res;
+		}
+		/* Absolute register address use for checksum calculation is 10-bit value.
+		 * Oldest five bit creates PHY address, youngest five bit creates register address.
+		 */
+		abs_reg = (phyad << 5);
+		abs_reg |= (regad & 0x1f);
+
+		sw_checksum = phy_crc_check(*data, abs_reg, PHY_READ);
+
+		if (CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION > 0) {
+			repetition++;
+			if (hw_checksum != sw_checksum) {
+				LOG_WRN("%d repeat of PHY read procedure due to CRC error.",
+					repetition);
+				if (repetition == CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
+					LOG_ERR("Maximum number of PHY read repetition exceed.");
+					res = (-EIO);
+				}
+			} else {
+				break;
+			}
+		} else {
+			if (hw_checksum != sw_checksum) {
+				LOG_ERR("Wrong checksum, during PHY read procedure.");
+				res = (-EIO);
+				break;
+			}
+		}
+	} while (repetition < CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION);
+#endif
+
+	return res;
+}
+
 static void phy_dm8806_gpio_callback(const struct device *dev, struct gpio_callback *cb,
 				     uint32_t pins)
 {
@@ -262,7 +452,7 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 	}
 #endif
 	/* Read data from Switch Per-Port Register. */
-	ret = mdio_read(cfg->mdio, cfg->switch_addr, PORTX_SWITCH_STATUS, &data);
+	ret = phy_dm8806_read_reg(dev, cfg->switch_addr, PORTX_SWITCH_STATUS, &data);
 	if (ret) {
 		LOG_ERR("Failes to read data drom DM8806 Switch Per-Port Registers area");
 		return ret;
@@ -325,14 +515,14 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	}
 
 	/* Power down */
-	ret = mdio_read(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
+	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
 		LOG_ERR("Failes to read data drom DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
 	data |= POWER_DOWN;
-	ret = mdio_write(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
+	ret = phy_dm8806_write_reg(dev, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
 	if (ret) {
 		LOG_ERR("Failed to write data to DM8806");
 		return ret;
@@ -340,14 +530,14 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	k_busy_wait(500);
 
 	/* Turn off the auto-negotiation process. */
-	ret = mdio_read(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
+	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
 		LOG_ERR("Failed to write data to DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
 	data &= ~(AUTO_NEGOTIATION);
-	ret = mdio_write(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
+	ret = phy_dm8806_write_reg(dev, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
 	if (ret) {
 		LOG_ERR("Failed to write data to DM8806");
 		return ret;
@@ -355,7 +545,7 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	k_busy_wait(500);
 
 	/* Change the link speed. */
-	ret = mdio_read(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
+	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
 		LOG_ERR("Failed to read data from DM8806");
 		return ret;
@@ -363,7 +553,7 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	k_busy_wait(500);
 	data &= ~(LINK_SPEED | DUPLEX_MODE);
 	data |= req_speed;
-	ret = mdio_write(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
+	ret = phy_dm8806_write_reg(dev, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
 	if (ret) {
 		LOG_ERR("Failed to write data to DM8806");
 		return ret;
@@ -371,20 +561,20 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	k_busy_wait(500);
 
 	/* Power up ethernet port*/
-	ret = mdio_read(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
+	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
 		LOG_ERR("Failes to read data drom DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
 	data &= ~(POWER_DOWN);
-	ret = mdio_write(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
+	ret = phy_dm8806_write_reg(dev, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
 	if (ret) {
 		LOG_ERR("Failed to write data to DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
-	return -ENOTSUP;
+	return ret;
 }
 
 static int phy_dm8806_reg_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
