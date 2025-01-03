@@ -32,6 +32,7 @@ def test_if_generate_command_creates_proper_command(patched_which, device: QemuA
     assert device.command == ['west', 'build', '-d', 'build_dir', '-t', 'run']
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMU FIFO fails on Windows.')
 def test_if_qemu_adapter_runs_without_errors(resources, device: QemuAdapter) -> None:
     fifo_file_path = str(device.device_config.build_dir / 'qemu-fifo')
     script_path = resources.joinpath('fifo_mock.py')
@@ -46,6 +47,7 @@ def test_if_qemu_adapter_runs_without_errors(resources, device: QemuAdapter) -> 
     assert file_lines[-2:] == lines[-2:]
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMU FIFO fails on Windows.')
 def test_if_qemu_adapter_raise_exception_due_to_no_fifo_connection(device: QemuAdapter) -> None:
     device.base_timeout = 0.3
     device.command = ['sleep', '1']

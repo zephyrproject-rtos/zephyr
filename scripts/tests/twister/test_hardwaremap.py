@@ -7,6 +7,7 @@ Tests for hardwaremap.py classes' methods
 """
 
 import mock
+import platform
 import pytest
 import sys
 
@@ -339,16 +340,8 @@ def test_hardwaremap_load():
         assert all([getattr(dut, k) == v for k, v in expected[dut.id].items()])
 
 
+TESTIDS_4 = ['no map (not linux)', 'no map (nonpersistent)']
 TESTDATA_4 = [
-    (
-        True,
-        'Linux',
-        ['<p1 (pr1) on s1>', '<p2 (pr2) on s2>', '<p3 (pr3) on s3>',
-         '<p4 (pr4) on s4>', '<p5 (pr5) on s5>',
-         '<unknown (TI product) on /dev/serial/by-id/basic-file1>',
-         '<unknown (product123) on dummy device>',
-         '<unknown (unknown) on /dev/serial/by-id/basic-file2-link>']
-    ),
     (
         True,
         'nt',
@@ -369,11 +362,24 @@ TESTDATA_4 = [
     )
 ]
 
+if platform.system == 'Linux':
+    TESTDATA_4.append(
+        (
+            True,
+            'Linux',
+            ['<p1 (pr1) on s1>', '<p2 (pr2) on s2>', '<p3 (pr3) on s3>',
+            '<p4 (pr4) on s4>', '<p5 (pr5) on s5>',
+            '<unknown (TI product) on /dev/serial/by-id/basic-file1>',
+            '<unknown (product123) on dummy device>',
+            '<unknown (unknown) on /dev/serial/by-id/basic-file2-link>']
+        )
+    )
+    TESTIDS_4.append('linux persistent map')
 
 @pytest.mark.parametrize(
     'persistent, system, expected_reprs',
     TESTDATA_4,
-    ids=['linux persistent map', 'no map (not linux)', 'no map (nonpersistent)']
+    ids=TESTIDS_4
 )
 def test_hardwaremap_scan(
     caplog,
