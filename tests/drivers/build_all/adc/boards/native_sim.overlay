@@ -371,6 +371,14 @@
 				#io-channel-cells = <1>;
 				drdy-gpios = <&test_gpio 0 0>;
 			};
+
+			test_spi_ad7124: ad7124@18 {
+				compatible = "adi,ad7124-adc";
+				reg = <0x18>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				active-device = <1>;
+			};
 		};
 	};
 };
