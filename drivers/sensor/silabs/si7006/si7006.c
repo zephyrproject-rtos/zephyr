@@ -6,12 +6,12 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/drivers/i2c.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <zephyr/sys/util.h>
@@ -27,6 +27,7 @@ struct si7006_data {
 
 struct si7006_config {
 	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec supply_gpio;
 	/** Use "read temp" vs "read old temp" command, the latter only with SiLabs sensors. */
 	uint8_t read_temp_cmd;
 };
@@ -186,10 +187,28 @@ static DEVICE_API(sensor, si7006_api) = {
 static int si7006_init(const struct device *dev)
 {
 	const struct si7006_config *config = dev->config;
+	int err;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
+	}
+
+	if (config->supply_gpio.port) {
+		if (!gpio_is_ready_dt(&config->supply_gpio)) {
+			LOG_ERR("Supply GPIO device is not ready");
+			return -ENODEV;
+		}
+
+		err = gpio_pin_configure_dt(&config->supply_gpio, GPIO_OUTPUT_ACTIVE);
+		if (err) {
+			return err;
+		}
+
+		/* Wait until the Sensor is guaranteed to be powered.
+		 * Per the spec - maximum Powerup Time time of 80ms.
+		 */
+		k_sleep(K_MSEC(80));
 	}
 
 	LOG_DBG("si7006 init ok");
@@ -202,6 +221,7 @@ static int si7006_init(const struct device *dev)
 											\
 	static const struct si7006_config si7006_config_##name##_##inst = {		\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+		.supply_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, supply_gpios, {0}),	\
 		.read_temp_cmd = temp_cmd,						\
 	};										\
 											\

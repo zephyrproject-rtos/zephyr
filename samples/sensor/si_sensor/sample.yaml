@@ -1,0 +1,16 @@
+sample:
+  description: Silabs Si7006/13/20/21 temperature and humidity polling sample
+  name: si_sensor
+tests:
+  sample.sensor.si_sensor_polling:
+    tags:
+      - sensors
+    filter: dt_alias_exists("si-sensor")
+    integration_platforms:
+      - xg23_rb4210a
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Temperature: [1-9][0-9].[0-9] °C"
+        - "Humidity: [1-9][0-9].[0-9]%"
