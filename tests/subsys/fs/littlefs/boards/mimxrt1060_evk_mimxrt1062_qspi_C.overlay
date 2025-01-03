@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2021 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&is25wp064 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(8))>;
+		};
+		large_partition: partition@322000 {
+			label = "large";
+			reg = <0x00322000 DT_SIZE_M(3)>;
+		};
+		medium_partition: partition@622000 {
+			label = "medium";
+			reg = <0x00622000 DT_SIZE_K(960)>;
+		};
+		small_partition: partition@712000 {
+			label = "small";
+			reg = <0x00712000 DT_SIZE_K(64)>;
+		};
+	};
+};

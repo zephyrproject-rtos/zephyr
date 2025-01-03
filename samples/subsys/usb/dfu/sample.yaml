@@ -8,7 +8,9 @@ common:
     - mimxrt1010_evk
     - mimxrt1020_evk
     - mimxrt1015_evk
-    - mimxrt1060_evk/mimxrt1062/qspi
+    - mimxrt1060_evk@A/mimxrt1062/qspi
+    - mimxrt1060_evk@B/mimxrt1062/qspi
+    - mimxrt1060_evk@C/mimxrt1062/qspi
     - sam4l_ek
     - mimxrt1050_evk/mimxrt1052/hyperflash
     - mimxrt1050_evk/mimxrt1052/qspi
