@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/phy.h>
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <ethernet/eth_stats.h>
 #include "../eth.h"
 #include "nxp_enet_qos_priv.h"
@@ -475,6 +477,29 @@ static inline int enet_qos_rx_desc_init(enet_qos_t *base, struct nxp_enet_qos_rx
 	return 0;
 }
 
+/* Note this is not universally unique, it just is probably unique on a network */
+static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
+{
+	uint8_t unique_device_ID_16_bytes[16] = {0};
+	ssize_t uuid_length =
+		hwinfo_get_device_id(unique_device_ID_16_bytes, sizeof(unique_device_ID_16_bytes));
+	uint32_t hash = 0;
+
+	if (uuid_length > 0) {
+		hash = crc24_pgp((uint8_t *)unique_device_ID_16_bytes, uuid_length);
+	} else {
+		LOG_ERR("No unique MAC can be provided in this platform");
+	}
+
+	/* Setting LAA bit because it is not guaranteed universally unique */
+	mac_addr[0] = NXP_OUI_BYTE_0 | 0x02;
+	mac_addr[1] = NXP_OUI_BYTE_1;
+	mac_addr[2] = NXP_OUI_BYTE_2;
+	mac_addr[3] = FIELD_GET(0xFF0000, hash);
+	mac_addr[4] = FIELD_GET(0x00FF00, hash);
+	mac_addr[5] = FIELD_GET(0x0000FF, hash);
+}
+
 static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
@@ -496,8 +521,11 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Random mac therefore overrides local mac that may have been initialized */
-	if (config->random_mac) {
+	if (config->mac_addr_source == MAC_ADDR_SOURCE_LOCAL) {
+		/* Use the mac address provided in the devicetree */
+	} else if (config->mac_addr_source == MAC_ADDR_SOURCE_UNIQUE) {
+		nxp_enet_unique_mac(data->mac_addr.addr);
+	} else {
 		gen_random_mac(data->mac_addr.addr,
 			       NXP_OUI_BYTE_0, NXP_OUI_BYTE_1, NXP_OUI_BYTE_2);
 	}
@@ -621,10 +649,19 @@ static const struct ethernet_api api_funcs = {
 	.set_config	= eth_nxp_enet_qos_set_config,
 };
 
-#define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)						\
-	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||				\
-			DT_INST_PROP(n, zephyr_random_mac_address),			\
-			"MAC address not specified on ENET QOS DT node");
+#define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)                                                    \
+	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||                                    \
+			     DT_INST_PROP(n, zephyr_random_mac_address) ||                         \
+			     DT_INST_PROP(n, nxp_unique_mac),                                      \
+		     "MAC address not specified on ENET QOS DT node");
+
+#define NXP_ENET_QOS_MAC_ADDR_SOURCE(n)                                                            \
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),		\
+			(MAC_ADDR_SOURCE_LOCAL),					\
+	(COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),			\
+			(MAC_ADDR_SOURCE_RANDOM),					\
+	(COND_CODE_1(DT_INST_PROP(n, nxp_unique_mac), (MAC_ADDR_SOURCE_UNIQUE),		\
+	(MAC_ADDR_SOURCE_INVALID))))))
 
 #define NXP_ENET_QOS_CONNECT_IRQS(node_id, prop, idx)					\
 	do {										\
@@ -644,21 +681,21 @@ static const struct ethernet_api api_funcs = {
 				NXP_ENET_QOS_CONNECT_IRQS)				\
 	}
 
-#define NXP_ENET_QOS_DRIVER_STRUCTS_INIT(n)						\
-	static const struct nxp_enet_qos_mac_config enet_qos_##n##_mac_config = {	\
-		.enet_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),				\
-		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),		\
-		.base = (enet_qos_t *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
-		.hw_info = {								\
-			.max_frame_len = ENET_QOS_MAX_NORMAL_FRAME_LEN,			\
-		},									\
-		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,			\
-		.random_mac = DT_INST_PROP(n, zephyr_random_mac_address),		\
-	};										\
-											\
-	static struct nxp_enet_qos_mac_data enet_qos_##n##_mac_data =			\
-	{										\
-		.mac_addr.addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
+#define NXP_ENET_QOS_DRIVER_STRUCTS_INIT(n)                                                        \
+	static const struct nxp_enet_qos_mac_config enet_qos_##n##_mac_config = {                  \
+		.enet_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
+		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
+		.base = (enet_qos_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                              \
+		.hw_info =                                                                         \
+			{                                                                          \
+				.max_frame_len = ENET_QOS_MAX_NORMAL_FRAME_LEN,                    \
+			},                                                                         \
+		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,                             \
+		.mac_addr_source = NXP_ENET_QOS_MAC_ADDR_SOURCE(n),                                \
+	};                                                                                         \
+                                                                                                   \
+	static struct nxp_enet_qos_mac_data enet_qos_##n##_mac_data = {                            \
+		.mac_addr.addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                       \
 	};
 
 #define NXP_ENET_QOS_DRIVER_INIT(n)							\
