@@ -72,19 +72,34 @@ foreach(root ${BOARD_ROOT})
   endforeach()
 endforeach()
 
+set(GEN_SHIELD_DERIVED_OVERLAY_SCRIPT          ${ZEPHYR_BASE}/scripts/build/gen_shield_derived_overlay.py)
+set(GENERATED_SHIELDS_DIR           ${PROJECT_BINARY_DIR}/include/generated/shields)
+
 # Process shields in-order
 if(DEFINED SHIELD)
-  foreach(s ${SHIELD_AS_LIST})
+  foreach(shld ${SHIELD_AS_LIST})
+    string(REGEX MATCH
+      [[^([a-zA-Z_][a-zA-Z0-9_]*)(@[a-zA-Z_][a-zA-Z0-9_]+)?(.*)?$]]
+      matched
+      "${shld}"
+    )
+
+    set(s ${CMAKE_MATCH_1}) # stem part
+
     if(NOT ${s} IN_LIST SHIELD_LIST)
       continue()
     endif()
 
-    list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
+    list(REMOVE_ITEM SHIELD-NOTFOUND ${shld})
 
-    # Add <shield>.overlay to the shield_dts_files output variable.
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ${GEN_SHIELD_DERIVED_OVERLAY_SCRIPT}
+                            "${SHIELD_DIR_${s}}/${s}.overlay" "--shield-options=${shld}"
+                            "--output-dir=${GENERATED_SHIELDS_DIR}")
+
+    # Add generated <shield>@<conn_name>.overlay to the shield_dts_files output variable.
     list(APPEND
       shield_dts_files
-      ${SHIELD_DIR_${s}}/${s}.overlay
+      ${GENERATED_SHIELDS_DIR}/${shld}.overlay
       )
 
     # Add the shield's directory to the SHIELD_DIRS output variable.
