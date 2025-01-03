@@ -26,6 +26,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
@@ -38,6 +39,19 @@
 LOG_MODULE_REGISTER(bt_tbs, CONFIG_BT_TBS_LOG_LEVEL);
 
 #define BT_TBS_VALID_STATUS_FLAGS(val) ((val) <= (BIT(0) | BIT(1)))
+
+struct tbs_flags {
+	bool bearer_provider_name_changed: 1;
+	bool bearer_technology_changed: 1;
+	bool bearer_signal_strength_changed: 1;
+	bool bearer_list_current_calls_changed: 1;
+	bool status_flags_changed: 1;
+	bool incoming_call_target_bearer_uri_changed: 1;
+	bool call_state_changed: 1;
+	bool termination_reason_changed: 1;
+	bool incoming_call_changed: 1;
+	bool call_friendly_name_changed: 1;
+};
 
 /* A service instance can either be a GTBS or a TBS instance */
 struct tbs_inst {
@@ -68,6 +82,24 @@ struct tbs_inst {
 	size_t attr_count;
 
 	bool authorization_required;
+
+	struct k_mutex mutex;
+	/* Flags for each client. Access and modification of these shall be guarded by the mutex */
+	struct tbs_flags flags[CONFIG_BT_MAX_CONN];
+
+	/* Control point notifications are handled separately from other notifications - We will not
+	 * accept any new control point operations while a notification is pending
+	 */
+	struct cp_ntf {
+		/** The opcode that was sent */
+		uint8_t opcode;
+		/** The result of the operation  */
+		uint8_t result;
+
+		bool pending;
+	} cp_ntf;
+
+	struct k_work_delayable notify_work;
 };
 
 static struct tbs_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];
@@ -303,6 +335,33 @@ static struct tbs_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t ur
 	return NULL;
 }
 
+static int notify(struct bt_conn *conn, const struct bt_uuid *uuid,
+		  const struct bt_gatt_attr *attrs, const void *value, size_t value_len)
+{
+	const uint8_t att_header_size = 3; /* opcode + handle */
+	const uint16_t att_mtu = bt_gatt_get_mtu(conn);
+	__ASSERT(att_mtu > att_header_size, "Could not get valid ATT MTU");
+	const uint16_t maxlen = att_mtu - att_header_size; /* Subtract opcode and handle */
+
+	if (maxlen < value_len) {
+		LOG_DBG("Truncating notification to %u (was %u)", maxlen, value_len);
+		value_len = maxlen;
+	}
+
+	/* Send notification potentially truncated to the MTU */
+	return bt_gatt_notify_uuid(conn, uuid, attrs, value, value_len);
+}
+
+/**
+ * 1) When value is changed, set a bit, and schedule work if not already
+ * 2)
+Adopt MCS ways of scheduling notifications in TBS
+Add truncation of values
+Add long read dirty bit
+Need to reject certain operations while notifications are pending
+	BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE
+ */
+
 static void tbs_set_terminate_reason(struct tbs_inst *inst, uint8_t call_index, uint8_t reason)
 {
 	inst->terminate_reason.call_index = call_index;
@@ -479,6 +538,230 @@ static void net_buf_put_current_calls(const struct tbs_inst *inst, struct net_bu
 			net_buf_put_current_calls_by_inst(&svc_insts[i], buf);
 		}
 	}
+}
+
+/**
+ * @brief Attempt to move a call in an instance from dialing to alerting
+ *
+ * This function will look through the state of an instance to see if there are any calls in the
+ * instance that are in the dialing state, and move them to the dialing state if we do not have any
+ * pending call state notification. The reason for this is that we do not have an API for the
+ * application to change from dialing to alterting state at this point, but the qualification tests
+ * require us to do this state change.
+ * Since we only notify the latest value, we need to notify dialing first for both current calls and
+ * call states, and then switch to the alerting state for the call and then notify again.
+ *
+ * @param inst The instance to attempt the state change on
+ * @retval true There was a state change
+ * @retval false There was not a state change
+ */
+static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst)
+{
+	bool state_changed = false;
+
+	/* If we still have pending state change notifications, we cannot change the state
+	 * autonomously
+	 */
+	for (size_t i = 0U; i < ARRAY_SIZE(inst->flags); i++) {
+		const struct tbs_flags *flags = &inst->flags[i];
+
+		if (flags->bearer_list_current_calls_changed || flags->call_state_changed) {
+			return false;
+		}
+	}
+
+	/* Check if we have any calls in the dialing state */
+	for (size_t i = 0U; i < ARRAY_SIZE(inst->calls); i++) {
+		if (inst->calls[i].state == BT_TBS_CALL_STATE_DIALING) {
+			inst->calls[i].state = BT_TBS_CALL_STATE_ALERTING;
+			state_changed = true;
+			break;
+		}
+	}
+
+	if (state_changed) {
+		for (size_t i = 0U; i < ARRAY_SIZE(inst->flags); i++) {
+			struct tbs_flags *flags = &inst->flags[i];
+
+			flags->bearer_list_current_calls_changed = flags->call_state_changed = true;
+		}
+	}
+
+	return state_changed;
+}
+
+static void notify_handler_cb(struct bt_conn *conn, void *data)
+{
+	struct tbs_inst *inst = data;
+	struct tbs_flags *flags = &inst->flags[bt_conn_index(conn)];
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	__ASSERT_NO_MSG(err == 0);
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		/* Not connected */
+		return;
+	}
+
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to take mutex: %d", err);
+		goto reschedule;
+	}
+
+	if (flags->bearer_provider_name_changed) {
+		LOG_DBG("Notifying Bearer Provider Name: %s", inst->provider_name);
+
+		err = notify(conn, BT_UUID_TBS_PROVIDER_NAME, inst->attrs, inst->provider_name,
+			     strlen(inst->provider_name));
+		if (err == 0) {
+			flags->bearer_provider_name_changed = false;
+		} else {
+			goto reschedule;
+		}
+	}
+
+	if (flags->bearer_technology_changed) {
+		LOG_DBG("Notifying Bearer Technology: %s (0x%02x)",
+			bt_tbs_technology_str(inst->technology), inst->technology);
+
+		err = notify(conn, BT_UUID_TBS_TECHNOLOGY, inst->attrs, &inst->technology,
+			     sizeof(inst->technology));
+		if (err == 0) {
+			flags->bearer_technology_changed = false;
+		} else {
+			goto reschedule;
+		}
+	}
+
+	if (flags->bearer_signal_strength_changed) {
+		LOG_DBG("Notifying Bearer Signal Strength: 0x%02x", inst->signal_strength);
+
+		err = notify(conn, BT_UUID_TBS_SIGNAL_STRENGTH, inst->attrs, &inst->signal_strength,
+			     sizeof(inst->signal_strength));
+		if (err == 0) {
+			flags->bearer_signal_strength_changed = false;
+		} else {
+			goto reschedule;
+		}
+	}
+
+	if (flags->bearer_list_current_calls_changed) {
+		LOG_DBG("Notifying Bearer List Current Calls");
+
+		net_buf_put_current_calls(inst, &read_buf);
+		err = notify(conn, BT_UUID_TBS_LIST_CURRENT_CALLS, inst->attrs, read_buf.data,
+			     read_buf.len);
+		if (err == 0) {
+			flags->bearer_list_current_calls_changed = false;
+		} else {
+			goto reschedule;
+		}
+
+		try_change_dialing_call_to_alerting(inst);
+	}
+
+	if (flags->status_flags_changed) {
+		LOG_DBG("Notifying Status Flags: 0x%02x", inst->status_flags);
+
+		err = notify(conn, BT_UUID_TBS_STATUS_FLAGS, inst->attrs, &inst->status_flags,
+			     sizeof(inst->status_flags));
+		if (err == 0) {
+			flags->status_flags_changed = false;
+		} else {
+			goto reschedule;
+		}
+	}
+
+	if (flags->incoming_call_target_bearer_uri_changed) {
+		LOG_DBG("Notifying Incoming Call Target Bearer URI: call index 0x%02x, URI %s",
+			inst->incoming_uri.call_index, inst->incoming_uri.uri);
+
+		err = notify(conn, BT_UUID_TBS_INCOMING_URI, inst->attrs, &inst->incoming_uri,
+			     sizeof(inst->incoming_uri.call_index) +
+				     strlen(inst->incoming_uri.uri));
+		if (err == 0) {
+			flags->incoming_call_target_bearer_uri_changed = false;
+		} else {
+			goto reschedule;
+		}
+	}
+
+	if (flags->call_state_changed) {
+		LOG_DBG("Notifying Call States");
+
+		net_buf_put_call_states(inst, &read_buf);
+		err = notify(conn, BT_UUID_TBS_CALL_STATE, inst->attrs, read_buf.data,
+			     read_buf.len);
+		if (err == 0) {
+			flags->call_state_changed = false;
+		} else {
+			goto reschedule;
+		}
+
+		try_change_dialing_call_to_alerting(inst);
+	}
+
+	if (flags->termination_reason_changed) {
+		LOG_DBG("Notifying Bearer Provider Name: call_index 0x%02x reason 0x%02x",
+			inst->terminate_reason.call_index, inst->terminate_reason.reason);
+
+		err = notify(conn, BT_UUID_TBS_TERMINATE_REASON, inst->attrs,
+			     &inst->terminate_reason, sizeof(inst->terminate_reason));
+		if (err == 0) {
+			flags->termination_reason_changed = false;
+		} else {
+			goto reschedule;
+		}
+	}
+
+	if (flags->incoming_call_changed) {
+		LOG_DBG("Notifying Incoming Call: call index 0x%02x, URI %s",
+			inst->in_call.call_index, inst->in_call.uri);
+
+		err = notify(conn, BT_UUID_TBS_INCOMING_CALL, inst->attrs, &inst->in_call,
+			     sizeof(inst->in_call.call_index) + strlen(inst->in_call.uri));
+		if (err == 0) {
+			flags->incoming_call_changed = false;
+		} else {
+			goto reschedule;
+		}
+	}
+
+	if (flags->call_friendly_name_changed) {
+		LOG_DBG("Notifying Friendly Name: call index 0x%02x, URI %s",
+			inst->friendly_name.call_index, inst->friendly_name.uri);
+
+		err = notify(conn, BT_UUID_TBS_FRIENDLY_NAME, inst->attrs, &inst->friendly_name,
+			     sizeof(inst->friendly_name.call_index) +
+				     strlen(inst->friendly_name.uri));
+		if (err == 0) {
+			flags->call_friendly_name_changed = false;
+		} else {
+			goto reschedule;
+		}
+	}
+
+reschedule:
+	if (err != 0) {
+		LOG_DBG("Notify failed (%d), retrying next connection interval", err);
+		err = k_work_reschedule(&inst->notify_work,
+					K_USEC(BT_CONN_INTERVAL_TO_US(info.le.interval)));
+		__ASSERT_NO_MSG(err == 0);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+}
+
+static void notify_work_handler(struct k_work *work)
+{
+	struct tbs_inst *inst =
+		CONTAINER_OF(k_work_delayable_from_work(work), struct tbs_inst, notify_work);
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, notify_handler_cb, inst);
 }
 
 static int inst_notify_calls(const struct tbs_inst *inst)
@@ -958,6 +1241,7 @@ static int originate_call(struct tbs_inst *inst, const struct bt_tbs_call_cp_ori
 
 	hold_other_calls(inst, 1, &call->index);
 
+	// TOOD: How to handle this? We need to send 2 notifications on the same characteristic.
 	notify_calls(inst);
 	call->state = BT_TBS_CALL_STATE_ALERTING;
 	notify_calls(inst);
@@ -1533,6 +1817,10 @@ static int tbs_inst_init_and_register(struct tbs_inst *inst, struct bt_gatt_serv
 	inst->authorization_required = param->authorization_required;
 
 	k_work_init_delayable(&inst->reporting_interval_work, signal_interval_timeout);
+	k_work_init_delayable(&inst->notify_work, notify_work_handler);
+
+	ret = k_mutex_init(&inst->mutex);
+	__ASSERT(ret == 0, "Failed to initialize mutex");
 
 	ret = bt_gatt_service_register(svc);
 	if (ret != 0) {
