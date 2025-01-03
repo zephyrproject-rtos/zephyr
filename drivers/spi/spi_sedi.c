@@ -406,10 +406,10 @@ static int spi_sedi_device_ctrl(const struct device *dev,
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(num)),                        \
 		.spi_device = num, .irq_config = spi_##num##_irq_init,         \
 	};								       \
-	PM_DEVICE_DEFINE(spi_##num, spi_sedi_device_ctrl);		       \
+	PM_DEVICE_DT_INST_DEFINE(spi_##num, spi_sedi_device_ctrl);	       \
 	SPI_DEVICE_DT_INST_DEFINE(num,					       \
 			      spi_sedi_init,				       \
-			      PM_DEVICE_GET(spi_##num),		               \
+			      PM_DEVICE_DT_INST_GET(spi_##num),	               \
 			      &spi_##num##_data,			       \
 			      &spi_##num##_config,			       \
 			      POST_KERNEL,				       \
