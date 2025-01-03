@@ -33,9 +33,6 @@ endif ()
 
 target_compile_definitions(zephyr-802154-interface
   INTERFACE
-    # Radio driver shim layer uses raw api
-    NRF_802154_USE_RAW_API=1
-
     # Number of slots containing short addresses of nodes for which
     # pending data is stored.
     NRF_802154_PENDING_SHORT_ADDRESSES=${CONFIG_NRF_802154_PENDING_SHORT_ADDRESSES}
