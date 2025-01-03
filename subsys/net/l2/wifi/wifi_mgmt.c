@@ -83,8 +83,6 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "EAP-TTLS-MSCHAPV2";
 	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
 		return "EAP-PEAP-TLS";
-	case WIFI_SECURITY_TYPE_EAP_TLS_SHA256:
-		return "EAP-TLS-SHA256";
 	case WIFI_SECURITY_TYPE_FT_PSK:
 		return "FT-PSK";
 	case WIFI_SECURITY_TYPE_FT_SAE:
@@ -96,6 +94,20 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	case WIFI_SECURITY_TYPE_UNKNOWN:
 	default:
 		return "UNKNOWN";
+	}
+}
+
+const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent)
+{
+	switch (wpa3_ent) {
+	case WIFI_WPA3_ENTERPRISE_SUITEB:
+		return "WPA3-SuiteB";
+	case WIFI_WPA3_ENTERPRISE_SUITEB_192:
+		return "WPA3-SuiteB-192";
+	case WIFI_WPA3_ENTERPRISE_ONLY:
+		return "WPA3-Enterprise-Only";
+	default:
+		return "";
 	}
 }
 
