@@ -266,6 +266,7 @@
 		cpuapp_peripherals: peripheral@52000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
+			reg = <0x52000000 0x1000000>;
 			ranges = <0x0 0x52000000 0x1000000>;
 
 			cpuapp_hsfll: clock@d000 {
@@ -475,6 +476,7 @@
 		tdd_peripherals: peripheral@bf000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
+			reg = <0xbf000000 0x1000000>;
 			ranges = <0x0 0xbf000000 0x1000000>;
 
 			tbm: tbm@3000 {
@@ -494,6 +496,7 @@
 		global_peripherals: peripheral@5f000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
+			reg = <0x5f000000 0x1000000>;
 			ranges = <0x0 0x5f000000 0x1000000>;
 
 			usbhs: usbhs@86000 {
