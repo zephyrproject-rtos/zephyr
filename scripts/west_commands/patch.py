@@ -116,9 +116,8 @@ class Patch(WestCommand):
             "--module",
             action="append",
             dest="modules",
-            metavar="MODULE",
-            help="Zephyr module to run the 'patch' command for. "
-            "Use 'zephyr' if the 'patch' command should run for Zephyr itself. "
+            metavar="DIR",
+            help="Zephyr module directory to run the 'patch' command for. "
             "Option can be passed multiple times. "
             "If this option is not given, the 'patch' command will run for Zephyr "
             "and all modules.",
@@ -282,18 +281,15 @@ class Patch(WestCommand):
             patched_mods.add(mod)
 
             self.dbg(f"patching {mod}... ", end="")
-            origdir = os.getcwd()
-            os.chdir(mod_path)
             apply_cmd += patch_path
             apply_cmd_list.extend([patch_path])
-            proc = subprocess.run(apply_cmd_list)
+            proc = subprocess.run(apply_cmd_list, cwd=mod_path)
             if proc.returncode:
                 self.dbg("FAIL")
                 self.err(proc.stderr)
                 failed_patch = pth
                 break
             self.dbg("OK")
-            os.chdir(origdir)
 
         if not failed_patch:
             self.inf(f"{patch_count} patches applied successfully \\o/")
@@ -302,7 +298,7 @@ class Patch(WestCommand):
         if args.roll_back:
             self.clean(args, yml, patched_mods)
 
-        self.die(f"failed to apply patch {pth}")
+        self.die(f"failed to apply patch {failed_patch}")
 
     def clean(self, args, yml, mods=None):
         clean_cmd = yml["clean-command"]
@@ -315,16 +311,13 @@ class Patch(WestCommand):
         clean_cmd_list = shlex.split(clean_cmd)
         checkout_cmd_list = shlex.split(checkout_cmd)
 
-        origdir = os.getcwd()
         for mod, mod_path in Patch.get_mod_paths(args, yml).items():
             if mods and mod not in mods:
                 continue
             try:
-                os.chdir(mod_path)
-
                 if checkout_cmd:
                     self.dbg(f"Running '{checkout_cmd}' in {mod}.. ", end="")
-                    proc = subprocess.run(checkout_cmd_list, capture_output=True)
+                    proc = subprocess.run(checkout_cmd_list, capture_output=True, cwd=mod_path)
                     if proc.returncode:
                         self.dbg("FAIL")
                         self.err(f"{checkout_cmd} failed for {mod}\n{proc.stderr}")
@@ -333,7 +326,7 @@ class Patch(WestCommand):
 
                 if clean_cmd:
                     self.dbg(f"Running '{clean_cmd}' in {mod}.. ", end="")
-                    proc = subprocess.run(clean_cmd_list, capture_output=True)
+                    proc = subprocess.run(clean_cmd_list, capture_output=True, cwd=mod_path)
                     if proc.returncode:
                         self.dbg("FAIL")
                         self.err(f"{clean_cmd} failed for {mod}\n{proc.stderr}")
@@ -343,8 +336,6 @@ class Patch(WestCommand):
             except Exception as e:
                 # If this fails for some reason, just log it and continue
                 self.err(f"failed to clean up {mod}: {e}")
-
-        os.chdir(origdir)
 
     def list(self, args, yml, mods=None):
         patches = yml.get("patches", [])
