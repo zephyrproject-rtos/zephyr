@@ -1,13 +1,11 @@
 /*
- * Copyright (c) 2018 Linaro Limited
+ * Copyright (c) 2019 Gerson Fernando Budke
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <mem.h>
-#include <atmel/same70b.dtsi>
-#include "dma_atmel_same70.h"
 
 / {
 	sram0: memory@20400000 {
