@@ -33,6 +33,15 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		pin_config.pin = GECKO_GET_PIN(pins[i]);
 		loc = GECKO_GET_LOC(pins[i]);
 
+		/* Force input for low power mode */
+		if (GECKO_GET_LP(pins[i]) == GECKO_LP_ENABLE) {
+			pin_config.mode = gpioModeInput;
+			pin_config.out = 0;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+					pin_config.out);
+			continue;
+		}
+
 		switch (GECKO_GET_FUN(pins[i])) {
 #ifdef CONFIG_UART_GECKO
 		case GECKO_FUN_UART_RX:
