@@ -6,7 +6,22 @@ common:
   depends_on:
     - eth
 tests:
-  net.ethernet.build.default: {}
+  net.ethernet.build.default:
+    integration_platforms:
+      - frdm_k64f
+      - ip_k66f
+      - linum
+      - mimxrt1064_evk
+      - mr_canhubk3
+      - nucleo_h753zi
+      - rd_rw612_bga/rw612/ethernet
+      - s32z2xxdc2/s32z270/rtu0
+      - sam4e_xpro
+      - sam_e70_xplained/same70q21b
+      - same54_xpro
+      - slstk3701a
+      - stm32f769i_disco
+      - xmc47_relax_kit
 
   net.ethernet.build.spi:
     extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
