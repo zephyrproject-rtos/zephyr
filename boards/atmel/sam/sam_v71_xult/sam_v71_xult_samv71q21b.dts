@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <atmel/samv71q21b.dtsi>
+#include <atmel/samv71x21b.dtsi>
 #include "sam_v71_xult-common.dtsi"
 
 / {
