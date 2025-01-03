@@ -179,6 +179,10 @@ endif()
 # with them.
 #
 
+foreach(board_extension_dir ${BOARD_EXTENSION_DIRS})
+  message(STATUS "Found board extension dir: ${board_extension_dir}")
+endforeach()
+
 zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} DTS board_extension_dts_files)
 
 set(dts_files
@@ -222,6 +226,7 @@ unset(DTS_ROOT_BINDINGS)
 foreach(dts_root ${DTS_ROOT})
   set(bindings_path ${dts_root}/dts/bindings)
   if(EXISTS ${bindings_path})
+    message(STATUS "Found DTS bindings dir: ${bindings_path}")
     list(APPEND
       DTS_ROOT_BINDINGS
       ${bindings_path}
