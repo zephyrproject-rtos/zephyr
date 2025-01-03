@@ -16,15 +16,14 @@
 #include <zephyr/bluetooth/services/ias.h>
 
 #include "host/shell/bt.h"
-
-extern const struct shell *ctx_shell;
+#include "common/bt_shell_private.h"
 
 static void ias_discover_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Failed to discover IAS err: %d\n", err);
+		bt_shell_error("Failed to discover IAS err: %d\n", err);
 	} else {
-		shell_print(ctx_shell, "IAS discover success\n");
+		bt_shell_print("IAS discover success\n");
 	}
 }
 
@@ -35,10 +34,6 @@ static struct bt_ias_client_cb ias_client_callbacks = {
 static int cmd_ias_client_init(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
-	}
 
 	err = bt_ias_client_cb_register(&ias_client_callbacks);
 	if (err != 0) {

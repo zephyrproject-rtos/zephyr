@@ -18,22 +18,21 @@
 #include <zephyr/bluetooth/services/ias.h>
 
 #include "host/shell/bt.h"
-
-extern const struct shell *ctx_shell;
+#include "common/bt_shell_private.h"
 
 static void alert_stop(void)
 {
-	shell_print(ctx_shell, "Alert stopped\n");
+	bt_shell_print("Alert stopped\n");
 }
 
 static void alert_start(void)
 {
-	shell_print(ctx_shell, "Mild alert started\n");
+	bt_shell_print("Mild alert started\n");
 }
 
 static void alert_high_start(void)
 {
-	shell_print(ctx_shell, "High alert started\n");
+	bt_shell_print("High alert started\n");
 }
 
 BT_IAS_CB_DEFINE(ias_callbacks) = {
