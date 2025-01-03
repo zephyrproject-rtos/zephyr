@@ -29,9 +29,6 @@ endif # LVGL
 
 if INPUT
 
-config INPUT_FT5336_INTERRUPT
-	default y
-
 config LV_Z_POINTER_INPUT_MSGQ_COUNT
 	default 70
 
