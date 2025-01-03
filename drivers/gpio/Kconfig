@@ -96,7 +96,7 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 # zephyr-keep-sorted-start
 source "drivers/gpio/Kconfig.ad559x"
 source "drivers/gpio/Kconfig.adp5585"
-source "drivers/gpio/Kconfig.ads114s0x"
+source "drivers/gpio/Kconfig.ads1x4s0x"
 source "drivers/gpio/Kconfig.altera"
 source "drivers/gpio/Kconfig.ambiq"
 source "drivers/gpio/Kconfig.andes_atcgpio100"
