@@ -7,9 +7,12 @@ if BT_LL_SW_SPLIT
 
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
-	depends on SOC_COMPATIBLE_NRF
-	depends on !$(dt_nodelabel_enabled,timer0)
-	depends on !$(dt_nodelabel_enabled,rtc0)
+	depends on SOC_COMPATIBLE_NRF && \
+		   !$(dt_nodelabel_enabled,timer0) && \
+		   !$(dt_nodelabel_enabled,timer1) && \
+		   !$(dt_nodelabel_enabled,timer4) && \
+		   !$(dt_nodelabel_enabled,timer10) && \
+		   !$(dt_nodelabel_enabled,rtc0)
 
 	select BT_CTLR_ENTROPY_SUPPORT if !SOC_COMPATIBLE_NRF54LX || BOARD_NRF54L15BSIM
 	select FAKE_ENTROPY_NATIVE_POSIX if BT_CTLR_ENTROPY && BOARD_NRF54L15BSIM
