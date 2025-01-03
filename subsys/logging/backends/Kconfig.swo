@@ -10,6 +10,12 @@ config LOG_BACKEND_SWO
 
 if LOG_BACKEND_SWO
 
+config LOG_BACKEND_SWO_CONFIGURE_ITM
+	bool "Initialize ITM"
+	default y
+
+if LOG_BACKEND_SWO_CONFIGURE_ITM
+
 config LOG_BACKEND_SWO_REF_FREQ_HZ
 	int "SWO reference clock frequency"
 	default $(dt_node_int_prop_int,$(dt_nodelabel_path,itm),swo-ref-frequency) if $(dt_nodelabel_enabled,itm)
@@ -51,6 +57,8 @@ config LOG_BACKEND_SWO_PROTOCOL_MANCHESTER
 	  recovered automatically on the receiving side.
 
 endchoice
+
+endif # LOG_BACKEND_SWO_CONFIGURE_ITM
 
 backend = SWO
 backend-str = swo
