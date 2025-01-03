@@ -1,0 +1,117 @@
+# This is an example for defining network configuration data that
+# can be applied automatically when the device boots.
+#
+net_init_config:
+  network_interfaces:
+    # Example of one interface selected by its name
+    - &main-interface
+      name: eth0
+      set_name: my-eth0
+      set_default: true
+      ipv6:
+        status: true
+        ipv6_addresses:
+          - 2001:db8:110::1
+        ipv6_multicast_addresses:
+          - ff05::114
+          - ff15::115
+        prefixes:
+          - address: "2001:db8::"
+            len: 64
+            lifetime: 1024
+        hop_limit: 64
+        multicast_hop_limit: 1
+        dhcpv6:
+          status: true
+          do_request_address: true
+          do_request_prefix: false
+      ipv4:
+        status: true
+        ipv4_addresses:
+          - 192.0.2.10/24
+        ipv4_multicast_addresses:
+          - 234.0.0.10
+        gateway: 192.0.2.1
+        time_to_live: 64
+        multicast_time_to_live: 1
+        dhcpv4_enabled: true
+        ipv4_autoconf_enabled: true
+
+    # Example of another interface selected by its device
+    - &device-interface
+      device_name: ETH_DEVICE
+      set_name: my-eth1
+      flags:
+        - NET_IF_NO_AUTO_START
+      ipv4:
+        status: true
+        ipv4_addresses:
+          - 192.168.1.2/24
+        ipv4_multicast_addresses:
+          - 234.0.0.10
+        gateway: 192.168.110.1
+        time_to_live: 10
+        multicast_time_to_live: 0
+        dhcpv4_enabled: true
+        dhcpv4_server:
+          status: true
+          base_address: 192.168.1.100
+
+    # Example of virtual interface tied to the first one
+    - name: virt0
+      set_name: virt0
+      bind_to: *device-interface
+      ipv6:
+        status: false
+        ipv6_addresses:
+          - 2001:db8:111::2
+      ipv4:
+        status: false
+
+    # Example of VLAN interface that attaches to eth0
+    - &vlan-interface
+      set_name: vlan0
+      bind_to: *main-interface
+      vlan:
+        status: true
+        tag: 1234
+      ipv4:
+        status: true
+        dhcpv4_enabled: true
+
+    # The interface IPv4 configuration could be set to disabled
+    # in which case its IPv4 configuration is skipped
+    - name: eth1
+      set_name: my-eth2
+      flags:
+        - NET_IF_NO_AUTO_START
+      ipv4:
+        status: false
+        ipv4_addresses:
+          - 192.168.1.2/24
+        ipv4_multicast_addresses:
+          - 234.0.0.10
+        gateway: 192.168.110.1
+        time_to_live: 10
+        multicast_time_to_live: 0
+        dhcpv4_server:
+          status: true
+          base_address: 192.168.2.1
+
+  ieee_802_15_4:
+    status: true
+    pan_id: 0xabcd
+    channel: 26
+    tx_power: 1
+    security_key: [0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9,
+                   0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf]
+    security_key_mode: 0
+    security_level: 1
+    ack_required: true
+    bind_to: *device-interface
+
+  sntp:
+    status: true
+    server: sntp.foo.bar
+    timeout: 30
+    bind_to: *vlan-interface

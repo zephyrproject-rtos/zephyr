@@ -706,7 +706,6 @@ uint16_t net_calc_chksum_igmp(struct net_pkt *pkt)
 }
 #endif /* CONFIG_NET_IPV4_IGMP */
 
-#if defined(CONFIG_NET_IP)
 static bool convert_port(const char *buf, uint16_t *port)
 {
 	unsigned long tmp;
@@ -723,7 +722,6 @@ static bool convert_port(const char *buf, uint16_t *port)
 
 	return true;
 }
-#endif /* CONFIG_NET_IP */
 
 #if defined(CONFIG_NET_IPV6)
 static bool parse_ipv6(const char *str, size_t str_len,
@@ -930,6 +928,51 @@ bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
 	return parse_ipv6(str, str_len, addr, false);
 #endif
 	return false;
+}
+
+bool net_ipaddr_mask_parse(const char *str, size_t str_len,
+			   struct sockaddr *addr, uint8_t *mask_len)
+{
+	const char *mask_ptr = NULL;
+	int i, count;
+
+	if (!str || str_len == 0) {
+		return false;
+	}
+
+	/* We cannot accept empty string here */
+	if (*str == '\0') {
+		return false;
+	}
+
+	for (count = i = 0; i < str_len && str[i]; i++) {
+		if (str[i] == ':') {
+			count++;
+		}
+
+		/* IPv5 netmask len or IPv6 prefix len can follow the address */
+		if (str[i] == '/') {
+			mask_ptr = &str[i] + 1;
+			str_len = &str[i] - &str[0];
+			break;
+		}
+	}
+
+	if (mask_ptr != NULL) {
+		uint16_t val;
+		int ret;
+
+		ret = convert_port(mask_ptr, &val);
+		if (ret) {
+			*mask_len = (uint8_t)val;
+		}
+	}
+
+	if (count == 0) {
+		return parse_ipv4(str, str_len, addr, false);
+	}
+
+	return parse_ipv6(str, str_len, addr, false);
 }
 
 int net_port_set_default(struct sockaddr *addr, uint16_t default_port)

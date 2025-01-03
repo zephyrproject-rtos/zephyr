@@ -16,6 +16,7 @@ include(CheckCXXCompilerFlag)
 # 1.2. zephyr_library_*
 # 1.2.1 zephyr_interface_library_*
 # 1.3. generate_inc_*
+# 1.3.1 generate_config_*
 # 1.4. board_*
 # 1.5. Misc.
 # 2. Kconfig-aware extensions
@@ -715,6 +716,79 @@ function(generate_inc_file_for_target
 
   add_custom_target(${generated_target_name} DEPENDS ${generated_file})
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
+endfunction()
+
+# 1.3.1 generate_config_*
+
+# These functions are needed if a configuration file is generated
+# from a user supplied yaml file.
+#
+function(generate_config_file
+    source_file           # The yaml source file to be converted to config data
+    generated_file        # The generated file
+    yaml_to_config_script # Script that generates the config
+    )
+  add_custom_command(
+    OUTPUT ${generated_file}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${yaml_to_config_script}
+    ${ARGN} # Extra arguments are passed to the script
+    < ${source_file}
+    > ${generated_file}
+    DEPENDS ${source_file}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endfunction()
+
+function(generate_config_file_for_gen_target
+    target                # The cmake target that depends on the generated file
+    source_file           # The yaml source file to be converted to config data
+    generated_file        # The generated file
+    gen_target            # The generated file target we depend on
+    yaml_to_config_script # Script that generates the config
+                          # Any additional arguments are passed on to script
+    )
+
+  generate_config_file(${source_file} ${generated_file} ${yaml_to_config_script} ${ARGN})
+
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # dependency between the two targets
+
+  add_dependencies(${target} ${gen_target})
+endfunction()
+
+function(generate_config_file_for_target
+    target                # The cmake target that depends on the generated file
+    source_file           # The yaml source file to be converted to config data
+    generated_file        # The generated file
+    yaml_to_config_script # Script that generates the config
+                          # Any additional arguments are passed on to script
+    )
+
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # 'custom_target' for it and setting up a dependency between the two
+  # targets
+
+  # But first create a unique name for the custom target
+  generate_unique_target_name_from_filename(${generated_file} generated_target_name)
+
+  add_custom_target(${generated_target_name} DEPENDS ${generated_file})
+  generate_config_file_for_gen_target(${target} ${source_file} ${generated_file}
+    ${generated_target_name} ${yaml_to_config_script} ${ARGN})
+endfunction()
+
+function(network_generate_config_file_for_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The yaml source file to be converted to config data
+    )
+
+  set(generated_file ${ZEPHYR_BINARY_DIR}/include/generated/net_init_config.inc)
+  set(yaml_to_config_script ${ZEPHYR_BASE}/scripts/net/net-yaml-config.py)
+  set(yaml_schema_file ${ZEPHYR_BASE}/scripts/schemas/net-configuration-schema.yml)
+
+  generate_config_file_for_target(${target} ${source_file} ${generated_file}
+    ${yaml_to_config_script} ${yaml_schema_file})
 endfunction()
 
 # 1.4. board_*
