@@ -29,7 +29,7 @@ properties:
     description: |
       Number of words used as write watermark level in FIFO queue for USDHC
 
-  max_current_330:
+  max-current-330:
     type: int
     default: 0
     description: |

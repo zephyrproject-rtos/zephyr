@@ -1583,6 +1583,18 @@ class Node:
         # to have a 'type: ...'. No Property object is created for it.
         return None
 
+    def _check_with_underscores(self, prop_name):
+        # Allow special case property names
+        # The content of this set needs to be consistent with the
+        # content of 'scripts/ci/bindings_propertys_name_wl.yaml'
+        wl = {'mmc-hs200-1_8v', 'mmc-hs400-1_8v'}
+
+        if '_' in prop_name and prop_name not in wl:
+            _err(f"'{prop_name}' should use hyphens instead of "
+                 "underscores in the property name. "
+                 f"The property names at '{self.edt.dts_path}' "
+                 f"and '{self.binding_path}' must also be updated.")
+
     def _check_undeclared_props(self) -> None:
         # Checks that all properties are declared in the binding
 
@@ -1594,6 +1606,9 @@ class Node:
                    "compatible", "status", "ranges", "phandle",
                    "interrupt-parent", "interrupts-extended", "device_type"}:
                 continue
+
+            # Checks whether the property with underscores
+            self._check_with_underscores(prop_name)
 
             if TYPE_CHECKING:
                 assert self._binding
@@ -2331,10 +2346,9 @@ class EDT:
                         if self._werror:
                             handler_fn: Any = _err
                         else:
-                            handler_fn = _LOG.warning
-                        handler_fn(
-                            f"node '{node.path}' compatible '{compat}' "
-                            f"has unknown vendor prefix '{vendor}'")
+                            handler_fn = _warn
+                        handler_fn(f"node '{node.path}' compatible '{compat}' "
+                                   f"has unknown vendor prefix '{vendor}'")
 
         for compat, nodes in self.compat2okay.items():
             self.compat2nodes[compat].extend(nodes)
@@ -3221,11 +3235,14 @@ def _check_dt(dt: DT) -> None:
                      "(see the devicetree specification)")
 
 
+# Logging object
+_LOG = logging.getLogger(__name__)
+
 def _err(msg) -> NoReturn:
     raise EDTError(msg)
 
-# Logging object
-_LOG = logging.getLogger(__name__)
+def _warn(msg) -> None:
+    _LOG.warning(msg)
 
 # Regular expression for non-alphanumeric-or-underscore characters.
 _NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
