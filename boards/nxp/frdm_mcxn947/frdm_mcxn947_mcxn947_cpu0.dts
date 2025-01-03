@@ -12,3 +12,10 @@
 	model = "NXP FRDM_N94 board";
 	compatible = "nxp,mcxn947", "nxp,mcx";
 };
+
+&sai1 {
+	status = "okay";
+};
+&sai0 {
+	status = "okay";
+};
