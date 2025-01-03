@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <atmel/same70q21b.dtsi>
+#include <atmel/same70x21b.dtsi>
 #include "sam_e70_xplained-common.dtsi"
 
 / {
