@@ -681,6 +681,16 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         """)
 
     parser.add_argument(
+        "--scripting-list",
+        action="append",
+        metavar="YAML_FILE",
+        help="YAML configuration file with device handler hooks to run additional "
+         "pre-/post- flash phase scripts for selected platform and test scenario combinations. "
+         "The file must comply with `scripting-schema.yaml`. "
+         "Overrides `--pre-script` and `--hardware-map` settings. "
+         "Requires `--device-testing`")
+
+    parser.add_argument(
         "--report-name",
         help="""Create a report with a custom name.
         """)
@@ -914,6 +924,10 @@ def parse_arguments(
         logger.error(
             "Use --device-testing with --device-serial, or --device-serial-pty, or --hardware-map."
         )
+        sys.exit(1)
+
+    if options.scripting_list and not options.device_testing:
+        logger.error("When --scripting_list is used --device-testing is required")
         sys.exit(1)
 
     if (
