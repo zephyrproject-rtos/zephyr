@@ -45,7 +45,6 @@
 static bool no_settings_load;
 
 uint8_t selected_id = BT_ID_DEFAULT;
-const struct shell *ctx_shell;
 
 #if defined(CONFIG_BT_CONN)
 struct bt_conn *default_conn;
@@ -1309,8 +1308,6 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	bool sync = false;
-
-	ctx_shell = sh;
 
 	for (size_t argn = 1; argn < argc; argn++) {
 		const char *arg = argv[argn];
