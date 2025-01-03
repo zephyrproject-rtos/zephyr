@@ -27,6 +27,7 @@
 #include <zephyr/shell/shell.h>
 
 #include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 struct bt_avrcp *default_avrcp;
 static bool avrcp_registered;
@@ -34,30 +35,29 @@ static bool avrcp_registered;
 static void avrcp_connected(struct bt_avrcp *avrcp)
 {
 	default_avrcp = avrcp;
-	shell_print(ctx_shell, "AVRCP connected");
+	bt_shell_print("AVRCP connected");
 }
 
 static void avrcp_disconnected(struct bt_avrcp *avrcp)
 {
-	shell_print(ctx_shell, "AVRCP disconnected");
+	bt_shell_print("AVRCP disconnected");
 }
 
 static void avrcp_unit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp)
 {
-	shell_print(ctx_shell, "AVRCP unit info received, unit type = 0x%02x, company_id = 0x%06x",
-		    rsp->unit_type, rsp->company_id);
+	bt_shell_print("AVRCP unit info received, unit type = 0x%02x, company_id = 0x%06x",
+		       rsp->unit_type, rsp->company_id);
 }
 
 static void avrcp_subunit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_subunit_info_rsp *rsp)
 {
 	int i;
 
-	shell_print(ctx_shell,
-		    "AVRCP subunit info received, subunit type = 0x%02x, extended subunit = %d",
-		    rsp->subunit_type, rsp->max_subunit_id);
+	bt_shell_print("AVRCP subunit info received, subunit type = 0x%02x, extended subunit = %d",
+		       rsp->subunit_type, rsp->max_subunit_id);
 	for (i = 0; i < rsp->max_subunit_id; i++) {
-		shell_print(ctx_shell, "extended subunit id = %d, subunit type = 0x%02x",
-			    rsp->extended_subunit_id[i], rsp->extended_subunit_type[i]);
+		bt_shell_print("extended subunit id = %d, subunit type = 0x%02x",
+			       rsp->extended_subunit_id[i], rsp->extended_subunit_type[i]);
 	}
 }
 
