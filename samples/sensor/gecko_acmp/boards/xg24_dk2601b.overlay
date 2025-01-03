@@ -1,0 +1,17 @@
+/*
+ * Copyright 2025 Kickmaker
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&acmp0 {
+	status = "okay";
+	bias-level = <0>;
+	input-range = "Reduced";
+	accuracy = "Low";
+	vrefdiv = <0x20>;
+	hysteresis-level = "Disabled";
+	positive-input = "VSENSE01DIV4LP";
+	negative-input = "VREFDIV1V25LP";
+	interrupt-mode = "FallingEdge";
+};
