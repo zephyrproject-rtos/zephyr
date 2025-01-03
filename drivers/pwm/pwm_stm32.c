@@ -80,6 +80,8 @@ struct pwm_stm32_data {
 	uint32_t tim_clk;
 	/* Reset controller device configuration */
 	const struct reset_dt_spec reset;
+	/* Prescaler value to be set next time PWM is set */
+	uint16_t prescaler_next;
 #ifdef CONFIG_PWM_CAPTURE
 	struct pwm_stm32_capture_data capture;
 #endif /* CONFIG_PWM_CAPTURE */
@@ -314,6 +316,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 				pwm_flags_t flags)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
+	struct pwm_stm32_data *data = dev->data;
 
 	uint32_t ll_channel;
 	uint32_t current_ll_channel; /* complementary output if used */
@@ -432,6 +435,9 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 		}
 #endif /* CONFIG_PWM_CAPTURE */
 
+		/* Set prescaler right before enabling output compare to prevent glitches */
+		LL_TIM_SetPrescaler(cfg->timer, data->prescaler_next);
+
 		/* in LL_TIM_OC_Init, the channel is always the non-complementary */
 		if (LL_TIM_OC_Init(cfg->timer, ll_channel, &oc_init) != SUCCESS) {
 			LOG_ERR("Could not initialize timer channel output");
@@ -446,11 +452,24 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	} else {
 		/* in LL_TIM_OC_SetPolarity, the channel could be the complementary one */
 		LL_TIM_OC_SetPolarity(cfg->timer, current_ll_channel, get_polarity(flags));
+		/* Set prescaler right before changing output compare to prevent glitches */
+		LL_TIM_SetPrescaler(cfg->timer, data->prescaler_next);
 		set_timer_compare[channel - 1u](cfg->timer, pulse_cycles);
 		LL_TIM_SetAutoReload(cfg->timer, period_cycles);
 	}
 
 	return 0;
+}
+
+static void pwm_stm32_tune_clock(const struct device *dev, uint32_t channel, uint32_t period)
+{
+	struct pwm_stm32_data *data = dev->data;
+	const struct pwm_stm32_config *cfg = dev->config;
+	const uint32_t cnt_max = (1 << (IS_TIM_32B_COUNTER_INSTANCE(cfg->timer) ? 32 : 16)) - 1;
+
+	data->prescaler_next =
+		MIN((uint32_t)((uint64_t)period * data->tim_clk / ((uint64_t)cnt_max * 1000000000ULL)),
+		    (1 << 16) - 1);
 }
 
 #ifdef CONFIG_PWM_CAPTURE
@@ -756,7 +775,7 @@ static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 	struct pwm_stm32_data *data = dev->data;
 	const struct pwm_stm32_config *cfg = dev->config;
 
-	*cycles = (uint64_t)(data->tim_clk / (cfg->prescaler + 1));
+	*cycles = (uint64_t)(data->tim_clk / (data->prescaler_next + 1));
 
 	return 0;
 }
@@ -764,6 +783,7 @@ static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 static DEVICE_API(pwm, pwm_stm32_driver_api) = {
 	.set_cycles = pwm_stm32_set_cycles,
 	.get_cycles_per_sec = pwm_stm32_get_cycles_per_sec,
+	.tune_clock = pwm_stm32_tune_clock,
 #ifdef CONFIG_PWM_CAPTURE
 	.configure_capture = pwm_stm32_configure_capture,
 	.enable_capture = pwm_stm32_enable_capture,
@@ -817,6 +837,8 @@ static int pwm_stm32_init(const struct device *dev)
 	init.CounterMode = cfg->countermode;
 	init.Autoreload = 0u;
 	init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
+
+	data->prescaler_next = cfg->prescaler;
 
 	if (LL_TIM_Init(cfg->timer, &init) != SUCCESS) {
 		LOG_ERR("Could not initialize timer");
