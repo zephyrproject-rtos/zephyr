@@ -13,3 +13,4 @@ boards:
       revisions:
         - name: "A"
         - name: "B"
+        - name: "C"
