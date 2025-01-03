@@ -3,8 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-
 #include <zephyr/ztest.h>
 #include <zephyr/ztest_error_hook.h>
 
