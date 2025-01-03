@@ -365,6 +365,12 @@
 #endif
 
 /* HAL abstraction of Radio bitfields */
+#define HAL_NRF_RADIO_EVENT_END                   NRF_RADIO_EVENT_END
+#define HAL_RADIO_EVENTS_END                      EVENTS_END
+#define HAL_RADIO_PUBLISH_END                     PUBLISH_END
+#define HAL_NRF_RADIO_EVENT_PHYEND                NRF_RADIO_EVENT_PHYEND
+#define HAL_RADIO_EVENTS_PHYEND                   EVENTS_PHYEND
+#define HAL_RADIO_PUBLISH_PHYEND                  PUBLISH_PHYEND
 #define HAL_RADIO_INTENSET_DISABLED_Msk           RADIO_INTENSET_DISABLED_Msk
 #define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk      RADIO_SHORTS_END_DISABLE_Msk
 #define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk   RADIO_SHORTS_PHYEND_DISABLE_Msk
@@ -415,17 +421,21 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	default:
 		mode = RADIO_MODE_MODE_Ble_1Mbit;
 
+#if defined(CONFIG_SOC_NRF5340_CPUNET)
 		/* Workaround: nRF5340 Revision 1 Errata 117 */
 		*((volatile uint32_t *)0x41008588) =
 			*((volatile uint32_t *)0x01FF0080); /* non-2M mode */
+#endif /* CONFIG_SOC_NRF5340_CPUNET */
 		break;
 
 	case BIT(1):
 		mode = RADIO_MODE_MODE_Ble_2Mbit;
 
+#if defined(CONFIG_SOC_NRF5340_CPUNET)
 		/* Workaround: nRF5340 Revision 1 Errata 117 */
 		*((volatile uint32_t *)0x41008588) =
 			*((volatile uint32_t *)0x01FF0084); /* 2M mode */
+#endif /* CONFIG_SOC_NRF5340_CPUNET */
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -436,9 +446,11 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 			mode = RADIO_MODE_MODE_Ble_LR500Kbit;
 		}
 
+#if defined(CONFIG_SOC_NRF5340_CPUNET)
 		/* Workaround: nRF5340 Revision 1 Errata 117 */
 		*((volatile uint32_t *)0x41008588) =
 			*((volatile uint32_t *)0x01FF0080); /* non-2M mode */
+#endif /* CONFIG_SOC_NRF5340_CPUNET */
 		break;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}

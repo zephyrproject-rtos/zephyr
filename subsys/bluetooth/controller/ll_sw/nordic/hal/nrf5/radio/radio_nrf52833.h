@@ -343,6 +343,10 @@
 #endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 
 /* HAL abstraction of Radio bitfields */
+#define HAL_NRF_RADIO_EVENT_END                   NRF_RADIO_EVENT_END
+#define HAL_RADIO_EVENTS_END                      EVENTS_END
+#define HAL_NRF_RADIO_EVENT_PHYEND                NRF_RADIO_EVENT_PHYEND
+#define HAL_RADIO_EVENTS_PHYEND                   EVENTS_PHYEND
 #define HAL_RADIO_INTENSET_DISABLED_Msk           RADIO_INTENSET_DISABLED_Msk
 #define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk      RADIO_SHORTS_END_DISABLE_Msk
 #define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk   RADIO_SHORTS_PHYEND_DISABLE_Msk
@@ -373,6 +377,7 @@ static inline void hal_radio_stop(void)
 
 static inline void hal_radio_ram_prio_setup(void)
 {
+#if defined(CONFIG_SOC_NRF52833)
 	struct {
 		uint32_t volatile reserved_0[0x5a0 >> 2];
 		uint32_t volatile bridge_type;
@@ -409,6 +414,7 @@ static inline void hal_radio_ram_prio_setup(void)
 	NRF_AMLI->RAMPRI.I2S     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PDM     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PWM     = 0xFFFFFFFFUL;
+#endif /* CONFIG_SOC_NRF52833 */
 }
 
 static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)

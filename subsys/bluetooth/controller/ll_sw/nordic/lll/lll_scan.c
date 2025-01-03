@@ -287,7 +287,7 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 		*conn_space_us = conn_offset_us;
 		pdu_tx->connect_ind.win_offset = sys_cpu_to_le16(0);
 	} else {
-		uint32_t win_offset_us =
+		uint32_t win_offset_us = radio_tmr_start_latency_get() +
 			lll->conn_win_offset_us +
 			radio_rx_ready_delay_get(phy, PHY_FLAGS_S8);
 

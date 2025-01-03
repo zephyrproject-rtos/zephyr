@@ -20,11 +20,7 @@
 #define HAL_RADIO_NS2US_ROUND(ns) ((ns + 500)/1000)
 
 /* SoC specific defines */
-#if defined(CONFIG_BOARD_NRF52_BSIM)
-#include "radio_sim_nrf52.h"
-#elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
-#include "radio_sim_nrf5340.h"
-#elif defined(CONFIG_SOC_SERIES_NRF51X)
+#if defined(CONFIG_SOC_SERIES_NRF51X)
 #include "radio_nrf51.h"
 #elif defined(CONFIG_SOC_NRF52805)
 #include "radio_nrf52805.h"
@@ -36,11 +32,11 @@
 #include "radio_nrf52820.h"
 #elif defined(CONFIG_SOC_NRF52832)
 #include "radio_nrf52832.h"
-#elif defined(CONFIG_SOC_NRF52833)
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF52833)
 #include "radio_nrf52833.h"
 #elif defined(CONFIG_SOC_NRF52840)
 #include "radio_nrf52840.h"
-#elif defined(CONFIG_SOC_NRF5340_CPUNET)
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET)
 #include <hal/nrf_vreqctrl.h>
 #include "radio_nrf5340.h"
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
