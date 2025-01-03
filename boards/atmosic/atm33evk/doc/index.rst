@@ -1,5 +1,3 @@
-.. _atm33evk:
-
 Atmosic ATM33/e
 ###############
 
@@ -9,7 +7,7 @@ The ATM33/e Wireless SoC Series is part of the Atmosic family of extremely low-p
 For detailed product specifications and features, please refer to https://atmosic.com/products_atm33/
 
 SoCs and EVKs
-*****************
+*************
 
 .. _board:
 
@@ -107,7 +105,7 @@ In the remainder of this document, substitute for ``<WEST_TOPDIR>``, ``<SPE>``, 
 
 Alternatively, use any board from the board_ list as ``<BOARD>``.
 
-Building and Flashing 
+Building and Flashing
 =====================
 
 Applications can be built with MCUboot or without the MCUboot option. If a device firmware update (DFU) is not needed, you can choose the option without MCUboot. If you require DFU, then the MCUboot option is required.
@@ -159,6 +157,8 @@ Flash the SPE and the application separately if ``CONFIG_MERGE_SPE_NSPE`` was no
 Alternatively, if ``CONFIG_MERGE_SPE_NSPE`` was enabled in building the application, the first step (programming the SPE) can be skipped.
 
 
+.. _flashing_opt_mcuboot:
+
 B. MCUboot Option
 -----------------
 
@@ -194,9 +194,7 @@ If the application requires Bluetooth (configured with ``CONFIG_BT`` in the prj.
 
 where ``<FLAV>`` is one of ``LL`` or ``PD50LL``.
 
-.. _flashing:
-
-Flash MCUboot::
+Flash MCUboot
 
 Atmosic provides a mechanism to increase the legacy programming time called FAST LOAD. Apply the option ``--fast_load`` to enable the FAST LOAD.::
 
@@ -267,7 +265,7 @@ This SDK ships with a tool called Atmosic In-System Programming Tool (ISP) for b
 +---------------+-----------------------------------------------------+
 |  Binary Type  |  Description                                        |
 +===============+=====================================================+
-|   .bin        |  binary file contains flash or nvds data only      |
+|   .bin        |  binary file contains flash or nvds data only       |
 +---------------+-----------------------------------------------------+
 
 The ISP tool, which is also shipped as a stand-alone package, can then be used
@@ -294,7 +292,7 @@ West atm_arch commands
 +-----------------------------------------------------------------------------+------------------------------------------------------------+
 | Command Arguments                                                           |  Description                                               |
 +=============================================================================+============================================================+
-| -atm_isp_path ATM_ISP_PATH, --atm_isp_path ATM_ISP_PATH                     |  specify atm_isp exe path            |
+| -atm_isp_path ATM_ISP_PATH, --atm_isp_path ATM_ISP_PATH                     |  specify atm_isp exe path                                  |
 +-----------------------------------------------------------------------------+------------------------------------------------------------+
 | -d, --debug                                                                 |  debug enabled, default false                              |
 +-----------------------------------------------------------------------------+------------------------------------------------------------+
@@ -351,7 +349,7 @@ The wireless stack ``elf`` file will be transferred to binary automatically and 
 * replace ``<ZEPHYR_TOOLCHAIN_VARIANT>`` the Zephyr toolchain path.
 
 Generate .atm isp file
----------------------
+----------------------
 
 * replace ``<APP_NAME>`` with the application name.
 
@@ -535,8 +533,10 @@ More information about the smp_svr sample and how to use the mcumgr utility can 
 
 A new overlay file has been provided named ``overlay-disable-stats.conf`` that saves around 3 kB by disabling ``taskstat`` and the stats subsystems if those features are not needed.
 
-To flash smp_svr follow the MCUBoot instructions from flashing_.
+To flash smp_svr follow the MCUBoot instructions from `MCUboot option`__.
 When using BLE remember that the wireless stack must also be flashed.
+
+__ flashing_opt_mcuboot_
 
 .. _serial_dfu:
 
@@ -631,11 +631,11 @@ To unlock using the default private key in ``openair/lib/atm_debug_auth/`` ::
 
 The unlocking script using the ``-v`` option will verbosely output::
 
-Sending: b'DBG REQUEST\n'
-Received: b'Static Challenge: o9H3wvgqOfAi/mvTV/qvvdNjBqzGILIai3G4OBURjhE=\n'
-Unlock Static Challenge
-Sending: b'DBG STATIC_RESPONSE sMdx+QFewpAt3Dnqy9BrjSLNxgtObtu3IKhSvpuvbG7J9IClpt/zJL4XRlo9rt7KCCw6orjUIyBdaWWM657aRw==\n'
-Received: b'Debug unlocked\n'
+  Sending: b'DBG REQUEST\n'
+  Received: b'Static Challenge: o9H3wvgqOfAi/mvTV/qvvdNjBqzGILIai3G4OBURjhE=\n'
+  Unlock Static Challenge
+  Sending: b'DBG STATIC_RESPONSE sMdx+QFewpAt3Dnqy9BrjSLNxgtObtu3IKhSvpuvbG7J9IClpt/zJL4XRlo9rt7KCCw6orjUIyBdaWWM657aRw==\n'
+  Received: b'Debug unlocked\n'
 
 The SWD port will be unlocked and MCUboot will remain in a benign state with the processor halted at a WFI instruction (Wait For Interrupt).  The developer can freely attach a debugger such as GDB and inspect the target (read memory, set breakpoints).  If the debugger allows the CPU to continue then MCUboot will continue its boot from the point at which WFI was entered.
 
