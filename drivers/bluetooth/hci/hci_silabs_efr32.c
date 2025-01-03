@@ -192,7 +192,7 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) || IS_ENABLED(CONFIG_BT_OBSERVER)) {
 		sl_btctrl_init_scan();
 	}
-	if (IS_ENABLED(CONFIG_BT_CONN)) {
+	if (IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_OBSERVER)) {
 		sl_btctrl_init_conn();
 	}
 	sl_btctrl_init_phy();
@@ -223,7 +223,8 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	if (IS_ENABLED(CONFIG_BT_CONN)) {
 		sl_btctrl_hci_parser_init_conn();
 	}
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_OBSERVER) ||
+	    IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
 		sl_btctrl_hci_parser_init_adv();
 	}
 	sl_btctrl_hci_parser_init_phy();
