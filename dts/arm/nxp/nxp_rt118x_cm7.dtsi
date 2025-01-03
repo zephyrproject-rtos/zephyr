@@ -10,13 +10,15 @@
 / {
 	soc {
 		itcm: itcm@0{
-			compatible = "nxp,imx-itcm";
+			compatible = "zephyr,memory-region", "nxp,imx-itcm";
 			reg = <0x00000000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "ITCM";
 		};
 
 		dtcm: dtcm@20000000 {
-			compatible = "nxp,imx-dtcm";
+			compatible = "zephyr,memory-region", "nxp,imx-dtcm";
 			reg = <0x20000000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "DTCM";
 		};
 
 		memory: memory@20000000 {
