@@ -109,6 +109,10 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 		return false;
 	}
 
+	if (codec_cfg.id == BT_HCI_CODING_FORMAT_VS) {
+		return memcmp(&codec_cfg, &vs_codec_cfg, sizeof(codec_cfg)) == 0;
+	}
+
 	ret = bt_audio_codec_cfg_get_freq(&codec_cfg);
 	if (ret >= 0) {
 		const int freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
@@ -366,10 +370,6 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 	.term = bap_pa_sync_terminated_cb,
 };
 
-static struct bt_pacs_cap cap = {
-	.codec_cap = &codec_cap,
-};
-
 static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
@@ -453,6 +453,11 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	uint16_t octets_per_frame;
 	uint8_t chan_cnt;
 	int ret;
+
+	if (codec_cfg->id != BT_HCI_CODING_FORMAT_LC3) {
+		/* We can only validate LC3 codecs */
+		return;
+	}
 
 	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
 	if (ret >= 0) {
@@ -606,6 +611,12 @@ static struct bt_bap_stream_ops stream_ops = {
 
 static int init(void)
 {
+	static struct bt_pacs_cap cap = {
+		.codec_cap = &codec_cap,
+	};
+	static struct bt_pacs_cap vs_cap = {
+		.codec_cap = &vs_codec_cap,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -619,6 +630,12 @@ static int init(void)
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err) {
 		FAIL("Capability register failed (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &vs_cap);
+	if (err) {
+		FAIL("VS capability register failed (err %d)\n", err);
 		return err;
 	}
 
@@ -949,17 +966,39 @@ static void test_common(void)
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_audio_received);
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
+}
+
+static void test_main(void)
+{
+	test_common();
+
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
+
+	/* The order of PA sync lost and BIG Sync lost is irrelevant
+	 * and depend on timeout parameters. We just wait for PA first, but
+	 * either way will work.
+	 */
+	printk("Waiting for PA disconnected\n");
+	WAIT_FOR_FLAG(flag_pa_sync_lost);
+
+	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
+		k_sem_take(&sem_stream_stopped, K_FOREVER);
+	}
+	WAIT_FOR_UNSET_FLAG(flag_sink_started);
+
+	PASS("Broadcast sink passed\n");
+}
+
+static void test_main_update(void)
+{
+	test_common();
 
 	/* Ensure that we also see the metadata update */
 	printk("Waiting for metadata update\n");
 	WAIT_FOR_FLAG(flag_base_metadata_updated)
 
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
-}
-
-static void test_main(void)
-{
-	test_common();
 
 	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
 
@@ -1145,11 +1184,6 @@ static void broadcast_sink_with_assistant(void)
 	WAIT_FOR_FLAG(flag_audio_received);
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
-	/* Ensure that we also see the metadata update */
-	printk("Waiting for metadata update\n");
-	WAIT_FOR_FLAG(flag_base_metadata_updated)
-	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
-
 	printk("Waiting for BIG sync terminate request\n");
 	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
 	test_broadcast_stop();
@@ -1214,6 +1248,12 @@ static const struct bst_test_instance test_broadcast_sink[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "broadcast_sink_update",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_update,
 	},
 	{
 		.test_id = "broadcast_sink_disconnect",

@@ -41,10 +41,12 @@
 CREATE_FLAG(flag_source_started);
 
 static struct audio_test_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+/* We always default to the mandatory-to-support preset_16_2_1 */
 static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 static struct bt_bap_lc3_preset preset_16_1_1 = BT_BAP_LC3_BROADCAST_PRESET_16_1_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+static struct bt_audio_codec_cfg *codec_cfg = &preset_16_2_1.codec_cfg;
 
 static uint8_t bis_codec_data[] = {
 	BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
@@ -58,8 +60,8 @@ static K_SEM_DEFINE(sem_stream_stopped, 0U, ARRAY_SIZE(broadcast_source_streams)
 
 static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 {
-	const struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
-	const struct bt_audio_codec_cfg *exp_codec_cfg = &preset_16_1_1.codec_cfg;
+	const struct bt_audio_codec_cfg *stream_codec_cfg = stream->codec_cfg;
+	const struct bt_audio_codec_cfg *exp_codec_cfg = codec_cfg;
 	enum bt_audio_location chan_allocation;
 	uint8_t frames_blocks_per_sdu;
 	size_t min_sdu_size_required;
@@ -68,7 +70,12 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	int ret;
 	int exp_ret;
 
-	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (stream_codec_cfg->id != BT_HCI_CODING_FORMAT_LC3) {
+		/* We can only validate LC3 codecs */
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_freq(stream_codec_cfg);
 	exp_ret = bt_audio_codec_cfg_get_freq(exp_codec_cfg);
 	if (ret >= 0) {
 		const int freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
@@ -85,7 +92,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 		return;
 	}
 
-	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	ret = bt_audio_codec_cfg_get_frame_dur(stream_codec_cfg);
 	exp_ret = bt_audio_codec_cfg_get_frame_dur(exp_codec_cfg);
 	if (ret >= 0) {
 		const int frm_dur_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
@@ -105,7 +112,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	/* The broadcast source sets the channel allocation in the BIS to
 	 * BT_AUDIO_LOCATION_FRONT_CENTER
 	 */
-	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, true);
+	ret = bt_audio_codec_cfg_get_chan_allocation(stream_codec_cfg, &chan_allocation, true);
 	if (ret == 0) {
 		if (chan_allocation != BT_AUDIO_LOCATION_FRONT_CENTER) {
 			FAIL("Unexpected channel allocation: 0x%08X", chan_allocation);
@@ -126,7 +133,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 		return;
 	}
 
-	ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+	ret = bt_audio_codec_cfg_get_octets_per_frame(stream_codec_cfg);
 	if (ret > 0) {
 		octets_per_frame = (uint16_t)ret;
 	} else {
@@ -142,7 +149,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 		return;
 	}
 
-	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream_codec_cfg, true);
 	if (ret > 0) {
 		frames_blocks_per_sdu = (uint8_t)ret;
 	} else {
@@ -283,7 +290,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source, bool 
 	for (size_t i = 0U; i < subgroup_cnt_arg; i++) {
 		subgroup_params[i].params_count = streams_per_subgroup_cnt_arg;
 		subgroup_params[i].params = &stream_params[i * streams_per_subgroup_cnt_arg];
-		subgroup_params[i].codec_cfg = &preset_16_1_1.codec_cfg;
+		subgroup_params[i].codec_cfg = codec_cfg;
 	}
 
 	create_param.params_count = subgroup_cnt_arg;
@@ -399,7 +406,8 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 	return 0;
 }
 
-static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *source)
+static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
+					   struct bt_le_ext_adv *adv)
 {
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
@@ -407,6 +415,8 @@ static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *sourc
 		subgroup_params[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
 	const unsigned long stream_cnt = subgroup_cnt_arg * streams_per_subgroup_cnt_arg;
 	struct bt_bap_broadcast_source_param reconfig_param;
+	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
+	struct bt_data per_ad;
 	int err;
 
 	for (size_t i = 0; i < stream_cnt; i++) {
@@ -416,15 +426,16 @@ static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *sourc
 		stream_params[i].data = bis_codec_data;
 	}
 
+	codec_cfg = &preset_16_1_1.codec_cfg;
 	for (size_t i = 0U; i < subgroup_cnt_arg; i++) {
 		subgroup_params[i].params_count = streams_per_subgroup_cnt_arg;
 		subgroup_params[i].params = &stream_params[i * streams_per_subgroup_cnt_arg];
-		subgroup_params[i].codec_cfg = &preset_16_1_1.codec_cfg;
+		subgroup_params[i].codec_cfg = codec_cfg; /* update the cfg 16_1_1 */
 	}
 
 	reconfig_param.params_count = subgroup_cnt_arg;
 	reconfig_param.params = subgroup_params;
-	reconfig_param.qos = &preset_16_1_1.qos;
+	reconfig_param.qos = &preset_16_1_1.qos; /* update the QoS from 16_2_1 to 16_1_1 */
 	reconfig_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 	reconfig_param.encryption = false;
 
@@ -439,6 +450,17 @@ static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *sourc
 		struct audio_test_stream *test_stream = &broadcast_source_streams[i];
 
 		test_stream->tx_sdu_size = preset_16_1_1.qos.sdu;
+	}
+
+	/* Update the BASE */
+	test_broadcast_source_get_base(source, &base_buf);
+
+	per_ad.type = BT_DATA_SVC_DATA16;
+	per_ad.data_len = base_buf.len;
+	per_ad.data = base_buf.data;
+	err = bt_le_per_adv_set_data(adv, &per_ad, 1);
+	if (err != 0) {
+		FAIL("Failed to set periodic advertising data: %d\n", err);
 	}
 }
 
@@ -598,17 +620,9 @@ static void test_main(void)
 		return;
 	}
 
-	test_broadcast_source_reconfig(source);
-
 	test_broadcast_source_start(source, adv);
 
-	/* Wait for other devices to have received what they wanted */
-	backchannel_sync_wait_any();
-
-	/* Update metadata while streaming */
-	test_broadcast_source_update_metadata(source, adv);
-
-	/* Wait for other devices to have received what they wanted */
+	/* Wait for other devices to have received data */
 	backchannel_sync_wait_any();
 
 	/* Wait for other devices to let us know when we can stop the source */
@@ -637,6 +651,57 @@ static void test_main(void)
 	printk("Deleting broadcast source\n");
 	test_broadcast_source_delete(source);
 	source = NULL;
+
+	PASS("Broadcast source passed\n");
+}
+
+static void test_main_update(void)
+{
+	struct bt_bap_broadcast_source *source;
+	struct bt_le_ext_adv *adv;
+	int err;
+
+	init();
+
+	err = setup_broadcast_source(&source, false);
+	if (err != 0) {
+		FAIL("Unable to setup broadcast source: %d\n", err);
+		return;
+	}
+
+	err = setup_extended_adv(source, &adv);
+	if (err != 0) {
+		FAIL("Failed to setup extended advertising: %d\n", err);
+		return;
+	}
+
+	test_broadcast_source_reconfig(source, adv);
+
+	test_broadcast_source_start(source, adv);
+
+	/* Wait for other devices to have received data */
+	backchannel_sync_wait_any();
+
+	/* Update metadata while streaming */
+	test_broadcast_source_update_metadata(source, adv);
+
+	/* Wait for other devices to have received metadata update */
+	backchannel_sync_wait_any();
+
+	/* Wait for other devices to let us know when we can stop the source */
+	backchannel_sync_wait_any();
+
+	test_broadcast_source_stop(source);
+
+	test_broadcast_source_delete(source);
+	source = NULL;
+
+	err = stop_extended_adv(adv);
+	if (err != 0) {
+		FAIL("Unable to stop extended advertising: %d\n", err);
+		return;
+	}
+	adv = NULL;
 
 	PASS("Broadcast source passed\n");
 }
@@ -706,6 +771,10 @@ static void test_args(int argc, char *argv[])
 				FAIL("Invalid number of streams per subgroup: %lu\n",
 				     streams_per_subgroup_cnt_arg);
 			}
+		} else if (strcmp(arg, "vs_codec") == 0) {
+			codec_cfg = &vs_codec_cfg;
+		} else if (strcmp(arg, "lc3_codec") == 0) {
+			codec_cfg = &preset_16_2_1.codec_cfg;
 		} else {
 			FAIL("Invalid arg: %s\n", arg);
 		}
@@ -718,6 +787,13 @@ static const struct bst_test_instance test_broadcast_source[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "broadcast_source_update",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_update,
 		.test_args_f = test_args,
 	},
 	{
