@@ -284,5 +284,5 @@ config BT_BAP_DEBUG_STREAM_SEQ_NUM
 config BT_BAP_BASE
 	def_bool BT_BAP_BROADCAST_SINK || BT_BAP_BROADCAST_ASSISTANT || BT_BAP_SCAN_DELEGATOR
 
-rsource "Kconfig.pacs"
-rsource "Kconfig.ascs"
+rsource "Kconfig_pacs"
+rsource "Kconfig_ascs"

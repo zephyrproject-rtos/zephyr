@@ -1086,9 +1086,9 @@ config BT_CTLR_CHANNEL_SOUNDING
 	  Enable support for Bluetooth 6.0 Channel Sounding in the
 	  Controller.
 
-rsource "Kconfig.df"
-rsource "Kconfig.ll_sw_split"
-rsource "Kconfig.dtm"
+rsource "Kconfig_df"
+rsource "Kconfig_ll_sw_split"
+rsource "Kconfig_dtm"
 
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"

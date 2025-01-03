@@ -751,8 +751,8 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 
 endif # BT_SMP
 
-rsource "Kconfig.l2cap"
-rsource "Kconfig.gatt"
+rsource "Kconfig_l2cap"
+rsource "Kconfig_gatt"
 rsource "../services/Kconfig"
 
 config BT_MAX_PAIRED
