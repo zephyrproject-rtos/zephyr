@@ -161,6 +161,7 @@ struct audio_test_stream {
 
 	struct bt_iso_recv_info last_info;
 	size_t rx_cnt;
+	size_t valid_rx_cnt;
 };
 
 static inline struct bt_cap_stream *cap_stream_from_bap_stream(struct bt_bap_stream *bap_stream)
