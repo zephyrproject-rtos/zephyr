@@ -970,7 +970,7 @@ reexecute:
 			parser->content_range.start = 0U;
 			parser->content_range.end = 0U;
 			parser->content_range.total = 0U;
-			parser->content_range_present = 0;
+			parser->content_range_present = false;
 
 			if (ch == 'H') {
 				UPDATE_STATE(s_res_or_resp_H);
@@ -1267,7 +1267,7 @@ reexecute:
 			parser->content_range.start = 0U;
 			parser->content_range.end = 0U;
 			parser->content_range.total = 0U;
-			parser->content_range_present = 0;
+			parser->content_range_present = false;
 
 			if (UNLIKELY(!IS_ALPHA(ch))) {
 				SET_ERRNO(HPE_INVALID_METHOD);
@@ -1809,7 +1809,7 @@ reexecute:
 					goto error;
 				}
 
-				parser->content_range_present = 1;
+				parser->content_range_present = true;
 				parser->content_range.start = 0;
 				break;
 

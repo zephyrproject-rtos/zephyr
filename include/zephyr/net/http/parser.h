@@ -48,6 +48,7 @@ typedef unsigned __int64 uint64_t;
 #include <zephyr/net/http/method.h>
 #include <zephyr/net/http/parser_state.h>
 #include <zephyr/net/http/parser_url.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,7 +168,7 @@ struct http_parser {
 	uint64_t content_length; /* # bytes in body (0 if no Content-Length
 				  * header)
 				  */
-	uint8_t content_range_present;
+	bool content_range_present;
 	struct http_content_range content_range;
 	/** READ-ONLY **/
 	unsigned short http_major;
