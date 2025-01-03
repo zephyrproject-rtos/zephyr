@@ -4788,6 +4788,9 @@ West:
   status: maintained
   maintainers:
     - kristofer-jonsson-arm
+    - ithinuel
+  collaborators:
+    - wearyzen
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
