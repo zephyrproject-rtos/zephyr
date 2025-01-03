@@ -844,7 +844,6 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 	lcp->context = fs->backend;
 	/* Set the validated/defaulted values. */
 	if (littlefs_on_blkdev(flags)) {
-		lfs_size_t new_cache_size = block_size;
 		lfs_size_t new_lookahead_size = block_size * 4;
 
 		lcp->read = lfs_api_read_blk;
@@ -854,12 +853,11 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 		lcp->read_size = block_size;
 		lcp->prog_size = block_size;
 
-		if (cache_size < new_cache_size) {
+		if (cache_size < block_size) {
 			LOG_ERR("Configured cache size is too small: %d < %d", cache_size,
-				new_cache_size);
-			return -ENOMEM;
+				block_size);
 		}
-		lcp->cache_size = new_cache_size;
+		lcp->cache_size = ROUND_DOWN(cache_size, block_size);
 
 		if (lookahead_size < new_lookahead_size) {
 			LOG_ERR("Configured lookahead size is too small: %d < %d",
