@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Semtech Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SEMTECH_SX126xMB2xxS
+	def_bool $(shields_list_contains,semtech_sx126xmb2xxs)
+
+config SHIELD_SEMTECH_SX126xMB2xxS
+	def_bool $(shields_list_contains,semtech_sx126xmb2xxs)
+
+config SHIELD_SEMTECH_SX126xMB2xxS
+	def_bool $(shields_list_contains,semtech_sx126xmb2xxs)
