@@ -218,7 +218,7 @@ static int config_shphold(const struct device *dev)
 	}
 
 	reg = config->shiphold_hibernate_wakeup ? WAKEUP_HIBERNATE_PIN : WAKEUP_HIBERNATE_NOPIN;
-	if ((config->shiphold_flags & GPIO_ACTIVE_HIGH) != 0U) {
+	if ((config->shiphold_flags & GPIO_ACTIVE_LOW) == 0U) {
 		reg |= WAKEUP_EDGE_RISING;
 	}
 
