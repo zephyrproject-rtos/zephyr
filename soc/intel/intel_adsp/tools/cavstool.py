@@ -211,7 +211,11 @@ def adsp_mem_window_config():
     return (base, stride)
 
 def map_regs(log_only):
-    p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
+    try:
+        p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
+    except subprocess.CalledProcessError:
+        # if no device found, also try 40300 class no-DSP devices
+        p = runx(f"grep -iEl 'PCI_CLASS=40300' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
