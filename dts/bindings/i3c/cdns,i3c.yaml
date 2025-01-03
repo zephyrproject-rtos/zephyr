@@ -24,3 +24,13 @@ properties:
     type: int
     default: 1
     description: IBI Data Fifo Threashold Value
+
+  tx-thr:
+    type: int
+    default: 1
+    description: TX Fifo Threashold Value
+
+  rx-thr:
+    type: int
+    default: 1
+    description: RX Fifo Threashold Value
