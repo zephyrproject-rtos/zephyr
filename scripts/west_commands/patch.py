@@ -5,9 +5,11 @@
 import argparse
 import hashlib
 import os
+import re
 import shlex
 import subprocess
 import textwrap
+import urllib.request
 from pathlib import Path
 
 import pykwalify.core
@@ -15,9 +17,10 @@ import yaml
 from west.commands import WestCommand
 
 try:
+    from yaml import CSafeDumper as SafeDumper
     from yaml import CSafeLoader as SafeLoader
 except ImportError:
-    from yaml import SafeLoader
+    from yaml import SafeDumper, SafeLoader
 
 WEST_PATCH_SCHEMA_PATH = Path(__file__).parents[1] / "schemas" / "patch-schema.yml"
 with open(WEST_PATCH_SCHEMA_PATH) as f:
@@ -114,6 +117,17 @@ class Patch(WestCommand):
             default=_WEST_TOPDIR,
             type=Path,
         )
+        parser.add_argument(
+            "-m",
+            "--module",
+            action="append",
+            dest="modules",
+            metavar="DIR",
+            help="Zephyr module directory to run the 'patch' command for. "
+            "Option can be passed multiple times. "
+            "If this option is not given, the 'patch' command will run for Zephyr "
+            "and all modules.",
+        )
 
         subparsers = parser.add_subparsers(
             dest="subcommand",
@@ -154,6 +168,51 @@ class Patch(WestCommand):
             ),
         )
 
+        gh_fetch_arg_parser = subparsers.add_parser(
+            "gh-fetch",
+            help="Fetch patch from Github",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=textwrap.dedent(
+                """
+            Fetching Patches from Github:
+
+                TODO
+            """
+            ),
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-o",
+            "--owner",
+            action="store",
+            default="zephyrproject-rtos",
+            help="Github repository owner",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-r",
+            "--repo",
+            action="store",
+            default="zephyr",
+            help="Github repository",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-pr",
+            "--pull-request",
+            metavar="ID",
+            action="store",
+            required=True,
+            type=int,
+            help="Github Pull Request ID",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-m",
+            "--module",
+            metavar="DIR",
+            action="store",
+            required=True,
+            type=Path,
+            help="Module path",
+        )
+
         subparsers.add_parser(
             "list",
             help="List patches",
@@ -184,6 +243,9 @@ class Patch(WestCommand):
             args.patch_yml = manifest_dir / args.patch_yml.relative_to(_WEST_MANIFEST_DIR)
         if args.west_workspace.is_relative_to(_WEST_TOPDIR):
             args.west_workspace = topdir / args.west_workspace.relative_to(_WEST_TOPDIR)
+        if args.modules:
+            # Remove trailing slashes
+            args.modules = [m.rstrip('/') for m in args.modules]
 
     def do_run(self, args, _):
         self.filter_args(args)
@@ -213,11 +275,12 @@ class Patch(WestCommand):
             "apply": self.apply,
             "clean": self.clean,
             "list": self.list,
+            "gh-fetch": self.gh_fetch,
         }
 
-        method[args.subcommand](args, yml)
+        method[args.subcommand](args, yml, args.modules)
 
-    def apply(self, args, yml):
+    def apply(self, args, yml, mods=None):
         patches = yml.get("patches", [])
         if not patches:
             return
@@ -227,6 +290,10 @@ class Patch(WestCommand):
         patched_mods = set()
 
         for patch_info in patches:
+            mod = patch_info["module"].rstrip('/')
+            if mods and mod not in mods:
+                continue
+
             pth = patch_info["path"]
             patch_path = os.path.realpath(Path(args.patch_base) / pth)
 
@@ -262,23 +329,19 @@ class Patch(WestCommand):
             patch_count += 1
             patch_file_data = None
 
-            mod = patch_info["module"]
             mod_path = Path(args.west_workspace) / mod
             patched_mods.add(mod)
 
             self.dbg(f"patching {mod}... ", end="")
-            origdir = os.getcwd()
-            os.chdir(mod_path)
             apply_cmd += patch_path
             apply_cmd_list.extend([patch_path])
-            proc = subprocess.run(apply_cmd_list)
+            proc = subprocess.run(apply_cmd_list, cwd=mod_path)
             if proc.returncode:
                 self.dbg("FAIL")
                 self.err(proc.stderr)
                 failed_patch = pth
                 break
             self.dbg("OK")
-            os.chdir(origdir)
 
         if not failed_patch:
             self.inf(f"{patch_count} patches applied successfully \\o/")
@@ -287,7 +350,7 @@ class Patch(WestCommand):
         if args.roll_back:
             self.clean(args, yml, patched_mods)
 
-        self.die(f"failed to apply patch {pth}")
+        self.die(f"failed to apply patch {failed_patch}")
 
     def clean(self, args, yml, mods=None):
         clean_cmd = yml["clean-command"]
@@ -300,16 +363,13 @@ class Patch(WestCommand):
         clean_cmd_list = shlex.split(clean_cmd)
         checkout_cmd_list = shlex.split(checkout_cmd)
 
-        origdir = os.getcwd()
         for mod, mod_path in Patch.get_mod_paths(args, yml).items():
             if mods and mod not in mods:
                 continue
             try:
-                os.chdir(mod_path)
-
                 if checkout_cmd:
                     self.dbg(f"Running '{checkout_cmd}' in {mod}.. ", end="")
-                    proc = subprocess.run(checkout_cmd_list, capture_output=True)
+                    proc = subprocess.run(checkout_cmd_list, capture_output=True, cwd=mod_path)
                     if proc.returncode:
                         self.dbg("FAIL")
                         self.err(f"{checkout_cmd} failed for {mod}\n{proc.stderr}")
@@ -318,7 +378,7 @@ class Patch(WestCommand):
 
                 if clean_cmd:
                     self.dbg(f"Running '{clean_cmd}' in {mod}.. ", end="")
-                    proc = subprocess.run(clean_cmd_list, capture_output=True)
+                    proc = subprocess.run(clean_cmd_list, capture_output=True, cwd=mod_path)
                     if proc.returncode:
                         self.dbg("FAIL")
                         self.err(f"{clean_cmd} failed for {mod}\n{proc.stderr}")
@@ -329,15 +389,48 @@ class Patch(WestCommand):
                 # If this fails for some reason, just log it and continue
                 self.err(f"failed to clean up {mod}: {e}")
 
-        os.chdir(origdir)
-
-    def list(self, args, yml):
+    def list(self, args, yml, mods=None):
         patches = yml.get("patches", [])
         if not patches:
             return
 
         for patch_info in patches:
+            if mods and patch_info["module"].rstrip('/') not in mods:
+                continue
             self.inf(patch_info)
+
+    def gh_fetch(self, args, yml, mods=None):
+        try:
+            from github import Github
+        except ImportError:
+            self.die("PyGithub not installed")
+
+        gh = Github()
+        pr = gh.get_repo(f"{args.owner}/{args.repo}").get_pull(args.pull_request)
+
+        filename = "-".join(re.split("[^a-zA-Z0-9]+", pr.title)) + ".patch"
+        urllib.request.urlretrieve(pr.patch_url, args.patch_base / filename)
+
+        with open(args.patch_base / filename, "rb") as fp:
+            hasher = hashlib.sha256()
+            hasher.update(fp.read())
+            pr_sha256 = hasher.hexdigest()
+
+        patch_info = {
+            "path": filename,
+            "sha256sum": pr_sha256,
+            "module": str(args.module),
+            "author": pr.user.name or "Hidden",
+            "email": pr.user.email or "hidden@github.com",
+            "date": pr.created_at.strftime("%Y-%m-%d"),
+            "upstreamable": True,
+            "merge-pr": pr.html_url,
+            "merge-status": pr.merged,
+        }
+
+        yml.setdefault("patches", []).append(patch_info)
+        with open(args.patch_yml, "w") as f:
+            yaml.dump(yml, f, Dumper=SafeDumper)
 
     @staticmethod
     def get_mod_paths(args, yml):
@@ -347,7 +440,7 @@ class Patch(WestCommand):
 
         mod_paths = {}
         for patch_info in patches:
-            mod = patch_info["module"]
+            mod = patch_info["module"].rstrip('/')
             mod_path = os.path.realpath(Path(args.west_workspace) / mod)
             mod_paths[mod] = mod_path
 
