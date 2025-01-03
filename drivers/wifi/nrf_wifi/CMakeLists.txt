@@ -73,7 +73,7 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_ON_QSPI
   -DNRF53_ERRATA_159_ENABLE_WORKAROUND=0
 )
 
-target_link_libraries(nrf_wifi PRIVATE nrf70-buslib)
+zephyr_library_link_libraries(nrf70-buslib nrf-wifi-shim)
 
 if (CONFIG_NRF_WIFI_PATCHES_BUILTIN)
   zephyr_blobs_verify(MODULE nrf_wifi REQUIRED)
