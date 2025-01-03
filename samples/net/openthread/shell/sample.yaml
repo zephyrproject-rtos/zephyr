@@ -1,0 +1,17 @@
+common:
+  harness: net
+  tags:
+    - net
+    - openthread
+  depends_on: openthread
+sample:
+  description: Test Thread and IEEE 802.15.4 using the OpenThread shell
+  name: OpenThread Shell
+tests:
+  sample.net.openthread.shell:
+    build_only: true
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52840dongle/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
