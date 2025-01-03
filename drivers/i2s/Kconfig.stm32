@@ -14,6 +14,20 @@ menuconfig I2S_STM32
 	  Enable I2S support on the STM32 family of processors.
 	  (Tested on the STM32F4 & STM32H7 series)
 
+menuconfig I2S_STM32_SAI
+	bool "STM32 MCU I2S controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_SAI_ENABLED
+	depends on SOC_SERIES_STM32U5X
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	select DMA
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_DMA_EX
+	select USE_STM32_HAL_SAI
+	select USE_STM32_LL_DLYB if (SOC_SERIES_STM32H5X || SOC_SERIES_STM32U5X)
+	help
+	  Enable SAI support on the STM32U5 family of processors.
+
 if I2S_STM32
 
 config I2S_STM32_RX_BLOCK_COUNT
@@ -25,3 +39,15 @@ config I2S_STM32_TX_BLOCK_COUNT
 	default 4
 
 endif # I2S_STM32
+
+if I2S_STM32_SAI
+
+config I2S_STM32_SAI_BLOCK_COUNT
+	int "SAI queue length"
+	default 4
+
+config I2S_STM32_SAI_DMA
+	bool "SAI DMA Transfer enable"
+	default n
+
+endif # I2S_STM32_SAI
