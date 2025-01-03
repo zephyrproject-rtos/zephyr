@@ -101,7 +101,7 @@ static void adv_work_handler(struct k_work *work)
 
 	if (ext_adv == NULL) {
 		/* Create a connectable advertising set */
-		err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &adv_cb, &ext_adv);
+		err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, &adv_cb, &ext_adv);
 		if (err) {
 			printk("Failed to create advertising set (err %d)\n", err);
 		}
