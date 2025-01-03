@@ -1201,3 +1201,11 @@ test_i2c_lis2duxs12: lis2duxs12@a7 {
 	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
 	status = "okay";
 };
+
+test_i2c_tmp435: tmp435@a8 {
+	compatible = "ti,tmp435";
+	reg = <0xa8>;
+	external-channel;
+	resistance-correction;
+	beta-compensation = <0x0f>;
+};
