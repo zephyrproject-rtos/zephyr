@@ -22,10 +22,16 @@ static const struct timespec ref_ts = {1514821501, NSEC_PER_SEC / 2U};
 static const clockid_t clocks[] = {
 	CLOCK_MONOTONIC,
 	CLOCK_REALTIME,
+#ifdef CONFIG_POSIX_THREAD_CPUTIME
+	CLOCK_THREAD_CPUTIME_ID,
+#endif /* CONFIG_POSIX_THREAD_CPUTIME */
 };
 static const bool settable[] = {
 	false,
 	true,
+#ifdef CONFIG_POSIX_THREAD_CPUTIME
+	false,
+#endif /* CONFIG_POSIX_THREAD_CPUTIME */
 };
 
 static inline int64_t ts_to_ns(const struct timespec *ts)
