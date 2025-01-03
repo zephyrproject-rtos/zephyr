@@ -173,3 +173,5 @@ zephyr_library_include_directories(
 )
 
 zephyr_library_property(ALLOW_EMPTY TRUE)
+
+zephyr_library_compile_options(-U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
