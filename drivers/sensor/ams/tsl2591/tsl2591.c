@@ -418,12 +418,6 @@ static int tsl2591_setup(const struct device *dev)
 	uint8_t device_id;
 	int ret;
 
-	ret = tsl2591_reg_write(dev, TSL2591_REG_CONFIG, TSL2591_SRESET);
-	if (ret < 0) {
-		LOG_ERR("Failed to reset device");
-		return ret;
-	}
-
 	ret = tsl2591_reg_read(dev, TSL2591_REG_ID, &device_id, 1U);
 	if (ret < 0) {
 		LOG_ERR("Failed to read device ID");
