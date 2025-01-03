@@ -140,7 +140,22 @@ static void usbhs_vbus_handler(nrfs_usb_evt_t const *p_evt, void *const context)
 			k_event_post(&usbhs_events, USBHS_VBUS_READY);
 			udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
 		} else {
+			const struct udc_dwc2_config *const config = dev->config;
+			struct usb_dwc2_reg *const base = config->base;
+			mem_addr_t dcfg_reg = (mem_addr_t)&base->dcfg;
+			uint32_t dcfg;
+			uint8_t addr;
+
 			k_event_set_masked(&usbhs_events, 0, USBHS_VBUS_READY);
+
+			dcfg = sys_read32(dcfg_reg);
+			addr = usb_dwc2_get_dcfg_devaddr(dcfg);
+			if (addr) {
+				LOG_INF("Device address not cleared before VBUS removal. "
+					"Submitting missing UDC_EVT_RESET event");
+				udc_submit_event(dev, UDC_EVT_RESET, 0);
+			}
+
 			udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0);
 		}
 
