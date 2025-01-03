@@ -13,12 +13,21 @@
 	npcx-miwus-wui-map {
 		compatible = "nuvoton,npcx-miwu-wui-map";
 
-		/* MIWU table 1 */
+		/* MIWU table 0 */
 		/* MIWU group A */
 		wui_cr_sin2: wui0-1-6-2 {
 			miwus = <&miwu0 0 6>; /* CR_SIN2 */
 		};
 
+		/* MIWU group D */
+		wui_smb0_2: wui0-4-3 {
+			miwus = <&miwu0 3 3>; /* SMB0/2 */
+		};
+		wui_smb1_3: wui0-4-4 {
+			miwus = <&miwu0 3 4>; /* SMB1/3 */
+		};
+
+		/* MIWU table 1 */
 		/* MIWU group G */
 		wui_io66: wui1-7-6 {
 			miwus = <&miwu1 6 6>; /* GPIO66 */

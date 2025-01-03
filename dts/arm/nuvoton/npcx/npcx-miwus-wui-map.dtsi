@@ -89,12 +89,6 @@
 		wui_iob0: wui0-4-2 {
 			miwus = <&miwu0 3 2>; /* GPIOB0 */
 		};
-		wui_smb0_2: wui0-4-3 {
-			miwus = <&miwu0 3 3>; /* SMB0/2 */
-		};
-		wui_smb1_3: wui0-4-4 {
-			miwus = <&miwu0 3 4>; /* SMB1/3 */
-		};
 		wui_iob1: wui0-4-5 {
 			miwus = <&miwu0 3 5>; /* GPIOB1 */
 		};
