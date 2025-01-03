@@ -5,5 +5,5 @@
 #
 
 # Add custom linker section to relocate framebuffers to PSRAM
-zephyr_linker_sources_ifdef(CONFIG_LV_Z_VBD_CUSTOM_SECTION
+zephyr_linker_sources_ifdef(CONFIG_LV_Z_VDB_CUSTOM_SECTION
   SECTIONS dc_ram.ld)
