@@ -872,6 +872,11 @@ struct fiu_reg {
 #define NCPM_ADDR_4B_EN_SHD_4B			5
 #define NCPM_ADDR_4B_EN_BACK_4B			6
 
+/* 0x042: Master FIU status */
+#define NPCM_FIU_MSR_STS_RD_PEND_UMA		0
+#define NPCM_FIU_MSR_STS_RD_PEND_FIU		1
+#define NPCM_FIU_MSR_STS_MSTR_INACT		2
+
 /* 0x043: FIU master interrupt enable and configuration register */
 #define NPCM_FIU_MSR_IE_CFG_RD_PEND_UMA_IE	0
 #define NPCM_FIU_MSR_IE_CFG_RD_PEND_FIU_IE	1

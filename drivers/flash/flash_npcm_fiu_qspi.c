@@ -18,18 +18,24 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(npcm_fiu_qspi, LOG_LEVEL_ERR);
 
+#define NPCM_FIU_CHK_TIMEOUT_US	10000
+
 #define NPCM_FIU_PVT_CS		NPCM_QSPI_SW_CS0
 #define NPCM_FIU_SHD_CS		NPCM_QSPI_SW_CS1
 #define NPCM_FIU_BACK_CS	NPCM_QSPI_SW_CS2
 
 /* Driver convenience defines */
 #define HAL_INSTANCE(dev) \
-	((struct fiu_reg *)((const struct npcm_qspi_fiu_config *)(dev)->config)->base)
+	((struct fiu_reg *)((const struct npcm_qspi_fiu_config *)(dev)->config)->core_base)
+#define HAL_HOST_INSTANCE(dev) \
+	((struct fiu_reg *)((const struct npcm_qspi_fiu_config *)(dev)->config)->host_base)
 
 /* Device config */
 struct npcm_qspi_fiu_config {
-	/* Flash controller base address */
-	uintptr_t base;
+	/* Flash controller core base address */
+	uintptr_t core_base;
+	/* Flash controller host base address */
+	uintptr_t host_base;
 	/* Clock configuration */
 	struct npcm_clk_cfg clk_cfg;
 };
@@ -118,13 +124,18 @@ static inline void qspi_npcm_config_dra_4byte_mode(const struct device *dev,
 						   const struct npcm_qspi_cfg *qspi_cfg)
 {
 #if defined(CONFIG_FLASH_NPCM_FIU_SUPP_DRA_4B_ADDR)
-	struct fiu_reg *const inst = HAL_INSTANCE(dev);
+	struct fiu_reg *const core_inst = HAL_INSTANCE(dev);
+	struct fiu_reg *const host_inst = HAL_HOST_INSTANCE(dev);
+	uint8_t addr_4b_en;
+
+	addr_4b_en = (qspi_cfg->flags & NPCM_QSPI_SW_CS_MASK) << 4;
 
 	if (qspi_cfg->enter_4ba != 0) {
-		inst->ADDR_4B_EN |= (qspi_cfg->flags & NPCM_QSPI_SW_CS_MASK) << 4;
-
+		core_inst->ADDR_4B_EN |= addr_4b_en;
+		host_inst->ADDR_4B_EN |= addr_4b_en;
 	} else {
-		inst->ADDR_4B_EN = 0;
+		core_inst->ADDR_4B_EN &= ~addr_4b_en;
+		host_inst->ADDR_4B_EN &= ~addr_4b_en;
 	}
 #endif /* CONFIG_FLASH_NPCM_FIU_SUPP_DRA_4B_ADDR */
 }
@@ -132,45 +143,46 @@ static inline void qspi_npcm_config_dra_4byte_mode(const struct device *dev,
 static inline void qspi_npcm_config_dra_mode(const struct device *dev,
 					     const struct npcm_qspi_cfg *qspi_cfg)
 {
-	struct fiu_reg *const inst = HAL_INSTANCE(dev);
+	struct fiu_reg *const core_inst = HAL_INSTANCE(dev);
+	struct fiu_reg *const host_inst = HAL_HOST_INSTANCE(dev);
+	uint8_t rd_mode, rd_burst = NPCM_BURST_CFG_R_BURST_16B;
 
-	/* Enable quad mode of Direct Read Mode if needed */
-	if (qspi_cfg->qer_type != JESD216_DW15_QER_NONE) {
-		inst->RESP_CFG |= BIT(NPCM_RESP_CFG_QUAD_EN);
-	} else {
-		inst->RESP_CFG &= ~BIT(NPCM_RESP_CFG_QUAD_EN);
-	}
-
-	/* Selects the SPI read access type of Direct Read Access mode */
 	switch (qspi_cfg->rd_mode) {
 		case NPCM_RD_MODE_NORMAL:
-			SET_FIELD(inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
-					NPCM_SPI_FL_CFG_RD_MODE_NORMAL);
-                        break;
+			rd_mode = NPCM_SPI_FL_CFG_RD_MODE_NORMAL;
+			break;
 		case NPCM_RD_MODE_FAST:
-			SET_FIELD(inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
-					NPCM_SPI_FL_CFG_RD_MODE_FAST);
+			rd_mode = NPCM_SPI_FL_CFG_RD_MODE_FAST;
 			break;
 		case NPCM_RD_MODE_FAST_DUAL:
-			SET_FIELD(inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
-					NPCM_SPI_FL_CFG_RD_MODE_FAST_DUAL);
-			break;
 		case NPCM_RD_MODE_QUAD:
-			SET_FIELD(inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
-					NPCM_SPI_FL_CFG_RD_MODE_FAST_DUAL);
-			inst->RESP_CFG |= BIT(NPCM_RESP_CFG_QUAD_EN);
+			rd_mode = NPCM_SPI_FL_CFG_RD_MODE_FAST_DUAL;
 			break;
                 default:
 			LOG_ERR("un-support rd mode:%d", qspi_cfg->rd_mode);
-			break;
+			return;
 	}
+
+	/* Selects the SPI read access type of Direct Read Access mode,
+	 * for quad mode, need enable extra configuration.
+	 */
+	SET_FIELD(core_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE, rd_mode);
+	SET_FIELD(host_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE, rd_mode);
+
+	if (qspi_cfg->rd_mode == NPCM_RD_MODE_QUAD) {
+		core_inst->RESP_CFG |= BIT(NPCM_RESP_CFG_QUAD_EN);
+		host_inst->RESP_CFG |= BIT(NPCM_RESP_CFG_QUAD_EN);
+	} else {
+		core_inst->RESP_CFG &= ~BIT(NPCM_RESP_CFG_QUAD_EN);
+		host_inst->RESP_CFG &= ~BIT(NPCM_RESP_CFG_QUAD_EN);
+	}
+
+	/* set read max burst 16 bytes */
+	SET_FIELD(core_inst->BURST_CFG, NPCM_BURST_CFG_R_BURST, rd_burst);
+	SET_FIELD(host_inst->BURST_CFG, NPCM_BURST_CFG_R_BURST, rd_burst);
 
 	/* Enable/Disable 4 byte address mode for Direct Read Access (DRA) */
 	qspi_npcm_config_dra_4byte_mode(dev, qspi_cfg);
-
-	/* set read max burst 16 bytes */
-	SET_FIELD(inst->BURST_CFG, NPCM_BURST_CFG_R_BURST,
-			NPCM_BURST_CFG_R_BURST_16B);
 }
 
 static inline void qspi_npcm_fiu_set_operation(const struct device *dev, uint32_t operation)
@@ -180,11 +192,20 @@ static inline void qspi_npcm_fiu_set_operation(const struct device *dev, uint32_
 	}
 }
 
-static inline void qspi_npcm_fiu_uma_lock(const struct device *dev)
+static inline int qspi_npcm_fiu_uma_lock(const struct device *dev)
 {
-	struct fiu_reg *const inst = HAL_INSTANCE(dev);
+	struct fiu_reg *const core_inst = HAL_INSTANCE(dev);
+	struct fiu_reg *const host_inst = HAL_HOST_INSTANCE(dev);
 
-	inst->FIU_MSR_IE_CFG |= BIT(NPCM_FIU_MSR_IE_CFG_UMA_BLOCK);
+	if (WAIT_FOR(IS_BIT_SET(host_inst->FIU_MSR_STS, NPCM_FIU_MSR_STS_MSTR_INACT),
+			NPCM_FIU_CHK_TIMEOUT_US, NULL) == false) {
+		LOG_ERR("wait host fiu inactive timeout");
+		return -ETIMEDOUT;
+	}
+
+	core_inst->FIU_MSR_IE_CFG |= BIT(NPCM_FIU_MSR_IE_CFG_UMA_BLOCK);
+
+	return 0;
 }
 
 static inline void qspi_npcm_fiu_uma_release(const struct device *dev)
@@ -199,6 +220,7 @@ static int qspi_npcm_fiu_uma_transceive(const struct device *dev, struct npcm_tr
 				     uint32_t flags)
 {
 	struct npcm_qspi_data *const data = dev->data;
+	int ret;
 
 	/* Transaction is permitted? */
 	if ((data->operation & NPCM_EX_OP_LOCK_TRANSCEIVE) != 0) {
@@ -206,7 +228,10 @@ static int qspi_npcm_fiu_uma_transceive(const struct device *dev, struct npcm_tr
 	}
 
 	/* UMA block */
-	qspi_npcm_fiu_uma_lock(dev);
+	ret = qspi_npcm_fiu_uma_lock(dev);
+	if (ret) {
+		return ret;
+	}
 
 	/* Assert chip select */
 	qspi_npcm_uma_cs_level(dev, data->sw_cs, false);
@@ -324,7 +349,8 @@ static int qspi_npcm_fiu_init(const struct device *dev)
 
 #define NPCM_SPI_FIU_INIT(n)							\
 static const struct npcm_qspi_fiu_config npcm_qspi_fiu_config_##n = {		\
-	.base = DT_INST_REG_ADDR(n),						\
+	.core_base = DT_INST_REG_ADDR_BY_IDX(n, 0),				\
+	.host_base = DT_INST_REG_ADDR_BY_IDX(n, 1),				\
 	.clk_cfg = NPCM_DT_CLK_CFG_ITEM(n),					\
 };										\
 static struct npcm_qspi_data npcm_qspi_data_##n = {				\
