@@ -23,7 +23,7 @@
 #include <zephyr/bluetooth/iso.h>
 
 #include "host/shell/bt.h"
-#include "host/shell/bt_shell_private.h"
+#include "common/bt_shell_private.h"
 
 #if defined(CONFIG_BT_ISO_TX)
 #define DEFAULT_IO_QOS                                                                             \

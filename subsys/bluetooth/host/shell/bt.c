@@ -35,7 +35,7 @@
 #include <zephyr/bluetooth/ead.h>
 
 #include <zephyr/shell/shell.h>
-#include "bt_shell_private.h"
+#include "common/bt_shell_private.h"
 
 #include "audio/shell/audio.h"
 #include "controller/ll_sw/shell/ll.h"
