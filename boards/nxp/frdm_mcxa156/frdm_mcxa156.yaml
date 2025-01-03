@@ -21,6 +21,7 @@ supported:
   - counter
   - dac
   - i2c
+  - i3c
   - pwm
   - usb_device
   - usbd
