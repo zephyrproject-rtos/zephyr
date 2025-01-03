@@ -13,6 +13,15 @@ properties:
     required: true
     description: Default baudrate of the uart controller.
 
+  parity:
+    default: "none"
+
+  stop-bits:
+    default: "1"
+
+  data-bits:
+    default: 8
+
   fixed-baudrate:
     type: boolean
     description: |

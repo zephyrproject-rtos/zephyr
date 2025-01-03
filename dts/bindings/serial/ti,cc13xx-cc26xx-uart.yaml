@@ -13,3 +13,15 @@ properties:
 
   interrupts:
     required: true
+
+  current-speed:
+    required: true
+
+  parity:
+    default: "none"
+
+  stop-bits:
+    default: "1"
+
+  data-bits:
+    default: 8
