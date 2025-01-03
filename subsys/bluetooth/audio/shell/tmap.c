@@ -20,6 +20,7 @@
 #include <zephyr/sys/util.h>
 
 #include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 {
@@ -46,11 +47,11 @@ static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 static void tmap_discover_cb(enum bt_tmap_role role, struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "tmap discovery (err %d)", err);
+		bt_shell_error("tmap discovery (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "tmap discovered for conn %p: role 0x%04x", conn, role);
+	bt_shell_print("tmap discovered for conn %p: role 0x%04x", conn, role);
 }
 
 static const struct bt_tmap_cb tmap_cb = {
@@ -65,10 +66,6 @@ static int cmd_tmap_discover(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "Not connected");
 
 		return -ENOEXEC;
-	}
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
 	}
 
 	err = bt_tmap_discover(default_conn, &tmap_cb);
