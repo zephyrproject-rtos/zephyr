@@ -92,15 +92,18 @@ int mfd_npm2100_reset(const struct device *dev);
  * @brief npm2100 hibernate
  *
  * Enters low power state, and wakes after specified time or "shphld" pin signal.
+ * Pass-through mode can be used when the battery voltage is high enough to supply the pmic directly
+ * without boosting. This lowers the power consumption of the pmic when hibernate mode is active.
  *
  * @param dev npm2100 mfd device
  * @param time_ms timer value in ms. Set to 0 to disable timer.
+ * @param pass_through set to use pass-through hibernate mode.
  * @retval 0 If successful
  * @retval -EINVAL if time value is too large
  * @retval -EBUSY if the timer is already in use.
  * @retval -errno In case of any bus error (see i2c_write_dt())
  */
-int mfd_npm2100_hibernate(const struct device *dev, uint32_t time_ms);
+int mfd_npm2100_hibernate(const struct device *dev, uint32_t time_ms, bool pass_through);
 
 /**
  * @brief Add npm2100 event callback
