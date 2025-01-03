@@ -316,8 +316,28 @@ The MIMXRT1060 SoC has eight UARTs. ``LPUART1`` is configured for the console,
 ``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
 
-Board Targets
-*************
+Board Revisions and Targets
+***************************
+
+There are three revisions of this board.
+
+Rev A:
+
+* Initial version
+
+Rev B:
+
+* adds the M.2 connector for Wi-Fi/BLE
+* adds audio expansion connector J23
+* USER LED1 changed to GPIO1 pin 8
+
+Rev C:
+
+* Replaces audio codec WM8960(EOL) to WM8962
+* Replaces 32.768 KHz oscillator from ASH7K-32.768KHz-T(EOL)to ASH7KW-32.768KHZ-L-T
+* Replaces motion sensor from FXOS8700CQ(EOL) to FXLS8974CFR3
+* Re-assigns Bluetooth Audio PCM with dedicated I2S2
+* Re-assigns Bluetooth interface UART_CTS, UART_RTS to hardware PIN
 
 This board has two variants that can be targeted,
 depending on which flash to set as ``zephyr,flash``:
@@ -387,10 +407,28 @@ Flashing
 
 Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: mimxrt1060_evk//qspi
-   :goals: flash
+.. tabs::
+
+   .. group-tab:: i.MX RT1060 Rev A
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@A//qspi
+         :goals: flash
+
+   .. group-tab:: i.MX RT1060 Rev B
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@B//qspi
+         :goals: flash
+
+   .. group-tab:: i.MX RT1060 Rev C (default)
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@C//qspi
+         :goals: flash
 
 Open a serial terminal, reset the board (press the SW9 button), and you should
 see the following message in the terminal:
@@ -405,10 +443,29 @@ Debugging
 
 Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: mimxrt1060_evk//qspi
-   :goals: debug
+.. tabs::
+
+   .. group-tab:: i.MX RT1060 Rev A
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@A//qspi
+         :goals: debug
+
+   .. group-tab:: i.MX RT1060 Rev B
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@B//qspi
+         :goals: debug
+
+   .. group-tab:: i.MX RT1060 Rev C (default)
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: mimxrt1060_evk@C//qspi
+         :goals: debug
+
 
 Open a serial terminal, step through the application in your debugger, and you
 should see the following message in the terminal:
