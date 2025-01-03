@@ -122,6 +122,8 @@
 		&quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	flash-id = <1>;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	mx25r512: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";

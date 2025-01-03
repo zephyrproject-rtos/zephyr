@@ -209,6 +209,8 @@ stm32_lp_tick_source: &lptim1 {
 	pinctrl-names = "default";
 
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	mx25lm51245: ospi-nor-flash@90000000 {
 		compatible = "st,stm32-ospi-nor";

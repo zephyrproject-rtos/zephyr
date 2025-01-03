@@ -75,6 +75,8 @@
 			&quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
 			&quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
 	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	status = "okay";
 	w25q128jv: qspi-nor-flash@90000000 {

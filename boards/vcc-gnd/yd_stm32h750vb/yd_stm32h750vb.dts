@@ -112,6 +112,8 @@
 		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
 		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	w25q128jv: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";

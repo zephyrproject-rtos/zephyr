@@ -178,6 +178,8 @@
 		      &quadspi_clk_pf10 >;
 	pinctrl-names = "default";
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	mx25l12833f: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";

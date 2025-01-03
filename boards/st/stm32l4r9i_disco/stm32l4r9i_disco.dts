@@ -222,6 +222,8 @@ zephyr_udc0: &usbotg_fs {
 			&octospim_p2_io6_pg9 &octospim_p2_io7_pg10
 			&octospim_p2_dqs_pg15>;
 	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	mx25lm51245: ospi-nor-flash@90000000 {
 		status = "okay";

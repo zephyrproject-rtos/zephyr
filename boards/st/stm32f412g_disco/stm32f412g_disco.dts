@@ -146,6 +146,8 @@
 		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pf6>;
 	pinctrl-names = "default";
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	n25q128a1: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";

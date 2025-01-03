@@ -145,6 +145,8 @@ zephyr_udc0: &usbotg_hs {
 		&octospim_p1_io0_pd11 &octospim_p1_io1_pd12
 		&octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	w25q64_qspi: ospi-nor-flash@90000000 {
 		compatible = "st,stm32-ospi-nor";
