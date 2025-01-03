@@ -180,7 +180,10 @@ FULL_PATH_NAMES        = YES
 # will be relative from the directory where Doxygen is started.
 # This tag requires that the tag FULL_PATH_NAMES is set to YES.
 
-STRIP_FROM_PATH        = @ZEPHYR_BASE@/include
+STRIP_FROM_PATH        = @ZEPHYR_BASE@/include \
+                         @ZEPHYR_BASE@/kernel/include/ \
+                         @ZEPHYR_BASE@/lib/ \
+                         @ZEPHYR_BASE@/subsys/testsuite/ztest/include/
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of the
 # path mentioned in the documentation of a class, which tells the reader which
@@ -972,14 +975,17 @@ WARN_LOGFILE           =
 
 INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/doc/_doxygen/groups.dox \
-                         @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
-                         @ZEPHYR_BASE@/include/zephyr/arch/cache.h \
-                         @ZEPHYR_BASE@/include/zephyr/sys/atomic.h \
                          @ZEPHYR_BASE@/include/ \
+                         @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
                          @ZEPHYR_BASE@/subsys/testsuite/include/ \
                          @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
                          @ZEPHYR_BASE@/subsys/secure_storage/include/ \
+
+# Note that when adding paths to INPUT you most likely want to add them
+# to STRIP_FROM_PATH as well, which will remove those parts from
+# the paths of the #include examples and the file list
+# in the generated documentation.
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
