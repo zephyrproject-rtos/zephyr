@@ -98,6 +98,7 @@
 
 &uart0 {
 	status = "disabled";
+	fifo-enable;
 };
 
 &uart1 {

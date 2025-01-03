@@ -10,3 +10,7 @@ properties:
 
   interrupts:
     required: true
+
+  fifo-enable:
+    type: boolean
+    description: Enable the UART FIFO

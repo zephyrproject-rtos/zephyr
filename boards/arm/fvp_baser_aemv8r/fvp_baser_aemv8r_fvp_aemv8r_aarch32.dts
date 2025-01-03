@@ -42,4 +42,5 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	fifo-enable;
 };

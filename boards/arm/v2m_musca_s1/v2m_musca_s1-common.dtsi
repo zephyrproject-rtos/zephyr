@@ -29,6 +29,7 @@ uart0: uart@101000 {
 	interrupt-names = "rx", "tx", "rxtim", "err";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+	fifo-enable;
 };
 
 uart1: uart@102000 {
@@ -38,6 +39,7 @@ uart1: uart@102000 {
 	interrupt-names = "rx", "tx", "rxtim", "err";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+	fifo-enable;
 };
 
 gpio: gpio@110000 {

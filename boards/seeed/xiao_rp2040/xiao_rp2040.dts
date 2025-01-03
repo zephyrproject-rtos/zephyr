@@ -95,6 +95,7 @@
 	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	fifo-enable;
 };
 
 &i2c1 {
