@@ -944,6 +944,24 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  *
  */
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
+
+/**
+ * @brief Get the absolute deadline of a thread.
+ *
+ * This routine gets the deadline of a thread to be used by the EDF
+ * scheduler when deciding which thread has the highest priority.
+ * The value returned is the absolute point in time calculated from
+ * the relative deadline value passed in k_thread_deadline_set().
+ *
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
+ * configuration.
+ *
+ * @param thread Thread from which to get the deadline
+ * @return absolute deadline value, in cycle units
+ *
+ */
+int32_t k_thread_deadline_get(k_tid_t thread);
+
 #endif
 
 /**
