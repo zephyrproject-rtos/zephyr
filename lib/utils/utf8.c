@@ -7,12 +7,17 @@
 #include <stdint.h>
 #include <string.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 #define ASCII_CHAR 0x7F
 #define SEQUENCE_FIRST_MASK 0xC0
 #define SEQUENCE_LEN_2_BYTE 0xC0
-#define SEQUENCE_LEN_3_BYTE 0xE0
-#define SEQUENCE_LEN_4_BYTE 0xF0
+#define SEQUENCE_MIN_LEN_2_BYTE (SEQUENCE_LEN_2_BYTE + 2)
+#define SEQUENCE_MAX_LEN_2_BYTE 0xDF
+#define SEQUENCE_MIN_LEN_3_BYTE 0xE0
+#define SEQUENCE_MAX_LEN_3_BYTE 0xEF
+#define SEQUENCE_MIN_LEN_4_BYTE 0xF0
+#define SEQUENCE_MAX_LEN_4_BYTE 0xF4
 
 char *utf8_trunc(char *utf8_str)
 {
@@ -46,11 +51,11 @@ char *utf8_trunc(char *utf8_str)
 	 * matches the number of bytes we searched for the starting byte
 	 */
 	seq_start_byte = *last_byte_p;
-	if ((seq_start_byte & SEQUENCE_LEN_4_BYTE) == SEQUENCE_LEN_4_BYTE) {
+	if ((seq_start_byte & SEQUENCE_MIN_LEN_4_BYTE) == SEQUENCE_MIN_LEN_4_BYTE) {
 		if (bytes_truncated == 4) {
 			return utf8_str;
 		}
-	} else if ((seq_start_byte & SEQUENCE_LEN_3_BYTE) == SEQUENCE_LEN_3_BYTE) {
+	} else if ((seq_start_byte & SEQUENCE_MIN_LEN_3_BYTE) == SEQUENCE_MIN_LEN_3_BYTE) {
 		if (bytes_truncated == 3) {
 			return utf8_str;
 		}
@@ -78,4 +83,39 @@ char *utf8_lcpy(char *dst, const char *src, size_t n)
 	}
 
 	return dst;
+}
+
+bool utf8_is_valid(const unsigned char *str, size_t len)
+{
+	size_t i = 0, nbyte = 0;
+
+	/* It will also return false */
+	if (str == NULL) {
+		return false;
+	}
+
+	while (i < len && str[i] != '\0') {
+		if (str[i] <= ASCII_CHAR) {
+			i++;
+			continue;
+		} else {
+			if (str[i] <= SEQUENCE_MAX_LEN_2_BYTE
+			 && str[i] >= SEQUENCE_MIN_LEN_2_BYTE) {
+				nbyte = 2;
+			} else if (str[i] <= SEQUENCE_MAX_LEN_3_BYTE
+					&& str[i] >= SEQUENCE_MIN_LEN_3_BYTE) {
+				nbyte = 3;
+			} else if (str[i] <= SEQUENCE_MAX_LEN_4_BYTE
+					&& str[i] >= SEQUENCE_MIN_LEN_4_BYTE) {
+				nbyte = 4;
+			} else {
+				return false;
+			}
+		}
+		if (i + nbyte > len) {
+			return false;
+		}
+		i += nbyte;
+	}
+	return true;
 }
