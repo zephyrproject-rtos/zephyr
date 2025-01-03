@@ -10,6 +10,7 @@
 
 &flash0 {
 	reg = <0x00000000 DT_SIZE_K(1024)>;
+	erase-block-size = < 512 >;
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
