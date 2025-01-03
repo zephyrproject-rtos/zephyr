@@ -1,0 +1,53 @@
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MSPM0G1X0X_G3X0X
+	bool
+	select SOC_FAMILY_TI_MSPM0
+	help
+	  Enable support for TI MSPM0G1X0X_G3X0X SoCs
+
+config SOC_MSPM0G1106
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G1107
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G1506
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G1507
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G3106
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G3107
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G3506
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G3507
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_SERIES
+	default "mspm0g1x0x_g3x0x" if SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC
+	default "mspm0g1106" if SOC_MSPM0G1106
+	default "mspm0g1107" if SOC_MSPM0G1107
+	default "mspm0g1506" if SOC_MSPM0G1506
+	default "mspm0g1507" if SOC_MSPM0G1507
+	default "mspm0g3106" if SOC_MSPM0G3106
+	default "mspm0g3107" if SOC_MSPM0G3107
+	default "mspm0g3506" if SOC_MSPM0G3506
+	default "mspm0g3507" if SOC_MSPM0G3507

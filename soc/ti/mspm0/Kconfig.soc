@@ -1,0 +1,12 @@
+# Texas Instruments MSPM0 Family
+
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_TI_MSPM0
+	bool
+
+config SOC_FAMILY
+	default "ti_mspm0" if SOC_FAMILY_TI_MSPM0
+
+rsource "*/Kconfig.soc"
