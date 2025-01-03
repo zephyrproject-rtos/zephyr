@@ -146,8 +146,7 @@
 				cc-num = <6>;
 				max-bit-width = <32>;
 				interrupts = <85 NRF_DEFAULT_IRQ_PRIORITY>;
-				/* NRFX-6881: Temporary workaround for timer00 */
-				max-frequency = <DT_FREQ_M(64)>;
+				clocks = <&hfpll>;
 				prescaler = <0>;
 			};
 
@@ -176,7 +175,7 @@
 				cc-num = <8>;
 				max-bit-width = <32>;
 				interrupts = <133 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(32)>;
+				clocks = <&hfxo>;
 				prescaler = <0>;
 			};
 
