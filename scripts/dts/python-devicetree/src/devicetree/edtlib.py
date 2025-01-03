@@ -70,8 +70,8 @@ bindings_from_paths() helper function.
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, NoReturn, \
-    Optional, Set, TYPE_CHECKING, Tuple, Union
+from typing import (Any, Callable, Dict, Iterable, List, NoReturn,
+                    Optional, Set, TYPE_CHECKING, Tuple, Union)
 import logging
 import os
 import re
@@ -401,9 +401,9 @@ class Binding:
 
         if "bus" in raw:
             bus = raw["bus"]
-            if not isinstance(bus, str) and \
-               (not isinstance(bus, list) and \
-                not all(isinstance(elem, str) for elem in bus)):
+            if (not isinstance(bus, str) and
+               (not isinstance(bus, list) and
+                not all(isinstance(elem, str) for elem in bus))):
                 _err(f"malformed 'bus:' value in {self.path}, "
                      "expected string or list of strings")
 
@@ -413,8 +413,8 @@ class Binding:
                 # Convert bus into a list
                 self._buses = [bus]
 
-        if "on-bus" in raw and \
-           not isinstance(raw["on-bus"], str):
+        if ("on-bus" in raw
+            and not isinstance(raw["on-bus"], str)):
             _err(f"malformed 'on-bus:' value in {self.path}, "
                  "expected string")
 
@@ -422,8 +422,8 @@ class Binding:
 
         for key, val in raw.items():
             if key.endswith("-cells"):
-                if not isinstance(val, list) or \
-                   not all(isinstance(elem, str) for elem in val):
+                if (not isinstance(val, list)
+                    or not all(isinstance(elem, str) for elem in val)):
                     _err(f"malformed '{key}:' in {self.path}, "
                          "expected a list of strings")
 
@@ -460,8 +460,8 @@ class Binding:
                 _err(f"'{prop_name}' in 'properties' in {self.path} should not "
                       "have both 'deprecated' and 'required' set")
 
-            if "description" in options and \
-               not isinstance(options["description"], str):
+            if ("description" in options
+                and not isinstance(options["description"], str)):
                 _err("missing, malformed, or empty 'description' for "
                      f"'{prop_name}' in 'properties' in {self.path}")
 
@@ -579,9 +579,10 @@ class PropertySpec:
             if not self.enum_tokenizable:
                 self._enum_upper_tokenizable = False
             else:
-                self._enum_upper_tokenizable = \
-                    (len(self._as_tokens) ==
-                     len(set(x.upper() for x in self._as_tokens)))
+                self._enum_upper_tokenizable = (
+                    len(self._as_tokens) == len(
+                        set(x.upper() for x in self._as_tokens)
+                    ))
         return self._enum_upper_tokenizable
 
     @property
@@ -1585,14 +1586,14 @@ class Node:
 
     def _check_undeclared_props(self) -> None:
         # Checks that all properties are declared in the binding
+        wl = {"compatible", "status", "ranges", "phandle",
+              "interrupt-parent", "interrupts-extended", "device_type"}
 
         for prop_name in self._node.props:
             # Allow a few special properties to not be declared in the binding
-            if prop_name.endswith("-controller") or \
-               prop_name.startswith("#") or \
-               prop_name in {
-                   "compatible", "status", "ranges", "phandle",
-                   "interrupt-parent", "interrupts-extended", "device_type"}:
+            if (prop_name.endswith("-controller")
+                or prop_name.startswith("#")
+                or prop_name in wl):
                 continue
 
             if TYPE_CHECKING:
@@ -1807,9 +1808,9 @@ class Node:
                 continue
 
             controller_node, data = item
-            mapped_controller, mapped_data = \
-                _map_phandle_array_entry(prop.node, controller_node, data,
-                                         specifier_space)
+            mapped_controller, mapped_data = (
+                _map_phandle_array_entry(prop.node, controller_node,
+                                         data, specifier_space))
 
             controller = self.edt._node2enode[mapped_controller]
             # We'll fix up the names below.
@@ -2066,8 +2067,8 @@ class EDT:
         return f"{self._dt}"
 
     def __repr__(self) -> str:
-        return f"<EDT for '{self.dts_path}', binding directories " \
-            f"'{self.bindings_dirs}'>"
+        return (f"<EDT for '{self.dts_path}', binding directories "
+                f"'{self.bindings_dirs}'>")
 
     def __deepcopy__(self, memo) -> 'EDT':
         """
@@ -2493,12 +2494,12 @@ def _check_include_dict(name: Optional[str],
 
     while child_filter is not None:
         child_copy = deepcopy(child_filter)
-        child_allowlist: Optional[List[str]] = \
-            child_copy.pop('property-allowlist', None)
-        child_blocklist: Optional[List[str]] = \
-            child_copy.pop('property-blocklist', None)
-        next_child_filter: Optional[dict] = \
-            child_copy.pop('child-binding', None)
+        child_allowlist: Optional[List[str]] = (
+            child_copy.pop('property-allowlist', None))
+        child_blocklist: Optional[List[str]] = (
+            child_copy.pop('property-blocklist', None))
+        next_child_filter: Optional[dict] = (
+            child_copy.pop('child-binding', None))
 
         if child_copy:
             # We've popped out all the valid keys.
@@ -2595,8 +2596,8 @@ def _merge_props(to_dict: dict,
     # These are used to generate errors for sketchy property overwrites.
 
     for prop in from_dict:
-        if isinstance(to_dict.get(prop), dict) and \
-           isinstance(from_dict[prop], dict):
+        if (isinstance(to_dict.get(prop), dict)
+            and isinstance(from_dict[prop], dict)):
             _merge_props(to_dict[prop], from_dict[prop], prop, binding_path,
                          check_required)
         elif prop not in to_dict:
@@ -2709,8 +2710,8 @@ def _check_prop_by_type(prop_name: str,
         # If you change this, be sure to update the type annotation for
         # PropertySpec.default.
 
-        if prop_type == "int" and isinstance(default, int) or \
-           prop_type == "string" and isinstance(default, str):
+        if (prop_type == "int" and isinstance(default, int)
+            or prop_type == "string" and isinstance(default, str)):
             return True
 
         # array, uint8-array, or string-array
@@ -2718,12 +2719,13 @@ def _check_prop_by_type(prop_name: str,
         if not isinstance(default, list):
             return False
 
-        if prop_type == "array" and \
-           all(isinstance(val, int) for val in default):
+        if (prop_type == "array"
+            and all(isinstance(val, int) for val in default)):
             return True
 
-        if prop_type == "uint8-array" and \
-           all(isinstance(val, int) and 0 <= val <= 255 for val in default):
+        if (prop_type == "uint8-array"
+            and all(isinstance(val, int)
+                    and 0 <= val <= 255 for val in default)):
             return True
 
         # string-array
