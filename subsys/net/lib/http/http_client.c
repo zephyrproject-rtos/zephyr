@@ -218,11 +218,16 @@ static int on_header_field(struct http_parser *parser, const char *at,
 						struct http_request,
 						internal.parser);
 	const char *content_len = "Content-Length";
-	uint16_t len;
+	const char *content_range = "Content-Range";
 
-	len = strlen(content_len);
-	if (length >= len && strncasecmp(at, content_len, len) == 0) {
+	uint16_t content_len_len = strlen(content_len);
+	uint16_t content_range_len = strlen(content_range);
+
+	if (length >= content_len_len && strncasecmp(at, content_len, content_len_len) == 0) {
 		req->internal.response.cl_present = true;
+	} else if (length >= content_range_len &&
+		   strncasecmp(at, content_range, content_range_len) == 0) {
+		req->internal.response.cr_present = true;
 	}
 
 	print_header_field(length, at);
@@ -262,6 +267,13 @@ static int on_header_value(struct http_parser *parser, const char *at,
 		}
 
 		req->internal.response.cl_present = false;
+	}
+
+	if (req->internal.response.cr_present) {
+		req->internal.response.content_range.start = parser->content_range.start;
+		req->internal.response.content_range.end = parser->content_range.end;
+		req->internal.response.content_range.total = parser->content_range.total;
+		req->internal.response.cr_present = false;
 	}
 
 	if (req->internal.response.http_cb &&
