@@ -96,6 +96,7 @@ class Patch(WestCommand):
             help="Directory containing patch files",
             metavar="DIR",
             default=_WEST_MANIFEST_DIR / WEST_PATCH_BASE,
+            type=Path,
         )
         parser.add_argument(
             "-l",
@@ -103,6 +104,7 @@ class Patch(WestCommand):
             help="Path to patches.yml file",
             metavar="FILE",
             default=_WEST_MANIFEST_DIR / WEST_PATCH_YAML,
+            type=Path,
         )
         parser.add_argument(
             "-w",
@@ -110,6 +112,7 @@ class Patch(WestCommand):
             help="West workspace",
             metavar="DIR",
             default=_WEST_TOPDIR,
+            type=Path,
         )
 
         subparsers = parser.add_subparsers(
