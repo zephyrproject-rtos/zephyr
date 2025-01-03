@@ -276,6 +276,18 @@ finds in the configuration phase, like this:
 
    -- Found devicetree overlay: .../some/file.overlay
 
+Additional directories containing devicetree overlay files can also be added
+by appending to the ``BOARD_EXTENSION_DIRS`` CMake variable in the application
+:file:`CMakeLists.txt` file. Make sure to do so **before** pulling in the
+Zephyr boilerplate with ``find_package(Zephyr ...)``.
+
+.. note::
+
+   When specifying ``BOARD_EXTENSION_DIRS`` in a CMakeLists.txt, then an absolute path must
+   be provided, for example ``list(APPEND BOARD_EXTENSION_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/<extension-dir>``.
+   When using ``-DBOARD_EXTENSION_DIRS=<extension-dir>`` both absolute and relative paths can be
+   used. Relative paths are treated relatively to the application directory.
+
 .. _use-dt-overlays:
 
 Use devicetree overlays
