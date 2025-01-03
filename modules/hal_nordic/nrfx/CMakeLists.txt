@@ -183,7 +183,10 @@ if(DEFINED uicr_path)
 endif()
 
 if(CONFIG_SOC_NRF54L_CPUAPP_COMMON)
-	dt_prop(clock_frequency PATH "/cpus/cpu@0" PROPERTY "clock-frequency")
+	# Ideally, hfpll should taken as a phandle from clocks property from cpu but it
+	# seems that there is no such option in DT cmake functions. Assuming that nrf54l
+	# is using hfpll as CPU clock source (true for all existing devices).
+	dt_prop(clock_frequency PATH "/clocks/hfpll" PROPERTY "clock-frequency")
 	math(EXPR clock_frequency_mhz "${clock_frequency} / 1000000")
 	zephyr_compile_definitions("NRF_CONFIG_CPU_FREQ_MHZ=${clock_frequency_mhz}")
 endif()
