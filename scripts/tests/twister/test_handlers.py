@@ -25,7 +25,7 @@ import twisterlib.harness
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 
-from twisterlib.error import TwisterException
+from pylib.twister.twisterlib.error import TwisterException
 from twisterlib.statuses import TwisterStatus
 from twisterlib.handlers import (
     Handler,

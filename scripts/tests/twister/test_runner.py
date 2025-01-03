@@ -24,8 +24,8 @@ from typing import List
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
+from pylib.twister.twisterlib.error import BuildError
 from twisterlib.statuses import TwisterStatus
-from twisterlib.error import BuildError
 from twisterlib.harness import Pytest
 
 from twisterlib.runner import (
