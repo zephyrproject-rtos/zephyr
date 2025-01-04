@@ -1,0 +1,64 @@
+/*
+ * Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/tcc/tcc70xx.dtsi>
+#include <arm/tcc/tcc7045.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "tcc,topst_vcc45";
+	model = "TOPST VCP45 Cortex-R5";
+
+	aliases {
+		led0 = &led_act;
+	};
+
+	chosen {
+		zephyr,sram = &ram_dlm;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_act: led-act {
+			gpios = <&gio_aon 6 GPIO_ACTIVE_HIGH>;
+			label = "ACT";
+		};
+	};
+
+};
+
+&flash0 {
+	status = "okay";
+};
+
+&gio_aon {
+	status = "okay";
+};
+
+&sysclk {
+	status = "okay";
+};
+
+&tic {
+	status = "okay";
+};
+
+&systick_timer {
+	status = "okay";
+	clock-frequency = <12000000>;
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <48000000>;
+};
