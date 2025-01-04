@@ -413,6 +413,13 @@ static int dma_sam0_init(const struct device *dev)
 	PM->APBBMASK.bit.DMAC_ = 1;
 #endif
 
+	/* Reset the DMA controller */
+	DMAC->CTRL.bit.DMAENABLE = 0;
+	DMAC->CTRL.bit.CRCENABLE = 0;
+	DMAC->CTRL.bit.SWRST = 1;
+	while (DMAC->CTRL.bit.SWRST) {
+	}
+
 	/* Set up the descriptor and write back addresses */
 	DMA_REGS->BASEADDR.reg = (uintptr_t)&data->descriptors;
 	DMA_REGS->WRBADDR.reg = (uintptr_t)&data->descriptors_wb;
