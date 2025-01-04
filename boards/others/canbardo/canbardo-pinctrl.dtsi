@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/same70n-pinctrl.h>
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <PA5C_UART1_RXD>,
+				 <PA4C_UART1_TXD>;
+		};
+	};
+
+	can0_default: can0_default {
+		group1 {
+			pinmux = <PB3A_CAN0_RX>,
+				 <PB2A_CAN0_TX>;
+		};
+	};
+
+	can1_default: can1_default {
+		group1 {
+			pinmux = <PD28B_CAN1_RX>,
+				 <PD12B_CAN1_TX>;
+		};
+	};
+};
