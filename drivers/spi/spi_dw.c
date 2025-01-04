@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(spi_dw);
 
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 #ifdef CONFIG_IOAPIC
 #include <zephyr/drivers/interrupt_controller/ioapic.h>

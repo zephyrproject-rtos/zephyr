@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/drivers/syscon.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include <zephyr/sys/errno_private.h>
 #include <zephyr/dt-bindings/gpio/renesas-rzt2m-gpio.h>
 #include <soc.h>

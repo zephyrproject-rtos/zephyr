@@ -49,11 +49,6 @@
  */
 #define Z_IS_ENABLED3(ignore_this, val, ...) val
 
-/* Implementation of IS_EQ(). Returns 1 if _0 and _1 are the same integer from
- * 0 to 4096, 0 otherwise.
- */
-#define Z_IS_EQ(_0, _1) Z_HAS_COMMA(Z_CAT4(Z_IS_, _0, _EQ_, _1)())
-
 /* Used internally by COND_CODE_1 and COND_CODE_0. */
 #define Z_COND_CODE_1(_flag, _if_1_code, _else_code) \
 	__COND_CODE(_XXXX##_flag, _if_1_code, _else_code)
@@ -124,12 +119,11 @@
 #define _CONCAT_5(arg, ...) UTIL_CAT(arg, _CONCAT_4(__VA_ARGS__))
 #define _CONCAT_6(arg, ...) UTIL_CAT(arg, _CONCAT_5(__VA_ARGS__))
 #define _CONCAT_7(arg, ...) UTIL_CAT(arg, _CONCAT_6(__VA_ARGS__))
-#define _CONCAT_8(arg, ...) UTIL_CAT(arg, _CONCAT_7(__VA_ARGS__))
-#define _CONCAT_9(arg, ...) UTIL_CAT(arg, _CONCAT_8(__VA_ARGS__))
+#define _CONCAT_8(arg, ...)  UTIL_CAT(arg, _CONCAT_7(__VA_ARGS__))
+#define _CONCAT_9(arg, ...)  UTIL_CAT(arg, _CONCAT_8(__VA_ARGS__))
 #define _CONCAT_10(arg, ...) UTIL_CAT(arg, _CONCAT_9(__VA_ARGS__))
 #define _CONCAT_11(arg, ...) UTIL_CAT(arg, _CONCAT_10(__VA_ARGS__))
 #define _CONCAT_12(arg, ...) UTIL_CAT(arg, _CONCAT_11(__VA_ARGS__))
-
 
 /* Implementation details for NUM_VA_ARGS_LESS_1 */
 #define NUM_VA_ARGS_LESS_1_IMPL(				\
@@ -164,9 +158,6 @@
 #define MACRO_MC_14(m, a, ...) UTIL_CAT(m(a), MACRO_MC_13(m, __VA_ARGS__,))
 #define MACRO_MC_15(m, a, ...) UTIL_CAT(m(a), MACRO_MC_14(m, __VA_ARGS__,))
 
-/* Used by Z_IS_EQ */
-#include "util_internal_is_eq.h"
-
 /*
  * Generic sparse list of odd numbers (check the implementation of
  * GPIO_DT_RESERVED_RANGES_NGPIOS as a usage example)
@@ -195,14 +186,141 @@
 	48, EMPTY, 50, EMPTY, 52, EMPTY, 54, EMPTY, \
 	56, EMPTY, 58, EMPTY, 60, EMPTY, 62, EMPTY
 
-/* Used by UTIL_INC */
-#include "util_internal_util_inc.h"
+#define Z_UTIL_INC_0  1
+#define Z_UTIL_INC_1  2
+#define Z_UTIL_INC_2  3
+#define Z_UTIL_INC_3  4
+#define Z_UTIL_INC_4  5
+#define Z_UTIL_INC_5  6
+#define Z_UTIL_INC_6  7
+#define Z_UTIL_INC_7  8
+#define Z_UTIL_INC_8  9
+#define Z_UTIL_INC_9  10
+#define Z_UTIL_INC_10 11
+#define Z_UTIL_INC_11 12
+#define Z_UTIL_INC_12 13
+#define Z_UTIL_INC_13 14
+#define Z_UTIL_INC_14 15
+#define Z_UTIL_INC_15 16
+#define Z_UTIL_INC_16 17
+#define Z_UTIL_INC_17 18
+#define Z_UTIL_INC_18 19
+#define Z_UTIL_INC_19 20
+#define Z_UTIL_INC_20 21
+#define Z_UTIL_INC_21 22
+#define Z_UTIL_INC_22 23
+#define Z_UTIL_INC_23 24
+#define Z_UTIL_INC_24 25
+#define Z_UTIL_INC_25 26
+#define Z_UTIL_INC_26 27
+#define Z_UTIL_INC_27 28
+#define Z_UTIL_INC_28 29
+#define Z_UTIL_INC_29 30
+#define Z_UTIL_INC_30 31
+#define Z_UTIL_INC_31 32
+#define Z_UTIL_INC_32 33
+#define Z_UTIL_INC_33 34
+#define Z_UTIL_INC_34 35
+#define Z_UTIL_INC_35 36
+#define Z_UTIL_INC_36 37
+#define Z_UTIL_INC_37 38
+#define Z_UTIL_INC_38 39
+#define Z_UTIL_INC_39 40
+#define Z_UTIL_INC_40 41
+#define Z_UTIL_INC_41 42
+#define Z_UTIL_INC_42 43
+#define Z_UTIL_INC_43 44
+#define Z_UTIL_INC_44 45
+#define Z_UTIL_INC_45 46
+#define Z_UTIL_INC_46 47
+#define Z_UTIL_INC_47 48
+#define Z_UTIL_INC_48 49
+#define Z_UTIL_INC_49 50
+#define Z_UTIL_INC_50 51
+#define Z_UTIL_INC_51 52
+#define Z_UTIL_INC_52 53
+#define Z_UTIL_INC_53 54
+#define Z_UTIL_INC_54 55
+#define Z_UTIL_INC_55 56
+#define Z_UTIL_INC_56 57
+#define Z_UTIL_INC_57 58
+#define Z_UTIL_INC_58 59
+#define Z_UTIL_INC_59 60
+#define Z_UTIL_INC_60 61
+#define Z_UTIL_INC_61 62
+#define Z_UTIL_INC_62 63
+#define Z_UTIL_INC_63 64
+#define Z_UTIL_INC_64 65
 
-/* Used by UTIL_DEC */
-#include "util_internal_util_dec.h"
+#define Z_UTIL_INC(x) UTIL_PRIMITIVE_CAT(Z_UTIL_INC_, x)
 
-/* Used by UTIL_X2 */
-#include "util_internal_util_x2.h"
+#define Z_UTIL_DEC_0  0
+#define Z_UTIL_DEC_1  0
+#define Z_UTIL_DEC_2  1
+#define Z_UTIL_DEC_3  2
+#define Z_UTIL_DEC_4  3
+#define Z_UTIL_DEC_5  4
+#define Z_UTIL_DEC_6  5
+#define Z_UTIL_DEC_7  6
+#define Z_UTIL_DEC_8  7
+#define Z_UTIL_DEC_9  8
+#define Z_UTIL_DEC_10 9
+#define Z_UTIL_DEC_11 10
+#define Z_UTIL_DEC_12 11
+#define Z_UTIL_DEC_13 12
+#define Z_UTIL_DEC_14 13
+#define Z_UTIL_DEC_15 14
+#define Z_UTIL_DEC_16 15
+#define Z_UTIL_DEC_17 16
+#define Z_UTIL_DEC_18 17
+#define Z_UTIL_DEC_19 18
+#define Z_UTIL_DEC_20 19
+#define Z_UTIL_DEC_21 20
+#define Z_UTIL_DEC_22 21
+#define Z_UTIL_DEC_23 22
+#define Z_UTIL_DEC_24 23
+#define Z_UTIL_DEC_25 24
+#define Z_UTIL_DEC_26 25
+#define Z_UTIL_DEC_27 26
+#define Z_UTIL_DEC_28 27
+#define Z_UTIL_DEC_29 28
+#define Z_UTIL_DEC_30 29
+#define Z_UTIL_DEC_31 30
+#define Z_UTIL_DEC_32 31
+#define Z_UTIL_DEC_33 32
+#define Z_UTIL_DEC_34 33
+#define Z_UTIL_DEC_35 34
+#define Z_UTIL_DEC_36 35
+#define Z_UTIL_DEC_37 36
+#define Z_UTIL_DEC_38 37
+#define Z_UTIL_DEC_39 38
+#define Z_UTIL_DEC_40 39
+#define Z_UTIL_DEC_41 40
+#define Z_UTIL_DEC_42 41
+#define Z_UTIL_DEC_43 42
+#define Z_UTIL_DEC_44 43
+#define Z_UTIL_DEC_45 44
+#define Z_UTIL_DEC_46 45
+#define Z_UTIL_DEC_47 46
+#define Z_UTIL_DEC_48 47
+#define Z_UTIL_DEC_49 48
+#define Z_UTIL_DEC_50 49
+#define Z_UTIL_DEC_51 50
+#define Z_UTIL_DEC_52 51
+#define Z_UTIL_DEC_53 52
+#define Z_UTIL_DEC_54 53
+#define Z_UTIL_DEC_55 54
+#define Z_UTIL_DEC_56 55
+#define Z_UTIL_DEC_57 56
+#define Z_UTIL_DEC_58 57
+#define Z_UTIL_DEC_59 58
+#define Z_UTIL_DEC_60 59
+#define Z_UTIL_DEC_61 60
+#define Z_UTIL_DEC_62 61
+#define Z_UTIL_DEC_63 62
+#define Z_UTIL_DEC_64 63
+
+#define Z_UTIL_DEC(x) UTIL_PRIMITIVE_CAT(Z_UTIL_DEC_, x)
 
 #define Z_UTIL_INC(x) UTIL_PRIMITIVE_CAT(Z_UTIL_INC_, x)
 

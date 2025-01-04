@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include <soc.h>
 #include <fsl_ftm.h>
 #include <fsl_clock.h>

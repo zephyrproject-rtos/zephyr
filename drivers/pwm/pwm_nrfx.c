@@ -14,6 +14,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/sys/util_macro_expr.h>
 #ifdef CONFIG_SOC_NRF54H20_GPD
 #include <nrf/gpd.h>
 #endif

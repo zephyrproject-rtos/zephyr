@@ -18,6 +18,7 @@ extern "C" {
 
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 /**
  * @defgroup devicetree-interrupt_controller Devicetree Interrupt Controller API
