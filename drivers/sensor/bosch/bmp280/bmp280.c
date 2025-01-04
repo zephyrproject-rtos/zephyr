@@ -1,6 +1,6 @@
 /* Bosch BMP280 pressure sensor
  *
- * Copyright (c) 2023 Russ Webber
+ * Copyright (c) 2025 Sentry Robotics
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -47,110 +47,14 @@ static int bmp280_byte_write_i2c(const struct device *dev,
 	return i2c_reg_write_byte_dt(&cfg->i2c, reg, byte);
 }
 
-#ifdef CONFIG_BMP280_ODR_RUNTIME
-static int bmp280_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
-{
-	// size_t i;
-
-	// /* An ODR of 0 Hz is not allowed */
-	// if (freq_int == 0U && freq_milli == 0U) {
-	// 	return -EINVAL;
-	// }
-
-	// for (i = 0; i < ARRAY_SIZE(bmp280_odr_map); i++) {
-	// 	if (freq_int < bmp280_odr_map[i].freq_int ||
-	// 	    (freq_int == bmp280_odr_map[i].freq_int &&
-	// 	     freq_milli <= bmp280_odr_map[i].freq_milli)) {
-	// 		return (ARRAY_SIZE(bmp280_odr_map) - 1) - i;
-	// 	}
-	// }
-
-	return -EINVAL;
-}
-
-static int bmp280_attr_set_odr(const struct device *dev,
-			       uint16_t freq_int,
-			       uint16_t freq_milli)
-{
-	int err;
-	// struct bmp280_data *data = dev->data;
-	// int odr = bmp280_freq_to_odr_val(freq_int, freq_milli);
-
-	// if (odr < 0) {
-	// 	return odr;
-	// }
-
-	// // err = bmp280_reg_field_update_i2c(dev,
-	// // 			      BMP280_REG_ODR,
-	// // 			      BMP280_ODR_MASK,
-	// // 			      (uint8_t)odr);
-	// if (err == 0) {
-	// 	data->odr = odr;
-	// }
-
-	return err;
-}
-#endif
-
-#ifdef CONFIG_BMP280_OSR_RUNTIME
-static int bmp280_attr_set_oversampling(const struct device *dev,
-					enum sensor_channel chan,
-					uint16_t val)
-{
-	// uint8_t reg_val = 0;
-	// uint32_t pos, mask;
-	int err;
-
-	// struct bmp280_data *data = dev->data;
-
-	// /* Value must be a positive power of 2 <= 32. */
-	// if ((val <= 0) || (val > 32) || ((val & (val - 1)) != 0)) {
-	// 	return -EINVAL;
-	// }
-
-	// if (chan == SENSOR_CHAN_PRESS) {
-	// 	pos = BMP280_OSR_PRESSURE_POS;
-	// 	mask = BMP280_OSR_PRESSURE_MASK;
-	// } else if ((chan == SENSOR_CHAN_AMBIENT_TEMP) ||
-	// 	   (chan == SENSOR_CHAN_DIE_TEMP)) {
-	// 	pos = BMP280_OSR_TEMP_POS;
-	// 	mask = BMP280_OSR_TEMP_MASK;
-	// } else {
-	// 	return -EINVAL;
-	// }
-
-	// /* Determine exponent: this corresponds to register setting. */
-	// while ((val % 2) == 0) {
-	// 	val >>= 1;
-	// 	++reg_val;
-	// }
-
-	// // err = bmp280_reg_field_update_i2c(dev,
-	// // 			      BMP280_REG_OSR,
-	// // 			      mask,
-	// // 			      reg_val << pos);
-	// if (err < 0) {
-	// 	return err;
-	// }
-
-	// /* Store for future use in converting RAW values. */
-	// // if (chan == SENSOR_CHAN_PRESS) {
-	// // 	data->osr_pressure = reg_val;
-	// // } else {
-	// // 	data->osr_temp = reg_val;
-	// // }
-
-	return err;
-}
-#endif
-
 static int bmp280_attr_set(const struct device *dev,
 			   enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	int ret;
+	int ret = -ENOTSUP;
 
+/*
 	switch (attr) {
 #ifdef CONFIG_BMP280_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
@@ -167,6 +71,8 @@ static int bmp280_attr_set(const struct device *dev,
 	default:
 		ret = -ENOTSUP;
 	}
+
+ */
 
 	return ret;
 }
@@ -194,6 +100,7 @@ static int bmp280_sample_fetch(const struct device *dev,
 		return -EIO;
 	}
 
+	bmp280->sample.ready = false;
 	ctrl_meas->power_mode = BMP280_PWR_CTRL_MODE_FORCED;
 
 	if (bmp280_byte_write_i2c(dev, BMP280_REG_CTRL_MEAS, *(uint8_t*)ctrl_meas) < 0) {
@@ -201,7 +108,7 @@ static int bmp280_sample_fetch(const struct device *dev,
 		return -EIO;
 	}
 
-	k_sleep(K_MSEC(20));
+	k_busy_wait(bmp280->measurement_time * 1000);
 
 	if (bmp280_byte_read_i2c(dev, BMP280_REG_STATUS, &status) < 0) {
 		LOG_ERR("Failed to read STATUS byte");
@@ -228,13 +135,14 @@ static int bmp280_sample_fetch(const struct device *dev,
 	bmp280->sample.raw_pressure = bmp280_get_be20(&raw[BMP280_SAMPLE_PRESSURE_POS]);
 	bmp280->sample.raw_temp = bmp280_get_be20(&raw[BMP280_SAMPLE_TEMPERATURE_POS]);
 	bmp280->sample.temp_fine = 0;
+	bmp280->sample.ready = true;
 	return ret;
 }
 
 static int32_t bmp280_compensate_temp(struct bmp280_data *data)
 {
 	/* Adapted from:
-	 * https://github.com/boschsensortec/BMP280_driver/blob/master/bmp280.c
+	 * https://github.com/boschsensortec/BME280_SensorAPI/blob/master/bme280.c
 	 */
 
 	struct bmp280_cal_data *cal = &data->cal;
@@ -242,7 +150,7 @@ static int32_t bmp280_compensate_temp(struct bmp280_data *data)
 
 	raw_temp = data->sample.raw_temp;
 
-	tmp1 = ((((raw_temp / 8) - ((int32_t) cal->t1 << 1))) * ((int32_t) cal->t2)) /
+	tmp1 = (((raw_temp / 8) - ((int32_t) cal->t1 << 1))) * (int32_t) cal->t2 /
 		2048;
 	tmp2 = (((((raw_temp / 16) - ((int32_t) cal->t1)) *
 			((raw_temp / 16) - ((int32_t) cal->t1))) / 4096) *
@@ -258,6 +166,11 @@ static int bmp280_temp_channel_get(const struct device *dev,
 {
 	struct bmp280_data *data = dev->data;
 
+	if (!data->sample.ready) {
+		LOG_ERR("No temperature sample available.");
+		return -EIO;
+	}
+
 	/* tmp is in 1/100 deg C */
 	int64_t tmp = bmp280_compensate_temp(data);
 	val->val1 = tmp / 100;
@@ -269,10 +182,10 @@ static int bmp280_temp_channel_get(const struct device *dev,
 static uint64_t bmp280_compensate_press(struct bmp280_data *data)
 {
 	/* Adapted from:
-	 * https://github.com/boschsensortec/BMP280_driver/blob/master/bmp280.c
+	 * https://github.com/boschsensortec/BME280_SensorAPI/blob/master/bme280.c
 	 */
 
-    int64_t tmp1, tmp2, comp_press;
+	int64_t tmp1, tmp2, comp_press;
 
 	struct bmp280_cal_data *cal = &data->cal;
 
@@ -304,6 +217,11 @@ static int bmp280_press_channel_get(const struct device *dev,
 {
 	struct bmp280_data *data = dev->data;
 
+	if (!data->sample.ready) {
+		LOG_ERR("No pressure sample available.");
+		return -EIO;
+	}
+
 	if (data->sample.temp_fine == 0) {
 		bmp280_compensate_temp(data);
 	}
@@ -312,7 +230,7 @@ static int bmp280_press_channel_get(const struct device *dev,
 
 	/* tmp is in 1/256 Pa. Convert to kPa as specified in sensor interface. */
 	val->val1 = tmp / (256 * 1000);
-	val->val2 = (tmp % (256 * 1000)) * 10;
+	val->val2 = tmp % (256 * 1000) * 10;
 
 	return 0;
 }
@@ -321,14 +239,15 @@ static int bmp280_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
+	int ret;
 	switch (chan) {
 		case SENSOR_CHAN_PRESS:
-			bmp280_press_channel_get(dev, val);
+			ret = bmp280_press_channel_get(dev, val);
 			break;
 
 		case SENSOR_CHAN_DIE_TEMP:
 		case SENSOR_CHAN_AMBIENT_TEMP:
-			bmp280_temp_channel_get(dev, val);
+			ret = bmp280_temp_channel_get(dev, val);
 			break;
 
 		default:
@@ -336,7 +255,7 @@ static int bmp280_channel_get(const struct device *dev,
 			return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int bmp280_get_compensation_params(const struct device *dev)
@@ -425,11 +344,12 @@ static int bmp280_init(const struct device *dev)
 
 	/* Enable normal mode */
 	// ctrl_meas->power_mode = BMP280_PWR_CTRL_MODE_NORMAL;
-
-	if (bmp280_byte_write_i2c(dev, BMP280_REG_CTRL_MEAS, *(uint8_t*)ctrl_meas) < 0) {
-		LOG_ERR("Cannot write CTRL_MEAS.");
-		return -EIO;
-	}
+	// ctrl_meas->power_mode = BMP280_PWR_CTRL_MODE_FORCED;
+	//
+	// if (bmp280_byte_write_i2c(dev, BMP280_REG_CTRL_MEAS, *(uint8_t*)ctrl_meas) < 0) {
+	// 	LOG_ERR("Cannot write CTRL_MEAS.");
+	// 	return -EIO;
+	// }
 
 	return 0;
 }
@@ -440,25 +360,25 @@ static const struct sensor_driver_api bmp280_api = {
 	.channel_get = bmp280_channel_get,
 };
 
-// DT_INST_ENUM(inst, osr_press)
 
 #define BMP280_INST(inst)						   \
 	static struct bmp280_data bmp280_data_##inst = {		   \
-		.odr = DT_INST_ENUM_IDX(inst, odr),			\
-		.ctrl_meas = { \
+		.measurement_time = BMP280_MEASUREMENT_TIME[DT_INST_ENUM_IDX(inst, osr_pressure)],	        \
+		.ctrl_meas = { 											\
 			.os_res_pressure = BMP280_OSRS[DT_INST_ENUM_IDX(inst, osr_pressure)],			\
 			.os_res_temp = BMP280_OSRS[DT_INST_ENUM_IDX(inst, osr_temperature)] },			\
-		.config_byte = { \
-			.iir_filter = 0,			\
-			.t_standby = DT_INST_ENUM_IDX(inst, odr) }			\
+		.config_byte = { 										\
+			.iir_filter = BMP280_IIR_COEFF[DT_INST_ENUM_IDX(inst, iir_filter)],			\
+			.standby_time = BMP280_STANDBY_TIME[DT_INST_ENUM_IDX(inst, standby_time)] },		\
+			.sample = { .ready = false },							        \
 	};								   \
 	static const struct bmp280_config bmp280_config_##inst = {	   \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					   \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),			   \
 	};								   \
 	DEVICE_DT_INST_DEFINE(						   \
 		inst,							   \
 		bmp280_init,						   \
-		NULL,						   \
+		NULL,						           \
 		&bmp280_data_##inst,					   \
 		&bmp280_config_##inst,					   \
 		POST_KERNEL,						   \

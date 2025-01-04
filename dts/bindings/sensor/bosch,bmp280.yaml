@@ -1,8 +1,8 @@
-# Copyright (c) 2023 Russ Webber
+# Copyright (c) 2025 Sentry Robotics
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Bosch BMA280 Pressure sensor.  See more info at:
+  Bosch BMP280 Pressure sensor.  See more info at:
   https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp280/
 
 compatible: "bosch,bmp280"
@@ -34,19 +34,38 @@ properties:
         - "0.5"
         - "0.25"
 
+    standby-time:
+        type: string
+        required: false
+        description: |
+            Default standby time in ms. Only the following values are allowed:
+            0.5   - 0.5ms  (default; chip reset value)
+            62.5  - 62.5ms
+            125   - 125ms
+            250   - 250ms
+            500   - 500ms
+            1000  - 1000ms
+            2000  - 2000ms
+            4000  - 4000ms
+        default: "0.5"
+        enum:
+            - "0.5"
+            - "62.5"
+            - "125"
+            - "250"
+            - "500"
+            - "1000"
+            - "2000"
+            - "4000"
+
     osr-pressure:
       type: int
       required: false
       description: |
-        Pressure oversampling rate. Only the following values are
-        allowed:
-          1 sample, 16-bit, 2.64 Pa
-          2 samples, 17-bit, 1.31 Pa
-          4 samples, 18-bit, 0.66 Pa (default; chip reset value)
-          8 samples, 19-bit, 0.33 Pa
-          16 samples, 20-bit, 0.16 Pa
+        Pressure oversampling rate. To skip pressure measurement, set to 0.
       default: 4
       enum:
+        - 0
         - 1
         - 2
         - 4
@@ -57,15 +76,10 @@ properties:
       type: int
       required: false
       description: |
-        Temperature oversampling rate. Only the following values are
-        allowed:
-          1 sample, 16-bit, .0050 C (default; chip reset value)
-          2 samples, 17-bit, .0025 C
-          4 samples, 18-bit, .0012 C
-          8 samples, 19-bit, .0006 C
-          16 samples, 20-bit, .0003 C
+        Temperature oversampling rate. To skip temperature measurement, set to 0.
       default: 1
       enum:
+        - 0
         - 1
         - 2
         - 4

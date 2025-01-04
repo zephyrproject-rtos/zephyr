@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Russ Webber
+# Copyright (c) 2025 Sentry Robotics
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BMP280
@@ -10,13 +10,5 @@ menuconfig BMP280
 	  Enable driver for the Bosch BMP280 pressure sensor
 
 if BMP280
-
-config BMP280_ODR_RUNTIME
-	bool "Change ODR at runtime."
-	default y
-
-config BMP280_OSR_RUNTIME
-	bool "Change OSR at runtime."
-	default y
 
 endif # BMP280

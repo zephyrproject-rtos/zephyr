@@ -1,6 +1,6 @@
 /* Bosch BMP280 Pressure Sensor
  *
- * Copyright (c) 2023 Russ Webber
+ * Copyright (c) 2025 Sentry Robotics
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -21,7 +21,7 @@
 #define BMP280_REG_CONFIG		0xF5
 #define BMP280_REG_RAW_PRESSURE		0xF7
 #define BMP280_REG_RAW_TEMP		0xFA
-#define BMP280_REG_COMPENSATION_PARAMS		0x88
+#define BMP280_REG_COMPENSATION_PARAMS	0x88
 
 #define BMP280_PWR_CTRL_MODE_SLEEP		0x0
 #define BMP280_PWR_CTRL_MODE_FORCED		0x1
@@ -34,13 +34,22 @@
 #define BMP280_STATUS_MEASURING		BIT(3)
 #define BMP280_STATUS_IM_UPDATE		BIT(0)
 
-/* Oversampling resolution {1x, 2x, 4x, 8x, 16x} */
-// #define BMP280_OSRS		{0x01, 0x02, 0x03, 0x04, 0x05}
-const uint8_t BMP280_OSRS[] = {0x01, 0x02, 0x03, 0x04, 0x05};
+/* Oversampling resolution {Skipped, 1x, 2x, 4x, 8x, 16x} */
+const uint8_t BMP280_OSRS[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+
+/* IIR filter coefficients {Off, 2, 4, 8, 16} */
+const uint8_t BMP280_IIR_COEFF[] = {0x00, 0x01, 0x02, 0x03, 0x04};
+
+/* Measurement time is based on oversampling resolution, in milliseconds */
+const uint8_t BMP280_MEASUREMENT_TIME[] = {6, 8, 12, 20, 38};
+
+/* Standby time in milliseconds {0, 62.5, 125, 250, 500, 1000, 2000, 4000} */
+const uint8_t BMP280_STANDBY_TIME[] = {0x0, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
 
 #define BMP280_CMD_SOFT_RESET 0xB6
 
 struct bmp280_sample {
+	bool ready;
 	uint32_t raw_pressure;
 	uint32_t raw_temp;
 	int64_t temp_fine;
@@ -71,7 +80,7 @@ struct bmp280_config_byte {
 	uint8_t spi_3wire : 1;
 	uint8_t reserved : 1;
 	uint8_t iir_filter : 3;
-	uint8_t t_standby : 3;
+	uint8_t standby_time : 3;
 } __packed;
 
 struct bmp280_config {
@@ -79,7 +88,7 @@ struct bmp280_config {
 };
 
 struct bmp280_data {
-	uint8_t odr;
+	uint16_t measurement_time;
 	struct bmp280_cal_data cal;
 	struct bmp280_sample sample;
 	struct bmp280_ctrl_meas ctrl_meas;
