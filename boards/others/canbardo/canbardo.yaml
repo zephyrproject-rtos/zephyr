@@ -1,0 +1,18 @@
+# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: canbardo/same70n20b
+name: CANbardo
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+flash: 1024
+ram: 384
+supported:
+  - can
+  - gpio
+  - usb
+  - usb_device
+vendor: others
