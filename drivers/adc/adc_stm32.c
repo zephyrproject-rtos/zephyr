@@ -21,6 +21,7 @@
 #include <soc.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include <stm32_ll_adc.h>
 #include <stm32_ll_system.h>
 #if defined(CONFIG_SOC_SERIES_STM32N6X) || \

@@ -20,6 +20,7 @@
 #include <stm32_ll_system.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h> /* For STM32L0 series */
 #include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
