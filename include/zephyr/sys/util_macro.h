@@ -401,6 +401,16 @@ extern "C" {
 #define GET_ARGS_LESS_N(N, ...) Z_GET_ARGS_LESS_##N(__VA_ARGS__)
 
 /**
+ * @brief Get the first N arguments from the argument list.
+ *
+ * @param N Number of arguments to take.
+ * @param ... Variable list of arguments.
+ *
+ * @return argument list only contains first N arguments.
+ */
+#define GET_ARGS_FIRST_N(N, ...) Z_GET_ARGS_FIRST_##N(__VA_ARGS__)
+
+/**
  * @brief Like <tt>a || b</tt>, but does evaluation and
  * short-circuiting at C preprocessor time.
  *
