@@ -301,27 +301,6 @@ extern "C" {
 #define IS_EMPTY(...) Z_IS_EMPTY_(__VA_ARGS__)
 
 /**
- * @brief Like <tt>a == b</tt>, but does evaluation and
- * short-circuiting at C preprocessor time.
- *
- * This however only works for integer literal from 0 to 4096 (literals with U suffix,
- * e.g. 0U are also included).
- *
- * Examples:
- *
- *   IS_EQ(1, 1)   -> 1
- *   IS_EQ(1U, 1U) -> 1
- *   IS_EQ(1U, 1)  -> 1
- *   IS_EQ(1, 1U)  -> 1
- *   IS_EQ(1, 0)   -> 0
- *
- * @param a Integer literal (can be with U suffix)
- * @param b Integer literal
- *
- */
-#define IS_EQ(a, b) Z_IS_EQ(a, b)
-
-/**
  * @brief Remove empty arguments from list.
  *
  * During macro expansion, `__VA_ARGS__` and other preprocessor
@@ -435,29 +414,6 @@ extern "C" {
  * build error when @p a is 0.
  */
 #define UTIL_AND(a, b) COND_CODE_1(UTIL_BOOL(a), (b), (0))
-
-/**
- * @brief UTIL_INC(x) for an integer literal x from 0 to 4095 expands to an
- * integer literal whose value is x+1.
- *
- * @see UTIL_DEC(x)
- */
-#define UTIL_INC(x) UTIL_PRIMITIVE_CAT(Z_UTIL_INC_, x)
-
-/**
- * @brief UTIL_DEC(x) for an integer literal x from 0 to 4095 expands to an
- * integer literal whose value is x-1.
- *
- * @see UTIL_INC(x)
- */
-#define UTIL_DEC(x) UTIL_PRIMITIVE_CAT(Z_UTIL_DEC_, x)
-
-/**
- * @brief UTIL_X2(y) for an integer literal y from 0 to 4095 expands to an
- * integer literal whose value is 2y.
- */
-#define UTIL_X2(y) UTIL_PRIMITIVE_CAT(Z_UTIL_X2_, y)
-
 
 /**
  * @brief Generates a sequence of code with configurable separator.
@@ -692,7 +648,7 @@ extern "C" {
  * @return  Number of variadic arguments in the argument list
  */
 #define NUM_VA_ARGS(...)                                                                           \
-	COND_CODE_1(IS_EMPTY(__VA_ARGS__), (0), (UTIL_INC(NUM_VA_ARGS_LESS_1(__VA_ARGS__))))
+	COND_CODE_1(IS_EMPTY(__VA_ARGS__), (0), (Z_UTIL_INC(NUM_VA_ARGS_LESS_1(__VA_ARGS__))))
 
 /**
  * @brief Mapping macro that pastes results together

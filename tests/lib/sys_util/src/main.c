@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util_expr.h>
 
 /**
  * @addtogroup sys_util_tests
