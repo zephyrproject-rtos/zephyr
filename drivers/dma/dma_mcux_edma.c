@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/barrier.h>

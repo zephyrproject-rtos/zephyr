@@ -21,6 +21,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
 #include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h>	/* For PORTA/PORTB defines */

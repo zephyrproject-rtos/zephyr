@@ -12,6 +12,7 @@
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util_macro_expr.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mipi_dbi_stm32_fmc, CONFIG_MIPI_DBI_LOG_LEVEL);

@@ -15,6 +15,7 @@
 #include <hal/nrf_uarte.h>
 #include <nrfx_timer.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro_expr.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <soc.h>
