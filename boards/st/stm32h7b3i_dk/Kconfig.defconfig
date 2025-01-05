@@ -25,9 +25,6 @@ config CACHE_MANAGEMENT
 config LV_USE_DRAW_DMA2D
 	default y
 
-config LV_DRAW_DMA2D_HAL_INCLUDE
-	default "stm32h7xx.h"
-
 config STM32_LTDC_FB_NUM
 	default 2
 
