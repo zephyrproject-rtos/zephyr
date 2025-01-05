@@ -4,7 +4,7 @@ sphinx
 sphinx_rtd_theme~=3.0
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
-pygments>=2.9
+pygments>=2.9,!=2.19.0
 sphinx-notfound-page
 sphinx-copybutton
 sphinx-togglebutton
