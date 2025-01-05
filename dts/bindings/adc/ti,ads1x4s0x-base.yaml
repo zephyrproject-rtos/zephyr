@@ -1,0 +1,54 @@
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+bus: ads1x4s0x
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  reset-gpios:
+    type: phandle-array
+    description: "GPIO for reset"
+
+  drdy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for data ready, becomes active when a conversion result is ready
+
+  start-sync-gpios:
+    type: phandle-array
+    description: |
+      GPIO for start/sync, used to signal the ADC that a conversion should be started
+
+  idac-current:
+    type: int
+    enum:
+      - 0
+      - 10
+      - 50
+      - 100
+      - 250
+      - 500
+      - 750
+      - 1000
+      - 1500
+      - 2000
+    default: 0
+    description: |
+      IDAC current in microampere, the default value turns the current source off
+
+  vbias-level:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      bias voltage level: 0 - (AVDD+AVSS)/2, 1 - (AVDD+AVSS)/12
+
+io-channel-cells:
+  - input
