@@ -106,6 +106,9 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE] = "gauge_design_voltage",
 	[SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE] = "gauge_desired_voltage",
 	[SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT] = "gauge_desired_charging_current",
+	[SENSOR_CHAN_GAME_ROTATION_VECTOR] = "game_rotation_vector",
+	[SENSOR_CHAN_GRAVITY_VECTOR] = "gravity_vector",
+	[SENSOR_CHAN_GBIAS_XYZ] = "gbias_xyz",
 	[SENSOR_CHAN_ALL] = "all",
 };
 
@@ -126,6 +129,8 @@ static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_ALERT] = "alert",
 	[SENSOR_ATTR_FF_DUR] = "ff_dur",
 	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
+	[SENSOR_ATTR_GAIN] = "gain",
+	[SENSOR_ATTR_RESOLUTION] = "resolution",
 };
 
 enum sample_stats_state {
