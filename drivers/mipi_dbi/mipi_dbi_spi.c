@@ -33,26 +33,28 @@ struct mipi_dbi_spi_data {
 };
 
 /* Expands to 1 if the node does not have the `write-only` property */
-#define _WRITE_ONLY_ABSENT(n) (!DT_INST_PROP(n, write_only)) |
+#define MIPI_DBI_SPI_WRITE_ONLY_ABSENT(n) (!DT_INST_PROP(n, write_only)) |
 
 /* This macro will evaluate to 1 if any of the nodes with zephyr,mipi-dbi-spi
  * lack a `write-only` property. The intention here is to allow the entire
  * command_read function to be optimized out when it is not needed.
  */
-#define MIPI_DBI_SPI_READ_REQUIRED DT_INST_FOREACH_STATUS_OKAY(_WRITE_ONLY_ABSENT) 0
+#define MIPI_DBI_SPI_READ_REQUIRED DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_SPI_WRITE_ONLY_ABSENT) 0
 uint32_t var = MIPI_DBI_SPI_READ_REQUIRED;
 
 /* Expands to 1 if the node does reflect the enum in `xfr-min-bits` property */
-#define _XFR_8BITS(n) (DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) == MIPI_DBI_SPI_XFR_8BIT) |
-#define _XFR_16BITS(n) (DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) == MIPI_DBI_SPI_XFR_16BIT) |
+#define MIPI_DBI_SPI_XFR_8BITS(n) (DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) \
+						== MIPI_DBI_SPI_XFR_8BIT) |
+#define MIPI_DBI_SPI_XFR_16BITS(n) (DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) \
+						== MIPI_DBI_SPI_XFR_16BIT) |
 
 /* This macros will evaluate to 1 if any of the nodes with zephyr,mipi-dbi-spi
  * have the `xfr-min-bits` property to corresponding enum value. The intention
  * here is to allow the write helper functions to be optimized out when not all
  * minimum transfer bits will be needed.
  */
-#define MIPI_DBI_SPI_WRITE_8BIT_REQUIRED DT_INST_FOREACH_STATUS_OKAY(_XFR_8BITS) 0
-#define MIPI_DBI_SPI_WRITE_16BIT_REQUIRED DT_INST_FOREACH_STATUS_OKAY(_XFR_16BITS) 0
+#define MIPI_DBI_SPI_WRITE_8BIT_REQUIRED DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_SPI_XFR_8BITS) 0
+#define MIPI_DBI_SPI_WRITE_16BIT_REQUIRED DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_SPI_XFR_16BITS) 0
 
 /* In Type C mode 1 MIPI BIT communication, the 9th bit of the word
  * (first bit sent in each word) indicates if the word is a command or
