@@ -16,6 +16,11 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
+#define ADS1X4S0X_HAS_16_BIT_DEV                                                                   \
+	(DT_HAS_COMPAT_STATUS_OKAY(ti_ads114s06) || DT_HAS_COMPAT_STATUS_OKAY(ti_ads114s08))
+#define ADS1X4S0X_HAS_24_BIT_DEV                                                                   \
+	(DT_HAS_COMPAT_STATUS_OKAY(ti_ads124s06) || DT_HAS_COMPAT_STATUS_OKAY(ti_ads124s08))
+
 #define ADC_CONTEXT_USES_KERNEL_TIMER 1
 #define ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT                                                    \
 	K_MSEC(CONFIG_ADC_ADS1X4S0X_WAIT_FOR_COMPLETION_TIMEOUT_MS)
@@ -28,7 +33,6 @@ LOG_MODULE_REGISTER(ads1x4s0x, CONFIG_ADC_LOG_LEVEL);
 #define ADS1X4S0X_START_SYNC_PULSE_DURATION_IN_CLOCK_CYCLES 4
 #define ADS1X4S0X_SETUP_TIME_IN_CLOCK_CYCLES                32
 #define ADS1X4S0X_INPUT_SELECTION_AINCOM                    12
-#define ADS1X4S0X_RESOLUTION                                16
 #define ADS1X4S0X_REF_INTERNAL                              2500
 #define ADS1X4S0X_GPIO_MAX                                  3
 #define ADS1X4S0X_POWER_ON_RESET_TIME_IN_US                 2200
@@ -73,12 +77,18 @@ enum ads1x4s0x_register {
 	ADS1X4S0X_REGISTER_IDACMUX = 0x07,
 	ADS1X4S0X_REGISTER_VBIAS = 0x08,
 	ADS1X4S0X_REGISTER_SYS = 0x09,
-	ADS1X4S0X_REGISTER_OFCAL0 = 0x0B,
-	ADS1X4S0X_REGISTER_OFCAL1 = 0x0C,
-	ADS1X4S0X_REGISTER_FSCAL0 = 0x0E,
-	ADS1X4S0X_REGISTER_FSCAL1 = 0x0F,
 	ADS1X4S0X_REGISTER_GPIODAT = 0x10,
 	ADS1X4S0X_REGISTER_GPIOCON = 0x11,
+	ADS114S0X_REGISTER_OFCAL0 = 0x0B,
+	ADS114S0X_REGISTER_OFCAL1 = 0x0C,
+	ADS114S0X_REGISTER_FSCAL0 = 0x0E,
+	ADS114S0X_REGISTER_FSCAL1 = 0x0F,
+	ADS124S0X_REGISTER_OFCAL0 = 0x0A,
+	ADS124S0X_REGISTER_OFCAL1 = 0x0B,
+	ADS124S0X_REGISTER_OFCAL2 = 0x0C,
+	ADS124S0X_REGISTER_FSCAL0 = 0x0E,
+	ADS124S0X_REGISTER_FSCAL1 = 0x0F,
+	ADS124S0X_REGISTER_FSCAL2 = 0x0F,
 };
 
 #define ADS1X4S0X_REGISTER_GET_VALUE(value, pos, length)                                           \
@@ -421,6 +431,8 @@ struct ads1x4s0x_config {
 	const struct gpio_dt_spec gpio_start_sync;
 	int idac_current;
 	uint8_t vbias_level;
+	uint8_t channels;
+	uint8_t resolution;
 };
 
 struct ads1x4s0x_data {
@@ -431,8 +443,8 @@ struct ads1x4s0x_data {
 	struct gpio_callback callback_data_ready;
 	struct k_sem data_ready_signal;
 	struct k_sem acquire_signal;
-	int16_t *buffer;
-	int16_t *buffer_ptr;
+	void *buffer;
+	void *buffer_ptr;
 #if CONFIG_ADC_ADS1X4S0X_GPIO
 	struct k_mutex gpio_lock;
 	uint8_t gpio_enabled;   /* one bit per GPIO, 1 = enabled */
@@ -680,13 +692,15 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 		LOG_DBG("%s: configuring channel for a differential measurement from the pins (p, "
 			"n) (%i, %i)",
 			dev->name, channel_cfg->input_positive, channel_cfg->input_negative);
-		if (channel_cfg->input_positive >= ADS1X4S0X_INPUT_SELECTION_AINCOM) {
+		if (channel_cfg->input_positive >= config->channels &&
+		    channel_cfg->input_positive != ADS1X4S0X_INPUT_SELECTION_AINCOM) {
 			LOG_ERR("%s: positive channel input %i is invalid", dev->name,
 				channel_cfg->input_positive);
 			return -EINVAL;
 		}
 
-		if (channel_cfg->input_negative >= ADS1X4S0X_INPUT_SELECTION_AINCOM) {
+		if (channel_cfg->input_negative >= config->channels &&
+		    channel_cfg->input_negative != ADS1X4S0X_INPUT_SELECTION_AINCOM) {
 			LOG_ERR("%s: negative channel input %i is invalid", dev->name,
 				channel_cfg->input_negative);
 			return -EINVAL;
@@ -705,7 +719,8 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 	} else {
 		LOG_DBG("%s: configuring channel for single ended measurement from input %i",
 			dev->name, channel_cfg->input_positive);
-		if (channel_cfg->input_positive >= ADS1X4S0X_INPUT_SELECTION_AINCOM) {
+		if (channel_cfg->input_positive >= config->channels &&
+		    channel_cfg->input_positive != ADS1X4S0X_INPUT_SELECTION_AINCOM) {
 			LOG_ERR("%s: channel input %i is invalid", dev->name,
 				channel_cfg->input_positive);
 			return -EINVAL;
@@ -871,9 +886,13 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int ads1x4s0x_validate_buffer_size(const struct adc_sequence *sequence)
+static int ads1x4s0x_validate_buffer_size(const struct device *dev,
+					  const struct adc_sequence *sequence)
 {
-	size_t needed = sizeof(int16_t);
+	const struct ads1x4s0x_config *config = dev->config;
+	size_t needed;
+
+	needed = (config->resolution > 16) ? sizeof(int32_t) : sizeof(int16_t);
 
 	if (sequence->options) {
 		needed *= (1 + sequence->options->extra_samplings);
@@ -889,7 +908,9 @@ static int ads1x4s0x_validate_buffer_size(const struct adc_sequence *sequence)
 static int ads1x4s0x_validate_sequence(const struct device *dev,
 				       const struct adc_sequence *sequence)
 {
-	if (sequence->resolution != ADS1X4S0X_RESOLUTION) {
+	const struct ads1x4s0x_config *config = dev->config;
+
+	if (sequence->resolution != config->resolution) {
 		LOG_ERR("%s: invalid resolution", dev->name);
 		return -EINVAL;
 	}
@@ -904,7 +925,7 @@ static int ads1x4s0x_validate_sequence(const struct device *dev,
 		return -EINVAL;
 	}
 
-	return ads1x4s0x_validate_buffer_size(sequence);
+	return ads1x4s0x_validate_buffer_size(dev, sequence);
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
@@ -988,18 +1009,19 @@ static int ads1x4s0x_wait_data_ready(const struct device *dev)
 	return k_sem_take(&data->data_ready_signal, ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT);
 }
 
-static int ads1x4s0x_read_sample(const struct device *dev, uint16_t *buffer)
+#if ADS1X4S0X_HAS_16_BIT_DEV
+static int ads1x4s0x_read_sample_16(const struct device *dev, int16_t *buffer)
 {
 	const struct ads1x4s0x_config *config = dev->config;
 	uint8_t buffer_tx[3];
 	uint8_t buffer_rx[ARRAY_SIZE(buffer_tx)];
 	const struct spi_buf tx_buf[] = {{
 		.buf = buffer_tx,
-		.len = ARRAY_SIZE(buffer_tx),
+		.len = 3,
 	}};
 	const struct spi_buf rx_buf[] = {{
 		.buf = buffer_rx,
-		.len = ARRAY_SIZE(buffer_rx),
+		.len = 3,
 	}};
 	const struct spi_buf_set tx = {
 		.buffers = tx_buf,
@@ -1024,11 +1046,55 @@ static int ads1x4s0x_read_sample(const struct device *dev, uint16_t *buffer)
 
 	return 0;
 }
+#endif
+
+#if ADS1X4S0X_HAS_24_BIT_DEV
+static int ads1x4s0x_read_sample_24(const struct device *dev, int32_t *buffer)
+{
+	const struct ads1x4s0x_config *config = dev->config;
+	uint8_t buffer_tx[5] = {0};
+	uint8_t buffer_rx[ARRAY_SIZE(buffer_tx)];
+	const struct spi_buf tx_buf[] = {{
+		.buf = buffer_tx,
+		.len = 4,
+	}};
+	const struct spi_buf rx_buf[] = {{
+		.buf = buffer_rx,
+		.len = 4,
+	}};
+	const struct spi_buf_set tx = {
+		.buffers = tx_buf,
+		.count = ARRAY_SIZE(tx_buf),
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_buf,
+		.count = ARRAY_SIZE(rx_buf),
+	};
+
+	buffer_tx[0] = (uint8_t)ADS1X4S0X_COMMAND_RDATA;
+
+	int result = spi_transceive_dt(&config->bus, &tx, &rx);
+
+	if (result != 0) {
+		LOG_ERR("%s: spi_transceive failed with error %i", dev->name, result);
+		return result;
+	}
+
+	*buffer = (int32_t)sys_get_be32(buffer_rx + 1) >> 8;
+
+	LOG_DBG("%s: read ADC sample 0x%02X%02X%02X", dev->name, *(buffer_rx + 1), *(buffer_rx + 2),
+		*(buffer_rx + 3));
+
+	return 0;
+}
+#endif
 
 static int ads1x4s0x_adc_perform_read(const struct device *dev)
 {
 	int result;
+	const struct ads1x4s0x_config *config = dev->config;
 	struct ads1x4s0x_data *data = dev->data;
+	void *buffer = data->buffer;
 
 	k_sem_take(&data->acquire_signal, K_FOREVER);
 	k_sem_reset(&data->data_ready_signal);
@@ -1047,17 +1113,34 @@ static int ads1x4s0x_adc_perform_read(const struct device *dev)
 		return result;
 	}
 
-	result = ads1x4s0x_read_sample(dev, data->buffer);
-	if (result != 0) {
-		LOG_ERR("%s: reading sample failed", dev->name);
-		adc_context_complete(&data->ctx, result);
-		return result;
+#if ADS1X4S0X_HAS_24_BIT_DEV
+	if (config->resolution == 24) {
+		result = ads1x4s0x_read_sample_24(dev, (int32_t *)data->buffer);
+
+		if (result == 0) {
+			buffer = (int32_t *)buffer + 1;
+			adc_context_on_sampling_done(&data->ctx, dev);
+			return 0;
+		}
+
 	}
+#endif
 
-	data->buffer++;
+#if ADS1X4S0X_HAS_16_BIT_DEV
+	if (config->resolution == 16) {
+		result = ads1x4s0x_read_sample_16(dev, (int16_t *)data->buffer);
 
-	adc_context_on_sampling_done(&data->ctx, dev);
+		if (result == 0) {
+			buffer = (int16_t *)buffer + 1;
+			adc_context_on_sampling_done(&data->ctx, dev);
+			return 0;
+		}
 
+	}
+#endif
+
+	LOG_ERR("%s: reading sample failed", dev->name);
+	adc_context_complete(&data->ctx, result);
 	return result;
 }
 
@@ -1112,6 +1195,7 @@ static void ads1x4s0x_acquisition_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	const struct device *dev = p1;
+
 	while (true) {
 		ads1x4s0x_adc_perform_read(dev);
 	}
@@ -1480,29 +1564,68 @@ static DEVICE_API(adc, api) = {
 	.read_async = ads1x4s0x_adc_read_async,
 #endif
 };
-
 BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 	     "CONFIG_ADC_INIT_PRIORITY must be higher than CONFIG_SPI_INIT_PRIORITY");
 
+#define ADC_ADS1X4S0X_INST_DEFINE(n, name, ch, res)                                               \
+	IF_ENABLED(                                                                               \
+		CONFIG_ADC_ASYNC,                                                                 \
+		(static K_KERNEL_STACK_DEFINE(                                                    \
+			 thread_stack_##name##_##n,                                               \
+			 CONFIG_ADC_ADS1X4S0X_ACQUISITION_THREAD_STACK_SIZE);)                    \
+	)                                                                                         \
+	static const struct ads1x4s0x_config config_##name##_##n = {                              \
+		.bus = SPI_DT_SPEC_INST_GET(                                                      \
+			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),              \
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n,))                        \
+		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                      \
+		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                          \
+		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),            \
+		.idac_current = DT_INST_PROP(n, idac_current),                                    \
+		.vbias_level = DT_INST_PROP(n, vbias_level),                                      \
+		.vbias_level = DT_INST_PROP(n, vbias_level),                                      \
+		.resolution = res,                                                                \
+		.channels = ch,                                                                   \
+	};                                                                                        \
+	static struct ads1x4s0x_data data_##name##_##n;                                           \
+	DEVICE_DT_INST_DEFINE(n, ads1x4s0x_init, NULL, &data_##name##_##n, &config_##name##_##n,  \
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &api);
+
+/*
+ * ADS114S06: 16 bit, 6 channels
+ */
+#define DT_DRV_COMPAT ti_ads114s06
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#define ADC_ADS114S06_INST_DEFINE(n) ADC_ADS1X4S0X_INST_DEFINE(n, ti_ads114s06, 6, 16)
+DT_INST_FOREACH_STATUS_OKAY(ADC_ADS114S06_INST_DEFINE);
+#endif
+
+/*
+ * ADS114S08: 16 bit, 12 channels
+ */
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads114s08
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#define ADC_ADS114S08_INST_DEFINE(n) ADC_ADS1X4S0X_INST_DEFINE(n, ti_ads114s08, 12, 16)
+DT_INST_FOREACH_STATUS_OKAY(ADC_ADS114S08_INST_DEFINE);
+#endif
 
-#define ADC_ADS1X4S0X_INST_DEFINE(n)                                                               \
-	IF_ENABLED(                                                                                \
-		CONFIG_ADC_ASYNC,                                                                  \
-		(static K_KERNEL_STACK_DEFINE(                                                     \
-			 thread_stack_##n, CONFIG_ADC_ADS1X4S0X_ACQUISITION_THREAD_STACK_SIZE);))  \
-	static const struct ads1x4s0x_config config_##n = {                                        \
-		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),               \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n,))                         \
-		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
-		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                           \
-		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),             \
-		.idac_current = DT_INST_PROP(n, idac_current),                                     \
-		.vbias_level = DT_INST_PROP(n, vbias_level),                                       \
-	};                                                                                         \
-	static struct ads1x4s0x_data data_##n;                                                     \
-	DEVICE_DT_INST_DEFINE(n, ads1x4s0x_init, NULL, &data_##n, &config_##n, POST_KERNEL,        \
-			      CONFIG_ADC_INIT_PRIORITY, &api);
+/*
+ * ADS124S06: 24 bit, 6 channels
+ */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_ads124s06
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#define ADC_ADS124S06_INST_DEFINE(n) ADC_ADS1X4S0X_INST_DEFINE(n, ti_ads124s06, 6, 24)
+DT_INST_FOREACH_STATUS_OKAY(ADC_ADS124S06_INST_DEFINE);
+#endif
 
-DT_INST_FOREACH_STATUS_OKAY(ADC_ADS1X4S0X_INST_DEFINE);
+/*
+ * ADS124S08: 24 bit, 12 channels
+ */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_ads124s08
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#define ADC_ADS124S08_INST_DEFINE(n) ADC_ADS1X4S0X_INST_DEFINE(n, ti_ads124s08, 12, 24)
+DT_INST_FOREACH_STATUS_OKAY(ADC_ADS124S08_INST_DEFINE);
+#endif
