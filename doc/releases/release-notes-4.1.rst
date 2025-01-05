@@ -302,6 +302,9 @@ New Drivers
    * :dtcompatible:`ti,ads131m02`
    * :dtcompatible:`ti,tla2022`
    * :dtcompatible:`ti,tla2024`
+   * :dtcompatible:`ti,ads114s06`
+   * :dtcompatible:`ti,ads124s06`
+   * :dtcompatible:`ti,ads124s08`
 
 * ARM architecture
 
