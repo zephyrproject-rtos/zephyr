@@ -40,7 +40,7 @@ tests:
       - adc
       - spi
     extra_args:
-      - DTC_OVERLAY_FILE="adc_ads1145s0x_gpio.overlay"
+      - DTC_OVERLAY_FILE="adc_ads1x4s0x_gpio.overlay"
     extra_configs:
       - CONFIG_ADC=y
       - CONFIG_ADC_INIT_PRIORITY=80

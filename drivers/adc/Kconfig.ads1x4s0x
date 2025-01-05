@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ADC_ADS1X4S0X
-	bool "Texas instruments ADS114S0x"
+	bool "Texas instruments ADS1X4S0X"
 	default y
-	depends on DT_HAS_TI_ADS114S08_ENABLED
+	depends on DT_HAS_TI_ADS114S06_ENABLED || DT_HAS_TI_ADS114S08_ENABLED \
+		|| DT_HAS_TI_ADS124S06_ENABLED || DT_HAS_TI_ADS124S08_ENABLED
 	select SPI
 	select ADC_CONFIGURABLE_INPUTS
 	select ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
@@ -14,7 +15,7 @@ menuconfig ADC_ADS1X4S0X
 	  Enable the driver implementation for the ADS1X4S0X family
 
 config ADC_ADS1X4S0X_ASYNC_THREAD_INIT_PRIO
-	int "ADC ADS114S0x async thread priority"
+	int "ADC ADS1X4S0X async thread priority"
 	default 0
 	depends on ADC_ADS1X4S0X
 
@@ -31,9 +32,9 @@ config ADC_ADS1X4S0X_GPIO
 	default n
 	depends on GPIO && ADC_ADS1X4S0X
 	help
-	  Enable GPIO child device support in the ADS1X4S0x ADC driver.
+	  Enable GPIO child device support in the ADS1X4S0X ADC driver.
 
-	  The GPIO functionality is handled by the ADS1X4S0x GPIO
+	  The GPIO functionality is handled by the ADS1X4S0X GPIO
 	  driver.
 
 config ADC_ADS1X4S0X_WAIT_FOR_COMPLETION_TIMEOUT_MS

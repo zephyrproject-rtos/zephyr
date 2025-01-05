@@ -9,8 +9,6 @@
  * @brief GPIO driver for the ADS1X4S0X AFE.
  */
 
-#define DT_DRV_COMPAT ti_ads1x4s0x_gpio
-
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 
@@ -129,6 +127,8 @@ static DEVICE_API(gpio, gpio_ads1x4s0x_api) = {
 
 BUILD_ASSERT(CONFIG_GPIO_ADS1X4S0X_INIT_PRIORITY > CONFIG_ADC_INIT_PRIORITY,
 	     "ADS1X4S0X GPIO driver must be initialized after ADS1X4S0X ADC driver");
+
+#define DT_DRV_COMPAT ti_ads1x4s0x_gpio
 
 #define GPIO_ADS1X4S0X_DEVICE(id)                                                                  \
 	static const struct gpio_ads1x4s0x_config gpio_ads1x4s0x_##id##_cfg = {                    \

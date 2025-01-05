@@ -1,19 +1,19 @@
-# ADS114S0x GPIO configuration options
+# ADS1X4S0x GPIO configuration options
 
 # Copyright (c) 2023 SILA Embedded Solutions GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GPIO_ADS1X4S0X
-	bool "ADS1X4S0x GPIO driver"
+	bool "ADS1X4S0X GPIO driver"
 	default y
 	depends on DT_HAS_TI_ADS1X4S0X_GPIO_ENABLED
 	depends on ADC_ADS1X4S0X_GPIO
 	help
-	  Enable GPIO driver for ADS114S0x.
+	  Enable GPIO driver for ADS1X4S0X.
 
-	  The ADS114S0x is a multi-channel analog frontend (AFE).
+	  The ADS1X4S0x is a multi-channel analog frontend (AFE).
 
-	  The GPIO port of the ADS114S0x (GPIO0 to GPIO3) is exposed as a
+	  The GPIO port of the ADS1X4S0X (GPIO0 to GPIO3) is exposed as a
 	  GPIO controller driver with read/write support.
 
 config GPIO_ADS1X4S0X_INIT_PRIORITY
@@ -22,4 +22,4 @@ config GPIO_ADS1X4S0X_INIT_PRIORITY
 	depends on GPIO_ADS1X4S0X
 	help
 	  Device driver initialization priority. This driver must be
-	  initialized after the ADS114S0x ADC driver.
+	  initialized after the ADS1X4S0X ADC driver.

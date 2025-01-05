@@ -10,7 +10,7 @@ compatible: "ti,ads1x4s0x-gpio"
 
 include: [gpio-controller.yaml, base.yaml]
 
-on-bus: ads114s0x
+on-bus: ads1x4s0x
 
 properties:
   "#gpio-cells":
