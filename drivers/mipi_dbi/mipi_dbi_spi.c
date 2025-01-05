@@ -1,6 +1,6 @@
 /*
  * Copyright 2023 NXP
- * Copyright 2024 TiaC Systems
+ * Copyright 2024-2025 TiaC Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,8 +43,8 @@ struct mipi_dbi_spi_data {
 uint32_t var = MIPI_DBI_SPI_READ_REQUIRED;
 
 /* Expands to 1 if the node does reflect the enum in `xfr-min-bits` property */
-#define _XFR_8BITS(n) (DT_INST_PROP(n, xfr_min_bits) == MIPI_DBI_SPI_XFR_8BIT) |
-#define _XFR_16BITS(n) (DT_INST_PROP(n, xfr_min_bits) == MIPI_DBI_SPI_XFR_16BIT) |
+#define _XFR_8BITS(n) (DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) == MIPI_DBI_SPI_XFR_8BIT) |
+#define _XFR_16BITS(n) (DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) == MIPI_DBI_SPI_XFR_16BIT) |
 
 /* This macros will evaluate to 1 if any of the nodes with zephyr,mipi-dbi-spi
  * have the `xfr-min-bits` property to corresponding enum value. The intention
@@ -560,7 +560,7 @@ static DEVICE_API(mipi_dbi, mipi_dbi_spi_driver_api) = {
 				    DT_INST_PHANDLE(n, spi_dev)),		\
 		    .cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),	\
 		    .reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),	\
-		    .xfr_min_bits = DT_INST_PROP(n, xfr_min_bits)               \
+		    .xfr_min_bits = DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) \
 	};									\
 	static struct mipi_dbi_spi_data mipi_dbi_spi_data_##n;			\
 										\
