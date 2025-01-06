@@ -59,8 +59,8 @@ MEMORY
 {
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
   mcuboot_hdr (R): org = 0x0,  len = 0x20
-  metadata (R):    org = 0x20, len = 0x20
-  FLASH (R):       org = 0x40, len = FLASH_SIZE - 0x40
+  metadata (R):    org = 0x20, len = 0x60
+  FLASH (R):       org = 0x80, len = FLASH_SIZE - 0x80
 #else
   /* Make safety margin in the FLASH memory size so the
    * (esp_img_header + (n*esp_seg_headers)) would fit */
@@ -124,6 +124,42 @@ SECTIONS
     LONG(ADDR(.dram0.data))
     LONG(LOADADDR(.dram0.data))
     LONG(LOADADDR(.dram0.end) - LOADADDR(.dram0.data))
+
+    /* LP_IRAM metadata - There is no RTC/LP memory!
+     * 8. Destination address (VMA) for LP_IRAM region
+     * 9. Flash offset (LMA) for start of LP_IRAM region
+     * 10. Size of LP_IRAM region
+     */
+    LONG(0x0)
+    LONG(0x0)
+    LONG(0x0)
+
+    /* LP_DRAM metadata - There is no RTC/LP memory!
+     * 11. Destination address (VMA) for LP_DRAM region
+     * 12. Flash offset (LMA) for start of LP_DRAM region
+     * 13. Size of LP_DRAM region
+     */
+    LONG(0x0)
+    LONG(0x0)
+    LONG(0x0)
+
+    /* IROM metadata:
+     * 14. Destination address (VMA) for IROM region
+     * 15. Flash offset (LMA) for start of IROM region
+     * 16. Size of IROM region
+     */
+    LONG(ADDR(.flash.text))
+    LONG(LOADADDR(.flash.text))
+    LONG(SIZEOF(.flash.text))
+
+    /* DROM metadata:
+     * 17. Destination address (VMA) for DROM region
+     * 18. Flash offset (LMA) for start of DROM region
+     * 19. Size of DROM region
+     */
+    LONG(ADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata_end) - LOADADDR(.flash.rodata))
   } > metadata
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
