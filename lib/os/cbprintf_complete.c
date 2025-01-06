@@ -652,6 +652,12 @@ static inline const char *extract_conversion(struct conversion *conv,
 	 * fast-exit.
 	 */
 	++sp;
+	/* Ensure that sp is still valid string */
+	if (*sp == '\0') {
+		// Mark the conversion as invalid
+		conv->invalid = true;
+		return sp;
+	}
 	if (*sp == '%') {
 		conv->specifier = *sp;
 		++sp;
