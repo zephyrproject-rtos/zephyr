@@ -130,6 +130,12 @@ def pytest_addoption(parser: pytest.Parser):
         '--extra-test-args',
         help='Additional args passed to the test binary'
     )
+    twister_harness_group.addoption(
+        '--harness_apps', default=None,
+        help='harness zephyr sample app for interaction with DuT.')
+    twister_harness_group.addoption(
+        '--harness_device_map', default=None,
+        help='harness devices info for interaction with DuT.')
 
 
 def pytest_configure(config: pytest.Config):

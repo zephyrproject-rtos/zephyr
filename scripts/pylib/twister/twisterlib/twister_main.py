@@ -112,7 +112,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
     env = TwisterEnv(options, default_options)
     env.discover()
 
-    hwm = HardwareMap(env)
+    hwm = HardwareMap(env.options)
     ret = hwm.discover()
     if ret == 0:
         return 0
