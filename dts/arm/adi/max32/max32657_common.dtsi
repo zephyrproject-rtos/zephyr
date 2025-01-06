@@ -19,13 +19,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33";
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpu-power-states = <&idle &suspend &standby>;
+			cpu-power-states = <&idle &standby &powerdown>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
@@ -38,28 +38,23 @@
 			idle: idle {
 				compatible = "zephyr,power-state";
 				power-state-name = "runtime-idle";
-				/* The value not mentioned in UG/DS, set it as 1us */
-				min-residency-us = <1>;
-				/* Typical value is 0.847us as per of Datasheet */
-				exit-latency-us = <1>;
-			};
-			/* Deep-sleep Mode */
-			suspend: suspend {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				/* The value not mentioned in UG/DS, set it as 35us */
-				min-residency-us = <35>;
-				/* Typical value is 12.4us as per of Datasheet */
-				exit-latency-us = <25>;
+				min-residency-us = <50>;
+				exit-latency-us = <5>;
 			};
 			/* Standby Mode */
 			standby: standby {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				/* The value not mentioned in UG/DS, set it as 40us */
-				min-residency-us = <40>;
-				/* Typical value is 14.7us as per of Datasheet */
-				exit-latency-us = <30>;
+				min-residency-us = <1000>;
+				exit-latency-us = <20>;
+			};
+			/* Powerdown Mode */
+			powerdown: powerdown {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <2147483647>;
+				exit-latency-us = <0>;
+				status = "disabled";
 			};
 		};
 	};
