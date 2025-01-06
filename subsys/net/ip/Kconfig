@@ -930,6 +930,9 @@ config NET_DEFAULT_IF_PPP
 	bool "PPP interface"
 	depends on NET_L2_PPP
 
+config NET_DEFAULT_IF_OFFLOADED_NETDEV
+	bool "Offloaded network device"
+
 config NET_DEFAULT_IF_WIFI
 	bool "WiFi interface"
 	depends on NET_L2_ETHERNET
