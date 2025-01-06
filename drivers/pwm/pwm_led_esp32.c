@@ -230,6 +230,11 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 		ledc_hal_ls_timer_update(&data->hal, channel->timer_num);
 	}
 
+	LOG_DBG("channel_num=%d, speed_mode=%d, timer_num=%d, clock_src=%d, prescaler=%d, "
+		"resolution=%d\n",
+		channel->channel_num, channel->speed_mode, channel->timer_num, channel->clock_src,
+		prescaler, channel->resolution);
+
 	return 0;
 }
 
@@ -256,6 +261,7 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 						  struct pwm_ledc_esp32_channel_config *channel,
 						  uint32_t period_cycles)
 {
+	const struct pwm_ledc_esp32_config *config = dev->config;
 	uint32_t current_freq = channel->freq;
 	uint64_t clk_freq;
 	int ret;
@@ -273,8 +279,26 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 	}
 
 	if (channel->freq == current_freq) {
-		/* no need to reconfigure timer */
+		/* No need to reconfigure timer */
 		return 0;
+	} else {
+		/* Check whether another channel is using the same timer.
+		 * Timers can only be shared if the same frequency is used, so
+		 * first set operation will take precedence.
+		 */
+		for (int i = 0; i < config->channel_len; ++i) {
+			struct pwm_ledc_esp32_channel_config *ch = &config->channel_config[i];
+
+			if (ch->freq && (channel->channel_num != ch->channel_num) &&
+			    (channel->timer_num == ch->timer_num) &&
+			    (channel->speed_mode == ch->speed_mode) &&
+			    (channel->freq != ch->freq)) {
+				LOG_ERR("Timer can't be shared and different frequency be "
+					"requested");
+				channel->freq = 0;
+				return -EINVAL;
+			}
+		}
 	}
 
 	pwm_led_esp32_timer_config(channel);
