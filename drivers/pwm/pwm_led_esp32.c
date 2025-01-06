@@ -9,6 +9,7 @@
 
 #include <hal/ledc_hal.h>
 #include <hal/ledc_types.h>
+#include <esp_clk_tree.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -21,15 +22,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_ledc_esp32, CONFIG_PWM_LOG_LEVEL);
 
-#if SOC_LEDC_SUPPORT_APB_CLOCK
-#define CLOCK_SOURCE LEDC_APB_CLK
-#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
-#define CLOCK_SOURCE LEDC_SCLK
-#if defined(CONFIG_SOC_SERIES_ESP32C2)
-#define SCLK_CLK_FREQ MHZ(60)
-#elif defined(CONFIG_SOC_SERIES_ESP32C6)
-#define SCLK_CLK_FREQ MHZ(80)
+static const int global_clks[] = LEDC_LL_GLOBAL_CLOCKS;
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+static const int timer_specific_clks[] = LEDC_LL_TIMER_SPECIFIC_CLOCKS;
+static int lowspd_clks[ARRAY_SIZE(global_clks) + ARRAY_SIZE(timer_specific_clks)];
 #endif
+#if SOC_LEDC_SUPPORT_HS_MODE
+static const int highspd_clks[] = {LEDC_APB_CLK, LEDC_REF_TICK};
 #endif
 
 struct pwm_ledc_esp32_data {
@@ -45,6 +44,7 @@ struct pwm_ledc_esp32_channel_config {
 	const ledc_mode_t speed_mode;
 	uint8_t resolution;
 	ledc_clk_src_t clock_src;
+	uint32_t clock_src_hz;
 	uint32_t duty_val;
 	bool inverted;
 };
@@ -56,9 +56,6 @@ struct pwm_ledc_esp32_config {
 	struct pwm_ledc_esp32_channel_config *channel_config;
 	const int channel_len;
 };
-
-static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev, uint32_t channel_idx,
-					    uint64_t *cycles);
 
 static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct device *dev,
 	int channel_id)
@@ -114,12 +111,7 @@ static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_
 	 * Max duty resolution can be obtained with
 	 * max_res = log2(CLK_FREQ/FREQ)
 	 */
-#if SOC_LEDC_SUPPORT_APB_CLOCK
-	uint64_t clock_freq = channel->clock_src == LEDC_APB_CLK ? APB_CLK_FREQ : REF_CLK_FREQ;
-#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
-	uint64_t clock_freq = SCLK_CLK_FREQ;
-#endif
-	uint32_t max_precision_n = clock_freq/channel->freq;
+	uint32_t max_precision_n = channel->clock_src_hz / channel->freq;
 
 	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDTH; i++) {
 		max_precision_n /= 2;
@@ -133,49 +125,44 @@ static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_
 
 static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *channel)
 {
+	const int *clock_src;
+	int clock_src_num;
+
+	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
+#ifdef SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+		clock_src = lowspd_clks;
+		clock_src_num = ARRAY_SIZE(lowspd_clks);
+#else
+		clock_src = global_clks;
+		clock_src_num = ARRAY_SIZE(global_clks);
+#endif
+	}
+#ifdef SOC_LEDC_SUPPORT_HS_MODE
+	else {
+		clock_src = highspd_clks;
+		clock_src_num = ARRAY_SIZE(highspd_clks);
+	}
+#endif
+
 	/**
 	 * Calculate max resolution based on the given frequency and the pwm clock.
-	 *
-	 * There are 2 clock resources for PWM:
-	 *
-	 * 1. APB_CLK (80MHz)
-	 * 2. REF_TICK (1MHz)
-	 *
-	 * The low speed timers can be sourced from:
-	 *
-	 * 1. APB_CLK (80MHz)
-	 * 2. RTC_CLK (8Mhz)
-	 *
-	 * The APB_CLK is mostly used
-	 *
-	 * First we try to find the largest resolution using the APB_CLK source.
-	 * If the given frequency doesn't support it, we move to the next clock source.
+	 * Try each clock source available depending on the device and channel type.
 	 */
-
-#if SOC_LEDC_SUPPORT_APB_CLOCK
-	channel->clock_src = LEDC_APB_CLK;
-#endif
-	if (!pwm_led_esp32_calculate_max_resolution(channel)) {
-		return 0;
+	for (int i = 0; i < clock_src_num; i++) {
+		channel->clock_src = clock_src[i];
+		esp_clk_tree_src_get_freq_hz(channel->clock_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &channel->clock_src_hz);
+		if (!pwm_led_esp32_calculate_max_resolution(channel)) {
+			return 0;
+		}
 	}
 
-#if SOC_LEDC_SUPPORT_REF_TICK
-	channel->clock_src = LEDC_REF_TICK;
-	if (!pwm_led_esp32_calculate_max_resolution(channel)) {
-		return 0;
-	}
-#endif
-
-	/**
-	 * ESP32 - S2,S3 and C3 variants have only 14 bits counter.
-	 * where as the plain ESP32 variant has 20 bits counter.
-	 * application failed to set low frequency(1Hz) in S2, S3 and C3 variants.
-	 * to get very low frequencies on these variants,
-	 * frequency needs to be tuned with 18 bits clock divider.
-	 * so select the slow clock source (1MHz) with highest counter resolution.
-	 * this can be handled on the func 'pwm_led_esp32_timer_set' with 'prescaler'.
+	/* Frequency is too low for this device, so even though best precision can't
+	 * be achieved we can set max resolution and consider that the previous
+	 * loop selects clock from fastest to slowest, so this is the best
+	 * configuration achievable.
 	 */
 	channel->resolution = SOC_LEDC_TIMER_BIT_WIDTH;
+
 	return 0;
 }
 
@@ -188,30 +175,7 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 
 	__ASSERT_NO_MSG(channel->freq > 0);
 
-	switch (channel->clock_src) {
-#if SOC_LEDC_SUPPORT_APB_CLOCK
-	case LEDC_APB_CLK:
-		/** This expression comes from ESP32 Espressif's Technical Reference
-		 * Manual chapter 13.2.2 Timers.
-		 * div_num is a fixed point value (Q10.8).
-		 */
-		prescaler = ((uint64_t) APB_CLK_FREQ << 8) / channel->freq / precision;
-	break;
-#endif
-#if SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
-	case LEDC_SCLK:
-		prescaler = ((uint64_t) SCLK_CLK_FREQ << 8) / channel->freq / precision;
-	break;
-#endif
-#if SOC_LEDC_SUPPORT_REF_TICK
-	case LEDC_REF_TICK:
-		prescaler = ((uint64_t) REF_CLK_FREQ << 8) / channel->freq / precision;
-	break;
-#endif
-	default:
-		LOG_ERR("Invalid clock source (%d)", channel->clock_src);
-		return -EINVAL;
-	}
+	prescaler = ((uint64_t)channel->clock_src_hz << 8) / channel->freq / precision;
 
 	if (prescaler < 0x100 || prescaler > 0x3FFFF) {
 		LOG_ERR("Prescaler out of range: %#X", prescaler);
@@ -248,11 +212,7 @@ static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev, uint32_t c
 		return -EINVAL;
 	}
 
-#if SOC_LEDC_SUPPORT_APB_CLOCK
-	*cycles = channel->clock_src == LEDC_APB_CLK ? APB_CLK_FREQ : REF_CLK_FREQ;
-#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
-	*cycles = SCLK_CLK_FREQ;
-#endif
+	*cycles = (uint64_t)channel->clock_src_hz;
 
 	return 0;
 }
@@ -335,6 +295,8 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 		channel->inverted = false;
 	}
 
+	ledc_hal_init(&data->hal, channel->speed_mode);
+
 	if ((pulse_cycles == period_cycles) || (pulse_cycles == 0)) {
 		/* For duty 0% and 100% stop PWM, set output level and return */
 		pwm_led_esp32_stop(data, channel, (pulse_cycles == period_cycles));
@@ -379,15 +341,29 @@ int pwm_led_esp32_init(const struct device *dev)
 	/* Enable peripheral */
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
-	ledc_hal_init(&data->hal, config->channel_config[0].speed_mode);
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+	/* Combine clock sources to include timer specific sources */
+	memcpy(lowspd_clks, global_clks, sizeof(global_clks));
+	memcpy(&lowspd_clks[ARRAY_SIZE(global_clks)], timer_specific_clks, sizeof(timer_specific_clks));
+#endif
 
 	for (int i = 0; i < config->channel_len; ++i) {
 		channel = &config->channel_config[i];
 
+		ledc_hal_init(&data->hal, channel->speed_mode);
+
 		if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
+			channel->clock_src = global_clks[0];
 			ledc_hal_set_slow_clk_sel(&data->hal, channel->clock_src);
 		}
+#ifdef SOC_LEDC_SUPPORT_HS_MODE
+		else {
+			channel->clock_src = highspd_clks[0];
+		}
+#endif
 		ledc_hal_set_clock_source(&data->hal, channel->timer_num, channel->clock_src);
+
+		esp_clk_tree_src_get_freq_hz(channel->clock_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &channel->clock_src_hz);
 
 		ledc_hal_bind_channel_timer(&data->hal, channel->channel_num, channel->timer_num);
 		pwm_led_esp32_stop(data, channel, channel->inverted);
@@ -418,7 +394,6 @@ PINCTRL_DT_INST_DEFINE(0);
 		.timer_num = DT_PROP(node_id, timer),                                              \
 		.speed_mode = DT_REG_ADDR(node_id) < SOC_LEDC_CHANNEL_NUM ? LEDC_LOW_SPEED_MODE    \
 									  : !LEDC_LOW_SPEED_MODE,  \
-		.clock_src = CLOCK_SOURCE,                                                         \
 		.inverted = DT_PWMS_FLAGS(node_id),                                                \
 	},
 
