@@ -539,6 +539,22 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_SPIN_LOCKS`.
     pthread_spin_trylock(),yes
     pthread_spin_unlock(),yes
 
+.. _posix_option_group_system_database_r:
+
+POSIX_SYSTEM_DATABASE_R
++++++++++++++++++++++++
+
+Enable this option group with :kconfig:option:`CONFIG_POSIX_SYSTEM_DATABASE_R`.
+
+.. csv-table:: POSIX_SYSTEM_DATABASE_R
+   :header: API, Supported
+   :widths: 50,10
+
+    getgrgid_r(),yes
+    getgrnam_r(),yes
+    getpwnam_r(),yes
+    getpwuid_r(),yes
+
 .. _posix_option_group_threads_base:
 
 POSIX_THREADS_BASE
