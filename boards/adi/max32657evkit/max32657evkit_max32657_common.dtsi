@@ -15,6 +15,7 @@
 
 	chosen {
 		zephyr,console = &uart0;
+		zephyr,cortex-m-idle-timer = &counter_wut1;
 		zephyr,shell-uart = &uart0;
 	};
 
@@ -98,5 +99,10 @@
 };
 
 &wut1 {
+	status = "okay";
 	clock-source = <ADI_MAX32_PRPH_CLK_SRC_INRO>;
+	wakeup-source;
+	counter_wut1: counter {
+		status = "okay";
+	};
 };
