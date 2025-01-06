@@ -448,6 +448,7 @@ static void sof_timer_handler(struct k_timer *timer)
 static void vrt_device_act(const struct device *dev,
 			   const enum uvb_device_act act)
 {
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	enum uhc_event_type type;
 
 	switch (act) {
@@ -456,9 +457,11 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_FS:
 		type = UHC_EVT_DEV_CONNECTED_FS;
+		k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
 		break;
 	case UVB_DEVICE_ACT_HS:
 		type = UHC_EVT_DEV_CONNECTED_HS;
+		k_timer_start(&priv->sof_timer, K_MSEC(1), K_USEC(125));
 		break;
 	case UVB_DEVICE_ACT_REMOVED:
 		type = UHC_EVT_DEV_REMOVED;
