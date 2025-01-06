@@ -2923,7 +2923,12 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		}
 
 		client_ctx->processed_req = NULL;
-		lwm2m_send_message_async(msg);
+		r = lwm2m_send_message_async(msg);
+		if (r < 0) {
+			LOG_ERR("Failed to send response (err: %d)", r);
+			lwm2m_reset_message(msg, true);
+			return;
+		}
 	} else {
 		LOG_DBG("No handler for response");
 	}
