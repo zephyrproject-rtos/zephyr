@@ -1087,7 +1087,9 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_THREAD_PRIORITY_SCHEDULING
 _POSIX_THREAD_SAFE_FUNCTIONS
 ++++++++++++++++++++++++++++
 
-Enable this option with :kconfig:option:`CONFIG_POSIX_THREAD_SAFE_FUNCTIONS`.
+Enable this option with :kconfig:option:`CONFIG_POSIX_C_LANG_SUPPORT_R`,
+:kconfig:option:`CONFIG_POSIX_FILE_LOCKING`, :kconfig:option:`CONFIG_POSIX_FILE_SYSTEM_R`,
+and :kconfig:option:`CONFIG_POSIX_SYSTEM_DATABASE_R`.
 
 .. csv-table:: _POSIX_THREAD_SAFE_FUNCTIONS
     :header: API, Supported
@@ -1095,19 +1097,19 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_THREAD_SAFE_FUNCTIONS`.
 
     asctime_r(), yes
     ctime_r(), yes (UTC timezone only)
-    flockfile(),
-    ftrylockfile(),
-    funlockfile(),
-    getc_unlocked(),
-    getchar_unlocked(),
-    getgrgid_r(),yes :ref:`†<posix_undefined_behaviour>`
-    getgrnam_r(),yes :ref:`†<posix_undefined_behaviour>`
-    getpwnam_r(),yes :ref:`†<posix_undefined_behaviour>`
-    getpwuid_r(),yes :ref:`†<posix_undefined_behaviour>`
+    flockfile(), yes
+    ftrylockfile(), yes
+    funlockfile(), yes
+    getc_unlocked(), yes
+    getchar_unlocked(), yes
+    getgrgid_r(),yes
+    getgrnam_r(),yes
+    getpwnam_r(),yes
+    getpwuid_r(),yes
     gmtime_r(), yes
     localtime_r(), yes (UTC timezone only)
-    putc_unlocked(),
-    putchar_unlocked(),
+    putc_unlocked(), yes
+    putchar_unlocked(), yes
     rand_r(), yes
     readdir_r(), yes
     strerror_r(), yes
