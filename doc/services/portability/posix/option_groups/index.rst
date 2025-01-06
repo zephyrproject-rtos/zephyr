@@ -555,6 +555,22 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_SYSTEM_DATABASE_R`.
     getpwnam_r(),yes
     getpwuid_r(),yes
 
+.. _posix_option_group_system_database:
+
+POSIX_SYSTEM_DATABASE
++++++++++++++++++++++
+
+Enable this option group with :kconfig:option:`CONFIG_POSIX_SYSTEM_DATABASE`.
+
+.. csv-table:: POSIX_SYSTEM_DATABASE
+   :header: API, Supported
+   :widths: 50,10
+
+    getgrgid(),yes
+    getgrnam(),yes
+    getpwnam(),yes
+    getpwuid(),yes
+
 .. _posix_option_group_threads_base:
 
 POSIX_THREADS_BASE
