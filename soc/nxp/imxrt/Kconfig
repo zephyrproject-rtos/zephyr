@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_NXP_IMXRT
@@ -113,9 +113,10 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 	  This setting should be enabled when the application uses HYPERRAM,
 	  or an MPU region will be defined to disable cached access to the
 	  HYPERRAM memory space.
+
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT11xx series"
-	depends on SOC_SERIES_IMXRT11XX
+	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 	help
 	  Indicates the second core will be enabled, and the part will run
 	  in dual core mode. Enables dual core operation on the RT11xx series,
