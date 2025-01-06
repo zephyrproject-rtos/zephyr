@@ -1,5 +1,5 @@
-identifier: tsi_skyp/txe
-name: TSI DSP
+identifier: tsi_skylp/txe
+name: TSI TXE
 type: mcu
 arch: xtensa
 toolchain:

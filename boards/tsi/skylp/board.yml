@@ -1,8 +1,8 @@
 board:
-  name: tsi_skyp
+  name: tsi_skylp
   vendor: tsi
   socs:
-  - name: skyp
+  - name: skylp
     variants:
     - name: tensilica
       cpucluster: txe
