@@ -15,6 +15,33 @@ tests:
     harness: keyboard
     min_ram: 20
     min_flash: 33
+  sample.sensor.shell.bma4xx.stream:
+    platform_allow:
+      - nrf52833dk/nrf52833
+      - nrf52840dk/nrf52840
+    filter: dt_compat_enabled("bosch,bma4xx")
+    extra_conf_files:
+      - boards/bma4xx/bma4xx_stream.conf
+    extra_dtc_overlay_files:
+      - boards/bma4xx/nrf52833_40_bma4xx.overlay
+  sample.sensor.shell.bma4xx.temp.enabled:
+    platform_allow:
+      - nrf52833dk/nrf52833
+      - nrf52840dk/nrf52840
+    filter: dt_compat_enabled("bosch,bma4xx")
+    extra_conf_files:
+      - boards/bma4xx/bma4xx_temp_enabled.config
+    extra_dtc_overlay_files:
+      - boards/bma4xx/nrf52833_40_bma4xx.overlay
+  sample.sensor.shell.bma4xx.fifo.disabled:
+    platform_allow:
+      - nrf52833dk/nrf52833
+      - nrf52840dk/nrf52840
+    filter: dt_compat_enabled("bosch,bma4xx")
+    extra_conf_files:
+      - boards/bma4xx/bma4xx_fifo_disabled.conf
+    extra_dtc_overlay_files:
+      - boards/bma4xx/nrf52833_40_bma4xx.overlay
   sample.sensor.shell.pytest:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     min_ram: 40
