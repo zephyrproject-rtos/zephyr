@@ -56,6 +56,7 @@
 
 &uicr {
 	gpio-as-nreset;
+	nfct-pins-as-gpios;
 };
 
 &gpiote {
