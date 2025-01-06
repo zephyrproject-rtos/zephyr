@@ -269,7 +269,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             + ['-speed', self.speed]
             + ['-device', self.device]
             + ['-silent']
-            + ['-endian' 'big' if big_endian else 'little']
+            + ['-endian', 'big' if big_endian else 'little']
             + ['-singlerun']
             + (['-nogui'] if self.supports_nogui else [])
             + (['-rtos', plugin_dir] if rtos else [])
