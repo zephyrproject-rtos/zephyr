@@ -72,6 +72,13 @@
 #define __kstackmem __noinit
 #endif /* CONFIG_KERNEL_COHERENCE */
 
+#ifdef CONFIG_LINKER_USE_STACK_SECTION
+#undef __stackmem
+#undef __kstackmem
+#define __stackmem Z_GENERIC_SECTION(.stacks)
+#define __kstackmem Z_GENERIC_SECTION(.stacks)
+#endif
+
 #if defined(CONFIG_LINKER_USE_BOOT_SECTION)
 #define __boot_func	Z_GENERIC_DOT_SECTION(BOOT_TEXT_SECTION_NAME)
 #define __boot_data	Z_GENERIC_DOT_SECTION(BOOT_DATA_SECTION_NAME)
