@@ -23,6 +23,15 @@
 			slew-rate = "fast";
 		};
 	};
+	pinmux_flexcan0: pinmux_flexcan0 {
+		group0 {
+			pinmux = <CAN0_TXD_P1_13>,
+				<CAN0_RXD_P1_12>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
 	pinmux_flexpwm0_pwm0: pinmux_flexpwm0_pwm0 {
 		group0 {
 			pinmux = <PWM0_A0_P3_6>,
