@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Vitor Massaru Iha <vitor@massaru.org>
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,10 +58,9 @@ struct pwm_ledc_esp32_config {
 };
 
 static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct device *dev,
-	int channel_id)
+								int channel_id)
 {
-	struct pwm_ledc_esp32_config *config =
-		(struct pwm_ledc_esp32_config *) dev->config;
+	struct pwm_ledc_esp32_config *config = (struct pwm_ledc_esp32_config *)dev->config;
 
 	for (uint8_t i = 0; i < config->channel_len; i++) {
 		if (config->channel_config[i].idx == channel_id) {
@@ -71,7 +70,8 @@ static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct dev
 	return NULL;
 }
 
-static void pwm_led_esp32_start(struct pwm_ledc_esp32_data *data, struct pwm_ledc_esp32_channel_config *channel)
+static void pwm_led_esp32_start(struct pwm_ledc_esp32_data *data,
+				struct pwm_ledc_esp32_channel_config *channel)
 {
 	ledc_hal_set_sig_out_en(&data->hal, channel->channel_num, true);
 	ledc_hal_set_duty_start(&data->hal, channel->channel_num, true);
@@ -81,7 +81,8 @@ static void pwm_led_esp32_start(struct pwm_ledc_esp32_data *data, struct pwm_led
 	}
 }
 
-static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data, struct pwm_ledc_esp32_channel_config *channel, bool idle_level)
+static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data,
+			       struct pwm_ledc_esp32_channel_config *channel, bool idle_level)
 {
 	ledc_hal_set_idle_level(&data->hal, channel->channel_num, idle_level);
 	ledc_hal_set_sig_out_en(&data->hal, channel->channel_num, false);
@@ -93,7 +94,7 @@ static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data, struct pwm_ledc
 }
 
 static void pwm_led_esp32_duty_set(const struct device *dev,
-	struct pwm_ledc_esp32_channel_config *channel)
+				   struct pwm_ledc_esp32_channel_config *channel)
 {
 	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
 
@@ -116,7 +117,7 @@ static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_
 	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDTH; i++) {
 		max_precision_n /= 2;
 		if (!max_precision_n) {
-			channel->resolution =  i;
+			channel->resolution = i;
 			return 0;
 		}
 	}
@@ -150,7 +151,9 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 */
 	for (int i = 0; i < clock_src_num; i++) {
 		channel->clock_src = clock_src[i];
-		esp_clk_tree_src_get_freq_hz(channel->clock_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &channel->clock_src_hz);
+		esp_clk_tree_src_get_freq_hz(channel->clock_src,
+					     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+					     &channel->clock_src_hz);
 		if (!pwm_led_esp32_calculate_max_resolution(channel)) {
 			return 0;
 		}
@@ -167,7 +170,7 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 }
 
 static int pwm_led_esp32_timer_set(const struct device *dev,
-	struct pwm_ledc_esp32_channel_config *channel)
+				   struct pwm_ledc_esp32_channel_config *channel)
 {
 	int prescaler = 0;
 	uint32_t precision = (0x1 << channel->resolution);
@@ -241,23 +244,23 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 	if (channel->freq == current_freq) {
 		/* No need to reconfigure timer */
 		return 0;
-	} else {
-		/* Check whether another channel is using the same timer.
-		 * Timers can only be shared if the same frequency is used, so
-		 * first set operation will take precedence.
-		 */
-		for (int i = 0; i < config->channel_len; ++i) {
-			struct pwm_ledc_esp32_channel_config *ch = &config->channel_config[i];
+	}
 
-			if (ch->freq && (channel->channel_num != ch->channel_num) &&
-			    (channel->timer_num == ch->timer_num) &&
-			    (channel->speed_mode == ch->speed_mode) &&
-			    (channel->freq != ch->freq)) {
-				LOG_ERR("Timer can't be shared and different frequency be "
-					"requested");
-				channel->freq = 0;
-				return -EINVAL;
-			}
+	/* Check whether another channel is using the same timer.
+	 * Timers can only be shared if the same frequency is used, so
+	 * first set operation will take precedence.
+	 */
+	for (int i = 0; i < config->channel_len; ++i) {
+		struct pwm_ledc_esp32_channel_config *ch = &config->channel_config[i];
+
+		if (ch->freq && (channel->channel_num != ch->channel_num) &&
+			(channel->timer_num == ch->timer_num) &&
+			(channel->speed_mode == ch->speed_mode) &&
+			(channel->freq != ch->freq)) {
+			LOG_ERR("Timer can't be shared and different frequency be "
+				"requested");
+			channel->freq = 0;
+			return -EINVAL;
 		}
 	}
 
@@ -274,8 +277,8 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 }
 
 static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_idx,
-				    uint32_t period_cycles,
-				    uint32_t pulse_cycles, pwm_flags_t flags)
+				    uint32_t period_cycles, uint32_t pulse_cycles,
+				    pwm_flags_t flags)
 {
 	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
 	struct pwm_ledc_esp32_channel_config *channel = get_channel_config(dev, channel_idx);
@@ -312,7 +315,7 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 
 	/* Update PWM duty  */
 
-	double duty_cycle = (double) pulse_cycles / (double) period_cycles;
+	double duty_cycle = (double)pulse_cycles / (double)period_cycles;
 
 	channel->duty_val = (uint32_t)((double)(1 << channel->resolution) * duty_cycle);
 
@@ -344,7 +347,8 @@ int pwm_led_esp32_init(const struct device *dev)
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 	/* Combine clock sources to include timer specific sources */
 	memcpy(lowspd_clks, global_clks, sizeof(global_clks));
-	memcpy(&lowspd_clks[ARRAY_SIZE(global_clks)], timer_specific_clks, sizeof(timer_specific_clks));
+	memcpy(&lowspd_clks[ARRAY_SIZE(global_clks)], timer_specific_clks,
+	       sizeof(timer_specific_clks));
 #endif
 
 	for (int i = 0; i < config->channel_len; ++i) {
@@ -363,7 +367,9 @@ int pwm_led_esp32_init(const struct device *dev)
 #endif
 		ledc_hal_set_clock_source(&data->hal, channel->timer_num, channel->clock_src);
 
-		esp_clk_tree_src_get_freq_hz(channel->clock_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &channel->clock_src_hz);
+		esp_clk_tree_src_get_freq_hz(channel->clock_src,
+					     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+					     &channel->clock_src_hz);
 
 		ledc_hal_bind_channel_timer(&data->hal, channel->channel_num, channel->timer_num);
 		pwm_led_esp32_stop(data, channel, channel->inverted);
@@ -398,8 +404,7 @@ PINCTRL_DT_INST_DEFINE(0);
 	},
 
 static struct pwm_ledc_esp32_channel_config channel_config[] = {
-	DT_INST_FOREACH_CHILD(0, CHANNEL_CONFIG)
-};
+	DT_INST_FOREACH_CHILD(0, CHANNEL_CONFIG)};
 
 static struct pwm_ledc_esp32_config pwm_ledc_esp32_config = {
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
@@ -416,9 +421,5 @@ static struct pwm_ledc_esp32_data pwm_ledc_esp32_data = {
 	.cmd_sem = Z_SEM_INITIALIZER(pwm_ledc_esp32_data.cmd_sem, 1, 1),
 };
 
-DEVICE_DT_INST_DEFINE(0, &pwm_led_esp32_init, NULL,
-			&pwm_ledc_esp32_data,
-			&pwm_ledc_esp32_config,
-			POST_KERNEL,
-			CONFIG_PWM_INIT_PRIORITY,
-			&pwm_led_esp32_api);
+DEVICE_DT_INST_DEFINE(0, &pwm_led_esp32_init, NULL, &pwm_ledc_esp32_data, &pwm_ledc_esp32_config,
+		      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_led_esp32_api);
