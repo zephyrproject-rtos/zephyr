@@ -23,9 +23,33 @@
  * @defgroup uhc_api USB host controller driver API
  * @ingroup io_interfaces
  * @since 3.3
- * @version 0.1.0
+ * @version 0.1.1
  * @{
  */
+
+/** USB device state */
+enum usb_device_state {
+	USB_STATE_NOTCONNECTED,
+	USB_STATE_DEFAULT,
+	USB_STATE_ADDRESSED,
+	USB_STATE_CONFIGURED,
+};
+
+/**
+ * Host representation of a USB device
+ */
+struct usb_device {
+	/** An opaque pointer to the host context to which this device belongs */
+	void *ctx;
+	/** USB device descriptor */
+	struct usb_device_descriptor dev_desc;
+	/** Device state */
+	enum usb_device_state state;
+	/** Actual active device configuration */
+	uint8_t actual_cfg;
+	/** Device address */
+	uint8_t addr;
+};
 
 /**
  * @brief USB control transfer stage
@@ -65,8 +89,8 @@ struct uhc_transfer {
 	unsigned int queued : 1;
 	/** Control stage status, up to the driver to use it or not */
 	unsigned int stage : 2;
-	/** Pointer to USB device (opaque for the UHC) */
-	void *udev;
+	/** Pointer to USB device */
+	struct usb_device *udev;
 	/** Pointer to transfer completion callback (opaque for the UHC) */
 	void *cb;
 	/** Transfer result, 0 on success, other values on error */
