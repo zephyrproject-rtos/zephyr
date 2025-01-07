@@ -260,14 +260,26 @@ extern atomic_t _cpus_active;
  * another SMP CPU.
  */
 bool z_smp_cpu_mobile(void);
-
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
 			arch_curr_cpu(); })
-#define _current arch_current_thread()
+
+struct k_thread *z_smp_current_get(void);
+#define _current z_smp_current_get()
 
 #else
 #define _current_cpu (&_kernel.cpus[0])
 #define _current _kernel.cpus[0].current
+#endif
+
+/* This is always invoked from a context where preemption is disabled */
+#define z_current_thread_set(thread) ({ _current_cpu->current = (thread); })
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL
+#undef _current
+#define _current arch_current_thread()
+#undef z_current_thread_set
+#define z_current_thread_set(thread) \
+	arch_current_thread_set(({ _current_cpu->current = (thread); }))
 #endif
 
 /* kernel wait queue record */
