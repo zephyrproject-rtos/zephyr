@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+config IPC_SERVICE_BITPOOL
+	bool "IPC Service atomic bitpool library"
+	help
+	  Atomic bitpool implementation library.
