@@ -39,7 +39,7 @@ static void rogue_user_fn(void *p1, void *p2, void *p3)
 	if (IS_ENABLED(CONFIG_RISCV_GP)) {
 		zassert_equal(reg_read(gp), 0xbad);
 	} else { /* CONFIG_RISCV_CURRENT_VIA_GP */
-		zassert_equal((uintptr_t)arch_current_thread(), 0xbad);
+		zassert_equal((uintptr_t)_current, 0xbad);
 	}
 
 	/* Sleep to force a context switch, which will sanitize `gp` */

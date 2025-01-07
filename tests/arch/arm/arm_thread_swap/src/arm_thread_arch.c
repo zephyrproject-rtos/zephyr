@@ -274,16 +274,16 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 	/* Verify that the _current_ (alt) thread is
 	 * initialized with EXC_RETURN.Ftype set
 	 */
-	zassert_true((arch_current_thread()->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
+	zassert_true((_current->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
 		"Alt thread FPCA flag not clear at initialization\n");
 #if defined(CONFIG_MPU_STACK_GUARD)
 	/* Alt thread is created with K_FP_REGS set, so we
 	 * expect lazy stacking and long guard to be enabled.
 	 */
-	zassert_true((arch_current_thread()->arch.mode &
+	zassert_true((_current->arch.mode &
 		Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0,
 		"Alt thread MPU GUAR DFLOAT flag not set at initialization\n");
-	zassert_true((arch_current_thread()->base.user_options & K_FP_REGS) != 0,
+	zassert_true((_current->base.user_options & K_FP_REGS) != 0,
 		"Alt thread K_FP_REGS not set at initialization\n");
 	zassert_true((FPU->FPCCR & FPU_FPCCR_LSPEN_Msk) != 0,
 		"Lazy FP Stacking not set at initialization\n");
@@ -326,7 +326,7 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 	p_ztest_thread->arch.swap_return_value = SWAP_RETVAL;
 #endif
 
-	z_move_thread_to_end_of_prio_q(arch_current_thread());
+	z_move_thread_to_end_of_prio_q(_current);
 
 	/* Modify the callee-saved registers by zero-ing them.
 	 * The main test thread will, later, assert that they
@@ -451,20 +451,20 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	 */
 	load_callee_saved_regs(&ztest_thread_callee_saved_regs_init);
 
-	k_thread_priority_set(arch_current_thread(), K_PRIO_COOP(PRIORITY));
+	k_thread_priority_set(_current, K_PRIO_COOP(PRIORITY));
 
 	/* Export current thread's callee-saved registers pointer
 	 * and arch.basepri variable pointer, into global pointer
 	 * variables, so they can be easily accessible by other
 	 * (alternative) test thread.
 	 */
-	p_ztest_thread = arch_current_thread();
+	p_ztest_thread = _current;
 
 	/* Confirm initial conditions before starting the test. */
 	test_flag = switch_flag;
 	zassert_true(test_flag == false,
 		"Switch flag not initialized properly\n");
-	zassert_true(arch_current_thread()->arch.basepri == 0,
+	zassert_true(_current->arch.basepri == 0,
 		"Thread BASEPRI flag not clear at thread start\n");
 	/* Verify, also, that the interrupts are unlocked. */
 #if defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
@@ -484,16 +484,16 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 		"Main test thread does not start in privilege mode\n");
 
 	/* Assert that the mode status variable indicates privilege mode */
-	zassert_true((arch_current_thread()->arch.mode & CONTROL_nPRIV_Msk) == 0,
+	zassert_true((_current->arch.mode & CONTROL_nPRIV_Msk) == 0,
 		"Thread nPRIV flag not clear for supervisor thread: 0x%0x\n",
-		arch_current_thread()->arch.mode);
+		_current->arch.mode);
 #endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* The main test thread is not (yet) actively using the FP registers */
-	zassert_true((arch_current_thread()->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
+	zassert_true((_current->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
 		"Thread Ftype flag not set at initialization 0x%0x\n",
-		arch_current_thread()->arch.mode);
+		_current->arch.mode);
 
 	/* Verify that the main test thread is initialized with FPCA cleared. */
 	zassert_true((__get_CONTROL() & CONTROL_FPCA_Msk) == 0,
@@ -506,7 +506,7 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	/* Clear the thread's floating-point callee-saved registers' container.
 	 * The container will, later, be populated by the swap mechanism.
 	 */
-	memset(&arch_current_thread()->arch.preempt_float, 0,
+	memset(&_current->arch.preempt_float, 0,
 		sizeof(struct _preempt_float));
 
 	/* Randomize the FP callee-saved registers at test initialization */
@@ -520,13 +520,13 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	/* The main test thread is using the FP registers, but the .mode
 	 * flag is not updated until the next context switch.
 	 */
-	zassert_true((arch_current_thread()->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
+	zassert_true((_current->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
 		"Thread Ftype flag not set at initialization\n");
 #if defined(CONFIG_MPU_STACK_GUARD)
-	zassert_true((arch_current_thread()->arch.mode &
+	zassert_true((_current->arch.mode &
 		Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) == 0,
 		"Thread MPU GUAR DFLOAT flag not clear at initialization\n");
-	zassert_true((arch_current_thread()->base.user_options & K_FP_REGS) == 0,
+	zassert_true((_current->base.user_options & K_FP_REGS) == 0,
 		"Thread K_FP_REGS not clear at initialization\n");
 	zassert_true((FPU->FPCCR & FPU_FPCCR_LSPEN_Msk) == 0,
 		"Lazy FP Stacking not clear at initialization\n");
@@ -555,13 +555,13 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	 * explicitly required by the test.
 	 */
 	(void)irq_lock();
-	z_move_thread_to_end_of_prio_q(arch_current_thread());
+	z_move_thread_to_end_of_prio_q(_current);
 
 	/* Clear the thread's callee-saved registers' container.
 	 * The container will, later, be populated by the swap
 	 * mechanism.
 	 */
-	memset(&arch_current_thread()->callee_saved, 0, sizeof(_callee_saved_t));
+	memset(&_current->callee_saved, 0, sizeof(_callee_saved_t));
 
 	/* Verify context-switch has not occurred yet. */
 	test_flag = switch_flag;
@@ -677,7 +677,7 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	 */
 	verify_callee_saved(
 		&ztest_thread_callee_saved_regs_container,
-		&arch_current_thread()->callee_saved);
+		&_current->callee_saved);
 
 	/* Verify context-switch did occur. */
 	test_flag = switch_flag;
@@ -693,7 +693,7 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	 * the alternative thread modified it, since the thread
 	 * is now switched back in.
 	 */
-	zassert_true(arch_current_thread()->arch.basepri == 0,
+	zassert_true(_current->arch.basepri == 0,
 		"arch.basepri value not in accordance with the update\n");
 
 #if defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
@@ -714,12 +714,12 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 
 #if !defined(CONFIG_NO_OPTIMIZATIONS)
 	/* The thread is now swapped-back in. */
-	zassert_equal(arch_current_thread()->arch.swap_return_value, SWAP_RETVAL,
+	zassert_equal(_current->arch.swap_return_value, SWAP_RETVAL,
 		"Swap value not set as expected: 0x%x (0x%x)\n",
-		arch_current_thread()->arch.swap_return_value, SWAP_RETVAL);
-	zassert_equal(arch_current_thread()->arch.swap_return_value, ztest_swap_return_val,
+		_current->arch.swap_return_value, SWAP_RETVAL);
+	zassert_equal(_current->arch.swap_return_value, ztest_swap_return_val,
 		"Swap value not returned as expected 0x%x (0x%x)\n",
-		arch_current_thread()->arch.swap_return_value, ztest_swap_return_val);
+		_current->arch.swap_return_value, ztest_swap_return_val);
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
@@ -737,7 +737,7 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	 */
 	verify_fp_callee_saved(
 		&ztest_thread_fp_callee_saved_regs,
-		&arch_current_thread()->arch.preempt_float);
+		&_current->arch.preempt_float);
 
 	/* Verify that the main test thread restored the FPSCR bit-0. */
 	zassert_true((__get_FPSCR() & 0x1) == 0x1,
@@ -746,13 +746,13 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	/* The main test thread is using the FP registers, and the .mode
 	 * flag and MPU GUARD flag are now updated.
 	 */
-	zassert_true((arch_current_thread()->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0,
+	zassert_true((_current->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0,
 		"Thread Ftype flag not cleared after main returned back\n");
 #if defined(CONFIG_MPU_STACK_GUARD)
-	zassert_true((arch_current_thread()->arch.mode &
+	zassert_true((_current->arch.mode &
 		Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0,
 		"Thread MPU GUARD FLOAT flag not set\n");
-	zassert_true((arch_current_thread()->base.user_options & K_FP_REGS) != 0,
+	zassert_true((_current->base.user_options & K_FP_REGS) != 0,
 		"Thread K_FPREGS not set after main returned back\n");
 	zassert_true((FPU->FPCCR & FPU_FPCCR_LSPEN_Msk) != 0,
 		"Lazy FP Stacking not set after main returned back\n");

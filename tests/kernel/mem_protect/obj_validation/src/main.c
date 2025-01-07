@@ -132,7 +132,7 @@ ZTEST(object_validation, test_generic_object)
 ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
 {
 	static struct k_sem *test_dyn_sem;
-	struct k_thread *thread = arch_current_thread();
+	struct k_thread *thread = _current;
 
 	uintptr_t start_addr, end_addr;
 	size_t size_heap = K_HEAP_MEM_POOL_SIZE;
@@ -173,7 +173,7 @@ ZTEST(object_validation, test_no_ref_dyn_kobj_release_mem)
 	zassert_not_null(test_dyn_mutex,
 					 "Can not allocate dynamic kernel object");
 
-	struct k_thread *thread = arch_current_thread();
+	struct k_thread *thread = _current;
 
 	/* revoke access from the current thread */
 	k_object_access_revoke(test_dyn_mutex, thread);

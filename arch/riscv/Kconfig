@@ -38,7 +38,7 @@ config RISCV_CURRENT_VIA_GP
 	select ARCH_HAS_CUSTOM_CURRENT_IMPL
 	help
 	  Store the current thread's pointer into the global pointer (GP) register.
-	  When is enabled, calls to `arch_current_thread()` & `k_sched_current_thread_query()` will
+	  When is enabled, calls to `_current` & `k_sched_current_thread_query()` will
 	  be reduced to a single register read.
 
 endchoice # RISCV_GP_PURPOSE

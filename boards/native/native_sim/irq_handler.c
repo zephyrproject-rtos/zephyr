@@ -113,7 +113,7 @@ void posix_irq_handler(void)
 	 */
 	if (may_swap
 		&& (hw_irq_ctrl_get_cur_prio() == 256)
-		&& (_kernel.ready_q.cache) && (_kernel.ready_q.cache != arch_current_thread())) {
+		&& (_kernel.ready_q.cache) && (_kernel.ready_q.cache != _current)) {
 
 		(void)z_swap_irqlock(irq_lock);
 	}

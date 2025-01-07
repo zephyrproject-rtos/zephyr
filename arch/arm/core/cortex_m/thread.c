@@ -231,8 +231,8 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 {
 
 	/* Set up privileged stack before entering user mode */
-	arch_current_thread()->arch.priv_stack_start =
-		(uint32_t)z_priv_stack_find(arch_current_thread()->stack_obj);
+	_current->arch.priv_stack_start =
+		(uint32_t)z_priv_stack_find(_current->stack_obj);
 #if defined(CONFIG_MPU_STACK_GUARD)
 #if defined(CONFIG_THREAD_STACK_INFO)
 	/* We're dropping to user mode which means the guard area is no
@@ -241,13 +241,13 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * which accounted for memory borrowed from the thread stack.
 	 */
 #if FP_GUARD_EXTRA_SIZE > 0
-	if ((arch_current_thread()->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) {
-		arch_current_thread()->stack_info.start -= FP_GUARD_EXTRA_SIZE;
-		arch_current_thread()->stack_info.size += FP_GUARD_EXTRA_SIZE;
+	if ((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) {
+		_current->stack_info.start -= FP_GUARD_EXTRA_SIZE;
+		_current->stack_info.size += FP_GUARD_EXTRA_SIZE;
 	}
 #endif /* FP_GUARD_EXTRA_SIZE */
-	arch_current_thread()->stack_info.start -= MPU_GUARD_ALIGN_AND_SIZE;
-	arch_current_thread()->stack_info.size += MPU_GUARD_ALIGN_AND_SIZE;
+	_current->stack_info.start -= MPU_GUARD_ALIGN_AND_SIZE;
+	_current->stack_info.size += MPU_GUARD_ALIGN_AND_SIZE;
 #endif /* CONFIG_THREAD_STACK_INFO */
 
 	/* Stack guard area reserved at the bottom of the thread's
@@ -255,18 +255,18 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * buffer area accordingly.
 	 */
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	arch_current_thread()->arch.priv_stack_start +=
-		((arch_current_thread()->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
+	_current->arch.priv_stack_start +=
+		((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
 		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
 #else
-	arch_current_thread()->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
+	_current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
-			     (uint32_t)arch_current_thread()->stack_info.start,
-			     arch_current_thread()->stack_info.size -
-			     arch_current_thread()->stack_info.delta);
+			     (uint32_t)_current->stack_info.start,
+			     _current->stack_info.size -
+			     _current->stack_info.delta);
 	CODE_UNREACHABLE;
 }
 
@@ -379,7 +379,7 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp)
 {
 #if defined(CONFIG_MULTITHREADING)
-	const struct k_thread *thread = arch_current_thread();
+	const struct k_thread *thread = _current;
 
 	if (thread == NULL) {
 		return 0;
@@ -389,7 +389,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 #if (defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)) && \
 	defined(CONFIG_MPU_STACK_GUARD)
 	uint32_t guard_len =
-		((arch_current_thread()->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
+		((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
 		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	/* If MPU_STACK_GUARD is not enabled, the guard length is
@@ -452,7 +452,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 int arch_float_disable(struct k_thread *thread)
 {
-	if (thread != arch_current_thread()) {
+	if (thread != _current) {
 		return -EINVAL;
 	}
 

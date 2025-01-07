@@ -210,7 +210,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #ifdef CONFIG_MULTITHREADING
 void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
 {
-	*old_thread = arch_current_thread();
+	*old_thread =  _current;
 
 	return z_get_next_switch_handle(NULL);
 }
@@ -227,16 +227,16 @@ void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
 {
-	setup_stack_vars(arch_current_thread());
+	setup_stack_vars(_current);
 
 	/* possible optimizaiton: no need to load mem domain anymore */
 	/* need to lock cpu here ? */
-	configure_mpu_thread(arch_current_thread());
+	configure_mpu_thread(_current);
 
 	z_arc_userspace_enter(user_entry, p1, p2, p3,
-			      (uint32_t)arch_current_thread()->stack_info.start,
-			      (arch_current_thread()->stack_info.size -
-			       arch_current_thread()->stack_info.delta), arch_current_thread());
+			      (uint32_t)_current->stack_info.start,
+			      (_current->stack_info.size -
+			       _current->stack_info.delta), _current);
 	CODE_UNREACHABLE;
 }
 #endif
@@ -336,7 +336,7 @@ int arc_vpx_lock(k_timeout_t timeout)
 
 	id = _current_cpu->id;
 #if (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_SCHED_CPU_MASK)
-	__ASSERT(!arch_is_in_isr() && (arch_current_thread()->base.cpu_mask == BIT(id)), "");
+	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == BIT(id)), "");
 #endif
 	k_spin_unlock(&lock, key);
 
@@ -355,7 +355,7 @@ void arc_vpx_unlock(void)
 
 	key = k_spin_lock(&lock);
 #if (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_SCHED_CPU_MASK)
-	__ASSERT(!arch_is_in_isr() && (arch_current_thread()->base.cpu_mask == BIT(id)), "");
+	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == BIT(id)), "");
 #endif
 	id = _current_cpu->id;
 	k_spin_unlock(&lock, key);
