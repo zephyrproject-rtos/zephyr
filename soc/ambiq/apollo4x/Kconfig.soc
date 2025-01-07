@@ -18,6 +18,7 @@ config SOC_APOLLO4P
 config SOC_APOLLO4P_BLUE
 	bool
 	select SOC_SERIES_APOLLO4X
+	select SOC_AMBIQ_BT_SUPPORTED
 	help
 	  Apollo4 Blue Plus
 
