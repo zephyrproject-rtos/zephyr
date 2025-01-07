@@ -201,9 +201,9 @@
 /*
  * POSIX2 Options
  */
-#define _POSIX2_VERSION _POSIX_VERSION
-#define _POSIX2_C_BIND  _POSIX2_VERSION
-#define _POSIX2_C_DEV   _POSIX2_VERSION
+/* #define _POSIX2_VERSION (-1) */
+#define _POSIX2_C_BIND _POSIX_VERSION
+/* #define _POSIX2_C_DEV (-1) */
 /* #define _POSIX2_CHAR_TERM (-1L) */
 /* #define _POSIX2_FORT_DEV (-1L) */
 /* #define _POSIX2_FORT_RUN (-1L) */
