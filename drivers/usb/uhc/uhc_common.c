@@ -93,12 +93,14 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
-				    const uint16_t mps,
-				    void *const udev,
-				    void *const cb)
+				    struct usb_device *const udev,
+				    void *const cb,
+				    void *const cb_priv)
 {
+	uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
 	const struct uhc_api *api = dev->api;
 	struct uhc_transfer *xfer = NULL;
+	uint16_t mps;
 
 	api->lock(dev);
 
@@ -106,7 +108,26 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		goto xfer_alloc_error;
 	}
 
-	LOG_DBG("Allocate xfer, ep 0x%02x cb %p", ep, cb);
+	if (ep_idx == 0) {
+		mps = udev->dev_desc.bMaxPacketSize0;
+	} else {
+		struct usb_ep_descriptor *ep_desc;
+
+		if (USB_EP_DIR_IS_IN(ep)) {
+			ep_desc = udev->ep_in[ep_idx].desc;
+		} else {
+			ep_desc = udev->ep_out[ep_idx].desc;
+		}
+
+		if (ep_desc == NULL) {
+			LOG_ERR("Endpoint 0x%02x is not configured", ep);
+			goto xfer_alloc_error;
+		}
+
+		mps = ep_desc->wMaxPacketSize;
+	}
+
+	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, mps, cb);
 
 	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, K_NO_WAIT)) {
 		LOG_ERR("Failed to allocate transfer");
@@ -118,6 +139,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	xfer->mps = mps;
 	xfer->udev = udev;
 	xfer->cb = cb;
+	xfer->priv = cb_priv;
 
 xfer_alloc_error:
 	api->unlock(dev);
@@ -127,9 +149,9 @@ xfer_alloc_error:
 
 struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 					     const uint8_t ep,
-					     const uint16_t mps,
-					     void *const udev,
+					     struct usb_device *const udev,
 					     void *const cb,
+					     void *const cb_priv,
 					     size_t size)
 {
 	struct uhc_transfer *xfer;
@@ -140,7 +162,7 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 		return NULL;
 	}
 
-	xfer = uhc_xfer_alloc(dev, ep, mps, udev, cb);
+	xfer = uhc_xfer_alloc(dev, ep, udev, cb, cb_priv);
 	if (xfer == NULL) {
 		net_buf_unref(buf);
 		return NULL;

@@ -93,6 +93,8 @@ struct uhc_transfer {
 	struct usb_device *udev;
 	/** Pointer to transfer completion callback (opaque for the UHC) */
 	void *cb;
+	/** Pointer to completion callback private data */
+	void *priv;
 	/** Transfer result, 0 on success, other values on error */
 	int err;
 };
@@ -361,17 +363,17 @@ static inline int uhc_bus_resume(const struct device *dev)
  *
  * @param[in] dev     Pointer to device struct of the driver instance
  * @param[in] ep      Endpoint address
- * @param[in] mps     Maximum packet size of the endpoint
- * @param[in] udev    Opaque pointer to USB device
+ * @param[in] udev    Pointer to USB device
  * @param[in] cb      Transfer completion callback
+ * @param[in] cb_priv Completion callback callback private data
  *
  * @return pointer to allocated transfer or NULL on error.
  */
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
-				    const uint16_t mps,
-				    void *const udev,
-				    void *const cb);
+				    struct usb_device *const udev,
+				    void *const cb,
+				    void *const cb_priv);
 
 /**
  * @brief Allocate UHC transfer with buffer
@@ -380,18 +382,18 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
  *
  * @param[in] dev     Pointer to device struct of the driver instance
  * @param[in] ep      Endpoint address
- * @param[in] mps     Maximum packet size of the endpoint
- * @param[in] udev    Opaque pointer to USB device
+ * @param[in] udev    Pointer to USB device
  * @param[in] cb      Transfer completion callback
+ * @param[in] cb_priv Completion callback callback private data
  * @param[in] size    Size of the buffer
  *
  * @return pointer to allocated transfer or NULL on error.
  */
 struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 					     const uint8_t ep,
-					     const uint16_t mps,
-					     void *const udev,
+					     struct usb_device *const udev,
 					     void *const cb,
+					     void *const cb_priv,
 					     size_t size);
 
 /**
