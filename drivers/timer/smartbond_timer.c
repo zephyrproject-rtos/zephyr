@@ -120,7 +120,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			 * RC32K maximum frequency.
 			 */
 			watchdog_expire_ticks = SYS_WDOG->WATCHDOG_REG *
-				CONFIG_SYS_CLOCK_TICKS_PER_SEC / (get_rc32k_max_frequency() / 320);
+				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
+				(get_rc32k_max_frequency() / 320);
 		}
 		if (watchdog_expire_ticks - 2 < ticks) {
 			ticks = watchdog_expire_ticks - 2;
