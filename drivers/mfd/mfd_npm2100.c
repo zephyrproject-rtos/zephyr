@@ -355,17 +355,6 @@ int mfd_npm2100_hibernate(const struct device *dev, uint32_t time_ms, bool pass_
 		}
 	}
 
-	/* Ensure shiphold button is enabled so that wakeup will work */
-	ret = i2c_reg_write_byte_dt(&config->i2c, RESET_WRITESTICKY, 0);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, RESET_STROBESTICKY, 1U);
-	if (ret < 0) {
-		return ret;
-	}
-
 	return i2c_reg_write_byte_dt(
 		&config->i2c, pass_through ? HIBERNATE_TASKS_HIBERPT : HIBERNATE_TASKS_HIBER, 1U);
 }
