@@ -262,7 +262,7 @@ static inline int queue_submit_locked(struct k_work_q *queue,
 	}
 
 	int ret;
-	bool chained = (arch_current_thread() == &queue->thread) && !k_is_in_isr();
+	bool chained = (_current == &queue->thread) && !k_is_in_isr();
 	bool draining = flag_test(&queue->flags, K_WORK_QUEUE_DRAIN_BIT);
 	bool plugged = flag_test(&queue->flags, K_WORK_QUEUE_PLUGGED_BIT);
 

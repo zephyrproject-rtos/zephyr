@@ -19,7 +19,7 @@
 static ALWAYS_INLINE struct k_thread *arch_current_thread(void)
 {
 #ifdef CONFIG_SMP
-	/* In SMP, arch_current_thread() is a field read from _current_cpu, which
+	/* In SMP, _current is a field read from _current_cpu, which
 	 * can race with preemption before it is read.  We must lock
 	 * local interrupts when reading it.
 	 */

@@ -262,7 +262,7 @@ config ARC_CURRENT_THREAD_USE_NO_TLS
 	  RGF_NUM_BANKS the parameter is disabled by-default because banks syncronization
 	  requires significant time, and it slows down performance.
 	  ARCMWDT works with tls pointer in different way then GCC. Optimized access to
-	  TLS pointer via arch_current_thread() does not provide significant advantages
+	  TLS pointer via the _current symbol does not provide significant advantages
 	  in case of MetaWare.
 
 config GEN_ISR_TABLES

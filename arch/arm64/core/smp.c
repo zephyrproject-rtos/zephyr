@@ -240,7 +240,7 @@ void mem_cfg_ipi_handler(const void *unused)
 	 * This is a no-op if the page table is already the right one.
 	 * Lock irq to prevent the interrupt during mem region switch.
 	 */
-	z_arm64_swap_mem_domains(arch_current_thread());
+	z_arm64_swap_mem_domains(_current);
 	arch_irq_unlock(key);
 }
 

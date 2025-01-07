@@ -421,7 +421,7 @@ void z_x86_tlb_ipi(const void *arg)
 	/* We might have been moved to another memory domain, so always invoke
 	 * z_x86_thread_page_tables_get() instead of using current CR3 value.
 	 */
-	ptables_phys = k_mem_phys_addr(z_x86_thread_page_tables_get(arch_current_thread()));
+	ptables_phys = k_mem_phys_addr(z_x86_thread_page_tables_get(_current));
 #endif
 	/*
 	 * In the future, we can consider making this smarter, such as
@@ -1440,7 +1440,7 @@ static inline void bcb_fence(void)
 __pinned_func
 int arch_buffer_validate(const void *addr, size_t size, int write)
 {
-	pentry_t *ptables = z_x86_thread_page_tables_get(arch_current_thread());
+	pentry_t *ptables = z_x86_thread_page_tables_get(_current);
 	uint8_t *virt;
 	size_t aligned_size;
 	int ret = 0;
@@ -1958,7 +1958,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 * IPI takes care of this if the thread is currently running on some
 	 * other CPU.
 	 */
-	if (thread == arch_current_thread() && thread->arch.ptables != z_x86_cr3_get()) {
+	if (thread == _current && thread->arch.ptables != z_x86_cr3_get()) {
 		z_x86_cr3_set(thread->arch.ptables);
 	}
 #endif /* CONFIG_X86_KPTI */
@@ -1980,9 +1980,8 @@ void z_x86_current_stack_perms(void)
 	/* Clear any previous context in the stack buffer to prevent
 	 * unintentional data leakage.
 	 */
-	(void)memset((void *)arch_current_thread()->stack_info.start, 0xAA,
-		     arch_current_thread()->stack_info.size -
-			     arch_current_thread()->stack_info.delta);
+	(void)memset((void *)_current->stack_info.start, 0xAA,
+		     _current->stack_info.size - _current->stack_info.delta);
 
 	/* Only now is it safe to grant access to the stack buffer since any
 	 * previous context has been erased.
@@ -1992,13 +1991,13 @@ void z_x86_current_stack_perms(void)
 	 * This will grant stack and memory domain access if it wasn't set
 	 * already (in which case this returns very quickly).
 	 */
-	z_x86_swap_update_common_page_table(arch_current_thread());
+	z_x86_swap_update_common_page_table(_current);
 #else
 	/* Memory domain access is already programmed into the page tables.
 	 * Need to enable access to this new user thread's stack buffer in
 	 * its domain-specific page tables.
 	 */
-	set_stack_perms(arch_current_thread(), z_x86_thread_page_tables_get(arch_current_thread()));
+	set_stack_perms(_current, z_x86_thread_page_tables_get(_current));
 #endif
 }
 #endif /* CONFIG_USERSPACE */

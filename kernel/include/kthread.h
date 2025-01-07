@@ -211,17 +211,17 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 		return true;
 	}
 
-	__ASSERT(arch_current_thread() != NULL, "");
+	__ASSERT(_current != NULL, "");
 
 	/* Or if we're pended/suspended/dummy (duh) */
-	if (z_is_thread_prevented_from_running(arch_current_thread())) {
+	if (z_is_thread_prevented_from_running(_current)) {
 		return true;
 	}
 
 	/* Otherwise we have to be running a preemptible thread or
 	 * switching to a metairq
 	 */
-	if (thread_is_preemptible(arch_current_thread()) || thread_is_metairq(thread)) {
+	if (thread_is_preemptible(_current) || thread_is_metairq(thread)) {
 		return true;
 	}
 

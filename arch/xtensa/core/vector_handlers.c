@@ -34,7 +34,7 @@ extern char xtensa_arch_kernel_oops_epc[];
 bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 {
 	uintptr_t start, end;
-	struct k_thread *thread = arch_current_thread();
+	struct k_thread *thread = _current;
 	bool was_in_isr, invalid;
 
 	/* Without userspace, there is no privileged stack so the thread stack
