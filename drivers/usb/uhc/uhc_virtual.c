@@ -98,7 +98,7 @@ static int vrt_xfer_control(const struct device *dev,
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		LOG_DBG("Handle SETUP stage");
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_SETUP,
-					xfer->addr, USB_CONTROL_EP_OUT,
+					xfer->udev->addr, USB_CONTROL_EP_OUT,
 					xfer->setup_pkt, sizeof(xfer->setup_pkt));
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
@@ -121,7 +121,7 @@ static int vrt_xfer_control(const struct device *dev,
 
 		LOG_DBG("Handle DATA stage");
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA,
-					xfer->addr, xfer->ep,
+					xfer->udev->addr, xfer->ep,
 					data, length);
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
@@ -144,7 +144,7 @@ static int vrt_xfer_control(const struct device *dev,
 		}
 
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA,
-					xfer->addr, ep,
+					xfer->udev->addr, ep,
 					NULL, 0);
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
@@ -176,7 +176,7 @@ static int vrt_xfer_bulk(const struct device *dev,
 		data = buf->data;
 	}
 
-	uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->addr, xfer->ep,
+	uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->udev->addr, xfer->ep,
 				data, length);
 	if (uvb_pkt == NULL) {
 		LOG_ERR("Failed to allocate UVB packet");
