@@ -222,7 +222,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         out = self.check_output([self.openocd_cmd[0], '--version'],
                                 stderr=subprocess.STDOUT).decode()
 
-        version_match = re.search(r"Open On-Chip Debugger (\d+.\d+.\d+)", out)
+        version_match = re.search(r"Open On-Chip Debugger v?(\d+.\d+.\d+)", out)
         version = version_match.group(1).split('.')
 
         return [to_num(i) for i in version]
