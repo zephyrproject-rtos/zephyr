@@ -797,11 +797,11 @@ struct k_thread *z_swap_next_thread(void)
 }
 
 #ifdef CONFIG_USE_SWITCH
-/* Just a wrapper around arch_current_thread_set(xxx) with tracing */
+/* Just a wrapper around z_current_thread_set(xxx) with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
 	z_thread_mark_switched_out();
-	arch_current_thread_set(new_thread);
+	z_current_thread_set(new_thread);
 }
 
 /**

@@ -34,6 +34,4 @@
 #include <zephyr/arch/sparc/arch_inlines.h>
 #endif
 
-#include <zephyr/arch/common/arch_inlines.h>
-
 #endif /* ZEPHYR_INCLUDE_ARCH_INLINES_H_ */
