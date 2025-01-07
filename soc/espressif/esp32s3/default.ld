@@ -1001,7 +1001,7 @@ SECTIONS
 
     _spiram_heap_start = ABSOLUTE(.);
     . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE - (_spiram_heap_start - _ext_ram_bss_start);
-    . = ALIGN(4);
+    . = ALIGN(16);
 
     _ext_ram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(ext_dram_seg)
