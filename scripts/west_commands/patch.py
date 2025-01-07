@@ -14,6 +14,11 @@ import pykwalify.core
 import yaml
 from west.commands import WestCommand
 
+import sys
+sys.path.append(os.fspath(Path(__file__).parent.parent))
+import zephyr_module
+from zephyr_ext_common import ZEPHYR_BASE
+
 try:
     from yaml import CSafeLoader as SafeLoader
 except ImportError:
@@ -90,6 +95,7 @@ class Patch(WestCommand):
             """),
         )
 
+        parser.add_argument("-m", "--module", help="module containing the patch")
         parser.add_argument(
             "-b",
             "--patch-base",
@@ -189,6 +195,17 @@ class Patch(WestCommand):
 
         topdir = Path(self.topdir)
         manifest_dir = topdir / manifest_path
+
+        if args.module is not None:
+            all_modules = zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest)
+            try:
+                module = [m for m in all_modules if m.meta['name'] == args.module][0]
+            except IndexError:
+                self.die(f"could not find module {args.module}")
+            if args.patch_base == _WEST_MANIFEST_DIR / WEST_PATCH_BASE:
+                args.patch_base = module.project / WEST_PATCH_BASE
+            if args.patch_yml == _WEST_MANIFEST_DIR / WEST_PATCH_YAML:
+                args.patch_yml = module.project / WEST_PATCH_YAML
 
         if args.patch_base.is_relative_to(_WEST_MANIFEST_DIR):
             args.patch_base = manifest_dir / args.patch_base.relative_to(_WEST_MANIFEST_DIR)
