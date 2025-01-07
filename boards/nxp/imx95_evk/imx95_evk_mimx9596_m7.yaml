@@ -17,4 +17,5 @@ supported:
   - uart
   - i2c
   - pwm
+  - spi
 vendor: nxp
