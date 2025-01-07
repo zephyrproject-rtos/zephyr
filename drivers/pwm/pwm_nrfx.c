@@ -234,7 +234,13 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 				out_level ^= 1;
 			}
 
+#if NRF_PWM_HAS_IDLEOUT
+			nrfx_pwm_stop(&config->pwm, true);
+			nrfy_pwm_channel_idle_set(config->pwm.p_reg, channel, out_level);
+			nrfy_pwm_enable(config->pwm.p_reg);
+#else
 			nrf_gpio_pin_write(psel, out_level);
+#endif
 		}
 
 		data->pwm_needed &= ~BIT(channel);
