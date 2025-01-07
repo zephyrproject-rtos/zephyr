@@ -35,6 +35,12 @@
 	status = "okay";
 };
 
+&lpspi1 {
+	pinctrl-0 = <&lpspi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &lpuart3 {
 	status = "okay";
 	current-speed = <115200>;
