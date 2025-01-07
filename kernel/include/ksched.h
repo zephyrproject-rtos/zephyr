@@ -180,7 +180,7 @@ static ALWAYS_INLINE struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
 		thread = _priq_wait_best(&wait_q->waitq);
 		if (unlikely(thread != NULL)) {
 			unpend_thread_no_timeout(thread);
-			(void)z_abort_thread_timeout(thread);
+			z_abort_thread_timeout(thread);
 		}
 	}
 
