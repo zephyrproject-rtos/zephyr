@@ -56,10 +56,15 @@
 #define IS_IRAM(addr)  (addr >= SOC_IRAM_LOW && addr < SOC_IRAM_HIGH)
 #define IS_IROM(addr)  (addr >= SOC_IROM_LOW && addr < SOC_IROM_HIGH)
 #define IS_DROM(addr)  (addr >= SOC_DROM_LOW && addr < SOC_DROM_HIGH)
-#define IS_SRAM(addr)  (IS_IRAM(addr) || IS_DRAM(addr))
-#define IS_MMAP(addr)  (IS_IROM(addr) || IS_DROM(addr))
-#define IS_NONE(addr)                                                                              \
-	(!IS_IROM(addr) && !IS_DROM(addr) && !IS_IRAM(addr) && !IS_DRAM(addr) && !IS_PADD(addr))
+#ifdef SOC_RTC_MEM_SUPPORTED
+#define IS_RTC(addr) (addr >= SOC_RTC_DRAM_LOW && addr < SOC_RTC_DRAM_HIGH)
+#else
+#define IS_RTC(addr) 0
+#endif
+#define IS_SRAM(addr) (IS_IRAM(addr) || IS_DRAM(addr))
+#define IS_MMAP(addr) (IS_IROM(addr) || IS_DROM(addr))
+#define IS_NONE(addr) (!IS_IROM(addr) && !IS_DROM(addr) \
+			&& !IS_IRAM(addr) && !IS_DRAM(addr) && !IS_PADD(addr) && !IS_RTC(addr))
 
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 
@@ -78,6 +83,7 @@ static uint32_t _app_irom_size = (uint32_t)&_image_irom_size;
 static uint32_t _app_drom_start =
 	(FIXED_PARTITION_OFFSET(slot0_partition) + (uint32_t)&_image_drom_start);
 static uint32_t _app_drom_size = (uint32_t)&_image_drom_size;
+
 #endif
 
 static uint32_t _app_irom_vaddr = ((uint32_t)&_image_irom_vaddr);
@@ -122,14 +128,13 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr, uint32_t
 		}
 
 		ESP_EARLY_LOGI(TAG, "%s: lma 0x%08x vma 0x%08x len 0x%-6x (%u)",
-			       IS_NONE(segment_hdr.load_addr) ? "???"
-			       : IS_MMAP(segment_hdr.load_addr)
-				       ? IS_IROM(segment_hdr.load_addr) ? "IMAP" : "DMAP"
-			       : IS_PADD(segment_hdr.load_addr) ? "padd"
-			       : IS_DRAM(segment_hdr.load_addr) ? "DRAM"
-								: "IRAM",
-			       offset + sizeof(esp_image_segment_header_t), segment_hdr.load_addr,
-			       segment_hdr.data_len, segment_hdr.data_len);
+			IS_NONE(segment_hdr.load_addr) ? "???" :
+			 IS_MMAP(segment_hdr.load_addr) ?
+			  IS_IROM(segment_hdr.load_addr) ? "IMAP" : "DMAP" :
+			    IS_DRAM(segment_hdr.load_addr) ? "DRAM" :
+				IS_RTC(segment_hdr.load_addr) ? "RTC" : "IRAM",
+			offset + sizeof(esp_image_segment_header_t),
+			segment_hdr.load_addr, segment_hdr.data_len, segment_hdr.data_len);
 
 		/* Fix drom and irom produced be the linker, as it could
 		 * be invalidated by the elf2image and flash load offset
@@ -142,9 +147,10 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr, uint32_t
 			app_irom_start = offset + sizeof(esp_image_segment_header_t);
 			app_irom_start_aligned = app_irom_start & MMU_FLASH_MASK;
 		}
-		if (IS_SRAM(segment_hdr.load_addr)) {
+		if (IS_SRAM(segment_hdr.load_addr) || IS_RTC(segment_hdr.load_addr)) {
 			ram_segments++;
 		}
+
 		offset += sizeof(esp_image_segment_header_t) + segment_hdr.data_len;
 
 		if (ram_segments == bootloader_image_hdr.segment_count && !checksum) {
