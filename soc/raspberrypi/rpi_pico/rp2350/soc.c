@@ -18,7 +18,9 @@
 
 void soc_reset_hook(void)
 {
+#if SOC_RP2350A_M33
 	runtime_init_per_core_enable_coprocessors();
+#endif
 }
 
 #endif /* CONFIG_SOC_RESET_HOOK */

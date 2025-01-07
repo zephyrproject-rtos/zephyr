@@ -45,4 +45,9 @@
 /* Definition required for the flash driver */
 #define __STRING(x) #x
 
+/* Enable the HAL to work with minimal modification when using a minimal libc. */
+#ifndef __CONCAT
+#define __CONCAT CONCAT
+#endif
+
 #endif
