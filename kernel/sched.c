@@ -1031,6 +1031,7 @@ static inline void z_vrfy_k_reschedule(void)
 {
 	z_impl_k_reschedule();
 }
+#include <zephyr/syscalls/k_reschedule_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 bool k_can_yield(void)
