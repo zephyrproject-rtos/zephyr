@@ -799,7 +799,7 @@ SECTIONS
   /* --- SPIRAM BEGIN --- */
 
 #ifdef CONFIG_ESP_SPIRAM
-  .ext_ram.bss (NOLOAD):
+  .ext_ram (NOLOAD):
   {
     _ext_ram_start = ABSOLUTE(.);
     _ext_ram_noinit_start = ABSOLUTE(.);
@@ -812,10 +812,17 @@ SECTIONS
     *libsubsys__net.a:(.noinit .noinit.*)
 #endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
     . = ALIGN(16);
+
+    *(.ext_ram_noinit*)
+    *(.ext_ram_noinit.*)
+
+    . = ALIGN(16);
     _ext_ram_noinit_end = ABSOLUTE(.);
 
     _ext_ram_bss_start = ABSOLUTE(.);
+
     *(.ext_ram.bss*)
+
     . = ALIGN(16);
     _ext_ram_bss_end = ABSOLUTE(.);
 
