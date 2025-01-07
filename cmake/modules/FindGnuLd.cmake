@@ -87,10 +87,11 @@ if(GNULD_LINKER)
     # - "GNU ld (GNU Binutils for Ubuntu) 2.34"
     # - "GNU ld (Zephyr SDK 0.15.2) 2.38"
     # - "GNU ld (Gentoo 2.39 p5) 2.39.0"
+    # - "GNU ld version 2.17.50.0.9 20070103"
     string(REGEX MATCH
-           "GNU ld \\(.+\\) ([0-9]+[.][0-9]+[.]?[0-9]*).*"
+           "GNU ld (\\(.+\\)|version) ([0-9]+[.][0-9]+[.]?[0-9]*).*"
            out_var ${gnuld_version_output})
-    set(GNULD_VERSION_STRING ${CMAKE_MATCH_1} CACHE STRING "GNU ld version" FORCE)
+    set(GNULD_VERSION_STRING ${CMAKE_MATCH_2} CACHE STRING "GNU ld version" FORCE)
   endif()
 endif()
 
