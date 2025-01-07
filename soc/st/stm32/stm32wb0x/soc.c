@@ -146,12 +146,9 @@ static void configure_smps(void)
 /**
  * @brief Perform basic hardware initialization at boot.
  *
- * This needs to be run from the very beginning,
- * so the init priority has to be 0 (zero).
- *
- * @return 0
+ * This needs to be run from the very beginning.
  */
-static int stm32wb0_init(void)
+void soc_early_init_hook(void)
 {
 	/* Update CMSIS SystemCoreClock variable (CLK_SYS) */
 	/* On reset, the 64MHz HSI is selected as input to
@@ -181,8 +178,4 @@ static int stm32wb0_init(void)
 
 	/* Configure SMPS step-down converter */
 	configure_smps();
-
-	return 0;
 }
-
-SYS_INIT(stm32wb0_init, PRE_KERNEL_1, 0);
