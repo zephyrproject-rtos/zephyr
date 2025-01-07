@@ -44,7 +44,7 @@ static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   const uint8_t attrib,
 						   const uint16_t mps,
 						   const uint16_t timeout,
-						   usbh_udev_cb_t *const cb)
+						   usbh_udev_cb_t cb)
 {
 	struct usbh_contex *const ctx = udev->ctx;
 
