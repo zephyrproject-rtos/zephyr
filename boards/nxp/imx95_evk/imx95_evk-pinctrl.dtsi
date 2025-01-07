@@ -28,6 +28,18 @@
 		};
 	};
 
+	lpspi1_default: lpspi1_default {
+		group0 {
+			pinmux = <&iomuxc_sai1_txfs_lpspi_pcs_lpspi1_pcs0>,
+				<&iomuxc_sai1_txd0_lpspi_sck_lpspi1_sck>,
+				<&iomuxc_sai1_txc_lpspi_sin_lpspi1_sin>,
+				<&iomuxc_sai1_rxd0_lpspi_sout_lpspi1_sout>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
 	lpuart1_default: lpuart1_default {
 		group0 {
 			pinmux = <&iomuxc_uart1_rxd_lpuart_rx_lpuart1_rx>,
