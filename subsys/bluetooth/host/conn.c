@@ -744,7 +744,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	} else if (is_acl_conn(conn)) {
 		err = send_acl(conn, frag, flags);
 	} else {
-		err = -EINVAL;	/* Some animals disable asserts (╯°□°）╯︵ ┻━┻ */
+		err = -EINVAL; /* asserts may be disabled */
 		__ASSERT(false, "Invalid connection type %u", conn->type);
 	}
 
