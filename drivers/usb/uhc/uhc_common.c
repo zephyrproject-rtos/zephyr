@@ -92,9 +92,7 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 }
 
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
-				    const uint8_t addr,
 				    const uint8_t ep,
-				    const uint8_t attrib,
 				    const uint16_t mps,
 				    void *const udev,
 				    void *const cb)
@@ -108,8 +106,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		goto xfer_alloc_error;
 	}
 
-	LOG_DBG("Allocate xfer, ep 0x%02x attrib 0x%02x cb %p",
-		ep, attrib, cb);
+	LOG_DBG("Allocate xfer, ep 0x%02x cb %p", ep, cb);
 
 	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, K_NO_WAIT)) {
 		LOG_ERR("Failed to allocate transfer");
@@ -117,9 +114,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	}
 
 	memset(xfer, 0, sizeof(struct uhc_transfer));
-	xfer->addr = addr;
 	xfer->ep = ep;
-	xfer->attrib = attrib;
 	xfer->mps = mps;
 	xfer->udev = udev;
 	xfer->cb = cb;
@@ -131,9 +126,7 @@ xfer_alloc_error:
 }
 
 struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
-					     const uint8_t addr,
 					     const uint8_t ep,
-					     const uint8_t attrib,
 					     const uint16_t mps,
 					     void *const udev,
 					     void *const cb,
@@ -147,7 +140,7 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 		return NULL;
 	}
 
-	xfer = uhc_xfer_alloc(dev, addr, ep, attrib, mps, udev, cb);
+	xfer = uhc_xfer_alloc(dev, ep, mps, udev, cb);
 	if (xfer == NULL) {
 		net_buf_unref(buf);
 		return NULL;

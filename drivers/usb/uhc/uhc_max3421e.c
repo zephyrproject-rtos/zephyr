@@ -392,7 +392,7 @@ static int max3421e_schedule_xfer(const struct device *dev)
 		}
 
 		LOG_DBG("Next transfer %p", priv->last_xfer);
-		ret = max3421e_peraddr(dev, priv->last_xfer->addr);
+		ret = max3421e_peraddr(dev, priv->last_xfer->udev->addr);
 		if (ret) {
 			return ret;
 		}

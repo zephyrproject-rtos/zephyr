@@ -77,12 +77,8 @@ struct uhc_transfer {
 	uint8_t setup_pkt[8];
 	/** Transfer data buffer */
 	struct net_buf *buf;
-	/** Device (peripheral) address */
-	uint8_t addr;
 	/** Endpoint to which request is associated */
 	uint8_t ep;
-	/** Endpoint attributes (TBD) */
-	uint8_t attrib;
 	/** Maximum packet size */
 	uint16_t mps;
 	/** Flag marks request buffer is queued */
@@ -358,9 +354,7 @@ static inline int uhc_bus_resume(const struct device *dev)
  * and added from different pools.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] addr    Device (peripheral) address
  * @param[in] ep      Endpoint address
- * @param[in] attrib  Endpoint attributes
  * @param[in] mps     Maximum packet size of the endpoint
  * @param[in] udev    Opaque pointer to USB device
  * @param[in] cb      Transfer completion callback
@@ -368,9 +362,7 @@ static inline int uhc_bus_resume(const struct device *dev)
  * @return pointer to allocated transfer or NULL on error.
  */
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
-				    const uint8_t addr,
 				    const uint8_t ep,
-				    const uint8_t attrib,
 				    const uint16_t mps,
 				    void *const udev,
 				    void *const cb);
@@ -381,9 +373,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
  * Allocate a new transfer from common transfer pool with buffer.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] addr    Device (peripheral) address
  * @param[in] ep      Endpoint address
- * @param[in] attrib  Endpoint attributes
  * @param[in] mps     Maximum packet size of the endpoint
  * @param[in] udev    Opaque pointer to USB device
  * @param[in] cb      Transfer completion callback
@@ -392,9 +382,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
  * @return pointer to allocated transfer or NULL on error.
  */
 struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
-					     const uint8_t addr,
 					     const uint8_t ep,
-					     const uint8_t attrib,
 					     const uint16_t mps,
 					     void *const udev,
 					     void *const cb,
