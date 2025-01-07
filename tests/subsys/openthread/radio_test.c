@@ -625,12 +625,18 @@ ZTEST(openthread_radio, test_radio_state_test)
 
 	zassert_equal(otPlatRadioSetTransmitPower(ot, power), OT_ERROR_NONE,
 		      "Failed to set TX power.");
+
+	zassert_equal(otPlatRadioSleep(ot), OT_ERROR_NONE, "Failed to switch to sleep mode.");
+
 	zassert_equal(otPlatRadioDisable(ot), OT_ERROR_NONE, "Failed to disable radio.");
 
 	zassert_false(otPlatRadioIsEnabled(ot), "Radio reports as enabled.");
 
 	zassert_equal(otPlatRadioSleep(ot), OT_ERROR_INVALID_STATE,
 		      "Changed to sleep regardless being disabled.");
+
+	zassert_equal(otPlatRadioReceive(ot, channel), OT_ERROR_INVALID_STATE,
+		      "Changed to receive regardless being disabled.");
 
 	zassert_equal(otPlatRadioEnable(ot), OT_ERROR_NONE, "Enabling radio failed.");
 
@@ -644,6 +650,9 @@ ZTEST(openthread_radio, test_radio_state_test)
 	zassert_equal(otPlatRadioReceive(ot, channel), OT_ERROR_NONE, "Failed to receive.");
 	zassert_equal(platformRadioChannelGet(ot), channel, "Channel number not remembered.");
 
+	zassert_equal(otPlatRadioDisable(ot), OT_ERROR_INVALID_STATE,
+		      "Changed to disabled regardless being in receive state.");
+
 	zassert_true(otPlatRadioIsEnabled(ot), "Radio reports as disabled.");
 	zassert_equal(1, set_channel_mock_fake.call_count);
 	zassert_equal(channel, set_channel_mock_fake.arg1_val);
@@ -651,7 +660,7 @@ ZTEST(openthread_radio, test_radio_state_test)
 	zassert_equal(power, set_txpower_mock_fake.arg1_val);
 	zassert_equal(1, start_mock_fake.call_count);
 	zassert_equal_ptr(radio, start_mock_fake.arg0_val, NULL);
-	zassert_equal(1, stop_mock_fake.call_count);
+	zassert_equal(2, stop_mock_fake.call_count);
 	zassert_equal_ptr(radio, stop_mock_fake.arg0_val, NULL);
 }
 
@@ -814,6 +823,7 @@ ZTEST(openthread_radio, test_net_pkt_transmit)
 		      "Failed to set TX power.");
 
 	set_channel_mock_fake.return_val = 0;
+	zassert_equal(otPlatRadioEnable(ot), OT_ERROR_NONE, "Failed to enable.");
 	zassert_equal(otPlatRadioReceive(ot, channel), OT_ERROR_NONE, "Failed to receive.");
 	zassert_equal(1, set_channel_mock_fake.call_count);
 	zassert_equal(channel, set_channel_mock_fake.arg1_val);
