@@ -177,4 +177,5 @@ ZTEST(hlp_priority_boost, test_priority_elevation)
 	zassert_true(prio == 8, "The priority must be 8, but it is %d", prio);
 }
 
-ZTEST_SUITE(hlp_priority_boost, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(hlp_priority_boost, NULL, NULL,
+	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
