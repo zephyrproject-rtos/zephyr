@@ -2700,8 +2700,11 @@ ZTEST(devicetree_api, test_ranges_empty)
 #undef FAIL
 }
 
-ZTEST(devicetree_api, test_compat_get_any_status_okay)
+ZTEST(devicetree_api, test_compat)
 {
+	zassert_true(DT_SAME_NODE(DT_COMPAT(vnd_reg_holder),TEST_REG), "");
+	zassert_false(DT_NODE_EXISTS(DT_COMPAT(this_is_not_a_real_compat)), "");
+
 	zassert_true(
 		DT_SAME_NODE(
 			DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_reg_holder),

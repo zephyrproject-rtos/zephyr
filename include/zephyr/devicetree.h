@@ -425,6 +425,16 @@
  */
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
 
+
+/**
+ * @brief Get a node identifier for a compatible
+ * @param compat lowercase-and-underscores compatible, without quotes
+ * @return node identifier for a node with that compatible, or
+ *         @ref DT_INVALID_NODE
+ */
+#define DT_COMPAT(compat) DT_COMPAT_GET_ANY_STATUS_OKAY(compat)
+
+
 /**
  * @brief Get a node identifier for a status `okay` node with a compatible
  *

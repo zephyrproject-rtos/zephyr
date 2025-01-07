@@ -62,6 +62,10 @@ By chosen node
    Use :c:macro:`DT_CHOSEN()` to get a node identifier for ``/chosen`` node
    properties.
 
+By compatible
+   Use :c:macro:`DT_COMPAT()` to get a node identifier for the first matching
+   compatible.
+
 By parent/child
    Use :c:macro:`DT_PARENT()` and :c:macro:`DT_CHILD()` to get a node identifier
    for a parent or child node, starting from a node identifier you already have.
