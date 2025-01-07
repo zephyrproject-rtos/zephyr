@@ -28,6 +28,11 @@
 #endif
 
 /*
+ * Subprofiling Considerations
+ */
+#define _POSIX_SUBPROFILE 1
+
+/*
  * POSIX System Interfaces
  */
 
