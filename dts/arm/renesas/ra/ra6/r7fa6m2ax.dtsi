@@ -17,8 +17,6 @@
 
 		sci5: sci5@400700a0 {
 			compatible = "renesas,ra-sci";
-			interrupts = <20 1>, <21 1>, <22 1>, <23 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x400700a0 0x20>;
 			clocks = <&pclka MSTPB 26>;
 			status = "disabled";
@@ -31,8 +29,6 @@
 
 		sci6: sci6@400700c0 {
 			compatible = "renesas,ra-sci";
-			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x400700c0 0x20>;
 			clocks = <&pclka MSTPB 25>;
 			status = "disabled";
@@ -45,7 +41,7 @@
 
 		sci7: sci7@400700e0 {
 			compatible = "renesas,ra-sci";
-			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
+			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x400700e0 0x20>;
 			clocks = <&pclka MSTPB 24>;

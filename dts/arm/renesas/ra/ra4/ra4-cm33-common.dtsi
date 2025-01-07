@@ -129,7 +129,7 @@
 
 		sci9: sci9@40118900 {
 			compatible = "renesas,ra-sci";
-			interrupts = <36 1>, <37 1>, <38 1>, <39 1>;
+			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118900 0x100>;
 			clocks = <&pclka MSTPB 22>;
@@ -253,7 +253,7 @@
 
 		adc0: adc@40170000 {
 			compatible = "renesas,ra-adc";
-			interrupts = <40 1>;
+			interrupts = <38 1>;
 			interrupt-names = "scanend";
 			reg = <0x40170000 0x100>;
 			#io-channel-cells = <1>;
@@ -263,7 +263,7 @@
 
 		adc1: adc@40170200 {
 			compatible = "renesas,ra-adc";
-			interrupts = <41 1>;
+			interrupts = <39 1>;
 			interrupt-names = "scanend";
 			reg = <0x40170200 0x100>;
 			#io-channel-cells = <1>;
