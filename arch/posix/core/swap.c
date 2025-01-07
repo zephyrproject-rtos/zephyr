@@ -50,7 +50,7 @@ int arch_swap(unsigned int key)
 		_current->callee_saved.thread_status;
 
 
-	arch_current_thread_set(_kernel.ready_q.cache);
+	z_current_thread_set(_kernel.ready_q.cache);
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
 	z_thread_mark_switched_in();
 #endif
@@ -94,7 +94,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	z_thread_mark_switched_out();
 #endif
 
-	arch_current_thread_set(_kernel.ready_q.cache);
+	z_current_thread_set(_kernel.ready_q.cache);
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	z_thread_mark_switched_in();
