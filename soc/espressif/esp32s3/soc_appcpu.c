@@ -65,7 +65,7 @@ void IRAM_ATTR __appcpu_start(void)
 	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
 
 	/* Initialize the architecture CPU pointer.  Some of the
-	 * initialization code wants a valid arch_current_thread() before
+	 * initialization code wants a valid _current before
 	 * arch_kernel_init() is invoked.
 	 */
 	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[1]));

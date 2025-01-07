@@ -58,23 +58,23 @@ unsigned int z_smp_global_lock(void)
 {
 	unsigned int key = arch_irq_lock();
 
-	if (!arch_current_thread()->base.global_lock_count) {
+	if (!_current->base.global_lock_count) {
 		while (!atomic_cas(&global_lock, 0, 1)) {
 			arch_spin_relax();
 		}
 	}
 
-	arch_current_thread()->base.global_lock_count++;
+	_current->base.global_lock_count++;
 
 	return key;
 }
 
 void z_smp_global_unlock(unsigned int key)
 {
-	if (arch_current_thread()->base.global_lock_count != 0U) {
-		arch_current_thread()->base.global_lock_count--;
+	if (_current->base.global_lock_count != 0U) {
+		_current->base.global_lock_count--;
 
-		if (!arch_current_thread()->base.global_lock_count) {
+		if (!_current->base.global_lock_count) {
 			(void)atomic_clear(&global_lock);
 		}
 	}
