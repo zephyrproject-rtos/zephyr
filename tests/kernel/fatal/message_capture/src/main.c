@@ -86,7 +86,7 @@ int main(void)
 	 * panic and not an oops).  Set the thread non-essential as a
 	 * workaround.
 	 */
-	z_thread_essential_clear(arch_current_thread());
+	z_thread_essential_clear(_current);
 
 	test_message_capture();
 	return 0;

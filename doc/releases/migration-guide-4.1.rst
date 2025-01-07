@@ -404,10 +404,6 @@ Stream Flash
 Architectures
 *************
 
-* Common
-
-  * ``_current`` is deprecated, used :c:func:`arch_current_thread` instead.
-
 * native/POSIX
 
   * :kconfig:option:`CONFIG_NATIVE_APPLICATION` has been deprecated. Out-of-tree boards using this

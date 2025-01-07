@@ -232,7 +232,7 @@ static void test_reschedule_helper0(void *p1, void *p2, void *p3)
 {
 	/* 4. Reschedule brings us here */
 
-	zassert_true(expected_thread == arch_current_thread(), "");
+	zassert_true(expected_thread == _current, "");
 
 	expected_thread = &worker_threads[1];
 }
@@ -243,26 +243,26 @@ static void test_reschedule_helper1(void *p1, void *p2, void *p3)
 
 	/* 1. First helper expected to execute */
 
-	zassert_true(expected_thread == arch_current_thread(), "");
+	zassert_true(expected_thread == _current, "");
 
 	offload(reschedule_wrapper, NULL);
 
 	/* 2. Deadlines have not changed. Expected no changes */
 
-	zassert_true(expected_thread == arch_current_thread(), "");
+	zassert_true(expected_thread == _current, "");
 
-	k_thread_deadline_set(arch_current_thread(), MSEC_TO_CYCLES(1000));
+	k_thread_deadline_set(_current, MSEC_TO_CYCLES(1000));
 
 	/* 3. Deadline changed, but there was no reschedule */
 
-	zassert_true(expected_thread == arch_current_thread(), "");
+	zassert_true(expected_thread == _current, "");
 
 	expected_thread = &worker_threads[0];
 	offload(reschedule_wrapper, NULL);
 
 	/* 5. test_thread_reschedule_helper0 executed */
 
-	zassert_true(expected_thread == arch_current_thread(), "");
+	zassert_true(expected_thread == _current, "");
 }
 
 static void thread_offload(void (*f)(const void *p), const void *param)

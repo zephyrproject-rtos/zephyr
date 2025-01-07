@@ -727,7 +727,7 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 	 */
 	thread->arch.region_num = (uint8_t)region_num;
 
-	if (thread == arch_current_thread()) {
+	if (thread == _current) {
 		ret = flush_dynamic_regions_to_mpu(dyn_regions, region_num);
 	}
 
@@ -795,7 +795,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 
 	ret = configure_dynamic_mpu_regions(thread);
 #ifdef CONFIG_SMP
-	if (ret == 0 && thread != arch_current_thread()) {
+	if (ret == 0 && thread != _current) {
 		/* the thread could be running on another CPU right now */
 		z_arm64_mem_cfg_ipi();
 	}
@@ -810,7 +810,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	ret = configure_dynamic_mpu_regions(thread);
 #ifdef CONFIG_SMP
-	if (ret == 0 && thread != arch_current_thread()) {
+	if (ret == 0 && thread != _current) {
 		/* the thread could be running on another CPU right now */
 		z_arm64_mem_cfg_ipi();
 	}

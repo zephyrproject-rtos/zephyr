@@ -299,7 +299,7 @@ is_fp:	/* Process the FP trap and quickly return from exception */
 	mv a0, sp
 	tail z_riscv_fpu_trap
 2:
-no_fp:	/* increment arch_current_thread()->arch.exception_depth */
+no_fp:	/* increment _current->arch.exception_depth */
 	lr t0, ___cpu_t_current_OFFSET(s0)
 	lb t1, _thread_offset_to_exception_depth(t0)
 	add t1, t1, 1
@@ -726,7 +726,7 @@ no_reschedule:
 	mv a0, sp
 	call z_riscv_fpu_exit_exc
 
-	/* decrement arch_current_thread()->arch.exception_depth */
+	/* decrement _current->arch.exception_depth */
 	lr t0, ___cpu_t_current_OFFSET(s0)
 	lb t1, _thread_offset_to_exception_depth(t0)
 	add t1, t1, -1
