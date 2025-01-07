@@ -722,6 +722,13 @@ uint16_t platformRadioChannelGet(otInstance *aInstance)
 	return channel;
 }
 
+#if defined(CONFIG_OPENTHREAD_DIAG)
+void platformRadioChannelSet(uint8_t aChannel)
+{
+	channel = aChannel;
+}
+#endif
+
 void otPlatRadioSetPanId(otInstance *aInstance, uint16_t aPanId)
 {
 	ARG_UNUSED(aInstance);

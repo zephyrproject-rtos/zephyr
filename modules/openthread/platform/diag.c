@@ -104,8 +104,8 @@ bool otPlatDiagModeGet(void)
 
 void otPlatDiagChannelSet(uint8_t aChannel)
 {
-	ARG_UNUSED(aChannel);
 	sChannel = aChannel;
+	platformRadioChannelSet(aChannel);
 }
 
 void otPlatDiagTxPowerSet(int8_t aTxPower)
