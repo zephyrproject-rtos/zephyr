@@ -1,0 +1,69 @@
+# Copyright (c), 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PF1550 battery charger
+
+include: battery.yaml
+
+compatible: "nxp,pf1550-charger"
+
+properties:
+  constant-charge-current-max-microamp:
+    required: true
+    type: int
+
+  vbus-current-limit-microamp:
+    type: int
+    required: true
+
+  constant-charge-voltage-max-microvolt:
+    type: int
+    required: true
+
+  system-voltage-min-threshold-microvolt:
+    type: int
+    required: true
+    enum:
+      - 3500000
+      - 3700000
+      - 4300000
+    description: |
+      System voltage minimum threshold.
+
+  thermistor-monitoring-mode:
+    type: string
+    required: true
+    enum:
+      - "disabled"
+      - "thermistor"
+      - "JEITA-1"
+      - "JEITA-2"
+    description: |
+      Thermistor monitoring mode.
+      Refer to ThrmCfg register description and Table 2 for details.
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin
+
+  #  The following macros are available:
+  #  - ON_DURING_CHARGING_FLASH_DURING_FAULT
+  #  - FLASH_DURING_CHARGING_ON_DURING_FAULT
+  #  - MANUAL_OFF
+  pf1550,led-behaviour:
+    type: int
+    default: 2
+    description: |
+      Behaviour for charger LED.
+
+  #  The following macros are available:
+  #  - LED_FREQUENCY_1_HZ
+  #  - LED_FREQUENCY_0_5_HZ
+  #  - LED_FREQUENCY_256_HZ
+  #  - LED_FREQUENCY_8_HZ
+  pf1550,led-frequency-duty:
+    type: array
+    default: [0, 0]
+    description: |
+      Frequency and duty cycle for charger LED.
