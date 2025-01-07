@@ -12,6 +12,7 @@ endif()
 target_sources(app PRIVATE
 	src/atomic.c
 	src/bitarray.c
+	src/bitpool.c
 	src/byteorder.c
 	src/clock.c
 	src/main.c
