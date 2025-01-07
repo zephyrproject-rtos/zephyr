@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "renesas,r9a07g063";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			clock-frequency = <DT_FREQ_M(1000)>;
+			reg = <0>;
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		gic: interrupt-controller@11900000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0x11900000 0x10000>, /* GICD */
+				<0x11940000 0x20000>; /* GICR */
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+	};
+};
