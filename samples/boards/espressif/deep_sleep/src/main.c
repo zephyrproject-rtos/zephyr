@@ -9,7 +9,9 @@
 #include <esp_sleep.h>
 #include <driver/rtc_io.h>
 
-#define WAKEUP_TIME_SEC		(20)
+#include <esp_attr.h>
+
+#define WAKEUP_TIME_SEC		(5)
 
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
 #define EXT_WAKEUP_PIN_1	(2)
@@ -24,8 +26,15 @@ static const struct gpio_dt_spec wakeup_button = GPIO_DT_SPEC_GET(DT_ALIAS(wakeu
 #endif
 #endif
 
+/* keep data in RTC memory after deep-sleep */
+RTC_DATA_ATTR int s_rtc_data = 0;
+
 int main(void)
 {
+#ifdef CONFIG_BOOTLOADER_MCUBOOT
+	printk("ESP32 deep sleep example, current counter is %d\r\n", s_rtc_data++);
+#endif
+
 	switch (esp_sleep_get_wakeup_cause()) {
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
 	case ESP_SLEEP_WAKEUP_EXT1:
