@@ -12,7 +12,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/cache.h>
 
-#ifdef SOC_FAMILY_INTEL_ADSP
+#ifdef CONFIG_SOC_FAMILY_INTEL_ADSP
 #include <adsp_memory.h>
 #include <mem_window.h>
 #endif
@@ -95,7 +95,7 @@ static int winstream_console_init(void)
 	void *buf = NULL;
 	size_t size = 0;
 
-#ifdef SOC_FAMILY_INTEL_ADSP
+#ifdef CONFIG_SOC_FAMILY_INTEL_ADSP
 	/* These have a SOC-specific "mem_window" device.  FIXME: The
 	 * type handling is backwards here.  We shouldn't be grabbing
 	 * an arbitrary DTS alias and assuming it's a mem_window at
