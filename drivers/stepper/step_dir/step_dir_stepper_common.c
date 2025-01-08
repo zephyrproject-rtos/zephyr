@@ -228,15 +228,15 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
 
-	if (data->max_velocity == 0) {
-		LOG_ERR("Velocity not set or invalid velocity set");
+	if (data->microstep_interval_ns == 0) {
+		LOG_ERR("Step interval not set or invalid step interval set");
 		return -EINVAL;
 	}
 
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_POSITION;
 		data->step_count = micro_steps;
-		config->timing_source->update(dev, data->max_velocity);
+		config->timing_source->update(dev, data->microstep_interval_ns);
 		update_direction_from_step_count(dev);
 		config->timing_source->start(dev);
 	}
@@ -244,24 +244,20 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
 	return 0;
 }
 
-int step_dir_stepper_common_set_max_velocity(const struct device *dev, const uint32_t velocity)
+int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
+					      const uint64_t microstep_interval_ns)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
 
-	if (velocity == 0) {
-		LOG_ERR("Velocity cannot be zero");
-		return -EINVAL;
-	}
-
-	if (velocity > USEC_PER_SEC) {
-		LOG_ERR("Velocity cannot be greater than %d micro steps per second", USEC_PER_SEC);
+	if (microstep_interval_ns == 0) {
+		LOG_ERR("Step interval cannot be zero");
 		return -EINVAL;
 	}
 
 	K_SPINLOCK(&data->lock) {
-		data->max_velocity = velocity;
-		config->timing_source->update(dev, velocity);
+		data->microstep_interval_ns = microstep_interval_ns;
+		config->timing_source->update(dev, microstep_interval_ns);
 	}
 
 	return 0;
@@ -294,15 +290,15 @@ int step_dir_stepper_common_move_to(const struct device *dev, const int32_t valu
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
 
-	if (data->max_velocity == 0) {
-		LOG_ERR("Velocity not set or invalid velocity set");
+	if (data->microstep_interval_ns == 0) {
+		LOG_ERR("Step interval not set or invalid step interval set");
 		return -EINVAL;
 	}
 
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_POSITION;
 		data->step_count = value - data->actual_position;
-		config->timing_source->update(dev, data->max_velocity);
+		config->timing_source->update(dev, data->microstep_interval_ns);
 		update_direction_from_step_count(dev);
 		config->timing_source->start(dev);
 	}
@@ -318,8 +314,7 @@ int step_dir_stepper_common_is_moving(const struct device *dev, bool *is_moving)
 	return 0;
 }
 
-int step_dir_stepper_common_run(const struct device *dev, const enum stepper_direction direction,
-				const uint32_t velocity)
+int step_dir_stepper_common_run(const struct device *dev, const enum stepper_direction direction)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
@@ -327,13 +322,8 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
 		data->direction = direction;
-		data->max_velocity = velocity;
-		config->timing_source->update(dev, velocity);
-		if (velocity != 0) {
-			config->timing_source->start(dev);
-		} else {
-			config->timing_source->stop(dev);
-		}
+		config->timing_source->update(dev, data->microstep_interval_ns);
+		config->timing_source->start(dev);
 	}
 
 	return 0;

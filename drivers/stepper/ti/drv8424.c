@@ -264,8 +264,7 @@ static int drv8424_move_by(const struct device *dev, int32_t steps)
 	return step_dir_stepper_common_move_by(dev, steps);
 }
 
-static int drv8424_run(const struct device *dev, enum stepper_direction direction,
-		       uint32_t velocity)
+static int drv8424_run(const struct device *dev, enum stepper_direction direction)
 {
 	struct drv8424_data *data = dev->data;
 
@@ -274,7 +273,7 @@ static int drv8424_run(const struct device *dev, enum stepper_direction directio
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_run(dev, direction, velocity);
+	return step_dir_stepper_common_run(dev, direction);
 }
 
 static int drv8424_init(const struct device *dev)
@@ -340,7 +339,7 @@ static DEVICE_API(stepper, drv8424_stepper_api) = {
 	.is_moving = step_dir_stepper_common_is_moving,
 	.set_reference_position = step_dir_stepper_common_set_reference_position,
 	.get_actual_position = step_dir_stepper_common_get_actual_position,
-	.set_max_velocity = step_dir_stepper_common_set_max_velocity,
+	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
 	.run = drv8424_run,
 	.set_micro_step_res = drv8424_set_micro_step_res,
 	.get_micro_step_res = drv8424_get_micro_step_res,

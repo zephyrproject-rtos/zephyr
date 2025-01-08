@@ -67,7 +67,7 @@ static void drv8424_api_before(void *f)
 static void drv8424_api_after(void *f)
 {
 	struct drv8424_api_fixture *fixture = f;
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE, 0);
+	(void)stepper_enable(fixture->dev, false);
 }
 
 ZTEST_F(drv8424_api, test_micro_step_res_set)
@@ -102,7 +102,7 @@ ZTEST_F(drv8424_api, test_is_not_moving_when_disabled)
 	bool moving = true;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_move_by(fixture->dev, steps);
 	(void)stepper_enable(fixture->dev, false);
 	(void)stepper_is_moving(fixture->dev, &moving);
@@ -116,7 +116,7 @@ ZTEST_F(drv8424_api, test_position_not_updating_when_disabled)
 	int32_t position_2 = 0;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_move_by(fixture->dev, steps);
 	(void)stepper_enable(fixture->dev, false);
 	(void)stepper_get_actual_position(fixture->dev, &position_1);
@@ -133,7 +133,7 @@ ZTEST_F(drv8424_api, test_is_not_moving_when_reenabled_after_movement)
 	bool moving = true;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_move_by(fixture->dev, steps);
 	(void)stepper_enable(fixture->dev, false);
 	(void)k_msleep(100);
@@ -149,7 +149,7 @@ ZTEST_F(drv8424_api, test_position_not_updating_when_reenabled_after_movement)
 	int32_t position_2 = 0;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_move_by(fixture->dev, steps);
 	(void)stepper_enable(fixture->dev, false);
 	(void)stepper_get_actual_position(fixture->dev, &position_1);
@@ -167,7 +167,7 @@ ZTEST_F(drv8424_api, test_move_to_positive_direction_movement)
 	int32_t pos = 50;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_to(fixture->dev, pos);
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
@@ -187,7 +187,7 @@ ZTEST_F(drv8424_api, test_move_to_negative_direction_movement)
 	int32_t pos = -50;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_to(fixture->dev, pos);
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
@@ -207,7 +207,7 @@ ZTEST_F(drv8424_api, test_move_to_identical_current_and_target_position)
 	int32_t pos = 0;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_to(fixture->dev, pos);
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
@@ -222,28 +222,13 @@ ZTEST_F(drv8424_api, test_move_to_identical_current_and_target_position)
 	zassert_equal(pos, 0, "Target position should not have changed from %d but is %d", 0, pos);
 }
 
-ZTEST_F(drv8424_api, test_move_to_zero_velocity)
-{
-	int32_t pos = 100;
-	int32_t ret = 0;
-
-	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 0u);
-	ret = stepper_move_to(fixture->dev, pos);
-
-	zassert_not_equal(ret, 0, "Command should fail with an error code, but returned 0");
-	k_msleep(100);
-	(void)stepper_get_actual_position(fixture->dev, &pos);
-	zassert_equal(pos, 0, "Target position should not have changed from %d but is %d", 0, pos);
-}
-
 ZTEST_F(drv8424_api, test_move_to_is_moving_true_while_moving)
 {
 	int32_t pos = 50;
 	bool moving = false;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_to(fixture->dev, pos);
 	(void)stepper_is_moving(fixture->dev, &moving);
@@ -256,7 +241,7 @@ ZTEST_F(drv8424_api, test_move_to_is_moving_false_when_completed)
 	bool moving = false;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_to(fixture->dev, pos);
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
@@ -277,7 +262,7 @@ ZTEST_F(drv8424_api, test_move_to_no_movement_when_disabled)
 	int32_t curr_pos = 50;
 	int32_t ret = 0;
 
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_enable(fixture->dev, false);
 
 	ret = stepper_move_to(fixture->dev, pos);
@@ -293,7 +278,7 @@ ZTEST_F(drv8424_api, test_move_by_positive_step_count)
 	int32_t steps = 50;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_by(fixture->dev, steps);
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
@@ -313,7 +298,7 @@ ZTEST_F(drv8424_api, test_move_by_negative_step_count)
 	int32_t steps = -50;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_by(fixture->dev, steps);
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
@@ -333,7 +318,7 @@ ZTEST_F(drv8424_api, test_move_by_zero_steps_no_movement)
 	int32_t steps = 0;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_by(fixture->dev, steps);
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
@@ -348,14 +333,14 @@ ZTEST_F(drv8424_api, test_move_by_zero_steps_no_movement)
 	zassert_equal(steps, 0, "Target position should be %d but is %d", 0, steps);
 }
 
-ZTEST_F(drv8424_api, test_move_by_zero_velocity)
+ZTEST_F(drv8424_api, test_move_by_zero_step_interval)
 {
 	int32_t steps = 100;
 	int32_t ret = 0;
 	int32_t pos = 100;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 0u);
+	(void)stepper_enable(fixture->dev, false);
 	ret = stepper_move_by(fixture->dev, steps);
 
 	zassert_not_equal(ret, 0, "Command should fail with an error code, but returned 0");
@@ -370,7 +355,7 @@ ZTEST_F(drv8424_api, test_move_by_is_moving_true_while_moving)
 	bool moving = false;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_by(fixture->dev, steps);
 	(void)stepper_is_moving(fixture->dev, &moving);
@@ -383,7 +368,7 @@ ZTEST_F(drv8424_api, test_move_by_is_moving_false_when_completed)
 	bool moving = true;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
 	(void)stepper_move_by(fixture->dev, steps);
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
@@ -404,7 +389,7 @@ ZTEST_F(drv8424_api, test_move_by_no_movement_when_disabled)
 	int32_t curr_pos = 100;
 	int32_t ret = 0;
 
-	(void)stepper_set_max_velocity(fixture->dev, 50u);
+	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
 	(void)stepper_enable(fixture->dev, false);
 
 	ret = stepper_move_by(fixture->dev, steps);
@@ -417,11 +402,12 @@ ZTEST_F(drv8424_api, test_move_by_no_movement_when_disabled)
 
 ZTEST_F(drv8424_api, test_run_positive_direction_correct_position)
 {
-	int32_t velocity = 50;
+	uint64_t step_interval = 20000000;
 	int32_t steps = 0;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE, velocity);
+	(void)stepper_set_microstep_interval(fixture->dev, step_interval);
+	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE);
 	k_busy_wait(110000);
 
 	(void)stepper_get_actual_position(fixture->dev, &steps);
@@ -431,11 +417,12 @@ ZTEST_F(drv8424_api, test_run_positive_direction_correct_position)
 
 ZTEST_F(drv8424_api, test_run_negative_direction_correct_position)
 {
-	int32_t velocity = 50;
+	uint64_t step_interval = 20000000;
 	int32_t steps = 0;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_NEGATIVE, velocity);
+	(void)stepper_set_microstep_interval(fixture->dev, step_interval);
+	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_NEGATIVE);
 	k_busy_wait(110000);
 
 	(void)stepper_get_actual_position(fixture->dev, &steps);
@@ -443,52 +430,43 @@ ZTEST_F(drv8424_api, test_run_negative_direction_correct_position)
 		     "Current position should be between -6 and -4 but is %d", steps);
 }
 
-ZTEST_F(drv8424_api, test_run_zero_velocity_correct_position)
+ZTEST_F(drv8424_api, test_run_zero_step_interval_correct_position)
 {
-	int32_t velocity = 0;
+	uint64_t step_interval = 0;
 	int32_t steps = 0;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE, velocity);
+	(void)stepper_set_microstep_interval(fixture->dev, step_interval);
+	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE);
 	k_msleep(100);
 
 	zassert_equal(steps, 0, "Current position should not have changed from %d but is %d", 0,
 		      steps);
 }
 
-ZTEST_F(drv8424_api, test_run_is_moving_true_when_velocity_greater_zero)
+ZTEST_F(drv8424_api, test_run_is_moving_true_when_step_interval_greater_zero)
 {
-	int32_t velocity = 50;
+	uint64_t step_interval = 20000000;
 	bool moving = false;
 
 	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE, velocity);
+	(void)stepper_set_microstep_interval(fixture->dev, step_interval);
+	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE);
 	(void)stepper_is_moving(fixture->dev, &moving);
 	zassert_true(moving, "Driver should be in state is_moving");
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE, 0);
-}
-
-ZTEST_F(drv8424_api, test_run_is_moving_false_when_velocity_zero)
-{
-	int32_t velocity = 50;
-	bool moving = true;
-
-	(void)stepper_enable(fixture->dev, true);
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE, velocity);
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE, 0);
-	(void)stepper_is_moving(fixture->dev, &moving);
-	zassert_false(moving, "Driver should not be in state is_moving when velocity is 0");
+	(void)stepper_enable(fixture->dev, false);
 }
 
 ZTEST_F(drv8424_api, test_run_no_movement_when_disabled)
 {
-	int32_t velocity = 50;
+	uint64_t step_interval = 20000000;
 	int32_t steps = 50;
 	int32_t ret = 0;
 
 	(void)stepper_enable(fixture->dev, false);
+	(void)stepper_set_microstep_interval(fixture->dev, step_interval);
 
-	ret = stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE, velocity);
+	ret = stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE);
 	zassert_equal(ret, -ECANCELED, "Run should fail with error code %d but returned %d",
 		      -ECANCELED, ret);
 	(void)stepper_get_actual_position(fixture->dev, &steps);

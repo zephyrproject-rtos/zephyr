@@ -10,11 +10,11 @@ static k_timeout_t stepper_movement_delay(const struct device *dev)
 {
 	const struct step_dir_stepper_common_data *data = dev->data;
 
-	if (data->max_velocity == 0) {
+	if (data->microstep_interval_ns == 0) {
 		return K_FOREVER;
 	}
 
-	return K_USEC(USEC_PER_SEC / data->max_velocity);
+	return K_NSEC(data->microstep_interval_ns);
 }
 
 static void stepper_work_step_handler(struct k_work *work)
@@ -35,10 +35,10 @@ int step_work_timing_source_init(const struct device *dev)
 	return 0;
 }
 
-int step_work_timing_source_update(const struct device *dev, const uint32_t velocity)
+int step_work_timing_source_update(const struct device *dev, const uint64_t microstep_interval_ns)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(velocity);
+	ARG_UNUSED(microstep_interval_ns);
 	return 0;
 }
 
