@@ -9,6 +9,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/renesas_rzg_clock.h>
 
 / {
 	compatible = "renesas,r9a08g045";
@@ -37,6 +38,13 @@
 	osc: osc {
 		compatible = "fixed-clock";
 		clock-frequency = <DT_FREQ_M(24)>;
+		#clock-cells = <0>;
+	};
+
+	/* External CAN clock - to be overridden by boards that provide it */
+	can_clk: can-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <0>;
 		#clock-cells = <0>;
 	};
 
@@ -464,6 +472,32 @@
 			interrupts = <345 1>, <346 1>, <347 1>, <348 1>, <349 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
+		};
+
+		canfd_global: canfd-global@400c0000 {
+			compatible = "renesas,rz-canfd-global";
+			reg = <0x400c0000 DT_SIZE_K(128)>;
+			interrupts = <373 1>, <374 1>;
+			interrupt-names = "g_err", "g_recc";
+			status = "disabled";
+
+			canfd0: canfd0 {
+				compatible = "renesas,rz-canfd";
+				channel = <0>;
+				interrupts = <375 1>, <377 1>, <379 1>;
+				interrupt-names = "ch_rec", "ch_err", "ch_trx";
+				status = "disabled";
+				clocks = <&cpg RZ_CLOCK_CANFD(0)>;
+			};
+
+			canfd1: canfd1 {
+				compatible = "renesas,rz-canfd";
+				channel = <1>;
+				interrupts = <376 1>, <378 1>, <380 1>;
+				interrupt-names = "ch_rec", "ch_err", "ch_trx";
+				status = "disabled";
+				clocks = <&cpg RZ_CLOCK_CANFD(1)>;
+			};
 		};
 
 		i2c0: i2c@40090000 {
