@@ -249,7 +249,7 @@ bool z_smp_cpu_mobile(void)
 	return !pinned;
 }
 
-struct k_thread *z_smp_current_get(void)
+__attribute_const__ struct k_thread *z_smp_current_get(void)
 {
 	/*
 	 * _current is a field read from _current_cpu, which can race
