@@ -263,7 +263,7 @@ bool z_smp_cpu_mobile(void);
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
 			arch_curr_cpu(); })
 
-struct k_thread *z_smp_current_get(void);
+__attribute_const__ struct k_thread *z_smp_current_get(void);
 #define _current z_smp_current_get()
 
 #else
