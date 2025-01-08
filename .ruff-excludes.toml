@@ -440,7 +440,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM201",   # https://docs.astral.sh/ruff/rules/negate-equal-op
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
     "UP037",    # https://docs.astral.sh/ruff/rules/quoted-annotation
 ]
@@ -453,7 +452,6 @@
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
     "UP037",    # https://docs.astral.sh/ruff/rules/quoted-annotation
 ]
