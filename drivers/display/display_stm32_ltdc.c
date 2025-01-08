@@ -173,6 +173,12 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	const uint8_t *src = buf;
 	uint16_t row;
 
+	/* If LTDC is suspended, a write may cause sem sync with ISR to never be given */
+	enum pm_device_state pm_state = PM_DEVICE_STATE_SUSPENDED;
+	if (pm_device_state_get(dev, &pm_state) != 0 || pm_state != PM_DEVICE_STATE_ACTIVE) {
+		return -ENODEV;
+	}
+
 	if ((x == 0) && (y == 0) &&
 	    (desc->width == config->width) &&
 	    (desc->height ==  config->height) &&
