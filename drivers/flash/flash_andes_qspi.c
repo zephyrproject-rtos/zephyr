@@ -21,6 +21,9 @@
 
 LOG_MODULE_REGISTER(flash_andes, CONFIG_FLASH_LOG_LEVEL);
 
+/* ATCSPI200 transfer count is limited to 512 bytes. */
+#define MAX_TRANSFER_CNT (512)
+
 /* Indicates that an access command includes bytes for the address.
  * If not provided the opcode is not followed by address bytes.
  */
@@ -304,6 +307,8 @@ static int flash_andes_qspi_read(const struct device *dev,
 				 off_t addr, void *dest, size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
+	size_t to_read = size;
+
 	int ret;
 
 	/* should be between 0 and flash size */
@@ -317,8 +322,23 @@ static int flash_andes_qspi_read(const struct device *dev,
 
 	acquire_device(dev);
 
-	ret = flash_andes_qspi_cmd_addr_read(dev,
-		FLASH_ANDES_CMD_4READ, addr, dest, size);
+	do {
+		/* Get the adequate size to receive */
+		to_read = MIN(MAX_TRANSFER_CNT, size);
+
+		ret = flash_andes_qspi_cmd_addr_read(dev,
+			FLASH_ANDES_CMD_4READ, addr, dest, to_read);
+
+		if (ret != 0) {
+			break;
+		}
+
+		size -= to_read;
+		dest = (uint8_t *)dest + to_read;
+		addr += to_read;
+
+		flash_andes_qspi_wait_until_ready(dev);
+	} while (size > 0);
 
 	release_device(dev);
 	return ret;
@@ -352,6 +372,8 @@ static int flash_andes_qspi_write(const struct device *dev, off_t addr,
 	do {
 		/* Get the adequate size to send*/
 		to_write = MIN(page_size - (addr % page_size), size);
+
+		flash_andes_qspi_cmd_write(dev, FLASH_ANDES_CMD_WREN);
 
 		ret = flash_andes_qspi_cmd_addr_write(dev,
 			FLASH_ANDES_CMD_4PP, addr, src, to_write);
@@ -880,7 +902,7 @@ flash_andes_qspi_get_parameters(const struct device *dev)
 	return &config->parameters;
 }
 
-static DEVICE_API(flash, flash_andes_qspi_api) = {
+static const struct flash_driver_api flash_andes_qspi_api = {
 	.read = flash_andes_qspi_read,
 	.write = flash_andes_qspi_write,
 	.erase = flash_andes_qspi_erase,
