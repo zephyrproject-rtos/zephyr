@@ -5905,7 +5905,7 @@ endfunction()
 # depending on the exact use of the function in script mode.
 #
 # Current Zephyr CMake scripts which includes `extensions.cmake` in script mode
-# are: package_helper.cmake, verify-toolchain.cmake
+# are: package_helper.cmake, verify-toolchain.cmake, llext-edk.cmake
 #
 
 if(CMAKE_SCRIPT_MODE_FILE)
