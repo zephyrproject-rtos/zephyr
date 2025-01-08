@@ -283,6 +283,13 @@
 			generation-delay-ns = <1250>; /* 1.25us */
 			status = "disabled";
 		};
+
+		iwdg: watchdog@40003000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x40003000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB0, 14)>;
+			status = "disabled";
+		};
 	};
 
 	bt_hci_wb0: bt_hci_wb0 {
