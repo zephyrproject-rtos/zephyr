@@ -52,6 +52,7 @@ static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
 static void isr_rx_done(void *param);
 static void isr_done(void *param);
+static uint16_t payload_index_get(const struct lll_sync_iso *lll);
 static void next_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter,
 			   uint16_t data_chan_id);
 static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
@@ -659,8 +660,7 @@ static void isr_rx(void *param)
 		 * Ensure we are not having offset values over 255 in payload_count_max, used to
 		 * allocate the buffers.
 		 */
-		payload_offset = (lll->latency_event * lll->bn) +  (lll->bn_curr - 1U) +
-				 (lll->ptc_curr * lll->pto);
+		payload_offset = (lll->latency_event * lll->bn) + payload_index_get(lll);
 		if (payload_offset >= lll->payload_count_max) {
 			goto isr_rx_done;
 		}
@@ -1031,8 +1031,7 @@ isr_rx_next_subevent:
 		if (bis) {
 			struct node_rx_pdu *node_rx;
 
-			payload_count += (lll->bn_curr - 1U) +
-					 (lll->ptc_curr * lll->pto);
+			payload_count += payload_index_get(lll);
 
 			/* By design, there shall always be one free node rx
 			 * available for setting up radio for new PDU reception.
@@ -1336,6 +1335,35 @@ static void isr_done(void *param)
 	}
 }
 
+static uint16_t payload_index_get(const struct lll_sync_iso *lll)
+{
+	uint16_t payload_index;
+
+	if (lll->ptc_curr) {
+		/* FIXME: Do not remember why ptc is 4 bits, it should be 5 bits as ptc is a
+		 *        running buffer offset related to nse.
+		 *        Fix ptc and ptc_curr definitions, until then there is an assertion
+		 *        check when ptc is calculated in ptc_calc function.
+		 */
+		uint8_t ptx_idx = lll->ptc_curr - 1U; /* max. nse 5 bits */
+		uint8_t ptx_payload_idx;
+		uint16_t ptx_group_mult;
+		uint8_t ptx_group_idx;
+
+		/* Calculate group index and multiplier for deriving
+		 * pre-transmission payload index.
+		 */
+		ptx_group_idx = ptx_idx / lll->bn; /* 5 bits */
+		ptx_payload_idx = ptx_idx - ptx_group_idx * lll->bn; /* 8 bits */
+		ptx_group_mult = (ptx_group_idx + 1U) * lll->pto; /* 9 bits */
+		payload_index = ptx_payload_idx + ptx_group_mult * lll->bn; /* 13 bits */
+	} else {
+		payload_index  = lll->bn_curr - 1U; /* 3 bits */
+	}
+
+	return payload_index;
+}
+
 static void next_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter,
 			   uint16_t data_chan_id)
 {
@@ -1377,8 +1405,7 @@ static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
 	node_rx->hdr.handle = handle;
 
 	iso_meta = &node_rx->rx_iso_meta;
-	iso_meta->payload_number = lll->payload_count + (lll->bn_curr - 1U) +
-				   (lll->ptc_curr * lll->pto);
+	iso_meta->payload_number = lll->payload_count + payload_index_get(lll);
 	/* Decrement BN as payload_count was pre-incremented */
 	iso_meta->payload_number -= lll->bn;
 

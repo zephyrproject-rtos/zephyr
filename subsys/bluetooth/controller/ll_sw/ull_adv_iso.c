@@ -212,7 +212,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
-			if (!IN_RANGE(pto, 0x00, 0x0F)) {
+			if (pto > 0x0F) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
@@ -1210,6 +1210,12 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 			 */
 			ptc = MIN(ptc, (lll->bn * BT_CTLR_ADV_ISO_PTO_GROUP_COUNT));
 		}
+
+		/* FIXME: Do not remember why ptc is 4 bits, it should be 5 bits as ptc is a
+		 *        running buffer offset related to nse. Fix ptc and ptc_curr definitions,
+		 *        until then lets have an assert check here.
+		 */
+		LL_ASSERT(ptc <= BIT_MASK(4));
 
 		return ptc;
 	}
