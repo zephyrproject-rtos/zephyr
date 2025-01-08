@@ -10,7 +10,9 @@ config MBOX_NRFX_IPC
 	default MBOX
 
 if BOARD_NRF7002DK_NRF5340_CPUAPP || \
-	BOARD_NRF7002DK_NRF5340_CPUAPP_NRF7001
+	BOARD_NRF7002DK_NRF5340_CPUAPP_NS || \
+	BOARD_NRF7002DK_NRF5340_CPUAPP_NRF7001 || \
+	BOARD_NRF7002DK_NRF5340_CPUAPP_NRF7001_NS
 
 config BT_HCI_IPC
 	default y if BT
@@ -38,7 +40,9 @@ config BT_ECC
 config DOMAIN_CPUAPP_BOARD
 	string
 	default "nrf7002dk/nrf5340/cpuapp" if BOARD_NRF7002DK_NRF5340_CPUAPP
+	default "nrf7002dk/nrf5340/cpuapp/ns" if BOARD_NRF7002DK_NRF5340_CPUAPP_NS
 	default "nrf7002dk/nrf5340/cpuapp/nrf7001" if BOARD_NRF7002DK_NRF5340_CPUAPP_NRF7001
+	default "nrf7002dk/nrf5340/cpuapp/nrf7001/ns" if BOARD_NRF7002DK_NRF5340_CPUAPP_NRF7001_NS
 	help
 	  The board which will be used for CPUAPP domain when creating a multi
 	  image application where one or more images should be located on
