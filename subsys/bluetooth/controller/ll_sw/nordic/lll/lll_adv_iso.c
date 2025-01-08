@@ -669,6 +669,10 @@ static void isr_tx_common(void *param,
 				 (tx->payload_count < payload_count));
 		}
 		if (!link || (tx->payload_count != payload_count)) {
+			/* FIXME: Do not transmit on air an empty PDU if this is a Pre-Transmission
+			 *        subevent, instead use radio_tmr_start_us() to schedule next valid
+			 *        subevent.
+			 */
 			pdu = radio_pkt_empty_get();
 			pdu->ll_id = lll->framing ? PDU_BIS_LLID_FRAMED :
 						    PDU_BIS_LLID_START_CONTINUE;
