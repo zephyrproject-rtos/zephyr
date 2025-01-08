@@ -483,13 +483,20 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->sub_interval = PDU_BIG_INFO_SUB_INTERVAL_GET(bi);
 	lll->max_pdu = bi->max_pdu;
 	lll->pto = PDU_BIG_INFO_PTO_GET(bi);
+	lll->bis_spacing = PDU_BIG_INFO_SPACING_GET(bi);
+	lll->irc = PDU_BIG_INFO_IRC_GET(bi);
 	if (lll->pto) {
-		lll->ptc = lll->bn;
+		uint8_t nse;
+
+		nse = lll->irc * lll->bn; /* 4 bits * 3 bits, total 7 bits */
+		if (nse >= lll->nse) {
+			return;
+		}
+
+		lll->ptc = lll->nse - nse;
 	} else {
 		lll->ptc = 0U;
 	}
-	lll->bis_spacing = PDU_BIG_INFO_SPACING_GET(bi);
-	lll->irc = PDU_BIG_INFO_IRC_GET(bi);
 	lll->sdu_interval = PDU_BIG_INFO_SDU_INTERVAL_GET(bi);
 
 	/* Pick the 39-bit payload count, 1 MSb is framing bit */
