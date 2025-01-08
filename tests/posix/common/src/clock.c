@@ -11,6 +11,29 @@
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log.h>
 
+#define SLEEP_SECONDS 1
+#define CLOCK_INVALID -1
+
+LOG_MODULE_REGISTER(clock_test, LOG_LEVEL_DBG);
+
+/* Set a particular time.  In this case, the output of: `date +%s -d 2018-01-01T15:45:01Z` */
+static const struct timespec ref_ts = {1514821501, NSEC_PER_SEC / 2U};
+
+static const clockid_t clocks[] = {
+	CLOCK_MONOTONIC,
+	CLOCK_REALTIME,
+#ifdef CONFIG_POSIX_THREAD_CPUTIME
+	CLOCK_THREAD_CPUTIME_ID,
+#endif /* CONFIG_POSIX_THREAD_CPUTIME */
+};
+static const bool settable[] = {
+	false,
+	true,
+#ifdef CONFIG_POSIX_THREAD_CPUTIME
+	false,
+#endif /* CONFIG_POSIX_THREAD_CPUTIME */
+};
+
 static inline int64_t ts_to_ns(const struct timespec *ts)
 {
 	return ts->tv_sec * NSEC_PER_SEC + ts->tv_nsec;
