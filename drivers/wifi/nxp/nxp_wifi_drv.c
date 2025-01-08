@@ -1216,6 +1216,26 @@ static int nxp_wifi_11k_cfg(const struct device *dev, struct wifi_11k_params *pa
 
 	return 0;
 }
+
+static int nxp_wifi_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params)
+{
+	int ret = WM_SUCCESS;
+
+	if (params != NULL) {
+		if (strlen(params->ssid) > WIFI_SSID_MAX_LEN) {
+			LOG_ERR("ssid too long");
+			return -EINVAL;
+		}
+
+		ret = wlan_host_11k_neighbor_req(params->ssid);
+		if (ret != WM_SUCCESS) {
+			LOG_ERR("send neighbor report request fail");
+			return -EAGAIN;
+		}
+	}
+
+	return 0;
+}
 #endif
 
 static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *params)
@@ -1866,6 +1886,7 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 #endif
 #ifdef CONFIG_NXP_WIFI_11K
 	.cfg_11k = nxp_wifi_11k_cfg,
+	.send_11k_neighbor_request = nxp_wifi_11k_neighbor_request,
 #endif
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,
