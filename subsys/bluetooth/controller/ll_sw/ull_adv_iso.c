@@ -51,6 +51,17 @@
 
 #include "hal/debug.h"
 
+/* Controller implementation dependent minimum Pre-Transmission Offset and
+ * Pre-Transmission Group Count to use when there is available time space in the
+ * BIG events.
+ * The number of Pre-Transmission Group Count configure how many future ISO SDUs
+ * from the Offset will be Pre-Transmitted in advance in the current BIG event.
+ *
+ * TODO: These could be a Kconfig option.
+ */
+#define BT_CTLR_ADV_ISO_PTO_MIN         1U
+#define BT_CTLR_ADV_ISO_PTO_GROUP_COUNT 1U
+
 static int init_reset(void);
 static struct ll_adv_iso_set *adv_iso_get(uint8_t handle);
 static struct stream *adv_iso_stream_acquire(void);
@@ -357,7 +368,12 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
 		}
 
-		/* FIXME: SDU per max latency */
+		/* FIXME: SDU per max latency, consider how to use Pre-transmission in the
+		 *        calculations.
+		 *        Take decision based on how ptc_calc function forces the use of
+		 *        Pre-Transmission when not using test command. Refer to comments in
+		 *        ptc_calc function.
+		 */
 		sdu_per_event = MAX((max_latency * USEC_PER_MSEC / sdu_interval), 2U) -
 				1U;
 
@@ -443,6 +459,9 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
+	/* Decision to use requested Pre-Transmission Offset or force Pre-Transmission when
+	 * possible (Zephyr Controller decision).
+	 */
 	lll_adv_iso->ptc = ptc_calc(lll_adv_iso, event_spacing, event_spacing_max);
 
 	if (test_config) {
@@ -454,7 +473,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	} else {
 		/* Pre-Transmission Offset (PTO) */
 		if (lll_adv_iso->ptc) {
-			lll_adv_iso->pto = bn / lll_adv_iso->bn;
+			lll_adv_iso->pto = MAX((bn / lll_adv_iso->bn), BT_CTLR_ADV_ISO_PTO_MIN);
 		} else {
 			lll_adv_iso->pto = 0U;
 		}
@@ -1154,15 +1173,43 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 			uint32_t event_spacing_max)
 {
 	if (event_spacing < event_spacing_max) {
-		uint8_t ptc;
+		uint32_t ptc;
+		uint8_t nse;
 
-		/* Possible maximum Pre-transmission Subevents per BIS */
+		/* Possible maximum Pre-transmission Subevents per BIS.
+		 * sub_interval is at least T_MSS_150 + MPT (hence a value in 8 bits or more), i.e.
+		 * the below division and the subsequent multiplication with lll->bn does not
+		 * overflow.
+		 */
 		ptc = ((event_spacing_max - event_spacing) /
 		       (lll->sub_interval * lll->bn * lll->num_bis)) *
 		      lll->bn;
 
-		/* Restrict PTC to number of available subevents */
-		ptc = MIN(ptc, lll->nse - lll->bn * lll->irc);
+		/* Required NSE */
+		nse = lll->bn * lll->irc; /* 3 bits * 4 bits, total 7 bits */
+
+		/* Requested NSE is greater than Required NSE, Pre-Transmission offset has been
+		 * provided.
+		 *
+		 * NOTE: This is the case under HCI test command use to create BIG, i.e. test_config
+		 *       variable is true.
+		 */
+		if (lll->nse > nse) {
+			/* Restrict PTC to number of available subevents */
+			ptc = MIN(ptc, lll->nse - nse);
+		} else {
+			/* No PTO requested, Zephyr Controller implementation here will try using
+			 * Pre-Transmisson offset of BT_CTLR_ADV_ISO_PTO_MIN, i.e. restrict to a
+			 * maximum of BN Pre-Transmission subevents per BIS. This allows for a
+			 * better time diversity ensuring skipped or missing reception at the ISO
+			 * Sync Receiver so it can still have another chance at receiving the ISO
+			 * PDUs within the permitted maximum transport latency.
+			 *
+			 * Usecases where BAP Broadcast Audio Assistant role device has a drifting
+			 * ACL Peripheral role active in the BAP Broadcast Audio Sink device.
+			 */
+			ptc = MIN(ptc, (lll->bn * BT_CTLR_ADV_ISO_PTO_GROUP_COUNT));
+		}
 
 		return ptc;
 	}
