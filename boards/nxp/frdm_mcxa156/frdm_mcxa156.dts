@@ -105,6 +105,10 @@
 	pinctrl-names = "default";
 };
 
+&edma0 {
+	status = "okay";
+};
+
 &flexcan0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan0>;
