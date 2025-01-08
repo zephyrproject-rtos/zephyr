@@ -245,6 +245,18 @@
 			status = "disabled";
 		};
 
+		flexio0: flexio@40099000 {
+			compatible = "nxp,flexio";
+			reg = <0x40099000 0x1000>;
+			status = "disabled";
+			interrupts = <23 0>;
+			clocks = <&syscon MCUX_FLEXIO0_CLK>;
+			flexio0_lcd: flexio0-lcd {
+				compatible = "nxp,mipi-dbi-flexio-lcdif";
+				status = "disabled";
+			};
+		};
+
 		flexpwm0: flexpwm@400a9000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x400a9000 0x1000>;
