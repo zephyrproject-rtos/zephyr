@@ -12,8 +12,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/method.h>
 #include <zephyr/net/http/parser.h>
-
-#define IS_BIT_SET(val, bit) (((val >> bit) & (0x1)) != 0)
+#include <zephyr/sys/util.h>
 
 static int cmd_net_http(const struct shell *sh, size_t argc, char *argv[])
 {
