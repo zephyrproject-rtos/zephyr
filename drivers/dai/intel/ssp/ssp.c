@@ -864,7 +864,7 @@ static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 	 /* Set upper slot number from configuration */
 	pcmsycm = pcmsycm | (dp->ssp_plat_data->params.tdm_slots - 1) << 4;
 
-	if (DAI_INTEL_SSP_IS_BIT_SET(cfg->link_config, 15)) {
+	if (IS_BIT_SET(cfg->link_config, 15)) {
 		uint32_t reg_add = dai_ip_base(dp) + 0x1000 * ssp_index + PCMS0CM_OFFSET;
 		/* Program HDA output stream parameters */
 		sys_write16((pcmsycm & 0xffff), reg_add);
@@ -880,7 +880,7 @@ static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 	uint16_t pcmsycm = cfg->link_config;
 	uint8_t slot_count = 0;
 
-	if (DAI_INTEL_SSP_IS_BIT_SET(cfg->link_config, 15)) {
+	if (IS_BIT_SET(cfg->link_config, 15)) {
 		if (blob30->version == SSP_BLOB_VER_3_0) {
 			time_slot_map =
 				blob30->i2s_ssp_config.ssmidytsa[cfg->tdm_slot_group];
