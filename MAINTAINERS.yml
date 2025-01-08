@@ -3142,6 +3142,8 @@ Open AMP:
   status: maintained
   maintainers:
     - carlocaione
+  collaborators:
+    - uLipe
   files:
     - lib/open-amp/
     - samples/subsys/ipc/openamp/
@@ -5191,6 +5193,7 @@ West:
   status: odd fixes
   collaborators:
     - carlocaione
+    - uLipe
   files:
     - modules/Kconfig.open-amp
   labels:
