@@ -12,4 +12,18 @@ if SOC_FAMILY_NXP_MCX
 
 rsource "*/Kconfig.defconfig"
 
+if BT
+
+config MAIN_STACK_SIZE
+	default 2560
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
+
+endif # BT
+
 endif # SOC_FAMILY_NXP_MCX
