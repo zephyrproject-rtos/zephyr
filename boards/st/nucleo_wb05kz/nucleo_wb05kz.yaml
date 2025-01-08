@@ -12,9 +12,11 @@ supported:
   - adc
   - arduino_i2c
   - arduino_spi
+  - counter
   - dma
   - gpio
   - i2c
+  - pwm
   - spi
   - bluetooth
 vendor: st
