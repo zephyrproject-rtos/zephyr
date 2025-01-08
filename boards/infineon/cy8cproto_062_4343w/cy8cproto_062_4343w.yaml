@@ -24,5 +24,6 @@ supported:
   - i2c
   - thermistor
   - uart
+  - dma
   - timer
 vendor: infineon
