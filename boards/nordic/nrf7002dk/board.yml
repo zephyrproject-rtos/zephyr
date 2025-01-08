@@ -5,5 +5,9 @@ board:
   socs:
     - name: nrf5340
       variants:
+        - name: ns
+          cpucluster: cpuapp
         - name: nrf7001
           cpucluster: cpuapp
+          variants:
+            - name: ns
