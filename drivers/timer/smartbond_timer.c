@@ -103,7 +103,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * as soon as system is awaken. Following code makes sure that
 	 * system never goes to sleep for longer time that watchdog reload value.
 	 */
-	if (!IS_ENABLED(CONFIG_WDT_SMARTBOND) && IS_ENABLED(CONFIG_PM)) {
+	if (IS_ENABLED(CONFIG_PM)) {
 		uint32_t watchdog_expire_ticks;
 
 		if (CRG_TOP->CLK_RCX_REG & CRG_TOP_CLK_RCX_REG_RCX_ENABLE_Msk) {
