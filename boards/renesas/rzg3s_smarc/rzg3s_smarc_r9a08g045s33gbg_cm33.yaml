@@ -10,3 +10,4 @@ supported:
   - gpio
   - counter
   - pwm
+  - can
