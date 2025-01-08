@@ -1,0 +1,15 @@
+sample:
+  description: A basic Constant Bandwidth Server sample
+  name: basic CBS sample
+common:
+  tags:
+    - CBS
+tests:
+  sample.cbs.simple:
+    build_only: true
+    platform_allow:
+      - qemu_riscv32
+      - qemu_cortex_a53
+    integration_platforms:
+      - qemu_riscv32
+    tags: cbs
