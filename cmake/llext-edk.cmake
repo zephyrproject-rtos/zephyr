@@ -11,24 +11,23 @@
 # directories (build/zephyr, zephyr base, west top dir and application source
 # dir), to avoid leaking any information about the host system.
 #
-# The following arguments are expected:
-# - llext_edk_name: Name of the extension, used to name the tarball and the
-#   install directory variable for Makefile.
-# - INTERFACE_INCLUDE_DIRECTORIES: List of include directories to copy headers
-#   from. It should simply be the INTERFACE_INCLUDE_DIRECTORIES property of the
-#   zephyr_interface target.
-# - llext_edk_file: Output file name for the tarball.
-# - llext_edk_cflags: Flags to be used for source compile commands.
-# - ZEPHYR_BASE: Path to the zephyr base directory.
-# - WEST_TOPDIR: Path to the west top directory.
-# - APPLICATION_SOURCE_DIR: Path to the application source directory.
-# - PROJECT_BINARY_DIR: Path to the project binary build directory.
-# - CONFIG_LLEXT_EDK_USERSPACE_ONLY: Whether to copy syscall headers from the
-#   edk directory. This is necessary when building an extension that only
-#   supports userspace, as the syscall headers are regenerated in the edk
-#   directory.
+# The script expects a build_info.yml file in the project binary directory.
+# This file should contain the following entries:
+#  - cmake application source-dir
+#  - cmake llext-edk cflags
+#  - cmake llext-edk file
+#  - cmake llext-edk include-dirs
+#  - west topdir
 
 cmake_minimum_required(VERSION 3.20.0)
+
+# initialize the same paths as the main CMakeLists.txt for consistency
+set(PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR})
+set(ZEPHYR_BASE ${CMAKE_CURRENT_LIST_DIR}/../)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/modules")
+
+include(extensions)
+include(yaml)
 
 # Usage:
 #   relative_dir(<dir> <relative_out> <bindir_out>)
@@ -142,19 +141,30 @@ endfunction()
 
 
 
+# read in computed build configuration
+import_kconfig(CONFIG ${PROJECT_BINARY_DIR}/.config)
+
 if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
   message(FATAL_ERROR
     "The LLEXT EDK is not compatible with CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID.")
 endif()
 
+set(build_info_file ${PROJECT_BINARY_DIR}/../build_info.yml)
+yaml_load(FILE ${build_info_file} NAME build_info)
+
+yaml_get(llext_edk_cflags NAME build_info KEY cmake llext-edk cflags)
+yaml_get(llext_edk_file NAME build_info KEY cmake llext-edk file)
+yaml_get(INTERFACE_INCLUDE_DIRECTORIES NAME build_info KEY cmake llext-edk include-dirs)
+yaml_get(APPLICATION_SOURCE_DIR NAME build_info KEY cmake application source-dir)
+yaml_get(WEST_TOPDIR NAME build_info KEY west topdir)
+
+set(llext_edk_name ${CONFIG_LLEXT_EDK_NAME})
 set(llext_edk ${PROJECT_BINARY_DIR}/${llext_edk_name})
 set(llext_edk_inc ${llext_edk}/include)
 
 string(REGEX REPLACE "[^a-zA-Z0-9]" "_" llext_edk_name_sane ${llext_edk_name})
 string(TOUPPER ${llext_edk_name_sane} llext_edk_name_sane)
 set(install_dir_var "${llext_edk_name_sane}_INSTALL_DIR")
-
-separate_arguments(llext_edk_cflags NATIVE_COMMAND ${llext_edk_cflags})
 
 set(make_relative FALSE)
 foreach(flag ${llext_edk_cflags})
@@ -179,9 +189,8 @@ set(llext_edk_cflags ${new_cflags})
 
 list(APPEND base_flags ${llext_edk_cflags} ${imacros})
 
-separate_arguments(include_dirs NATIVE_COMMAND ${INTERFACE_INCLUDE_DIRECTORIES})
 file(MAKE_DIRECTORY ${llext_edk_inc})
-foreach(dir ${include_dirs})
+foreach(dir ${INTERFACE_INCLUDE_DIRECTORIES})
     if (NOT EXISTS ${dir})
         continue()
     endif()
