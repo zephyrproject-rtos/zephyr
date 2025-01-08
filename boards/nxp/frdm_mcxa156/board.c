@@ -155,6 +155,11 @@ static int frdm_mcxa156_init(void)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCAN0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
+	CLOCK_SetClockDiv(kCLOCK_DivFLEXIO0, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_FLEXIO0);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
 	CLOCK_SetClockDiv(kCLOCK_DivADC0, 1u);
 	CLOCK_AttachClk(kFRO12M_to_ADC0);
