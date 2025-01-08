@@ -83,6 +83,7 @@ static struct bt_a2dp *a2dp_get_connection(struct bt_conn *conn)
 		/* Clean the memory area before returning */
 		(void)memset(a2dp, 0, sizeof(struct bt_a2dp));
 	}
+
 	return a2dp;
 }
 
@@ -92,6 +93,7 @@ static void a2dp_connected(struct bt_avdtp *session)
 	struct bt_a2dp *a2dp = A2DP_AVDTP(session);
 
 	a2dp->a2dp_state = INTERNAL_STATE_AVDTP_CONNECTED;
+
 	/* notify a2dp app the connection. */
 	if ((a2dp_cb != NULL) && (a2dp_cb->connected != NULL)) {
 		a2dp_cb->connected(a2dp, 0);
@@ -276,8 +278,8 @@ static void bt_a2dp_media_data_callback(struct bt_avdtp_sep *sep, struct net_buf
 	if (ep->stream == NULL || buf->len < sizeof(*media_hdr)) {
 		return;
 	}
-	stream = ep->stream;
 
+	stream = ep->stream;
 	media_hdr = net_buf_pull_mem(buf, sizeof(*media_hdr));
 
 	stream->ops->recv(stream, buf, sys_get_be16((uint8_t *)&media_hdr->sequence_number),
@@ -301,6 +303,7 @@ static int a2dp_ctrl_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uin
 		*errcode = BT_AVDTP_BAD_ACP_SEID;
 		return -EINVAL;
 	}
+
 	stream = ep->stream;
 
 	if (req_cb != NULL) {
@@ -400,11 +403,12 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req)
 	if (ep->stream == NULL) {
 		return -EINVAL;
 	}
+
 	if ((ep->stream == NULL) || (SET_CONF_REQ(req) != &a2dp->set_config_param)) {
 		return -EINVAL;
 	}
-	stream = ep->stream;
 
+	stream = ep->stream;
 	LOG_DBG("SET CONFIGURATION result:%d", req->status);
 
 	if ((a2dp_cb != NULL) && (a2dp_cb->config_rsp != NULL)) {
@@ -460,6 +464,7 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req)
 		memcpy(&info->codec_cap.codec_ie, codec_info_element, codec_info_element_len);
 		info->codec_cap.len = codec_info_element_len;
 		user_ret = a2dp->discover_cb_param->cb(a2dp, info, &ep);
+
 		if (ep != NULL) {
 			ep->codec_type = info->codec_type;
 			ep->sep.sep_info = *info->sep_info;
@@ -505,11 +510,13 @@ static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp)
 				a2dp->discover_cb_param->seps_info[a2dp->get_cap_index].id;
 			err = bt_avdtp_get_capabilities(&a2dp->session,
 							&a2dp->get_capabilities_param);
+
 			if (err) {
 				LOG_DBG("AVDTP get codec_cap failed");
 				a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
 				a2dp->discover_cb_param = NULL;
 			}
+
 			return 0;
 		}
 	}
@@ -526,22 +533,27 @@ static int bt_a2dp_discover_cb(struct bt_avdtp_req *req)
 	if (a2dp->discover_cb_param == NULL) {
 		return -EINVAL;
 	}
+
 	a2dp->peer_seps_count = 0U;
+
 	if (!(req->status)) {
 		if (a2dp->discover_cb_param->sep_count == 0) {
 			if (a2dp->discover_cb_param->cb != NULL) {
 				a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
 				a2dp->discover_cb_param = NULL;
 			}
+
 			return -EINVAL;
 		}
 
 		do {
 			sep_info = &a2dp->discover_cb_param->seps_info[a2dp->peer_seps_count];
 			err = bt_avdtp_parse_sep(DISCOVER_REQ(req)->buf, sep_info);
+
 			if (err) {
 				break;
 			}
+
 			a2dp->peer_seps_count++;
 			LOG_DBG("id:%d, inuse:%d, media_type:%d, tsep:%d, ", sep_info->id,
 				sep_info->inuse, sep_info->media_type, sep_info->tsep);
@@ -586,11 +598,13 @@ int bt_a2dp_discover(struct bt_a2dp *a2dp, struct bt_a2dp_discover_param *param)
 	a2dp->discover_cb_param = param;
 	a2dp->discover_param.req.func = bt_a2dp_discover_cb;
 	a2dp->discover_param.buf = NULL;
+
 	err = bt_avdtp_discover(&a2dp->session, &a2dp->discover_param);
 	if (err) {
 		if (a2dp->discover_cb_param->cb != NULL) {
 			a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
 		}
+
 		a2dp->discover_cb_param = NULL;
 	}
 
@@ -660,7 +674,9 @@ static int bt_a2dp_ctrl_cb(struct bt_avdtp_req *req, bt_a2dp_rsp_cb rsp_cb, bt_a
 	if ((ep->stream == NULL) || (CTRL_REQ(req) != &a2dp->ctrl_param)) {
 		return -EINVAL;
 	}
+
 	stream = ep->stream;
+
 	if (clear_stream) {
 		ep->stream = NULL;
 	}
@@ -674,6 +690,7 @@ static int bt_a2dp_ctrl_cb(struct bt_avdtp_req *req, bt_a2dp_rsp_cb rsp_cb, bt_a
 	if ((!req->status) && (done_cb != NULL)) {
 		done_cb(stream);
 	}
+
 	return 0;
 }
 
@@ -755,6 +772,7 @@ int bt_a2dp_stream_establish(struct bt_a2dp_stream *stream)
 	if (err) {
 		return err;
 	}
+
 	return bt_avdtp_open(&a2dp->session, &a2dp->ctrl_param);
 }
 
@@ -767,6 +785,7 @@ int bt_a2dp_stream_release(struct bt_a2dp_stream *stream)
 	if (err) {
 		return err;
 	}
+
 	return bt_avdtp_close(&a2dp->session, &a2dp->ctrl_param);
 }
 
@@ -779,6 +798,7 @@ int bt_a2dp_stream_start(struct bt_a2dp_stream *stream)
 	if (err) {
 		return err;
 	}
+
 	return bt_avdtp_start(&a2dp->session, &a2dp->ctrl_param);
 }
 
@@ -791,6 +811,7 @@ int bt_a2dp_stream_suspend(struct bt_a2dp_stream *stream)
 	if (err) {
 		return err;
 	}
+
 	return bt_avdtp_suspend(&a2dp->session, &a2dp->ctrl_param);
 }
 
@@ -803,6 +824,7 @@ int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream)
 	if (err) {
 		return err;
 	}
+
 	return bt_avdtp_abort(&a2dp->session, &a2dp->ctrl_param);
 }
 
@@ -843,6 +865,7 @@ int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint
 
 	media_hdr = net_buf_push(buf, sizeof(struct bt_avdtp_media_hdr));
 	memset(media_hdr, 0, sizeof(struct bt_avdtp_media_hdr));
+
 	if (stream->local_ep->codec_type == BT_A2DP_SBC) {
 		media_hdr->playload_type = A2DP_SBC_PAYLOAD_TYPE;
 	}
@@ -864,6 +887,7 @@ int a2dp_stream_l2cap_disconnected(struct bt_avdtp *session, struct bt_avdtp_sep
 
 	__ASSERT(sep, "Invalid sep");
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
+
 	if (ep->stream != NULL) {
 		struct bt_a2dp_stream_ops *ops;
 		struct bt_a2dp_stream *stream = ep->stream;
@@ -874,6 +898,7 @@ int a2dp_stream_l2cap_disconnected(struct bt_avdtp *session, struct bt_avdtp_sep
 		 * all the related callbacks are in the same zephyr task context.
 		 */
 		ep->stream = NULL;
+
 		if ((ops != NULL) && (ops->released != NULL)) {
 			ops->released(stream);
 		}
@@ -950,8 +975,8 @@ struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
 	}
 
 	a2dp->a2dp_state = INTERNAL_STATE_IDLE;
-
 	a2dp->session.ops = &signaling_avdtp_ops;
+
 	err = bt_avdtp_connect(conn, &(a2dp->session));
 	if (err < 0) {
 		LOG_DBG("AVDTP Connect failed");
@@ -983,6 +1008,7 @@ int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t sep_t
 #else
 	ep->sep.media_data_cb = NULL;
 #endif
+
 	err = bt_avdtp_register_sep(media_type, sep_type, &(ep->sep));
 	if (err < 0) {
 		return err;
