@@ -534,6 +534,7 @@ endchoice
 
 config LTO
 	bool "Link Time Optimization"
+	default y
 	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
 	depends on !NATIVE_LIBRARY
 	depends on !CODE_DATA_RELOCATION

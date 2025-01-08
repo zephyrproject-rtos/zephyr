@@ -460,6 +460,7 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 
 config ISR_TABLES_LOCAL_DECLARATION
 	bool "ISR tables created locally and placed by linker"
+	default y
 	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	help
 	  Enable new scheme of interrupt tables generation.
