@@ -53,7 +53,7 @@ struct flash_andes_qspi_config {
 	uint32_t base;
 	uint32_t irq_num;
 	struct flash_parameters parameters;
-	bool xip;
+	bool qspi_cfg_rom;
 #if defined(CONFIG_FLASH_ANDES_QSPI_SFDP_DEVICETREE)
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 	uint32_t flash_size;
@@ -823,7 +823,7 @@ static int flash_andes_qspi_init(const struct device *dev)
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 
 	/* we should not configure the device we are running on */
-	if (config->xip) {
+	if (config->qspi_cfg_rom) {
 		return -EINVAL;
 	}
 
@@ -917,10 +917,20 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 };
 
 #if (CONFIG_XIP)
-#define QSPI_ROM_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_CHOSEN(zephyr_flash))
+#define QSPI_FLASH_BASE DT_REG_ADDR_BY_IDX(DT_PARENT(DT_CHOSEN(zephyr_flash)), 1)
+#define QSPI_FLASH_SIZE DT_REG_SIZE_BY_IDX(DT_PARENT(DT_CHOSEN(zephyr_flash)), 1)
+#define QSPI_FLASH_END (QSPI_FLASH_BASE + QSPI_FLASH_SIZE)
+
+#if ((QSPI_FLASH_BASE <= CONFIG_FLASH_BASE_ADDRESS) && \
+	(CONFIG_FLASH_BASE_ADDRESS <= QSPI_FLASH_END))
+#define QSPI_CFG_ROM(node_id) DT_SAME_NODE(node_id, DT_CHOSEN(zephyr_flash))
 #else
-#define QSPI_ROM_CFG_XIP(node_id) false
+#define QSPI_CFG_ROM(node_id) false
 #endif
+
+#else /* CONFIG_XIP */
+#define QSPI_CFG_ROM(node_id) false
+#endif /* CONFIG_XIP */
 
 #define LAYOUT_PAGES_PROP(n)						\
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,				\
@@ -962,7 +972,7 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 				.write_block_size = 1,			\
 				.erase_value = 0xff			\
 			},						\
-			.xip = QSPI_ROM_CFG_XIP(DT_DRV_INST(n)),	\
+			.qspi_cfg_rom = QSPI_CFG_ROM(DT_DRV_INST(n)), \
 			ANDES_QSPI_SFDP_DEVICETREE_PROP(n)		\
 		};							\
 									\
