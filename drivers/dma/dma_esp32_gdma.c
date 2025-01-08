@@ -249,8 +249,13 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
 
-	gdma_ll_rx_clear_interrupt_status(data->hal.dev, dma_channel->channel_id, UINT32_MAX);
-	gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, UINT32_MAX,
+	gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, GDMA_LL_RX_EVENT_MASK,
+				    false);
+
+	gdma_ll_rx_clear_interrupt_status(data->hal.dev, dma_channel->channel_id,
+					  GDMA_LL_RX_EVENT_MASK);
+
+	gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, GDMA_LL_RX_EVENT_MASK,
 				    config_dma->dma_callback != NULL);
 
 	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
@@ -283,7 +288,12 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
 
-	gdma_ll_tx_clear_interrupt_status(data->hal.dev, dma_channel->channel_id, UINT32_MAX);
+	gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id, GDMA_LL_TX_EVENT_MASK,
+				    false);
+
+	gdma_ll_tx_clear_interrupt_status(data->hal.dev, dma_channel->channel_id,
+					  GDMA_LL_TX_EVENT_MASK);
+
 	gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id, GDMA_LL_EVENT_TX_EOF,
 				    config_dma->dma_callback != NULL);
 
