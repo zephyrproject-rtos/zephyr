@@ -74,6 +74,19 @@
 		reg = <0x80200000 DT_SIZE_K(256)>;
 	};
 
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+
+	transceiver1: can-phy1 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&gpio13 1 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &scif1 {
@@ -84,6 +97,10 @@
 };
 
 &gpio0{
+	status = "okay";
+};
+
+&gpio13{
 	status = "okay";
 };
 
