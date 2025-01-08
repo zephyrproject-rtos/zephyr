@@ -70,7 +70,7 @@ struct step_dir_stepper_common_data {
 	enum stepper_direction direction;
 	enum stepper_run_mode run_mode;
 	int32_t actual_position;
-	uint32_t max_velocity;
+	uint64_t microstep_interval_ns;
 	int32_t step_count;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
@@ -141,13 +141,14 @@ int step_dir_stepper_common_init(const struct device *dev);
 int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micro_steps);
 
 /**
- * @brief Set the maximum velocity in micro_steps per second.
+ * @brief Set the step interval of the stepper motor.
  *
  * @param dev Pointer to the device structure.
- * @param velocity Maximum velocity in micro_steps per second.
+ * @param microstep_interval_ns The step interval in nanoseconds.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_set_max_velocity(const struct device *dev, const uint32_t velocity);
+int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
+					      const uint64_t microstep_interval_ns);
 
 /**
  * @brief Set the reference position of the stepper motor.
@@ -186,15 +187,13 @@ int step_dir_stepper_common_move_to(const struct device *dev, const int32_t valu
 int step_dir_stepper_common_is_moving(const struct device *dev, bool *is_moving);
 
 /**
- * @brief Run the stepper with a given velocity in a given direction.
+ * @brief Run the stepper with a given direction and step interval.
  *
  * @param dev Pointer to the device structure.
  * @param direction The direction of movement (positive or negative).
- * @param velocity The velocity in micro_steps per second.
  * @return 0 on success, or a negative error code on failure.
  */
-int step_dir_stepper_common_run(const struct device *dev, const enum stepper_direction direction,
-				const uint32_t velocity);
+int step_dir_stepper_common_run(const struct device *dev, const enum stepper_direction direction);
 
 /**
  * @brief Set a callback function for stepper motor events.
