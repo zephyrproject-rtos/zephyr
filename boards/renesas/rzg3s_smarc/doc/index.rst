@@ -67,6 +67,8 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| CANFD     | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
