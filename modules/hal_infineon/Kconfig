@@ -14,6 +14,11 @@ config USE_INFINEON_ADC
 	help
 	  Enable Analog-to-Digital Converter (ADC) HAL module driver for Infineon devices
 
+config USE_INFINEON_DMA
+	bool
+	help
+	  Enable ADC HAL module driver for Infineon devices
+
 config USE_INFINEON_I2C
 	bool
 	help
