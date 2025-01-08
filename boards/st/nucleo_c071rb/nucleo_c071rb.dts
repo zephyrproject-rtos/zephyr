@@ -72,6 +72,10 @@
 	status = "okay";
 };
 
+&clk_hsi {
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&clk_hse>;
 	clock-frequency = <DT_FREQ_M(48)>;
@@ -138,7 +142,9 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in4_pa4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
+	st,adc-clock-source = "ASYNC";
+	clocks = <&rcc STM32_CLOCK(APB1_2, 20U)>,
+		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
 	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;
