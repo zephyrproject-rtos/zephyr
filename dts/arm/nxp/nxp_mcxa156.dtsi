@@ -221,6 +221,20 @@
 			#io-channel-cells = <1>;
 		};
 
+		edma0: dma-controller@40080000 {
+			#dma-cells = <2>;
+			compatible = "nxp,mcux-edma";
+			nxp,version = <4>;
+			dma-channels = <8>;
+			dma-requests = <86>;
+
+			reg = <0x40080000 0x1000>;
+			interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
+				<6 0>, <7 0>, <8 0>, <9 0>;
+			no-error-irq;
+			status = "disabled";
+		};
+
 		flexcan0: can@400cc000 {
 			compatible = "nxp,flexcan";
 			reg = <0x400cc000 0x1000>;
