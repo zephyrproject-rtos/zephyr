@@ -230,6 +230,11 @@ config USE_RZ_FSP_MHU
 	help
 	  Enable RZ FSP MHU driver
 
+config USE_RZ_FSP_CANFD
+	bool
+	help
+	  Enable RZ FSP CANFD driver
+
 config USE_RZ_FSP_CPG
 	bool
 	help
