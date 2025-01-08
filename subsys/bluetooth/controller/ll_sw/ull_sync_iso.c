@@ -494,6 +494,13 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		}
 
 		lll->ptc = lll->nse - nse;
+
+		/* FIXME: Do not remember why ptc is 4 bits, it should be 5 bits as ptc is a
+		 *        running buffer offset related to nse.
+		 *        Fix ptc and ptc_curr definitions, until then we keep an assertion check
+		 *        here.
+		 */
+		LL_ASSERT(lll->ptc <= BIT_MASK(4));
 	} else {
 		lll->ptc = 0U;
 	}
