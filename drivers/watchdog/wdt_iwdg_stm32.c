@@ -10,10 +10,12 @@
 #define DT_DRV_COMPAT st_stm32_watchdog
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys_clock.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_rcc.h>
 #include <stm32_ll_iwdg.h>
 #include <stm32_ll_system.h>
 #include <errno.h>
@@ -90,14 +92,16 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 
 	/* Deactivate running when debugger is attached. */
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-#if defined(CONFIG_SOC_SERIES_STM32F0X)
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+		/* STM32WB0 watchdog does not support halt by debugger */
+		return -ENOTSUP;
+#elif defined(CONFIG_SOC_SERIES_STM32F0X)
 		LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) || defined(CONFIG_SOC_SERIES_STM32G0X)
 		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
-#endif
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG1_STOP);
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG_STOP);
@@ -192,6 +196,43 @@ static DEVICE_API(wdt, iwdg_stm32_api) = {
 
 static int iwdg_stm32_init(const struct device *dev)
 {
+/* Enable watchdog clock if needed */
+#if DT_INST_NODE_HAS_PROP(0, clocks)
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct stm32_pclken clk_cfg = STM32_CLOCK_INFO(0, DT_DRV_INST(0));
+	int err = clock_control_on(clk, (clock_control_subsys_t)&clk_cfg);
+
+	if (err < 0) {
+		return err;
+	}
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/**
+	 * On STM32WB0, application must wait two slow clock cycles
+	 * before accessing the IWDG IP after turning on the WDGEN
+	 * bit in RCC registers. However, there is no register that
+	 * can be polled for this event.
+	 * To work around this limitation, force the IWDG to go
+	 * through a reset cycle, which also takes two slow clock
+	 * cycles, but can polled on (bit WDGRSTF of RCC_CIFR).
+	 */
+
+	/* Clear bit beforehand to avoid early exit of polling loop */
+	LL_RCC_ClearFlag_WDGRSTREL();
+
+	/* Place IWDG under reset, then release the reset */
+	LL_APB0_GRP1_ForceReset(LL_APB0_GRP1_PERIPH_WDG);
+	LL_APB0_GRP1_ReleaseReset(LL_APB0_GRP1_PERIPH_WDG);
+	while (!LL_RCC_IsActiveFlag_WDGRSTREL()) {
+		/* Wait for IWDG reset release event,
+		 * which takes two slow clock cycles
+		 */
+	}
+
+	/* Clear WDRSTF bit after polling completes */
+	LL_RCC_ClearFlag_WDGRSTREL();
+#endif /* defined(CONFIG_SOC_SERIES_STM32WB0X) */
+#endif /* DT_INST_NODE_HAS_PROP(0, clocks) */
+
 #ifndef CONFIG_WDT_DISABLE_AT_BOOT
 	struct wdt_timeout_cfg config = {
 		.window.max = CONFIG_IWDG_STM32_INITIAL_TIMEOUT
