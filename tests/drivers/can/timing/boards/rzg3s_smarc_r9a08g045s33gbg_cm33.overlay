@@ -1,0 +1,21 @@
+/ {
+	chosen {
+		zephyr,canbus = &canfd0;
+	};
+};
+
+&canfd_global {
+	status = "okay";
+};
+
+&gpio13{
+	status = "okay";
+};
+
+&canfd0 {
+	pinctrl-0 = <&can0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	rx-max-filters = <32>;
+	phys = <&transceiver0>;
+};
