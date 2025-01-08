@@ -21,7 +21,7 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.error import BuildError
 from twisterlib.runner import TwisterRunner
-from twisterlib.handlers import QEMUHandler
+from twisterlib.handlers import QEMUHandler, QEMUWinHandler
 from expr_parser import reserved
 
 
@@ -35,8 +35,11 @@ TESTDATA_PART_1 = [
     (False, True, "sensor", "native", "", True, [], (True, False)),
 ]
 @pytest.mark.parametrize(
-    "build_only, slow, harness, platform_type, platform_sim, device_testing,fixture, expected",
-    TESTDATA_PART_1
+    "build_only, slow, harness, platform_type, platform_sim, device_testing, fixture, expected",
+    TESTDATA_PART_1,
+    ids=['console, na, qemu', 'console, native, qemu', 'console, native, nsim, build only',
+         'console, native, renode, build_only, slow', 'sensor, native',
+         'sensor, na', 'sensor, native, slow, device_testing']
 )
 def test_check_build_or_run(
     class_testplan,
@@ -56,9 +59,9 @@ def test_check_build_or_run(
     Scenario 2: Test if build_only is enabled when the OS is Windows"""
 
     class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/'
-                                              'test_a/test_a.check_1')
-    print(testsuite)
+    testsuite_path = 'scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1'
+    testsuite_path = testsuite_path.replace('/', os.sep)
+    testsuite = class_testplan.testsuites.get(testsuite_path)
 
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
@@ -78,9 +81,11 @@ def test_check_build_or_run(
             sim_name=platform_sim
         )
     )
-    run = testinstance.check_runnable(env.options)
-    _, r = expected
-    assert run == r
+
+    with mock.patch('os.name', 'posix'):
+        run = testinstance.check_runnable(env.options)
+        _, r = expected
+        assert run == r
 
     with mock.patch('os.name', 'nt'):
         # path to QEMU binary is not in QEMU_BIN_PATH environment variable
@@ -95,15 +100,15 @@ def test_check_build_or_run(
 
 
 TESTDATA_PART_2 = [
-    (True, True, True, ["demo_board_2/unit_testing"], "native",
+    (True, True, True, ["demo_board_2"], "native",
      None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),
-    (True, False, True, ["demo_board_2/unit_testing"], "native",
+    (True, False, True, ["demo_board_2"], "native",
      None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y'),
-    (False, False, True, ["demo_board_2/unit_testing"], 'native',
+    (False, False, True, ["demo_board_2"], 'native',
      None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
-    (True, False, True, ["demo_board_2/unit_testing"], 'mcu',
+    (True, False, True, ["demo_board_2"], 'mcu',
      None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
-    (False, False, False, ["demo_board_2/unit_testing"], 'native', None, ''),
+    (False, False, False, ["demo_board_2"], 'native', None, ''),
     (False, False, True, ['demo_board_1'], 'native', None, ''),
     (True, False, False, ["demo_board_2"], 'native', None, '\nCONFIG_ASAN=y'),
     (False, True, False, ["demo_board_2"], 'native', None, '\nCONFIG_UBSAN=y'),
@@ -114,7 +119,7 @@ TESTDATA_PART_2 = [
     (False, False, False, ["demo_board_2"], 'native',
      ["arch:arm:CONFIG_LOG=y"], ''),
     (False, False, False, ["demo_board_2"], 'native',
-     ["platform:demo_board_2/unit_testing:CONFIG_LOG=y"], 'CONFIG_LOG=y'),
+     ["platform:demo_board_2:CONFIG_LOG=y"], ''),
     (False, False, False, ["demo_board_2"], 'native',
      ["platform:demo_board_1:CONFIG_LOG=y"], ''),
 ]
@@ -138,14 +143,15 @@ def test_create_overlay(
 ):
     """Test correct content is written to testcase_extra.conf based on if conditions."""
     class_testplan.testsuites = all_testsuites_dict
-    testcase = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/samples/'
-                                             'test_app/sample_test.app')
+    testcase_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    testcase_path = testcase_path.replace('/', os.sep)
+    testcase = class_testplan.testsuites.get(testcase_path)
 
     if extra_configs:
         testcase.extra_configs = extra_configs
 
     class_testplan.platforms = platforms_list
-    platform = class_testplan.get_platform("demo_board_2")
+    platform = class_testplan.get_platform("demo_board_2/unit_testing")
 
     testinstance = TestInstance(testcase, platform, class_testplan.env.outdir)
     platform.type = platform_type
@@ -154,8 +160,9 @@ def test_create_overlay(
 def test_calculate_sizes(class_testplan, all_testsuites_dict, platforms_list):
     """ Test Calculate sizes method for zephyr elf"""
     class_testplan.testsuites = all_testsuites_dict
-    testcase = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/samples/'
-                                             'test_app/sample_test.app')
+    testcase_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    testcase_path = testcase_path.replace('/', os.sep)
+    testcase = class_testplan.testsuites.get(testcase_path)
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
     testinstance = TestInstance(testcase, platform, class_testplan.env.outdir)
@@ -204,6 +211,7 @@ def sample_testinstance(all_testsuites_dict, class_testplan, platforms_list, req
         testsuite_path += '/samples/test_app/sample_test.app'
     elif request.param['testsuite_kind'] == 'tests':
         testsuite_path += '/tests/test_a/test_a.check_1'
+    testsuite_path = testsuite_path.replace('/', os.sep)
 
     class_testplan.testsuites = all_testsuites_dict
     testsuite = class_testplan.testsuites.get(testsuite_path)
@@ -221,19 +229,22 @@ TESTDATA_1 = [
 
 @pytest.mark.parametrize('detailed_test_id', TESTDATA_1)
 def test_testinstance_init(all_testsuites_dict, class_testplan, platforms_list, detailed_test_id):
-    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    testsuite_rel_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    testsuite_path = testsuite_rel_path.replace('/', os.sep)
     class_testplan.testsuites = all_testsuites_dict
     testsuite = class_testplan.testsuites.get(testsuite_path)
     testsuite.detailed_test_id = detailed_test_id
     class_testplan.platforms = platforms_list
-    platform = class_testplan.get_platform("demo_board_2/unit_testing")
+    platform = class_testplan.get_platform("demo_board_2")
 
     testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
 
     if detailed_test_id:
-        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, testsuite_path)
+        expected_path = os.path.join(class_testplan.env.outdir, platform.normalized_name, testsuite_rel_path)
     else:
-        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, testsuite.source_dir_rel, testsuite.name)
+        expected_path = os.path.join(class_testplan.env.outdir, platform.normalized_name, testsuite.source_dir_rel, testsuite.name)
+    expected_path = os.path.abspath(os.fspath(expected_path))
+    assert testinstance.build_dir == expected_path
 
 
 @pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'sample'}], indirect=True)
@@ -255,8 +266,6 @@ def test_testinstance_record(testinstance):
         mock.Mock()
     ) as mock_writerows:
         testinstance.record(recording)
-
-    print(mock_file.mock_calls)
 
     mock_file.assert_called_with(
         os.path.join(testinstance.build_dir, 'recording.csv'),
@@ -282,6 +291,7 @@ def test_testinstance_add_filter(testinstance):
 
 def test_testinstance_init_cases(all_testsuites_dict, class_testplan, platforms_list):
     testsuite_path = 'scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1'
+    testsuite_path = testsuite_path.replace('/', os.sep)
     class_testplan.testsuites = all_testsuites_dict
     testsuite = class_testplan.testsuites.get(testsuite_path)
     class_testplan.platforms = platforms_list
@@ -336,10 +346,12 @@ def test_testinstance_add_missing_case_status(testinstance, reason, expected_rea
 
 def test_testinstance_dunders(all_testsuites_dict, class_testplan, platforms_list):
     testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    testsuite_name = os.path.normpath(testsuite_path)
+    testsuite_path = testsuite_path.replace('/', os.sep)
     class_testplan.testsuites = all_testsuites_dict
     testsuite = class_testplan.testsuites.get(testsuite_path)
     class_testplan.platforms = platforms_list
-    platform = class_testplan.get_platform("demo_board_2")
+    platform = class_testplan.get_platform("demo_board_2/unit_testing")
 
     testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
     testinstance_copy = TestInstance(testsuite, platform, class_testplan.env.outdir)
@@ -440,7 +452,9 @@ def test_testinstance_testsuite_runnable(
     expected_can_run
 ):
     testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    testsuite_path = testsuite_path.replace('/', os.sep)
     class_testplan.testsuites = all_testsuites_dict
+    print(class_testplan.testsuites)
     testsuite = class_testplan.testsuites.get(testsuite_path)
 
     testsuite.harness = harness
@@ -467,7 +481,7 @@ TESTDATA_4 = [
     ' expected_handler_type, expected_handler_args, expected_handler_ready',
     TESTDATA_4,
     ids=['preexisting handler', 'device testing', 'qemu simulation',
-         'non-qemu simulation with exec', 'unit teting', 'no handler']
+         'non-qemu simulation with exec', 'unit testing', 'no handler']
 )
 @pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
 def test_testinstance_setup_handler(
@@ -492,12 +506,14 @@ def test_testinstance_setup_handler(
     )
 
     with mock.patch.object(QEMUHandler, 'get_fifo', return_value=1), \
+         mock.patch.object(QEMUWinHandler, 'get_fifo', return_value=1), \
          mock.patch('shutil.which', return_value=True):
         testinstance.setup_handler(env)
 
     if expected_handler_type:
         assert testinstance.handler.type_str == expected_handler_type
         assert testinstance.handler.ready == expected_handler_ready
+
     assert all([arg in testinstance.handler.args for arg in expected_handler_args])
 
 
