@@ -1533,11 +1533,9 @@ class Node:
 
         if prop_type == "boolean":
             if prop.type != Type.EMPTY:
-                _err(
-                    "'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
-                    "but is assigned a value ('{3}') instead of being empty "
-                    "('{0};')".format(name, node, binding_path, prop)
-                )
+                _err(f"'{name}' in {node!r} is defined with 'type: boolean' "
+                     f"in {binding_path}, but is assigned a value ('{prop}') "
+                     f"instead of being empty ('{name};')")
             return True
 
         if prop_type == "int":
