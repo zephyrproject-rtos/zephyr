@@ -16,6 +16,7 @@
 			device_type = "cpu";
 			compatible = "wch,qingke-v2";
 			reg = <0>;
+			riscv,isa = "rv32ec_zicsr_zifencei";
 		};
 	};
 
