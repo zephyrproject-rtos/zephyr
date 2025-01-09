@@ -93,6 +93,8 @@ The below features are currently supported on Zephyr OS for FPB-RA6E1 board:
 +-----------+------------+----------------------+
 | PWM       | on-chip    | pwm                  |
 +-----------+------------+----------------------+
+| ENTROPY   | on-chip    | entropy              |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
