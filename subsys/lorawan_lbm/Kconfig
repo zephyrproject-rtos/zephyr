@@ -3,22 +3,13 @@
 # Copyright (c) 2024 Semtech Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config LORA_BASICS_MODEM_USER_STORAGE_IMPL
-	bool "Use a user-provided LoRa Basics Modem storage implementation"
-	default n
-	help
-	  Enable if user storage implementation is required.
-	  This disables the default storage implementation in the HAL
-	  that uses the settings subsystem.
-
 menuconfig LORA_BASICS_MODEM
 	bool "LoRa Basics Modem LoRaWAN stack support [EXPERIMENTAL]"
-	depends on EXPERIMENTAL
 	depends on LORA_BASICS_MODEM_DRIVERS
-	depends on LORA_BASICS_MODEM_DRIVERS_RAL_RALF
-	depends on REBOOT
+	select EXPERIMENTAL
+	select LORA_BASICS_MODEM_DRIVERS_RAL_RALF
+	select REBOOT
 	# depends on REQUIRES_FULL_LIBC
-	depends on SETTINGS || LORA_BASICS_MODEM_USER_STORAGE_IMPL
 	depends on TEST_RANDOM_GENERATOR || ENTROPY_HAS_DRIVER
 	select ZEPHYR_LORA_BASICS_MODEM_MODULE
 	depends on !LORAWAN
@@ -26,6 +17,27 @@ menuconfig LORA_BASICS_MODEM
 	  This option enables the LoRa Basics Modem stack for LoRaWAN support.
 	  Full libc is required for floorf.
 	  Also make sure some source of randomness is used.
+
+choice
+	prompt "LoRaWAN storage implementation"
+	default LORA_BASICS_MODEM_PROVIDED_STORAGE_IMPL
+	help
+	  Use a basic flash-based storage implementation or a user-provided implementation
+
+config LORA_BASICS_MODEM_PROVIDED_STORAGE_IMPL
+	bool "Build LoRa Basics Modem basic storage implementation"
+	select FLASH
+	select FLASH_MAP
+	select FLASH_PAGE_LAYOUT
+
+config LORA_BASICS_MODEM_USER_STORAGE_IMPL
+	bool "Enable LoRa Basics Modem user storage implementation"
+	help
+	  Enable if user storage implementation is required.
+	  This disables the default storage implementation in the HAL
+	  that uses the settings subsystem.
+
+endchoice
 
 if LORA_BASICS_MODEM
 

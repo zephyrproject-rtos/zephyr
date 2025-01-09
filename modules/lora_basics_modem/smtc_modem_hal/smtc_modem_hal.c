@@ -314,13 +314,16 @@ void smtc_modem_hal_context_restore(const modem_context_type_t ctx_type, uint32_
 uint8_t page_buffer[4096];
 
 /* We assume (FIXME:) that stores are only on one sector.
- * FIXME: we assume page size = 4096B like in nrf
  */
 void smtc_modem_hal_context_store(const modem_context_type_t ctx_type, uint32_t offset,
 				  const uint8_t *buffer, const uint32_t size)
 {
 	int rc;
 	uint32_t real_offset;
+	uint32_t real_size;
+
+	/* shitty workaround because some 4-bytes writes will come while flash supports only 8 */
+	real_size = size + 8 - (size % 8);
 
 	flash_init();
 	real_offset = priv_hal_context_address(ctx_type, offset);
@@ -335,7 +338,10 @@ void smtc_modem_hal_context_store(const modem_context_type_t ctx_type, uint32_t 
 		rc = flash_area_write(context_flash_area, 0, page_buffer, 4096);
 	} else {
 		/* LOG_INF("%s: offset %d, real_offset=%d", __FUNCTION__, offset, real_offset); */
-		rc = flash_area_write(context_flash_area, real_offset, buffer, size);
+		memset(page_buffer, 0, real_size);
+		/* yes, size, not real_size */
+		memcpy(page_buffer, buffer, size);
+		rc = flash_area_write(context_flash_area, real_offset, page_buffer, real_size);
 	}
 }
 
@@ -352,18 +358,30 @@ void smtc_modem_hal_context_flash_pages_erase(const modem_context_type_t ctx_typ
 			      smtc_modem_hal_flash_get_page_size() * nb_page);
 }
 
-#define NUM_PAGES 6
+uint16_t smtc_modem_hal_flash_get_page_size(void)
+{
+	const struct device *flash_device;
+	struct flash_pages_info info;
+
+	flash_init();
+	flash_device = flash_area_get_device(context_flash_area);
+	flash_get_page_info_by_offs(flash_device, ADDR_STORE_AND_FORWARD_CONTEXT_OFFSET, &info);
+	return info.size;
+}
 
 uint16_t smtc_modem_hal_store_and_forward_get_number_of_pages(void)
 {
-	return NUM_PAGES;
-	/* return ADDR_STORE_AND_FORWARD_CONTEXT_OFFSET smtc_modem_hal_flash_get_page_size(); */
-}
+	uint16_t page_size;
+	size_t flash_size;
+	uint16_t pages_possible;
 
-uint16_t smtc_modem_hal_flash_get_page_size(void)
-{
-	flash_init();
-	return flash_area_align(context_flash_area);
+	page_size = smtc_modem_hal_flash_get_page_size();
+	flash_size = context_flash_area->fa_size;
+
+	/* 8192B are taken by stuff before store_and_forward */
+	pages_possible = (flash_size - 8192) / page_size;
+
+	return pages_possible;
 }
 
 void smtc_modem_hal_crashlog_store(const uint8_t *crashlog, uint8_t crash_string_length)
