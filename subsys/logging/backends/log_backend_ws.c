@@ -15,11 +15,6 @@ LOG_MODULE_REGISTER(log_backend_ws, CONFIG_LOG_DEFAULT_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
 
-/* Set this to 1 if you want to see what is being sent to server */
-#define DEBUG_PRINTING 0
-
-#define DBG(fmt, ...) IF_ENABLED(DEBUG_PRINTING, (printk(fmt, ##__VA_ARGS__)))
-
 static bool ws_init_done;
 static bool panic_mode;
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_WS_OUTPUT_DEFAULT;
@@ -136,8 +131,6 @@ static int line_out(uint8_t *data, size_t length, void *output_ctx)
 		length = sent;
 	}
 
-	DBG(data);
-
 	return length;
 }
 
@@ -200,7 +193,7 @@ int log_backend_ws_unregister(int fd)
 	struct log_backend_ws_ctx *ctx = log_output_ws.control_block->ctx;
 
 	if (ctx->sock != fd) {
-		DBG("Websocket sock mismatch (%d vs %d)", ctx->sock, fd);
+		LOG_DBG("Websocket sock mismatch (%d vs %d)", ctx->sock, fd);
 	}
 
 	ctx->sock = -1;
