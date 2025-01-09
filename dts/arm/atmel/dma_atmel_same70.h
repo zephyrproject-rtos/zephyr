@@ -6,7 +6,11 @@
 #ifndef DMA_ATMEL_SAME70_H_
 #define DMA_ATMEL_SAME70_H_
 
-/** Peripheral Hardware Request Line Identifier */
+/**
+ * SAMx7x Peripheral Hardware Request HW Interface Number (XDMAC_CC.PERID).
+ *
+ * See table Table 35-1. Peripheral Hardware Requests in the SAM E70/S70/V70/V71 datasheet.
+ */
 #define DMA_PERID_HSMCI_TX_RX 0
 #define DMA_PERID_SPI0_TX     1
 #define DMA_PERID_SPI0_RX     2
@@ -37,7 +41,8 @@
 #define DMA_PERID_UART3_RX    27
 #define DMA_PERID_UART4_TX    28
 #define DMA_PERID_UART4_RX    29
-#define DMA_PERID_DACC_TX     30
+#define DMA_PERID_DACC0_TX    30
+#define DMA_PERID_DACC1_TX    31
 #define DMA_PERID_SSC_TX      32
 #define DMA_PERID_SSC_RX      33
 #define DMA_PERID_PIOA_RX     34
@@ -50,5 +55,13 @@
 #define DMA_PERID_TC1_RX      41
 #define DMA_PERID_TC2_RX      42
 #define DMA_PERID_TC3_RX      43
+#define DMA_PERID_I2SC0_TX_L  44
+#define DMA_PERID_I2SC0_RX_L  45
+#define DMA_PERID_I2SC1_TX_L  46
+#define DMA_PERID_I2SC1_RX_L  47
+#define DMA_PERID_I2SC0_TX_R  48
+#define DMA_PERID_I2SC0_RX_R  49
+#define DMA_PERID_I2SC1_TX_R  50
+#define DMA_PERID_I2SC1_RX_R  51
 
 #endif /* DMA_ATMEL_SAME70_H_ */
