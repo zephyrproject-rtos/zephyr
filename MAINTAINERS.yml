@@ -5562,6 +5562,7 @@ zbus:
     - cmake/llext-edk.cmake
     - samples/subsys/llext/
     - include/zephyr/llext/
+    - tests/misc/llext-edk/
     - tests/subsys/llext/
     - subsys/llext/
     - doc/services/llext/
