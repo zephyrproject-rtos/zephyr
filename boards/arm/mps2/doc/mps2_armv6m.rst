@@ -1,14 +1,13 @@
-.. _mps2_an386_board:
+.. _mps2_armv6m_board:
 
-ARM V2M MPS2 AN386
-##################
+ARM V2M MPS2 Armv6-m (AN383)
+############################
 
 Overview
 ********
 
-The ``mps2/an386`` board target is used by Zephyr applications that run on
-the V2M MPS2 board. It provides support for the ARM Cortex-M4 (an386) CPU and
-the following devices:
+Currently ``mps2/an383`` is the only mps2 Armv6-m based board target supported in Zephyr.
+It provides support for the ARM Cortex-M0+ (AN383) CPU and the following devices:
 
 - Nested Vectored Interrupt Controller (NVIC)
 - System Tick System Clock (SYSTICK)
@@ -19,26 +18,28 @@ the following devices:
      :alt: ARM V2M MPS2
 
 In addition to enabling actual hardware usage, this board target can
-also use `FVP`_ to emulate the AN386 platform running on the MPS2+.
+also use `FVP`_. to emulate the AN383 platform running on the MPS2+.
 
 More information about the board can be found at the `V2M MPS2 Website`_.
 
-The Application Note an386 can be found at `Application Note an386`_.
+The Application Note AN383 can be found at `Application Note AN383`_.
 
 .. note::
    This board target makes no claims about its suitability for use
-   with actual MPS2 hardware systems using AN386, or any other hardware
+   with actual MPS2 hardware systems using AN383, or any other hardware
    system. It has been tested on FVP.
+
 
 Hardware
 ********
 
-ARM V2M MPS2 provides the following hardware components:
+ARM V2M MPS2 AN383 provides the following hardware components:
 
-- ARM Cortex-M4 (an386)
+- ARM Cortex-M0+
 - ARM IoT Subsystem for Cortex-M
 - Form factor: 140x120cm
 - ZBTSRAM: 8MB single cycle SRAM, 16MB PSRAM
+- Video: QSVGA touch screen panel, 4bit RGB VGA connector
 - Audio: Audio Codec
 - Debug:
 
@@ -60,7 +61,7 @@ ARM V2M MPS2 provides the following hardware components:
 Supported Features
 ==================
 
-The ``mps2/an386`` board target supports the following hardware features:
+The ``mps2/an383`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -86,18 +87,18 @@ See the `V2M MPS2 Website`_ for a complete list of V2M MPS2 board hardware
 features.
 
 The default configuration can be found in
-:zephyr_file:`boards/arm/mps2/mps2_an386_defconfig`
+:zephyr_file:`boards/arm/mps2/mps2_an383_defconfig`
 
 Interrupt Controller
 ====================
 
-MPS2 is a Cortex-M4 based SoC and has 15 fixed exceptions and 45 IRQs.
+MPS2 is a Cortex-M0+ based SoC and has 6 fixed exceptions and 32 IRQs.
 
-A Cortex-M3/4-based board uses vectored exceptions. This means each exception
+A Cortex-M0+ board uses vectored exceptions. This means each exception
 calls a handler directly from the vector table.
 
-Handlers are provided for exceptions 1-6, 11-12, and 14-15. The table here
-identifies the handlers used for each exception.
+Handlers are provided for exceptions 1-3, 11, and 14-15. The table here
+MPS2 is a Cortex-M0+ based SoC and has 15 fixed exceptions and 45 IRQs.
 
 +------+------------+----------------+--------------------------+
 | Exc# | Name       | Remarks        | Used by Zephyr Kernel    |
@@ -108,26 +109,13 @@ identifies the handlers used for each exception.
 +------+------------+----------------+--------------------------+
 | 3    | Hard fault |                | system fatal error       |
 +------+------------+----------------+--------------------------+
-| 4    | MemManage  | MPU fault      | system fatal error       |
-+------+------------+----------------+--------------------------+
-| 5    | Bus        |                | system fatal error       |
-+------+------------+----------------+--------------------------+
-| 6    | Usage      | undefined      | system fatal error       |
-|      | fault      | instruction,   |                          |
-|      |            | or switch      |                          |
-|      |            | attempt to ARM |                          |
-|      |            | mode           |                          |
-+------+------------+----------------+--------------------------+
 | 11   | SVC        |                | system calls, kernel     |
 |      |            |                | run-time exceptions,     |
 |      |            |                | and IRQ offloading       |
 +------+------------+----------------+--------------------------+
-| 12   | Debug      |                | system fatal error       |
-|      | monitor    |                |                          |
-+------+------------+----------------+--------------------------+
 | 14   | PendSV     |                | context switch           |
 +------+------------+----------------+--------------------------+
-| 15   | SYSTICK    |                | system clock             |
+| 15   | SYSTICK    | optional       | system clock             |
 +------+------------+----------------+--------------------------+
 
 Pin Mapping
@@ -255,7 +243,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mps2/an386
+   :board: mps2/an383
    :goals: build
 
 Connect the V2M MPS2 to your host computer using the USB port and you should
@@ -268,15 +256,26 @@ the following message:
 
    Hello World! arm
 
+Running an applicatoin with FVP
+-------------------------------
+
+Here is the same example for running with FVP.
+Set the ``ARMFVP_BIN_PATH`` environemnt variable to the location of your FVP you have downloaded from `here <FVP_>`_
+
+.. code-block:: console
+
+    export ARMFVP_BIN_PATH=/home/../FVP_MPS2/
+
+Then build with the same command you would use normally, and run with ``west build -t run_armfvp``.
 
 .. _V2M MPS2 Website:
    https://developer.mbed.org/platforms/ARM-MPS2/
 
 .. _MPS2 Technical Reference Manual (TRM):
-   http://infocenter.arm.com/help/topic/com.arm.doc.100112_0200_05_en/versatile_express_cortex_m_prototyping_systems_v2m_mps2_and_v2m_mps2plus_technical_reference_100112_0200_05_en.pdf
+   https://developer.arm.com/documentation/100112/0200/
 
-.. _Application Note an386:
-   https://documentation-service.arm.com/static/5ed1094dca06a95ce53f8a9f
+.. _Application Note AN383:
+   https://documentation-service.arm.com/static/5ed1051dca06a95ce53f88a1
 
 .. _FVP:
    https://developer.arm.com/downloads/view/FMFVP

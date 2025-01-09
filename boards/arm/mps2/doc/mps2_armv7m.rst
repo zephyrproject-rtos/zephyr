@@ -1,14 +1,15 @@
-.. _mps2_an383_board:
+.. _mps2_armv7m_board:
 
-ARM V2M MPS2 AN383
-##################
+ARM V2M MPS2 Armv7-m (AN385/AN386/AN500)
+########################################
 
 Overview
 ********
 
-The ``mps2/an383`` board target is used by Zephyr applications that run on
-the V2M MPS2 board. It provides support for the ARM Cortex-M0+ (AN383) CPU and
-the following devices:
+The ``mps2/an385``, ``mps2/an386``, and ``mps2/an500`` board targets are three of
+the mps2 Armv7-m based board targets supported in Zephyr. This document
+provides details about the support provided for these three Armv7-m mps2 board targets
+(**AN385**, **AN386**, **AN500**) and the following devices:
 
 - Nested Vectored Interrupt Controller (NVIC)
 - System Tick System Clock (SYSTICK)
@@ -18,25 +19,30 @@ the following devices:
      :align: center
      :alt: ARM V2M MPS2
 
-In addition to enabling actual hardware usage, this board target can
-also use `FVP`_. to emulate the AN383 platform running on the MPS2+.
+In addition to enabling actual hardware usage, these board targets can
+also use `FVP`_ to emulate the platforms running on the MPS2+.
 
 More information about the board can be found at the `V2M MPS2 Website`_.
 
-The Application Note AN383 can be found at `Application Note AN383`_.
+The application note for each of the board can be found as follows:
+
+- AN385 can be found at `Application Note AN385`_
+- AN386 can be found at `Application Note AN386`_
+- AN500 can be found at `Application Note AN500`_
+
+AN385 is also supported to run with QEMU, and is set to run with QEMU by default.
 
 .. note::
-   This board target makes no claims about its suitability for use
-   with actual MPS2 hardware systems using AN383, or any other hardware
-   system. It has been tested on FVP.
-
+   These board targets makes no claims about its suitability for use
+   with actual MPS2 hardware systems, or any other hardware
+   system.
 
 Hardware
 ********
 
-ARM V2M MPS2 AN383 provides the following hardware components:
+ARM V2M MPS2 provides the following hardware components:
 
-- ARM Cortex-M0+
+- ARM Cortex-M Chip
 - ARM IoT Subsystem for Cortex-M
 - Form factor: 140x120cm
 - ZBTSRAM: 8MB single cycle SRAM, 16MB PSRAM
@@ -62,7 +68,7 @@ ARM V2M MPS2 AN383 provides the following hardware components:
 Supported Features
 ==================
 
-The ``mps2/an383`` board target supports the following hardware features:
+The ``mps2/an385``, ``mps2/an386``, and ``mps2/an500`` board targets support the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -88,18 +94,19 @@ See the `V2M MPS2 Website`_ for a complete list of V2M MPS2 board hardware
 features.
 
 The default configuration can be found in
-:zephyr_file:`boards/arm/mps2/mps2_an383_defconfig`
+:zephyr_file:`boards/arm/mps2/mps2_an385_defconfig`
+or similarly in ``mps2_anxxx_defconfig`` for the other applicable boards.
 
 Interrupt Controller
 ====================
 
-MPS2 is a Cortex-M0+ based SoC and has 6 fixed exceptions and 32 IRQs.
+MPS2 is a Cortex-M based SoC and has 15 fixed exceptions and 45 IRQs.
 
-A Cortex-M0+ board uses vectored exceptions. This means each exception
+A Cortex-M3/4/7-based board uses vectored exceptions. This means each exception
 calls a handler directly from the vector table.
 
-Handlers are provided for exceptions 1-3, 11, and 14-15. The table here
-MPS2 is a Cortex-M0+ based SoC and has 15 fixed exceptions and 45 IRQs.
+Handlers are provided for exceptions 1-6, 11-12, and 14-15. The table here
+identifies the handlers used for each exception.
 
 +------+------------+----------------+--------------------------+
 | Exc# | Name       | Remarks        | Used by Zephyr Kernel    |
@@ -110,13 +117,26 @@ MPS2 is a Cortex-M0+ based SoC and has 15 fixed exceptions and 45 IRQs.
 +------+------------+----------------+--------------------------+
 | 3    | Hard fault |                | system fatal error       |
 +------+------------+----------------+--------------------------+
+| 4    | MemManage  | MPU fault      | system fatal error       |
++------+------------+----------------+--------------------------+
+| 5    | Bus        |                | system fatal error       |
++------+------------+----------------+--------------------------+
+| 6    | Usage      | undefined      | system fatal error       |
+|      | fault      | instruction,   |                          |
+|      |            | or switch      |                          |
+|      |            | attempt to ARM |                          |
+|      |            | mode           |                          |
++------+------------+----------------+--------------------------+
 | 11   | SVC        |                | system calls, kernel     |
 |      |            |                | run-time exceptions,     |
 |      |            |                | and IRQ offloading       |
 +------+------------+----------------+--------------------------+
+| 12   | Debug      |                | system fatal error       |
+|      | monitor    |                |                          |
++------+------------+----------------+--------------------------+
 | 14   | PendSV     |                | context switch           |
 +------+------------+----------------+--------------------------+
-| 15   | SYSTICK    | optional       | system clock             |
+| 15   | SYSTICK    |                | system clock             |
 +------+------------+----------------+--------------------------+
 
 Pin Mapping
@@ -240,11 +260,11 @@ V2M MPS2 provides:
 Flashing an application to V2M MPS2
 -----------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application with AN385.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mps2/an383
+   :board: mps2/an385
    :goals: build
 
 Connect the V2M MPS2 to your host computer using the USB port and you should
@@ -257,15 +277,32 @@ the following message:
 
    Hello World! arm
 
+Running an applicatoin with FVP
+-------------------------------
+
+Here is the same example for running with FVP.
+Set the ``ARMFVP_BIN_PATH`` environemnt variable to the location of your FVP you have downloaded from `here <FVP_>`_
+
+.. code-block:: console
+
+    export ARMFVP_BIN_PATH=/home/../FVP_MPS2/
+
+Then build with the same command you would use normally, and run with ``west build -t run_armfvp``.
 
 .. _V2M MPS2 Website:
    https://developer.mbed.org/platforms/ARM-MPS2/
 
 .. _MPS2 Technical Reference Manual (TRM):
-   http://infocenter.arm.com/help/topic/com.arm.doc.100112_0200_05_en/versatile_express_cortex_m_prototyping_systems_v2m_mps2_and_v2m_mps2plus_technical_reference_100112_0200_05_en.pdf
+   https://developer.arm.com/documentation/100112/0200/
 
-.. _Application Note AN383:
-   https://documentation-service.arm.com/static/5ed1051dca06a95ce53f88a1
+.. _Application Note AN385:
+   https://documentation-service.arm.com/static/5ed107a5ca06a95ce53f89e3
+
+.. _Application Note AN386:
+   https://documentation-service.arm.com/static/5ed1094dca06a95ce53f8a9f
+
+.. _Application Note AN500:
+   https://documentation-service.arm.com/static/5ed112fcca06a95ce53f8eb3
 
 .. _FVP:
    https://developer.arm.com/downloads/view/FMFVP
