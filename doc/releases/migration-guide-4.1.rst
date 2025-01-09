@@ -263,10 +263,17 @@ Stepper
   * Renamed the ``compatible`` from ``zephyr,gpio-steppers`` to :dtcompatible:`zephyr,gpio-stepper`.
   * Renamed the ``stepper_set_actual_position`` function to :c:func:`stepper_set_reference_position`.
   * Renamed the ``stepper_enable_constant_velocity_mode`` function to :c:func:`stepper_run`.
+    The function does not take a velocity parameter anymore. Set the desired speed using the
+    :c:func:`stepper_set_microstep_interval` function beforehand.
   * Renamed the ``stepper_move`` function to :c:func:`stepper_move_by`.
   * Renamed the ``stepper_set_target_position`` function to :c:func:`stepper_move_to`.
+  * Renamed the ``stepper_set_max_velocity`` function to :c:func:`stepper_set_microstep_interval`.
+    The function now takes the step interval in nanoseconds. This allows for a more precise control.
+  * Deprecating setting max velocity via :c:func:`stepper_run`.
   * The :kconfig:option:`STEPPER_ADI_TMC_RAMP_GEN` is now deprecated and is replaced with the new
     :kconfig:option:`STEPPER_ADI_TMC5041_RAMP_GEN` option.
+  * To control the velocity for :dtcompatible:`adi,tmc5041` stepper driver, use
+    :c:func:`tmc5041_stepper_set_max_velocity` or :c:func:`tmc5041_stepper_set_ramp`.
 
 SPI
 ===
