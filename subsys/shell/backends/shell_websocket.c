@@ -386,7 +386,8 @@ int shell_websocket_setup(int ws_socket, struct http_request_ctx *request_ctx, v
 
 int shell_websocket_enable(const struct shell *sh)
 {
-	bool log_backend = CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL > 0;
+	bool log_backend = CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL > 0 &&
+			   !IS_ENABLED(CONFIG_LOG_BACKEND_WS);
 	uint32_t level = (CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL;
 	static const struct shell_backend_config_flags cfg_flags =
