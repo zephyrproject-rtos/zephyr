@@ -24,21 +24,10 @@
 #ifdef CONFIG_BT_TMAP
 extern enum bst_result_t bst_result;
 
-static uint8_t tmap_addata[] = {
-	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL), /* TMAS UUID */
-	(BT_TMAP_ROLE_UMR | BT_TMAP_ROLE_CT), 0x00, /* TMAP Role  */
-};
-
-static const struct bt_data ad_tmas[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_GAP_APPEARANCE, 0x09, 0x41), /* Appearance - Earbud  */
-	BT_DATA(BT_DATA_SVC_DATA16, tmap_addata, ARRAY_SIZE(tmap_addata)),
-};
-
 static void test_main(void)
 {
 	int err;
-	struct bt_le_ext_adv *adv;
+	struct bt_le_ext_adv *ext_adv;
 
 	err = bt_enable(NULL);
 	if (err != 0) {
@@ -48,31 +37,13 @@ static void test_main(void)
 
 	printk("Bluetooth initialized\n");
 	/* Initialize TMAP */
-	err = bt_tmap_register(BT_TMAP_ROLE_CT | BT_TMAP_ROLE_UMR);
+	err = bt_tmap_register(TMAP_ROLE_SUPPORTED);
 	if (err != 0) {
 		return;
 	}
 	printk("TMAP initialized. Start advertising...\n");
-	/* Create a connectable extended advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
-	if (err) {
-		printk("Failed to create advertising set (err %d)\n", err);
-		return;
-	}
+	setup_connectable_adv(&ext_adv);
 
-	err = bt_le_ext_adv_set_data(adv, ad_tmas, ARRAY_SIZE(ad_tmas), NULL, 0);
-	if (err) {
-		printk("Failed to set advertising data (err %d)\n", err);
-		return;
-	}
-
-	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
-		printk("Failed to start advertising set (err %d)\n", err);
-		return;
-	}
-
-	printk("Advertising successfully started\n");
 	WAIT_FOR_FLAG(flag_connected);
 	printk("Connected!\n");
 
