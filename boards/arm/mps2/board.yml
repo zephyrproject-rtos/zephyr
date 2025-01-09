@@ -5,6 +5,7 @@ board:
   socs:
   - name: an383
   - name: an385
+  - name: an386
   - name: an521
     variants:
     - name: ns

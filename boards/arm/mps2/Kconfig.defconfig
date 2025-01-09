@@ -2,7 +2,7 @@
 # Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MPS2_AN385 || BOARD_MPS2_AN383
+if BOARD_MPS2_AN383 || BOARD_MPS2_AN385 || BOARD_MPS2_AN386
 
 if SERIAL
 
