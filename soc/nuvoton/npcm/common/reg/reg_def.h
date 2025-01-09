@@ -43,61 +43,6 @@
 		__ASSERT(reg == val, "32-bit reg access failed!"); \
 		reg = placeholder; \
 	}
-/*
- * Core Domain Clock Generator (CDCG) device registers
- */
-struct cdcg_reg {
-	/* High Frequency Clock Generator (HFCG) registers */
-	/* 0x000: HFCG Control */
-	volatile uint8_t HFCGCTRL;
-	volatile uint8_t reserved1;
-	/* 0x002: HFCG M Low Byte Value */
-	volatile uint8_t HFCGML;
-	volatile uint8_t reserved2;
-	/* 0x004: HFCG M High Byte Value */
-	volatile uint8_t HFCGMH;
-	volatile uint8_t reserved3;
-	/* 0x006: HFCG N Value */
-	volatile uint8_t HFCGN;
-	volatile uint8_t reserved4;
-	/* 0x008: HFCG Prescaler */
-	volatile uint8_t HFCGP;
-	volatile uint8_t reserved5[7];
-	/* 0x010: HFCG Bus Clock Dividers */
-	volatile uint8_t HFCBCD;
-	volatile uint8_t reserved6;
-	/* 0x012: HFCG Bus Clock Dividers */
-	volatile uint8_t HFCBCD1;
-	volatile uint8_t reserved7;
-	/* 0x014: HFCG Bus Clock Dividers */
-	volatile uint8_t HFCBCD2;
-	volatile uint8_t reserved8[235];
-
-	/* Low Frequency Clock Generator (LFCG) registers */
-	/* 0x100: LFCG Control */
-	volatile uint8_t  LFCGCTL;
-	volatile uint8_t reserved9;
-	/* 0x102: High-Frequency Reference Divisor I */
-	volatile uint16_t HFRDI;
-	/* 0x104: High-Frequency Reference Divisor F */
-	volatile uint16_t HFRDF;
-	/* 0x106: FRCLK Clock Divisor */
-	volatile uint16_t FRCDIV;
-	/* 0x108: Divisor Correction Value 1 */
-	volatile uint16_t DIVCOR1;
-	/* 0x10A: Divisor Correction Value 2 */
-	volatile uint16_t DIVCOR2;
-	volatile uint8_t reserved10[8];
-	/* 0x114: LFCG Control 2 */
-	volatile uint8_t  LFCGCTL2;
-	volatile uint8_t  reserved11;
-};
-
-
-/* CDCG register fields */
-#define NPCM_HFCGCTRL_LOAD                    0
-#define NPCM_HFCGCTRL_LOCK                    2
-#define NPCM_HFCGCTRL_CLK_CHNG                7
 
 /*
  * Power Management Controller (PMC) device registers
@@ -141,11 +86,6 @@ struct pmc_reg {
 	/* 0x016: Power-Down Control 8 */
 	volatile uint8_t PWDWN_CTL8;
 };
-
-/* PMC multi-registers */
-#define NPCM_PWDWN_CTL_OFFSET(n) (((n) < 7) ? (0x007 + n) : (0x015 + (n - 7)))
-#define NPCM_PWDWN_CTL(base, n) (*(volatile uint8_t *)(base + \
-						NPCM_PWDWN_CTL_OFFSET(n)))
 
 /* PMC register fields */
 #define NPCM_PMCSR_DI_INSTW                   0

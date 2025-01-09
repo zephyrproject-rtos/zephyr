@@ -18,7 +18,6 @@
 #include <reg/reg_access.h>
 #include <reg/reg_def.h>
 #include <soc_dt.h>
-#include <soc_clock.h>
 #include <soc_pins.h>
 #include "gdma.h"
 
