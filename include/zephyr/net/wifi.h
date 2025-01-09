@@ -76,6 +76,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2,
 	/** EAP PEAP security - Enterprise. */
 	WIFI_SECURITY_TYPE_EAP_PEAP_TLS,
+	/** EAP TLS SHA256 security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_TLS_SHA256,
 	/** FT-PSK security */
 	WIFI_SECURITY_TYPE_FT_PSK,
 	/** FT-SAE security */
