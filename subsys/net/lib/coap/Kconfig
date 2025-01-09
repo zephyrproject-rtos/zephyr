@@ -247,6 +247,14 @@ config COAP_SERVER_PENDING_ALLOCATOR_STATIC_BLOCKS
 	help
 	  The number of data blocks to reserve for pending messages to retransmit.
 
+config COAP_SERVER_TRUNCATE_MSGS
+	bool "Handle truncated messages"
+	default y
+	help
+	  Include ZSOCK_MSG_TRUNC in flags passed to zsock_recvfrom() to
+	  receive network stack notifications about block truncation.
+	  Otherwise it happens silently.
+
 config COAP_SERVER_SHELL
 	bool "CoAP service shell commands"
 	depends on SHELL
