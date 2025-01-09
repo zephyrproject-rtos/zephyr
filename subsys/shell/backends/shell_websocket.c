@@ -35,7 +35,9 @@ static void ws_end_client_connection(struct shell_websocket *ws)
 
 	LOG_DBG("Closing connection to #%d", ws->fds[0].fd);
 
-	(void)log_backend_ws_unregister(ws->fds[0].fd);
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_WS)) {
+		(void)log_backend_ws_unregister(ws->fds[0].fd);
+	}
 
 	(void)websocket_unregister(ws->fds[0].fd);
 
@@ -212,8 +214,9 @@ static int shell_ws_init(struct shell_websocket *ctx, int ws_socket)
 		LOG_ERR("Failed to register socket service, %d", ret);
 		goto error;
 	}
-
-	log_backend_ws_register(ws_socket);
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_WS)) {
+		log_backend_ws_register(ws_socket);
+	}
 
 	return 0;
 
