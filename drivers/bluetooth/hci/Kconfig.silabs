@@ -14,7 +14,7 @@ config BT_SILABS_EFR32_BUFFER_MEMORY
 
 config BT_SILABS_EFR32_USER_ADVERTISERS
 	int "User advertisement sets"
-	default 0
+	default 1
 	help
 	  Amount of advertisement sets reserved for application.
 
