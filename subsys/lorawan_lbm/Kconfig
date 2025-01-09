@@ -127,25 +127,25 @@ endchoice
 #-----------------------------------------------------------------------------
 
 config LORA_BASICS_MODEM_CLASS_B
-	bool "Class B support"
+	bool "LoRaWAN Class B support"
 	default n
 
 config LORA_BASICS_MODEM_CLASS_C
-	bool "Class C support"
+	bool "LoRaWAN Class C support"
 	default n
 
 config LORA_BASICS_MODEM_MULTICAST
-	bool "Multicast support"
+	bool "LoRaWAN multicast support"
 	default n
 	depends on LORA_BASICS_MODEM_CLASS_B || LORA_BASICS_MODEM_CLASS_C
 
 config LORA_BASICS_MODEM_CSMA
-	bool "CSMA support"
+	bool "LoRaWAN CSMA support"
 	default y
 	depends on SEMTECH_LR11XX || SEMTECH_SX126X
 
 config LORA_BASICS_MODEM_CSMA_BY_DEFAULT
-	bool "CSMA at startup"
+	bool "LoRaWAN CSMA enabled at startup"
 	default n
 	depends on LORA_BASICS_MODEM_CSMA
 
@@ -275,6 +275,7 @@ config LORA_BASICS_MODEM_BEACON_TX
 # TODO:
 config LORA_BASICS_MODEM_RELAY_TX
 	bool "Relay TX feature"
+	depends on LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
 	default n
 
 # TODO: not released yet
