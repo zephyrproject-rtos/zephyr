@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef DMA_ATMEL_SAME70_H_
-#define DMA_ATMEL_SAME70_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ATMEL_SAMX7X_DMA_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_ATMEL_SAMX7X_DMA_H_
 
 /**
- * SAMx7x Peripheral Hardware Request HW Interface Number (XDMAC_CC.PERID).
+ * Atmel SAMx7x Peripheral Hardware Request HW Interface Number (XDMAC_CC.PERID).
  *
  * See table Table 35-1. Peripheral Hardware Requests in the SAM E70/S70/V70/V71 datasheet.
  */
@@ -64,4 +64,4 @@
 #define DMA_PERID_I2SC1_TX_R  50
 #define DMA_PERID_I2SC1_RX_R  51
 
-#endif /* DMA_ATMEL_SAME70_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ATMEL_SAMX7X_DMA_H_ */
