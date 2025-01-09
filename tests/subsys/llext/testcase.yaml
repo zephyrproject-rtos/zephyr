@@ -124,3 +124,21 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
+
+  # Test the export device IDs by hash feature on a single architecture in
+  # both normal and SLID mode.
+  llext.devices_by_hash:
+    arch_allow: arm
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH=y
+  llext.devices_by_hash_slid_linking:
+    arch_allow: arm
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH=y
+      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y

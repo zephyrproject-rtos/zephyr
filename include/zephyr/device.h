@@ -101,9 +101,35 @@ typedef int16_t device_handle_t;
  * The ordinal used in this name can be mapped to the path by
  * examining zephyr/include/generated/zephyr/devicetree_generated.h.
  */
-#define Z_DEVICE_DT_DEV_ID(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+#define Z_DEVICE_DT_DEP_ORD(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
-#if defined(CONFIG_LLEXT_EXPORT_DEVICES)
+/* Same as above, but uses the hash of the node path instead of the ordinal.
+ *
+ * The hash used in this name can be mapped to the path by
+ * examining zephyr/include/generated/zephyr/devicetree_generated.h.
+ */
+#define Z_DEVICE_DT_HASH(node_id) _CONCAT(dts_, DT_NODE_HASH(node_id))
+
+/* By default, device identifiers are obtained using the dependency ordinal.
+ * When LLEXT_EXPORT_DEV_IDS_BY_HASH is defined, the main Zephyr binary exports
+ * DT identifiers via EXPORT_SYMBOL_NAMED as hashed versions of their paths.
+ * When matching extensions are built, that is what they need to look for.
+ *
+ * The ordinal or hash used in this name can be mapped to the path by
+ * examining zephyr/include/generated/zephyr/devicetree_generated.h.
+ */
+#if defined(LL_EXTENSION_BUILD) && defined(CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH)
+#define Z_DEVICE_DT_DEV_ID(node_id) Z_DEVICE_DT_HASH(node_id)
+#else
+#define Z_DEVICE_DT_DEV_ID(node_id) Z_DEVICE_DT_DEP_ORD(node_id)
+#endif
+
+#if defined(CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH)
+/* Export device identifiers by hash */
+#define Z_DEVICE_EXPORT(node_id)					       \
+	EXPORT_SYMBOL_NAMED(DEVICE_DT_NAME_GET(node_id),		       \
+			    DEVICE_NAME_GET(Z_DEVICE_DT_HASH(node_id)))
+#elif defined(CONFIG_LLEXT_EXPORT_DEVICES)
 /* Export device identifiers using the builtin name */
 #define Z_DEVICE_EXPORT(node_id) EXPORT_SYMBOL(DEVICE_DT_NAME_GET(node_id))
 #endif
@@ -175,8 +201,8 @@ typedef int16_t device_handle_t;
  *
  * This macro defines a @ref device that is automatically configured by the
  * kernel during system initialization. The global device object's name as a C
- * identifier is derived from the node's dependency ordinal. @ref device.name is
- * set to `DEVICE_DT_NAME(node_id)`.
+ * identifier is derived from the node's dependency ordinal or hash.
+ * @ref device.name is set to `DEVICE_DT_NAME(node_id)`.
  *
  * The device is declared with extern visibility, so a pointer to a global
  * device object can be obtained with `DEVICE_DT_GET(node_id)` from any source
