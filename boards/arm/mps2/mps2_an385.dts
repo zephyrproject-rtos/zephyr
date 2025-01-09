@@ -11,6 +11,14 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "mps2_base.dtsi"
 
+/*
+ * FVP does not support uart3 and uart4 whilst QEMU does.
+ * So if using QEMU, you might want to comment out the following two lines
+ */
+
+/delete-node/ &uart3;
+/delete-node/ &uart4;
+
 / {
 	cpus {
 		#address-cells = <1>;
