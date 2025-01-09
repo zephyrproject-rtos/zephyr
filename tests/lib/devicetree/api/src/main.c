@@ -338,6 +338,16 @@ ZTEST(devicetree_api, test_has_alias)
 	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_undef), okay), 0, "");
 }
 
+ZTEST(devicetree_api, test_node_hashes)
+{
+	zassert_str_equal(TO_STRING(DT_NODE_HASH(DT_ROOT)),
+			  "il7asoJjJEMhngUeSt4tHVu8Zxx4EFG_FDeJfL3_oPE");
+	zassert_str_equal(TO_STRING(DT_NODE_HASH(TEST_DEADBEEF)),
+			  "kPPqtBX5DX_QDQMO0_cOls2ebJMevAWHhAPY1JCKTyU");
+	zassert_str_equal(TO_STRING(DT_NODE_HASH(TEST_ABCD1234)),
+			  "Bk4fvF6o3Mgslz_xiIZaJcuwo6_IeelozwOaxtUsSos");
+}
+
 ZTEST(devicetree_api, test_inst_checks)
 {
 	zassert_equal(DT_NODE_EXISTS(DT_INST(0, vnd_gpio_device)), 1, "");

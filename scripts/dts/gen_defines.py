@@ -720,6 +720,9 @@ def write_dep_info(node: edtlib.Node) -> None:
         else:
             return "/* nothing */"
 
+    out_comment("Node's hash:")
+    out_dt_define(f"{node.z_path_id}_HASH", node.hash)
+
     out_comment("Node's dependency ordinal:")
     out_dt_define(f"{node.z_path_id}_ORD", node.dep_ordinal)
     out_dt_define(f"{node.z_path_id}_ORD_STR_SORTABLE", f"{node.dep_ordinal:0>5}")
