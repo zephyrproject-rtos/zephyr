@@ -154,7 +154,6 @@ static void prv_smtc_modem_hal_timer_handler(struct k_timer *timer)
 
 	if (prv_modem_irq_enabled) {
 		prv_smtc_modem_hal_timer_callback(prv_smtc_modem_hal_timer_context);
-		smtc_modem_hal_wake_up();
 	} else {
 		prv_modem_irq_pending_while_disabled = true;
 	}
@@ -497,7 +496,6 @@ void prv_transceiver_event_cb(const struct device *dev)
 		 * this is called from the system workq.
 		 */
 		prv_smtc_modem_hal_radio_irq_callback(prv_smtc_modem_hal_radio_irq_context);
-		smtc_modem_hal_wake_up();
 	} else {
 		prv_radio_irq_pending_while_disabled = true;
 	}
@@ -703,5 +701,5 @@ uint8_t smtc_modem_hal_get_fw_delete_status_for_fuota(uint32_t fw_to_delete_vers
 
 void smtc_modem_hal_user_lbm_irq(void)
 {
-	/* Do nothing in case implementation is bare metal */
+	smtc_modem_hal_wake_up();
 }
