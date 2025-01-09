@@ -360,7 +360,7 @@ static void z_sys_init_run_level(enum init_level level)
 	const struct init_entry *entry;
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
-		const struct device *dev = entry->dev.dev;
+		const struct device *dev = entry->dev;
 		int result;
 
 		sys_trace_sys_init_enter(entry, level);
@@ -381,7 +381,7 @@ int z_impl_device_init(const struct device *dev)
 	}
 
 	STRUCT_SECTION_FOREACH_ALTERNATE(_deferred_init, init_entry, entry) {
-		if (entry->dev.dev == dev) {
+		if (entry->dev == dev) {
 			return do_device_init(dev);
 		}
 	}
