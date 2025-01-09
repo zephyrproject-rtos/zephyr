@@ -367,7 +367,7 @@ static void z_sys_init_run_level(enum init_level level)
 		if (dev != NULL) {
 			result = do_device_init(dev);
 		} else {
-			result = entry->init_fn.sys();
+			result = entry->init_fn();
 		}
 		sys_trace_sys_init_exit(entry, level, result);
 	}
