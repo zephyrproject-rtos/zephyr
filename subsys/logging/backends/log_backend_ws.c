@@ -103,13 +103,14 @@ static int ws_console_out(struct log_backend_ws_ctx *ctx, int c)
 		}
 	}
 
-	return cnt;
+	return ret;
 }
 
 static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
 	struct log_backend_ws_ctx *ctx = (struct log_backend_ws_ctx *)output_ctx;
 	int ret = -ENOMEM;
+	int sent = 0;
 
 	if (ctx == NULL || ctx->sock == -1) {
 		return length;
@@ -118,14 +119,23 @@ static int line_out(uint8_t *data, size_t length, void *output_ctx)
 	for (int i = 0; i < length; i++) {
 		ret = ws_console_out(ctx, data[i]);
 		if (ret < 0) {
-			goto fail;
+			break;
 		}
+
+		sent++;
 	}
 
-	length = ret;
+	/* In case we've managed to buffer/send anything, return the actual
+	 * number of bytes processed. Otherwise, assume the data was dropped
+	 * to avoid busy looping endlessly (which could happen in case of fatal
+	 * socket failures or persistent EAGAIN).
+	 */
+	if (sent > 0) {
+		length = sent;
+	}
 
 	DBG(data);
-fail:
+
 	return length;
 }
 
