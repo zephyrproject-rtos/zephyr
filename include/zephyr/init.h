@@ -112,7 +112,7 @@ struct init_entry {
 #ifdef CONFIG_DEVICE_MUTABLE
 		struct device *dev_rw;
 #endif
-	};
+	} dev;
 };
 
 /** @cond INTERNAL_HIDDEN */
