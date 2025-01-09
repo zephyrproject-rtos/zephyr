@@ -6,7 +6,7 @@ ARM V2M MPS2 AN385
 Overview
 ********
 
-The mps2/an385 board configuration is used by Zephyr applications that run on
+The ``mps2/an385`` board target is used by Zephyr applications that run on
 the V2M MPS2 board. It provides support for the ARM Cortex-M3 (AN385) CPU and
 the following devices:
 
@@ -18,15 +18,15 @@ the following devices:
      :align: center
      :alt: ARM V2M MPS2
 
-In addition to enabling actual hardware usage, this board configuration can
-also use QEMU to emulate the AN385 platform running on the MPS2+.
+In addition to enabling actual hardware usage, this board target can
+also use QEMU and FVP to emulate the AN385 platform running on the MPS2+.
 
 More information about the board can be found at the `V2M MPS2 Website`_.
 
 The Application Note AN385 can be found at `Application Note AN385`_.
 
 .. note::
-   This board configuration makes no claims about its suitability for use
+   This board target makes no claims about its suitability for use
    with actual MPS2 hardware systems using AN385, or any other hardware
    system. It has been tested on actual hardware, but its primary purpose is
    for use with QEMU and unit tests.
@@ -62,7 +62,7 @@ ARM V2M MPS2 provides the following hardware components:
 Supported Features
 ==================
 
-The mps2/an385 board configuration supports the following hardware features:
+The ``mps2/an385`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -279,3 +279,6 @@ the following message:
 
 .. _Application Note AN385:
    http://infocenter.arm.com/help/topic/com.arm.doc.dai0385c/DAI0385C_cortex_m3_on_v2m_mps2.pdf
+
+.. _FVP:
+   https://developer.arm.com/downloads/view/FMFVP
