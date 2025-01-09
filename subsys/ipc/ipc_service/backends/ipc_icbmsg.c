@@ -19,10 +19,13 @@
  * buffers containing actual data. Data buffers can span multiple blocks. The first block
  * starts with the size of the following data.
  *
- *  +------------+-------------+
- *  | ICMsg area | Blocks area |
- *  +------------+-------------+
- *       _______/               \_________________________________________
+ *         Control block
+ *   ____________/\____________
+ *  /                          \
+ *  +------------+-------------+-------------+
+ *  | ICMsg area | Status area | Blocks area |
+ *  +------------+-------------+-------------+
+ *       _____________________/               \___________________________
  *      /                                                                 \
  *      +-----------+-----------+-----------+-----------+-   -+-----------+
  *      |  Block 0  |  Block 1  |  Block 2  |  Block 3  | ... | Block N-1 |
@@ -37,8 +40,14 @@
  * for allocating and releasing the blocks. The receiver just tells the sender that it
  * does not need a specific buffer anymore.
  *
- * Control messages
- * ----------------
+ * Control block
+ * -------------
+ *
+ * Note that there is no need for alignment between ICMsg area and Status area,
+ * as both of this areas are write only for local side and read only for remote.
+ *
+ * ICMSG area
+ * ^^^^^^^^^^
  *
  * ICMsg is used to send and receive small 3-byte control messages.
  *
@@ -47,10 +56,8 @@
  *    This message is used to send data buffer to specific endpoint.
  *
  *  - Release data
- *    | MSG_RELEASE_DATA | 0 | block index |
- *    This message is a response to the "Send data" message and it is used to inform that
- *    specific buffer is not used anymore and can be released. Endpoint addresses does
- *    not matter here, so it is zero.
+ *    | MSG_RELEASE_DATA |
+ *    Block is released. This message is sent only if any thread is waiting for block to release.
  *
  *  - Bound endpoint
  *    | MSG_BOUND | endpoint address | block index |
@@ -62,6 +69,29 @@
  *    This message is a response to the "Bound endpoint" message and it is used to inform
  *    that a specific buffer (starting at "block index") is not used anymore and
  *    a the endpoint is bounded and can now receive a data.
+ *
+ * Status area
+ * ^^^^^^^^^^^
+ *
+ * Status area controls used blocks and the process of block releasing.
+ *
+ * +---------------------+--------------+-------------------+
+ * | release_waiting_cnt | send_bitmask | processed_bitmask |
+ * +---------------------+--------------+-------------------+
+ *
+ * - release_waiting_cnt
+ *   Number of threads waiting for the buffer.
+ *   If the value is non-zero there is an thread that waits for buffer to be released.
+ *
+ * - send_bitmask
+ *   Bitmask of sent buffers.
+ *   Used buffers are the ones that have bit in different state than the ones in processed_bitmask.
+ *   The size of send_bitmask depends on the number of buffers.
+ *
+ * - processed_bitmask
+ *   Bitmask of processed buffers.
+ *   To release buffer set corresponding bit to the same value like in send_bitmask.
+ *   The size and placement of processed_bitmask depends on number of buffers.
  *
  * Bounding endpoints
  * ------------------
@@ -82,7 +112,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
-#include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/bitpool.h>
 #include <zephyr/ipc/icmsg.h>
 #include <zephyr/ipc/ipc_service_backend.h>
 #include <zephyr/cache.h>
@@ -118,7 +148,7 @@ LOG_MODULE_REGISTER(ipc_icbmsg,
 #define FLAG_EPT_COUNT_MASK 0xFFFF
 
 /** Workqueue stack size for bounding processing (this configuration is not optimized). */
-#define EP_BOUND_WORK_Q_STACK_SIZE (512U)
+#define EP_BOUND_WORK_Q_STACK_SIZE (768U)
 
 /** Workqueue priority for bounding processing. */
 #define EP_BOUND_WORK_Q_PRIORITY (CONFIG_SYSTEM_WORKQUEUE_PRIORITY)
@@ -154,18 +184,41 @@ enum ept_rebound_state {
 				 */
 };
 
+struct channel_status {
+	atomic_t release_waiting_cnt;
+	atomic_t send_processed_bitmask[];
+};
+
 struct channel_config {
 	uint8_t *blocks_ptr;	/* Address where the blocks start. */
 	size_t block_size;	/* Size of one block. */
 	size_t block_count;	/* Number of blocks. */
+	atomic_t *waiting_cnt;  /* Pointer to thread waiting counter */
+	atomic_t *send_bitmask; /* Pointer to send bitmask */
+	atomic_t *proc_bitmask; /* pointer to send bitmask */
 };
+
 
 struct icbmsg_config {
 	struct icmsg_config_t control_config;	/* Configuration of the ICMsg. */
 	struct channel_config rx;		/* RX channel config. */
 	struct channel_config tx;		/* TX channel config. */
-	sys_bitarray_t *tx_usage_bitmap;	/* Bit is set when TX block is in use */
-	sys_bitarray_t *rx_hold_bitmap;		/* Bit is set, if the buffer starting at
+	atomic_t *tx_usage_bm;			/* Bit is set when TX block is in use.
+						 * It is internal state that holds all blocks that
+						 * cannot be used for sending data.
+						 * It is updated only in a situation
+						 * when we do not have more space left.
+						 * The update calculates used blocks from
+						 * tx::send_bitmask and rx::proc_bitmask together
+						 * with allocated_bm.
+						 * This have to be updated first when allocating.
+						 */
+	atomic_t *tx_allocated_bm;		/* Blocks allocaed locally but not sent.
+						 * For bit setting - start in tx_usage_bm first.
+						 * For bit clearing - start here and then clear
+						 * in tx_usage_bm.
+						 */
+	atomic_t *rx_hold_bm;			/* Bit is set, if the buffer starting at
 						 * this block should be kept after exit
 						 * from receive handler.
 						 */
@@ -318,6 +371,137 @@ static int buffer_to_index_validate(const struct channel_config *ch_conf,
 }
 
 /**
+ * Update local information about tx_usage from shared variables
+ *
+ * Update information about tx_usage using shared usage variables together
+ * with local allocation.
+ */
+static void update_tx_usage(struct backend_data *dev_data)
+{
+	bool status;
+	const struct icbmsg_config *conf = dev_data->conf;
+
+	ATOMIC_VAL_DEFINE(tx_usage_old, conf->tx.block_count);
+	ATOMIC_VAL_DEFINE(tx_usage_new, conf->tx.block_count);
+	ATOMIC_VAL_DEFINE(calc, conf->tx.block_count);
+
+	/* Cache coherency management only once as the following do-while loop
+	 * takes care only about changed internal allocation.
+	 */
+	sys_cache_data_invd_range(conf->rx.proc_bitmask,
+				  ATOMIC_BITMAP_SIZE(conf->tx.block_count) * sizeof(atomic_val_t));
+	do {
+		__sync_synchronize();
+		/* Read old value only for CAS operation */
+		bitpool_atomic_read(conf->tx_usage_bm, tx_usage_old, conf->tx.block_count);
+		bitpool_atomic_read(conf->tx.send_bitmask, tx_usage_new, conf->tx.block_count);
+		bitpool_atomic_read(conf->rx.proc_bitmask, calc, conf->tx.block_count);
+		bitpool_xor(tx_usage_new, tx_usage_new, calc, conf->tx.block_count);
+		/* Adjust to locally allocated blocks */
+		bitpool_atomic_read(conf->tx_allocated_bm, calc, conf->tx.block_count);
+		bitpool_or(tx_usage_new, tx_usage_new, calc, conf->tx.block_count);
+
+		/* Store the result. With an assumption that tx_usage_bm is updated always before
+		 * tx_allocated_bm we should detect any change in both of them.
+		 */
+		status = bitpool_atomic_cas(conf->tx_usage_bm, tx_usage_old, tx_usage_new,
+					    conf->tx.block_count);
+		if (!status) {
+			continue;
+		}
+	} while (!status);
+}
+
+/**
+ * Allocate buffer in the given bitmap
+ *
+ * @param[in]  bitmap     Pointer to the bitpool bitmap where the allocation takes place.
+ * @param[out] num_blocks Pointer to the number of blocks to allocate. If zero, the first
+ *                        available block and all subsequent free blocks are allocated.
+ *                        The number of blocks allocated is returned in this argument.
+ * @param[in]  bitcnt     Total number of blocks that are available.
+ *
+ * @return Positive index of the first allocated block or negative error code.
+ * @retval -ENOSPC If there is no space available in the bitpool.
+ */
+static int bit_alloc(atomic_t *bitmap, size_t *num_blocks, size_t bitcnt)
+{
+	int r;
+
+	BITPOOL_ATOMIC_OP(bitmap, bitmap_old, bitmap_new, bitcnt) {
+		bitpool_copy(bitmap_old, bitmap_new, bitcnt);
+
+		if (*num_blocks == 0) {
+			r = bitpool_find_first_block_any_size(bitmap_new, 0, num_blocks, bitcnt);
+		} else {
+			r = bitpool_find_first_block(bitmap_new, 0, *num_blocks, bitcnt);
+		}
+		if (r < 0) {
+			BITPOOL_ATOMIC_OP_break;
+		}
+		bitpool_set_block_to(bitmap_new, r, *num_blocks, 1);
+	}
+
+	return r;
+}
+
+/**
+ * Mark blocks as allocated in the given bitmap.
+ *
+ * @param[in] bitmap     Pointer to the bitpool bitmap where the blocks are to be marked.
+ * @param[in] num_blocks Number of blocks to be marked as allocated.
+ * @param[in] start      Index of the first block to be marked.
+ * @param[in] bitcnt     Total number of blocks that are available.
+ */
+static void bit_mark_allocated(atomic_t *bitmap, size_t num_blocks, size_t start, size_t bitcnt)
+{
+	__ASSERT(start + num_blocks <= bitcnt, "Block index out of range");
+
+	BITPOOL_ATOMIC_OP(bitmap, bitmap_old, bitmap_new, bitcnt) {
+		bitpool_copy(bitmap_old, bitmap_new, bitcnt);
+		bitpool_set_block_to(bitmap_new, start, num_blocks, 1);
+	}
+}
+
+/**
+ * Free allocated blocks in the given bitmap
+ *
+ * @param[in] bitmap     Pointer to the bitpool bitmap where the blocks are to be freed.
+ * @param[in] num_blocks Number of blocks to be freed.
+ * @param[in] start      Index of the first block to be freed.
+ * @param[in] bitcnt     Total number of blocks that are available.
+ */
+static void bit_mark_free(atomic_t *bitmap, size_t num_blocks, size_t start, size_t bitcnt)
+{
+	__ASSERT(start + num_blocks <= bitcnt, "Block index out of range");
+
+	BITPOOL_ATOMIC_OP(bitmap, bitmap_old, bitmap_new, bitcnt) {
+		bitpool_copy(bitmap_old, bitmap_new, bitcnt);
+		bitpool_set_block_to(bitmap_new, start, num_blocks, 0);
+	}
+}
+
+/**
+ * @brief Mark blocks as inverted in the given bitmap, atomic operation.
+ *
+ * Function used to mark the buffers state in shared memory.
+ *
+ * @param[in] bitmap     Pointer to the bitpool bitmap where the blocks are to be inverted.
+ * @param[in] num_blocks Number of blocks to be inverted.
+ * @param[in] start      Index of the first block to be inverted.
+ * @param[in] bitcnt     Total number of blocks that are available.
+ */
+static void bit_inv_block(atomic_t *bitmap, size_t num_blocks, size_t start, size_t bitcnt)
+{
+	__ASSERT(start + num_blocks <= bitcnt, "Block index out of range");
+
+	BITPOOL_ATOMIC_OP(bitmap, bitmap_old, bitmap_new, bitcnt) {
+		bitpool_copy(bitmap_old, bitmap_new, bitcnt);
+		bitpool_inv_block(bitmap_new, start, num_blocks);
+	}
+}
+
+/**
  * Allocate buffer for transmission
  *
  * @param[in,out] size	Required size of the buffer. If set to zero, the first available block will
@@ -337,30 +521,40 @@ static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
 {
 	const struct icbmsg_config *conf = dev_data->conf;
 	size_t total_size = *size + BLOCK_HEADER_SIZE;
-	size_t num_blocks = DIV_ROUND_UP(total_size, conf->tx.block_size);
+	size_t num_blocks = *size ? DIV_ROUND_UP(total_size, conf->tx.block_size) : 0;
 	struct block_content *block;
 #ifdef CONFIG_MULTITHREADING
+	k_timepoint_t timepoint_end = sys_timepoint_calc(timeout);
+	bool first_try = true;
 	bool sem_taken = false;
 #endif
 	size_t tx_block_index;
-	size_t next_bit;
-	int prev_bit_val;
 	int r;
 
 #ifdef CONFIG_MULTITHREADING
 	do {
 		/* Try to allocate specified number of blocks. */
-		r = sys_bitarray_alloc(conf->tx_usage_bitmap, num_blocks,
-				       &tx_block_index);
+		r = bit_alloc(conf->tx_usage_bm, &num_blocks, conf->tx.block_count);
+		tx_block_index = r;
+
+		if (r == -ENOSPC && first_try) {
+			waiting_cnt_inc(dev_data);
+			first_try = false;
+			update_tx_usage(dev_data);
+			continue;
+		}
+
+		timeout = sys_timepoint_timeout(timepoint_end);
 		if (r == -ENOSPC && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 			/* Wait for releasing if there is no enough space and exit loop
-			 * on timeout.
-			 */
+			* on timeout.
+			*/
 			r = k_sem_take(&dev_data->block_wait_sem, timeout);
 			if (r < 0) {
 				break;
 			}
 			sem_taken = true;
+			update_tx_usage(dev_data);
 		} else {
 			/* Exit loop if space was allocated or other error occurred. */
 			break;
@@ -375,7 +569,12 @@ static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
 	}
 #else
 	/* Try to allocate specified number of blocks. */
-	r = sys_bitarray_alloc(conf->tx_usage_bitmap, num_blocks, &tx_block_index);
+	r = bit_alloc(conf->tx_usage_bm, &num_blocks, conf->tx.block_count);
+	tx_block_index = r;
+	if (r == -ENOSPC) {
+		update_tx_usage(dev_data);
+		r = bit_alloc(conf->tx_usage_bm, &num_blocks, conf->tx.block_count);
+	}
 #endif
 
 	if (r < 0) {
@@ -394,21 +593,8 @@ static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
 		return r;
 	}
 
-	/* If size is 0 try to allocate more blocks after already allocated. */
-	if (*size == 0) {
-		prev_bit_val = 0;
-		for (next_bit = tx_block_index + 1; next_bit < conf->tx.block_count;
-		     next_bit++) {
-			r = sys_bitarray_test_and_set_bit(conf->tx_usage_bitmap, next_bit,
-							  &prev_bit_val);
-			/** Setting bit should always success. */
-			__ASSERT_NO_MSG(r == 0);
-			if (prev_bit_val) {
-				break;
-			}
-		}
-		num_blocks = next_bit - tx_block_index;
-	}
+	/* Mark the allocated buffer in local allocation variable */
+	bit_mark_allocated(conf->tx_allocated_bm, num_blocks, tx_block_index, conf->tx.block_count);
 
 	/* Get block pointer and adjust size to actually allocated space. */
 	*size = conf->tx.block_size * num_blocks - BLOCK_HEADER_SIZE;
@@ -442,7 +628,6 @@ static int release_tx_blocks(struct backend_data *dev_data, size_t tx_block_inde
 	size_t new_total_size;
 	size_t new_num_blocks;
 	size_t release_index;
-	int r;
 
 	/* Calculate number of blocks. */
 	total_size = size + BLOCK_HEADER_SIZE;
@@ -468,13 +653,13 @@ static int release_tx_blocks(struct backend_data *dev_data, size_t tx_block_inde
 	}
 
 	if (num_blocks > 0) {
-		/* Free bits in the bitmap. */
-		r = sys_bitarray_free(conf->tx_usage_bitmap, num_blocks,
-				      release_index);
-		if (r < 0) {
-			LOG_ERR("Cannot free bits, err %d", r);
-			return r;
-		}
+		/* Free bits in the bitmap.
+		 * Note: Clearing in allocated_bm first to get rid of a race where we could
+		 * potencially dealocate a block here that would be allocated in other thread
+		 */
+		bit_mark_free(conf->tx_allocated_bm, num_blocks, release_index,
+			      conf->tx.block_count);
+		bit_mark_free(conf->tx_usage_bm, num_blocks, release_index, conf->tx.block_count);
 
 #ifdef CONFIG_MULTITHREADING
 		/* Wake up all waiting threads. */
@@ -555,12 +740,25 @@ static int send_release(struct backend_data *dev_data, const uint8_t *buffer,
 {
 	const struct icbmsg_config *conf = dev_data->conf;
 	int rx_block_index;
+	size_t block_size;
+	size_t num_of_blocks;
 
-	rx_block_index = buffer_to_index_validate(&conf->rx, buffer, NULL);
+	/* Releasing the block from Rx side
+	 */
+	rx_block_index = buffer_to_index_validate(&conf->rx, buffer, &block_size);
 	if (rx_block_index < 0) {
 		return rx_block_index;
 	}
+	/* For the sake of cache optimisation - we set the processed blocks in tx buffer */
+	num_of_blocks = DIV_ROUND_UP(block_size + BLOCK_HEADER_SIZE, conf->rx.block_size);
+	bit_inv_block(conf->tx.proc_bitmask, num_of_blocks, rx_block_index,
+		      conf->rx.block_count);
+	__sync_synchronize();
+	sys_cache_data_flush_range(conf->tx.proc_bitmask,
+				   ATOMIC_BITMAP_SIZE(conf->rx.block_count) * sizeof(atomic_val_t));
 
+#warning Optimisation: Send release message only if the waiting_count is non-zero.
+/* Note - this should work anyway, but the performance would be compromised */
 	return send_control_message(dev_data, msg_type, ept_addr, rx_block_index);
 }
 
@@ -580,8 +778,9 @@ static int send_release(struct backend_data *dev_data, const uint8_t *buffer,
 static int send_block(struct backend_data *dev_data, enum msg_type msg_type,
 		      uint8_t ept_addr, size_t tx_block_index, size_t size)
 {
+	const struct icbmsg_config *conf = dev_data->conf;
+	size_t num_blocks = DIV_ROUND_UP(size + BLOCK_HEADER_SIZE, conf->tx.block_size);
 	struct block_content *block;
-	int r;
 
 	block = block_from_index(&dev_data->conf->tx, tx_block_index);
 
@@ -589,12 +788,14 @@ static int send_block(struct backend_data *dev_data, enum msg_type msg_type,
 	__sync_synchronize();
 	sys_cache_data_flush_range(block, size + BLOCK_HEADER_SIZE);
 
-	r = send_control_message(dev_data, msg_type, ept_addr, tx_block_index);
-	if (r < 0) {
-		release_tx_blocks(dev_data, tx_block_index, size, -1);
-	}
+	/* Mark the buffers used as sent */
+	bit_inv_block(conf->tx.send_bitmask, num_blocks, tx_block_index, conf->tx.block_count);
+	__sync_synchronize();
+	sys_cache_data_flush_range(conf->tx.send_bitmask,
+				   ATOMIC_BITMAP_SIZE(conf->tx.block_count) * sizeof(atomic_val_t));
+	bit_mark_free(conf->tx_allocated_bm, num_blocks, tx_block_index, conf->tx.block_count);
 
-	return r;
+	return send_control_message(dev_data, msg_type, ept_addr, tx_block_index);
 }
 
 /**
@@ -848,6 +1049,7 @@ static int received_data(struct backend_data *dev_data, size_t rx_block_index,
 	uint8_t *buffer;
 	struct ept_data *ept;
 	size_t size;
+	size_t num_of_blocks;
 	int bit_val;
 
 	/* Validate. */
@@ -859,14 +1061,15 @@ static int received_data(struct backend_data *dev_data, size_t rx_block_index,
 		return -EINVAL;
 	}
 
+	num_of_blocks = DIV_ROUND_UP(size + BLOCK_HEADER_SIZE, conf->rx.block_size);
 	/* Clear bit. If cleared, specific block will not be hold after the callback. */
-	sys_bitarray_clear_bit(conf->rx_hold_bitmap, rx_block_index);
+	bit_mark_free(conf->rx_hold_bm, num_of_blocks, rx_block_index, conf->rx.block_count);
 
 	/* Call the endpoint callback. It can set the hold bit. */
 	ept->cfg->cb.received(buffer, size, ept->cfg->priv);
 
 	/* If the bit is still cleared, request release of the buffer. */
-	sys_bitarray_test_bit(conf->rx_hold_bitmap, rx_block_index, &bit_val);
+	bit_val = bitpool_get_bit(conf->rx_hold_bm, rx_block_index);
 	if (!bit_val) {
 		send_release(dev_data, buffer, MSG_RELEASE_DATA, 0);
 	}
@@ -879,25 +1082,10 @@ static int received_data(struct backend_data *dev_data, size_t rx_block_index,
  */
 static int received_release_data(struct backend_data *dev_data, size_t tx_block_index)
 {
-	const struct icbmsg_config *conf = dev_data->conf;
-	uint8_t *buffer;
-	size_t size;
-	int r;
+	/* Signal the fact that there may be new space available */
+	k_sem_give(&dev_data->block_wait_sem);
 
-	/* Validate. */
-	buffer = buffer_from_index_validate(&conf->tx, tx_block_index, &size, false);
-	if (buffer == NULL) {
-		LOG_ERR("Received invalid block index %d", tx_block_index);
-		return -EINVAL;
-	}
-
-	/* Release. */
-	r = release_tx_blocks(dev_data, tx_block_index, size, -1);
-	if (r < 0) {
-		return r;
-	}
-
-	return r;
+	return 0;
 }
 
 /**
@@ -1042,6 +1230,24 @@ static int open(const struct device *instance)
 		(uint32_t)conf->rx.blocks_ptr,
 		(uint32_t)(conf->rx.block_size * conf->rx.block_count -
 			   BLOCK_HEADER_SIZE));
+
+	/* Initialize buffer used state */
+	sys_cache_data_invd_range(conf->rx.send_bitmask,
+				  ATOMIC_BITMAP_SIZE(conf->rx.block_count) * sizeof(atomic_val_t));
+	__sync_synchronize();
+
+	ATOMIC_VAL_DEFINE(send_bitmask, conf->rx.block_count);
+	ATOMIC_VAL_DEFINE(rx_hold, conf->rx.block_count);
+
+	bitpool_atomic_read(conf->rx.send_bitmask, send_bitmask, conf->rx.block_count);
+	bitpool_atomic_read(conf->rx_hold_bm, rx_hold, conf->rx.block_count);
+	LOG_DBG("  Initialized send_bitmask: %lx, rx_hold: %lx", send_bitmask[0], rx_hold[0]);
+	bitpool_xor(send_bitmask, send_bitmask, rx_hold, conf->rx.block_count);
+
+	bitpool_atomic_write(conf->tx.proc_bitmask, send_bitmask, conf->rx.block_count);
+	__sync_synchronize();
+	sys_cache_data_flush_range(conf->tx.proc_bitmask,
+				   ATOMIC_BITMAP_SIZE(conf->rx.block_count) * sizeof(atomic_val_t));
 
 	return icmsg_open(&conf->control_config, &dev_data->control_data, &cb,
 			  (void *)instance);
@@ -1224,11 +1430,16 @@ static int hold_rx_buffer(const struct device *instance, void *token, void *data
 	const struct icbmsg_config *conf = instance->config;
 	int rx_block_index;
 	uint8_t *buffer = data;
+	size_t block_size;
+	size_t num_of_blocks;
 
 	/* Calculate block index and set associated bit. */
-	rx_block_index = buffer_to_index_validate(&conf->rx, buffer, NULL);
+	rx_block_index = buffer_to_index_validate(&conf->rx, buffer, &block_size);
 	__ASSERT_NO_MSG(rx_block_index >= 0);
-	return sys_bitarray_set_bit(conf->rx_hold_bitmap, rx_block_index);
+	num_of_blocks = DIV_ROUND_UP(block_size + BLOCK_HEADER_SIZE, conf->rx.block_size);
+
+	bitpool_set_block_to(conf->rx_hold_bm, rx_block_index, num_of_blocks, true);
+	return 0;
 }
 
 /**
@@ -1236,7 +1447,24 @@ static int hold_rx_buffer(const struct device *instance, void *token, void *data
  */
 static int release_rx_buffer(const struct device *instance, void *token, void *data)
 {
+	const struct icbmsg_config *conf = instance->config;
 	struct backend_data *dev_data = instance->data;
+	int rx_block_index;
+	size_t block_size;
+	size_t num_of_blocks;
+
+	/* Releasing the block from Rx side
+	 */
+	rx_block_index = buffer_to_index_validate(&conf->rx, (uint8_t *)data, &block_size);
+	if (rx_block_index < 0) {
+		return rx_block_index;
+	}
+	num_of_blocks = DIV_ROUND_UP(block_size + BLOCK_HEADER_SIZE, conf->rx.block_size);
+	/* Clear hold values */
+	if (!bitpool_set_block_to_cond(dev_data->conf->rx_hold_bm, rx_block_index,
+				       num_of_blocks, false)) {
+		return -ENXIO;
+	}
 
 	return send_release(dev_data, (uint8_t *)data, MSG_RELEASE_DATA, 0);
 }
@@ -1329,12 +1557,76 @@ const static struct ipc_service_backend backend_ops = {
 	(ICMSG_BUFFER_OVERHEAD(i) + BYTES_PER_ICMSG_MESSAGE *				\
 	 (local_blocks + remote_blocks)), GET_CACHE_ALIGNMENT(i))
 
+/** Internal macros for GET_CHANNEL_LOCAL_BLOCKS */
+#define _GET_CHANNEL_LOCAL_BLOCKS_rx(rx_blocks, tx_blocks) rx_blocks
+#define _GET_CHANNEL_LOCAL_BLOCKS_tx(rx_blocks, tx_blocks) tx_blocks
+/**
+ * Get channel local bocks for given direction
+ *
+ * @param direction Direction mnemonic: "rx" or "tx"
+ * @param rx_blocks Rx blocks
+ * @param tx_blocks Tx blocks
+ *
+ * @return <direction>_blocks
+ */
+#define GET_CHANNEL_LOCAL_BLOCKS(direction, rx_blocks, tx_blocks) \
+	_GET_CHANNEL_LOCAL_BLOCKS_##direction(rx_blocks, tx_blocks)
+
+/** Internal macros for GET_CHANNEL_REMOTE_BLOCKS */
+#define _GET_CHANNEL_REMOTE_BLOCKS_rx(rx_blocks, tx_blocks) tx_blocks
+#define _GET_CHANNEL_REMOTE_BLOCKS_tx(rx_blocks, tx_blocks) rx_blocks
+/**
+ * Get channel remote blocks for given direction
+ *
+ * @param direction Direction mnemonic: "rx" or "tx"
+ * @param rx_blocks Rx blocks
+ * @param tx_blocks Tx blocks
+ *
+ * @return rx_blocks if direction == "tx" or tx_blocks if direction == "rx"
+ */
+#define GET_CHANNEL_REMOTE_BLOCKS(direction, rx_blocks, tx_blocks) \
+	_GET_CHANNEL_REMOTE_BLOCKS_##direction(rx_blocks, tx_blocks)
+
+/**
+ * Access to all parts of the status section in shared memory
+ */
+#define GET_CHANNEL_STATUS_SEND_BM_SIZE(i, local_blocks) ATOMIC_BITMAP_SIZE(local_blocks)
+#define GET_CHANNEL_STATUS_PROC_BM_SIZE(i, remote_blocks) ATOMIC_BITMAP_SIZE(remote_blocks)
+#define GET_CHANNEL_STATUS_SEND_BM_SIZEOF(i, local_blocks) \
+	(ATOMIC_BITMAP_SIZE(local_blocks) * sizeof(atomic_val_t))
+#define GET_CHANNEL_STATUS_PROC_BM_SIZEOF(i, remote_blocks) \
+	(ATOMIC_BITMAP_SIZE(remote_blocks) * sizeof(atomic_val_t))
+
+#define GET_CHANNEL_STATUS_OFFSET(i, local_blocks, remote_blocks) \
+	ROUND_UP(GET_ICMSG_MIN_SIZE(i, (local_blocks), (remote_blocks)), GET_CACHE_ALIGNMENT(i))
+#define GET_CHANNEL_STATUS_SIZE(i, local_blocks, remote_blocks) \
+	(sizeof(struct channel_status) +                        \
+	 GET_CHANNEL_STATUS_SEND_BM_SIZEOF(i, local_blocks) +   \
+	 GET_CHANNEL_STATUS_PROC_BM_SIZEOF(i, remote_blocks))
+#define GET_CHANNEL_STATUS_END(i, local_blocks, remote_blocks) \
+	(GET_CHANNEL_STATUS_OFFSET(i, local_blocks, remote_blocks) + \
+	 GET_CHANNEL_STATUS_SIZE(i, local_blocks, remote_blocks))
+
+#define GET_CHANNEL_STATUS_WAITING_CNT_PTR(i, direction, rx_blocks, tx_blocks) \
+	((atomic_t *)(GET_MEM_ADDR_INST(i, direction) +                        \
+	GET_CHANNEL_STATUS_OFFSET(i,                                           \
+		GET_CHANNEL_LOCAL_BLOCKS(direction, rx_blocks, tx_blocks),     \
+		GET_CHANNEL_REMOTE_BLOCKS(direction, rx_blocks, tx_blocks))))
+
+#define GET_CHANNEL_STATUS_SEND_BM_PTR(i, direction, rx_blocks, tx_blocks) \
+	(GET_CHANNEL_STATUS_WAITING_CNT_PTR(i, direction, rx_blocks, tx_blocks) + 1)
+
+#define GET_CHANNEL_STATUS_PROC_BM_PTR(i, direction, rx_blocks, tx_blocks)     \
+	(GET_CHANNEL_STATUS_SEND_BM_PTR(i, direction, rx_blocks, tx_blocks) +  \
+	 GET_CHANNEL_STATUS_SEND_BM_SIZE(i,                                    \
+		GET_CHANNEL_LOCAL_BLOCKS(direction, rx_blocks, tx_blocks)))
+
 /**
  * Calculate aligned block size by evenly dividing remaining space after removing
  * the space for ICMsg.
  */
 #define GET_BLOCK_SIZE(i, total_size, local_blocks, remote_blocks) ROUND_DOWN(		\
-	((total_size) - GET_ICMSG_MIN_SIZE(i, (local_blocks), (remote_blocks))) /	\
+	((total_size) - GET_CHANNEL_STATUS_END(i, (local_blocks), (remote_blocks))) /	\
 	(local_blocks), BLOCK_ALIGNMENT)
 
 /**
@@ -1371,9 +1663,7 @@ const static struct ipc_service_backend backend_ops = {
  *  or "rx, tx".
  */
 #define GET_ICMSG_SIZE_INST(i, loc, rem)					\
-	GET_BLOCKS_OFFSET(							\
-		i,								\
-		GET_MEM_SIZE_INST(i, loc),					\
+	GET_CHANNEL_STATUS_OFFSET(i,						\
 		DT_INST_PROP(i, loc##_blocks),					\
 		DT_INST_PROP(i, rem##_blocks))
 
@@ -1403,8 +1693,9 @@ const static struct ipc_service_backend backend_ops = {
 		DT_INST_PROP(i, rem##_blocks))
 
 #define DEFINE_BACKEND_DEVICE(i)							\
-	SYS_BITARRAY_DEFINE_STATIC(tx_usage_bitmap_##i, DT_INST_PROP(i, tx_blocks));	\
-	SYS_BITARRAY_DEFINE_STATIC(rx_hold_bitmap_##i, DT_INST_PROP(i, rx_blocks));	\
+	static ATOMIC_VAL_DEFINE(tx_usage_bitmap_##i, DT_INST_PROP(i, tx_blocks));	\
+	static ATOMIC_VAL_DEFINE(tx_allocated_bitmap_##i, DT_INST_PROP(i, tx_blocks));	\
+	static ATOMIC_VAL_DEFINE(rx_hold_bitmap_##i, DT_INST_PROP(i, rx_blocks));	\
 	PBUF_DEFINE(tx_icbmsg_pb_##i,							\
 			GET_MEM_ADDR_INST(i, tx),					\
 			GET_ICMSG_SIZE_INST(i, tx, rx),					\
@@ -1428,16 +1719,29 @@ const static struct ipc_service_backend backend_ops = {
 		},									\
 		.tx = {									\
 			.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR_INST(i, tx, rx),	\
-			.block_count = DT_INST_PROP(i, tx_blocks),			\
 			.block_size = GET_BLOCK_SIZE_INST(i, tx, rx),			\
+			.block_count = DT_INST_PROP(i, tx_blocks),			\
+			.waiting_cnt = GET_CHANNEL_STATUS_WAITING_CNT_PTR(i, tx,	\
+				DT_INST_PROP(i, rx_blocks), DT_INST_PROP(i, tx_blocks)),\
+			.send_bitmask = GET_CHANNEL_STATUS_SEND_BM_PTR(i, tx,		\
+				DT_INST_PROP(i, rx_blocks), DT_INST_PROP(i, tx_blocks)),\
+			.proc_bitmask = GET_CHANNEL_STATUS_PROC_BM_PTR(i, tx,		\
+				DT_INST_PROP(i, rx_blocks), DT_INST_PROP(i, tx_blocks)),\
 		},									\
 		.rx = {									\
 			.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR_INST(i, rx, tx),	\
-			.block_count = DT_INST_PROP(i, rx_blocks),			\
 			.block_size = GET_BLOCK_SIZE_INST(i, rx, tx),			\
+			.block_count = DT_INST_PROP(i, rx_blocks),			\
+			.waiting_cnt = GET_CHANNEL_STATUS_WAITING_CNT_PTR(i, rx,	\
+				DT_INST_PROP(i, rx_blocks), DT_INST_PROP(i, tx_blocks)),\
+			.send_bitmask = GET_CHANNEL_STATUS_SEND_BM_PTR(i, rx,		\
+				DT_INST_PROP(i, rx_blocks), DT_INST_PROP(i, tx_blocks)),\
+			.proc_bitmask = GET_CHANNEL_STATUS_PROC_BM_PTR(i, rx,		\
+				DT_INST_PROP(i, rx_blocks), DT_INST_PROP(i, tx_blocks)),\
 		},									\
-		.tx_usage_bitmap = &tx_usage_bitmap_##i,				\
-		.rx_hold_bitmap = &rx_hold_bitmap_##i,					\
+		.tx_usage_bm = tx_usage_bitmap_##i,					\
+		.tx_allocated_bm = tx_allocated_bitmap_##i,				\
+		.rx_hold_bm = rx_hold_bitmap_##i,					\
 	};										\
 	BUILD_ASSERT(IS_POWER_OF_TWO(GET_CACHE_ALIGNMENT(i)),				\
 		     "This module supports only power of two cache alignment");		\
