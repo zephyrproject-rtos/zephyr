@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,17 +9,24 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/audio/tmap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "bs_cmd_line.h"
 #include "bs_dynargs.h"
@@ -37,9 +44,37 @@ atomic_t flag_disconnected;
 atomic_t flag_conn_updated;
 atomic_t flag_audio_received;
 volatile bt_security_t security_level;
+#if defined(CONFIG_BT_CSIP_SET_MEMBER)
+uint8_t csip_rsi[BT_CSIP_RSI_SIZE];
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
 
-const struct bt_data ad[AD_SIZE] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR))
+static const struct bt_data connectable_ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA_BYTES(BT_DATA_UUID16_SOME, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_PACS_VAL)),
+#if defined(CONFIG_BT_CAP_ACCEPTOR)
+	BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
+		      BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED),
+#endif /* CONFIG_BT_CAP_ACCEPTOR */
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
+	BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
+		      BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, BT_BYTES_LIST_LE16(SINK_CONTEXT),
+		      BT_BYTES_LIST_LE16(SOURCE_CONTEXT), 0x00,
+		      /* Metadata length */),
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
+#if defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
+	BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
+#endif /* CONFIG_BT_BAP_SCAN_DELEGATOR */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER)
+	BT_DATA(BT_DATA_CSIS_RSI, csip_rsi, BT_CSIP_RSI_SIZE),
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_TMAP)
+	BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL),
+		      BT_UUID_16_ENCODE(TMAP_ROLE_SUPPORTED)),
+#endif /* CONFIG_BT_TMAP */
 };
 
 static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad_buf)
@@ -51,8 +86,9 @@ static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	/* We're only interested in connectable events */
-	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) == 0) {
+	/* We're only interested in extended advertising connectable events */
+	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) == 0U ||
+	     (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) == 0U)) {
 		return;
 	}
 
@@ -149,6 +185,38 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.le_param_updated = conn_param_updated_cb,
 	.security_changed = security_changed_cb,
 };
+
+void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
+{
+	int err;
+
+	/* Create a non-connectable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, ext_adv);
+	if (err != 0) {
+		FAIL("Unable to create extended advertising set: %d\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_set_data(*ext_adv, connectable_ad, ARRAY_SIZE(connectable_ad), NULL, 0);
+	if (err != 0) {
+		FAIL("Unable to set extended advertising data: %d\n", err);
+
+		bt_le_ext_adv_delete(*ext_adv);
+
+		return;
+	}
+
+	err = bt_le_ext_adv_start(*ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
+		bt_le_ext_adv_delete(*ext_adv);
+
+		return;
+	}
+
+	printk("Advertising started\n");
+}
 
 void test_tick(bs_time_t HW_device_time)
 {

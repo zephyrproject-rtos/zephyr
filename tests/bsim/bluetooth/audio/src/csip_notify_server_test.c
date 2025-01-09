@@ -52,15 +52,13 @@ static struct bt_csip_set_member_cb csip_cb = {
 static void test_main(void)
 {
 	int err;
-	const struct bt_data ad[] = {
-		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	};
 	struct bt_csip_set_member_register_param csip_params = {
 		.set_size = 1,
 		.rank = 1,
 		.lockable = true,
-		.cb       = &csip_cb,
+		.cb = &csip_cb,
 	};
+	struct bt_le_ext_adv *ext_adv;
 
 	printk("Enabling Bluetooth\n");
 	err = bt_enable(NULL);
@@ -77,12 +75,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Start Advertising\n");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
+	setup_connectable_adv(&ext_adv);
 
 	printk("Waiting to be connected\n");
 	WAIT_FOR_FLAG(flag_connected);
@@ -100,16 +93,10 @@ static void test_main(void)
 		return;
 	}
 
-	/* Now wait for client to disconnect, then stop adv so it does not reconnect */
+	/* Now wait for client to disconnect */
 	printk("Wait for client disconnect\n");
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	printk("Client disconnected\n");
-
-	err = bt_le_adv_stop();
-	if (err != 0) {
-		FAIL("Advertising failed to stop (err %d)\n", err);
-		return;
-	}
 
 	/* Trigger changes while device is disconnected */
 	err = bt_csip_set_member_lock(svc_inst, false, false);
@@ -119,9 +106,12 @@ static void test_main(void)
 	}
 
 	printk("Start Advertising\n");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
+		bt_le_ext_adv_delete(ext_adv);
+
 		return;
 	}
 

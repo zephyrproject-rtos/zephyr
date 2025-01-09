@@ -481,6 +481,7 @@ static void discover_tbs(void)
 
 static void test_main(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 	int index = 0;
 
@@ -503,11 +504,7 @@ static void test_main(void)
 
 	printk("Audio Server: Bluetooth discovered\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, AD_SIZE, NULL, 0);
-	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
+	setup_connectable_adv(&ext_adv);
 
 	printk("Advertising successfully started\n");
 

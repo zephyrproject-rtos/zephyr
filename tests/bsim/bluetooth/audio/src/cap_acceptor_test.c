@@ -53,11 +53,6 @@
 
 extern enum bst_result_t bst_result;
 
-#define SINK_CONTEXT                                                                               \
-	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_MEDIA |                         \
-	 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL)
-#define SOURCE_CONTEXT (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS)
-
 CREATE_FLAG(flag_broadcaster_found);
 CREATE_FLAG(flag_broadcast_code);
 CREATE_FLAG(flag_base_received);
@@ -415,27 +410,6 @@ static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
 	.broadcast_code = broadcast_code_cb,
 };
 
-/* TODO: Expand with CAP service data */
-static const struct bt_data cap_acceptor_ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
-	BT_DATA_BYTES(BT_DATA_UUID16_SOME, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
-		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
-	BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
-		      BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED),
-	IF_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER,
-		   (BT_DATA_BYTES(BT_DATA_SVC_DATA16,
-				  BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
-				  BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
-				  BT_BYTES_LIST_LE16(SINK_CONTEXT),
-				  BT_BYTES_LIST_LE16(SOURCE_CONTEXT),
-				  0x00, /* Metadata length */),
-	))
-	IF_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR,
-		   (BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
-	))
-};
-
 static struct bt_csip_set_member_svc_inst *csip_set_member;
 
 static struct bt_bap_stream *unicast_stream_alloc(void)
@@ -636,32 +610,9 @@ static int set_supported_contexts(void)
 
 void test_start_adv(void)
 {
-	int err;
 	struct bt_le_ext_adv *ext_adv;
 
-	/* Create a connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_CUSTOM, NULL, &ext_adv);
-	if (err != 0) {
-		FAIL("Failed to create advertising set (err %d)\n", err);
-
-		return;
-	}
-
-	/* Add cap acceptor advertising data */
-	err = bt_le_ext_adv_set_data(ext_adv, cap_acceptor_ad, ARRAY_SIZE(cap_acceptor_ad), NULL,
-				     0);
-	if (err != 0) {
-		FAIL("Failed to set advertising data (err %d)\n", err);
-
-		return;
-	}
-
-	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err != 0) {
-		FAIL("Failed to start advertising set (err %d)\n", err);
-
-		return;
-	}
+	setup_connectable_adv(&ext_adv);
 }
 
 static void set_available_contexts(void)

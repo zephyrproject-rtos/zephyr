@@ -21,6 +21,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -424,6 +425,49 @@ static const struct bt_gmap_cb gmap_cb = {
 	.discover = gmap_discover_cb,
 };
 
+static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+	struct bt_conn *conn;
+	int err;
+
+	/* Check for connectable, extended advertising */
+	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) == 0) ||
+	    ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE)) == 0) {
+		/* We're only interested in connectable extended advertising */
+	}
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, info->addr);
+	if (conn != NULL) {
+		/* Already connected to this device */
+		bt_conn_unref(conn);
+		return;
+	}
+
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	printk("Device found: %s (RSSI %d)\n", addr_str, info->rssi);
+
+	/* connect only to devices in close proximity */
+	if (info->rssi < -70) {
+		FAIL("RSSI too low");
+		return;
+	}
+
+	printk("Stopping scan\n");
+	if (bt_le_scan_stop()) {
+		FAIL("Could not stop scan");
+		return;
+	}
+
+	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN,
+						 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
+				&connected_conns[connected_conn_cnt]);
+	if (err != 0) {
+		FAIL("Could not connect to peer: %d", err);
+	}
+}
+
 static void init(void)
 {
 	const struct bt_gmap_feat features = {
@@ -431,6 +475,9 @@ static void init(void)
 			     BT_GMAP_UGG_FEAT_MULTISINK),
 	};
 	const enum bt_gmap_role role = BT_GMAP_ROLE_UGG;
+	static struct bt_le_scan_cb scan_cb = {
+		.recv = scan_recv_cb,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -443,6 +490,11 @@ static void init(void)
 	bap_stream_tx_init();
 
 	bt_gatt_cb_register(&gatt_callbacks);
+	err = bt_le_scan_cb_register(&scan_cb);
+	if (err != 0) {
+		FAIL("Failed to register scan callbacks (err %d)\n", err);
+		return;
+	}
 
 	err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 	if (err != 0) {
@@ -480,56 +532,13 @@ static void init(void)
 	}
 }
 
-static void gmap_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			      struct net_buf_simple *ad)
-{
-	char addr_str[BT_ADDR_LE_STR_LEN];
-	struct bt_conn *conn;
-	int err;
-
-	/* We're only interested in connectable events */
-	if (type != BT_HCI_ADV_IND && type != BT_HCI_ADV_DIRECT_IND) {
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
-	if (conn != NULL) {
-		/* Already connected to this device */
-		bt_conn_unref(conn);
-		return;
-	}
-
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
-
-	/* connect only to devices in close proximity */
-	if (rssi < -70) {
-		FAIL("RSSI too low");
-		return;
-	}
-
-	printk("Stopping scan\n");
-	if (bt_le_scan_stop()) {
-		FAIL("Could not stop scan");
-		return;
-	}
-
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN,
-						 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
-				&connected_conns[connected_conn_cnt]);
-	if (err) {
-		FAIL("Could not connect to peer: %d", err);
-	}
-}
-
 static void scan_and_connect(void)
 {
 	int err;
 
 	UNSET_FLAG(flag_connected);
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, gmap_device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;
