@@ -302,13 +302,12 @@ extern volatile uintptr_t __stack_chk_guard;
 __pinned_bss
 bool z_sys_post_kernel;
 
-static int do_device_init(const struct init_entry *entry)
+static int do_device_init(const struct device *dev)
 {
-	const struct device *dev = entry->dev.dev;
 	int rc = 0;
 
-	if (entry->init_fn.dev != NULL) {
-		rc = entry->init_fn.dev(dev);
+	if (dev->init_fn != NULL) {
+		rc = dev->init_fn(dev);
 		/* Mark device initialized. If initialization
 		 * failed, record the error condition.
 		 */
@@ -366,7 +365,7 @@ static void z_sys_init_run_level(enum init_level level)
 
 		sys_trace_sys_init_enter(entry, level);
 		if (dev != NULL) {
-			result = do_device_init(entry);
+			result = do_device_init(dev);
 		} else {
 			result = entry->init_fn.sys();
 		}
@@ -383,7 +382,7 @@ int z_impl_device_init(const struct device *dev)
 
 	STRUCT_SECTION_FOREACH_ALTERNATE(_deferred_init, init_entry, entry) {
 		if (entry->dev.dev == dev) {
-			return do_device_init(entry);
+			return do_device_init(dev);
 		}
 	}
 
