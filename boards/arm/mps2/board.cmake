@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
-
-set(SUPPORTED_EMU_PLATFORMS qemu)
 if(CONFIG_BOARD_MPS2_AN385)
+  set(SUPPORTED_EMU_PLATFORMS qemu armfvp)
   set(QEMU_CPU_TYPE_${ARCH} cortex-m3)
   set(QEMU_FLAGS_${ARCH}
     -cpu ${QEMU_CPU_TYPE_${ARCH}}
@@ -11,6 +10,7 @@ if(CONFIG_BOARD_MPS2_AN385)
     -nographic
     -vga none
     )
+  set(ARMFVP_BIN_NAME FVP_MPS2_Cortex-M3)
 elseif(CONFIG_BOARD_MPS2_AN383)
   set(SUPPORTED_EMU_PLATFORMS armfvp)
   set(ARMFVP_BIN_NAME FVP_MPS2_Cortex-M0plus)
@@ -23,6 +23,7 @@ elseif(CONFIG_BOARD_MPS2_AN386)
   set(SUPPORTED_EMU_PLATFORMS armfvp)
   set(ARMFVP_BIN_NAME FVP_MPS2_Cortex-M4)
 elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG_BOARD_MPS2_AN521_CPU1)
+  set(SUPPORTED_EMU_PLATFORMS qemu)
   set(QEMU_CPU_TYPE_${ARCH} cortex-m33)
   set(QEMU_FLAGS_${ARCH}
     -cpu ${QEMU_CPU_TYPE_${ARCH}}
