@@ -461,6 +461,8 @@ struct device {
 	struct device_state *state;
 	/** Address of the device instance private data */
 	void *data;
+	/** Initialization function (optional) */
+	int (*init_fn)(const struct device *);
 #if defined(CONFIG_DEVICE_DEPS) || defined(__DOXYGEN__)
 	/**
 	 * Optional pointer to dependencies associated with the device.
@@ -1055,6 +1057,7 @@ device_get_dt_nodelabels(const struct device *dev)
  * @brief Initializer for @ref device.
  *
  * @param name_ Name of the device.
+ * @param init_fn_ Init function (optional).
  * @param pm_ Reference to @ref pm_device_base (optional).
  * @param data_ Reference to device data.
  * @param config_ Reference to device config.
@@ -1064,14 +1067,15 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param node_id_ Devicetree node identifier
  * @param dev_id_ Device identifier token, as passed to Z_DEVICE_BASE_DEFINE
  */
-#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_, node_id_,	\
-		      dev_id_)								\
+#define Z_DEVICE_INIT(name_, init_fn_, pm_, data_, config_, api_, state_, deps_,	\
+		      node_id_,	dev_id_)						\
 	{										\
 		.name = name_,								\
 		.config = (config_),							\
 		.api = (api_),								\
 		.state = (state_),							\
 		.data = (data_),							\
+		.init_fn = (init_fn_),							\
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/			\
 		IF_ENABLED(CONFIG_PM_DEVICE, Z_DEVICE_INIT_PM_BASE(pm_)) /**/		\
 		IF_ENABLED(CONFIG_DEVICE_DT_METADATA,					\
@@ -1107,6 +1111,7 @@ device_get_dt_nodelabels(const struct device *dev)
  * software device).
  * @param dev_id Device identifier (used to name the defined @ref device).
  * @param name Name of the device.
+ * @param init_fn Init function.
  * @param pm Reference to @ref pm_device_base associated with the device.
  * (optional).
  * @param data Reference to device data.
@@ -1116,14 +1121,14 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param api Reference to device API.
  * @param ... Optional dependencies, manually specified.
  */
-#define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level, prio, api, state,     \
-			     deps)                                                    \
+#define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config, level, prio, api,   \
+			     state, deps)                                                          \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                                         \
 	COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (), (const))                                     \
 	STRUCT_SECTION_ITERABLE_NAMED_ALTERNATE(                                                   \
 		device, COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (device_mutable), (device)),     \
 		Z_DEVICE_SECTION_NAME(level, prio), DEVICE_NAME_GET(dev_id)) =                     \
-		Z_DEVICE_INIT(name, pm, data, config, api, state, deps, node_id, dev_id)
+		Z_DEVICE_INIT(name, init_fn, pm, data, config, api, state, deps, node_id, dev_id)
 
 /**
  * @brief Issue an error if the given init level is not supported.
@@ -1142,32 +1147,27 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param node_id Devicetree node id for the device (DT_INVALID_NODE if a
  * software device).
  * @param dev_id Device identifier.
- * @param init_fn_ Device init function.
  * @param level Initialization level.
  * @param prio Initialization priority.
  */
-#define Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn_, level, prio)                         \
+#define Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, level, prio)                                   \
 	Z_DEVICE_CHECK_INIT_LEVEL(level)                                                           \
                                                                                                    \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
 		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id),                                  \
-				    (.init_fn = { .dev_rw = init_fn_ },                            \
-				     .dev = { .dev_rw = &DEVICE_NAME_GET(dev_id)}),                \
-				    (.init_fn = { .dev = init_fn_ },                               \
-				     .dev = { .dev = &DEVICE_NAME_GET(dev_id)}))                   \
+				    (.dev = { .dev_rw = &DEVICE_NAME_GET(dev_id)}),                \
+				    (.dev = { .dev = &DEVICE_NAME_GET(dev_id)}))                   \
 		}
 
-#define Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn_)                                \
+#define Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id)                                          \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan                               \
 		__attribute__((__section__(".z_deferred_init")))                                   \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id),                                  \
-				    (.init_fn = { .dev_rw = init_fn_ },                            \
-				     .dev = { .dev_rw = &DEVICE_NAME_GET(dev_id)}),                \
-				    (.init_fn = { .dev = init_fn_ },                               \
-				     .dev = { .dev = &DEVICE_NAME_GET(dev_id)}))                   \
+				    (.dev = { .dev_rw = &DEVICE_NAME_GET(dev_id)}),                \
+				    (.dev = { .dev = &DEVICE_NAME_GET(dev_id)}))                   \
 		}
 
 /**
@@ -1202,13 +1202,11 @@ device_get_dt_nodelabels(const struct device *dev)
 		   (IF_ENABLED(DT_NODE_EXISTS(node_id),                         \
 			      (Z_DEVICE_DT_METADATA_DEFINE(node_id, dev_id);))))\
                                                                                 \
-	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,    \
-		prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));                  \
+	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config,  \
+		level, prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));           \
 	COND_CODE_1(DEVICE_DT_DEFER(node_id),                                   \
-		    (Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id,          \
-						      init_fn)),                \
-		    (Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn,       \
-						level, prio)));                 \
+		    (Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id)),        \
+		    (Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, level, prio)));\
 	IF_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES,                                 \
 		(IF_ENABLED(DT_NODE_EXISTS(node_id),                            \
 				(Z_DEVICE_EXPORT(node_id);))))
