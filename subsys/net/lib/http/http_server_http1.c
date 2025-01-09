@@ -386,8 +386,9 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 				    struct http_client_ctx *client)
 {
-#define RESPONSE_TEMPLATE_STATIC_FS                                                                \
-	"HTTP/1.1 200 OK\r\n"                                                                      \
+#define RESPONSE_TEMPLATE_STATIC_FS				\
+	"HTTP/1.1 200 OK\r\n"					\
+	"Content-Length: %zd\r\n"				\
 	"Content-Type: %s%s\r\n\r\n"
 #define CONTENT_ENCODING_GZIP "\r\nContent-Encoding: gzip"
 
@@ -403,6 +404,7 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	 * for the content type and encoding
 	 */
 	char http_response[sizeof(RESPONSE_TEMPLATE_STATIC_FS) + HTTP_SERVER_MAX_CONTENT_TYPE_LEN +
+			   sizeof("Content-Length: 01234567890123456789\r\n") +
 			   sizeof(CONTENT_ENCODING_GZIP)];
 
 	if (!(static_fs_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
@@ -450,7 +452,7 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 
 	/* send HTTP header */
 	len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
-		       content_type, gzipped ? CONTENT_ENCODING_GZIP : "");
+		       file_size, content_type, gzipped ? CONTENT_ENCODING_GZIP : "");
 	ret = http_server_sendall(client, http_response, len);
 	if (ret < 0) {
 		goto close;
