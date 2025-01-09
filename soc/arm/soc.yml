@@ -6,6 +6,7 @@ family:
     - name: an383
     - name: an385
     - name: an386
+    - name: an500
     - name: an521
       cpuclusters:
       - name: cpu0

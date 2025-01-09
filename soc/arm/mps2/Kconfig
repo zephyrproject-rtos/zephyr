@@ -25,6 +25,10 @@ config SOC_MPS2_AN386
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_VFP
 
+config SOC_MPS2_AN500
+	select CPU_CORTEX_M7
+	select CPU_HAS_ARM_MPU
+
 config SOC_MPS2_AN521_CPU0
 	select CPU_HAS_ARM_SAU
 
