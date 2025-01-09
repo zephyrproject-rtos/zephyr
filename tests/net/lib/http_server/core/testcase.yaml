@@ -14,3 +14,9 @@ common:
     - native_posix/native/64
 tests:
   net.http.server.core: {}
+  net.http.server.static.fs:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
+    platform_allow:
+      - native_sim
+      - qemu_x86

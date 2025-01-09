@@ -27,6 +27,7 @@
 #define TEST_DYNAMIC_POST_PAYLOAD "Test dynamic POST"
 #define TEST_DYNAMIC_GET_PAYLOAD "Test dynamic GET"
 #define TEST_STATIC_PAYLOAD "Hello, World!"
+#define TEST_STATIC_FS_PAYLOAD "Hello, World from static file!"
 
 /* Random base64 encoded data */
 #define TEST_LONG_PAYLOAD_CHUNK_1                                                                  \
@@ -2284,6 +2285,204 @@ ZTEST(server_function_tests_no_init, test_parse_http_frames)
 	zassert_equal(frame->stream_identifier, 0x01,
 		      "Expected stream_identifier for the 2nd frame doesn't match");
 }
+
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_ram_disk)
+
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
+
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
+
+#define TEST_PARTITION		storage_partition
+#define TEST_PARTITION_ID	FIXED_PARTITION_ID(TEST_PARTITION)
+
+#define LFS_MNTP		"/littlefs"
+#define TEST_FILE		"static_file.html"
+#define TEST_DIR		"/files"
+#define TEST_DIR_PATH		LFS_MNTP TEST_DIR
+
+static struct http_resource_detail_static_fs static_file_resource_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_STATIC_FS,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+			.content_type = "text/html",
+		},
+	.fs_path = TEST_DIR_PATH,
+};
+
+HTTP_RESOURCE_DEFINE(static_file_resource, test_http_service, "/static_file.html",
+		     &static_file_resource_detail);
+
+struct fs_mount_t littlefs_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &storage,
+	.storage_dev = (void *)TEST_PARTITION_ID,
+	.mnt_point = LFS_MNTP,
+};
+
+void test_clear_flash(void)
+{
+	int rc;
+	const struct flash_area *fap;
+
+	rc = flash_area_open(TEST_PARTITION_ID, &fap);
+	zassert_equal(rc, 0, "Opening flash area for erase [%d]\n", rc);
+
+	rc = flash_area_flatten(fap, 0, fap->fa_size);
+	zassert_equal(rc, 0, "Erasing flash area [%d]\n", rc);
+}
+
+static int test_mount(void)
+{
+	int ret;
+
+	ret = fs_mount(&littlefs_mnt);
+	if (ret < 0) {
+		TC_PRINT("Error mounting fs [%d]\n", ret);
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
+#ifndef PATH_MAX
+#define PATH_MAX 64
+#endif
+
+int check_file_dir_exists(const char *fpath)
+{
+	int res;
+	struct fs_dirent entry;
+
+	res = fs_stat(fpath, &entry);
+
+	return !res;
+}
+
+int test_file_write(struct fs_file_t *filep, const char *test_str)
+{
+	ssize_t brw;
+	int res;
+
+	TC_PRINT("\nWrite tests:\n");
+
+	/* Verify fs_seek() */
+	res = fs_seek(filep, 0, FS_SEEK_SET);
+	if (res) {
+		TC_PRINT("fs_seek failed [%d]\n", res);
+		fs_close(filep);
+		return res;
+	}
+
+	TC_PRINT("Data written:\"%s\"\n\n", test_str);
+
+	/* Verify fs_write() */
+	brw = fs_write(filep, (char *)test_str, strlen(test_str));
+	if (brw < 0) {
+		TC_PRINT("Failed writing to file [%zd]\n", brw);
+		fs_close(filep);
+		return brw;
+	}
+
+	if (brw < strlen(test_str)) {
+		TC_PRINT("Unable to complete write. Volume full.\n");
+		TC_PRINT("Number of bytes written: [%zd]\n", brw);
+		fs_close(filep);
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Data successfully written!\n");
+
+	return res;
+}
+
+int test_mkdir(const char *dir_path, const char *file)
+{
+	int res;
+	struct fs_file_t filep;
+	char file_path[PATH_MAX] = { 0 };
+
+	fs_file_t_init(&filep);
+	res = sprintf(file_path, "%s/%s", dir_path, file);
+	__ASSERT_NO_MSG(res < sizeof(file_path));
+
+	if (check_file_dir_exists(dir_path)) {
+		TC_PRINT("Dir %s exists\n", dir_path);
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Creating new dir %s\n", dir_path);
+
+	/* Verify fs_mkdir() */
+	res = fs_mkdir(dir_path);
+	if (res) {
+		TC_PRINT("Error creating dir[%d]\n", res);
+		return res;
+	}
+
+	res = fs_open(&filep, file_path, FS_O_CREATE | FS_O_RDWR);
+	if (res) {
+		TC_PRINT("Failed opening file [%d]\n", res);
+		return res;
+	}
+
+	TC_PRINT("Testing write to file %s\n", file_path);
+	res = test_file_write(&filep, TEST_STATIC_FS_PAYLOAD);
+	if (res) {
+		fs_close(&filep);
+		return res;
+	}
+
+	res = fs_close(&filep);
+	if (res) {
+		TC_PRINT("Error closing file [%d]\n", res);
+		return res;
+	}
+
+	TC_PRINT("Created dir %s!\n", dir_path);
+
+	return res;
+}
+
+static int setup_fs(void)
+{
+	test_clear_flash();
+
+	zassert_equal(test_mount(), TC_PASS, "Failed to mount fs");
+
+	return test_mkdir(TEST_DIR_PATH, TEST_FILE);
+}
+
+ZTEST(server_function_tests, test_http1_static_fs)
+{
+	static const char http1_request[] =
+		"GET /static_file.html HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 30\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n"
+		TEST_STATIC_FS_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = setup_fs();
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(zephyr_ram_disk) */
 
 static void http_server_tests_before(void *fixture)
 {
