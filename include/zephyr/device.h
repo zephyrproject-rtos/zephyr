@@ -1152,33 +1152,23 @@ device_get_dt_nodelabels(const struct device *dev)
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
 		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
-			.init_fn = {COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) = \
-					    (init_fn_)},                                           \
-			Z_DEVICE_INIT_ENTRY_DEV(node_id, dev_id),                                  \
-	}
+			COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id),                                  \
+				    (.init_fn = { .dev_rw = init_fn_ },                            \
+				     .dev = { .dev_rw = &DEVICE_NAME_GET(dev_id)}),                \
+				    (.init_fn = { .dev = init_fn_ },                               \
+				     .dev = { .dev = &DEVICE_NAME_GET(dev_id)}))                   \
+		}
 
 #define Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn_)                                \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan                               \
 		__attribute__((__section__(".z_deferred_init")))                                   \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
-			.init_fn = {COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) = \
-					    (init_fn_)},                                           \
-			Z_DEVICE_INIT_ENTRY_DEV(node_id, dev_id),                                  \
-	}
-
-/*
- * Anonymous unions require C11. Some pre-C11 gcc versions have early support for anonymous
- * unions but they require these braces when combined with C99 designated initializers. For
- * more details see https://docs.zephyrproject.org/latest/develop/languages/cpp/
- */
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__) < 201100
-#  define Z_DEVICE_INIT_ENTRY_DEV(node_id, dev_id) { Z_DEV_ENTRY_DEV(node_id, dev_id) }
-#else
-#  define Z_DEVICE_INIT_ENTRY_DEV(node_id, dev_id)   Z_DEV_ENTRY_DEV(node_id, dev_id)
-#endif
-
-#define Z_DEV_ENTRY_DEV(node_id, dev_id)                                                           \
-	COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) =  &DEVICE_NAME_GET(dev_id)
+			COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id),                                  \
+				    (.init_fn = { .dev_rw = init_fn_ },                            \
+				     .dev = { .dev_rw = &DEVICE_NAME_GET(dev_id)}),                \
+				    (.init_fn = { .dev = init_fn_ },                               \
+				     .dev = { .dev = &DEVICE_NAME_GET(dev_id)}))                   \
+		}
 
 /**
  * @brief Define a @ref device and all other required objects.
