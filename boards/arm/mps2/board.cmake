@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
-
 if(CONFIG_BOARD_MPS2_AN385)
   set(QEMU_CPU_TYPE_${ARCH} cortex-m3)
   set(QEMU_FLAGS_${ARCH}
@@ -10,6 +11,14 @@ if(CONFIG_BOARD_MPS2_AN385)
     -nographic
     -vga none
     )
+elseif(CONFIG_BOARD_MPS2_AN383)
+  set(SUPPORTED_EMU_PLATFORMS armfvp)
+  set(ARMFVP_BIN_NAME FVP_MPS2_Cortex-M0plus)
+  set(ARMFVP_FLAGS
+  -C armcortexm0plusct.NUM_MPU_REGION=8
+  -C armcortexm0plusct.USER=1
+  -C armcortexm0plusct.VTOR=1
+  )
 elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG_BOARD_MPS2_AN521_CPU1)
   set(QEMU_CPU_TYPE_${ARCH} cortex-m33)
   set(QEMU_FLAGS_${ARCH}
@@ -19,11 +28,7 @@ elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG
     -m 16
     -vga none
     )
-endif()
 
-board_set_debugger_ifnset(qemu)
-
-if(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG_BOARD_MPS2_AN521_CPU1)
   # To enable a host tty switch between serial and pty
   #  -chardev serial,path=/dev/ttyS0,id=hostS0
   # pty is not available on Windows.
@@ -44,3 +49,18 @@ if(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG_BOA
     list(APPEND QEMU_EXTRA_FLAGS "-device;loader,file=${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}")
   endif()
 endif()
+
+board_set_debugger_ifnset(qemu)
+
+set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+-C fvp_mps2.telnetterminal0.start_telnet=0
+-C fvp_mps2.telnetterminal1.start_telnet=0
+-C fvp_mps2.telnetterminal2.start_telnet=0
+-C fvp_mps2.UART0.out_file=-
+-C fvp_mps2.UART0.unbuffered_output=1
+-C fvp_mps2.UART1.out_file=-
+-C fvp_mps2.UART1.unbuffered_output=1
+-C fvp_mps2.UART2.out_file=-
+-C fvp_mps2.UART2.unbuffered_output=1
+-C fvp_mps2.mps2_visualisation.disable-visualisation=1
+)
