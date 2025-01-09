@@ -15,8 +15,6 @@
 	};
 };
 
-// FIXME: Is there a way to reassign the node label arduino_spi from spi2 to spi3 ?
-// spi2 draws way less current than spi3.
 &arduino_spi {
 	status = "okay";
 

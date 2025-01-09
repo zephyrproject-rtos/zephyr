@@ -85,7 +85,6 @@ lr11xx_hal_status_t lr11xx_hal_write(const void *context, const uint8_t *command
 	cmd_crc = lr11xx_hal_compute_crc(cmd_crc, data, data_length);
 #endif /* defined( CONFIG_LR11XX_USE_CRC_OVER_SPI ) */
 
-	lr11xx_hal_check_device_ready(context);
 	const struct spi_buf tx_buf[] = {{
 						 .buf = (uint8_t *)command,
 						 .len = command_length,
@@ -98,6 +97,8 @@ lr11xx_hal_status_t lr11xx_hal_write(const void *context, const uint8_t *command
 					 }};
 
 	const struct spi_buf_set tx = {.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)};
+
+	lr11xx_hal_check_device_ready(context);
 
 	ret = spi_write_dt(&config->spi, &tx);
 	if (ret) {
@@ -130,8 +131,6 @@ lr11xx_hal_status_t lr11xx_hal_direct_read(const void *context, uint8_t *data,
 	uint8_t rx_crc;
 #endif /* defined( CONFIG_LR11XX_USE_CRC_OVER_SPI ) */
 
-	lr11xx_hal_check_device_ready(context);
-
 	const struct spi_buf rx_buf[] = {
 		{.buf = data, .len = data_length
 #if defined(CONFIG_LR11XX_USE_CRC_OVER_SPI)
@@ -143,6 +142,8 @@ lr11xx_hal_status_t lr11xx_hal_direct_read(const void *context, uint8_t *data,
 		}};
 
 	const struct spi_buf_set rx = {.buffers = rx_buf, .count = ARRAY_SIZE(rx_buf)};
+
+	lr11xx_hal_check_device_ready(context);
 
 	ret = spi_read_dt(&config->spi, &rx);
 	if (ret) {

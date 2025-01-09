@@ -61,12 +61,12 @@ extern "C" {
 
 #if (MODEM_HAL_DEEP_DBG_TRACE)
 /* Deep debug trace default definitions*/
-#define SMTC_MODEM_HAL_TRACE_PRINTF_DEBUG(...)      smtc_modem_hal_print_trace_dbg(__VA_ARGS__);
-#define SMTC_MODEM_HAL_TRACE_MSG_DEBUG(msg)         smtc_modem_hal_print_trace_dbg("%s", msg);
+#define SMTC_MODEM_HAL_TRACE_PRINTF_DEBUG(...)           smtc_modem_hal_print_trace_dbg(__VA_ARGS__);
+#define SMTC_MODEM_HAL_TRACE_MSG_DEBUG(msg)              smtc_modem_hal_print_trace_dbg("%s", msg);
 #define SMTC_MODEM_HAL_TRACE_MSG_COLOR_DEBUG(msg, color) smtc_modem_hal_print_trace_dbg("%s", msg);
-#define SMTC_MODEM_HAL_TRACE_INFO_DEBUG(...)        smtc_modem_hal_print_trace_dbg(__VA_ARGS__);
-#define SMTC_MODEM_HAL_TRACE_WARNING_DEBUG(...)     smtc_modem_hal_print_trace_dbg(__VA_ARGS__);
-#define SMTC_MODEM_HAL_TRACE_ERROR_DEBUG(...)       smtc_modem_hal_print_trace_dbg(__VA_ARGS__);
+#define SMTC_MODEM_HAL_TRACE_INFO_DEBUG(...)             smtc_modem_hal_print_trace_dbg(__VA_ARGS__);
+#define SMTC_MODEM_HAL_TRACE_WARNING_DEBUG(...)          smtc_modem_hal_print_trace_dbg(__VA_ARGS__);
+#define SMTC_MODEM_HAL_TRACE_ERROR_DEBUG(...)            smtc_modem_hal_print_trace_dbg(__VA_ARGS__);
 #define SMTC_MODEM_HAL_TRACE_ARRAY_DEBUG(msg, array, len)                                          \
 	smtc_modem_hal_print_trace_array_dbg(msg, array, len);
 #define SMTC_MODEM_HAL_TRACE_PACKARRAY_DEBUG(...) SMTC_MODEM_HAL_TRACE_ARRAY_DEBUG(__VA_ARGS__)

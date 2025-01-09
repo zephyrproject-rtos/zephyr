@@ -25,7 +25,7 @@ rsource "Kconfig.sx12xx"
 
 config LORA_BASICS_MODEM_DRIVERS_INIT_PRIORITY
 	int "Init priority"
-	default 90
+	default 50
 
 
 config LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER

@@ -114,7 +114,7 @@ void ral_sx126x_bsp_get_ocp_value(const void *context, uint8_t *ocp_in_step_of_2
 	/* Do nothing, let the driver choose the default values */
 }
 
-void ral_sx126x_bsp_get_lora_cad_det_peak(ral_lora_sf_t sf, ral_lora_bw_t bw,
+void ral_sx126x_bsp_get_lora_cad_det_peak(const void *context, ral_lora_sf_t sf, ral_lora_bw_t bw,
 					  ral_lora_cad_symbs_t nb_symbol,
 					  uint8_t *in_out_cad_det_peak)
 {
@@ -136,5 +136,3 @@ uint8_t radio_utilities_get_tx_power_offset(const void *context)
 
 	return data->tx_offset;
 }
-
-/* --- EOF ------------------------------------------------------------------ */

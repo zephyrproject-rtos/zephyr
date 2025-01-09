@@ -47,11 +47,11 @@ static void lr11xx_get_tx_cfg(const void *context, lr11xx_pa_type_t pa_type,
 		 * The output power must be in range [ -17 , +15 ] dBm
 		 */
 		power = CLAMP(power, LR11XX_MIN_PWR_LP_LF, LR11XX_MAX_PWR_LP_LF);
-		output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_LP;
-		output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VREG;
 		lr11xx_pa_pwr_cfg_t *pwr_cfg =
 			&config->pa_lf_lp_cfg_table[power - LR11XX_MIN_PWR_LP_LF];
 
+		output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_LP;
+		output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VREG;
 		output_params->pa_cfg.pa_duty_cycle = pwr_cfg->pa_duty_cycle;
 		output_params->pa_cfg.pa_hp_sel = pwr_cfg->pa_hp_sel;
 		output_params->chip_output_pwr_in_dbm_configured = pwr_cfg->power;
@@ -63,19 +63,17 @@ static void lr11xx_get_tx_cfg(const void *context, lr11xx_pa_type_t pa_type,
 		 * The output power must be in range [ -9 , +22 ] dBm
 		 */
 		power = CLAMP(power, LR11XX_MIN_PWR_HP_LF, LR11XX_MAX_PWR_HP_LF);
-		output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_HP;
-
-		if (power <= LR11XX_PWR_VREG_VBAT_SWITCH) {
-			/* For powers below 8dBm use regulated supply for
-			 * HP PA for a better efficiency.
-			 */
-			output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VREG;
-		} else {
-			output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VBAT;
-		}
 		lr11xx_pa_pwr_cfg_t *pwr_cfg =
 			&config->pa_lf_hp_cfg_table[power - LR11XX_MIN_PWR_HP_LF];
 
+		output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_HP;
+
+		/* For powers below 8dBm use regulated supply for
+		 * HP PA for a better efficiency.
+		 */
+		output_params->pa_cfg.pa_reg_supply = (power <= LR11XX_PWR_VREG_VBAT_SWITCH)
+							      ? LR11XX_RADIO_PA_REG_SUPPLY_VREG
+							      : LR11XX_RADIO_PA_REG_SUPPLY_VBAT;
 		output_params->pa_cfg.pa_duty_cycle = pwr_cfg->pa_duty_cycle;
 		output_params->pa_cfg.pa_hp_sel = pwr_cfg->pa_hp_sel;
 		output_params->chip_output_pwr_in_dbm_configured = pwr_cfg->power;
@@ -87,23 +85,24 @@ static void lr11xx_get_tx_cfg(const void *context, lr11xx_pa_type_t pa_type,
 		 * The output power must be in range [ -17 , +22 ] dBm
 		 */
 		power = CLAMP(power, LR11XX_MIN_PWR_LP_LF, LR11XX_MAX_PWR_HP_LF);
-		output_params->chip_output_pwr_in_dbm_expected = power;
 
 		if (power <= LR11XX_MAX_PWR_LP_LF) {
-			output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_LP;
-			output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VREG;
 			lr11xx_pa_pwr_cfg_t *pwr_cfg =
 				&config->pa_lf_lp_cfg_table[power - LR11XX_MIN_PWR_LP_LF];
 
+			output_params->chip_output_pwr_in_dbm_expected = power;
+			output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_LP;
+			output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VREG;
 			output_params->pa_cfg.pa_duty_cycle = pwr_cfg->pa_duty_cycle;
 			output_params->pa_cfg.pa_hp_sel = pwr_cfg->pa_hp_sel;
 			output_params->chip_output_pwr_in_dbm_configured = pwr_cfg->power;
 		} else {
-			output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_HP;
-			output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VBAT;
 			lr11xx_pa_pwr_cfg_t *pwr_cfg =
 				&config->pa_lf_hp_cfg_table[power - LR11XX_MIN_PWR_HP_LF];
 
+			output_params->chip_output_pwr_in_dbm_expected = power;
+			output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_HP;
+			output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VBAT;
 			output_params->pa_cfg.pa_duty_cycle = pwr_cfg->pa_duty_cycle;
 			output_params->pa_cfg.pa_hp_sel = pwr_cfg->pa_hp_sel;
 			output_params->chip_output_pwr_in_dbm_configured = pwr_cfg->power;
@@ -115,14 +114,14 @@ static void lr11xx_get_tx_cfg(const void *context, lr11xx_pa_type_t pa_type,
 		 * The output power must be in range [ -18 , +13 ] dBm
 		 */
 		power = CLAMP(power, LR11XX_MIN_PWR_PA_HF, LR11XX_MAX_PWR_PA_HF);
-		output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_HF;
-		output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VREG;
 		lr11xx_pa_pwr_cfg_t *pwr_cfg =
 			&config->pa_hf_cfg_table[power - LR11XX_MIN_PWR_PA_HF];
 
-		output_params->pa_cfg.pa_duty_cycle = pwr_cfg.pa_duty_cycle;
-		output_params->pa_cfg.pa_hp_sel = pwr_cfg.pa_hp_sel;
-		output_params->chip_output_pwr_in_dbm_configured = pwr_cfg.power;
+		output_params->pa_cfg.pa_sel = LR11XX_RADIO_PA_SEL_HF;
+		output_params->pa_cfg.pa_reg_supply = LR11XX_RADIO_PA_REG_SUPPLY_VREG;
+		output_params->pa_cfg.pa_duty_cycle = pwr_cfg->pa_duty_cycle;
+		output_params->pa_cfg.pa_hp_sel = pwr_cfg->pa_hp_sel;
+		output_params->chip_output_pwr_in_dbm_configured = pwr_cfg->power;
 		output_params->chip_output_pwr_in_dbm_expected = power;
 		break;
 	}

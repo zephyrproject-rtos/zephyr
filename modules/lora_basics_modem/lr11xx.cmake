@@ -38,6 +38,8 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_LR11XX_WITH_C
 #-----------------------------------------------------------------------------
 # Includes
 #-----------------------------------------------------------------------------
+
+# Used in publicly-included headers
 zephyr_include_directories(${LBM_LR11XX_DIR})
 
 zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_LR11XX
@@ -51,13 +53,16 @@ zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_LR11XX_WI
 # Radio specific compilation flags
 #-----------------------------------------------------------------------------
 
-# Used in publicly-included headers
 zephyr_compile_definitions(LR11XX)
 
 zephyr_library_compile_definitions(LR11XX_TRANSCEIVER LR11XX_DISABLE_WARNINGS)
 
-zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_LR11XX
+# Used in publicly-included headers
+zephyr_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_LR11XX
+  USE_LR11XX_CE)
+
+zephyr_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_LR11XX_WITH_CREDENTIALS
   USE_LR11XX_CE)
 
 zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_LR11XX_WITH_CREDENTIALS
-  USE_LR11XX_CE USE_PRE_PROVISIONED_FEATURES)
+  USE_PRE_PROVISIONED_FEATURES)

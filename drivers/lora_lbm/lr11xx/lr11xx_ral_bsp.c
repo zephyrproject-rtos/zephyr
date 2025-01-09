@@ -1,5 +1,5 @@
 /*
- *Copyright (c) 2024 Semtech Corporation
+ * Copyright (c) 2024 Semtech Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */

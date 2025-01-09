@@ -16,7 +16,8 @@ extern "C" {
 /**
  * @brief Initializes the LoRa Basics Modem callbacks and starts its work thread.
  *
- * @param event_callback Function to be called when a modem event is raised internally
+ * @param event_callback The callback that will be called each time an modem event is raised
+ * internally
  * @param hal_cb User provided callbacks for Device Management
  */
 

@@ -14,6 +14,9 @@
 #include <zephyr/sys/reboot.h>
 #include <zephyr/fs/nvs.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 
 #include <lora_lbm_transceiver.h>
 
@@ -21,7 +24,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smtc_modem_hal, CONFIG_LORA_BASICS_MODEM_LOG_LEVEL);
 
 /* ------------ Local context ------------ */
@@ -95,6 +97,7 @@ void smtc_modem_hal_reset_mcu(void)
 {
 	LOG_WRN("Resetting the MCU");
 	log_panic(); /* To flush the logs */
+	k_msleep(100);
 	sys_reboot(SYS_REBOOT_COLD);
 }
 
@@ -237,7 +240,9 @@ bool smtc_modem_hal_crashlog_get_status(void)
 	return available;
 }
 
-#else
+#endif
+
+#ifdef CONFIG_LORA_BASICS_MODEM_PROVIDED_STORAGE_IMPL
 
 /* FIXME: That whole storage bit should be revamped to something more generic,
  * that would remove the whole read-erase-write logics and leverage the zephyr flash stack.

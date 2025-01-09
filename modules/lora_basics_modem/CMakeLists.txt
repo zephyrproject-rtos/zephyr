@@ -5,9 +5,9 @@ if(CONFIG_ZEPHYR_LORA_BASICS_MODEM_MODULE)
   # Based on makefiles from Semtech
 
   set(LORA_BASICS_MODEM_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
-  set(LBM_LIB ${LORA_BASICS_MODEM_DIR}/lbm_lib)
-  set(LBM_SMTC_MODEM_CORE_DIR ${LBM_LIB}/smtc_modem_core)
-  set(LBM_RADIO_DRIVERS_DIR ${LBM_LIB}/smtc_modem_core/radio_drivers)
+  set(LBM_LIB_DIR ${LORA_BASICS_MODEM_DIR}/lbm_lib)
+  set(LBM_SMTC_MODEM_CORE_DIR ${LBM_LIB_DIR}/smtc_modem_core)
+  set(LBM_RADIO_DRIVERS_DIR ${LBM_LIB_DIR}/smtc_modem_core/radio_drivers)
 
   zephyr_library()
 

@@ -57,9 +57,13 @@ zephyr_library_sources(
 )
 
 zephyr_include_directories(
-  ${LBM_LIB_DIR}
   ${LBM_LIB_DIR}/smtc_modem_api
+  # FIXME: is only used by the samples, should be cleaned up.
   ${LBM_LIB_DIR}/smtc_modem_hal
+)
+
+zephyr_library_include_directories(
+  ${LBM_LIB_DIR}
   ${LBM_SMTC_MODEM_CORE_DIR}
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_api
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_manager
@@ -94,7 +98,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_ALC_SYNC_V2
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/application_layer_clock_synchronization/v2.0.0/lorawan_alcsync_v2.0.0.c
 )
 
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_ALC_SYNC
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_ALC_SYNC
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/application_layer_clock_synchronization
 )
 
@@ -139,22 +143,22 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA_MPA
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/multi_package_access/lorawan_mpa_package.c
 )
 
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/application_layer_clock_synchronization
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/fragmented_data_block_transport
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/remote_multicast_setup
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/firmware_management_protocol/
 )
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA_V1
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA_V1
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/fragmented_data_block_transport/v1.0.0
 )
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA_V2
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA_V2
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/fragmented_data_block_transport/v2.0.0
 )
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA_FMP
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA_FMP
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/firmware_management_protocol
 )
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA_MPA
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_FUOTA_MPA
   ${LBM_SMTC_MODEM_CORE_DIR}/lorawan_packages/multi_package_access
 )
 
@@ -167,7 +171,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
   ${LBM_SMTC_MODEM_CORE_DIR}/smtc_modem_crypto/soft_secure_element/cmac.c
   ${LBM_SMTC_MODEM_CORE_DIR}/smtc_modem_crypto/soft_secure_element/soft_se.c
 )
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
   ${LBM_SMTC_MODEM_CORE_DIR}/smtc_modem_crypto/soft_secure_element
 )
 
@@ -175,8 +179,7 @@ zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
 # Class B
 #-----------------------------------------------------------------------------
 
-# Used in publicly-included headers
-zephyr_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_B
+zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_B
   ADD_CLASS_B
 )
 
@@ -186,7 +189,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_B
   ${LBM_SMTC_MODEM_CORE_DIR}/lr1mac/src/lr1mac_class_b/smtc_ping_slot.c
 )
 
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_B
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_B
   ${LBM_SMTC_MODEM_CORE_DIR}/lr1mac/src/lr1mac_class_b
 )
 
@@ -194,8 +197,7 @@ zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_B
 # Class C
 #-----------------------------------------------------------------------------
 
-# Used in publicly-included headers
-zephyr_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_C
+zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_C
   ADD_CLASS_C
 )
 
@@ -203,7 +205,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_C
   ${LBM_SMTC_MODEM_CORE_DIR}/lr1mac/src/lr1mac_class_c/lr1mac_class_c.c
 )
 
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_C
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_C
   ${LBM_SMTC_MODEM_CORE_DIR}/lr1mac/src/lr1mac_class_c
 )
 
@@ -211,8 +213,7 @@ zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_CLASS_C
 # Multicast
 #-----------------------------------------------------------------------------
 
-# Used in publicly-included headers
-zephyr_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_MULTICAST
+zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_MULTICAST
   SMTC_MULTICAST
 )
 
@@ -220,7 +221,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_MULTICAST
   ${LBM_SMTC_MODEM_CORE_DIR}/lr1mac/src/services/smtc_multicast/smtc_multicast.c
 )
 
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_MULTICAST
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_MULTICAST
   ${LBM_SMTC_MODEM_CORE_DIR}/lr1mac/src/services/smtc_multicast
 )
 
@@ -228,8 +229,7 @@ zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_MULTICAST
 # CSMA
 #-----------------------------------------------------------------------------
 
-# Used in publicly-included headers
-zephyr_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CSMA
+zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CSMA
   ADD_CSMA
 )
 zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_CSMA_BY_DEFAULT
@@ -244,8 +244,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_CSMA
 # Almanac
 #-----------------------------------------------------------------------------
 
-# Used in publicly-included headers
-zephyr_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_ALMANAC
+zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_ALMANAC
   ADD_ALMANAC
 )
 
@@ -253,7 +252,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_ALMANAC
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/almanac_packages/almanac.c
 )
 
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_ALMANAC
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_ALMANAC
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/almanac_packages
 )
@@ -271,7 +270,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_STREAM
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/stream_packages/rose.c
 )
 
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_STREAM
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_STREAM
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/stream_packages
 )
@@ -286,7 +285,7 @@ zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_LFU
 zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_LFU
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/lfu_service/file_upload.c
 )
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_LFU
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_LFU
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/lfu_service
 )
@@ -301,7 +300,7 @@ zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_DEVICE_MANAGEM
 zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_DEVICE_MANAGEMENT
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/cloud_dm_package/cloud_dm_package.c
 )
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_DEVICE_MANAGEMENT
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_DEVICE_MANAGEMENT
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/cloud_dm_package
 )
@@ -310,8 +309,7 @@ zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_DEVICE_MANAGEMENT
 # Geolocation
 #-----------------------------------------------------------------------------
 
-# Used in publicly-included headers
-zephyr_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_GEOLOCATION
+zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_GEOLOCATION
   ADD_LBM_GEOLOCATION
 )
 zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_GEOLOCATION
@@ -324,6 +322,8 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_GEOLOCATION
   ${LBM_SMTC_MODEM_CORE_DIR}/geolocation_services/mw_wifi_send.c
   ${LBM_SMTC_MODEM_CORE_DIR}/geolocation_services/wifi_helpers.c
 )
+
+# Used in publicly-included headers
 zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_GEOLOCATION
   ${LBM_SMTC_MODEM_CORE_DIR}/geolocation_services
 )
@@ -339,7 +339,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_STORE_AND_FORWARD
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_utilities/circularfs.c
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/store_and_forward/store_and_forward_flash.c
 )
-zephyr_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_STORE_AND_FORWARD
+zephyr_library_include_directories_ifdef(CONFIG_LORA_BASICS_MODEM_STORE_AND_FORWARD
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services
   ${LBM_SMTC_MODEM_CORE_DIR}/modem_services/store_and_forward
 )
@@ -364,8 +364,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_BASICS_MODEM_MULTICAST
 # Misc
 #-----------------------------------------------------------------------------
 
-# Used in publicly-included headers
-zephyr_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_PERF_TEST
+zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_PERF_TEST
   PERF_TEST_ENABLED
 )
 
