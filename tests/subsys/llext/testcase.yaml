@@ -7,6 +7,7 @@ common:
     - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
     # platforms that are always skipped by the runtime filter
     - qemu_cortex_m0
+    - mps2/an383
     - qemu_xtensa/dc233c/mmu
   integration_platforms:
     - qemu_cortex_a9          # ARM Cortex-A9 (ARMv7-A ISA)

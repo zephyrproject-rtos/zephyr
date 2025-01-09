@@ -1,13 +1,13 @@
-.. _mps2_an385_board:
+.. _mps2_an383_board:
 
-ARM V2M MPS2 AN385
+ARM V2M MPS2 AN383
 ##################
 
 Overview
 ********
 
-The mps2/an385 board configuration is used by Zephyr applications that run on
-the V2M MPS2 board. It provides support for the ARM Cortex-M3 (AN385) CPU and
+The ``mps2/an383`` board target is used by Zephyr applications that run on
+the V2M MPS2 board. It provides support for the ARM Cortex-M0+ (AN383) CPU and
 the following devices:
 
 - Nested Vectored Interrupt Controller (NVIC)
@@ -18,25 +18,25 @@ the following devices:
      :align: center
      :alt: ARM V2M MPS2
 
-In addition to enabling actual hardware usage, this board configuration can
-also use QEMU to emulate the AN385 platform running on the MPS2+.
+In addition to enabling actual hardware usage, this board target can
+also use `FVP`_. to emulate the AN383 platform running on the MPS2+.
 
 More information about the board can be found at the `V2M MPS2 Website`_.
 
-The Application Note AN385 can be found at `Application Note AN385`_.
+The Application Note AN383 can be found at `Application Note AN383`_.
 
 .. note::
-   This board configuration makes no claims about its suitability for use
-   with actual MPS2 hardware systems using AN385, or any other hardware
-   system. It has been tested on actual hardware, but its primary purpose is
-   for use with QEMU and unit tests.
+   This board target makes no claims about its suitability for use
+   with actual MPS2 hardware systems using AN383, or any other hardware
+   system. It has been tested on FVP.
+
 
 Hardware
 ********
 
-ARM V2M MPS2 provides the following hardware components:
+ARM V2M MPS2 AN383 provides the following hardware components:
 
-- ARM Cortex-M3 (AN385)
+- ARM Cortex-M0+
 - ARM IoT Subsystem for Cortex-M
 - Form factor: 140x120cm
 - ZBTSRAM: 8MB single cycle SRAM, 16MB PSRAM
@@ -62,7 +62,7 @@ ARM V2M MPS2 provides the following hardware components:
 Supported Features
 ==================
 
-The mps2/an385 board configuration supports the following hardware features:
+The ``mps2/an383`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -88,18 +88,18 @@ See the `V2M MPS2 Website`_ for a complete list of V2M MPS2 board hardware
 features.
 
 The default configuration can be found in
-:zephyr_file:`boards/arm/mps2/mps2_an385_defconfig`
+:zephyr_file:`boards/arm/mps2/mps2_an383_defconfig`
 
 Interrupt Controller
 ====================
 
-MPS2 is a Cortex-M3 based SoC and has 15 fixed exceptions and 45 IRQs.
+MPS2 is a Cortex-M0+ based SoC and has 6 fixed exceptions and 32 IRQs.
 
-A Cortex-M3/4-based board uses vectored exceptions. This means each exception
+A Cortex-M0+ board uses vectored exceptions. This means each exception
 calls a handler directly from the vector table.
 
-Handlers are provided for exceptions 1-6, 11-12, and 14-15. The table here
-identifies the handlers used for each exception.
+Handlers are provided for exceptions 1-3, 11, and 14-15. The table here
+MPS2 is a Cortex-M0+ based SoC and has 15 fixed exceptions and 45 IRQs.
 
 +------+------------+----------------+--------------------------+
 | Exc# | Name       | Remarks        | Used by Zephyr Kernel    |
@@ -110,26 +110,13 @@ identifies the handlers used for each exception.
 +------+------------+----------------+--------------------------+
 | 3    | Hard fault |                | system fatal error       |
 +------+------------+----------------+--------------------------+
-| 4    | MemManage  | MPU fault      | system fatal error       |
-+------+------------+----------------+--------------------------+
-| 5    | Bus        |                | system fatal error       |
-+------+------------+----------------+--------------------------+
-| 6    | Usage      | undefined      | system fatal error       |
-|      | fault      | instruction,   |                          |
-|      |            | or switch      |                          |
-|      |            | attempt to ARM |                          |
-|      |            | mode           |                          |
-+------+------------+----------------+--------------------------+
 | 11   | SVC        |                | system calls, kernel     |
 |      |            |                | run-time exceptions,     |
 |      |            |                | and IRQ offloading       |
 +------+------------+----------------+--------------------------+
-| 12   | Debug      |                | system fatal error       |
-|      | monitor    |                |                          |
-+------+------------+----------------+--------------------------+
 | 14   | PendSV     |                | context switch           |
 +------+------------+----------------+--------------------------+
-| 15   | SYSTICK    |                | system clock             |
+| 15   | SYSTICK    | optional       | system clock             |
 +------+------------+----------------+--------------------------+
 
 Pin Mapping
@@ -253,11 +240,11 @@ V2M MPS2 provides:
 Flashing an application to V2M MPS2
 -----------------------------------
 
-Here is an example for the :zephyr:code-sample:`hello_world` application.
+Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mps2/an385
+   :board: mps2/an383
    :goals: build
 
 Connect the V2M MPS2 to your host computer using the USB port and you should
@@ -277,5 +264,8 @@ the following message:
 .. _MPS2 Technical Reference Manual (TRM):
    http://infocenter.arm.com/help/topic/com.arm.doc.100112_0200_05_en/versatile_express_cortex_m_prototyping_systems_v2m_mps2_and_v2m_mps2plus_technical_reference_100112_0200_05_en.pdf
 
-.. _Application Note AN385:
-   http://infocenter.arm.com/help/topic/com.arm.doc.dai0385c/DAI0385C_cortex_m3_on_v2m_mps2.pdf
+.. _Application Note AN383:
+   https://documentation-service.arm.com/static/5ed1051dca06a95ce53f88a1
+
+.. _FVP:
+   https://developer.arm.com/downloads/view/FMFVP
