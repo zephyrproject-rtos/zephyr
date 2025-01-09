@@ -20,6 +20,12 @@ config SOC_MPS2_AN385
 	help
 	  ARM Cortex-M3 SMM on V2M-MPS2 (Application Note AN385)
 
+config SOC_MPS2_AN386
+	bool
+	select SOC_SERIES_MPS2
+	help
+	  ARM Cortex-M4 SMM on V2M-MPS2 (Application Note AN386)
+
 config SOC_MPS2_AN521
 	bool
 	select SOC_SERIES_MPS2
@@ -42,4 +48,5 @@ config SOC_SERIES
 config SOC
 	default "an383" if SOC_MPS2_AN383
 	default "an385" if SOC_MPS2_AN385
+	default "an386" if SOC_MPS2_AN386
 	default "an521" if SOC_MPS2_AN521
