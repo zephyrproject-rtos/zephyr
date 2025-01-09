@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Wind River Systems, Inc.
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +28,11 @@ void idle(void *unused1, void *unused2, void *unused3)
 	__ASSERT_NO_MSG(arch_current_thread()->base.prio >= 0);
 
 	while (true) {
+#ifdef CONFIG_IDLE_ENTER_HOOK
+		idle_enter_hook();
+#endif /* CONFIG_IDLE_ENTER_HOOK */
+
+#ifdef CONFIG_IDLE_DEFAULT_ROUTINE
 		/* SMP systems without a working IPI can't actual
 		 * enter an idle state, because they can't be notified
 		 * of scheduler changes (i.e. threads they should
@@ -90,6 +96,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 		}
 # endif /* !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC) */
 #endif /* !defined(CONFIG_PREEMPT_ENABLED) */
+#endif /* CONFIG_IDLE_DEFAULT_ROUTINE */
 	}
 }
 
