@@ -16,6 +16,10 @@ static uint64_t curr_tick;
 
 static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
 
+/*
+ * The timeout code shall take no locks other than its own (timeout_lock), nor
+ * shall it call any other subsystem while holding this lock.
+ */
 static struct k_spinlock timeout_lock;
 
 #define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
