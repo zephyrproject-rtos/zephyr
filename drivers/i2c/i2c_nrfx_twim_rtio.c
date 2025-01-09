@@ -74,7 +74,8 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
 			sqe->tx.buf = config->common.msg_buf;
 		}
 		return i2c_nrfx_twim_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						    sqe->tx.buf, sqe->tx.buf_len, dt_spec->addr);
+						    (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+						    dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
 		(void)i2c_nrfx_twim_configure(dev, sqe->i2c_config);
 		return false;
