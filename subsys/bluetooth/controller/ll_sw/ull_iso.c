@@ -156,12 +156,12 @@ void ll_iso_tx_mem_release(void *node_tx);
 
 static struct {
 	void *free;
-	uint8_t pool[NODE_TX_BUFFER_SIZE * BT_CTLR_ISO_TX_BUFFERS];
+	uint8_t pool[NODE_TX_BUFFER_SIZE * BT_CTLR_ISO_TX_PDU_BUFFERS];
 } mem_iso_tx;
 
 static struct {
 	void *free;
-	uint8_t pool[sizeof(memq_link_t) * BT_CTLR_ISO_TX_BUFFERS];
+	uint8_t pool[sizeof(memq_link_t) * BT_CTLR_ISO_TX_PDU_BUFFERS];
 } mem_link_iso_tx;
 
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
@@ -1960,12 +1960,12 @@ static int init_reset(void)
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* Initialize tx pool. */
-	mem_init(mem_iso_tx.pool, NODE_TX_BUFFER_SIZE, BT_CTLR_ISO_TX_BUFFERS,
+	mem_init(mem_iso_tx.pool, NODE_TX_BUFFER_SIZE, BT_CTLR_ISO_TX_PDU_BUFFERS,
 		 &mem_iso_tx.free);
 
 	/* Initialize tx link pool. */
-	mem_init(mem_link_iso_tx.pool, sizeof(memq_link_t),
-		 BT_CTLR_ISO_TX_BUFFERS, &mem_link_iso_tx.free);
+	mem_init(mem_link_iso_tx.pool, sizeof(memq_link_t), BT_CTLR_ISO_TX_PDU_BUFFERS,
+		 &mem_link_iso_tx.free);
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if BT_CTLR_ISO_STREAMS
