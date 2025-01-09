@@ -24,6 +24,7 @@
 
 #include "host/conn_internal.h"
 #include "l2cap_br_internal.h"
+#include "rfcomm_internal.h"
 #include "obex_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_GOEP_LOG_LEVEL
@@ -181,6 +182,8 @@ static int goep_rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *ser
 {
 	struct bt_goep_transport_rfcomm_server *rfcomm_server;
 	struct bt_goep *goep;
+	uint32_t mtu;
+	uint32_t hdr_size;
 	int err;
 
 	rfcomm_server = CONTAINER_OF(server, struct bt_goep_transport_rfcomm_server, rfcomm);
@@ -196,11 +199,30 @@ static int goep_rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *ser
 		return err;
 	}
 
-	if (!goep || !goep->transport_ops || (goep->obex.rx.mtu < GOEP_MIN_MTU) ||
-	    !goep->obex.server_ops || !goep->obex.server_ops->connect ||
-	    !goep->obex.server_ops->disconnect) {
+	if (!goep || !goep->transport_ops || !goep->obex.server_ops ||
+	    !goep->obex.server_ops->connect || !goep->obex.server_ops->disconnect) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
+	}
+
+	hdr_size = sizeof(struct bt_l2cap_hdr);
+	hdr_size += BT_RFCOMM_HDR_SIZE + BT_RFCOMM_FCS_SIZE;
+
+	mtu = CONFIG_BT_GOEP_RFCOMM_MTU - hdr_size;
+	/* Use default MTU if it is not given */
+	if (!goep->obex.rx.mtu) {
+		goep->obex.rx.mtu = mtu;
+	}
+
+	if (goep->obex.rx.mtu < GOEP_MIN_MTU) {
+		LOG_WRN("GOEP RFCOMM MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
+			GOEP_MIN_MTU);
+		goep->obex.rx.mtu = GOEP_MIN_MTU;
+	}
+
+	if (goep->obex.rx.mtu > mtu) {
+		LOG_WRN("GOEP RFCOMM MTU exceeds maximum size (%d > %d)", goep->obex.rx.mtu, mtu);
+		goep->obex.rx.mtu = mtu;
 	}
 
 	err = bt_obex_reg_transport(&goep->obex, &goep_rfcomm_transport_ops);
@@ -251,12 +273,33 @@ int bt_goep_transport_rfcomm_server_register(struct bt_goep_transport_rfcomm_ser
 int bt_goep_transport_rfcomm_connect(struct bt_conn *conn, struct bt_goep *goep, uint8_t channel)
 {
 	int err;
+	uint32_t mtu;
+	uint32_t hdr_size;
 
-	if (!conn || !goep || !goep->transport_ops || (goep->obex.rx.mtu < GOEP_MIN_MTU) ||
-	    !goep->obex.client_ops || !goep->obex.client_ops->connect ||
-	    !goep->obex.client_ops->disconnect) {
+	if (!conn || !goep || !goep->transport_ops || !goep->obex.client_ops ||
+	    !goep->obex.client_ops->connect || !goep->obex.client_ops->disconnect) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
+	}
+
+	hdr_size = sizeof(struct bt_l2cap_hdr);
+	hdr_size += BT_RFCOMM_HDR_SIZE + BT_RFCOMM_FCS_SIZE;
+
+	mtu = CONFIG_BT_GOEP_RFCOMM_MTU - hdr_size;
+	/* Use default MTU if it is not given */
+	if (!goep->obex.rx.mtu) {
+		goep->obex.rx.mtu = mtu;
+	}
+
+	if (goep->obex.rx.mtu < GOEP_MIN_MTU) {
+		LOG_WRN("GOEP RFCOMM MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
+			GOEP_MIN_MTU);
+		goep->obex.rx.mtu = GOEP_MIN_MTU;
+	}
+
+	if (goep->obex.rx.mtu > mtu) {
+		LOG_WRN("GOEP RFCOMM MTU exceeds maximum size (%d > %d)", goep->obex.rx.mtu, mtu);
+		goep->obex.rx.mtu = mtu;
 	}
 
 	err = bt_obex_reg_transport(&goep->obex, &goep_rfcomm_transport_ops);
@@ -451,6 +494,8 @@ static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serve
 {
 	struct bt_goep_transport_l2cap_server *l2cap_server;
 	struct bt_goep *goep;
+	uint32_t mtu;
+	uint32_t hdr_size;
 	int err;
 
 	l2cap_server = CONTAINER_OF(server, struct bt_goep_transport_l2cap_server, l2cap);
@@ -466,11 +511,29 @@ static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serve
 		return err;
 	}
 
-	if (!goep || !goep->transport_ops || (goep->obex.rx.mtu < GOEP_MIN_MTU) ||
-	    !goep->obex.server_ops || !goep->obex.server_ops->connect ||
-	    !goep->obex.server_ops->disconnect) {
+	if (!goep || !goep->transport_ops || !goep->obex.server_ops ||
+	    !goep->obex.server_ops->connect || !goep->obex.server_ops->disconnect) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
+	}
+
+	hdr_size = sizeof(struct bt_l2cap_hdr);
+
+	mtu = CONFIG_BT_GOEP_L2CAP_MTU - hdr_size;
+	/* Use default MTU if it is not given */
+	if (!goep->obex.rx.mtu) {
+		goep->obex.rx.mtu = mtu;
+	}
+
+	if (goep->obex.rx.mtu < GOEP_MIN_MTU) {
+		LOG_WRN("GOEP RFCOMM MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
+			GOEP_MIN_MTU);
+		goep->obex.rx.mtu = GOEP_MIN_MTU;
+	}
+
+	if (goep->obex.rx.mtu > mtu) {
+		LOG_WRN("GOEP RFCOMM MTU exceeds maximum size (%d > %d)", goep->obex.rx.mtu, mtu);
+		goep->obex.rx.mtu = mtu;
 	}
 
 	err = bt_obex_reg_transport(&goep->obex, &goep_l2cap_transport_ops);
@@ -522,10 +585,11 @@ int bt_goep_transport_l2cap_connect(struct bt_conn *conn, struct bt_goep *goep, 
 {
 	int err;
 	uint32_t state;
+	uint32_t mtu;
+	uint32_t hdr_size;
 
-	if (!conn || !goep || !goep->transport_ops || (goep->obex.rx.mtu < GOEP_MIN_MTU) ||
-	    !goep->obex.client_ops || !goep->obex.client_ops->connect ||
-	    !goep->obex.client_ops->disconnect) {
+	if (!conn || !goep || !goep->transport_ops || !goep->obex.client_ops ||
+	    !goep->obex.client_ops->connect || !goep->obex.client_ops->disconnect) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
 	}
@@ -534,6 +598,25 @@ int bt_goep_transport_l2cap_connect(struct bt_conn *conn, struct bt_goep *goep, 
 	if (state != BT_GOEP_TRANSPORT_DISCONNECTED) {
 		LOG_DBG("Invalid stats %d", state);
 		return -EBUSY;
+	}
+
+	hdr_size = sizeof(struct bt_l2cap_hdr);
+
+	mtu = CONFIG_BT_GOEP_L2CAP_MTU - hdr_size;
+	/* Use default MTU if it is not given */
+	if (!goep->obex.rx.mtu) {
+		goep->obex.rx.mtu = mtu;
+	}
+
+	if (goep->obex.rx.mtu < GOEP_MIN_MTU) {
+		LOG_WRN("GOEP RFCOMM MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
+			GOEP_MIN_MTU);
+		goep->obex.rx.mtu = GOEP_MIN_MTU;
+	}
+
+	if (goep->obex.rx.mtu > mtu) {
+		LOG_WRN("GOEP RFCOMM MTU exceeds maximum size (%d > %d)", goep->obex.rx.mtu, mtu);
+		goep->obex.rx.mtu = mtu;
 	}
 
 	err = bt_obex_reg_transport(&goep->obex, &goep_l2cap_transport_ops);

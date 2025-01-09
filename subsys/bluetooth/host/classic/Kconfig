@@ -231,11 +231,37 @@ config BT_COD
 
 config BT_GOEP
 	bool "Bluetooth GOEP Profile [EXPERIMENTAL]"
+	select BT_RFCOMM
 	select EXPERIMENTAL
 	help
 	  This option enables the GOEP profile
 
 if BT_GOEP
+config BT_GOEP_RFCOMM_MTU
+	int "RFCOMM MTU for GOEP"
+	default BT_RFCOMM_L2CAP_MTU
+	# For GOEP over RFCOMM, including,
+	# 255 bytes - the minimum MTU of GOEP,
+	# 4 bytes - L2CAP Header,
+	# 5 bytes - 4 bytes for RFCOMM header with extended length, 1 byte for FCS.
+	range 264 BT_RFCOMM_L2CAP_MTU
+	help
+	  Maximum size of RFCOMM MTU for GOEP.
+	  RX MTU will be truncated to account for ACL data and type overhead, the L2CAP PDU header,
+	  and the RFCOMM header.
+
+config BT_GOEP_L2CAP_MTU
+	int "L2CAP MTU for GOEP"
+	default BT_BUF_ACL_RX_SIZE
+	# For GOEP over L2CAP, including,
+	# 255 bytes - the minimum MTU of GOEP,
+	# 4 bytes - L2CAP Header,
+	range 259 BT_BUF_ACL_RX_SIZE
+	help
+	  Maximum size of L2CAP MTU for GOEP.
+	  RX MTU will be truncated to account for ACL data and type overhead, and the L2CAP PDU
+	  header.
+
 config BT_OEBX_RSP_CODE_TO_STR
 	bool "Print OBEX response code as strings"
 	help
