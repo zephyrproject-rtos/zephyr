@@ -1156,18 +1156,14 @@ device_get_dt_nodelabels(const struct device *dev)
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
 		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
-			COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id),                                  \
-				    (.dev = { .dev_rw = &DEVICE_NAME_GET(dev_id)}),                \
-				    (.dev = { .dev = &DEVICE_NAME_GET(dev_id)}))                   \
+			.dev = (const struct device *)&DEVICE_NAME_GET(dev_id)                     \
 		}
 
 #define Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id)                                          \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan                               \
 		__attribute__((__section__(".z_deferred_init")))                                   \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
-			COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id),                                  \
-				    (.dev = { .dev_rw = &DEVICE_NAME_GET(dev_id)}),                \
-				    (.dev = { .dev = &DEVICE_NAME_GET(dev_id)}))                   \
+			.dev = (const struct device *)&DEVICE_NAME_GET(dev_id)                     \
 		}
 
 /**

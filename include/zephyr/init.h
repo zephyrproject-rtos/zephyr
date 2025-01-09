@@ -73,12 +73,7 @@ struct init_entry {
 	 * If the init entry belongs to a device, this fields stores a
 	 * reference to it, otherwise it is set to NULL.
 	 */
-	union {
-		const struct device *dev;
-#ifdef CONFIG_DEVICE_MUTABLE
-		struct device *dev_rw;
-#endif
-	} dev;
+	const struct device *dev;
 };
 
 /** @cond INTERNAL_HIDDEN */
