@@ -151,7 +151,7 @@ ARC arch:
 ARM arch:
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - microbuilder
     - carlocaione
@@ -159,7 +159,6 @@ ARM arch:
     - MaureenHelm
     - stephanosio
     - bbolen
-    - wearyzen
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -195,8 +194,6 @@ ARM64 arch:
 ARM Platforms:
   status: maintained
   maintainers:
-    - ithinuel
-  collaborators:
     - wearyzen
   files:
     - boards/arm/mps*/
@@ -4689,10 +4686,9 @@ West:
 "West project: cmsis_6":
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - tomi-font
-    - wearyzen
   files: []
   labels:
     - "area: CMSIS_6"
@@ -4787,8 +4783,6 @@ West:
   status: maintained
   maintainers:
     - kristofer-jonsson-arm
-    - ithinuel
-  collaborators:
     - wearyzen
   files:
     - drivers/misc/ethos_u/
@@ -5104,7 +5098,6 @@ West:
     - d3zd3z
     - ceolin
   collaborators:
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
@@ -5293,7 +5286,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
@@ -5313,7 +5305,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
   files: []
   labels:
@@ -5326,7 +5317,6 @@ West:
     - sgrrzhf
   collaborators:
     - carlocaione
-    - ithinuel
     - wearyzen
   files:
     - modules/trusted-firmware-a/
@@ -5339,7 +5329,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
   files: []
   labels:
