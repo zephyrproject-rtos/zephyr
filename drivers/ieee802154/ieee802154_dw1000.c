@@ -416,7 +416,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 	rx_pacc = (rx_finfo & DWT_RX_FINFO_RXPACC_MASK) >>
 		   DWT_RX_FINFO_RXPACC_SHIFT;
 
-	if (!(IS_ENABLED(CONFIG_IEEE802154_RAW_MODE))) {
+	if (!IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		pkt_len -= DWT_FCS_LENGTH;
 	}
 

@@ -12,6 +12,10 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
+# Enable GIC Safe Configuration to run multiple OSes on Cortex-A Cores
+config GIC_SAFE_CONFIG
+	default y
+
 config NUM_IRQS
 	default 320
 

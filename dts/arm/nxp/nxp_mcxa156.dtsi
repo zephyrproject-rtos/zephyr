@@ -134,6 +134,19 @@
 			reg = <0x4009f000 0x1000>;
 			interrupts = <31 0>;
 			clocks = <&syscon MCUX_LPUART0_CLK>;
+			/* DMA channels 0 and 1, muxed to LPUART0 RX and TX */
+			dmas = <&edma0 0 21>, <&edma0 1 22>;
+			dma-names = "rx", "tx";
+		};
+
+		lpuart1: lpuart@400a0000 {
+			compatible = "nxp,lpuart";
+			reg = <0x400a0000 0x1000>;
+			interrupts = <32 0>;
+			clocks = <&syscon MCUX_LPUART1_CLK>;
+			/* DMA channels 2 and 3, muxed to LPUART1 RX and TX */
+			dmas = <&edma0 2 23>, <&edma0 3 24>;
+			dma-names = "rx", "tx";
 		};
 
 		fmu: flash-controller@40095000 {
@@ -219,6 +232,42 @@
 			status = "disabled";
 			voltage-reference = <0>;
 			#io-channel-cells = <1>;
+		};
+
+		edma0: dma-controller@40080000 {
+			#dma-cells = <2>;
+			compatible = "nxp,mcux-edma";
+			nxp,version = <4>;
+			dma-channels = <8>;
+			dma-requests = <86>;
+
+			reg = <0x40080000 0x1000>;
+			interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
+				<6 0>, <7 0>, <8 0>, <9 0>;
+			no-error-irq;
+			status = "disabled";
+		};
+
+		flexcan0: can@400cc000 {
+			compatible = "nxp,flexcan";
+			reg = <0x400cc000 0x1000>;
+			interrupts = <19 0>;
+			interrupt-names = "common";
+			clocks = <&syscon MCUX_FLEXCAN0_CLK>;
+			clk-source = <0>;
+			status = "disabled";
+		};
+
+		flexio0: flexio@40099000 {
+			compatible = "nxp,flexio";
+			reg = <0x40099000 0x1000>;
+			status = "disabled";
+			interrupts = <23 0>;
+			clocks = <&syscon MCUX_FLEXIO0_CLK>;
+			flexio0_lcd: flexio0-lcd {
+				compatible = "nxp,mipi-dbi-flexio-lcdif";
+				status = "disabled";
+			};
 		};
 
 		flexpwm0: flexpwm@400a9000 {
@@ -410,6 +459,14 @@
 			num-bidir-endpoints = <16>;
 			status = "disabled";
 			no-voltage-regulator;
+		};
+
+		wwdt0: watchdog@4000c000 {
+			compatible = "nxp,lpc-wwdt";
+			reg = <0x4000c000 0x1000>;
+			interrupts = <60 0>;
+			status = "disabled";
+			clk-divider = <1>;
 		};
 	};
 };

@@ -1,0 +1,22 @@
+# DS3231 temperature sensor configuration options
+
+# Copyright (c) 2024 Gergo Vari <work@gergovari.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSOR_DS3231
+	bool "DS3231 sensor"
+	default y
+	depends on DT_HAS_MAXIM_DS3231_MFD_ENABLED
+	depends on DT_HAS_MAXIM_DS3231_SENSOR_ENABLED
+	select I2C
+	select MFD
+	select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Enable driver for DS3231 I2C-based temperature sensor.
+
+config SENSOR_DS3231_INIT_PRIORITY
+	int "DS3231 sensor driver init priority"
+	default 86
+	help
+	Init priority for the DS3231 sensor driver. It must be
+	greater than MFD_INIT_PRIORITY.

@@ -137,7 +137,7 @@ uint8_t mem_nz(uint8_t *src, uint16_t len)
 /**
  * @brief Unit test
  */
-uint32_t mem_ut(void)
+int mem_ut(void)
 {
 #define BLOCK_SIZE  MROUND(10)
 #define BLOCK_COUNT 10

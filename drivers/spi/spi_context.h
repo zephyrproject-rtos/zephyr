@@ -92,14 +92,14 @@ static inline void spi_context_lock(struct spi_context *ctx,
 				    void *callback_data,
 				    const struct spi_config *spi_cfg)
 {
-	if ((spi_cfg->operation & SPI_LOCK_ON) &&
-		(k_sem_count_get(&ctx->lock) == 0) &&
-		(ctx->owner == spi_cfg)) {
-			return;
-	}
+	bool already_locked = (spi_cfg->operation & SPI_LOCK_ON) &&
+			      (k_sem_count_get(&ctx->lock) == 0) &&
+			      (ctx->owner == spi_cfg);
 
-	k_sem_take(&ctx->lock, K_FOREVER);
-	ctx->owner = spi_cfg;
+	if (!already_locked) {
+		k_sem_take(&ctx->lock, K_FOREVER);
+		ctx->owner = spi_cfg;
+	}
 
 #ifdef CONFIG_SPI_ASYNC
 	ctx->asynchronous = asynchronous;

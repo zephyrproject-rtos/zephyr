@@ -1053,6 +1053,7 @@ static int os_mgmt_translate_error_code(uint16_t err)
 
 	case OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER:
 	case OS_MGMT_ERR_RTC_NOT_SET:
+	case OS_MGMT_ERR_QUERY_RESPONSE_VALUE_NOT_VALID:
 		rc = MGMT_ERR_ENOENT;
 		break;
 

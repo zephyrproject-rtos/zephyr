@@ -1322,7 +1322,7 @@ class Identity(ComplianceTest):
 
     def run(self):
         for shaidx in get_shas(COMMIT_RANGE):
-            commit = git("log", "--decorate=short", "-n 1", shaidx)
+            commit = git("log", "--decorate=short", "--no-use-mailmap", "-n 1", shaidx)
             signed = []
             author = ""
             sha = ""

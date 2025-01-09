@@ -25,6 +25,8 @@ config I2C_TARGET_BUFFER_MODE
 	help
 	  This is an option to enable buffer mode.
 
+# zephyr-keep-sorted-start
 source "drivers/i2c/target/Kconfig.eeprom"
+# zephyr-keep-sorted-stop
 
 endif # I2C_TARGET

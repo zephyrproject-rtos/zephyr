@@ -4,6 +4,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <atmel/same70.dtsi>
-
+#include <atmel/samx7x.dtsi>
 #include "dma_atmel_samv71.h"

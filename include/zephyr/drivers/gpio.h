@@ -340,8 +340,8 @@ struct gpio_dt_spec {
  * @brief Like GPIO_DT_SPEC_GET_BY_IDX(), with a fallback to a default value
  *
  * If the devicetree node identifier 'node_id' refers to a node with a
- * property 'prop', this expands to
- * <tt>GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)</tt>. The @p
+ * property 'prop', and the index @p idx is valid for that property,
+ * this expands to <tt>GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)</tt>. The @p
  * default_value parameter is not expanded in this case.
  *
  * Otherwise, this expands to @p default_value.
@@ -354,7 +354,7 @@ struct gpio_dt_spec {
  *         or default_value if the node or property do not exist
  */
 #define GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, prop, idx, default_value)	\
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop),			\
+	COND_CODE_1(DT_PROP_HAS_IDX(node_id, prop, idx),		\
 		    (GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)),	\
 		    (default_value))
 

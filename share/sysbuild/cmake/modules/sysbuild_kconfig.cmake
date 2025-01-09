@@ -105,6 +105,15 @@ set(KCONFIG_NAMESPACE SB_CONFIG)
 if(EXISTS ${APP_DIR}/Kconfig.sysbuild)
   set(KCONFIG_ROOT ${APP_DIR}/Kconfig.sysbuild)
 endif()
+
+# Apply any EXTRA_CONF_FILE variables from snippets
+zephyr_scope_exists(scope_defined snippets)
+if(scope_defined)
+  zephyr_get_scoped(snippets_EXTRA_CONF_FILE snippets SB_EXTRA_CONF_FILE)
+  list(APPEND EXTRA_CONF_FILE ${snippets_EXTRA_CONF_FILE})
+endif()
+
 include(${ZEPHYR_BASE}/cmake/modules/kconfig.cmake)
 set(CONF_FILE)
 set(EXTRA_CONF_FILE)
+set(SB_EXTRA_CONF_FILE)

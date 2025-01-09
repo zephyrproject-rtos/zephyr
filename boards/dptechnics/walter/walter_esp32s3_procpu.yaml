@@ -16,7 +16,4 @@ supported:
   - pwm
   - dma
   - input
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: dptechnics

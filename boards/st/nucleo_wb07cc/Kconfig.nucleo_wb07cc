@@ -1,0 +1,5 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_WB07CC
+	select SOC_STM32WB07XX

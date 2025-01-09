@@ -86,6 +86,14 @@ config NET_DHCPV4_OPTION_NTP_SERVER
 	  If this option is set, then the NTP server can be set from the
 	  DHCPv4 option.
 
+config NET_DHCPV4_OPTION_DNS_ADDRESS
+	bool "Use DNS server from DHCPv4 option and save it in the DNS resolver default context"
+	default y
+	depends on DNS_RESOLVER
+	help
+	  If this option is set, then the DNS server can be set from the
+	  DHCPv4 option.
+
 endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER

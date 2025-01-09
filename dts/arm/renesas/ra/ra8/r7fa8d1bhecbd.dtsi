@@ -5,6 +5,7 @@
  */
 
 #include <arm/renesas/ra/ra8/r7fa8d1xh.dtsi>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	soc {

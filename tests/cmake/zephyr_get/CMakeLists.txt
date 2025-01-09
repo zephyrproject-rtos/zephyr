@@ -2,9 +2,17 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(zephyr_get_test)
-target_sources(app PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+if(CMAKE_SCRIPT_MODE_FILE)
+  # Script mode initialization (re-run)
+  set(ZEPHYR_BASE ${CMAKE_CURRENT_LIST_DIR}/../../../)
+  list(APPEND CMAKE_MODULE_PATH "${ZEPHYR_BASE}/cmake/modules")
+  include(extensions)
+else()
+  # Project mode initialization (main CMake invocation)
+  find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+  project(zephyr_get_test)
+  target_sources(app PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+endif()
 
 if(SYSBUILD)
   get_property(IMAGE_NAME TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
@@ -73,6 +81,9 @@ function(assert_equal variable expected_value)
   endif()
 
   set(info "${TEST_NAME}: ${variable} == '${actual_value}'")
+  if(CMAKE_SCRIPT_MODE_FILE)
+    string(PREPEND info "script mode ")
+  endif()
   if("${actual_value}" STREQUAL "${expected_value}")
     message("PASS: ${info}")
   else()
@@ -490,7 +501,8 @@ endfunction()
 
 
 function(test_snippets_scope)
-  if(NOT TARGET snippets_scope)
+  zephyr_scope_exists(snippets_defined snippets)
+  if(NOT snippets_defined)
     zephyr_create_scope(snippets)
   endif()
 
@@ -583,3 +595,8 @@ run_suite(
   test_merge_reverse
   test_snippets_scope
 )
+
+if (NOT CMAKE_SCRIPT_MODE_FILE AND NOT SYSBUILD)
+  # Re-run this testsuite in plain script mode
+  execute_process(COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_FILE})
+endif()

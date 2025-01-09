@@ -9,13 +9,21 @@
 / {
 	soc {
 		flash-controller@407e0000 {
-			reg = <0x407e0000 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
+			block-32kb-linear-end = <13>;
 			flash0: flash@0 {
-				compatible = "soc-nv-flash";
+				compatible = "renesas,ra-nv-flash";
 				reg = <0x0 DT_SIZE_K(256)>;
+				write-block-size = <128>;
+				erase-block-size = <8192>;
+				renesas,programming-enable;
+			};
+
+			flash1: flash@8000000 {
+				compatible = "renesas,ra-nv-flash";
+				reg = <0x8000000 DT_SIZE_K(4)>;
+				write-block-size = <4>;
+				erase-block-size = <64>;
+				renesas,programming-enable;
 			};
 		};
 	};

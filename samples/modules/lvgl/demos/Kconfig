@@ -16,6 +16,7 @@ config LV_Z_DEMO_MUSIC
 config LV_Z_DEMO_BENCHMARK
 	bool "LVGL benchmark demo"
 	select LV_USE_DEMO_BENCHMARK
+	select LV_USE_DEMO_WIDGETS
 	help
 	  Build benchmarking demo application.
 
@@ -29,8 +30,59 @@ config LV_Z_DEMO_WIDGETS
 	bool "LVGL widgets demo"
 	select LV_USE_DEMO_WIDGETS
 	help
-	  Build stress testing demo application.
+	  Build widgets demo application.
+
+config LV_Z_DEMO_FLEX_LAYOUT
+	bool "LVGL flex layout demo"
+	select LV_USE_DEMO_FLEX_LAYOUT
+	help
+	  Build flex layout demo application.
+
+config LV_Z_DEMO_KEYPAD_AND_ENCODER
+	bool "LVGL keypad and encoder demo"
+	select LV_USE_DEMO_KEYPAD_AND_ENCODER
+	help
+	  Build keypad and encoder demo application.
+
+config LV_Z_DEMO_RENDER
+	bool "LVGL render demo"
+	select LV_USE_DEMO_RENDER
+	help
+	  Build render demo application.
+
+config LV_Z_DEMO_SCROLL
+	bool "LVGL scroll demo"
+	select LV_USE_DEMO_SCROLL
+	help
+	  Build scroll demo application.
+
+config LV_Z_DEMO_MULTILANG
+	bool "LVGL multilang demo"
+	select LV_USE_DEMO_MULTILANG
+	select LV_USE_IMGFONT
+	help
+	  Build multilang demo application.
 
 endchoice
+
+config LV_Z_DEMO_RENDER_SCENE_DYNAMIC
+	bool "Switch scenes dynamically"
+	help
+	  Switch between scenes to render dynamically.
+
+config LV_Z_DEMO_RENDER_SCENE_INDEX
+	int "Index of the rendered scene"
+	depends on !LV_Z_DEMO_RENDER_SCENE_DYNAMIC
+	default 0
+	range 0 11
+	help
+	  Render scene by its index (refer to lv_demo_render.h)
+
+config LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT
+	int "Seconds each rendered scene is shown"
+	depends on LV_Z_DEMO_RENDER_SCENE_DYNAMIC
+	default 3
+	help
+	  Seconds each rendered scenar is shown
 
 source "Kconfig.zephyr"

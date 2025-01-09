@@ -296,55 +296,69 @@ ZTEST(http_service, test_HTTP_RESOURCE_DEFINE)
 	}
 }
 
-extern struct http_resource_detail *get_resource_detail(const char *path,
+extern struct http_resource_detail *get_resource_detail(const struct http_service_desc *service,
+							const char *path,
 							int *path_len,
 							bool is_websocket);
 
-#define CHECK_PATH(path, len) ({ *len = 0; get_resource_detail(path, len, false); })
+#define CHECK_PATH(svc, path, len) ({ *len = 0; get_resource_detail(&svc, path, len, false); })
 
 ZTEST(http_service, test_HTTP_RESOURCE_WILDCARD)
 {
 	struct http_resource_detail *res;
 	int len;
 
-	res = CHECK_PATH("/", &len);
+	res = CHECK_PATH(service_A, "/", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(0), "Resource mismatch");
 
-	res = CHECK_PATH("/f", &len);
+	res = CHECK_PATH(service_D, "/f", &len);
 	zassert_is_null(res, "Resource found");
 	zassert_equal(len, 0, "Length set");
 
-	res = CHECK_PATH("/foo1.html", &len);
+	res = CHECK_PATH(service_D, "/foo1.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(0), "Resource mismatch");
 
-	res = CHECK_PATH("/foo2222.html", &len);
+	res = CHECK_PATH(service_D, "/foo2222.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(1), "Resource mismatch");
 
-	res = CHECK_PATH("/fbo3.html", &len);
+	res = CHECK_PATH(service_D, "/fbo3.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(1), "Resource mismatch");
 
-	res = CHECK_PATH("/fbo3.htm", &len);
+	res = CHECK_PATH(service_D, "/fbo3.htm", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(0), "Resource mismatch");
 
-	res = CHECK_PATH("/fbo4.html", &len);
+	res = CHECK_PATH(service_D, "/fbo4.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(3), "Resource mismatch");
 
-	res = CHECK_PATH("/fs/index.html", &len);
+	res = CHECK_PATH(service_A, "/fs/index.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(5), "Resource mismatch");
+
+	/* Resources that only exist on one service should not be found on another */
+	res = CHECK_PATH(service_A, "/foo1.htm", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	res = CHECK_PATH(service_A, "/foo2222.html", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	res = CHECK_PATH(service_A, "/fbo3.htm", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
 }
 
 extern void http_server_get_content_type_from_extension(char *url, char *content_type,

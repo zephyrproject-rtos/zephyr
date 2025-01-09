@@ -98,10 +98,15 @@ struct k_work_q uart_emul_work_q;
 
 int uart_emul_init_work_q(void)
 {
+	struct k_work_queue_config cfg = {
+		.name = "uart_emul_workq",
+		.no_yield = false,
+	};
+
 	k_work_queue_init(&uart_emul_work_q);
 	k_work_queue_start(&uart_emul_work_q, uart_emul_stack_area,
 			   K_THREAD_STACK_SIZEOF(uart_emul_stack_area),
-			   CONFIG_UART_EMUL_WORK_Q_PRIORITY, NULL);
+			   CONFIG_UART_EMUL_WORK_Q_PRIORITY, &cfg);
 	return 0;
 }
 

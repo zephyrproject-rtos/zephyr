@@ -10,7 +10,7 @@ menuconfig POSIX_C_LIB_EXT
 	  stpcpy(), stpncpy(), strcasecmp(), strdup(), strfmon(), and strncasecmp(), strndup(), and
 	  strnlen().
 
-	  For more informnation, please see
+	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
 if POSIX_C_LIB_EXT

@@ -1,0 +1,8 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics LIS2DUXS12 3-axis accelerometer
+
+compatible: "st,lis2duxs12"
+
+include: ["i2c-device.yaml", "st,lis2duxs12-common.yaml"]

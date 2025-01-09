@@ -208,7 +208,7 @@ config SOC_GECKO_CMU
 	help
 	  Set if the clock management unit (CMU) is present in the SoC.
 
-if SOC_GECKO_CMU
+if SOC_GECKO_CMU && (SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1)
 
 config CMU_NEED_LFXO
 	bool

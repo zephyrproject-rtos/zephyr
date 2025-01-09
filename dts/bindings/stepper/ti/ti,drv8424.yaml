@@ -33,16 +33,13 @@ include:
       - micro-step-res
       - step-gpios
       - dir-gpios
+      - en-gpios
+      - counter
 
 properties:
-
   fault-gpios:
     type: phandle-array
     description: Fault pin.
-
-  en-gpios:
-    type: phandle-array
-    description: Enable pin.
 
   sleep-gpios:
     type: phandle-array
@@ -57,8 +54,3 @@ properties:
     required: true
     type: phandle-array
     description: Microstep configuration pin 1.
-
-  counter:
-    required: true
-    type: phandle
-    description: Counter used for generating step-accurate pulse signals.

@@ -16,7 +16,4 @@ supported:
   - pinmux
   - nvs
   - dma
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: m5stack

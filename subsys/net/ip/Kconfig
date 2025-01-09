@@ -822,7 +822,7 @@ config NET_BUF_TX_COUNT
 	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data.
 
-choice
+choice NET_PKT_DATA_ALLOC_TYPE
 	prompt "Network packet data allocator type"
 	default NET_BUF_FIXED_DATA_SIZE
 	help
@@ -929,6 +929,9 @@ config NET_DEFAULT_IF_CANBUS_RAW
 config NET_DEFAULT_IF_PPP
 	bool "PPP interface"
 	depends on NET_L2_PPP
+
+config NET_DEFAULT_IF_OFFLOADED_NETDEV
+	bool "Offloaded network device"
 
 config NET_DEFAULT_IF_WIFI
 	bool "WiFi interface"

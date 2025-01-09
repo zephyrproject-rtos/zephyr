@@ -1,0 +1,6 @@
+board:
+  name: xg24_ek2703a
+  full_name: EFR32xG24 Explorer Kit (xG24-EK2703A)
+  vendor: silabs
+  socs:
+  - name: efr32mg24b210f1536im48

@@ -116,6 +116,11 @@ static int frdm_mcxa156_init(void)
 	CLOCK_AttachClk(kFRO12M_to_LPUART0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
+	CLOCK_SetClockDiv(kCLOCK_DivLPUART1, 1u);
+	CLOCK_AttachClk(kFRO12M_to_LPUART1);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_CTIMER0);
@@ -147,6 +152,17 @@ static int frdm_mcxa156_init(void)
 	CLOCK_AttachClk(kFRO12M_to_DAC0);
 
 	CLOCK_EnableClock(kCLOCK_GateDAC0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan0))
+	CLOCK_SetClockDiv(kCLOCK_DivFLEXCAN0, 1U);
+	CLOCK_SetClockDiv(kCLOCK_DivFRO_HF_DIV, 1U);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCAN0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
+	CLOCK_SetClockDiv(kCLOCK_DivFLEXIO0, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_FLEXIO0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
@@ -204,6 +220,10 @@ static int frdm_mcxa156_init(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb))
 	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
 	CLOCK_EnableUsbfsClock();
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	CLOCK_SetClockDiv(kCLOCK_DivWWDT0, 1u);
 #endif
 
 	/* Set SystemCoreClock variable. */

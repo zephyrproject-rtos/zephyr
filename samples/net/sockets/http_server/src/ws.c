@@ -295,7 +295,7 @@ int ws_netstats_init(void)
 }
 SYS_INIT(ws_netstats_init, APPLICATION, 0);
 
-int ws_echo_setup(int ws_socket, void *user_data)
+int ws_echo_setup(int ws_socket, struct http_request_ctx *request_ctx, void *user_data)
 {
 	int slot;
 
@@ -331,7 +331,7 @@ int ws_echo_setup(int ws_socket, void *user_data)
 	return 0;
 }
 
-int ws_netstats_setup(int ws_socket, void *user_data)
+int ws_netstats_setup(int ws_socket, struct http_request_ctx *request_ctx, void *user_data)
 {
 	int ret;
 	int slot;

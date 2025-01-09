@@ -1,0 +1,4 @@
+name: foo
+append:
+  SB_EXTRA_CONF_FILE: sb.conf
+  EXTRA_CONF_FILE: app.conf

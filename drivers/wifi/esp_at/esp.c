@@ -811,9 +811,11 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 	}
 
 	*sock = esp_socket_ref_from_link_id(dev, link_id);
-	if (!sock) {
+
+	if (!*sock) {
 		LOG_ERR("No socket for link %ld", link_id);
-		return str - ipd_buf;
+		*data_offset = (str - ipd_buf);
+		return -ENOTCONN;
 	}
 
 	if (!ESP_PROTO_PASSIVE(esp_socket_ip_proto(*sock)) &&

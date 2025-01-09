@@ -24,10 +24,9 @@ config STEPPER_SHELL
 	help
 	  Enable stepper shell for testing.
 
-config STEP_DIR_STEPPER
-	bool
-	help
-	  Enable library used for step direction stepper drivers.
+comment "Stepper Driver Common"
+
+rsource "step_dir/Kconfig"
 
 comment "Stepper Drivers"
 

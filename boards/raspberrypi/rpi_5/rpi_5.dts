@@ -23,6 +23,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart10;
 		zephyr,shell-uart = &uart10;
+		zephyr,pcie-controller = &pcie1;
 	};
 
 	leds {

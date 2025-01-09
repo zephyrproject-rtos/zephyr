@@ -1,0 +1,74 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The sensry SY1xx pin controller is a single node responsible for controlling
+  pin configuration, such as pull-up, pull-down, tri-state, ...
+
+  The node has the 'pinctrl0' node label set in your SoC's devicetree,
+  so you can modify it like this:
+
+    &pinctrl0 {
+            /* your modifications go here */
+    };
+
+  For example:
+    &pinctrl0 {
+
+      /* UART0 */
+      uart0_tx: uart0_tx {
+        pinmux = <SY1XX_UART0_PAD_CFG0 SY1XX_PAD(0)>;
+      };
+
+      uart0_rx: uart0_rx {
+        pinmux = <SY1XX_UART0_PAD_CFG0 SY1XX_PAD(1)>;
+        input-enable;
+      };
+    }
+
+  Then define the uart:
+    &uart0 {
+      pinctrl-0 = <&uart0_tx &uart0_rx>;
+      pinctrl-names = "default";
+    };
+
+  Every pin configuration will be configured in a 32bit register. The configuration
+  itself is 8bit wide. So we have a number of 4 pin configurations per 32bit register.
+
+  The pinmux describes the registers address and the offset [0, 8, 16, 24] for
+  the individual configuration.
+
+  Allowed modifiers for each pin are:
+  - bias-high-impedance
+  - bias-pull-down
+  - bias-pull-up
+  - input-enable
+  - input-schmitt-enable
+
+compatible: "sensry,sy1xx-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: Each child node defines the configuration of a particular state.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-high-impedance
+        - bias-pull-down
+        - bias-pull-up
+        - input-enable
+        - input-schmitt-enable
+
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        Pin mux selection. See the SOC level pinctrl header
+        for a defined list of these options.

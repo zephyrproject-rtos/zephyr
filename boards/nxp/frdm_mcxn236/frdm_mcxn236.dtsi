@@ -168,3 +168,11 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	pinctrl-0 = <&pinmux_flexio_lcd>;
 	pinctrl-names = "default";
 };
+
+&i3c1 {
+	pinctrl-0 = <&pinmux_i3c1>;
+	pinctrl-names = "default";
+};
+
+p3t1755dp_ard_i3c_interface: &i3c1 {};
+p3t1755dp_ard_i2c_interface: &flexcomm5_lpi2c5 {};

@@ -11,7 +11,4 @@ supported:
   - uart
   - watchdog
   - can
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: seeed

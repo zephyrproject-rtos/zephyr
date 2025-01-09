@@ -37,4 +37,13 @@
 				<RA_PSEL(RA_PSEL_GPT1, 1, 4)>;
 		};
 	};
+
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL0 SDA0 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 4, 7)>,
+			<RA_PSEL(RA_PSEL_I2C, 2, 4)>;
+			drive-strength = "medium";
+		};
+	};
 };

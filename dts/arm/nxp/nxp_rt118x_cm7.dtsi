@@ -19,8 +19,8 @@
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
 
-		memory: memory@20000000 {
-			ranges = <0x0 0x20000000 0x10000000>;
+		memory: memory@20484000 {
+			ranges = <0x0 0x20484000 0x10000000>;
 		};
 
 		peripheral: peripheral@40000000 {

@@ -279,7 +279,6 @@ void nrf70_off_raw_tx_deinit(void)
 	}
 
 	nrf_wifi_fmac_off_raw_tx_deinit(off_raw_tx_drv_priv.fmac_priv);
-	nrf_wifi_osal_deinit();
 
 	k_spin_unlock(&off_raw_tx_drv_priv.lock, key);
 }

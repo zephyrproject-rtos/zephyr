@@ -20,11 +20,11 @@ static const char *lvgl_monkey_indev_as_string(lv_monkey_t *monkey)
 	lv_indev_t *input_device;
 
 	input_device = lv_monkey_get_indev(monkey);
-	if (!input_device || !input_device->driver) {
+	if (!input_device) {
 		return "unknown";
 	}
 
-	switch (input_device->driver->type) {
+	switch (lv_indev_get_type(input_device)) {
 	case LV_INDEV_TYPE_POINTER:
 		return "pointer";
 	case LV_INDEV_TYPE_KEYPAD:

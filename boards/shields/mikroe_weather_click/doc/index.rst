@@ -21,7 +21,14 @@ Requirements
 
 This shield can only be used with a board that provides a mikroBUS |trade|
 socket and defines a ``mikrobus_i2c`` node label for the mikroBUS |trade| I2C
+interface or a ``mikrobus_spi`` node label for the mikroBUS |trade| SPI
 interface (see :ref:`shields` for more details).
+
+.. note::
+
+   By default the Weather Click is configured to use the I2C interface. In
+   order to use the SPI interface the jumper settings must be changed. See
+   the `Weather Click Schematic`_ for further details.
 
 For more information about the BME280 and the Weather Click, see the following
 documentation:
@@ -34,13 +41,14 @@ documentation:
 Programming
 ***********
 
-Set ``--shield mikroe_weather_click`` when you invoke ``west build``. For
+Set ``--shield mikroe_weather_click_i2c`` or
+``--shield mikroe_weather_click_spi`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bme280
    :board: lpcxpresso55s16
-   :shield: mikroe_weather_click
+   :shield: [mikroe_weather_click_i2c | mikroe_weather_click_spi]
    :goals: build
 
 .. _Weather Click:

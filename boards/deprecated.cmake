@@ -25,3 +25,15 @@ set(mimx8mp_phyboard_pollux/mimx8ml8/m7_DEPRECATED
 set(mimx8mm_phyboard_polis/mimx8mm6/m4_DEPRECATED
     phyboard_polis/mimx8mm6/m4
 )
+set(mimxrt1050_evk_DEPRECATED
+    mimxrt1050_evk/mimxrt1052/hyperflash
+)
+set(mimxrt1060_evk_DEPRECATED
+    mimxrt1060_evk/mimxrt1064/hyperflash
+)
+set(mimxrt1060_evk_DEPRECATED
+     mimxrt1060_evk/mimxrt1062/qspi
+)
+set(mimxrt1060_evkb_DEPRECATED
+    mimxrt1060_evk@B/mimxrt1062/qspi
+)

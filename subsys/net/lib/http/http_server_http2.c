@@ -1029,7 +1029,7 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 		client->preface_sent = true;
 	}
 
-	detail = get_resource_detail(client->url_buffer, &path_len, false);
+	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
 	if (detail != NULL) {
 		detail->path_len = path_len;
 
@@ -1509,7 +1509,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		return 0;
 	}
 
-	detail = get_resource_detail(client->url_buffer, &path_len, false);
+	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
 	if (detail != NULL) {
 		detail->path_len = path_len;
 

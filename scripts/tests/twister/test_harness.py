@@ -207,7 +207,7 @@ def test_robot_configure(tmp_path):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr',  outdir=outdir
     )
     instance.testsuite.harness_config = {
         "robot_testsuite": "/path/to/robot/test",
@@ -238,7 +238,7 @@ def test_robot_handle(tmp_path):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
 
     handler = Robot()
@@ -288,7 +288,7 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
     instance.build_dir = "build_dir"
 
@@ -342,7 +342,7 @@ def test_console_configure(tmp_path, type, num_patterns):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
     instance.testsuite.harness_config = {
         "type": type,
@@ -403,7 +403,7 @@ def test_console_handle(
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
 
     console = Console()
@@ -465,7 +465,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
 
     handler = mock.Mock()
@@ -563,7 +563,7 @@ def test_pytest_run(tmp_path, caplog):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
     instance.handler = handler
 
@@ -607,7 +607,7 @@ TEST_DATA_7 = [
     ),
     (
         True,
-        "On TC_START: Ztest case 'testcase' is not known in {} running suite(s)",
+        "TC_START: Ztest case 'testcase' is not known in {} running suite(s)",
         "START - test_testcase",
         [],
         {},
@@ -618,7 +618,7 @@ TEST_DATA_7 = [
     ),
     (
         True,
-        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
+        "TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "PASS - test_example in 0 seconds",
         [],
         {},
@@ -629,7 +629,7 @@ TEST_DATA_7 = [
     ),
     (
         True,
-        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
+        "TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "SKIP - test_example in 0 seconds",
         [],
         {},
@@ -640,7 +640,7 @@ TEST_DATA_7 = [
     ),
     (
         True,
-        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
+        "TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "FAIL - test_example in 0 seconds",
         [],
         {},
@@ -712,8 +712,9 @@ def test_test_handle(
     outdir = tmp_path / "ztest_out"
     with mock.patch('twisterlib.testsuite.TestSuite.get_unique', return_value="dummy_suite"):
         instance = TestInstance(
-            testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+            testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
         )
+    instance.handler = mock.Mock(options=mock.Mock(verbose=0), type_str="handler_type")
 
     test_obj = Test()
     test_obj.configure(instance)
@@ -752,7 +753,7 @@ def gtest(tmp_path):
     outdir.mkdir()
 
     instance = TestInstance(
-        testsuite=mock_testsuite, platform=mock_platform, outdir=outdir
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
 
     harness = Gtest()

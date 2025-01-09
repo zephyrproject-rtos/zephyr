@@ -24,11 +24,8 @@ config WIFI_NM_WPA_SUPPLICANT
 if WIFI_NM_WPA_SUPPLICANT
 
 config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
-	def_int 85000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && !MBEDTLS_ENABLE_HEAP
-	def_int 85000 if WIFI_NM_HOSTAPD_AP
-	def_int 40000 if WIFI_NM_WPA_SUPPLICANT_AP
-	# 8192 for MbedTLS heap
-	def_int 21808 if MBEDTLS_ENABLE_HEAP
+	def_int 66560 if WIFI_NM_HOSTAPD_AP
+	def_int 41808 if WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	# 30K is mandatory, but might need more for long duration use cases
 	def_int 30000
 
@@ -75,6 +72,15 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 	  available levels and functions for emitting the messages. Note that
 	  runtime filtering can also be configured in addition to the compile-time
 	  filtering.
+
+if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
+# hostap debug is very verbose and despite large log buffer sizes
+# log messages can be lost. So, we set the log mode to immediate
+# to avoid losing any debug messages.
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
+endif # WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
 
 # Memory optimizations
 config WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
@@ -155,7 +161,7 @@ endchoice
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 	bool "Crypto Platform Secure Architecture support for WiFi"
-	select MBEDTLS_PSA_CRYPTO_C
+	imply MBEDTLS_PSA_CRYPTO_C
 	select MBEDTLS_USE_PSA_CRYPTO
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ALG_HMAC

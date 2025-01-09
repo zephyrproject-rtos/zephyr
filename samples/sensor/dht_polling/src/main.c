@@ -84,7 +84,7 @@ int main(void)
 					(struct sensor_chan_spec) {SENSOR_CHAN_HUMIDITY, 0},
 					&hum_fit, 1, &hum_data);
 
-			printk("%16s: temp is %s%d.%d °C humidity is %s%d.%d RH\n", dev->name,
+			printk("%16s: temp is %s%d.%d °C humidity is %s%d.%d %%RH\n", dev->name,
 				PRIq_arg(temp_data.readings[0].temperature, 2, temp_data.shift),
 				PRIq_arg(hum_data.readings[0].humidity, 2, hum_data.shift));
 		}

@@ -10,16 +10,18 @@
 	};
 };
 
-it8801_i2c: &i2c4 {
+&i2c4 {
 	status = "okay";
+
+	it8801_mfd: it8801@38 {
+		compatible = "ite,it8801-mfd";
+		reg = <0x38>;
+		irq-gpios = <&gpioa 1 0>;
+	};
 };
 
 #include <ite/it8801-common-cfg.dtsi>
 
-&it8801_mfd {
-	irq-gpios = <&gpioa 1 0>;
-
-	ioex_it8801_pwm7: it8801_pwm@90 {
-		status = "okay";
-	};
+&ioex_it8801_pwm7 {
+	status = "okay";
 };

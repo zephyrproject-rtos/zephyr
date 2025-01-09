@@ -946,6 +946,26 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
 #endif
 
+/**
+ * @brief Invoke the scheduler
+ *
+ * This routine invokes the scheduler to force a schedule point on the current
+ * CPU. If invoked from within a thread, the scheduler will be invoked
+ * immediately (provided interrupts were not locked when invoked). If invoked
+ * from within an ISR, the scheduler will be invoked upon exiting the ISR.
+ *
+ * Invoking the scheduler allows the kernel to make an immediate determination
+ * as to what the next thread to execute should be. Unlike yielding, this
+ * routine is not guaranteed to switch to a thread of equal or higher priority
+ * if any are available. For example, if the current thread is cooperative and
+ * there is a still higher priority cooperative thread that is ready, then
+ * yielding will switch to that higher priority thread whereas this routine
+ * will not.
+ *
+ * Most applications will never use this routine.
+ */
+__syscall void k_reschedule(void);
+
 #ifdef CONFIG_SCHED_CPU_MASK
 /**
  * @brief Sets all CPU enable masks to zero
@@ -5490,6 +5510,31 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  */
 void *k_heap_alloc(struct k_heap *h, size_t bytes,
 		k_timeout_t timeout) __attribute_nonnull(1);
+
+/**
+ * @brief Allocate and initialize memory for an array of objects from a k_heap
+ *
+ * Allocates memory for an array of num objects of size and initializes all
+ * bytes in the allocated storage to zero.  If no memory is available
+ * immediately, the call will block for the specified timeout (constructed
+ * via the standard timeout API, or K_NO_WAIT or K_FOREVER) waiting for memory
+ * to be freed.  If the allocation cannot be performed by the expiration of
+ * the timeout, NULL will be returned.
+ * Allocated memory is aligned on a multiple of pointer sizes.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param h Heap from which to allocate
+ * @param num Number of objects to allocate
+ * @param size Desired size of each object to allocate
+ * @param timeout How long to wait, or K_NO_WAIT
+ * @return A pointer to valid heap memory, or NULL
+ */
+void *k_heap_calloc(struct k_heap *h, size_t num, size_t size, k_timeout_t timeout)
+	__attribute_nonnull(1);
 
 /**
  * @brief Reallocate memory from a k_heap

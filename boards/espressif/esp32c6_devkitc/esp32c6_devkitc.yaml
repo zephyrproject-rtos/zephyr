@@ -12,8 +12,6 @@ supported:
   - dma
   - pwm
   - spi
+  - counter
   - entropy
   - i2c
-testing:
-  ignore_tags:
-    - bluetooth

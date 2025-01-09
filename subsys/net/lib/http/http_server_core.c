@@ -237,6 +237,7 @@ int http_server_init(struct http_server_ctx *ctx)
 		LOG_DBG("Initialized HTTP Service %s:%u",
 			svc->host ? svc->host : "<any>", *svc->port);
 
+		*svc->fd = fd;
 		ctx->fds[count].fd = fd;
 		ctx->fds[count].events = ZSOCK_POLLIN;
 		count++;
@@ -298,6 +299,10 @@ static void close_all_sockets(struct http_server_ctx *ctx)
 		}
 
 		ctx->fds[i].fd = -1;
+	}
+
+	HTTP_SERVICE_FOREACH(svc) {
+		*svc->fd = -1;
 	}
 }
 
@@ -393,9 +398,22 @@ void http_client_timer_restart(struct http_client_ctx *client)
 	k_work_reschedule(&client->inactivity_timer, INACTIVITY_TIMEOUT);
 }
 
-static void init_client_ctx(struct http_client_ctx *client, int new_socket)
+static const struct http_service_desc *lookup_service(int server_fd)
+{
+	HTTP_SERVICE_FOREACH(svc) {
+		if (*svc->fd == server_fd) {
+			return svc;
+		}
+	}
+
+	return NULL;
+}
+
+static void init_client_ctx(struct http_client_ctx *client, const struct http_service_desc *svc,
+			    int new_socket)
 {
 	client->fd = new_socket;
+	client->service = svc;
 	client->data_len = 0;
 	client->server_state = HTTP_SERVER_PREFACE_STATE;
 	client->has_upgrade_header = false;
@@ -523,6 +541,7 @@ static int handle_http_request(struct http_client_ctx *client)
 static int http_server_run(struct http_server_ctx *ctx)
 {
 	struct http_client_ctx *client;
+	const struct http_service_desc *service;
 	eventfd_t value;
 	bool found_slot;
 	int new_socket;
@@ -600,6 +619,9 @@ static int http_server_run(struct http_server_ctx *ctx)
 					continue;
 				}
 
+				service = lookup_service(ctx->fds[i].fd);
+				__ASSERT(NULL != service, "fd not associated with a service");
+
 				found_slot = false;
 
 				for (j = ctx->listen_fds; j < ARRAY_SIZE(ctx->fds); j++) {
@@ -615,7 +637,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 					LOG_DBG("Init client #%d", j - ctx->listen_fds);
 
-					init_client_ctx(&ctx->clients[j - ctx->listen_fds],
+					init_client_ctx(&ctx->clients[j - ctx->listen_fds], service,
 							new_socket);
 					found_slot = true;
 					break;
@@ -713,33 +735,29 @@ static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
 	return false;
 }
 
-struct http_resource_detail *get_resource_detail(const char *path,
-						 int *path_len,
-						 bool is_websocket)
+struct http_resource_detail *get_resource_detail(const struct http_service_desc *service,
+						 const char *path, int *path_len, bool is_websocket)
 {
-	HTTP_SERVICE_FOREACH(service) {
-		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
-			if (skip_this(resource, is_websocket)) {
-				continue;
-			}
+	HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
+		if (skip_this(resource, is_websocket)) {
+			continue;
+		}
 
-			if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
-				int ret;
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
+			int ret;
 
-				ret = fnmatch(resource->resource, path,
-					      (FNM_PATHNAME | FNM_LEADING_DIR));
-				if (ret == 0) {
-					*path_len = strlen(resource->resource);
-					return resource->detail;
-				}
-			}
-
-			if (compare_strings(path, resource->resource) == 0) {
-				NET_DBG("Got match for %s", resource->resource);
-
+			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
+			if (ret == 0) {
 				*path_len = strlen(resource->resource);
 				return resource->detail;
 			}
+		}
+
+		if (compare_strings(path, resource->resource) == 0) {
+			NET_DBG("Got match for %s", resource->resource);
+
+			*path_len = strlen(resource->resource);
+			return resource->detail;
 		}
 	}
 

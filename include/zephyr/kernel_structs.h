@@ -122,6 +122,9 @@ struct _priq_rb {
 struct _priq_mq {
 	sys_dlist_t queues[K_NUM_THREAD_PRIO];
 	unsigned long bitmask[PRIQ_BITMAP_SIZE];
+#ifndef CONFIG_SMP
+	unsigned int cached_queue_index;
+#endif
 };
 
 struct _ready_q {

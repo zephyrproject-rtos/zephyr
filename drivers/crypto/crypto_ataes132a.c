@@ -353,7 +353,7 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (out_len < 2 || out_len > 33) {
+	if (!IN_RANGE(out_len, 2, 33)) {
 		LOG_ERR("decrypt command response has invalid"
 			    " size %d", out_len);
 		k_sem_give(&data->device_sem);
@@ -394,7 +394,14 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	uint8_t buf_len;
 	uint8_t out_len;
 	uint8_t return_code;
-	uint8_t param_buffer[40];
+
+	const uint8_t key_id_len = 1;
+	const uint8_t buf_len_len = 1;
+	const uint8_t max_input_len = 32;
+	const uint8_t nonce_len = 12;
+	const uint8_t tag_len = 16;
+
+	uint8_t param_buffer[key_id_len + buf_len_len + max_input_len + nonce_len + tag_len];
 
 	if (!aead_op) {
 		LOG_ERR("Parameter cannot be null");
@@ -525,7 +532,7 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (out_len < 33 || out_len > 49) {
+	if (!IN_RANGE(out_len, 33, 49)) {
 		LOG_ERR("encrypt command response has invalid"
 			    " size %d", out_len);
 		k_sem_give(&data->device_sem);
@@ -542,6 +549,7 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	if (aead_op->tag) {
 		memcpy(aead_op->tag, param_buffer + 1, 16);
 	}
+
 	memcpy(aead_op->pkt->out_buf, param_buffer + 17, out_len - 17U);
 
 	if (mac_mode) {

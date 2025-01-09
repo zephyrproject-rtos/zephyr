@@ -100,7 +100,7 @@ Programming and Debugging
 
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -163,6 +163,3 @@ this example.
 
 .. _MGM240P Schematics:
    https://cdn.sparkfun.com/assets/0/f/8/4/9/Thing_Plus_MGM240P.pdf
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink

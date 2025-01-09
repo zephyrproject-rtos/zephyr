@@ -21,3 +21,18 @@ properties:
     description: |
       VDDA/VREF+ voltage in millivolts applied during manufacturing to determine
       the internal bandgap voltage reference VREFINT.
+
+  vrefint-cal-resolution:
+    type: int
+    description: |
+      ADC resolution used for measuring calibration data
+
+      This is usually equal to the ADC's native resolution.
+
+      Most series have a 12-bit ADC, but 14-bit and 16-bit
+      also exists on e.g., STM32U5 and STM32H7 series.
+    default: 12
+    enum:
+      - 12
+      - 14
+      - 16

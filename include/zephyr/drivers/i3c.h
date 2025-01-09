@@ -23,6 +23,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i3c/addresses.h>
+#include <zephyr/drivers/i3c/error_types.h>
 #include <zephyr/drivers/i3c/ccc.h>
 #include <zephyr/drivers/i3c/devicetree.h>
 #include <zephyr/drivers/i3c/ibi.h>
@@ -293,87 +294,6 @@ enum i3c_data_rate {
 };
 
 /**
- * @brief I3C SDR Controller Error Codes
- *
- * These are error codes defined by the I3C specification.
- *
- * #I3C_ERROR_CE_UNKNOWN and #I3C_ERROR_CE_NONE are not
- * official error codes according to the specification.
- * These are there simply to aid in error handling during
- * interactions with the I3C drivers and subsystem.
- */
-enum i3c_sdr_controller_error_codes {
-	/** Transaction after sending CCC */
-	I3C_ERROR_CE0,
-
-	/** Monitoring Error */
-	I3C_ERROR_CE1,
-
-	/** No response to broadcast address (0x7E) */
-	I3C_ERROR_CE2,
-
-	/** Failed Controller Handoff */
-	I3C_ERROR_CE3,
-
-	/** Unknown error (not official error code) */
-	I3C_ERROR_CE_UNKNOWN,
-
-	/** No error (not official error code) */
-	I3C_ERROR_CE_NONE,
-
-	I3C_ERROR_CE_MAX = I3C_ERROR_CE_UNKNOWN,
-	I3C_ERROR_CE_INVALID,
-};
-
-/**
- * @brief I3C SDR Target Error Codes
- *
- * These are error codes defined by the I3C specification.
- *
- * #I3C_ERROR_TE_UNKNOWN and #I3C_ERROR_TE_NONE are not
- * official error codes according to the specification.
- * These are there simply to aid in error handling during
- * interactions with the I3C drivers and subsystem.
- */
-enum i3c_sdr_target_error_codes {
-	/**
-	 * Invalid Broadcast Address or
-	 * Dynamic Address after DA assignment
-	 */
-	I3C_ERROR_TE0,
-
-	/** CCC Code */
-	I3C_ERROR_TE1,
-
-	/** Write Data */
-	I3C_ERROR_TE2,
-
-	/** Assigned Address during Dynamic Address Arbitration */
-	I3C_ERROR_TE3,
-
-	/** 0x7E/R missing after RESTART during Dynamic Address Arbitration */
-	I3C_ERROR_TE4,
-
-	/** Transaction after detecting CCC */
-	I3C_ERROR_TE5,
-
-	/** Monitoring Error */
-	I3C_ERROR_TE6,
-
-	/** Dead Bus Recovery */
-	I3C_ERROR_DBR,
-
-	/** Unknown error (not official error code) */
-	I3C_ERROR_TE_UNKNOWN,
-
-	/** No error (not official error code) */
-	I3C_ERROR_TE_NONE,
-
-	I3C_ERROR_TE_MAX = I3C_ERROR_TE_UNKNOWN,
-	I3C_ERROR_TE_INVALID,
-};
-
-/**
  * @brief I3C Transfer API
  * @defgroup i3c_transfer_api I3C Transfer API
  * @{
@@ -485,6 +405,14 @@ struct i3c_msg {
 	 * write to this after the transfer.
 	 */
 	uint32_t		num_xfer;
+
+	/**
+	 * SDR Error Type
+	 *
+	 * Error from I3C Specification v1.1.1 section 5.1.10.2. It is expected
+	 * for the driver to write to this.
+	 */
+	enum i3c_sdr_controller_error_types err;
 
 	/** Flags for this message */
 	uint8_t			flags;
@@ -768,6 +696,19 @@ __subsystem struct i3c_driver_api {
 	 */
 	struct i3c_device_desc *(*i3c_device_find)(const struct device *dev,
 						   const struct i3c_device_id *id);
+
+	/**
+	 * ACK or NACK IBI HJ Requests
+	 *
+	 * @see ibi_hj_response()
+	 *
+	 * @param dev Pointer to controller device driver instance.
+	 * @param ack True to ack, False to nack
+	 *
+	 * @return See ibi_hj_response()
+	 */
+	int (*ibi_hj_response)(const struct device *dev,
+			       bool ack);
 
 	/**
 	 * Raise In-Band Interrupt (IBI).
@@ -1676,6 +1617,31 @@ struct i3c_device_desc *i3c_device_find(const struct device *dev,
  */
 
 /**
+ * @brief ACK or NACK IBI HJ Requests
+ *
+ * This tells the controller to Acknowledge or Not Acknowledge
+ * In-Band Interrupt Hot-Join Requests.
+ *
+ * @param dev Pointer to controller device driver instance.
+ * @param ack True to ack, False to nack
+ *
+ * @retval 0 if operation is successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i3c_ibi_hj_response(const struct device *dev,
+				      bool ack)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)dev->api;
+
+	if (api->ibi_hj_response == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->ibi_hj_response(dev, ack);
+}
+
+/**
  * @brief Raise an In-Band Interrupt (IBI).
  *
  * This raises an In-Band Interrupt (IBI) to the active controller.
@@ -2106,8 +2072,6 @@ int i3c_bus_init(const struct device *dev,
  * This retrieves some basic information:
  *   * Bus Characteristics Register (GETBCR)
  *   * Device Characteristics Register (GETDCR)
- *   * Max Read Length (GETMRL)
- *   * Max Write Length (GETMWL)
  * from the device and update the corresponding fields of the device
  * descriptor.
  *
@@ -2120,6 +2084,63 @@ int i3c_bus_init(const struct device *dev,
  * @retval -EIO General Input/Output error.
  */
 int i3c_device_basic_info_get(struct i3c_device_desc *target);
+
+/**
+ * @brief Get advanced information from device and update device descriptor.
+ *
+ * This retrieves some information:
+ *   * Max Read Length (GETMRL)
+ *   * Max Write Length (GETMWL)
+ *   * Get Capabilities (GETCAPS)
+ *   * Max Device Speed (GETMXDS) (if applicable)
+ * from the device and update the corresponding fields of the device
+ * descriptor.
+ *
+ * This only updates the field(s) in device descriptor
+ * only if CCC operations succeed.
+ *
+ * @note This should only be called after i3c_device_basic_info_get() or
+ * if the BCR was already obtained through ENTDAA, DEFTGTS, or GETBCR.
+ *
+ * @param[in,out] target I3C target device descriptor.
+ *
+ * @retval 0 if successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_device_adv_info_get(struct i3c_device_desc *target);
+
+/**
+ * @brief Get all information from device and update device descriptor.
+ *
+ * This retrieves all information:
+ *   * Bus Characteristics Register (GETBCR)
+ *   * Device Characteristics Register (GETDCR)
+ *   * Max Read Length (GETMRL)
+ *   * Max Write Length (GETMWL)
+ *   * Get Capabilities (GETCAPS)
+ *   * Max Device Speed (GETMXDS) (if applicable)
+ * from the device and update the corresponding fields of the device
+ * descriptor.
+ *
+ * This only updates the field(s) in device descriptor
+ * only if CCC operations succeed.
+ *
+ * @param[in,out] target I3C target device descriptor.
+ *
+ * @retval 0 if successful.
+ * @retval -EIO General Input/Output error.
+ */
+static inline int i3c_device_info_get(struct i3c_device_desc *target)
+{
+	int rc;
+
+	rc = i3c_device_basic_info_get(target);
+	if (rc != 0) {
+		return rc;
+	}
+
+	return i3c_device_adv_info_get(target);
+}
 
 /**
  * @brief Check if the bus has a secondary controller.

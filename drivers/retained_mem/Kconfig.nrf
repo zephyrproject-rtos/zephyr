@@ -13,6 +13,6 @@ config RETAINED_MEM_NRF_RAM_CTRL
 	bool "nRF RAM retention driver"
 	default y
 	depends on DT_HAS_ZEPHYR_RETAINED_RAM_ENABLED && RETAINED_MEM_ZEPHYR_RAM && POWEROFF
-	depends on SOC_FAMILY_NORDIC_NRF
+	depends on HAS_NORDIC_RAM_CTRL
 	help
 	  Enable driver for Nordic RAM retention.

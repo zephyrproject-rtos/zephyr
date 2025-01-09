@@ -11,7 +11,4 @@ supported:
   - watchdog
   - uart
   - nvs
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: hardkernel

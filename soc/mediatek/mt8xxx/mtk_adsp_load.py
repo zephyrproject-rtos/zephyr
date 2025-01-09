@@ -171,7 +171,7 @@ class MT8196:
 # stream at 0x60700000 -- the top of the linkable region of
 # existing SOF firmware, before the heap.  Nothing uses this
 # currently.  Will be replaced by winstream very soon.
-def log(dev):
+def old_log(dev):
     msg = b''
     dram = maps["dram1"]
     for i in dev.logrange():
@@ -216,6 +216,93 @@ def readfile(f, mode="rb"):
 def le4(bstr):
     assert len(bstr) == 4
     return struct.unpack("<I", bstr)[0]
+
+
+# Wrapper class for winstream logging.  Instantiate with a single
+# integer argument representing a local/in-process address for the
+# shared winstream memory.  The memory mapped access is encapsulated
+# with a Regs object for the fields and a ctypes array for the data
+# area.  The lockless algorithm in read() matches the C version in
+# upstream Zephyr, don't modify in isolation.  Note that on some
+# platforms word access to the data array (by e.g. copying a slice
+# into a bytes object or by calling memmove) produces bus errors
+# (plausibly an alignment requirement on the fabric with the DSP
+# memory, where arm64 python is happy doing unaligned loads?).  Access
+# to the data bytes is done bytewise for safety.
+class Winstream:
+    def __init__(self, addr):
+        r = Regs(addr)
+        r.WLEN = 0x00
+        r.START = 0x04
+        r.END = 0x08
+        r.SEQ = 0x0C
+        r.freeze()
+        # Sanity-check, the 32M size limit isn't a rule, but seems reasonable
+        if r.WLEN > 0x2000000 or (r.START >= r.WLEN) or (r.END >= r.WLEN):
+            raise RuntimeError("Invalid winstream")
+        self.regs = r
+        self.data = (ctypes.c_char * r.WLEN).from_address(addr + 16)
+        self.msg = bytearray(r.WLEN)
+        self.seq = 0
+
+    def read(self):
+        ws, msg, data = self.regs, self.msg, self.data
+        last_seq = self.seq
+        wlen = ws.WLEN
+        while True:
+            start, end, seq = ws.START, ws.END, ws.SEQ
+            self.seq = seq
+            if seq == last_seq or start == end:
+                return ""
+            behind = seq - last_seq
+            if behind > ((end - start) % wlen):
+                return ""
+            copy = (end - behind) % wlen
+            suffix = min(behind, wlen - copy)
+            for i in range(suffix):
+                msg[i] = data[copy + i][0]
+            msglen = suffix
+            l2 = behind - suffix
+            if l2 > 0:
+                for i in range(l2):
+                    msg[msglen + i] = data[i][0]
+                msglen += l2
+            if start == ws.START and seq == ws.SEQ:
+                return msg[0:msglen].decode("utf-8", "replace")
+
+
+# Locates a winstream descriptor in the firmware via its 96-bit magic
+# number and returns the address and size fields it finds there.
+def find_winstream(maps):
+    magic = b'\x74\x5f\x6a\xd0\x79\xe2\x4f\x00\xcd\xb8\xbd\xf9'
+    for m in maps:
+        if "dram" in m:
+            magoff = maps[m].find(magic)
+            if magoff >= 0:
+                addr = le4(maps[m][magoff + 12 : magoff + 16])
+                return addr
+    raise RuntimeError("Cannot find winstream descriptor in firmware runtime")
+
+
+def winstream_localaddr(globaddr, mmio, maps):
+    for m in mmio:
+        off = globaddr - mmio[m][0]
+        if 0 <= off < mmio[m][1]:
+            return ctypes.addressof(ctypes.c_int.from_buffer(maps[m])) + off
+    raise RuntimeError("Winstream address not inside DSP memory")
+
+
+def winstream_log(mmio, maps):
+    physaddr = find_winstream(maps)
+    regsbase = winstream_localaddr(physaddr, mmio, maps)
+    ws = Winstream(regsbase)
+    while True:
+        msg = ws.read()
+        if msg:
+            sys.stdout.write(msg)
+            sys.stdout.flush()
+        else:
+            time.sleep(0.1)
 
 
 def main():
@@ -272,10 +359,18 @@ def main():
         for i in range(len(dram), mmio["dram1"][1]):
             maps["dram1"][i] = 0
         dev.start(boot_vector)
-        log(dev)
+        winstream_log(mmio, maps)
 
     elif sys.argv[1] == "log":
-        log(dev)
+        winstream_log(mmio, maps)
+
+    elif sys.argv[1] == "oldlog":
+        old_log(dev)
+
+    elif sys.argv[1] == "mem":
+        print("Memory Regions:")
+        for m in mmio:
+            print(f"  {m}: {mmio[m][1]} @ 0x{mmio[m][0]:08x}")
 
     elif sys.argv[1] == "dump":
         sz = mmio[sys.argv[2]][1]

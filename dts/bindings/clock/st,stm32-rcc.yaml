@@ -20,8 +20,8 @@ description: |
            clocks = <&pll>;  /* Select 80MHz pll as SYSCLK source */
            ahb-prescaler = <2>;
            clock-frequency = <DT_FREQ_M(40)>; /* = SYSCLK / AHB prescaler */
-           apb1-presacler = <1>;
-           apb2-presacler = <1>;
+           apb1-prescaler = <1>;
+           apb2-prescaler = <1>;
   }
 
   Specifying a gated clock:

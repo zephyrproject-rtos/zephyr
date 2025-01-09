@@ -7,6 +7,7 @@ config WDT_TI_TPS382X
 	default y
 	depends on DT_HAS_TI_TPS382X_ENABLED
 	depends on GPIO
+	select HAS_WDT_NO_CALLBACKS
 	help
 	  Enable WDT driver for TI TPS382x. This is an external IC and requires
 	  a GPIO connection from the processor.

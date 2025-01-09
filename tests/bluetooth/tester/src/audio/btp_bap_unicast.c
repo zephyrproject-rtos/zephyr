@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <errno.h>
 
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -711,9 +712,13 @@ static void stream_recv(struct bt_bap_stream *stream,
 		/* For now, send just a first packet, to limit the number
 		 * of logs and not unnecessarily spam through btp.
 		 */
-		LOG_DBG("Incoming audio on stream %p len %u", stream, buf->len);
-		u_stream->already_sent = true;
-		send_stream_received_ev(stream->conn, stream->ep, buf->len, buf->data);
+		LOG_DBG("Incoming audio on stream %p len %u flags 0x%02X seq_num %u and ts %u",
+			stream, buf->len, info->flags, info->seq_num, info->ts);
+
+		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
+			u_stream->already_sent = true;
+			send_stream_received_ev(stream->conn, stream->ep, buf->len, buf->data);
+		}
 	}
 }
 

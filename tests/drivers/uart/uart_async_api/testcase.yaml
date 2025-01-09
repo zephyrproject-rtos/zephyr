@@ -99,10 +99,8 @@ tests:
     platform_allow:
       - nucleo_f746zg
       - nucleo_h723zg
-    extra_configs:
-      - CONFIG_DCACHE=y
-      - CONFIG_NOCACHE_MEMORY=y
-      - CONFIG_USERSPACE=n
+    extra_args:
+      - EXTRA_CONF_FILE=stm32_nocache_mem.conf
   drivers.uart.async_api.nocache_mem_dt.nucleo_f746zg:
     # nocache memory region is defined in DT
     harness: ztest
@@ -114,6 +112,8 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/nucleo_f746zg.overlay;boards/nucleo_f746zg_nocachemem.overlay"
       - EXTRA_CONF_FILE=stm32_nocache_mem_dt.conf
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
   drivers.uart.async_api.nocache_mem_dt.nucleo_h723zg:
     # nocache memory region is defined in DT
     harness: ztest

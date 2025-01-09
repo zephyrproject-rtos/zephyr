@@ -151,8 +151,8 @@ static int max7219_write(const struct device *dev, const uint16_t x, const uint1
 	/*
 	 * MAX7219 only supports PIXEL_FORMAT_MONO01. 1 bit stands for 1 pixel.
 	 */
-	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Input buffer to small");
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
+	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Input buffer too small");
+	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT(desc->pitch <= max_width, "Pitch in descriptor is larger than screen size");
 	__ASSERT(desc->height <= max_height, "Height in descriptor is larger than screen size");
 	__ASSERT(x + desc->pitch <= max_width,

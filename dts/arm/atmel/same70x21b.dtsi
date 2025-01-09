@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/same70b.dtsi>
+#include <atmel/samx7xx21.dtsi>

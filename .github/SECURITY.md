@@ -12,8 +12,7 @@ At this time, with the latest release of v4.0, the supported
 versions are:
 
   - v4.0: Current release
-  - v3.7: Current LTS
-  - v3.6: Prior release
+  - v3.7: Prior release and Current LTS
   - v2.7: Prior LTS
 
 ## Reporting process

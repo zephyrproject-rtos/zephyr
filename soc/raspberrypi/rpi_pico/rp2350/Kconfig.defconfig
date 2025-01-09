@@ -1,0 +1,14 @@
+# Raspberry Pi RP2350 MCU line
+
+# Copyright (c) 2024 Andrew Featherstone
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RP2350
+
+config BUILD_OUTPUT_UF2_USE_FLASH_BASE
+	default y if BUILD_OUTPUT_UF2
+
+config NUM_IRQS
+	default 52
+
+endif # SOC_SERIES_RP2350

@@ -31,10 +31,31 @@ config IRQ_OFFLOAD_NESTED
 	default n if SOC_SERIES_MT818X
 	default y
 
+config CPU_HAS_DCACHE
+	default y
+config DCACHE
+	default y
+config CACHE_MANAGEMENT
+	default y
+config DCACHE_LINE_SIZE
+	default 128
+
+config NOCACHE_MEMORY
+	default y
+
 config MTK_ADSP_TIMER
 	default y
 config XTENSA_TIMER
 	default n
+
+config CONSOLE
+	default y
+config WINSTREAM_CONSOLE
+	default y
+config WINSTREAM
+	default y
+config LOG_BACKEND_ADSP
+	default y if LOG
 
 config XTENSA_CCOUNT_HZ
 	default 720000000 if SOC_MT8195

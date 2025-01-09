@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# This binding file allows only properties that are not allowed
+# in simple_allowlist.yaml: we should end up with no property at all.
+
+include:
+  - name: simple_allowlist.yaml
+    property-allowlist: [prop-3]
+    child-binding:
+      property-allowlist: [child-prop-3]
+      child-binding:
+        property-allowlist: [grandchild-prop-3]

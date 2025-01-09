@@ -31,6 +31,6 @@ To build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/i2s/output
-   :board: mimxrt1060_evkb
+   :board: mimxrt1060_evk@B
    :goals: build flash
    :compact:

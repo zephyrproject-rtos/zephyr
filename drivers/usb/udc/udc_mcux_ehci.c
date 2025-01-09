@@ -695,8 +695,7 @@ static int udc_mcux_init(const struct device *dev)
 
 #ifdef CONFIG_DT_HAS_NXP_USBPHY_ENABLED
 	if (config->phy_config != NULL) {
-		USB_EhciPhyInit(priv->controller_id, 0u,
-			(usb_phy_config_struct_t *)&config->phy_config);
+		USB_EhciPhyInit(priv->controller_id, 0u, config->phy_config);
 	}
 #endif
 

@@ -16,15 +16,6 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 
-#if CONFIG_PM
-
-#if !defined(CONFIG_DEBUG) && defined(CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP)
-#warning "Running with PM=y and STM32_ENABLE_DEBUG_SLEEP_STOP=y, \
-this will result in increased power consumption during sleep."
-#endif
-
-#endif /* CONFIG_PM */
-
 /**
  * @brief Perform SoC configuration at boot.
  *

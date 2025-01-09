@@ -10,8 +10,8 @@ tests:
       - CONFIG_DISK_DRIVER_SDMMC=y
     tags: mcux
     integration_platforms:
-      - mimxrt1060_evk
-      - mimxrt1050_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1050_evk/mimxrt1052/hyperflash
       - mimxrt1064_evk
   drivers.disk.ram:
     platform_allow: qemu_x86_64

@@ -1140,8 +1140,8 @@ static int i2c_dw_initialize(const struct device *dev)
 #endif
 
 #if defined(CONFIG_RESET)
-#define RESET_DW_CONFIG(n)                                                                         \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets),                          \
+#define RESET_DW_CONFIG(n)                                                    \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                          \
 		   (.reset = RESET_DT_SPEC_INST_GET(n),))
 #else
 #define RESET_DW_CONFIG(n)

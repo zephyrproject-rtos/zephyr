@@ -1,0 +1,21 @@
+identifier: xg24_ek2703a
+name: EFR32xG24 Explorer Kit (xG24-EK2703A, BRD2703A)
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - counter
+  - gpio
+  - uart
+  - watchdog
+  - clock_control
+testing:
+  ignore_tags:
+    - pm
+    - hwinfo
+vendor: silabs

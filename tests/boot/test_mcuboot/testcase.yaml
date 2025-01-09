@@ -31,8 +31,8 @@ tests:
       - mimxrt1020_evk
       - mimxrt1024_evk
       - mimxrt1040_evk
-      - mimxrt1050_evk
-      - mimxrt1060_evk
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+      - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1062_fmurt6
       - mimxrt1064_evk
       - mimxrt1160_evk/mimxrt1166/cm7

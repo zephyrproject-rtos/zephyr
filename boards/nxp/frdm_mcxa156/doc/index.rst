@@ -60,6 +60,15 @@ The FRDM-MCXA156 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | dac                                 |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
++-----------+------------+-------------------------------------+
+| FLEXCAN   | on-chip    | CAN                                 |
++-----------+------------+-------------------------------------+
+| FLEXIO    | on-chip    | flexio                              |
++-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
+|           |            | :ref:`lcd_par_s035`                 |
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | LPCMP     | on-chip    | sensor(comparator)                  |
@@ -69,6 +78,8 @@ The FRDM-MCXA156 board configuration supports the following hardware features:
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
 
 Targets available

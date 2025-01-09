@@ -15,7 +15,4 @@ supported:
   - lora
   - nvs
   - sdhc
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: lilygo

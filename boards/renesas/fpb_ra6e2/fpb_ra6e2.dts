@@ -21,6 +21,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -81,14 +82,9 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		boot_partition: partition@0 {
-			label = "application";
-			reg = <0x00000000 DT_SIZE_K(128)>;
-		};
-
-		storage_partition: partition@20000 {
+		storage_partition: partition@0 {
 			label = "storage";
-			reg = <0x20000 DT_SIZE_K(128)>;
+			reg = <0X0 DT_SIZE_K(4)>;
 		};
 	};
 };
@@ -122,4 +118,8 @@
 	interrupt-names = "gtioca", "overflow";
 	divider = <RA_PWM_SOURCE_DIV_256>;
 	status = "okay";
+};
+
+&trng {
+	status ="okay";
 };

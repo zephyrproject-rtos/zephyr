@@ -20,7 +20,7 @@
 		 * sram region is changed and DMA is in use, you will
 		 * encounter issues!
 		 */
-		zephyr,sram = &sram1;
+		zephyr,sram = &ocram;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,flash-controller = &is25wp128;

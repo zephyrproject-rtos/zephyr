@@ -254,6 +254,7 @@ BUILD_ASSERT(offsetof(struct http_resource_detail_dynamic, common) == 0);
  *        reading and writing websocket data, and closing the connection.
  *
  * @param ws_socket A socket for the Websocket data.
+ * @param request_ctx Request context structure associated with HTTP upgrade request
  * @param user_data User specified data.
  *
  * @return  0 Accepting the connection, HTTP server library will no longer
@@ -261,7 +262,7 @@ BUILD_ASSERT(offsetof(struct http_resource_detail_dynamic, common) == 0);
  *            to send and receive data to/from the supplied socket.
  *         <0 error, close the connection.
  */
-typedef int (*http_resource_websocket_cb_t)(int ws_socket,
+typedef int (*http_resource_websocket_cb_t)(int ws_socket, struct http_request_ctx *request_ctx,
 					    void *user_data);
 
 /** @brief Representation of a websocket server resource */
@@ -398,6 +399,9 @@ struct http_header_name {
 struct http_client_ctx {
 	/** Socket descriptor associated with the server. */
 	int fd;
+
+	/** HTTP service on which the client is connected */
+	const struct http_service_desc *service;
 
 	/** Client data buffer.  */
 	unsigned char buffer[HTTP_SERVER_CLIENT_BUFFER_SIZE];

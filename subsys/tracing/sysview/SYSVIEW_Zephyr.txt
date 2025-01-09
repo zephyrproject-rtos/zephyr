@@ -82,6 +82,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 
 76  k_heap_init                heap=%I, mem=%p, bytes=%u
 77  k_heap_alloc               heap=%I, bytes=%u, Timeout=%TimeOut | Returns %p
+77  k_heap_calloc              heap=%I, num=%u, size=%u, Timeout=%TimeOut | Returns %p
 78  k_heap_free                heap=%I, mem=%p
 79  k_heap_aligned_alloc       heap=%I
 

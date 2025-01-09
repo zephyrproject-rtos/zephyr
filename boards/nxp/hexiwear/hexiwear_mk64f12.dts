@@ -103,7 +103,7 @@
 
 &ftm3 {
 	status = "okay";
-	compatible = "nxp,kinetis-ftm-pwm";
+	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";

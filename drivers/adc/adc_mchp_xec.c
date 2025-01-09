@@ -47,6 +47,7 @@ enum adc_pm_policy_state_flag {
 	ADC_PM_POLICY_STATE_FLAG_COUNT,
 };
 
+#define XEC_ADC_MAX_HW_CHAN 16
 #define XEC_ADC_CFG_CHANNELS DT_INST_PROP(0, channels)
 
 struct adc_xec_regs {
@@ -56,7 +57,7 @@ struct adc_xec_regs {
 	uint32_t single_reg;
 	uint32_t repeat_reg;
 	uint32_t channel_read_reg[XEC_ADC_CFG_CHANNELS];
-	uint32_t unused[10 + (MCHP_ADC_MAX_CHAN - XEC_ADC_CFG_CHANNELS)];
+	uint32_t unused[10 + (XEC_ADC_MAX_HW_CHAN - XEC_ADC_CFG_CHANNELS)];
 	uint32_t config_reg;
 	uint32_t vref_channel_reg;
 	uint32_t vref_control_reg;

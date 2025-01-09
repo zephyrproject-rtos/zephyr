@@ -168,7 +168,7 @@
 			spi-dev = <&test_spi>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			xfr-min-bits = <MIPI_DBI_SPI_XFR_16BIT>;
+			xfr-min-bits = "MIPI_DBI_SPI_XFR_16BIT";
 			write-only;
 
 			test_mipi_dbi_xfr_16bit_ili9342c: ili9342c@0 {

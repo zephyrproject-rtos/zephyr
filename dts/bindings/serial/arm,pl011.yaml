@@ -2,7 +2,7 @@ description: ARM PL011 UART
 
 compatible: "arm,pl011"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   reg:

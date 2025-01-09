@@ -8,7 +8,6 @@ description: |
 
   The specification of the sensor can be found at:
     https://www.ti.com/lit/ds/symlink/tmag5273.pdf
-    https://www.ti.com/lit/ds/symlink/tmag3001.pdf
 
     When setting the enum properties in a .dts or .dtsi file you may
     include tmag5273.h and use the macros defined there.

@@ -1138,6 +1138,8 @@ static int lsm6dsv16x_init(const struct device *dev)
 		   (.fifo_wtm = DT_INST_PROP(inst, fifo_watermark),		\
 		    .accel_batch  = DT_INST_PROP(inst, accel_fifo_batch_rate),	\
 		    .gyro_batch  = DT_INST_PROP(inst, gyro_fifo_batch_rate),	\
+		    .sflp_odr  = DT_INST_PROP(inst, sflp_odr),			\
+		    .sflp_fifo_en  = DT_INST_PROP(inst, sflp_fifo_enable),	\
 		    .temp_batch  = DT_INST_PROP(inst, temp_fifo_batch_rate),))	\
 	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
 			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),		\

@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2024 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <string.h>
+
+#include <zephyr/sys/byteorder.h>
 
 #include <hal/nrf_ecb.h>
 
@@ -16,17 +19,73 @@
 
 #include "hal/debug.h"
 
+#if defined(NRF54L_SERIES)
+#define NRF_ECB                   NRF_ECB00
+#define ECB_IRQn                  ECB00_IRQn
+#define ECB_INTENSET_ERRORECB_Msk ECB_INTENSET_ERROR_Msk
+#define ECB_INTENSET_ENDECB_Msk   ECB_INTENSET_END_Msk
+#define TASKS_STARTECB            TASKS_START
+#define TASKS_STOPECB             TASKS_STOP
+#define EVENTS_ENDECB             EVENTS_END
+#define EVENTS_ERRORECB           EVENTS_ERROR
+#define NRF_ECB_TASK_STARTECB     NRF_ECB_TASK_START
+#define NRF_ECB_TASK_STOPECB      NRF_ECB_TASK_STOP
+#define ECBDATAPTR                IN.PTR
+
+struct ecb_job_ptr {
+	void *ptr;
+	struct {
+		uint32_t length:24;
+		uint32_t attribute:8;
+	} __packed;
+} __packed;
+
+/* Product Specification recommends a value of 11, but prior work had used 7 */
+#define ECB_JOB_PTR_ATTRIBUTE 7U
+#endif /* NRF54L_SERIES */
+
 struct ecb_param {
 	uint8_t key[16];
 	uint8_t clear_text[16];
 	uint8_t cipher_text[16];
+
+#if defined(NRF54L_SERIES)
+	struct ecb_job_ptr in[2];
+	struct ecb_job_ptr out[2];
+#endif /* NRF54L_SERIES */
 } __packed;
 
-static void do_ecb(struct ecb_param *ecb)
+static void do_ecb(struct ecb_param *ep)
 {
 	do {
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
-		NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
+
+#if defined(NRF54L_SERIES)
+		NRF_ECB->KEY.VALUE[3] = sys_get_be32(&ep->key[0]);
+		NRF_ECB->KEY.VALUE[2] = sys_get_be32(&ep->key[4]);
+		NRF_ECB->KEY.VALUE[1] = sys_get_be32(&ep->key[8]);
+		NRF_ECB->KEY.VALUE[0] = sys_get_be32(&ep->key[12]);
+
+		ep->in[0].ptr = ep->clear_text;
+		ep->in[0].length = sizeof(ep->clear_text);
+		ep->in[0].attribute = ECB_JOB_PTR_ATTRIBUTE;
+		ep->in[1].ptr = NULL;
+		ep->in[1].length = 0U;
+		ep->in[1].attribute = 0U;
+
+		ep->out[0].ptr = ep->cipher_text;
+		ep->out[0].length = sizeof(ep->cipher_text);
+		ep->out[0].attribute = ECB_JOB_PTR_ATTRIBUTE;
+		ep->out[1].ptr = NULL;
+		ep->out[1].length = 0U;
+		ep->out[1].attribute = 0U;
+
+		NRF_ECB->IN.PTR = (uint32_t)ep->in;
+		NRF_ECB->OUT.PTR = (uint32_t)ep->out;
+#else /* !NRF54L_SERIES */
+		NRF_ECB->ECBDATAPTR = (uint32_t)ep;
+#endif /* !NRF54L_SERIES */
+
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STARTECB);
@@ -82,21 +141,46 @@ void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le
 	}
 }
 
-uint32_t ecb_encrypt_nonblocking(struct ecb *ecb)
+void ecb_encrypt_nonblocking(struct ecb *e)
 {
 	/* prepare to be used in a BE AES h/w */
-	if (ecb->in_key_le) {
-		mem_rcopy(&ecb->in_key_be[0], ecb->in_key_le,
-			  sizeof(ecb->in_key_be));
+	if (e->in_key_le) {
+		mem_rcopy(&e->in_key_be[0], e->in_key_le, sizeof(e->in_key_be));
 	}
-	if (ecb->in_clear_text_le) {
-		mem_rcopy(&ecb->in_clear_text_be[0],
-			  ecb->in_clear_text_le,
-			  sizeof(ecb->in_clear_text_be));
+	if (e->in_clear_text_le) {
+		mem_rcopy(&e->in_clear_text_be[0], e->in_clear_text_le,
+			  sizeof(e->in_clear_text_be));
 	}
 
 	/* setup the encryption h/w */
-	NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
+#if defined(NRF54L_SERIES)
+	NRF_ECB->KEY.VALUE[3] = sys_get_be32(&e->in_key_be[0]);
+	NRF_ECB->KEY.VALUE[2] = sys_get_be32(&e->in_key_be[4]);
+	NRF_ECB->KEY.VALUE[1] = sys_get_be32(&e->in_key_be[8]);
+	NRF_ECB->KEY.VALUE[0] = sys_get_be32(&e->in_key_be[12]);
+
+	struct ecb_job_ptr *in = (void *)((uint8_t *)e + sizeof(*e));
+	struct ecb_job_ptr *out = (void *)((uint8_t *)in + 16U);
+
+	in[0].ptr = e->in_clear_text_be;
+	in[0].length = sizeof(e->in_clear_text_be);
+	in[0].attribute = ECB_JOB_PTR_ATTRIBUTE;
+	in[1].ptr = NULL;
+	in[1].length = 0U;
+	in[1].attribute = 0U;
+
+	out[0].ptr = e->out_cipher_text_be;
+	out[0].length = sizeof(e->out_cipher_text_be);
+	out[0].attribute = ECB_JOB_PTR_ATTRIBUTE;
+	out[1].ptr = NULL;
+	out[1].length = 0U;
+	out[1].attribute = 0U;
+
+	NRF_ECB->IN.PTR = (uint32_t)in;
+	NRF_ECB->OUT.PTR = (uint32_t)out;
+#else /* !NRF54L_SERIES */
+	NRF_ECB->ECBDATAPTR = (uint32_t)e;
+#endif /* !NRF54L_SERIES */
 	NRF_ECB->EVENTS_ENDECB = 0;
 	NRF_ECB->EVENTS_ERRORECB = 0;
 	nrf_ecb_int_enable(NRF_ECB, ECB_INTENSET_ERRORECB_Msk
@@ -108,43 +192,40 @@ uint32_t ecb_encrypt_nonblocking(struct ecb *ecb)
 
 	/* start the encryption h/w */
 	nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STARTECB);
-
-	return 0;
 }
 
-static void ecb_cleanup(void)
+static void isr_ecb(const void *arg)
 {
-	/* stop h/w */
-	NRF_ECB->TASKS_STOPECB = 1;
+#if defined(NRF54L_SERIES)
+	struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
+				 sizeof(struct ecb));
+#else /* !NRF54L_SERIES */
+	struct ecb *e = (void *)NRF_ECB->ECBDATAPTR;
+#endif /* !NRF54L_SERIES */
+
+	ARG_UNUSED(arg);
+
+	/* Stop ECB h/w */
 	nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 
-	/* cleanup interrupt */
+	/* We are done or encountered error, disable interrupt */
 	irq_disable(ECB_IRQn);
-}
-
-void isr_ecb(void *param)
-{
-	ARG_UNUSED(param);
 
 	if (NRF_ECB->EVENTS_ERRORECB) {
-		struct ecb *ecb = (struct ecb *)NRF_ECB->ECBDATAPTR;
+		NRF_ECB->EVENTS_ERRORECB = 0U;
 
-		ecb_cleanup();
-
-		ecb->fp_ecb(1, NULL, ecb->context);
+		e->fp_ecb(1U, NULL, e->context);
 	}
 
 	else if (NRF_ECB->EVENTS_ENDECB) {
-		struct ecb *ecb = (struct ecb *)NRF_ECB->ECBDATAPTR;
+		NRF_ECB->EVENTS_ENDECB = 0U;
 
-		ecb_cleanup();
-
-		ecb->fp_ecb(0, &ecb->out_cipher_text_be[0],
-			      ecb->context);
+		e->fp_ecb(0U, &e->out_cipher_text_be[0],
+			      e->context);
 	}
 
 	else {
-		LL_ASSERT(0);
+		LL_ASSERT(false);
 	}
 }
 
@@ -167,35 +248,62 @@ static void ecb_cb(uint32_t status, uint8_t *cipher_be, void *context)
 	}
 }
 
-uint32_t ecb_ut(void)
+int ecb_ut(void)
 {
-	uint8_t key[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-			 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
-	uint8_t clear_text[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-				0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44,
-				0x55 };
-	uint8_t cipher_text[16];
-	uint32_t status = 0U;
-	struct ecb ecb;
+	uint8_t key[] = {
+		0xbf, 0x01, 0xfb, 0x9d, 0x4e, 0xf3, 0xbc, 0x36,
+		0xd8, 0x74, 0xf5, 0x39, 0x41, 0x38, 0x68, 0x4c
+	};
+	uint8_t clear_text[] = {
+		0x13, 0x02, 0xf1, 0xe0, 0xdf, 0xce, 0xbd, 0xac,
+		0x79, 0x68, 0x57, 0x46, 0x35, 0x24, 0x13, 0x02
+	};
+	uint8_t cipher_text_expected[] = {
+		0x66, 0xc6, 0xc2, 0x27, 0x8e, 0x3b, 0x8e, 0x05,
+		0x3e, 0x7e, 0xa3, 0x26, 0x52, 0x1b, 0xad, 0x99
+	};
+	uint8_t cipher_text_actual[16];
+	int status;
+
+	(void)memset(cipher_text_actual, 0, sizeof(cipher_text_actual));
+	ecb_encrypt(key, clear_text, cipher_text_actual, NULL);
+
+	status = memcmp(cipher_text_actual, cipher_text_expected,
+			sizeof(cipher_text_actual));
+	if (status) {
+		return status;
+	}
+
+#if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS)
+	irq_connect_dynamic(ECB_IRQn, CONFIG_BT_CTLR_ULL_LOW_PRIO, isr_ecb, NULL, 0);
+#else /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
+	IRQ_CONNECT(ECB_IRQn, CONFIG_BT_CTLR_ULL_LOW_PRIO, isr_ecb, NULL, 0);
+#endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
+
+	uint8_t ecb_mem[sizeof(struct ecb) + 32U];
+	struct ecb *e = (void *)ecb_mem;
 	struct ecb_ut_context context;
 
-	ecb_encrypt(key, clear_text, cipher_text, NULL);
-
-	context.done = 0U;
-	ecb.in_key_le = key;
-	ecb.in_clear_text_le = clear_text;
-	ecb.fp_ecb = ecb_cb;
-	ecb.context = &context;
-	status = ecb_encrypt_nonblocking(&ecb);
+	(void)memset(&context, 0, sizeof(context));
+	e->in_key_le = key;
+	e->in_clear_text_le = clear_text;
+	e->fp_ecb = ecb_cb;
+	e->context = &context;
+	ecb_encrypt_nonblocking(e);
 	do {
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+		k_busy_wait(10);
+#else
 		cpu_sleep();
+#endif
 	} while (!context.done);
 
 	if (context.status != 0U) {
 		return context.status;
 	}
 
-	status = memcmp(cipher_text, context.cipher_text, sizeof(cipher_text));
+	status = memcmp(cipher_text_expected, context.cipher_text,
+			sizeof(cipher_text_expected));
 	if (status) {
 		return status;
 	}

@@ -293,6 +293,12 @@ static int frdm_mcxn236_init(void)
 
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0)) */
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c1))
+	CLOCK_SetClkDiv(kCLOCK_DivI3c1FClk, DT_PROP(DT_NODELABEL(i3c1), clk_divider));
+	/* Attach PLL0 clock to I3C, 150MHz / 6 = 25MHz. */
+	CLOCK_AttachClk(kPLL0_to_I3C1FCLK);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 

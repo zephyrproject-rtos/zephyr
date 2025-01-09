@@ -124,6 +124,13 @@ config SECOND_CORE_MCUX
 	  generated header specifying the VMA and LMA of each memory section
 	  to load
 
+config SECOND_CORE_MCUX_REMOTE_DIR
+	string "Directory to with output image header from second core"
+	depends on SECOND_CORE_MCUX
+	help
+	  Sets the remote directory to include the output image header data
+	  from when launching a second core image
+
 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 config PM_MCUX_GPC
