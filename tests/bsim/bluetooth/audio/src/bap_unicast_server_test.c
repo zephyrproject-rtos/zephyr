@@ -70,19 +70,6 @@ static struct audio_test_stream
 static const struct bt_bap_qos_cfg_pref qos_pref =
 	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
-static uint8_t unicast_server_addata[] = {
-	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
-	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
-	BT_BYTES_LIST_LE16(PREF_CONTEXT),
-	BT_BYTES_LIST_LE16(PREF_CONTEXT),
-	0x00, /* Metadata length */
-};
-
-static const struct bt_data unicast_server_ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
-	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
-};
 static struct bt_le_ext_adv *ext_adv;
 
 CREATE_FLAG(flag_stream_configured);
@@ -460,26 +447,7 @@ static void init(void)
 					  &stream_ops);
 	}
 
-	/* Create a connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
-	if (err != 0) {
-		FAIL("Failed to create advertising set (err %d)\n", err);
-		return;
-	}
-
-	err = bt_le_ext_adv_set_data(ext_adv, unicast_server_ad, ARRAY_SIZE(unicast_server_ad),
-				     NULL, 0);
-	if (err != 0) {
-		FAIL("Failed to set advertising data (err %d)\n", err);
-		return;
-	}
-
-	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err != 0) {
-		FAIL("Failed to start advertising set (err %d)\n", err);
-		return;
-	}
-	printk("Advertising started\n");
+	setup_connectable_adv(&ext_adv);
 }
 
 static void test_main(void)
@@ -540,22 +508,7 @@ static void test_main_acl_disconnect(void)
 	 * bt_conn object is properly unref'ed by the stack
 	 */
 	for (size_t i = 0U; i < ARRAY_SIZE(dummy_ext_adv); i++) {
-		const struct bt_le_adv_param param = BT_LE_ADV_PARAM_INIT(
-			(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN), BT_GAP_ADV_SLOW_INT_MAX,
-			BT_GAP_ADV_SLOW_INT_MAX, NULL);
-		int err;
-
-		err = bt_le_ext_adv_create(&param, NULL, &dummy_ext_adv[i]);
-		if (err != 0) {
-			FAIL("Failed to create advertising set[%zu] (err %d)\n", i, err);
-			return;
-		}
-
-		err = bt_le_ext_adv_start(dummy_ext_adv[i], BT_LE_EXT_ADV_START_DEFAULT);
-		if (err != 0) {
-			FAIL("Failed to start advertising set[%zu] (err %d)\n", i, err);
-			return;
-		}
+		setup_connectable_adv(&dummy_ext_adv[i]);
 	}
 
 	bt_conn_cb_register(&conn_callbacks);

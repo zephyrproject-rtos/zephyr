@@ -691,6 +691,7 @@ static void sync_all_broadcasts(void)
 
 static int common_init(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = bt_enable(NULL);
@@ -709,13 +710,7 @@ static int common_init(void)
 
 	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, AD_SIZE, NULL, 0);
-	if (err) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return err;
-	}
-
-	printk("Advertising successfully started\n");
+	setup_connectable_adv(&ext_adv);
 
 	WAIT_FOR_FLAG(flag_connected);
 

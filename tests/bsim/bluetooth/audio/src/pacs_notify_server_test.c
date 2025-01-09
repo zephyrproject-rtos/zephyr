@@ -158,9 +158,7 @@ static void test_main(void)
 {
 	int err;
 	enum bt_audio_context available, available_for_conn;
-	const struct bt_data ad[] = {
-		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	};
+	struct bt_le_ext_adv *ext_adv;
 
 	LOG_DBG("Enabling Bluetooth");
 	err = bt_enable(NULL);
@@ -191,11 +189,7 @@ static void test_main(void)
 	}
 
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)", err);
-		return;
-	}
+	setup_connectable_adv(&ext_adv);
 
 	LOG_DBG("Waiting to be connected");
 	WAIT_FOR_FLAG(flag_connected);
@@ -210,24 +204,21 @@ static void test_main(void)
 	LOG_INF("Trigger changes while device is connected");
 	trigger_notifications();
 
-	/* Now wait for client to disconnect, then stop adv so it does not reconnect */
+	/* Now wait for client to disconnect */
 	LOG_DBG("Wait for client disconnect");
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	LOG_DBG("Client disconnected");
-
-	err = bt_le_adv_stop();
-	if (err != 0) {
-		FAIL("Advertising failed to stop (err %d)", err);
-		return;
-	}
 
 	LOG_INF("Trigger changes while device is disconnected");
 	trigger_notifications();
 
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)", err);
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
+		bt_le_ext_adv_delete(ext_adv);
+
 		return;
 	}
 
@@ -235,16 +226,13 @@ static void test_main(void)
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	LOG_DBG("Client disconnected");
 
-	err = bt_le_adv_stop();
-	if (err != 0) {
-		FAIL("Advertising failed to stop (err %d)", err);
-		return;
-	}
-
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)", err);
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
+		bt_le_ext_adv_delete(ext_adv);
+
 		return;
 	}
 
@@ -269,16 +257,13 @@ static void test_main(void)
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	LOG_DBG("Client disconnected");
 
-	err = bt_le_adv_stop();
-	if (err != 0) {
-		FAIL("Advertising failed to stop (err %d)", err);
-		return;
-	}
-
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)", err);
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
+		bt_le_ext_adv_delete(ext_adv);
+
 		return;
 	}
 
