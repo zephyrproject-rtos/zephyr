@@ -108,22 +108,12 @@ enum wifi_eap_type {
 	WIFI_EAP_TYPE_MSCHAPV2 = 26,
 };
 
-/** @brief WPA3 Enterprise security types. */
-enum wifi_wpa3_enterprise_type {
-	/** no wpa3 enterprise. */
-	WIFI_WPA3_ENTERPRISE_NONE = 0,
-	/** wpa3 enterprise suiteb. */
-	WIFI_WPA3_ENTERPRISE_SUITEB = 1,
-	/** wpa3 enterprise suiteb-192. */
-	WIFI_WPA3_ENTERPRISE_SUITEB_192,
-	/** wpa3 enterprise only. */
-	WIFI_WPA3_ENTERPRISE_ONLY,
-
-	/** @cond INTERNAL_HIDDEN */
-	__WIFI_WPA3_ENTERPRISE_AFTER_LAST,
-	WIFI_WPA3_ENTERPRISE_MAX = __WIFI_WPA3_ENTERPRISE_AFTER_LAST - 1,
-	WIFI_WPA3_ENTERPRISE_UNKNOWN
-	/** @endcond */
+/** @brief Enterprise security WPA3 suiteb types. */
+enum wifi_suiteb_type {
+	/** suiteb. */
+	WIFI_SUITEB = 1,
+	/** suiteb-192. */
+	WIFI_SUITEB_192,
 };
 
 enum wifi_eap_tls_cipher_type {
