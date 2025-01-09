@@ -3,6 +3,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <apollo3p/am_apollo3p.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -61,142 +62,142 @@
 	};
 
 	/* TCM */
-	tcm: tcm@10000000 {
+	tcm: tcm@APOLLO3P_TCM {
 		compatible = "zephyr,memory-region";
-		reg = <0x10000000 0x10000>;
+		reg = <APOLLO3P_TCM_BASE APOLLO3P_TCM_SIZE>;
 		zephyr,memory-region = "ITCM";
 	};
 
 	/* SRAM */
-	sram0: memory@10010000 {
+	sram0: memory@APOLLO3P_SRAM {
 		compatible = "mmio-sram";
-		reg = <0x10010000 0xB0000>;
+		reg = <APOLLO3P_SRAM_BASE APOLLO3P_SRAM_SIZE>;
 	};
 
-	xip0: memory@52000000 {
+	xip0: memory@APOLLO3P_MSPI0_XIPMM_APERTURE {
 		compatible = "zephyr,memory-region";
-		reg = <0x52000000 0x2000000>;
+		reg = <APOLLO3P_MSPI0_XIPMM_APERTURE_BASE APOLLO3P_MSPI0_XIPMM_APERTURE_SIZE>;
 		zephyr,memory-region = "XIP0";
 	};
 
-	xip1: memory@54000000 {
+	xip1: memory@APOLLO3P_MSPI1_XIPMM_APERTURE {
 		compatible = "zephyr,memory-region";
-		reg = <0x54000000 0x2000000>;
+		reg = <APOLLO3P_MSPI1_XIPMM_APERTURE_BASE APOLLO3P_MSPI1_XIPMM_APERTURE_SIZE>;
 		zephyr,memory-region = "XIP1";
 	};
 
-	xip2: memory@56000000 {
+	xip2: memory@APOLLO3P_MSPI2_XIPMM_APERTURE {
 		compatible = "zephyr,memory-region";
-		reg = <0x56000000 0x2000000>;
+		reg = <APOLLO3P_MSPI2_XIPMM_APERTURE_BASE APOLLO3P_MSPI2_XIPMM_APERTURE_SIZE>;
 		zephyr,memory-region = "XIP2";
 	};
 
 	soc {
 		compatible = "ambiq,apollo3p-blue", "ambiq,apollo3x", "simple-bus";
 
-		flash: flash-controller@c000 {
+		flash: flash-controller@APOLLO3P_FLASH {
 			compatible = "ambiq,flash-controller";
-			reg = <0x0000c000 0x1f4000>;
+			reg = <APOLLO3P_FLASH_BASE APOLLO3P_FLASH_SIZE>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			/* Flash region */
-			flash0: flash@c000 {
+			flash0: flash@APOLLO3P_FLASH {
 				compatible = "soc-nv-flash";
-				reg = <0x0000c000 0x1f4000>;
+				reg = <APOLLO3P_FLASH_BASE APOLLO3P_FLASH_SIZE>;
 			};
 		};
 
-		pwrcfg: pwrcfg@40021000 {
+		pwrcfg: pwrcfg@APOLLO3P_PWRCTRL {
 			compatible = "ambiq,pwrctrl";
-			reg = <0x40021000 0x400>;
+			reg = <APOLLO3P_PWRCTRL_BASE APOLLO3P_PWRCTRL_SIZE>;
 			#pwrcfg-cells = <2>;
 		};
 
-		stimer0: stimer@40008140 {
+		stimer0: stimer@APOLLO3P_STIMER {
 			compatible = "ambiq,stimer";
-			reg = <0x40008140 0x80>;
-			interrupts = <23 0>;
+			reg = <APOLLO3P_STIMER_BASE APOLLO3P_STIMER_SIZE>;
+			interrupts = <APOLLO3P_STIMER_CMPR0_IRQ 0>;
 			status = "okay";
 		};
 
-		counter0: counter@40008000 {
+		counter0: counter@APOLLO3P_CTIMER0 {
 			compatible = "ambiq,counter";
-			reg = <0x40008000 0x20>;
-			interrupts = <14 0>;
+			reg = <APOLLO3P_CTIMER0_BASE APOLLO3P_CTIMER0_SIZE>;
+			interrupts = <APOLLO3P_CTIMER_IRQ 0>;
 			clock-frequency = <DT_FREQ_M(3)>;
 			clk-source = <2>;
 			status = "disabled";
 		};
 
-		counter1: counter@40008020 {
+		counter1: counter@APOLLO3P_CTIMER1 {
 			compatible = "ambiq,counter";
-			reg = <0x40008020 0x20>;
-			interrupts = <14 0>;
+			reg = <APOLLO3P_CTIMER1_BASE APOLLO3P_CTIMER1_SIZE>;
+			interrupts = <APOLLO3P_CTIMER_IRQ 0>;
 			clock-frequency = <DT_FREQ_M(3)>;
 			clk-source = <2>;
 			status = "disabled";
 		};
 
-		counter2: counter@40008040 {
+		counter2: counter@APOLLO3P_CTIMER2 {
 			compatible = "ambiq,counter";
-			reg = <0x40008040 0x20>;
-			interrupts = <14 0>;
+			reg = <APOLLO3P_CTIMER2_BASE APOLLO3P_CTIMER2_SIZE>;
+			interrupts = <APOLLO3P_CTIMER_IRQ 0>;
 			clock-frequency = <DT_FREQ_M(3)>;
 			clk-source = <2>;
 			status = "disabled";
 		};
 
-		counter3: counter@40008060 {
+		counter3: counter@APOLLO3P_CTIMER3 {
 			compatible = "ambiq,counter";
-			reg = <0x40008060 0x20>;
-			interrupts = <14 0>;
+			reg = <APOLLO3P_CTIMER3_BASE APOLLO3P_CTIMER3_SIZE>;
+			interrupts = <APOLLO3P_CTIMER_IRQ 0>;
 			clock-frequency = <DT_FREQ_M(3)>;
 			clk-source = <2>;
 			status = "disabled";
 		};
 
-		counter4: counter@40008080 {
+		counter4: counter@APOLLO3P_CTIMER4 {
 			compatible = "ambiq,counter";
-			reg = <0x40008080 0x20>;
-			interrupts = <14 0>;
+			reg = <APOLLO3P_CTIMER4_BASE APOLLO3P_CTIMER4_SIZE>;
+			interrupts = <APOLLO3P_CTIMER_IRQ 0>;
 			clock-frequency = <DT_FREQ_M(3)>;
 			clk-source = <2>;
 			status = "disabled";
 		};
 
-		counter5: counter@400080a0 {
+		counter5: counter@APOLLO3P_CTIMER5 {
 			compatible = "ambiq,counter";
-			reg = <0x400080A0 0x20>;
-			interrupts = <14 0>;
+			reg = <APOLLO3P_CTIMER5_BASE APOLLO3P_CTIMER5_SIZE>;
+			interrupts = <APOLLO3P_CTIMER_IRQ 0>;
 			clock-frequency = <DT_FREQ_M(3)>;
 			clk-source = <2>;
 			status = "disabled";
 		};
 
-		counter6: counter@400080c0 {
+		counter6: counter@APOLLO3P_CTIMER6 {
 			compatible = "ambiq,counter";
-			reg = <0x400080C0 0x20>;
-			interrupts = <14 0>;
+			reg = <APOLLO3P_CTIMER6_BASE APOLLO3P_CTIMER6_SIZE>;
+			interrupts = <APOLLO3P_CTIMER_IRQ 0>;
 			clock-frequency = <DT_FREQ_M(3)>;
 			clk-source = <2>;
 			status = "disabled";
 		};
 
-		counter7: counter@400080e0 {
+		counter7: counter@APOLLO3P_CTIMER7 {
 			compatible = "ambiq,counter";
-			reg = <0x400080E0 0x20>;
-			interrupts = <14 0>;
+			reg = <APOLLO3P_CTIMER7_BASE APOLLO3P_CTIMER7_SIZE>;
+			interrupts = <APOLLO3P_CTIMER_IRQ 0>;
 			clock-frequency = <DT_FREQ_M(3)>;
 			clk-source = <2>;
 			status = "disabled";
 		};
 
-		uart0: uart@4001c000 {
+		uart0: uart@APOLLO3P_UART0 {
 			compatible = "ambiq,uart", "arm,pl011";
-			reg = <0x4001c000 0x1000>;
-			interrupts = <15 0>;
+			reg = <APOLLO3P_UART0_BASE APOLLO3P_UART0_SIZE>;
+			interrupts = <APOLLO3P_UART0_IRQ 0>;
 			interrupt-names = "UART0";
 			status = "disabled";
 			clocks = <&uartclk>;
@@ -204,10 +205,10 @@
 			zephyr,pm-device-runtime-auto;
 		};
 
-		uart1: uart@4001d000 {
+		uart1: uart@APOLLO3P_UART1 {
 			compatible = "ambiq,uart", "arm,pl011";
-			reg = <0x4001d000 0x1000>;
-			interrupts = <16 0>;
+			reg = <APOLLO3P_UART1_BASE APOLLO3P_UART1_SIZE>;
+			interrupts = <APOLLO3P_UART1_IRQ 0>;
 			interrupt-names = "UART1";
 			status = "disabled";
 			clocks = <&uartclk>;
@@ -215,153 +216,153 @@
 			zephyr,pm-device-runtime-auto;
 		};
 
-		spid0: spi@50000100 {
+		spid0: spi@APOLLO3P_IOS {
 			compatible = "ambiq,spid";
-			reg = <0x50000100 0x1000>;
+			reg = <APOLLO3P_IOS_BASE APOLLO3P_IOS_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <4 0>;
+			interrupts = <APOLLO3P_IOSLAVE_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		spi0: spi@50004000 {
+		spi0: spi@APOLLO3P_IOM0 {
 			compatible = "ambiq,spi";
-			reg = <0x50004000 0x1000>;
+			reg = <APOLLO3P_IOM0_BASE APOLLO3P_IOM0_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <6 0>;
+			interrupts = <APOLLO3P_IOMSTR0_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		spi1: spi@50005000 {
+		spi1: spi@APOLLO3P_IOM1 {
 			compatible = "ambiq,spi";
-			reg = <0x50005000 0x1000>;
+			reg = <APOLLO3P_IOM1_BASE APOLLO3P_IOM1_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <7 0>;
+			interrupts = <APOLLO3P_IOMSTR1_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		spi2: spi@50006000 {
+		spi2: spi@APOLLO3P_IOM2 {
 			compatible = "ambiq,spi";
-			reg = <0x50006000 0x1000>;
+			reg = <APOLLO3P_IOM2_BASE APOLLO3P_IOM2_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <8 0>;
+			interrupts = <APOLLO3P_IOMSTR2_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		spi3: spi@50007000 {
+		spi3: spi@APOLLO3P_IOM3 {
 			compatible = "ambiq,spi";
-			reg = <0x50007000 0x1000>;
+			reg = <APOLLO3P_IOM3_BASE APOLLO3P_IOM3_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <9 0>;
+			interrupts = <APOLLO3P_IOMSTR3_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		spi4: spi@50008000 {
+		spi4: spi@APOLLO3P_IOM4 {
 			compatible = "ambiq,spi";
-			reg = <0x50008000 0x1000>;
+			reg = <APOLLO3P_IOM4_BASE APOLLO3P_IOM4_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <10 0>;
+			interrupts = <APOLLO3P_IOMSTR4_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		spi5: spi@50009000 {
+		spi5: spi@APOLLO3P_IOM5 {
 			compatible = "ambiq,spi";
-			reg = <0x50009000 0x1000>;
+			reg = <APOLLO3P_IOM5_BASE APOLLO3P_IOM5_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <11 0>;
+			interrupts = <APOLLO3P_IOMSTR5_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		i2c0: i2c@50004000 {
+		i2c0: i2c@APOLLO3P_IOM0 {
 			compatible = "ambiq,i2c";
-			reg = <0x50004000 0x1000>;
+			reg = <APOLLO3P_IOM0_BASE APOLLO3P_IOM0_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <6 0>;
+			interrupts = <APOLLO3P_IOMSTR0_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		i2c1: i2c@50005000 {
+		i2c1: i2c@APOLLO3P_IOM1 {
 			compatible = "ambiq,i2c";
-			reg = <0x50005000 0x1000>;
+			reg = <APOLLO3P_IOM1_BASE APOLLO3P_IOM1_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <7 0>;
+			interrupts = <APOLLO3P_IOMSTR1_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		i2c2: i2c@50006000 {
+		i2c2: i2c@APOLLO3P_IOM2 {
 			compatible = "ambiq,i2c";
-			reg = <0x50006000 0x1000>;
+			reg = <APOLLO3P_IOM2_BASE APOLLO3P_IOM2_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <8 0>;
+			interrupts = <APOLLO3P_IOMSTR2_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		i2c3: i2c@50007000 {
+		i2c3: i2c@APOLLO3P_IOM3 {
 			compatible = "ambiq,i2c";
-			reg = <0x50007000 0x1000>;
+			reg = <APOLLO3P_IOM3_BASE APOLLO3P_IOM3_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <9 0>;
+			interrupts = <APOLLO3P_IOMSTR3_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		i2c4: i2c@50008000 {
+		i2c4: i2c@APOLLO3P_IOM4 {
 			compatible = "ambiq,i2c";
-			reg = <0x50008000 0x1000>;
+			reg = <APOLLO3P_IOM4_BASE APOLLO3P_IOM4_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <10 0>;
+			interrupts = <APOLLO3P_IOMSTR4_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		i2c5: i2c@50009000 {
+		i2c5: i2c@APOLLO3P_IOM5 {
 			compatible = "ambiq,i2c";
-			reg = <0x50009000 0x1000>;
+			reg = <APOLLO3P_IOM5_BASE APOLLO3P_IOM5_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <11 0>;
+			interrupts = <APOLLO3P_IOMSTR5_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
 			zephyr,pm-device-runtime-auto;
 		};
 
-		adc0: adc@50010000 {
+		adc0: adc@APOLLO3P_ADC {
 			compatible = "ambiq,adc";
-			reg = <0x50010000 0x400>;
-			interrupts = <18 0>;
+			reg = <APOLLO3P_ADC_BASE APOLLO3P_ADC_SIZE>;
+			interrupts = <APOLLO3P_ADC_IRQ 0>;
 			interrupt-names = "ADC";
 			channel-count = <10>;
 			internal-vref-mv = <1500>;
@@ -370,51 +371,54 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x200>;
 		};
 
-		mspi0: mspi@50014000 {
+		mspi0: mspi@APOLLO3P_MSPI0 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x50014000 0x400>,<0x52000000 0x2000000>;
+			reg = <APOLLO3P_MSPI0_BASE APOLLO3P_MSPI0_SIZE>,
+			<APOLLO3P_MSPI0_XIPMM_APERTURE_BASE APOLLO3P_MSPI0_XIPMM_APERTURE_SIZE>;
 			clock-frequency = <48000000>;
-			interrupts = <20 0>;
+			interrupts = <APOLLO3P_MSPI0_IRQ 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x800>;
 		};
 
-		mspi1: mspi@50015000 {
+		mspi1: mspi@APOLLO3P_MSPI1 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x50015000 0x400>,<0x54000000 0x2000000>;
+			reg = <APOLLO3P_MSPI1_BASE APOLLO3P_MSPI1_SIZE>,
+			<APOLLO3P_MSPI1_XIPMM_APERTURE_BASE APOLLO3P_MSPI1_XIPMM_APERTURE_SIZE>;
 			clock-frequency = <48000000>;
-			interrupts = <32 0>;
+			interrupts = <APOLLO3P_MSPI1_IRQ 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x1000>;
 		};
 
-		mspi2: mspi@50016000 {
+		mspi2: mspi@APOLLO3P_MSPI2 {
 			compatible = "ambiq,mspi-controller";
 			clock-frequency = <48000000>;
-			reg = <0x50016000 0x400>,<0x56000000 0x2000000>;
-			interrupts = <33 0>;
+			reg = <APOLLO3P_MSPI2_BASE APOLLO3P_MSPI2_SIZE>,
+			<APOLLO3P_MSPI2_XIPMM_APERTURE_BASE APOLLO3P_MSPI2_XIPMM_APERTURE_SIZE>;
+			interrupts = <APOLLO3P_MSPI2_IRQ 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x2000>;
 		};
 
-		rtc0: rtc@40004240 {
+		rtc0: rtc@APOLLO3P_RTC {
 			compatible = "ambiq,rtc";
-			reg = <0x40004240 0xD0>;
-			interrupts = <2 0>;
+			reg = <APOLLO3P_RTC_BASE APOLLO3P_RTC_SIZE>;
+			interrupts = <APOLLO3P_RTC_IRQ 0>;
 			alarms-count = <1>;
 			status = "disabled";
 		};
 
-		bleif: spi@5000c000 {
+		bleif: spi@APOLLO3P_BLEIF {
 			compatible = "ambiq,spi-bleif";
-			reg = <0x5000c000 0x414>;
-			interrupts = <12 1>;
+			reg = <APOLLO3P_BLEIF_BASE APOLLO3P_BLEIF_SIZE>;
+			interrupts = <APOLLO3P_BLE_IRQ 1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -427,13 +431,13 @@
 			};
 		};
 
-		pinctrl: pin-controller@40010000 {
+		pinctrl: pin-controller@APOLLO3P_GPIO {
 			compatible = "ambiq,apollo3-pinctrl";
-			reg = <0x40010000 0x800>;
+			reg = <APOLLO3P_GPIO_BASE APOLLO3P_GPIO_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			gpio: gpio@40010000 {
+			gpio: gpio@APOLLO3P_GPIO {
 				compatible = "ambiq,gpio";
 				gpio-map-mask = <0xffffffe0 0xffffffc0>;
 				gpio-map-pass-thru = <0x1f 0x3f>;
@@ -442,7 +446,7 @@
 					0x20 0x0 &gpio32_63 0x0 0x0
 					0x40 0x0 &gpio64_95 0x0 0x0
 				>;
-				reg = <0x40010000>;
+				reg = <APOLLO3P_GPIO_BASE>;
 				#gpio-cells = <2>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -453,7 +457,7 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					reg = <0>;
-					interrupts = <13 0>;
+					interrupts = <APOLLO3P_GPIO_IRQ 0>;
 					status = "disabled";
 				};
 
@@ -462,7 +466,7 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					reg = <0x20>;
-					interrupts = <13 0>;
+					interrupts = <APOLLO3P_GPIO_IRQ 0>;
 					status = "disabled";
 				};
 
@@ -471,17 +475,17 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					reg = <0x40>;
-					interrupts = <13 0>;
+					interrupts = <APOLLO3P_GPIO_IRQ 0>;
 					status = "disabled";
 					ngpios = <10>;
 				};
 			};
 		};
 
-		wdt0: watchdog@40024000 {
+		wdt0: watchdog@APOLLO3P_WDT {
 			compatible = "ambiq,watchdog";
-			reg = <0x40024000 0x400>;
-			interrupts = <1 0>;
+			reg = <APOLLO3P_WDT_BASE APOLLO3P_WDT_SIZE>;
+			interrupts = <APOLLO3P_WDT_IRQ 0>;
 			clock-frequency = <16>;
 			status = "disabled";
 		};

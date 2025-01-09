@@ -3,6 +3,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <apollo4p/am_apollo4p.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -63,260 +64,260 @@
 	};
 
 	/* TCM */
-	tcm: tcm@10000000 {
+	tcm: tcm@APOLLO4P_TCM {
 		compatible = "zephyr,memory-region";
-		reg = <0x10000000 0x10000>;
+		reg = <APOLLO4P_TCM_BASE APOLLO4P_TCM_SIZE>;
 		zephyr,memory-region = "ITCM";
 	};
 
 	/* SRAM */
-	sram0: memory@10010000 {
+	sram0: memory@APOLLO4P_SRAM0 {
 		compatible = "mmio-sram";
-		reg = <0x10010000 0x2B0000>;
+		reg = <APOLLO4P_SRAM0_BASE APOLLO4P_SRAM0_SIZE>;
 	};
 
 	soc {
 		compatible = "ambiq,apollo4p", "ambiq,apollo4x", "simple-bus";
 
-		flash: flash-controller@18000 {
+		flash: flash-controller@APOLLO4P_FLASH {
 			compatible = "ambiq,flash-controller";
-			reg = <0x00018000 0x1e8000>;
+			reg = <APOLLO4P_FLASH_BASE APOLLO4P_FLASH_SIZE>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			/* Flash region */
-			flash0: flash@18000 {
+			/* MRAM region */
+			flash0: flash@APOLLO4P_FLASH {
 				compatible = "soc-nv-flash";
-				reg = <0x00018000 0x1e8000>;
+				reg = <APOLLO4P_FLASH_BASE APOLLO4P_FLASH_SIZE>;
 			};
 		};
 
-		pwrcfg: pwrcfg@40021000 {
+		pwrcfg: pwrcfg@APOLLO4P_PWRCTRL {
 			compatible = "ambiq,pwrctrl";
-			reg = <0x40021000 0x400>;
+			reg = <APOLLO4P_PWRCTRL_BASE APOLLO4P_PWRCTRL_SIZE>;
 			#pwrcfg-cells = <2>;
 		};
 
-		stimer0: stimer@40008800 {
+		stimer0: stimer@APOLLO4P_STIMER {
 			compatible = "ambiq,stimer";
-			reg = <0x40008800 0x80>;
-			interrupts = <32 0>;
+			reg = <APOLLO4P_STIMER_BASE APOLLO4P_STIMER_SIZE>;
+			interrupts = <APOLLO4P_STIMER_CMPR0_IRQ 0>;
 			status = "okay";
 		};
 
-		counter0: counter@40008200 {
+		counter0: counter@APOLLO4P_TIMER0 {
 			compatible = "ambiq,counter";
-			reg = <0x40008200 0x20>;
-			interrupts = <67 0>;
+			reg = <APOLLO4P_TIMER0_BASE APOLLO4P_TIMER0_SIZE>;
+			interrupts = <APOLLO4P_TIMER0_IRQ 0>;
 			clock-frequency = <DT_FREQ_M(6)>;
 			clk-source = <1>;
 			status = "disabled";
 		};
 
-		uart0: uart@4001c000 {
+		uart0: uart@APOLLO4P_UART0 {
 			compatible = "ambiq,uart", "arm,pl011";
-			reg = <0x4001c000 0x1000>;
-			interrupts = <15 0>;
+			reg = <APOLLO4P_UART0_BASE APOLLO4P_UART0_SIZE>;
+			interrupts = <APOLLO4P_UART0_IRQ 0>;
 			interrupt-names = "UART0";
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x200>;
 		};
-		uart1: uart@4001d000 {
+		uart1: uart@APOLLO4P_UART1 {
 			compatible = "ambiq,uart", "arm,pl011";
-			reg = <0x4001d000 0x1000>;
-			interrupts = <16 0>;
+			reg = <APOLLO4P_UART1_BASE APOLLO4P_UART1_SIZE>;
+			interrupts = <APOLLO4P_UART1_IRQ 0>;
 			interrupt-names = "UART1";
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x400>;
 		};
 
-		uart2: uart@4001e000 {
+		uart2: uart@APOLLO4P_UART2 {
 			compatible = "ambiq,uart", "arm,pl011";
-			reg = <0x4001e000 0x1000>;
-			interrupts = <17 0>;
+			reg = <APOLLO4P_UART2_BASE APOLLO4P_UART2_SIZE>;
+			interrupts = <APOLLO4P_UART2_IRQ 0>;
 			interrupt-names = "UART2";
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x800>;
 		};
 
-		uart3: uart@4001f000 {
+		uart3: uart@APOLLO4P_UART3 {
 			compatible = "ambiq,uart", "arm,pl011";
-			reg = <0x4001f000 0x1000>;
-			interrupts = <18 0>;
+			reg = <APOLLO4P_UART3_BASE APOLLO4P_UART3_SIZE>;
+			interrupts = <APOLLO4P_UART3_IRQ 0>;
 			interrupt-names = "UART3";
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x1000>;
 		};
 
-		iom0_spi: spi@40050000 {
+		spi0: spi@APOLLO4P_IOM0 {
 			compatible = "ambiq,spi";
-			reg = <0x40050000 0x1000>;
+			reg = <APOLLO4P_IOM0_BASE APOLLO4P_IOM0_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <6 0>;
+			interrupts = <APOLLO4P_IOMSTR0_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
 		};
 
-		iom0_i2c: i2c@40050000 {
+		i2c0: i2c@APOLLO4P_IOM0 {
 			compatible = "ambiq,i2c";
-			reg = <0x40050000 0x1000>;
+			reg = <APOLLO4P_IOM0_BASE APOLLO4P_IOM0_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <6 0>;
+			interrupts = <APOLLO4P_IOMSTR0_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
 		};
 
-		iom1_spi: spi@40051000 {
+		spi1: spi@APOLLO4P_IOM1 {
 			compatible = "ambiq,spi";
-			reg = <0x40051000 0x1000>;
+			reg = <APOLLO4P_IOM1_BASE APOLLO4P_IOM1_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <7 0>;
+			interrupts = <APOLLO4P_IOMSTR1_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
 		};
 
-		iom1_i2c: i2c@40051000 {
+		i2c1: i2c@APOLLO4P_IOM1 {
 			compatible = "ambiq,i2c";
-			reg = <0x40051000 0x1000>;
+			reg = <APOLLO4P_IOM1_BASE APOLLO4P_IOM1_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <7 0>;
+			interrupts = <APOLLO4P_IOMSTR1_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
 		};
 
-		iom2_spi: spi@40052000 {
+		spi2: spi@APOLLO4P_IOM2 {
 			compatible = "ambiq,spi";
-			reg = <0x40052000 0x1000>;
+			reg = <APOLLO4P_IOM2_BASE APOLLO4P_IOM2_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <8 0>;
+			interrupts = <APOLLO4P_IOMSTR2_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
 		};
 
-		iom2_i2c: i2c@40052000 {
+		i2c2: i2c@APOLLO4P_IOM2 {
 			compatible = "ambiq,i2c";
-			reg = <0x40052000 0x1000>;
+			reg = <APOLLO4P_IOM2_BASE APOLLO4P_IOM2_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <8 0>;
+			interrupts = <APOLLO4P_IOMSTR2_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
 		};
 
-		iom3_spi: spi@40053000 {
+		spi3: spi@APOLLO4P_IOM3 {
 			compatible = "ambiq,spi";
-			reg = <0x40053000 0x1000>;
+			reg = <APOLLO4P_IOM3_BASE APOLLO4P_IOM3_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <9 0>;
+			interrupts = <APOLLO4P_IOMSTR3_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
 		};
 
-		iom3_i2c: i2c@40053000 {
+		i2c3: i2c@APOLLO4P_IOM3 {
 			compatible = "ambiq,i2c";
-			reg = <0x40053000 0x1000>;
+			reg = <APOLLO4P_IOM3_BASE APOLLO4P_IOM3_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <9 0>;
+			interrupts = <APOLLO4P_IOMSTR3_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
 		};
 
-		iom4_spi: spi@40054000 {
+		spi4: spi@APOLLO4P_IOM4 {
 			compatible = "ambiq,spi";
-			reg = <0x40054000 0x1000>;
+			reg = <APOLLO4P_IOM4_BASE APOLLO4P_IOM4_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <10 0>;
+			interrupts = <APOLLO4P_IOMSTR4_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
 		};
 
-		iom4_i2c: i2c@40054000 {
+		i2c4: i2c@APOLLO4P_IOM4 {
 			compatible = "ambiq,i2c";
-			reg = <0x40054000 0x1000>;
+			reg = <APOLLO4P_IOM4_BASE APOLLO4P_IOM4_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <10 0>;
+			interrupts = <APOLLO4P_IOMSTR4_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
 		};
 
-		iom5_spi: spi@40055000 {
+		spi5: spi@APOLLO4P_IOM5 {
 			compatible = "ambiq,spi";
-			reg = <0x40055000 0x1000>;
+			reg = <APOLLO4P_IOM5_BASE APOLLO4P_IOM5_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <11 0>;
+			interrupts = <APOLLO4P_IOMSTR5_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
 		};
 
-		iom5_i2c: i2c@40055000 {
+		i2c5: i2c@APOLLO4P_IOM5 {
 			compatible = "ambiq,i2c";
-			reg = <0x40055000 0x1000>;
+			reg = <APOLLO4P_IOM5_BASE APOLLO4P_IOM5_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <11 0>;
+			interrupts = <APOLLO4P_IOMSTR5_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
 		};
 
-		iom6_spi: spi@40056000 {
+		spi6: spi@APOLLO4P_IOM6 {
 			compatible = "ambiq,spi";
-			reg = <0x40056000 0x1000>;
+			reg = <APOLLO4P_IOM6_BASE APOLLO4P_IOM6_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <12 0>;
+			interrupts = <APOLLO4P_IOMSTR6_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
 		};
 
-		iom6_i2c: i2c@40056000 {
+		i2c6: i2c@APOLLO4P_IOM6 {
 			compatible = "ambiq,i2c";
-			reg = <0x40056000 0x1000>;
+			reg = <APOLLO4P_IOM6_BASE APOLLO4P_IOM6_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <12 0>;
+			interrupts = <APOLLO4P_IOMSTR6_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
 		};
 
-		iom7_spi: spi@40057000 {
+		spi7: spi@APOLLO4P_IOM7 {
 			compatible = "ambiq,spi";
-			reg = <0x40057000 0x1000>;
+			reg = <APOLLO4P_IOM7_BASE APOLLO4P_IOM7_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <13 0>;
+			interrupts = <APOLLO4P_IOMSTR7_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
 		};
 
-		iom7_i2c: i2c@40057000 {
+		i2c7: i2c@APOLLO4P_IOM7 {
 			compatible = "ambiq,i2c";
-			reg = <0x40057000 0x1000>;
+			reg = <APOLLO4P_IOM7_BASE APOLLO4P_IOM7_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <13 0>;
+			interrupts = <APOLLO4P_IOMSTR7_IRQ 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
 		};
 
-		adc0: adc@40038000 {
+		adc0: adc@APOLLO4P_ADC {
 			compatible = "ambiq,adc";
-			reg = <0x40038000 0x400>;
-			interrupts = <19 0>;
+			reg = <APOLLO4P_ADC_BASE APOLLO4P_ADC_SIZE>;
+			interrupts = <APOLLO4P_ADC_IRQ 0>;
 			interrupt-names = "ADC";
 			channel-count = <10>;
 			internal-vref-mv = <1190>;
@@ -325,61 +326,61 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x2000>;
 		};
 
-		mspi0: spi@40060000 {
+		mspi0: spi@APOLLO4P_MSPI0 {
 			compatible = "ambiq,mspi";
-			reg = <0x40060000 0x400>;
-			interrupts = <20 0>;
+			reg = <APOLLO4P_MSPI0_BASE APOLLO4P_MSPI0_SIZE>;
+			interrupts = <APOLLO4P_MSPI0_IRQ 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x4000>;
 		};
 
-		mspi1: spi@40061000 {
+		mspi1: spi@APOLLO4P_MSPI1 {
 			compatible = "ambiq,mspi";
-			reg = <0x40061000 0x400>;
-			interrupts = <21 0>;
+			reg = <APOLLO4P_MSPI1_BASE APOLLO4P_MSPI1_SIZE>;
+			interrupts = <APOLLO4P_MSPI1_IRQ 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x8000>;
 		};
 
-		mspi2: spi@40062000 {
+		mspi2: spi@APOLLO4P_MSPI2 {
 			compatible = "ambiq,mspi";
-			reg = <0x40062000 0x400>;
-			interrupts = <22 0>;
+			reg = <APOLLO4P_MSPI2_BASE APOLLO4P_MSPI2_SIZE>;
+			interrupts = <APOLLO4P_MSPI2_IRQ 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x10000>;
 		};
 
-		rtc0: rtc@40004800 {
+		rtc0: rtc@APOLLO4P_RTC {
 			compatible = "ambiq,rtc";
-			reg = <0x40004800 0x210>;
-			interrupts = <2 0>;
+			reg = <APOLLO4P_RTC_BASE APOLLO4P_RTC_SIZE>;
+			interrupts = <APOLLO4P_RTC_IRQ 0>;
 			alarms-count = <1>;
 			status = "disabled";
 		};
 
-		usb: usb@400b0000 {
+		usb: usb@APOLLO4P_USB {
 			compatible = "ambiq,usb";
-			reg = <0x400B0000 0x4100>;
-			interrupts = <27 0>;
+			reg = <APOLLO4P_USB_BASE APOLLO4P_USB_SIZE>;
+			interrupts = <APOLLO4P_USB_IRQ 0>;
 			num-bidir-endpoints = <6>;
 			maximum-speed = "full-speed";
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x400000>;
 		};
 
-		pinctrl: pin-controller@40010000 {
+		pinctrl: pin-controller@APOLLO4P_GPIO {
 			compatible = "ambiq,apollo4-pinctrl";
-			reg = <0x40010000 0x800>;
+			reg = <APOLLO4P_GPIO_BASE APOLLO4P_GPIO_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			gpio: gpio@40010000 {
+			gpio: gpio@APOLLO4P_GPIO {
 				compatible = "ambiq,gpio";
 				gpio-map-mask = <0xffffffe0 0xffffffc0>;
 				gpio-map-pass-thru = <0x1f 0x3f>;
@@ -389,7 +390,7 @@
 					0x40 0x0 &gpio64_95 0x0 0x0
 					0x60 0x0 &gpio96_127 0x0 0x0
 				>;
-				reg = <0x40010000>;
+				reg = <APOLLO4P_GPIO_BASE>;
 				#gpio-cells = <2>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -400,7 +401,7 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					reg = <0>;
-					interrupts = <56 0>;
+					interrupts = <APOLLO4P_GPIO0_001F_IRQ 0>;
 					status = "disabled";
 				};
 
@@ -409,7 +410,7 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					reg = <0x80>;
-					interrupts = <57 0>;
+					interrupts = <APOLLO4P_GPIO0_203F_IRQ 0>;
 					status = "disabled";
 				};
 
@@ -418,7 +419,7 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					reg = <0x100>;
-					interrupts = <58 0>;
+					interrupts = <APOLLO4P_GPIO0_405F_IRQ 0>;
 					status = "disabled";
 				};
 
@@ -427,16 +428,16 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					reg = <0x180>;
-					interrupts = <59 0>;
+					interrupts = <APOLLO4P_GPIO0_607F_IRQ 0>;
 					status = "disabled";
 				};
 			};
 		};
 
-		wdt0: watchdog@40024000 {
+		wdt0: watchdog@APOLLO4P_WDT {
 			compatible = "ambiq,watchdog";
-			reg = <0x40024000 0x400>;
-			interrupts = <1 0>;
+			reg = <APOLLO4P_WDT_BASE APOLLO4P_WDT_SIZE>;
+			interrupts = <APOLLO4P_WDT_IRQ 0>;
 			clock-frequency = <16>;
 			status = "disabled";
 		};
