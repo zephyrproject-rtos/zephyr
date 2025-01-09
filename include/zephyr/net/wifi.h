@@ -185,12 +185,12 @@ struct wifi_eap_cipher_config {
 
 struct wifi_eap_config {
 	/**  Security type. */
-	enum wifi_security_type type;
-	/** EAP method type of phase1. */
+	unsigned int type;
+	/** EPA method type of phase1. */
 	enum wifi_eap_type eap_type_phase1;
-	/** EAP method type of phase2. */
+	/** EPA method type of phase2. */
 	enum wifi_eap_type eap_type_phase2;
-	/** EAP method string. */
+	/** EPA method string. */
 	char *method;
 	/** Phase2 setting string. */
 	char *phase2;
