@@ -252,6 +252,7 @@ struct xmodem_packet {
 #define DNS_WORK_DELAY_SECS 1
 #define IFACE_WORK_DELAY K_MSEC(500)
 #define SOCKET_CLEANUP_WORK_DELAY K_MSEC(100)
+#define STORED_SOCKETS_DELAY K_SECONDS(1)
 #define WAIT_FOR_KSUP_RETRIES 5
 
 #define CGCONTRDP_RESPONSE_NUM_DELIMS 7
@@ -457,6 +458,7 @@ struct hl7800_iface_ctx {
 	/* semaphores */
 	struct k_sem response_sem;
 	struct k_sem mdm_awake;
+	struct k_sem wait_urc;
 
 	/* work */
 	struct k_work_delayable rssi_query_work;
@@ -1974,7 +1976,7 @@ static void dns_work_cb(struct k_work *work)
 			LOG_DBG("DNS ready");
 			iface_ctx.dns_ready = true;
 		} else {
-			LOG_DBG("DNS not ready, schedule a retry");
+			LOG_WRN("DNS not ready, schedule a retry");
 			k_work_reschedule_for_queue(&hl7800_workq, &iface_ctx.dns_work,
 						    K_SECONDS(DNS_WORK_DELAY_SECS * 2));
 		}
@@ -4085,6 +4087,9 @@ static bool on_cmd_sockcreate(enum net_sock_type type, struct net_buf **buf, uin
 	sock->reconfig = false;
 	/* don't give back semaphore -- OK to follow */
 done:
+	if (iface_ctx.reconfig_IP_connection) {
+		k_sem_give(&iface_ctx.wait_urc);
+	}
 	return true;
 }
 
@@ -5928,14 +5933,14 @@ static int reconfigure_IP_connection(void)
 	int ret = 0;
 
 	if (iface_ctx.reconfig_IP_connection) {
-		iface_ctx.reconfig_IP_connection = false;
-
 		/* reconfigure GPRS connection so sockets can be used */
 		ret = setup_gprs_connection(iface_ctx.mdm_apn.value);
 		if (ret < 0) {
 			LOG_ERR("AT+KCNXCFG= ret:%d", ret);
 			goto done;
 		}
+
+		k_sem_reset(&iface_ctx.wait_urc);
 
 		/* query all TCP socket configs */
 		ret = send_at_cmd(NULL, "AT+KTCPCFG?", MDM_CMD_SEND_TIMEOUT, 0,
@@ -5945,8 +5950,13 @@ static int reconfigure_IP_connection(void)
 		ret = send_at_cmd(NULL, "AT+KUDPCFG?", MDM_CMD_SEND_TIMEOUT, 0,
 				  false);
 
-		/* TODO: to make this better, wait for +KUDP_IND or timeout */
-		k_sleep(K_SECONDS(1));
+		ret = k_sem_take(&iface_ctx.wait_urc, STORED_SOCKETS_DELAY);
+		if (ret == -EAGAIN) {
+			/* There are no sockets to reset */
+			iface_ctx.reset_sockets = false;
+		}
+
+		iface_ctx.reconfig_IP_connection = false;
 	}
 
 done:
@@ -6425,6 +6435,7 @@ static int hl7800_init(const struct device *dev)
 	iface_ctx.last_socket_id = 0;
 	k_sem_init(&iface_ctx.response_sem, 0, 1);
 	k_sem_init(&iface_ctx.mdm_awake, 0, 1);
+	k_sem_init(&iface_ctx.wait_urc, 0, 1);
 
 	/* initialize the work queue */
 	k_work_queue_start(&hl7800_workq, hl7800_workq_stack,
