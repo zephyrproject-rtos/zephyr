@@ -448,7 +448,7 @@
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
+    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
