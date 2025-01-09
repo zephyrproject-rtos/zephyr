@@ -7,6 +7,7 @@ menuconfig IPC_SERVICE_BACKEND_ICBMSG
 	depends on MBOX
 	depends on DT_HAS_ZEPHYR_IPC_ICBMSG_ENABLED
 	select IPC_SERVICE_ICMSG
+	select IPC_SERVICE_BITPOOL
 	help
 	  Choosing this backend results in multi endpoint implementation based
 	  on dynamically allocated buffers. References to them are send over
