@@ -1,4 +1,5 @@
 # Copyright (c) 2017-2019 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MPS2
@@ -6,6 +7,12 @@ config SOC_SERIES_MPS2
 	select SOC_FAMILY_ARM
 	help
 	  Enable support for ARM MPS2 MCU Series
+
+config SOC_MPS2_AN383
+	bool
+	select SOC_SERIES_MPS2
+	help
+	  ARM Cortex-M0+ SMM on V2M-MPS2 (Application Note AN383)
 
 config SOC_MPS2_AN385
 	bool
@@ -33,5 +40,6 @@ config SOC_SERIES
 	default "mps2" if SOC_SERIES_MPS2
 
 config SOC
+	default "an383" if SOC_MPS2_AN383
 	default "an385" if SOC_MPS2_AN385
 	default "an521" if SOC_MPS2_AN521
