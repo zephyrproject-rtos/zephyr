@@ -68,7 +68,9 @@ static uint32_t counter_rpi_pico_timer_get_top_value(const struct device *dev)
 
 static int counter_rpi_pico_timer_get_value(const struct device *dev, uint32_t *ticks)
 {
-	*ticks = time_us_32();
+	const struct counter_rpi_pico_timer_config *config = dev->config;
+
+	*ticks = timer_time_us_32(config->timer);
 	return 0;
 }
 
@@ -158,6 +160,7 @@ static int counter_rpi_pico_timer_set_guard_period(const struct device *dev, uin
 static void counter_rpi_pico_irq_handle(uint32_t ch, void *arg)
 {
 	struct device *dev = arg;
+	const struct counter_rpi_pico_timer_config *config = dev->config;
 	struct counter_rpi_pico_timer_data *data = dev->data;
 	counter_alarm_callback_t cb = data->ch_data[ch].callback;
 	void *user_data = data->ch_data[ch].user_data;
@@ -165,7 +168,7 @@ static void counter_rpi_pico_irq_handle(uint32_t ch, void *arg)
 	if (cb) {
 		data->ch_data[ch].callback = NULL;
 		data->ch_data[ch].user_data = NULL;
-		cb(dev, ch, time_us_32(), user_data);
+		cb(dev, ch, timer_time_us_32(config->timer), user_data);
 	}
 }
 
