@@ -66,17 +66,19 @@ static int ws_console_out(struct log_backend_ws_ctx *ctx, int c)
 	unsigned int cnt = 0;
 	int ret = 0;
 
-	if (pos >= (sizeof(output_buf) - 1)) {
-		printnow = true;
+	__ASSERT_NO_MSG(pos < sizeof(output_buf));
+
+	if ((c != '\n') && (c != '\r')) {
+		output_buf[pos++] = c;
 	} else {
-		if ((c != '\n') && (c != '\r')) {
-			output_buf[pos++] = c;
-		} else {
-			printnow = true;
-		}
+		printnow = true;
 	}
 
-	if (printnow) {
+	if (pos >= sizeof(output_buf)) {
+		printnow = true;
+	}
+
+	if (pos > 0 && printnow) {
 		while (ctx->sock >= 0 && cnt < max_cnt) {
 			ret = ws_send_all(ctx->sock, output_buf, pos);
 			if (ret < 0) {
