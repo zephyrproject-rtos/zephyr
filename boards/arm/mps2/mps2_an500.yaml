@@ -1,0 +1,20 @@
+identifier: mps2/an500
+name: ARM V2M MPS2-an500
+type: mcu
+arch: arm
+simulation:
+  - name: armfvp
+    exec: FVP_MPS2_Cortex-M7
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - watchdog
+testing:
+  default: true
+  ignore_tags:
+    - net
+vendor: arm
