@@ -59,7 +59,6 @@ static uint32_t broadcaster_broadcast_id;
 static struct audio_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 static uint32_t requested_bis_sync;
-static struct bt_le_ext_adv *ext_adv;
 static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
 static uint8_t recv_state_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
@@ -897,39 +896,6 @@ static void test_broadcast_delete_inval(void)
 	}
 }
 
-static void test_start_adv(void)
-{
-	const struct bt_data ad[] = {
-		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-		BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
-			      BT_UUID_16_ENCODE(BT_UUID_PACS_VAL)),
-		BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
-	};
-	int err;
-
-	/* Create a connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
-	if (err != 0) {
-		FAIL("Failed to create advertising set (err %d)\n", err);
-
-		return;
-	}
-
-	err = bt_le_ext_adv_set_data(ext_adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err != 0) {
-		FAIL("Failed to set advertising data (err %d)\n", err);
-
-		return;
-	}
-
-	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err != 0) {
-		FAIL("Failed to start advertising set (err %d)\n", err);
-
-		return;
-	}
-}
-
 static void test_common(void)
 {
 	int err;
@@ -1144,6 +1110,7 @@ static void test_sink_encrypted_incorrect_code(void)
 
 static void broadcast_sink_with_assistant(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = init();
@@ -1152,7 +1119,7 @@ static void broadcast_sink_with_assistant(void)
 		return;
 	}
 
-	test_start_adv();
+	setup_connectable_adv(&ext_adv);
 	WAIT_FOR_FLAG(flag_connected);
 
 	printk("Waiting for PA sync request\n");
@@ -1200,6 +1167,7 @@ static void broadcast_sink_with_assistant(void)
 
 static void broadcast_sink_with_assistant_incorrect_code(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = init();
@@ -1208,7 +1176,7 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 		return;
 	}
 
-	test_start_adv();
+	setup_connectable_adv(&ext_adv);
 	WAIT_FOR_FLAG(flag_connected);
 
 	printk("Waiting for PA sync request\n");
