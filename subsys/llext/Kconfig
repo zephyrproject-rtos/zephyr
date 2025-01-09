@@ -86,6 +86,14 @@ config LLEXT_EXPORT_DEVICES
 	  When enabled, all Zephyr devices defined in the device tree are
 	  made available to llexts via the standard DT_ / DEVICE_* macros.
 
+config LLEXT_EXPORT_DEV_IDS_BY_HASH
+	bool "Use hash of device path in device name"
+	depends on LLEXT_EXPORT_DEVICES
+	help
+	  When enabled, exported device names are generated from a hash of the
+	  node path instead of an ordinal number. Identifiers generated this
+	  way are stable across rebuilds.
+
 config LLEXT_EXPORT_BUILTINS_BY_SLID
 	bool "Export built-in symbols to llexts via SLIDs"
 	help
