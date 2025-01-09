@@ -3,6 +3,7 @@ family:
   series:
   - name: mps2
     socs:
+    - name: an383
     - name: an385
     - name: an521
       cpuclusters:
