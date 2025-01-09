@@ -32,9 +32,6 @@ struct hci_data {
 #else
 #define CTLR_RL_SIZE 0
 #endif
-#if !defined(CONFIG_BT_CTLR_RL_SIZE)
-#define CONFIG_BT_CTLR_RL_SIZE 0
-#endif
 
 static K_KERNEL_STACK_DEFINE(slz_ll_stack, CONFIG_BT_SILABS_EFR32_ACCEPT_LINK_LAYER_STACK_SIZE);
 static struct k_thread slz_ll_thread;
@@ -197,47 +194,31 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 		goto deinit;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		sl_btctrl_init_adv();
-	}
-	if (IS_ENABLED(CONFIG_BT_CENTRAL) || IS_ENABLED(CONFIG_BT_OBSERVER)) {
-		sl_btctrl_init_scan();
-	}
-	if (IS_ENABLED(CONFIG_BT_CONN)) {
-		sl_btctrl_init_conn();
-	}
+	sl_btctrl_init_adv();
+	sl_btctrl_init_scan();
+	sl_btctrl_init_conn();
 	sl_btctrl_init_phy();
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
-		if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-			sl_btctrl_init_adv_ext();
-		}
-		if (IS_ENABLED(CONFIG_BT_CENTRAL) || IS_ENABLED(CONFIG_BT_OBSERVER)) {
-			sl_btctrl_init_scan_ext();
-		}
+		sl_btctrl_init_adv_ext();
+		sl_btctrl_init_scan_ext();
 	}
 
-	ret = sl_btctrl_init_basic(MAX_CONN, CONFIG_BT_SILABS_EFR32_USER_ADVERTISERS,
+	ret = sl_btctrl_init_basic(MAX_CONN, CONFIG_BT_SILABS_EFR32_USER_ADVERTISERS + MAX_CONN,
 				   CONFIG_BT_SILABS_EFR32_ACCEPT_LIST_SIZE);
 	if (ret) {
 		LOG_ERR("Failed to initialize the controller %d", ret);
 		goto deinit;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CONN)) {
-		sl_btctrl_configure_completed_packets_reporting(
-			CONFIG_BT_SILABS_EFR32_COMPLETED_PACKETS_THRESHOLD,
-			CONFIG_BT_SILABS_EFR32_COMPLETED_PACKETS_TIMEOUT);
-	}
+	sl_btctrl_configure_completed_packets_reporting(
+		CONFIG_BT_SILABS_EFR32_COMPLETED_PACKETS_THRESHOLD,
+		CONFIG_BT_SILABS_EFR32_COMPLETED_PACKETS_TIMEOUT);
 
 	sl_bthci_init_upper();
 	sl_btctrl_hci_parser_init_default();
-	if (IS_ENABLED(CONFIG_BT_CONN)) {
-		sl_btctrl_hci_parser_init_conn();
-	}
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		sl_btctrl_hci_parser_init_adv();
-	}
+	sl_btctrl_hci_parser_init_conn();
+	sl_btctrl_hci_parser_init_adv();
 	sl_btctrl_hci_parser_init_phy();
 
 	if (IS_ENABLED(CONFIG_PM)) {
