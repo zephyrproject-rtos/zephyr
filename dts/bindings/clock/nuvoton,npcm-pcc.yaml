@@ -207,16 +207,17 @@ properties:
       - 2
       - 4
 
-  i3c-prescaler:
+  i3c-tc-prescaler:
     type: int
     required: true
     description: |
-      I3C prescaler. It sets the I3C clk_slow_tc frequency, by dividing
-      APB3_CLK and it can be up to 100 MHz.
+      I3C time counter prescaler. The tc clock is used for the SC1 and SC2 counters in
+      asynchronous mode 0. It sets the I3C clk_slow_tc frequency, by dividing APB3_CLK
+      and it can be up to 100 MHz.
     enum:
       - 1
       - 2
       - 4
 
 clock-cells:
-  - clk_id
+  - clk_cfg

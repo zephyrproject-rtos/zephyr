@@ -41,7 +41,7 @@
 			apb3-prescaler = <1>; /* APB3_CLK runs at 96MHz */
 			ahb6-prescaler = <1>; /* APB6_CLK runs at 96MHz */
 			fiu-prescaler = <1>; /* FIU_CLK runs at 96MHz */
-			i3c-prescaler = <1>; /* I3C_CLK runs at 96MHz */
+			i3c-tc-prescaler = <1>; /* I3C_TC_CLK runs at 96MHz */
 		};
 
 		timer_systick: timer-systick@400b0000 {
