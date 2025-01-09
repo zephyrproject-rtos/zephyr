@@ -1143,14 +1143,6 @@ class TwisterEnv:
         return results
 
     def get_toolchain(self):
-        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
-        result = self.run_cmake_script([toolchain_script, "FORMAT=json"])
-
-        try:
-            if result['returncode']:
-                raise TwisterRuntimeError(f"E: {result['returnmsg']}")
-        except Exception as e:
-            print(str(e))
-            sys.exit(2)
-        self.toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
-        logger.info(f"Using '{self.toolchain}' toolchain.")
+        self.toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT")
+        if self.toolchain:
+            logger.info(f"Using '{self.toolchain}' toolchain.")
