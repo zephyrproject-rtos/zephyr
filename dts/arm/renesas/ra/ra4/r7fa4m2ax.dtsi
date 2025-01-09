@@ -139,6 +139,11 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		trng: trng {
+			compatible = "renesas,ra-sce9-rng";
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {
