@@ -16,7 +16,7 @@
 #include <zephyr/shell/shell_websocket.h>
 #include <zephyr/logging/log_backend_ws.h>
 
-LOG_MODULE_REGISTER(shell_websocket, CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL);
+LOG_MODULE_REGISTER(shell_websocket, CONFIG_SHELL_WEBSOCKET_LOG_LEVEL);
 
 #define WEBSOCKET_LINE_SIZE CONFIG_SHELL_WEBSOCKET_LINE_BUF_SIZE
 #define WEBSOCKET_TIMEOUT   CONFIG_SHELL_WEBSOCKET_SEND_TIMEOUT
