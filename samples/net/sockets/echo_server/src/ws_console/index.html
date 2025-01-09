@@ -16,8 +16,8 @@ function init() {
 	ws.onopen = function() {
 		output("Connection opened");
 		connected = "true";
-		// No need to print Escape codes for colors
-		ws.send("shell colors off\n");
+		// No need to print escape codes
+		ws.send("shell colors off\nshell vt100 off\n");
 	};
 
 	ws.onmessage = function(e) {
