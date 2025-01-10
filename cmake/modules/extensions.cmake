@@ -336,6 +336,12 @@ function(process_flags lang input output)
 
   foreach(flag ${${input}})
     set(is_compile_lang_generator_expression 0)
+    # SHELL is used to avoid de-duplication, but when process flags
+    # then this tag must be removed to return real compile/linker flags.
+    if(flag MATCHES "^SHELL:[ ]*(.*)")
+      separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
+    endif()
+
     foreach(l ${languages})
       if(flag MATCHES "<COMPILE_LANGUAGE:${l}>:([^>]+)>")
         set(updated_flag ${CMAKE_MATCH_1})
@@ -356,11 +362,6 @@ function(process_flags lang input output)
     endforeach()
 
     if(NOT is_compile_lang_generator_expression)
-      # SHELL is used to avoid de-duplication, but when process flags
-      # then this tag must be removed to return real compile/linker flags.
-      if(flag MATCHES "SHELL:[ ]*(.*)")
-        separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
-      endif()
       # Flags may be placed inside generator expression, therefore any flag
       # which is not already a generator expression must have commas converted.
       if(NOT flag MATCHES "\\\$<.*>")
@@ -1452,7 +1453,7 @@ endmacro()
 # - PHDR [program_header]: add program header. Used on Xtensa platforms.
 function(zephyr_code_relocate)
   set(options NOCOPY NOKEEP)
-  set(single_args LIBRARY LOCATION PHDR)
+  set(single_args LIBRARY LOCATION PHDR FILTER)
   set(multi_args FILES)
   cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
     "${multi_args}" ${ARGN})
@@ -1521,7 +1522,7 @@ function(zephyr_code_relocate)
   if(CODE_REL_PHDR)
     set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
   endif()
-  # We use the "|" character to separate code relocation directives, instead of
+  # Each code relocation directive is placed on an independent line, instead of
   # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
   # each directive can embed multiple CMake lists, representing flags and files,
   # the latter of which can come from generator expressions.
@@ -1529,7 +1530,7 @@ function(zephyr_code_relocate)
     PROPERTY INTERFACE_SOURCES)
   set_property(TARGET code_data_relocation_target
     PROPERTY INTERFACE_SOURCES
-    "${code_rel_str}|${CODE_REL_LOCATION}:${flag_list}:${file_list}")
+    "${code_rel_str}\n${CODE_REL_LOCATION}:${flag_list}:${file_list},${CODE_REL_FILTER}")
 endfunction()
 
 # Usage:

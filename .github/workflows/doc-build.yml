@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 90
     concurrency:
-      group: doc-build-html-${{ github.ref }}
+      group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
@@ -145,7 +145,7 @@ jobs:
 
     - name: compress-docs
       run: |
-        tar --use-compress-program="xz -T0" -cf html-output.tar.xz --directory=doc/_build html
+        tar --use-compress-program="xz -T0" -cf html-output.tar.xz --exclude html/_sources --exclude html/doxygen/xml --directory=doc/_build html
         tar --use-compress-program="xz -T0" -cf api-output.tar.xz --directory=doc/_build html/doxygen/html
         tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
 
@@ -192,7 +192,7 @@ jobs:
     container: texlive/texlive:latest
     timeout-minutes: 120
     concurrency:
-      group: doc-build-pdf-${{ github.ref }}
+      group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
       cancel-in-progress: true
 
     steps:

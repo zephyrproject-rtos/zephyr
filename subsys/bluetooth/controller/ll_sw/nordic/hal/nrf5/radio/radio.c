@@ -405,7 +405,7 @@ void radio_aa_set(const uint8_t *aa)
 	NRF_RADIO->RXADDRESSES =
 	    ((RADIO_RXADDRESSES_ADDR0_Enabled) << RADIO_RXADDRESSES_ADDR0_Pos);
 	NRF_RADIO->PREFIX0 = aa[3];
-	NRF_RADIO->BASE0 = (((uint32_t) aa[2]) << 24) | (aa[1] << 16) | (aa[0] << 8);
+	NRF_RADIO->BASE0 = sys_get_le24(aa) << 8;
 }
 
 void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
@@ -2098,7 +2098,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	       CCM_MODE_MODE_Msk;
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-	/* Enable CCM Protocol Mode BLE */
+	/* Enable CCM Protocol Mode Bluetooth LE */
 	mode |= (CCM_MODE_PROTOCOL_Ble << CCM_MODE_PROTOCOL_Pos) &
 		CCM_MODE_PROTOCOL_Msk;
 
@@ -2342,7 +2342,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 		CCM_MODE_DATARATE_Msk;
 
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-	/* Enable CCM Protocol Mode BLE */
+	/* Enable CCM Protocol Mode Bluetooth LE */
 	mode |= (CCM_MODE_PROTOCOL_Ble << CCM_MODE_PROTOCOL_Pos) &
 		CCM_MODE_PROTOCOL_Msk;
 

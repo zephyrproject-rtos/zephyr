@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZG external interrupt controller
+
+compatible: "renesas,rz-ext-irq"
+
+include: [interrupt-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  "#address-cells":
+    const: 0
+
+  "#interrupt-cells":
+    const: 2
+
+  trigger-type:
+    required: true
+    type: string
+    description: |
+      Indicates the condition that will trigger an interrupt when detected.
+    enum:
+      - "falling"
+      - "rising"
+      - "both_edges"
+      - "low_level"

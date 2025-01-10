@@ -51,6 +51,13 @@ config PICOLIBC_SUPPORTED
 	help
 	  Selected when the target has support for picolibc.
 
+config IAR_LIBC_SUPPORTED
+	bool
+	default n
+	select FULL_LIBC_SUPPORTED
+	help
+	  Selected if the target is an IAR Systems compiler
+
 config NATIVE_LIBC_INCOMPATIBLE
 	bool
 	help
@@ -65,6 +72,7 @@ choice LIBC_IMPLEMENTATION
 	default PICOLIBC
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
+	default IAR_LIBC
 
 config MINIMAL_LIBC
 	bool "Minimal C library"
@@ -87,6 +95,7 @@ config PICOLIBC
 	select NEED_LIBC_MEM_PARTITION
 	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
 	imply COMMON_LIBC_MALLOC
+	imply COMMON_LIBC_ABORT
 	depends on PICOLIBC_SUPPORTED
 	help
 	  Build with picolibc library. The picolibc library is built as
@@ -122,6 +131,17 @@ config EXTERNAL_LIBC
 	bool "External C library"
 	help
 	  Build with external/user provided C library.
+
+config IAR_LIBC
+	bool "IAR C Runtime Library"
+	depends on IAR_LIBC_SUPPORTED
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "iar"
+	select COMMON_LIBC_STRNLEN
+	select COMMON_LIBC_TIME if POSIX_TIMERS
+	help
+	  Use the full IAR Compiler runtime libraries.
+	  A reduced Zephyr minimal libc will be used for library functionality
+	  not provided by the IAR C Runtime Library.
 
 endchoice # LIBC_IMPLEMENTATION
 

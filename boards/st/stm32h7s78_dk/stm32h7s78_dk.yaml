@@ -13,4 +13,6 @@ supported:
   - watchdog
   - entropy
   - adc
+  - usb_device
+  - usbd
 vendor: st

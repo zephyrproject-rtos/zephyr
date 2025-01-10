@@ -237,6 +237,28 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	b z_arm_exc_exit
 
 #else
+
+GTEXT(z_arm_cortex_ar_exit_exc)
+SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
+
+	/* Note:
+	 * This function is expected to be *always* called with
+	 * processor mode set to MODE_SYS.
+	 */
+
+	/* decrement exception depth */
+	get_cpu r2
+	ldrb r1, [r2, #_cpu_offset_to_exc_depth]
+	sub r1, r1, #1
+	strb r1, [r2, #_cpu_offset_to_exc_depth]
+
+	/*
+	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
+	 * and return to the current thread.
+	 */
+	pop {r0-r3, r12, lr}
+	rfeia sp!
+
 /**
  * @brief Undefined instruction exception handler
  *

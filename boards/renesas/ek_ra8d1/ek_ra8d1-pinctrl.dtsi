@@ -86,6 +86,14 @@
 		};
 	};
 
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_DAC, 0, 14)>;
+			renesas,analog-enable;
+		};
+	};
+
 	sdram_default: sdram_default{
 		group1 {
 			/* SDRAM_DQM1 */
@@ -259,6 +267,16 @@
 		group2 {
 			psels = <RA_PSEL(RA_PSEL_SDHI, 4, 0)>; /* SDCLK */
 			drive-strength = "highspeed-high";
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			/* USBP USBN */
+			psels = <RA_PSEL(RA_PSEL_USBFS, 8, 15)>,
+				<RA_PSEL(RA_PSEL_USBFS, 8, 14)>,
+				<RA_PSEL(RA_PSEL_USBFS, 4, 7)>;
+			drive-strength = "high";
 		};
 	};
 };

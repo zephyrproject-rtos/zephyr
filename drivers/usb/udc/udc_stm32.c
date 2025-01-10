@@ -73,14 +73,14 @@ struct udc_stm32_msg {
 	uint16_t rx_count;
 };
 
-static int udc_stm32_lock(const struct device *dev)
+static void udc_stm32_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_stm32_unlock(const struct device *dev)
+static void udc_stm32_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 #define hpcd2data(hpcd) CONTAINER_OF(hpcd, struct udc_stm32_data, pcd);

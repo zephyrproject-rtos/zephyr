@@ -54,5 +54,5 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
         elif self.fsbl:
             cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file, self.fsbl]
         else:
-            cmd = ['xsdb', self.xsdb_cfg_file]
+            cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file]
         self.check_call(cmd)

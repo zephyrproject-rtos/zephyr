@@ -462,7 +462,7 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
 	tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-	arch_mem_map(virt, tlb_entry_to_pa(entry), CONFIG_MM_DRV_PAGE_SIZE, flags);
+	arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
 #endif
 
 out:

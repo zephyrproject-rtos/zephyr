@@ -1163,14 +1163,14 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 				break;
 			}
 
-			if (write_buf_len == sizeof(time_t)) {
+			if (data_len == sizeof(time_t)) {
 				*(time_t *)write_buf = temp_time;
 				len = sizeof(time_t);
-			} else if (write_buf_len == sizeof(uint32_t)) {
+			} else if (data_len == sizeof(uint32_t)) {
 				*(uint32_t *)write_buf = (uint32_t)temp_time;
 				len = sizeof(uint32_t);
 			} else {
-				LOG_ERR("Time resource buf len not supported %zu", write_buf_len);
+				LOG_ERR("Time resource buf len not supported %zu", data_len);
 				ret = -EINVAL;
 			}
 

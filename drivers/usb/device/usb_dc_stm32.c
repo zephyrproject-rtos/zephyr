@@ -75,7 +75,10 @@ PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *usb_pcfg =
 					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
-#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
+#define USB_OTG_HS_EMB_PHYC (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
+			     DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
+
+#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy) && \
 			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 #define USB_OTG_HS_ULPI_PHY (DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && \
@@ -406,7 +409,7 @@ static int usb_dc_stm32_clock_enable(void)
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
 
-#if USB_OTG_HS_EMB_PHY
+#if USB_OTG_HS_EMB_PHYC
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 #endif
 #endif /* USB_OTG_HS_ULPI_PHY */
@@ -436,7 +439,7 @@ static uint32_t usb_dc_stm32_get_maximum_speed(void)
 	 * If max-speed is not passed via DT, set it to USB controller's
 	 * maximum hardware capability.
 	 */
-#if USB_OTG_HS_EMB_PHY || USB_OTG_HS_ULPI_PHY
+#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY || USB_OTG_HS_ULPI_PHY
 	uint32_t speed = USB_OTG_SPEED_HIGH;
 #else
 	uint32_t speed = USB_OTG_SPEED_FULL;
@@ -447,7 +450,8 @@ static uint32_t usb_dc_stm32_get_maximum_speed(void)
 	if (!strncmp(USB_MAXIMUM_SPEED, "high-speed", 10)) {
 		speed = USB_OTG_SPEED_HIGH;
 	} else if (!strncmp(USB_MAXIMUM_SPEED, "full-speed", 10)) {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHY)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHYC) || \
+	defined(USB_OTG_HS_EMB_PHY)
 		speed = USB_OTG_SPEED_HIGH_IN_FULL;
 #else
 		speed = USB_OTG_SPEED_FULL;
@@ -488,7 +492,7 @@ static int usb_dc_stm32_init(void)
 #endif
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
-#if USB_OTG_HS_EMB_PHY
+#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
 #elif USB_OTG_HS_ULPI_PHY
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_ULPI_PHY;

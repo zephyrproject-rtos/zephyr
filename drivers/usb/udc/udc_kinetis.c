@@ -1069,14 +1069,14 @@ static int usbfsotg_shutdown(const struct device *dev)
 	return 0;
 }
 
-static int usbfsotg_lock(const struct device *dev)
+static void usbfsotg_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int usbfsotg_unlock(const struct device *dev)
+static void usbfsotg_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 static int usbfsotg_driver_preinit(const struct device *dev)

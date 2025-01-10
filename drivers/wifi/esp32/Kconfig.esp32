@@ -71,11 +71,6 @@ config ESP32_WIFI_STA_SCAN_ALL
 	  highest RSSI. Without this, a fast scan is performed which connects to the first AP
 	  found.
 
-config ESP32_WIFI_SW_COEXIST_ENABLE
-	bool
-	help
-	  Software controls WiFi/Bluetooth coexistence. Not supported yet.
-
 config ESP32_WIFI_NET_ALLOC_SPIRAM
 	bool "Allocate memory of WiFi and NET in SPIRAM"
 	depends on ESP_SPIRAM
@@ -227,7 +222,6 @@ config ESP32_WIFI_RX_MGMT_BUF_NUM_DEF
 
 config ESP32_WIFI_CSI_ENABLED
 	bool "WiFi CSI(Channel State Information)"
-	default n
 	help
 	  Select this option to enable CSI(Channel State Information) feature.
 	  CSI takes about CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM KB of RAM.
@@ -280,7 +274,6 @@ config ESP32_WIFI_RX_BA_WIN
 config ESP32_WIFI_AMSDU_TX_ENABLED
 	bool "WiFi AMSDU TX"
 	depends on ESP_SPIRAM
-	default n
 	help
 	  Select this option to enable AMSDU TX feature
 
@@ -293,8 +286,6 @@ config ESP32_WIFI_MGMT_SBUF_NUM
 
 config ESP32_WIFI_IRAM_OPT
 	bool "WiFi IRAM speed optimization"
-	default n if (BT && ESP_SPIRAM && SOC_SERIES_ESP32)
-	default y
 	help
 	  Select this option to place frequently called Wi-Fi library functions in IRAM.
 	  When this option is disabled, more than 10Kbytes of IRAM memory will be saved
@@ -302,7 +293,6 @@ config ESP32_WIFI_IRAM_OPT
 
 config ESP32_WIFI_RX_IRAM_OPT
 	bool "WiFi RX IRAM speed optimization"
-	default n if (BT && ESP_SPIRAM && SOC_SERIES_ESP32)
 	help
 	  Select this option to place frequently called Wi-Fi library RX functions in IRAM.
 	  When this option is disabled, more than 17Kbytes of IRAM memory will be saved
@@ -345,7 +335,6 @@ config ESP32_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
 
 config ESP32_WIFI_FTM_ENABLE
 	bool "WiFi FTM"
-	default n
 	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 	help
 	  Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
@@ -368,7 +357,6 @@ config ESP32_WIFI_SOFTAP_SUPPORT
 
 config ESP32_WIFI_MBEDTLS_CRYPTO
 	bool "Use MbedTLS crypto APIs"
-	default n
 	select MBEDTLS_ECP_C
 	select MBEDTLS_ECDH_C
 	select MBEDTLS_ECDSA_C
@@ -382,7 +370,6 @@ config ESP32_WIFI_MBEDTLS_CRYPTO
 
 config ESP32_WIFI_ENABLE_WPA3_SAE
 	bool "WPA3-Personal"
-	default n
 	select ESP32_WIFI_MBEDTLS_CRYPTO
 	help
 	  Select this option to allow the device to establish a WPA3-Personal connection.
@@ -403,7 +390,6 @@ config ESP32_WIFI_ENABLE_SAE_PK
 
 config ESP32_WIFI_DEBUG_PRINT
 	bool "Print debug messages from WPA Supplicant"
-	default n
 	help
 	  Select this option to print logging information from WPA supplicant,
 	  this includes handshake information and key hex dumps depending

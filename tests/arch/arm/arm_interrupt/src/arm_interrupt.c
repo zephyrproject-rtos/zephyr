@@ -19,7 +19,7 @@ static volatile uint32_t expected_msp;
 static K_THREAD_STACK_DEFINE(esf_collection_stack, 2048);
 static struct k_thread esf_collection_thread;
 #define MAIN_PRIORITY 7
-#define PRIORITY 5
+#define PRIORITY      5
 
 /**
  * Validates that pEsf matches state from set_regs_with_known_pattern()
@@ -28,11 +28,8 @@ static int check_esf_matches_expectations(const struct arch_esf *pEsf)
 {
 	const uint16_t expected_fault_instruction = 0xde5a; /* udf #90 */
 	const bool caller_regs_match_expected =
-		(pEsf->basic.r0 == 0) &&
-		(pEsf->basic.r1 == 1) &&
-		(pEsf->basic.r2 == 2) &&
-		(pEsf->basic.r3 == 3) &&
-		(pEsf->basic.lr == 15) &&
+		(pEsf->basic.r0 == 0) && (pEsf->basic.r1 == 1) && (pEsf->basic.r2 == 2) &&
+		(pEsf->basic.r3 == 3) && (pEsf->basic.lr == 15) &&
 		(*(uint16_t *)pEsf->basic.pc == expected_fault_instruction);
 	if (!caller_regs_match_expected) {
 		printk("__basic_sf member of ESF is incorrect\n");
@@ -42,14 +39,10 @@ static int check_esf_matches_expectations(const struct arch_esf *pEsf)
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	const struct _callee_saved *callee_regs = pEsf->extra_info.callee;
 	const bool callee_regs_match_expected =
-		(callee_regs->v1 /* r4 */ == 4) &&
-		(callee_regs->v2 /* r5 */ == 5) &&
-		(callee_regs->v3 /* r6 */ == 6) &&
-		(callee_regs->v4 /* r7 */ == 7) &&
-		(callee_regs->v5 /* r8 */ == 8) &&
-		(callee_regs->v6 /* r9 */ == 9) &&
-		(callee_regs->v7 /* r10 */ == 10) &&
-		(callee_regs->v8 /* r11 */ == 11);
+		(callee_regs->v1 /* r4 */ == 4) && (callee_regs->v2 /* r5 */ == 5) &&
+		(callee_regs->v3 /* r6 */ == 6) && (callee_regs->v4 /* r7 */ == 7) &&
+		(callee_regs->v5 /* r8 */ == 8) && (callee_regs->v6 /* r9 */ == 9) &&
+		(callee_regs->v7 /* r10 */ == 10) && (callee_regs->v8 /* r11 */ == 11);
 	if (!callee_regs_match_expected) {
 		printk("_callee_saved_t member of ESF is incorrect\n");
 		return -1;
@@ -62,10 +55,8 @@ static int check_esf_matches_expectations(const struct arch_esf *pEsf)
 	 */
 	const uint32_t exc_bits_set_mask = 0xff00000C;
 
-	if ((pEsf->extra_info.exc_return & exc_bits_set_mask) !=
-		exc_bits_set_mask) {
-		printk("Incorrect EXC_RETURN of 0x%08x",
-			pEsf->extra_info.exc_return);
+	if ((pEsf->extra_info.exc_return & exc_bits_set_mask) != exc_bits_set_mask) {
+		printk("Incorrect EXC_RETURN of 0x%08x", pEsf->extra_info.exc_return);
 		return -1;
 	}
 
@@ -73,15 +64,13 @@ static int check_esf_matches_expectations(const struct arch_esf *pEsf)
 	 * to the xpsr. (the xpsr value in the copy used for pEsf
 	 * is overwritten in fault.c)
 	 */
-	if (memcmp((void *)callee_regs->psp, pEsf,
-		offsetof(struct arch_esf, basic.xpsr)) != 0) {
+	if (memcmp((void *)callee_regs->psp, pEsf, offsetof(struct arch_esf, basic.xpsr)) != 0) {
 		printk("psp does not match __basic_sf provided\n");
 		return -1;
 	}
 
 	if (pEsf->extra_info.msp != expected_msp) {
-		printk("MSP is 0x%08x but should be 0x%08x",
-			pEsf->extra_info.msp, expected_msp);
+		printk("MSP is 0x%08x but should be 0x%08x", pEsf->extra_info.msp, expected_msp);
 		return -1;
 	}
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
@@ -98,8 +87,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 	}
 
 	if (reason != expected_reason) {
-		printk("Wrong crash type got %d expected %d\n", reason,
-			expected_reason);
+		printk("Wrong crash type got %d expected %d\n", reason, expected_reason);
 		k_fatal_halt(reason);
 	}
 
@@ -131,29 +119,27 @@ void set_regs_with_known_pattern(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	__asm__ volatile(
-		"mov r1, #1\n"
-		"mov r2, #2\n"
-		"mov r3, #3\n"
-		"mov r4, #4\n"
-		"mov r5, #5\n"
-		"mov r6, #6\n"
-		"mov r7, #7\n"
-		"mov r0, #8\n"
-		"mov r8, r0\n"
-		"add r0, r0, #1\n"
-		"mov r9, r0\n"
-		"add r0, r0, #1\n"
-		"mov r10, r0\n"
-		"add r0, r0, #1\n"
-		"mov r11, r0\n"
-		"add r0, r0, #1\n"
-		"mov r12, r0\n"
-		"add r0, r0, #3\n"
-		"mov lr, r0\n"
-		"mov r0, #0\n"
-		"udf #90\n"
-	);
+	__asm__ volatile("mov r1, #1\n"
+			 "mov r2, #2\n"
+			 "mov r3, #3\n"
+			 "mov r4, #4\n"
+			 "mov r5, #5\n"
+			 "mov r6, #6\n"
+			 "mov r7, #7\n"
+			 "mov r0, #8\n"
+			 "mov r8, r0\n"
+			 "add r0, r0, #1\n"
+			 "mov r9, r0\n"
+			 "add r0, r0, #1\n"
+			 "mov r10, r0\n"
+			 "add r0, r0, #1\n"
+			 "mov r11, r0\n"
+			 "add r0, r0, #1\n"
+			 "mov r12, r0\n"
+			 "add r0, r0, #3\n"
+			 "mov lr, r0\n"
+			 "mov r0, #0\n"
+			 "udf #90\n");
 }
 
 ZTEST(arm_interrupt, test_arm_esf_collection)
@@ -181,23 +167,19 @@ ZTEST(arm_interrupt, test_arm_esf_collection)
 
 	TC_PRINT("Testing ESF Reporting\n");
 	k_thread_create(&esf_collection_thread, esf_collection_stack,
-			K_THREAD_STACK_SIZEOF(esf_collection_stack),
-			set_regs_with_known_pattern,
-			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
-			K_NO_WAIT);
+			K_THREAD_STACK_SIZEOF(esf_collection_stack), set_regs_with_known_pattern,
+			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0, K_NO_WAIT);
 
 	test_validation_rv = esf_validation_rv;
 
-	zassert_not_equal(test_validation_rv, TC_FAIL,
-		"ESF fault collection failed");
+	zassert_not_equal(test_validation_rv, TC_FAIL, "ESF fault collection failed");
 }
 
 void arm_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 
-#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU) && \
-	defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Clear Floating Point Status and Control Register (FPSCR),
 	 * to prevent from having the interrupt line set to pending again,
 	 * in case FPU IRQ is selected by the test as "Available IRQ line"
@@ -235,8 +217,7 @@ void arm_isr_handler(const void *args)
 		 */
 		int reason = expected_reason;
 
-		zassert_equal(reason, -1,
-			"expected_reason has not been reset (%d)\n", reason);
+		zassert_equal(reason, -1, "expected_reason has not been reset (%d)\n", reason);
 #endif
 	}
 }
@@ -284,8 +265,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 		}
 	}
 
-	zassert_true(i >= 0,
-		"No available IRQ line to use in the test\n");
+	zassert_true(i >= 0, "No available IRQ line to use in the test\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
@@ -304,14 +284,10 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	 * expected reason variable is reset.
 	 */
 	reason = expected_reason;
-	zassert_equal(reason, -1,
-		"expected_reason has not been reset (%d)\n", reason);
+	zassert_equal(reason, -1, "expected_reason has not been reset (%d)\n", reason);
 	NVIC_DisableIRQ(i);
 
-	arch_irq_connect_dynamic(i, 0 /* highest priority */,
-		arm_isr_handler,
-		NULL,
-		0);
+	arch_irq_connect_dynamic(i, 0 /* highest priority */, arm_isr_handler, NULL, 0);
 
 	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
@@ -355,17 +331,14 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	 * entry will make PSP descend below the limit and into the MPU guard
 	 * section (or beyond the address pointed by PSPLIM in ARMv8-M MCUs).
 	 */
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && \
-	defined(CONFIG_MPU_STACK_GUARD)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_MPU_STACK_GUARD)
 #define FPU_STACK_EXTRA_SIZE 0x48
 	/* If an FP context is present, we should not set the PSP
 	 * too close to the end of the stack, because stacking of
 	 * the ESF might corrupt kernel memory, making it not
 	 * possible to continue the test execution.
 	 */
-	uint32_t fp_extra_size =
-		(__get_CONTROL() & CONTROL_FPCA_Msk) ?
-			FPU_STACK_EXTRA_SIZE : 0;
+	uint32_t fp_extra_size = (__get_CONTROL() & CONTROL_FPCA_Msk) ? FPU_STACK_EXTRA_SIZE : 0;
 	__set_PSP(_current->stack_info.start + 0x10 + fp_extra_size);
 #else
 	__set_PSP(_current->stack_info.start + 0x10);
@@ -420,8 +393,7 @@ static inline void z_vrfy_test_arm_user_interrupt_syscall(void)
 ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 {
 	/* Test thread executing in user mode */
-	zassert_true(arch_is_user_context(),
-		"Test thread not running in user mode\n");
+	zassert_true(arch_is_user_context(), "Test thread not running in user mode\n");
 
 	/* Attempt to lock IRQs in user mode */
 	irq_lock();
@@ -455,16 +427,17 @@ ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 #else
 ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 {
-	TC_PRINT("Skipped\n");
+	ztest_test_skip();
 }
 #endif /* CONFIG_USERSPACE */
 
-#if defined(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION)
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 /* Avoid compiler optimizing null pointer de-referencing. */
 ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 {
+	Z_TEST_SKIP_IFNDEF(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION);
+
 	int reason;
 
 	struct test_struct {
@@ -475,21 +448,12 @@ ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 
 	expected_reason = K_ERR_CPU_EXCEPTION;
 
-	printk("Reading a null pointer value: 0x%0x\n",
-		test_struct_null_pointer->val[1]);
+	printk("Reading a null pointer value: 0x%0x\n", test_struct_null_pointer->val[1]);
 
 	reason = expected_reason;
-	zassert_equal(reason, -1,
-		"expected_reason has not been reset (%d)\n", reason);
+	zassert_equal(reason, -1, "expected_reason has not been reset (%d)\n", reason);
 }
 #pragma GCC pop_options
-#else
-ZTEST(arm_interrupt, test_arm_null_pointer_exception)
-{
-	TC_PRINT("Skipped\n");
-}
-
-#endif /* CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION */
 
 /**
  * @}

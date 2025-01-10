@@ -810,6 +810,24 @@ __subsystem struct i3c_driver_api {
 	int (*target_tx_write)(const struct device *dev,
 				 uint8_t *buf, uint16_t len, uint8_t hdr_mode);
 
+	/**
+	 * ACK or NACK controller handoffs
+	 *
+	 * This will tell the target to ACK or NACK controller handoffs
+	 * from the CCC GETACCCR
+	 *
+	 * Target device only API.
+	 *
+	 * @see i3c_target_controller_handoff()
+	 *
+	 * @param dev Pointer to the controller device driver instance.
+	 * @param accept True to ACK controller handoffs, False to NACK.
+	 *
+	 * @return See i3c_target_controller_handoff()
+	 */
+	int (*target_controller_handoff)(const struct device *dev,
+				      bool accept);
+
 #ifdef CONFIG_I3C_RTIO
 	/**
 	 * RTIO
@@ -877,7 +895,8 @@ struct i3c_device_desc {
 	const struct device * const dev;
 
 	/** Device Provisioned ID */
-	const uint64_t pid:48;
+	/* TODO: bring back the bitfield */
+	const uint64_t pid;
 
 	/**
 	 * Static address for this target device.
@@ -975,6 +994,9 @@ struct i3c_device_desc {
 		uint8_t max_ibi;
 	} data_length;
 
+	/** Controller Handoff Delay Parameters */
+	uint8_t crhdly1;
+
 	/** Describes advanced (Target) capabilities and features */
 	struct {
 		union {
@@ -1026,6 +1048,28 @@ struct i3c_device_desc {
 		 */
 		uint8_t getcap4;
 	} getcaps;
+
+	/* Describes Controller Feature Capabilities */
+	struct {
+		/**
+		 * CRCAPS1
+		 * - Bit[0]: Hot-Join Support
+		 * - Bit[1]: Group Management Support
+		 * - Bit[2]: Multi-Lane Support
+		 * - Bit[7:3]: Reserved
+		 */
+		uint8_t crcaps1;
+
+		/**
+		 * CRCAPS2
+		 * - Bit[0]: In-Band Interrupt Support
+		 * - Bit[1]: Controller Pass-Back
+		 * - Bit[2]: Deep Sleep Capable
+		 * - Bit[3]: Delayed Controller Handoff
+		 * - Bit[7:4]: Reserved
+		 */
+		uint8_t crcaps2;
+	} crcaps;
 
 	/** @cond INTERNAL_HIDDEN */
 	/**
@@ -1159,6 +1203,12 @@ struct i3c_driver_data {
 
 	/** Attached I3C/I2C devices and addresses */
 	struct i3c_dev_attached_list attached_dev;
+
+	/** Received DEFTGTS Pointer */
+	struct i3c_ccc_deftgts *deftgts;
+
+	/** DEFTGTS refreshed */
+	bool deftgts_refreshed;
 };
 
 /**
@@ -1212,6 +1262,21 @@ struct i3c_device_desc *i3c_dev_list_find(const struct i3c_dev_list *dev_list,
  */
 struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
 						   uint8_t addr);
+
+/**
+ * @brief Find a I3C target device descriptor by static address.
+ *
+ * This finds the I3C target device descriptor in the attached
+ * device list matching the static address (@p addr)
+ *
+ * @param dev Pointer to controller device driver instance.
+ * @param addr static address to be matched.
+ *
+ * @return Pointer to the I3C target device descriptor, or
+ *         `NULL` if none is found.
+ */
+struct i3c_device_desc *i3c_dev_list_i3c_static_addr_find(const struct device *dev,
+							  uint8_t addr);
 
 /**
  * @brief Find a I2C target device descriptor by address.
@@ -2166,6 +2231,152 @@ bool i3c_bus_has_sec_controller(const struct device *dev);
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_deftgts(const struct device *dev);
+
+/**
+ * @brief Calculate odd parity
+ *
+ * Calculate the Odd Parity of a Target Address.
+ *
+ * @param p The 7b target dynamic address
+ *
+ * @return The odd parity bit
+ */
+uint8_t i3c_odd_parity(uint8_t p);
+
+/**
+ * @brief Perform Controller Handoff
+ *
+ * This performs the controller handoff according to 5.1.7.1 of
+ * I3C v1.1.1 Specification.
+ *
+ * @param target I3C target device descriptor.
+ * @param requested True if the target requested the Handoff, False if
+ * the active controller is passing it to a secondary controller
+ *
+ * @retval 0 if successful.
+ * @retval -EIO General Input/Output error.
+ * @retval -EBUSY Target cannot accept Controller Handoff
+ */
+int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool requested);
+
+#ifdef CONFIG_I3C_USE_IBI
+/**
+ * @brief Call back for when Controllership is Handoffed to itself
+ *
+ * This reads the DEFTGTS it received earlier and processes it by reading
+ * the PIDs of all the devices with GETPID and then matching it with known
+ * PIDS. If it does not match, then it will attempt to grab a mem slab
+ * for i3c_device_desc. It will then obtain the standard I3C information
+ * from the device.
+ *
+ * @param work pointer to the work item.
+ */
+void i3c_sec_handoffed(struct k_work *work);
+#endif
+
+#if CONFIG_I3C_NUM_OF_DESC_MEM_SLABS > 0
+
+/**
+ * @brief Allocate memory for a i3c device descriptor
+ *
+ * This allocates memory from a mem slab for a i3c_device_desc
+ *
+ * @retval Pointer to allocated i3c_device_desc
+ * @retval NULL if no mem slabs available
+ */
+struct i3c_device_desc *i3c_device_desc_alloc(void);
+
+/**
+ * @brief Free memory from a i3c device descriptor
+ *
+ * This frees memory from a mem slab of a i3c_device_desc
+ *
+ * @param desc Pointer to allocated i3c_device_desc
+ */
+void i3c_device_desc_free(struct i3c_device_desc *desc);
+
+/**
+ * @brief Report if the i3c device descriptor was from a mem slab
+ *
+ * This reports if the i3c_device_desc was from a memory slab
+ *
+ * @param desc Pointer to a i3c_device_desc
+ *
+ * @return True if from a memory slab, False if not
+ */
+bool i3c_device_desc_in_pool(struct i3c_device_desc *desc);
+
+#else
+
+static inline struct i3c_device_desc *i3c_device_desc_alloc(void)
+{
+	return NULL;
+}
+
+static inline void i3c_device_desc_free(struct i3c_device_desc *desc)
+{
+	ARG_UNUSED(desc);
+}
+
+static inline bool i3c_device_desc_in_pool(struct i3c_device_desc *desc)
+{
+	ARG_UNUSED(desc);
+	return false;
+}
+
+#endif /* CONFIG_I3C_NUM_OF_DESC_MEM_SLABS > 0 */
+
+#if CONFIG_I3C_I2C_NUM_OF_DESC_MEM_SLABS > 0
+
+/**
+ * @brief Allocate memory for a i3c i2c device descriptor
+ *
+ * This allocates memory from a mem slab for a i3c_i2c_device_desc
+ *
+ * @return Pointer to allocated i3c_i2c_device_desc, NULL if none
+ *         available
+ */
+struct i3c_i2c_device_desc *i3c_i2c_device_desc_alloc(void);
+
+/**
+ * @brief Free memory from a i3c i2c device descriptor
+ *
+ * This frees memory from a mem slab of a i3c_i2c_device_desc
+ *
+ * @param desc Pointer to allocated i3c_i2c_device_desc
+ */
+void i3c_i2c_device_desc_free(struct i3c_i2c_device_desc *desc);
+
+/**
+ * @brief Report if the i3c i2c device descriptor was from a mem slab
+ *
+ * This reports if the i3c_i2c_device_desc was from a memory slab
+ *
+ * @param desc Pointer to a i3c_i2c_device_desc
+ *
+ * @return True if from a memory slab, False if not
+ */
+bool i3c_i2c_device_desc_in_pool(struct i3c_i2c_device_desc *desc);
+
+#else
+
+static inline struct i3c_i2c_device_desc *i3c_i2c_device_desc_alloc(void)
+{
+	return NULL;
+}
+
+static inline void i3c_i2c_device_desc_free(struct i3c_i2c_device_desc *desc)
+{
+	ARG_UNUSED(desc);
+}
+
+static inline bool i3c_i2c_device_desc_in_pool(struct i3c_i2c_device_desc *desc)
+{
+	ARG_UNUSED(desc);
+	return false;
+}
+
+#endif /* CONFIG_I3C_I2C_NUM_OF_DESC_MEM_SLABS > 0 */
 
 #if defined(CONFIG_I3C_RTIO) || defined(__DOXYGEN__)
 

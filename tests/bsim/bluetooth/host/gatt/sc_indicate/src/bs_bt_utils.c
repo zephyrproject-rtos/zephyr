@@ -52,13 +52,13 @@ void clear_g_conn(void)
 
 	conn = g_conn;
 	g_conn = NULL;
-	BSIM_ASSERT(conn, "Test error: no g_conn!\n");
+	TEST_ASSERT(conn, "Test error: no g_conn!");
 	bt_conn_unref(conn);
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	BSIM_ASSERT((!g_conn || (conn == g_conn)), "Unexpected new connection.");
+	TEST_ASSERT((!g_conn || (conn == g_conn)), "Unexpected new connection.");
 
 	if (!g_conn) {
 		g_conn = bt_conn_ref(conn);
@@ -94,10 +94,10 @@ static void stop_scan_and_connect(const bt_addr_le_t *addr,
 	printk("Got scan result, connecting.. dst %s, RSSI %d\n", addr_str, rssi);
 
 	err = bt_le_scan_stop();
-	BSIM_ASSERT(!err, "Err bt_le_scan_stop %d", err);
+	TEST_ASSERT(!err, "Err bt_le_scan_stop %d", err);
 
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &g_conn);
-	BSIM_ASSERT(!err, "Err bt_conn_le_create %d", err);
+	TEST_ASSERT(!err, "Err bt_conn_le_create %d", err);
 }
 
 void scan_connect_to_first_result(void)
@@ -105,7 +105,7 @@ void scan_connect_to_first_result(void)
 	int err;
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, stop_scan_and_connect);
-	BSIM_ASSERT(!err, "Err bt_le_scan_start %d", err);
+	TEST_ASSERT(!err, "Err bt_le_scan_start %d", err);
 }
 
 void disconnect(void)
@@ -113,7 +113,7 @@ void disconnect(void)
 	int err;
 
 	err = bt_conn_disconnect(g_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	BSIM_ASSERT(!err, "bt_conn_disconnect failed (%d)\n", err);
+	TEST_ASSERT(!err, "bt_conn_disconnect failed (%d)", err);
 }
 
 void set_security(bt_security_t sec)
@@ -121,7 +121,7 @@ void set_security(bt_security_t sec)
 	int err;
 
 	err = bt_conn_set_security(g_conn, sec);
-	BSIM_ASSERT(!err, "Err bt_conn_set_security %d", err);
+	TEST_ASSERT(!err, "Err bt_conn_set_security %d", err);
 }
 
 void create_adv(struct bt_le_ext_adv **adv)
@@ -138,7 +138,7 @@ void create_adv(struct bt_le_ext_adv **adv)
 	params.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
 	err = bt_le_ext_adv_create(&params, NULL, adv);
-	BSIM_ASSERT(!err, "bt_le_ext_adv_create failed (%d)\n", err);
+	TEST_ASSERT(!err, "bt_le_ext_adv_create failed (%d)", err);
 }
 
 void start_adv(struct bt_le_ext_adv *adv)
@@ -146,7 +146,7 @@ void start_adv(struct bt_le_ext_adv *adv)
 	int err;
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	BSIM_ASSERT(!err, "bt_le_ext_adv_start failed (%d)\n", err);
+	TEST_ASSERT(!err, "bt_le_ext_adv_start failed (%d)", err);
 }
 
 void stop_adv(struct bt_le_ext_adv *adv)
@@ -154,7 +154,7 @@ void stop_adv(struct bt_le_ext_adv *adv)
 	int err;
 
 	err = bt_le_ext_adv_stop(adv);
-	BSIM_ASSERT(!err, "bt_le_ext_adv_stop failed (%d)\n", err);
+	TEST_ASSERT(!err, "bt_le_ext_adv_stop failed (%d)", err);
 }
 
 /* The following flags are raised by events and lowered by test code. */
@@ -178,5 +178,5 @@ void pairing_complete(struct bt_conn *conn, bool bonded)
 
 void pairing_failed(struct bt_conn *conn, enum bt_security_err err)
 {
-	FAIL("Pairing failed\n");
+	TEST_FAIL("Pairing failed");
 }

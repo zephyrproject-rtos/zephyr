@@ -100,6 +100,10 @@ The below features are currently supported on Zephyr OS for EK-RA6M2 board:
 +-----------+------------+----------------------+
 | FLASH     | on-chip    | flash                |
 +-----------+------------+----------------------+
+| DAC       | on-chip    | dac                  |
++-----------+------------+----------------------+
+| USBFS     | on-chip    | udc                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 

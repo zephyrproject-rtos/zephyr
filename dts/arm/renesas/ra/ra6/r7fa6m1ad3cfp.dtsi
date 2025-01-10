@@ -273,3 +273,7 @@
 	port-irq-names = "port-irq11";
 	port-irq11-pins = <8>;
 };
+
+&dac_global {
+	has-output-amplifier;
+};

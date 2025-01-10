@@ -50,14 +50,8 @@ SECTIONS
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_map.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.*)
-
-    *libzephyr.a:heap.*(.literal .text .literal.* .text.*)
-
-    *libkernel.a:kheap.*(.literal .text .literal.* .text.*)
-    *libkernel.a:mempool.*(.literal .text .literal.* .text.*)
-
+    *libkernel.a:device.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_loader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
 
     *(.literal.esp_intr_disable .literal.esp_intr_disable.* .text.esp_intr_disable .text.esp_intr_disable.*)
     *(.literal.default_intr_handler .text.default_intr_handler .iram1.*.default_intr_handler)

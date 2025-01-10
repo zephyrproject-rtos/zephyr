@@ -38,11 +38,6 @@ struct max32_rtc_config {
 
 static int api_start(const struct device *dev)
 {
-	/* Ensure that both sec and subsec are reset to 0 */
-	while (MXC_RTC_Init(0, 0) == E_BUSY) {
-		;
-	}
-
 	while (MXC_RTC_Start() == E_BUSY) {
 		;
 	}

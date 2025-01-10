@@ -3420,7 +3420,7 @@ int k_work_busy_get(const struct k_work *work);
 
 /** @brief Test whether a work item is currently pending.
  *
- * Wrapper to determine whether a work item is in a non-idle dstate.
+ * Wrapper to determine whether a work item is in a non-idle state.
  *
  * @note This is a live snapshot of state, which may change before the result
  * is checked.  Use locks where appropriate.

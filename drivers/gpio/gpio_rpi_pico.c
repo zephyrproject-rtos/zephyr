@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Yonatan Schachter
+ * Copyright (c) 2025, Andrew Featherstone
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,8 +40,15 @@ static int gpio_rpi_configure(const struct device *dev,
 {
 	struct gpio_rpi_data *data = dev->data;
 
-	if ((flags & GPIO_DIR_MASK) == GPIO_DISCONNECTED) {
-		return -ENOTSUP;
+	if (flags == GPIO_DISCONNECTED) {
+		gpio_disable_pulls(pin);
+		/* This is almost the opposite of the Pico SDK's gpio_set_function. */
+		hw_write_masked(&pads_bank0_hw->io[pin], PADS_BANK0_GPIO0_OD_BITS,
+				PADS_BANK0_GPIO0_IE_BITS | PADS_BANK0_GPIO0_OD_BITS);
+#ifdef SOC_SERIES_RP2350
+		hw_set_bits(&pads_bank0_hw->io[gpio], PADS_BANK0_GPIO0_ISO_BITS);
+#endif
+		return 0;
 	}
 
 	gpio_set_pulls(pin,
@@ -49,6 +57,12 @@ static int gpio_rpi_configure(const struct device *dev,
 
 	/* Avoid gpio_init, since that also clears previously set direction/high/low */
 	gpio_set_function(pin, GPIO_FUNC_SIO);
+
+	if (flags & GPIO_INPUT) {
+		gpio_set_dir(pin, GPIO_IN);
+	} else {
+		gpio_set_input_enabled(pin, false);
+	}
 
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_SINGLE_ENDED) {
@@ -77,12 +91,41 @@ static int gpio_rpi_configure(const struct device *dev,
 			}
 			gpio_set_dir(pin, GPIO_OUT);
 		}
-	} else if (flags & GPIO_INPUT) {
-		gpio_set_dir(pin, GPIO_IN);
 	}
 
 	return 0;
 }
+
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_rpi_get_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t *flags)
+{
+	struct gpio_rpi_data *data = dev->data;
+
+	*flags = 0;
+
+	/* RP2xxxx supports Bus Keeper mode where both pull-up and pull-down are enabled. */
+	if (gpio_is_pulled_up(pin)) {
+		*flags |= GPIO_PULL_UP;
+	}
+	if (gpio_is_pulled_down(pin)) {
+		*flags |= GPIO_PULL_DOWN;
+	}
+
+	if (gpio_get_dir(pin)) {
+		*flags |= gpio_get_out_level(pin) ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+		if (data->single_ended_mask & BIT(pin)) {
+			*flags |=
+				data->open_drain_mask & BIT(pin) ? GPIO_OPEN_DRAIN : GPIO_PUSH_PULL;
+		}
+	}
+
+	if (pads_bank0_hw->io[pin] & PADS_BANK0_GPIO0_IE_BITS) {
+		*flags |= GPIO_INPUT;
+	}
+
+	return 0;
+}
+#endif
 
 static int gpio_rpi_port_get_raw(const struct device *dev, uint32_t *value)
 {
@@ -182,8 +225,50 @@ static int gpio_rpi_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
+static uint32_t gpio_rpi_get_pending_int(const struct device *dev)
+{
+	io_bank0_irq_ctrl_hw_t *irq_ctrl_base =
+		get_core_num() ? &io_bank0_hw->proc1_irq_ctrl : &io_bank0_hw->proc0_irq_ctrl;
+	ARRAY_FOR_EACH_PTR(irq_ctrl_base->ints, p) {
+		if (*p) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_rpi_port_get_direction(const struct device *port, gpio_port_pins_t map,
+				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	/* The Zephyr API considers a disconnected pin to be neither an input nor output.
+	 * Since we disable both OE and IE for disconnected pins clear the mask bits.
+	 */
+	for (int pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
+		if (pads_bank0_hw->io[pin] & PADS_BANK0_GPIO0_OD_BITS) {
+			map &= ~BIT(pin);
+		}
+		if (inputs && (pads_bank0_hw->io[pin] & PADS_BANK0_GPIO0_IE_BITS)) {
+			*inputs |= BIT(pin);
+		}
+	}
+	if (inputs) {
+		*inputs &= map;
+	}
+	if (outputs) {
+		*outputs = sio_hw->gpio_oe & map;
+	}
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 	.pin_configure = gpio_rpi_configure,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_rpi_get_config,
+#endif
 	.port_get_raw = gpio_rpi_port_get_raw,
 	.port_set_masked_raw = gpio_rpi_port_set_masked_raw,
 	.port_set_bits_raw = gpio_rpi_port_set_bits_raw,
@@ -191,6 +276,10 @@ static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 	.port_toggle_bits = gpio_rpi_port_toggle_bits,
 	.pin_interrupt_configure = gpio_rpi_pin_interrupt_configure,
 	.manage_callback = gpio_rpi_manage_callback,
+	.get_pending_int = gpio_rpi_get_pending_int,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_rpi_port_get_direction,
+#endif
 };
 
 static void gpio_rpi_isr(const struct device *dev)

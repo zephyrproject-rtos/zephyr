@@ -1,6 +1,6 @@
 # MIMXRT1180-EVK board
 
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_MIMXRT1180_EVK
@@ -14,4 +14,20 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 
 config BOARD_EARLY_INIT_HOOK
 	default y
+
+if SECOND_CORE_MCUX && BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7
+
+config BUILD_OUTPUT_INFO_HEADER
+	default y
+
+DT_CHOSEN_IMAGE_M7 = nxp,m7-partition
+
+# Adjust the offset of the output image if building for RT18xx SOC
+config BUILD_OUTPUT_ADJUST_LMA
+	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M7)) + \
+	$(dt_node_reg_addr_hex,/soc/spi@425e0000,1)) - \
+	$(dt_node_reg_addr_hex,/soc/itcm@0)"
+
+endif
+
 endif # BOARD_MIMXRT1180_EVK

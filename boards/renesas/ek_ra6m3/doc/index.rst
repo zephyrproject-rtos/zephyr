@@ -104,11 +104,15 @@ The below features are currently supported on Zephyr OS for EK-RA6M3 board:
 +-----------+------------+----------------------+
 | USBHS     | on-chip    | udc                  |
 +-----------+------------+----------------------+
+| USBFS     | on-chip    | udc                  |
++-----------+------------+----------------------+
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
 | PWM       | on-chip    | pwm                  |
 +-----------+------------+----------------------+
 | FLASH     | on-chip    | flash                |
++-----------+------------+----------------------+
+| DAC       | on-chip    | dac                  |
 +-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.

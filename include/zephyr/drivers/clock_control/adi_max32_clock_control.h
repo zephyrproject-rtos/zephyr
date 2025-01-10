@@ -41,7 +41,7 @@ struct max32_perclk {
 
 #define ADI_MAX32_CLK_IPO_FREQ    DT_PROP(DT_NODELABEL(clk_ipo), clock_frequency)
 #define ADI_MAX32_CLK_ERFO_FREQ   DT_PROP_OR(DT_NODELABEL(clk_erfo), clock_frequency, 0)
-#define ADI_MAX32_CLK_IBRO_FREQ   DT_PROP(DT_NODELABEL(clk_ibro), clock_frequency)
+#define ADI_MAX32_CLK_IBRO_FREQ   DT_PROP_OR(DT_NODELABEL(clk_ibro), clock_frequency, 0)
 #define ADI_MAX32_CLK_ISO_FREQ    DT_PROP_OR(DT_NODELABEL(clk_iso), clock_frequency, 0)
 #define ADI_MAX32_CLK_INRO_FREQ   DT_PROP(DT_NODELABEL(clk_inro), clock_frequency)
 #define ADI_MAX32_CLK_ERTCO_FREQ  DT_PROP(DT_NODELABEL(clk_ertco), clock_frequency)

@@ -136,7 +136,7 @@ static int lps2xdf_sample_fetch(const struct device *dev, enum sensor_channel ch
 	const struct lps2xdf_config *const cfg = dev->config;
 	const struct lps2xdf_chip_api *chip_api = cfg->chip_api;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PRESS || chan == SENSOR_CHAN_ALL);
 
 	return chip_api->sample_fetch(dev, chan);
 }

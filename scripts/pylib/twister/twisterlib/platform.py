@@ -70,6 +70,7 @@ class Platform:
         # if no flash size is specified by the board, take a default of 512K
         self.flash = 512
         self.supported = set()
+        self.binaries = []
 
         self.arch = None
         self.vendor = ""
@@ -114,15 +115,24 @@ class Platform:
         # if no flash size is specified by the board, take a default of 512K
         self.flash = variant_data.get("flash", data.get("flash", self.flash))
 
-        testing = variant_data.get("testing", data.get("testing", {}))
-        self.timeout_multiplier = testing.get("timeout_multiplier", self.timeout_multiplier)
-        self.ignore_tags = testing.get("ignore_tags", self.ignore_tags)
-        self.only_tags = testing.get("only_tags", self.only_tags)
+        testing = data.get("testing", {})
+        self.ignore_tags = testing.get("ignore_tags", [])
+        self.only_tags = testing.get("only_tags", [])
         self.default = testing.get("default", self.default)
         self.binaries = testing.get("binaries", [])
+        self.timeout_multiplier = testing.get("timeout_multiplier", self.timeout_multiplier)
+
+        # testing data for variant
+        testing_var = variant_data.get("testing", data.get("testing", {}))
+        self.timeout_multiplier = testing_var.get("timeout_multiplier", self.timeout_multiplier)
+        self.ignore_tags = testing_var.get("ignore_tags", self.ignore_tags)
+        self.only_tags = testing_var.get("only_tags", self.only_tags)
+        self.default = testing_var.get("default", self.default)
+        self.binaries = testing_var.get("binaries", self.binaries)
         renode = testing.get("renode", {})
         self.uart = renode.get("uart", "")
         self.resc = renode.get("resc", "")
+
         self.supported = set()
         for supp_feature in variant_data.get("supported", data.get("supported", [])):
             for item in supp_feature.split(":"):

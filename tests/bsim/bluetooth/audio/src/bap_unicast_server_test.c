@@ -407,7 +407,7 @@ static void init(void)
 	static struct bt_pacs_cap cap = {
 		.codec_cap = &lc3_codec_cap,
 	};
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 #if defined(CONFIG_BT_PAC_SNK)
 		.snk_pac = true,
 #endif /* CONFIG_BT_PAC_SNK */
@@ -418,7 +418,7 @@ static void init(void)
 		.src_pac = true,
 #endif /* CONFIG_BT_PAC_SRC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-		.src_loc = true
+		.src_loc = true,
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	};
 	int err;
@@ -471,6 +471,29 @@ static void init(void)
 	setup_connectable_adv(&ext_adv);
 }
 
+static void deinit(void)
+{
+	int err;
+
+	err = bt_bap_unicast_server_unregister_cb(&unicast_server_cb);
+	if (err != 0) {
+		FAIL("Failed to unregister unicast server callbacks (err %d)\n", err);
+		return;
+	}
+
+	err = bt_bap_unicast_server_unregister();
+	if (err != 0) {
+		FAIL("Failed to unregister unicast server (err %d)\n", err);
+		return;
+	}
+
+	err = bt_pacs_unregister();
+	if (err != 0) {
+		FAIL("Failed to unregister PACS (err %d)\n", err);
+		return;
+	}
+}
+
 static void test_main(void)
 {
 	init();
@@ -484,6 +507,8 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_stream_started);
 	transceive_test_streams();
 	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	deinit();
 	PASS("Unicast server passed\n");
 }
 
@@ -540,6 +565,8 @@ static void test_main_acl_disconnect(void)
 	/* The client will reconnect */
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	WAIT_FOR_FLAG(flag_connected);
+
+	deinit();
 	PASS("Unicast server ACL disconnect  passed\n");
 }
 

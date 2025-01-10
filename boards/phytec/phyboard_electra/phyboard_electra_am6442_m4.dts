@@ -17,7 +17,8 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,sram1 = &ddr0;
+		zephyr,ipc_shm = &ddr0;
+		zephyr,sram1 = &ddr1;
 	};
 
 	aliases {
@@ -31,9 +32,20 @@
 		};
 	};
 
-	ddr0:memory@a4100000 {
+	ddr0: memory@a4000000 {
+		compatible = "mmio-sram";
+		reg = <0xa4000000 DT_SIZE_M(1)>;
+	};
+
+	rsc_table: memory@a4100000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xa4100000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	ddr1: memory@a4101000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa4101000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
 		zephyr,memory-region = "DDR";
 	};
 

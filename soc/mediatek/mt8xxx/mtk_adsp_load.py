@@ -277,7 +277,13 @@ def find_winstream(maps):
     magic = b'\x74\x5f\x6a\xd0\x79\xe2\x4f\x00\xcd\xb8\xbd\xf9'
     for m in maps:
         if "dram" in m:
-            magoff = maps[m].find(magic)
+            # Some python versions produce bus errors (!) on the
+            # hardware when finding a 12 byte substring (maybe a SIMD
+            # load that the hardware doesn't like?).  Do it in two
+            # chunks.
+            magoff = maps[m].find(magic[0:8])
+            if magoff >= 0:
+                magoff = maps[m].find(magic[8:], magoff) - 8
             if magoff >= 0:
                 addr = le4(maps[m][magoff + 12 : magoff + 16])
                 return addr

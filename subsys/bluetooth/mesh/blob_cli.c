@@ -1086,7 +1086,7 @@ static void progress_checked(struct bt_mesh_blob_cli *cli)
 
 	cli->state = BT_MESH_BLOB_CLI_STATE_NONE;
 
-	if (cli->cb && cli->cb->end) {
+	if (cli->cb && cli->cb->xfer_progress_complete) {
 		cli->cb->xfer_progress_complete(cli);
 	}
 }

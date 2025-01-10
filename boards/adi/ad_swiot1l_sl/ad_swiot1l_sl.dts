@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32650.dtsi>
+#include <adi/max32/max32650-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices AD-SWIOT1L-SL";
+	compatible = "adi,ad_swiot1l_sl";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&gpio2 15 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio2 14 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+	};
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_tx_p2_12 &uart0_rx_p2_11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};

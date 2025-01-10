@@ -26,6 +26,12 @@ Build System
 * Support for the build type feature which was deprecated in Zephyr 3.6 has been removed,
   :ref:`application-file-suffixes`/:ref:`sysbuild_file_suffixes` has replaced this.
 
+* Sysbuild
+
+  * The Kconfig ``SB_CONFIG_MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH`` has been deprecated and replaced
+    with ``SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE``, applications should be updated to select this
+    new symbol if they were selecting the old symbol.
+
 BOSSA Runner
 ============
 
@@ -61,6 +67,10 @@ Boards
   always erase only the sectors of the external flash used by the new firmware,
   and the ``nrfutil`` one would always erase the whole external flash.
 
+* CAN1 and USART1 have been disabled on the ``stm32f4_disco``, because of
+  conflicting pinctrl on I2C1, which is now used to control the audio codec
+  connected to the audio jack output.
+
 Devicetree
 **********
 
@@ -87,6 +97,9 @@ STM32
 * MCO clock source and prescaler are now exclusively configured by the DTS
   as it was introduced earlier.
   The Kconfig method for configuration is now removed.
+
+* ADC properties ``st,adc-sequencer`` and ``st,adc-clock-source`` now uses
+  string values instead of integer values.
 
 Modules
 *******
@@ -129,13 +142,16 @@ Device Drivers and Devicetree
   The :c:macro:`DEVICE_API()` macro should be used by out-of-tree driver implementations for
   all the upstream driver classes.
 
-* The :c:func:`video_buffer_alloc` and :c:func:`video_buffer_aligned_alloc` functions in the
-  video API now take an additional timeout parameter.
-
 ADC
 ===
 
 * Renamed the ``compatible`` from ``nxp,kinetis-adc12`` to :dtcompatible:`nxp,adc12`.
+
+Clock
+=====
+* Renamed the devicetree property ``freqs_mhz`` to ``freqs-mhz``.
+* Renamed the devicetree property ``cg_reg`` to ``cg-reg``.
+* Renamed the devicetree property ``pll_ctrl_reg`` to ``pll-ctrl-reg``.
 
 Counter
 =======
@@ -465,6 +481,13 @@ Video
   ``pitch = width * video_pix_fmt_bpp(pixfmt)`` needs to be replaced by an equivalent
   ``pitch = width * video_bits_per_pixel(pixfmt) / BITS_PER_BYTE``.
 
+* The :c:func:`video_buffer_alloc` and :c:func:`video_buffer_aligned_alloc` functions in the
+  video API now take an additional timeout parameter.
+
+* The :c:func:`video_stream_start` and :c:func:`video_stream_stop` driver APIs are now merged
+  into the new :c:func:`video_set_stream` driver API. The user APIs are however unchanged to
+  keep backward compatibility with downstream applications.
+
 Watchdog
 ========
 
@@ -568,6 +591,16 @@ Bluetooth Host
 Bluetooth Crypto
 ================
 
+Bluetooth Services
+==================
+
+* The :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` have been
+  deprecated. Application developers should now use the
+  :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR` and
+  :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options to set the string values in the
+  Model Number String and Manufacturer Name String characteristics that are part of the Device
+  Information Service (DIS).
+
 Networking
 **********
 
@@ -626,6 +659,10 @@ hawkBit
 
 MCUmgr
 ======
+
+* The Kconfig :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH` has been
+  deprecated and replaced with :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE`,
+  applications should be updated to select this new symbol if they were selecting the old symbol.
 
 Modem
 =====

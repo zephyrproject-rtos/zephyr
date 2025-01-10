@@ -59,11 +59,10 @@ for args in ${TEST_ARGS[@]}; do
             use-ext-adv=${use_ext_adv} scannable=${scannable} connectable=${connectable}
 
         Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s="${simulation_id}_${sim_id_count}" \
-            -D=2 -sim_length=60e6 $@
+            -D=2 -sim_length=20e6 $@
 
         wait_for_background_jobs
 
         sim_id_count=$(( sim_id_count + 1 ))
     done
 done
-

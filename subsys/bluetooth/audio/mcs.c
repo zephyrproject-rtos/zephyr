@@ -985,18 +985,12 @@ static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 
 static void notify_string(struct bt_conn *conn, const struct bt_uuid *uuid, const char *str)
 {
-	const uint8_t att_header_size = 3; /* opcode + handle */
-	uint16_t att_mtu;
-	uint16_t maxlen;
+	const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(conn);
 	int err;
-
-	att_mtu = bt_gatt_get_mtu(conn);
-	__ASSERT(att_mtu > att_header_size, "Could not get valid ATT MTU");
-	maxlen = att_mtu - att_header_size; /* Subtract opcode and handle */
 
 	/* Send notification potentially truncated to the MTU */
 	err = bt_gatt_notify_uuid(conn, uuid, mcs.attrs, (void *)str,
-				  MIN(strlen(str), maxlen));
+				  MIN(strlen(str), max_ntf_size));
 	if (err != 0) {
 		LOG_ERR("Notification error: %d", err);
 	}

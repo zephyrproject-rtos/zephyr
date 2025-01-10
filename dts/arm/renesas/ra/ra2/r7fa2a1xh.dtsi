@@ -173,8 +173,13 @@
 				status = "disabled";
 			};
 
-
 			sdadcclk: sdadcclk {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			uclk: uclk {
 				compatible = "renesas,ra-cgc-pclk";
 				#clock-cells = <2>;
 				status = "disabled";
@@ -250,4 +255,9 @@
 	port-irq1-pins = <2>;
 	port-irq2-pins = <1>;
 	port-irq3-pins = <0>;
+};
+
+&dac_global {
+	has-chargepump;
+	has-davrefcr;
 };

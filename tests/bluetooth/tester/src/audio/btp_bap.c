@@ -480,7 +480,7 @@ static const struct btp_handler bap_handlers[] = {
 
 uint8_t tester_init_pacs(void)
 {
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 #if defined(CONFIG_BT_PAC_SNK)
 		.snk_pac = true,
 #endif /* CONFIG_BT_PAC_SNK */
@@ -491,7 +491,7 @@ uint8_t tester_init_pacs(void)
 		.src_pac = true,
 #endif /* CONFIG_BT_PAC_SRC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-		.src_loc = true
+		.src_loc = true,
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	};
 	int err;
