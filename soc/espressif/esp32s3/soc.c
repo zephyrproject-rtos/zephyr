@@ -86,21 +86,6 @@ static void IRAM_ATTR esp_errata(void)
  */
 void IRAM_ATTR __esp_platform_start(void)
 {
-	extern uint32_t _init_start;
-
-	/* Move the exception vector table to IRAM. */
-	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
-
-	z_bss_zero();
-
-	/* Disable normal interrupts. */
-	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
-
-	/* Initialize the architecture CPU pointer.  Some of the
-	 * initialization code wants a valid _current before
-	 * arch_kernel_init() is invoked.
-	 */
-	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
 #ifndef CONFIG_MCUBOOT
 	/* Configure the mode of instruction cache : cache size, cache line size. */

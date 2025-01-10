@@ -21,8 +21,10 @@
 #include <esp_log.h>
 #include <bootloader_clock.h>
 #include <bootloader_common.h>
-
 #include <esp_cpu.h>
+
+#include <zephyr/linker/linker-defs.h>
+#include <kernel_internal.h>
 
 #if CONFIG_SOC_SERIES_ESP32C6
 #include <soc/hp_apm_reg.h>
@@ -254,6 +256,26 @@ void __start(void)
 			     ".option norelax\n"
 			     "la gp, __global_pointer$\n"
 			     ".option pop");
+#else /* xtensa */
+
+	extern uint32_t _init_start;
+
+	/* Move the exception vector table to IRAM. */
+	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
+
+	z_bss_zero();
+
+	__asm__ __volatile__ ("" : : "g"(&__bss_start) : "memory");
+
+	/* Disable normal interrupts. */
+	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
+
+	/* Initialize the architecture CPU pointer.  Some of the
+	 * initialization code wants a valid arch_current_thread() before
+	 * arch_kernel_init() is invoked.
+	 */
+	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+
 #endif /* CONFIG_RISCV_GP */
 
 #ifndef CONFIG_BOOTLOADER_MCUBOOT
