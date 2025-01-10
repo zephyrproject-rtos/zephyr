@@ -898,9 +898,14 @@ class TestPlan:
             ):
                 if itoolchain:
                     toolchain = itoolchain
+                elif plat.arch in ['posix', 'unit']:
+                    # workaround until toolchain variant in zephyr is overhauled and improved.
+                    if self.env.toolchain in ['llvm']:
+                        toolchain = 'llvm'
+                    else:
+                        toolchain = 'host'
                 else:
-                    default_toolchain = "zephyr" if not self.env.toolchain else self.env.toolchain
-                    toolchain = default_toolchain if plat.arch not in ['posix', 'unit'] else "host"
+                    toolchain = "zephyr" if not self.env.toolchain else self.env.toolchain
 
                 instance = TestInstance(ts, plat, toolchain, self.env.outdir)
                 instance.run = instance.check_runnable(
