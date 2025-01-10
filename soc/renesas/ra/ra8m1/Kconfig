@@ -14,5 +14,6 @@ config SOC_SERIES_RA8M1
 	select CLOCK_CONTROL_RENESAS_RA_CGC if CLOCK_CONTROL
 	select HAS_RENESAS_RA_FSP
 	select SOC_EARLY_INIT_HOOK
+	select GPIO_RA_HAS_VBTICTLR
 	help
 	  Enable support for Renesas RA8M1 MCU series

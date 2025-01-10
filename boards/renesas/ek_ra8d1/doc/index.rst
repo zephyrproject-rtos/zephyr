@@ -114,6 +114,8 @@ The below features are currently supported on Zephyr OS for EK-RA8D1 board:
 +--------------+------------+-----------------------------------+
 | USBHS        | on-chip    | udc                               |
 +--------------+------------+-----------------------------------+
+| USBFS        | on-chip    | udc                               |
++--------------+------------+-----------------------------------+
 | DISPLAY      | on-chip    | LCDIF; MIPI-DSI. Tested with      |
 |              |            | :ref:`rtkmipilcdb00000be` shields |
 +--------------+------------+-----------------------------------+

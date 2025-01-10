@@ -67,6 +67,10 @@ Boards
   always erase only the sectors of the external flash used by the new firmware,
   and the ``nrfutil`` one would always erase the whole external flash.
 
+* CAN1 and USART1 have been disabled on the ``stm32f4_disco``, because of
+  conflicting pinctrl on I2C1, which is now used to control the audio codec
+  connected to the audio jack output.
+
 Devicetree
 **********
 
@@ -586,6 +590,16 @@ Bluetooth Host
 
 Bluetooth Crypto
 ================
+
+Bluetooth Services
+==================
+
+* The :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` have been
+  deprecated. Application developers should now use the
+  :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR` and
+  :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options to set the string values in the
+  Model Number String and Manufacturer Name String characteristics that are part of the Device
+  Information Service (DIS).
 
 Networking
 **********

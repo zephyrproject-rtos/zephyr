@@ -17,6 +17,7 @@ from collections import OrderedDict
 from enum import Enum
 
 import junitparser.junitparser as junit
+import yaml
 from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
@@ -628,6 +629,7 @@ class Pytest(Harness):
             self.status = TwisterStatus.SKIP
             self.instance.reason = 'No tests collected'
 
+
 class Shell(Pytest):
     def generate_command(self):
         config = self.instance.testsuite.harness_config
@@ -635,12 +637,27 @@ class Shell(Pytest):
         config['pytest_root'] = pytest_root
 
         command = super().generate_command()
-        if config.get('shell_params_file'):
-            p_file = os.path.join(self.source_dir, config.get('shell_params_file'))
-            command.append(f'--testdata={p_file}')
+        if test_shell_file := self._get_shell_commands_file(config):
+            command.append(f'--testdata={test_shell_file}')
         else:
-            command.append(f'--testdata={os.path.join(self.source_dir, "test_shell.yml")}')
+            logger.warning('No shell commands provided')
         return command
+
+    def _get_shell_commands_file(self, harness_config):
+        if shell_commands := harness_config.get('shell_commands'):
+            test_shell_file = os.path.join(self.running_dir, 'test_shell.yml')
+            with open(test_shell_file, 'w') as f:
+                yaml.dump(shell_commands, f)
+            return test_shell_file
+
+        test_shell_file = harness_config.get('shell_commands_file', 'test_shell.yml')
+        test_shell_file = os.path.join(
+            self.source_dir, os.path.expanduser(os.path.expandvars(test_shell_file))
+        )
+        if os.path.exists(test_shell_file):
+            return test_shell_file
+        return None
+
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')

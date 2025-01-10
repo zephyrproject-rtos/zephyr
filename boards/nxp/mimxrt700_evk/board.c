@@ -79,10 +79,6 @@ void board_early_init_hook(void)
 		.coarseTrimEn = true,
 	};
 
-#ifndef CONFIG_IMXRT7XX_CODE_CACHE
-	CACHE64_DisableCache(CACHE64_CTRL0);
-#endif
-
 	POWER_DisablePD(kPDRUNCFG_PD_LPOSC);
 
 	/* Power up OSC */
@@ -397,6 +393,18 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer7), okay)
 	SET_UP_CTIMER_CLOCK(7);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay)
+	CLOCK_AttachClk(kFRO1_DIV1_to_SENSE_MAIN);
+	CLOCK_AttachClk(kSENSE_BASE_to_ADC);
+	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1U);
+#endif
+
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(os_timer_cpu0), okay) || \
+		DT_NODE_HAS_STATUS(DT_NODELABEL(os_timer_cpu1), okay))
+	CLOCK_AttachClk(kLPOSC_to_OSTIMER);
+	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
 #endif
 }
 

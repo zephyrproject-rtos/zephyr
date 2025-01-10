@@ -510,6 +510,7 @@ peregrine	Peregrine Consultoria e Servicos
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
 phicomm	PHICOMM Co., Ltd.
+phosense	Beijing Phosense Electronic Technology Co., Ltd.
 phytec	PHYTEC
 picochip	Picochip Ltd
 pine64	Pine64

@@ -182,6 +182,7 @@ ARM arch:
     - MaureenHelm
     - stephanosio
     - bbolen
+    - ithinuel
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -202,6 +203,8 @@ ARM64 arch:
     - npitre
     - povergoing
     - sgrrzhf
+    - wearyzen
+    - ithinuel
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
@@ -218,6 +221,8 @@ ARM Platforms:
   status: maintained
   maintainers:
     - wearyzen
+  collaborators:
+    - ithinuel
   files:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
@@ -1642,6 +1647,9 @@ Release Notes:
   status: maintained
   maintainers:
     - carlocaione
+  collaborators:
+    - wearyzen
+    - ithinuel
   files:
     - include/zephyr/drivers/mbox.h
     - drivers/mbox/
@@ -2121,6 +2129,7 @@ Release Notes:
     - include/zephyr/drivers/stepper.h
     - dts/bindings/stepper/
     - doc/hardware/peripherals/stepper.rst
+    - samples/drivers/stepper/
     - tests/drivers/build_all/stepper/
   labels:
     - "area: Stepper"
@@ -3352,7 +3361,7 @@ Settings:
     - subsys/settings/
     - tests/subsys/settings/
     - samples/subsys/settings/
-    - doc/services/settings/
+    - doc/services/storage/settings/
   labels:
     - "area: Settings"
   tests:
@@ -4332,13 +4341,25 @@ Secure storage:
     - tomi-font
   files:
     - subsys/secure_storage/
+    - include/zephyr/psa/
     - samples/psa/
-    - doc/services/secure_storage.rst
+    - doc/services/storage/secure_storage/index.rst
     - tests/subsys/secure_storage/
   labels:
     - "area: Secure storage"
   tests:
     - psa.secure_storage
+
+Sensry Platforms:
+  status: maintained
+  maintainers:
+    - tswaehn
+  files:
+    - boards/sensry/
+  files-regex:
+    - .*sy1xx.*
+  labels:
+    - "platform: sensry"
 
 Storage:
   status: odd fixes
@@ -4468,6 +4489,18 @@ TDK Sensors:
     - cmake/linker/armlink/
     - include/zephyr/toolchain/armclang.h
     - lib/libc/armstdc/*
+  labels:
+    - "area: Toolchains"
+
+"Toolchain IAR":
+  status: maintained
+  maintainers:
+    - RobinKastberg
+  files:
+    - cmake/*/iar/
+    - include/zephyr/toolchain/iar.h
+    - include/zephyr/toolchain/iar/*
+    - lib/libc/iar/*
   labels:
     - "area: Toolchains"
 
@@ -4772,6 +4805,7 @@ West:
     - wearyzen
   collaborators:
     - tomi-font
+    - ithinuel
   files: []
   labels:
     - "area: CMSIS_6"
@@ -4868,6 +4902,8 @@ West:
   maintainers:
     - kristofer-jonsson-arm
     - wearyzen
+  collaborators:
+    - ithinuel
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
@@ -5200,6 +5236,7 @@ West:
     - wearyzen
     - valeriosetti
     - tomi-font
+    - ithinuel
   files:
     - modules/mbedtls/
     - tests/crypto/mbedtls/
@@ -5390,6 +5427,7 @@ West:
     - wearyzen
     - valeriosetti
     - tomi-font
+    - ithinuel
   files:
     - modules/trusted-firmware-m/
     - samples/tfm_integration/
@@ -5407,6 +5445,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"
@@ -5419,6 +5458,7 @@ West:
   collaborators:
     - carlocaione
     - wearyzen
+    - ithinuel
   files:
     - modules/trusted-firmware-a/
   labels:
@@ -5431,6 +5471,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"

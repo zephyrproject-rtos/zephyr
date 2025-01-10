@@ -52,6 +52,7 @@ static struct k_fifo slz_rx_fifo;
 /* FIXME: these functions should come from the SiSDK headers! */
 void BTLE_LL_EventRaise(uint32_t events);
 void BTLE_LL_Process(uint32_t events);
+int16_t BTLE_LL_SetMaxPower(int16_t power);
 bool sli_pending_btctrl_events(void);
 RAIL_Handle_t BTLE_LL_GetRadioHandle(void);
 
@@ -256,6 +257,18 @@ static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 	}
 }
 
+static void slz_set_tx_power(int16_t max_power_dbm)
+{
+	const int16_t max_power_cbm = max_power_dbm * 10;
+	const int16_t actual_max_power_cbm = BTLE_LL_SetMaxPower(max_power_cbm);
+	const int16_t actual_max_power_dbm = DIV_ROUND_CLOSEST(actual_max_power_cbm, 10);
+
+	if (actual_max_power_dbm != max_power_dbm) {
+		LOG_WRN("Unable to set max TX power to %d dBm, actual max is %d dBm", max_power_dbm,
+			actual_max_power_dbm);
+	}
+}
+
 static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 {
 	struct hci_data *hci = dev->data;
@@ -302,6 +315,8 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 		LOG_ERR("Bluetooth link layer init failed %d", ret);
 		goto deinit;
 	}
+
+	slz_set_tx_power(CONFIG_BT_CTLR_TX_PWR_ANTENNA);
 
 	sl_btctrl_init_adv();
 	sl_btctrl_init_scan();

@@ -162,15 +162,11 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		 */
 		slot0_partition: partition@14000 {
 			label = "image-0";
-			reg = <0x00014000 DT_SIZE_K(888)>;
+			reg = <0x00014000 DT_SIZE_K(984)>;
 		};
-		slot1_partition: partition@F2000 {
+		slot1_partition: partition@10A000 {
 			label = "image-1";
-			reg = <0x000F2000 DT_SIZE_K(888)>;
-		};
-		cpu1_partition: partition@1D0000 {
-			label = "cpu1-image";
-			reg = <0x001D0000 DT_SIZE_K(192)>;
+			reg = <0x0010A000 DT_SIZE_K(984)>;
 		};
 		/* storage_partition is placed in WINBOND flash memory*/
 	};

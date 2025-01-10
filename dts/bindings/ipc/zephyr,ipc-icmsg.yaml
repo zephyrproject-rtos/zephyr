@@ -21,6 +21,21 @@ properties:
     required: true
     type: phandle
 
+  unbound:
+    type: string
+    enum:
+      - disable
+      - enable
+      - detect
+    default: disable
+    description: |
+      Select unbound() callback mode. The callback can be enabled or disabled with the
+      "enable" and "disable" option respectively. This functionality requires session
+      number handshake procedure on both sides, so you cannot set "enable" on one side
+      and "disable" on the other. The "detect" mode detects if the remote side
+      supports handshake procedure and adjusts its behavior accordingly. The
+      "detect" mode is possible only if "dcache-alignment" is at least 8 bytes.
+
   dcache-alignment:
     type: int
     description: |

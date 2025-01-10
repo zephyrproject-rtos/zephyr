@@ -79,3 +79,4 @@ static inline const char *bt_audio_dir_str(enum bt_audio_dir dir)
 }
 
 bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len);
+uint16_t bt_audio_get_max_ntf_size(struct bt_conn *conn);

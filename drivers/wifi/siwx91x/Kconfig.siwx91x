@@ -45,4 +45,9 @@ config NET_MGMT_EVENT_STACK_SIZE
 config NET_MGMT_EVENT_QUEUE_SIZE
 	default 10
 
+# Override the WIFI_MGMT_SCAN_SSID_FILT_MAX parameter for the Wi-Fi subsystem.
+# This device supports filtering scan results for only one SSID.
+config WIFI_MGMT_SCAN_SSID_FILT_MAX
+	default 1
+
 endif

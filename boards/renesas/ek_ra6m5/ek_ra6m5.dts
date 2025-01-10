@@ -111,6 +111,19 @@
 	status = "okay";
 };
 
+&pll2 {
+	clocks = <&xtal>;
+	div = <2>;
+	mul = <20 0>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pll2>;
+	div = <5>;
+	status = "okay";
+};
+
 &usbhs {
 	pinctrl-0 = <&usbhs_default>;
 	pinctrl-names = "default";
@@ -170,4 +183,10 @@
 
 &trng {
 	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
 };

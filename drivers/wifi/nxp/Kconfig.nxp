@@ -838,6 +838,11 @@ config NXP_WIFI_WLAN_CALDATA_3ANT_DIVERSITY
 	help
 	  This option is used to enable three antenna diversity.
 
+config NXP_OVERRIDE_CALIBRATION_DATA
+	bool "override default calibriation data"
+	help
+	  This option is used to override default calibration data.
+
 endif # NXP_RW610
 
 config NXP_WIFI_11AX_TWT
