@@ -136,6 +136,10 @@ static ALWAYS_INLINE void clock_init(void)
 		CLOCK_EnableClock(kCLOCK_PortA);
 	}
 
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpiob), nxp_kinetis_gpio, okay)) {
+		CLOCK_EnableClock(kCLOCK_PortB);
+	}
+
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioc), nxp_kinetis_gpio, okay)) {
 		CLOCK_EnableClock(kCLOCK_PortC);
 	}
