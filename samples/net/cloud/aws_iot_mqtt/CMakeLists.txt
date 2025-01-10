@@ -21,3 +21,5 @@ else()
 endif()
 
 target_sources(app PRIVATE "src/main.c" ${creds})
+
+include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
