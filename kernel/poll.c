@@ -665,7 +665,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 	__ASSERT(work_q != NULL, "NULL work_q\n");
 	__ASSERT(work != NULL, "NULL work\n");
 	__ASSERT(events != NULL, "NULL events\n");
-	__ASSERT(num_events > 0, "zero events\n");
+	__ASSERT(num_events >= 0, "<0 events\n");
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_work_poll, submit_to_queue, work_q, work, timeout);
 
