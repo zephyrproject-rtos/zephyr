@@ -10,11 +10,7 @@
 #include <soc.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
-#if defined(CONFIG_SOC_MIMXRT1189_CM7)
 #include <zephyr/cache.h>
-#elif defined(CONFIG_IMXRT118X_CM33_XCACHE_PS)
-#include <fsl_cache.h>
-#endif
 #include <fsl_clock.h>
 #include <fsl_gpc.h>
 #include <fsl_pmu.h>
@@ -631,13 +627,8 @@ void soc_early_init_hook(void)
 	trdc_enable_all_access();
 
 	/* Enable data cache */
-#if defined(CONFIG_IMXRT118X_CM33_XCACHE_PS)
-	XCACHE_EnableCache(XCACHE_PC);
-	XCACHE_EnableCache(XCACHE_PS);
-#elif defined(CONFIG_SOC_MIMXRT1189_CM7)
-	sys_cache_instr_enable();
 	sys_cache_data_enable();
-#endif
+
 	__ISB();
 	__DSB();
 }
