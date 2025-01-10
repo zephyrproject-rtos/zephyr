@@ -598,10 +598,13 @@ class CMake:
                     log.write(log_msg)
 
             if log_msg:
-                overflow_found = re.findall(
-                    "region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram\\d_\\d_seg)' overflowed by",
-                    log_msg
+                pattern = (
+                    r"region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|"
+                    r"dram\d_\d_seg|iram\d_\d_seg)' "
+                    "overflowed by"
                 )
+                overflow_found = re.findall(pattern, log_msg)
+
                 imgtool_overflow_found = re.findall(
                     r"Error: Image size \(.*\) \+ trailer \(.*\) exceeds requested size",
                     log_msg
