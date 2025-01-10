@@ -300,6 +300,9 @@ Drivers and Sensors
   * Changed :file:`include/zephyr/drivers/video-controls.h` to have control IDs (CIDs) matching
     those present in the Linux kernel.
 
+  * Changed ``video_pix_fmt_bpp()`` returning the byte count and only supports 8-bit depth,
+    into ``video_bits_per_pixel()`` returning the bit count and supports any color depth.
+
 * Watchdog
 
   * Added :kconfig:option:`CONFIG_HAS_WDT_NO_CALLBACKS` which drivers select when they do not support
