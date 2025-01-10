@@ -1018,6 +1018,8 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			goto error;
 		}
 
+		client->http1_headers_sent = true;
+
 		/* The first HTTP/2 frame sent by the server MUST be a server connection
 		 * preface.
 		 */
