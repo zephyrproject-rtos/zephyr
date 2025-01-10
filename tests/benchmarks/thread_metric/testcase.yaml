@@ -9,8 +9,10 @@ common:
   # time does not pass while the CPU executes. So the benchmark just appears as if hung.
   arch_exclude:
     - posix
-  # qemu_nios2 excluded as it is slow
+  # some slow qemu_* excluded
   platform_exclude:
+    - qemu_malta/qemu_malta
+    - qemu_malta/qemu_malta/be
     - qemu_nios2
   integration_platforms:
     - qemu_x86
@@ -18,9 +20,22 @@ common:
   timeout: 300
   harness: console
   harness_config:
-    type: one_line
+    type: multi_line
+    ordered: true
     regex:
-      - "(.*) Relative Time: (.*)"
+      # Collect at least 3 measurements for each benchmark:
+      - "(.*) Thread-Metric(.+) Relative Time:[ ]*[0-9]+(.*)"
+      - "(.*)Time Period Total:[ ]*[0-9]+(.*)"
+      - "(.*) Thread-Metric(.+) Relative Time:[ ]*[0-9]+(.*)"
+      - "(.*)Time Period Total:[ ]*[0-9]+(.*)"
+      - "(.*) Thread-Metric(.+) Relative Time:[ ]*[0-9]+(.*)"
+      - "(.*)Time Period Total:[ ]*[0-9]+(.*)"
+    record:
+      regex:
+        - "Time Period Total:[ ]*(?P<total_time_period>[0-9]+)"
+        - "ERROR:[ ]*(?P<error_message>.*)"
+        - "[ ]+Average:(?P<error_details>.*)"
+      merge: true
 
 tests:
   benchmark.thread_metric.basic:
