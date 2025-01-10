@@ -596,6 +596,10 @@ Filesystem
 hawkBit
 =======
 
+* The Kconfig symbols :kconfig:option:`CONFIG_SMF` and
+  :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` are now required to be enabled to use the
+  hawkBit subsystem.
+
 MCUmgr
 ======
 
