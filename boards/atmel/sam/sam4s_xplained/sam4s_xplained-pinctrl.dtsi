@@ -59,6 +59,13 @@
 		};
 	};
 
+	dacc_default: dacc_default {
+		group1 {
+			pinmux = <PB13D_DACC_DAC0>,
+				 <PB14D_DACC_DAC1>;
+		};
+	};
+
 	smc_default: smc_default {
 		group1 {
 			pinmux = <PC18A_EBI_A0>,
