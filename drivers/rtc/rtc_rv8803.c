@@ -205,7 +205,7 @@ static int rv8803_write_regs(const struct device *dev, uint8_t addr, const void 
 	return err;
 }
 
-#ifdef RV8803_INT_GPIOS_IN_USE
+#if defined(RV8803_INT_GPIOS_IN_USE) || defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_CALIBRATION)
 static int rv8803_write_reg8(const struct device *dev, uint8_t addr, uint8_t val)
 {
 	return rv8803_write_regs(dev, addr, &val, sizeof(val));
