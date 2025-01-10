@@ -493,15 +493,6 @@ struct net_buf *net_pkt_get_reserve_tx_data(size_t min_len, k_timeout_t timeout)
 
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-static inline struct k_mem_slab *get_tx_slab(struct net_context *context)
-{
-	if (context->tx_slab) {
-		return context->tx_slab();
-	}
-
-	return NULL;
-}
-
 static inline struct net_buf_pool *get_data_pool(struct net_context *context)
 {
 	if (context->data_pool) {
@@ -511,7 +502,6 @@ static inline struct net_buf_pool *get_data_pool(struct net_context *context)
 	return NULL;
 }
 #else
-#define get_tx_slab(...) NULL
 #define get_data_pool(...) NULL
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
