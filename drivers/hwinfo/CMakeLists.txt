@@ -31,6 +31,7 @@ zephyr_library_sources_ifdef(CONFIG_HWINFO_SAM         hwinfo_sam.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_SAM0        hwinfo_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_SAM4L       hwinfo_sam4l.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_SAM_RSTC    hwinfo_sam_rstc.c)
+zephyr_library_sources_ifdef(CONFIG_HWINFO_SILABS_S2   hwinfo_silabs_series2.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_SMARTBOND   hwinfo_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_STM32       hwinfo_stm32.c)
 # zephyr-keep-sorted-stop
