@@ -16,10 +16,10 @@ import mock
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
+from pylib.twister.twisterlib.error import BuildError
 from pylib.twister.twisterlib.platform import Simulator
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
-from twisterlib.error import BuildError
 from twisterlib.runner import TwisterRunner
 from twisterlib.handlers import QEMUHandler
 from expr_parser import reserved
