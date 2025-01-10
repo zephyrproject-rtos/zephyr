@@ -9,3 +9,4 @@ supported:
   - uart
   - gpio
   - counter
+  - pwm

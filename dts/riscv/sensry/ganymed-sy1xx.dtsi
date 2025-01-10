@@ -58,7 +58,7 @@
 			reg = <0x1a10b040 0x04>;
 			interrupt-parent = <&event0>;
 			interrupts = <10 0>;
-			ticks_us = <1000>;
+			ticks-us = <1000>;
 		};
 
 		timer1: timer@1a10b044 {
@@ -66,7 +66,7 @@
 			reg = <0x1a10b044 0x04>;
 			interrupt-parent = <&event0>;
 			interrupts = <11 0>;
-			ticks_us = <1000>;
+			ticks-us = <1000>;
 		};
 
 		uart0: uart@1a102000 {
@@ -115,5 +115,15 @@
 			status = "okay";
 		};
 
+		mdio0: mdio@1a120020 {
+			compatible = "sensry,sy1xx-mdio";
+			reg = <0x1a120020 0x20>;
+			status = "disabled";
+
+			clock-frequency = <450000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };

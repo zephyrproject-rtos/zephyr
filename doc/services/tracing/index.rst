@@ -41,7 +41,7 @@ also provides one generic named tracing function for convenience purposes,
 as well as to demonstrate how tracing frameworks could be extended.
 
 Users can generate a custom trace event by calling
-:c:func:`sys_tracing_named_event`, which takes an event name as well as two
+:c:func:`sys_trace_named_event`, which takes an event name as well as two
 arbitrary 4 byte arguments. Tracing backends may truncate the provided event
 name if it is too long for the serialization format they support.
 

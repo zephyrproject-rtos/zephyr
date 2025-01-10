@@ -45,6 +45,7 @@ struct st7789v_config {
 	uint8_t rgb_param[3];
 	uint16_t height;
 	uint16_t width;
+	uint8_t ready_time_ms;
 };
 
 struct st7789v_data {
@@ -67,22 +68,29 @@ static void st7789v_set_lcd_margins(const struct device *dev,
 	data->y_offset = y_offset;
 }
 
-static void st7789v_transmit(const struct device *dev, uint8_t cmd,
-			     uint8_t *tx_data, size_t tx_count)
+static int st7789v_transmit(const struct device *dev, uint8_t cmd,
+			    uint8_t *tx_data, size_t tx_count)
 {
 	const struct st7789v_config *config = dev->config;
 
-	mipi_dbi_command_write(config->mipi_dbi, &config->dbi_config, cmd,
-			       tx_data, tx_count);
+	return mipi_dbi_command_write(config->mipi_dbi, &config->dbi_config,
+				      cmd, tx_data, tx_count);
 }
 
-static void st7789v_exit_sleep(const struct device *dev)
+static int st7789v_exit_sleep(const struct device *dev)
 {
-	st7789v_transmit(dev, ST7789V_CMD_SLEEP_OUT, NULL, 0);
+	int ret;
+
+	ret = st7789v_transmit(dev, ST7789V_CMD_SLEEP_OUT, NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
 	k_sleep(K_MSEC(120));
+	return ret;
 }
 
-static void st7789v_reset_display(const struct device *dev)
+static int st7789v_reset_display(const struct device *dev)
 {
 	const struct st7789v_config *config = dev->config;
 	int ret;
@@ -93,26 +101,29 @@ static void st7789v_reset_display(const struct device *dev)
 	ret = mipi_dbi_reset(config->mipi_dbi, 6);
 	if (ret == -ENOTSUP) {
 		/* Send software reset command */
-		st7789v_transmit(dev, ST7789V_CMD_SW_RESET, NULL, 0);
+		ret = st7789v_transmit(dev, ST7789V_CMD_SW_RESET, NULL, 0);
+		if (ret < 0) {
+			return ret;
+		}
 		k_sleep(K_MSEC(5));
 	} else {
 		k_sleep(K_MSEC(20));
 	}
+
+	return ret;
 }
 
 static int st7789v_blanking_on(const struct device *dev)
 {
-	st7789v_transmit(dev, ST7789V_CMD_DISP_OFF, NULL, 0);
-	return 0;
+	return st7789v_transmit(dev, ST7789V_CMD_DISP_OFF, NULL, 0);
 }
 
 static int st7789v_blanking_off(const struct device *dev)
 {
-	st7789v_transmit(dev, ST7789V_CMD_DISP_ON, NULL, 0);
-	return 0;
+	return st7789v_transmit(dev, ST7789V_CMD_DISP_ON, NULL, 0);
 }
 
-static void st7789v_set_mem_area(const struct device *dev, const uint16_t x,
+static int st7789v_set_mem_area(const struct device *dev, const uint16_t x,
 				 const uint16_t y, const uint16_t w, const uint16_t h)
 {
 	struct st7789v_data *data = dev->data;
@@ -121,13 +132,18 @@ static void st7789v_set_mem_area(const struct device *dev, const uint16_t x,
 	uint16_t ram_x = x + data->x_offset;
 	uint16_t ram_y = y + data->y_offset;
 
+	int ret;
+
 	spi_data[0] = sys_cpu_to_be16(ram_x);
 	spi_data[1] = sys_cpu_to_be16(ram_x + w - 1);
-	st7789v_transmit(dev, ST7789V_CMD_CASET, (uint8_t *)&spi_data[0], 4);
+	ret = st7789v_transmit(dev, ST7789V_CMD_CASET, (uint8_t *)&spi_data[0], 4);
+	if (ret < 0) {
+		return ret;
+	}
 
 	spi_data[0] = sys_cpu_to_be16(ram_y);
 	spi_data[1] = sys_cpu_to_be16(ram_y + h - 1);
-	st7789v_transmit(dev, ST7789V_CMD_RASET, (uint8_t *)&spi_data[0], 4);
+	return st7789v_transmit(dev, ST7789V_CMD_RASET, (uint8_t *)&spi_data[0], 4);
 }
 
 static int st7789v_write(const struct device *dev,
@@ -142,6 +158,7 @@ static int st7789v_write(const struct device *dev,
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
 	enum display_pixel_format pixfmt;
+	int ret;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT((desc->pitch * ST7789V_PIXEL_SIZE * desc->height) <= desc->buf_size,
@@ -149,7 +166,10 @@ static int st7789v_write(const struct device *dev,
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
 		desc->width, desc->height, x, y);
-	st7789v_set_mem_area(dev, x, y, desc->width, desc->height);
+	ret = st7789v_set_mem_area(dev, x, y, desc->width, desc->height);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (desc->pitch > desc->width) {
 		write_h = 1U;
@@ -175,16 +195,22 @@ static int st7789v_write(const struct device *dev,
 	mipi_desc.pitch = desc->width;
 
 	/* Send RAMWR command */
-	st7789v_transmit(dev, ST7789V_CMD_RAMWR, NULL, 0);
+	ret = st7789v_transmit(dev, ST7789V_CMD_RAMWR, NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
 
 	for (uint16_t write_cnt = 0U; write_cnt < nbr_of_writes; ++write_cnt) {
-		mipi_dbi_write_display(config->mipi_dbi, &config->dbi_config,
-				       write_data_start, &mipi_desc, pixfmt);
+		ret = mipi_dbi_write_display(config->mipi_dbi, &config->dbi_config,
+					     write_data_start, &mipi_desc, pixfmt);
+		if (ret < 0) {
+			return ret;
+		}
 
 		write_data_start += (desc->pitch * ST7789V_PIXEL_SIZE);
 	}
 
-	return 0;
+	return ret;
 }
 
 static void st7789v_get_capabilities(const struct device *dev,
@@ -235,121 +261,196 @@ static int st7789v_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static void st7789v_lcd_init(const struct device *dev)
+static int st7789v_lcd_init(const struct device *dev)
 {
 	struct st7789v_data *data = dev->data;
 	const struct st7789v_config *config = dev->config;
 	uint8_t tmp;
+	int ret;
 
 	st7789v_set_lcd_margins(dev, data->x_offset,
 				data->y_offset);
 
-	st7789v_transmit(dev, ST7789V_CMD_CMD2EN,
-			 (uint8_t *)config->cmd2en_param,
-			 sizeof(config->cmd2en_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_CMD2EN,
+			       (uint8_t *)config->cmd2en_param,
+			       sizeof(config->cmd2en_param));
+	if (ret < 0) {
+		return ret;
+	}
 
-	st7789v_transmit(dev, ST7789V_CMD_PORCTRL,
-			 (uint8_t *)config->porch_param,
-			 sizeof(config->porch_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_PORCTRL,
+			       (uint8_t *)config->porch_param,
+			       sizeof(config->porch_param));
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Digital Gamma Enable, default disabled */
 	tmp = 0x00;
-	st7789v_transmit(dev, ST7789V_CMD_DGMEN, &tmp, 1);
+	ret = st7789v_transmit(dev, ST7789V_CMD_DGMEN, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Frame Rate Control in Normal Mode, default value */
 	tmp = 0x0f;
-	st7789v_transmit(dev, ST7789V_CMD_FRCTRL2, &tmp, 1);
+	ret = st7789v_transmit(dev, ST7789V_CMD_FRCTRL2, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	tmp = config->gctrl;
-	st7789v_transmit(dev, ST7789V_CMD_GCTRL, &tmp, 1);
+	ret = st7789v_transmit(dev, ST7789V_CMD_GCTRL, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	tmp = config->vcom;
-	st7789v_transmit(dev, ST7789V_CMD_VCOMS, &tmp, 1);
+	ret = st7789v_transmit(dev, ST7789V_CMD_VCOMS, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (config->vdv_vrh_enable) {
 		tmp = 0x01;
-		st7789v_transmit(dev, ST7789V_CMD_VDVVRHEN, &tmp, 1);
+		ret = st7789v_transmit(dev, ST7789V_CMD_VDVVRHEN, &tmp, 1);
+		if (ret < 0) {
+			return ret;
+		}
 
 		tmp = config->vrh_value;
-		st7789v_transmit(dev, ST7789V_CMD_VRH, &tmp, 1);
+		ret = st7789v_transmit(dev, ST7789V_CMD_VRH, &tmp, 1);
+		if (ret < 0) {
+			return ret;
+		}
 
 		tmp = config->vdv_value;
-		st7789v_transmit(dev, ST7789V_CMD_VDS, &tmp, 1);
+		ret = st7789v_transmit(dev, ST7789V_CMD_VDS, &tmp, 1);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
-	st7789v_transmit(dev, ST7789V_CMD_PWCTRL1,
-			 (uint8_t *)config->pwctrl1_param,
-			 sizeof(config->pwctrl1_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_PWCTRL1,
+			       (uint8_t *)config->pwctrl1_param,
+			       sizeof(config->pwctrl1_param));
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Memory Data Access Control */
 	tmp = config->mdac;
-	st7789v_transmit(dev, ST7789V_CMD_MADCTL, &tmp, 1);
+	ret = st7789v_transmit(dev, ST7789V_CMD_MADCTL, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Interface Pixel Format */
 	tmp = config->colmod;
-	st7789v_transmit(dev, ST7789V_CMD_COLMOD, &tmp, 1);
-
-	tmp = config->lcm;
-	st7789v_transmit(dev, ST7789V_CMD_LCMCTRL, &tmp, 1);
-
-	tmp = config->gamma;
-	st7789v_transmit(dev, ST7789V_CMD_GAMSET, &tmp, 1);
-
-	if (config->inversion_on) {
-		st7789v_transmit(dev, ST7789V_CMD_INV_ON, NULL, 0);
-	} else {
-		st7789v_transmit(dev, ST7789V_CMD_INV_OFF, NULL, 0);
+	ret = st7789v_transmit(dev, ST7789V_CMD_COLMOD, &tmp, 1);
+	if (ret < 0) {
+		return ret;
 	}
 
-	st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL,
-			 (uint8_t *)config->pvgam_param,
-			 sizeof(config->pvgam_param));
+	tmp = config->lcm;
+	ret = st7789v_transmit(dev, ST7789V_CMD_LCMCTRL, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
-	st7789v_transmit(dev, ST7789V_CMD_NVGAMCTRL,
-			 (uint8_t *)config->nvgam_param,
-			 sizeof(config->nvgam_param));
+	tmp = config->gamma;
+	ret = st7789v_transmit(dev, ST7789V_CMD_GAMSET, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
-	st7789v_transmit(dev, ST7789V_CMD_RAMCTRL,
-			 (uint8_t *)config->ram_param,
-			 sizeof(config->ram_param));
+	if (config->inversion_on) {
+		ret = st7789v_transmit(dev, ST7789V_CMD_INV_ON, NULL, 0);
+	} else {
+		ret = st7789v_transmit(dev, ST7789V_CMD_INV_OFF, NULL, 0);
+	}
+	if (ret < 0) {
+		return ret;
+	}
 
-	st7789v_transmit(dev, ST7789V_CMD_RGBCTRL,
-			 (uint8_t *)config->rgb_param,
-			 sizeof(config->rgb_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL,
+			       (uint8_t *)config->pvgam_param,
+			       sizeof(config->pvgam_param));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = st7789v_transmit(dev, ST7789V_CMD_NVGAMCTRL,
+			       (uint8_t *)config->nvgam_param,
+			       sizeof(config->nvgam_param));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = st7789v_transmit(dev, ST7789V_CMD_RAMCTRL,
+			       (uint8_t *)config->ram_param,
+			       sizeof(config->ram_param));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = st7789v_transmit(dev, ST7789V_CMD_RGBCTRL,
+			       (uint8_t *)config->rgb_param,
+			       sizeof(config->rgb_param));
+	return ret;
 }
 
 static int st7789v_init(const struct device *dev)
 {
 	const struct st7789v_config *config = dev->config;
+	int ret;
 
 	if (!device_is_ready(config->mipi_dbi)) {
 		LOG_ERR("MIPI DBI device not ready");
 		return -ENODEV;
 	}
 
-	st7789v_reset_display(dev);
+	k_sleep(K_TIMEOUT_ABS_MS(config->ready_time_ms));
 
-	st7789v_blanking_on(dev);
+	ret = st7789v_reset_display(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to reset display (%d)", ret);
+		return ret;
+	}
 
-	st7789v_lcd_init(dev);
+	ret = st7789v_blanking_on(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to turn blanking on (%d)", ret);
+		return ret;
+	}
 
-	st7789v_exit_sleep(dev);
+	ret = st7789v_lcd_init(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to init display (%d)", ret);
+		return ret;
+	}
 
-	return 0;
+	ret = st7789v_exit_sleep(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to exit the sleep mode (%d)", ret);
+		return ret;
+	}
+
+	return ret;
 }
 
 #ifdef CONFIG_PM_DEVICE
 static int st7789v_pm_action(const struct device *dev,
 			     enum pm_device_action action)
 {
-	int ret = 0;
+	int ret;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		st7789v_exit_sleep(dev);
+		ret = st7789v_exit_sleep(dev);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		st7789v_transmit(dev, ST7789V_CMD_SLEEP_IN, NULL, 0);
+		ret = st7789v_transmit(dev, ST7789V_CMD_SLEEP_IN, NULL, 0);
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -398,6 +499,7 @@ static DEVICE_API(display, st7789v_api) = {
 		.rgb_param = DT_INST_PROP(inst, rgb_param),				\
 		.width = DT_INST_PROP(inst, width),					\
 		.height = DT_INST_PROP(inst, height),					\
+		.ready_time_ms = DT_INST_PROP(inst, ready_time_ms),			\
 	};										\
 											\
 	static struct st7789v_data st7789v_data_ ## inst = {				\

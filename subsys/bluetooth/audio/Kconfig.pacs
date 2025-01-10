@@ -9,6 +9,8 @@ menu "Published Audio Capabilities (PAC) options"
 
 config BT_PAC_SNK
 	bool "Sink PAC Characteristic Support"
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_SMP
 	help
 	  This option enables support for Sink Published Audio Capabilities.
 
@@ -43,6 +45,7 @@ endif # BT_PACS_SNK
 
 config BT_PAC_SRC
 	bool "Source PAC Characteristic Support"
+	depends on BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for Source Published Audio Capabilities.
 

@@ -66,8 +66,9 @@ MEMORY
 /*  Default entry point:  */
 ENTRY(__appcpu_start)
 
-/* Used as a pointer to the heap end */
+/* Heap size calculations for APPCPU */
 _heap_sentry = DRAM_RESERVED_START;
+_libc_heap_size = _heap_sentry - _end;
 
 SECTIONS
 {

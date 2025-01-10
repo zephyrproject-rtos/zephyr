@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2025 Charles Dias <charlesdias.cd@outlook.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/ {
+	chosen {
+		zephyr,camera = &st_cam_dvp;
+	};
+};
+
+&st_cam_i2c {
+
+	ov5640: ov5640@3c {
+		compatible = "ovti,ov5640";
+		reg = <0x3c>;
+		status = "okay";
+		reset-gpios = <&dmci_camera_connector 5 GPIO_ACTIVE_LOW>;
+		powerdown-gpios = <&dmci_camera_connector 6 GPIO_ACTIVE_HIGH>;
+
+		port {
+			ov5640_ep_out: endpoint {
+				remote-endpoint-label = "dcmi_ep_in";
+				bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+			};
+		};
+	};
+};
+
+&st_cam_dvp {
+	status = "okay";
+	sensor = <&ov5640>;
+
+	bus-width = <8>;
+	hsync-active = <0>;
+	vsync-active = <0>;
+	pixelclk-active = <1>;
+	capture-rate = <1>;
+
+	port {
+		dcmi_ep_in: endpoint {
+			remote-endpoint-label = "ov5640_ep_out";
+		};
+	};
+};

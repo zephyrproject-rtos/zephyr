@@ -78,13 +78,14 @@ def _get_suit_starter():
 class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
-    def __init__(self, cfg, family, softreset, dev_id, erase=False,
+    def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
                  reset=True, tool_opt=None, force=False, recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         # The old --nrf-family options takes upper-case family names
         self.family = family.lower() if family else None
         self.softreset = softreset
+        self.pinreset = pinreset
         self.dev_id = dev_id
         self.erase = bool(erase)
         self.reset = bool(reset)
@@ -117,9 +118,14 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                                      'NRF54H', 'NRF91', 'NRF92'],
                             help='''MCU family; still accepted for
                             compatibility only''')
+        # Not using a mutual exclusive group for softreset and pinreset due to
+        # the way dump_runner_option_help() works in run_common.py
         parser.add_argument('--softreset', required=False,
                             action='store_true',
-                            help='use reset instead of pinreset')
+                            help='use softreset instead of pinreset')
+        parser.add_argument('--pinreset', required=False,
+                            action='store_true',
+                            help='use pinreset instead of softreset')
         parser.add_argument('--snr', required=False, dest='dev_id',
                             help='obsolete synonym for -i/--dev-id')
         parser.add_argument('--force', required=False,
@@ -301,6 +307,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     def _get_core(self):
         if self.family in ('nrf54h', 'nrf92'):
             if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUFLPR') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUPPR') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')):
                 return 'Application'
             if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
@@ -405,20 +413,26 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family in xip_ranges:
             xip_start, xip_end = xip_ranges[self.family]
             if self.hex_refers_region(xip_start, xip_end):
-                ext_mem_erase_opt = 'ERASE_ALL'
+                ext_mem_erase_opt = erase_arg
 
         self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
         self.flush(force=False)
 
 
     def reset_target(self):
-        if self.family == 'nrf52' and not self.softreset:
+        sw_reset = "RESET_HARD" if self.family in ('nrf54h', 'nrf92') else "RESET_SYSTEM"
+        # Default to soft reset on nRF52 only, because ICs in these series can
+        # reconfigure the reset pin as a regular GPIO
+        default = sw_reset if self.family == 'nrf52' else "RESET_PIN"
+        kind = (sw_reset if self.softreset else "RESET_PIN" if
+                self.pinreset else default)
+
+        if self.family == 'nrf52' and kind == "RESET_PIN":
+            # Write to the UICR enabling nRESET in the corresponding pin
             self.exec_op('pinreset-enable')
 
-        if self.softreset:
-            self.exec_op('reset', kind="RESET_SYSTEM")
-        else:
-            self.exec_op('reset', kind="RESET_PIN")
+        self.logger.debug(f'Reset kind: {kind}')
+        self.exec_op('reset', kind=kind)
 
     @abc.abstractmethod
     def do_require(self):
@@ -487,6 +501,10 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.do_require()
+
+        if self.softreset and self.pinreset:
+            raise RuntimeError('Options --softreset and --pinreset are mutually '
+                               'exclusive.')
 
         self.ensure_output('hex')
         if IntelHex is None:

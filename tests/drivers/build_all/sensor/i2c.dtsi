@@ -629,11 +629,10 @@ test_i2c_max31875: max31875@5b {
 	reg = <0x5b>;
 };
 
-test_i2c_icp10125: icp10125@5c {
-	compatible = "invensense,icp10125";
+test_i2c_icp101xx: icp101xx@5c {
+	compatible = "invensense,icp101xx";
 	reg = <0x5c>;
-	temperature-measurement-mode = "normal";
-	pressure-measurement-mode = "normal";
+	mode = "normal";
 };
 
 test_i2c_as5600: as5600@5d {
@@ -677,6 +676,13 @@ test_i2c_tmd2620: tmd2620@62 {
 	proximity-led-drive-strength = <4>;
 	proximity-interrupt-filter = <0>;
 	wait-time-factor = <0>;
+};
+
+test_i2c_wsen_pads_2511020213301: wsen_pads_2511020213301@63 {
+	compatible = "we,wsen-pads-2511020213301";
+	reg = <0x63>;
+	interrupt-gpios = <&test_gpio 0 0>;
+	odr = <10>;
 };
 
 test_i2c_s11059: s11059@64 {

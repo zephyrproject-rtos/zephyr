@@ -117,7 +117,7 @@ static void set_modem_clock(void)
  * clock.
  *
  */
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 

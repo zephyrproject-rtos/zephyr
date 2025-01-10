@@ -73,4 +73,6 @@ ZTEST(rtc_api, test_update_callback)
 	zassert_true(counter < 12 && counter > 8, "Invalid update callback called counter");
 
 	zassert_equal(address, ((void *)&test_user_data), "Incorrect user data");
+	zassert_ok(rtc_update_set_callback(rtc, NULL, NULL),
+	    "Failed to clear and disable update callback");
 }

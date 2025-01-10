@@ -71,7 +71,7 @@ static const ccm_analog_frac_pll_config_t g_audioPll2Config = {
 	.postDiv = 1U, /* AUDIO PLL2 frequency  = 722534399HZ */
 };
 
-static void SOC_ClockInit(void)
+__weak void SOC_ClockInit(void)
 {
 	/*
 	 * Switch AHB NOC root to 24M first in order to configure

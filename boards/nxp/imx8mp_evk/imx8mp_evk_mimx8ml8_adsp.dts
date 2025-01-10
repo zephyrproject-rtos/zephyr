@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2023, 2024 NXP
+ * Copyright 2021, 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8m.dtsi>
-#include <nxp/nxp_imx/mimx8ml8dvnlz-pinctrl.dtsi>
+#include "imx8mp_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX 8MPLUS Audio DSP";
@@ -21,16 +21,9 @@
 	};
 };
 
-&pinctrl {
-	uart4_default: uart4_default {
-		group0 {
-			pinmux = <&iomuxc_uart4_rxd_uart_rx_uart4_rx>,
-				<&iomuxc_uart4_txd_uart_tx_uart4_tx>;
-			bias-pull-up;
-			slew-rate = "slow";
-			drive-strength = "x1";
-		};
-	};
+&sai3 {
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
 };
 
 &uart4 {

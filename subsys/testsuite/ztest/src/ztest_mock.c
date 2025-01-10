@@ -329,7 +329,7 @@ int z_cleanup_mock(void)
 		fail = 1;
 	}
 	if (return_value_list.next) {
-		PRINT_DATA("Return value no used by mock: %s\n", return_value_list.next->fn);
+		PRINT_DATA("Return value not used by mock: %s\n", return_value_list.next->fn);
 		fail = 2;
 	}
 

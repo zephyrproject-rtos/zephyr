@@ -25,7 +25,6 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
-#include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -38,8 +37,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "../host/conn_internal.h"
-#include "../host/hci_core.h"
+#include "host/hci_core.h"
 #include "common/bt_str.h"
 
 #include "audio_internal.h"
@@ -102,11 +100,11 @@ struct pacs_client {
 #endif /* CONFIG_BT_PAC_SRC */
 
 	/* Pending notification flags */
-	ATOMIC_DEFINE(flags, PACS_FLAG_NUM);
+	ATOMIC_DEFINE(flags, FLAG_NUM);
 };
 
 static struct pacs {
-	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
+	ATOMIC_DEFINE(flags, PACS_FLAG_NUM);
 
 	struct pacs_client clients[CONFIG_BT_MAX_PAIRED];
 } pacs;
@@ -272,7 +270,7 @@ static ssize_t available_contexts_read(struct bt_conn *conn,
 			pacs_get_available_contexts_for_conn(conn, BT_AUDIO_DIR_SOURCE)),
 	};
 
-	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
+	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &context,
 				 sizeof(context));
@@ -317,7 +315,7 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 		.src = sys_cpu_to_le16(supported_context_get(BT_AUDIO_DIR_SOURCE)),
 	};
 
-	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
+	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &context,
 				 sizeof(context));
@@ -384,7 +382,7 @@ static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	ssize_t ret_val;
 	int err;
 
-	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
+	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
 
 	err = k_sem_take(&read_buf_sem, READ_BUF_SEM_TIMEOUT);
 	if (err != 0) {
@@ -420,7 +418,7 @@ static ssize_t snk_loc_read(struct bt_conn *conn,
 {
 	uint32_t location = sys_cpu_to_le32(pacs_snk_location);
 
-	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
+	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &location,
 				 sizeof(location));
@@ -491,7 +489,7 @@ static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	ssize_t ret_val;
 	int err;
 
-	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
+	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
 
 	err = k_sem_take(&read_buf_sem, READ_BUF_SEM_TIMEOUT);
 	if (err != 0) {
@@ -527,7 +525,7 @@ static ssize_t src_loc_read(struct bt_conn *conn,
 {
 	uint32_t location = sys_cpu_to_le32(pacs_src_location);
 
-	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
+	LOG_DBG("conn %p attr %p buf %p len %u offset %u", (void *)conn, attr, buf, len, offset);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &location,
 				 sizeof(location));
@@ -782,9 +780,49 @@ static void configure_pacs_char(const struct bt_bap_pacs_register_param *param)
 	pacs_svc.attr_count -= attrs_to_rem;
 }
 
+static bool valid_pacs_register_param(const struct bt_bap_pacs_register_param *param)
+{
+	bool any_pac_registered = false;
+
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+#if defined(CONFIG_BT_PAC_SNK)
+	any_pac_registered |= param->snk_pac;
+#endif /* CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+	if (param->snk_loc && !param->snk_pac) {
+		LOG_DBG("Cannot register snk_loc without snk_pac");
+		return false;
+	}
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC)
+	any_pac_registered |= param->src_pac;
+#endif /* CONFIG_BT_PAC_SRC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+	if (param->src_loc && !param->src_pac) {
+		LOG_DBG("Cannot register src_loc without src_pac");
+		return false;
+	}
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+
+	if (!any_pac_registered) {
+		LOG_DBG("Neither snk_pac or src_pac registered");
+		return false;
+	}
+
+	return true;
+}
+
 int bt_pacs_register(const struct bt_bap_pacs_register_param *param)
 {
 	int err = 0;
+
+	if (!valid_pacs_register_param(param)) {
+		return -EINVAL;
+	}
 
 	if (atomic_test_and_set_bit(pacs.flags, PACS_FLAG_REGISTERED)) {
 		LOG_DBG("PACS already registered");
@@ -811,10 +849,10 @@ int bt_pacs_register(const struct bt_bap_pacs_register_param *param)
 
 	err = bt_gatt_service_register(&pacs_svc);
 	if (err != 0) {
-		LOG_DBG("Failed to register ASCS in gatt DB");
+		LOG_DBG("Failed to register ASCS in gatt DB: %d", err);
 		atomic_clear_bit(pacs.flags, PACS_FLAG_REGISTERED);
 
-		return err;
+		return -ENOEXEC;
 	}
 
 	return 0;
@@ -1162,15 +1200,24 @@ static void pacs_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 }
 
 static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
-				  enum bt_security_err err)
+				  enum bt_security_err sec_err)
 {
+	struct bt_conn_info info;
+	int err;
+
 	LOG_DBG("%s changed security level to %d", bt_addr_le_str(bt_conn_get_dst(conn)), level);
 
-	if (err != 0 || conn->encrypt == 0) {
+	if (sec_err != BT_SECURITY_ERR_SUCCESS || level <= BT_SECURITY_L1) {
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	err = bt_conn_get_info(conn, &info);
+	if (err < 0) {
+		__ASSERT_NO_MSG(false);
+		return;
+	}
+
+	if (!bt_addr_le_is_bonded(info.id, info.le.dst)) {
 		return;
 	}
 
@@ -1225,7 +1272,7 @@ static void pacs_disconnected(struct bt_conn *conn, uint8_t reason)
 #endif /* CONFIG_BT_PAC_SRC */
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.security_changed = pacs_security_changed,
 	.disconnected = pacs_disconnected,
 };
@@ -1295,7 +1342,6 @@ int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 	sys_slist_append(pac, &cap->_node);
 
 	if (!callbacks_registered) {
-		bt_conn_cb_register(&conn_callbacks);
 		bt_conn_auth_info_cb_register(&auth_callbacks);
 
 		callbacks_registered = true;

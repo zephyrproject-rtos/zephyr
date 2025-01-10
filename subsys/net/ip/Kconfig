@@ -401,7 +401,14 @@ config NET_TC_RX_COUNT
 	  enable at least 1 RX thread.
 
 config NET_TC_SKIP_FOR_HIGH_PRIO
+	bool "Push high priority packets directly to network driver [DEPRECATED]"
+	select DEPRECATED
+	help
+	  Deprecated, use NET_TC_TX_SKIP_FOR_HIGH_PRIO instead.
+
+config NET_TC_TX_SKIP_FOR_HIGH_PRIO
 	bool "Push high priority packets directly to network driver"
+	default NET_TC_SKIP_FOR_HIGH_PRIO
 	help
 	  If this is set, then high priority (>= NET_PRIORITY_CA) net_pkt will
 	  be pushed directly to network driver and will skip the traffic class

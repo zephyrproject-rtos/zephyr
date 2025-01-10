@@ -185,7 +185,8 @@ The MAX32625 microcontroller on the board is preprogrammed with DAPLink firmware
 It allows debugging and programming of the MAX78000 Arm core over USB.
 
 Once the debug probe is connected to your host computer, then you can simply run the
-``west flash`` command to write a firmware image into flash.
+``west flash`` command to write a firmware image into flash. To perform a full erase,
+pass the ``--erase`` option when executing ``west flash``.
 
 .. note::
 

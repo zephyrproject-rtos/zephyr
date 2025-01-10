@@ -14,46 +14,57 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/pwm.h>
 
-static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
+#define PWM_LED_ALIAS(i) DT_ALIAS(_CONCAT(pwm_led, i))
+#define PWM_LED_IS_OKAY(i) DT_NODE_HAS_STATUS_OKAY(DT_PARENT(PWM_LED_ALIAS(i)))
+#define PWM_LED(i, _) IF_ENABLED(PWM_LED_IS_OKAY(i), (PWM_DT_SPEC_GET(PWM_LED_ALIAS(i)),))
+
+#define MAX_LEDS 10
+static const struct pwm_dt_spec pwm_leds[] = {LISTIFY(MAX_LEDS, PWM_LED, ())};
 
 #define NUM_STEPS	50U
 #define SLEEP_MSEC	25U
 
 int main(void)
 {
-	uint32_t pulse_width = 0U;
-	uint32_t step = pwm_led0.period / NUM_STEPS;
+	uint32_t pulse_widths[ARRAY_SIZE(pwm_leds)];
+	uint32_t steps[ARRAY_SIZE(pwm_leds)];
 	uint8_t dir = 1U;
 	int ret;
 
-	printk("PWM-based LED fade\n");
+	printk("PWM-based LED fade. Found %d LEDs\n", ARRAY_SIZE(pwm_leds));
 
-	if (!pwm_is_ready_dt(&pwm_led0)) {
-		printk("Error: PWM device %s is not ready\n",
-		       pwm_led0.dev->name);
-		return 0;
+	for (size_t i = 0; i < ARRAY_SIZE(pwm_leds); i++) {
+		pulse_widths[i] = 0;
+		steps[i] = pwm_leds[i].period / NUM_STEPS;
+		if (!pwm_is_ready_dt(&pwm_leds[i])) {
+			printk("Error: PWM device %s is not ready\n", pwm_leds[i].dev->name);
+			return 0;
+		}
 	}
 
 	while (1) {
-		ret = pwm_set_pulse_dt(&pwm_led0, pulse_width);
-		if (ret) {
-			printk("Error %d: failed to set pulse width\n", ret);
-			return 0;
-		}
-		printk("Using pulse width %d%%\n", 100 * pulse_width / pwm_led0.period);
-
-		if (dir) {
-			pulse_width += step;
-			if (pulse_width >= pwm_led0.period) {
-				pulse_width = pwm_led0.period - step;
-				dir = 0U;
+		for (size_t i = 0; i < ARRAY_SIZE(pwm_leds); i++) {
+			ret = pwm_set_pulse_dt(&pwm_leds[i], pulse_widths[i]);
+			if (ret) {
+				printk("Error %d: failed to set pulse width for LED %d\n", ret, i);
 			}
-		} else {
-			if (pulse_width >= step) {
-				pulse_width -= step;
+			printk("LED %d: Using pulse width %d%%\n", i,
+			       100 * pulse_widths[i] / pwm_leds[i].period);
+
+			if (dir) {
+				if (pulse_widths[i] + steps[i] >= pwm_leds[i].period) {
+					pulse_widths[i] = pwm_leds[i].period;
+					dir = 0U;
+				} else {
+					pulse_widths[i] += steps[i];
+				}
 			} else {
-				pulse_width = step;
-				dir = 1U;
+				if (pulse_widths[i] <= steps[i]) {
+					pulse_widths[i] = 0;
+					dir = 1U;
+				} else {
+					pulse_widths[i] -= steps[i];
+				}
 			}
 		}
 

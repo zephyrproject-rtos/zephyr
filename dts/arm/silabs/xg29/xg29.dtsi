@@ -9,6 +9,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/adc/adc.h>
 #include <dt-bindings/clock/silabs/xg29-clock.h>
+#include <dt-bindings/dma/silabs/xg29-dma.h>
 #include <freq.h>
 
 / {
@@ -324,7 +325,7 @@
 			reg = <0x40040000 0x4000>;
 			interrupts = <26 0>;
 			interrupt-names = "ldma";
-			#dma-cells = <3>;
+			#dma-cells = <1>;
 			dma_channels = <8>;
 			status = "disabled";
 		};

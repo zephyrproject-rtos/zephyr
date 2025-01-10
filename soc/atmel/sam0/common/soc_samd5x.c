@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 ML!PA Consulting GmbH
- * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2023-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,30 +10,57 @@
  * @brief Atmel SAMD MCU series initialization code
  */
 
+/* The CPU clock will be configured to the DT requested value,
+ * and run via DFLL48M.
+ *
+ * Reference -> GCLK Gen 1 -> DFLL48M -> GCLK Gen 0 -> GCLK_MAIN
+ *
+ * GCLK Gen 0 -> GCLK_MAIN @ DPLL0
+ * GCLK Gen 1 -> DFLL48M @ 32768 Hz
+ * GCLK Gen 2 -> USB @ DFLL48M
+ * GCLK Gen 3 -> ADC @ reserved
+ * GCLK Gen 4 -> RTC @ xtal 32768 Hz
+ */
+
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+
+/* clang-format off */
 
 #define SAM0_DFLL_FREQ_HZ		(48000000U)
 #define SAM0_DPLL_FREQ_MIN_HZ		(96000000U)
 #define SAM0_DPLL_FREQ_MAX_HZ		(200000000U)
 #define SAM0_XOSC32K_STARTUP_TIME	CONFIG_SOC_ATMEL_SAMD5X_XOSC32K_STARTUP
 
-#if CONFIG_SOC_ATMEL_SAMD5X_XOSC32K_AS_MAIN
-static void osc32k_init(void)
+#if !CONFIG_SOC_ATMEL_SAMD5X_XOSC32K
+#define xosc32k_init()
+#else
+static inline void xosc32k_init(void)
 {
 	OSC32KCTRL->XOSC32K.reg = OSC32KCTRL_XOSC32K_ENABLE
+#if CONFIG_SOC_ATMEL_SAMD5X_XOSC32K_CRYSTAL
 				| OSC32KCTRL_XOSC32K_XTALEN
+#endif
+#if CONFIG_SOC_ATMEL_SAMD5X_XOSC32K_GAIN_HS
+				| OSC32KCTRL_XOSC32K_CGM_HS
+#else
 				| OSC32KCTRL_XOSC32K_CGM_XT
+#endif
 				| OSC32KCTRL_XOSC32K_EN32K
+				| OSC32KCTRL_XOSC32K_EN1K
 				| OSC32KCTRL_XOSC32K_RUNSTDBY
-				| OSC32KCTRL_XOSC32K_STARTUP(SAM0_XOSC32K_STARTUP_TIME)
-				;
+				| OSC32KCTRL_XOSC32K_STARTUP(SAM0_XOSC32K_STARTUP_TIME);
 
 	while (!OSC32KCTRL->STATUS.bit.XOSC32KRDY) {
 	}
+}
+#endif
 
+#if CONFIG_SOC_ATMEL_SAMD5X_XOSC32K_AS_MAIN
+static void osc32k_init(void)
+{
 	GCLK->GENCTRL[1].reg = GCLK_GENCTRL_SRC(GCLK_SOURCE_XOSC32K)
 			     | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN;
 
@@ -132,6 +159,7 @@ void soc_reset_hook(void)
 	CMCC->CTRL.bit.CEN = 0;
 
 	gclk_reset();
+	xosc32k_init();
 	osc32k_init();
 	dfll_init();
 	dpll_init(0, dfll_div * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
@@ -141,4 +169,15 @@ void soc_reset_hook(void)
 
 	/* connect GCLK2 to 48 MHz DFLL for USB */
 	gclk_connect(2, GCLK_SOURCE_DFLL48M, 0);
+
+	/* connect GCLK4 to xosc32k for RTC. The output is 1024 Hz*/
+	gclk_connect(4,
+#if CONFIG_SOC_ATMEL_SAMD5X_XOSC32K
+		     GCLK_SOURCE_XOSC32K,
+#else
+		     GCLK_SOURCE_OSCULP32K,
+#endif
+		     CONFIG_SOC_ATMEL_SAMD5X_OSC32K_PRESCALER);
 }
+
+/* clang-format on */

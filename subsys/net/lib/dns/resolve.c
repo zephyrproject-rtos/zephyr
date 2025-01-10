@@ -201,11 +201,11 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 	}
 }
 
-static int dispatcher_cb(void *my_ctx, int sock,
+static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 			 struct sockaddr *addr, size_t addrlen,
 			 struct net_buf *dns_data, size_t len)
 {
-	struct dns_resolve_context *ctx = my_ctx;
+	struct dns_resolve_context *ctx = my_ctx->resolve_ctx;
 	struct net_buf *dns_cname = NULL;
 	uint16_t query_hash = 0U;
 	uint16_t dns_id = 0U;
@@ -782,7 +782,8 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 
 	ret = dns_unpack_response_header(dns_msg, *dns_id);
 	if (ret < 0) {
-		ret = DNS_EAI_FAIL;
+		errno = -ret;
+		ret = DNS_EAI_SYSTEM;
 		goto quit;
 	}
 
@@ -797,7 +798,8 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 	ret = dns_unpack_response_query(dns_msg);
 	if (ret < 0) {
 		if (ret == -ENOMEM) {
-			ret = DNS_EAI_FAIL;
+			errno = -ret;
+			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
 
@@ -828,7 +830,8 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		ret = dns_unpack_answer(dns_msg, answer_ptr, &ttl,
 					&answer_type);
 		if (ret < 0) {
-			ret = DNS_EAI_FAIL;
+			errno = -ret;
+			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
 
@@ -902,14 +905,16 @@ query_known:
 
 			if (dns_msg->response_length < address_size) {
 				/* it seems this is a malformed message */
-				ret = DNS_EAI_FAIL;
+				errno = EMSGSIZE;
+				ret = DNS_EAI_SYSTEM;
 				goto quit;
 			}
 
 			if ((dns_msg->response_position + address_size) >
 			    dns_msg->msg_size) {
 				/* Too short message */
-				ret = DNS_EAI_FAIL;
+				errno = EMSGSIZE;
+				ret = DNS_EAI_SYSTEM;
 				goto quit;
 			}
 
@@ -955,6 +960,7 @@ query_known:
 
 		*query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
 		if (*query_idx < 0) {
+			errno = ENOENT;
 			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
@@ -977,6 +983,7 @@ query_known:
 						     net_buf_max_len(dns_cname),
 						     dns_msg, pos);
 				if (ret < 0) {
+					errno = -ret;
 					ret = DNS_EAI_SYSTEM;
 					goto quit;
 				}
@@ -1414,7 +1421,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 
 try_resolve:
 #ifdef CONFIG_DNS_RESOLVER_CACHE
-	ret = dns_cache_find(&dns_cache, query, cached_info, ARRAY_SIZE(cached_info));
+	ret = dns_cache_find(&dns_cache, query, type, cached_info, ARRAY_SIZE(cached_info));
 	if (ret > 0) {
 		/* The query was cached, no
 		 * need to continue further.

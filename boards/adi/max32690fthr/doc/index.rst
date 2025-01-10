@@ -97,7 +97,8 @@ Logic levels are fixed to VDDIO (1.8V).
 
 Once the debug probe is connected to your host computer, then you can run the
 ``west flash`` command to write a firmware image into flash. Here is an example
-for the :zephyr:code-sample:`hello_world` application.
+for the :zephyr:code-sample:`hello_world` application. To perform a full erase,
+pass the ``--erase`` option when executing ``west flash``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

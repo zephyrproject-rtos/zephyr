@@ -1,7 +1,4 @@
-.. _lp_em_cc2340r5:
-
-TI CC2340R5 Launchpad
-#####################
+.. zephyr:board:: lp_em_cc2340r5
 
 Overview
 ********
@@ -10,12 +7,6 @@ The Texas Instruments CC2340R5 LaunchPad |trade| (LP_EM_CC2340R5) is a
 development kit for the SimpleLink |trade| multi-Standard CC2340R5 wireless MCU.
 
 See the `TI CC2340R5 LaunchPad Product Page`_ for details.
-
-.. figure:: img/lp_em_cc2340r5.webp
-   :align: center
-   :alt: TI CC2340R5 Launchpad
-
-   Texas Instruments CC2340R5 LaunchPad |trade|
 
 Hardware
 ********

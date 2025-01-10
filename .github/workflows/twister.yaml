@@ -243,6 +243,31 @@ jobs:
           check_name: Unit Test Results
           files: "**/twister.xml"
           comment_mode: off
+
+      - name: Check out source code
+        if: failure()
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Analyze Twister Reports
+        if: failure()
+        run: |
+          ./scripts/ci/twister_report_analyzer.py artifacts/*/*/twister.json --long-summary --platforms --output-md errors.md
+          echo '### Error Summary! 🚀' >> $GITHUB_STEP_SUMMARY
+          cat errors.md  >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Twister Analysis Results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Twister Analysis Results
+          if-no-files-found: ignore
+          path: |
+            twister_report_summary.json
+
   twister-status-check:
     if: always()
     name: "Check Twister Status"

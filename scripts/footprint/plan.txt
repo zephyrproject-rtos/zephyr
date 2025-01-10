@@ -5,7 +5,7 @@ footprints,userspace,disco_l475_iot1,tests/benchmarks/footprints,-DCONF_FILE=prj
 footprints,default,nrf5340dk/nrf5340/cpuapp,tests/benchmarks/footprints,,benchmark.kernel.footprints.default
 footprints,default,nrf51dk/nrf51822,tests/benchmarks/footprints,,benchmark.kernel.footprints.default
 footprints,default,altera_max10,tests/benchmarks/footprints,,benchmark.kernel.footprints.default
-footprints,default,hifive1_revb,tests/benchmarks/footprints,,benchmark.kernel.footprints.default
+footprints,default,hifive1@B,tests/benchmarks/footprints,,benchmark.kernel.footprints.default
 footprints,default,intel_ehl_crb,tests/benchmarks/footprints,,benchmark.kernel.footprints.default
 footprints,userspace,intel_ehl_crb,tests/benchmarks/footprints,-DCONF_FILE=prj_userspace.conf,benchmark.kernel.footprints.userspace
 footprints,power-management,frdm_k64f,tests/benchmarks/footprints,-DCONF_FILE=prj_pm.conf,benchmark.kernel.footprints.pm

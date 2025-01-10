@@ -13,6 +13,7 @@ if BT_AUDIO
 config BT_TBS
 	bool "Telephone Bearer Service Support"
 	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_SMP
 	depends on UTF8
 	help
 	  This option enables support for Telephone Bearer Service. By default this only
@@ -58,20 +59,24 @@ endif # BT_TBS
 
 config BT_TBS_CLIENT_GTBS
 	bool "Generic Telephone Bearer Service client support"
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_SMP
 	depends on UTF8
 	help
 	  This option enables support for the GTBS-oriented Call Control client.
 
 config BT_TBS_CLIENT_TBS
 	bool "Telephone Bearer Service client support"
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_SMP
 	depends on UTF8
 	help
 	  This option enables support for the TBS-oriented Call Control client.
 
 config BT_TBS_CLIENT
 	def_bool BT_TBS_CLIENT_GTBS || BT_TBS_CLIENT_TBS
-	depends on BT_GATT_CLIENT
-	depends on BT_GATT_AUTO_DISCOVER_CCC
 
 if BT_TBS_CLIENT
 

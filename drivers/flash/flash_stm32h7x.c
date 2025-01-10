@@ -55,6 +55,9 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
  * the serie, there is a discontinuty between bank1 and bank2.
  */
 #define DISCONTINUOUS_BANKS         (REAL_FLASH_SIZE_KB < STM32H7_SERIES_MAX_FLASH_KB)
+#define NUMBER_OF_BANKS             2
+#else
+#define NUMBER_OF_BANKS             1
 #endif
 
 struct flash_stm32_sector_t {
@@ -69,6 +72,8 @@ static __unused int commit_optb(const struct device *dev)
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int64_t timeout_time = k_uptime_get() + STM32H7_FLASH_OPT_TIMEOUT_MS;
 
+	/* Make sure previous write is completed before committing option bytes. */
+	barrier_dsync_fence_full();
 	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
 	barrier_dsync_fence_full();
 	while (regs->OPTSR_CUR & FLASH_OPTSR_OPT_BUSY) {
@@ -81,6 +86,7 @@ static __unused int commit_optb(const struct device *dev)
 	return 0;
 }
 
+/* Returns negative value on error, 0 if a change was not need, 1 if a change has been made. */
 static __unused int write_opt(const struct device *dev, uint32_t mask, uint32_t value,
 			      uintptr_t cur, bool commit)
 {
@@ -101,18 +107,21 @@ static __unused int write_opt(const struct device *dev, uint32_t mask, uint32_t 
 	}
 
 	if ((sys_read32(cur) & mask) == value) {
+		/* A change not needed, return 0. */
 		return 0;
 	}
 
 	sys_write32((sys_read32(cur) & ~mask) | value, prg);
 
 	if (commit) {
-		/* Make sure previous write is completed before committing option bytes. */
-		barrier_dsync_fence_full();
 		rc = commit_optb(dev);
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
-	return rc;
+	/* A change has been made, return 1. */
+	return 1;
 }
 
 static __unused int write_optsr(const struct device *dev, uint32_t mask, uint32_t value)
@@ -121,6 +130,25 @@ static __unused int write_optsr(const struct device *dev, uint32_t mask, uint32_
 	uintptr_t cur = (uintptr_t)regs + offsetof(FLASH_TypeDef, OPTSR_CUR);
 
 	return write_opt(dev, mask, value, cur, true);
+}
+
+static __unused int write_optwp(const struct device *dev, uint32_t mask, uint32_t value,
+				 uint32_t bank)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	uintptr_t cur = (uintptr_t)regs + offsetof(FLASH_TypeDef, WPSN_CUR1);
+
+	if (bank >= NUMBER_OF_BANKS) {
+		return -EINVAL;
+	}
+
+#ifdef DUAL_BANK
+	if (bank == 1) {
+		cur = (uintptr_t)regs + offsetof(FLASH_TypeDef, WPSN_CUR2);
+	}
+#endif /* DUAL_BANK */
+
+	return write_opt(dev, mask, value, cur, false);
 }
 
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
@@ -136,6 +164,147 @@ void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 	write_optsr(dev, FLASH_OPTSR_RDP_Msk, (uint32_t)level << FLASH_OPTSR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+
+#define WP_MSK FLASH_WPSN_WRPSN_Msk
+#define WP_POS FLASH_WPSN_WRPSN_Pos
+
+int flash_stm32_update_wp_sectors(const struct device *dev, uint64_t changed_sectors,
+				  uint64_t protected_sectors)
+{
+	/* All banks share the same sector mask. */
+	const uint64_t bank_mask = WP_MSK >> WP_POS;
+	const uint32_t sectors_per_bank = __builtin_popcount(WP_MSK);
+	uint64_t sectors_mask = 0;
+	uint32_t protected_sectors_reg;
+	uint32_t changed_sectors_reg;
+	int ret, ret2 = 0;
+	bool commit = false;
+
+	for (int i = 0; i < NUMBER_OF_BANKS; i++) {
+		sectors_mask |= bank_mask << (sectors_per_bank * i);
+	}
+
+	if ((changed_sectors & sectors_mask) != changed_sectors) {
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < NUMBER_OF_BANKS; i++) {
+		/* Prepare protected and changed masks per bank. */
+		protected_sectors_reg = (protected_sectors >> sectors_per_bank * i) & bank_mask;
+		changed_sectors_reg = (changed_sectors >> sectors_per_bank * i) & bank_mask;
+
+		if (changed_sectors_reg == 0) {
+			continue;
+		}
+		changed_sectors_reg <<= WP_POS;
+		protected_sectors_reg <<= WP_POS;
+		/* Sector is protected when bit == 0. Flip protected_sectors bits */
+		protected_sectors_reg = ~protected_sectors_reg;
+
+		ret = write_optwp(dev, changed_sectors_reg, protected_sectors_reg, i);
+		/* Option byte was successfully changed if the return value is greater than 0. */
+		if (ret > 0) {
+			commit = true;
+		} else if (ret < 0) {
+			/* Do not continue changing WP on error. */
+			ret2 = ret;
+			break;
+		}
+	}
+
+	if (commit) {
+		ret = commit_optb(dev);
+		/* Make sure to return the first error. */
+		if (ret < 0 && ret2 == 0) {
+			ret2 = ret;
+		}
+	}
+
+	return ret2;
+}
+
+int flash_stm32_get_wp_sectors(const struct device *dev, uint64_t *protected_sectors)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	*protected_sectors = (~regs->WPSN_CUR1 & WP_MSK) >> WP_POS;
+#ifdef DUAL_BANK
+	/* Available only for STM32H7x */
+	uint64_t proctected_sectors_2 =
+		(~regs->WPSN_CUR2 & WP_MSK) >> WP_POS;
+	const uint32_t sectors_per_bank = __builtin_popcount(WP_MSK);
+	*protected_sectors |= proctected_sectors_2 << sectors_per_bank;
+#endif /* DUAL_BANK */
+
+	return 0;
+}
+#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
+
+#ifdef CONFIG_FLASH_STM32_BLOCK_REGISTERS
+int flash_stm32_control_register_disable(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	/*
+	 * Access to control register can be disabled by writing wrong key to
+	 * the key register. Option register will remain disabled until reset.
+	 * Writing wrong key causes a bus fault, so we need to set FAULTMASK to
+	 * disable faults, and clear bus fault pending bit before enabling them
+	 * again.
+	 */
+	regs->CR1 |= FLASH_CR_LOCK;
+#ifdef DUAL_BANK
+	regs->CR2 |= FLASH_CR_LOCK;
+#endif /* DUAL_BANK */
+
+	__set_FAULTMASK(1);
+	regs->KEYR1 = 0xffffffff;
+
+#ifdef DUAL_BANK
+	regs->KEYR2 = 0xffffffff;
+#endif /* DUAL_BANK */
+	/* Make sure that the fault occurs before we clear it. */
+	barrier_dsync_fence_full();
+
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	/* Make sure to clear the fault before changing the fault mask. */
+	barrier_dsync_fence_full();
+
+	__set_FAULTMASK(0);
+
+	return 0;
+}
+
+int flash_stm32_option_bytes_disable(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	/*
+	 * Access to option register can be disabled by writing wrong key to
+	 * the key register. Option register will remain disabled until reset.
+	 * Writing wrong key causes a bus fault, so we need to set FAULTMASK to
+	 * disable faults, and clear bus fault pending bit before enabling them
+	 * again.
+	 */
+	regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
+
+	__set_FAULTMASK(1);
+	regs->OPTKEYR = 0xffffffff;
+	/* Make sure that the fault occurs before we clear it. */
+	barrier_dsync_fence_full();
+
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	/* Make sure to clear the fault before changing the fault mask. */
+	barrier_dsync_fence_full();
+	__set_FAULTMASK(0);
+
+	return 0;
+}
+#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
 
 int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 {

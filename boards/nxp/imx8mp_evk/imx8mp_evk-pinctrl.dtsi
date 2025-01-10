@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  */
@@ -7,6 +7,20 @@
 #include <nxp/nxp_imx/mimx8ml8dvnlz-pinctrl.dtsi>
 
 &pinctrl {
+	sai3_default: sai3_default {
+		group0 {
+			pinmux = <&iomuxc_sai3_txfs_sai_tx_sync_sai3_tx_sync>,
+				 <&iomuxc_sai3_txc_sai_tx_bclk_sai3_tx_bclk>,
+				 <&iomuxc_sai3_rxd_sai_rx_data_sai3_rx_data0>,
+				 <&iomuxc_sai3_txd_sai_tx_data_sai3_tx_data0>,
+				 <&iomuxc_sai3_mclk_sai_mclk_sai3_mclk>;
+			bias-pull-up;
+			slew-rate = "fast";
+			drive-strength = "x6";
+			input-schmitt-enable;
+		};
+	};
+
 	uart2_default: uart2_default {
 		group0 {
 			pinmux = <&iomuxc_uart2_rxd_uart_rx_uart2_rx>,

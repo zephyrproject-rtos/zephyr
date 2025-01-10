@@ -29,7 +29,7 @@ BUILD_ASSERT(NET_TC_RX_SLOTS > 0,
 		"CONFIG_NET_TC_RX_COUNT or disable CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO");
 #endif
 
-#define TC_TX_PSEUDO_QUEUE (COND_CODE_1(CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO, (1), (0)))
+#define TC_TX_PSEUDO_QUEUE (COND_CODE_1(CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO, (1), (0)))
 #define NET_TC_TX_EFFECTIVE_COUNT (NET_TC_TX_COUNT + TC_TX_PSEUDO_QUEUE)
 
 #if NET_TC_TX_EFFECTIVE_COUNT > 1
@@ -37,7 +37,7 @@ BUILD_ASSERT(NET_TC_RX_SLOTS > 0,
 BUILD_ASSERT(NET_TC_TX_SLOTS > 0,
 		"Misconfiguration: There are more traffic classes then packets, "
 		"either increase CONFIG_NET_PKT_TX_COUNT or decrease "
-		"CONFIG_NET_TC_TX_COUNT or disable CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO");
+		"CONFIG_NET_TC_TX_COUNT or disable CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO");
 #endif
 
 /* Template for thread name. The "xx" is either "TX" denoting transmit thread,

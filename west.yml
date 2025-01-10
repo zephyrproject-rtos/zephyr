@@ -117,7 +117,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 4b96cbb174678dcd3ca86e11e1f24bc5f8726da0
+      revision: d1b8b20b6278615b00e136374540eb1c00dcabe7
       path: modules/hal/cmsis
       groups:
         - hal
@@ -157,12 +157,12 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: dde7a36d00bd5dafd1ffcd8d243dfbceeb20e856
+      revision: d697369628ba67d4613b90aa61a2822c3aaa876e
       path: modules/hal/atmel
       groups:
         - hal
     - name: hal_espressif
-      revision: c0b38024651cb917d7b6e31b50adf1202e0a10d6
+      revision: 2b8198796816e085759a96c2844e2d237b7f512d
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -238,12 +238,12 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 1d1f81866ccbaa6e84e9960ed763e005d1e45560
+      revision: 55043bcc35fffa3b4a8c75a696d932b5020aad09
       path: modules/hal/stm32
       groups:
         - hal
     - name: hal_tdk
-      revision: e0ade95b29841d915c38bc157bb5509270e8aa21
+      revision: 6727477af1e46fa43878102489b9672a9d24e39f
       path: modules/hal/tdk
       groups:
         - hal
@@ -295,7 +295,7 @@ manifest:
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 6decbb7f7783f6e48d4591fcb9f7810c2fb08e61
+      revision: 1ed1ddd881c3784049a92bb9fe37c38c6c74d998
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 4952e1328529ee549d412b498ea71c54f30aa3b1

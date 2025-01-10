@@ -50,6 +50,17 @@ Boards
   the required configuration by using ``mikroe_weather_click_i2c`` or ``mikroe_weather_click_spi``
   instead of ``mikroe_weather_click``.
 
+* All nRF52-based boards will now default to soft (system) reset
+  instead of pin reset when flashing with ``west flash``. If you want to keep
+  using pin reset on the nRF52 family of ICs you can use ``west flash --pinreset``.
+
+* Erasing the external memory when programming a new firmware image with ``west
+  flash`` on the nRF52 and nRF53 series now always correctly honors the
+  ``--erase`` flag (and its absence) both when using the ``nrfjprog`` and
+  ``nrfutil`` backends.  Prior to this release, the ``nrjfprog`` backend would
+  always erase only the sectors of the external flash used by the new firmware,
+  and the ``nrfutil`` one would always erase the whole external flash.
+
 Devicetree
 **********
 
@@ -225,6 +236,7 @@ I2C
 ===
 
 * Renamed the ``compatible`` from ``nxp,imx-lpi2c`` to :dtcompatible:`nxp,lpi2c`.
+* Renamed the device tree property ``port_sel`` to ``port-sel```.
 
 I2S
 ===
@@ -317,6 +329,21 @@ SDHC
 Sensors
 =======
 
+  * The :dtcompatible:`we,wsen-pads` driver has been renamed to
+    :dtcompatible:`we,wsen-pads-2511020213301`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        pads:pads-2511020213301@5d {
+          compatible = "we,wsen-pads-2511020213301";
+          reg = <0x5d>;
+          odr = < 10 >;
+          interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+        };
+      };
+
   * The :dtcompatible:`we,wsen-pdus` driver has been renamed to
     :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
     The Device Tree can be configured as follows:
@@ -346,6 +373,19 @@ Sensors
         };
       };
 
+  * The :dtcompatible:`invensense,icp10125` driver has been renamed to
+    :dtcompatible:`invensense,icp101xx`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        icp101xx:icp101xx@63 {
+           compatible = "invensense,icp101xx";
+           reg = <0x63>;
+        };
+      };
+
 Serial
 ======
 
@@ -367,9 +407,10 @@ Stepper
     The function now takes the step interval in nanoseconds. This allows for a more precise control.
   * Deprecating setting max velocity via :c:func:`stepper_run`.
   * The :kconfig:option:`STEPPER_ADI_TMC_RAMP_GEN` is now deprecated and is replaced with the new
-    :kconfig:option:`STEPPER_ADI_TMC5041_RAMP_GEN` option.
-  * To control the velocity for :dtcompatible:`adi,tmc5041` stepper driver, use
-    :c:func:`tmc5041_stepper_set_max_velocity` or :c:func:`tmc5041_stepper_set_ramp`.
+    :kconfig:option:`STEPPER_ADI_TMC50XX_RAMP_GEN` option.
+  * Renamed tmc5041 stepper driver to tmc50xx.
+  * To control the velocity for :dtcompatible:`adi,tmc50xx` stepper driver, use
+    :c:func:`tmc50xx_stepper_set_max_velocity` or :c:func:`tmc50xx_stepper_set_ramp`.
   * Renamed the DeviceTree property ``en_spreadcycle`` to ``en-spreadcycle``.
   * Renamed the DeviceTree property ``i_scale_analog`` to ``i-scale-analog``.
   * Renamed the DeviceTree property ``index_optw`` to ``index-otpw``.
@@ -402,6 +443,7 @@ Timer
 
 * Renamed the ``compatible`` from ``nxp,kinetis-ftm`` to :dtcompatible:`nxp,ftm` and relocate it
   under ``dts/bindings/timer``.
+* Renamed the device tree property from ``ticks_us`` to ``ticks-us``.
 
 USB
 ===
@@ -456,6 +498,16 @@ Bluetooth Mesh
   set as deprecated. Default option for platforms that do not support TF-M
   is :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`.
 
+* Mesh key representations are not backward compatible if images are built with TinyCrypt and
+  crypto libraries based on the PSA API. Mesh no longer stores the key values for those crypto
+  libraries. The crypto library stores the keys in the internal trusted storage.
+  If a provisioned device is going to update its image that was built with
+  the :kconfig:option:`CONFIG_BT_MESH_USES_TINYCRYPT` Kconfig option set on an image
+  that was built with :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA` or
+  :kconfig:option:`CONFIG_BT_MESH_USES_TFM_PSA` without erasing the persistent area,
+  it should be unprovisioned first and reprovisioned after update again.
+  If the image is changed over Mesh DFU, use :c:enumerator:`BT_MESH_DFU_EFFECT_UNPROV`.
+
 * Mesh explicitly depends on the Secure Storage subsystem if storing into
   non-volatile memory (:kconfig:option:`CONFIG_BT_SETTINGS`) is enabled and
   Mbed TLS library (:kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`) is used.
@@ -482,6 +534,10 @@ Bluetooth Audio
   :c:func:`bt_pacs_register` also have to be called before :c:func:`bt_ascs_register` can be
   be called. All Kconfig options still remain. Runtime configuration cannot override a disabled
   Kconfig option. (:github:`83730`)
+
+* Several services and service client (AICS, ASCS, CSIP, HAS, MCS, PACS, TBS, VCP and VOCS) now
+  depend on :kconfig:option:`CONFIG_BT_SMP` and may need to be explicitly enabled.
+  (:github:`84994``)
 
 Bluetooth Classic
 =================
@@ -546,6 +602,9 @@ Networking
   :kconfig:option:`CONFIG_NVS` Kconfig option. Platforms using OpenThread must explicitly enable
   either the :kconfig:option:`CONFIG_NVS` or :kconfig:option:`CONFIG_ZMS` Kconfig option.
 
+* ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO`` was deprecated in favour of
+  :kconfig:option:`CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO` to avoid naming ambiguity.
+
 Other Subsystems
 ****************
 
@@ -560,6 +619,10 @@ Filesystem
 
 hawkBit
 =======
+
+* The Kconfig symbols :kconfig:option:`CONFIG_SMF` and
+  :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` are now required to be enabled to use the
+  hawkBit subsystem.
 
 MCUmgr
 ======

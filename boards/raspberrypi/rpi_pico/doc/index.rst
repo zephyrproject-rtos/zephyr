@@ -3,16 +3,20 @@
 Overview
 ********
 
-The Raspberry Pi Pico and Pico W are small, low-cost, versatile boards from
-Raspberry Pi. They are equipped with an RP2040 SoC, an on-board LED,
-a USB connector, and an SWD interface. The Pico W additionally contains an
-Infineon CYW43439 2.4 GHz Wi-Fi/Bluetooth module. The USB bootloader allows the
-ability to flash without any adapter, in a drag-and-drop manner.
+The `Raspberry Pi Pico`_ and Pico W are small, low-cost, versatile boards from
+Raspberry Pi. They are equipped with an `RP2040 <RP2040_Datasheet>`_ SoC, an on-board LED,
+a USB connector, and an SWD interface.
+
+The Pico W additionally contains an `Infineon CYW43439`_ 2.4 GHz Wi-Fi/Bluetooth module.
+
+The USB bootloader allows the ability to flash without any adapter,
+in a drag-and-drop manner.
 It is also possible to flash and debug the boards with their SWD interface,
 using an external adapter.
 
 Hardware
 ********
+
 - Dual core Arm Cortex-M0+ processor running up to 133MHz
 - 264KB on-chip SRAM
 - 2MB on-board QSPI flash with XIP capabilities
@@ -44,7 +48,7 @@ Hardware
 Supported Features
 ==================
 
-The rpi_pico board configuration supports the following
+The ``rpi_pico`` board configuration supports the following
 hardware features:
 
 .. list-table::
@@ -85,16 +89,10 @@ hardware features:
      - :dtcompatible:`raspberrypi,pico-pwm`
    * - Flash
      - :kconfig:option:`CONFIG_FLASH`
-     - :dtcompatible:`raspberrypi,pico-flash`
+     - :dtcompatible:`raspberrypi,pico-flash-controller`
    * - Clock controller
      - :kconfig:option:`CONFIG_CLOCK_CONTROL`
      - :dtcompatible:`raspberrypi,pico-clock-controller`
-   * - UART (PIO)
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart-pio`
-   * - SPI (PIO)
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`raspberrypi,pico-spi-pio`
 
 .. _rpi_pico_pin_mapping:
 
@@ -133,7 +131,8 @@ Default Zephyr Peripheral Mapping:
 
 Programmable I/O (PIO)
 **********************
-The RP2040 SoC comes with two PIO periherals. These are two simple
+
+The RP2040 SoC comes with two PIO peripherals. These are two simple
 co-processors that are designed for I/O operations. The PIOs run
 a custom instruction set, generated from a custom assembly language.
 PIO programs are assembled using :command:`pioasm`, a tool provided by Raspberry Pi.
@@ -152,8 +151,35 @@ combination of GPIO pins for an SPI bus, as well as allowing up to
 four independent SPI buses on a single board (using the two SPI
 devices as well as both PIO devices).
 
+.. _rpi_pico_pio_based_features:
+
+PIO Based Features
+==================
+
+Raspberry Pi Pico's PIO is a programmable chip that can implement a variety of peripherals.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Peripheral
+     - Kconfig option
+     - Devicetree compatible
+   * - UART (PIO)
+     - :kconfig:option:`CONFIG_SERIAL`
+     - :dtcompatible:`raspberrypi,pico-uart-pio`
+   * - SPI (PIO)
+     - :kconfig:option:`CONFIG_SPI`
+     - :dtcompatible:`raspberrypi,pico-spi-pio`
+   * - WS2812 (PIO)
+     - :kconfig:option:`CONFIG_LED_STRIP`
+     - :dtcompatible:`worldsemi,ws2812-rpi_pico-pio`
+
 Programming and Debugging
 *************************
+
+Applications for the ``rpi_pico`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
 System requirements
 ===================
@@ -172,14 +198,32 @@ provided by Infineon. Run the command below to retrieve those files:
 
    It is recommended running the command above after :file:`west update`.
 
+Debug Probe and Host Tools
+--------------------------
+
+Several debugging tools support the Raspberry Pi Pico.
+The `Raspberry Pi Debug Probe`_ is an easy-to-obtain CMSIS-DAP adapter
+officially provided by the Raspberry Pi Foundation,
+making it a convenient choice for debugging ``rpi_pico``.
+
+It can be used with
+
+- :ref:`openocd-debug-host-tools`
+- :ref:`pyocd-debug-host-tools`
+
+OpenOCD is the default for ``rpi_pico``.
+
+- `SEGGER J-Link`_
+- `Black Magic Debug Probe <Black Magic Debug>`_
+
+can also be used.
+These are used with dedicated probes.
+
 Flashing
 ========
 
-Using SEGGER JLink
-------------------
-
-You can Flash the rpi_pico with a SEGGER JLink debug probe as described in
-:ref:`Building, Flashing and Debugging <west-flashing>`.
+The ``rpi_pico`` can flash with Zephyr's standard method.
+See also :ref:`Building, Flashing and Debugging<west-flashing>`.
 
 Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
@@ -188,33 +232,25 @@ Here is an example of building and flashing the :zephyr:code-sample:`blinky` app
    :board: rpi_pico
    :goals: build
 
-.. code-block:: bash
+.. code-block:: console
 
   west flash --runner jlink
+
+
+.. _rpi_pico_flashing_using_openocd:
 
 Using OpenOCD
 -------------
 
-To use CMSIS-DAP, You must configure **udev**.
-
-Create a file in /etc/udev.rules.d with any name, and write the line below.
-
-.. code-block:: bash
-
-   ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000c", MODE="660", GROUP="plugdev", TAG+="uaccess"
-
-This example is valid for the case that the user joins to ``plugdev`` groups.
+To use a debugging adapter such as the Raspberry Pi Debug Probe,
+You must configure **udev**. Refer to :ref:`setting-udev-rules` for details.
 
 The Raspberry Pi Pico has an SWD interface that can be used to program
-and debug the on board RP2040. This interface can be utilized by OpenOCD.
-To use it with the RP2040, OpenOCD version 0.12.0 or later is needed.
+and debug the onboard SoC. This interface can be used with OpenOCD.
+To use it, OpenOCD version 0.12.0 or later is needed.
 
 If you are using a Debian based system (including RaspberryPi OS, Ubuntu. and more),
 using the `pico_setup.sh`_ script is a convenient way to set up the forked version of OpenOCD.
-
-Depending on the interface used (such as JLink), you might need to
-checkout to a branch that supports this interface, before proceeding.
-Build and install OpenOCD as described in the README.
 
 Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
@@ -222,17 +258,16 @@ Here is an example of building and flashing the :zephyr:code-sample:`blinky` app
    :zephyr-app: samples/basic/blinky
    :board: rpi_pico
    :goals: build flash
-   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts -DRPI_PICO_DEBUG_ADAPTER=cmsis-dap
+   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DRPI_PICO_DEBUG_ADAPTER=cmsis-dap
 
-Set the environment variables **OPENOCD** to :file:`/usr/local/bin/openocd`
-and **OPENOCD_DEFAULT_PATH** to :file:`/usr/local/share/openocd/scripts`. This should work
+Set the CMake option **OPENOCD** to :file:`/usr/local/bin/openocd`. This should work
 with the OpenOCD that was installed with the default configuration.
 This configuration also works with an environment that is set up by the `pico_setup.sh`_ script.
 
 **RPI_PICO_DEBUG_ADAPTER** specifies what debug adapter is used for debugging.
 
-If **RPI_PICO_DEBUG_ADAPTER** was not assigned, ``cmsis-dap`` is used by default.
-The other supported adapters are ``raspberrypi-swd``, ``jlink`` and ``blackmagicprobe``.
+If **RPI_PICO_DEBUG_ADAPTER** was not set, ``cmsis-dap`` is used by default.
+The ``raspberrypi-swd`` and ``jlink`` are verified to work.
 How to connect ``cmsis-dap`` and ``raspberrypi-swd`` is described in `Getting Started with Raspberry Pi Pico`_.
 Any other SWD debug adapter maybe also work with this configuration.
 
@@ -243,12 +278,7 @@ The value of **RPI_PICO_DEBUG_ADAPTER** is cached, so it can be omitted from
 **RPI_PICO_DEBUG_ADAPTER** is used in an argument to OpenOCD as ``"source [find interface/${RPI_PICO_DEBUG_ADAPTER}.cfg]"``.
 Thus, **RPI_PICO_DEBUG_ADAPTER** needs to be assigned the file name of the debug adapter.
 
-You can also flash the board with the following
-command that directly calls OpenOCD (assuming a SEGGER JLink adapter is used):
-
-.. code-block:: console
-
-   $ openocd -f interface/jlink.cfg -c 'transport select swd' -f target/rp2040.cfg -c "adapter speed 2000" -c 'targets rp2040.core0' -c 'program path/to/zephyr.elf verify reset exit'
+.. _rpi_pico_flashing_using_uf2:
 
 Using UF2
 ---------
@@ -262,59 +292,48 @@ UF2 file should be drag-and-dropped to the device, which will flash the Pico.
 Debugging
 =========
 
-The SWD interface can also be used to debug the board. To achieve this, you can
-either use SEGGER JLink or OpenOCD.
-
-Using SEGGER JLink
-------------------
-
-Use a SEGGER JLink debug probe and follow the instruction in
-:ref:`Building, Flashing and Debugging<west-debugging>`.
-
-
-Using OpenOCD
--------------
-
-Install OpenOCD as described for flashing the board.
-
-Here is an example for debugging the :zephyr:code-sample:`blinky` application.
+Like flashing, debugging can also be performed using Zephyr's standard method
+(see :ref:`application_run`).
+The following sample demonstrates how to debug using OpenOCD and
+the `Raspberry Pi Debug Probe`_.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: rpi_pico
    :maybe-skip-config:
    :goals: debug
-   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts -DRPI_PICO_DEBUG_ADAPTER=raspberrypi-swd
+   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DRPI_PICO_DEBUG_ADAPTER=cmsis-dap
 
-As with flashing, you can specify the debug adapter by specifying **RPI_PICO_DEBUG_ADAPTER**
-at ``west build`` time. No needs to specify it at ``west debug`` time.
+The default debugging tool is ``openocd``.
+If you use a different tool, specify it with the ``--runner``,
+such as ``jlink``.
 
-You can also debug with OpenOCD and gdb launching from command-line.
-Run the following command:
+If you use OpenOCD, see also the description about flashing :ref:`rpi_pico_flashing_using_uf2`
+for more information.
 
-.. code-block:: console
-
-   $ openocd -f interface/jlink.cfg -c 'transport select swd' -f target/rp2040.cfg -c "adapter speed 2000" -c 'targets rp2040.core0'
-
-On another terminal, run:
-
-.. code-block:: console
-
-   $ gdb-multiarch
-
-Inside gdb, run:
-
-.. code-block:: console
-
-   (gdb) tar ext :3333
-   (gdb) file path/to/zephyr.elf
-
-You can then start debugging the board.
 
 .. target-notes::
+
+.. _Raspberry Pi Pico:
+   https://www.raspberrypi.com/products/raspberry-pi-pico/
+
+.. _RP2040 Datasheet:
+   https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
+
+.. _Infineon CYW43439:
+   https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/wi-fi-4-802.11n/cyw43439/
 
 .. _pico_setup.sh:
    https://raw.githubusercontent.com/raspberrypi/pico-setup/master/pico_setup.sh
 
 .. _Getting Started with Raspberry Pi Pico:
-  https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
+   https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
+
+.. _Raspberry Pi Debug Probe:
+   https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html
+
+.. _SEGGER J-Link:
+   https://www.segger.com/products/debug-probes/j-link/
+
+.. _Black Magic Debug:
+   https://black-magic.org/

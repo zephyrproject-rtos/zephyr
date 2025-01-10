@@ -140,6 +140,13 @@ New APIs and options
 
 * Management
 
+  * hawkBit
+
+    * The hawkBit subsystem now uses the State Machine Framework internally.
+    * :kconfig:option:`CONFIG_HAWKBIT_TENANT`
+    * :kconfig:option:`CONFIG_HAWKBIT_EVENT_CALLBACKS`
+    * :kconfig:option:`CONFIG_HAWKBIT_SAVE_PROGRESS`
+
   * MCUmgr
 
     * Image management :c:macro:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` now has image data field
@@ -156,7 +163,7 @@ New Boards
 **********
 ..
   You may update this list as you contribute a new board during the release cycle, in order to make
-  is visible to people who might be looking at the working draft of the release notes. However, note
+  it visible to people who might be looking at the working draft of the release notes. However, note
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
 
@@ -535,6 +542,7 @@ New Drivers
    * :dtcompatible:`st,lsm6dsv16x`
    * :dtcompatible:`ti,tmag3001`
    * :dtcompatible:`ti,tmp435`
+   * :dtcompatible:`we,wsen-pads-2511020213301`
    * :dtcompatible:`we,wsen-pdus-25131308XXXXX`
    * :dtcompatible:`we,wsen-tids-2521020222501`
 

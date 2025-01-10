@@ -116,9 +116,11 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 			int ret = net_ipv4_igmp_join(iface,
 					&net_sin(&v4_ctx[i].dispatcher.local_addr)->sin_addr,
 					NULL);
-			if (ret < 0) {
-				NET_DBG("Cannot add IPv4 multicast address to iface %d",
-					net_if_get_by_iface(iface));
+			if (ret < 0 && ret != -EALREADY) {
+				NET_DBG("Cannot add IPv4 multicast address %s to iface %d (%d)",
+					net_sprint_ipv4_addr(&net_sin(
+						&v4_ctx[i].dispatcher.local_addr)->sin_addr),
+					net_if_get_by_iface(iface), ret);
 			}
 		}
 #endif /* defined(CONFIG_NET_IPV4) */
@@ -581,7 +583,8 @@ static int dns_read(int sock,
 		if (!strncasecmp(hostname, result->data + 1, hostname_len) &&
 		    (result->len - 1) >= hostname_len &&
 		    &(result->data + 1)[hostname_len] == lquery) {
-			NET_DBG("%s query to our hostname %s.local", "mDNS",
+			NET_DBG("%s %s %s to our hostname %s.local", "mDNS",
+				family == AF_INET ? "IPv4" : "IPv6", "query",
 				hostname);
 			send_response(sock, family, src_addr, addrlen,
 				      result, qtype);
@@ -666,13 +669,11 @@ static void setup_ipv4_addr(struct sockaddr_in *local_addr)
 #define INTERFACE_NAME_LEN 0
 #endif
 
-static int dispatcher_cb(void *my_ctx, int sock,
+static int dispatcher_cb(struct dns_socket_dispatcher *ctx, int sock,
 			 struct sockaddr *addr, size_t addrlen,
 			 struct net_buf *dns_data, size_t len)
 {
 	int ret;
-
-	ARG_UNUSED(my_ctx);
 
 	ret = dns_read(sock, dns_data, len, addr, addrlen);
 	if (ret < 0 && ret != -EINVAL && ret != -ENOENT) {
@@ -787,6 +788,9 @@ static int init_listener(void)
 			if (ret < 0) {
 				NET_DBG("Cannot bind sock %d to interface %d (%d)",
 					v6, ifindex, ret);
+			} else {
+				NET_DBG("Bound %s sock %d to interface %d",
+					"IPv6", v6, ifindex);
 			}
 		}
 
@@ -817,7 +821,7 @@ static int init_listener(void)
 
 		ret = register_dispatcher(&v6_ctx[i], &v6_svc, (struct sockaddr *)&local_addr6,
 					  ifindex, ipv6_fds, ARRAY_SIZE(ipv6_fds));
-		if (ret < 0) {
+		if (ret < 0 && ret != -EALREADY) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv6", "mDNS", ret);
 			zsock_close(v6);
@@ -880,6 +884,9 @@ static int init_listener(void)
 			if (ret < 0) {
 				NET_DBG("Cannot bind sock %d to interface %d (%d)",
 					v4, ifindex, ret);
+			} else {
+				NET_DBG("Bound %s sock %d to interface %d",
+					"IPv4", v4, ifindex);
 			}
 		}
 
@@ -910,7 +917,7 @@ static int init_listener(void)
 
 		ret = register_dispatcher(&v4_ctx[i], &v4_svc, (struct sockaddr *)&local_addr4,
 					  ifindex, ipv4_fds, ARRAY_SIZE(ipv4_fds));
-		if (ret < 0) {
+		if (ret < 0 && ret != -EALREADY) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv4", "mDNS", ret);
 			zsock_close(v4);

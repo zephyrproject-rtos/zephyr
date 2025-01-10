@@ -168,4 +168,9 @@ config USE_RZ_FSP_GTM
 	help
 	  Enable RZ FSP GTM driver
 
+config USE_RZ_FSP_GPT
+	bool
+	help
+	  Enable RZ FSP GPT driver
+
 endif

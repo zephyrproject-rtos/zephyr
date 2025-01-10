@@ -1990,7 +1990,6 @@ if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
     --elf-file ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
     --slid-listing ${PROJECT_BINARY_DIR}/slid_listing.txt
   )
-
 endif()
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
@@ -2236,6 +2235,10 @@ list(APPEND llext_edk_cflags ${llext_filt_flags})
 list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
 list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
 
+build_info(llext-edk file PATH ${llext_edk_file})
+build_info(llext-edk cflags VALUE ${llext_edk_cflags})
+build_info(llext-edk include-dirs VALUE "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>")
+
 add_custom_command(
     OUTPUT ${llext_edk_file}
     # Regenerate syscalls in case CONFIG_LLEXT_EDK_USERSPACE_ONLY
@@ -2252,17 +2255,8 @@ add_custom_command(
         ${SYSCALL_LONG_REGISTERS_ARG}
         ${SYSCALL_SPLIT_TIMEOUT_ARG}
     COMMAND ${CMAKE_COMMAND}
-        -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}
-        -DAPPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
-        -DINTERFACE_INCLUDE_DIRECTORIES="$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>"
-        -Dllext_edk_file=${llext_edk_file}
-        -Dllext_edk_cflags="${llext_edk_cflags}"
-        -Dllext_edk_name=${CONFIG_LLEXT_EDK_NAME}
-        -DWEST_TOPDIR=${WEST_TOPDIR}
-        -DZEPHYR_BASE=${ZEPHYR_BASE}
-        -DCONFIG_LLEXT_EDK_USERSPACE_ONLY=${CONFIG_LLEXT_EDK_USERSPACE_ONLY}
         -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
-    DEPENDS ${logical_target_for_zephyr_elf}
+    DEPENDS ${logical_target_for_zephyr_elf} build_info_yaml_saved
     COMMAND_EXPAND_LISTS
 )
 add_custom_target(llext-edk DEPENDS ${llext_edk_file})
@@ -2286,9 +2280,8 @@ add_subdirectory_ifdef(
 
 toolchain_linker_finalize()
 
-yaml_context(EXISTS NAME build_info result)
-if(result)
-  build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
-  build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
-  yaml_save(NAME build_info)
-endif()
+# export build information
+build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
+build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
+
+yaml_save(NAME build_info)

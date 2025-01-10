@@ -33,7 +33,7 @@ if SOC_FLASH_STM32
 
 config FLASH_STM32_WRITE_PROTECT
 	bool "Extended operation for flash write protection control"
-	depends on SOC_SERIES_STM32F4X
+	depends on SOC_SERIES_STM32F4X || SOC_SERIES_STM32H7X
 	select FLASH_HAS_EX_OP
 	default n
 	help

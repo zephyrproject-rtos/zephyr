@@ -92,22 +92,11 @@ int lll_central_iso_reset(void)
 
 void lll_central_iso_prepare(void *param)
 {
-	struct lll_conn_iso_group *cig_lll;
-	struct lll_prepare_param *p;
-	uint16_t elapsed;
 	int err;
 
 	/* Initiate HF clock start up */
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
-
-	/* Instants elapsed */
-	p = param;
-	elapsed = p->lazy + 1U;
-
-	/* Save the (latency + 1) for use in event and/or supervision timeout */
-	cig_lll = p->param;
-	cig_lll->latency_prepare += elapsed;
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0U, param);
@@ -135,7 +124,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
-	uint16_t lazy;
 	uint32_t ret;
 	uint8_t phy;
 	int err = 0;
@@ -162,6 +150,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 
+	/* Pick the event_count calculated in the ULL prepare */
+	cis_lll->event_count = cis_lll->event_count_prepare;
+
 	/* Event counter value,  0-15 bit of cisEventCounter */
 	event_counter = cis_lll->event_count;
 
@@ -173,9 +164,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 					   &data_chan_prn_s,
 					   &data_chan_remap_idx);
 
-	/* Store the current event latency */
-	cig_lll->latency_event = cig_lll->latency_prepare;
-	lazy = cig_lll->latency_prepare - 1U;
+	/* Calculate the current event latency */
+	cig_lll->lazy_prepare = p->lazy;
+	cig_lll->latency_event = cig_lll->latency_prepare + cig_lll->lazy_prepare;
 
 	/* Reset accumulated latencies */
 	cig_lll->latency_prepare = 0U;
@@ -183,7 +174,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	se_curr = 1U;
 
 	/* Adjust the SN and NESN for skipped CIG events */
-	payload_count_lazy_update(cis_lll, lazy);
+	payload_count_lazy_update(cis_lll, cig_lll->latency_event);
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
@@ -369,8 +360,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 	do {
 		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
 		if (cis_lll && cis_lll->active) {
+			/* Pick the event_count calculated in the ULL prepare */
+			cis_lll->event_count = cis_lll->event_count_prepare;
+
 			/* Adjust sn and nesn for skipped CIG events */
-			payload_count_lazy_update(cis_lll, lazy);
+			payload_count_lazy_update(cis_lll, cig_lll->latency_event);
 
 			/* Adjust sn and nesn for canceled events */
 			if (err) {
@@ -395,13 +389,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+	struct lll_conn_iso_group *cig_lll;
 	int err;
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
 		struct lll_conn_iso_stream *next_cis_lll;
 		struct lll_conn_iso_stream *cis_lll;
-		struct lll_conn_iso_group *cig_lll;
 
 		cis_lll = ull_conn_iso_lll_stream_get(cis_handle_curr);
 		cig_lll = param;
@@ -430,6 +424,13 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 */
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
+
+	/* Get reference to CIG LLL context */
+	cig_lll = prepare_param->param;
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
+	cig_lll->lazy_prepare = prepare_param->lazy;
+	cig_lll->latency_prepare += (cig_lll->lazy_prepare + 1U);
 
 	lll_done(param);
 }

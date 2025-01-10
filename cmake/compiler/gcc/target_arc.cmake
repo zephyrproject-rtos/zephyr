@@ -18,5 +18,9 @@ set(LLEXT_REMOVE_FLAGS
   -Os
 )
 
+set(LLEXT_APPEND_FLAGS
+  -mcpu=${GCC_ARC_TUNED_CPU} # Force compiler and linker match
+)
+
 list(APPEND TOOLCHAIN_C_FLAGS -mcpu=${GCC_ARC_TUNED_CPU})
 list(APPEND TOOLCHAIN_LD_FLAGS -mcpu=${GCC_ARC_TUNED_CPU})

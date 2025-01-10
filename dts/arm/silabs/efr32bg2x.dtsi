@@ -344,7 +344,7 @@
 		dma0: dma@40040000{
 			compatible = "silabs,ldma";
 			reg = <0x40040000 0x4000>;
-			#dma-cells = <3>;
+			#dma-cells = <1>;
 			dma_channels = <8>;
 			status = "disabled";
 		};

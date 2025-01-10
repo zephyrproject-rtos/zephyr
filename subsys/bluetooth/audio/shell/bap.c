@@ -4224,8 +4224,7 @@ static int cmd_bap(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_CMD_ARG_REGISTER(bap, &bap_cmds, "Bluetooth BAP shell commands", cmd_bap, 1, 1);
 
-static ssize_t connectable_ad_data_add(struct bt_data *data_array,
-				       size_t data_array_size)
+static size_t connectable_ad_data_add(struct bt_data *data_array, size_t data_array_size)
 {
 	static const uint8_t ad_ext_uuid16[] = {
 		IF_ENABLED(CONFIG_BT_MICP_MIC_DEV, (BT_UUID_16_ENCODE(BT_UUID_MICS_VAL),))
@@ -4307,8 +4306,7 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 	return ad_len;
 }
 
-static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
-					  const size_t data_array_size)
+static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_t data_array_size)
 {
 	static const uint8_t ad_ext_uuid16[] = {
 		IF_ENABLED(CONFIG_BT_PACS, (BT_UUID_16_ENCODE(BT_UUID_PACS_VAL),))
@@ -4339,9 +4337,9 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 
 		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 		if (err != 0) {
-			printk("Unable to generate broadcast ID: %d\n", err);
+			bt_shell_error("Unable to generate broadcast ID: %d\n", err);
 
-			return -1;
+			return 0;
 		}
 
 		sys_put_le24(broadcast_id, &ad_bap_broadcast_announcement[2]);
@@ -4367,10 +4365,10 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 	return ad_len;
 }
 
-ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-			  const bool discoverable, const bool connectable)
+size_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+			 const bool discoverable, const bool connectable)
 {
-	ssize_t ad_len = 0;
+	size_t ad_len = 0;
 
 	if (!discoverable) {
 		return 0;
@@ -4390,8 +4388,7 @@ ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_si
 	return ad_len;
 }
 
-ssize_t audio_pa_data_add(struct bt_data *data_array,
-			  const size_t data_array_size)
+size_t audio_pa_data_add(struct bt_data *data_array, const size_t data_array_size)
 {
 	size_t ad_len = 0;
 
@@ -4407,9 +4404,9 @@ ssize_t audio_pa_data_add(struct bt_data *data_array,
 
 		err = bt_bap_broadcast_source_get_base(default_source.bap_source, &base_buf);
 		if (err != 0) {
-			printk("Unable to get BASE: %d\n", err);
+			bt_shell_error("Unable to get BASE: %d\n", err);
 
-			return -1;
+			return 0;
 		}
 
 		data_array[ad_len].type = BT_DATA_SVC_DATA16;

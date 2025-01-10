@@ -1,0 +1,115 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices TMC50XX Stepper Motor Controller
+
+  Example:
+
+    &spi0 {
+        /* SPI bus options here, not shown */
+
+        /* Dual controller/driver for up to two 2-phase bipolar stepper motors */
+        tmc50xx: tmc50xx@0 {
+            compatible = "adi,tmc50xx";
+            reg = <0>;
+            spi-max-frequency = <DT_FREQ_M(24)>; /* Maximum SPI bus frequency */
+
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            poscmp-enable; test-mode; lock-gconf; /* ADI TMC Global configuration flags */
+            clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
+
+            motor: motor@0 {
+                status = "okay";
+                reg = <0>;
+
+                /* common stepper controller settings */
+                invert-direction;
+                micro-step-res = <256>;
+
+                /* ADI TMC stallguard settings specific to TMC50XX */
+                activate-stallguard2;
+                stallguard-velocity-check-interval-ms=<100>;
+                stallguard2-threshold=<9>;
+                stallguard-threshold-velocity=<500000>;
+
+                /* ADI TMC ramp generator as well as current settings */
+                vstart = <10>;
+                a1 = <20>;
+                v1 = <30>;
+                d1 = <40>;
+                vmax = <50>;
+                amax = <60>;
+                dmax = <70>;
+                tzerowait = <80>;
+                vhigh = <90>;
+                vcoolthrs = <100>;
+                ihold = <1>;
+                irun = <2>;
+                iholddelay = <3>;
+            };
+        };
+    };
+
+
+compatible: "adi,tmc50xx"
+
+include:
+  - name: spi-device.yaml
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - poscmp-enable
+      - shaft1
+      - shaft2
+      - test-mode
+      - lock-gconf
+
+properties:
+  "#address-cells":
+    default: 1
+    const: 1
+
+  "#size-cells":
+    default: 0
+    const: 0
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      The frequency of the clock signal provided to the TMC50XX.
+      This is used for real world conversion.
+
+      Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[50xx] * ( fCLK[Hz]/2 / 2^23 )
+            where v[50xx] is the value written to the TMC50XX.
+
+child-binding:
+  include:
+    - name: stepper-controller.yaml
+    - name: base.yaml
+      property-allowlist:
+        - reg
+    - name: adi,trinamic-ramp-generator.yaml
+      property-allowlist:
+        - vstart
+        - a1
+        - v1
+        - amax
+        - vmax
+        - dmax
+        - d1
+        - vstop
+        - tzerowait
+        - vhigh
+        - vcoolthrs
+        - ihold
+        - irun
+        - iholddelay
+    - name: adi,trinamic-stallguard.yaml
+      property-allowlist:
+        - activate-stallguard2
+        - stallguard2-threshold
+        - stallguard-threshold-velocity
+        - stallguard-velocity-check-interval-ms

@@ -357,8 +357,8 @@ void tcp_server_block_thread(void *vps_sock, void *unused2, void *unused3)
 void test_send_recv_large_common(int tcp_nodelay, int family)
 {
 	int rv;
-	int c_sock;
-	int s_sock;
+	int c_sock = 0;
+	int s_sock = 0;
 	struct sockaddr *c_saddr = NULL;
 	struct sockaddr *s_saddr = NULL;
 	size_t addrlen = 0;

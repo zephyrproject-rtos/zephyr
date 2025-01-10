@@ -116,7 +116,6 @@ static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
@@ -245,7 +244,6 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("ep 0x%02x nrfx error: %x", ep, err);
 			/* REVISE: remove from endpoint queue? ASSERT? */
-			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(dev, ep, true);
 		}
