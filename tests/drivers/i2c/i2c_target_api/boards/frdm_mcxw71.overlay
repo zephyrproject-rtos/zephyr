@@ -1,0 +1,37 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This is a looback setup for the frdm_mcxw71
+ * To test this sample, connect J2.1 <-> J1.5 and J2.2 <-> J2.9
+ */
+&lpi2c1 {
+	status = "okay";
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
