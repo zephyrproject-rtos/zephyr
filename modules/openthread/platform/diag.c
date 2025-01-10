@@ -125,8 +125,8 @@ void otPlatDiagRadioReceived(otInstance *aInstance,
 #if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 otError otPlatDiagRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 {
-	if (!otPlatDiagModeGet() || (sTransmitMode != DIAG_TRANSMIT_MODE_IDLE &&
-				     sTransmitMode != DIAG_TRANSMIT_MODE_CARRIER)) {
+	if (sTransmitMode != DIAG_TRANSMIT_MODE_IDLE &&
+	    sTransmitMode != DIAG_TRANSMIT_MODE_CARRIER) {
 		return OT_ERROR_INVALID_STATE;
 	}
 
@@ -174,10 +174,6 @@ static otError gpio_get_spec(uint32_t gpio_idx, const struct gpio_dt_spec **spec
 	}
 
 	*spec = &gpio_spec[gpio_idx];
-
-	if (!otPlatDiagModeGet()) {
-		return OT_ERROR_INVALID_STATE;
-	}
 
 	if (!gpio_is_ready_dt(*spec)) {
 		return OT_ERROR_INVALID_ARGS;
@@ -326,8 +322,8 @@ static otError startModCarrier(otInstance *aInstance, uint8_t aArgsLength, char 
 		return OT_ERROR_INVALID_ARGS;
 	}
 
-	if (!otPlatDiagModeGet() || (sTransmitMode != DIAG_TRANSMIT_MODE_IDLE &&
-				     sTransmitMode != DIAG_TRANSMIT_MODE_MODCARRIER)) {
+	if (sTransmitMode != DIAG_TRANSMIT_MODE_IDLE &&
+	    sTransmitMode != DIAG_TRANSMIT_MODE_MODCARRIER) {
 		return OT_ERROR_INVALID_STATE;
 	}
 
@@ -395,10 +391,6 @@ static otError processTransmit(otInstance *aInstance, uint8_t aArgsLength, char 
 	otError error = OT_ERROR_NONE;
 	long value;
 	uint32_t now;
-
-	if (!otPlatDiagModeGet()) {
-		return OT_ERROR_INVALID_STATE;
-	}
 
 	if (aArgsLength == 0) {
 		diag_output("transmit will send %" PRId32 " diagnostic messages with %" PRIu32
