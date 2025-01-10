@@ -140,6 +140,13 @@ New APIs and options
 
 * Management
 
+  * hawkBit
+
+    * The hawkBit subsystem now uses the State Machine Framework internally.
+    * :kconfig:option:`CONFIG_HAWKBIT_TENANT`
+    * :kconfig:option:`CONFIG_HAWKBIT_EVENT_CALLBACKS`
+    * :kconfig:option:`CONFIG_HAWKBIT_SAVE_PROGRESS`
+
   * MCUmgr
 
     * Image management :c:macro:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` now has image data field
