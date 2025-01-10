@@ -21,9 +21,12 @@ LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
  * Compare old style USB BOS definition with section aligned
  */
 
+/* Disable erroneous clang warning: https://github.com/llvm/llvm-project/issues/25458. */
+TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_UNNEEDED_INTERNAL_DECLARATION)
 static const uint8_t dummy_descriptor[] = {
 	0x00, 0x01, 0x02
 };
+TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_UNNEEDED_INTERNAL_DECLARATION)
 
 static struct webusb_bos_desc {
 	struct usb_bos_descriptor bos;
