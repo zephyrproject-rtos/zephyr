@@ -86,21 +86,6 @@ static int lsm6dso_gyro_range_to_fs_val(int32_t range)
 	return -EINVAL;
 }
 
-static inline int lsm6dso_reboot(const struct device *dev)
-{
-	const struct lsm6dso_config *cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-
-	if (lsm6dso_boot_set(ctx, 1) < 0) {
-		return -EIO;
-	}
-
-	/* Wait sensor turn-on time as per datasheet */
-	k_busy_wait(35 * USEC_PER_MSEC);
-
-	return 0;
-}
-
 static int lsm6dso_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 {
 	const struct lsm6dso_config *cfg = dev->config;
