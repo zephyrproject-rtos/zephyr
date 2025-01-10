@@ -339,6 +339,22 @@ static int send_http2_404(struct http_client_ctx *client,
 	return ret;
 }
 
+static int send_http2_405(struct http_client_ctx *client,
+			  struct http2_frame *frame)
+{
+	int ret;
+
+	ret = send_headers_frame(client, HTTP_405_METHOD_NOT_ALLOWED,
+				 frame->stream_identifier, NULL,
+				 HTTP2_FLAG_END_STREAM, NULL, 0);
+	if (ret < 0) {
+		LOG_DBG("Cannot write to socket (%d)", ret);
+		return ret;
+	}
+
+	return ret;
+}
+
 static int send_http2_409(struct http_client_ctx *client,
 			  struct http2_frame *frame)
 {
@@ -361,8 +377,8 @@ static int handle_http2_static_resource(
 	size_t content_len;
 	int ret;
 
-	if (!(static_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
-		return -ENOTSUP;
+	if (client->method != HTTP_GET) {
+		return send_http2_405(client, frame);
 	}
 
 	if (client->current_stream == NULL) {
@@ -413,8 +429,8 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	int remaining;
 	char tmp[64];
 
-	if (!(static_fs_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
-		return -ENOTSUP;
+	if (client->method != HTTP_GET) {
+		return send_http2_405(client, frame);
 	}
 
 	if (client->current_stream == NULL) {
@@ -715,7 +731,7 @@ static int handle_http2_dynamic_resource(
 	user_method = dynamic_detail->common.bitmask_of_supported_http_methods;
 
 	if (!(BIT(client->method) & user_method)) {
-		return -ENOPROTOOPT;
+		return send_http2_405(client, frame);
 	}
 
 	if (dynamic_detail->holder != NULL && dynamic_detail->holder != client) {
