@@ -191,6 +191,8 @@ static int lis2dw12_config(const struct device *dev, enum sensor_channel chan,
 }
 
 
+#if (CONFIG_LIS2DW12_SLEEP || CONFIG_LIS2DW12_WAKEUP)
+
 static inline int32_t sensor_ms2_to_mg(const struct sensor_value *ms2)
 {
 	int64_t nano_ms2 = (ms2->val1 * 1000000LL + ms2->val2) * 1000LL;
@@ -201,8 +203,6 @@ static inline int32_t sensor_ms2_to_mg(const struct sensor_value *ms2)
 		return (nano_ms2 - SENSOR_G / 2) / SENSOR_G;
 	}
 }
-
-#if (CONFIG_LIS2DW12_SLEEP || CONFIG_LIS2DW12_WAKEUP)
 
 /* Converts a lis2dw12_fs_t range to its value in milli-g
  * Range can be 2/4/8/16G
