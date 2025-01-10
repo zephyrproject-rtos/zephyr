@@ -313,7 +313,17 @@ static int reset(void)
 
 int bap_broadcast_sink_init(void)
 {
+	const struct bt_bap_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+	};
 	int err;
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		printk("Could not register PACS (err %d)\n", err);
+		return err;
+	}
 
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 	bt_le_per_adv_sync_cb_register(&broadcast_sync_cb);

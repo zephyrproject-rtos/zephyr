@@ -3768,7 +3768,20 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
 		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
 	};
-
+	const struct bt_bap_pacs_register_param pacs_param = {
+#if defined(CONFIG_BT_PAC_SNK)
+		.snk_pac = true,
+#endif /* CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+		.snk_loc = true,
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC)
+		.src_pac = true,
+#endif /* CONFIG_BT_PAC_SRC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+		.src_loc = true
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+	};
 
 	if (argc == 3) {
 		snk_cnt = shell_strtoul(argv[1], 0, &err);
@@ -3795,8 +3808,14 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		src_cnt = CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT;
 	}
 
-	bt_bap_unicast_server_register(&unicast_server_param);
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	err = bt_pacs_register(&pacs_param);
+	__ASSERT(err == 0, "Failed to register PACS: %d", err);
+
+	err = bt_bap_unicast_server_register(&unicast_server_param);
+	__ASSERT(err == 0, "Failed to register Unicast Server: %d", err);
+
+	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	__ASSERT(err == 0, "Failed to register Unicast Server Callbacks: %d", err);
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 #if defined(CONFIG_BT_PAC_SNK)

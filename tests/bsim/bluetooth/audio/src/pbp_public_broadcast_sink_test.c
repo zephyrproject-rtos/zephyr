@@ -197,6 +197,12 @@ static int reset(void)
 
 static int init(void)
 {
+	const struct bt_bap_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -207,6 +213,12 @@ static int init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		FAIL("Could not register PACS (err %d)\n", err);
+		return err;
+	}
 
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 	bt_le_per_adv_sync_cb_register(&broadcast_sync_cb);

@@ -627,6 +627,12 @@ static int init(void)
 	static struct bt_pacs_cap vs_cap = {
 		.codec_cap = &vs_codec_cap,
 	};
+	const struct bt_bap_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -636,6 +642,12 @@ static int init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		FAIL("Could not register PACS (err %d)\n", err);
+		return err;
+	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err) {
