@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+set pagination off
+target extended-remote :3333
+
+mon reset halt
+maintenance flush register-cache
+
+add-symbol build/debug_ulp_lpcore/zephyr/zephyr.elf
+thb do_things
