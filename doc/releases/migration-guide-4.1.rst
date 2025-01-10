@@ -354,6 +354,11 @@ Video
   The new ``video-controls.h`` source now contains description of each control ID to help
   disambiguating.
 
+* The ``video_pix_fmt_bpp()`` function was returning a byte count, this got replaced by
+  ``video_bits_per_pixel()`` which return a bit count. For instance, invocations such as
+  ``pitch = width * video_pix_fmt_bpp(pixfmt)`` needs to be replaced by an equivalent
+  ``pitch = width * video_bits_per_pixel(pixfmt) / BITS_PER_BYTE``.
+
 Watchdog
 ========
 
