@@ -1,0 +1,8 @@
+#
+# Copyright (c) 2025 Ezurio
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"
