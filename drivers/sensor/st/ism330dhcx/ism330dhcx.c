@@ -104,20 +104,6 @@ static int ism330dhcx_gyro_range_to_fs_val(int32_t range)
 	return -EINVAL;
 }
 
-static inline int ism330dhcx_reboot(const struct device *dev)
-{
-	struct ism330dhcx_data *data = dev->data;
-
-	if (ism330dhcx_boot_set(data->ctx, 1) < 0) {
-		return -EIO;
-	}
-
-	/* Wait sensor turn-on time as per datasheet */
-	k_busy_wait(35 * USEC_PER_MSEC);
-
-	return 0;
-}
-
 static int ism330dhcx_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 {
 	struct ism330dhcx_data *data = dev->data;
