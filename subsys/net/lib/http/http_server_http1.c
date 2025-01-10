@@ -37,6 +37,40 @@ static const char conflict_response[] = "HTTP/1.1 409 Conflict\r\n\r\n";
 static const char final_chunk[] = "0\r\n\r\n";
 static const char *crlf = &final_chunk[3];
 
+static int send_http1_error_common(struct http_client_ctx *client,
+				   const char *response, size_t len)
+{
+	int ret;
+
+	ret = http_server_sendall(client, response, len);
+	if (ret < 0) {
+		LOG_DBG("Cannot write to socket (%d)", ret);
+		return ret;
+	}
+
+	client->http1_headers_sent = true;
+
+	return 0;
+}
+
+static int send_http1_404(struct http_client_ctx *client)
+{
+	return send_http1_error_common(client, not_found_response,
+				       sizeof(not_found_response) - 1);
+}
+
+static int send_http1_405(struct http_client_ctx *client)
+{
+	return send_http1_error_common(client, not_allowed_response,
+				       sizeof(not_allowed_response) - 1);
+}
+
+static int send_http1_409(struct http_client_ctx *client)
+{
+	return send_http1_error_common(client, conflict_response,
+				       sizeof(conflict_response) - 1);
+}
+
 static int handle_http1_static_resource(
 	struct http_resource_detail_static *static_detail,
 	struct http_client_ctx *client)
@@ -408,12 +442,7 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 			   sizeof(CONTENT_ENCODING_GZIP)];
 
 	if (!(static_fs_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
-		ret = http_server_sendall(client, not_allowed_response,
-					  sizeof(not_allowed_response) - 1);
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-		}
-		return ret;
+		return send_http1_405(client);
 	}
 
 	/* get filename and content-type from url */
@@ -432,12 +461,7 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	ret = http_server_find_file(fname, sizeof(fname), &file_size, &gzipped);
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
-		ret = http_server_sendall(client, not_found_response,
-					  sizeof(not_found_response) - 1);
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-		}
-		return ret;
+		return send_http1_404(client);
 	}
 	fs_file_t_init(&file);
 	ret = fs_open(&file, fname, FS_O_READ);
@@ -501,10 +525,8 @@ static int handle_http1_dynamic_resource(
 	}
 
 	if (dynamic_detail->holder != NULL && dynamic_detail->holder != client) {
-		ret = http_server_sendall(client, conflict_response,
-					  sizeof(conflict_response) - 1);
+		ret = send_http1_409(client);
 		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
 			return ret;
 		}
 
@@ -931,10 +953,8 @@ upgrade_not_found:
 		}
 	} else {
 not_found: ; /* Add extra semicolon to make clang to compile when using label */
-		ret = http_server_sendall(client, not_found_response,
-					  sizeof(not_found_response) - 1);
+		ret = send_http1_404(client);
 		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
 			return ret;
 		}
 	}
