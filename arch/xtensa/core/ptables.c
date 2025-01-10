@@ -250,18 +250,25 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 static void map_memory(const uint32_t start, const uint32_t end,
 		       const uint32_t attrs)
 {
-	map_memory_range(start, end, attrs);
-
 #ifdef CONFIG_XTENSA_MMU_DOUBLE_MAP
+	uint32_t uc_attrs = attrs & ~XTENSA_MMU_PTE_ATTR_CACHED_MASK;
+	uint32_t c_attrs = attrs | XTENSA_MMU_CACHED_WB;
+
 	if (sys_cache_is_ptr_uncached((void *)start)) {
+		map_memory_range(start, end, uc_attrs);
+
 		map_memory_range(POINTER_TO_UINT(sys_cache_cached_ptr_get((void *)start)),
-			POINTER_TO_UINT(sys_cache_cached_ptr_get((void *)end)),
-			attrs | XTENSA_MMU_CACHED_WB);
+			POINTER_TO_UINT(sys_cache_cached_ptr_get((void *)end)),	c_attrs);
 	} else if (sys_cache_is_ptr_cached((void *)start)) {
+		map_memory_range(start, end, c_attrs);
+
 		map_memory_range(POINTER_TO_UINT(sys_cache_uncached_ptr_get((void *)start)),
-			POINTER_TO_UINT(sys_cache_uncached_ptr_get((void *)end)), attrs);
-	}
+			POINTER_TO_UINT(sys_cache_uncached_ptr_get((void *)end)), uc_attrs);
+	} else
 #endif
+	{
+		map_memory_range(start, end, attrs);
+	}
 }
 
 static void xtensa_init_page_tables(void)
