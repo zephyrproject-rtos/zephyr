@@ -116,10 +116,11 @@ int usbh_req_desc(struct usb_device *const udev,
 }
 
 int usbh_req_desc_dev(struct usb_device *const udev,
+		      const uint16_t len,
 		      struct usb_device_descriptor *const desc)
 {
 	const uint8_t type = USB_DESC_DEVICE;
-	const uint16_t wLength = sizeof(struct usb_device_descriptor);
+	const uint16_t wLength = MIN(len, sizeof(struct usb_device_descriptor));
 	struct net_buf *buf;
 	int ret;
 
