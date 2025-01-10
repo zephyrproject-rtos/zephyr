@@ -71,6 +71,51 @@ static int send_http1_409(struct http_client_ctx *client)
 				       sizeof(conflict_response) - 1);
 }
 
+static void send_http1_500(struct http_client_ctx *client, int error_code)
+{
+#define HTTP_500_RESPONSE_TEMPLATE			\
+	"HTTP/1.1 500 Internal Server Error\r\n"	\
+	"Content-Type: text/plain\r\n"			\
+	"Content-Length: %d\r\n\r\n"			\
+	"Internal Server Error%s%s\r\n"
+#define MAX_ERROR_DESC_LEN 32
+
+	/* Placeholder for the error description. */
+	char error_str[] = "xxx";
+	char http_response[sizeof(HTTP_500_RESPONSE_TEMPLATE) +
+			   sizeof("xx") + /* Content-Length */
+			   MAX_ERROR_DESC_LEN + 1]; /* For the error description */
+	const char *error_desc;
+	const char *desc_separator;
+	int desc_len;
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_REPORT_FAILURE_REASON)) {
+		/* Try to fetch error description, fallback to error number if
+		 * not available
+		 */
+		error_desc = strerror(error_code);
+		if (strlen(error_desc) == 0) {
+			/* Cast error value to uint8_t to avoid truncation warnings. */
+			(void)snprintk(error_str, sizeof(error_str), "%u",
+				       (uint8_t)error_code);
+			error_desc = error_str;
+		}
+		desc_separator = ": ";
+		desc_len = MIN(MAX_ERROR_DESC_LEN, strlen(error_desc));
+		desc_len += 2; /* For ": " */
+	} else {
+		error_desc = "";
+		desc_separator = "";
+		desc_len = 0;
+	}
+
+	(void)snprintk(http_response, sizeof(http_response),
+		       HTTP_500_RESPONSE_TEMPLATE,
+		       sizeof("Internal Server Error\r\n") - 1 + desc_len,
+		       desc_separator, error_desc);
+	(void)http_server_sendall(client, http_response, strlen(http_response));
+}
+
 static int handle_http1_static_resource(
 	struct http_resource_detail_static *static_detail,
 	struct http_client_ctx *client)
@@ -118,6 +163,8 @@ static int handle_http1_static_resource(
 	if (ret < 0) {
 		return ret;
 	}
+
+	client->http1_headers_sent = true;
 
 	ret = http_server_sendall(client, data, len);
 	if (ret < 0) {
@@ -483,6 +530,8 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 		goto close;
 	}
 
+	client->http1_headers_sent = true;
+
 	/* read and send file */
 	remaining = file_size;
 	while (remaining > 0) {
@@ -545,6 +594,7 @@ static int handle_http1_dynamic_resource(
 				return ret;
 			}
 
+			client->http1_headers_sent = true;
 			dynamic_detail->holder = NULL;
 
 			return 0;
@@ -839,12 +889,14 @@ int handle_http1_request(struct http_client_ctx *client)
 
 	if (parsed > client->data_len) {
 		LOG_ERR("HTTP/1 parser error, too much data consumed");
-		return -EBADMSG;
+		ret = -EBADMSG;
+		goto error;
 	}
 
 	if (client->parser.http_errno != HPE_OK) {
 		LOG_ERR("HTTP/1 parsing error, %d", client->parser.http_errno);
-		return -EBADMSG;
+		ret = -EBADMSG;
+		goto error;
 	}
 
 	if (client->parser_state < HTTP1_RECEIVED_HEADER_STATE) {
@@ -863,7 +915,8 @@ int handle_http1_request(struct http_client_ctx *client)
 		size_t frag_headers_len;
 
 		if (parsed < client->http1_frag_data_len) {
-			return -EBADMSG;
+			ret = -EBADMSG;
+			goto error;
 		}
 
 		frag_headers_len = parsed - client->http1_frag_data_len;
@@ -892,14 +945,25 @@ int handle_http1_request(struct http_client_ctx *client)
 
 				detail->path_len = path_len;
 				client->current_detail = detail;
-				return handle_http1_to_websocket_upgrade(client);
+
+				ret = handle_http1_to_websocket_upgrade(client);
+				if (ret < 0) {
+					goto error;
+				}
+
+				return 0;
 			}
 
 			goto upgrade_not_found;
 		}
 
 		if (client->http2_upgrade) {
-			return handle_http1_to_http2_upgrade(client);
+			ret = handle_http1_to_http2_upgrade(client);
+			if (ret < 0) {
+				goto error;
+			}
+
+			return 0;
 		}
 
 upgrade_not_found:
@@ -907,21 +971,23 @@ upgrade_not_found:
 					  sizeof(upgrade_required) - 1);
 		if (ret < 0) {
 			LOG_DBG("Cannot write to socket (%d)", ret);
-			return ret;
+			goto error;
 		}
+
+		client->http1_headers_sent = true;
 
 		ret = http_server_sendall(client, needed_upgrade,
 					  strlen(needed_upgrade));
 		if (ret < 0) {
 			LOG_DBG("Cannot write to socket (%d)", ret);
-			return ret;
+			goto error;
 		}
 
 		ret = http_server_sendall(client, upgrade_msg,
 					  sizeof(upgrade_msg) - 1);
 		if (ret < 0) {
 			LOG_DBG("Cannot write to socket (%d)", ret);
-			return ret;
+			goto error;
 		}
 	}
 
@@ -934,14 +1000,14 @@ upgrade_not_found:
 				(struct http_resource_detail_static *)detail,
 				client);
 			if (ret < 0) {
-				return ret;
+				goto error;
 			}
 #if defined(CONFIG_FILE_SYSTEM)
 		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
 			ret = handle_http1_static_fs_resource(
 				(struct http_resource_detail_static_fs *)detail, client);
 			if (ret < 0) {
-				return ret;
+				goto error;
 			}
 #endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
@@ -949,15 +1015,17 @@ upgrade_not_found:
 				(struct http_resource_detail_dynamic *)detail,
 				client);
 			if (ret < 0) {
-				return ret;
+				goto error;
 			}
 		}
 	} else {
 not_found: ; /* Add extra semicolon to make clang to compile when using label */
 		ret = send_http1_404(client);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
+
+		client->http1_headers_sent = true;
 	}
 
 	client->cursor += parsed;
@@ -974,4 +1042,16 @@ not_found: ; /* Add extra semicolon to make clang to compile when using label */
 	}
 
 	return 0;
+
+error:
+	/* Best effort try to send HTTP 500 Internal Server Error response in
+	 * case of errors. This can only be done however if we haven't sent
+	 * response header elsewhere (i. e. can't send another reply if the
+	 * error ocurred amid resource processing).
+	 */
+	if (ret != -EAGAIN && !client->http1_headers_sent) {
+		send_http1_500(client, -ret);
+	}
+
+	return ret;
 }
