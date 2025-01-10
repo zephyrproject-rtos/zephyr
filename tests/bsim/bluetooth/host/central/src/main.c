@@ -9,6 +9,9 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 
+/* Include hci_common_internal for the purpose of checking HCI Command counts. */
+#include "common/hci_common_internal.h"
+
 /* Include conn_internal for the purpose of checking reference counts. */
 #include "host/conn_internal.h"
 
@@ -63,7 +66,7 @@ static void test_central_connect_timeout_with_timeout(uint32_t timeout_ms, bool 
 		.window_coded = 0,
 		.timeout = timeout_ms / 10,
 	};
-	struct net_buf *bufs[CONFIG_BT_BUF_CMD_TX_COUNT];
+	struct net_buf *bufs[BT_BUF_CMD_TX_COUNT];
 
 	k_sem_reset(&sem_failed_to_connect);
 
@@ -74,7 +77,7 @@ static void test_central_connect_timeout_with_timeout(uint32_t timeout_ms, bool 
 
 	if (stack_load) {
 		/* Claim all the buffers so that the stack cannot handle the timeout */
-		for (int i = 0; i < CONFIG_BT_BUF_CMD_TX_COUNT; i++) {
+		for (int i = 0; i < BT_BUF_CMD_TX_COUNT; i++) {
 			bufs[i] = bt_hci_cmd_create(BT_HCI_LE_ADV_ENABLE, 0);
 			TEST_ASSERT(bufs[i] != NULL, "Failed to claim all command buffers");
 		}
@@ -82,7 +85,7 @@ static void test_central_connect_timeout_with_timeout(uint32_t timeout_ms, bool 
 		err = k_sem_take(&sem_failed_to_connect, K_MSEC(expected_conn_timeout_ms + 50));
 		TEST_ASSERT(err == -EAGAIN, "Callback ran with no buffers available", err);
 		/* Release all the buffers back to the stack */
-		for (int i = 0; i < CONFIG_BT_BUF_CMD_TX_COUNT; i++) {
+		for (int i = 0; i < BT_BUF_CMD_TX_COUNT; i++) {
 			net_buf_unref(bufs[i]);
 		}
 	}

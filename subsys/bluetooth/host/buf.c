@@ -5,15 +5,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/l2cap.h>
+
+#include "common/hci_common_internal.h"
 
 #include "buf_view.h"
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "iso_internal.h"
-
-#include <zephyr/bluetooth/hci.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_buf, CONFIG_BT_LOG_LEVEL);
@@ -72,8 +73,9 @@ static void evt_pool_destroy(struct net_buf *buf)
 	buf_rx_freed_notify(BT_BUF_EVT);
 }
 
-NET_BUF_POOL_DEFINE(acl_in_pool, BT_BUF_ACL_RX_COUNT, BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE),
-		    sizeof(struct acl_data), acl_in_pool_destroy);
+NET_BUF_POOL_DEFINE(acl_in_pool, (BT_BUF_ACL_RX_COUNT_EXTRA + BT_BUF_HCI_ACL_RX_COUNT),
+		    BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE), sizeof(struct acl_data),
+		    acl_in_pool_destroy);
 
 NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT, BT_BUF_EVT_RX_SIZE,
 			  sizeof(struct bt_buf_data), evt_pool_destroy);
