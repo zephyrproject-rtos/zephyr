@@ -408,7 +408,6 @@ Bluetooth Host:
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -524,7 +523,6 @@ Bluetooth ISO:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/shell/host/iso.rst
     - samples/bluetooth/iso_*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
