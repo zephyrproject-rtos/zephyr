@@ -268,7 +268,7 @@ bool bt_is_ready(void);
  *
  * @sa @kconfig{CONFIG_BT_DEVICE_NAME_MAX}.
  *
- * @param name New name
+ * @param name New name, must be null terminated
  *
  * @return Zero on success or (negative) error code otherwise.
  */
