@@ -14,6 +14,7 @@ struct k_msgq msgq1;
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
 K_THREAD_STACK_DEFINE(tstack2, STACK_SIZE);
+ZTEST_BMEM k_tid_t tids[2];
 struct k_thread tdata;
 struct k_thread tdata1;
 struct k_thread tdata2;
@@ -94,12 +95,12 @@ static void msgq_thread(struct k_msgq *pmsgq)
 {
 	/**TESTPOINT: thread-thread data passing via message queue*/
 	put_msgq(pmsgq);
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      thread_entry, pmsgq, NULL, NULL,
-				      K_PRIO_PREEMPT(0),
-				      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+	tids[0] = k_thread_create(&tdata, tstack, STACK_SIZE,
+				  thread_entry, pmsgq, NULL, NULL,
+				  K_PRIO_PREEMPT(0),
+				  K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	k_sem_take(&end_sema, K_FOREVER);
-	k_thread_abort(tid);
+	k_thread_abort(tids[0]);
 
 	/**TESTPOINT: msgq purge*/
 	purge_msgq(pmsgq);
@@ -131,17 +132,17 @@ static void msgq_thread_overflow(struct k_msgq *pmsgq)
 	zassert_equal(ret, 0);
 
 	/**TESTPOINT: thread-thread data passing via message queue*/
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      thread_entry_overflow, pmsgq, NULL, NULL,
-				      K_PRIO_PREEMPT(0),
-				      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+	tids[0] = k_thread_create(&tdata, tstack, STACK_SIZE,
+				  thread_entry_overflow, pmsgq, NULL, NULL,
+				  K_PRIO_PREEMPT(0),
+				  K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	ret = k_msgq_put(pmsgq, (void *)&data[1], K_FOREVER);
 
 	zassert_equal(ret, 0);
 
 	k_sem_take(&end_sema, K_FOREVER);
-	k_thread_abort(tid);
+	k_thread_abort(tids[0]);
 
 	/**TESTPOINT: msgq purge*/
 	k_msgq_purge(pmsgq);
@@ -182,17 +183,17 @@ static void msgq_thread_data_passing(struct k_msgq *pmsgq)
 	while (k_msgq_put(pmsgq, &data[0], K_NO_WAIT) != 0) {
 	}
 
-	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,
-					pend_thread_entry, pmsgq, NULL,
-					NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	tids[0] = k_thread_create(&tdata2, tstack2, STACK_SIZE,
+				  pend_thread_entry, pmsgq, NULL,
+				  NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
-	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
-					thread_entry_get_data, pmsgq, NULL,
-					NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	tids[1] = k_thread_create(&tdata1, tstack1, STACK_SIZE,
+				  thread_entry_get_data, pmsgq, NULL,
+				  NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 
 	k_sem_take(&end_sema, K_FOREVER);
-	k_thread_abort(tid);
-	k_thread_abort(tid1);
+	k_thread_abort(tids[0]);
+	k_thread_abort(tids[1]);
 
 	/**TESTPOINT: msgq purge*/
 	k_msgq_purge(pmsgq);
@@ -399,13 +400,13 @@ ZTEST(msgq_api_1cpu, test_msgq_empty)
 	ret = k_sem_init(&end_sema, 0, 1);
 	zassert_equal(ret, 0);
 
-	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,
-				      get_empty_entry, &msgq1, NULL,
-				      NULL, pri, 0, K_NO_WAIT);
+	tids[0] = k_thread_create(&tdata2, tstack2, STACK_SIZE,
+				  get_empty_entry, &msgq1, NULL,
+				  NULL, pri, 0, K_NO_WAIT);
 
 	k_sem_take(&end_sema, K_FOREVER);
 	/* that getting thread is being blocked now */
-	zassert_equal(tid->base.thread_state, _THREAD_PENDING);
+	zassert_equal(tids[0]->base.thread_state, _THREAD_PENDING);
 	/* since there is a thread is waiting for message, this queue
 	 * can't be cleanup
 	 */
@@ -416,7 +417,7 @@ ZTEST(msgq_api_1cpu, test_msgq_empty)
 	ret = k_msgq_put(&msgq1, &data[0], K_NO_WAIT);
 	zassert_equal(ret, 0);
 
-	k_thread_abort(tid);
+	k_thread_abort(tids[0]);
 }
 
 /**
@@ -442,13 +443,13 @@ ZTEST(msgq_api_1cpu, test_msgq_full)
 	ret = k_msgq_put(&msgq1, &data[0], K_NO_WAIT);
 	zassert_equal(ret, 0);
 
-	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,
-					put_full_entry, &msgq1, NULL,
-					NULL, pri, 0, K_NO_WAIT);
+	tids[0] = k_thread_create(&tdata2, tstack2, STACK_SIZE,
+				  put_full_entry, &msgq1, NULL,
+				  NULL, pri, 0, K_NO_WAIT);
 	k_sem_take(&end_sema, K_FOREVER);
 	/* that putting thread is being blocked now */
-	zassert_equal(tid->base.thread_state, _THREAD_PENDING);
-	k_thread_abort(tid);
+	zassert_equal(tids[0]->base.thread_state, _THREAD_PENDING);
+	k_thread_abort(tids[0]);
 }
 
 /**
