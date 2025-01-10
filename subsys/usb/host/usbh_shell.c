@@ -188,7 +188,7 @@ static int cmd_desc_device(const struct shell *sh,
 	struct usb_device_descriptor desc;
 	int err;
 
-	err = usbh_req_desc_dev(udev, &desc);
+	err = usbh_req_desc_dev(udev, sizeof(desc), &desc);
 	if (err) {
 		shell_print(sh, "host: Failed to request device descriptor");
 	} else {
