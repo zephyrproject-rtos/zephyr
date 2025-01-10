@@ -46,7 +46,7 @@ static const unsigned char compressed_inc_file[] = {
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, MY_IPV4_ADDR,
 		    &test_http_service_port, 1,
-		    10, NULL);
+		    10, NULL, NULL);
 
 struct http_resource_detail_static index_html_gz_resource_detail = {
 	.common = {
