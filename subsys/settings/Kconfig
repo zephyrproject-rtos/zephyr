@@ -1,4 +1,5 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
+# Copyright (c) 2025 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SETTINGS
@@ -36,6 +37,7 @@ choice SETTINGS_BACKEND
 	default SETTINGS_NVS if NVS
 	default SETTINGS_FCB if FCB
 	default SETTINGS_FILE if FILE_SYSTEM
+	default SETTINGS_TFM_ITS if TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
 	default SETTINGS_NONE
 	help
 	  Storage back-end to be used by the settings subsystem.
@@ -108,6 +110,17 @@ config SETTINGS_CUSTOM
 	bool "CUSTOM"
 	help
 	  Use a custom settings storage back-end.
+
+config SETTINGS_TFM_ITS
+	bool "Internal Trusted Storage (ITS) settings backend"
+	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	help
+	  Enables Internal Trusted Storage (ITS) Settings backend. Intended for use with boards
+	  using TF-M which cannot make use of persistent storage otherwise.
+	  Note: This settings backend compacts settings data into as few ITS nodes as possible.
+	  On every save, the entire settings array is written to ITS.
+	  Note: With this backend, all settings are kept in RAM at all times. The RAM consumption
+	  is controlled by the SETTINGS_TFM_ITS_NUM_ENTRIES Kconfig option.
 
 config SETTINGS_NONE
 	bool "NONE"
@@ -218,5 +231,29 @@ config SETTINGS_SHELL
 	  reading the settings requires quite a big stack buffer, so the stack
 	  size of the shell thread may need to be increased to accommodate this
 	  feature.
+
+if SETTINGS_TFM_ITS
+
+config SETTINGS_TFM_ITS_NUM_ENTRIES
+	int "Maximum number of settings entries"
+	default 10
+	help
+	  Configures the maximum number of settings that can be stored simultaneously.
+	  Note: This value determines the size of a statically-allocated buffer which holds
+	  all the settings entries in RAM at all times.
+
+config SETTINGS_TFM_ITS_LAZY_PERSIST_DELAY_MS
+	int "Milliseconds delay before persisting settings"
+	default 500
+	help
+	  ITS may block for a long period of time when writing to flash, which may be
+	  unacceptable for time-sensitive events.
+	  Data is always persisted to ITS using k_work_delayable, instead of happening in
+	  the same context as settings_its_save. This option sets the delay with which the
+	  work item is scheduled. The delay is useful in cases where a PSA ITS write may
+	  block a time-sensitive event, Bluetooth pairing for example, which requires a
+	  sequence of settings writes.
+
+endif # SETTINGS_TFM_ITS
 
 endif # SETTINGS
