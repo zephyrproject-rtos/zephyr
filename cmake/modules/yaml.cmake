@@ -4,7 +4,7 @@
 
 # CMake YAML module for handling of YAML files.
 #
-# This module offers basic support for simple yaml files.
+# This module offers basic support for simple files.
 #
 # It supports basic key-value pairs, like
 # foo: bar
@@ -19,6 +19,13 @@
 #  - foo2
 #  - foo3
 #
+# Support for list of maps, like:
+# foo:
+#  - bar: val1
+#    baz: val1
+#  - bar: val2
+#    baz: val2
+#
 # All of above can be combined, for example like:
 # foo:
 #   bar: baz
@@ -28,14 +35,6 @@
 #      - beta
 #      - gamma
 # fred: thud
-#
-# Support for list of objects are currently experimental and not guranteed to work.
-# For example:
-# foo:
-#  - bar: val1
-#    baz: val1
-#  - bar: val2
-#    baz: val2
 
 include_guard(GLOBAL)
 
@@ -243,6 +242,7 @@ endfunction()
 # Usage:
 #   yaml_set(NAME <name> KEY <key>... VALUE <value>)
 #   yaml_set(NAME <name> KEY <key>... [APPEND] LIST <value>...)
+#   yaml_set(NAME <name> KEY <key>... [APPEND] LIST MAP <map1> MAP <map2> MAP ...)
 #
 # Set a value or a list of values to given key.
 #
@@ -254,6 +254,9 @@ endfunction()
 # VALUE <value>: New value for the key.
 # List <values>: New list of values for the key.
 # APPEND       : Append the list of values to the list of values for the key.
+# MAP <map>    : Map, with key-value pairs where key-value is separated by ':', and pairs separated by ',',
+#                format: "<key1>: <value1>, <key2>: <value2>, ..."
+#                MAP can be given multiple times to separate maps when adding them to a list.
 #
 function(yaml_set)
   cmake_parse_arguments(ARG_YAML "APPEND" "NAME;VALUE" "KEY;LIST" ${ARGN})
@@ -303,12 +306,32 @@ function(yaml_set)
     string(JSON subjson GET "${json_content}" ${ARG_YAML_KEY})
     string(JSON index LENGTH "${subjson}")
     list(LENGTH ARG_YAML_LIST length)
-    math(EXPR stop "${index} + ${length} - 1")
     if(NOT length EQUAL 0)
-      foreach(i RANGE ${index} ${stop})
-        list(POP_FRONT ARG_YAML_LIST value)
-        string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} ${i} "\"${value}\"")
-      endforeach()
+      list(GET ARG_YAML_LIST 0 entry_0)
+      if(entry_0 STREQUAL MAP)
+        math(EXPR length "${length} / 2")
+        math(EXPR stop "${index} + ${length} - 1")
+        foreach(i RANGE ${index} ${stop})
+          list(POP_FRONT ARG_YAML_LIST argument)
+          if(NOT argument STREQUAL MAP)
+            message(FATAL_ERROR "")
+            message(FATAL_ERROR "${function}(${argument} ) is not valid at this position.\n"
+                    "Syntax is 'LIST MAP \"key1: value1.1, ...\" MAP \"key1: value1.2, ...\""
+            )
+          endif()
+          list(POP_FRONT ARG_YAML_LIST map_value)
+          string(REGEX REPLACE "[ ]*(:|,)[ ]*" "\"\\1\"" qouted_map_value "\"${map_value}\"")
+          message("foo: ${map_value}")
+          message("bar: ${qouted_map_value}")
+          string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} ${i} "{${qouted_map_value}}")
+        endforeach()
+      else()
+        math(EXPR stop "${index} + ${length} - 1")
+        foreach(i RANGE ${index} ${stop})
+          list(POP_FRONT ARG_YAML_LIST value)
+          string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} ${i} "\"${value}\"")
+        endforeach()
+      endif()
     endif()
   else()
     string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} "\"${ARG_YAML_VALUE}\"")
@@ -411,7 +434,18 @@ function(to_yaml json level yaml)
         math(EXPR arraystop "${arraylength} - 1")
         foreach(i RANGE 0 ${arraystop})
           string(JSON item GET "${json}" ${member} ${i})
-          set(${yaml} "${${yaml}}${indent_${level}} - ${item}\n")
+          # Check the length of item. Only OBJECT and ARRAY may have length, so a length at this
+          # level means `to_yaml()` should be called recursively.
+          string(JSON length ERROR_VARIABLE ignore LENGTH "${item}")
+          if(length)
+            set(non_indent_yaml)
+            to_yaml("${item}" 0 non_indent_yaml)
+            string(REGEX REPLACE "\n$" "" non_indent_yaml "${non_indent_yaml}")
+            string(REPLACE "\n" "\n${indent_${level}}   " indent_yaml "${non_indent_yaml}")
+            set(${yaml} "${${yaml}}${indent_${level}} - ${indent_yaml}\n")
+          else()
+            set(${yaml} "${${yaml}}${indent_${level}} - ${item}\n")
+          endif()
         endforeach()
       endif()
     else()
