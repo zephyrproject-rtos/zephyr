@@ -385,6 +385,12 @@ Bluetooth Audio
     * :kconfig:option:`CONFIG_BT_PAC_SNK`
     * :kconfig:option:`CONFIG_BT_PAC_SRC`
 
+* PACS have been changed to support dynamic, runtime configuration. This means that PACS now has
+  to be registered with :c:func:`bt_pacs_register` before it can be used. In addition,
+  :c:func:`bt_pacs_register` also have to be called before :c:func:`bt_ascs_register` can be
+  be called. All Kconfig options still remain. Runtime configuration cannot override a disabled
+  Kconfig option. (:github:`83730`)
+
 Bluetooth Classic
 =================
 
