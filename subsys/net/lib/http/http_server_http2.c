@@ -208,6 +208,8 @@ static int send_headers_frame(struct http_client_ctx *client, enum http_status s
 		return ret;
 	}
 
+	client->current_stream->headers_sent = true;
+
 	return 0;
 }
 
@@ -377,8 +379,6 @@ static int handle_http2_static_resource(
 		goto out;
 	}
 
-	client->current_stream->headers_sent = true;
-
 	ret = send_data_frame(client, content_200, content_len,
 			      frame->stream_identifier,
 			      HTTP2_FLAG_END_STREAM);
@@ -465,8 +465,6 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 		goto out;
 	}
 
-	client->current_stream->headers_sent = true;
-
 	/* read and send file */
 	remaining = client->data_len;
 	while (remaining > 0) {
@@ -535,8 +533,6 @@ static int http2_dynamic_response(struct http_client_ctx *client, struct http2_f
 		if (ret < 0) {
 			return ret;
 		}
-
-		client->current_stream->headers_sent = true;
 	}
 
 	/* Send body data if provided */
