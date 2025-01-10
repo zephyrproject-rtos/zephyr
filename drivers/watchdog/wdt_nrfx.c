@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/math_extras.h>
 #include <nrfx_wdt.h>
 #include <zephyr/drivers/watchdog.h>
@@ -13,11 +14,18 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(wdt_nrfx);
 
+#if !CONFIG_WDT_NRFX_NO_IRQ && NRF_WDT_HAS_STOP
+#define WDT_NRFX_SYNC_STOP 1
+#endif
+
 struct wdt_nrfx_data {
 	wdt_callback_t m_callbacks[NRF_WDT_CHANNEL_NUMBER];
 	uint32_t m_timeout;
 	uint8_t m_allocated_channels;
 	bool enabled;
+#if defined(WDT_NRFX_SYNC_STOP)
+	struct k_sem sync_stop;
+#endif
 };
 
 struct wdt_nrfx_config {
@@ -72,6 +80,10 @@ static int wdt_nrf_disable(const struct device *dev)
 		/* This can only happen if wdt_nrf_setup() is not called first. */
 		return -EFAULT;
 	}
+
+#if defined(WDT_NRFX_SYNC_STOP)
+	k_sem_take(&data->sync_stop, K_FOREVER);
+#endif
 
 	nrfx_wdt_channels_free(&config->wdt);
 
@@ -170,10 +182,16 @@ static DEVICE_API(wdt, wdt_nrfx_driver_api) = {
 static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_type,
 			      uint32_t requests, void *p_context)
 {
-	(void)event_type;
-	(void)p_context;
-
 	struct wdt_nrfx_data *data = dev->data;
+
+#if defined(WDT_NRFX_SYNC_STOP)
+	if (event_type == NRF_WDT_EVENT_STOPPED) {
+		k_sem_give(&data->sync_stop);
+	}
+#else
+	(void)event_type;
+#endif
+	(void)p_context;
 
 	while (requests) {
 		uint8_t i = u32_count_trailing_zeros(requests);
@@ -217,7 +235,11 @@ static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_ty
 		}							       \
 		return 0;						       \
 	}								       \
-	static struct wdt_nrfx_data wdt_##idx##_data;			       \
+	static struct wdt_nrfx_data wdt_##idx##_data =	{		       \
+		IF_ENABLED(WDT_NRFX_SYNC_STOP,				       \
+			(.sync_stop = Z_SEM_INITIALIZER(		       \
+				wdt_##idx##_data.sync_stop, 0, 1),))	       \
+	};								       \
 	static const struct wdt_nrfx_config wdt_##idx##z_config = {	       \
 		.wdt = NRFX_WDT_INSTANCE(idx),				       \
 	};								       \
