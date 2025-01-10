@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_NXP_XCACHE
+	bool "NXP external cache driver for xcache controller"
+	default y
+	select CACHE_HAS_DRIVER
+	depends on HAS_MCUX_XCACHE
+	help
+	  This option enables the XCACHE driver for NXP SOC's.
