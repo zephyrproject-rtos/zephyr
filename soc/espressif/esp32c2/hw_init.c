@@ -57,15 +57,9 @@ int hardware_init(void)
 	print_banner();
 #endif /* CONFIG_ESP_CONSOLE */
 
-	spi_flash_init_chip_state();
-	err = esp_flash_init_default_chip();
-	if (err != 0) {
-		ESP_EARLY_LOGE(TAG, "Failed to init flash chip, error %d", err);
-		return err;
-	}
-
 	cache_hal_init();
 	mmu_hal_init();
+
 	flash_update_id();
 
 	err = bootloader_flash_xmc_startup();
@@ -91,6 +85,8 @@ int hardware_init(void)
 
 	check_wdt_reset();
 	config_wdt();
+
+	soc_random_enable();
 
 	return 0;
 }

@@ -21,8 +21,10 @@
 #include <esp_log.h>
 #include <bootloader_clock.h>
 #include <bootloader_common.h>
-
 #include <esp_cpu.h>
+
+#include <zephyr/linker/linker-defs.h>
+#include <kernel_internal.h>
 
 #if CONFIG_SOC_SERIES_ESP32C6
 #include <soc/hp_apm_reg.h>
@@ -99,13 +101,6 @@ static struct rom_segments map = {
 	.drom_size = (uint32_t)&_image_drom_size,
 };
 
-#ifndef CONFIG_BOOTLOADER_MCUBOOT
-static int spi_flash_read(uint32_t address, void *buffer, size_t length)
-{
-	return esp_flash_read(NULL, buffer, address, length);
-}
-#endif /* CONFIG_BOOTLOADER_MCUBOOT */
-
 void map_rom_segments(int core, struct rom_segments *map)
 {
 	uint32_t app_irom_vaddr_align = map->irom_map_addr & MMU_FLASH_MASK;
@@ -126,7 +121,8 @@ void map_rom_segments(int core, struct rom_segments *map)
 
 	while (segments++ < 16) {
 
-		if (spi_flash_read(offset, &segment_hdr, sizeof(esp_image_segment_header_t)) != 0) {
+		if (esp_rom_flash_read(offset, &segment_hdr,
+					      sizeof(esp_image_segment_header_t), true) != 0) {
 			ESP_EARLY_LOGE(TAG, "Failed to read segment header at %x", offset);
 			abort();
 		}
@@ -255,6 +251,13 @@ void map_rom_segments(int core, struct rom_segments *map)
 void __start(void)
 {
 #ifdef CONFIG_RISCV_GP
+
+	__asm__ __volatile__("la t0, _esp_vector_table\n"
+			     "csrw mtvec, t0\n");
+
+	/* Disable normal interrupts. */
+	csr_read_clear(mstatus, MSTATUS_MIE);
+
 	/* Configure the global pointer register
 	 * (This should be the first thing startup does, as any other piece of code could be
 	 * relaxed by the linker to access something relative to __global_pointer$)
@@ -263,17 +266,40 @@ void __start(void)
 			     ".option norelax\n"
 			     "la gp, __global_pointer$\n"
 			     ".option pop");
-#endif
 
-#ifndef CONFIG_BOOTLOADER_MCUBOOT
-	/* Init fundamental components */
+	z_bss_zero();
+
+#else /* xtensa */
+
+	extern uint32_t _init_start;
+
+	/* Move the exception vector table to IRAM. */
+	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
+
+	z_bss_zero();
+
+	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
+
+	/* Disable normal interrupts. */
+	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
+
+	/* Initialize the architecture CPU pointer.  Some of the
+	 * initialization code wants a valid arch_current_thread() before
+	 * arch_kernel_init() is invoked.
+	 */
+	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+
+#endif /* CONFIG_RISCV_GP */
+
+/* Initialize hardware only during 1st boot  */
+#if defined(CONFIG_MCUBOOT) || defined(CONFIG_ESP_SIMPLE_BOOT)
 	if (hardware_init()) {
 		ESP_EARLY_LOGE(TAG, "HW init failed, aborting");
 		abort();
 	}
 #endif
 
-#if !defined(CONFIG_MCUBOOT)
+#if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_BOOTLOADER_MCUBOOT)
 	map_rom_segments(0, &map);
 
 	/* Show map segments continue using same log format as during MCUboot phase */
@@ -282,19 +308,19 @@ void __start(void)
 	ESP_EARLY_LOGI(TAG, "%s segment: paddr=%08xh, vaddr=%08xh, size=%05Xh (%6d) map", "DROM",
 		       map.drom_flash_offset, map.drom_map_addr, map.drom_size, map.drom_size);
 	esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
-#endif
 
-#ifndef CONFIG_SOC_SERIES_ESP32C2
 	/* Disable RNG entropy source as it was already used */
 	soc_random_disable();
-#endif
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C3)
+
 	/* Disable glitch detection as it can be falsely triggered by EMI interference */
-	ESP_EARLY_LOGI(TAG, "Disabling glitch detection");
 	ana_clock_glitch_reset_config(false);
-#endif
-#ifndef CONFIG_MCUBOOT
+
 	ESP_EARLY_LOGI(TAG, "libc heap size %d kB.", libc_heap_size / 1024);
+
+	__esp_platform_app_start();
+#endif /* CONFIG_ESP_SIMPLE_BOOT || CONFIG_BOOTLOADER_MCUBOOT */
+
+#if defined(CONFIG_MCUBOOT)
+	__esp_platform_mcuboot_start();
 #endif
-	__esp_platform_start();
 }
