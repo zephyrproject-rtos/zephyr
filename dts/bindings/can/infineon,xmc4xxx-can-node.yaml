@@ -16,7 +16,7 @@ properties:
   interrupts:
     required: true
 
-  clock_div8:
+  clock-div8:
     description: Option enables clock divide by a factor of 8.
     type: boolean
 
