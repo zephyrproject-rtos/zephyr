@@ -597,6 +597,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 	}
 }
 
+#if defined(CONFIG_NET_NATIVE_IP)
 static inline uint16_t pkt_calc_chksum(struct net_pkt *pkt, uint16_t sum)
 {
 	struct net_pkt_cursor *cur = &pkt->cursor;
@@ -634,7 +635,6 @@ static inline uint16_t pkt_calc_chksum(struct net_pkt *pkt, uint16_t sum)
 	return sum;
 }
 
-#if defined(CONFIG_NET_NATIVE_IP)
 uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 {
 	size_t len = 0U;
