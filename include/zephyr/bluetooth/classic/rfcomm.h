@@ -19,10 +19,26 @@
 
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** RFCOMM Maximum Header Size. The length could be 2 bytes, it depends on information length. */
+#define BT_RFCOMM_HDR_MAX_SIZE 4
+/** RFCOMM FCS Size */
+#define BT_RFCOMM_FCS_SIZE     1
+
+/** @brief Helper to calculate needed buffer size for RFCOMM PDUs.
+ *         Useful for creating buffer pools.
+ *
+ *  @param mtu Needed RFCOMM PDU MTU.
+ *
+ *  @return Needed buffer size to match the requested RFCOMM PDU MTU.
+ */
+#define BT_RFCOMM_BUF_SIZE(mtu)                                                                    \
+	BT_L2CAP_BUF_SIZE(BT_RFCOMM_HDR_MAX_SIZE + BT_RFCOMM_FCS_SIZE + (mtu))
 
 /* RFCOMM channels (1-30): pre-allocated for profiles to avoid conflicts */
 enum {
