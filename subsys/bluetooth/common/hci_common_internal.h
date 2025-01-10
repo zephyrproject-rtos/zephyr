@@ -57,9 +57,6 @@ BUILD_ASSERT((CONFIG_BT_BUF_CMD_TX_COUNT == CONFIG_BT_CTLR_HCI_NUM_CMD_PKT_MAX),
  * BT_BUF_ACL_RX_COUNT_EXTRA holds the application configured number of buffers across active
  * connections for recombination of HCI data packets to L2CAP SDUs.
  *
- * BT_BUF_HCI_EVT_RX_COUNT defines the number of available buffers reserved for "synchronous"
- * processing of HCI events like Number of Completed Packets, disconnection complete etc.
- *
  * BT_BUF_HCI_ACL_RX_COUNT defines the number of available buffers for Controller to Host data
  * flow control; keeping the application configured BT_BUF_ACL_RX_COUNT_EXTRA number of buffers
  * available for L2CAP recombination, and a reserved number of buffers for processing HCI events.
@@ -79,9 +76,7 @@ BUILD_ASSERT((CONFIG_BT_BUF_CMD_TX_COUNT == CONFIG_BT_CTLR_HCI_NUM_CMD_PKT_MAX),
  * control to restrict buffers required on resource constraint devices, i.e. if these events are not
  * processed "synchronous".
  */
-#define BT_BUF_HCI_EVT_RX_COUNT          1
-#define BT_BUF_HCI_ACL_RX_COUNT          (BT_BUF_RX_COUNT - BT_BUF_HCI_EVT_RX_COUNT - \
-					  BT_BUF_ACL_RX_COUNT_EXTRA)
+#define BT_BUF_HCI_ACL_RX_COUNT          (BT_BUF_ACL_RX_COUNT - BT_BUF_ACL_RX_COUNT_EXTRA)
 #define BT_BUF_CMD_TX_HOST_NUM_CMPLT_PKT (BT_BUF_HCI_ACL_RX_COUNT)
 #else /* !CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 #define BT_BUF_CMD_TX_HOST_NUM_CMPLT_PKT 0
