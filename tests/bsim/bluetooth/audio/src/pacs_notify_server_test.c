@@ -159,11 +159,23 @@ static void test_main(void)
 	int err;
 	enum bt_audio_context available, available_for_conn;
 	struct bt_le_ext_adv *ext_adv;
+	const struct bt_bap_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true
+	};
 
 	LOG_DBG("Enabling Bluetooth");
 	err = bt_enable(NULL);
 	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)", err);
+		return;
+	}
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		FAIL("Could not register PACS (err %d)\n", err);
 		return;
 	}
 
