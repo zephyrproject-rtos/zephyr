@@ -29,6 +29,12 @@ Currently, the following resource types are supported:
 * Static resources - content defined compile-time, cannot be modified at runtime
   (:c:enumerator:`HTTP_RESOURCE_TYPE_STATIC`).
 
+* Static file system resources - the path at which the filesystem is mounted,
+  and the URL at which the filesystem is made available are fixed at build time,
+  but the content within the filesystem can be changed dynamically. This means that
+  the files can be created, modified or deleted by some other code outside the HTTP
+  server (:c:enumerator:`HTTP_RESOURCE_TYPE_STATIC_FS`).
+
 * Dynamic resources - content provided at runtime by respective application
   callback (:c:enumerator:`HTTP_RESOURCE_TYPE_DYNAMIC`).
 
@@ -190,7 +196,8 @@ where ``src/index.html`` is the location of the webpage to be compressed.
 Static filesystem resources
 ===========================
 
-Static filesystem resource content is defined build-time and is immutable. The following
+Static filesystem resource content is defined build-time and is immutable. Note that only
+``GET`` operation is supported, user is not able to upload files to the filesystem. The following
 example shows how the path can be defined as a static resource in the application:
 
 .. code-block:: c
