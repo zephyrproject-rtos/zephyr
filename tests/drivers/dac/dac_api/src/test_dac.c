@@ -85,8 +85,8 @@
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
-#elif defined(CONFIG_BOARD_SAM_E70_XPLAINED) || \
-	defined(CONFIG_BOARD_SAM_V71_XULT)
+#elif defined(CONFIG_BOARD_SAM_E70_XPLAINED) || defined(CONFIG_BOARD_SAM_V71_XULT) ||              \
+	defined(CONFIG_BOARD_SAM4S_XPLAINED)
 
 #define DAC_DEVICE_NODE		DT_NODELABEL(dacc)
 #define DAC_RESOLUTION		12
