@@ -920,22 +920,27 @@ class ZephyrBinaryRunner(abc.ABC):
         # RuntimeError avoids a stack trace saved in run_common.
         raise RuntimeError(err)
 
-    def run_telnet_client(self, host: str, port: int) -> None:
+    def run_telnet_client(self, host: str, port: int, active_sock=None) -> None:
         '''
         Run a telnet client for user interaction.
         '''
-        # If a `nc` command is available, run it, as it will provide the best support for
-        # CONFIG_SHELL_VT100_COMMANDS etc.
-        if shutil.which('nc') is not None:
+        # If the caller passed in an active socket, use that
+        if active_sock is not None:
+            sock = active_sock
+        elif shutil.which('nc') is not None:
+            # If a `nc` command is available, run it, as it will provide the
+            # best support for CONFIG_SHELL_VT100_COMMANDS etc.
             client_cmd = ['nc', host, str(port)]
             # Note: netcat (nc) does not handle sigint, so cannot use run_client()
             self.check_call(client_cmd)
             return
+        else:
+            # Start a new socket connection
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((host, port))
 
         # Otherwise, use a pure python implementation. This will work well for logging,
         # but input is line based only.
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((host, port))
         sel = selectors.DefaultSelector()
         sel.register(sys.stdin, selectors.EVENT_READ)
         sel.register(sock, selectors.EVENT_READ)
