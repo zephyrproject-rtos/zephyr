@@ -367,8 +367,23 @@ static struct bt_pacs_cap cap = {
 	.codec_cap = &lc3_codec_cap,
 };
 
+
 int bap_unicast_sr_init(void)
 {
+	const struct bt_bap_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true
+	};
+	int err;
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		printk("Could not register PACS (err %d)\n", err);
+		return err;
+	}
+
 	bt_bap_unicast_server_register(&param);
 	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 
