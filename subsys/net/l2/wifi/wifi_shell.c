@@ -1355,7 +1355,7 @@ static int cmd_wifi_11k_neighbor_request(const struct shell *sh, size_t argc, ch
 
 	context.sh = sh;
 
-	if ((argc != 1 && argc != 3) || (argc == 3 && !strncasecmp("ssid", argv[1], 4))) {
+	if ((argc != 1 && argc != 3) || (argc == 3 && strncasecmp("ssid", argv[1], 4))) {
 		PR_WARNING("Invalid input arguments\n");
 		PR_WARNING("Usage: %s\n", argv[0]);
 		PR_WARNING("or	 %s ssid <ssid>\n", argv[0]);
