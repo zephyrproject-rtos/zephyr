@@ -204,13 +204,20 @@ config HWINFO_PSOC6
 config HWINFO_GECKO
 	bool "GECKO hwinfo"
 	default y
-	depends on SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
-	depends on !SOC_SERIES_EFR32MG21
-	depends on !SOC_SERIES_EFR32BG22
+	depends on SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
 	select HWINFO_HAS_DRIVER
 	select SOC_GECKO_RMU
 	help
 	  Enable Silabs GECKO hwinfo driver.
+
+config HWINFO_SILABS_S2
+	bool "Silabs Series 2 hwinfo"
+	default y
+	depends on SOC_FAMILY_SILABS_S2
+	select HWINFO_HAS_DRIVER
+	select SOC_GECKO_RMU
+	help
+	  Enable Silabs Series 2 hwinfo driver.
 
 config HWINFO_ANDES
 	bool "Andes system ID"
