@@ -90,37 +90,38 @@ static int handle_http1_static_resource(
 	int len;
 	int ret;
 
-	if (static_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET)) {
-		data = static_detail->static_data;
-		len = static_detail->static_data_len;
+	if (client->method != HTTP_GET) {
+		return send_http1_405(client);
+	}
 
-		if (static_detail->common.content_encoding != NULL &&
-		    static_detail->common.content_encoding[0] != '\0') {
-			snprintk(http_response, sizeof(http_response),
-				 RESPONSE_TEMPLATE "Content-Encoding: %s\r\n\r\n",
-				 "Content-Type: ",
-				 static_detail->common.content_type == NULL ?
-				 "text/html" : static_detail->common.content_type,
-				 len, static_detail->common.content_encoding);
-		} else {
-			snprintk(http_response, sizeof(http_response),
-				 RESPONSE_TEMPLATE "\r\n",
-				 "Content-Type: ",
-				 static_detail->common.content_type == NULL ?
-				 "text/html" : static_detail->common.content_type,
-				 len);
-		}
+	data = static_detail->static_data;
+	len = static_detail->static_data_len;
 
-		ret = http_server_sendall(client, http_response,
-					  strlen(http_response));
-		if (ret < 0) {
-			return ret;
-		}
+	if (static_detail->common.content_encoding != NULL &&
+	    static_detail->common.content_encoding[0] != '\0') {
+		snprintk(http_response, sizeof(http_response),
+			 RESPONSE_TEMPLATE "Content-Encoding: %s\r\n\r\n",
+			 "Content-Type: ",
+			 static_detail->common.content_type == NULL ?
+			 "text/html" : static_detail->common.content_type,
+			 len, static_detail->common.content_encoding);
+	} else {
+		snprintk(http_response, sizeof(http_response),
+			 RESPONSE_TEMPLATE "\r\n",
+			 "Content-Type: ",
+			 static_detail->common.content_type == NULL ?
+			 "text/html" : static_detail->common.content_type,
+			 len);
+	}
 
-		ret = http_server_sendall(client, data, len);
-		if (ret < 0) {
-			return ret;
-		}
+	ret = http_server_sendall(client, http_response, strlen(http_response));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = http_server_sendall(client, data, len);
+	if (ret < 0) {
+		return ret;
 	}
 
 	return 0;
@@ -441,7 +442,7 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 			   sizeof("Content-Length: 01234567890123456789\r\n") +
 			   sizeof(CONTENT_ENCODING_GZIP)];
 
-	if (!(static_fs_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
+	if (client->method != HTTP_GET) {
 		return send_http1_405(client);
 	}
 
@@ -521,7 +522,7 @@ static int handle_http1_dynamic_resource(
 	user_method = dynamic_detail->common.bitmask_of_supported_http_methods;
 
 	if (!(BIT(client->method) & user_method)) {
-		return -ENOPROTOOPT;
+		return send_http1_405(client);
 	}
 
 	if (dynamic_detail->holder != NULL && dynamic_detail->holder != client) {
