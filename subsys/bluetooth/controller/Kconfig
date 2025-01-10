@@ -155,6 +155,16 @@ config BT_CTLR_HCI
 	  This should almost always be enabled, except in a few special
 	  cases, like for unit testing.
 
+config BT_CTLR_HCI_NUM_CMD_PKT_MAX
+	# Hidden Controller implementation supported Num_HCI_Command_Packets value.
+	# This value will be used to calculate the total number of HCI command buffers to be
+	# allocated, BT_BUF_CMD_TX_COUNT, dependent on HCI Controller to Host data flow control
+	# being enabled.
+	int
+	depends on BT_CTLR_HCI
+	default 1 if BT_LL_SW_SPLIT
+	default 1
+
 if HAS_BT_CTLR
 
 comment "BLE Controller configuration"
@@ -227,7 +237,6 @@ config BT_CTLR_DUP_FILTER_ADV_SET_MAX
 
 config BT_CTLR_RX_BUFFERS
 	int "Number of Rx buffers"
-	depends on BT_LL_SW_SPLIT
 	default 6 if BT_HCI_RAW
 	default 1
 	range 1 18
