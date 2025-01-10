@@ -112,6 +112,12 @@ static int vl53l1x_init_interrupt(const struct device *dev)
 
 	drv_data->work.handler = vl53l1x_worker;
 
+	ret = gpio_pin_interrupt_configure_dt(&config->gpio1, GPIO_INT_EDGE_TO_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("[%s] Unable to config interrupt", dev->name);
+		return -EIO;
+	}
+
 	return 0;
 }
 #endif
@@ -312,16 +318,6 @@ static int vl53l1x_sample_fetch(const struct device *dev,
 		LOG_ERR("VL53L1_StopMeasurement return error (%d)", ret);
 		return -EBUSY;
 	}
-
-#ifdef CONFIG_VL53L1X_INTERRUPT_MODE
-	const struct vl53l1x_config *config = dev->config;
-
-	ret = gpio_pin_interrupt_configure_dt(&config->gpio1, GPIO_INT_EDGE_TO_INACTIVE);
-	if (ret < 0) {
-		LOG_ERR("[%s] Unable to config interrupt", dev->name);
-		return -EIO;
-	}
-#endif
 
 	ret = VL53L1_StartMeasurement(&drv_data->vl53l1x);
 	if (ret != VL53L1_ERROR_NONE) {
