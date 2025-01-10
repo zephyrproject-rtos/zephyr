@@ -453,4 +453,10 @@ int esp_appcpu_init(void)
 
 	return 0;
 }
+
+#if !defined(CONFIG_MCUBOOT)
+extern int esp_appcpu_init(void);
+SYS_INIT(esp_appcpu_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
+
 #endif /* CONFIG_SOC_ENABLE_APPCPU */
