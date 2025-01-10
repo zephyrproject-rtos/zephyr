@@ -126,6 +126,10 @@ zephyr_udc0: &usbhs {
 	phys = <&transceiver1>;
 };
 
+&wdt {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
