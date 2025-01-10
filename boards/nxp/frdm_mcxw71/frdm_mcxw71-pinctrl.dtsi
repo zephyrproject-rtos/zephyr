@@ -32,6 +32,16 @@
 		};
 	};
 
+	pinmux_lpi2c0: pinmux_lpi2c0 {
+		group0 {
+			pinmux = <LPI2C0_SCL_PTA19>,
+				<LPI2C0_SDA_PTA18>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			drive-open-drain;
+		};
+	};
+
 	pinmux_lpi2c1: pinmux_lpi2c1 {
 		group0 {
 			pinmux = <LPI2C1_SCL_PTB5>,
