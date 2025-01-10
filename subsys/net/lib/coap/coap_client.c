@@ -995,7 +995,15 @@ fail:
 		report_callback_error(internal_req, ret);
 	}
 	if (!internal_req->is_observe) {
-		release_internal_request(internal_req);
+		if (response_type == COAP_TYPE_ACK) {
+			/* This is piggybacked ACK,
+			 * no need to wait for lifetime to expire, all data is already transferred
+			 * and acknowledged
+			 */
+			reset_internal_request(internal_req);
+		} else {
+			release_internal_request(internal_req);
+		}
 	}
 	return ret;
 }
@@ -1119,6 +1127,16 @@ struct coap_client_option coap_client_option_initial_block2(void)
 	};
 
 	return block2;
+}
+
+bool coap_client_has_ongoing_exchange(struct coap_client *client)
+{
+	if (client == NULL) {
+		LOG_ERR("Invalid (NULL) Client");
+		return false;
+	}
+
+	return has_ongoing_exchange(client);
 }
 
 K_THREAD_DEFINE(coap_client_recv_thread, CONFIG_COAP_CLIENT_STACK_SIZE,

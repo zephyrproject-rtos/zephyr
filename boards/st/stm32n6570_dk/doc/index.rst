@@ -64,37 +64,7 @@ For more details, please refer to:
 Supported Features
 ==================
 
-The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| CAN/CANFD | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access Controller     |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32n6570_dk/stm32n6570_dk_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -153,6 +123,13 @@ The board is configured to be programmed using west `STM32CubeProgrammer`_ runne
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is needed.
 Version 2.18.0 or later of `STM32CubeProgrammer`_ is required.
 
+.. note::
+   Firmware is run in secure mode of execution, which requires a signature.
+   After build, the build system  will automatically generate a signed version of the
+   binary using `STM32CubeProgrammer`_ utility ``STM32_SigningTool_CLI``.
+   This utility is installed along with `STM32CubeProgrammer`_, but make sure it is
+   available in your ``PATH`` variable.
+
 To program the board, there are two options:
 
 - Program the firmware in external flash. At boot, it will then be loaded on RAM
@@ -190,12 +167,6 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
             * BOOT1: 0
 
 	    Power off and on the board again.
-
-         Run a serial host program to connect to your board:
-
-         .. code-block:: console
-
-            $ minicom -D /dev/ttyACM0
 
       .. group-tab:: Serial Boot Loader (USB)
 

@@ -1,4 +1,4 @@
-description: INFINEON XMC4XXX GPIO PORT node
+description: INFINEON XMC4XXX GPIO Port
 
 compatible: "infineon,xmc4xxx-gpio"
 

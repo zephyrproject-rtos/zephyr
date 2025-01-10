@@ -1,0 +1,9 @@
+tests:
+  boards.silabs.dma.block_append:
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    platform_allow:
+      - slwrb4180a
+    filter: dt_alias_exists("dma0")

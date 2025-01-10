@@ -4,6 +4,7 @@
 import logging
 import os
 import pickle
+import re
 import subprocess
 import sys
 from collections import namedtuple
@@ -20,6 +21,52 @@ ZEPHYR_BINDINGS = ZEPHYR_BASE / "dts/bindings"
 EDT_PICKLE_PATH = "zephyr/edt.pickle"
 
 logger = logging.getLogger(__name__)
+
+
+class DeviceTreeUtils:
+    _compat_description_cache = {}
+
+    @classmethod
+    def get_first_sentence(cls, text):
+        """Extract the first sentence from a text block (typically a node description).
+
+        Args:
+            text: The text to extract the first sentence from.
+
+        Returns:
+            The first sentence found in the text, or the entire text if no sentence
+            boundary is found.
+        """
+        if not text:
+            return ""
+
+        text = text.replace('\n', ' ')
+        # Split by double spaces to get paragraphs
+        paragraphs = text.split('  ')
+        first_paragraph = paragraphs[0].strip()
+
+        # Look for a period followed by a space in the first paragraph
+        period_match = re.search(r'(.*?)\.(?:\s|$)', first_paragraph)
+        if period_match:
+            return period_match.group(1).strip()
+
+        # If no period in the first paragraph, return the entire first paragraph
+        return first_paragraph
+
+    @classmethod
+    def get_cached_description(cls, node):
+        """Get the cached description for a devicetree node.
+
+        Args:
+            node: A devicetree node object with matching_compat and description attributes.
+
+        Returns:
+            The cached description for the node's compatible, creating it if needed.
+        """
+        return cls._compat_description_cache.setdefault(
+            node.matching_compat,
+            cls.get_first_sentence(node.description)
+        )
 
 
 def guess_file_from_patterns(directory, patterns, name, extensions):
@@ -197,34 +244,64 @@ def get_catalog(generate_hw_features=False):
         doc_page = guess_doc_page(board)
 
         supported_features = {}
-        targets = set()
 
         # Use pre-gathered build info and DTS files
         if board.name in board_devicetrees:
             for board_target, edt in board_devicetrees[board.name].items():
-                targets.add(board_target)
+                features = {}
+                for node in edt.nodes:
+                    if node.binding_path is None:
+                        continue
 
-                okay_nodes = [
-                    node
-                    for node in edt.nodes
-                    if node.status == "okay" and node.matching_compat is not None
-                ]
-
-                target_features = {}
-                for node in okay_nodes:
                     binding_path = Path(node.binding_path)
                     binding_type = (
                         binding_path.relative_to(ZEPHYR_BINDINGS).parts[0]
                         if binding_path.is_relative_to(ZEPHYR_BINDINGS)
                         else "misc"
                     )
-                    target_features.setdefault(binding_type, set()).add(node.matching_compat)
 
+                    if node.matching_compat is None:
+                        continue
 
-                # for now we do the union of all supported features for all of board's targets but
-                # in the future it's likely the catalog will be organized so that the list of
-                # supported features is also available per target.
-                supported_features.update(target_features)
+                    # skip "zephyr,xxx" compatibles
+                    if node.matching_compat.startswith("zephyr,"):
+                        continue
+
+                    description = DeviceTreeUtils.get_cached_description(node)
+                    filename = node.filename
+                    lineno = node.lineno
+                    locations = set()
+                    if Path(filename).is_relative_to(ZEPHYR_BASE):
+                        filename = Path(filename).relative_to(ZEPHYR_BASE)
+                        if filename.parts[0] == "boards":
+                            locations.add("board")
+                        else:
+                            locations.add("soc")
+
+                    existing_feature = features.get(binding_type, {}).get(
+                        node.matching_compat
+                    )
+
+                    node_info = {"filename": str(filename), "lineno": lineno}
+                    node_list_key = "okay_nodes" if node.status == "okay" else "disabled_nodes"
+
+                    if existing_feature:
+                        locations.update(existing_feature["locations"])
+                        existing_feature.setdefault(node_list_key, []).append(node_info)
+                        continue
+
+                    feature_data = {
+                        "description": description,
+                        "locations": locations,
+                        "okay_nodes": [],
+                        "disabled_nodes": [],
+                    }
+                    feature_data[node_list_key].append(node_info)
+
+                    features.setdefault(binding_type, {})[node.matching_compat] = feature_data
+
+                # Store features for this specific target
+                supported_features[board_target] = features
 
         # Grab all the twister files for this board and use them to figure out all the archs it
         # supports.
@@ -246,7 +323,6 @@ def get_catalog(generate_hw_features=False):
             "archs": list(archs),
             "socs": list(socs),
             "supported_features": supported_features,
-            "targets": list(targets),
             "image": guess_image(board),
         }
 

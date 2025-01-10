@@ -21,30 +21,7 @@ For more information about the Apollo3 Blue Plus SoC and Apollo3 Blue Plus EVB b
 Supported Features
 ==================
 
-The Apollo3 Blue Plus EVB board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| MPU       | on-chip    | memory protection unit              |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| STIMER    | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | bluetooth                           |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-``boards/arm/apollo3p_evb/apollo3p_evb_defconfig``.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 =========================

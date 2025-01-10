@@ -23,19 +23,7 @@ Detailed information about the board can be found in a `QuickFeather repository`
 Supported Features
 ==================
 
-The QuickFeather configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/quicklogic/quick_feather/quick_feather_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

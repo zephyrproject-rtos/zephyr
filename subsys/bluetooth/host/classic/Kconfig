@@ -18,6 +18,14 @@ config BT_CLASSIC
 	  This option enables Bluetooth BR/EDR support
 
 if BT_CLASSIC
+config BT_LIMITED_DISCOVERABLE_DURATION
+	int "Maximum duration that a device is in limited discoverable mode in seconds"
+	default 60
+	range 31 60
+	help
+	  This option sets the maximum duration that a device is in limited discoverable mode in
+	  seconds.
+
 config BT_BR_MIN_ENC_KEY_SIZE
 	int
 	prompt "Minimum encryption key size accepted in octets" if !BT_SMP_SC_ONLY

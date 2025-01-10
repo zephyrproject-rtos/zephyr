@@ -420,8 +420,10 @@ struct bt_csip_set_coordinator_cb {
 	/** Callback for the ordered access procedure */
 	bt_csip_set_coordinator_ordered_access_cb_t ordered_access;
 
-	/** @internal Internally used field for list handling */
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**

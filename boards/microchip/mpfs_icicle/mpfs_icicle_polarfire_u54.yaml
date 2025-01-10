@@ -9,5 +9,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
-    - flash
 vendor: microchip

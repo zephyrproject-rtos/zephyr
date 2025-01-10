@@ -136,71 +136,7 @@ More information about STM32H563ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_h563zi board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| BKP SRAM  | on-chip    | Backup SRAM                         |
-+-----------+------------+-------------------------------------+
-| CAN/CANFD | on-chip    | CAN                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | PWM                                 |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | Real Time Clock                     |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi bus                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c bus                             |
-+-----------+------------+-------------------------------------+
-| I3C       | on-chip    | i3c bus                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB full-speed host/device bus      |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig and dts files:
-
-- Secure target:
-
-  - :zephyr_file:`boards/st/nucleo_h563zi/nucleo_h563zi_defconfig`
-  - :zephyr_file:`boards/st/nucleo_h563zi/nucleo_h563zi.dts`
-
-Zephyr board options
-====================
-
-The STM32H563 is an SoC with Cortex-M33 architecture. Zephyr provides support
-for building for Secure firmware.
-
-The BOARD options are summarized below:
-
-+----------------------+-----------------------------------------------+
-|   BOARD              | Description                                   |
-+======================+===============================================+
-| nucleo_h563zi        | For building Secure firmware                  |
-+----------------------+-----------------------------------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -261,7 +197,7 @@ OpenOCD Support
 
 For now, openocd support  for stm32h5 is not available on upstream OpenOCD.
 You can check `OpenOCD official Github mirror`_.
-In order to use it though, you should clone from the cutomized
+In order to use it though, you should clone from the customized
 `STMicroelectronics OpenOCD Github`_ and compile it following usual README guidelines.
 Once it is done, you can set the OPENOCD and OPENOCD_DEFAULT_PATH variables in
 :zephyr_file:`boards/st/nucleo_h563zi/board.cmake` to point the build

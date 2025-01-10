@@ -1329,9 +1329,12 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 	}
 
 #define LSM6DSV16X_DEFINE_SPI(inst)					\
-	IF_ENABLED(CONFIG_LSM6DSV16X_STREAM, (LSM6DSV16X_SPI_RTIO_DEFINE(inst))); \
+	IF_ENABLED(UTIL_AND(CONFIG_LSM6DSV16X_STREAM,			\
+			    CONFIG_SPI_RTIO),				\
+		   (LSM6DSV16X_SPI_RTIO_DEFINE(inst)));			\
 	static struct lsm6dsv16x_data lsm6dsv16x_data_##inst =	{	\
-		IF_ENABLED(CONFIG_LSM6DSV16X_STREAM,			\
+		IF_ENABLED(UTIL_AND(CONFIG_LSM6DSV16X_STREAM,		\
+				    CONFIG_SPI_RTIO),			\
 			(.rtio_ctx = &lsm6dsv16x_rtio_ctx_##inst,	\
 			 .iodev = &lsm6dsv16x_iodev_##inst,		\
 			 .bus_type = BUS_SPI,))				\
@@ -1358,9 +1361,12 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 
 
 #define LSM6DSV16X_DEFINE_I2C(inst)					\
-	IF_ENABLED(CONFIG_LSM6DSV16X_STREAM, (LSM6DSV16X_I2C_RTIO_DEFINE(inst))); \
+	IF_ENABLED(UTIL_AND(CONFIG_LSM6DSV16X_STREAM,			\
+			    CONFIG_I2C_RTIO),				\
+		   (LSM6DSV16X_I2C_RTIO_DEFINE(inst)));			\
 	static struct lsm6dsv16x_data lsm6dsv16x_data_##inst =	{	\
-		IF_ENABLED(CONFIG_LSM6DSV16X_STREAM,			\
+		IF_ENABLED(UTIL_AND(CONFIG_LSM6DSV16X_STREAM,		\
+				    CONFIG_I2C_RTIO),			\
 			(.rtio_ctx = &lsm6dsv16x_rtio_ctx_##inst,	\
 			 .iodev = &lsm6dsv16x_iodev_##inst,		\
 			 .bus_type = BUS_I2C,))				\
@@ -1391,9 +1397,12 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 	}
 
 #define LSM6DSV16X_DEFINE_I3C(inst)					\
-	IF_ENABLED(CONFIG_LSM6DSV16X_STREAM, (LSM6DSV16X_I3C_RTIO_DEFINE(inst))); \
+	IF_ENABLED(UTIL_AND(CONFIG_LSM6DSV16X_STREAM,			\
+			    CONFIG_I3C_RTIO),				\
+		   (LSM6DSV16X_I3C_RTIO_DEFINE(inst)));			\
 	static struct lsm6dsv16x_data lsm6dsv16x_data_##inst = {	\
-		IF_ENABLED(CONFIG_LSM6DSV16X_STREAM,			\
+		IF_ENABLED(UNTIL_AND(CONFIG_LSM6DSV16X_STREAM,		\
+				     CONFIG_I3C_RTIO),			\
 			(.rtio_ctx = &lsm6dsv16x_rtio_ctx_##inst,	\
 			 .iodev = &lsm6dsv16x_i3c_iodev_##inst,		\
 			 .bus_type = BUS_I3C,))				\

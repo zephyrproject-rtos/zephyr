@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -490,7 +490,7 @@ static int udc_renesas_ra_disable(const struct device *dev)
 		return -EIO;
 	}
 
-	LOG_DBG("Enable device %p", dev);
+	LOG_DBG("Disable device %p", dev);
 
 	return 0;
 }
@@ -687,16 +687,16 @@ static int udc_renesas_ra_driver_preinit(const struct device *dev)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_usbhs)
 	if (priv->udc_cfg.hs_irq != (IRQn_Type)BSP_IRQ_DISABLED) {
-		R_ICU->IELSR[priv->udc_cfg.hs_irq] = ELC_EVENT_USBHS_USB_INT_RESUME;
+		R_ICU->IELSR[priv->udc_cfg.hs_irq] = BSP_PRV_IELS_ENUM(EVENT_USBHS_USB_INT_RESUME);
 	}
 #endif
 
 	if (priv->udc_cfg.irq != (IRQn_Type)BSP_IRQ_DISABLED) {
-		R_ICU->IELSR[priv->udc_cfg.irq] = ELC_EVENT_USBFS_INT;
+		R_ICU->IELSR[priv->udc_cfg.irq] = BSP_PRV_IELS_ENUM(EVENT_USBFS_INT);
 	}
 
 	if (priv->udc_cfg.irq_r != (IRQn_Type)BSP_IRQ_DISABLED) {
-		R_ICU->IELSR[priv->udc_cfg.irq_r] = ELC_EVENT_USBFS_RESUME;
+		R_ICU->IELSR[priv->udc_cfg.irq_r] = BSP_PRV_IELS_ENUM(EVENT_USBFS_RESUME);
 	}
 
 	config->make_thread(dev);

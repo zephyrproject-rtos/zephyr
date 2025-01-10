@@ -268,6 +268,9 @@ class RunnerCaps:
       connected to a single computer, in order to select which one will be used
       with the command provided.
 
+    - mult_dev_ids: whether the runner supports multiple device identifiers
+      for a single operation, allowing for bulk flashing of devices.
+
     - flash_addr: whether the runner supports flashing to an
       arbitrary address. Default is False. If true, the runner
       must honor the --dt-flash option.
@@ -305,6 +308,7 @@ class RunnerCaps:
 
     commands: set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
     dev_id: bool = False
+    mult_dev_ids: bool = False
     flash_addr: bool = False
     erase: bool = False
     reset: bool = False
@@ -316,6 +320,8 @@ class RunnerCaps:
                        # to allow other commands to use the rtt address
 
     def __post_init__(self):
+        if self.mult_dev_ids and not self.dev_id:
+            raise RuntimeError('dev_id must be set along mult_dev_ids')
         if not self.commands.issubset(_RUNNERCAPS_COMMANDS):
             raise ValueError(f'{self.commands=} contains invalid command')
 
@@ -543,7 +549,9 @@ class ZephyrBinaryRunner(abc.ABC):
         caps = cls.capabilities()
 
         if caps.dev_id:
+            action = 'append' if caps.mult_dev_ids else 'store'
             parser.add_argument('-i', '--dev-id',
+                                action=action,
                                 dest='dev_id',
                                 help=cls.dev_id_help())
         else:
@@ -749,10 +757,13 @@ class ZephyrBinaryRunner(abc.ABC):
     @classmethod
     def dev_id_help(cls) -> str:
         ''' Get the ArgParse help text for the --dev-id option.'''
-        return '''Device identifier. Use it to select
+        help = '''Device identifier. Use it to select
                   which debugger, device, node or instance to
                   target when multiple ones are available or
                   connected.'''
+        addendum = '''\nThis option can be present multiple times.''' if \
+                   cls.capabilities().mult_dev_ids else ''
+        return help + addendum
 
     @classmethod
     def extload_help(cls) -> str:

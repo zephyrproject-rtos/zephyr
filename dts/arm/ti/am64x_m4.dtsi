@@ -9,6 +9,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 
@@ -39,6 +40,15 @@
 		#clock-cells = <0>;
 	};
 
+	mbox6: mailbox@29060000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29060000 0x200>;
+		interrupts = <56 4>;
+		interrupt-parent = <&nvic>;
+		usr-id = <3>;
+		#mbox-cells = <1>;
+	};
+
 	pinctrl: pinctrl@4084000 {
 		compatible = "ti,k3-pinctrl";
 		reg = <0x04084000 0x88>;
@@ -64,6 +74,26 @@
 		clock-frequency = <DT_FREQ_M(96)>;
 		current-speed = <115200>;
 		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	i2c0: i2c@4900000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x04900000 0x100>;
+		interrupts = <17 4>;
+		interrupt-parent = <&nvic>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c1: i2c@4910000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x04910000 0x100>;
+		interrupts = <18 4>;
+		interrupt-parent = <&nvic>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		status = "disabled";
 	};
 

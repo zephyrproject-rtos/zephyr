@@ -65,13 +65,14 @@ static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
 static struct net_traffic_class rx_classes[NET_TC_RX_COUNT];
 #endif
 
-enum net_verdict net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt)
+enum net_verdict net_tc_try_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt,
+					       k_timeout_t timeout)
 {
 #if NET_TC_TX_COUNT > 0
 	net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
 #if NET_TC_TX_EFFECTIVE_COUNT > 1
-	if (k_sem_take(&tx_classes[tc].fifo_slot, K_FOREVER) != 0) {
+	if (k_sem_take(&tx_classes[tc].fifo_slot, timeout) != 0) {
 		return NET_DROP;
 	}
 #endif
@@ -95,7 +96,7 @@ enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt)
 
 #if NET_TC_RX_EFFECTIVE_COUNT > 1
 	while (k_sem_take(&rx_classes[tc].fifo_slot, K_NO_WAIT) != 0) {
-		if (retry_cnt == 0) {
+		if (k_is_in_isr() || retry_cnt == 0) {
 			return NET_DROP;
 		}
 

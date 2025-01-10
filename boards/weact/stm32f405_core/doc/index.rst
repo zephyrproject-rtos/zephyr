@@ -45,35 +45,7 @@ hardware components:
 Supported Features
 ==================
 
-The Zephyr weact_stm32f405_core board configuration supports the following
-hardware features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| NVIC       | on-chip    | nested vector interrupt controller  |
-+------------+------------+-------------------------------------+
-| SYSTICK    | on-chip    | system clock                        |
-+------------+------------+-------------------------------------+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| FLASH      | on-chip    | flash                               |
-+------------+------------+-------------------------------------+
-| SPI        | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| I2C        | on-chip    | i2c                                 |
-+------------+------------+-------------------------------------+
-| ADC        | on-chip    | ADC Controller                      |
-+------------+------------+-------------------------------------+
-| USB OTG FS | on-chip    | USB device                          |
-+------------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/weact/stm32f405_core/weact_stm32f405_core_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

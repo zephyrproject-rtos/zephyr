@@ -58,14 +58,19 @@ static int si7060_sample_fetch(const struct device *dev,
 	uint8_t dspsigl;
 
 	retval = si7060_reg_read(dev, SI7060_REG_TEMP_HIGH, &dspsigm);
-	retval += si7060_reg_read(dev, SI7060_REG_TEMP_LOW, &dspsigl);
-
-	if (retval == 0) {
-		drv_data->temperature = (256 * (dspsigm & SIGN_BIT_MASK))
-		+ dspsigl;
-	} else {
-		LOG_ERR("Read register err");
+	if (retval != 0) {
+		LOG_ERR("Error reading temperature high register");
+		return retval;
 	}
+
+	retval = si7060_reg_read(dev, SI7060_REG_TEMP_LOW, &dspsigl);
+	if (retval != 0) {
+		LOG_ERR("Error reading temperature low register");
+		return retval;
+	}
+
+	drv_data->temperature = (256 * (dspsigm & SIGN_BIT_MASK))
+	+ dspsigl;
 
 	LOG_DBG("Sample_fetch retval: %d", retval);
 

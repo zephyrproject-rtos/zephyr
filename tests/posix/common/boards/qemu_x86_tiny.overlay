@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	dram0: memory@0 {
-		reg = <0x100000 0x80000>;
-	};
+&dram0 {
+	reg = <0x100000 0x80000>;
 };

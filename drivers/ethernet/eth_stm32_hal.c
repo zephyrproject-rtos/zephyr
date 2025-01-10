@@ -88,6 +88,12 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
 
+#define MAC_NODE DT_NODELABEL(mac)
+
+#define STM32_ETH_PHY_MODE(node_id) \
+	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii) ? \
+		ETH_MEDIA_INTERFACE_MII : ETH_MEDIA_INTERFACE_RMII)
+
 #define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
@@ -1252,6 +1258,14 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	return ret;
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
+static const struct device *eth_stm32_hal_get_phy(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return eth_stm32_phy_dev;
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio) */
+
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 static const struct device *eth_stm32_get_ptp_clock(const struct device *dev)
 {
@@ -1277,6 +1291,9 @@ static const struct ethernet_api eth_api = {
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
+	.get_phy = eth_stm32_hal_get_phy,
+#endif
 #if defined(CONFIG_NET_DSA)
 	.send = dsa_tx,
 #else
@@ -1311,6 +1328,10 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
+BUILD_ASSERT(DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, mii) ||
+	     DT_ENUM_HAS_VALUE(MAC_NODE, phy_connection_type, rmii),
+	     "Unsupported PHY connection type selected");
+
 static struct eth_stm32_hal_dev_data eth0_data = {
 	.heth = {
 		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
@@ -1330,8 +1351,7 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 			.ChecksumMode = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
 					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
-			.MediaInterface = IS_ENABLED(CONFIG_ETH_STM32_HAL_MII) ?
-					  ETH_MEDIA_INTERFACE_MII : ETH_MEDIA_INTERFACE_RMII,
+			.MediaInterface = STM32_ETH_PHY_MODE(MAC_NODE),
 		},
 	},
 };

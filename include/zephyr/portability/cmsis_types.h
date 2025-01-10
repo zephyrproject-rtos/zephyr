@@ -28,8 +28,6 @@ struct cmsis_rtos_thread_cb {
 	uint32_t signal_results;
 	char name[CMSIS_OBJ_NAME_MAX_LEN];
 	uint32_t attr_bits;
-	struct k_sem join_guard;
-	char has_joined;
 };
 
 /**

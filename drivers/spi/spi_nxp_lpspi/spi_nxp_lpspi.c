@@ -13,8 +13,6 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 struct lpspi_driver_data {
 	size_t fill_len;
-	size_t tx_total_len;
-	size_t rx_total_len;
 	uint8_t word_size_bytes;
 };
 
@@ -25,6 +23,17 @@ static inline void lpspi_wait_tx_fifo_empty(const struct device *dev)
 	while (LPSPI_GetTxFifoCount(base) != 0) {
 	}
 }
+
+static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
+{
+	return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
+}
+
+static inline uint8_t tx_fifo_cur_len(LPSPI_Type *base)
+{
+	return (base->FSR & LPSPI_FSR_TXCOUNT_MASK) >> LPSPI_FSR_TXCOUNT_SHIFT;
+}
+
 
 /* Reads a word from the RX fifo and handles writing it into the RX spi buf */
 static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t offset)
@@ -53,7 +62,7 @@ static inline size_t lpspi_rx_buf_write_words(const struct device *dev, uint8_t 
 	struct spi_mcux_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
-	size_t buf_len = ctx->rx_len / lpspi_data->word_size_bytes;
+	size_t buf_len = DIV_ROUND_UP(ctx->rx_len, lpspi_data->word_size_bytes);
 	uint8_t words_read = 0;
 	size_t offset = 0;
 
@@ -66,21 +75,16 @@ static inline size_t lpspi_rx_buf_write_words(const struct device *dev, uint8_t 
 	return words_read;
 }
 
-static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
-{
-	return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
-}
-
 static inline void lpspi_handle_rx_irq(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_mcux_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
+	uint8_t rx_fsr = rx_fifo_cur_len(base);
 	uint8_t total_words_written = 0;
 	uint8_t total_words_read = 0;
 	uint8_t words_read;
-	uint8_t rx_fsr;
 
 	LPSPI_ClearStatusFlags(base, kLPSPI_RxDataReadyFlag);
 
@@ -95,7 +99,7 @@ static inline void lpspi_handle_rx_irq(const struct device *dev)
 
 	LOG_DBG("RX done %d words to spi buf", total_words_written);
 
-	if (!spi_context_rx_on(ctx)) {
+	if (spi_context_rx_len_left(ctx) == 0) {
 		LPSPI_DisableInterrupts(base, (uint32_t)kLPSPI_RxInterruptEnable);
 		LPSPI_FlushFifo(base, false, true);
 	}
@@ -132,7 +136,7 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev)
 	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", lpspi_data->fill_len, offset);
 }
 
-static inline void lpspi_fill_tx_fifo_nop(const struct device *dev)
+static void lpspi_fill_tx_fifo_nop(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_mcux_data *data = dev->data;
@@ -154,7 +158,7 @@ static void lpspi_next_tx_fill(const struct device *dev)
 	size_t max_chunk;
 
 	/* Convert bytes to words for this xfer */
-	max_chunk = ctx->tx_len / lpspi_data->word_size_bytes;
+	max_chunk = DIV_ROUND_UP(ctx->tx_len, lpspi_data->word_size_bytes);
 	max_chunk = MIN(max_chunk, config->tx_fifo_size);
 	lpspi_data->fill_len = max_chunk;
 
@@ -176,47 +180,12 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 
 	LPSPI_ClearStatusFlags(base, kLPSPI_TxDataRequestFlag);
 
-	/* Having no buffer length left indicates transfer is done, if there
-	 * was RX to do left, the TX buf would be null but
-	 * ctx still tracks length of dummy data
-	 */
 	if (!spi_context_tx_on(ctx)) {
-		/* Disable chip select and end transfer clocks last word */
-		base->TCR = 0;
-		lpspi_wait_tx_fifo_empty(dev);
-		spi_context_cs_control(ctx, false);
 		LPSPI_DisableInterrupts(base, (uint32_t)kLPSPI_TxInterruptEnable);
 		return;
 	}
 
 	lpspi_next_tx_fill(data->dev);
-}
-
-static inline bool lpspi_is_rx_done(const struct device *dev)
-{
-	struct spi_mcux_data *data = dev->data;
-	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
-	struct spi_context *ctx = &data->ctx;
-	size_t tx_total = lpspi_data->tx_total_len;
-	size_t rx_total = lpspi_data->rx_total_len;
-
-	if (tx_total >= rx_total) {
-		return (spi_context_total_rx_len(ctx) == 0);
-	} else {
-		return (tx_total <= (rx_total - spi_context_rx_len_left(ctx)));
-	}
-}
-
-static inline void lpspi_clear_remaining_rx(struct spi_context *ctx)
-{
-	size_t remaining_len;
-
-	while ((remaining_len = spi_context_rx_len_left(ctx)) > 0) {
-		for (int i = 0; i < ctx->rx_len; i++) {
-			ctx->rx_buf[i] = 0;
-		}
-		spi_context_update_rx(ctx, 1, ctx->rx_len);
-	}
 }
 
 static void lpspi_isr(const struct device *dev)
@@ -225,6 +194,7 @@ static void lpspi_isr(const struct device *dev)
 	const struct spi_mcux_config *config = dev->config;
 	uint32_t status_flags = LPSPI_GetStatusFlags(base);
 	struct spi_mcux_data *data = dev->data;
+	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 
 	if (status_flags & kLPSPI_RxDataReadyFlag) {
@@ -235,10 +205,29 @@ static void lpspi_isr(const struct device *dev)
 		lpspi_handle_tx_irq(dev);
 	}
 
-	if (!spi_context_tx_on(ctx) && lpspi_is_rx_done(dev)) {
+	if (spi_context_tx_on(ctx)) {
+		return;
+	}
+
+	if (spi_context_rx_len_left(ctx) == 1) {
+		base->TCR &= ~LPSPI_TCR_CONT_MASK;
+	} else if (spi_context_rx_on(ctx)) {
+		size_t rx_fifo_len = rx_fifo_cur_len(base);
+		size_t expected_rx_left = rx_fifo_len < ctx->rx_len ? ctx->rx_len - rx_fifo_len : 0;
+		size_t max_fill = MIN(expected_rx_left, config->rx_fifo_size);
+		size_t tx_current_fifo_len = tx_fifo_cur_len(base);
+
+		lpspi_data->fill_len = tx_current_fifo_len < ctx->rx_len ?
+					max_fill - tx_current_fifo_len : 0;
+
+		lpspi_fill_tx_fifo_nop(dev);
+	} else {
 		spi_context_complete(ctx, dev, 0);
 		NVIC_ClearPendingIRQ(config->irqn);
-		lpspi_clear_remaining_rx(ctx);
+		base->TCR &= ~LPSPI_TCR_CONT_MASK;
+		lpspi_wait_tx_fifo_empty(dev);
+		spi_context_cs_control(ctx, false);
+		spi_context_release(&data->ctx, 0);
 	}
 }
 
@@ -257,17 +246,14 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	if (lpspi_data->word_size_bytes > 4) {
 		LOG_ERR("Maximum 4 byte word size");
 		ret = -EINVAL;
-		goto out;
+		return ret;
 	}
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, lpspi_data->word_size_bytes);
 
-	lpspi_data->tx_total_len = spi_context_total_tx_len(&data->ctx);
-	lpspi_data->rx_total_len = spi_context_total_rx_len(&data->ctx);
-
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
-		goto out;
+		return ret;
 	}
 
 	LPSPI_FlushFifo(base, true, true);
@@ -281,7 +267,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	LPSPI_Enable(base, true);
 
 	/* keep the chip select asserted until the end of the zephyr xfer */
-	base->TCR |= LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
+	base->TCR |= LPSPI_TCR_CONT_MASK;
 	/* tcr is written to tx fifo */
 	lpspi_wait_tx_fifo_empty(dev);
 
@@ -291,11 +277,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	LPSPI_EnableInterrupts(base, (uint32_t)kLPSPI_TxInterruptEnable |
 				     (uint32_t)kLPSPI_RxInterruptEnable);
 
-	ret = spi_context_wait_for_completion(&data->ctx);
-out:
-	spi_context_release(&data->ctx, ret);
-
-	return ret;
+	return spi_context_wait_for_completion(&data->ctx);
 }
 
 static int spi_mcux_transceive_sync(const struct device *dev, const struct spi_config *spi_cfg,

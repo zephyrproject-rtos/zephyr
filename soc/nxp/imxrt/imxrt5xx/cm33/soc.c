@@ -177,7 +177,7 @@ static void usb_device_clock_init(void)
 	while (SYSCTL0->USB0CLKSTAT & SYSCTL0_USB0CLKSTAT_HOST_NEED_CLKST_MASK) {
 		__ASM("nop");
 	}
-	/* According to reference mannual, device mode setting has to be set by access
+	/* According to reference manual, device mode setting has to be set by access
 	 * usb host register
 	 */
 	USBHSH->PORTMODE |= USBHSH_PORTMODE_DEV_ENABLE_MASK;

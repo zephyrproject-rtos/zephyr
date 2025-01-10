@@ -79,6 +79,13 @@
 			clocks = <&sysclk>;
 			status = "disabled";
 		};
+
+		aes: aes@400c0000 {
+			compatible = "ti,cc23x0-aes";
+			reg = <0x400c0000 0x120>;
+			interrupts = <9 0>;
+			status = "disabled";
+		};
 	};
 };
 

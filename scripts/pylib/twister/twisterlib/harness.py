@@ -197,7 +197,7 @@ class Robot(Harness):
         ''' Test cases that make use of this harness care about results given
             by Robot Framework which is called in run_robot_test(), so works of this
             handle is trying to give a PASS or FAIL to avoid timeout, nothing
-            is writen into handler.log
+            is written into handler.log
         '''
         self.instance.status = TwisterStatus.PASS
         tc = self.instance.get_case_or_create(self.id)

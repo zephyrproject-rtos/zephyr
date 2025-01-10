@@ -399,7 +399,7 @@ void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_cu
 					      uint8_t phy_next, uint8_t flags_next)
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk |
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;

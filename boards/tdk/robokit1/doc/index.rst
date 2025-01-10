@@ -32,75 +32,7 @@ Hardware
 Supported Features
 ==================
 
-The TDK RoboKit1 board supports the following hardware
-features:
-
-.. list-table::
-   : header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO_SAM`
-     - :dtcompatible:`atmel,sam-gpio`
-   * - USART
-     - :kconfig:option:`CONFIG_USART_SAM`
-     - :dtcompatible:`atmel,sam-usart`
-   * - UART
-     - :kconfig:option:`CONFIG_UART_SAM`
-     - :dtcompatible:`atmel,sam-uart`
-   * - SPI
-     - :kconfig:option:`CONFIG_SPI_SAM`
-     - :dtcompatible:`atmel,sam-spi`
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C_SAM_TWIHS`
-     - :dtcompatible:`atmel,sam-i2c-twihs`
-   * - I2S
-     - :kconfig:option:`CONFIG_I2S_SAM_SSC`
-     - :dtcompatible:`atmel,sam-ssc`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC_SAM_AFEC`
-     - :dtcompatible:`atmel,sam-afec`
-   * - DAC
-     - :kconfig:option:`CONFIG_DAC_SAM`
-     - :dtcompatible:`atmel,sam-dac`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM_SAM`
-     - :dtcompatible:`atmel,sam-pwm`
-   * - CAN
-     - :kconfig:option:`CONFIG_CAN_SAM`
-     - :dtcompatible:`atmel,sam-can`
-   * - USB
-     - :kconfig:option:`CONFIG_USB_DC_SAM_USBHS`
-     - :dtcompatible:`atmel,sam-usbhs`
-   * - WATCHDOG
-     - :kconfig:option:`CONFIG_WDT_SAM`
-     - :dtcompatible:`atmel,sam-watchdog`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v7m-nvic`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - COUNTER
-     - :kconfig:option:`CONFIG_COUNTER_SAM_TC`
-     - :dtcompatible:`atmel,sam-tc`
-   * - DMA
-     - :kconfig:option:`CONFIG_DMA_SAM_XDMAC`
-     - :dtcompatible:`atmel,sam-xdmac`
-   * - ENTROPY
-     - :kconfig:option:`CONFIG_ENTROPY_SAM_RNG`
-     - :dtcompatible:`atmel,sam-trng`
-   * - HWINFO (reset cause)
-     - :kconfig:option:`CONFIG_HWINFO_SAM_RSTC`
-     - :dtcompatible:`atmel,sam-rstc`
-   * - HWINFO (device id)
-     - :kconfig:option:`CONFIG_HWINFO_SAM`
-     - N/A
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/tdk/robokit1/robokit1_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

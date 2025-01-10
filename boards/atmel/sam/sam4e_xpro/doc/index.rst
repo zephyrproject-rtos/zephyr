@@ -27,45 +27,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4e_xpro board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| AFEC      | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | hwinfo                              |
-+-----------+------------+-------------------------------------+
-| HSMCI     | on-chip    | sdhc                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam/sam4e_xpro/sam4e_xpro_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,10 +17,19 @@
 
 LOG_MODULE_REGISTER(neorv32_trng, CONFIG_ENTROPY_LOG_LEVEL);
 
-/* TRNG CTRL register bits */
-#define NEORV32_TRNG_CTRL_DATA_MASK BIT_MASK(8)
-#define NEORV32_TRNG_CTRL_EN        BIT(30)
-#define NEORV32_TRNG_CTRL_VALID     BIT(31)
+/* Register offsets */
+#define NEORV32_TRNG_CTRL 0x00
+#define NEORV32_TRNG_DATA 0x04
+
+/* CTRL register bits */
+#define NEORV32_TRNG_CTRL_EN         BIT(0)
+#define NEORV32_TRNG_CTRL_FIFO_CLR   BIT(1)
+#define NEORV32_TRNG_CTRL_FIFO_DEPTH GENMASK(5, 2)
+#define NEORV32_TRNG_CTRL_SIM_MODE   BIT(6)
+#define NEORV32_TRNG_CTRL_AVAIL      BIT(7)
+
+/* DATA register bits */
+#define NEORV32_TRNG_DATA_MASK GENMASK(7, 0)
 
 struct neorv32_trng_config {
 	const struct device *syscon;
@@ -31,14 +40,21 @@ static inline uint32_t neorv32_trng_read_ctrl(const struct device *dev)
 {
 	const struct neorv32_trng_config *config = dev->config;
 
-	return sys_read32(config->base);
+	return sys_read32(config->base + NEORV32_TRNG_CTRL);
 }
 
 static inline void neorv32_trng_write_ctrl(const struct device *dev, uint32_t ctrl)
 {
 	const struct neorv32_trng_config *config = dev->config;
 
-	sys_write32(ctrl, config->base);
+	sys_write32(ctrl, config->base + NEORV32_TRNG_CTRL);
+}
+
+static inline uint8_t neorv32_trng_read_data(const struct device *dev)
+{
+	const struct neorv32_trng_config *config = dev->config;
+
+	return sys_read32(config->base + NEORV32_TRNG_DATA) & NEORV32_TRNG_DATA_MASK;
 }
 
 static int neorv32_trng_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t len)
@@ -48,8 +64,8 @@ static int neorv32_trng_get_entropy(const struct device *dev, uint8_t *buffer, u
 	while (len > 0) {
 		ctrl = neorv32_trng_read_ctrl(dev);
 
-		if ((ctrl & NEORV32_TRNG_CTRL_VALID) != 0) {
-			*buffer++ = ctrl & NEORV32_TRNG_CTRL_DATA_MASK;
+		if ((ctrl & NEORV32_TRNG_CTRL_AVAIL) != 0) {
+			*buffer++ = neorv32_trng_read_data(dev);
 			len--;
 		}
 	}
@@ -65,8 +81,8 @@ static int neorv32_trng_get_entropy_isr(const struct device *dev, uint8_t *buffe
 
 	if ((flags & ENTROPY_BUSYWAIT) == 0) {
 		ctrl = neorv32_trng_read_ctrl(dev);
-		if ((ctrl & NEORV32_TRNG_CTRL_VALID) != 0) {
-			*buffer = ctrl & NEORV32_TRNG_CTRL_DATA_MASK;
+		if ((ctrl & NEORV32_TRNG_CTRL_AVAIL) != 0) {
+			*buffer = neorv32_trng_read_data(dev);
 			return 1;
 		}
 
@@ -93,13 +109,13 @@ static int neorv32_trng_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_FEATURES, &features);
+	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
 		LOG_ERR("failed to determine implemented features (err %d)", err);
 		return err;
 	}
 
-	if ((features & NEORV32_SYSINFO_FEATURES_IO_TRNG) == 0) {
+	if ((features & NEORV32_SYSINFO_SOC_IO_TRNG) == 0) {
 		LOG_ERR("neorv32 trng not supported");
 		return -ENODEV;
 	}

@@ -51,7 +51,7 @@ TrOnchip.Set BUSERR OFF
 SYStem.Up
 
 ; Init SRAM
-DO ~~/demo/arm/hardware/s32k3/scripts/init_sram.cmm
+DO ~~/demo/arm/hardware/s32k3/misc/init_sram.cmm
 
 ; Only declares flash, does not execute flash programming
 DO ~~/demo/arm/flash/s32k3.cmm PREPAREONLY
@@ -97,7 +97,7 @@ IF ("&loadTo"=="flash")
 ELSE
 (
   ; Init ITCM
-  DO ~~/demo/arm/hardware/s32k3/scripts/init_itcm.cmm
+  DO ~~/demo/arm/hardware/s32k3/misc/init_itcm.cmm
 
   Data.LOAD.Elf &elfFile
 )

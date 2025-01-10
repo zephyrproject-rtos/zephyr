@@ -59,8 +59,8 @@ ENE KB1200_EVB Board OpenOCD Configuration
 ------------------------------------------
 
 * *Licensing:* `GPLv2 License`_
-* *Impact:* This file is used by `OpenOCD`_ when programming and debugging the :ref:`ene_kb1200_evb`
-  board. It is never linked into the firmware.
+* *Impact:* This file is used by `OpenOCD`_ when programming and debugging the
+  :zephyr:board:`kb1200_evb` board. It is never linked into the firmware.
 * *Files:*
 
   * :zephyr_file:`boards/ene/kb1200_evb/support/openocd.cfg`
@@ -98,6 +98,15 @@ OpenThread Spinel HDLC RCP Host Interface Files
   * :zephyr_file:`modules/openthread/platform/hdlc_interface.hpp`
   * :zephyr_file:`modules/openthread/platform/radio_spinel.cpp`
   * :zephyr_file:`modules/openthread/platform/hdlc_interface.cpp`
+
+Python Devicetree library test files
+------------------------------------
+
+* *Licensing:* `BSD-3-clause`_
+* *Impact:* These are only used for testing and never linked with the firmware.
+* *Files*:
+
+  * Various yaml files under ``scripts/dts/python-devicetree/tests``
 
 .. _Apache 2.0 License:
    https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE

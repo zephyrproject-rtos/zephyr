@@ -660,7 +660,7 @@ static int pf1550_init(const struct device *dev)
 	return 0;
 }
 
-static const struct charger_driver_api pf1550_driver_api = {
+static DEVICE_API(charger, pf1550_driver_api) = {
 	.get_property = pf1550_get_prop,
 	.set_property = pf1550_set_prop,
 	.charge_enable = pf1550_set_enabled,

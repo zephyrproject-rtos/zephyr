@@ -13,7 +13,7 @@ BOARD="${BOARD:-nrf52_bsim/native}"
 BOARD_TS="${BOARD//\//_}"
 
 function run_in_background(){
-  $@ & _process_ids="$_process_ids $!"
+  "$@" & _process_ids="$_process_ids $!"
 }
 
 function wait_for_background_jobs(){
@@ -46,7 +46,7 @@ function Execute() {
   EXECUTE_TIMEOUT="${EXECUTE_TIMEOUT:-30}"
 
   check_program_exists $1
-  run_in_background timeout --kill-after=5 -v ${EXECUTE_TIMEOUT} $@
+  run_in_background timeout --kill-after=5 -v ${EXECUTE_TIMEOUT} "$@"
 }
 
 function _guess_test_relpath(){

@@ -49,6 +49,12 @@
 	};
 
 	clocks {
+		pclk: pclk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(16)>;
+		};
+
 		lfxo: lfxo {
 			compatible = "nordic,nrf-lfxo";
 			#clock-cells = <0>;
@@ -419,6 +425,8 @@
 				compatible = "nordic,nrf-grtc";
 				reg = <0xe2000 0x1000>;
 				cc-num = <12>;
+				clocks = <&lfxo>, <&pclk>;
+				clock-names = "lfclock", "hfclock";
 				status = "disabled";
 			};
 

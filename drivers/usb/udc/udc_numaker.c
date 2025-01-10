@@ -1561,7 +1561,7 @@ static int udc_numaker_enable(const struct device *dev)
 
 static int udc_numaker_disable(const struct device *dev)
 {
-	LOG_DBG("Enable device %p", dev);
+	LOG_DBG("Disable device %p", dev);
 
 	/* S/W disconnect */
 	numaker_usbd_sw_disconnect(dev);

@@ -61,6 +61,9 @@ static void print_callback(const struct device *dev, const enum stepper_event ev
 	case STEPPER_EVENT_RIGHT_END_STOP_DETECTED:
 		shell_info(sh, "%s: Right limit switch pressed.", dev->name);
 		break;
+	case STEPPER_EVENT_STOPPED:
+		shell_info(sh, "%s: Stepper stopped.", dev->name);
+		break;
 	default:
 		shell_info(sh, "%s: Unknown signal received.", dev->name);
 		break;
@@ -190,6 +193,30 @@ static int cmd_stepper_enable(const struct shell *sh, size_t argc, char **argv)
 	err = stepper_enable(dev, enable);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_stepper_stop(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	int err = 0;
+
+	err = parse_device_arg(sh, argv, &dev);
+	if (err < 0) {
+		return err;
+	}
+
+	err = stepper_stop(dev);
+	if (err) {
+		shell_error(sh, "Error: %d", err);
+		return err;
+	}
+
+	err = stepper_set_event_callback(dev, print_callback, (void *)sh);
+	if (err != 0) {
+		shell_error(sh, "Failed to set callback: %d", err);
 	}
 
 	return err;
@@ -452,10 +479,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	stepper_cmds,
 	SHELL_CMD_ARG(enable, &dsub_pos_stepper_motor_name, "<device> <on/off>", cmd_stepper_enable,
 		      3, 0),
-	SHELL_CMD_ARG(move_by, &dsub_pos_stepper_motor_name, "<device> <microsteps>",
-		      cmd_stepper_move_by, 3, 0),
-	SHELL_CMD_ARG(set_microstep_interval, &dsub_pos_stepper_motor_name,
-		      "<device> <microstep_interval_ns>", cmd_stepper_set_microstep_interval, 3, 0),
 	SHELL_CMD_ARG(set_micro_step_res, &dsub_pos_stepper_motor_name_microstep,
 		      "<device> <resolution>", cmd_stepper_set_micro_step_res, 3, 0),
 	SHELL_CMD_ARG(get_micro_step_res, &dsub_pos_stepper_motor_name, "<device>",
@@ -464,10 +487,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_stepper_set_reference_position, 3, 0),
 	SHELL_CMD_ARG(get_actual_position, &dsub_pos_stepper_motor_name, "<device>",
 		      cmd_stepper_get_actual_position, 2, 0),
+	SHELL_CMD_ARG(set_microstep_interval, &dsub_pos_stepper_motor_name,
+		      "<device> <microstep_interval_ns>", cmd_stepper_set_microstep_interval, 3, 0),
+	SHELL_CMD_ARG(move_by, &dsub_pos_stepper_motor_name, "<device> <microsteps>",
+		      cmd_stepper_move_by, 3, 0),
 	SHELL_CMD_ARG(move_to, &dsub_pos_stepper_motor_name, "<device> <microsteps>",
 		      cmd_stepper_move_to, 3, 0),
 	SHELL_CMD_ARG(run, &dsub_pos_stepper_motor_name_dir, "<device> <direction>",
 		      cmd_stepper_run, 3, 0),
+	SHELL_CMD_ARG(stop, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_stop, 2, 0),
 	SHELL_CMD_ARG(info, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_info, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
