@@ -220,6 +220,8 @@ Drivers and Sensors
 
 * Modem
 
+  * HL7800: Fix socket port byte order. This resolves issues with TLS handshake failures. (:github:`83763`)
+
 * MIPI-DBI
 
 * MSPI
