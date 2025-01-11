@@ -14,7 +14,7 @@ properties:
   reg:
     required: true
     description: register space
-  power_delay_ms:
+  power-delay-ms:
     type: int
     required: true
     description: delay required to switch on the SDHC
