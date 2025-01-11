@@ -11,15 +11,15 @@ properties:
   reg:
     required: true
 
-  bit_per_gpio:
+  bit-per-gpio:
     type: int
     required: true
 
-  off_val:
+  off-val:
     type: int
     required: true
 
-  on_val:
+  on-val:
     type: int
     required: true
 
