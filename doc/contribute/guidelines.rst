@@ -838,8 +838,24 @@ workflow here:
 
      git push origin fix_comment_typo
 
+#. Avoid submitting a large number of commits in a single pull request,
+   see :ref:`contributor-expectations` why. It is tempting to submit
+   all at once and hope that everything will be merged faster but the
+   opposite effect is generally achieved. Submitting several, smaller
+   pull requests does *not* require creating and managing local git
+   branches::
+
+     git push origin big_work~15:refs/heads/big_work_part1
+
+   In this example, the 15 most recent commits in the ``big_work`` local
+   branch are *omitted* from the ``big_work_part1`` remote branch and pull
+   request. This "Stacked Diffs" approach lets you submit part 1 and get
+   reviews started long before the rest is ready.  When smaller parts are
+   independent of each other, rotating them with ``git rebase -i`` (see below)
+   lets you submit them concurrently which is even faster.
+
 #. In your web browser, go to your forked repo and click on the
-   ``Compare & pull request`` button for the branch you just worked on and
+   ``Compare & pull request`` button for the remote branch you just pushed and
    you want to open a pull request with.
 
 #. Review the pull request changes, and verify that you are opening a pull
