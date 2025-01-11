@@ -3,6 +3,10 @@
 zephyr_library()
 zephyr_library_sources(libc-hooks.c)
 
+zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM
+  source/file_ops.c
+  )
+
 # Do not allow LTO when compiling libc-hooks.c file
 set_source_files_properties(libc-hooks.c PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
 

@@ -35,6 +35,10 @@ zephyr_library_sources(
   ${STRERROR_TABLE_H}
 )
 
+zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM
+  source/file_ops.c
+  )
+
 if(CONFIG_MINIMAL_LIBC_TIME)
   zephyr_library_sources(source/time/gmtime.c)
 endif()

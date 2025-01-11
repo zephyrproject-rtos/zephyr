@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 int open(const char *name, int flags, ...);
+int close(int fd);
 int fcntl(int fildes, int cmd, ...);
 
 #ifdef __cplusplus
