@@ -414,6 +414,7 @@ Timer
 
 * Renamed the ``compatible`` from ``nxp,kinetis-ftm`` to :dtcompatible:`nxp,ftm` and relocate it
   under ``dts/bindings/timer``.
+* Renamed the device tree property from ``ticks_us`` to ``ticks-us``.
 
 USB
 ===
