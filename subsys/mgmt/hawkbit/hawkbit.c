@@ -1318,7 +1318,7 @@ static void s_http_end(void *o)
  * Root resource for an individual Target
  * GET: /{tenant}/controller/v1/{controllerId}
  */
-static void s_probe(void *o)
+static enum smf_state_result s_probe(void *o)
 {
 	struct s_object *s = (struct s_object *)o;
 	char url_buffer[URL_BUFFER_SIZE] = {0};
@@ -1330,7 +1330,7 @@ static void s_probe(void *o)
 	if (!send_request(&s->hb_context, HAWKBIT_PROBE, url_buffer, NULL)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_PROBE");
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	if (s->hb_context.results.base.config.polling.sleep) {
@@ -1356,13 +1356,14 @@ static void s_probe(void *o)
 		hawkbit_event_raise(HAWKBIT_EVENT_NO_UPDATE);
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /*
  * Feedback channel for cancel actions
  * POST: /{tenant}/controller/v1/{controllerId}/cancelAction/{actionId}/feedback
  */
-static void s_cancel(void *o)
+static enum smf_state_result s_cancel(void *o)
 {
 	int ret = 0;
 	int32_t cancel_action_id = 0;
@@ -1377,7 +1378,7 @@ static void s_cancel(void *o)
 		LOG_ERR("Can't find %s url", "cancelAction");
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	snprintk(url_buffer, sizeof(url_buffer), "%s/%s", cancel_base, "feedback");
@@ -1387,7 +1388,7 @@ static void s_cancel(void *o)
 		LOG_ERR("Can't find %s id: %d", "cancelAction", ret);
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	cancel.status.execution = hawkbit_status_execution(HAWKBIT_STATUS_EXEC_CLOSED);
@@ -1401,13 +1402,13 @@ static void s_cancel(void *o)
 		LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_CANCEL", ret);
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	if (!send_request(&s->hb_context, HAWKBIT_CANCEL, url_buffer, status_buffer)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_CANCEL");
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	LOG_INF("From hawkBit server requested update cancellation %s",
@@ -1418,13 +1419,14 @@ static void s_cancel(void *o)
 	}
 
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_PROBE]);
+	return SMF_EVENT_HANDLED;
 }
 
 /*
  * Feedback channel for the config data action
  * PUT: /{tenant}/controller/v1/{controllerId}/configData
  */
-static void s_config_device(void *o)
+static enum smf_state_result s_config_device(void *o)
 {
 	int ret = 0;
 	struct s_object *s = (struct s_object *)o;
@@ -1436,7 +1438,7 @@ static void s_config_device(void *o)
 		LOG_ERR("Can't find %s url", "configData");
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	ret = hawkbit_config_device_data_cb_handler(s->device_id, status_buffer,
@@ -1445,23 +1447,24 @@ static void s_config_device(void *o)
 		LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_CONFIG_DEVICE", ret);
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	if (!send_request(&s->hb_context, HAWKBIT_CONFIG_DEVICE, url_buffer, status_buffer)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_CONFIG_DEVICE");
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_PROBE]);
+	return SMF_EVENT_HANDLED;
 }
 
 /*
  * Resource for software module (Deployment Base)
  * GET: /{tenant}/controller/v1/{controllerId}/deploymentBase/{actionId}
  */
-static void s_probe_deployment_base(void *o)
+static enum smf_state_result s_probe_deployment_base(void *o)
 {
 	int ret = 0;
 	struct s_object *s = (struct s_object *)o;
@@ -1472,13 +1475,13 @@ static void s_probe_deployment_base(void *o)
 		LOG_ERR("Can't find %s url", "deploymentBase");
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	if (!send_request(&s->hb_context, HAWKBIT_PROBE_DEPLOYMENT_BASE, url_buffer, NULL)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_PROBE_DEPLOYMENT_BASE");
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	hawkbit_dump_deployment(&s->hb_context.results.dep);
@@ -1488,23 +1491,24 @@ static void s_probe_deployment_base(void *o)
 	if (ret < 0) {
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	if (hb_cfg.action_id == s->hb_context.json_action_id) {
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_REPORT]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	LOG_INF("Ready to download update");
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_DOWNLOAD]);
+	return SMF_EVENT_HANDLED;
 }
 
 /*
  * Feedback channel for the DeploymentBase action
  * POST: /{tenant}/controller/v1/{controllerId}/deploymentBase/{actionId}/feedback
  */
-static void s_report(void *o)
+static enum smf_state_result s_report(void *o)
 {
 	int ret = 0;
 	struct s_object *s = (struct s_object *)o;
@@ -1528,13 +1532,13 @@ static void s_report(void *o)
 		LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_REPORT", ret);
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	if (!send_request(&s->hb_context, HAWKBIT_REPORT, url_buffer, status_buffer)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_REPORT");
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* After reporting the successful update to the hawkBit server, we can reset the saved
@@ -1543,6 +1547,7 @@ static void s_report(void *o)
 	(void)hawkbit_device_acid_update(0);
 
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_PROBE]);
+	return SMF_EVENT_HANDLED;
 }
 
 static void s_download_start(void *o)
@@ -1560,7 +1565,7 @@ static void s_download_end(void *o)
  * GET: /{tenant}/controller/v1/{controllerId}/softwaremodules/{softwareModuleId}/
  *      artifacts/{fileName}
  */
-static void s_download(void *o)
+static enum smf_state_result s_download(void *o)
 {
 	int ret = 0;
 	struct s_object *s = (struct s_object *)o;
@@ -1573,7 +1578,7 @@ static void s_download(void *o)
 		LOG_ERR("Failed to parse %s: %d", "deploymentBase", ret);
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	flash_img_init(&s->hb_context.flash_ctx);
@@ -1590,7 +1595,7 @@ static void s_download(void *o)
 	if (!send_request(&s->hb_context, HAWKBIT_DOWNLOAD, url_buffer, NULL)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_DOWNLOAD");
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* Check if download finished */
@@ -1598,7 +1603,7 @@ static void s_download(void *o)
 		LOG_ERR("Download incomplete");
 		s->hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 #ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
@@ -1612,7 +1617,7 @@ static void s_download(void *o)
 		LOG_ERR("Failed to validate stored firmware");
 		s->hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* Request mcuboot to upgrade */
@@ -1620,7 +1625,7 @@ static void s_download(void *o)
 		LOG_ERR("Failed to mark the image in slot 1 as pending");
 		s->hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* If everything is successful */
@@ -1629,6 +1634,7 @@ static void s_download(void *o)
 	hawkbit_event_raise(HAWKBIT_EVENT_UPDATE_DOWNLOADED);
 
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
+	return SMF_EVENT_HANDLED;
 }
 
 static void s_terminate(void *o)
@@ -1726,7 +1732,6 @@ static const struct smf_state hawkbit_states[] = {
 		NULL),
 };
 /* clang-format on */
-
 enum hawkbit_response hawkbit_probe(void)
 {
 	int32_t ret = 0;
