@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Armin Kessler <armin.kessler@me.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config A4988_STEPPER
+	bool "Activate driver for A4988 stepper motor driver"
+	default y
+	depends on DT_HAS_ALLEGRO_A4988_ENABLED
+	select STEP_DIR_STEPPER
+	select STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS
+	help
+	  Microstepping motor driver for stepper motors.

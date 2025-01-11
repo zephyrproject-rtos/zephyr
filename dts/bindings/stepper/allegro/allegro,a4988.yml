@@ -1,33 +1,33 @@
-compatible: "allegro,a4988"
 
 description: |
   The A4988 is a complete microstepping motor driver with
   built-in translator for easy operation. It is designed to operate
   bipolar stepper motors in full-, half-, quarter-, eighth-, and
   sixteenth-step modes.
+
+  Example:
+  a4988: a4988 {
+    status = "okay";
+    compatible = "allegro,a4988";
+
+    dir-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+    step-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+    en-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+    msx-gpios = <&gpio1 3 0>, <&gpio1 4 0>, <&gpio1 5 0>;
+  };
+
+compatible: "allegro,a4988"
+
 include:
   - name: stepper-controller.yaml
     property-allowlist:
       - micro-step-res
+      - step-gpios
+      - dir-gpios
+      - en-gpios
+      - counter
 
 properties:
-  dir-gpios:
-    type: phandle-array
-    required: true
-    description: |
-      The gpio pin to control the direction of the stepper motor.
-
-  step-gpios:
-    type: phandle-array
-    required: true
-    description: |
-      The gpio pin to trigger a step of the stepper motor.
-
-  en-gpios:
-    type: phandle-array
-    description: |
-      The gpio pin to trigger a step of the stepper motor.
-
   msx-gpios:
     type: phandle-array
     description: |
@@ -35,3 +35,11 @@ properties:
       - MS1 pin
       - MS2 pin
       - MS3 pin
+
+  sleep-gpios:
+    type: phandle-array
+    description: Sleep pin
+  
+  reset-gpios:
+    type: phandle-array
+    description: Reset pin
