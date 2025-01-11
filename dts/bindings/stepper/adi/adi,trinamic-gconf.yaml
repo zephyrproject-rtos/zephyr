@@ -4,51 +4,51 @@
 description: Global configuration flags for Trinamic stepper controller.
 
 properties:
-  en_spreadcycle:
+  en-spreadcycle:
     type: boolean
     description: |
       A high level on the pin SPREAD inverts this flag to switch between both chopper modes.
       0: StealthChop mode
       1: SpreadCycle mode enabled
 
-  i_scale_analog:
+  i-scale-analog:
     type: boolean
     description: |
       0: Use internal reference derived from 5VOUT
       1: Use voltage supplied to VREF as current reference
 
-  internal_rsense:
+  internal-rsense:
     type: boolean
     description: |
       0: Operation with external sense resistors
       1: Internal sense resistors. Use current supplied into VREF as reference for internal
          sense resistor. VREF pin internally is driven to GND in this mode.
 
-  index_otpw:
+  index-otpw:
     type: boolean
     description: |
       0: INDEX shows the first microstep position of sequencer
       1: INDEX output shows step pulses from internal pulse generator (toggle upon each step)
 
-  index_step:
+  index-step:
     type: boolean
     description: |
-      0: INDEX output as selected by index_otpw
+      0: INDEX output as selected by index-otpw
       1: INDEX pin shows the current step position of sequencer
 
-  pdn_disable:
+  pdn-disable:
     type: boolean
     description: |
       0: Normal operation
       1: Power down mode
 
-  mstep_reg_select:
+  mstep-reg-select:
     type: boolean
     description: |
       0: Microstep resolution selected by pins MS1, MS2
       1: Microstep resolution selected by MRES register
 
-  poscmp_enable:
+  poscmp-enable:
     type: boolean
     description: |
       Enable position compare feature
@@ -56,9 +56,9 @@ properties:
       1: Position compare pulse (PP) and interrupt output (INT) are available
 
       Attention – do not leave the outputs floating in tristate condition, provide an external
-      pull-up or set poscmp_enable=1
+      pull-up or set poscmp-enable=1
 
-  test_mode:
+  test-mode:
     type: boolean
     description: |
       Enable test mode
@@ -68,7 +68,7 @@ properties:
 
       Attention: Not for user, set to 0 for normal operation!
 
-  lock_gconf:
+  lock-gconf:
     type: boolean
     description: |
       1: GCONF is locked against further write access.
