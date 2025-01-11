@@ -104,7 +104,6 @@ check_set_compiler_property(PROPERTY warning_extended
                             -Wno-sometimes-uninitialized
                             -Wno-shift-overflow
                             -Wno-missing-braces
-                            -Wno-self-assign
                             -Wno-address-of-packed-member
                             -Wno-unused-function
                             -Wno-initializer-overrides
