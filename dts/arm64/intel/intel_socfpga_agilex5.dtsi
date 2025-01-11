@@ -128,7 +128,7 @@
 			<0x10B92000 0x1000>;
 		reg-names = "reg_base", "combo_phy";
 		clock-frequency = <200000000>;
-		power_delay_ms = <1000>;
+		power-delay-ms = <1000>;
 		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
 			<&reset RSTMGR_SDMMCECC_RSTLINE>,
 			<&reset RSTMGR_SOFTPHY_RSTLINE>;
