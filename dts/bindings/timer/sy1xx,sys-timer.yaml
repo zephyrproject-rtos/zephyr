@@ -14,6 +14,6 @@ properties:
   interrupts:
     required: true
 
-  ticks_us:
+  ticks-us:
     type: int
     required: true
