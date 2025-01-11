@@ -638,6 +638,17 @@ hawkBit
   be prepended with :kconfig:option:`CONFIG_BOARD`. It is the user's responsibility to write a
   callback that prepends the board name if needed.
 
+State Machine Framework
+=======================
+
+* :c:func:`smf_set_handled` has been removed.
+* State run actions now return an :c:enum:`smf_state_result` value instead of void. and the return
+  code determines if the event is propagated to parent run actions or has been handled. A run action
+  that handles the event completely should return :c:enum:`SMF_EVENT_HANDLED`, and run actions that
+  propagate handling to parent states should return :c:enum:`SMF_EVENT_PROPAGATE`.
+* Flat state machines ignore the return value; returning :c:enum:`SMF_EVENT_HANDLED`
+  would be the most technically accurate response.
+
 Modules
 *******
 

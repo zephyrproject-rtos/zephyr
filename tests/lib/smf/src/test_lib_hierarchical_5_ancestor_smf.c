@@ -35,34 +35,34 @@
 
 #define TEST_OBJECT(o) ((struct test_object *)o)
 
-#define SMF_RUN                         3
+#define SMF_RUN 3
 
-#define P05_ENTRY_BIT    (1 << 0)
-#define P04_ENTRY_BIT    (1 << 1)
-#define P03_ENTRY_BIT    (1 << 2)
-#define P02_ENTRY_BIT    (1 << 3)
-#define P01_ENTRY_BIT    (1 << 4)
-#define A_ENTRY_BIT      (1 << 5)
-#define A_RUN_BIT        (1 << 6)
-#define A_EXIT_BIT       (1 << 7)
-#define B_ENTRY_BIT      (1 << 8)
-#define B_RUN_BIT        (1 << 9)
-#define P01_RUN_BIT      (1 << 10)
-#define P02_RUN_BIT      (1 << 11)
-#define P03_RUN_BIT      (1 << 12)
-#define P04_RUN_BIT      (1 << 13)
-#define P05_RUN_BIT      (1 << 14)
-#define B_EXIT_BIT       (1 << 15)
-#define P01_EXIT_BIT     (1 << 16)
-#define P02_EXIT_BIT     (1 << 17)
-#define P03_EXIT_BIT     (1 << 18)
-#define P04_EXIT_BIT     (1 << 19)
-#define P05_EXIT_BIT     (1 << 20)
-#define C_ENTRY_BIT      (1 << 21)
-#define C_RUN_BIT        (1 << 22)
-#define C_EXIT_BIT       (1 << 23)
+#define P05_ENTRY_BIT BIT(0)
+#define P04_ENTRY_BIT BIT(1)
+#define P03_ENTRY_BIT BIT(2)
+#define P02_ENTRY_BIT BIT(3)
+#define P01_ENTRY_BIT BIT(4)
+#define A_ENTRY_BIT   BIT(5)
+#define A_RUN_BIT     BIT(6)
+#define A_EXIT_BIT    BIT(7)
+#define B_ENTRY_BIT   BIT(8)
+#define B_RUN_BIT     BIT(9)
+#define P01_RUN_BIT   BIT(10)
+#define P02_RUN_BIT   BIT(11)
+#define P03_RUN_BIT   BIT(12)
+#define P04_RUN_BIT   BIT(13)
+#define P05_RUN_BIT   BIT(14)
+#define B_EXIT_BIT    BIT(15)
+#define P01_EXIT_BIT  BIT(16)
+#define P02_EXIT_BIT  BIT(17)
+#define P03_EXIT_BIT  BIT(18)
+#define P04_EXIT_BIT  BIT(19)
+#define P05_EXIT_BIT  BIT(20)
+#define C_ENTRY_BIT   BIT(21)
+#define C_RUN_BIT     BIT(22)
+#define C_EXIT_BIT    BIT(23)
 
-#define TEST_VALUE_NUM              24
+#define TEST_VALUE_NUM 24
 static uint32_t test_value[] = {
 	0x00000000, /* P05_ENTRY */
 	0x00000001, /* P04_ENTRY */
@@ -117,24 +117,23 @@ static void p05_entry(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 05 entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 05 entry failed");
 
 	o->transition_bits |= P05_ENTRY_BIT;
 }
 
-static void p05_run(void *obj)
+static enum smf_state_result p05_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 05 run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 05 run failed");
 
 	o->transition_bits |= P05_RUN_BIT;
 
 	smf_set_state(SMF_CTX(obj), &test_states[C]);
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void p05_exit(void *obj)
@@ -143,8 +142,7 @@ static void p05_exit(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 05 exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 05 exit failed");
 
 	o->transition_bits |= P05_EXIT_BIT;
 }
@@ -155,22 +153,21 @@ static void p04_entry(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 04 entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 04 entry failed");
 
 	o->transition_bits |= P04_ENTRY_BIT;
 }
 
-static void p04_run(void *obj)
+static enum smf_state_result p04_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 04 run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 04 run failed");
 
 	o->transition_bits |= P04_RUN_BIT;
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void p04_exit(void *obj)
@@ -179,8 +176,7 @@ static void p04_exit(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 04 exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 04 exit failed");
 
 	o->transition_bits |= P04_EXIT_BIT;
 }
@@ -191,22 +187,21 @@ static void p03_entry(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 03 entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 03 entry failed");
 
 	o->transition_bits |= P03_ENTRY_BIT;
 }
 
-static void p03_run(void *obj)
+static enum smf_state_result p03_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 03 run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 03 run failed");
 
 	o->transition_bits |= P03_RUN_BIT;
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void p03_exit(void *obj)
@@ -215,8 +210,7 @@ static void p03_exit(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 03 exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 03 exit failed");
 
 	o->transition_bits |= P03_EXIT_BIT;
 }
@@ -227,22 +221,21 @@ static void p02_entry(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 02 entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 02 entry failed");
 
 	o->transition_bits |= P02_ENTRY_BIT;
 }
 
-static void p02_run(void *obj)
+static enum smf_state_result p02_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 02 run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 02 run failed");
 
 	o->transition_bits |= P02_RUN_BIT;
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void p02_exit(void *obj)
@@ -251,8 +244,7 @@ static void p02_exit(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 02 exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 02 exit failed");
 
 	o->transition_bits |= P02_EXIT_BIT;
 }
@@ -263,22 +255,21 @@ static void p01_entry(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 01 entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 01 entry failed");
 
 	o->transition_bits |= P01_ENTRY_BIT;
 }
 
-static void p01_run(void *obj)
+static enum smf_state_result p01_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 01 run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 01 run failed");
 
 	o->transition_bits |= P01_RUN_BIT;
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void p01_exit(void *obj)
@@ -287,8 +278,7 @@ static void p01_exit(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test Parent 01 exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test Parent 01 exit failed");
 
 	o->transition_bits |= P01_EXIT_BIT;
 }
@@ -299,24 +289,23 @@ static void a_entry(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State A entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State A entry failed");
 
 	o->transition_bits |= A_ENTRY_BIT;
 }
 
-static void a_run(void *obj)
+static enum smf_state_result a_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State A run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State A run failed");
 
 	o->transition_bits |= A_RUN_BIT;
 
 	smf_set_state(SMF_CTX(obj), &test_states[B]);
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void a_exit(void *obj)
@@ -325,8 +314,7 @@ static void a_exit(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State A exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State A exit failed");
 
 	o->transition_bits |= A_EXIT_BIT;
 }
@@ -337,22 +325,21 @@ static void b_entry(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State B entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State B entry failed");
 
 	o->transition_bits |= B_ENTRY_BIT;
 }
 
-static void b_run(void *obj)
+static enum smf_state_result b_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State B run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State B run failed");
 
 	o->transition_bits |= B_RUN_BIT;
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void b_exit(void *obj)
@@ -361,8 +348,7 @@ static void b_exit(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State B exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State B exit failed");
 
 	o->transition_bits |= B_EXIT_BIT;
 }
@@ -373,23 +359,22 @@ static void c_entry(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State C entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State C entry failed");
 
 	o->transition_bits |= C_ENTRY_BIT;
 }
 
-static void c_run(void *obj)
+static enum smf_state_result c_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State C run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State C run failed");
 	o->transition_bits |= C_RUN_BIT;
 
 	smf_set_state(SMF_CTX(obj), &test_states[D]);
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void c_exit(void *obj)
@@ -398,8 +383,7 @@ static void c_exit(void *obj)
 
 	o->tv_idx++;
 
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State C exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State C exit failed");
 
 	o->transition_bits |= C_EXIT_BIT;
 }
@@ -435,8 +419,7 @@ ZTEST(smf_tests, test_smf_hierarchical_5_ancestors)
 		}
 	}
 
-	zassert_equal(TEST_VALUE_NUM, test_obj.tv_idx,
-		      "Incorrect test value index");
+	zassert_equal(TEST_VALUE_NUM, test_obj.tv_idx, "Incorrect test value index");
 	zassert_equal(test_obj.transition_bits, test_value[test_obj.tv_idx],
 		      "Final state not reached");
 }

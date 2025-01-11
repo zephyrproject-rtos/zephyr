@@ -766,7 +766,7 @@ static void pe_drs_evaluate_swap_entry(void *obj)
 /**
  * @brief PE_DRS_Evaluate_Swap Run state
  */
-static void pe_drs_evaluate_swap_run(void *obj)
+static enum smf_state_result pe_drs_evaluate_swap_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -793,6 +793,7 @@ static void pe_drs_evaluate_swap_run(void *obj)
 		policy_notify(dev, MSG_DISCARDED);
 		pe_send_soft_reset(dev, prl_rx->emsg.type);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -813,7 +814,7 @@ static void pe_drs_send_swap_entry(void *obj)
  * @brief PE_DRS_Send_Swap Run state
  *	  NOTE: Sender Response Timer is handled in super state.
  */
-static void pe_drs_send_swap_run(void *obj)
+static enum smf_state_result pe_drs_send_swap_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -853,12 +854,12 @@ static void pe_drs_send_swap_run(void *obj)
 			 * a Type-C Error Recovery.
 			 */
 			usbc_request(dev, REQUEST_TC_ERROR_RECOVERY);
-			return;
+			return SMF_EVENT_PROPAGATE;
 		}
 
 		/* return to ready state */
 		pe_set_ready_state(dev);
-		return;
+		return SMF_EVENT_PROPAGATE;
 	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		/*
 		 * Inform Device Policy Manager that the message
@@ -866,8 +867,9 @@ static void pe_drs_send_swap_run(void *obj)
 		 */
 		policy_notify(dev, MSG_DISCARDED);
 		pe_set_ready_state(dev);
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -894,7 +896,7 @@ void pe_get_sink_cap_entry(void *obj)
  * @brief PE_Get_Sink_Cap Run state
  *        NOTE: Sender Response Timer is handled in super state.
  */
-void pe_get_sink_cap_run(void *obj)
+enum smf_state_result pe_get_sink_cap_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -923,17 +925,17 @@ void pe_get_sink_cap_run(void *obj)
 					policy_set_port_partner_snk_cap(dev, pdos, num_pdos);
 #endif
 					pe_set_ready_state(dev);
-					return;
+					return SMF_EVENT_PROPAGATE;
 				} else if (received_control_message(dev, header, PD_CTRL_REJECT) ||
 					   received_control_message(dev, header,
 								    PD_CTRL_NOT_SUPPORTED)) {
 					pe_set_ready_state(dev);
-					return;
+					return SMF_EVENT_PROPAGATE;
 				}
 				/* Unexpected messages fall through to soft reset */
 			}
 			pe_send_soft_reset(dev, PD_PACKET_SOP);
-			return;
+			return SMF_EVENT_PROPAGATE;
 		}
 		/*
 		 * Inform Device Policy Manager that the message
@@ -942,9 +944,10 @@ void pe_get_sink_cap_run(void *obj)
 		else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 			policy_notify(dev, MSG_DISCARDED);
 			pe_set_ready_state(dev);
-			return;
+			return SMF_EVENT_PROPAGATE;
 		}
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void pe_suspend_entry(void *obj)
@@ -952,9 +955,10 @@ static void pe_suspend_entry(void *obj)
 	LOG_INF("PE_SUSPEND");
 }
 
-static void pe_suspend_run(void *obj)
+static enum smf_state_result pe_suspend_run(void *obj)
 {
 	/* DO NOTHING */
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -983,13 +987,13 @@ static void pe_soft_reset_entry(void *obj)
 	pe->submachine = PE_SOFT_RESET_RUN_SEND_ACCEPT_MSG;
 }
 
-static void pe_soft_reset_run(void *obj)
+static enum smf_state_result pe_soft_reset_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
 
 	if (!prl_is_running(dev)) {
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	switch (pe->submachine) {
@@ -1018,6 +1022,7 @@ static void pe_soft_reset_run(void *obj)
 		}
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -1039,7 +1044,7 @@ static void pe_send_soft_reset_entry(void *obj)
 /**
  * @brief PE_Send_Soft_Reset Run State
  */
-static void pe_send_soft_reset_run(void *obj)
+static enum smf_state_result pe_send_soft_reset_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -1048,13 +1053,13 @@ static void pe_send_soft_reset_run(void *obj)
 	union pd_header header;
 
 	if (prl_is_running(dev) == false) {
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_SEND_SOFT_RESET)) {
 		/* Send Soft Reset message */
 		pe_send_ctrl_msg(dev, pe->soft_reset_sop, PD_CTRL_SOFT_RESET);
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
@@ -1080,6 +1085,7 @@ static void pe_send_soft_reset_run(void *obj)
 		 */
 		pe_set_state(dev, PE_SNK_HARD_RESET);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -1103,7 +1109,7 @@ static void pe_send_not_supported_entry(void *obj)
 	}
 }
 
-static void pe_send_not_supported_run(void *obj)
+static enum smf_state_result pe_send_not_supported_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -1114,6 +1120,7 @@ static void pe_send_not_supported_run(void *obj)
 		atomic_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED);
 		pe_set_ready_state(dev);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -1135,7 +1142,7 @@ static void pe_chunk_received_entry(void *obj)
 /**
  * @brief PE_Chunk_Received Run State
  */
-static void pe_chunk_received_run(void *obj)
+static enum smf_state_result pe_chunk_received_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -1148,13 +1155,14 @@ static void pe_chunk_received_run(void *obj)
 	if (usbc_timer_expired(&pe->pd_t_chunking_not_supported)) {
 		pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /*
  * @brief Super State for any message that requires
  *	  Sender Response Timer functionality
  */
-static void pe_sender_response_run(void *obj)
+static enum smf_state_result pe_sender_response_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -1235,6 +1243,7 @@ static void pe_sender_response_run(void *obj)
 			LOG_INF("Unhandled Sender Response Timeout State!");
 		}
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void pe_sender_response_exit(void *obj)
@@ -1250,6 +1259,7 @@ static void pe_sender_response_exit(void *obj)
  */
 /* clang-format off */
 static const struct smf_state pe_states[PE_STATE_COUNT] = {
+	/* PE Super States */
 	[PE_SENDER_RESPONSE_PARENT] = SMF_CREATE_STATE(
 		NULL,
 		pe_sender_response_run,
@@ -1447,7 +1457,6 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		NULL,
 		NULL,
 		NULL),
-
 };
-/* clang-format off */
+/* clang-format on */
 BUILD_ASSERT(ARRAY_SIZE(pe_states) == PE_STATE_COUNT);

@@ -51,9 +51,10 @@ static void initial_entry(void *o)
 	obj->foo = false;
 }
 
-static void initial_run(void *o)
+static enum smf_state_result initial_run(void *o)
 {
 	LOG_INF("%s", __func__);
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void initial_exit(void *o)
@@ -67,7 +68,7 @@ static void s_entry(void *o)
 	LOG_INF("%s", __func__);
 }
 
-static void s_run(void *o)
+static enum smf_state_result s_run(void *o)
 {
 	LOG_INF("%s", __func__);
 	struct s_object *obj = (struct s_object *)o;
@@ -84,12 +85,12 @@ static void s_run(void *o)
 		} else {
 			LOG_INF("%s received EVENT_I and did nothing", __func__);
 		}
-		smf_set_handled(SMF_CTX(obj));
-		break;
+		return SMF_EVENT_HANDLED;
 	case EVENT_TERMINATE:
 		LOG_INF("%s received SMF_EVENT_TERMINATE. Terminating", __func__);
 		smf_set_terminate(SMF_CTX(obj), -1);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void s_exit(void *o)
@@ -103,7 +104,7 @@ static void s1_entry(void *o)
 	LOG_INF("%s", __func__);
 }
 
-static void s1_run(void *o)
+static enum smf_state_result s1_run(void *o)
 {
 	LOG_INF("%s", __func__);
 	struct s_object *obj = (struct s_object *)o;
@@ -136,9 +137,9 @@ static void s1_run(void *o)
 		break;
 	case EVENT_I:
 		LOG_INF("%s received EVENT_I", __func__);
-		smf_set_handled(SMF_CTX(obj));
-		break;
+		return SMF_EVENT_HANDLED;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void s1_exit(void *o)
@@ -152,7 +153,7 @@ static void s11_entry(void *o)
 	LOG_INF("%s", __func__);
 }
 
-static void s11_run(void *o)
+static enum smf_state_result s11_run(void *o)
 {
 	LOG_INF("%s", __func__);
 	struct s_object *obj = (struct s_object *)o;
@@ -176,6 +177,7 @@ static void s11_run(void *o)
 		smf_set_state(SMF_CTX(obj), &demo_states[STATE_S]);
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void s11_exit(void *o)
@@ -189,7 +191,7 @@ static void s2_entry(void *o)
 	LOG_INF("%s", __func__);
 }
 
-static void s2_run(void *o)
+static enum smf_state_result s2_run(void *o)
 {
 	LOG_INF("%s", __func__);
 	struct s_object *obj = (struct s_object *)o;
@@ -207,12 +209,13 @@ static void s2_run(void *o)
 		if (!obj->foo) {
 			LOG_INF("%s received EVENT_I and set foo true", __func__);
 			obj->foo = true;
-			smf_set_handled(SMF_CTX(obj));
+			return SMF_EVENT_HANDLED;
 		} else {
 			LOG_INF("%s received EVENT_I and did nothing", __func__);
 		}
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void s2_exit(void *o)
@@ -226,7 +229,7 @@ static void s21_entry(void *o)
 	LOG_INF("%s", __func__);
 }
 
-static void s21_run(void *o)
+static enum smf_state_result s21_run(void *o)
 {
 	LOG_INF("%s", __func__);
 	struct s_object *obj = (struct s_object *)o;
@@ -245,6 +248,7 @@ static void s21_run(void *o)
 		smf_set_state(SMF_CTX(obj), &demo_states[STATE_S1]);
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void s21_exit(void *o)
@@ -258,7 +262,7 @@ static void s211_entry(void *o)
 	LOG_INF("%s", __func__);
 }
 
-static void s211_run(void *o)
+static enum smf_state_result s211_run(void *o)
 {
 	LOG_INF("%s", __func__);
 	struct s_object *obj = (struct s_object *)o;
@@ -273,6 +277,7 @@ static void s211_run(void *o)
 		smf_set_state(SMF_CTX(obj), &demo_states[STATE_S]);
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void s211_exit(void *o)
