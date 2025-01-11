@@ -23,8 +23,8 @@ description: |
               gpio-controller;
               #gpio-cells = <2>;
               ngpios = <8>;
-              pin_mask = <0xff>;
-              pinmux_mask = <0xf7>;
+              pin-mask = <0xff>;
+              pinmux-mask = <0xf7>;
             };
 
             gpio@1 {
@@ -33,7 +33,7 @@ description: |
               gpio-controller;
               #gpio-cells = <2>;
               ngpios = <8>;
-              pin_mask = <0xff>;
+              pin-mask = <0xff>;
             };
           };
         };
@@ -53,8 +53,8 @@ description: |
               gpio-controller;
               #gpio-cells = <2>;
               ngpios = <8>;
-              pin_mask = <0xdc>;
-              pinmux_mask = <0xff>;
+              pin-mask = <0xdc>;
+              pinmux-mask = <0xff>;
             };
           };
         };
@@ -74,8 +74,8 @@ description: |
               gpio-controller;
               #gpio-cells = <2>;
               ngpios = <8>;
-              pin_mask = <0xdc>;
-              pinmux_mask = <0xff>;
+              pin-mask = <0xdc>;
+              pinmux-mask = <0xff>;
             };
           };
         };
