@@ -113,7 +113,7 @@ void pe_src_startup_entry(void *obj)
 	policy_notify(dev, NOT_PD_CONNECTED);
 }
 
-void pe_src_startup_run(void *obj)
+enum smf_state_result pe_src_startup_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -125,6 +125,7 @@ void pe_src_startup_run(void *obj)
 	if (prl_is_running(dev)) {
 		pe_set_state(dev, PE_SRC_SEND_CAPABILITIES);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -143,7 +144,7 @@ void pe_src_discovery_entry(void *obj)
 	usbc_timer_start(&pe->pd_t_typec_send_source_cap);
 }
 
-void pe_src_discovery_run(void *obj)
+enum smf_state_result pe_src_discovery_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -160,6 +161,7 @@ void pe_src_discovery_run(void *obj)
 			pe_set_state(dev, PE_SRC_DISABLED);
 		}
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 void pe_src_discovery_exit(void *obj)
@@ -186,7 +188,7 @@ void pe_src_send_capabilities_entry(void *obj)
 	LOG_INF("PE_SRC_Send_Capabilities");
 }
 
-void pe_src_send_capabilities_run(void *obj)
+enum smf_state_result pe_src_send_capabilities_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -245,6 +247,7 @@ void pe_src_send_capabilities_run(void *obj)
 		}
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -316,7 +319,7 @@ void pe_src_transition_supply_entry(void *obj)
 	}
 }
 
-void pe_src_transition_supply_run(void *obj)
+enum smf_state_result pe_src_transition_supply_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -339,6 +342,7 @@ void pe_src_transition_supply_run(void *obj)
 	else if (atomic_test_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
 		pe_set_state(dev, PE_SRC_HARD_RESET);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 void pe_src_transition_supply_exit(void *obj)
@@ -383,7 +387,7 @@ void pe_src_ready_entry(void *obj)
 	}
 }
 
-void pe_src_ready_run(void *obj)
+enum smf_state_result pe_src_ready_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -467,6 +471,7 @@ void pe_src_ready_run(void *obj)
 		/* Handle Source DPManager Requests */
 		source_dpm_requests(dev);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 void pe_src_ready_exit(void *obj)
@@ -521,7 +526,7 @@ void pe_src_transition_to_default_entry(void *obj)
 	policy_notify(dev, DATA_ROLE_IS_DFP);
 }
 
-void pe_src_transition_to_default_run(void *obj)
+enum smf_state_result pe_src_transition_to_default_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -535,6 +540,7 @@ void pe_src_transition_to_default_run(void *obj)
 	if (policy_check(dev, CHECK_SRC_PS_AT_DEFAULT_LEVEL)) {
 		pe_set_state(dev, PE_SRC_STARTUP);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 void pe_src_transition_to_default_exit(void *obj)
@@ -584,14 +590,14 @@ void pe_src_capability_response_entry(void *obj)
 	}
 }
 
-void pe_src_capability_response_run(void *obj)
+enum smf_state_result pe_src_capability_response_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
 
 	/* Wait until message has been sent */
 	if (!atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	/*
@@ -648,6 +654,7 @@ void pe_src_capability_response_run(void *obj)
 			pe_set_state(dev, PE_SUSPEND);
 		}
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 void pe_src_hard_reset_parent_entry(void *obj)
@@ -657,7 +664,7 @@ void pe_src_hard_reset_parent_entry(void *obj)
 	pe->submachine = SM_HARD_RESET_START;
 }
 
-void pe_src_hard_reset_parent_run(void *obj)
+enum smf_state_result pe_src_hard_reset_parent_run(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
@@ -687,6 +694,7 @@ void pe_src_hard_reset_parent_run(void *obj)
 		}
 		break;
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 void pe_src_hard_reset_parent_exit(void *obj)
