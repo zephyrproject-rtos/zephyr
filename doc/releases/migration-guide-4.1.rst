@@ -236,6 +236,7 @@ I2C
 ===
 
 * Renamed the ``compatible`` from ``nxp,imx-lpi2c`` to :dtcompatible:`nxp,lpi2c`.
+* Renamed the device tree property ``port_sel`` to ``port-sel```.
 
 I2S
 ===
