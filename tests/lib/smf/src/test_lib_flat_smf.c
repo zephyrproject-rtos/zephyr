@@ -94,7 +94,7 @@ static void state_a_entry(void *obj)
 	o->transition_bits |= STATE_A_ENTRY_BIT;
 }
 
-static void state_a_run(void *obj)
+static enum smf_state_result state_a_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
@@ -105,6 +105,7 @@ static void state_a_run(void *obj)
 	o->transition_bits |= STATE_A_RUN_BIT;
 
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_B]);
+	return SMF_EVENT_HANDLED;
 }
 
 static void state_a_exit(void *obj)
@@ -129,7 +130,7 @@ static void state_b_entry(void *obj)
 	o->transition_bits |= STATE_B_ENTRY_BIT;
 }
 
-static void state_b_run(void *obj)
+static enum smf_state_result state_b_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
@@ -139,12 +140,13 @@ static void state_b_run(void *obj)
 
 	if (o->terminate == RUN) {
 		smf_set_terminate(obj, -1);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	o->transition_bits |= STATE_B_RUN_BIT;
 
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_C]);
+	return SMF_EVENT_HANDLED;
 }
 
 static void state_b_exit(void *obj)
@@ -167,7 +169,7 @@ static void state_c_entry(void *obj)
 	o->transition_bits |= STATE_C_ENTRY_BIT;
 }
 
-static void state_c_run(void *obj)
+static enum smf_state_result state_c_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
@@ -177,6 +179,7 @@ static void state_c_run(void *obj)
 	o->transition_bits |= STATE_C_RUN_BIT;
 
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_D]);
+	return SMF_EVENT_HANDLED;
 }
 
 static void state_c_exit(void *obj)
@@ -202,9 +205,10 @@ static void state_d_entry(void *obj)
 	o->tv_idx++;
 }
 
-static void state_d_run(void *obj)
+static enum smf_state_result state_d_run(void *obj)
 {
 	/* Do nothing */
+	return SMF_EVENT_HANDLED;
 }
 
 static void state_d_exit(void *obj)
