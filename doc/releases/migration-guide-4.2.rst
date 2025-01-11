@@ -127,6 +127,12 @@ Networking
   (because the addr is not a pointer) and must be changed to ``if (lladdr->len == 0)``
   if the code wants to check that the link address is not set.
 
+SPI
+===
+
+* Renamed the device tree property ``port_sel`` to ``port-sel``.
+* Renamed the device tree property ``chip_select`` to ``chip-select``.
+
 Other subsystems
 ****************
 
