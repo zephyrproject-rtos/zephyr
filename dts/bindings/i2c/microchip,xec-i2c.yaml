@@ -11,7 +11,7 @@ properties:
   reg:
     required: true
 
-  port_sel:
+  port-sel:
     type: int
     description: soc block mapping to pin
     required: true
