@@ -13,7 +13,8 @@
  *  Hierarchical Test Transition to self:
  *
  * This implements a hierarchical state machine using UML rules and demonstrates
- * initial transitions, transitions to self (in PARENT_C) and smf_set_handled (in STATE_B)
+ * initial transitions, transitions to self (in PARENT_C) and preventing event
+ * propagation (in STATE_B)
  *
  * The order of entry, exit and run actions is given in the ordering of the test_value[] array.
  */
@@ -42,7 +43,7 @@ enum test_steps {
 	STATE_A_EXIT,
 	STATE_B_ENTRY,
 
-	/* Run 1: Test smf_set_handled() */
+	/* Run 1: Test preventing event propagation */
 	STATE_B_1ST_RUN,
 
 	/* Run 2: Normal state transition via parent */
@@ -165,7 +166,7 @@ static void root_entry(void *obj)
 	o->transition_bits |= BIT(ROOT_ENTRY);
 }
 
-static void root_run(void *obj)
+static enum smf_state_result root_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
@@ -176,6 +177,7 @@ static void root_run(void *obj)
 	o->transition_bits |= BIT(ROOT_RUN);
 
 	/* Return to parent run state */
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void root_exit(void *obj)
@@ -204,7 +206,7 @@ static void parent_ab_entry(void *obj)
 	o->transition_bits |= BIT(PARENT_AB_ENTRY);
 }
 
-static void parent_ab_run(void *obj)
+static enum smf_state_result parent_ab_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
@@ -214,18 +216,13 @@ static void parent_ab_run(void *obj)
 
 	if (o->terminate == PARENT_RUN) {
 		smf_set_terminate(obj, -1);
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	o->transition_bits |= BIT(PARENT_AB_RUN);
 
-	/*
-	 * You should not call smf_set_handled() in the same code path as smf_set_state().
-	 * There was a bug that did not reset the handled bit if both were called,
-	 * so check it's still fixed:
-	 */
-	smf_set_handled(SMF_CTX(obj));
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_C]);
+	return SMF_EVENT_HANDLED;
 }
 
 static void parent_ab_exit(void *obj)
@@ -259,7 +256,7 @@ static void parent_c_entry(void *obj)
 	}
 }
 
-static void parent_c_run(void *obj)
+static enum smf_state_result parent_c_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
@@ -270,6 +267,8 @@ static void parent_c_run(void *obj)
 	o->transition_bits |= BIT(PARENT_C_RUN);
 
 	smf_set_state(SMF_CTX(obj), &test_states[PARENT_C]);
+
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void parent_c_exit(void *obj)
@@ -304,7 +303,7 @@ static void state_a_entry(void *obj)
 	o->transition_bits |= BIT(STATE_A_ENTRY);
 }
 
-static void state_a_run(void *obj)
+static enum smf_state_result state_a_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
@@ -315,6 +314,7 @@ static void state_a_run(void *obj)
 	o->transition_bits |= BIT(STATE_A_RUN);
 
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_B]);
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void state_a_exit(void *obj)
@@ -338,7 +338,7 @@ static void state_b_entry(void *obj)
 	o->transition_bits |= BIT(STATE_B_ENTRY);
 }
 
-static void state_b_run(void *obj)
+static enum smf_state_result state_b_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
@@ -348,17 +348,18 @@ static void state_b_run(void *obj)
 
 	if (o->terminate == RUN) {
 		smf_set_terminate(obj, -1);
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	if (o->first_time & B_RUN_FIRST_TIME) {
 		o->first_time &= ~B_RUN_FIRST_TIME;
 		o->transition_bits |= BIT(STATE_B_1ST_RUN);
-		smf_set_handled(SMF_CTX(obj));
+		return SMF_EVENT_HANDLED;
 	} else {
 		o->transition_bits |= BIT(STATE_B_2ND_RUN);
 		/* bubble up to PARENT_AB */
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void state_b_exit(void *obj)
@@ -387,7 +388,7 @@ static void state_c_entry(void *obj)
 	}
 }
 
-static void state_c_run(void *obj)
+static enum smf_state_result state_c_run(void *obj)
 {
 	struct test_object *o = TEST_OBJECT(obj);
 
@@ -403,6 +404,7 @@ static void state_c_run(void *obj)
 		o->transition_bits |= BIT(STATE_C_2ND_RUN);
 		smf_set_state(SMF_CTX(obj), &test_states[STATE_D]);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void state_c_exit(void *obj)
@@ -433,9 +435,10 @@ static void state_d_entry(void *obj)
 	o->tv_idx++;
 }
 
-static void state_d_run(void *obj)
+static enum smf_state_result state_d_run(void *obj)
 {
 	/* Do nothing */
+	return SMF_EVENT_PROPAGATE;
 }
 
 static void state_d_exit(void *obj)
