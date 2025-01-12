@@ -86,11 +86,11 @@ void ft8xx_copro_cmd_text(const struct device *dev,
 			   int16_t y,
 			   int16_t font,
 			   uint16_t options,
-			   const char *s)
+			   const char *string)
 {
 	struct ft8xx_data *data = dev->data;
 
-	const uint16_t str_bytes = strlen(s) + 1;
+	const uint16_t str_bytes = strlen(string) + 1;
 	const uint16_t padding_bytes = (4 - (str_bytes % 4)) % 4;
 	const uint16_t cmd_size = sizeof(CMD_TEXT) +
 				   sizeof(x) +
@@ -119,7 +119,8 @@ void ft8xx_copro_cmd_text(const struct device *dev,
 	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, options);
 	increase_reg_cmd_write(dev, sizeof(options));
 
-	(void)ft8xx_drv_write(dev, FT800_RAM_CMD + data->reg_cmd_write, (uint8_t *)s, str_bytes);
+	(void)ft8xx_drv_write(dev, FT800_RAM_CMD + data->reg_cmd_write, (uint8_t *)string,
+			      str_bytes);
 	increase_reg_cmd_write(dev, str_bytes + padding_bytes);
 
 	flush_reg_cmd_write(dev);
@@ -130,7 +131,7 @@ void ft8xx_copro_cmd_number(const struct device *dev,
 			     int16_t y,
 			     int16_t font,
 			     uint16_t options,
-			     int32_t n)
+			     int32_t number)
 {
 	struct ft8xx_data *data = dev->data;
 
@@ -139,7 +140,7 @@ void ft8xx_copro_cmd_number(const struct device *dev,
 				   sizeof(y) +
 				   sizeof(font) +
 				   sizeof(options) +
-				   sizeof(n);
+				   sizeof(number);
 
 	while (ram_cmd_freespace(dev) < cmd_size) {
 		refresh_reg_cmd_read(dev);
@@ -160,8 +161,8 @@ void ft8xx_copro_cmd_number(const struct device *dev,
 	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, options);
 	increase_reg_cmd_write(dev, sizeof(options));
 
-	ft8xx_wr32(dev, FT800_RAM_CMD + data->reg_cmd_write, n);
-	increase_reg_cmd_write(dev, sizeof(n));
+	ft8xx_wr32(dev, FT800_RAM_CMD + data->reg_cmd_write, number);
+	increase_reg_cmd_write(dev, sizeof(number));
 
 	flush_reg_cmd_write(dev);
 }
