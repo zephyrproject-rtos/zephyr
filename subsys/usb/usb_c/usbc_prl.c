@@ -624,7 +624,7 @@ static void prl_tx_wait_for_message_request_run(void *obj)
 	 */
 	if (data->rev[PD_PACKET_SOP] == PD_REV30 && pe_dpm_initiated_ams(dev)) {
 		if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_WAIT_SINK_OK) ||
-			atomic_test_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG)) {
+		    atomic_test_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG)) {
 			/*
 			 * If we are already in an AMS then allow the
 			 * multi-message AMS to continue.
@@ -637,7 +637,7 @@ static void prl_tx_wait_for_message_request_run(void *obj)
 			 * Policy Engine
 			 */
 			if (IS_ENABLED(CONFIG_USBC_CSM_SOURCE_ONLY) &&
-				pe_get_power_role(dev) == TC_ROLE_SOURCE) {
+			    pe_get_power_role(dev) == TC_ROLE_SOURCE) {
 				atomic_set_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG);
 				prl_tx_set_state(dev, PRL_TX_SRC_SOURCE_TX);
 			} else {
@@ -1260,6 +1260,7 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 /**
  * @brief Protocol Layer Transmit State table
  */
+/* clang-format off */
 static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 	[PRL_TX_PHY_LAYER_RESET] = SMF_CREATE_STATE(
 		prl_tx_phy_layer_reset_entry,
@@ -1320,11 +1321,13 @@ static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 		NULL),
 #endif
 };
+/* clang-format on */
 BUILD_ASSERT(ARRAY_SIZE(prl_tx_states) == PRL_TX_STATE_COUNT);
 
 /**
  * @brief Protocol Layer Hard Reset State table
  */
+/* clang-format off */
 static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT] = {
 	[PRL_HR_WAIT_FOR_REQUEST] = SMF_CREATE_STATE(
 		prl_hr_wait_for_request_entry,
@@ -1357,4 +1360,5 @@ static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT] = {
 		NULL,
 		NULL),
 };
+/* clang-format on */
 BUILD_ASSERT(ARRAY_SIZE(prl_hr_states) == PRL_HR_STATE_COUNT);
