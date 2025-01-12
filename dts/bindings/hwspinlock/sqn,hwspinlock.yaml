@@ -11,6 +11,6 @@ properties:
   reg:
     required: true
 
-  num_locks:
+  num-locks:
     type: int
     required: true
