@@ -221,6 +221,7 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 				config->source_burst_length / 4 << GPDMA0_CH_CTLL_SRC_MSIZE_Pos |
 				BIT(GPDMA0_CH_CTLL_INT_EN_Pos);
 
+	dma->CH[channel].CFGH = 0;
 	if (config->channel_direction == MEMORY_TO_PERIPHERAL ||
 	    config->channel_direction == PERIPHERAL_TO_MEMORY) {
 		uint8_t request_source = XMC4XXX_DMA_GET_REQUEST_SOURCE(config->dma_slot);
@@ -315,8 +316,14 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 static int dma_xmc4xxx_start(const struct device *dev, uint32_t channel)
 {
 	const struct dma_xmc4xxx_config *dev_cfg = dev->config;
+	struct dma_xmc4xxx_data *dev_data = dev->data;
+	uint8_t dlr_line = dev_data->channels[channel].dlr_line;
 
 	LOG_DBG("Starting channel %d", channel);
+	if (dlr_line != DLR_LINE_UNSET && (DLR->LNEN & BIT(dlr_line)) == 0) {
+		DLR->LNEN |= BIT(dlr_line);
+	}
+
 	XMC_DMA_CH_Enable(dev_cfg->dma, channel);
 	return 0;
 }
@@ -341,10 +348,8 @@ static int dma_xmc4xxx_stop(const struct device *dev, uint32_t channel)
 		DLR->LNEN &= ~BIT(dma_channel->dlr_line);
 	}
 
-	dma_channel->dlr_line = DLR_LINE_UNSET;
-	dma_channel->cb = NULL;
-
 	XMC_DMA_CH_Disable(dma, channel);
+	XMC_DMA_CH_Resume(dma, channel);
 	return 0;
 }
 
