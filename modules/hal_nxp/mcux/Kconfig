@@ -1,0 +1,111 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SDKNG_UNSUPPORTED
+	bool
+	default y if SOC_LPC11U66
+	default y if SOC_LPC11U67
+	default y if SOC_LPC11U68
+	default y if SOC_LPC54114
+	default y if SOC_MIMX8ML8_A53
+	default y if SOC_MIMX8ML8_ADSP
+	default y if SOC_MIMX8MM6_A53
+	default y if SOC_MIMX8MN6_A53
+	default y if SOC_MIMX8QM6
+	default y if SOC_MIMX8QX6
+	default y if SOC_MIMX8UD7_ADSP
+	default y if SOC_MIMX9352_A55
+	default y if SOC_MIMX9596_A55
+	default y if SOC_MK22F12
+	default y if SOC_MK64F12
+	default y if SOC_MK66F18
+	default y if SOC_MK80F25615
+	default y if SOC_MK82F25615
+	default y if SOC_MKE14F16
+	default y if SOC_MKE16F16
+	default y if SOC_MKE18F16
+	default y if SOC_MKL25Z4
+	default y if SOC_MKV56F24
+	default y if SOC_MKV58F24
+	default y if SOC_MKW22D5
+	default y if SOC_MKW24D5
+	default y if SOC_MKW40Z4
+	default y if SOC_MKW41Z4
+
+if (!SOC_SDKNG_UNSUPPORTED && !SOC_FAMILY_NXP_S32 && HAS_MCUX)
+
+mainmenu "MCUX SDK Configuration"
+
+# These items defines compile and link flags, which are not necessary for Zephyr
+# so deactivate them.
+config MCUX_PRJSEG_config.device_core.define
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.cm4
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.cm4f
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.fpu.no_fpu
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.fpu.fpv4_sp
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.cm7f
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.fpu.fpv5_dp
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.fpu.fpv5_sp
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.cm33
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.cm33_nodsp_nosau
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.cm33_dsp_nosau
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.cm33_nodsp_sau
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.core.cm0p
+	bool
+	default n
+
+config MCUX_PRJSEG_config.arm.shared
+	bool
+	default n
+
+config MCUX_PRJSEG_config.kinetis.shared
+	bool
+	default n
+
+config MCUX_PRJSEG_config.wireless.shared
+	bool
+	default n
+
+rsource "mcux-sdk-ng/components/Kconfig"
+rsource "mcux-sdk-ng/device/Kconfig"
+rsource "mcux-sdk-ng/drivers/Kconfig"
+rsource "mcux-sdk-ng/middleware/Kconfig"
+
+endif

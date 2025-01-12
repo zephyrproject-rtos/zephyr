@@ -26,16 +26,13 @@ source "modules/Kconfig.chre"
 source "modules/Kconfig.cypress"
 source "modules/Kconfig.eos_s3"
 source "modules/Kconfig.esp32"
-source "modules/Kconfig.imx"
 source "modules/Kconfig.infineon"
 source "modules/Kconfig.libmetal"
 source "modules/lvgl/Kconfig"
-source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
 source "modules/Kconfig.nuvoton"
 source "modules/Kconfig.open-amp"
 source "modules/Kconfig.picolibc"
-source "modules/Kconfig.nxp_s32"
 source "modules/Kconfig.renesas_fsp"
 source "modules/Kconfig.rust"
 source "modules/Kconfig.simplelink"
@@ -71,6 +68,9 @@ comment "hal_gigadevice module not available."
 
 comment "hal_nordic module not available."
 	depends on !ZEPHYR_HAL_NORDIC_MODULE
+
+comment "hal_nxp module not available."
+	depends on !ZEPHYR_HAL_NXP_MODULE
 
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE

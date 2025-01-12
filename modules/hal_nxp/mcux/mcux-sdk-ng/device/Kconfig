@@ -1,0 +1,242 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT1176_CM7
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1170/MIMXRT1176/cm7/Kconfig"
+endif
+
+if SOC_MIMXRT1176_CM4
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1170/MIMXRT1176/cm4/Kconfig"
+endif
+
+if SOC_MIMXRT1176
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1170/MIMXRT1176/Kconfig"
+endif
+
+if SOC_MIMXRT1166_CM7
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1160/MIMXRT1166/cm7/Kconfig"
+endif
+
+if SOC_MIMXRT1166_CM4
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1160/MIMXRT1166/cm4/Kconfig"
+endif
+
+if SOC_MIMXRT1166
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1160/MIMXRT1166/Kconfig"
+endif
+
+if SOC_LPC51U68
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/LPC/LPC51U68/LPC51U68/Kconfig"
+endif
+
+if SOC_LPC55S06
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/LPC/LPC5500/LPC55S06/Kconfig"
+endif
+
+if SOC_LPC55S16
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/LPC/LPC5500/LPC55S16/Kconfig"
+endif
+
+if SOC_LPC55S26
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/LPC/LPC5500/LPC55S26/Kconfig"
+endif
+
+if SOC_LPC55S28
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/LPC/LPC5500/LPC55S28/Kconfig"
+endif
+
+if SOC_LPC55S36
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/LPC/LPC5500/LPC55S36/Kconfig"
+endif
+
+if SOC_LPC55S69
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/LPC/LPC5500/LPC55S69/Kconfig"
+endif
+
+if SOC_LPC55S69_CPU0
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/LPC/LPC5500/LPC55S69/cm33_core0/Kconfig"
+endif
+
+if SOC_LPC55S69_CPU1
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/LPC/LPC5500/LPC55S69/cm33_core1/Kconfig"
+endif
+
+if SOC_MCXA156
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXA/MCXA156/Kconfig"
+endif
+
+if SOC_MCXC141
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXC/MCXC141/Kconfig"
+endif
+
+if SOC_MCXC142
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXC/MCXC142/Kconfig"
+endif
+
+if SOC_MCXC242
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXC/MCXC242/Kconfig"
+endif
+
+if SOC_MCXC444
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXC/MCXC444/Kconfig"
+endif
+
+if SOC_MCXN236
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXN/MCXN236/Kconfig"
+endif
+
+if SOC_MCXN947
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXN/MCXN947/Kconfig"
+endif
+
+if SOC_MCXN947_CPU0
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXN/MCXN947/cm33_core0/Kconfig"
+endif
+
+if SOC_MCXN947_CPU1
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXN/MCXN947/cm33_core1/Kconfig"
+endif
+
+if SOC_MCXW716C
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/MCX/MCXW/MCXW716C/Kconfig"
+endif
+
+if SOC_MIMX8ML8
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/i.MX/i.MX8MP/MIMX8ML8/Kconfig"
+endif
+
+if SOC_MIMX8MM6
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/i.MX/i.MX8MM/MIMX8MM6/Kconfig"
+endif
+
+if SOC_MIMX8MN6
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/i.MX/i.MX8MN/MIMX8MN6/Kconfig"
+endif
+
+if SOC_MIMX8MQ6
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/i.MX/i.MX8M/MIMX8MQ6/Kconfig"
+endif
+
+if SOC_MIMX8UD7
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/i.MX/i.MX8ULP/MIMX8UD7/Kconfig"
+
+	if SOC_MIMX8UD7_ADSP
+	    osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/i.MX/i.MX8ULP/MIMX8UD7/fusionf1/Kconfig"
+	endif
+
+	if !SOC_MIMX8UD7_ADSP
+	    osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/i.MX/i.MX8ULP/MIMX8UD7/cm33/Kconfig"
+	endif
+endif
+
+
+# MCUXSDK only support M core
+if SOC_MIMX9352_M33
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/i.MX/i.MX93/MIMX9352/Kconfig"
+endif
+
+# MCUXSDK only support M core
+if SOC_MIMX9596_M7
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/i.MX/i.MX95/MIMX9596/Kconfig"
+endif
+
+if SOC_MIMXRT1011
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1010/MIMXRT1011/Kconfig"
+endif
+
+if SOC_MIMXRT1015
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1015/MIMXRT1015/Kconfig"
+endif
+
+if SOC_MIMXRT1021
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1020/MIMXRT1021/Kconfig"
+endif
+
+if SOC_MIMXRT1024
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1020/MIMXRT1024/Kconfig"
+endif
+
+if SOC_MIMXRT1042
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1040/MIMXRT1042/Kconfig"
+endif
+
+if SOC_MIMXRT1052
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1050/MIMXRT1052/Kconfig"
+endif
+
+if SOC_MIMXRT1062
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1060/MIMXRT1062/Kconfig"
+endif
+
+if SOC_MIMXRT1064
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1064/MIMXRT1064/Kconfig"
+endif
+
+if SOC_MIMXRT1189
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1180/MIMXRT1189/Kconfig"
+endif
+
+if SOC_MIMXRT1189_CM33
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1180/MIMXRT1189/cm33/Kconfig"
+endif
+
+if SOC_MIMXRT1189_CM7
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT1180/MIMXRT1189/cm7/Kconfig"
+endif
+
+if SOC_MIMXRT595S
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT500/MIMXRT595S/Kconfig"
+endif
+
+if SOC_MIMXRT595S_CM33
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT500/MIMXRT595S/cm33/Kconfig"
+endif
+
+if SOC_MIMXRT595S_F1
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT500/MIMXRT595S/fusionf1/Kconfig"
+endif
+
+if SOC_MIMXRT685S
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT600/MIMXRT685S/Kconfig"
+endif
+
+if SOC_MIMXRT685S_CM33
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT600/MIMXRT685S/cm33/Kconfig"
+endif
+
+if SOC_MK22F51212
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/Kinetis/K/MK22F51212/Kconfig"
+endif
+
+if SOC_MKE15Z7
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/Kinetis/KE/MKE15Z7/Kconfig"
+endif
+
+if SOC_MKE17Z7
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/Kinetis/KE/MKE17Z7/Kconfig"
+endif
+
+if SOC_MKE17Z9
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/Kinetis/KE/MKE17Z9/Kconfig"
+endif
+
+if SOC_RW610
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/Wireless/RW/RW610/Kconfig"
+endif
+
+if SOC_RW612
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/Wireless/RW/RW612/Kconfig"
+endif
+
+if SOC_MIMXRT798S_CM33_CPU0
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT700/MIMXRT798S/cm33_core0/Kconfig"
+endif
+
+if SOC_MIMXRT798S_CM33_CPU1
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT700/MIMXRT798S/cm33_core1/Kconfig"
+endif
+
+if SOC_MIMXRT798S
+	osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/devices/RT/RT700/MIMXRT798S/Kconfig"
+endif

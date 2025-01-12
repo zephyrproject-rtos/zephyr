@@ -1,0 +1,25 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_COMPONENT_middleware.usb.common_header
+	bool
+	#default y if DT_HAS_NXP_USBPHY_ENABLED
+
+config MCUX_COMPONENT_middleware.usb.device.common_header
+	bool
+	#default y if (USB_DC_NXP_EHCI || UDC_NXP_EHCI || USB_DC_NXP_LPCIP3511 || UDC_NXP_IP3511)
+	select MCUX_COMPONENT_middleware.usb.common_header
+
+config MCUX_COMPONENT_middleware.usb.phy
+	bool
+	default y if (DT_HAS_NXP_USBPHY_ENABLED || USB_DEVICE_DRIVER)
+	select MCUX_COMPONENT_middleware.usb.device.common_header
+
+config MCUX_COMPONENT_middleware.usb.device.ehci
+	bool
+	default y if (USB_DC_NXP_EHCI || UDC_NXP_EHCI)
+
+config MCUX_COMPONENT_middleware.usb.device.ip3511fs
+	bool
+	default y if (USB_DC_NXP_LPCIP3511 || UDC_NXP_IP3511)

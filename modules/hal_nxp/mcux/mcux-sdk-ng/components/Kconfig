@@ -1,0 +1,30 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+osource "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/components/osa/Kconfig"
+
+config MCUX_COMPONENT_middleware.zephyr
+	bool
+	default y
+
+config MCUX_COMPONENT_component.osa
+	bool
+	default y if (UDC_DRIVER || USB_DEVICE_DRIVER || SOC_SERIES_RW6XX)
+	select CONFIG_MCUX_COMPONENT_component.osa_zephyr
+
+config MCUX_COMPONENT_component.wifi_bt_module.tx_pwr_limits
+	bool
+	default y if WIFI_NXP
+
+config MCUX_COMPONENT_driver.conn_fwloader
+	bool
+	default y if NXP_FW_LOADER
+
+config MCUX_COMPONENT_component.lists
+	bool
+	default y if (NXP_RF_IMU && SOC_SERIES_MCXW)
+
+config MCUX_COMPONENT_component.mflash_offchip
+	bool
+	default y if (SOC_SERIES_RW6XX && NXP_FW_LOADER)

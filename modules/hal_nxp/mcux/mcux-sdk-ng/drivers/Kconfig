@@ -1,0 +1,608 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/drivers/Kconfig"
+
+config MCUX_COMPONENT_driver.common
+	bool
+	default y if HAS_MCUX
+
+config MCUX_COMPONENT_driver.clock
+	bool
+	default y if HAS_MCUX
+
+config MCUX_COMPONENT_device.system
+	bool
+	default y if HAS_MCUX
+
+config MCUX_COMPONENT_device.boot_header
+	bool
+	default y if HAS_MCUX
+
+config MCUX_COMPONENT_driver.anadig_pmu
+	bool
+	default y if SOC_SERIES_IMXRT11XX
+
+#config MCUX_COMPONENT_driver.pgmc
+#	bool
+#    default y if SOC_SERIES_IMXRT11XX
+
+config MCUX_COMPONENT_driver.src_2
+	bool
+	default y if HWINFO_MCUX_SRC_V2
+
+config MCUX_COMPONENT_driver.dcdc_2
+	bool
+	default y if SOC_SERIES_IMXRT11XX
+
+config MCUX_COMPONENT_driver.anatop_ai
+	bool
+	default y if SOC_SERIES_IMXRT11XX
+
+config MCUX_COMPONENT_driver.lpadc
+	bool
+	default y if ADC_MCUX_LPADC
+
+config MCUX_COMPONENT_driver.ctimer
+	bool
+	default y if COUNTER_MCUX_CTIMER
+
+config MCUX_COMPONENT_driver.lpc_rtc
+	bool
+	default y if COUNTER_MCUX_LPC_RTC
+
+config MCUX_COMPONENT_driver.lpc_dma
+	bool
+	default y if DMA_MCUX_LPC
+
+config MCUX_COMPONENT_driver.lpc_gpio
+	bool
+	default y if GPIO_MCUX_LPC
+
+config MCUX_COMPONENT_driver.pint
+	bool
+	default y if NXP_PINT
+
+config MCUX_COMPONENT_driver.inputmux
+	bool
+	default y if NXP_PINT
+	default y if DMA_MCUX_SMARTDMA
+
+config MCUX_COMPONENT_driver.flexcomm
+	bool
+
+config MCUX_COMPONENT_driver.flexcomm_i2c
+	bool
+	default y if I2C_MCUX_FLEXCOMM
+	select MCUX_COMPONENT_driver.flexcomm
+
+config MCUX_COMPONENT_driver.flexcomm_i2s
+	bool
+	default y if I2S_MCUX_FLEXCOMM
+	select MCUX_COMPONENT_driver.flexcomm
+
+config MCUX_COMPONENT_driver.flexcomm_spi
+	bool
+	default y if SPI_MCUX_FLEXCOMM
+	select MCUX_COMPONENT_driver.flexcomm
+
+config MCUX_COMPONENT_driver.flexcomm_usart
+	bool
+	default y if UART_MCUX_FLEXCOMM
+	select MCUX_COMPONENT_driver.flexcomm
+
+config MCUX_COMPONENT_driver.ostimer
+	bool
+	default y if MCUX_OS_TIMER
+
+config MCUX_COMPONENT_driver.sctimer
+	bool
+	default y if PWM_MCUX_SCTIMER
+
+config MCUX_COMPONENT_driver.flashiap
+	bool
+	default y if SOC_FLASH_LPC
+
+config MCUX_COMPONENT_driver.wwdt
+	bool
+	default y if WDT_MCUX_WWDT
+
+config MCUX_COMPONENT_driver.adc12
+	bool
+	default y if ADC_MCUX_ADC12
+
+config MCUX_COMPONENT_driver.adc16
+	bool
+	default y if ADC_MCUX_ADC16
+
+config MCUX_COMPONENT_driver.flexcan
+	bool
+	default y if CAN_MCUX_FLEXCAN
+	default y if CAN_MCUX_FLEXCAN_FD
+
+config MCUX_COMPONENT_driver.pit
+	bool
+	default y if COUNTER_NXP_PIT
+
+config MCUX_COMPONENT_driver.rtc
+	bool
+	default y if COUNTER_MCUX_RTC
+
+config MCUX_COMPONENT_driver.dac
+	bool
+	default y if DAC_MCUX_DAC
+
+config MCUX_COMPONENT_driver.dac32
+	bool
+	default y if DAC_MCUX_DAC32
+
+config MCUX_COMPONENT_driver.dmamux
+	bool
+	default y if DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3
+
+config MCUX_COMPONENT_driver.edma
+	bool
+	default y if DMA_MCUX_EDMA
+
+config MCUX_COMPONENT_driver.dma3
+	bool
+	default y if DMA_MCUX_EDMA_V3
+
+config MCUX_COMPONENT_driver.edma4
+	bool
+	default y if DMA_MCUX_EDMA_V4
+
+config MCUX_COMPONENT_driver.rnga
+	bool
+	default y if ENTROPY_MCUX_RNGA
+
+config MCUX_COMPONENT_driver.trng
+	bool
+	default y if ENTROPY_MCUX_TRNG
+
+config MCUX_COMPONENT_driver.caam
+	bool
+	default y if ENTROPY_MCUX_CAAM
+
+config MCUX_COMPONENT_driver.enet
+	bool
+	default y if ETH_NXP_ENET
+	default y if ETH_MCUX
+
+config MCUX_COMPONENT_driver.netc
+	bool
+	default y if ETH_NXP_IMX_NETC
+
+config MCUX_COMPONENT_driver.smc
+	bool
+	default y if HAS_MCUX_SMC
+
+config MCUX_COMPONENT_driver.i2c
+	bool
+	default y if I2C_MCUX
+
+config MCUX_COMPONENT_driver.lpspi
+	bool
+	default y if (SPI_MCUX_LPSPI && !NXP_LP_FLEXCOMM)
+
+config MCUX_COMPONENT_driver.lpflexcomm
+	bool
+
+config MCUX_COMPONENT_driver.lpflexcomm_lpspi
+	bool
+	default y if (SPI_MCUX_LPSPI && NXP_LP_FLEXCOMM)
+	select MCUX_COMPONENT_driver.lpflexcomm
+
+config MCUX_COMPONENT_driver.lpuart
+	bool
+	default y if (UART_MCUX_LPUART && !NXP_LP_FLEXCOMM)
+
+config MCUX_COMPONENT_driver.lpflexcomm_lpuart
+	bool
+	default y if (UART_MCUX_LPUART && NXP_LP_FLEXCOMM)
+	select MCUX_COMPONENT_driver.lpflexcomm
+
+config MCUX_COMPONENT_driver.lpi2c
+	bool
+	default y if (I2C_MCUX_LPI2C && !NXP_LP_FLEXCOMM)
+
+config MCUX_COMPONENT_driver.lpflexcomm_lpi2c
+	bool
+	default y if (I2C_MCUX_LPI2C && NXP_LP_FLEXCOMM)
+	select MCUX_COMPONENT_driver.lpflexcomm
+
+config MCUX_COMPONENT_driver.i3c
+	bool
+	default y if I3C_MCUX
+
+config MCUX_COMPONENT_driver.acmp
+	bool
+	default y if (ACMP_MCUX || COMPARATOR_MCUX_ACMP || SENSOR_MCUX_ACMP)
+
+config MCUX_COMPONENT_driver.ftm
+	bool
+	default y if PWM_MCUX_FTM
+
+config MCUX_COMPONENT_driver.tpm
+	bool
+	default y if PWM_MCUX_TPM
+	default y if COUNTER_MCUX_TPM
+
+config MCUX_COMPONENT_driver.pwt
+	bool
+	default y if PWM_MCUX_PWT
+
+config MCUX_COMPONENT_driver.qtmr_1
+	bool
+	default y if PWM_MCUX_QTMR_1
+	default y if COUNTER_MCUX_QTMR
+
+config MCUX_COMPONENT_driver.rtc
+	bool
+	default y if RTC_MCUX
+
+config MCUX_COMPONENT_driver.dspi
+	bool
+	default y if SPI_MCUX_DSPI
+
+config MCUX_COMPONENT_driver.ecspi
+	bool
+	default y if SPI_MCUX_ECSPI
+
+config MCUX_COMPONENT_driver.flexio
+	bool
+	default y if (MCUX_FLEXIO || PWM_NXP_FLEXIO)
+
+config MCUX_COMPONENT_driver.flexio_spi
+	bool
+	default y if SPI_MCUX_FLEXIO
+
+config MCUX_COMPONENT_driver.flexio_mculcd
+	bool
+	default y if FLEXIO_MCUX_MCULCD
+	default y if MIPI_DBI_NXP_FLEXIO_LCDIF
+
+config MCUX_COMPONENT_driver.uart
+	bool
+	default y if UART_MCUX
+
+config MCUX_COMPONENT_driver.lpsci
+	bool
+	default y if UART_MCUX_LPSCI
+
+config MCUX_COMPONENT_driver.wdog
+	bool
+	default y if WDOG_MCUX
+
+config MCUX_COMPONENT_driver.wdog32
+	bool
+	default y if WDOG_MCUX_32
+
+config MCUX_COMPONENT_driver.gpt
+	bool
+	default y if (COUNTER_MCUX_GPT || MCUX_GPT_TIMER)
+
+config MCUX_COMPONENT_driver.elcdif
+	bool
+	default y if DISPLAY_MCUX_ELCDIF
+
+config MCUX_COMPONENT_driver.lcdif
+	bool
+	default y if DISPLAY_MCUX_DCNANO_LCDIF
+
+config MCUX_COMPONENT_driver.pxp
+	bool
+	default y if MCUX_PXP
+	default y if LV_USE_GPU_NXP_PXP
+
+config MCUX_COMPONENT_driver.igpio
+	bool
+	default y if GPIO_MCUX_IGPIO
+
+config MCUX_COMPONENT_driver.rgpio
+	bool
+	default y if GPIO_MCUX_RGPIO
+
+config MCUX_COMPONENT_driver.gpio
+	bool
+	default y if GPIO_MCUX
+
+config MCUX_COMPONENT_driver.glikey
+	bool
+	default y if GLIKEY_MCUX_GLIKEY
+
+config MCUX_COMPONENT_driver.sai
+	bool
+	default y if I2S_MCUX_SAI
+	default y if DAI_NXP_SAI
+
+config MCUX_COMPONENT_driver.flexspi
+	bool
+	default y if (MEMC_MCUX_FLEXSPI || SOC_SERIES_RW6XX)
+
+config MCUX_COMPONENT_driver.pwm
+	bool
+	default y if PWM_MCUX
+
+config MCUX_COMPONENT_driver.csi
+	bool
+	default y if VIDEO_MCUX_CSI
+
+config MCUX_COMPONENT_driver.mipi_csi2rx
+	bool
+	default y if VIDEO_MCUX_MIPI_CSI2RX
+
+config MCUX_COMPONENT_driver.wdog01
+	bool
+	default y if WDT_MCUX_IMX_WDOG
+
+config MCUX_COMPONENT_driver.rdc
+	bool
+	default y if HAS_RDC_MCUX
+
+config MCUX_COMPONENT_driver.iuart
+	bool
+	default y if UART_MCUX_IUART
+
+config MCUX_COMPONENT_driver.adc_12b1msps_sar
+	bool
+	default y if ADC_MCUX_12B1MSPS_SAR
+
+config MCUX_COMPONENT_driver.src
+	bool
+	default y if HWINFO_MCUX_SRC
+
+config MCUX_COMPONENT_driver.sim
+	bool
+	default y if HWINFO_MCUX_SIM
+
+config MCUX_COMPONENT_driver.rcm
+	bool
+	default y if HWINFO_MCUX_RCM
+
+config MCUX_COMPONENT_driver.mailbox
+	bool
+	default y if IPM_MCUX || MBOX_NXP_MAILBOX
+
+config MCUX_COMPONENT_driver.snvs_hp
+	bool
+	default y if COUNTER_MCUX_SNVS
+
+config MCUX_COMPONENT_driver.snvs_lp
+	bool
+	default y if COUNTER_MCUX_SNVS_SRTC
+
+config MCUX_COMPONENT_driver.lptmr
+	bool
+	default y if COUNTER_MCUX_LPTMR || MCUX_LPTMR_TIMER
+
+config MCUX_COMPONENT_driver.usdhc
+	bool
+	default y if IMX_USDHC
+
+config MCUX_COMPONENT_driver.mipi_dsi_split
+	bool
+	default y if MIPI_DSI_MCUX
+
+config MCUX_COMPONENT_driver.mipi_dsi
+	bool
+	default y if MIPI_DSI_MCUX_2L
+
+config MCUX_COMPONENT_driver.lpc_adc
+	bool
+	default y if ADC_LPC_ADC
+
+config MCUX_COMPONENT_driver.sdif
+	bool
+	default y if MCUX_SDIF
+
+config MCUX_COMPONENT_driver.adc_etc
+	bool
+	default y if ADC_MCUX_ETC
+
+config MCUX_COMPONENT_driver.xbara
+	bool
+	default y if MCUX_XBARA
+
+config MCUX_COMPONENT_driver.enc
+	bool
+	default y if QDEC_MCUX
+
+config MCUX_COMPONENT_driver.dcp
+	bool
+	default y if CRYPTO_MCUX_DCP
+
+config MCUX_COMPONENT_driver.smartdma
+	bool
+	default y if DMA_MCUX_SMARTDMA
+
+config MCUX_COMPONENT_driver.dac_1
+	bool
+	default y if DAC_MCUX_LPDAC
+
+config MCUX_COMPONENT_driver.irqsteer
+	bool
+	default y if NXP_IRQSTEER
+
+config MCUX_COMPONENT_driver.dmic
+	bool
+	default y if AUDIO_DMIC_MCUX
+
+config MCUX_COMPONENT_driver.sdma
+	bool
+	default y if DMA_NXP_SDMA
+
+config MCUX_COMPONENT_driver.mcx_spc
+	bool
+	default y if SOC_SERIES_MCXN || SOC_SERIES_MCXA
+
+config MCUX_COMPONENT_driver.cns_adc
+	bool
+	default y if ADC_MCUX_GAU
+
+config MCUX_COMPONENT_driver.cns_dac
+	bool
+	default y if DAC_MCUX_GAU
+
+config MCUX_COMPONENT_driver.esai
+	bool
+	default y if DAI_NXP_ESAI
+
+config MCUX_COMPONENT_driver.lpcmp
+	bool
+	default y if MCUX_LPCMP
+
+config MCUX_COMPONENT_driver.imu
+	bool
+	default y if NXP_RF_IMU
+
+config MCUX_COMPONENT_driver.gdma
+	bool
+	default y if NXP_RF_IMU
+
+config MCUX_COMPONENT_driver.trdc
+	bool
+	default y if TRDC_MCUX_TRDC
+
+config MCUX_COMPONENT_driver.s3mu
+	bool
+	default y if S3MU_MCUX_S3MU
+
+config MCUX_COMPONENT_driver.port
+	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NXP_PORT_PINCTRL))
+
+config MCUX_COMPONENT_driver.pdm
+	bool
+	default y if DAI_NXP_MICFIL
+
+config MCUX_COMPONENT_driver.edma_soc_rev2
+	bool
+	default y if DMA_NXP_EDMA
+
+config MCUX_COMPONENT_driver.spc
+	bool
+	default y if BT_NXP && SOC_SERIES_MCXW
+
+config MCUX_COMPONENT_driver.netc_rt1180
+	bool
+	default y if SOC_MIMXRT1189 && ETH_NXP_IMX_NETC
+
+config MCUX_COMPONENT_driver.msgintr
+	bool
+	default y if SOC_MIMXRT1189 && ETH_NXP_IMX_NETC
+
+config HAS_MCUX_CACHE
+	select MCUX_COMPONENT_driver.cache_xcache if MCUX_HAS_COMPONENT_driver.cache_xcache
+	select MCUX_COMPONENT_driver.cache_lplmem if MCUX_HAS_COMPONENT_driver.cache_lplmem
+	select MCUX_COMPONENT_driver.cache_lpcac if MCUX_HAS_COMPONENT_driver.cache_lpcac
+	select MCUX_COMPONENT_driver.cache_lmem if MCUX_HAS_COMPONENT_driver.cache_lmem
+	select MCUX_COMPONENT_driver.cache_armv7_m7 if MCUX_HAS_COMPONENT_driver.cache_armv7_m7
+	select MCUX_COMPONENT_driver.cache_lpcac_n4a_mcxn if MCUX_HAS_COMPONENT_driver.cache_lpcac_n4a_mcxn
+	select MCUX_COMPONENT_driver.cache_cache64 if MCUX_HAS_COMPONENT_driver.cache_cache64
+
+config MCUX_COMPONENT_driver.mu1
+	bool
+	default y if (SOC_MIMX9596 && (IPM_IMX || MBOX_NXP_IMX_MU))
+
+config MCUX_COMPONENT_driver.mu
+	bool
+	default y if (!SOC_MIMX9596 && (IPM_IMX || MBOX_NXP_IMX_MU))
+
+config MCUX_COMPONENT_driver.gpc_3
+	bool
+	default y if (SOC_SERIES_IMXRT11XX && PM_MCUX_GPC)
+
+config MCUX_COMPONENT_driver.gpc_xxx_ctrl
+	bool
+	default y if (SOC_SERIES_IMXRT11XX && PM_MCUX_GPC)
+
+config MCUX_COMPONENT_driver.src_3
+	bool
+	default y if (SOC_SERIES_IMXRT11XX && HWINFO_MCUX_SRC_V2)
+
+config MCUX_COMPONENT_driver.gpc_1
+	bool
+	default y if (SOC_SERIES_IMXRT10XX && PM_MCUX_GPC)
+
+config MCUX_COMPONENT_driver.dcdc_1
+	bool
+	default y if (SOC_SERIES_IMXRT10XX && PM_MCUX_DCDC)
+
+config MCUX_COMPONENT_driver.pmu
+	bool
+	default y if (SOC_SERIES_IMXRT10XX && PM_MCUX_PMU)
+
+config MCUX_COMPONENT_driver.flash
+	bool
+	default y if ((SOC_FAMILY_KINETIS || SOC_SERIES_MCXC) && SOC_FLASH_MCUX)
+
+#config MCUX_COMPONENT_driver.port
+#	bool
+#    default y if SOC_FAMILY_KINETIS
+
+config MCUX_COMPONENT_driver.sysmpu
+	bool
+	default y if (SOC_MK80F25615 || SOC_MK82F25615 || SOC_MK64F12 || SOC_MK66F18 \
+	           || SOC_MKE14F16 || SOC_MKE16F16 || SOC_MKE18F16 || SOC_MK22F12)
+
+config MCUX_COMPONENT_driver.romapi
+	bool
+	default y if SOC_SERIES_MCXA
+
+config MCUX_COMPONENT_driver.romapi_flashiap
+	bool
+	default y if (SOC_SERIES_MCXN && SOC_FLASH_MCUX)
+
+config MCUX_COMPONENT_driver.flash_k4
+	bool
+	default y if (SOC_SERIES_MCXW && SOC_FLASH_MCUX)
+
+config MCUX_COMPONENT_driver.iap
+	bool
+	default y if ((SOC_SERIES_LPC51U68 || SOC_SERIES_LPC54XXX) && SOC_FLASH_MCUX)
+
+config MCUX_COMPONENT_driver.rng
+	bool
+	default y if ((SOC_SERIES_LPC51U68 || SOC_SERIES_LPC54XXX) && ENTROPY_MCUX_RNG)
+
+config MCUX_COMPONENT_driver.iap1
+	bool
+	default y if ((SOC_SERIES_LPC55XXX && !SOC_LPC55S36) && SOC_FLASH_MCUX)
+
+config MCUX_COMPONENT_driver.romapi_flash
+	bool
+	default y if (SOC_LPC55S36 && SOC_FLASH_MCUX)
+
+config MCUX_COMPONENT_driver.rng_1
+	bool
+	default y if (SOC_SERIES_LPC55XXX && ENTROPY_MCUX_RNG)
+
+config MCUX_COMPONENT_driver.lpc_iocon
+	bool
+	default y if (SOC_SERIES_LPC51U68 || SOC_SERIES_LPC54XXX || SOC_SERIES_LPC55XXX)
+
+config MCUX_COMPONENT_driver.vref_1
+	bool
+	default y if (SOC_LPC55S36 && (ADC_MCUX_LPADC || DAC_MCUX_LPDAC))
+
+config MCUX_COMPONENT_driver.lpc_iopctl
+	bool
+	default y if (SOC_SERIES_IMXRT5XX || SOC_SERIES_IMXRT6XX)
+
+config MCUX_COMPONENT_driver.ocotp
+	bool
+	default y if ((SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX) && ETH_NXP_ENET)
+
+config MCUX_COMPONENT_driver.ccm32k
+	bool
+	default y if SOC_SERIES_MCXW
+
+config MCUX_COMPONENT_driver.iap3
+	bool
+	default y if SOC_SERIES_IMXRT5XX
+
+config MCUX_COMPONENT_device.boot_header
+	bool
+	default y if (SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX)
