@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMX9131
+	select ARM64
+	select CPU_CORTEX_A55
+	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
+	select HAS_MCUX if CLOCK_CONTROL
+	select HAS_MCUX_CCM_REV2 if CLOCK_CONTROL
+	select HAS_MCUX_IOMUXC if PINCTRL
+	select HAS_MCUX_CACHE
+	select KERNEL_DIRECT_MAP if HAS_MCUX
