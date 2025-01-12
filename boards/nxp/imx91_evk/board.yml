@@ -1,0 +1,6 @@
+board:
+  name: imx91_evk
+  full_name: i.MX91 EVK
+  vendor: nxp
+  socs:
+  - name: mimx9131
