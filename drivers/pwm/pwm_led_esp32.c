@@ -400,7 +400,7 @@ PINCTRL_DT_INST_DEFINE(0);
 		.timer_num = DT_PROP(node_id, timer),                                              \
 		.speed_mode = DT_REG_ADDR(node_id) < SOC_LEDC_CHANNEL_NUM ? LEDC_LOW_SPEED_MODE    \
 									  : !LEDC_LOW_SPEED_MODE,  \
-		.inverted = DT_PWMS_FLAGS(node_id),                                                \
+		.inverted = DT_PROP(node_id, inverted),                                            \
 	},
 
 static struct pwm_ledc_esp32_channel_config channel_config[] = {
