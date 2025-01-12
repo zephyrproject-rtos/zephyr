@@ -79,8 +79,7 @@ static void send_src_caps(struct policy_engine *pe)
 	uint32_t num_pdos = 0;
 
 	/* This callback must be implemented */
-	__ASSERT(data->policy_cb_get_src_caps != NULL,
-			"Callback pointer should not be NULL");
+	__ASSERT(data->policy_cb_get_src_caps != NULL, "Callback pointer should not be NULL");
 
 	data->policy_cb_get_src_caps(dev, &pdos, &num_pdos);
 
@@ -216,8 +215,8 @@ void pe_src_send_capabilities_run(void *obj)
 		 *	2) And we are presently not Connected.
 		 */
 		else if ((atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_XMIT_ERROR) ||
-			atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED))
-			&& (atomic_test_bit(pe->flags, PE_FLAGS_PD_CONNECTED) == false)) {
+			  atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) &&
+			 (atomic_test_bit(pe->flags, PE_FLAGS_PD_CONNECTED) == false)) {
 			pe_set_state(dev, PE_SRC_DISCOVERY);
 		}
 		break;
@@ -232,7 +231,7 @@ void pe_src_send_capabilities_run(void *obj)
 			if (received_data_message(dev, header, PD_DATA_REQUEST)) {
 				/* Set to highest revision supported by both ports */
 				prl_set_rev(dev, PD_PACKET_SOP,
-					MIN(PD_REV30, header.specification_revision));
+					    MIN(PD_REV30, header.specification_revision));
 				pe_set_state(dev, PE_SRC_NEGOTIATE_CAPABILITY);
 			}
 		}
@@ -267,8 +266,7 @@ void pe_src_negotiate_capability_entry(void *obj)
 	 * Ask the Device Policy Manager to evaluate the Request
 	 * from the Attached Sink.
 	 */
-	pe->snk_request_reply =
-		policy_check_sink_request(dev, pe->snk_request);
+	pe->snk_request_reply = policy_check_sink_request(dev, pe->snk_request);
 
 	/*
 	 * The Policy Engine Shall transition to the
@@ -380,8 +378,7 @@ void pe_src_ready_entry(void *obj)
 	 * Else on entry to the PE_SRC_Ready state the Source Shall notify the
 	 * Protocol Layer of the end of the Atomic Message Sequence (AMS).
 	 */
-	if (atomic_test_and_clear_bit(pe->flags,
-				PE_FLAGS_PROTOCOL_ERROR_NO_SOFT_RESET)) {
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR_NO_SOFT_RESET)) {
 		pe_dpm_end_ams(dev);
 	}
 }
@@ -605,9 +602,9 @@ void pe_src_capability_response_run(void *obj)
 	 *	3: A Wait Message has been sent.
 	 */
 	if (atomic_test_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT) &&
-			((pe->snk_request_reply == SNK_REQUEST_REJECT &&
-			policy_present_contract_is_valid(dev, pe->present_contract)) ||
-			(pe->snk_request_reply == SNK_REQUEST_WAIT))) {
+	    ((pe->snk_request_reply == SNK_REQUEST_REJECT &&
+	      policy_present_contract_is_valid(dev, pe->present_contract)) ||
+	     (pe->snk_request_reply == SNK_REQUEST_WAIT))) {
 		pe_set_state(dev, PE_SRC_READY);
 	}
 	/*
@@ -618,7 +615,7 @@ void pe_src_capability_response_run(void *obj)
 	 *	   is Invalid
 	 */
 	else if (atomic_test_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT) &&
-			policy_present_contract_is_valid(dev, pe->present_contract) == false) {
+		 policy_present_contract_is_valid(dev, pe->present_contract) == false) {
 		pe_set_state(dev, PE_SRC_HARD_RESET);
 	}
 	/*
@@ -718,5 +715,4 @@ void pe_src_hard_reset_entry(void *obj)
 	 * the PHY Layer
 	 */
 	prl_execute_hard_reset(dev);
-
 }
