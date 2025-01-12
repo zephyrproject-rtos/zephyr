@@ -161,7 +161,7 @@ void tc_attach_wait_src_run(void *obj)
 
 	/* Wait for CC debounce */
 	if (usbc_timer_running(&tc->tc_t_cc_debounce) &&
-		!usbc_timer_expired(&tc->tc_t_cc_debounce)) {
+	    !usbc_timer_expired(&tc->tc_t_cc_debounce)) {
 		return;
 	}
 
