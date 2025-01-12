@@ -224,7 +224,7 @@ struct ext2_backend_ops {
 	int (*sync)(struct ext2_data *fs);
 };
 
-#define MAX_INODES (CONFIG_MAX_FILES + 2)
+#define MAX_INODES (CONFIG_EXT2_MAX_FILES + 2)
 
 struct ext2_data {
 	struct ext2_superblock sblock; /* superblock */
