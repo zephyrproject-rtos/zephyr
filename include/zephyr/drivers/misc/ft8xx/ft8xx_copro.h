@@ -99,14 +99,14 @@ void ft8xx_copro_cmd_swap(const struct device *dev);
  * @param y y-coordinate of text base, in pixels
  * @param font Font to use for text, 0-31. 16-31 are ROM fonts
  * @param options Options to apply
- * @param s Character string to display, terminated with a null character
+ * @param string Character string to display, terminated with a null character
  */
 void ft8xx_copro_cmd_text(const struct device *dev,
 			  int16_t x,
 			  int16_t y,
 			  int16_t font,
 			  uint16_t options,
-			  const char *s);
+			  const char *string);
 
 /**
  * @brief Draw a decimal number
@@ -126,14 +126,14 @@ void ft8xx_copro_cmd_text(const struct device *dev,
  * @param y y-coordinate of text base, in pixels
  * @param font Font to use for text, 0-31. 16-31 are ROM fonts
  * @param options Options to apply
- * @param n The number to display.
+ * @param number The number to display.
  */
 void ft8xx_copro_cmd_number(const struct device *dev,
 			    int16_t x,
 			    int16_t y,
 			    int16_t font,
 			    uint16_t options,
-			    int32_t n);
+			    int32_t number);
 
 /**
  * @brief Execute the touch screen calibration routine
