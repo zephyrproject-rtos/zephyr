@@ -320,6 +320,7 @@ static void tc_error_recovery_run(void *obj)
 /**
  * @brief Type-C State Table
  */
+/* clang-format off */
 static const struct smf_state tc_states[TC_STATE_COUNT] = {
 	/* Super States */
 	[TC_CC_OPEN_SUPER_STATE] = SMF_CREATE_STATE(
@@ -402,4 +403,5 @@ static const struct smf_state tc_states[TC_STATE_COUNT] = {
 		&tc_states[TC_CC_OPEN_SUPER_STATE],
 		NULL),
 };
+/* clang-format on */
 BUILD_ASSERT(ARRAY_SIZE(tc_states) == TC_STATE_COUNT);
