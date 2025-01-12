@@ -8,7 +8,7 @@ properties:
     type: phandle-array
     description: |
       GPIO to use to enable/disable the controller.
-  max_curr_opt:
+  max-curr-opt:
     type: boolean
     description: |
       If enabled the maximum current output is set to 35 mA (25.5 mA else).
