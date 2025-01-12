@@ -38,13 +38,13 @@
 
 LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
-#define RECV_BUFFER_SIZE 640
-#define URL_BUFFER_SIZE 300
-#define SHA256_HASH_SIZE 32
-#define RESPONSE_BUFFER_SIZE 1100
-#define DDI_SECURITY_TOKEN_SIZE 32
-#define RANGE_HEADER_SIZE 50
-#define HAWKBIT_RECV_TIMEOUT (300 * MSEC_PER_SEC)
+#define RECV_BUFFER_SIZE           640
+#define URL_BUFFER_SIZE            300
+#define SHA256_HASH_SIZE           32
+#define RESPONSE_BUFFER_SIZE       1100
+#define DDI_SECURITY_TOKEN_SIZE    32
+#define RANGE_HEADER_SIZE          50
+#define HAWKBIT_RECV_TIMEOUT       (300 * MSEC_PER_SEC)
 #define HAWKBIT_SET_SERVER_TIMEOUT K_MSEC(300)
 
 #define HAWKBIT_JSON_URL "/" CONFIG_HAWKBIT_TENANT "/controller/v1"
@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
 #define SLOT1_LABEL slot1_partition
-#define SLOT1_SIZE FIXED_PARTITION_SIZE(SLOT1_LABEL)
+#define SLOT1_SIZE  FIXED_PARTITION_SIZE(SLOT1_LABEL)
 
 static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * SEC_PER_MIN);
 
@@ -177,7 +177,7 @@ enum hawkbit_state {
 };
 
 int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer,
-			      const size_t buffer_size);
+				   const size_t buffer_size);
 
 static hawkbit_config_device_data_cb_handler_t hawkbit_config_device_data_cb_handler =
 	hawkbit_default_config_data_cb;
@@ -665,8 +665,7 @@ static char *hawkbit_get_url(const char *href)
 /*
  * Find URL component for the device cancel action id
  */
-static int hawkbit_find_cancel_action_id(struct hawkbit_ctl_res *res,
-					  int32_t *cancel_action_id)
+static int hawkbit_find_cancel_action_id(struct hawkbit_ctl_res *res, int32_t *cancel_action_id)
 {
 	char *helper;
 
@@ -947,12 +946,10 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 		body_data = rsp->body_frag_start;
 		body_len = rsp->body_frag_len;
 
-		if ((hb_context->dl.downloaded_size + body_len) >
-			hb_context->response_data_size) {
-			hb_context->response_data_size =
-				hb_context->dl.downloaded_size + body_len;
+		if ((hb_context->dl.downloaded_size + body_len) > hb_context->response_data_size) {
+			hb_context->response_data_size = hb_context->dl.downloaded_size + body_len;
 			rsp_tmp = k_realloc(hb_context->response_data,
-						hb_context->response_data_size);
+					    hb_context->response_data_size);
 			if (rsp_tmp == NULL) {
 				LOG_ERR("Failed to realloc memory");
 				hb_context->code_status = HAWKBIT_ALLOC_ERROR;
@@ -961,16 +958,15 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 
 			hb_context->response_data = rsp_tmp;
 		}
-		strncpy(hb_context->response_data + hb_context->dl.downloaded_size,
-			body_data, body_len);
+		strncpy(hb_context->response_data + hb_context->dl.downloaded_size, body_data,
+			body_len);
 		hb_context->dl.downloaded_size += body_len;
 	}
 
 	if (final_data == HTTP_DATA_FINAL) {
 		if (hb_context->dl.http_content_size != hb_context->dl.downloaded_size) {
 			LOG_ERR("HTTP response len mismatch, expected %d, got %d",
-				hb_context->dl.http_content_size,
-				hb_context->dl.downloaded_size);
+				hb_context->dl.http_content_size, hb_context->dl.downloaded_size);
 			hb_context->code_status = HAWKBIT_METADATA_ERROR;
 			return;
 		}
@@ -978,19 +974,19 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 		hb_context->response_data[hb_context->dl.downloaded_size] = '\0';
 		memset(&hb_context->results, 0, sizeof(hb_context->results));
 		if (hb_context->type == HAWKBIT_PROBE) {
-			ret = json_obj_parse(
-				hb_context->response_data, hb_context->dl.downloaded_size,
-				json_ctl_res_descr, ARRAY_SIZE(json_ctl_res_descr),
-				&hb_context->results.base);
+			ret = json_obj_parse(hb_context->response_data,
+					     hb_context->dl.downloaded_size, json_ctl_res_descr,
+					     ARRAY_SIZE(json_ctl_res_descr),
+					     &hb_context->results.base);
 			if (ret < 0) {
 				LOG_ERR("JSON parse error (%s): %d", "HAWKBIT_PROBE", ret);
 				hb_context->code_status = HAWKBIT_METADATA_ERROR;
 			}
 		} else {
-			ret = json_obj_parse(
-				hb_context->response_data, hb_context->dl.downloaded_size,
-				json_dep_res_descr, ARRAY_SIZE(json_dep_res_descr),
-				&hb_context->results.dep);
+			ret = json_obj_parse(hb_context->response_data,
+					     hb_context->dl.downloaded_size, json_dep_res_descr,
+					     ARRAY_SIZE(json_dep_res_descr),
+					     &hb_context->results.dep);
 			if (ret < 0) {
 				LOG_ERR("JSON parse error (%s): %d", "deploymentBase", ret);
 				hb_context->code_status = HAWKBIT_METADATA_ERROR;
@@ -1672,6 +1668,7 @@ static void s_terminate(void *o)
 	smf_set_terminate(SMF_CTX(s), s->hb_context.code_status);
 }
 
+/* clang-format off */
 static const struct smf_state hawkbit_states[] = {
 	[S_HAWKBIT_START] = SMF_CREATE_STATE(
 		s_start,
@@ -1728,6 +1725,7 @@ static const struct smf_state hawkbit_states[] = {
 		NULL,
 		NULL),
 };
+/* clang-format on */
 
 enum hawkbit_response hawkbit_probe(void)
 {
