@@ -446,6 +446,12 @@ Other Subsystems
 Flash map
 =========
 
+Filesystem
+==========
+
+* The EXT2 Kconfig symbol ``CONFIG_MAX_FILES`` has been renamed to
+  :kconfig:option:`CONFIG_EXT2_MAX_FILES`.
+
 hawkBit
 =======
 
