@@ -441,6 +441,10 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 {
 	const struct flash_area *fa;
 	int rc;
+	const struct device *dev;
+	struct flash_pages_info page;
+	off_t page_offset;
+	size_t erase_size;
 
 	if (off != 0) {
 		rc = IMG_MGMT_ERR_INVALID_OFFSET;
@@ -454,16 +458,15 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		goto end;
 	}
 
-	/* align requested erase size to the erase-block-size */
-	const struct device *dev = flash_area_get_device(fa);
+	/* Align requested erase size to the erase-block-size */
+	dev = flash_area_get_device(fa);
 
 	if (dev == NULL) {
 		rc = IMG_MGMT_ERR_FLASH_AREA_DEVICE_NULL;
 		goto end_fa;
 	}
-	struct flash_pages_info page;
-	off_t page_offset = fa->fa_off + num_bytes - 1;
 
+	page_offset = fa->fa_off + num_bytes - 1;
 	rc = flash_get_page_info_by_offs(dev, page_offset, &page);
 	if (rc != 0) {
 		LOG_ERR("bad offset (0x%lx)", (long)page_offset);
@@ -471,9 +474,9 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		goto end_fa;
 	}
 
-	size_t erase_size = page.start_offset + page.size - fa->fa_off;
-
-	rc = flash_area_flatten(fa, 0, erase_size);
+	erase_size = page.start_offset + page.size - fa->fa_off;
+	rc = flash_area_flatten(fa, boot_get_image_start_offset(g_img_mgmt_state.area_id),
+				erase_size);
 
 	if (rc != 0) {
 		LOG_ERR("image slot erase of 0x%zx bytes failed (err %d)", erase_size,
@@ -568,6 +571,7 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 		const struct flash_area *fa;
 #if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&			\
 	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
@@ -645,6 +649,7 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&			\
 	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
