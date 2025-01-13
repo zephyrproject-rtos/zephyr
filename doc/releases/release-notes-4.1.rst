@@ -139,6 +139,11 @@ Build system and Infrastructure
   them can use the :zephyr_file:`scripts/utils/twister_to_list.py` script to
   automatically migrate Twister configuration files.
 
+* Sysbuild
+
+  * The newly introduced MCUboot swap using offset mode can be selected from sysbuild by using
+    ``SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET``, this mode is experimental.
+
 * Twister
 
   * Test Case names for Ztest now include Ztest suite name, so the resulting identifier has
@@ -396,6 +401,13 @@ Libraries / Subsystems
 * Formatted output
 
 * Management
+
+  * MCUmgr
+
+    * Support for MCUboot swap using offset has been introduced, if this swapping algorithm is used
+      then :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET` should be selected in
+      applications (if sysbuild is configured to use this mode then no manual configuration of the
+      application Kconfig to specify the MCUboot operating mode is needed).
 
 * Logging
 
