@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stddef.h>
 #include <string.h>
 #include <zephyr/device.h>
@@ -141,6 +142,38 @@ bool z_impl_device_is_ready(const struct device *dev)
 
 	return dev->state->initialized && (dev->state->init_res == 0U);
 }
+
+int z_impl_device_deinit(const struct device *dev)
+{
+	int ret;
+
+	if (!dev->state->initialized) {
+		return -EPERM;
+	}
+
+	if (dev->ops.deinit == NULL) {
+		return -ENOTSUP;
+	}
+
+	ret = dev->ops.deinit(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dev->state->initialized = false;
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_device_deinit(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	return z_impl_device_deinit(dev);
+}
+#include <zephyr/syscalls/device_deinit_mrsh.c>
+#endif
 
 #ifdef CONFIG_DEVICE_DEPS
 
