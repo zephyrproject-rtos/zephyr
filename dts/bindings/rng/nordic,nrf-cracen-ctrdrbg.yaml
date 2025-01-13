@@ -1,0 +1,14 @@
+# Copyright (c) 2025, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Nordic nRF CRACEN CTR_DRBG based (Random Number Generator)
+
+    This driver is only compatible with 54L devices, and may only be used from one processor
+    core. This driver cannot be used in conjunction with the nRF security PSA solution, as both
+    would attempt to use the CRACEN HW exclusively; When that is enabled, zephyr,psa-crypto-rng
+    should be selected instead.
+
+compatible: "nordic,nrf-cracen-ctrdrbg"
+
+include: base.yaml
