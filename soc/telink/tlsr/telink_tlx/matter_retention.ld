@@ -9,11 +9,20 @@
 /*
  * Moving BLE library sections (without suffix) to RAM DLM (non-retention)
  */
-SECTION_DATA_PROLOGUE(ram_non_ret,,)
+SECTION_DATA_PROLOGUE(ram_dlm_data,,)
 {
 	. = ALIGN(4);
 	*(.data)
 	*(.sdata)
+
+	PROVIDE (_RAM_DLM_DATA_VMA_END = .);
+	PROVIDE (_RAM_DLM_DATA_VMA_START = ADDR(ram_dlm_data));
+	PROVIDE (_RAM_DLM_DATA_LMA_START = LOADADDR(ram_dlm_data));
+} GROUP_DATA_LINK_IN(TELINK_RAM_DATA_REGION, ROMABLE_REGION)
+
+SECTION_DATA_PROLOGUE(ram_dlm_bss,(NOLOAD),)
+{
+	. = ALIGN(4);
 	*(.bss)
 
 	/* Moving the BLE controller stack (HAL) */
@@ -28,10 +37,10 @@ SECTION_DATA_PROLOGUE(ram_non_ret,,)
 	"*hci_core.c.obj*"(".noinit.*" ".bss.*")
 	"*l2cap.c.obj*"(".bss.*")
 
-	PROVIDE (_RAM_NON_RET_VMA_END = .);
-	PROVIDE (_RAM_NON_RET_VMA_START = ADDR(ram_non_ret));
-	PROVIDE (_RAM_NON_RET_LMA_START = LOADADDR(ram_non_ret));
-} GROUP_DATA_LINK_IN(TELINK_RAM_DATA_REGION, ROMABLE_REGION)
+	PROVIDE (_RAM_DLM_BSS_VMA_END = .);
+	PROVIDE (_RAM_DLM_BSS_VMA_START = ADDR(ram_dlm_bss));
+	PROVIDE (_RAM_DLM_BSS_LMA_START = LOADADDR(ram_dlm_bss));
+} GROUP_DATA_LINK_IN(TELINK_RAM_DATA_REGION, TELINK_RAM_DATA_REGION)
 
 /*
  * Moving BLE relative ramcode to special section

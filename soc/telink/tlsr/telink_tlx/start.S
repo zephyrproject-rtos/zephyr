@@ -59,24 +59,34 @@ _RAMCODE_BLE_INIT:
 	la     t2, _RAMCODE_BLE_VMA_START
 	la     t3, _RAMCODE_BLE_VMA_END
 _RAMCODE_BLE_INIT_BEGIN:
-	bleu   t3, t2, _RAM_NON_RET_INIT
+	bleu   t3, t2, _RAM_DLM_INIT
 	lw     t0, 0(t1)
 	sw     t0, 0(t2)
 	addi   t1, t1, 4
 	addi   t2, t2, 4
 	j      _RAMCODE_BLE_INIT_BEGIN
 
-_RAM_NON_RET_INIT:
-	la     t1, _RAM_NON_RET_LMA_START
-	la     t2, _RAM_NON_RET_VMA_START
-	la     t3, _RAM_NON_RET_VMA_END
-_RAM_NON_RET_BEGIN:
-	bleu   t3, t2, _RETENTION_RESET_INIT
+_RAM_DLM_INIT:
+	la     t1, _RAM_DLM_DATA_LMA_START
+	la     t2, _RAM_DLM_DATA_VMA_START
+	la     t3, _RAM_DLM_DATA_VMA_END
+_RAM_DLM_BEGIN:
+	bleu   t3, t2, _RAM_DLM_BSS_INIT
 	lw     t0, 0(t1)
 	sw     t0, 0(t2)
 	addi   t1, t1, 4
 	addi   t2, t2, 4
-	j      _RAM_NON_RET_BEGIN
+	j      _RAM_DLM_BEGIN
+
+_RAM_DLM_BSS_INIT:
+	lui    t0, 0
+	la     t2, _RAM_DLM_BSS_VMA_START
+	la     t3, _RAM_DLM_BSS_VMA_END
+_ZERO_DLM_BSS_BEGIN:
+	bleu   t3, t2, _RETENTION_RESET_INIT
+	sw     t0, 0(t2)
+	addi   t2, t2, 4
+	j      _ZERO_DLM_BSS_BEGIN
 #endif /* CONFIG_TELINK_TLX_MATTER_RETENTION_LAYOUT */
 
 _RETENTION_RESET_INIT:
