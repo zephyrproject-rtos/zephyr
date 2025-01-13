@@ -772,24 +772,6 @@ __syscall const struct device *device_get_binding(const char *name);
 size_t z_device_get_all_static(const struct device **devices);
 
 /**
- * @brief Verify that a device is ready for use.
- *
- * Indicates whether the provided device pointer is for a device known to be
- * in a state where it can be used with its standard API.
- *
- * This can be used with device pointers captured from DEVICE_DT_GET(), which
- * does not include the readiness checks of device_get_binding(). At minimum
- * this means that the device has been successfully initialized.
- *
- * @param dev pointer to the device in question.
- *
- * @retval true If the device is ready for use.
- * @retval false If the device is not ready for use or if a NULL device pointer
- * is passed as argument.
- */
-__syscall bool device_is_ready(const struct device *dev);
-
-/**
  * Get a device.
  *
  * When getting a device, its usage count will be increased and, if not yet
@@ -803,6 +785,29 @@ __syscall bool device_is_ready(const struct device *dev);
  * indicate the current reference count.
  */
 __syscall int device_get(const struct device *dev);
+
+/**
+ * @brief Verify that a device is ready for use.
+ *
+ * Indicates whether the provided device pointer is for a device known to be
+ * in a state where it can be used with its standard API.
+ *
+ * This can be used with device pointers captured from DEVICE_DT_GET(), which
+ * does not include the readiness checks of device_get_binding(). At minimum
+ * this means that the device has been successfully initialized.
+ *
+ * @param dev pointer to the device in question.
+ *
+ * @deprecated Use device_get() instead.
+ *
+ * @retval true If the device is ready for use.
+ * @retval false If the device is not ready for use or if a NULL device pointer
+ * is passed as argument.
+ */
+static inline __deprecated bool device_is_ready(const struct device *dev)
+{
+	return device_get(dev) >= 0;
+}
 
 /**
  * @brief Initialize a device.
