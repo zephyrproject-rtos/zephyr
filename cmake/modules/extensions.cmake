@@ -3818,7 +3818,7 @@ endfunction()
 #   will make this clear in each case.
 
 # Usage:
-#   dt_nodelabel(<var> NODELABEL <label>)
+#   dt_nodelabel(<var> NODELABEL <label> [REQUIRED])
 #
 # Function for retrieving the node path for the node having nodelabel
 # <label>.
@@ -3871,7 +3871,7 @@ function(dt_nodelabel var)
 endfunction()
 
 # Usage:
-#   dt_alias(<var> PROPERTY <prop>)
+#   dt_alias(<var> PROPERTY <prop> [REQUIRED])
 #
 # Get a node path for an /aliases node property.
 #
@@ -4016,7 +4016,7 @@ endfunction()
 
 # Usage:
 #
-#   dt_prop(<var> PATH <path> PROPERTY <prop> [INDEX <idx>])
+#   dt_prop(<var> PATH <path> PROPERTY <prop> [INDEX <idx>] [REQUIRED])
 #
 # Get a devicetree property value. The value will be returned in the
 # <var> parameter.
