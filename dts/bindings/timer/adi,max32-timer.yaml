@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2024 Analog Devices, Inc.
+# Copyright (c) 2023-2025 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: ADI MAX32 timer
@@ -12,7 +12,7 @@ properties:
     required: true
 
   clocks:
-    required: true
+    description: Source clock controller configuration
 
   clock-source:
     type: int
