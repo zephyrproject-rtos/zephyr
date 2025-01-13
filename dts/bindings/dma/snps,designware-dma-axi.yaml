@@ -20,6 +20,12 @@ properties:
   "#dma-cells":
     const: 1
 
+  iommus:
+    type: phandle-array
+    description: |
+      A list of phandle and IOMMU specifier pairs that describe the IOMMU
+      master interfaces of the device.
+
 # #dma-cells : Must be <1>.
 # The 1st cell specifies the hardware handshaking signal ID
 # Example of device-tree dma channel configuration:

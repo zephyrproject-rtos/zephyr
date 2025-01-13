@@ -11,6 +11,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/cache.h>
+#include <zephyr/sys/mem_blocks.h>
+#include <zephyr/sys/mm.h>
 
 LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 
