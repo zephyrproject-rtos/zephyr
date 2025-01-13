@@ -26,7 +26,14 @@ config HCI_NXP_SET_CAL_DATA
 	default y
 
 config MAIN_STACK_SIZE
-	default 1280
+	default 2560
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
 
 endif # BT
 
