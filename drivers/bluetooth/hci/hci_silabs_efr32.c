@@ -71,6 +71,82 @@ void rail_isr_installer(void)
 	IRQ_CONNECT(AGC_IRQn, 0, AGC_IRQHandler, NULL, 0);
 }
 
+static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8_t *params,
+				   int16_t params_len)
+{
+	switch (hdr->evt) {
+	case BT_HCI_EVT_LE_META_EVENT: {
+		struct bt_hci_evt_le_meta_event *meta_evt = (void *)params;
+
+		if (params_len < sizeof(*meta_evt)) {
+			return false;
+		}
+		params += sizeof(*meta_evt);
+		params_len -= sizeof(*meta_evt);
+
+		switch (meta_evt->subevent) {
+		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+			return true;
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT: {
+			struct bt_hci_evt_le_ext_advertising_report *evt = (void *)params;
+
+			if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+				return false;
+			}
+
+			if (params_len < sizeof(*evt) + sizeof(*evt->adv_info)) {
+				return false;
+			}
+
+			/* Never discard if the event could be part of a multi-part report event,
+			 * because the missing part could confuse the BT host.
+			 */
+			return (evt->num_reports == 1) &&
+			       ((evt->adv_info[0].evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0);
+		}
+		default:
+			return false;
+		}
+	}
+	default:
+		return false;
+	}
+}
+
+static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const int16_t len)
+{
+	struct net_buf *buf;
+	bool discardable;
+	const struct bt_hci_evt_hdr *hdr = (void *)data;
+	const uint8_t *params = &data[sizeof(*hdr)];
+	const int16_t params_len = len - sizeof(*hdr);
+
+	if (len < sizeof(*hdr)) {
+		LOG_ERR("Event header is missing");
+		return NULL;
+	}
+
+	discardable = slz_is_evt_discardable(hdr, params, params_len);
+	buf = bt_buf_get_evt(hdr->evt, discardable, discardable ? K_NO_WAIT : K_FOREVER);
+	if (!buf) {
+		LOG_DBG("Discardable buffer pool full, ignoring event");
+		return buf;
+	}
+
+	net_buf_add_mem(buf, data, len);
+
+	return buf;
+}
+
+static struct net_buf *slz_bt_recv_acl(const uint8_t *data, const int16_t len)
+{
+	struct net_buf *buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+
+	net_buf_add_mem(buf, data, len);
+
+	return buf;
+}
+
 /**
  * @brief Transmit HCI message using the currently used transport layer.
  * The HCI calls this function to transmit a full HCI message.
@@ -81,30 +157,35 @@ void rail_isr_installer(void)
 uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 {
 	struct net_buf *buf;
-	uint8_t packet_type = data[0];
-	uint8_t event_code;
+	uint8_t packet_type;
 
 	LOG_HEXDUMP_DBG(data, len, "host packet data:");
 
+	if (len < 1) {
+		LOG_ERR("HCI packet type is missing");
+		return -EINVAL;
+	}
+
+	packet_type = data[0];
 	/* drop packet type from the frame buffer - it is no longer needed */
-	data = &data[1];
+	data += 1;
 	len -= 1;
 
 	switch (packet_type) {
 	case BT_HCI_H4_EVT:
-		event_code = data[0];
-		buf = bt_buf_get_evt(event_code, false, K_FOREVER);
+		buf = slz_bt_recv_evt(data, len);
 		break;
 	case BT_HCI_H4_ACL:
-		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+		buf = slz_bt_recv_acl(data, len);
 		break;
 	default:
 		LOG_ERR("Unknown HCI type: %d", packet_type);
 		return -EINVAL;
 	}
 
-	net_buf_add_mem(buf, data, len);
-	k_fifo_put(&slz_rx_fifo, buf);
+	if (buf) {
+		k_fifo_put(&slz_rx_fifo, buf);
+	}
 
 	sl_btctrl_hci_transmit_complete(0);
 
