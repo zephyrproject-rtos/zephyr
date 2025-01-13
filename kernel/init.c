@@ -361,11 +361,13 @@ static void z_sys_init_run_level(enum init_level level)
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		const struct device *dev = entry->dev;
-		int result;
+		int result = 0;
 
 		sys_trace_sys_init_enter(entry, level);
 		if (dev != NULL) {
-			result = do_device_init(dev);
+			if ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) == 0U) {
+				result = do_device_init(dev);
+			}
 		} else {
 			result = entry->init_fn();
 		}
@@ -376,12 +378,13 @@ static void z_sys_init_run_level(enum init_level level)
 
 int z_impl_device_init(const struct device *dev)
 {
-	if (dev == NULL) {
-		return -ENOENT;
-	}
+	const struct device *devs;
+	size_t devc;
 
-	STRUCT_SECTION_FOREACH_ALTERNATE(_deferred_init, init_entry, entry) {
-		if (entry->dev == dev) {
+	devc = z_device_get_all_static(&devs);
+
+	for (const struct device *dev_ = devs; dev_ < (devs + devc); dev_++) {
+		if ((dev_ == dev) && ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) != 0U)) {
 			return do_device_init(dev);
 		}
 	}
