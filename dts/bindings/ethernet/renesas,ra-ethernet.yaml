@@ -16,3 +16,6 @@ properties:
 
   phy-handle:
     required: true
+
+  phy-connection-type:
+    default: "rmii"
