@@ -38,6 +38,7 @@ static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe, k_spinlock_key_t *key
 		    k_timepoint_t time_limit)
 {
 	k_timeout_t timeout = sys_timepoint_timeout(time_limit);
+	int rc;
 
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		return -EAGAIN;
@@ -45,28 +46,17 @@ static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe, k_spinlock_key_t *key
 
 	pipe->waiting++;
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, read, pipe, timeout);
-	z_pend_curr(&pipe->lock, *key, waitq, timeout);
+	rc = z_pend_curr(&pipe->lock, *key, waitq, timeout);
 	*key = k_spin_lock(&pipe->lock);
 	pipe->waiting--;
 	if (unlikely(pipe_resetting(pipe))) {
 		if (pipe->waiting == 0) {
 			pipe->flags &= ~PIPE_FLAG_RESET;
 		}
-		return -ECANCELED;
-	} else if (sys_timepoint_expired(time_limit)) {
-		return -EAGAIN;
+		rc = -ECANCELED;
 	}
 
-	return 0;
-}
-
-static void notify_waiter(_wait_q_t *waitq)
-{
-	struct k_thread *thread_to_unblock = z_unpend_first_thread(waitq);
-
-	if (likely(thread_to_unblock != NULL)) {
-		z_ready_thread(thread_to_unblock);
-	}
+	return rc;
 }
 
 void z_impl_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size)
@@ -110,7 +100,7 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 		}
 
 		if (pipe_empty(pipe)) {
-			notify_waiter(&pipe->data);
+			z_sched_wake(&pipe->data, 0, NULL);
 #ifdef CONFIG_POLL
 			z_handle_obj_poll_events(&pipe->poll_events,
 						 K_POLL_STATE_PIPE_DATA_AVAILABLE);
@@ -153,7 +143,7 @@ int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout
 
 	for (;;) {
 		if (pipe_full(pipe)) {
-			notify_waiter(&pipe->space);
+			z_sched_wake(&pipe->space, 0, NULL);
 		}
 
 		read += ring_buf_get(&pipe->buf, &data[read], len - read);
@@ -188,8 +178,8 @@ void z_impl_k_pipe_reset(struct k_pipe *pipe)
 		ring_buf_reset(&pipe->buf);
 		if (likely(pipe->waiting != 0)) {
 			pipe->flags |= PIPE_FLAG_RESET;
-			z_unpend_all(&pipe->data);
-			z_unpend_all(&pipe->space);
+			z_sched_wake_all(&pipe->data, 0, NULL);
+			z_sched_wake_all(&pipe->space, 0, NULL);
 		}
 	}
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, reset, pipe);
@@ -200,8 +190,8 @@ void z_impl_k_pipe_close(struct k_pipe *pipe)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, close, pipe);
 	K_SPINLOCK(&pipe->lock) {
 		pipe->flags = 0;
-		z_unpend_all(&pipe->data);
-		z_unpend_all(&pipe->space);
+		z_sched_wake_all(&pipe->data, 0, NULL);
+		z_sched_wake_all(&pipe->space, 0, NULL);
 	}
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, close, pipe);
 }
