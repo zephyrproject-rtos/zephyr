@@ -36,6 +36,10 @@ LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 #define SHM_START_ADDR	DT_REG_ADDR(SHM_NODE)
 #define SHM_SIZE		DT_REG_SIZE(SHM_NODE)
 
+#define SHM_PHYS_START_ADDR	COND_CODE_1(DT_NUM_REGS(SHM_NODE),  \
+				(DT_REG_ADDR(SHM_NODE)),            \
+				(DT_REG_ADDR_BY_NAME(SHM_NODE, 1))) \
+
 #define APP_TASK_STACK_SIZE (1024)
 
 /* Add 1024 extra bytes for the TTY task stack for the "tx_buff" buffer. */
@@ -52,7 +56,7 @@ static struct k_thread thread_tty_data;
 static const struct device *const ipm_handle =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 
-static metal_phys_addr_t shm_physmap = SHM_START_ADDR;
+static metal_phys_addr_t shm_physmap = SHM_PHYS_START_ADDR;
 static metal_phys_addr_t rsc_tab_physmap;
 
 static struct metal_io_region shm_io_data; /* shared memory */
