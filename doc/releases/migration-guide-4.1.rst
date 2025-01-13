@@ -295,6 +295,11 @@ Timer
 * Renamed the ``compatible`` from ``nxp,kinetis-ftm`` to :dtcompatible:`nxp,ftm` and relocate it
   under ``dts/bindings/timer``.
 
+USB
+===
+
+* Renamed the devicetree property names ``phy_handle`` to ``phy-handle``.
+
 Video
 =====
 
