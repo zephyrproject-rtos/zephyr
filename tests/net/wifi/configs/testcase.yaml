@@ -53,3 +53,6 @@ tests:
   wifi.build.dpp:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP=y
+  wifi.build.disable_advanced_feat:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES=y
