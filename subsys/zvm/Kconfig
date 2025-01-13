@@ -1,0 +1,46 @@
+# Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
+# Copyright 2024-2025 openEuler SIG-Zephyr
+# SPDX-License-Identifier: Apache-2.0
+
+source "subsys/zvm/vdev/Kconfig"
+
+menuconfig ZVM
+	bool "Zephyr Based Virtual Machine"
+	default n
+	select USERSPACE
+	help
+	  Enable Zephyr virtualization support.
+
+if ZVM
+
+config ZVM_INIT_PRIORITY
+	int "ZVM Initialization Priority"
+	default 80
+	help
+	  Set the initialization priority for the ZVM module.
+
+config MAX_VM_NUM
+	int "Maximum Number of Simultaneous VMs"
+	range 0 32
+	default 2
+	help
+	  Define the maximum number of VMs that can run simultaneously in the ZVM hypervisor.
+
+config MAX_VCPU_PER_VM
+	int "Maximum Number of vCPUs per VM"
+	range 1 4
+	default 1
+	help
+	  Specify the maximum number of vCPUs that each VM can possess.
+
+config ZVM_DEBUG_LOG_INFO
+	bool "Enable System Boot Info Logging"
+	help
+	  Enable logging of system boot information for debugging purposes.
+
+config VM_DTB_FILE_INPUT
+	bool "Parse DTB File for Linux VM"
+	help
+	  Enable parsing of the Device Tree Blob (DTB) file for Linux VMs.
+
+endif # ZVM
