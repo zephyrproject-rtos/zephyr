@@ -825,18 +825,25 @@ __subsystem struct gpio_driver_api {
  * @endcond
  */
 
+static inline int gpio_get_dt(const struct gpio_dt_spec *spec)
+{
+	return device_get(spec->port);
+}
+
 /**
  * @brief Validate that GPIO port is ready.
  *
  * @param spec GPIO specification from devicetree
  *
+ * @deprecated Use gpio_get_dt() instead.
+ *
  * @retval true if the GPIO spec is ready for use.
  * @retval false if the GPIO spec is not ready for use.
  */
-static inline bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
+static inline __deprecated bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
 {
 	/* Validate port is ready */
-	return device_is_ready(spec->port);
+	return gpio_get_dt(spec);
 }
 
 /**
