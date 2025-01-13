@@ -319,10 +319,10 @@ struct gpio_dt_spec {
  *	//         .dt_flags = GPIO_ACTIVE_LOW
  *	// }
  *
- * The 'gpio' field must still be checked for readiness, e.g. using
- * device_is_ready(). It is an error to use this macro unless the node
- * exists, has the given property, and that property specifies a GPIO
- * controller, pin number, and flags as shown above.
+ * Usage of the 'gpio' field must still be notified using device_get().
+ * It is an error to use this macro unless the node exists, has the given
+ * property, and that property specifies a GPIO controller, pin number, and
+ * flags as shown above.
  *
  * @param node_id devicetree node identifier
  * @param prop lowercase-and-underscores property name
@@ -825,10 +825,17 @@ __subsystem struct gpio_driver_api {
  * @endcond
  */
 
+static inline int gpio_get_dt(const struct gpio_dt_spec *spec)
+{
+	return device_get(spec->port);
+}
+
 /**
  * @brief Validate that GPIO port is ready.
  *
  * @param spec GPIO specification from devicetree
+ *
+ * @note Usage of gpio_get_dt() is preferred, this function will be deprecated.
  *
  * @retval true if the GPIO spec is ready for use.
  * @retval false if the GPIO spec is not ready for use.
@@ -836,7 +843,7 @@ __subsystem struct gpio_driver_api {
 static inline bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
 {
 	/* Validate port is ready */
-	return device_is_ready(spec->port);
+	return gpio_get_dt(spec);
 }
 
 /**
