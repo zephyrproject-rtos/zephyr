@@ -56,7 +56,7 @@ enum uart_host_command_state {
 
 	/*
 	 * If bad packet header is received, the current state is moved to rx_bad
-	 * state and after timeout all the bytes are dropped.
+	 * state.
 	 */
 	UART_HOST_CMD_RX_BAD,
 
@@ -65,6 +65,12 @@ enum uart_host_command_state {
 	 * host is sending extra bytes which indicates data overrun.
 	 */
 	UART_HOST_CMD_RX_OVERRUN,
+
+	/*
+	 * If not enough bytes data is received, the current state is moved to
+	 * rx_underrun.
+	 */
+	UART_HOST_CMD_RX_UNDERRUN,
 };
 
 struct ec_host_cmd_uart_ctx {
@@ -72,7 +78,7 @@ struct ec_host_cmd_uart_ctx {
 	struct ec_host_cmd_rx_ctx *rx_ctx;
 	const size_t rx_buf_size;
 	struct ec_host_cmd_tx_buf *tx_buf;
-	struct k_work_delayable timeout_work;
+	struct k_work error_work;
 	enum uart_host_command_state state;
 };
 
@@ -100,9 +106,6 @@ static int request_expected_size(const struct ec_host_cmd_request_header *r)
 		.ctx = &_name##_hc_uart,                                                           \
 	}
 
-/* Timeout after receiving first byte */
-#define UART_REQ_RX_TIMEOUT K_MSEC(150)
-
 /*
  * Max data size for a version 3 request/response packet. This is big enough
  * to handle a request/response header, flash write offset/size and 512 bytes
@@ -111,22 +114,16 @@ static int request_expected_size(const struct ec_host_cmd_request_header *r)
 #define UART_MAX_REQ_SIZE  0x220
 #define UART_MAX_RESP_SIZE 0x100
 
-static void rx_timeout(struct k_work *work)
+static void rx_error(struct k_work *work)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct ec_host_cmd_uart_ctx *hc_uart =
-		CONTAINER_OF(dwork, struct ec_host_cmd_uart_ctx, timeout_work);
+		CONTAINER_OF(work, struct ec_host_cmd_uart_ctx, error_work);
 	int res;
 
 	switch (hc_uart->state) {
-	case UART_HOST_CMD_RECEIVING:
-		/* If state is receiving then timeout was hit due to underrun */
-		LOG_ERR("Request underrun detected");
-		break;
 	case UART_HOST_CMD_RX_OVERRUN:
-		/* If state is rx_overrun then timeout was hit because
-		 * process request was cancelled and extra rx bytes were
-		 * dropped
+		/* If state is rx_overrun, it was hit because process request
+		 * was cancelled and extra rx bytes were dropped
 		 */
 		LOG_ERR("Request overrun detected");
 		break;
@@ -136,8 +133,14 @@ static void rx_timeout(struct k_work *work)
 		 */
 		LOG_ERR("Bad packet header detected");
 		break;
+	case UART_HOST_CMD_RX_UNDERRUN:
+		/* If state is rx_underrun then packet header was bad and process
+		 * request was cancelled to drop all incoming bytes.
+		 */
+		LOG_ERR("Request underrun detected");
+		break;
 	default:
-		LOG_ERR("Request timeout mishandled, state: %d", hc_uart->state);
+		LOG_ERR("Request error mishandled, state: %d", hc_uart->state);
 	}
 
 	res = uart_rx_disable(hc_uart->uart_dev);
@@ -149,51 +152,30 @@ static void rx_timeout(struct k_work *work)
 static void uart_callback(const struct device *dev, struct uart_event *evt, void *user_data)
 {
 	struct ec_host_cmd_uart_ctx *hc_uart = user_data;
-	size_t new_len;
 
 	switch (evt->type) {
 	case UART_RX_RDY:
 		if (hc_uart->state == UART_HOST_CMD_READY_TO_RX) {
 			hc_uart->rx_ctx->len = 0;
 			hc_uart->state = UART_HOST_CMD_RECEIVING;
-			k_work_reschedule(&hc_uart->timeout_work, UART_REQ_RX_TIMEOUT);
-		} else if (hc_uart->state == UART_HOST_CMD_PROCESSING ||
-			   hc_uart->state == UART_HOST_CMD_SENDING) {
-			LOG_ERR("UART HOST CMD ERROR: Received data while processing or sending");
-			return;
-		} else if (hc_uart->state == UART_HOST_CMD_RX_BAD ||
-			   hc_uart->state == UART_HOST_CMD_RX_OVERRUN) {
-			/* Wait for timeout if an error has been detected */
+		} else {
+			LOG_ERR("UART HOST CMD ERROR: Unexpected data");
+
+			/* Wait for error handler if an error has been detected before */
 			return;
 		}
 
 		__ASSERT(hc_uart->state == UART_HOST_CMD_RECEIVING,
 			 "UART Host Command state mishandled, state: %d", hc_uart->state);
 
-		new_len = hc_uart->rx_ctx->len + evt->data.rx.len;
-
-		if (new_len > hc_uart->rx_buf_size) {
-			/* Bad data error, set the state and wait for timeout */
-			hc_uart->state = UART_HOST_CMD_RX_BAD;
-			return;
-		}
-
-		hc_uart->rx_ctx->len = new_len;
+		hc_uart->rx_ctx->len = evt->data.rx.len;
 
 		if (hc_uart->rx_ctx->len >= sizeof(struct ec_host_cmd_request_header)) {
 			/* Buffer has request header. Check header and get data_len */
 			size_t expected_len = request_expected_size(
 				(struct ec_host_cmd_request_header *)hc_uart->rx_ctx->buf);
 
-			if (expected_len == 0 || expected_len > hc_uart->rx_buf_size) {
-				/* Invalid expected size, set the state and wait for timeout */
-				hc_uart->state = UART_HOST_CMD_RX_BAD;
-			} else if (hc_uart->rx_ctx->len == expected_len) {
-				/* Don't wait for overrun, because it is already done
-				 * in a UART driver.
-				 */
-				(void)k_work_cancel_delayable(&hc_uart->timeout_work);
-
+			if (hc_uart->rx_ctx->len == expected_len) {
 				/* Disable receiving to prevent overwriting the rx buffer while
 				 * processing. Enabling receiving to a temporary buffer to detect
 				 * unexpected transfer while processing increases average handling
@@ -206,10 +188,22 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 				hc_uart->state = UART_HOST_CMD_PROCESSING;
 
 				ec_host_cmd_rx_notify();
-			} else if (hc_uart->rx_ctx->len > expected_len) {
-				/* Overrun error, set the state and wait for timeout */
-				hc_uart->state = UART_HOST_CMD_RX_OVERRUN;
+			} else {
+				if (expected_len == 0 || expected_len > hc_uart->rx_buf_size) {
+					/* Invalid expected size */
+					hc_uart->state = UART_HOST_CMD_RX_BAD;
+				} else if (expected_len < hc_uart->rx_ctx->len) {
+					/* Overrun error */
+					hc_uart->state = UART_HOST_CMD_RX_OVERRUN;
+				} else if (expected_len > hc_uart->rx_ctx->len) {
+					/* Underrun error */
+					hc_uart->state = UART_HOST_CMD_RX_UNDERRUN;
+				}
+				k_work_submit(&hc_uart->error_work);
 			}
+		} else {
+			hc_uart->state = UART_HOST_CMD_RX_UNDERRUN;
+			k_work_submit(&hc_uart->error_work);
 		}
 		break;
 	case UART_RX_BUF_REQUEST:
@@ -258,7 +252,7 @@ static int ec_host_cmd_uart_init(const struct ec_host_cmd_backend *backend,
 		hc_uart->tx_buf->len_max = UART_MAX_RESP_SIZE;
 	}
 
-	k_work_init_delayable(&hc_uart->timeout_work, rx_timeout);
+	k_work_init(&hc_uart->error_work, rx_error);
 	uart_callback_set(hc_uart->uart_dev, uart_callback, hc_uart);
 	ret = uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size, 0);
 
