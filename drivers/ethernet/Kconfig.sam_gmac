@@ -27,8 +27,7 @@ DT_ETH_SAM_GMAC_NQ := $(dt_node_int_prop_int,$(DT_ETH_SAM_GMAC_PATH),num-queues)
 config ETH_SAM_GMAC_QUEUES
 	int "Number of active hardware TX and RX queues"
 	default 1
-	range 1 $(DT_ETH_SAM_GMAC_NQ) if SOC_SERIES_SAME70 || \
-						SOC_SERIES_SAMV71 || \
+	range 1 $(DT_ETH_SAM_GMAC_NQ) if SOC_SERIES_SAMX7X || \
 						SOC_SERIES_SAM4E || \
 						SOC_SERIES_SAME54
 	help
