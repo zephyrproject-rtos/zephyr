@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(pwm_sam, CONFIG_PWM_LOG_LEVEL);
 /* The SAMV71 HALs change the name of the field, so we need to
  * define it this way to match how the other SoC variants name it
  */
-#if defined(CONFIG_SOC_SERIES_SAMV71)
+#if defined(CONFIG_SOC_ATMEL_SAMV71) || defined(CONFIG_SOC_ATMEL_SAMV71_REVB)
 #define PWM_CH_NUM PwmChNum
 #endif
 

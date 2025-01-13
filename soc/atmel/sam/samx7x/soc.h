@@ -1,18 +1,18 @@
 /*
  * Copyright (c) 2016 Piotr Mienkowski
- * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2019-2024 Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /** @file
- * @brief Register access macros for the Atmel SAM E70 MCU.
+ * @brief Register access macros for the Atmel SAM E70/S70/V70/V71 MCU series.
  *
- * This file provides register access macros for the Atmel SAM E70 MCU, HAL
- * drivers for core peripherals as well as symbols specific to Atmel SAM family.
+ * This file provides register access macros for the Atmel SAM E70/S70/V70/V71 MCU series, HAL
+ * drivers for core peripherals as well as symbols specific to this Atmel SAM family.
  */
 
-#ifndef _SOC_ATMEL_SAM_SAME70_SOC_H_
-#define _SOC_ATMEL_SAM_SAME70_SOC_H_
+#ifndef _SOC_ATMEL_SAM_SAMX7X_SOC_H_
+#define _SOC_ATMEL_SAM_SAMX7X_SOC_H_
 
 #include <zephyr/sys/util.h>
 
@@ -58,6 +58,42 @@
 #include <same70q20b.h>
 #elif defined(CONFIG_SOC_SAME70Q21B)
 #include <same70q21b.h>
+#elif defined(CONFIG_SOC_SAMV71J19)
+#include <samv71j19.h>
+#elif defined(CONFIG_SOC_SAMV71J20)
+#include <samv71j20.h>
+#elif defined(CONFIG_SOC_SAMV71J21)
+#include <samv71j21.h>
+#elif defined(CONFIG_SOC_SAMV71N19)
+#include <samv71n19.h>
+#elif defined(CONFIG_SOC_SAMV71N20)
+#include <samv71n20.h>
+#elif defined(CONFIG_SOC_SAMV71N21)
+#include <samv71n21.h>
+#elif defined(CONFIG_SOC_SAMV71Q19)
+#include <samv71q19.h>
+#elif defined(CONFIG_SOC_SAMV71Q20)
+#include <samv71q20.h>
+#elif defined(CONFIG_SOC_SAMV71Q21)
+#include <samv71q21.h>
+#elif defined(CONFIG_SOC_SAMV71J19B)
+#include <samv71j19b.h>
+#elif defined(CONFIG_SOC_SAMV71J20B)
+#include <samv71j20b.h>
+#elif defined(CONFIG_SOC_SAMV71J21B)
+#include <samv71j21b.h>
+#elif defined(CONFIG_SOC_SAMV71N19B)
+#include <samv71n19b.h>
+#elif defined(CONFIG_SOC_SAMV71N20B)
+#include <samv71n20b.h>
+#elif defined(CONFIG_SOC_SAMV71N21B)
+#include <samv71n21b.h>
+#elif defined(CONFIG_SOC_SAMV71Q19B)
+#include <samv71q19b.h>
+#elif defined(CONFIG_SOC_SAMV71Q20B)
+#include <samv71q20b.h>
+#elif defined(CONFIG_SOC_SAMV71Q21B)
+#include <samv71q21b.h>
 #else
   #error Library does not support the specified device.
 #endif
@@ -79,4 +115,4 @@
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _SOC_ATMEL_SAM_SAME70_SOC_H_ */
+#endif /* _SOC_ATMEL_SAM_SAMX7X_SOC_H_ */

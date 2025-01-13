@@ -1,14 +1,14 @@
 /*
  * Copyright (c) 2016 Piotr Mienkowski
- * Copyright (c) 2019-2023 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2019-2024 Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /** @file
- * @brief Atmel SAM V71 MCU initialization code
+ * @brief Atmel SAM E70/S70/V70/V71 MCU series initialization code
  *
  * This file provides routines to initialize and support board-level hardware
- * for the Atmel SAM V71 MCU.
+ * for the Atmel SAM E70/S70/V70/V71 MCU series.
  */
 
 #include <zephyr/kernel.h>
@@ -17,6 +17,8 @@
 #include <zephyr/cache.h>
 #include <zephyr/arch/cache.h>
 #include <soc.h>
+#include <soc_pmc.h>
+#include <soc_supc.h>
 #include <cmsis_core.h>
 #include <zephyr/logging/log.h>
 
@@ -44,7 +46,6 @@ static ALWAYS_INLINE void clock_init(void)
 	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_SLCK)) {
 		soc_supc_slow_clock_select_crystal_osc();
 	}
-
 
 	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_MAINCK)) {
 		/*
@@ -83,7 +84,6 @@ static ALWAYS_INLINE void clock_init(void)
 	 */
 	soc_pmc_enable_pllack(CONFIG_SOC_ATMEL_SAM_PLLA_MULA, 0x3Fu,
 			      CONFIG_SOC_ATMEL_SAM_PLLA_DIVA);
-
 
 	soc_pmc_enable_upllck(0x3Fu);
 
@@ -132,7 +132,7 @@ void soc_reset_hook(void)
 	clock_init();
 }
 
-extern void atmel_samv71_config(void);
+extern void atmel_samx7x_config(void);
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -145,5 +145,6 @@ void soc_early_init_hook(void)
 		LOG_WRN("CIDR mismatch: chip = 0x%08x vs HAL = 0x%08x",
 			(uint32_t)CHIPID->CHIPID_CIDR, (uint32_t)CHIP_CIDR);
 	}
-	atmel_samv71_config();
+
+	atmel_samx7x_config();
 }
