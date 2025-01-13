@@ -345,6 +345,9 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument("-C", "--coverage", action="store_true",
                         help="Generate coverage reports. Implies "
                              "--enable-coverage.")
+    parser.add_argument("--coverage-by-testsuite", action="store_true",
+                        help=("Generate coverage data per testsuite, then merge. "
+                              "Requires --coverage."))
 
     parser.add_argument(
         "-c", "--clobber-output", action="store_true",

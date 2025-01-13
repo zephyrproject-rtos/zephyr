@@ -132,6 +132,30 @@ class CoverageTool:
                 gcda_created = False
         return gcda_created
 
+    def generate_testsuite(self, testsuite_name, outdir):
+        coverage_completed = True
+        for filename in glob.glob(f"{outdir}/**/handler.log", recursive=True):
+            gcov_data = self.__class__.retrieve_gcov_data(filename)
+            capture_complete = gcov_data['complete']
+            extracted_coverage_info = gcov_data['data']
+            if capture_complete:
+                gcda_created = self.create_gcda_files(extracted_coverage_info)
+                if gcda_created:
+                    logger.debug(f"Gcov data captured: {filename}")
+                else:
+                    logger.error(f"Gcov data invalid for: {filename}")
+                    coverage_completed = False
+            else:
+                logger.error(f"Gcov data capture incomplete: {filename}")
+                coverage_completed = False
+
+        with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
+            ret = self._generate(outdir, coveragelog, testsuite_name=testsuite_name)
+            if ret != 0:
+                coverage_completed = False
+        logger.debug(f"Testsuite coverage data processed: {coverage_completed}")
+        return coverage_completed
+
     def generate(self, outdir):
         coverage_completed = True
         for filename in glob.glob(f"{outdir}/**/handler.log", recursive=True):
@@ -182,6 +206,9 @@ class CoverageTool:
         logger.debug(f"All coverage data processed: {coverage_completed}")
         return coverage_completed
 
+    def merge_coverage(self, outdir):
+        logger.error("Merge coverage not implemented for %s", self)
+        return False
 
 class Lcov(CoverageTool):
 
@@ -261,24 +288,34 @@ class Lcov(CoverageTool):
         ] + parallel + args
         return self.run_command(cmd, coveragelog)
 
-    def _generate(self, outdir, coveragelog):
+    def _generate(self, outdir, coveragelog, testsuite_name=None):
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
 
         cmd = ["--capture", "--directory", outdir, "--output-file", coveragefile]
-        self.run_lcov(cmd, coveragelog)
+        if testsuite_name:
+            invalid_chars = re.compile(r"[^A-Za-z0-9_]")
+            cmd.append("--test-name")
+            cmd.append(invalid_chars.sub("_", testsuite_name))
+        ret = self.run_lcov(cmd, coveragelog)
+        if ret != 0:
+            return ret
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         cmd = ["--extract", coveragefile,
                os.path.join(self.base_dir, "tests", "ztest", "*"),
                "--output-file", ztestfile]
-        self.run_lcov(cmd, coveragelog)
+        ret = self.run_lcov(cmd, coveragelog)
+        if ret != 0:
+            return ret
 
         if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
             cmd = ["--remove", ztestfile,
                    os.path.join(self.base_dir, "tests/ztest/test/*"),
                    "--output-file", ztestfile]
-            self.run_lcov(cmd, coveragelog)
+            ret = self.run_lcov(cmd, coveragelog)
+            if ret != 0:
+                return ret
 
             files = [coveragefile, ztestfile]
         else:
@@ -286,15 +323,52 @@ class Lcov(CoverageTool):
 
         for i in self.ignores:
             cmd = ["--remove", coveragefile, i, "--output-file", coveragefile]
-            self.run_lcov(cmd, coveragelog)
+            ret = self.run_lcov(cmd, coveragelog)
+            if ret != 0:
+                return ret
 
-        if 'html' not in self.output_formats.split(','):
+        if 'html' not in self.output_formats.split(',') or testsuite_name is not None:
             return 0
 
         cmd = ["genhtml", "--legend", "--branch-coverage",
                "--prefix", self.base_dir,
                "-output-directory", os.path.join(outdir, "coverage")] + files
         return self.run_command(cmd, coveragelog)
+
+    def merge_coverage(self, outdir):
+        logger.info("Merging coverage files...")
+        with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
+            coveragefile = os.path.join(outdir, "coverage.info")
+            ztestfile = os.path.join(outdir, "ztest.info")
+
+            # Merge all the coverage.info files into one
+            cmd = ["--output-file", coveragefile]
+            for filename in glob.glob(f"{outdir}/**/coverage.info", recursive=True):
+                cmd.append("--add-tracefile")
+                cmd.append(filename)
+            ret = self.run_lcov(cmd, coveragelog)
+            if ret != 0:
+                return False
+
+            # Merge all the ztest.info files into one
+            cmd = ["--output-file", ztestfile]
+            for filename in glob.glob(f"{outdir}/**/ztest.info", recursive=True):
+                cmd.append("--add-tracefile")
+                cmd.append(filename)
+            ret = self.run_lcov(cmd, coveragelog)
+            if ret != 0:
+                return False
+
+            if 'html' not in self.output_formats.split(','):
+                return True
+
+            # Generate html report
+            cmd = ["genhtml", "--legend", "--branch-coverage",
+                "--prefix", self.base_dir, "--show-details",
+                "-output-directory", os.path.join(outdir, "coverage"),
+                coveragefile, ztestfile]
+            ret = self.run_command(cmd, coveragelog)
+            return ret == 0
 
 
 class Gcovr(CoverageTool):
@@ -343,7 +417,7 @@ class Gcovr(CoverageTool):
     def _flatten_list(list):
         return [a for b in list for a in b]
 
-    def _generate(self, outdir, coveragelog):
+    def _generate(self, outdir, coveragelog, testsuite_name=None):
         coveragefile = os.path.join(outdir, "coverage.json")
         ztestfile = os.path.join(outdir, "ztest.json")
 
@@ -404,6 +478,11 @@ class Gcovr(CoverageTool):
 
 
 def run_coverage(testplan, options):
+    coverage_tool = make_coverage_tool(testplan, options)
+    coverage_completed = coverage_tool.generate(options.outdir)
+    return coverage_completed
+
+def make_coverage_tool(testplan, options):
     use_system_gcov = False
     gcov_tool = None
 
@@ -456,5 +535,4 @@ def run_coverage(testplan, options):
     # Ignore branch coverage on __ASSERT* macros
     # Covering the failing case is not desirable as it will immediately terminate the test.
     coverage_tool.add_ignore_branch_pattern(r"^\s*__ASSERT(?:_EVAL|_NO_MSG|_POST_ACTION)?\(.*")
-    coverage_completed = coverage_tool.generate(options.outdir)
-    return coverage_completed
+    return coverage_tool
