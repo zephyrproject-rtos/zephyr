@@ -49,6 +49,13 @@
 #define	GICD_IIDR		(GIC_DIST_BASE +   0x8)
 
 /*
+ * 0x010   Distributor Status Register
+ * v1		ICDSTATUSR
+ * v2/v3	GICD_STATUSR
+ */
+#define	GICD_STATUSR		(GIC_DIST_BASE +   0x10)
+
+/*
  * 0x080  Interrupt Group Registers
  * v1		ICDISRn
  * v2/v3	GICD_IGROUPRn
@@ -332,6 +339,14 @@ unsigned int arm_gic_get_active(void);
  * @param irq interrupt ID
  */
 void arm_gic_eoi(unsigned int irq);
+
+/**
+ * @brief Deactive interrupt after eoi
+ *
+ * @param intid: interrupt ID
+ * @param no_deactive: no need deactive flag
+ */
+void arm_gic_eoi_deactive(unsigned int intid, bool no_deactive);
 
 #ifdef CONFIG_SMP
 /**

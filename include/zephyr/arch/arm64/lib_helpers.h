@@ -78,6 +78,27 @@ MAKE_REG_HELPER(tpidrro_el0);
 MAKE_REG_HELPER(vmpidr_el2);
 MAKE_REG_HELPER(sp_el0);
 
+MAKE_REG_HELPER(cntp_ctl_el0);
+MAKE_REG_HELPER(cntp_cval_el0)
+MAKE_REG_HELPER(cntpct_el0);
+MAKE_REG_HELPER(hstr_el2);
+MAKE_REG_HELPER(id_aa64pfr1_el1);
+MAKE_REG_HELPER(id_aa64mmfr1_el1);
+MAKE_REG_HELPER(lorc_el1);
+MAKE_REG_HELPER(mdscr_el1);
+MAKE_REG_HELPER(midr_el1);
+MAKE_REG_HELPER(mdcr_el2);
+MAKE_REG_HELPER(pmcr_el0);
+MAKE_REG_HELPER(sp_el1);
+MAKE_REG_HELPER(tpidr_el0);
+MAKE_REG_HELPER(tpidr_el1);
+MAKE_REG_HELPER(tpidr_el2);
+MAKE_REG_HELPER(vdisr_el2);
+MAKE_REG_HELPER(vpidr_el2);
+MAKE_REG_HELPER(vttbr_el2);
+MAKE_REG_HELPER(vtcr_el2);
+MAKE_REG_HELPER(isr_el1);
+
 MAKE_REG_HELPER_EL123(actlr)
 MAKE_REG_HELPER_EL123(cpacr)
 MAKE_REG_HELPER_EL123(cptr)
@@ -89,7 +110,9 @@ MAKE_REG_HELPER_EL123(sctlr)
 MAKE_REG_HELPER_EL123(spsr)
 MAKE_REG_HELPER_EL123(tcr)
 MAKE_REG_HELPER_EL123(ttbr0)
+MAKE_REG_HELPER_EL123(ttbr1)
 MAKE_REG_HELPER_EL123(vbar)
+MAKE_REG_HELPER_EL123(hpfar)
 
 #if defined(CONFIG_ARM_MPU)
 /* Armv8-R aarch64 mpu registers */
@@ -103,6 +126,69 @@ MAKE_REG_HELPER(prselr_el1);
 MAKE_REG_HELPER(prbar_el1);
 MAKE_REG_HELPER(prlar_el1);
 #endif
+
+#if defined(CONFIG_GIC_V3)
+#define eisr_el2	s3_4_c12_c11_3
+#define elrsr_el2	s3_4_c12_c11_5
+
+MAKE_REG_HELPER(eisr_el2);
+MAKE_REG_HELPER(elrsr_el2);
+#endif	/* CONFIG_GIC_V3 */
+
+/* Armv8.1+ VHE register */
+#if defined(CONFIG_HAS_ARM_VHE)
+#define	sctlr_el12		s3_5_c1_c0_0
+#define	trfcr_el12		s3_5_c1_c0_1
+#define	cpacr_el12		s3_5_c1_c0_2
+#define	zcr_el12		s3_5_c1_c2_0
+#define	ttbr0_el12		s3_5_c2_c0_0
+#define	ttbr1_el12		s3_5_c2_c0_1
+#define	tcr_el12		s3_5_c2_c0_2
+#define	afsr0_el12		s3_5_c5_c1_0
+#define	afsr1_el12		s3_5_c5_c1_1
+#define	esr_el12		s3_5_c5_c2_0
+#define	far_el12		s3_5_c6_c0_0
+#define	pmscr_el12		s3_5_c9_c9_0
+#define	mair_el12		s3_5_c10_c2_0
+#define	amair_el12		s3_5_c10_c3_0
+#define	vbar_el12		s3_5_c12_c0_0
+#define	contextidr_el12 s3_5_c13_c0_1
+#define	spsr_el12		s3_5_c4_c0_0
+#define	elr_el12		s3_5_c4_c0_1
+#define	cntkctl_el12    s3_5_c14_c1_0
+#define	cntp_tval_el02	s3_5_c14_c2_0
+#define	cntp_ctl_el02	s3_5_c14_c2_1
+#define	cntp_cval_el02	s3_5_c14_c2_2
+#define	cntv_tval_el02	s3_5_c14_c3_0
+#define	cntv_ctl_el02	s3_5_c14_c3_1
+#define	cntv_cval_el02	s3_5_c14_c3_2
+
+MAKE_REG_HELPER(sctlr_el12);
+MAKE_REG_HELPER(trfcr_el12);
+MAKE_REG_HELPER(cpacr_el12);
+MAKE_REG_HELPER(zcr_el12);
+MAKE_REG_HELPER(ttbr0_el12);
+MAKE_REG_HELPER(ttbr1_el12);
+MAKE_REG_HELPER(tcr_el12);
+MAKE_REG_HELPER(afsr0_el12);
+MAKE_REG_HELPER(afsr1_el12);
+MAKE_REG_HELPER(esr_el12);
+MAKE_REG_HELPER(far_el12);
+MAKE_REG_HELPER(pmscr_el12);
+MAKE_REG_HELPER(mair_el12);
+MAKE_REG_HELPER(amair_el12);
+MAKE_REG_HELPER(vbar_el12);
+MAKE_REG_HELPER(contextidr_el12);
+MAKE_REG_HELPER(spsr_el12);
+MAKE_REG_HELPER(elr_el12);
+MAKE_REG_HELPER(cntkctl_el12);
+MAKE_REG_HELPER(cntp_tval_el02);
+MAKE_REG_HELPER(cntp_ctl_el02);
+MAKE_REG_HELPER(cntp_cval_el02);
+MAKE_REG_HELPER(cntv_tval_el02);
+MAKE_REG_HELPER(cntv_ctl_el02);
+MAKE_REG_HELPER(cntv_cval_el02);
+#endif /* CONFIG_HAS_ARM_VHE */
 
 static ALWAYS_INLINE void enable_debug_exceptions(void)
 {
@@ -189,6 +275,11 @@ static inline bool is_el2_sec_supported(void)
 {
 	return (((read_id_aa64pfr0_el1() >> ID_AA64PFR0_SEL2_SHIFT) &
 		ID_AA64PFR0_SEL2_MASK) != 0U);
+}
+
+static inline bool is_el2_vhe_supported(void)
+{
+	return MODE_EL2 == GET_EL(read_currentel());
 }
 
 static inline bool is_in_secure_state(void)

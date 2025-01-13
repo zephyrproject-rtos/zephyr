@@ -163,6 +163,22 @@ void z_arm64_el2_init(void)
 	write_vmpidr_el2(reg);
 #endif
 
+#if defined(CONFIG_ZVM) && defined(CONFIG_HAS_ARM_VHE)
+	reg = read_hcr_el2();
+	reg |= HCR_VHE_FLAGS;
+	write_hcr_el2(reg);
+
+	reg = read_mpidr_el1();
+	cpu_vmpidr_el2_list[MPIDR_TO_CORE(GET_MPIDR())] = reg;
+
+	/* Disable CP15 trapping to EL2 of EL1 accesses to System register  */
+	zero_sysreg(hstr_el2);
+	/* Disable Debug related register  */
+	zero_sysreg(mdcr_el2);
+	/* Init stage-2 translation table base register  */
+	zero_sysreg(vttbr_el2);
+#endif
+
 	/*
 	 * Enable this if/when we use the hypervisor timer.
 	 * write_cnthp_cval_el2(~(uint64_t)0);

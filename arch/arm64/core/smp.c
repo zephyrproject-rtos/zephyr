@@ -144,7 +144,7 @@ void arch_secondary_cpu_init(int cpu_num)
 
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[cpu_num]);
-
+	arch_set_cpu_id_elx();
 	z_arm64_mm_init(false);
 
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK

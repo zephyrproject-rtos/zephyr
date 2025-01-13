@@ -70,6 +70,10 @@ GEN_OFFSET_SYM(_thread_t, stack_info);
 GEN_OFFSET_SYM(_thread_t, tls);
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
 
+#ifdef CONFIG_ZVM
+GEN_OFFSET_SYM(_thread_t, vcpu_struct);
+#endif
+
 GEN_ABSOLUTE_SYM(__z_interrupt_stack_SIZEOF, sizeof(z_interrupt_stacks[0]));
 GEN_ABSOLUTE_SYM(__z_interrupt_all_stacks_SIZEOF, sizeof(z_interrupt_stacks));
 

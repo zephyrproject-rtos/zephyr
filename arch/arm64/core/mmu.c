@@ -965,13 +965,19 @@ void z_arm64_mm_init(bool is_primary_core)
 
 	__ASSERT(CONFIG_MMU_PAGE_SIZE == KB(4),
 		 "Only 4K page size is supported\n");
+#if defined(CONFIG_ZVM) && defined(CONFIG_HAS_ARM_VHE)
+	__ASSERT(GET_EL(read_currentel()) == MODE_EL2,
+		 "Exception level not EL2, MMU not enabled!\n");
 
+	/* Ensure that MMU is already not enabled */
+	__ASSERT((read_sctlr_el2() & SCTLR_M_BIT) == 0, "MMU is already enabled\n");
+#else
 	__ASSERT(GET_EL(read_currentel()) == MODE_EL1,
 		 "Exception level not EL1, MMU not enabled!\n");
 
 	/* Ensure that MMU is already not enabled */
 	__ASSERT((read_sctlr_el1() & SCTLR_M_BIT) == 0, "MMU is already enabled\n");
-
+#endif
 	/*
 	 * Only booting core setup up the page tables.
 	 */

@@ -32,7 +32,7 @@ void z_prep_c(void)
 {
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[0]);
-
+	arch_set_cpu_id_elx();
 	z_bss_zero();
 	z_data_copy();
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK

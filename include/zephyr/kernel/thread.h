@@ -72,7 +72,7 @@ struct _thread_base {
 	uint8_t user_options;
 
 	/* thread state */
-	uint8_t thread_state;
+	uint16_t thread_state;
 
 	/*
 	 * scheduler lock count and thread priority
@@ -374,6 +374,11 @@ struct k_thread {
 
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
+
+	/* The point for vcpu struct here */
+#ifdef CONFIG_ZVM
+	void *vcpu_struct;
+#endif
 };
 
 typedef struct k_thread _thread_t;

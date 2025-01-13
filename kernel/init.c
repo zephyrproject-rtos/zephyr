@@ -681,6 +681,10 @@ FUNC_NORETURN void z_cstart(void)
 	timing_start();
 #endif /* CONFIG_TIMING_FUNCTIONS_NEED_AT_BOOT */
 
+#ifdef CONFIG_ZVM
+	_current->vcpu_struct = NULL;
+#endif
+
 #ifdef CONFIG_MULTITHREADING
 	switch_to_main_thread(prepare_multithreading());
 #else
