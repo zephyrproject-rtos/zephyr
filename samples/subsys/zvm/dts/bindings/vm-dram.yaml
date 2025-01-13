@@ -1,0 +1,40 @@
+description: Virtual Machine DRAM
+
+compatible: "vm-dram"
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: |
+      Memory regions for the VM.
+
+  label:
+    type: string
+    required: true
+    description: |
+      Human-readable name for the VM DRAM.
+
+  memmap_type:
+    type: string
+    required: true
+    description: |
+      Type of memory mapping for the VM domain.
+
+  vm_reg_base:
+    type: int
+    required: true
+    description: |
+      Guest VM's physical memory base, equivalent to the common `memory reg base` in the DTS.
+
+  vm_reg_size:
+    type: int
+    required: true
+    description: |
+      Guest VM's physical memory size, equivalent to the common `memory reg size` in the DTS.
+
+  address_type:
+    type: string
+    required: true
+    description: |
+      Type of virtual address for the VM.
