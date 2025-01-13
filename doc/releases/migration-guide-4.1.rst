@@ -118,6 +118,14 @@ ADC
 
 * Renamed the ``compatible`` from ``nxp,kinetis-adc12`` to :dtcompatible:`nxp,adc12`.
 
+Counter
+=======
+
+* Renamed the devicetree property ``primary_source`` to ``primary-source``.
+* Renamed the devicetree property ``secondary_source`` to ``secondary-source``.
+* Renamed the devicetree property ``filter_count`` to ``filter-count``.
+* Renamed the devicetree property ``filter_period`` to ``filter-period``.
+
 Controller Area Network (CAN)
 =============================
 
