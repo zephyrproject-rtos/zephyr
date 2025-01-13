@@ -451,6 +451,12 @@ typedef uint8_t device_flags_t;
 
 /** @} */
 
+/** Device operations */
+struct device_ops {
+	/** Initialization function */
+	int (*init)(const struct device *dev);
+};
+
 /**
  * @brief Runtime device structure (in ROM) per driver instance
  */
@@ -465,8 +471,8 @@ struct device {
 	struct device_state *state;
 	/** Address of the device instance private data */
 	void *data;
-	/** Initialization function (optional) */
-	int (*init_fn)(const struct device *);
+	/** Device operations */
+	struct device_ops ops;
 	/** Device flags */
 	device_flags_t flags;
 #if defined(CONFIG_DEVICE_DEPS) || defined(__DOXYGEN__)
@@ -1090,7 +1096,7 @@ device_get_dt_nodelabels(const struct device *dev)
 		.api = (api_),								\
 		.state = (state_),							\
 		.data = (data_),							\
-		.init_fn = (init_fn_),							\
+		.ops = { .init = (init_fn_) },						\
 		.flags = (flags_),							\
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/			\
 		IF_ENABLED(CONFIG_PM_DEVICE, Z_DEVICE_INIT_PM_BASE(pm_)) /**/		\
