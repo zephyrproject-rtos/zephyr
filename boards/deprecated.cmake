@@ -686,6 +686,9 @@ set(qemu_cortex_a53_smp_DEPRECATED
 set(qemu_cortex_a53_xip_DEPRECATED
     qemu_cortex_a53/qemu_cortex_a53/xip
 )
+set(qemu_max_smp_DEPRECATED
+    qemu_max/qemu_max/smp
+)
 set(qemu_malta_be_DEPRECATED
     qemu_malta/qemu_malta/be
 )
