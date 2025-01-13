@@ -306,6 +306,30 @@
 		};
 	};
 
+	wut0: timer@6400 {
+		compatible = "adi,max32-timer";
+		reg = <0x6400 0x200>;
+		interrupts = <24 0>;
+		status = "disabled";
+		prescaler = <1>;
+		counter {
+			compatible = "adi,max32-wut";
+			status = "disabled";
+		};
+	};
+
+	wut1: timer@6600 {
+		compatible = "adi,max32-timer";
+		reg = <0x6600 0x200>;
+		interrupts = <25 0>;
+		status = "disabled";
+		prescaler = <1>;
+		counter {
+			compatible = "adi,max32-wut";
+			status = "disabled";
+		};
+	};
+
 	rtc_counter: rtc_counter@6000 {
 		compatible = "adi,max32-rtc-counter";
 		reg = <0x6000 0x400>;
