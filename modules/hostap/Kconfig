@@ -278,7 +278,6 @@ config WIFI_NM_WPA_SUPPLICANT_EAPOL
 
 config WIFI_NM_WPA_SUPPLICANT_CLI
 	bool "CLI support for wpa_supplicant"
-	default n
 
 config WIFI_NM_WPA_SUPPLICANT_INF_MON
 	bool "Monitor the net mgmt event to add/del interface"
