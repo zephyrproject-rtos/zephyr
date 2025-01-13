@@ -51,7 +51,7 @@
 		};
 
 		qspi_spim: quad-spim@40017000 {
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL1 0>;
+			clocks = <&pcc NPCM_CLOCK_BUS_CORE NPCM_PWDWN_CTL1 0>;
 		};
 
 		qspi_fiu0: quad-fiu@40020000 {
