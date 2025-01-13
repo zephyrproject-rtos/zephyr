@@ -374,6 +374,9 @@ class KconfigCheck(ComplianceTest):
     # Top-level Kconfig file. The path can be relative to srctree (ZEPHYR_BASE).
     FILENAME = "Kconfig"
 
+    # Kconfig symbol prefix/namespace.
+    CONFIG_ = "CONFIG_"
+
     def run(self):
         kconf = self.parse_kconfig()
 
@@ -385,7 +388,7 @@ class KconfigCheck(ComplianceTest):
         self.check_soc_name_sync(kconf)
         self.check_no_undef_outside_kconfig(kconf)
 
-    def get_modules(self, modules_file, settings_file):
+    def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
         """
         Get a list of modules and put them in a file that is parsed by
         Kconfig
@@ -398,7 +401,9 @@ class KconfigCheck(ComplianceTest):
         zephyr_module_path = os.path.join(ZEPHYR_BASE, "scripts",
                                           "zephyr_module.py")
         cmd = [sys.executable, zephyr_module_path,
-               '--kconfig-out', modules_file, '--settings-out', settings_file]
+               '--kconfig-out', modules_file,
+               '--sysbuild-kconfig-out', sysbuild_modules_file,
+               '--settings-out', settings_file]
         try:
             subprocess.run(cmd, check=True, stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT)
@@ -485,6 +490,7 @@ class KconfigCheck(ComplianceTest):
 
         kconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig')
         kconfig_boards_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.boards')
+        kconfig_sysbuild_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.sysbuild')
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.defconfig')
 
         board_roots = self.get_module_setting_root('board', settings_file)
@@ -500,6 +506,11 @@ class KconfigCheck(ComplianceTest):
             for board in v2_boards:
                 for board_dir in board.directories:
                     fp.write('osource "' + (board_dir / 'Kconfig.defconfig').as_posix() + '"\n')
+
+        with open(kconfig_sysbuild_file, 'w') as fp:
+            for board in v2_boards:
+                for board_dir in board.directories:
+                    fp.write('osource "' + (board_dir / 'Kconfig.sysbuild').as_posix() + '"\n')
 
         with open(kconfig_boards_file, 'w') as fp:
             for board in v2_boards:
@@ -522,6 +533,7 @@ class KconfigCheck(ComplianceTest):
                     fp.write('osource "' + (board_dir / 'Kconfig').as_posix() + '"\n')
 
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.defconfig')
+        kconfig_sysbuild_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.sysbuild')
         kconfig_soc_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.soc')
         kconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig')
 
@@ -532,6 +544,10 @@ class KconfigCheck(ComplianceTest):
         with open(kconfig_defconfig_file, 'w') as fp:
             for folder in soc_folders:
                 fp.write('osource "' + (Path(folder) / 'Kconfig.defconfig').as_posix() + '"\n')
+
+        with open(kconfig_sysbuild_file, 'w') as fp:
+            for folder in soc_folders:
+                fp.write('osource "' + (Path(folder) / 'Kconfig.sysbuild').as_posix() + '"\n')
 
         with open(kconfig_soc_file, 'w') as fp:
             for folder in soc_folders:
@@ -587,6 +603,7 @@ class KconfigCheck(ComplianceTest):
 
         # For multi repo support
         self.get_modules(os.path.join(kconfiglib_dir, "Kconfig.modules"),
+                         os.path.join(kconfiglib_dir, "Kconfig.sysbuild.modules"),
                          os.path.join(kconfiglib_dir, "settings_file.txt"))
         # For Kconfig.dts support
         self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig.dts"),
@@ -833,7 +850,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         undef_to_locs = collections.defaultdict(list)
 
         # Warning: Needs to work with both --perl-regexp and the 're' module
-        regex = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
+        regex = r"\b" + self.CONFIG_ + r"[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
 
         # Skip doc/releases and doc/security/vulnerabilities.rst, which often
         # reference removed symbols
@@ -849,7 +866,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             # Extract symbol references (might be more than one) within the
             # line
             for sym_name in re.findall(regex, line):
-                sym_name = sym_name[7:]  # Strip CONFIG_
+                sym_name = sym_name[len(self.CONFIG_):]  # Strip CONFIG_
                 if sym_name not in defined_syms and \
                    sym_name not in self.UNDEF_KCONFIG_ALLOWLIST and \
                    not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms):
@@ -865,7 +882,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         #
         #   CONFIG_ALSO_MISSING    arch/xtensa/core/fatal.c:273
         #   CONFIG_MISSING         arch/xtensa/core/fatal.c:264, subsys/fb/cfb.c:20
-        undef_desc = "\n".join(f"CONFIG_{sym_name:35} {', '.join(locs)}"
+        undef_desc = "\n".join(f"{self.CONFIG_}{sym_name:35} {', '.join(locs)}"
             for sym_name, locs in sorted(undef_to_locs.items()))
 
         self.failure(f"""
@@ -1031,8 +1048,11 @@ class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     """
     name = "KconfigBasicNoModules"
 
-    def get_modules(self, modules_file, settings_file):
+    def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
         with open(modules_file, 'w') as fp_module_file:
+            fp_module_file.write("# Empty\n")
+
+        with open(sysbuild_modules_file, 'w') as fp_module_file:
             fp_module_file.write("# Empty\n")
 
 
@@ -1048,6 +1068,48 @@ class KconfigHWMv2Check(KconfigBasicCheck):
     # Use dedicated Kconfig board / soc v2 scheme file.
     # This file sources only v2 scheme tree.
     FILENAME = os.path.join(os.path.dirname(__file__), "Kconfig.board.v2")
+
+
+class SysbuildKconfigCheck(KconfigCheck):
+    """
+    Checks if we are introducing any new warnings/errors with sysbuild Kconfig,
+    for example using undefined Kconfig variables.
+    """
+    name = "SysbuildKconfig"
+
+    FILENAME = "share/sysbuild/Kconfig"
+    CONFIG_ = "SB_CONFIG_"
+
+    # A different allowlist is used for symbols prefixed with SB_CONFIG_ (omitted here).
+    UNDEF_KCONFIG_ALLOWLIST = {
+        # zephyr-keep-sorted-start re(^\s+")
+        "FOO",
+        "SECOND_SAMPLE", # Used in sysbuild documentation
+        "SUIT_ENVELOPE", # Used by nRF runners to program provisioning data
+        "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data
+        "SUIT_MPI_GENERATE", # Used by nRF runners to program provisioning data
+        "SUIT_MPI_RAD_AREA_PATH", # Used by nRF runners to program provisioning data
+        # zephyr-keep-sorted-stop
+    }
+
+
+class SysbuildKconfigBasicCheck(SysbuildKconfigCheck, KconfigBasicCheck):
+    """
+    Checks if we are introducing any new warnings/errors with sysbuild Kconfig,
+    for example using undefined Kconfig variables.
+    This runs the basic Kconfig test, which is checking only for undefined
+    references inside the sysbuild Kconfig tree.
+    """
+    name = "SysbuildKconfigBasic"
+
+
+class SysbuildKconfigBasicNoModulesCheck(SysbuildKconfigCheck, KconfigBasicNoModulesCheck):
+    """
+    Checks if we are introducing any new warnings/errors with sysbuild Kconfig
+    when no modules are available. Catches symbols used in the main repository
+    but defined only in a module.
+    """
+    name = "SysbuildKconfigBasicNoModules"
 
 
 class Nits(ComplianceTest):
