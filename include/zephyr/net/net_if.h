@@ -3378,7 +3378,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 				   init_fn, pm, data, config, prio,	\
 				   api, l2, l2_ctx_type, mtu)		\
 	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn,			\
+			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
@@ -3525,7 +3526,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 #define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_id, name, init_fn, pm,	\
 				  data, config, prio, api, mtu)		\
 	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn,			\
+			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_IF_OFFLOAD_INIT(dev_id, 0, mtu)
