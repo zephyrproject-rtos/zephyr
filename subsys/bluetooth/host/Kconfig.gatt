@@ -118,7 +118,7 @@ config BT_GATT_CACHING
 	depends on PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_AES
 	select PSA_WANT_ALG_CMAC
-	select MBEDTLS_AES_ROM_TABLES if MBEDTLS_PSA_CRYPTO_C
+	imply MBEDTLS_AES_ROM_TABLES if MBEDTLS_PSA_CRYPTO_C
 	help
 	  This option enables support for GATT Caching. When enabled the stack
 	  will register Client Supported Features and Database Hash
