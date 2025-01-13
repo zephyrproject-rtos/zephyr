@@ -106,3 +106,7 @@ zephyr_udc1: &usb2 {
 &kpp {
 	status = "okay";
 };
+
+temp_sensor: &tmpsns {
+	status = "okay";
+};

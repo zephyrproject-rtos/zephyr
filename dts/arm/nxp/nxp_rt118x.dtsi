@@ -1407,6 +1407,13 @@
 		reg = <0x2cb0000 0x1000>;
 		status = "disabled";
 	};
+
+	tmpsns: tmpsns@4484580 {
+		reg = <0x4484580 0x24>;
+		interrupts = <83 0>;
+		compatible = "nxp,tmpsns";
+		status = "disabled";
+	};
 };
 
 &flexspi {
