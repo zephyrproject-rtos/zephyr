@@ -1,12 +1,12 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_VM_DEVICE_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_VM_DEVICE_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_VM_DEVICE_H_
+#define ZEPHYR_INCLUDE_ZVM_VM_DEVICE_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -263,4 +263,4 @@ void virt_device_irq_callback_data_set(int irq, int priority, void *user_data);
 
 int vm_device_init(struct z_vm *vm);
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_VM_DEVICE_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_VM_DEVICE_H_ */
