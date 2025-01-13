@@ -10,9 +10,11 @@ include: ["ethernet-controller.yaml", "pinctrl-device.yaml"]
 properties:
   reg:
     required: true
+  clocks:
+    required: true
   interrupts:
     required: true
   pinctrl-0:
-      required: true
+    required: true
   pinctrl-names:
     required: true

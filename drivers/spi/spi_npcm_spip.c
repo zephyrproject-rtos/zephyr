@@ -36,7 +36,7 @@ struct spi_npcm_spip_data {
 
 struct spi_npcm_spip_cfg {
 	struct spip_reg *reg_base;
-	struct npcm_clk_cfg clk_cfg;
+	uint32_t clk_cfg;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -360,20 +360,20 @@ static int spi_npcm_spip_init(const struct device *dev)
 	int ret;
 	struct spi_npcm_spip_data *const data = dev->data;
 	const struct spi_npcm_spip_cfg *const config = dev->config;
-	const struct device *const clk_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 
 	if (!device_is_ready(clk_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on SPIP clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)config->clk_cfg,
 				     &data->src_clock_freq);
 	if (ret < 0) {
 		LOG_ERR("Get SPIP clock source rate error %d", ret);
@@ -410,7 +410,7 @@ static struct spi_driver_api spi_npcm_spip_api = {
                                                                                                    \
 	static struct spi_npcm_spip_cfg spi_npcm_spip_cfg_##n = {                                  \
 		.reg_base = (struct spip_reg *)DT_INST_REG_ADDR(n),                                \
-		.clk_cfg = NPCM_DT_CLK_CFG_ITEM(n),                                                \
+		.clk_cfg = DT_INST_PHA(n, clocks, clk_cfg),                                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                        \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, spi_npcm_spip_init, NULL, &spi_npcm_spip_data_##n,                \

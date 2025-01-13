@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(pwm_npcm, LOG_LEVEL_ERR);
 #define NPCM_PWM_MAX_PRESCALER      (1UL << (16))
 #define NPCM_PWM_MAX_PERIOD_CYCLES  (1UL << (16))
 
+#define NPCM_PWM_LFCLK              32768
+
 /* PWM clock sources */
 #define NPCM_PWM_CLOCK_APB2_LFCLK   0
 #define NPCM_PWM_CLOCK_FX           1
@@ -35,7 +37,7 @@ struct pwm_npcm_config {
 	/* pwm controller base address */
 	struct pwm_reg *base;
 	/* clock configuration */
-	struct npcm_clk_cfg clk_cfg;
+	uint32_t clk_cfg;
 	/* pinmux configuration */
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -47,7 +49,7 @@ struct pwm_npcm_data {
 };
 
 /* PWM local functions */
-static int pwm_npcm_configure(const struct device *dev, int clk_bus)
+static int pwm_npcm_configure(const struct device *dev, uint32_t cycles)
 {
 	const struct pwm_npcm_config *config = dev->config;
 	struct pwm_reg *inst = config->base;
@@ -66,14 +68,11 @@ static int pwm_npcm_configure(const struct device *dev, int clk_bus)
 	SET_FIELD(inst->PWMCTLEX, NPCM_PWMCTLEX_FCK_SEL_FIELD,
 			NPCM_PWM_CLOCK_APB2_LFCLK);
 
-	/* Select input clock source to LFCLK or APB2 , otherwise failure */
-	if (clk_bus == NPCM_CLOCK_BUS_LFCLK) {
+	/* Select input clock source to LFCLK or APB2 */
+	if (cycles == NPCM_PWM_LFCLK) {
 		inst->PWMCTL |= BIT(NPCM_PWMCTL_CKSEL);
-	} else if (clk_bus == NPCM_CLOCK_BUS_APB2) {
-		inst->PWMCTL &= ~BIT(NPCM_PWMCTL_CKSEL);
 	} else {
-		LOG_ERR("Support LFCLK and APB2 input clock source only");
-		return -EINVAL;
+		inst->PWMCTL &= ~BIT(NPCM_PWMCTL_CKSEL);
 	}
 
 	return 0;
@@ -175,7 +174,7 @@ static int pwm_npcm_init(const struct device *dev)
 	const struct pwm_npcm_config *const config = dev->config;
 	struct pwm_npcm_data *const data = dev->data;
 	struct pwm_reg *const inst = config->base;
-	const struct device *const clk_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	int ret;
 
 	/*
@@ -193,21 +192,30 @@ static int pwm_npcm_init(const struct device *dev)
 
 	/* Turn on device clock first and get source clock freq. */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
-							&config->clk_cfg);
+							config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on PWM clock fail %d", ret);
 		return ret;
 	}
 
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
-			&config->clk_cfg, &data->cycles_per_sec);
+			config->clk_cfg, &data->cycles_per_sec);
 	if (ret < 0) {
 		LOG_ERR("Get PWM clock rate error %d", ret);
 		return ret;
 	}
 
+	/* Bus only could be APB2 or Low frequency clock */
+	if (((config->clk_cfg >> NPCM_CLOCK_BUS_OFFSET) & NPCM_CLOCK_BUS_MASK) !=
+			NPCM_CLOCK_BUS_APB2) {
+		if ((data->cycles_per_sec != NPCM_PWM_LFCLK)) {
+			LOG_ERR("PWM only support source LF or APB2");
+			return -EINVAL;
+		}
+	}
+
 	/* Configure PWM device initially */
-	ret = pwm_npcm_configure(dev, config->clk_cfg.bus);
+	ret = pwm_npcm_configure(dev, data->cycles_per_sec);
 	if (ret < 0) {
 		LOG_ERR("PWM configure failed (%d)", ret);
 		return ret;
@@ -228,7 +236,7 @@ static int pwm_npcm_init(const struct device *dev)
 									                \
 	static const struct pwm_npcm_config pwm_npcm_cfg_##inst = {                     \
 		.base = (struct pwm_reg *)DT_INST_REG_ADDR(inst),                       \
-		.clk_cfg = NPCM_DT_CLK_CFG_ITEM(inst),                                  \
+		.clk_cfg = DT_INST_PHA(inst, clocks, clk_cfg),                          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                           \
 	};                                                                              \
 									                \

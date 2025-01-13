@@ -49,20 +49,20 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x400b0000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL4 0>;
+			clocks = <&pcc NPCM_CLOCK_ITIM1>;
 			interrupts = <29 1>;
 		};
 
 		qspi_spim: quad-spim@40017000 {
-			clocks = <&pcc NPCM_CLOCK_BUS_CORE NPCM_PWDWN_CTL1 0>;
+			clocks = <&pcc NPCM_CLOCK_SPIM>;
 		};
 
 		qspi_fiu0: quad-fiu@40020000 {
-			clocks = <&pcc NPCM_CLOCK_BUS_FIU NPCM_PWDWN_CTL1 2>;
+			clocks = <&pcc NPCM_CLOCK_FIU>;
 		};
 
 		spip1: spi@40016000 {
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL4 7>;
+			clocks = <&pcc NPCM_CLOCK_SPIP1>;
 		};
 
 		gpio0: gpio@40081000 {

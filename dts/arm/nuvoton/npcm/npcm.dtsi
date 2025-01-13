@@ -42,7 +42,7 @@
 		pcc: clock-controller@4000d000 {
 			compatible = "nuvoton,npcm-pcc";
 			/* Cells for bus type, clock control reg and bit */
-			#clock-cells = <3>;
+			#clock-cells = <1>;
 			/* First reg region is Power Management Controller */
 			/* Second reg region is Core Domain Clock Generator */
 			reg = <0x4000d000 0x2000
@@ -65,7 +65,7 @@
 			compatible = "nuvoton,npcm-uart";
 			reg = <0x400c4000 0x100>;
 			interrupts = <23 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL1 4>;
+			clocks = <&pcc NPCM_CLOCK_UART>;
 			status = "disabled";
 		};
 
@@ -73,7 +73,7 @@
 			compatible = "nuvoton,npcm-uart";
 			reg = <0x400c4200 0x100>;
 			interrupts = <76 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL0 6>;
+			clocks = <&pcc NPCM_CLOCK_UART2>;
 			status = "disabled";
 		};
 
@@ -271,7 +271,7 @@
 			#io-channel-cells = <1>;
 			reg = <0x400d1100 0xf00>;
 			interrupts = <21 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB1 NPCM_PWDWN_CTL4 4>;
+			clocks = <&pcc NPCM_CLOCK_ADC>;
 			vref-mv = <2048>;
 			status = "disabled";
 		};
@@ -282,7 +282,7 @@
 			#size-cells = <0>;
 			reg = <0x40006000 0x200>;
 			interrupts = <35 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 0>;
+			clocks = <&pcc NPCM_CLOCK_SMB1>;
 			status = "disabled";
 		};
 
@@ -292,7 +292,7 @@
 			#size-cells = <0>;
 			reg = <0x40006200 0x200>;
 			interrupts = <0 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 1>;
+			clocks = <&pcc NPCM_CLOCK_SMB2>;
 			status = "disabled";
 		};
 
@@ -302,7 +302,7 @@
 			#size-cells = <0>;
 			reg = <0x40006400 0x200>;
 			interrupts = <37 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 2>;
+			clocks = <&pcc NPCM_CLOCK_SMB3>;
 			status = "disabled";
 		};
 
@@ -312,7 +312,7 @@
 			#size-cells = <0>;
 			reg = <0x40006600 0x200>;
 			interrupts = <38 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 3>;
+			clocks = <&pcc NPCM_CLOCK_SMB4>;
 			status = "disabled";
 		};
 
@@ -322,7 +322,7 @@
 			#size-cells = <0>;
 			reg = <0x40006800 0x200>;
 			interrupts = <39 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 4>;
+			clocks = <&pcc NPCM_CLOCK_SMB5>;
 			status = "disabled";
 		};
 
@@ -332,7 +332,7 @@
 			#size-cells = <0>;
 			reg = <0x40006a00 0x200>;
 			interrupts = <20 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 5>;
+			clocks = <&pcc NPCM_CLOCK_SMB6>;
 			status = "disabled";
 		};
 
@@ -342,7 +342,7 @@
 			#size-cells = <0>;
 			reg = <0x40006c00 0x200>;
 			interrupts = <70 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL7 0>;
+			clocks = <&pcc NPCM_CLOCK_SMB7>;
 			status = "disabled";
 		};
 
@@ -352,7 +352,7 @@
 			#size-cells = <0>;
 			reg = <0x40006e00 0x200>;
 			interrupts = <71 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL7 1>;
+			clocks = <&pcc NPCM_CLOCK_SMB8>;
 			status = "disabled";
 		};
 
@@ -362,7 +362,7 @@
 			#size-cells = <0>;
 			reg = <0x40007000 0x200>;
 			interrupts = <72 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL7 2>;
+			clocks = <&pcc NPCM_CLOCK_SMB9>;
 			status = "disabled";
 		};
 
@@ -372,7 +372,7 @@
 			#size-cells = <0>;
 			reg = <0x40007200 0x200>;
 			interrupts = <73 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL7 3>;
+			clocks = <&pcc NPCM_CLOCK_SMB10>;
 			status = "disabled";
 		};
 
@@ -382,7 +382,7 @@
 			#size-cells = <0>;
 			reg = <0x40007400 0x200>;
 			interrupts = <74 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL7 4>;
+			clocks = <&pcc NPCM_CLOCK_SMB11>;
 			status = "disabled";
 		};
 
@@ -392,7 +392,7 @@
 			#size-cells = <0>;
 			reg = <0x40007600 0x200>;
 			interrupts = <75 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL7 5>;
+			clocks = <&pcc NPCM_CLOCK_SMB12>;
 			status = "disabled";
 		};
 
@@ -402,7 +402,7 @@
 			#size-cells = <0>;
 			reg = <0x40006000 0x200>;
 			interrupts = <35 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 0>;
+			clocks = <&pcc NPCM_CLOCK_SMB1>;
 			status = "disabled";
 		};
 
@@ -412,7 +412,7 @@
 			#size-cells = <0>;
 			reg = <0x40006600 0x200>;
 			interrupts = <38 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 3>;
+			clocks = <&pcc NPCM_CLOCK_SMB4>;
 			status = "disabled";
 		};
 
@@ -422,7 +422,7 @@
 			#size-cells = <0>;
 			reg = <0x40006a00 0x200>;
 			interrupts = <20 3>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 5>;
+			clocks = <&pcc NPCM_CLOCK_SMB6>;
 			status = "disabled";
 		};
 
@@ -432,7 +432,7 @@
 			reg = <0x40004000 0x2000
 			       0x40015000 0x10
 			       0x40015010 0x10>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL0 2>;
+			clocks = <&pcc NPCM_CLOCK_I3CI>;
 			interrupts = <64 3>;
 			status = "disabled";
 			#address-cells = <3>;
@@ -445,7 +445,7 @@
 			reg = <0x40004200 0x2000
 			       0x40015020 0x10
 			       0x40015030 0x10>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 0>;
+			clocks = <&pcc NPCM_CLOCK_I3CI2>;
 			interrupts = <65 3>;
 			status = "disabled";
 			#address-cells = <3>;
@@ -458,7 +458,7 @@
 			reg = <0x40004400 0x2000
 			       0x40015040 0x10
 			       0x40015050 0x10>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 1>;
+			clocks = <&pcc NPCM_CLOCK_I3CI3>;
 			interrupts = <66 3>;
 			status = "disabled";
 			#address-cells = <3>;
@@ -471,7 +471,7 @@
 			reg = <0x40004600 0x2000
 			       0x40015060 0x10
 			       0x40015070 0x10>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 2>;
+			clocks = <&pcc NPCM_CLOCK_I3CI4>;
 			interrupts = <67 3>;
 			status = "disabled";
 			#address-cells = <3>;
@@ -484,7 +484,7 @@
 			reg = <0x40004800 0x2000
 			       0x40015080 0x10
 			       0x40015090 0x10>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 3>;
+			clocks = <&pcc NPCM_CLOCK_I3CI5>;
 			interrupts = <68 3>;
 			status = "disabled";
 			#address-cells = <3>;
@@ -497,7 +497,7 @@
 			reg = <0x40004a00 0x2000
 			       0x400150a0 0x10
 			       0x400150b0 0x10>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 4>;
+			clocks = <&pcc NPCM_CLOCK_I3CI6>;
 			interrupts = <69 3>;
 			status = "disabled";
 			#address-cells = <3>;
@@ -509,7 +509,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x400b0000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL4 0>;
+			clocks = <&pcc NPCM_CLOCK_ITIM1>;
 			interrupts = <29 1>;
 			status = "disabled";
 		};
@@ -519,7 +519,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x400b2000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL4 1>;
+			clocks = <&pcc NPCM_CLOCK_ITIM2>;
 			interrupts = <30 1>;
 			status = "disabled";
                 };
@@ -529,7 +529,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x400b4000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL4 2>;
+			clocks = <&pcc NPCM_CLOCK_ITIM3>;
 			interrupts = <31 1>;
 			status = "disabled";
 		};
@@ -539,7 +539,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x400b6000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL6 0>;
+			clocks = <&pcc NPCM_CLOCK_ITIM4>;
 			interrupts = <32 1>;
 			status = "disabled";
 		};
@@ -549,7 +549,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x400b8000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL6 1>;
+			clocks = <&pcc NPCM_CLOCK_ITIM5>;
 			interrupts = <33 1>;
 			status = "disabled";
 		};
@@ -559,7 +559,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x400ba000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL6 2>;
+			clocks = <&pcc NPCM_CLOCK_ITIM6>;
 			interrupts = <34 1>;
 			status = "disabled";
 		};
@@ -567,7 +567,7 @@
 		tach1: tach@400e1000 {
 			compatible = "nuvoton,npcm-tach";
 			reg = <0x400e1000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_LFCLK NPCM_PWDWN_CTL1 5>;
+			clocks = <&pcc NPCM_CLOCK_MFT1>;
 			tach-channel = <1>;
 			status = "disabled";
 		};
@@ -575,7 +575,7 @@
 		tach2: tach@400e3000 {
 			compatible = "nuvoton,npcm-tach";
 			reg = <0x400e3000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_LFCLK NPCM_PWDWN_CTL1 6>;
+			clocks = <&pcc NPCM_CLOCK_MFT2_LF>;
 			tach-channel = <2>;
 			status = "disabled";
 		};
@@ -583,7 +583,7 @@
 		tach3: tach@400e5000 {
 			compatible = "nuvoton,npcm-tach";
 			reg = <0x400e5000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_LFCLK NPCM_PWDWN_CTL1 7>;
+			clocks = <&pcc NPCM_CLOCK_MFT3>;
 			tach-channel = <3>;
 			status = "disabled";
 		};
@@ -591,7 +591,7 @@
 		pwm1: pwm@40080000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x40080000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL2 0>;
+			clocks = <&pcc NPCM_CLOCK_PWM_A>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -599,7 +599,7 @@
 		pwm2: pwm@40082000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x40082000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL2 1>;
+			clocks = <&pcc NPCM_CLOCK_PWM_B>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -607,7 +607,7 @@
 		pwm3: pwm@40084000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x40084000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL2 2>;
+			clocks = <&pcc NPCM_CLOCK_PWM_C>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -615,7 +615,7 @@
 		pwm4: pwm@40086000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x40086000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL2 3>;
+			clocks = <&pcc NPCM_CLOCK_PWM_D>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -623,7 +623,7 @@
 		pwm5: pwm@40088000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x40088000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL2 4>;
+			clocks = <&pcc NPCM_CLOCK_PWM_E>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -631,7 +631,7 @@
 		pwm6: pwm@4008a000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x4008a000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL2 5>;
+			clocks = <&pcc NPCM_CLOCK_PWM_F>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -639,7 +639,7 @@
 		pwm7: pwm@4008c000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x4008c000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL2 6>;
+			clocks = <&pcc NPCM_CLOCK_PWM_G>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -647,7 +647,7 @@
 		pwm8: pwm@4008e000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x4008e000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL2 7>;
+			clocks = <&pcc NPCM_CLOCK_PWM_H>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -655,7 +655,7 @@
 		pwm9: pwm@40090000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x40090000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL0 0>;
+			clocks = <&pcc NPCM_CLOCK_PWM_I>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -663,7 +663,7 @@
 		pwm10: pwm@40092000 {
 			compatible = "nuvoton,npcm-pwm";
 			reg = <0x40092000 0x2000>;
-			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL0 1>;
+			clocks = <&pcc NPCM_CLOCK_PWM_J>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -680,6 +680,7 @@
 		emac: ethernet@40018000 {
 			compatible = "nuvoton,npcm-ethernet";
 			reg = <0x40018000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_EMAC>;
 			interrupts = <36 3>;
 			status = "disabled";
 		};

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(npcm_itim32, CONFIG_COUNTER_LOG_LEVEL);
 
 #define NUM_CHANNELS		1
 #define MAX_PRESCALER		256
-#define LF_CYCLES_PER_SEC	LFCLK /* 32768 Hz */
+#define NPCM_ITIM_LFCLK		32768
 
 struct counter_npcm_itim32_data {
 	uint32_t freq;
@@ -35,7 +35,7 @@ struct counter_npcm_itim32_config {
 	/* register base */
 	uintptr_t base;
 	/* Clock configuration */
-	struct npcm_clk_cfg clk_cfg;
+	uint32_t clk_cfg;
 	/* prescaler that use to divide input source frequency */
 	uint8_t prescaler;
 	void (*irq_config_func)(const struct device *dev);
@@ -234,7 +234,7 @@ static int counter_npcm_itim32_init(const struct device *dev)
 {
 	const struct counter_npcm_itim32_config *config = dev->config;
 	struct counter_npcm_itim32_data *data = dev->data;
-	const struct device *const clk_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	struct itim32_reg *const inst = HAL_INSTANCE(dev);
 	uint8_t itcts;
 	int ret;
@@ -246,13 +246,13 @@ static int counter_npcm_itim32_init(const struct device *dev)
 
 	/* Turn on device clock first and get source clock freq. */
 	ret = clock_control_on(clk_dev,
-				(clock_control_subsys_t)&config->clk_cfg);
+				(clock_control_subsys_t)config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on FIU clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)config->clk_cfg,
 				     &data->freq);
 	if (ret < 0) {
 		LOG_ERR("Get ITIM32 clock source rate error %d", ret);
@@ -276,9 +276,10 @@ static int counter_npcm_itim32_init(const struct device *dev)
 		BIT(NPCM_ITCTS_TO_STS);
 
 	/* Select low-frequency input clock source and change src freq to LF */
-	if (config->clk_cfg.bus == NPCM_CLOCK_BUS_LFCLK) {
-		data->freq = LF_CYCLES_PER_SEC;
+	if (data->freq == NPCM_ITIM_LFCLK) {
 		itcts |= BIT(NPCM_ITCTS_CKSEL);
+	} else {
+		itcts &= ~BIT(NPCM_ITCTS_CKSEL);
 	}
 
 	/* Store actual frequency value */
@@ -321,7 +322,7 @@ static const struct counter_driver_api counter_npcm_itim32_driver_api = {
 			.channels = NUM_CHANNELS,                                                   \
 		},                                                                                  \
 		.base = DT_INST_REG_ADDR(id),                                                       \
-		.clk_cfg = NPCM_DT_CLK_CFG_ITEM(id),                                                \
+		.clk_cfg = DT_INST_PHA(id, clocks, clk_cfg),                                        \
 		.prescaler = DT_INST_PROP(id, prescaler),				            \
 		.irq_config_func = counter_npcm_itim32_irq_config_##id,	                            \
 	};                                                                                          \

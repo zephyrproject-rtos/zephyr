@@ -43,7 +43,7 @@
 LOG_MODULE_REGISTER(wdt_npcm, CONFIG_WDT_LOG_LEVEL);
 
 /* Watchdog operating frequency is fixed to LFCLK (32.768) kHz */
-#define NPCM_WDT_CLK LFCLK
+#define NPCM_WDT_CLK 32768
 
 /*
  * Maximum watchdog window time. Since the watchdog counter is 8-bits, maximum

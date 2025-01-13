@@ -50,7 +50,7 @@ struct tach_npcm_config {
 	/* tachometer controller base address */
 	uintptr_t base;
 	/* clock configuration */
-	struct npcm_clk_cfg clk_cfg;
+	uint32_t clk_cfg;
 	/* sampling clock frequency of tachometer */
 	uint32_t sample_clk;
 	/* tach channel */
@@ -86,6 +86,7 @@ struct tach_npcm_data {
 /* Clock selection for tachometer */
 #define NPCM_CLKSEL_APBCLK 1
 #define NPCM_CLKSEL_LFCLK 4
+#define NPCM_TACH_LFCLK	32768
 
 /* TACH inline local functions */
 static inline void tach_npcm_start(const struct device *dev)
@@ -108,7 +109,7 @@ static inline void tach_npcm_start(const struct device *dev)
 	inst->TCFG |= BIT(NPCM_TCFG_TADBEN);
 
 	/* Select clock source of timer 1 from no clock and start to count. */
-	SET_FIELD(inst->TCKC, NPCM_TCKC_C1CSEL_FIELD, data->input_clk == LFCLK
+	SET_FIELD(inst->TCKC, NPCM_TCKC_C1CSEL_FIELD, data->input_clk == NPCM_TACH_LFCLK
 		  ? NPCM_CLKSEL_LFCLK : NPCM_CLKSEL_APBCLK);
 }
 
@@ -172,7 +173,7 @@ static int tach_npcm_configure(const struct device *dev)
 	/* Configure clock module and its frequency of tachometer */
 	if (config->sample_clk == 0) {
 		return -EINVAL;
-	} else if (data->input_clk == LFCLK) {
+	} else if (data->input_clk == NPCM_TACH_LFCLK) {
 		/* Enable low power mode */
 		inst->TCKC |= BIT(NPCM_TCKC_LOW_PWR);
 		if (config->sample_clk != data->input_clk) {
@@ -184,7 +185,7 @@ static int tach_npcm_configure(const struct device *dev)
 		/* Configure sampling freq by setting prescaler of APB1 */
 		uint16_t prescaler = data->input_clk / config->sample_clk;
 
-		if (data->input_clk > config->sample_clk) {
+		if (config->sample_clk > data->input_clk) {
 			LOG_ERR("%s operate freq exceeds APB1 clock",
 				dev->name);
 			return -EINVAL;
@@ -268,7 +269,7 @@ static int tach_npcm_init(const struct device *dev)
 {
 	const struct tach_npcm_config *const config = dev->config;
 	struct tach_npcm_data *const data = dev->data;
-	const struct device *const clk_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
@@ -278,14 +279,14 @@ static int tach_npcm_init(const struct device *dev)
 
 	/* Turn on device clock first and get source clock freq. */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
-							&config->clk_cfg);
+							config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on tachometer clock fail %d", ret);
 		return ret;
 	}
 
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
-					&config->clk_cfg, &data->input_clk);
+					config->clk_cfg, &data->input_clk);
 	if (ret < 0) {
 		LOG_ERR("Get tachometer clock rate error %d", ret);
 		return ret;
@@ -322,7 +323,7 @@ static const struct sensor_driver_api tach_npcm_driver_api = {
 									                       \
 	static const struct tach_npcm_config tach_cfg_##inst = {                               \
 		.base = DT_INST_REG_ADDR(inst),                                                \
-		.clk_cfg = NPCM_DT_CLK_CFG_ITEM(inst),                                         \
+		.clk_cfg = DT_INST_PHA(inst, clocks, clk_cfg),                                 \
 		.sample_clk = DT_INST_PROP(inst, sample_clk),                                  \
 		.tach_channel = DT_INST_PROP(inst, tach_channel),                              \
 		.pin_select = DT_INST_PROP_OR(inst, pin_select, NPCM_TACH_PIN_SELECT_DEFAULT), \

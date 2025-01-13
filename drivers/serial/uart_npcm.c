@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(uart_npcm, CONFIG_UART_LOG_LEVEL);
 struct uart_npcm_config {
 	struct uart_reg *base;
 	/* clock configuration */
-	struct npcm_clk_cfg clk_cfg;
+	uint32_t clk_cfg;
 	/* pinmux configuration */
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -392,20 +392,20 @@ static int uart_npcm_init(const struct device *dev)
 	const struct uart_npcm_config *const config = dev->config;
 	struct uart_npcm_data *const data = dev->data;
 	struct uart_reg *const inst = config->base;
-	const struct device *const clk_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	uint32_t uart_rate;
 	int ret;
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
-							&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
+							config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on UART clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
-		&config->clk_cfg, &uart_rate);
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
+		config->clk_cfg, &uart_rate);
 	if (ret < 0) {
 		LOG_ERR("Get UART clock rate error %d", ret);
 		return ret;
@@ -528,7 +528,7 @@ static int uart_npcm_pm_control(const struct device *dev, uint32_t ctrl_command,
 												\
 	static const struct uart_npcm_config uart_npcm_cfg_##inst = {				\
 		.base = (struct uart_reg *)DT_INST_REG_ADDR(inst),				\
-		.clk_cfg = NPCM_DT_CLK_CFG_ITEM(inst),						\
+		.clk_cfg = DT_INST_PHA(inst, clocks, clk_cfg),					\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
 		NPCM_UART_IRQ_CONFIG_FUNC_INIT(inst)						\
 	};                                                                                      \

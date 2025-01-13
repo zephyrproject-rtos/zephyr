@@ -79,11 +79,8 @@ struct npcm_i3c_config {
 	/* Pointer to controller registers. */
 	struct i3c_reg *base;
 
-	/* Pointer to the clock device. */
-	const struct device *clock_dev;
-
-	/* Clock control subsys related struct. */
-	struct npcm_clk_cfg clock_subsys;
+	/* Clock configuration */
+	uint32_t clk_cfg;
 
 	/* Pointer to pin control device. */
 	const struct pinctrl_dev_config *pincfg;
@@ -2148,7 +2145,7 @@ static int npcm_i3c_freq_init(const struct device *dev)
 	const struct npcm_i3c_config *config = dev->config;
 	struct npcm_i3c_data *data = dev->data;
 	struct i3c_reg *i3c_inst = HAL_INSTANCE(dev);
-	const struct device *const clk_dev = config->clock_dev;
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 	uint32_t scl_pp = ctrl_config->scl.i3c;
 	uint32_t scl_od = config->clocks.i3c_od_scl_hz;
@@ -2157,7 +2154,7 @@ static int npcm_i3c_freq_init(const struct device *dev)
 	uint32_t i3c_freq_rate;
 	int ret;
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clock_subsys,
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)config->clk_cfg,
 				     &i3c_freq_rate);
 	if (ret != 0x0) {
 		LOG_ERR("Get I3C source clock fail %d", ret);
@@ -2213,7 +2210,7 @@ static int npcm_i3c_cntlr_init(const struct device *dev)
 {
 	const struct npcm_i3c_config *config = dev->config;
 	struct i3c_reg *i3c_inst = HAL_INSTANCE(dev);
-	const struct device *const clk_dev = config->clock_dev;
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	uint32_t i3c_freq_rate;
 	uint8_t bamatch;
 	int ret;
@@ -2239,7 +2236,7 @@ static int npcm_i3c_cntlr_init(const struct device *dev)
 	npcm_i3c_fifo_flush(i3c_inst);
 
 	/* Set bus available match value in target register */
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clock_subsys,
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)config->clk_cfg,
 				     &i3c_freq_rate);
 	LOG_DBG("I3C_CLK_FREQ: %d", i3c_freq_rate);
 
@@ -2299,7 +2296,7 @@ static int npcm_i3c_init(const struct device *dev)
 	const struct npcm_i3c_config *config = dev->config;
 	struct npcm_i3c_data *data = dev->data;
 	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
-	const struct device *const clk_dev = config->clock_dev;
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	int ret;
 
 	/* Check clock device ready */
@@ -2309,7 +2306,7 @@ static int npcm_i3c_init(const struct device *dev)
 	}
 
 	/* Set I3C_PD operational */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clock_subsys);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on I3C clock fail %d", ret);
 		return ret;
@@ -2498,8 +2495,7 @@ static const struct i3c_driver_api npcm_i3c_driver_api = {
 		I3C_I2C_DEVICE_ARRAY_DT_INST(id);                                                     \
 	static const struct npcm_i3c_config npcm_i3c_config_##id = {                                  \
 		.base = (struct i3c_reg *)DT_INST_REG_ADDR(id),                                       \
-		.clock_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE),                                       \
-		.clock_subsys = NPCM_DT_CLK_CFG_ITEM(id),                                             \
+		.clk_cfg = DT_INST_PHA(id, clocks, clk_cfg),                                          \
 		.irq_config_func = npcm_i3c_config_func_##id,                                         \
 		.common.dev_list.i3c = npcm_i3c_device_array_##id,                                    \
 		.common.dev_list.num_i3c = ARRAY_SIZE(npcm_i3c_device_array_##id),                    \

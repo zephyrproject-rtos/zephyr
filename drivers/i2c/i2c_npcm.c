@@ -52,7 +52,7 @@ enum i2c_npcm_oper_state {
 /* Device configuration */
 struct i2c_npcm_config {
 	uintptr_t base;				/* i2c controller base address */
-	struct npcm_clk_cfg clk_cfg;		/* clock configuration */
+	uint32_t clk_cfg;			/* clock configuration */
 	uint32_t default_bitrate;
 	uint8_t irq;				/* i2c controller irq */
 	const struct pinctrl_dev_config *pcfg;  /* pinmux configuration */
@@ -252,10 +252,10 @@ static void i2c_npcm_set_baudrate(const struct device *dev, uint32_t bus_freq)
 	uint32_t reg_tmp;
 	const struct i2c_npcm_config *const config = dev->config;
 	struct i2c_reg *const inst = I2C_INSTANCE(dev);
-	const struct device *const clk_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	struct i2c_npcm_data *const data = dev->data;
 
-	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t *)&config->clk_cfg,
+	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t)config->clk_cfg,
 				   &data->source_clk) != 0) {
 		LOG_ERR("Get %s clock source.", dev->name);
 	}
@@ -738,7 +738,7 @@ static int i2c_npcm_init(const struct device *dev)
 {
 	const struct i2c_npcm_config *const config = dev->config;
 	struct i2c_npcm_data *const data = dev->data;
-	const struct device *const clk_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	struct i2c_reg *const inst = I2C_INSTANCE(dev);
 	int ret;
 
@@ -752,7 +752,7 @@ static int i2c_npcm_init(const struct device *dev)
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	if (clock_control_on(clk_dev, (clock_control_subsys_t *) &config->clk_cfg) != 0) {
+	if (clock_control_on(clk_dev, (clock_control_subsys_t)config->clk_cfg) != 0) {
 		LOG_ERR("Turn on %s clock fail.", dev->name);
 		return -EIO;
 	}
@@ -971,7 +971,7 @@ static const struct i2c_driver_api i2c_npcm_driver_api = {
 										 \
 	static const struct i2c_npcm_config i2c_npcm_cfg_##inst = {		 \
 		.base = DT_INST_REG_ADDR(inst),					 \
-		.clk_cfg = NPCM_DT_CLK_CFG_ITEM(inst),				 \
+		.clk_cfg = DT_INST_PHA(inst, clocks, clk_cfg),			 \
 		.default_bitrate = DT_INST_PROP(inst, clock_frequency),		 \
 		.irq = DT_INST_IRQN(inst),					 \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			 \

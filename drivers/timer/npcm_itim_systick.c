@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(npcm_itim_systick, LOG_LEVEL_ERR);
 
 static struct itim32_reg *const sys_tmr = (struct itim32_reg *) DT_INST_REG_ADDR(0);
 
-static const struct npcm_clk_cfg itim_clk_cfg[] = NPCM_DT_CLK_CFG_ITEMS_LIST(0);
+static const struct npcm_clk_cfg itim_clk_cfg = DT_INST_PHA(0, clocks, clk_cfg);
 
 static struct k_spinlock lock;
 
@@ -312,21 +312,19 @@ static int sys_clock_driver_init(void)
 	int ret;
 	uint32_t sys_tmr_rate;
 	uint8_t itcts;
-	const struct device *const clk_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 
 	if (!device_is_ready(clk_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	/* Turn on all itim module clocks used for counting */
-	for (int i = 0; i < ARRAY_SIZE(itim_clk_cfg); i++) {
-		ret = clock_control_on(clk_dev, (clock_control_subsys_t)
-				&itim_clk_cfg[i]);
-		if (ret < 0) {
-			LOG_ERR("Turn on timer %d clock failed.", i);
-			return ret;
-		}
+	/* Turn on itim module clock used for counting */
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
+					itim_clk_cfg);
+	if (ret < 0) {
+		LOG_ERR("Turn on timer %d clock failed.");
+		return ret;
 	}
 
 	/*
@@ -334,7 +332,7 @@ static int sys_clock_driver_init(void)
 	 * clock frequency must equal to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
 	 */
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
-			&itim_clk_cfg[0], &sys_tmr_rate);
+			itim_clk_cfg, &sys_tmr_rate);
 	if (ret < 0) {
 		LOG_ERR("Get ITIM clock rate failed %d", ret);
 		return ret;

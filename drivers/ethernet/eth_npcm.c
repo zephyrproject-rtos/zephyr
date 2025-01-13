@@ -50,6 +50,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Device constant configuration parameters */
 struct eth_npcm_dev_cfg {
 	void (*config_func)(void);
+	uint32_t clk_cfg;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -78,7 +79,7 @@ static uint8_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __eth_npcm_buf;
 /* Ethernet Transmit Buffers */
 static uint8_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __eth_npcm_buf;
 
-inline int __ETH_LOCK(struct ETH_HANDLE_TYPE *__HANDLE__)
+static inline int __ETH_LOCK(struct ETH_HANDLE_TYPE *__HANDLE__)
 {
 	if ((__HANDLE__)->Lock == ETH_LOCK_LOCKED) {
 		return ETH_RET_BUSY;
@@ -87,7 +88,7 @@ inline int __ETH_LOCK(struct ETH_HANDLE_TYPE *__HANDLE__)
 	}
 }
 
-inline void  __ETH_UNLOCK(struct ETH_HANDLE_TYPE *__HANDLE__)
+static inline void  __ETH_UNLOCK(struct ETH_HANDLE_TYPE *__HANDLE__)
 {
 	(__HANDLE__)->Lock = ETH_LOCK_UNLOCKED;
 }
@@ -610,26 +611,24 @@ static void generate_mac(uint8_t *mac_addr)
 }
 #endif
 
-void __SetSMIClock(void)
+void __SetSMIClock(const struct device *dev)
 {
 	struct emac_reg *const emac_regs = ETH_NPCM_REG_BASE;
-	const struct device *const clk_dev = DEVICE_DT_GET(NPCM_CLK_CTRL_NODE);
-	struct npcm_clk_cfg clk_cfg;
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
+	const struct eth_npcm_dev_cfg *config = dev->config;
 	uint32_t core_clk;
 	int ret;
 	uint32_t value = 0;
 
-	clk_cfg.bus = NPCM_CLOCK_BUS_CORE;
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)config->clk_cfg,
+			&core_clk);
+	if (ret < 0) {
+		LOG_ERR("Get ethernet clock source rate error %d", ret);
+		return;
+	}
 
 	/* Clock Range (1 MHz ~ 2.5 MHz) */
 	value = (emac_regs->MACMIIAR & (0x0F << NPCM_MACMIIAR_CR));
-
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
-			&clk_cfg, &core_clk);
-
-	if (ret < 0) {
-		LOG_ERR("Get ITIM clock rate error %d", ret);
-	}
 
 	if (core_clk < 10000000) {
 		value |= (0x08 << NPCM_MACMIIAR_CR); /* DIV 4 */
@@ -985,7 +984,7 @@ static int eth_initialize(const struct device *dev)
 
 	/*-------------------------------- MAC Initialization ----------------------*/
 	/* Clock Range (1 MHz ~ 2.5 MHz) */
-	__SetSMIClock();
+	__SetSMIClock(dev);
 
 	/*-------------------- PHY initialization and configuration ----------------*/
 	/* Reset PHY */
@@ -1221,6 +1220,7 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct eth_npcm_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
+	.clk_cfg = DT_INST_PHA(0, clocks, clk_cfg),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
