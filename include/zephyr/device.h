@@ -836,22 +836,6 @@ size_t z_device_get_all_static(const struct device **devices);
 __syscall bool device_is_ready(const struct device *dev);
 
 /**
- * @brief Initialize a device.
- *
- * A device whose initialization was deferred (by marking it as
- * ``zephyr,deferred-init`` on devicetree) needs to be initialized manually via
- * this call. Note that only devices whose initialization was deferred can be
- * initialized via this call - one can not try to initialize a non
- * initialization deferred device that failed initialization with this call.
- *
- * @param dev device to be initialized.
- *
- * @retval -ENOENT If device was not found - or isn't a deferred one.
- * @retval -errno For other errors.
- */
-__syscall int device_init(const struct device *dev);
-
-/**
  * Get a device.
  *
  * When getting a device, its usage count will be increased and, if not yet
@@ -865,6 +849,27 @@ __syscall int device_init(const struct device *dev);
  * indicate the current reference count.
  */
 __syscall int device_get(const struct device *dev);
+
+/**
+ * @brief Initialize a device.
+ *
+ * A device whose initialization was deferred (by marking it as
+ * ``zephyr,deferred-init`` on devicetree) needs to be initialized manually via
+ * this call. Note that only devices whose initialization was deferred can be
+ * initialized via this call - one can not try to initialize a non
+ * initialization deferred device that failed initialization with this call.
+ *
+ * @param dev device to be initialized.
+ *
+ * @note Usage of device_get() is preferred, this function will be deprecated.
+ *
+ * @retval -ENOENT If device was not found - or isn't a deferred one.
+ * @retval -errno For other errors.
+ */
+static inline int device_init(const struct device *dev)
+{
+	return device_get(dev);
+}
 
 /**
  * @}
