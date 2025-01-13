@@ -240,7 +240,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	uint8_t hdr_len = sizeof(struct net_eth_hdr);
 	uint16_t type;
 	struct net_linkaddr *lladdr;
-	sa_family_t family = AF_UNSPEC;
 	bool is_vlan_pkt = false;
 
 	/* This expects that the Ethernet header is in the first net_buf
@@ -315,18 +314,14 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	case NET_ETH_PTYPE_IP:
 	case NET_ETH_PTYPE_ARP:
 		net_pkt_set_family(pkt, AF_INET);
-		family = AF_INET;
 		break;
 	case NET_ETH_PTYPE_IPV6:
 		net_pkt_set_family(pkt, AF_INET6);
-		family = AF_INET6;
 		break;
 	case NET_ETH_PTYPE_EAPOL:
-		family = AF_UNSPEC;
 		break;
 #if defined(CONFIG_NET_L2_PTP)
 	case NET_ETH_PTYPE_PTP:
-		family = AF_UNSPEC;
 		break;
 #endif
 	case NET_ETH_PTYPE_LLDP:
@@ -339,7 +334,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 #endif
 	default:
 		if (IS_ENABLED(CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE)) {
-			family = AF_UNSPEC;
 			break;
 		}
 
@@ -398,8 +392,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt) + hdr_len);
 
-	if (IS_ENABLED(CONFIG_NET_ARP) &&
-	    family == AF_INET && type == NET_ETH_PTYPE_ARP) {
+	if (IS_ENABLED(CONFIG_NET_ARP) && type == NET_ETH_PTYPE_ARP) {
 		NET_DBG("ARP packet from %s received",
 			net_sprint_ll_addr((uint8_t *)hdr->src.addr,
 					   sizeof(struct net_eth_addr)));
