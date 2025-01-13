@@ -75,6 +75,10 @@
 #define NRFX_COMP_CONFIG_LOG_ENABLED 1
 #endif
 
+#ifdef CONFIG_NRFX_CRACEN
+#define NRFX_CRACEN_ENABLED 1
+#endif
+
 #ifdef CONFIG_NRFX_DPPI
 #define NRFX_DPPI_ENABLED 1
 #endif
