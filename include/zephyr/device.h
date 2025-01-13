@@ -426,6 +426,8 @@ typedef uint8_t device_flags_t;
 struct device_ops {
 	/** Initialization function */
 	int (*init)(const struct device *dev);
+	/** De-initialization function */
+	int (*deinit)(const struct device *dev);
 };
 
 /**
@@ -785,6 +787,20 @@ size_t z_device_get_all_static(const struct device **devices);
  * indicate the current reference count.
  */
 __syscall int device_get(const struct device *dev);
+
+/**
+ * Put a device.
+ *
+ * When putting a device, its usage count will be decreased and, if it reaches
+ * 0, its de-initialization routine will be called.
+ *
+ * @param dev Device instance
+ *
+ * @retval -errno Device failed to be put (de-initialization failed).
+ * @retval >=0 Device was successfully put. Values > 0 indicate the current
+ * reference count.
+ */
+__syscall int device_put(const struct device *dev);
 
 /**
  * @brief Verify that a device is ready for use.
