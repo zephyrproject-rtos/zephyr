@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -129,7 +129,7 @@
 
 		sci9: sci9@40118900 {
 			compatible = "renesas,ra-sci";
-			interrupts = <36 1>, <37 1>, <38 1>, <39 1>;
+			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118900 0x100>;
 			clocks = <&pclka MSTPB 22>;
@@ -253,7 +253,7 @@
 
 		adc0: adc@40170000 {
 			compatible = "renesas,ra-adc";
-			interrupts = <40 1>;
+			interrupts = <38 1>;
 			interrupt-names = "scanend";
 			reg = <0x40170000 0x100>;
 			#io-channel-cells = <1>;
@@ -263,12 +263,33 @@
 
 		adc1: adc@40170200 {
 			compatible = "renesas,ra-adc";
-			interrupts = <41 1>;
+			interrupts = <39 1>;
 			interrupt-names = "scanend";
 			reg = <0x40170200 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
 			status = "disabled";
+		};
+
+		dac_global: dac_global@40171000 {
+			compatible = "renesas,ra-dac-global";
+			reg = <0x40171000 0x10c4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			dac0: dac@0 {
+				compatible = "renesas,ra-dac";
+				#io-channel-cells = <1>;
+				reg = <0>;
+				status = "disabled";
+			};
+
+			dac1: dac@1 {
+				compatible = "renesas,ra-dac";
+				#io-channel-cells = <1>;
+				reg = <1>;
+				status = "disabled";
+			};
 		};
 
 		iic0: iic0@4009f000 {
@@ -283,6 +304,22 @@
 			channel = <1>;
 			reg = <0x4009f100 0x100>;
 			status = "disabled";
+		};
+
+		usbfs: usbfs@40090000 {
+			compatible = "renesas,ra-usbfs";
+			reg = <0x40090000 0x2000>;
+			interrupts = <32 1>, <33 1>;
+			interrupt-names = "usbfs-i", "usbfs-r";
+			num-bidir-endpoints = <10>;
+			phys = <&usbfs_phy>;
+			phys-clock = <&uclk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
 		};
 
 		option_setting_ofs: option_setting_ofs@100a100 {
@@ -489,6 +526,11 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+	};
+
+	usbfs_phy: usbfs-phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };
 

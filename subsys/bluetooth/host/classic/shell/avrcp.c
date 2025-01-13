@@ -61,11 +61,25 @@ static void avrcp_subunit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_subun
 	}
 }
 
+static void avrcp_passthrough_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_passthrough_rsp *rsp)
+{
+	if (rsp->response == BT_AVRCP_RSP_ACCEPTED) {
+		bt_shell_print(
+			"AVRCP passthough command accepted, operation id = 0x%02x, state = %d",
+			rsp->operation_id, rsp->state);
+	} else {
+		bt_shell_print("AVRCP passthough command rejected, operation id = 0x%02x, state = "
+			       "%d, response = %d",
+			       rsp->operation_id, rsp->state, rsp->response);
+	}
+}
+
 static struct bt_avrcp_cb avrcp_cb = {
 	.connected = avrcp_connected,
 	.disconnected = avrcp_disconnected,
 	.unit_info_rsp = avrcp_unit_info_rsp,
 	.subunit_info_rsp = avrcp_subunit_info_rsp,
+	.passthrough_rsp = avrcp_passthrough_rsp,
 };
 
 static int register_cb(const struct shell *sh)
@@ -172,15 +186,47 @@ static int cmd_get_subunit_info(const struct shell *sh, int32_t argc, char *argv
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(avrcp_cmds,
-			       SHELL_CMD_ARG(register_cb, NULL, "register avrcp callbacks",
-					     cmd_register_cb, 1, 0),
-			       SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
-			       SHELL_CMD_ARG(disconnect, NULL, "<address>", cmd_disconnect, 2, 0),
-			       SHELL_CMD_ARG(get_unit, NULL, "<address>", cmd_get_unit_info, 2, 0),
-			       SHELL_CMD_ARG(get_subunit, NULL, "<address>", cmd_get_subunit_info,
-					     2, 0),
-			       SHELL_SUBCMD_SET_END);
+static int cmd_passthrough(const struct shell *sh, bt_avrcp_opid_t operation_id,
+			   const uint8_t *payload, uint8_t len)
+{
+	if (!avrcp_registered) {
+		if (register_cb(sh) != 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	if (default_avrcp != NULL) {
+		bt_avrcp_passthrough(default_avrcp, operation_id, BT_AVRCP_BUTTON_PRESSED, payload,
+				     len);
+		bt_avrcp_passthrough(default_avrcp, operation_id, BT_AVRCP_BUTTON_RELEASED, payload,
+				     len);
+	} else {
+		shell_error(sh, "AVRCP is not connected");
+	}
+
+	return 0;
+}
+
+static int cmd_play(const struct shell *sh, int32_t argc, char *argv[])
+{
+	return cmd_passthrough(sh, BT_AVRCP_OPID_PLAY, NULL, 0);
+}
+
+static int cmd_pause(const struct shell *sh, int32_t argc, char *argv[])
+{
+	return cmd_passthrough(sh, BT_AVRCP_OPID_PAUSE, NULL, 0);
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	avrcp_cmds,
+	SHELL_CMD_ARG(register_cb, NULL, "register avrcp callbacks", cmd_register_cb, 1, 0),
+	SHELL_CMD_ARG(connect, NULL, "connect AVRCP", cmd_connect, 1, 0),
+	SHELL_CMD_ARG(disconnect, NULL, "disconnect AVRCP", cmd_disconnect, 1, 0),
+	SHELL_CMD_ARG(get_unit, NULL, "get unit info", cmd_get_unit_info, 1, 0),
+	SHELL_CMD_ARG(get_subunit, NULL, "get subunit info", cmd_get_subunit_info, 1, 0),
+	SHELL_CMD_ARG(play, NULL, "request a play at the remote player", cmd_play, 1, 0),
+	SHELL_CMD_ARG(pause, NULL, "request a pause at the remote player", cmd_pause, 1, 0),
+	SHELL_SUBCMD_SET_END);
 
 static int cmd_avrcp(const struct shell *sh, size_t argc, char **argv)
 {

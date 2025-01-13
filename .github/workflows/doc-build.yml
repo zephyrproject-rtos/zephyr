@@ -18,14 +18,12 @@ env:
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
   DOXYGEN_VERSION: 1.12.0
-  # Job count is set to 2 less than the vCPU count of 16 because the total available RAM is 32GiB
-  # and each sphinx-build process may use more than 2GiB of RAM.
-  JOB_COUNT: 14
+  JOB_COUNT: 4
 
 jobs:
   doc-file-check:
     name: Check for doc changes
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: >
       github.repository_owner == 'zephyrproject-rtos'
     outputs:
@@ -63,7 +61,7 @@ jobs:
     if: >
       github.repository_owner == 'zephyrproject-rtos' &&
         ( needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request' )
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     concurrency:
       group: doc-build-html-${{ github.ref }}
@@ -84,6 +82,7 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
+        path: zephyr
 
     - name: Rebase
       if: github.event_name == 'pull_request'
@@ -91,6 +90,7 @@ jobs:
       env:
         BASE_REF: ${{ github.base_ref }}
         PR_HEAD: ${{ github.event.pull_request.head.sha }}
+      working-directory: zephyr
       run: |
         git config --global user.email "actions@zephyrproject.org"
         git config --global user.name "Github Actions"
@@ -100,25 +100,21 @@ jobs:
         git clean -f -d
         git log --graph --oneline HEAD...${PR_HEAD}
 
-    - name: cache-pip
-      uses: actions/cache@v4
+    - name: Setup Zephyr project
+      uses: zephyrproject-rtos/action-zephyr-setup@v1
       with:
-        path: ~/.cache/pip
-        key: pip-${{ hashFiles('doc/requirements.txt') }}
+        app-path: zephyr
+        toolchains: 'all'
 
     - name: install-pip
+      working-directory: zephyr
       run: |
         pip install -r doc/requirements.txt
-        pip install west==${WEST_VERSION}
-        pip install cmake==${CMAKE_VERSION}
         pip install coverxygen
-
-    - name: west setup
-      run: |
-        west init -l .
 
     - name: build-docs
       shell: bash
+      working-directory: zephyr
       run: |
         if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
           DOC_TAG="release"
@@ -144,8 +140,9 @@ jobs:
         genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
 
     - name: compress-docs
+      working-directory: zephyr
       run: |
-        tar --use-compress-program="xz -T0" -cf html-output.tar.xz --directory=doc/_build html
+        tar --use-compress-program="xz -T0" -cf html-output.tar.xz --exclude html/_sources --exclude html/doxygen/xml --directory=doc/_build html
         tar --use-compress-program="xz -T0" -cf api-output.tar.xz --directory=doc/_build html/doxygen/html
         tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
 
@@ -153,13 +150,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: html-output
-        path: html-output.tar.xz
+        path: zephyr/html-output.tar.xz
 
     - name: upload-api-coverage
       uses: actions/upload-artifact@v4
       with:
         name: api-coverage
-        path: api-coverage.tar.xz
+        path: zephyr/api-coverage.tar.xz
 
     - name: process-pr
       if: github.event_name == 'pull_request'

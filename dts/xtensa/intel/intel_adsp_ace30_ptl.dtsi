@@ -446,6 +446,14 @@
 			};
 		};
 
+		mic_privacy: mic-prv@71a40  {
+			compatible = "intel,adsp-mic-privacy";
+			reg = <0x71a40  0x8000>;
+			interrupts = <29 0 0>;
+			interrupt-parent = <&ace_intc>;
+			status = "okay";
+		};
+
 		mem_window0: mem_window@70200 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x70200 0x8>;
@@ -623,7 +631,7 @@
 			interrupt-controller;
 			#interrupt-cells = <3>;
 			interrupts = <4 0 0>;
-			num-irqs = <28>;
+			num-irqs = <30>;
 			interrupt-parent = <&core_intc>;
 		};
 

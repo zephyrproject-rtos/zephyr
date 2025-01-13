@@ -196,9 +196,9 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("4.1.0", "/4.1.0/"),
         ("4.0.0", "/4.0.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
-        ("2.7.6 (LTS)", "/2.7.6/"),
     ),
     "display_gh_links": True,
     "reference_links": {
@@ -299,6 +299,8 @@ gh_link_exclude = [
 
 kconfig_generate_db = True
 kconfig_ext_paths = [ZEPHYR_BASE]
+kconfig_gh_link_base_url = "https://github.com/zephyrproject-rtos/zephyr"
+kconfig_zephyr_version = f"v{version}" if is_release else "main"
 
 # -- Options for zephyr.external_content ----------------------------------
 
@@ -324,6 +326,7 @@ external_content_keep = [
 # -- Options for zephyr.domain --------------------------------------------
 
 zephyr_breathe_insert_related_samples = True
+zephyr_generate_hw_features = not tags.has("hw_features_turbo")  # pylint: disable=undefined-variable  # noqa: F821
 
 # -- Options for sphinx.ext.graphviz --------------------------------------
 
@@ -336,6 +339,9 @@ graphviz_dot_args = [
     "-Ncolor=gray60",
     "-Nfontcolor=gray25",
     "-Ecolor=gray60",
+    "-Gfontname=system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif",
+    "-Nfontname=system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif",
+    "-Efontname=SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,Courier,monospace",
 ]
 
 # -- Options for sphinx_copybutton ----------------------------------------

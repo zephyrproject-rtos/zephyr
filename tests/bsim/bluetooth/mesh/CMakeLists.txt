@@ -26,12 +26,6 @@ if(CONFIG_SETTINGS)
   src/test_brg.c
 )
 
-if(CONFIG_BT_MESH_USES_MBEDTLS_PSA)
- target_sources(app PRIVATE
-  src/distribute_keyid.c
- )
-endif()
-
 if(CONFIG_BT_MESH_GATT_PROXY AND CONFIG_BT_MESH_PROXY_SOLICITATION)
  target_sources(app PRIVATE
   src/test_proxy_sol.c

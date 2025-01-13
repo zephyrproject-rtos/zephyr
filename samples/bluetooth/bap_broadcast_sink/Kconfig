@@ -80,4 +80,11 @@ config TARGET_BROADCAST_CHANNEL
 	  Channel Audio Location to sync to. These corresponds to the bt_audio_location,
 	  supporting mono, left and right channels
 
+config INFO_REPORTING_INTERVAL
+	int "Number of SDUs received between each information report"
+	default 1000
+	help
+	  Determines how often information about received data is logged.
+	  Set to 0 to disable reporting.
+
 source "Kconfig.zephyr"

@@ -25,4 +25,19 @@ config NRFS_BACKEND_TX_MSG_QUEUE_SIZE
 	range 1 16
 	default 8
 
+config NRFS_SEND_RETRY_DELAY
+	int "Delay in us"
+	range 1 100
+	default 1
+	help
+	  Delay when waiting for next message send retry in case of send error.
+
+config NRFS_SEND_RETRY_MAX_COUNT
+	int "Max number of send retries"
+	range 0 100
+	default 5
+	help
+	  How many times nrfs will try to send message over ipc service until
+	  error will be reported. For example when shared ipc memory is full.
+
 endmenu

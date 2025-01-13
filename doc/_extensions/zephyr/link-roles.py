@@ -84,6 +84,12 @@ def modulelink(default_module=None, format="blob"):
             link_text = text
             link = text
 
+        line_ref = ""
+        line_match = re.search(r"(.+?)(?:#(L\d+(?:-L\d+)?))?$", link)
+        if line_match and line_match.group(2):
+            link = line_match.group(1)
+            line_ref = f"?plain=1#{line_match.group(2)}"
+
         module_match = re.search(r"(.+?):\s*(.+)", link)
         if module_match:
             module = module_match.group(1).strip()
@@ -124,7 +130,7 @@ def modulelink(default_module=None, format="blob"):
                     f"{link} not found in {config.link_roles_manifest_project} {trace}"
                 )
 
-        url = f"{baseurl}/{format}/{rev}/{link}"
+        url = f"{baseurl}/{format}/{rev}/{link}{line_ref}"
         node = nodes.reference(rawtext, link_text, refuri=url, **options)
         return [node], []
 

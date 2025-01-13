@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: This is a representation of the nRF7000 Wi-Fi chip with COEX interface.
+description: nRF7000 Wi-Fi chip with COEX interface.
 
 compatible: nordic,nrf7000-coex
 

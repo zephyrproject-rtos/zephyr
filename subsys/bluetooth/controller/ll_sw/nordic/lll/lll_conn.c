@@ -771,9 +771,9 @@ void lll_conn_isr_tx(void *param)
 
 	radio_isr_set(lll_conn_isr_rx, param);
 
-#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
 	ull_conn_lll_tx_demux_sched(lll);
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+#endif /* CONFIG_BT_CTLR_LOW_LAT */
 }
 
 void lll_conn_rx_pkt_set(struct lll_conn *lll)

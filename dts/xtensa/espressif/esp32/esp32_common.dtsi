@@ -112,6 +112,29 @@
 			zephyr,memory-region = "SRAM2";
 		};
 
+		dcache0: dcache0@3f400000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3f400000 DT_SIZE_M(4)>;
+			zephyr,memory-region = "DCACHE0";
+		};
+
+		dcache1: dcache1@3f800000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3f800000 DT_SIZE_M(4)>;
+			zephyr,memory-region = "DCACHE1";
+
+			psram0: psram0 {
+				compatible = "espressif,esp32-psram";
+				size = <0x0>;
+			};
+		};
+
+		icache0: icache0@400d0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x400d0000 DT_SIZE_K(11456)>;
+			zephyr,memory-region = "ICACHE0";
+		};
+
 		ipmmem0: memory@3ffe5230 {
 			compatible = "mmio-sram";
 			reg = <0x3ffe5230 0x400>;
@@ -187,14 +210,6 @@
 				write-block-size = <4>;
 				/* Flash size is specified in SOC/SIP dtsi */
 			};
-		};
-
-		psram0: psram@3f800000 {
-			device_type = "memory";
-			compatible = "mmio-sram";
-			/* PSRAM size is specified in SOC/SIP dtsi */
-			reg = <0x3f800000 DT_SIZE_M(2)>;
-			status = "disabled";
 		};
 
 		ipi0: ipi@3f4c0058 {

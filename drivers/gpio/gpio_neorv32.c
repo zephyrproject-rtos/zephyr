@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,10 @@ LOG_MODULE_REGISTER(gpio_neorv32, CONFIG_GPIO_LOG_LEVEL);
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+/* Register offsets */
+#define NEORV32_GPIO_PORT_IN  0x00
+#define NEORV32_GPIO_PORT_OUT 0x04
+
 /* Maximum number of GPIOs supported */
 #define MAX_GPIOS 32
 
@@ -27,8 +31,7 @@ struct neorv32_gpio_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	const struct device *syscon;
-	mm_reg_t input;
-	mm_reg_t output;
+	mm_reg_t base;
 };
 
 struct neorv32_gpio_data {
@@ -42,14 +45,14 @@ static inline uint32_t neorv32_gpio_read(const struct device *dev)
 {
 	const struct neorv32_gpio_config *config = dev->config;
 
-	return sys_read32(config->input);
+	return sys_read32(config->base + NEORV32_GPIO_PORT_IN);
 }
 
 static inline void neorv32_gpio_write(const struct device *dev, uint32_t val)
 {
 	const struct neorv32_gpio_config *config = dev->config;
 
-	sys_write32(val, config->output);
+	sys_write32(val, config->base + NEORV32_GPIO_PORT_OUT);
 }
 
 static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin,
@@ -179,13 +182,13 @@ static int neorv32_gpio_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_FEATURES, &features);
+	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
 		LOG_ERR("failed to determine implemented features (err %d)", err);
 		return -EIO;
 	}
 
-	if ((features & NEORV32_SYSINFO_FEATURES_IO_GPIO) == 0) {
+	if ((features & NEORV32_SYSINFO_SOC_IO_GPIO) == 0) {
 		LOG_ERR("neorv32 gpio not supported");
 		return -ENODEV;
 	}
@@ -216,8 +219,7 @@ static DEVICE_API(gpio, neorv32_gpio_driver_api) = {
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n) \
 		},							\
 		.syscon = DEVICE_DT_GET(DT_INST_PHANDLE(n, syscon)),	\
-		.input = DT_INST_REG_ADDR_BY_NAME(n, input),		\
-		.output = DT_INST_REG_ADDR_BY_NAME(n, output),		\
+		.base = DT_INST_REG_ADDR(n),				\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\

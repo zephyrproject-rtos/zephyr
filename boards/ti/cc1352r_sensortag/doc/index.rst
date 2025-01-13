@@ -24,42 +24,7 @@ See the `TI CC1352R Product Page`_ for additional details.
 Supported Features
 ==================
 
-The CC1352R SensorTag board configuration supports the following hardware
-features:
-
-+-----------+------------+------------------+
-| Interface | Controller | Driver/Component |
-+===========+============+==================+
-| GPIO      | on-chip    | gpio             |
-+-----------+------------+------------------+
-| MPU       | on-chip    | arch/arm         |
-+-----------+------------+------------------+
-| NVIC      | on-chip    | arch/arm         |
-+-----------+------------+------------------+
-| PINMUX    | on-chip    | pinmux           |
-+-----------+------------+------------------+
-| UART      | on-chip    | serial           |
-+-----------+------------+------------------+
-| I2C       | on-chip    | i2c              |
-+-----------+------------+------------------+
-| SPI       | on-chip    | spi              |
-+-----------+------------+------------------+
-| AUX_ADC   | on-chip    | adc              |
-+-----------+------------+------------------+
-| DIO23     | off-chip   | DRV5032          |
-+-----------+------------+------------------+
-| I2C       | off-chip   | HDC2080          |
-+-----------+------------+------------------+
-| I2C       | off-chip   | OPT3001          |
-+-----------+------------+------------------+
-| SPI       | off-chip   | ADXL362          |
-+-----------+------------+------------------+
-| WDT       | on-chip    | watchdog         |
-+-----------+------------+------------------+
-| HWINFO    | on-chip    | hwinfo           |
-+-----------+------------+------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

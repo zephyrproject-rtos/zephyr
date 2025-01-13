@@ -105,12 +105,13 @@
 		};
 
 		usbhs: usbhs@40060000 {
-			compatible = "renesas,ra-usb";
+			compatible = "renesas,ra-usbhs";
 			reg = <0x40060000 0x2000>;
-			interrupts = <54 12>, <55 12>, <56 12>;
-			interrupt-names = "usbhs-ir", "usbhs-d0", "usbhs-d1";
+			interrupts = <54 12>;
+			interrupt-names = "usbhs-ir";
 			num-bidir-endpoints = <10>;
 			phys = <&usbhs_phy>;
+			phys-clock = <&uclk>;
 			status = "disabled";
 			udc {
 				compatible = "renesas,ra-udc";
@@ -119,12 +120,10 @@
 		};
 
 		adc@4005c000 {
-			channel-count = <13>;
 			channel-available-mask = <0x1f00ff>;
 		};
 
 		adc@4005c200 {
-			channel-count = <11>;
 			channel-available-mask = <0xf00ef>;
 		};
 
@@ -198,6 +197,7 @@
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <120000000>;
 				div = <2>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -381,4 +381,8 @@
 	port-irq8-pins = <7>;
 	port-irq10-pins = <9>;
 	port-irq11-pins = <8>;
+};
+
+&dac_global {
+	has-output-amplifier;
 };

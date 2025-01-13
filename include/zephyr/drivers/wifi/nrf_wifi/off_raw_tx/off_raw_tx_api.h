@@ -16,7 +16,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "osal_api.h"
 
 /*  Minimum frame size for raw packet transmission */
 #define NRF_WIFI_OFF_RAW_TX_FRAME_SIZE_MIN 26

@@ -23,7 +23,7 @@
 
 LOG_MODULE_REGISTER(dut, LOG_LEVEL_DBG);
 
-static DEFINE_FLAG(is_subscribed);
+DEFINE_FLAG_STATIC(is_subscribed);
 
 extern unsigned long runtime_log_level;
 

@@ -73,7 +73,7 @@ Sample output of the benchmark using the defaults::
         fifo.get.free.immediate.kernel           - Free when getting data from FIFO (no ctx switch)   :     560 cycles ,     4666 ns :
         fifo.get.blocking.k_to_k                 - Get data from FIFO (w/ ctx switch)                 :     510 cycles ,     4257 ns :
         fifo.put.wake+ctx.k_to_k                 - Add data to FIFO (w/ ctx switch)                   :     590 cycles ,     4923 ns :
-        fifo.get.free.blocking.k_to_k            - Free when getting data from FIFO (w/ ctx siwtch)   :     510 cycles ,     4250 ns :
+        fifo.get.free.blocking.k_to_k            - Free when getting data from FIFO (w/ ctx switch)   :     510 cycles ,     4250 ns :
         fifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to FIFO (w/ ctx switch)       :     585 cycles ,     4875 ns :
         lifo.put.immediate.kernel                - Add data to LIFO (no ctx switch)                   :     214 cycles ,     1791 ns :
         lifo.get.immediate.kernel                - Get data from LIFO (no ctx switch)                 :     120 cycles ,     1008 ns :
@@ -82,7 +82,7 @@ Sample output of the benchmark using the defaults::
         lifo.get.blocking.k_to_k                 - Get data from LIFO (w/ ctx switch)                 :     502 cycles ,     4191 ns :
         lifo.put.wake+ctx.k_to_k                 - Add data to LIFO (w/ ctx switch)                   :     585 cycles ,     4875 ns :
         lifo.get.free.blocking.k_to_k            - Free when getting data from LIFO (w/ ctx switch)   :     513 cycles ,     4275 ns :
-        lifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to LIFO (w/ ctx siwtch)       :     585 cycles ,     4881 ns :
+        lifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to LIFO (w/ ctx switch)       :     585 cycles ,     4881 ns :
         events.post.immediate.kernel             - Post events (nothing wakes)                        :     225 cycles ,     1875 ns :
         events.set.immediate.kernel              - Set events (nothing wakes)                         :     230 cycles ,     1923 ns :
         events.wait.immediate.kernel             - Wait for any events (no ctx switch)                :     120 cycles ,     1000 ns :
@@ -126,7 +126,7 @@ Sample output of the benchmark with stack canaries enabled::
         fifo.get.free.immediate.kernel           - Free when getting data from FIFO (no ctx switch)   :    1230 cycles ,    10250 ns :
         fifo.get.blocking.k_to_k                 - Get data from FIFO (w/ ctx switch)                 :     868 cycles ,     7241 ns :
         fifo.put.wake+ctx.k_to_k                 - Add data to FIFO (w/ ctx switch)                   :     991 cycles ,     8259 ns :
-        fifo.get.free.blocking.k_to_k            - Free when getting data from FIFO (w/ ctx siwtch)   :     879 cycles ,     7325 ns :
+        fifo.get.free.blocking.k_to_k            - Free when getting data from FIFO (w/ ctx switch)   :     879 cycles ,     7325 ns :
         fifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to FIFO (w/ ctx switch)       :     990 cycles ,     8250 ns :
         lifo.put.immediate.kernel                - Add data to LIFO (no ctx switch)                   :     429 cycles ,     3582 ns :
         lifo.get.immediate.kernel                - Get data from LIFO (no ctx switch)                 :     320 cycles ,     2674 ns :
@@ -135,7 +135,7 @@ Sample output of the benchmark with stack canaries enabled::
         lifo.get.blocking.k_to_k                 - Get data from LIFO (w/ ctx switch)                 :     863 cycles ,     7199 ns :
         lifo.put.wake+ctx.k_to_k                 - Add data to LIFO (w/ ctx switch)                   :     985 cycles ,     8208 ns :
         lifo.get.free.blocking.k_to_k            - Free when getting data from LIFO (w/ ctx switch)   :     879 cycles ,     7325 ns :
-        lifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to LIFO (w/ ctx siwtch)       :     985 cycles ,     8208 ns :
+        lifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to LIFO (w/ ctx switch)       :     985 cycles ,     8208 ns :
         events.post.immediate.kernel             - Post events (nothing wakes)                        :     420 cycles ,     3501 ns :
         events.set.immediate.kernel              - Set events (nothing wakes)                         :     420 cycles ,     3501 ns :
         events.wait.immediate.kernel             - Wait for any events (no ctx switch)                :     280 cycles ,     2334 ns :
@@ -183,7 +183,7 @@ Sample output of the benchmark with object core enabled::
         fifo.get.free.immediate.kernel           - Free when getting data from FIFO (no ctx switch)   :     565 cycles ,     4708 ns :
         fifo.get.blocking.k_to_k                 - Get data from FIFO (w/ ctx switch)                 :     947 cycles ,     7899 ns :
         fifo.put.wake+ctx.k_to_k                 - Add data to FIFO (w/ ctx switch)                   :    1015 cycles ,     8458 ns :
-        fifo.get.free.blocking.k_to_k            - Free when getting data from FIFO (w/ ctx siwtch)   :     950 cycles ,     7923 ns :
+        fifo.get.free.blocking.k_to_k            - Free when getting data from FIFO (w/ ctx switch)   :     950 cycles ,     7923 ns :
         fifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to FIFO (w/ ctx switch)       :    1010 cycles ,     8416 ns :
         lifo.put.immediate.kernel                - Add data to LIFO (no ctx switch)                   :     226 cycles ,     1891 ns :
         lifo.get.immediate.kernel                - Get data from LIFO (no ctx switch)                 :     123 cycles ,     1033 ns :
@@ -192,7 +192,7 @@ Sample output of the benchmark with object core enabled::
         lifo.get.blocking.k_to_k                 - Get data from LIFO (w/ ctx switch)                 :     951 cycles ,     7932 ns :
         lifo.put.wake+ctx.k_to_k                 - Add data to LIFO (w/ ctx switch)                   :    1010 cycles ,     8416 ns :
         lifo.get.free.blocking.k_to_k            - Free when getting data from LIFO (w/ ctx switch)   :     959 cycles ,     7991 ns :
-        lifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to LIFO (w/ ctx siwtch)       :    1010 cycles ,     8422 ns :
+        lifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to LIFO (w/ ctx switch)       :    1010 cycles ,     8422 ns :
         events.post.immediate.kernel             - Post events (nothing wakes)                        :     210 cycles ,     1750 ns :
         events.set.immediate.kernel              - Set events (nothing wakes)                         :     230 cycles ,     1917 ns :
         events.wait.immediate.kernel             - Wait for any events (no ctx switch)                :     120 cycles ,     1000 ns :
@@ -265,13 +265,13 @@ Sample output of the benchmark with userspace enabled::
         fifo.get.free.immediate.user             - Free when getting data from FIFO (no ctx switch)   :    1440 cycles ,    12000 ns :
         fifo.get.blocking.k_to_k                 - Get data from FIFO (w/ ctx switch)                 :    1209 cycles ,    10082 ns :
         fifo.put.wake+ctx.k_to_k                 - Add data to FIFO (w/ ctx switch)                   :    1230 cycles ,    10250 ns :
-        fifo.get.free.blocking.k_to_k            - Free when getting data from FIFO (w/ ctx siwtch)   :    1210 cycles ,    10083 ns :
+        fifo.get.free.blocking.k_to_k            - Free when getting data from FIFO (w/ ctx switch)   :    1210 cycles ,    10083 ns :
         fifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to FIFO (w/ ctx switch)       :    1260 cycles ,    10500 ns :
-        fifo.get.free.blocking.u_to_k            - Free when getting data from FIFO (w/ ctx siwtch)   :    1745 cycles ,    14547 ns :
+        fifo.get.free.blocking.u_to_k            - Free when getting data from FIFO (w/ ctx switch)   :    1745 cycles ,    14547 ns :
         fifo.put.alloc.wake+ctx.k_to_u           - Allocate to add data to FIFO (w/ ctx switch)       :    1600 cycles ,    13333 ns :
-        fifo.get.free.blocking.k_to_u            - Free when getting data from FIFO (w/ ctx siwtch)   :    1550 cycles ,    12922 ns :
+        fifo.get.free.blocking.k_to_u            - Free when getting data from FIFO (w/ ctx switch)   :    1550 cycles ,    12922 ns :
         fifo.put.alloc.wake+ctx.u_to_k           - Allocate to add data to FIFO (w/ ctx switch)       :    1795 cycles ,    14958 ns :
-        fifo.get.free.blocking.u_to_u            - Free when getting data from FIFO (w/ ctx siwtch)   :    2084 cycles ,    17374 ns :
+        fifo.get.free.blocking.u_to_u            - Free when getting data from FIFO (w/ ctx switch)   :    2084 cycles ,    17374 ns :
         fifo.put.alloc.wake+ctx.u_to_u           - Allocate to add data to FIFO (w/ ctx switch)       :    2135 cycles ,    17791 ns :
         lifo.put.immediate.kernel                - Add data to LIFO (no ctx switch)                   :     234 cycles ,     1957 ns :
         lifo.get.immediate.kernel                - Get data from LIFO (no ctx switch)                 :     189 cycles ,     1582 ns :
@@ -282,13 +282,13 @@ Sample output of the benchmark with userspace enabled::
         lifo.get.blocking.k_to_k                 - Get data from LIFO (w/ ctx switch)                 :    1219 cycles ,    10166 ns :
         lifo.put.wake+ctx.k_to_k                 - Add data to LIFO (w/ ctx switch)                   :    1230 cycles ,    10250 ns :
         lifo.get.free.blocking.k_to_k            - Free when getting data from LIFO (w/ ctx switch)   :    1210 cycles ,    10083 ns :
-        lifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to LIFO (w/ ctx siwtch)       :    1260 cycles ,    10500 ns :
+        lifo.put.alloc.wake+ctx.k_to_k           - Allocate to add data to LIFO (w/ ctx switch)       :    1260 cycles ,    10500 ns :
         lifo.get.free.blocking.u_to_k            - Free when getting data from LIFO (w/ ctx switch)   :    1744 cycles ,    14541 ns :
-        lifo.put.alloc.wake+ctx.k_to_u           - Allocate to add data to LIFO (w/ ctx siwtch)       :    1595 cycles ,    13291 ns :
+        lifo.put.alloc.wake+ctx.k_to_u           - Allocate to add data to LIFO (w/ ctx switch)       :    1595 cycles ,    13291 ns :
         lifo.get.free.blocking.k_to_u            - Free when getting data from LIFO (w/ ctx switch)   :    1544 cycles ,    12874 ns :
-        lifo.put.alloc.wake+ctx.u_to_k           - Allocate to add data to LIFO (w/ ctx siwtch)       :    1795 cycles ,    14958 ns :
+        lifo.put.alloc.wake+ctx.u_to_k           - Allocate to add data to LIFO (w/ ctx switch)       :    1795 cycles ,    14958 ns :
         lifo.get.free.blocking.u_to_u            - Free when getting data from LIFO (w/ ctx switch)   :    2080 cycles ,    17339 ns :
-        lifo.put.alloc.wake+ctx.u_to_u           - Allocate to add data to LIFO (w/ ctx siwtch)       :    2130 cycles ,    17750 ns :
+        lifo.put.alloc.wake+ctx.u_to_u           - Allocate to add data to LIFO (w/ ctx switch)       :    2130 cycles ,    17750 ns :
         events.post.immediate.kernel             - Post events (nothing wakes)                        :     285 cycles ,     2375 ns :
         events.set.immediate.kernel              - Set events (nothing wakes)                         :     290 cycles ,     2417 ns :
         events.wait.immediate.kernel             - Wait for any events (no ctx switch)                :     235 cycles ,     1958 ns :

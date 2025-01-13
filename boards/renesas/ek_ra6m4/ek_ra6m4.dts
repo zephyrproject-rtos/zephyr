@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -41,6 +41,29 @@
 		};
 	};
 
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &ioport0 0 0>,	/* AN  */
+				<1 0 &ioport1 15 0>,	/* RST */
+				<2 0 &ioport2 5 0>,	/* CS   */
+				<3 0 &ioport2 4 0>,	/* SCK  */
+				<4 0 &ioport2 2 0>,	/* MISO */
+				<5 0 &ioport2 3 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &ioport4 8 0>,	/* PWM  */
+				<7 0 &ioport4 9 0>,	/* INT  */
+				<8 0 &ioport6 14 0>,	/* RX   */
+				<9 0 &ioport6 13 0>,	/* TX   */
+				<10 0 &ioport5 12 0>,	/* SCL  */
+				<11 0 &ioport5 11 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: s1 {
@@ -72,6 +95,16 @@
 	};
 };
 
+&sci7 {
+	pinctrl-0 = <&sci7_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart7: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
 &iic1 {
 	status = "okay";
 	#address-cells = <1>;
@@ -93,7 +126,23 @@
 	status = "okay";
 };
 
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
 &ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport6 {
 	status = "okay";
 };
 
@@ -115,6 +164,13 @@
 	status = "okay";
 };
 
+&pll2 {
+	clocks = <&hoco>;
+	div = <2>;
+	mul = <24 0>;
+	status = "okay";
+};
+
 &pclka {
 	clocks = <&pll>;
 	div = <2>;
@@ -125,6 +181,12 @@
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+};
+
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &port_irq10 {
@@ -161,3 +223,23 @@
 &trng {
 	status = "okay";
 };
+
+&uclk {
+	clocks = <&pll2>;
+	div = <5>;
+	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+mikrobus_serial: &uart7 {};
+mikrobus_i2c: &iic1 {};
+mikrobus_spi: &spi0 {};

@@ -28,7 +28,7 @@
 
 extern void z_arm_reserved(void);
 
-#define NUM_IRQS_PER_REG 32
+#define NUM_IRQS_PER_REG  32
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
 
@@ -87,8 +87,7 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	 */
 	__ASSERT(prio <= (BIT(NUM_IRQ_PRIO_BITS) - 1),
 		 "invalid priority %d for %d irq! values must be less than %lu\n",
-		 prio - _IRQ_PRIO_OFFSET, irq,
-		 BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
+		 prio - _IRQ_PRIO_OFFSET, irq, BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
@@ -141,7 +140,6 @@ void _arch_isr_direct_pm(void)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-
 }
 #endif
 
@@ -165,8 +163,7 @@ void _arch_isr_direct_pm(void)
  *
  * @return The resulting target state of the given IRQ
  */
-irq_target_state_t irq_target_state_set(unsigned int irq,
-	irq_target_state_t irq_target_state)
+irq_target_state_t irq_target_state_set(unsigned int irq, irq_target_state_t irq_target_state)
 {
 	uint32_t result;
 
@@ -217,7 +214,7 @@ int irq_target_state_is_secure(unsigned int irq)
  * - Bits corresponding to un-implemented interrupts are RES0, so writes
  *   will be ignored.
  *
-*/
+ */
 void irq_target_state_set_all_non_secure(void)
 {
 	int i;
@@ -241,8 +238,8 @@ void irq_target_state_set_all_non_secure(void)
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 #ifdef CONFIG_GEN_ISR_TABLES
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(const void *parameter),
-			     const void *parameter, uint32_t flags)
+			     void (*routine)(const void *parameter), const void *parameter,
+			     uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
 	z_arm_irq_priority_set(irq, priority, flags);

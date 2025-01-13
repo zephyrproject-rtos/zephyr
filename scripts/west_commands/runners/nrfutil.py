@@ -34,6 +34,15 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         return 'nrfutil'
 
     @classmethod
+    def capabilities(cls):
+        return NrfBinaryRunner._capabilities(mult_dev_ids=True)
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return NrfBinaryRunner._dev_id_help() + \
+               '''.\n This option can be specified multiple times'''
+
+    @classmethod
     def tool_opt_help(cls) -> str:
         return 'Additional options for nrfutil, e.g. "--log-level"'
 
@@ -107,6 +116,12 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         self._op_id += 1
         self._ops.append(op)
 
+    def _format_dev_ids(self):
+        if isinstance(self.dev_id, list):
+            return ','.join(self.dev_id)
+        else:
+            return self.dev_id
+
     def _append_batch(self, op, json_file):
         _op = op['operation']
         op_type = _op['type']
@@ -151,7 +166,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
             precmd = ['--x-ext-mem-config-file', self.ext_mem_config_file]
 
         self._exec(precmd + ['x-execute-batch', '--batch-path', f'{json_file}',
-                             '--serial-number', f'{self.dev_id}'])
+                             '--serial-number', self._format_dev_ids()])
 
     def do_exec_op(self, op, force=False):
         self.logger.debug(f'Executing op: {op}')

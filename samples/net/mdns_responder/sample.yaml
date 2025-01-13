@@ -12,6 +12,14 @@ tests:
       - qemu_cortex_m3
     integration_platforms:
       - qemu_x86
+  sample.net.mdns_responder.probing:
+    extra_args:
+      - CONFIG_MDNS_RESPONDER_PROBE=y
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_x86
   sample.net.mdns_responder.wifi.nrf70dk:
     extra_args:
       - SNIPPET=wifi-ipv4

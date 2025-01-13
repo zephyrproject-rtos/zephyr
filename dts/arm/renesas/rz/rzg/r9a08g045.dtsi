@@ -5,7 +5,9 @@
  */
 
 #include <arm/armv8-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
 #include <mem.h>
+#include <freq.h>
 
 / {
 	compatible = "renesas,r9a08g045";
@@ -31,7 +33,165 @@
 		};
 	};
 
+	osc: osc {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(24)>;
+		#clock-cells = <0>;
+	};
+
 	soc {
+		cpg: clock-controller@41010000 {
+			compatible = "renesas,rz-cpg";
+			reg = <0x41010000 0x10000>;
+			clocks = <&osc>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(1100)>;
+				#clock-cells = <0>;
+			};
+
+			p0clk: p0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			p4clk: p4clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(160)>;
+				#clock-cells = <0>;
+			};
+
+			p5clk: p5clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			tsuclk: tsuclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			sd0clk: sd0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <133333333>;
+				#clock-cells = <0>;
+			};
+
+			sd1clk: sd1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <133333333>;
+				#clock-cells = <0>;
+			};
+
+			sd2clk: sd2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <133333333>;
+				#clock-cells = <0>;
+			};
+
+			m0clk: m0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			p1clk: p1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			p2clk: p2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			p3clk: p3clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			atclk: atclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(400)>;
+				#clock-cells = <0>;
+			};
+
+			ztclk: ztclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			oc0clk: oc0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <33333333>;
+				#clock-cells = <0>;
+			};
+
+			oc1clk: oc1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <16666666>;
+				#clock-cells = <0>;
+			};
+
+			spi0clk: spi0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <33333333>;
+				#clock-cells = <0>;
+			};
+
+			spi1clk: spi1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <16666666>;
+				#clock-cells = <0>;
+			};
+
+			s0clk: s0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(400)>;
+				#clock-cells = <0>;
+			};
+
+			i2clk: i2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(250)>;
+				#clock-cells = <0>;
+			};
+
+			i3clk: i3clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(250)>;
+				#clock-cells = <0>;
+			};
+
+			hpclk: hpclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(250)>;
+				#clock-cells = <0>;
+			};
+
+			oscclk: oscclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(24)>;
+				#clock-cells = <0>;
+			};
+
+			osc2clk: osc2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(8)>;
+				#clock-cells = <0>;
+			};
+		};
+
 		pinctrl: pin-controller@41030000 {
 			compatible = "renesas,rzg-pinctrl";
 			reg = <0x41030000 DT_SIZE_K(64)>;
@@ -271,6 +431,55 @@
 			reg = <0x4004e000 0x18>;
 			interrupts = <345 1>, <346 1>, <347 1>, <348 1>, <349 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		i2c0: i2c@40090000 {
+			compatible = "renesas,rz-riic";
+			channel = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40090000 0x15>;
+			interrupts = <257 1>, <258 1>, <259 1>, <260 1>,
+				     <261 1>, <262 1>, <263 1>, <264 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
+			status = "disabled";
+		};
+		i2c1: i2c@40090400 {
+			compatible = "renesas,rz-riic";
+			channel = <1>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40090400 0x15>;
+			interrupts = <265 1>, <266 1>, <267 1>, <268 1>,
+				     <269 1>, <270 1>, <271 1>, <272 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
+			status = "disabled";
+		};
+		i2c2: i2c@40090800 {
+			compatible = "renesas,rz-riic";
+			channel = <2>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40090800 0x15>;
+			interrupts = <273 1>, <274 1>, <275 1>, <276 1>,
+				     <277 1>, <278 1>, <279 1>, <280 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
+			status = "disabled";
+		};
+		i2c3: i2c@40090c00 {
+			compatible = "renesas,rz-riic";
+			channel = <3>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40090c00 0x15>;
+			interrupts = <281 1>, <282 1>, <283 1>, <284 1>,
+				     <285 1>, <286 1>, <287 1>, <288 1>;
+			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
 			status = "disabled";
 		};
 
@@ -514,6 +723,133 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+		};
+
+		intc: interrupt-controller@41060000 {
+			reg = <0x41060000 0x18>;
+			#address-cells = <0>;
+			interrupt-parent = <&nvic>;
+
+			nmi: nmi {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <0 1>; //NMI
+				status = "disabled";
+			};
+
+			irq0: irq0 {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <1 1>;
+				status = "disabled";
+			};
+			irq1: irq1 {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <2 1>;
+				status = "disabled";
+			};
+			irq2: irq2 {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <3 1>;
+				status = "disabled";
+			};
+			irq3: irq3 {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <4 1>;
+				status = "disabled";
+			};
+			irq4: irq4 {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <5 1>;
+				status = "disabled";
+			};
+			irq5: irq5 {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <6 1>;
+				status = "disabled";
+			};
+			irq6: irq6 {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <7 1>;
+				status = "disabled";
+			};
+			irq7: irq7 {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <8 1>;
+				status = "disabled";
+			};
+		};
+
+		/* CM33 <-> CA55 */
+		mbox1: mhu@50400020 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <1>;
+			reg = <0x50400020 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <58 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CM33_FPU */
+		mbox3: mhu@50400060 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <3>;
+			reg = <0x50400060 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <59 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CA55 */
+		mbox4: mhu@50400080 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <4>;
+			reg = <0x50400080 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <60 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CM33_FPU */
+		mbox5: mhu@504000a0 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <5>;
+			reg = <0x504000a0 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <61 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
 		};
 	};
 };

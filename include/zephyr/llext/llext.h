@@ -146,6 +146,7 @@ static inline unsigned int llext_section_count(const struct llext *ext)
 struct llext_load_param {
 	/** Perform local relocation */
 	bool relocate_local;
+
 	/**
 	 * Use the virtual symbol addresses from the ELF, not addresses within
 	 * the memory buffer, when calculating relocation targets. It also
@@ -154,12 +155,22 @@ struct llext_load_param {
 	 * allocation and copying internally.
 	 */
 	bool pre_located;
+
 	/**
 	 * Extensions can implement custom ELF sections to be loaded in specific
 	 * memory regions, detached from other sections of compatible types.
 	 * This optional callback checks whether a section should be detached.
 	 */
 	bool (*section_detached)(const elf_shdr_t *shdr);
+
+	/**
+	 * Keep the ELF section data in memory after loading the extension. This
+	 * is needed to use some of the functions in @ref llext_inspect_apis.
+	 *
+	 * @note Related memory must be freed by @ref llext_free_inspection_data
+	 *       before the extension can be unloaded via @ref llext_unload.
+	 */
+	bool keep_section_info;
 };
 
 /** Default initializer for @ref llext_load_param */
@@ -210,6 +221,19 @@ int llext_load(struct llext_loader *loader, const char *name, struct llext **ext
  * @param[in] ext Extension to unload
  */
 int llext_unload(struct llext **ext);
+
+/**
+ * @brief Free any inspection-related memory for the specified loader and extension.
+ *
+ * This is only required if inspection data was requested at load time by
+ * setting @ref llext_load_param.keep_section_info; otherwise, this call will
+ * be a no-op.
+ *
+ * @param[in] ldr Extension loader
+ * @param[in] ext Extension
+ * @returns 0 on success, or a negative error code.
+ */
+int llext_free_inspection_data(struct llext_loader *ldr, struct llext *ext);
 
 /** @brief Entry point function signature for an extension. */
 typedef void (*llext_entry_fn_t)(void *user_data);
@@ -330,18 +354,19 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
  * symbolic data such as a section, function, or object. These relocations
  * are architecture specific and each architecture supporting LLEXT must
  * implement this.
+ * Arguments sym_base_addr, sym_name can be computed from the sym parameter,
+ * but these parameters are provided redundantly to increase efficiency.
  *
+ * @param[in] ldr Extension loader
+ * @param[in] ext Extension being relocated refers to
  * @param[in] rel Relocation data provided by ELF
- * @param[in] loc Address of opcode to rewrite
- * @param[in] sym_base_addr Address of symbol referenced by relocation
- * @param[in] sym_name Name of symbol referenced by relocation
- * @param[in] load_bias `.text` load address
+ * @param[in] shdr Header of the ELF section currently being located
  * @retval 0 Success
  * @retval -ENOTSUP Unsupported relocation
  * @retval -ENOEXEC Invalid relocation
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
-			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias);
+int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr);
 
 /**
  * @brief Locates an ELF section in the file.

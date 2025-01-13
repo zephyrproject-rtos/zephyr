@@ -1,0 +1,30 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 STMicroelectronics
+ */
+
+/* The clock that is output must be enabled. */
+&clk_lse {
+	status = "okay";
+};
+/* MCO use same pin like usart1 RX - disable usart */
+/ {
+	chosen {
+		zephyr,bt-c2h-uart = &lpuart1;
+		zephyr,uart-pipe = &lpuart1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+};
+&usart1 {
+	status = "disabled";
+};
+
+&mco1 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_LSE MCO1_SEL(MCO_SEL_LSE)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_2)>;
+	pinctrl-0 = <&rcc_mco_pa8>;
+	pinctrl-names = "default";
+};

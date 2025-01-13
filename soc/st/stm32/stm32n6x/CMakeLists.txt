@@ -20,11 +20,9 @@ if(SIGNING_TOOL_FIND STREQUAL SIGNING_TOOL_FIND-NOTFOUND)
   message(WARNING "
   Signing Image tool (${SIGNING_TOOL}) is not available.
   Signed image will not be generated.
-  You won't be able to run image on board.")
-endif()
-
-if(NOT SIGNING_TOOL_FIND STREQUAL SIGNING_TOOL_FIND-NOTFOUND)
-
+  You won't be able to run application on the board.
+  Refer to board documentation for more information")
+else()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${SIGNING_TOOL}
     -in ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
@@ -35,5 +33,4 @@ if(NOT SIGNING_TOOL_FIND STREQUAL SIGNING_TOOL_FIND-NOTFOUND)
   )
 
   set_property(TARGET runners_yaml_props_target PROPERTY bin_file ${CONFIG_KERNEL_BIN_NAME}.signed.bin)
-
 endif()

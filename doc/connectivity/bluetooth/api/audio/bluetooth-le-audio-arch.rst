@@ -1238,10 +1238,10 @@ The LE audio channel on Discord
 
 Zephyr has a specific Discord channel for LE Audio development, which is open to all.
 Find it here at https://discordapp.com/channels/720317445772017664/1207326649591271434 or simply
-search for "ble-audio" from within Discord.
-Since the ``#ble-audio`` channel is open for all,
+search for "bt-audio" from within Discord.
+Since the ``#bt-audio`` channel is open for all,
 we cannot discuss any specifications that are in development in that channel.
-For discussions that require a Bluetooth SIG membership we refer to the ``#bluetooth-sig``
+For discussions that require a Bluetooth SIG membership we refer to the ``#bt-sig``
 Discord channel found at https://discordapp.com/channels/720317445772017664/869172014018097162.
 
 Zephyr weekly meetings

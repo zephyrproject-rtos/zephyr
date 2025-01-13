@@ -51,7 +51,7 @@ to be aliased as ``tdk-apex-sensorN`` where ``N`` goes from ``0`` to ``9``. For 
 		};
 	};
 
-This sample supports APEX feature of TDK device. It needs to be specified as bellow:
+This sample supports APEX feature of TDK device. It needs to be specified as below:
 
 .. code-block:: devicetree
 

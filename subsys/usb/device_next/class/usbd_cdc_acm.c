@@ -243,6 +243,10 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 		}
 
+		if (bi->ep == cdc_acm_get_int_in(c_data)) {
+			k_sem_reset(&data->notif_sem);
+		}
+
 		goto ep_request_error;
 	}
 
@@ -513,8 +517,8 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-static int cdc_acm_send_notification(const struct device *dev,
-				     const uint16_t serial_state)
+static inline int cdc_acm_send_notification(const struct device *dev,
+					    const uint16_t serial_state)
 {
 	struct cdc_acm_notification notification = {
 		.bmRequestType = 0xA1,
@@ -549,8 +553,14 @@ static int cdc_acm_send_notification(const struct device *dev,
 
 	net_buf_add_mem(buf, &notification, sizeof(struct cdc_acm_notification));
 	ret = usbd_ep_enqueue(c_data, buf);
-	/* FIXME: support for sync transfers */
-	k_sem_take(&data->notif_sem, K_FOREVER);
+	if (ret) {
+		net_buf_unref(buf);
+		return ret;
+	}
+
+	if (k_sem_take(&data->notif_sem, K_FOREVER) == -EAGAIN) {
+		return -ECANCELED;
+	}
 
 	return ret;
 }

@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-description: This is a representation of ARM Cortex-A76 CPU.
+description: ARM Cortex-A76 CPU
 
 compatible: "arm,cortex-a76"
 

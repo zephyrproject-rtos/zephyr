@@ -256,11 +256,11 @@ static int init_cap_acceptor(void)
 	static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 		SUPPORTED_FREQ, SUPPORTED_DURATION, MAX_CHAN_PER_STREAM, MIN_SDU, MAX_SDU,
 		FRAMES_PER_SDU, (SINK_CONTEXT | SOURCE_CONTEXT));
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 		.snk_pac = true,
 		.snk_loc = true,
 		.src_pac = true,
-		.src_loc = true
+		.src_loc = true,
 	};
 	int err;
 

@@ -125,6 +125,7 @@
 
 			cpuclk: cpuclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <480000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -244,12 +245,13 @@
 
 	soc {
 		usbhs: usbhs@40351000 {
-			compatible = "renesas,ra-usb";
+			compatible = "renesas,ra-usbhs";
 			reg = <0x40351000 0x2000>;
-			interrupts = <54 12>, <55 12>, <56 12>;
-			interrupt-names = "usbhs-ir", "usbhs-d0", "usbhs-d1";
+			interrupts = <54 12>;
+			interrupt-names = "usbhs-ir";
 			num-bidir-endpoints = <10>;
 			phys = <&usbhs_phy>;
+			phys-clock = <&uclk>, <&u60clk>;
 			status = "disabled";
 			udc {
 				compatible = "renesas,ra-udc";
@@ -420,4 +422,9 @@
 	port-irq4-pins = <10>;
 	port-irq5-pins = <9>;
 	port-irq6-pins = <8>;
+};
+
+&dac_global {
+	has-internal-output;
+	has-output-amplifier;
 };

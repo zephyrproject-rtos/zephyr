@@ -15,7 +15,7 @@
 
 #define UUID_16_BASE_OFFSET 12
 
-/* TODO: Decide whether to continue using BLE format or switch to RFC 4122 */
+/* TODO: Decide whether to continue using Bluetooth LE format or switch to RFC 4122 */
 
 /* Base UUID : 0000[0000]-0000-1000-8000-00805F9B34FB
  * 0x2800    : 0000[2800]-0000-1000-8000-00805F9B34FB

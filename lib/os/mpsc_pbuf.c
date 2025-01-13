@@ -627,18 +627,28 @@ bool mpsc_pbuf_is_pending(struct mpsc_pbuf_buffer *buffer)
 void mpsc_pbuf_get_utilization(struct mpsc_pbuf_buffer *buffer,
 			       uint32_t *size, uint32_t *now)
 {
+	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
+
 	/* One byte is left for full/empty distinction. */
 	*size = (buffer->size - 1) * sizeof(int);
 	*now = get_usage(buffer) * sizeof(int);
+
+	k_spin_unlock(&buffer->lock, key);
 }
 
 int mpsc_pbuf_get_max_utilization(struct mpsc_pbuf_buffer *buffer, uint32_t *max)
 {
+	int rc;
+	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
 
-	if (!(buffer->flags & MPSC_PBUF_MAX_UTILIZATION)) {
-		return -ENOTSUP;
+	if (buffer->flags & MPSC_PBUF_MAX_UTILIZATION) {
+		*max = buffer->max_usage * sizeof(int);
+		rc = 0;
+	} else {
+		rc = -ENOTSUP;
 	}
 
-	*max = buffer->max_usage * sizeof(int);
-	return 0;
+	k_spin_unlock(&buffer->lock, key);
+
+	return rc;
 }

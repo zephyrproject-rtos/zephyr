@@ -13,7 +13,6 @@ flash: 200
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - dma
   - gpio

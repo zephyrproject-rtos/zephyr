@@ -309,9 +309,9 @@
 			};
 		};
 
-		flexpwm1: flexpwm@d0000 {
+		flexpwm1: flexpwm@400aa000 {
 			compatible = "nxp,flexpwm";
-			reg = <0xd0000 0x1000>;
+			reg = <0x400aa000 0x1000>;
 			interrupt-names = "RELOAD-ERROR", "FAULT";
 			interrupts = <79 0>, <80 0>;
 			flexpwm1_pwm0: pwm0 {

@@ -207,7 +207,7 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 	ctx->user_data = user_data;
 	ctx->iface = iface;
 
-	if (net_send_data(pkt) >= 0) {
+	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
 		net_stats_update_icmp_sent(iface);
 		return 0;
 	}
@@ -330,7 +330,7 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 	ctx->user_data = user_data;
 	ctx->iface = iface;
 
-	if (net_send_data(pkt) >= 0) {
+	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
 		net_stats_update_icmp_sent(iface);
 		return 0;
 	}

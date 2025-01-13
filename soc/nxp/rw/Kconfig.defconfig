@@ -52,4 +52,8 @@ config NXP_FW_LOADER
 config NXP_RF_IMU
 	default y if (BT || WIFI || IEEE802154)
 
+if WIFI
+orsource "Kconfig.defconfig.wifi"
+endif # WIFI
+
 endif # SOC_SERIES_RW6XX

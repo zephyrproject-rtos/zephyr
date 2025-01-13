@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SIWG917
+	bool
+	select SOC_FAMILY_SILABS_SIWX91X
+	help
+	  SiWG917 Series MCU
+
+config SOC_PART_NUMBER_SIWG917M111MGTBA
+	bool
+	select SOC_SERIES_SIWG917
+
+config SOC_SERIES
+	default "siwg917" if SOC_SERIES_SIWG917
+
+config SOC
+	default "siwg917m111mgtba" if SOC_PART_NUMBER_SIWG917M111MGTBA
+
+config SOC_PART_NUMBER
+	default "SIWG917M111MGTBA" if SOC_PART_NUMBER_SIWG917M111MGTBA

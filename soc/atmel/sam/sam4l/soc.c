@@ -57,6 +57,19 @@ static inline bool osc_is_ready(uint8_t id)
 }
 
 /**
+ * Enable Backup System Control Oscilator RC32K
+ */
+static inline void osc_priv_enable_rc32k(void)
+{
+	uint32_t temp = BSCIF->RC32KCR;
+	uint32_t addr = (uint32_t)&BSCIF->RC32KCR - (uint32_t)BSCIF;
+
+	BSCIF->UNLOCK = BSCIF_UNLOCK_KEY(0xAAu)
+		      | BSCIF_UNLOCK_ADDR(addr);
+	BSCIF->RC32KCR = temp | BSCIF_RC32KCR_EN32K | BSCIF_RC32KCR_EN;
+}
+
+/**
  * The PLL options #PLL_OPT_VCO_RANGE_HIGH and #PLL_OPT_OUTPUT_DIV will
  * be set automatically based on the calculated target frequency.
  */
@@ -153,6 +166,8 @@ static inline void flashcalw_issue_command(uint32_t command, int page_number)
  */
 static ALWAYS_INLINE void clock_init(void)
 {
+	uint32_t gen_clk_conf;
+
 	/* Disable PicoCache and Enable HRAMC1 as extended RAM */
 	soc_pmc_peripheral_enable(
 		PM_CLOCK_MASK(PM_CLK_GRP_HSB, SYSCLK_HRAMC1_DATA));
@@ -224,6 +239,24 @@ static ALWAYS_INLINE void clock_init(void)
 	PM->UNLOCK = PM_UNLOCK_KEY(0xAAu) |
 		     PM_UNLOCK_ADDR((uint32_t)&PM->MCCTRL - (uint32_t)PM);
 	PM->MCCTRL = OSC_SRC_PLL0;
+
+	/** Enable RC32K Oscilator */
+	osc_priv_enable_rc32k();
+	while (!osc_is_ready(OSC_ID_RC32K)) {
+		;
+	}
+
+	/** Enable Generic Clock 5
+	 *   Source: RC32K
+	 *      Div: 32
+	 *      Clk: 1024 Hz
+	 *  The GCLK-5 can be used by GLOC, TC0 and RC32KIFB_REF
+	 */
+	gen_clk_conf = SCIF_GCCTRL_RESETVALUE;
+	gen_clk_conf |= SCIF_GCCTRL_OSCSEL(GEN_CLK_SRC_RC32K);
+	gen_clk_conf |= SCIF_GCCTRL_DIVEN;
+	gen_clk_conf |= SCIF_GCCTRL_DIV(((32 + 1) / 2) - 1);
+	SCIF->GCCTRL[GEN_CLK_TC0_GLOC_RC32] = gen_clk_conf | SCIF_GCCTRL_CEN;
 }
 
 void soc_reset_hook(void)

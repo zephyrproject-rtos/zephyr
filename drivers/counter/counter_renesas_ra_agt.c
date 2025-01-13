@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -535,11 +535,8 @@ static DEVICE_API(counter, ra_agt_driver_api) = {
 
 #define TIMER(idx) DT_INST_PARENT(idx)
 
-#define _ELC_EVENT_AGT_INT(channel)       ELC_EVENT_AGT##channel##_INT
-#define _ELC_EVENT_AGT_COMPARE_A(channel) ELC_EVENT_AGT##channel##_COMPARE_A
-
-#define ELC_EVENT_AGT_INT(channel)       _ELC_EVENT_AGT_INT(channel)
-#define ELC_EVENT_AGT_COMPARE_A(channel) _ELC_EVENT_AGT_COMPARE_A(channel)
+#define EVENT_AGT_INT(channel)       BSP_PRV_IELS_ENUM(CONCAT(EVENT_AGT, channel, _INT))
+#define EVENT_AGT_COMPARE_A(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_AGT, channel, _COMPARE_A))
 
 #define AGT_DEVICE_INIT_RA(n)                                                                      \
 	static const struct counter_ra_agt_config ra_agt_config_##n = {                            \
@@ -570,14 +567,14 @@ static DEVICE_API(counter, ra_agt_driver_api) = {
 	static int counter_ra_agt_##n##_init(const struct device *dev)                             \
 	{                                                                                          \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(TIMER(n), agti, irq)] =                                \
-			ELC_EVENT_AGT_INT(DT_PROP(TIMER(n), channel));                             \
+			EVENT_AGT_INT(DT_PROP(TIMER(n), channel));                                 \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(TIMER(n), agti, irq),                                   \
 			    DT_IRQ_BY_NAME(TIMER(n), agti, priority), counter_ra_agt_agti_isr,     \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_IRQ_BY_NAME(TIMER(n), agti, irq));                                   \
                                                                                                    \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(TIMER(n), agtcmai, irq)] =                             \
-			ELC_EVENT_AGT_COMPARE_A(DT_PROP(TIMER(n), channel));                       \
+			EVENT_AGT_COMPARE_A(DT_PROP(TIMER(n), channel));                           \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(TIMER(n), agtcmai, irq),                                \
 			    DT_IRQ_BY_NAME(TIMER(n), agtcmai, priority),                           \
 			    counter_ra_agt_agtcmai_isr, DEVICE_DT_INST_GET(n), 0);                 \

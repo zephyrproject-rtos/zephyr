@@ -3,14 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import os
 from pathlib import Path
 from unittest.mock import patch, call
 
 import pytest
 
 from runners.stm32cubeprogrammer import STM32CubeProgrammerBinaryRunner
-from conftest import RC_KERNEL_HEX, RC_KERNEL_ELF
-
+from conftest import RC_KERNEL_HEX, RC_KERNEL_ELF, RC_KERNEL_BIN
 
 CLI_PATH = Path("STM32_Programmer_CLI")
 """Default CLI path used in tests."""
@@ -436,7 +436,7 @@ TEST_CASES = (
                 "--connect",
                 "port=swd",
                 "--download",
-                RC_KERNEL_HEX,
+                RC_KERNEL_BIN,
                 "0x80000000",
                 "0x1",
                 "--start",
@@ -447,6 +447,12 @@ TEST_CASES = (
 )
 """Test cases."""
 
+os_path_isfile = os.path.isfile
+
+def os_path_isfile_patch(filename):
+    if filename == RC_KERNEL_BIN:
+        return True
+    return os_path_isfile(filename)
 
 @pytest.mark.parametrize("tc", TEST_CASES)
 @patch("runners.stm32cubeprogrammer.platform.system")
@@ -455,7 +461,9 @@ TEST_CASES = (
 @patch.dict("runners.stm32cubeprogrammer.os.environ", ENVIRON)
 @patch("runners.core.ZephyrBinaryRunner.require")
 @patch("runners.stm32cubeprogrammer.STM32CubeProgrammerBinaryRunner.check_call")
+@patch("os.path.isfile", side_effect=os_path_isfile_patch)
 def test_stm32cubeprogrammer_init(
+    os_path_isfile_patch,
     check_call, require, path_exists, path_home, system, tc, runner_config
 ):
     """Tests that ``STM32CubeProgrammerBinaryRunner`` class can be initialized
@@ -494,7 +502,9 @@ def test_stm32cubeprogrammer_init(
 @patch.dict("runners.stm32cubeprogrammer.os.environ", ENVIRON)
 @patch("runners.core.ZephyrBinaryRunner.require")
 @patch("runners.stm32cubeprogrammer.STM32CubeProgrammerBinaryRunner.check_call")
+@patch("os.path.isfile", side_effect=os_path_isfile_patch)
 def test_stm32cubeprogrammer_create(
+    os_path_isfile_patch,
     check_call, require, path_exists, path_home, system, tc, runner_config
 ):
     """Tests that ``STM32CubeProgrammerBinaryRunner`` class can be created using

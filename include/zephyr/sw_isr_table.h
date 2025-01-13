@@ -213,7 +213,7 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 
 #define _Z_ISR_DECLARE_C(irq, flags, func, param, counter)                                \
 	_Z_ISR_TABLE_ENTRY(irq, func, param, _MK_ISR_ELEMENT_SECTION(counter));           \
-	static struct _isr_list_sname Z_GENERIC_SECTION(.intList)                         \
+	static Z_DECL_ALIGN(struct _isr_list_sname) Z_GENERIC_SECTION(.intList)           \
 		__used _MK_ISR_NAME(func, counter) =                                      \
 		{irq, flags, _MK_ISR_ELEMENT_SECTION(counter)}
 
@@ -247,7 +247,7 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 
 #define _Z_ISR_DECLARE_DIRECT_C(irq, flags, func, counter)                                         \
 	_Z_ISR_DIRECT_TABLE_ENTRY(irq, func, _MK_IRQ_ELEMENT_SECTION(counter));                    \
-	static struct _isr_list_sname Z_GENERIC_SECTION(.intList)                                  \
+	static Z_DECL_ALIGN(struct _isr_list_sname) Z_GENERIC_SECTION(.intList)                    \
 		__used _MK_ISR_NAME(func, counter) = {                                             \
 			irq,                                                                       \
 			ISR_FLAG_DIRECT | (flags),                                                 \

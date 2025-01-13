@@ -1,0 +1,17 @@
+description: Silabs SiWx91x UULP (ultra ultra low power) GPIO Port
+
+compatible: "silabs,siwx91x-gpio-uulp"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

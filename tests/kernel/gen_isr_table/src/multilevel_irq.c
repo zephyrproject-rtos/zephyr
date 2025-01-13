@@ -14,17 +14,21 @@ static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t
 	const uint32_t l3_shift = CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS;
 	const uint32_t hwirq1 = irq1;
 	const uint32_t hwirq2 = irq2 - 1;
-	const uint32_t hwirq3 = irq3 - 1;
-	const bool has_l3 = irq3 > 0;
-	const bool has_l2 = irq2 > 0;
-	const uint32_t level = has_l3 ? 3 : has_l2 ? 2 : 1;
 	const uint32_t irqn_l1 = irq1;
 	const uint32_t irqn_l2 = (irq2 << l2_shift) | irqn_l1;
 	const uint32_t irqn = (irq3 << l3_shift) | irqn_l2;
+	int level;
 
+	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS) && (irq3 > 0)) {
+		level = 3;
+	} else if (IS_ENABLED(CONFIG_2ND_LEVEL_INTERRUPTS) && (irq2 > 0)) {
+		level = 2;
+	} else {
+		level = 1;
+	}
 	zassert_equal(level, irq_get_level(irqn));
 
-	if (has_l2) {
+	if (irq2 > 0) {
 		zassert_equal(hwirq2, irq_from_level_2(irqn));
 		zassert_equal(hwirq2, irq_from_level(irqn, 2));
 		zassert_equal((hwirq2 + 1) << l2_shift, irq_to_level_2(hwirq2));
@@ -33,7 +37,10 @@ static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t
 		zassert_equal(hwirq1, irq_parent_level(irqn, 2));
 	}
 
-	if (has_l3) {
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	if (irq3 > 0) {
+		const uint32_t hwirq3 = irq3 - 1;
+
 		zassert_equal(hwirq3, irq_from_level_3(irqn));
 		zassert_equal(hwirq3, irq_from_level(irqn, 3));
 		zassert_equal((hwirq3 + 1) << l3_shift, irq_to_level_3(hwirq3));
@@ -41,10 +48,15 @@ static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t
 		zassert_equal(hwirq2, irq_parent_level_3(irqn));
 		zassert_equal(hwirq2, irq_parent_level(irqn, 3));
 	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
-	if (has_l3) {
+	if (false) {
+		/* always skipped */
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	} else if (irq3 > 0) {
 		zassert_equal(irqn_l2, irq_get_intc_irq(irqn));
-	} else if (has_l2) {
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+	} else if (irq2 > 0) {
 		zassert_equal(irqn_l1, irq_get_intc_irq(irqn));
 	} else {
 		/* degenerate cases */

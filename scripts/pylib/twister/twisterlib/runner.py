@@ -29,6 +29,7 @@ from packaging import version
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
+from twisterlib.log_helper import setup_logging
 from twisterlib.statuses import TwisterStatus
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
@@ -978,7 +979,9 @@ class ProjectBuilder(FilterBuilder):
         additionals = {}
 
         op = message.get('op')
-
+        options = self.options
+        if not logger.handlers:
+            setup_logging(options.outdir, options.log_file, options.log_level, options.timestamps)
         self.instance.setup_handler(self.env)
 
         if op == "filter":
@@ -1207,7 +1210,7 @@ class ProjectBuilder(FilterBuilder):
                     mode == "passed"
                     or (mode == "all" and self.instance.reason != "CMake build failure")
                 ):
-                    self.cleanup_artifacts()
+                    self.cleanup_artifacts(self.options.keep_artifacts)
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
@@ -1313,6 +1316,8 @@ class ProjectBuilder(FilterBuilder):
             'recording.csv',
             'rom.json',
             'ram.json',
+            'build_info.yml',
+            'zephyr/zephyr.dts',
             # below ones are needed to make --test-only work as well
             'Makefile',
             'CMakeCache.txt',
@@ -1753,8 +1758,8 @@ class ProjectBuilder(FilterBuilder):
 
             if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()
-                if('CONFIG_FAKE_ENTROPY_NATIVE_POSIX' in self.defconfig and
-                    self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
+                if('CONFIG_FAKE_ENTROPY_NATIVE_SIM' in self.defconfig and
+                    self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_SIM'] == 'y'):
                     instance.handler.seed = self.options.seed
 
             if self.options.extra_test_args and instance.platform.arch == "posix":

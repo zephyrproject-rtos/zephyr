@@ -147,7 +147,10 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)lldp_multicast_eth_addr.addr;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
-	if (net_if_send_data(lldp->iface, pkt) == NET_DROP) {
+	/* send without timeout, so we do not risk being blocked by tx when
+	 * being flooded
+	 */
+	if (net_if_try_send_data(lldp->iface, pkt, K_NO_WAIT) == NET_DROP) {
 		net_pkt_unref(pkt);
 		ret = -EIO;
 	}

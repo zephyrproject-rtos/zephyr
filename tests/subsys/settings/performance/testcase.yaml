@@ -1,0 +1,66 @@
+tests:
+  settings.performance.zms:
+    extra_configs:
+      - CONFIG_SETTINGS_ZMS=y
+      - CONFIG_ZMS_LOOKUP_CACHE=y
+      - CONFIG_ZMS_LOOKUP_CACHE_SIZE=512
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf54l15dk/nrf54l15/cpuapp
+    min_ram: 32
+    tags:
+      - settings
+      - zms
+
+  settings.performance.nvs:
+    extra_configs:
+      - CONFIG_ZMS=n
+      - CONFIG_NVS=y
+      - CONFIG_NVS_LOOKUP_CACHE=y
+      - CONFIG_NVS_LOOKUP_CACHE_SIZE=512
+      - CONFIG_SETTINGS_NVS_NAME_CACHE=y
+      - CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE=512
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf54l15dk/nrf54l15/cpuapp
+    min_ram: 32
+    tags:
+      - settings
+      - nvs
+
+  settings.performance.zms_bt:
+    extra_configs:
+      - CONFIG_BT=y
+      - CONFIG_BT_OBSERVER=y
+      - CONFIG_BT_PERIPHERAL=y
+      - CONFIG_SETTINGS_ZMS=y
+      - CONFIG_ZMS_LOOKUP_CACHE=y
+      - CONFIG_ZMS_LOOKUP_CACHE_SIZE=512
+    platform_allow: nrf52840dk/nrf52840
+    platform_exclude:
+      - native_sim
+      - qemu_x86
+    min_ram: 32
+    tags:
+      - settings
+      - zms
+
+  settings.performance.nvs_bt:
+    extra_configs:
+      - CONFIG_BT=y
+      - CONFIG_BT_OBSERVER=y
+      - CONFIG_BT_PERIPHERAL=y
+      - CONFIG_ZMS=n
+      - CONFIG_NVS=y
+      - CONFIG_NVS_LOOKUP_CACHE=y
+      - CONFIG_NVS_LOOKUP_CACHE_SIZE=512
+      - CONFIG_SETTINGS_NVS_NAME_CACHE=y
+      - CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE=512
+    platform_allow: nrf52840dk/nrf52840
+    platform_exclude:
+      - native_sim
+      - qemu_x86
+    min_ram: 32
+    tags:
+      - settings
+      - nvs

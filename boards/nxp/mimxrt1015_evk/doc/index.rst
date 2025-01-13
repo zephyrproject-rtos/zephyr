@@ -52,7 +52,7 @@ This platform has the following external memories:
 +--------------------+------------+-------------------------------------+
 | Device             | Controller | Status                              |
 +====================+============+=====================================+
-| AT25SF128A         | FLEXSPI    | Enabled via flash configurationn    |
+| AT25SF128A         | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+

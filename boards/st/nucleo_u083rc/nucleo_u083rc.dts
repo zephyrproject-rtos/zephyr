@@ -153,7 +153,7 @@ stm32_lp_tick_source: &lptim1 {
 
 &spi1{
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
-	cs-gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	cs-gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	pinctrl-names = "default";
 	status = "okay";
 };

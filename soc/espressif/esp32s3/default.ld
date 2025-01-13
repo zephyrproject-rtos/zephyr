@@ -20,12 +20,31 @@ procpu_iram_len = procpu_iram_end - procpu_iram_org;
 procpu_dram_org = SRAM1_DRAM_START;
 procpu_dram_len = procpu_dram_end - procpu_dram_org;
 
+/* User available ROM memory segments */
+procpu_irom_end = ICACHE0_START + ICACHE0_SIZE - APPCPU_ROM_SIZE;
+procpu_drom_end = DCACHE0_START + DCACHE0_SIZE - APPCPU_ROM_SIZE;
+
+procpu_irom_org = ICACHE0_START;
+procpu_irom_len = ICACHE0_SIZE - APPCPU_ROM_SIZE;
+
+procpu_drom_org = DCACHE0_START;
+procpu_drom_len = DCACHE0_SIZE - APPCPU_ROM_SIZE;
+
+#if defined(CONFIG_ESP_SPIRAM)
+procpu_ext_dram_org = procpu_drom_org;
+procpu_ext_dram_len = CONFIG_ESP_SPIRAM_SIZE;
+procpu_ext_iram_org = procpu_irom_org;
+procpu_ext_iram_len = CONFIG_ESP_SPIRAM_SIZE;
+#endif
+
 /* Aliases */
-#define FLASH_CODE_REGION  irom0_0_seg
-#define RODATA_REGION      drom0_0_seg
-#define IRAM_REGION        iram0_0_seg
-#define RAMABLE_REGION     dram0_0_seg
-#define ROMABLE_REGION     FLASH
+#define FLASH_CODE_REGION irom0_0_seg
+#define RODATA_REGION     drom0_0_seg
+#define IRAM_REGION       iram0_0_seg
+#define RAMABLE_REGION    dram0_0_seg
+#define EXT_DRAM_REGION   ext_dram_seg
+#define EXT_IRAM_REGION   ext_iram_seg
+#define ROMABLE_REGION    FLASH
 
 /* Zephyr macro re-definitions */
 #undef GROUP_DATA_LINK_IN
@@ -54,44 +73,43 @@ MEMORY
   FLASH (R):       org = 0x80, len = FLASH_SIZE - 0x80
 #else
   /* Make safety margin in the FLASH memory size so the
-   * (esp_img_header + (n*esp_seg_headers)) would fit */
+   * (esp_img_header + (n*esp_seg_headers)) would fit
+   */
   FLASH (R):       org = 0x0, len = FLASH_SIZE - 0x100
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   iram0_0_seg(RX): org = procpu_iram_org, len = procpu_iram_len
   dram0_0_seg(RW): org = procpu_dram_org, len = procpu_dram_len
 
-  irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
-  drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
+  irom0_0_seg(RX): org = procpu_irom_org, len = procpu_irom_len
+  drom0_0_seg(R):  org = procpu_drom_org, len = procpu_drom_len
 
   /* The `ext_ram_seg` and `drom0_0_seg` share the same bus and the address region.
    * A dummy section is used to avoid overlap. See `.ext_ram.dummy` in `sections.ld.in`
    */
 #if defined(CONFIG_ESP_SPIRAM)
-  /* `ext_[id]ram_seg` and `drom0_0_seg` share the same bus and the address region.
+  /* `ext_dram_seg` and `drom0_0_seg` share the same bus and the address region.
    * A dummy section is used to avoid overlap. See `.ext_ram.dummy` */
-  ext_dram_seg(RW): org = DROM_SEG_ORG, len = (CONFIG_ESP_SPIRAM_SIZE)
-  ext_iram_seg(RX): org = IROM_SEG_ORG, len = (CONFIG_ESP_SPIRAM_SIZE)
+  ext_dram_seg(RW): org = procpu_ext_dram_org, len = procpu_ext_dram_len
+  ext_iram_seg(RX): org = procpu_ext_iram_org, len = procpu_ext_iram_len
 #endif
 
-  /* RTC fast memory (executable). Persists over deep sleep.
-   */
+  /* RTC fast memory (executable). Persists over deep sleep. */
   rtc_iram_seg(RWX): org = 0x600fe000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
 
   /* We reduced the size of rtc_iram_seg by CONFIG_RESERVE_RTC_MEM value.
-     It reserves the amount of RTC fast memory that we use for this memory segment.
-     This segment is intended for keeping:
-       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
-       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
-     The aim of this is to keep data that will not be moved around and have a fixed address.
-  */
+   * It reserves the amount of RTC fast memory that we use for this memory segment.
+   * This segment is intended for keeping:
+   *   - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+   *   - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
+   * The aim of this is to keep data that will not be moved around and have a fixed address.
+   */
 #if (CONFIG_RESERVE_RTC_MEM > 0)
   rtc_reserved_seg(RW): org = 0x600fe000 + 0x2000 - CONFIG_RESERVE_RTC_MEM,
                         len = CONFIG_RESERVE_RTC_MEM
 #endif
 
-  /* RTC slow memory (data accessible). Persists over deep sleep.
-   */
+  /* RTC slow memory (data accessible). Persists over deep sleep. */
   rtc_slow_seg(RW): org = 0x50000000, len = 0x2000
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -149,7 +167,7 @@ SECTIONS
      */
     LONG(ADDR(.dram0.data))
     LONG(LOADADDR(.dram0.data))
-    LONG(LOADADDR(.dram0.end) + SIZEOF(.dram0.end) - LOADADDR(.dram0.data))
+    LONG(LOADADDR(.dram0.data_end) + SIZEOF(.dram0.data_end) - LOADADDR(.dram0.data))
 
     /* RTC_IRAM metadata:
      * 8. Destination address (VMA) for RTC_IRAM region
@@ -380,6 +398,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_octal.*(.literal .literal.* .text .text.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_hal_iram.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.literal .text .literal.* .text.*)
@@ -458,7 +477,7 @@ SECTIONS
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:(.wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
     *libpp.a:(.wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
-    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.*)
+    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 
     /* [mapping:esp_wifi] */
     *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
@@ -559,8 +578,8 @@ SECTIONS
     /* Spacer section is required to skip .iram0.text area because
      * iram0_0_seg and dram0_0_seg reflect the same address space on different buses.
      */
-    . = ORIGIN(dram0_0_seg) + MAX(_iram_end, SRAM1_IRAM_START) - SRAM1_IRAM_START;
-    . = ALIGN(4) + 16;
+    . = ORIGIN(dram0_0_seg) + (MAX(_iram_end, SRAM1_IRAM_START) - SRAM1_IRAM_START);
+    . = ALIGN(16);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   .dram0.data :
@@ -621,6 +640,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.rodata .rodata.*)
     *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
@@ -753,7 +773,7 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-logging.ld>
   #pragma pop_macro("GROUP_ROM_LINK_IN")
 
-  .dram0.end :
+  .dram0.data_end :
   {
     __data_end = ABSOLUTE(.);
     _data_end = ABSOLUTE(.);
@@ -848,6 +868,7 @@ SECTIONS
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
+    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 #endif
 
 #if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
@@ -966,22 +987,17 @@ SECTIONS
 
   /* --- START OF SPIRAM --- */
 
-  /**
-   * This section is required to skip flash rodata sections, because `ext_ram_seg`
-   * and `drom0_0_seg` are on the same bus
-   */
 #if defined(CONFIG_ESP_SPIRAM)
-
-  /* This section is required to skip flash rodata sections, because `ext_[id]ram_seg`
+  /* This section is required to skip flash rodata sections, because SPIRAM
    * and `drom0_0_seg` are on the same bus */
   .ext_ram.dummy (NOLOAD):
   {
     . = ADDR(.flash.rodata_end) - ORIGIN(ext_dram_seg);
     . = ALIGN (CACHE_ALIGN);
-  } GROUP_LINK_IN(ext_dram_seg)
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
 
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
-  .ext_ram.bss (NOLOAD) :
+  .ext_ram.data (NOLOAD) :
   {
     _ext_ram_start = ABSOLUTE(.);
     _ext_ram_noinit_start = ABSOLUTE(.);
@@ -992,7 +1008,9 @@ SECTIONS
     *libsubsys__net__lib__config.a:(.noinit .noinit.*)
     *libsubsys__net__ip.a:(.noinit .noinit.*)
     *libsubsys__net.a:(.noinit .noinit.*)
-#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+#endif
+    . = ALIGN(16);
+    *(.ext_ram_noinit.*)
     . = ALIGN(16);
     _ext_ram_noinit_end = ABSOLUTE(.);
 
@@ -1001,13 +1019,13 @@ SECTIONS
     . = ALIGN(16);
     _ext_ram_bss_end = ABSOLUTE(.);
 
-    _spiram_heap_start = ABSOLUTE(.);
-    . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE - (_spiram_heap_start - _ext_ram_bss_start);
+    _ext_ram_heap_start = ABSOLUTE(.);
+    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
     . = ALIGN(16);
+    _ext_ram_heap_end = ABSOLUTE(.);
 
     _ext_ram_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(ext_dram_seg)
-
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
 #endif /* CONFIG_ESP_SPIRAM */
 
   /* --- END OF SPIRAM --- */

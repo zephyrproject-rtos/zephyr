@@ -375,8 +375,8 @@
 				status = "disabled";
 			};
 
-			exmif: spi@95000 {
-				compatible = "nordic,nrf-exmif";
+			exmif: exmif@95000 {
+				compatible = "nordic,nrf-exmif", "snps,designware-ssi";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0x95000 0x500 0x95500 0xb00>;
@@ -384,7 +384,6 @@
 				interrupts = <149 NRF_DEFAULT_IRQ_PRIORITY>;
 				clock-frequency = <DT_FREQ_M(400)>;
 				fifo-depth = <32>;
-				max-xfer-size = <16>;
 				status = "disabled";
 			};
 
@@ -443,28 +442,6 @@
 				status = "disabled";
 				channels = <8>;
 				global-domain-id = <12>;
-			};
-
-			can120: can@8d8000 {
-				compatible = "nordic,nrf-can";
-				reg = <0x8d8000 0x400>, <0x2fbef800 0x800>, <0x2fbe8000 0x7800>;
-				reg-names = "wrapper", "m_can", "message_ram";
-				interrupts = <216 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&canpll>, <&hsfll120>;
-				clock-names = "auxpll", "hsfll";
-				bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-				status = "disabled";
-			};
-
-			can121: can@8db000 {
-				compatible = "nordic,nrf-can";
-				reg = <0x8db000 0x400>, <0x2fbf7800 0x800>, <0x2fbf0000 0x7800>;
-				reg-names = "wrapper", "m_can", "message_ram";
-				interrupts = <219 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&canpll>, <&hsfll120>;
-				clock-names = "auxpll", "hsfll";
-				bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-				status = "disabled";
 			};
 
 			dppic120: dppic@8e1000 {
@@ -709,6 +686,7 @@
 				interrupts = <386 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				#io-channel-cells = <1>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			comp: comparator@983000 {

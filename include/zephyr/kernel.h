@@ -545,9 +545,10 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  *
  * @param timeout Desired duration of sleep.
  *
- * @return Zero if the requested time has elapsed or if the thread was woken up
- * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
- * millisecond.
+ * @return Zero if the requested time has elapsed or the time left to
+ * sleep rounded up to the nearest millisecond (e.g. if the thread was
+ * awoken by the \ref k_wakeup call).  Will be clamped to INT_MAX in
+ * the case where the remaining time is unrepresentable in an int32_t.
  */
 __syscall int32_t k_sleep(k_timeout_t timeout);
 
@@ -3420,7 +3421,7 @@ int k_work_busy_get(const struct k_work *work);
 
 /** @brief Test whether a work item is currently pending.
  *
- * Wrapper to determine whether a work item is in a non-idle dstate.
+ * Wrapper to determine whether a work item is in a non-idle state.
  *
  * @note This is a live snapshot of state, which may change before the result
  * is checked.  Use locks where appropriate.

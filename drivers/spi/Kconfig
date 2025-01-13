@@ -37,6 +37,24 @@ config SPI_RTIO
 	  This option enables the RTIO API calls. RTIO support is
 	  experimental as the API itself is unstable.
 
+if SPI_RTIO
+
+config SPI_RTIO_FALLBACK_MSGS
+	int "Number of available spi_buf structs for the default handler to use"
+	default 4
+	help
+		When RTIO is used with a driver that does not yet implement the submit API
+		natively the submissions are converted back to struct spi_buf values that
+		are given to spi_transfer. This requires some number of msgs be available to convert
+		the submissions into on the stack. MISRA rules dictate we must know this in
+		advance.
+
+		In all likelihood 4 is going to work for everyone, but in case you do end up with
+		an issue where you are using RTIO, your driver does not implement submit natively,
+		and get an error relating to not enough spi msgs this is the Kconfig to manipulate.
+
+endif # SPI_RTIO
+
 config SPI_SLAVE
 	bool "Slave support [EXPERIMENTAL]"
 	select EXPERIMENTAL

@@ -3,8 +3,9 @@
 
 description: |
         STM32 Clock multiplexer
+
         Describes a clock multiplexer, such as per_ck on STM32H7 or
-        CLK48 on STM32L5.
+        CLK48 on STM32WB.
         The only property of this node is to select a clock input.
         For instance:
                 &perck {
@@ -20,3 +21,8 @@ include:
       - status
       - compatible
       - clocks
+
+properties:
+
+  clocks:
+    required: true

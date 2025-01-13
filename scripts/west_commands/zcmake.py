@@ -10,6 +10,7 @@ See build.py for the build command itself.
 '''
 
 from collections import OrderedDict
+import argparse
 import os.path
 import re
 import subprocess
@@ -26,7 +27,7 @@ DEFAULT_CMAKE_GENERATOR = 'Ninja'
 '''Name of the default CMake generator.'''
 
 
-def run_cmake(args, cwd=None, capture_output=False, dry_run=False):
+def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
     '''Run cmake to (re)generate a build system, a script, etc.
 
     :param args: arguments to pass to CMake
@@ -36,6 +37,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False):
                            dry_run is also True)
     :param dry_run: don't actually execute the command, just print what
                     would have been run
+    :param env: used adjusted environment when running CMake
 
     If capture_output is set to True, returns the output of the command instead
     of displaying it on stdout/stderr..'''
@@ -60,7 +62,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False):
         return None
 
     log.dbg('Running CMake:', quote_sh_list(cmd), level=log.VERBOSE_NORMAL)
-    p = subprocess.Popen(cmd, **kwargs)
+    p = subprocess.Popen(cmd, env=env, **kwargs)
     out, _ = p.communicate()
     if p.returncode == 0:
         if out:
@@ -82,8 +84,29 @@ def run_build(build_directory, **kwargs):
 
     Any additional keyword arguments are passed as-is to run_cmake().
     '''
+    cmake_env = None
     extra_args = kwargs.pop('extra_args', [])
-    return run_cmake(['--build', build_directory] + extra_args, **kwargs)
+
+    try:
+        index = extra_args.index('--') + 1
+        build_opt_parser = argparse.ArgumentParser(allow_abbrev=False)
+        build_opt_parser.add_argument('-j', '--jobs')
+        build_opt_parser.add_argument('-v', '--verbose', action='store_true')
+        build_opts, native_args = build_opt_parser.parse_known_args(extra_args[index:])
+        extra_args = extra_args[:index] + native_args
+
+        if build_opts:
+            cmake_env = os.environ.copy()
+            if build_opts.jobs:
+                cmake_env["CMAKE_BUILD_PARALLEL_LEVEL"] = build_opts.jobs
+
+            if build_opts.verbose:
+                cmake_env["VERBOSE"] = "1"
+
+    except ValueError:
+        pass # Ignore, no presence of '--' so nothing to do.
+
+    return run_cmake(['--build', build_directory] + extra_args, env=cmake_env, **kwargs)
 
 
 def make_c_identifier(string):

@@ -16,14 +16,17 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_central, LOG_LEVEL_DBG);
 
 #include "bs_bt_utils.h"
 
-DEFINE_FLAG(flag_discovered);
-DEFINE_FLAG(flag_subscribed);
-DEFINE_FLAG(flag_indicated);
+DEFINE_FLAG_STATIC(flag_discovered);
+DEFINE_FLAG_STATIC(flag_subscribed);
+DEFINE_FLAG_STATIC(flag_indicated);
 
 enum GATT_HANDLES {
 	SC,
@@ -66,7 +69,7 @@ static void subscribe(void)
 	subscribe_params.notify = sc_indicated;
 
 	err = bt_gatt_subscribe(get_g_conn(), &subscribe_params);
-	BSIM_ASSERT(!err, "bt_gatt_subscribe failed (%d)\n", err);
+	TEST_ASSERT(!err, "bt_gatt_subscribe failed (%d)", err);
 
 	WAIT_FOR_FLAG(flag_subscribed);
 }
@@ -78,7 +81,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 	if (attr == NULL) {
 		for (size_t i = 0U; i < ARRAY_SIZE(gatt_handles); i++) {
 			LOG_DBG("handle[%d] = 0x%x", i, gatt_handles[i]);
-			BSIM_ASSERT(gatt_handles[i] != 0, "did not find all handles\n");
+			TEST_ASSERT(gatt_handles[i] != 0, "did not find all handles");
 		}
 
 		(void)memset(params, 0, sizeof(*params));
@@ -102,7 +105,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			params->type = BT_GATT_DISCOVER_DESCRIPTOR;
 
 			err = bt_gatt_discover(conn, params);
-			BSIM_ASSERT(!err, "bt_gatt_discover failed (%d)\n", err);
+			TEST_ASSERT(!err, "bt_gatt_discover failed (%d)", err);
 
 			return BT_GATT_ITER_STOP;
 		}
@@ -131,7 +134,7 @@ static void gatt_discover(void)
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
 	err = bt_gatt_discover(get_g_conn(), &discover_params);
-	BSIM_ASSERT(!err, "bt_gatt_discover failed (%d)\n", err);
+	TEST_ASSERT(!err, "bt_gatt_discover failed (%d)", err);
 
 	WAIT_FOR_FLAG(flag_discovered);
 
@@ -161,13 +164,13 @@ void central(void)
 	};
 
 	err = bt_enable(NULL);
-	BSIM_ASSERT(!err, "bt_enable failed (%d)\n", err);
+	TEST_ASSERT(!err, "bt_enable failed (%d)", err);
 
 	err = bt_conn_auth_info_cb_register(&bt_conn_auth_info_cb);
-	BSIM_ASSERT(!err, "bt_conn_auth_info_cb_register failed.\n");
+	TEST_ASSERT(!err, "bt_conn_auth_info_cb_register failed.");
 
 	err = settings_load();
-	BSIM_ASSERT(!err, "settings_load failed (%d)\n", err);
+	TEST_ASSERT(!err, "settings_load failed (%d)", err);
 
 	scan_connect_to_first_result();
 	wait_connected();
@@ -191,5 +194,5 @@ void central(void)
 	/* wait for service change indication */
 	WAIT_FOR_FLAG(flag_indicated);
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }

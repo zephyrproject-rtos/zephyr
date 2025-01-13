@@ -14,7 +14,8 @@ list(APPEND CXX_EXCLUDED_OPTIONS
 set_compiler_property(PROPERTY no_optimization -O0)
 set_compiler_property(PROPERTY optimization_debug -O0)
 set_compiler_property(PROPERTY optimization_speed -O2)
-set_compiler_property(PROPERTY optimization_size  -Os)
+set_compiler_property(PROPERTY optimization_size -Os)
+set_compiler_property(PROPERTY optimization_fast -O3)
 
 #######################################################
 # This section covers flags related to warning levels #
@@ -165,6 +166,9 @@ set_compiler_property(PROPERTY coverage "")
 # mwdt compiler flags for imacros. The specific header must be appended by user.
 set_compiler_property(PROPERTY imacros -imacros)
 
+# assembler compiler flags for imacros. The specific header must be appended by user.
+set_property(TARGET asm PROPERTY imacros -imacros)
+
 # Security canaries.
 #no support of -mstack-protector-guard=global"
 set_compiler_property(PROPERTY security_canaries -fstack-protector)
@@ -205,8 +209,9 @@ if(CONFIG_ARCMWDT_LIBC)
   set_property(TARGET asm APPEND PROPERTY required "-I${NOSTDINC}")
 endif()
 
-# Remove after testing that -Wshadow works
+# Update after testing that -Wshadow and -Wno-array-bounds works
 set_compiler_property(PROPERTY warning_shadow_variables)
+set_compiler_property(PROPERTY warning_no_array_bounds)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)

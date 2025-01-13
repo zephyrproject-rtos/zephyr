@@ -12,6 +12,7 @@
 LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 
 #include <zephyr/net/dhcpv6.h>
+#include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/math_extras.h>
@@ -25,6 +26,12 @@ LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 
 /* Maximum number of options client can request. */
 #define DHCPV6_MAX_OPTION_REQUEST 2
+
+#if defined(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)
+#define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
+#else
+#define MAX_DNS_SERVERS 1
+#endif
 
 struct dhcpv6_options_include {
 	bool clientid : 1;
@@ -625,7 +632,12 @@ static int dhcpv6_send_solicit(struct net_if *iface)
 		.elapsed_time = true,
 		.ia_na = iface->config.dhcpv6.params.request_addr,
 		.ia_pd = iface->config.dhcpv6.params.request_prefix,
-		.oro = { DHCPV6_OPTION_CODE_SOL_MAX_RT },
+		.oro = {
+			DHCPV6_OPTION_CODE_SOL_MAX_RT,
+#if defined(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)
+			DHCPV6_OPTION_CODE_OPTION_DNS_SERVERS,
+#endif
+		},
 	};
 
 	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_SOLICIT, &options);
@@ -651,7 +663,12 @@ static int dhcpv6_send_request(struct net_if *iface)
 		.elapsed_time = true,
 		.ia_na = iface->config.dhcpv6.params.request_addr,
 		.ia_pd = iface->config.dhcpv6.params.request_prefix,
-		.oro = { DHCPV6_OPTION_CODE_SOL_MAX_RT },
+		.oro = {
+			DHCPV6_OPTION_CODE_SOL_MAX_RT,
+#if defined(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)
+			DHCPV6_OPTION_CODE_OPTION_DNS_SERVERS,
+#endif
+		},
 	};
 
 	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_REQUEST, &options);
@@ -1178,6 +1195,42 @@ static int dhcpv6_parse_option_ia_pd(struct net_pkt *pkt, uint16_t length,
 	return 0;
 }
 
+static int dhcpv6_parse_option_dns_servers(struct net_pkt *pkt, uint16_t length,
+					   struct sockaddr_in6 *servers,
+					   uint16_t *server_count)
+
+{
+	const uint8_t addr_size = sizeof(struct in6_addr);
+	uint16_t addr_count;
+	int ret;
+
+	if (length % addr_size != 0) {
+		NET_ERR("Invalid DNS Recursive Name Server option size");
+		return -EMSGSIZE;
+	}
+
+	/* Parse only as many server addresses as the buffer allows. */
+	addr_count = length / addr_size;
+	addr_count = MIN(addr_count, *server_count);
+
+	for (int i = 0; i < addr_count; i++) {
+		ret = net_pkt_read(pkt, &servers[i].sin6_addr, addr_size);
+		if (ret < 0) {
+			return ret;
+		}
+
+		length -= addr_size;
+	}
+
+	*server_count = addr_count;
+
+	if (length > 0) {
+		net_pkt_skip(pkt, length);
+	}
+
+	return 0;
+}
+
 static int dhcpv6_find_option(struct net_pkt *pkt, enum dhcpv6_option_code opt_code,
 			      uint16_t *opt_len)
 {
@@ -1322,6 +1375,50 @@ static int dhcpv6_find_status_code(struct net_pkt *pkt, uint16_t *status)
 		ret = 0;
 	}
 
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
+static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
+{
+	const struct sockaddr *dns_servers[MAX_DNS_SERVERS + 1] = { 0 };
+	struct sockaddr_in6 dns_saddr[MAX_DNS_SERVERS] = { 0 };
+	uint16_t server_count = MAX_DNS_SERVERS;
+	struct dns_resolve_context *ctx;
+	struct net_pkt_cursor backup;
+	uint16_t length;
+	int ret, status;
+
+	net_pkt_cursor_backup(pkt, &backup);
+
+	ret = dhcpv6_find_option(pkt, DHCPV6_OPTION_CODE_OPTION_DNS_SERVERS,
+				 &length);
+	if (ret < 0) {
+		/* If the option is not present, don't report an error. */
+		ret = 0;
+		goto out;
+	}
+
+	ret = dhcpv6_parse_option_dns_servers(pkt, length, dns_saddr,
+					      &server_count);
+	if (ret < 0 || server_count == 0) {
+		goto out;
+	}
+
+	for (uint8_t i = 0; i < server_count; i++) {
+		dns_saddr[i].sin6_family = AF_INET6;
+		dns_servers[i] = (struct sockaddr *)&dns_saddr[i];
+	}
+
+	ctx = dns_resolve_get_default();
+	status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+	if (status < 0) {
+		NET_DBG("Failed to reconfigure DNS resolver from DHCPv6 "
+			"option: %d", status);
+	}
+
+out:
 	net_pkt_cursor_restore(pkt, &backup);
 
 	return ret;
@@ -1763,6 +1860,14 @@ prefix:
 			NET_ERR("Failed to configure DHCPv6 prefix");
 			net_dhcpv6_stop(iface);
 			return -EFAULT;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)) {
+		ret = dhcpv6_handle_dns_server_option(pkt);
+		if (ret < 0) {
+			NET_ERR("DNS server option handling failed");
+			return ret;
 		}
 	}
 
@@ -2222,7 +2327,7 @@ int net_dhcpv6_init(void)
 	unspec_addr.sa_family = AF_INET6;
 
 	ret = net_udp_register(AF_INET6, NULL, &unspec_addr,
-			       DHCPV6_SERVER_PORT, DHCPV6_CLIENT_PORT,
+			       0, DHCPV6_CLIENT_PORT,
 			       NULL, dhcpv6_input, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("UDP callback registration failed");

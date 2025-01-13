@@ -11,12 +11,12 @@
 #include <zephyr/irq_offload.h>
 #include <zephyr/kernel_structs.h>
 
-#define TIMEOUT_TICKS   (10)
-#define FLAG1           (0x00000020)
-#define FLAG2           (0x00000004)
-#define FLAG            (FLAG1 | FLAG2)
-#define ISR_FLAG        (0x50)
-#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
+#define TIMEOUT_TICKS (10)
+#define FLAG1         (0x00000020)
+#define FLAG2         (0x00000004)
+#define FLAG          (FLAG1 | FLAG2)
+#define ISR_FLAG      (0x50)
+#define STACKSZ       CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 static void thread1(void *arg)
 {
@@ -36,8 +36,7 @@ static void thread1(void *arg)
 
 	/* Clear the Flag explicitly */
 	flags = osThreadFlagsClear(FLAG1);
-	zassert_not_equal(flags, osFlagsErrorParameter,
-			  "ThreadFlagsClear failed");
+	zassert_not_equal(flags, osFlagsErrorParameter, "ThreadFlagsClear failed");
 
 	/* wait for FLAG1. It should timeout here as the flag
 	 * though triggered, gets cleared in the previous step.
@@ -51,22 +50,19 @@ static void thread2(void *arg)
 	uint32_t flags;
 
 	flags = osThreadFlagsWait(FLAG, osFlagsWaitAll, TIMEOUT_TICKS);
-	zassert_equal(flags & FLAG, FLAG,
-		      "osThreadFlagsWait failed unexpectedly");
+	zassert_equal(flags & FLAG, FLAG, "osThreadFlagsWait failed unexpectedly");
 
 	/* validate by passing invalid parameters */
 	zassert_equal(osThreadFlagsSet(NULL, 0), osFlagsErrorParameter,
 		      "Invalid Thread Flags ID is unexpectedly working!");
-	zassert_equal(osThreadFlagsSet(osThreadGetId(), 0x80010000),
-		      osFlagsErrorParameter,
+	zassert_equal(osThreadFlagsSet(osThreadGetId(), 0x80010000), osFlagsErrorParameter,
 		      "Thread with MSB set is set unexpectedly");
 
 	zassert_equal(osThreadFlagsClear(0x80010000), osFlagsErrorParameter,
 		      "Thread with MSB set is cleared unexpectedly");
 
 	/* cannot wait for Flag mask with MSB set */
-	zassert_equal(osThreadFlagsWait(0x80010000, osFlagsWaitAny, 0),
-		      osFlagsErrorParameter,
+	zassert_equal(osThreadFlagsWait(0x80010000, osFlagsWaitAny, 0), osFlagsErrorParameter,
 		      "ThreadFlagsWait passed unexpectedly");
 }
 
@@ -134,8 +130,7 @@ static void offload_function(const void *param)
 	zassert_true(k_is_in_isr(), "Not in IRQ context!");
 
 	flags = osThreadFlagsSet((osThreadId_t)param, ISR_FLAG);
-	zassert_equal(flags & ISR_FLAG, ISR_FLAG,
-		      "ThreadFlagsSet failed in ISR");
+	zassert_equal(flags & ISR_FLAG, ISR_FLAG, "ThreadFlagsSet failed in ISR");
 }
 
 void test_thread_flags_from_isr(void *thread_id)
@@ -146,8 +141,7 @@ void test_thread_flags_from_isr(void *thread_id)
 	irq_offload(offload_function, (const void *)osThreadGetId());
 
 	flags = osThreadFlagsWait(ISR_FLAG, osFlagsWaitAll, TIMEOUT_TICKS);
-	zassert_equal((flags & ISR_FLAG),
-		      ISR_FLAG, "unexpected Thread flags value");
+	zassert_equal((flags & ISR_FLAG), ISR_FLAG, "unexpected Thread flags value");
 }
 
 static K_THREAD_STACK_DEFINE(test_stack3, STACKSZ);
@@ -162,8 +156,7 @@ ZTEST(cmsis_thread_flags, test_thread_flags_isr)
 {
 	osThreadId_t id;
 
-	id = osThreadNew(test_thread_flags_from_isr, osThreadGetId(),
-			 &thread3_attr);
+	id = osThreadNew(test_thread_flags_from_isr, osThreadGetId(), &thread3_attr);
 	zassert_true(id != NULL, "Failed creating thread");
 
 	osDelay(TIMEOUT_TICKS);

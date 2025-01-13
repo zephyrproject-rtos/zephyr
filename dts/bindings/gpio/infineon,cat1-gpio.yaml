@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Infineon CAT1 GPIO PORT node
+description: Infineon CAT1 GPIO Port
 
 compatible: "infineon,cat1-gpio"
 

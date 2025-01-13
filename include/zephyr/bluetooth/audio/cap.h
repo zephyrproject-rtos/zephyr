@@ -974,7 +974,7 @@ struct bt_cap_commander_broadcast_reception_start_param {
 int bt_cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
 
-/** Parameters for stopping broadcast reception  */
+/** Member parameters for stopping broadcast reception  */
 struct bt_cap_commander_broadcast_reception_stop_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;
@@ -986,6 +986,7 @@ struct bt_cap_commander_broadcast_reception_stop_member_param {
 	size_t num_subgroups;
 };
 
+/** Parameters for stopping broadcast reception */
 struct bt_cap_commander_broadcast_reception_stop_param {
 	/** The type of the set. */
 	enum bt_cap_set_type type;
@@ -1008,7 +1009,7 @@ struct bt_cap_commander_broadcast_reception_stop_param {
 int bt_cap_commander_broadcast_reception_stop(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param);
 
-/** Parameters for distributing broadcast code */
+/** Member parameters for distributing broadcast code */
 struct bt_cap_commander_distribute_broadcast_code_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;
@@ -1017,6 +1018,7 @@ struct bt_cap_commander_distribute_broadcast_code_member_param {
 	uint8_t src_id;
 };
 
+/** Parameters for distributing broadcast code */
 struct bt_cap_commander_distribute_broadcast_code_param {
 	/** The type of the set. */
 	enum bt_cap_set_type type;

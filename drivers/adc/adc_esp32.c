@@ -45,6 +45,8 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 
 #define ADC_DMA_BUFFER_SIZE DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
 
+#define ADC_CLIP_MVOLT_12DB	2550
+
 struct adc_esp32_conf {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
@@ -92,6 +94,42 @@ static inline int gain_to_atten(enum adc_gain gain, adc_atten_t *atten)
 	}
 	return 0;
 }
+
+#if !defined(CONFIG_ADC_ESP32_DMA)
+
+/* Convert voltage by inverted attenuation to support zephyr gain values */
+static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
+{
+	uint32_t num, den;
+
+	if (!val_mv) {
+		return;
+	}
+
+	switch (atten) {
+	case ADC_ATTEN_DB_2_5: /* 1/ADC_GAIN_4_5 */
+		num = 4;
+		den = 5;
+		break;
+	case ADC_ATTEN_DB_6: /* 1/ADC_GAIN_1_2 */
+		num = 1;
+		den = 2;
+		break;
+	case ADC_ATTEN_DB_12: /* 1/ADC_GAIN_1_4 */
+		num = 1;
+		den = 4;
+		break;
+	case ADC_ATTEN_DB_0: /* 1/ADC_GAIN_1 */
+	default:
+		num = 1;
+		den = 1;
+		break;
+	}
+
+	*val_mv = (*val_mv * num) / den;
+}
+
+#endif /* !defined(CONFIG_ADC_ESP32_DMA) */
 
 static void adc_hw_calibration(adc_unit_t unit)
 {
@@ -375,7 +413,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 
 #if !defined(CONFIG_ADC_ESP32_DMA)
 
-	uint32_t acq_raw, acq_mv, result;
+	uint32_t acq_raw;
 
 	adc_oneshot_hal_setup(&data->hal, channel_id);
 
@@ -386,20 +424,36 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	adc_oneshot_hal_convert(&data->hal, &acq_raw);
 
 	if (data->cal_handle[channel_id]) {
-		adc_cali_raw_to_voltage(data->cal_handle[channel_id], acq_raw, &acq_mv);
+		if (data->meas_ref_internal > 0) {
+			uint32_t acq_mv;
 
-		LOG_DBG("ADC acquisition [unit: %u, chan: %u, acq_raw: %u, acq_mv: %u]",
-			data->hal.unit, channel_id, acq_raw, acq_mv);
+			adc_cali_raw_to_voltage(data->cal_handle[channel_id], acq_raw, &acq_mv);
 
-		result = acq_mv;
+			LOG_DBG("ADC acquisition [unit: %u, chan: %u, acq_raw: %u, acq_mv: %u]",
+				data->hal.unit, channel_id, acq_raw, acq_mv);
+
+#if CONFIG_SOC_SERIES_ESP32
+		if (data->attenuation[channel_id] == ADC_ATTEN_DB_12) {
+			if (acq_mv > ADC_CLIP_MVOLT_12DB) {
+				acq_mv = ADC_CLIP_MVOLT_12DB;
+			}
+		}
+#endif /* CONFIG_SOC_SERIES_ESP32 */
+
+			/* Fit according to selected attenuation */
+			atten_to_gain(data->attenuation[channel_id], &acq_mv);
+			acq_raw = acq_mv * ((1 << data->resolution[channel_id]) - 1) /
+				  data->meas_ref_internal;
+		} else {
+			LOG_WRN("ADC reading is uncompensated");
+		}
 	} else {
-		LOG_WRN("ADC values are raw (uncalibrated)");
-		result = acq_raw;
+		LOG_WRN("ADC reading is uncompensated");
 	}
 
 	/* Store result */
 	data->buffer = (uint16_t *)seq->buffer;
-	data->buffer[0] = result;
+	data->buffer[0] = acq_raw;
 
 #else /* !defined(CONFIG_ADC_ESP32_DMA) */
 

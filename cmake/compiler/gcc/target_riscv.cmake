@@ -98,8 +98,12 @@ set(LLEXT_REMOVE_FLAGS
 # Flags to be added to llext code compilation
 # mno-relax is needed to stop gcc from generating R_RISCV_ALIGN relocations,
 # which are currently not supported
+# -msmall-data-limit=0 disables the "small data" sections such as .sbss and .sdata
+# only one NOBITS sections is supported at a time, so having .sbss can cause
+# llext's not to be loadable
 set(LLEXT_APPEND_FLAGS
   -mabi=${riscv_mabi}
   -march=${riscv_march}
   -mno-relax
+  -msmall-data-limit=0
 )

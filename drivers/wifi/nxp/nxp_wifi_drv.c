@@ -49,7 +49,9 @@ LOG_MODULE_REGISTER(nxp_wifi, CONFIG_WIFI_LOG_LEVEL);
  ******************************************************************************/
 static int s_nxp_wifi_State = NXP_WIFI_NOT_INITIALIZED;
 static bool s_nxp_wifi_StaConnected;
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 static bool s_nxp_wifi_UapActivated;
+#endif
 static struct k_event s_nxp_wifi_SyncEvent;
 
 static struct nxp_wifi_dev nxp_wifi0; /* static instance */
@@ -59,7 +61,7 @@ static struct wlan_network nxp_wlan_network;
 static struct wlan_network nxp_wlan_uap_network;
 #endif
 
-#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
+#if defined(CONFIG_NXP_WIFI_SOFTAP_SUPPORT) && !defined(CONFIG_WIFI_NM_HOSTAPD_AP)
 static char uap_ssid[IEEEtypes_SSID_SIZE + 1];
 #endif
 
@@ -103,9 +105,9 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	struct in_addr dhcps_addr4;
 	struct in_addr base_addr;
 	struct in_addr netmask_addr;
-#endif
 	struct wifi_iface_status status = { 0 };
 	struct wifi_ap_sta_info ap_sta_info = { 0 };
+#endif
 
 	LOG_DBG("WLAN: received event %d", reason);
 
@@ -151,6 +153,10 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		net_if_dormant_off(g_mlan.netif);
 #endif
 		LOG_DBG("WLAN: associated to nxp_wlan_network");
+#ifdef CONFIG_NET_STATISTICS_WIFI
+		g_mlan.stats.sta_mgmt.beacons_rx = 0;
+		g_mlan.stats.sta_mgmt.beacons_miss = 0;
+#endif
 		break;
 	case WLAN_REASON_SUCCESS:
 		LOG_DBG("WLAN: connected to nxp_wlan_network");
@@ -278,12 +284,6 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		s_nxp_wifi_UapActivated = true;
 		break;
 	case WLAN_REASON_UAP_CLIENT_ASSOC:
-		LOG_DBG("WLAN: UAP a Client Associated");
-		LOG_DBG("Client => ");
-		print_mac((const char *)data);
-		LOG_DBG("Associated with Soft AP");
-		break;
-	case WLAN_REASON_UAP_CLIENT_CONN:
 		wlan_get_current_uap_network(&nxp_wlan_uap_network);
 #ifdef CONFIG_NXP_WIFI_11AX
 		if (nxp_wlan_uap_network.dot11ax) {
@@ -306,6 +306,12 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		ap_sta_info.twt_capable = status.twt_capable;
 
 		wifi_mgmt_raise_ap_sta_connected_event(g_uap.netif, &ap_sta_info);
+		LOG_DBG("WLAN: UAP a Client Associated");
+		LOG_DBG("Client => ");
+		print_mac((const char *)data);
+		LOG_DBG("Associated with Soft AP");
+		break;
+	case WLAN_REASON_UAP_CLIENT_CONN:
 		LOG_DBG("WLAN: UAP a Client Connected");
 		LOG_DBG("Client => ");
 		print_mac((const char *)data);
@@ -492,6 +498,11 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 			nxp_wlan_uap_network.channel = params->channel;
 		}
 
+		if (nxp_wlan_uap_network.channel == 0) {
+			nxp_wlan_uap_network.acs_band =
+				(params->band == WIFI_FREQ_BAND_5_GHZ) ? 1 : 0;
+		}
+
 		if (params->mfp == WIFI_MFP_REQUIRED) {
 			nxp_wlan_uap_network.security.mfpc = true;
 			nxp_wlan_uap_network.security.mfpr = true;
@@ -504,6 +515,11 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 			nxp_wlan_uap_network.security.type = WLAN_SECURITY_NONE;
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK) {
 			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2;
+			nxp_wlan_uap_network.security.psk_len = params->psk_length;
+			strncpy(nxp_wlan_uap_network.security.psk, params->psk, params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2;
+			nxp_wlan_uap_network.security.key_mgmt = WLAN_KEY_MGMT_PSK_SHA256;
 			nxp_wlan_uap_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_uap_network.security.psk, params->psk, params->psk_length);
 		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
@@ -565,6 +581,9 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 		LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_MASK");
 		return -ENOENT;
 	}
+
+	nxp_wlan_uap_network.beacon_period = NXP_WIFI_SAP_BEACON_PERIOD_DEFAULT;
+	nxp_wlan_uap_network.dtim_period = NXP_WIFI_SAP_DTIM_PERIOD_DEFAULT;
 
 	ret = wlan_add_network(&nxp_wlan_uap_network);
 	if (ret != WM_SUCCESS) {
@@ -702,11 +721,9 @@ static int nxp_wifi_process_results(unsigned int count)
 		if (scan_result.wpa2) {
 			res.security = WIFI_SECURITY_TYPE_PSK;
 		}
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 		if (scan_result.wpa2_sha256) {
 			res.security = WIFI_SECURITY_TYPE_PSK_SHA256;
 		}
-#endif
 		if (scan_result.wpa3_sae) {
 			res.security = WIFI_SECURITY_TYPE_SAE;
 		}
@@ -923,6 +940,11 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
+			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
+			nxp_wlan_network.security.key_mgmt = WLAN_KEY_MGMT_PSK_SHA256;
+			nxp_wlan_network.security.psk_len = params->psk_length;
+			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
 		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
 			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
 			nxp_wlan_network.security.password_len = params->psk_length;
@@ -1011,15 +1033,47 @@ static int nxp_wifi_disconnect(const struct device *dev)
 	return 0;
 }
 
-static inline enum wifi_security_type nxp_wifi_security_type(enum wlan_security_type type)
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
+static int nxp_wifi_uap_disconnect_sta(const struct device *dev, const uint8_t *mac)
 {
-	switch (type) {
-	case WLAN_SECURITY_NONE:
+	int ret;
+
+	if (!is_uap_started()) {
+		LOG_ERR("Please start uap first!");
+		return -EAGAIN;
+	}
+
+	ret = wlan_uap_disconnect_sta((uint8_t *)mac);
+	if (ret != WM_SUCCESS) {
+		LOG_ERR("Failed to disconnect STA");
+	}
+
+	return ret;
+}
+#endif
+
+static inline enum wifi_security_type nxp_wifi_key_mgmt_to_zephyr(int key_mgmt, int pwe)
+{
+	switch (key_mgmt) {
+	case WLAN_KEY_MGMT_NONE:
 		return WIFI_SECURITY_TYPE_NONE;
-	case WLAN_SECURITY_WPA2:
+	case WLAN_KEY_MGMT_PSK:
 		return WIFI_SECURITY_TYPE_PSK;
-	case WLAN_SECURITY_WPA3_SAE:
+	case WLAN_KEY_MGMT_PSK_SHA256:
+		return WIFI_SECURITY_TYPE_PSK_SHA256;
+	case WLAN_KEY_MGMT_PSK | WLAN_KEY_MGMT_PSK_SHA256:
+		return WIFI_SECURITY_TYPE_PSK;
+	case WLAN_KEY_MGMT_SAE:
+		if (pwe == 1) {
+			return WIFI_SECURITY_TYPE_SAE_H2E;
+		} else if (pwe == 2) {
+			return WIFI_SECURITY_TYPE_SAE_AUTO;
+		} else {
+			return WIFI_SECURITY_TYPE_SAE_HNP;
+		}
 		return WIFI_SECURITY_TYPE_SAE;
+	case WLAN_KEY_MGMT_SAE | WLAN_KEY_MGMT_PSK:
+		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
@@ -1056,11 +1110,15 @@ static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_statu
 
 			status->rssi = nxp_wlan_uap_network.rssi;
 
-			status->channel = nxp_wlan_uap_network.channel;
+			wlan_get_uap_channel(&status->channel);
 
 			status->beacon_interval = nxp_wlan_uap_network.beacon_period;
 
 			status->dtim_period = nxp_wlan_uap_network.dtim_period;
+
+#ifdef CONFIG_NXP_WIFI_11AX_TWT
+			status->twt_capable = true;
+#endif
 
 			if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
 				status->iface_mode = WIFI_MODE_INFRA;
@@ -1084,10 +1142,16 @@ static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_statu
 				status->link_mode = WIFI_3;
 			}
 
-			status->band = nxp_wlan_uap_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
-									 : WIFI_FREQ_BAND_2_4_GHZ;
-			status->security =
-				nxp_wifi_security_type(nxp_wlan_uap_network.security.type);
+			if (nxp_wlan_uap_network.channel != 0) {
+				status->band = nxp_wlan_uap_network.channel > 14 ?
+					WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+			} else {
+				status->band = nxp_wlan_uap_network.acs_band;
+			}
+
+			status->security = nxp_wifi_key_mgmt_to_zephyr(
+				nxp_wlan_uap_network.security.key_mgmt,
+				nxp_wlan_uap_network.security.pwe_derivation);
 			status->mfp =
 				nxp_wlan_uap_network.security.mfpr
 					? WIFI_MFP_REQUIRED
@@ -1124,6 +1188,7 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 	} else if (connection_state == WLAN_AUTHENTICATED
 			|| connection_state == WLAN_CONNECTED) {
 		status->state = WIFI_STATE_COMPLETED;
+		wlan_ds_rate ds_rate = {0};
 
 		if (!wlan_get_current_network(&nxp_wlan_network)) {
 			strncpy(status->ssid, nxp_wlan_network.ssid, WIFI_SSID_MAX_LEN - 1);
@@ -1167,9 +1232,27 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 
 			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
 								     : WIFI_FREQ_BAND_2_4_GHZ;
-			status->security = nxp_wifi_security_type(nxp_wlan_network.security.type);
+			status->security = nxp_wifi_key_mgmt_to_zephyr(
+				nxp_wlan_network.security.key_mgmt,
+				nxp_wlan_network.security.pwe_derivation);
 			status->mfp = nxp_wlan_network.security.mfpr ? WIFI_MFP_REQUIRED :
 				(nxp_wlan_network.security.mfpc ? WIFI_MFP_OPTIONAL : 0);
+		}
+		ds_rate.sub_command = WIFI_DS_GET_DATA_RATE;
+		if (!wlan_get_data_rate(&ds_rate, WLAN_BSS_TYPE_STA)) {
+			wifi_data_rate_t *datarate = (wifi_data_rate_t *)&ds_rate.param.data_rate;
+			int lg_rate[12] = {1, 2, 5, 11, 6, 9, 12, 18, 24, 36, 48, 54};
+
+			if (datarate->tx_rate_format == MLAN_RATE_FORMAT_LG &&
+			    datarate->tx_data_rate < 12) {
+				/* Legacy rates (in bps) */
+				/* Need to feed Zephyr L2 Wi-Fi with rate value in unit of Mbps*/
+				status->current_phy_tx_rate = lg_rate[datarate->tx_data_rate];
+			} else if (datarate->tx_rate_format <= 3) {
+				/* HT, VHT, HE rates (in bps) */
+				/* Need to feed Zephyr L2 Wi-Fi with rate value in unit of Mbps*/
+				status->current_phy_tx_rate = (datarate->tx_data_rate >> 1);
+			}
 		}
 	}
 
@@ -1177,9 +1260,30 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 }
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
+#ifdef CONFIG_NXP_WIFI_GET_LOG
+static int nxp_wifi_get_detail_stats(int bss_type, wlan_pkt_stats_t *stats)
+{
+	int ret = -ENODEV;
+
+	if (bss_type == WLAN_BSS_TYPE_STA) {
+		ret = wlan_get_log(stats);
+	}
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
+	else if (bss_type == WLAN_BSS_TYPE_UAP) {
+		ret = wlan_uap_get_log(stats);
+	}
+#endif
+	return ret;
+}
+#endif
+
 static int nxp_wifi_stats(const struct device *dev, struct net_stats_wifi *stats)
 {
 	struct interface *if_handle = (struct interface *)dev->data;
+#ifdef CONFIG_NXP_WIFI_GET_LOG
+	int ret;
+	wlan_pkt_stats_t *wifi_stats;
+#endif
 
 	stats->bytes.received = if_handle->stats.bytes.received;
 	stats->bytes.sent = if_handle->stats.bytes.sent;
@@ -1191,8 +1295,87 @@ static int nxp_wifi_stats(const struct device *dev, struct net_stats_wifi *stats
 	stats->broadcast.tx = if_handle->stats.broadcast.tx;
 	stats->multicast.rx = if_handle->stats.multicast.rx;
 	stats->multicast.tx = if_handle->stats.multicast.tx;
-	stats->sta_mgmt.beacons_rx = if_handle->stats.sta_mgmt.beacons_rx;
-	stats->sta_mgmt.beacons_miss = if_handle->stats.sta_mgmt.beacons_miss;
+	stats->unicast.rx = if_handle->stats.unicast.rx;
+	stats->unicast.tx = if_handle->stats.unicast.tx;
+	stats->overrun_count = if_handle->stats.errors.rx + if_handle->stats.errors.tx;
+
+	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+		return 0;
+	}
+
+#ifdef CONFIG_NXP_WIFI_GET_LOG
+	wifi_stats = k_malloc(sizeof(wlan_pkt_stats_t));
+	if (!wifi_stats) {
+		LOG_WRN("No mem for detailed statistics");
+		return 0;
+	}
+
+	memset(wifi_stats, 0, sizeof(wlan_pkt_stats_t));
+	ret = nxp_wifi_get_detail_stats(if_handle->state.interface, wifi_stats);
+	if (ret != 0) {
+		LOG_ERR("Get detailed statistics from Wi-Fi failed ret %d", ret);
+		k_free(wifi_stats);
+		return ret;
+	}
+
+	if (wifi_stats->bcn_rcv_cnt >= if_handle->stats.sta_mgmt.beacons_rx) {
+		stats->sta_mgmt.beacons_rx = wifi_stats->bcn_rcv_cnt -
+			if_handle->stats.sta_mgmt.beacons_rx;
+	} else {
+		/** we might have a new connection since last stats reset,
+		 *  so stored stats is invalid
+		 */
+		stats->sta_mgmt.beacons_rx = wifi_stats->bcn_rcv_cnt;
+	}
+
+	if (wifi_stats->bcn_miss_cnt >= if_handle->stats.sta_mgmt.beacons_miss) {
+		stats->sta_mgmt.beacons_miss = wifi_stats->bcn_miss_cnt -
+			if_handle->stats.sta_mgmt.beacons_miss;
+	} else {
+		stats->sta_mgmt.beacons_miss = wifi_stats->bcn_miss_cnt;
+	}
+
+	k_free(wifi_stats);
+#endif
+	return 0;
+}
+
+int nxp_wifi_reset_stats(const struct device *dev)
+{
+	struct interface *if_handle = (struct interface *)dev->data;
+#ifdef CONFIG_NXP_WIFI_GET_LOG
+	int ret;
+	wlan_pkt_stats_t *wifi_stats;
+#endif
+
+	/* clear local statistics */
+	memset(&if_handle->stats, 0, sizeof(if_handle->stats));
+
+	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+		return 0;
+	}
+
+#ifdef CONFIG_NXP_WIFI_GET_LOG
+	/* store firmware statistics */
+	wifi_stats = k_malloc(sizeof(wlan_pkt_stats_t));
+	if (!wifi_stats) {
+		LOG_WRN("No mem to reset detailed statistics");
+		return 0;
+	}
+
+	memset(wifi_stats, 0, sizeof(wlan_pkt_stats_t));
+	ret = nxp_wifi_get_detail_stats(if_handle->state.interface, wifi_stats);
+	if (ret != 0) {
+		LOG_ERR("Reset detailed statistics from Wi-Fi failed ret %d", ret);
+		k_free(wifi_stats);
+		return ret;
+	}
+
+	if_handle->stats.sta_mgmt.beacons_rx =  wifi_stats->bcn_rcv_cnt;
+	if_handle->stats.sta_mgmt.beacons_miss = wifi_stats->bcn_miss_cnt;
+
+	k_free(wifi_stats);
+#endif
 
 	return 0;
 }
@@ -1269,6 +1452,13 @@ static int nxp_wifi_11k_neighbor_request(const struct device *dev, struct wifi_1
 	}
 
 	return 0;
+}
+#endif
+
+#ifdef CONFIG_NXP_WIFI_11V
+static int nxp_wifi_btm_query(const struct device *dev, uint8_t reason)
+{
+	return wlan_host_11v_bss_trans_query(reason);
 }
 #endif
 
@@ -1577,6 +1767,7 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 	return ret;
 }
 
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *params)
 {
 	wlan_btwt_config_t btwt_config;
@@ -1592,6 +1783,7 @@ static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *p
 
 	return wlan_set_btwt_cfg(&btwt_config);
 }
+#endif
 #endif
 
 static int nxp_wifi_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
@@ -1609,6 +1801,7 @@ static int nxp_wifi_set_rts_threshold(const struct device *dev, unsigned int rts
 	return ret;
 }
 
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 static int nxp_wifi_ap_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
 {
 	int ret = -1;
@@ -1623,6 +1816,7 @@ static int nxp_wifi_ap_set_rts_threshold(const struct device *dev, unsigned int 
 
 	return ret;
 }
+#endif
 
 static void nxp_wifi_sta_init(struct net_if *iface)
 {
@@ -1723,6 +1917,8 @@ static NXP_WIFI_SET_FUNC_ATTR int nxp_wifi_send(const struct device *dev, struct
 		if_handle->stats.multicast.tx++;
 	} else if (net_eth_is_addr_broadcast(&hdr->dst)) {
 		if_handle->stats.broadcast.tx++;
+	} else {
+		if_handle->stats.unicast.tx++;
 	}
 #endif
 
@@ -1752,6 +1948,8 @@ static NXP_WIFI_SET_FUNC_ATTR int nxp_wifi_recv(struct net_if *iface, struct net
 		if_handle->stats.broadcast.rx++;
 	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
 		if_handle->stats.multicast.rx++;
+	} else {
+		if_handle->stats.unicast.rx++;
 	}
 
 	if_handle->stats.bytes.received += pkt_len;
@@ -1917,10 +2115,14 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.iface_status = nxp_wifi_status,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = nxp_wifi_stats,
+	.reset_stats = nxp_wifi_reset_stats,
 #endif
 #ifdef CONFIG_NXP_WIFI_11K
 	.cfg_11k = nxp_wifi_11k_cfg,
 	.send_11k_neighbor_request = nxp_wifi_11k_neighbor_request,
+#endif
+#ifdef CONFIG_NXP_WIFI_11V
+	.btm_query = nxp_wifi_btm_query,
 #endif
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,
@@ -1999,6 +2201,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 	.iface_status = nxp_wifi_uap_status,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = nxp_wifi_stats,
+	.reset_stats = nxp_wifi_reset_stats,
 #endif
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,
@@ -2006,6 +2209,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 #ifdef CONFIG_NXP_WIFI_11AX_TWT
 	.set_btwt = nxp_wifi_set_btwt,
 #endif
+	.ap_sta_disconnect = nxp_wifi_uap_disconnect_sta,
 	.set_rts_threshold = nxp_wifi_ap_set_rts_threshold,
 };
 

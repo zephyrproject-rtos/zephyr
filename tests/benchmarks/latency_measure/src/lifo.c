@@ -335,7 +335,7 @@ int lifo_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 		 start_options & K_USER ? "u" : "k",
 		 alt_options & K_USER ? "u" : "k");
 	snprintf(description, sizeof(description),
-		 "%-40s - Allocate to add data to LIFO (w/ ctx siwtch)", tag);
+		 "%-40s - Allocate to add data to LIFO (w/ ctx switch)", tag);
 	cycles = timestamp.cycles;
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");

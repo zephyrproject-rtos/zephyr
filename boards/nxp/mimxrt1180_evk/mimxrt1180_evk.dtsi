@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		pwm-led0 = &green_pwm_led;
+		sdhc0 = &usdhc1;
 	};
 
 	leds {
@@ -19,7 +20,7 @@
 		green_led: led-1 {
 			gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>;
 			label = "User LED D6";
-	    };
+		};
 	};
 
 	gpio_keys {
@@ -39,11 +40,115 @@
 	};
 };
 
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy0: phy@2 {
+		compatible = "ethernet-phy";
+		reg = <0x2>;
+		status = "okay";
+	};
+
+	phy1: phy@5 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x5>;
+		status = "okay";
+	};
+
+	phy2: phy@4 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x4>;
+		status = "okay";
+	};
+
+	phy3: phy@7 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x7>;
+		status = "okay";
+	};
+
+	phy4: phy@3 {
+		compatible = "ethernet-phy";
+		reg = <0x3>;
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	local-mac-address = [00 00 00 01 02 00];
+	pinctrl-0 = <&eth4_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy4>;
+	status = "okay";
+};
+
+/* Internal port */
+&enetc_psi1 {
+	local-mac-address = [00 00 00 01 03 00];
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&switch_port0 {
+	local-mac-address = [00 00 00 01 04 00];
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "rmii";
+	status = "okay";
+};
+
+&switch_port1 {
+	local-mac-address = [00 00 00 01 05 00];
+	pinctrl-0 = <&eth1_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy1>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&switch_port2 {
+	local-mac-address = [00 00 00 01 06 00];
+	pinctrl-0 = <&eth2_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy2>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&switch_port3 {
+	local-mac-address = [00 00 00 01 07 00];
+	pinctrl-0 = <&eth3_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy3>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+/* Internal port */
+&switch_port4 {
+	local-mac-address = [00 00 00 01 06 00];
+	status = "okay";
+};
+
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart12 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart12>;
+	pinctrl-1 = <&pinmux_lpuart12_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
@@ -164,4 +269,19 @@ p3t1755dp_ard_i2c_interface: &lpi2c2 {};
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi3>;
 	pinctrl-names = "default";
+};
+
+&usdhc1 {
+	status = "okay";
+	detect-dat3;
+	no-1-8-v;
+	pwr-gpios = <&gpio4 14 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "nopull";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };

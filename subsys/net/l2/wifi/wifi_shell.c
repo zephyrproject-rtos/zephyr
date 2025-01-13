@@ -599,6 +599,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"key2-pwd", required_argument, 0, 'K'},
 		{"wpa3-enterprise", required_argument, 0, 'S'},
 		{"TLS-cipher", required_argument, 0, 'T'},
+		{"verify-peer-cert", required_argument, 0, 'A'},
 		{"eap-version", required_argument, 0, 'V'},
 		{"eap-id1", required_argument, 0, 'I'},
 		{"eap-id2", required_argument, 0, 'I'},
@@ -644,8 +645,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->eap_ver = 1;
 	params->ignore_broadcast_ssid = 0;
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
+	params->verify_peer_cert = false;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:V:I:P:i:Rh",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:i:Rh",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -670,12 +672,10 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'c':
 			channel = strtol(state->optarg, &endptr, 10);
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 			if (iface_mode == WIFI_MODE_AP && channel == 0) {
 				params->channel = channel;
 				break;
 			}
-#endif
 			for (band = 0; band < ARRAY_SIZE(all_bands); band++) {
 				offset += snprintf(bands_str + offset,
 						   sizeof(bands_str) - offset,
@@ -806,6 +806,11 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'T':
 			params->TLS_cipher = atoi(state->optarg);
+			break;
+		case 'A':
+			if (iface_mode == WIFI_MODE_INFRA) {
+				params->verify_peer_cert = !!atoi(state->optarg);
+			}
 			break;
 		case 'V':
 			params->eap_ver = atoi(state->optarg);
@@ -2293,7 +2298,6 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 	return 0;
 }
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_wifi_sta();
@@ -2318,7 +2322,6 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
-#endif
 
 static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -3436,7 +3439,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
 		      "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
 		      "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2,\n"
-		      "15: EAP-PEAP-TLS\n"
+		      "15: EAP-PEAP-TLS, 20: SAE-EXT-KEY\n"
 		      "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
 		      "0:Disable, 1:Optional, 2:Required\n"
 		      "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
@@ -3647,12 +3650,10 @@ SHELL_SUBCMD_ADD((wifi), 11k_neighbor_request, NULL,
 		 cmd_wifi_11k_neighbor_request,
 		 1, 2);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 SHELL_SUBCMD_ADD((wifi), 11v_btm_query, NULL,
 		 "<query_reason: The reason code for a BSS transition management query>.\n",
 		 cmd_wifi_btm_query,
 		 2, 0);
-#endif
 
 SHELL_SUBCMD_ADD((wifi), channel, NULL,
 		 "wifi channel setting\n"
@@ -3681,7 +3682,7 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
 		  "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
 		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2,\n"
-		  "15: EAP-PEAP-TLS\n"
+		  "15: EAP-PEAP-TLS, 20: SAE-EXT-KEY\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
@@ -3693,6 +3694,8 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		  "Default 0: Not WPA3 enterprise mode.\n"
 		  "1:Suite-b mode, 2:Suite-b-192-bit mode, 3:WPA3-enterprise-only mode.\n"
 		  "[-T, --TLS-cipher]: 0:TLS-NONE, 1:TLS-ECC-P384, 2:TLS-RSA-3K.\n"
+		  "[-A, --verify-peer-cert]: apply for EAP-PEAP-MSCHAPv2 and EAP-TTLS-MSCHAPv2\n"
+		  "Default 0. 0:not use CA to verify peer, 1:use CA to verify peer.\n"
 		  "[-V, --eap-version]: 0 or 1. Default 1: eap version 1.\n"
 		  "[-I, --eap-id1]: Client Identity. Default no eap identity.\n"
 		  "[-P, --eap-pwd1]: Client Password.\n"

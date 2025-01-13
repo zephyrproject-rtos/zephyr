@@ -1,0 +1,47 @@
+# Copyright (c) 2025 IAR Systems AB
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+config PICOLIBC_SUPPORTED
+	default n
+
+config TOOLCHAIN_HAS_BUILTIN_FFS
+	default n
+
+config IAR_LIBC_SUPPORTED
+	default y
+
+config COMPILER_FREESTANDING
+	default y
+
+config CBPRINTF_LIBC_SUBSTS
+	default y
+
+# IAR has slightly different types
+config ENFORCE_ZEPHYR_STDINT
+	default n
+
+# IAR uses a little bit more stack than GCC
+config TEST_EXTRA_STACK_SIZE
+	default 64
+
+# ICCARM does not support relaxation
+config LINKER_USE_NO_RELAX
+	default y
+
+# ICCARM support C17 with some additional features from C23
+config REQUIRES_STD_C17
+	default y
+
+config CODING_GUIDELINE_CHECK
+	default n
+	help
+	  Not applicable to ICCARM
+
+config TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
+	default n
+
+# ICCARM does not support <threads.h>
+config COMMON_LIBC_THRD
+	default n

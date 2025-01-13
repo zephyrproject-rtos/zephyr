@@ -12,6 +12,10 @@ supported:
   - spi
   - entropy
   - i2c
+  - xiao_gpio
+  - xiao_i2c
+  - xiao_serial
+  - xiao_spi
 testing:
   ignore_tags:
     - tracing

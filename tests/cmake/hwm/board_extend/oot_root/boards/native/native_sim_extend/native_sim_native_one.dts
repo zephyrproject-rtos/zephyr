@@ -153,12 +153,12 @@
 
 	rng: rng {
 		status = "okay";
-		compatible = "zephyr,native-posix-rng";
+		compatible = "zephyr,native-sim-rng";
 	};
 
 	counter0: counter {
 		status = "okay";
-		compatible = "zephyr,native-posix-counter";
+		compatible = "zephyr,native-sim-counter";
 	};
 
 	gpio0: gpio@800 {

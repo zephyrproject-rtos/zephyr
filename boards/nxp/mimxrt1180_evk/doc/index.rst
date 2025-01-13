@@ -70,7 +70,7 @@ This platform has the following external memories:
 |                    |            | data block, which sets up SEMC at   |
 |                    |            | boot time                           |
 +--------------------+------------+-------------------------------------+
-| W25Q128JWSIQ       | FLEXSPI    | Enabled via flash configurationn    |
+| W25Q128JWSIQ       | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -106,7 +106,7 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
-| NETC      | on-chip    | ethernet, mdio                      |
+| NETC      | on-chip    | dsa, ethernet, mdio                 |
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
@@ -130,6 +130,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| SDHC      | on-chip    | SD host controller                  |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1180_evk/mimxrt1180_evk_mimxrt1189_cm33_defconfig`
@@ -149,9 +151,13 @@ The MIMXRT1180 SoC has six pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_27    | GPIO            | LED                       |
 +---------------+-----------------+---------------------------+
-| GPIO_AON_08   | LPUART1_TX      | UART Console              |
+| GPIO_AON_08   | LPUART1_TX      | UART Console M33 core     |
 +---------------+-----------------+---------------------------+
-| GPIO_AON_09   | LPUART1_RX      | UART Console              |
+| GPIO_AON_09   | LPUART1_RX      | UART Console M33 core     |
++---------------+---------------------------------------------+
+| GPIO_AON_19   | LPUART12_TX     | UART Console M7 core      |
++---------------+-----------------+---------------------------+
+| GPIO_AON_20   | LPUART12_RX     | UART Console M7 core      |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B1_00 | SPI1_CS0        | spi                       |
 +---------------+---------------------------------------------+
@@ -160,7 +166,10 @@ The MIMXRT1180 SoC has six pairs of pinmux/gpio controllers.
 | GPIO_SD_B1_02 | SPI1_SDO        | spi                       |
 +---------------+---------------------------------------------+
 | GPIO_SD_B1_03 | SPI1_SDI        | spi                       |
-+---------------+---------------------------------------------+
++---------------+-----------------+---------------------------+
+
+UART for M7 core is connected to USB-to-UART J60 connector.
+Or user can use open JP7 Jumper to enable second UART on MCU LINK J53 connector.
 
 System Clock
 ============
@@ -172,13 +181,41 @@ running at 792MHz
 Serial Port
 ===========
 
-The MIMXRT1180 SoC has 12 UARTs. One is configured for the console and the
-remaining are not used.
+The MIMXRT1180 SoC has 12 UARTs. LPUART1 is configured for the CM33 console, the LPUART12 is
+configured for the CM7 console core and the remaining are not used.
 
 Ethernet
 ========
 
-NETC driver supports to manage the Physical Station Interface (PSI).
+NETC Ethernet driver supports to manage the Physical Station Interface (PSI).
+NETC DSA driver supports to manage switch ports. Current DSA support is with
+limitation that only switch function is available without management via
+DSA master port. DSA master port support is TODO work.
+
+.. code-block:: none
+
+                   +--------+                  +--------+
+                   | ENETC1 |                  | ENETC0 |
+                   |        |                  |        |
+                   | Pseudo |                  |  1G    |
+                   |  MAC   |                  |  MAC   |
+                   +--------+                  +--------+
+                       | zero copy interface       |
+   +-------------- +--------+----------------+     |
+   |               | Pseudo |                |     |
+   |               |  MAC   |                |     |
+   |               |        |                |     |
+   |               | Port 4 |                |     |
+   |               +--------+                |     |
+   |           SWITCH       CORE             |     |
+   +--------+ +--------+ +--------+ +--------+     |
+   | Port 0 | | Port 1 | | Port 2 | | Port 3 |     |
+   |        | |        | |        | |        |     |
+   |  1G    | |  1G    | |  1G    | |  1G    |     |
+   |  MAC   | |  MAC   | |  MAC   | |  MAC   |     |
+   +--------+-+--------+-+--------+-+--------+     |
+       |          |          |          |          |
+   NETC External Interfaces (4 switch ports, 1 end-point port)
 
 Programming and Debugging
 *************************
@@ -224,6 +261,16 @@ Please ensure to use a version of Linkserver above V1.5.30 and jumper JP5 is uni
 When debugging cm33 core, need to ensure the SW5 on "0100" mode.
 When debugging cm7 core, need to ensure the SW5 on "0001" mode.
 (Only support run cm7 image when debugging due to default boot core on board is cm33 core)
+
+Dual Core samples Debugging
+***************************
+
+When debugging dual core samples, need to ensure the SW5 on "0100" mode.
+The CM33 core is responsible for copying and starting the CM7.
+To debug the CM7 it is useful to put infinite while loop either in reset vector or
+into main function and attach via debugger to CM7 core.
+
+CM7 core can be started again only after reset, so after flashing ensure to reset board.
 
 Configuring a Console
 =====================

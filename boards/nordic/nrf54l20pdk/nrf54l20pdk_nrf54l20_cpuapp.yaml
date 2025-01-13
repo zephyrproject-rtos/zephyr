@@ -12,7 +12,10 @@ sysbuild: true
 ram: 512
 flash: 449
 supported:
+  - adc
   - counter
+  - dmic
   - gpio
   - i2c
+  - pwm
   - watchdog

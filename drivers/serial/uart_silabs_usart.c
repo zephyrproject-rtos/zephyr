@@ -14,8 +14,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <em_usart.h>
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_silabs_ldma.h>
 #endif
@@ -26,7 +27,7 @@ LOG_MODULE_REGISTER(uart_silabs_usart, CONFIG_UART_LOG_LEVEL);
 #define SILABS_USART_TIMEOUT_TO_TIMERCOUNTER(timeout, baudrate)                                    \
 	((timeout * NSEC_PER_USEC) / ((NSEC_PER_SEC / baudrate) * SILABS_USART_TIMER_COMPARE_VALUE))
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 struct uart_dma_channel {
 	const struct device *dma_dev;
 	uint32_t dma_channel;
@@ -47,9 +48,14 @@ struct uart_silabs_config {
 	const struct device *clock_dev;
 	const struct silabs_clock_control_cmu_config clock_cfg;
 	USART_TypeDef *base;
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	void (*irq_config_func)(const struct device *dev);
-#endif
+};
+
+enum uart_silabs_pm_lock {
+	UART_SILABS_PM_LOCK_TX,
+	UART_SILABS_PM_LOCK_TX_POLL,
+	UART_SILABS_PM_LOCK_RX,
+	UART_SILABS_PM_LOCK_COUNT,
 };
 
 struct uart_silabs_data {
@@ -58,7 +64,7 @@ struct uart_silabs_data {
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	const struct device *uart_dev;
 	uart_callback_t async_cb;
 	void *async_user_data;
@@ -67,7 +73,64 @@ struct uart_silabs_data {
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
 #endif
+#ifdef CONFIG_PM
+	ATOMIC_DEFINE(pm_lock, UART_SILABS_PM_LOCK_COUNT);
+#endif
 };
+
+static int uart_silabs_pm_action(const struct device *dev, enum pm_device_action action);
+
+/**
+ * @brief Get PM lock on low power states
+ *
+ * @param dev  UART device struct
+ * @param lock UART PM lock type
+ *
+ * @return true if lock was taken, false otherwise
+ */
+static bool uart_silabs_pm_lock_get(const struct device *dev, enum uart_silabs_pm_lock lock)
+{
+#ifdef CONFIG_PM
+	struct uart_silabs_data *data = dev->data;
+	bool was_locked = atomic_test_and_set_bit(data->pm_lock, lock);
+
+	if (!was_locked) {
+		/* Lock out low-power states that would interfere with UART traffic */
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+
+	return !was_locked;
+#else
+	return false;
+#endif
+}
+
+/**
+ * @brief Release PM lock on low power states
+ *
+ * @param dev  UART device struct
+ * @param lock UART PM lock type
+ *
+ * @return true if lock was released, false otherwise
+ */
+static bool uart_silabs_pm_lock_put(const struct device *dev, enum uart_silabs_pm_lock lock)
+{
+#ifdef CONFIG_PM
+	struct uart_silabs_data *data = dev->data;
+	bool was_locked = atomic_test_and_clear_bit(data->pm_lock, lock);
+
+	if (was_locked) {
+		/* Unlock low-power states that would interfere with UART traffic */
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+
+	return was_locked;
+#else
+	return false;
+#endif
+}
 
 static int uart_silabs_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -85,6 +148,10 @@ static int uart_silabs_poll_in(const struct device *dev, unsigned char *c)
 static void uart_silabs_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_silabs_config *config = dev->config;
+
+	if (uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX_POLL)) {
+		USART_IntEnable(config->base, USART_IF_TXC);
+	}
 
 	USART_Tx(config->base, c);
 }
@@ -141,6 +208,7 @@ static void uart_silabs_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_silabs_config *config = dev->config;
 
+	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX);
 	USART_IntEnable(config->base, USART_IEN_TXBL | USART_IEN_TXC);
 }
 
@@ -149,6 +217,7 @@ static void uart_silabs_irq_tx_disable(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 
 	USART_IntDisable(config->base, USART_IEN_TXBL | USART_IEN_TXC);
+	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX);
 }
 
 static int uart_silabs_irq_tx_complete(const struct device *dev)
@@ -173,6 +242,7 @@ static void uart_silabs_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_silabs_config *config = dev->config;
 
+	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_RX);
 	USART_IntEnable(config->base, USART_IEN_RXDATAV);
 }
 
@@ -181,6 +251,7 @@ static void uart_silabs_irq_rx_disable(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 
 	USART_IntDisable(config->base, USART_IEN_RXDATAV);
+	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_RX);
 }
 
 static int uart_silabs_irq_rx_full(const struct device *dev)
@@ -232,7 +303,7 @@ static void uart_silabs_irq_callback_set(const struct device *dev, uart_irq_call
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 static inline void async_user_callback(struct uart_silabs_data *data, struct uart_event *event)
 {
 	if (data->async_cb) {
@@ -423,6 +494,7 @@ static int uart_silabs_async_tx(const struct device *dev, const uint8_t *tx_data
 	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.buffer;
 	data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length;
 
+	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX);
 	USART_IntClear(config->base, USART_IF_TXC | USART_IF_TCMP2);
 	USART_IntEnable(config->base, USART_IF_TXC);
 	if (timeout >= 0) {
@@ -460,6 +532,7 @@ static int uart_silabs_async_tx_abort(const struct device *dev)
 	USART_IntDisable(config->base, USART_IF_TXC);
 	USART_IntDisable(config->base, USART_IF_TCMP2);
 	USART_IntClear(config->base, USART_IF_TXC | USART_IF_TCMP2);
+	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX);
 
 	if (!dma_get_status(data->dma_tx.dma_dev, data->dma_tx.dma_channel, &stat)) {
 		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
@@ -519,6 +592,7 @@ static int uart_silabs_async_rx_enable(const struct device *dev, uint8_t *rx_buf
 		return -EFAULT;
 	}
 
+	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_RX);
 	USART_IntClear(config->base, USART_IF_RXOF | USART_IF_TCMP1);
 	USART_IntEnable(config->base, USART_IF_RXOF);
 
@@ -549,6 +623,7 @@ static int uart_silabs_async_rx_disable(const struct device *dev)
 	USART_IntDisable(usart, USART_IF_RXOF);
 	USART_IntDisable(usart, USART_IF_TCMP1);
 	USART_IntClear(usart, USART_IF_RXOF | USART_IF_TCMP1);
+	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_RX);
 
 	if (!data->dma_rx.enabled) {
 		usart->CMD = USART_CMD_CLEARRX;
@@ -664,28 +739,33 @@ static int uart_silabs_async_init(const struct device *dev)
 		USART_TIMECMP2_TSTOP_TXST | USART_TIMECMP2_TSTART_TXEOF | USART_TIMECMP2_RESTARTEN |
 		(SILABS_USART_TIMER_COMPARE_VALUE << _USART_TIMECMP2_TCMPVAL_SHIFT);
 
-	USART_Enable(config->base, usartEnable);
-
 	return 0;
 }
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* CONFIG_UART_SILABS_USART_ASYNC */
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 static void uart_silabs_isr(const struct device *dev)
 {
-	struct uart_silabs_data *data = dev->data;
-#ifdef CONFIG_UART_ASYNC_API
+	__maybe_unused struct uart_silabs_data *data = dev->data;
 	const struct uart_silabs_config *config = dev->config;
 	USART_TypeDef *usart = config->base;
+	uint32_t flags = USART_IntGet(usart);
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	struct dma_status stat;
 #endif
+
+	if (flags & USART_IF_TXC) {
+		if (uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX_POLL)) {
+			USART_IntDisable(usart, USART_IEN_TXC);
+			USART_IntClear(usart, USART_IF_TXC);
+		}
+	}
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
 	}
 #endif
-#ifdef CONFIG_UART_ASYNC_API
-	if (usart->IF & USART_IF_TCMP1) {
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
+	if (flags & USART_IF_TCMP1) {
 
 		data->dma_rx.timeout_cnt++;
 		if (data->dma_rx.timeout_cnt >= data->dma_rx.timeout) {
@@ -698,14 +778,14 @@ static void uart_silabs_isr(const struct device *dev)
 
 		USART_IntClear(usart, USART_IF_TCMP1);
 	}
-	if (usart->IF & USART_IF_RXOF) {
+	if (flags & USART_IF_RXOF) {
 		async_evt_rx_err(data, UART_ERROR_OVERRUN);
 
 		uart_silabs_async_rx_disable(dev);
 
 		USART_IntClear(usart, USART_IF_RXOF);
 	}
-	if (usart->IF & USART_IF_TXC) {
+	if (flags & USART_IF_TXC) {
 		if (!dma_get_status(data->dma_tx.dma_dev, data->dma_tx.dma_channel, &stat)) {
 			data->dma_tx.counter = data->dma_tx.buffer_length - stat.pending_length;
 		}
@@ -714,6 +794,7 @@ static void uart_silabs_isr(const struct device *dev)
 			USART_IntDisable(config->base, USART_IF_TXC);
 			USART_IntDisable(config->base, USART_IF_TCMP2);
 			USART_IntClear(usart, USART_IF_TXC | USART_IF_TCMP2);
+			(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX);
 
 			usart->TIMECMP2 &= ~_USART_TIMECMP2_TSTART_MASK;
 			usart->TIMECMP2 |= USART_TIMECMP2_TSTART_DISABLE;
@@ -721,7 +802,7 @@ static void uart_silabs_isr(const struct device *dev)
 
 		async_evt_tx_done(data);
 	}
-	if (usart->IF & USART_IF_TCMP2) {
+	if (flags & USART_IF_TCMP2) {
 		data->dma_tx.timeout_cnt++;
 		if (data->dma_tx.timeout_cnt >= data->dma_tx.timeout) {
 			usart->TIMECMP2 &= ~_USART_TIMECMP2_TSTART_MASK;
@@ -733,9 +814,8 @@ static void uart_silabs_isr(const struct device *dev)
 
 		USART_IntClear(usart, USART_IF_TCMP2);
 	}
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* CONFIG_UART_SILABS_USART_ASYNC */
 }
-#endif
 
 static inline USART_Parity_TypeDef uart_silabs_cfg2ll_parity(
 	enum uart_config_parity parity)
@@ -866,6 +946,23 @@ static inline enum uart_config_flow_control uart_silabs_ll2cfg_hwctrl(
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
+static void uart_silabs_configure_peripheral(const struct device *dev, bool enable)
+{
+	const struct uart_silabs_config *config = dev->config;
+	const struct uart_silabs_data *data = dev->data;
+	USART_InitAsync_TypeDef usartInit = USART_INITASYNC_DEFAULT;
+
+	usartInit.baudrate = data->uart_cfg->baudrate;
+	usartInit.parity = uart_silabs_cfg2ll_parity(data->uart_cfg->parity);
+	usartInit.stopbits = uart_silabs_cfg2ll_stopbits(data->uart_cfg->stop_bits);
+	usartInit.databits = uart_silabs_cfg2ll_databits(data->uart_cfg->data_bits,
+							 data->uart_cfg->parity);
+	usartInit.hwFlowControl = uart_silabs_cfg2ll_hwctrl(data->uart_cfg->flow_ctrl);
+	usartInit.enable = enable ? usartEnable : usartDisable;
+
+	USART_InitAsync(config->base, &usartInit);
+}
+
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_silabs_configure(const struct device *dev,
 				const struct uart_config *cfg)
@@ -873,10 +970,8 @@ static int uart_silabs_configure(const struct device *dev,
 	const struct uart_silabs_config *config = dev->config;
 	USART_TypeDef *base = config->base;
 	struct uart_silabs_data *data = dev->data;
-	struct uart_config *uart_cfg = data->uart_cfg;
-	USART_InitAsync_TypeDef usartInit = USART_INITASYNC_DEFAULT;
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	if (data->dma_rx.enabled || data->dma_tx.enabled) {
 		return -EBUSY;
 	}
@@ -892,19 +987,10 @@ static int uart_silabs_configure(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	*uart_cfg = *cfg;
-	usartInit.baudrate = uart_cfg->baudrate;
-	usartInit.parity = uart_silabs_cfg2ll_parity(uart_cfg->parity);
-	usartInit.stopbits = uart_silabs_cfg2ll_stopbits(uart_cfg->stop_bits);
-	usartInit.databits = uart_silabs_cfg2ll_databits(uart_cfg->data_bits,
-								 uart_cfg->parity);
-	usartInit.hwFlowControl = uart_silabs_cfg2ll_hwctrl(uart_cfg->flow_ctrl);
-
+	*data->uart_cfg = *cfg;
 	USART_Enable(base, usartDisable);
 
-	USART_InitAsync(base, &usartInit);
-
-	USART_Enable(base, usartEnable);
+	uart_silabs_configure_peripheral(dev, true);
 
 	return 0;
 };
@@ -929,9 +1015,6 @@ static int uart_silabs_init(const struct device *dev)
 {
 	int err;
 	const struct uart_silabs_config *config = dev->config;
-	const struct uart_silabs_data *data = dev->data;
-	const struct uart_config *uart_cfg = data->uart_cfg;
-	USART_InitAsync_TypeDef usartInit = USART_INITASYNC_DEFAULT;
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio driver */
 	/* Enable USART clock */
@@ -940,55 +1023,63 @@ static int uart_silabs_init(const struct device *dev)
 		return err;
 	}
 
-	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	uart_silabs_configure_peripheral(dev, false);
+
+	config->irq_config_func(dev);
+
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
+	err = uart_silabs_async_init(dev);
 	if (err < 0) {
 		return err;
 	}
-
-	usartInit.baudrate = uart_cfg->baudrate;
-	usartInit.parity = uart_silabs_cfg2ll_parity(uart_cfg->parity);
-	usartInit.stopbits = uart_silabs_cfg2ll_stopbits(uart_cfg->stop_bits);
-	usartInit.databits = uart_silabs_cfg2ll_databits(uart_cfg->data_bits, uart_cfg->parity);
-	usartInit.hwFlowControl =
-		uart_cfg->flow_ctrl ? usartHwFlowControlCtsAndRts : usartHwFlowControlNone;
-
-	USART_InitAsync(config->base, &usartInit);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	config->irq_config_func(dev);
-	USART_Enable(config->base, usartEnable);
 #endif
-
-#ifdef CONFIG_UART_ASYNC_API
-	config->irq_config_func(dev);
-	return uart_silabs_async_init(dev);
-#else
-	return 0;
-#endif
+	return pm_device_driver_init(dev, uart_silabs_pm_action);
 }
 
-#ifdef CONFIG_PM_DEVICE
 static int uart_silabs_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	__maybe_unused const struct uart_silabs_config *config = dev->config;
+	int err;
+	const struct uart_silabs_config *config = dev->config;
+	__maybe_unused struct uart_silabs_data *data = dev->data;
 
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		/* Wait for TX FIFO to flush before suspending */
-		while (!(USART_StatusGet(config->base) & USART_STATUS_TXIDLE)) {
+	if (action == PM_DEVICE_ACTION_RESUME) {
+		err = clock_control_on(config->clock_dev,
+				       (clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0 && err != -EALREADY) {
+			return err;
 		}
-		break;
 
-	case PM_DEVICE_ACTION_RESUME:
-		break;
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
 
-	default:
+		USART_Enable(config->base, usartEnable);
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
+		/* Entering suspend requires there to be no active asynchronous calls. */
+		__ASSERT_NO_MSG(!data->dma_rx.enabled);
+		__ASSERT_NO_MSG(!data->dma_tx.enabled);
+#endif
+		USART_Enable(config->base, usartDisable);
+
+		err = clock_control_off(config->clock_dev,
+					(clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+	} else {
 		return -ENOTSUP;
 	}
 
 	return 0;
 }
-#endif
 
 static DEVICE_API(uart, uart_silabs_driver_api) = {
 	.poll_in = uart_silabs_poll_in,
@@ -1014,7 +1105,7 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
 	.irq_update = uart_silabs_irq_update,
 	.irq_callback_set = uart_silabs_irq_callback_set,
 #endif
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	.callback_set = uart_silabs_async_callback_set,
 	.tx = uart_silabs_async_tx,
 	.tx_abort = uart_silabs_async_tx_abort,
@@ -1024,7 +1115,7 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
 #endif
 };
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 
 #define UART_DMA_CHANNEL_INIT(index, dir)                                                          \
 	.dma_##dir = {                                                                             \
@@ -1048,7 +1139,6 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
 
 #endif
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 #define SILABS_USART_IRQ_HANDLER_FUNC(idx) .irq_config_func = usart_silabs_config_func_##idx,
 #define SILABS_USART_IRQ_HANDLER(idx)                                                              \
 	static void usart_silabs_config_func_##idx(const struct device *dev)                       \
@@ -1063,10 +1153,6 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, rx, irq));                                     \
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, tx, irq));                                     \
 	}
-#else
-#define SILABS_USART_IRQ_HANDLER_FUNC(idx)
-#define SILABS_USART_IRQ_HANDLER(idx)
-#endif
 
 #define SILABS_USART_INIT(idx)                                                                     \
 	SILABS_USART_IRQ_HANDLER(idx);                                                             \

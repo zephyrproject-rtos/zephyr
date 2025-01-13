@@ -27,6 +27,7 @@ int usbh_req_desc(struct usb_device *const udev,
 		  struct net_buf *const data);
 
 int usbh_req_desc_dev(struct usb_device *const udev,
+		      const uint16_t len,
 		      struct usb_device_descriptor *const dev);
 
 int usbh_req_desc_cfg(struct usb_device *const udev,

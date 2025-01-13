@@ -1,0 +1,115 @@
+/*
+ * Copyright (c) 2023 Antmicro
+ * Copyright (c) 2024 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/siwg917m111mgtba.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+#include <common/freq.h>
+
+/ {
+	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
+	compatible = "silabs,x917_rb4338a", "silabs,siwg917";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,code-partition = &code_partition;
+		zephyr,console = &ulpuart;
+		zephyr,shell-uart = &ulpuart;
+		zephyr,bt-hci = &bt_hci0;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		dht0 = &si7021;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&ulpgpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1: led_1 {
+			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&uulpgpio 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpioa 11 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&pinctrl0 {
+	ulpuart_default: ulpuart_default {
+		out {
+			pinmux = <ULPUART_TX_ULP11>;
+		};
+		in {
+			pinmux = <ULPUART_RX_ULP9>;
+		};
+	};
+
+	ulpi2c_default: ulpi2c_default {
+		group {
+			pinmux = <ULPI2C_SDA_ULP6>, <ULPI2C_SCL_ULP7>;
+		};
+	};
+};
+
+&ulpuart {
+	status = "okay";
+	pinctrl-0 = <&ulpuart_default>;
+	pinctrl-names = "default";
+};
+
+&ulpi2c {
+	status = "okay";
+	pinctrl-0 = <&ulpi2c_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_K(100)>;
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			label = "code_partition";
+			reg = <0x0000000 DT_SIZE_K(2048-8)>;
+		};
+	};
+};
+
+&bt_hci0 {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+};

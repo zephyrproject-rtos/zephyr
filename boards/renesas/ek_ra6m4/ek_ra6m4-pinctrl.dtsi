@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,14 @@
 			/* tx rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>,
 			<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
+		};
+	};
+
+	sci7_default: sci7_default {
+		group1 {
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_7, 6, 13)>,
+			<RA_PSEL(RA_PSEL_SCI_7, 6, 14)>;
 		};
 	};
 
@@ -39,11 +47,27 @@
 		};
 	};
 
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_DAC, 0, 14)>;
+			renesas,analog-enable;
+		};
+	};
+
 	pwm1_default: pwm1_default {
 		group1 {
 			/* GTIOC1A GTIOC1B */
 			psels = <RA_PSEL(RA_PSEL_GPT1, 4, 5)>,
 				<RA_PSEL(RA_PSEL_GPT1, 4, 6)>;
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			/* USB_VBUS */
+			psels = <RA_PSEL(RA_PSEL_USBFS, 4, 7)>;
+			drive-strength = "high";
 		};
 	};
 };

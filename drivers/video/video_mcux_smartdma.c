@@ -93,12 +93,16 @@ static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 	data->buf_reload_flag = !data->buf_reload_flag;
 }
 
-static int nxp_video_sdma_stream_start(const struct device *dev)
+static int nxp_video_sdma_set_stream(const struct device *dev, bool enable)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 	struct nxp_video_sdma_data *data = dev->data;
 	struct dma_config sdma_config = {0};
 	int ret;
+
+	if (!enable) {
+		return dma_stop(config->dma_dev, 0);
+	}
 
 	/* Setup dma configuration for SmartDMA */
 	sdma_config.dma_slot = kSMARTDMA_CameraDiv16FrameQVGA;
@@ -142,14 +146,6 @@ static int nxp_video_sdma_stream_start(const struct device *dev)
 	return 0;
 }
 
-static int nxp_video_sdma_stream_stop(const struct device *dev)
-{
-	const struct nxp_video_sdma_config *config = dev->config;
-
-	/* Stop DMA engine */
-	return dma_stop(config->dma_dev, 0);
-}
-
 static int nxp_video_sdma_enqueue(const struct device *dev,
 				  enum video_endpoint_id ep,
 				  struct video_buffer *vbuf)
@@ -170,7 +166,7 @@ static int nxp_video_sdma_enqueue(const struct device *dev,
 	k_fifo_put(&data->fifo_in, vbuf);
 	if (data->stream_starved) {
 		/* Kick SmartDMA off */
-		nxp_video_sdma_stream_start(dev);
+		nxp_video_sdma_set_stream(dev, true);
 	}
 	return 0;
 }
@@ -361,8 +357,7 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 	.get_format = nxp_video_sdma_get_format,
 	.set_format = nxp_video_sdma_set_format,
 	.get_caps = nxp_video_sdma_get_caps,
-	.stream_start = nxp_video_sdma_stream_start,
-	.stream_stop = nxp_video_sdma_stream_stop,
+	.set_stream = nxp_video_sdma_set_stream,
 	.enqueue = nxp_video_sdma_enqueue,
 	.dequeue = nxp_video_sdma_dequeue,
 	.flush = nxp_video_sdma_flush

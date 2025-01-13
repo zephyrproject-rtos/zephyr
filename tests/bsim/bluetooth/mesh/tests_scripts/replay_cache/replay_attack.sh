@@ -14,12 +14,12 @@ RunTest mesh_replay_attack \
     rpc_tx_power_replay_attack \
     rpc_rx_power_replay_attack -flash=../results/mesh_replay_attack/flash.bin -flash_rm
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTest mesh_replay_attack_psa \
     rpc_tx_immediate_replay_attack \
     rpc_rx_immediate_replay_attack -flash=../results/mesh_replay_attack_psa/flash.bin -flash_erase
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTest mesh_replay_attack_psa \
     rpc_tx_power_replay_attack \
     rpc_rx_power_replay_attack -flash=../results/mesh_replay_attack_psa/flash.bin -flash_rm

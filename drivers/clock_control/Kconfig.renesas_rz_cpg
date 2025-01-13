@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RENESAS_RZ_CPG
+	bool "Renesas RZ/G Clock Control Driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_CPG_ENABLED
+	select USE_RZ_FSP_CPG
+	help
+	  Enable support for Renesas RZ CPG Clock Pulse Generator (CPG) driver.
+	  The CPG driver supports only module's clocks.
+	  The PLLs and core clocks are not configured by the CPG driver.

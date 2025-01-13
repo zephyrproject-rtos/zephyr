@@ -20,7 +20,7 @@
 
 extern enum bst_result_t bst_result;
 
-static DEFINE_FLAG(flag_is_connected);
+DEFINE_FLAG_STATIC(flag_is_connected);
 
 #define NUM_ITERATIONS 10
 

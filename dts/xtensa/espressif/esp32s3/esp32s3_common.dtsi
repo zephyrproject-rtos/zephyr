@@ -86,6 +86,23 @@
 		compatible = "simple-bus";
 		ranges;
 
+		icache0: memory@42000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x42000000 DT_SIZE_M(32)>;
+			zephyr,memory-region = "ICACHE0";
+		};
+
+		dcache0: memory@3c000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x3c000000 DT_SIZE_M(32)>;
+			zephyr,memory-region = "DCACHE0";
+
+			psram0: psram0 {
+				compatible = "espressif,esp32-psram";
+				size = <0x0>;
+			};
+		};
+
 		sram0: memory@40370000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40370000 DT_SIZE_K(32)>;
@@ -187,14 +204,6 @@
 				write-block-size = <4>;
 				/* Flash size is specified in SOC/SIP dtsi */
 			};
-		};
-
-		psram0: psram@3c000000 {
-			device_type = "memory";
-			compatible = "mmio-sram";
-			/* PSRAM size is specified in SOC/SIP dtsi */
-			reg = <0x3c000000 DT_SIZE_M(2)>;
-			status = "disabled";
 		};
 
 		uart0: uart@60000000 {

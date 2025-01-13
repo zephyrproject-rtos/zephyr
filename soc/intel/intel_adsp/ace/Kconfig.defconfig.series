@@ -23,7 +23,7 @@ config MULTI_LEVEL_INTERRUPTS
 	default y
 
 config MAX_IRQ_PER_AGGREGATOR
-	default 29
+	default 30
 
 config NUM_2ND_LEVEL_AGGREGATORS
 	default 1

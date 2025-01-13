@@ -91,6 +91,9 @@ static const struct espi_npcx_vw_ex espi_npcx_vw_ex_0[] = {
 #define NPCX_ESPI_MAXFREQ_50         3
 #define NPCX_ESPI_MAXFREQ_66         4
 
+/* SLP_S3/SLP_S4/SLP_S5 Virtual Wire belong to Virtual Wire Index 2 */
+#define ESPI_VW_SLP_SX_INDEX         0x02
+
 /* Minimum delay before acknowledging a virtual wire */
 #define NPCX_ESPI_VWIRE_ACK_DELAY    10ul /* 10 us */
 
@@ -497,6 +500,14 @@ static void espi_vw_config_input(const struct device *dev,
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	int idx = config_in->reg_idx;
+
+	if (IS_ENABLED(CONFIG_ESPI_NPCX_RESET_SLP_SX_VW_ON_ESPI_RST)) {
+		uint8_t vwire_index = GET_FIELD(inst->VWEVMS[idx], NPCX_VWEVMS_INDEX);
+
+		if (vwire_index == ESPI_VW_SLP_SX_INDEX) {
+			inst->VWEVMS[idx] |= BIT(NPCX_VWEVMS_ENESPIRST);
+		}
+	}
 
 	/* IE & WE bits are already set? */
 	if (IS_BIT_SET(inst->VWEVMS[idx], NPCX_VWEVMS_IE) &&

@@ -17,6 +17,7 @@ from collections import OrderedDict
 from enum import Enum
 
 import junitparser.junitparser as junit
+import yaml
 from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
@@ -196,7 +197,7 @@ class Robot(Harness):
         ''' Test cases that make use of this harness care about results given
             by Robot Framework which is called in run_robot_test(), so works of this
             handle is trying to give a PASS or FAIL to avoid timeout, nothing
-            is writen into handler.log
+            is written into handler.log
         '''
         self.instance.status = TwisterStatus.PASS
         tc = self.instance.get_case_or_create(self.id)
@@ -403,6 +404,7 @@ class Pytest(Harness):
             f'--junit-xml={self.report_file}',
             f'--platform={self.instance.platform.name}'
         ]
+
         command.extend([os.path.normpath(os.path.join(
             self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
 
@@ -626,6 +628,35 @@ class Pytest(Harness):
         else:
             self.status = TwisterStatus.SKIP
             self.instance.reason = 'No tests collected'
+
+
+class Shell(Pytest):
+    def generate_command(self):
+        config = self.instance.testsuite.harness_config
+        pytest_root = [os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'shell-twister-harness')]
+        config['pytest_root'] = pytest_root
+
+        command = super().generate_command()
+        if test_shell_file := self._get_shell_commands_file(config):
+            command.append(f'--testdata={test_shell_file}')
+        else:
+            logger.warning('No shell commands provided')
+        return command
+
+    def _get_shell_commands_file(self, harness_config):
+        if shell_commands := harness_config.get('shell_commands'):
+            test_shell_file = os.path.join(self.running_dir, 'test_shell.yml')
+            with open(test_shell_file, 'w') as f:
+                yaml.dump(shell_commands, f)
+            return test_shell_file
+
+        test_shell_file = harness_config.get('shell_commands_file', 'test_shell.yml')
+        test_shell_file = os.path.join(
+            self.source_dir, os.path.expanduser(os.path.expandvars(test_shell_file))
+        )
+        if os.path.exists(test_shell_file):
+            return test_shell_file
+        return None
 
 
 class Gtest(Harness):

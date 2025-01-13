@@ -207,6 +207,11 @@ def get_section_ranges(elf):
     ram_size = 0
     unassigned_size = 0
 
+    xip = any(section.get_symbol_by_name('CONFIG_XIP')
+              for section in elf.iter_sections('SHT_SYMTAB'))
+    if args.verbose:
+        print(f'INFO: XIP={xip}')
+
     for section in elf.iter_sections():
         size = section['sh_size']
         sec_start = section['sh_addr']
@@ -232,14 +237,16 @@ def get_section_ranges(elf):
                 print_section_info(section, "ROM txt section")
 
             elif (flags & SHF_WRITE_ALLOC) == SHF_WRITE_ALLOC:
-                # Data occupies both ROM and RAM
-                # since at boot, content is copied from ROM to RAM
-                rom_addr_ranges.append(bound)
-                rom_size += size
+                # Read/write data
+                if xip:
+                    # For XIP, the data section occupies both ROM and RAM
+                    # since at boot, content is copied from ROM to RAM
+                    rom_addr_ranges.append(bound)
+                    rom_size += size
                 ram_addr_ranges.append(bound)
                 ram_size += size
                 is_assigned = True
-                print_section_info(section, "ROM,RAM section")
+                print_section_info(section, "DATA r/w section")
 
             elif (flags & SHF_ALLOC) == SHF_ALLOC:
                 # Read only data

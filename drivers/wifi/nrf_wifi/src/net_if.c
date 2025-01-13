@@ -23,8 +23,7 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 #include "net_private.h"
 
 #include "util.h"
-#include "fmac_api.h"
-#include "fmac_util.h"
+#include "common/fmac_util.h"
 #include "shim.h"
 #include "fmac_main.h"
 #include "wpa_supp_if.h"
@@ -178,7 +177,7 @@ void nrf_wifi_rpu_recovery_cb(void *vif_ctx_handle,
 {
 	struct nrf_wifi_fmac_vif_ctx *vif_ctx = vif_ctx_handle;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 
 	if (!vif_ctx) {
@@ -188,9 +187,9 @@ void nrf_wifi_rpu_recovery_cb(void *vif_ctx_handle,
 	}
 
 	fmac_dev_ctx = vif_ctx->fmac_dev_ctx;
-	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
-	if (!def_dev_ctx) {
-		LOG_ERR("%s: def_dev_ctx is NULL",
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+	if (!sys_dev_ctx) {
+		LOG_ERR("%s: sys_dev_ctx is NULL",
 			__func__);
 		goto out;
 	}
@@ -238,10 +237,10 @@ void nrf_wifi_if_sniffer_rx_frm(void *os_vif_ctx, void *frm,
 	struct net_pkt *pkt;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	int ret;
 
-	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
 
 	pkt = net_raw_pkt_from_nbuf(iface, frm, sizeof(struct raw_rx_pkt_header),
 				    raw_rx_hdr,
@@ -269,11 +268,11 @@ void nrf_wifi_if_rx_frm(void *os_vif_ctx, void *frm)
 	int status;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	struct rpu_host_stats *host_stats = NULL;
 
-	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
-	host_stats = &def_dev_ctx->host_stats;
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+	host_stats = &sys_dev_ctx->host_stats;
 	host_stats->total_rx_pkts++;
 
 	pkt = net_pkt_from_nbuf(iface, frm);
@@ -356,7 +355,7 @@ int nrf_wifi_if_send(const struct device *dev,
 #ifdef CONFIG_NRF70_DATA_TX
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	struct rpu_host_stats *host_stats = NULL;
 	void *nbuf = NULL;
 
@@ -383,8 +382,8 @@ int nrf_wifi_if_send(const struct device *dev,
 		goto unlock;
 	}
 
-	def_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
-	host_stats = &def_dev_ctx->host_stats;
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	host_stats = &sys_dev_ctx->host_stats;
 	nbuf = net_pkt_to_nbuf(pkt);
 	if (!nbuf) {
 		LOG_DBG("Failed to allocate net_pkt");
@@ -460,7 +459,7 @@ static void ip_maddr_event_handler(struct net_if *iface,
 		goto unlock;
 	}
 
-	mcast_info = k_calloc(sizeof(*mcast_info), sizeof(char));
+	mcast_info = nrf_wifi_osal_mem_zalloc(sizeof(*mcast_info));
 
 	if (!mcast_info) {
 		LOG_ERR("%s: Unable to allocate memory of size %d "
@@ -490,7 +489,7 @@ static void ip_maddr_event_handler(struct net_if *iface,
 		   &mac_addr,
 		   NRF_WIFI_ETH_ADDR_LEN);
 
-	status = nrf_wifi_fmac_set_mcast_addr(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_sys_fmac_set_mcast_addr(rpu_ctx_zep->rpu_ctx,
 					      vif_ctx_zep->vif_idx,
 					      mcast_info);
 	if (status == NRF_WIFI_STATUS_FAIL) {
@@ -502,7 +501,7 @@ static void ip_maddr_event_handler(struct net_if *iface,
 					       sizeof(mac_string_buf)));
 	}
 unlock:
-	k_free(mcast_info);
+	nrf_wifi_osal_mem_free(mcast_info);
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 }
 #endif /* CONFIG_NRF70_STA_MODE */
@@ -751,7 +750,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	       dev->name,
 	       strlen(dev->name));
 
-	vif_ctx_zep->vif_idx = nrf_wifi_fmac_add_vif(fmac_dev_ctx,
+	vif_ctx_zep->vif_idx = nrf_wifi_sys_fmac_add_vif(fmac_dev_ctx,
 						     vif_ctx_zep,
 						     &add_vif_info);
 	if (vif_ctx_zep->vif_idx >= MAX_NUM_VIFS) {
@@ -785,7 +784,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 		mac_addr_len = WIFI_MAC_ADDR_LEN;
 	}
 
-	status = nrf_wifi_fmac_set_vif_macaddr(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_sys_fmac_set_vif_macaddr(rpu_ctx_zep->rpu_ctx,
 					       vif_ctx_zep->vif_idx,
 					       mac_addr);
 
@@ -806,12 +805,12 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	       dev->name,
 	       strlen(dev->name));
 
-	status = nrf_wifi_fmac_chg_vif_state(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_sys_fmac_chg_vif_state(rpu_ctx_zep->rpu_ctx,
 					     vif_ctx_zep->vif_idx,
 					     &vif_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_chg_vif_state failed",
+		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_vif_state failed",
 			__func__);
 		goto del_vif;
 	}
@@ -820,12 +819,12 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	nrf_wifi_wpa_supp_event_mac_chgd(vif_ctx_zep);
 
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
-	status = nrf_wifi_fmac_set_power_save(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_sys_fmac_set_power_save(rpu_ctx_zep->rpu_ctx,
 					      vif_ctx_zep->vif_idx,
 					      NRF_WIFI_PS_ENABLED);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_set_power_save failed",
+		LOG_ERR("%s: nrf_wifi_sys_fmac_set_power_save failed",
 			__func__);
 		goto dev_rem;
 	}
@@ -838,9 +837,9 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 
 	goto out;
 del_vif:
-	status = nrf_wifi_fmac_del_vif(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx);
+	status = nrf_wifi_sys_fmac_del_vif(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_del_vif failed",
+		LOG_ERR("%s: nrf_wifi_sys_fmac_del_vif failed",
 			__func__);
 	}
 dev_rem:
@@ -891,12 +890,12 @@ int nrf_wifi_if_stop_zep(const struct device *dev)
 
 #ifdef CONFIG_NRF70_STA_MODE
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
-	status = nrf_wifi_fmac_set_power_save(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_sys_fmac_set_power_save(rpu_ctx_zep->rpu_ctx,
 					      vif_ctx_zep->vif_idx,
 					      NRF_WIFI_PS_DISABLED);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_set_power_save failed",
+		LOG_ERR("%s: nrf_wifi_sys_fmac_set_power_save failed",
 			__func__);
 	}
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
@@ -909,20 +908,20 @@ int nrf_wifi_if_stop_zep(const struct device *dev)
 	vif_info.state = NRF_WIFI_FMAC_IF_OP_STATE_DOWN;
 	vif_info.if_index = vif_ctx_zep->vif_idx;
 
-	status = nrf_wifi_fmac_chg_vif_state(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_sys_fmac_chg_vif_state(rpu_ctx_zep->rpu_ctx,
 					     vif_ctx_zep->vif_idx,
 					     &vif_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_chg_vif_state failed",
+		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_vif_state failed",
 			__func__);
 	}
 
-	status = nrf_wifi_fmac_del_vif(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_sys_fmac_del_vif(rpu_ctx_zep->rpu_ctx,
 				       vif_ctx_zep->vif_idx);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_del_vif failed",
+		LOG_ERR("%s: nrf_wifi_sys_fmac_del_vif failed",
 			__func__);
 	}
 
@@ -951,7 +950,7 @@ int nrf_wifi_if_get_config_zep(const struct device *dev,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 
 	if (!dev || !config) {
 		LOG_ERR("%s: Invalid parameters",
@@ -979,9 +978,9 @@ int nrf_wifi_if_get_config_zep(const struct device *dev,
 		goto unlock;
 	}
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
-	if (!def_dev_ctx) {
-		LOG_ERR("%s: def_dev_ctx is NULL",
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+	if (!sys_dev_ctx) {
+		LOG_ERR("%s: sys_dev_ctx is NULL",
 			__func__);
 		goto unlock;
 	}
@@ -990,7 +989,7 @@ int nrf_wifi_if_get_config_zep(const struct device *dev,
 
 	if (type == ETHERNET_CONFIG_TYPE_TXINJECTION_MODE) {
 		config->txinjection_mode =
-			def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode;
+			sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode;
 	}
 #ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	if (type  == ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT ||
@@ -1018,7 +1017,7 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	int ret = -1;
 
 	if (!dev) {
@@ -1067,9 +1066,9 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 	}
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
-	if (!def_dev_ctx) {
-		LOG_ERR("%s: def_dev_ctx is NULL",
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+	if (!sys_dev_ctx) {
+		LOG_ERR("%s: sys_dev_ctx is NULL",
 			__func__);
 		goto unlock;
 	}
@@ -1078,7 +1077,7 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 	if (type == ETHERNET_CONFIG_TYPE_TXINJECTION_MODE) {
 		unsigned char mode;
 
-		if (def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode ==
+		if (sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode ==
 		    config->txinjection_mode) {
 			LOG_INF("%s: Driver TX injection setting is same as configured setting",
 				__func__);
@@ -1091,15 +1090,15 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 		 * as is
 		 */
 		if (config->txinjection_mode) {
-			mode = (def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) |
+			mode = (sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) |
 			       (NRF_WIFI_TX_INJECTION_MODE);
 		} else {
-			mode = (def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) ^
+			mode = (sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) ^
 			       (NRF_WIFI_TX_INJECTION_MODE);
 		}
 
-		ret = nrf_wifi_fmac_set_mode(rpu_ctx_zep->rpu_ctx,
-					     vif_ctx_zep->vif_idx, mode);
+		ret = nrf_wifi_sys_fmac_set_mode(rpu_ctx_zep->rpu_ctx,
+						 vif_ctx_zep->vif_idx, mode);
 
 		if (ret != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: Mode set operation failed", __func__);
@@ -1111,7 +1110,7 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 	else if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
 		unsigned char mode;
 
-		if (def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->promisc_mode ==
+		if (sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->promisc_mode ==
 		    config->promisc_mode) {
 			LOG_ERR("%s: Driver promisc mode setting is same as configured setting",
 				__func__);
@@ -1119,15 +1118,15 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 		}
 
 		if (config->promisc_mode) {
-			mode = (def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) |
+			mode = (sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) |
 			       (NRF_WIFI_PROMISCUOUS_MODE);
 		} else {
-			mode = (def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) ^
+			mode = (sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) ^
 			       (NRF_WIFI_PROMISCUOUS_MODE);
 		}
 
-		ret = nrf_wifi_fmac_set_mode(rpu_ctx_zep->rpu_ctx,
-					     vif_ctx_zep->vif_idx, mode);
+		ret = nrf_wifi_sys_fmac_set_mode(rpu_ctx_zep->rpu_ctx,
+						 vif_ctx_zep->vif_idx, mode);
 
 		if (ret != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: mode set operation failed", __func__);
@@ -1171,9 +1170,9 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 #ifdef CONFIG_NRF70_RAW_DATA_TX
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
-	struct rpu_op_stats stats;
+	struct rpu_sys_op_stats stats;
 	int ret = -1;
 
 	if (!dev) {
@@ -1204,8 +1203,8 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 		goto unlock;
 	}
 
-	memset(&stats, 0, sizeof(struct rpu_op_stats));
-	status = nrf_wifi_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
+	memset(&stats, 0, sizeof(struct rpu_sys_op_stats));
+	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_fmac_stats_get failed", __func__);
 		goto unlock;
@@ -1229,8 +1228,8 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 	zstats->overrun_count = stats.host.total_tx_drop_pkts + stats.host.total_rx_drop_pkts;
 
 #ifdef CONFIG_NRF70_RAW_DATA_TX
-	def_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
-	zstats->errors.tx += def_dev_ctx->raw_pkt_stats.raw_pkt_send_failure;
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	zstats->errors.tx += sys_dev_ctx->raw_pkt_stats.raw_pkt_send_failure;
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 	ret = 0;
 unlock:
@@ -1244,7 +1243,7 @@ int nrf_wifi_stats_reset(const struct device *dev)
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	int ret = -1;
 
 	if (!dev) {
@@ -1277,8 +1276,8 @@ int nrf_wifi_stats_reset(const struct device *dev)
 		goto unlock;
 	}
 
-	def_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
-	memset(&def_dev_ctx->host_stats, 0, sizeof(struct rpu_host_stats));
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	memset(&sys_dev_ctx->host_stats, 0, sizeof(struct rpu_host_stats));
 
 	ret = 0;
 unlock:

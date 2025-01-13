@@ -1209,6 +1209,25 @@ static inline void sensor_g_to_ms2(int32_t g, struct sensor_value *ms2)
 }
 
 /**
+ * @brief Helper function to convert acceleration from m/s^2 to milli Gs
+ *
+ * @param ms2 A pointer to a sensor_value struct holding the acceleration,
+ *            in m/s^2.
+ *
+ * @return The converted value, in milli Gs.
+ */
+static inline int32_t sensor_ms2_to_mg(const struct sensor_value *ms2)
+{
+	int64_t nano_ms2 = (ms2->val1 * 1000000LL + ms2->val2) * 1000LL;
+
+	if (nano_ms2 > 0) {
+		return (nano_ms2 + SENSOR_G / 2) / SENSOR_G;
+	} else {
+		return (nano_ms2 - SENSOR_G / 2) / SENSOR_G;
+	}
+}
+
+/**
  * @brief Helper function to convert acceleration from m/s^2 to micro Gs
  *
  * @param ms2 A pointer to a sensor_value struct holding the acceleration,

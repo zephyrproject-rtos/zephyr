@@ -122,6 +122,7 @@
 
 			cpuclk: cpuclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <480000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -402,4 +403,9 @@
 	port-irq4-pins = <10>;
 	port-irq5-pins = <9>;
 	port-irq6-pins = <8>;
+};
+
+&dac_global {
+	has-internal-output;
+	has-output-amplifier;
 };

@@ -39,12 +39,10 @@
 		};
 
 		adc@4005c000 {
-			channel-count = <11>;
 			channel-available-mask = <0x1700ef>;
 		};
 
 		adc@4005c200 {
-			channel-count = <8>;
 			channel-available-mask = <0x300e7>;
 		};
 	};
@@ -108,6 +106,7 @@
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <120000000>;
 				div = <2>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -272,4 +271,8 @@
 	port-irqs = <&port_irq11>;
 	port-irq-names = "port-irq11";
 	port-irq11-pins = <8>;
+};
+
+&dac_global {
+	has-output-amplifier;
 };

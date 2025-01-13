@@ -8,7 +8,7 @@ if(CONFIG_CMSIS_NN)
 
   zephyr_library()
 
-  zephyr_library_compile_options(-Ofast)
+  zephyr_library_compile_options($<TARGET_PROPERTY:compiler,optimization_fast>)
 
   zephyr_include_directories(${CMSIS_NN_DIR}/Include)
 
@@ -82,6 +82,16 @@ if(CONFIG_CMSIS_NN)
 
   if(CONFIG_CMSIS_NN_LSTM)
     file(GLOB SRC "${CMSIS_NN_DIR}/Source/LSTMFunctions/*_s16.c")
+    zephyr_library_sources(${SRC})
+  endif()
+
+  if(CONFIG_CMSIS_NN_TRANSPOSE)
+    file(GLOB SRC "${CMSIS_NN_DIR}/Source/TransposeFunctions/*_s8.c")
+    zephyr_library_sources(${SRC})
+  endif()
+
+  if(CONFIG_CMSIS_NN_PAD)
+    file(GLOB SRC "${CMSIS_NN_DIR}/Source/PadFunctions/*_s8.c")
     zephyr_library_sources(${SRC})
   endif()
 

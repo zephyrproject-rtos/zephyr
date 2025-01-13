@@ -510,8 +510,8 @@
 				status = "disabled";
 			};
 
-			exmif: spi@95000 {
-				compatible = "nordic,nrf-exmif";
+			exmif: exmif@95000 {
+				compatible = "nordic,nrf-exmif", "snps,designware-ssi";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0x95000 0x500 0x95500 0xb00>;
@@ -520,7 +520,6 @@
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE0>;
 				clock-frequency = <DT_FREQ_M(400)>;
 				fifo-depth = <32>;
-				max-xfer-size = <16>;
 				status = "disabled";
 			};
 
@@ -876,6 +875,7 @@
 				status = "disabled";
 				#io-channel-cells = <1>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			comp: comparator@983000 {
@@ -943,11 +943,8 @@
 				reg = <0x99c000 0x1000>;
 				status = "disabled";
 				cc-num = <16>;
-				/* GRTC uses both LFCLK and FLL16M, but its accuracy and
-				 * precision are inherited from LFCLK. that's why this
-				 *  one is linked here.
-				 */
-				clocks = <&lfclk>;
+				clocks = <&lfclk>, <&fll16m>;
+				clock-names = "lfclock", "hfclock";
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
 			};
 

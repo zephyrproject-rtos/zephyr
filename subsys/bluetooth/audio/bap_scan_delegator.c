@@ -151,33 +151,40 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 	}
 }
 
-static void bass_notify_receive_state(struct bt_conn *conn,
-				      const struct bass_recv_state_internal *internal_state)
+static void receive_state_notify_cb(struct bt_conn *conn, void *data)
 {
-	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
+	const struct bass_recv_state_internal *internal_state = data;
+	struct bt_conn_info conn_info;
 	uint16_t max_ntf_size;
 	uint16_t ntf_size;
 	int err;
 
-	if (conn != NULL) {
-		max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
-	} else {
-		max_ntf_size = MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU) - att_ntf_header_size;
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
+
+	if (conn_info.state != BT_CONN_STATE_CONNECTED ||
+	    !bt_gatt_is_subscribed(conn, internal_state->attr, BT_GATT_CCC_NOTIFY)) {
+		return;
 	}
+
+	max_ntf_size = bt_audio_get_max_ntf_size(conn);
 
 	ntf_size = MIN(max_ntf_size, read_buf.len);
 	if (ntf_size < read_buf.len) {
 		LOG_DBG("Sending truncated notification (%u/%u)", ntf_size, read_buf.len);
 	}
 
-	LOG_DBG("Sending bytes %d", ntf_size);
-	err = bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE,
-				  internal_state->attr, read_buf.data,
-				  ntf_size);
-
-	if (err != 0 && err != -ENOTCONN) {
+	LOG_DBG("Sending bytes %u for %p", ntf_size, (void *)conn);
+	err = bt_gatt_notify_uuid(conn, BT_UUID_BASS_RECV_STATE, internal_state->attr,
+				  read_buf.data, ntf_size);
+	if (err != 0) {
 		LOG_DBG("Could not notify receive state: %d", err);
 	}
+}
+
+static void bass_notify_receive_state(const struct bass_recv_state_internal *internal_state)
+{
+	bt_conn_foreach(BT_CONN_TYPE_LE, receive_state_notify_cb, (void *)internal_state);
 }
 
 static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_state)
@@ -237,7 +244,7 @@ static void receive_state_updated(struct bt_conn *conn,
 
 	bt_debug_dump_recv_state(internal_state);
 	net_buf_put_recv_state(internal_state);
-	bass_notify_receive_state(conn, internal_state);
+	bass_notify_receive_state(internal_state);
 	if (scan_delegator_cbs != NULL &&
 	    scan_delegator_cbs->recv_state_updated != NULL) {
 		scan_delegator_cbs->recv_state_updated(conn,
@@ -285,7 +292,7 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 		}
 
 		net_buf_put_recv_state(internal_state);
-		bass_notify_receive_state(conn, internal_state);
+		receive_state_notify_cb(conn, (void *)internal_state);
 
 		k_sem_give(&read_buf_sem);
 	}
@@ -412,14 +419,32 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 static bool supports_past(struct bt_conn *conn, uint8_t pa_sync_val)
 {
 	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)) {
+		struct bt_le_local_features local_features;
+		struct bt_conn_remote_info remote_info;
+		int err;
+
+		err = bt_le_get_local_features(&local_features);
+		if (err != 0) {
+			LOG_DBG("Failed to get local features: %d", err);
+			return false;
+		}
+
+		err = bt_conn_get_remote_info(conn, &remote_info);
+		if (err != 0) {
+			LOG_DBG("Failed to get remote info: %d", err);
+			return false;
+		}
+
 		LOG_DBG("%p remote %s PAST, local %s PAST (req %u)", (void *)conn,
-			BT_FEAT_LE_PAST_SEND(conn->le.features) ? "supports" : "does not support",
-			BT_FEAT_LE_PAST_RECV(bt_dev.le.features) ? "supports" : "does not support",
+			BT_FEAT_LE_PAST_SEND(remote_info.le.features) ? "supports"
+								      : "does not support",
+			BT_FEAT_LE_PAST_RECV(local_features.features) ? "supports"
+								      : "does not support",
 			pa_sync_val);
 
 		return pa_sync_val == BT_BAP_BASS_PA_REQ_SYNC_PAST &&
-		       BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-		       BT_FEAT_LE_PAST_RECV(bt_dev.le.features);
+		       BT_FEAT_LE_PAST_SEND(remote_info.le.features) &&
+		       BT_FEAT_LE_PAST_RECV(local_features.features);
 	} else {
 		return false;
 	}
@@ -652,8 +677,8 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 			(void)memset(state, 0, sizeof(*state));
 			internal_state->active = false;
 
-			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync, conn,
-				err);
+			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync,
+				(void *)conn, err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
@@ -859,8 +884,8 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			(void)memcpy(state, &backup_state,
 				     sizeof(backup_state));
 
-			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync, conn,
-				err);
+			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync,
+				(void *)conn, err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		} else if (pa_sync_state != state->pa_sync_state) {
@@ -877,7 +902,8 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		const int err = pa_sync_term_request(conn, &internal_state->state);
 
 		if (err != 0) {
-			LOG_DBG("PA sync term from %p was rejected with reason %d", conn, err);
+			LOG_DBG("PA sync term from %p was rejected with reason %d", (void *)conn,
+				err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
@@ -972,7 +998,8 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 		/* Terminate PA sync */
 		err = pa_sync_term_request(conn, &internal_state->state);
 		if (err != 0) {
-			LOG_DBG("PA sync term from %p was rejected with reason %d", conn, err);
+			LOG_DBG("PA sync term from %p was rejected with reason %d", (void *)conn,
+				err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}

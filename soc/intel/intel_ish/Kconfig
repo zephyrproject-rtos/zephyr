@@ -6,10 +6,10 @@
 
 config SOC_FAMILY_INTEL_ISH
 	select X86
+	select CPU_LAKEMONT_VALUE
 	select X86_NO_SPECULATIVE_VULNERABILITIES
 	select IOAPIC
 	select LOAPIC
-	select CPU_HAS_FPU
 	select INTEL_HAL
 	select HAS_PM
 	select HAS_COVERAGE_SUPPORT

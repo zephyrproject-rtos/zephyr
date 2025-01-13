@@ -26,15 +26,7 @@ Hardware
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| I2S       | on-chip    | I2S controller                      |
-+-----------+------------+-------------------------------------+
-| DMIC(PDM) | on-chip    | PDM controller                      |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 System Clock
 ============

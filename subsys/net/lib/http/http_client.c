@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_http_client, CONFIG_NET_HTTP_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/http/client.h>
+#include <zephyr/net/http/status.h>
 
 #include "net_private.h"
 
@@ -327,6 +328,11 @@ static int on_headers_complete(struct http_parser *parser)
 		req->internal.response.http_cb->on_headers_complete(parser);
 	}
 
+	if (parser->status_code == HTTP_101_SWITCHING_PROTOCOLS) {
+		NET_DBG("Switching protocols, skipping body");
+		return 1;
+	}
+
 	if (parser->status_code >= 500 && parser->status_code < 600) {
 		NET_DBG("Status %d, skipping body", parser->status_code);
 		return 1;
@@ -496,8 +502,16 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 			ret = -errno;
 			goto error;
 		}
-		if (fds[0].revents & (ZSOCK_POLLERR | ZSOCK_POLLNVAL)) {
-			ret = -errno;
+
+		if (fds[0].revents & ZSOCK_POLLERR) {
+			int sock_err;
+			socklen_t optlen = sizeof(sock_err);
+
+			(void)zsock_getsockopt(sock, SOL_SOCKET, SO_ERROR, &sock_err, &optlen);
+			ret = -sock_err;
+			goto error;
+		} else if (fds[0].revents & ZSOCK_POLLNVAL) {
+			ret = -EBADF;
 			goto error;
 		} else if (fds[0].revents & ZSOCK_POLLHUP) {
 			/* Connection closed */

@@ -975,7 +975,11 @@ static void state_collect(const struct shell *sh)
 		shell_bypass_cb_t bypass = sh->ctx->bypass;
 
 		if (bypass) {
+#if defined(CONFIG_SHELL_BACKEND_RTT) && defined(CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN)
+			uint8_t buf[CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN];
+#else
 			uint8_t buf[16];
+#endif
 
 			(void)sh->iface->api->read(sh->iface, buf,
 							sizeof(buf), &count);
@@ -1155,9 +1159,9 @@ static void state_collect(const struct shell *sh)
 			receive_state_change(sh, SHELL_RECEIVE_DEFAULT);
 			break;
 		}
-	}
 
-	z_transport_buffer_flush(sh);
+		z_transport_buffer_flush(sh);
+	}
 }
 
 static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)

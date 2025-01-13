@@ -198,12 +198,16 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_CONN_SUBRATING           37
 #define BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP 38
 #define BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION   39
-
+#define BT_LE_FEAT_BIT_ADV_CODING_SEL           40
+#define BT_LE_FEAT_BIT_ADV_CODING_SEL_HOST      41
+#define BT_LE_FEAT_BIT_DECISION_ADV_FILTER      42
 #define BT_LE_FEAT_BIT_PAWR_ADVERTISER          43
 #define BT_LE_FEAT_BIT_PAWR_SCANNER             44
-
+#define BT_LE_FEAT_BIT_UNSEG_FRAMED_MODE        45
 #define BT_LE_FEAT_BIT_CHANNEL_SOUNDING         46
 #define BT_LE_FEAT_BIT_CHANNEL_SOUNDING_HOST    47
+#define BT_LE_FEAT_BIT_CHANNEL_SOUNDING_TONE_QUAL_IND    48
+#define BT_LE_FEAT_BIT_LL_EXTENDED_FEAT_SET     63
 
 #define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
 						 BIT((n) & 7))
@@ -268,6 +272,10 @@ struct bt_hci_cmd_hdr {
 						  BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP)
 #define BT_FEAT_LE_CHANNEL_CLASSIFICATION(feat)   BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION)
+#define BT_FEAT_LE_ADV_CODING_SEL(feat)	          BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_ADV_CODING_SEL)
+#define BT_FEAT_LE_ADV_CODING_SEL_HOST(feat)	  BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_ADV_CODING_SEL_HOST)
 #define BT_FEAT_LE_PAWR_ADVERTISER(feat)	  BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_PAWR_ADVERTISER)
 #define BT_FEAT_LE_PAWR_SCANNER(feat)             BT_LE_FEAT_TEST(feat, \
@@ -584,6 +592,12 @@ struct bt_hci_rp_write_conn_accept_timeout {
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
 
+#define BT_HCI_OP_READ_CLASS_OF_DEVICE          BT_OP(BT_OGF_BASEBAND, 0x0023) /* 0x0c23 */
+struct bt_hci_rp_read_class_of_device {
+	uint8_t  status;
+	uint8_t  class_of_device[3];
+} __packed;
+
 #define BT_COD(major_service, major_device, minor_device)                         \
 	(((uint32_t)major_service << 13) | ((uint32_t)major_device << 8) |            \
 	 ((uint32_t)minor_device << 2))
@@ -756,6 +770,16 @@ struct bt_hci_handle_count {
 struct bt_hci_cp_host_num_completed_packets {
 	uint8_t  num_handles;
 	struct bt_hci_handle_count h[0];
+} __packed;
+
+#define BT_HCI_OP_WRITE_CURRENT_IAC_LAP         BT_OP(BT_OGF_BASEBAND, 0x003a) /* 0x0c3a */
+struct bt_hci_iac_lap {
+	uint8_t iac[3];
+} __packed;
+
+struct bt_hci_cp_write_current_iac_lap {
+	uint8_t  num_current_iac;
+	struct bt_hci_iac_lap lap[0];
 } __packed;
 
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
@@ -1022,7 +1046,7 @@ struct bt_hci_rp_read_encryption_key_size {
 	uint8_t  key_size;
 } __packed;
 
-/* BLE */
+/* Bluetooth LE */
 
 #define BT_HCI_OP_LE_SET_EVENT_MASK             BT_OP(BT_OGF_LE, 0x0001) /* 0x2001 */
 struct bt_hci_cp_le_set_event_mask {
@@ -1536,6 +1560,30 @@ struct bt_hci_cp_le_set_ext_adv_param {
 struct bt_hci_rp_le_set_ext_adv_param {
 	uint8_t status;
 	int8_t  tx_power;
+} __packed;
+
+#define BT_HCI_LE_ADV_PHY_OPTION_NO_REQUIRED 0x00
+#define BT_HCI_LE_ADV_PHY_OPTION_REQUIRE_S2  0x03
+#define BT_HCI_LE_ADV_PHY_OPTION_REQUIRE_S8  0x04
+
+#define BT_HCI_OP_LE_SET_EXT_ADV_PARAM_V2        BT_OP(BT_OGF_LE, 0x007F) /* 0x207F */
+struct bt_hci_cp_le_set_ext_adv_param_v2 {
+	uint8_t      handle;
+	uint16_t     props;
+	uint8_t      prim_min_interval[3];
+	uint8_t      prim_max_interval[3];
+	uint8_t      prim_channel_map;
+	uint8_t      own_addr_type;
+	bt_addr_le_t peer_addr;
+	uint8_t      filter_policy;
+	int8_t       tx_power;
+	uint8_t      prim_adv_phy;
+	uint8_t      sec_adv_max_skip;
+	uint8_t      sec_adv_phy;
+	uint8_t      sid;
+	uint8_t      scan_req_notify_enable;
+	uint8_t      prim_adv_phy_opt;
+	uint8_t      sec_adv_phy_opt;
 } __packed;
 
 #define BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG        0x00
@@ -3172,6 +3220,14 @@ struct bt_hci_evt_le_phy_update_complete {
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL    1
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE 2
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED  0xFF
+
+/* Advertising Coding Selection extended advertising report PHY values.
+ * Only used when Kconfig BT_EXT_ADV_CODING_SELECTION is enabled.
+ */
+#define BT_HCI_LE_ADV_EVT_PHY_1M                0x01
+#define BT_HCI_LE_ADV_EVT_PHY_2M                0x02
+#define BT_HCI_LE_ADV_EVT_PHY_CODED_S8          0x03
+#define BT_HCI_LE_ADV_EVT_PHY_CODED_S2          0x04
 
 struct bt_hci_evt_le_ext_advertising_info {
 	uint16_t     evt_type;

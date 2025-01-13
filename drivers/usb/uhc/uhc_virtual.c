@@ -24,7 +24,21 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc_vrt, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
+#define FRAME_MAX_TRANSFERS 16
+
 struct uhc_vrt_config {
+};
+
+struct uhc_vrt_slot {
+	sys_dnode_t node;
+	struct uhc_transfer *xfer;
+};
+
+struct uhc_vrt_frame {
+	struct uhc_vrt_slot slots[FRAME_MAX_TRANSFERS];
+	sys_dnode_t *ptr;
+	sys_dlist_t list;
+	uint8_t count;
 };
 
 struct uhc_vrt_data {
@@ -33,14 +47,13 @@ struct uhc_vrt_data {
 	struct k_work work;
 	struct k_fifo fifo;
 	struct uhc_transfer *last_xfer;
+	struct uhc_vrt_frame frame;
 	struct k_timer sof_timer;
-	bool busy;
+	uint16_t frame_number;
 	uint8_t req;
 };
 
 enum uhc_vrt_event_type {
-	/* Trigger next transfer */
-	UHC_VRT_EVT_XFER,
 	/* SoF generator event */
 	UHC_VRT_EVT_SOF,
 	/* Request reply received */
@@ -86,7 +99,7 @@ static int vrt_xfer_control(const struct device *dev,
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		LOG_DBG("Handle SETUP stage");
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_SETUP,
-					xfer->addr, USB_CONTROL_EP_OUT,
+					xfer->udev->addr, USB_CONTROL_EP_OUT,
 					xfer->setup_pkt, sizeof(xfer->setup_pkt));
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
@@ -94,7 +107,6 @@ static int vrt_xfer_control(const struct device *dev,
 		}
 
 		priv->req = UVB_REQUEST_SETUP;
-		priv->busy = true;
 
 		return uvb_advert_pkt(priv->host_node, uvb_pkt);
 	}
@@ -110,7 +122,7 @@ static int vrt_xfer_control(const struct device *dev,
 
 		LOG_DBG("Handle DATA stage");
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA,
-					xfer->addr, xfer->ep,
+					xfer->udev->addr, xfer->ep,
 					data, length);
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
@@ -118,7 +130,6 @@ static int vrt_xfer_control(const struct device *dev,
 		}
 
 		priv->req = UVB_REQUEST_DATA;
-		priv->busy = true;
 
 		return uvb_advert_pkt(priv->host_node, uvb_pkt);
 	}
@@ -134,7 +145,7 @@ static int vrt_xfer_control(const struct device *dev,
 		}
 
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA,
-					xfer->addr, ep,
+					xfer->udev->addr, ep,
 					NULL, 0);
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
@@ -142,7 +153,6 @@ static int vrt_xfer_control(const struct device *dev,
 		}
 
 		priv->req = UVB_REQUEST_DATA;
-		priv->busy = true;
 
 		return uvb_advert_pkt(priv->host_node, uvb_pkt);
 	}
@@ -167,7 +177,7 @@ static int vrt_xfer_bulk(const struct device *dev,
 		data = buf->data;
 	}
 
-	uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->addr, xfer->ep,
+	uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->udev->addr, xfer->ep,
 				data, length);
 	if (uvb_pkt == NULL) {
 		LOG_ERR("Failed to allocate UVB packet");
@@ -177,25 +187,97 @@ static int vrt_xfer_bulk(const struct device *dev,
 	return uvb_advert_pkt(priv->host_node, uvb_pkt);
 }
 
-static int vrt_schedule_xfer(const struct device *dev)
+static inline uint8_t get_xfer_ep_idx(const uint8_t ep)
 {
-	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	/* We do not need to differentiate the direction for the control
+	 * transfers because they are handled as a whole.
+	 */
+	if (USB_EP_DIR_IS_OUT(ep) || USB_EP_GET_IDX(ep) == 0) {
+		return USB_EP_GET_IDX(ep & BIT_MASK(4));
+	}
+
+	return USB_EP_GET_IDX(ep & BIT_MASK(4)) + 16U;
+}
+
+static void vrt_assemble_frame(const struct device *dev)
+{
+	struct uhc_vrt_data *const priv = uhc_get_private(dev);
+	struct uhc_vrt_frame *const frame = &priv->frame;
+	struct uhc_data *const data = dev->data;
+	struct uhc_transfer *tmp;
+	unsigned int n = 0;
+	unsigned int key;
+	uint32_t bm = 0;
+
+	sys_dlist_init(&frame->list);
+	frame->ptr = NULL;
+	frame->count = 0;
+	key = irq_lock();
+
+	/* TODO: add periodic transfers up to 90% */
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
+		uint8_t idx = get_xfer_ep_idx(tmp->ep);
+
+		/* There could be multiple transfers queued for the same
+		 * endpoint, for now we only allow one to be scheduled per frame.
+		 */
+		if (bm & BIT(idx)) {
+			continue;
+		}
+
+		if (tmp->interval) {
+			if (tmp->start_frame != priv->frame_number) {
+				continue;
+			}
+
+			tmp->start_frame = priv->frame_number + tmp->interval;
+			LOG_DBG("Interrupt transfer s.f. %u f.n. %u interval %u",
+				tmp->start_frame, priv->frame_number, tmp->interval);
+		}
+
+		bm |= BIT(idx);
+		frame->slots[n].xfer = tmp;
+		sys_dlist_append(&frame->list, &frame->slots[n].node);
+		n++;
+
+		if (n >= FRAME_MAX_TRANSFERS) {
+			/* No more free slots */
+			break;
+		}
+	}
+
+	irq_unlock(key);
+}
+
+static int vrt_schedule_frame(const struct device *dev)
+{
+	struct uhc_vrt_data *const priv = uhc_get_private(dev);
+	struct uhc_vrt_frame *const frame = &priv->frame;
+	struct uhc_vrt_slot *slot;
 
 	if (priv->last_xfer == NULL) {
-		priv->last_xfer = uhc_xfer_get_next(dev);
-		if (priv->last_xfer == NULL) {
-			LOG_DBG("Nothing to transfer");
+		if (frame->count >= FRAME_MAX_TRANSFERS) {
+			LOG_DBG("Frame finished");
 			return 0;
 		}
 
-		LOG_DBG("Next transfer is %p", priv->last_xfer);
+		frame->ptr = sys_dlist_get(&frame->list);
+		slot = SYS_DLIST_CONTAINER(frame->ptr, slot, node);
+		if (slot == NULL) {
+			LOG_DBG("No more transfers for the frame");
+			return 0;
+		}
+
+		priv->last_xfer = slot->xfer;
+		frame->count++;
+		LOG_DBG("Next transfer is %p (count %u)",
+			(void *)priv->last_xfer, frame->count);
 	}
 
 	if (USB_EP_GET_IDX(priv->last_xfer->ep) == 0) {
 		return vrt_xfer_control(dev, priv->last_xfer);
 	}
 
-	/* TODO: Isochronous transfers */
 	return vrt_xfer_bulk(dev, priv->last_xfer);
 }
 
@@ -276,6 +358,7 @@ static int vrt_handle_reply(const struct device *dev,
 			    struct uvb_packet *const pkt)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	struct uhc_vrt_frame *const frame = &priv->frame;
 	struct uhc_transfer *const xfer = priv->last_xfer;
 	int ret = 0;
 
@@ -285,11 +368,12 @@ static int vrt_handle_reply(const struct device *dev,
 		goto handle_reply_err;
 	}
 
-	priv->busy = false;
-
 	switch (pkt->reply) {
 	case UVB_REPLY_NACK:
-		/* Restart last transaction */
+		/* Move the transfer back to the list. */
+		sys_dlist_append(&frame->list, frame->ptr);
+		priv->last_xfer = NULL;
+		LOG_DBG("NACK 0x%02x count %u", xfer->ep, frame->count);
 		break;
 	case UVB_REPLY_STALL:
 		vrt_xfer_drop_active(dev, -EPIPE);
@@ -308,6 +392,23 @@ handle_reply_err:
 	return ret;
 }
 
+static void vrt_xfer_cleanup_cancelled(const struct device *dev)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *tmp;
+
+	if (priv->last_xfer != NULL && priv->last_xfer->err == -ECONNRESET) {
+		vrt_xfer_drop_active(dev, -ECONNRESET);
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
+		if (tmp->err == -ECONNRESET) {
+			uhc_xfer_return(dev, tmp, -ECONNRESET);
+		}
+	}
+}
+
 static void xfer_work_handler(struct k_work *work)
 {
 	struct uhc_vrt_data *priv = CONTAINER_OF(work, struct uhc_vrt_data, work);
@@ -319,6 +420,12 @@ static void xfer_work_handler(struct k_work *work)
 		int err;
 
 		switch (ev->type) {
+		case UHC_VRT_EVT_SOF:
+			priv->frame_number++;
+			vrt_xfer_cleanup_cancelled(dev);
+			vrt_assemble_frame(dev);
+			schedule = true;
+			break;
 		case UHC_VRT_EVT_REPLY:
 			err = vrt_handle_reply(dev, ev->pkt);
 			if (unlikely(err)) {
@@ -327,30 +434,16 @@ static void xfer_work_handler(struct k_work *work)
 
 			schedule = true;
 			break;
-		case UHC_VRT_EVT_XFER:
-			LOG_DBG("Transfer triggered for %p", dev);
-			schedule = true;
-			break;
-		case UHC_VRT_EVT_SOF:
-			if (priv->last_xfer != NULL) {
-				if (priv->last_xfer->timeout) {
-					priv->last_xfer->timeout--;
-				} else {
-					vrt_xfer_drop_active(dev, -ETIMEDOUT);
-					priv->busy = false;
-					LOG_WRN("Transfer timeout");
-				}
-			}
-			break;
 		default:
 			break;
 		}
 
-		if (schedule && !priv->busy) {
-			err = vrt_schedule_xfer(dev);
+		if (schedule) {
+			err = vrt_schedule_frame(dev);
 			if (unlikely(err)) {
 				uhc_submit_event(dev, UHC_EVT_ERROR, err);
 			}
+
 		}
 
 		k_mem_slab_free(&uhc_vrt_slab, (void *)ev);
@@ -367,6 +460,7 @@ static void sof_timer_handler(struct k_timer *timer)
 static void vrt_device_act(const struct device *dev,
 			   const enum uvb_device_act act)
 {
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	enum uhc_event_type type;
 
 	switch (act) {
@@ -375,9 +469,11 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_FS:
 		type = UHC_EVT_DEV_CONNECTED_FS;
+		k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
 		break;
 	case UVB_DEVICE_ACT_HS:
 		type = UHC_EVT_DEV_CONNECTED_HS;
+		k_timer_start(&priv->sof_timer, K_MSEC(1), K_USEC(125));
 		break;
 	case UVB_DEVICE_ACT_REMOVED:
 		type = UHC_EVT_DEV_REMOVED;
@@ -406,7 +502,10 @@ static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 
 static int uhc_vrt_sof_enable(const struct device *dev)
 {
-	/* TODO */
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+
 	return 0;
 }
 
@@ -423,17 +522,21 @@ static int uhc_vrt_bus_suspend(const struct device *dev)
 static int uhc_vrt_bus_reset(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	int ret;
 
 	k_timer_stop(&priv->sof_timer);
+	ret = uvb_advert(priv->host_node, UVB_EVT_RESET, NULL);
+	/* TDRSTR */
+	k_msleep(50);
+	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
 
-	return uvb_advert(priv->host_node, UVB_EVT_RESET, NULL);
+	return ret;
 }
 
 static int uhc_vrt_bus_resume(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	k_timer_init(&priv->sof_timer, sof_timer_handler, NULL);
 	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
 
 	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
@@ -442,8 +545,15 @@ static int uhc_vrt_bus_resume(const struct device *dev)
 static int uhc_vrt_enqueue(const struct device *dev,
 			   struct uhc_transfer *const xfer)
 {
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	if (xfer->interval) {
+		xfer->start_frame = priv->frame_number + xfer->interval;
+		LOG_DBG("New interrupt transfer s.f. %u f.n. %u interval %u",
+			xfer->start_frame, priv->frame_number, xfer->interval);
+	}
+
 	uhc_xfer_append(dev, xfer);
-	vrt_event_submit(dev, UHC_VRT_EVT_XFER, NULL);
 
 	return 0;
 }
@@ -451,7 +561,20 @@ static int uhc_vrt_enqueue(const struct device *dev,
 static int uhc_vrt_dequeue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
-	/* TODO */
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *tmp;
+	unsigned int key;
+
+	key = irq_lock();
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
+		if (xfer == tmp) {
+			tmp->err = -ECONNRESET;
+		}
+	}
+
+	irq_unlock(key);
+
 	return 0;
 }
 

@@ -8,9 +8,6 @@ properties:
   reg:
     required: true
 
-  reg-names:
-    required: true
-
   syscon:
     type: phandle
     required: true

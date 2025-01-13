@@ -21,11 +21,11 @@ overlay=overlay_pst_conf
 RunTest mesh_replay_fragmentation \
     rpc_rx_reboot_after_defrag -flash=../results/mesh_replay_fragmentation/flash.bin -flash_rm
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTest mesh_replay_fragmentation_psa \
     rpc_rx_rpl_frag -flash=../results/mesh_replay_fragmentation_psa/flash.bin -flash_erase \
     rpc_tx_rpl_frag
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTest mesh_replay_fragmentation_psa \
     rpc_rx_reboot_after_defrag -flash=../results/mesh_replay_fragmentation_psa/flash.bin -flash_rm

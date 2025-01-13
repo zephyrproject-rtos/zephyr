@@ -1,7 +1,7 @@
 # Copyright (c) 2021, Linaro ltd
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32L0 and STM32L1 Multi Speed Internal Clock
+description: STM32L0/L1 Multi Speed Internal Clock
 
 compatible: "st,stm32l0-msi-clock"
 

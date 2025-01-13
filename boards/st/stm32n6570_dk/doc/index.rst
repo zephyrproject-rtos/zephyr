@@ -64,27 +64,7 @@ For more details, please refer to:
 Supported Features
 ==================
 
-The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32n6570_dk/stm32n6570_dk_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -97,10 +77,24 @@ For more details please refer to `STM32N6570_DK User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- ADC1_INP10 : PA9
+- ADC1_INP11 : PA10
+- FDCAN1_TX : PH2
+- FDCAN1_RX : PD0
+- I2C1_SCL : PH9
+- I2C1_SDA : PC1
+- I2C4_SCL : PE13
+- I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SPI5_SCK : PE15
+- SPI5_MOSI : PG2
+- SPI5_MISO : PH8
+- SPI5_NSS : PA3
 - USART_1_TX : PE5
 - USART_1_RX : PE6
+- USART_2_TX : PD5
+- USART_2_RX : PF6
 
 System Clock
 ------------
@@ -128,6 +122,13 @@ Flashing or loading
 The board is configured to be programmed using west `STM32CubeProgrammer`_ runner,
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is needed.
 Version 2.18.0 or later of `STM32CubeProgrammer`_ is required.
+
+.. note::
+   Firmware is run in secure mode of execution, which requires a signature.
+   After build, the build system  will automatically generate a signed version of the
+   binary using `STM32CubeProgrammer`_ utility ``STM32_SigningTool_CLI``.
+   This utility is installed along with `STM32CubeProgrammer`_, but make sure it is
+   available in your ``PATH`` variable.
 
 To program the board, there are two options:
 
@@ -166,12 +167,6 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
             * BOOT1: 0
 
 	    Power off and on the board again.
-
-         Run a serial host program to connect to your board:
-
-         .. code-block:: console
-
-            $ minicom -D /dev/ttyACM0
 
       .. group-tab:: Serial Boot Loader (USB)
 

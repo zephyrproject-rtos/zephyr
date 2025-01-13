@@ -4,6 +4,7 @@
 config RTIO_WORKQ
 	bool "RTIO Work-queues service to process Sync operations"
 	select SCHED_DEADLINE
+	select P4WQ_INIT_STAGE_EARLY
 	select RTIO_CONSUME_SEM
 	help
 	  Enable RTIO Work-queues to allow processing synchronous operations
@@ -21,6 +22,7 @@ config RTIO_WORKQ_STACK_SIZE
 
 config RTIO_WORKQ_THREADS_POOL
 	int "Number of threads to use for processing work-items"
+	default 2 if SPI_RTIO || I2C_RTIO || I3C_RTIO
 	default 1
 
 config RTIO_WORKQ_POOL_ITEMS

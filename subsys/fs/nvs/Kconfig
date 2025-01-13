@@ -6,8 +6,8 @@
 config NVS
 	bool "Non-volatile Storage"
 	depends on FLASH
+	depends on FLASH_PAGE_LAYOUT
 	select CRC
-	select FLASH_PAGE_LAYOUT
 	help
 	  Enable support of Non-volatile Storage.
 

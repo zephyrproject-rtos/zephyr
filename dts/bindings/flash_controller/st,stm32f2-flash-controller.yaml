@@ -1,4 +1,4 @@
-description: STM32 F2 flash controller
+description: STM32F2 flash controller
 
 compatible: "st,stm32f2-flash-controller"
 

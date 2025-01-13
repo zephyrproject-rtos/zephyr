@@ -33,7 +33,17 @@ struct net_buf *bt_hci_cmd_complete_create(uint16_t op, uint8_t plen)
 	buf = bt_hci_evt_create(BT_HCI_EVT_CMD_COMPLETE, sizeof(*cc) + plen);
 
 	cc = net_buf_add(buf, sizeof(*cc));
+
+	/* The Num_HCI_Command_Packets parameter allows the Controller to
+	 * indicate the number of HCI command packets the Host can send to the
+	 * Controller. If the Controller requires the Host to stop sending
+	 * commands, Num_HCI_Command_Packets will be set to zero.
+	 *
+	 * NOTE: Zephyr Controller (and may be other Controllers) do not support
+	 *       higher Number of HCI Command packets than 1.
+	 */
 	cc->ncmd = 1U;
+
 	cc->opcode = sys_cpu_to_le16(op);
 
 	return buf;
@@ -48,7 +58,17 @@ struct net_buf *bt_hci_cmd_status_create(uint16_t op, uint8_t status)
 
 	cs = net_buf_add(buf, sizeof(*cs));
 	cs->status = status;
+
+	/* The Num_HCI_Command_Packets parameter allows the Controller to
+	 * indicate the number of HCI command packets the Host can send to the
+	 * Controller. If the Controller requires the Host to stop sending
+	 * commands, Num_HCI_Command_Packets will be set to zero.
+	 *
+	 * NOTE: Zephyr Controller (and may be other Controllers) do not support
+	 *       higher Number of HCI Command packets than 1.
+	 */
 	cs->ncmd = 1U;
+
 	cs->opcode = sys_cpu_to_le16(op);
 
 	return buf;

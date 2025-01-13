@@ -44,28 +44,17 @@ SECTIONS
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
 
     *libarch__xtensa__core.a:xtensa_asm2_util.*(.literal .text .literal.* .text.*)
-    *liblib__libc__common.a:abort.*(.literal .text .literal.* .text.*)
-    *libdrivers__timer.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
     *libarch__common.a:dynamic_isr.*(.literal .text .literal.* .text.*)
     *libarch__common.a:sw_isr_common.*(.literal .text .literal.* .text.*)
 
     *libapp.a:flash_map_extended.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
     *libzephyr.a:cbprintf_nano.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cpu.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_map.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.*)
-
-    *libzephyr.a:heap.*(.literal .text .literal.* .text.*)
-
-    *libkernel.a:kheap.*(.literal .text .literal.* .text.*)
-    *libkernel.a:mempool.*(.literal .text .literal.* .text.*)
     *libkernel.a:device.*(.literal .text .literal.* .text.*)
-    *libkernel.a:timeout.*(.literal .text .literal.* .text.*)
-
     *libzephyr.a:esp_loader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
 
     *(.literal.esp_intr_disable .literal.esp_intr_disable.* .text.esp_intr_disable .text.esp_intr_disable.*)
     *(.literal.default_intr_handler .text.default_intr_handler .iram1.*.default_intr_handler)

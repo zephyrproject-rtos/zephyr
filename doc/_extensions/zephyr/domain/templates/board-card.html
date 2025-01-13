@@ -1,5 +1,5 @@
 {#
-  Copyright (c) 2024, The Linux Foundation.
+  Copyright (c) 2024-2025, The Linux Foundation.
   SPDX-License-Identifier: Apache-2.0
 #}
 
@@ -15,7 +15,17 @@
   data-arch="{{ board.archs | join(" ") }}"
   data-vendor="{{ board.vendor }}"
   data-socs="{{ board.socs | join(" ") }}"
-  tabindex="0">
+  data-supported-features="
+    {%- set feature_types = [] -%}
+    {%- for target_features in board.supported_features.values() -%}
+      {%- for feature_type in target_features.keys() -%}
+        {%- if feature_type not in feature_types -%}
+          {%- set _ = feature_types.append(feature_type) -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endfor -%}
+    {{- feature_types|join(' ') -}}
+  " tabindex="0">
   <div class="vendor">{{ vendors[board.vendor] }}</div>
   {% if board.image -%}
   <img alt="A picture of the {{ board.full_name }} board"

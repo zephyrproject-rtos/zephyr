@@ -9,6 +9,7 @@ config SOC_SERIES_AM6X_A53
 config SOC_SERIES_AM6X_M4
 	select ARM
 	select CPU_CORTEX_M4
+	select CPU_HAS_FPU
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select DYNAMIC_INTERRUPTS
 	select CPU_CORTEX_M_HAS_DWT
@@ -23,6 +24,7 @@ config SOC_SERIES_AM6X_R5
 	select ARM
 	select CPU_CORTEX_R5
 	select CPU_HAS_ARM_MPU
+	select VFP_SP_D16
 	select ARM_CUSTOM_INTERRUPT_CONTROLLER
 	select VIM
 	select TI_DM_TIMER

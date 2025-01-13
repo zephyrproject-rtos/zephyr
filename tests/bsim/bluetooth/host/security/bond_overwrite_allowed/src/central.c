@@ -12,6 +12,9 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+
 void central(void)
 {
 	bt_addr_le_t id_b;
@@ -40,8 +43,8 @@ void central(void)
 	printk("== Directed connect id b ==\n");
 	scan_connect_to_first_result();
 	wait_connected();
-	ASSERT(bt_addr_le_eq(bt_conn_get_dst(g_conn), &id_b),
-	       "Unexpected Peer. Did something resolve incorrectly?");
+	TEST_ASSERT(bt_addr_le_eq(bt_conn_get_dst(g_conn), &id_b),
+		    "Unexpected Peer. Did something resolve incorrectly?");
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }

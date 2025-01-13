@@ -281,7 +281,7 @@ The mandatory files are:
 #. :file:`plank_<qualifiers>.dts`: a hardware description
    in :ref:`devicetree <dt-guide>` format. This declares your SoC, connectors,
    and any other hardware components such as LEDs, buttons, sensors, or
-   communication peripherals (USB, BLE controller, etc).
+   communication peripherals (USB, Bluetooth controller, etc).
 
 #. :file:`Kconfig.plank`: the base software configuration for selecting SoC and
    other board and SoC related settings. Kconfig settings outside of the board
@@ -696,11 +696,13 @@ example :file:`board.cmake`:
    board_runner_args(jlink "--device=nrf52" "--speed=4000")
    board_runner_args(pyocd "--target=nrf52" "--frequency=4000000")
 
+   include(${ZEPHYR_BASE}/boards/common/nrfutil.board.cmake)
    include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
    include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
    include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 
-This example configures the ``nrfjprog``, ``jlink``, and ``pyocd`` runners.
+This example configures the ``nrfutil``, ``nrfjprog``, ``jlink``, and ``pyocd``
+runners.
 
 .. warning::
 
