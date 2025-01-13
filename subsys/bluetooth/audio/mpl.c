@@ -315,7 +315,6 @@ static struct obj_t obj = {
 	.selected_id = 0,
 	.add_type = MPL_OBJ_NONE,
 	.add_track = NULL,
-	.add_group = NULL,
 	.content = NET_BUF_SIMPLE(CONFIG_BT_MPL_MAX_OBJ_SIZE),
 };
 
