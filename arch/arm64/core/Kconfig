@@ -85,6 +85,13 @@ config HAS_ARM_SMCCC
 	  Include support for the Secure Monitor Call (SMC) and Hypervisor
 	  Call (HVC) instructions on Armv7 and above architectures.
 
+config HAS_ARM_VHE
+	bool
+	default y if CPU_CORTEX_A55 || CPU_CORTEX_A76 || CPU_CORTEX_A76_A55
+	help
+	  This option signifies the enable of Virtualization Host Extention
+	  on Armv8.1+ platform.
+
 config NUM_IRQS
 	int
 
@@ -270,6 +277,14 @@ config ARM64_SET_VMPIDR_EL2
 	help
 	  VMPIDR_EL2 holds the value of the Virtualization Multiprocessor ID.
 	  This is the value returned by EL1 reads of MPIDR_EL1.
+	  This register may already be set by bootloader at the EL2 stage, if
+	  not, Zephyr should set it.
+
+config ARM64_SET_VPIDR_EL2
+	bool "Set VPIDR_EL2 at EL2 stage"
+	help
+	  VPIDR_EL2 holds the value of the Virtualization ID.
+	  This is the value returned by EL1 reads of MIDR_EL1.
 	  This register may already be set by bootloader at the EL2 stage, if
 	  not, Zephyr should set it.
 
