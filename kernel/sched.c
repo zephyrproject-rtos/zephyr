@@ -21,6 +21,9 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/sys/util.h>
+#ifdef CONFIG_ZVM
+#include <zephyr/zvm/zvm.h>
+#endif
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -926,8 +929,17 @@ void *z_get_next_switch_handle(void *interrupted)
 		if (IS_ENABLED(CONFIG_SMP)) {
 			old_thread->switch_handle = NULL;
 		}
-		new_thread = next_up();
 
+#ifdef CONFIG_ZVM
+		if(old_thread->base.thread_state & _THREAD_VCPU_NO_SWITCH){
+			old_thread->base.thread_state &= ~_THREAD_VCPU_NO_SWITCH;
+			new_thread = old_thread;
+		}else{
+			new_thread = next_up();
+		}
+#else
+		new_thread = next_up();
+#endif
 		z_sched_usage_switch(new_thread);
 
 		if (old_thread != new_thread) {
@@ -970,6 +982,11 @@ void *z_get_next_switch_handle(void *interrupted)
 #endif
 				runq_add(old_thread);
 			}
+#ifdef CONFIG_ZVM
+			if(vcpu_need_switch(new_thread, old_thread)){
+				do_vcpu_swap(new_thread, old_thread);
+			}
+#endif /* CONFIG_ZVM */
 		}
 		old_thread->switch_handle = interrupted;
 		ret = new_thread->switch_handle;
@@ -981,6 +998,11 @@ void *z_get_next_switch_handle(void *interrupted)
 	signal_pending_ipi();
 	return ret;
 #else
+#ifdef CONFIG_ZVM
+	if(vcpu_need_switch(_kernel.ready_q.cache, _current)){
+		do_vcpu_swap(_kernel.ready_q.cache, _current);
+	}
+#endif /* CONFIG_ZVM */
 	z_sched_usage_switch(_kernel.ready_q.cache);
 	_current->switch_handle = interrupted;
 	set_current(_kernel.ready_q.cache);
@@ -1599,4 +1621,21 @@ int z_sched_waitq_walk(_wait_q_t  *wait_q,
 	}
 
 	return status;
+}
+
+bool is_thread_active_elsewhere(struct k_thread *thread)
+{
+	bool ret = false;
+	K_SPINLOCK(&_sched_spinlock) {
+		if (thread_active_elsewhere(thread) != NULL) {
+			ret = true;
+		}
+	}
+	return ret;
+}
+
+void dequeue_ready_thread(struct k_thread *thread)
+{
+	unready_thread(thread);
+	signal_pending_ipi();
 }

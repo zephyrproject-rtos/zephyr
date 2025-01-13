@@ -67,6 +67,8 @@ struct k_thread *z_swap_next_thread(void);
 void z_thread_abort(struct k_thread *thread);
 void move_thread_to_end_of_prio_q(struct k_thread *thread);
 bool thread_is_sliceable(struct k_thread *thread);
+void dequeue_ready_thread(struct k_thread *thread);
+bool is_thread_active_elsewhere(struct k_thread *thread);
 
 static inline void z_reschedule_unlocked(void)
 {
