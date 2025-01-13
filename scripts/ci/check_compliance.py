@@ -477,6 +477,12 @@ class KconfigCheck(ComplianceTest):
         This is needed to complete Kconfig sanity tests.
         """
         os.environ['HWM_SCHEME'] = 'v2'
+        os.environ["KCONFIG_BOARD_DIR"] = os.path.join(kconfig_dir, 'boards')
+
+        os.makedirs(os.path.join(kconfig_dir, 'boards'), exist_ok=True)
+        os.makedirs(os.path.join(kconfig_dir, 'soc'), exist_ok=True)
+        os.makedirs(os.path.join(kconfig_dir, 'arch'), exist_ok=True)
+
         kconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig')
         kconfig_boards_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.boards')
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.defconfig')
@@ -585,14 +591,7 @@ class KconfigCheck(ComplianceTest):
         # For Kconfig.dts support
         self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig.dts"),
                              os.path.join(kconfiglib_dir, "settings_file.txt"))
-
-        # To make compliance work with old hw model and HWMv2 simultaneously.
-        kconfiglib_boards_dir = os.path.join(kconfiglib_dir, 'boards')
-        os.makedirs(kconfiglib_boards_dir, exist_ok=True)
-        os.makedirs(os.path.join(kconfiglib_dir, 'soc'), exist_ok=True)
-        os.makedirs(os.path.join(kconfiglib_dir, 'arch'), exist_ok=True)
-
-        os.environ["KCONFIG_BOARD_DIR"] = kconfiglib_boards_dir
+        # For hardware model support (board, soc, arch)
         self.get_v2_model(kconfiglib_dir, os.path.join(kconfiglib_dir, "settings_file.txt"))
 
         # Tells Kconfiglib to generate warnings for all references to undefined
