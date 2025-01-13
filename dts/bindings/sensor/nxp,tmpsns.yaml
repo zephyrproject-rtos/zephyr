@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Polytech A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP TMPSNS
+
+compatible: "nxp,tmpsns"
+
+include: sensor-device.yaml
+
+properties:
+  clock-divider:
+    type: int
+    default: 24000
+    description: |
+      Represents the number of clock cycles of the 24 MHz clock that TMPSNS counts between two
+      temperature readings.
+      The value must be between 0 and 65535.
+      A value of 0 selects Single Reading mode (a new reading only when START is toggled to 1).
+      Any non-zero value selects Continuous Reading mode, where a new temperature conversion
+      starts automatically after the programmed number of cycles elapses following the end of the
+      current reading.
+
+      Effective sampling frequency (Hz) in Continuous Reading mode is 24 MHz / clock-divider.
+      The default value 24000 yields an update rate of approximately 1000 Hz (1 kHz).
