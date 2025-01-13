@@ -211,6 +211,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_BEE_RTC
 	DEVS_FOR_DT_COMPAT(realtek_bee_counter_rtc)
 #endif
+#ifdef CONFIG_COUNTER_WUT_MAX32
+	DEVS_FOR_DT_COMPAT(adi_max32_wut)
+#endif
 };
 
 static const struct device *const period_devs[] = {
