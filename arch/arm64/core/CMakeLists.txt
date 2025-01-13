@@ -56,6 +56,7 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
 endif()
 
 add_subdirectory_ifdef(CONFIG_XEN xen)
+add_subdirectory_ifdef(CONFIG_ZVM zvm)
 
 if(CONFIG_GEN_SW_ISR_TABLE)
   if(CONFIG_DYNAMIC_INTERRUPTS)

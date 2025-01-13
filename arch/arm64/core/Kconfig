@@ -226,6 +226,7 @@ config ARMV8_A
 	  It supports the T32 and A32 instruction sets.
 
 rsource "xen/Kconfig"
+rsource "zvm/Kconfig"
 
 endif # CPU_CORTEX_A
 
