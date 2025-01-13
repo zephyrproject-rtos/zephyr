@@ -61,47 +61,10 @@ child-binding:
       description: |
         Adapted from
         https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
-        Integer array, represents gpio pin number and mux setting.
-        These defines are calculated as: ((port * 16 + line) << 8) | (function << 6) | remap)
-        With:
-        - port: The gpio port index (PA = 0, PB = 1, ..., PK = 11)
-        - line: The line offset within the port (PA0 = 0, PA1 = 1, ..., PA15 = 15)
-        - function: The configuration mode, can be:
-        * 0 : Alternate function output
-        * 1 : Input
-        * 2 : Analog
-        * 3 : GPIO output
-        In case selected pin function is GPIO output, pin is statically configured as
-        a plain output GPIO, which configuration can be set by adding 'ouptut-low' or
-        'output-high' properties to the pinctrl configuration. Default is output-low.
-        - remap: The pin remapping configuration. It allows to assign the pin
-        function to a different peripheral. Remain configuration can be:
-        * 0 : No remap
-        * 1 : Partial remap 1
-        * 2 : Partial remap 2
-        * 3 : Partial remap 3
-        * 4 : Full remap
-        To simplify the usage, macro is available to generate "pinmux" field.
-        This macro is available here:
-          -include/zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h
-        Some examples of macro usage:
-           GPIO A9 set as alternate with no remap
-        ... {
-                 pinmux = <STM32F1_PINMUX('A', 9, ALTERNATE, REMAP_NO)>;
-        };
-           GPIO A9 set as alternate with full remap
-        ... {
-                 pinmux = <STM32F1_PINMUX('A', 9, ALTERNATE, REMAP_FULL)>;
-        };
-           GPIO A9 set as input
-        ... {
-                 pinmux = <STM32F1_PINMUX('A', 9, GPIO_IN, REMAP_NO)>;
-        };
-           GPIO A9 set as output-high
-        ... {
-                 pinmux = <STM32F1_PINMUX('A', 9, GPIO_OUT, REMAP_NO)>;
-                 output-high;
-        };
+        Integer represents gpio pin number and mux setting.
+        Each integer encodes a port, line, alternate function and remap.
+        Refer to STM32F1_PINMUX() for details about encoding in
+        include/zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h
 
     slew-rate:
       type: string
