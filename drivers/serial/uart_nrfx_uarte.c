@@ -2536,12 +2536,16 @@ static int uarte_instance_init(const struct device *dev,
 			IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN));     \
 	}								       \
 									       \
+	static const struct device_ops uarte_##idx##_ops = {		       \
+		.init = uarte_##idx##_init,				       \
+	};								       \
+									       \
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action,		       \
 			    COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _),\
 				    (0), (PM_DEVICE_ISR_SAFE)));	       \
 									       \
 	DEVICE_DT_DEFINE(UARTE(idx),					       \
-		      uarte_##idx##_init,				       \
+		      &uarte_##idx##_ops,				       \
 		      PM_DEVICE_DT_GET(UARTE(idx)),			       \
 		      &uarte_##idx##_data,				       \
 		      &uarte_##idx##z_config,				       \
