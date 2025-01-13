@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Polytech A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP TMPSNS
+
+compatible: "nxp,tmpsns"
+
+include: sensor-device.yaml
+
+properties:
+  freq:
+    type: int
+    default: 1000
+    description: |
+      Sets the desired sampling output frequency in Hz, default: 1000 Hz.
+      The driver uses this value to calculate the required number of 24 MHz clock cycles
+      between temperature readings, ensuring the sensor outputs samples at the specified rate.
