@@ -246,7 +246,7 @@ static int cpu_system_msr_mrs_sync(arch_commom_regs_t *arch_ctxt, uint64_t esr_e
 
 	default:
         ZVM_LOG_WARN("Can not emulate provided register here, the register is 0x%x \n", reg_name);
-        return -ENOVDEV;
+        return -ENODEV;
 		break;
 	}
 
@@ -308,7 +308,7 @@ static int cpu_data_abort_low_sync(arch_commom_regs_t *arch_ctxt, uint64_t esr_e
     case DFSC_FT_PERM_L0:
     default:
         ZVM_LOG_WARN("Stage-2 error without translation fault: %016llx !  VM stop! \n", ipa_ddr);
-        ret = -ENOVDEV;
+        ret = -ENODEV;
         break;
     }
 
@@ -412,7 +412,7 @@ static int arch_vm_trap_sync(struct z_vcpu *vcpu)
 
 handler_failed:
     ZVM_LOG_WARN("ZVM do not support this exit code: %lld. \n", GET_ESR_EC(esr_elx));
-    return -ENOVDEV;
+    return -ENODEV;
 }
 
 static void vm_disable_daif(void)

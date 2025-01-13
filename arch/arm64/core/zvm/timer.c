@@ -63,7 +63,7 @@ static int arm_arch_virt_vtimer_compare_isr(void *dev)
 	cntvctl = read_cntv_ctl_el02();
 	if(!(cntvctl & CNTV_CTL_ISTAT_BIT)){
 		ZVM_LOG_WARN("No virt vtimer interrupt but signal raise! \n");
-		return -EVIRQ;
+		return -EINTR;
 	}
 	ctxt->cntv_ctl = cntvctl | CNTV_CTL_IMASK_BIT;
 
@@ -336,11 +336,11 @@ int zvm_arch_vtimer_init(void)
 
     if( (zvm_global_vtimer_info.virt_irq > 32) || (zvm_global_vtimer_info.virt_irq < 0)){
         ZVM_LOG_ERR("Can not get vtimer virt struct from hw. \n");
-		return -EVIRQ;
+		return -EINTR;
     }
 	if( (zvm_global_vtimer_info.phys_irq > 32) || (zvm_global_vtimer_info.phys_irq < 0)){
         ZVM_LOG_ERR("Can not get vtimer phys struct from hw. \n");
-		return -EVIRQ;
+		return -EINTR;
     }
 
 	zvm_virt_vtimer_init();

@@ -401,10 +401,10 @@ int zvm_arch_init(void *op)
 
     /* Is hyp、vhe available? */
     if(!is_basic_hardware_support()){
-        return -EVMODE;
+        return -ESRCH;
     }
     if(!is_gicv3_device_support()){
-        return -ENOVDEV;
+        return -ENODEV;
     }
     ret = zvm_arch_vtimer_init();
     if(ret) {
