@@ -209,7 +209,7 @@ typedef int16_t device_handle_t;
  * device object can be obtained with `DEVICE_DT_GET(node_id)` from any source
  * file that includes `<zephyr/device.h>` (even from extensions, when
  * @kconfig{CONFIG_LLEXT_EXPORT_DEVICES} is enabled). Before using the
- * pointer, the referenced object should be checked using device_is_ready().
+ * pointer, its usage should be registered using device_get().
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Pointer to the device's initialization function, which will be
@@ -302,8 +302,8 @@ typedef int16_t device_handle_t;
  *
  * If there are multiple, this returns an arbitrary one.
  *
- * If this returns non-NULL, the device must be checked for readiness
- * before use, e.g. with device_is_ready().
+ * If this returns non-NULL, device usage must be notified using
+ * device_get().
  *
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device, or NULL
@@ -323,8 +323,8 @@ typedef int16_t device_handle_t;
  *
  * If there are multiple, this returns an arbitrary one.
  *
- * If this returns non-NULL, the device must be checked for readiness before
- * use, e.g. with device_is_ready().
+ * If this returns non-NULL, device usage must be notified using
+ * device_get().
  *
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device
@@ -818,24 +818,6 @@ __syscall const struct device *device_get_binding(const char *name);
 size_t z_device_get_all_static(const struct device **devices);
 
 /**
- * @brief Verify that a device is ready for use.
- *
- * Indicates whether the provided device pointer is for a device known to be
- * in a state where it can be used with its standard API.
- *
- * This can be used with device pointers captured from DEVICE_DT_GET(), which
- * does not include the readiness checks of device_get_binding(). At minimum
- * this means that the device has been successfully initialized.
- *
- * @param dev pointer to the device in question.
- *
- * @retval true If the device is ready for use.
- * @retval false If the device is not ready for use or if a NULL device pointer
- * is passed as argument.
- */
-__syscall bool device_is_ready(const struct device *dev);
-
-/**
  * Get a device.
  *
  * When getting a device, its usage count will be increased and, if not yet
@@ -849,6 +831,30 @@ __syscall bool device_is_ready(const struct device *dev);
  * indicate the current reference count.
  */
 __syscall int device_get(const struct device *dev);
+
+/**
+ * @brief Verify that a device is ready for use.
+ *
+ * Indicates whether the provided device pointer is for a device known to be
+ * in a state where it can be used with its standard API.
+ *
+ * This can be used with device pointers captured from DEVICE_DT_GET(), which
+ * does not include the readiness checks of device_get_binding(). At minimum
+ * this means that the device has been successfully initialized.
+ *
+ * @param dev pointer to the device in question.
+ *
+ * @note Usage of device_get() if preferred, this function will be deprecated
+ * in the future.
+ *
+ * @retval true If the device is ready for use.
+ * @retval false If the device is not ready for use or if a NULL device pointer
+ * is passed as argument.
+ */
+static inline bool device_is_ready(const struct device *dev)
+{
+	return device_get(dev) >= 0;
+}
 
 /**
  * @brief Initialize a device.
