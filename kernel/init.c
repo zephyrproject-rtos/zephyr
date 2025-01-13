@@ -306,8 +306,8 @@ static int do_device_init(const struct device *dev)
 {
 	int rc = 0;
 
-	if (dev->init_fn != NULL) {
-		rc = dev->init_fn(dev);
+	if (dev->ops.init != NULL) {
+		rc = dev->ops.init(dev);
 		/* Mark device initialized. If initialization
 		 * failed, record the error condition.
 		 */
