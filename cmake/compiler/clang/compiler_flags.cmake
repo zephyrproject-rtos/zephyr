@@ -111,7 +111,6 @@ check_set_compiler_property(PROPERTY warning_extended
                             -Wno-section
                             -Wno-unknown-warning-option
                             -Wno-unused-variable
-                            -Wno-format-invalid-specifier
                             -Wno-gnu
                             # comparison of unsigned expression < 0 is always false
                             -Wno-tautological-compare
