@@ -1,0 +1,18 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	resources {
+		compatible = "test-gpio-basic-api";
+		/*
+		 * Use connector J21 GPIO.1 which connect to pca6416 EXP_P1_0 as input
+		 * GPIO, and connector J21 GPIO.4 which connect to pca6416 EXP_P1_3 as
+		 * output GPIO, connect these two pins with a Dupont Line.
+		 */
+		out-gpios = <&gpio_exp1 8 0>;
+		in-gpios = <&gpio_exp1 11 0>;
+	};
+};

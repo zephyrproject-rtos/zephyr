@@ -27,9 +27,11 @@
 #ifdef CONFIG_NRF70_STA_MODE
 #include <drivers/driver_zephyr.h>
 #endif /* CONFIG_NRF70_STA_MODE */
+#include <system/fmac_api.h>
+#else
+#include <radio_test/fmac_api.h>
 #endif /* !CONFIG_NRF70_RADIO_TEST */
 
-#include <fmac_api.h>
 #include <host_rpu_umac_if.h>
 
 #define NRF70_DRIVER_VERSION "1."KERNEL_VERSION_STRING

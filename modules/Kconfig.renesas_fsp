@@ -1,6 +1,6 @@
 # Renesas FSP HAL config
 
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_RENESAS_RA_FSP
@@ -149,6 +149,11 @@ config USE_RA_FSP_SDHI
 	help
 	  Enable RA FSP SDHI driver
 
+config USE_RA_FSP_DAC
+	bool
+	help
+	  Enable RA FSP DAC driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
@@ -172,5 +177,10 @@ config USE_RZ_FSP_GPT
 	bool
 	help
 	  Enable RZ FSP GPT driver
+
+config USE_RZ_FSP_EXT_IRQ
+	bool
+	help
+	  Enable RZ FSP External IRQ driver
 
 endif

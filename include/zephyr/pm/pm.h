@@ -135,11 +135,6 @@ const struct pm_state_info *pm_state_next_get(uint8_t cpu);
  */
 void pm_system_resume(void);
 
-
-/** @cond INTERNAL_HIDDEN */
-__deprecated void z_pm_save_idle_exit(void);
-/** @endcond */
-
 /**
  * @}
  */
@@ -198,9 +193,6 @@ static inline const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 	ARG_UNUSED(cpu);
 
 	return NULL;
-}
-static inline void z_pm_save_idle_exit(void)
-{
 }
 
 static inline void pm_system_resume(void)

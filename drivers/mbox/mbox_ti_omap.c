@@ -199,7 +199,7 @@ static int omap_mailbox_set_enabled(const struct device *dev, uint32_t channel, 
 	return 0;
 }
 
-static const struct mbox_driver_api omap_mailbox_driver_api = {
+static DEVICE_API(mbox, omap_mailbox_driver_api) = {
 	.send = omap_mailbox_send,
 	.register_callback = omap_mailbox_register_callback,
 	.mtu_get = omap_mailbox_mtu_get,

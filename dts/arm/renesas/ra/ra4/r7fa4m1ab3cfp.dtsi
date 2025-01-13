@@ -312,3 +312,11 @@
 	port-irq12-pins = <2>;
 	port-irq14-pins = <5>;
 };
+
+&pwm2 {
+	clocks = <&pclkd MSTPD 6>;
+};
+
+&pwm3 {
+	clocks = <&pclkd MSTPD 6>;
+};

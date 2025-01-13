@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(EMLIB_DIR      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/emlib)
+set(EMDRV_DIR      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/emdrv)
 set(COMMON_DIR     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/common)
 set(DEVICE_DIR     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/Device)
 set(DRIVER_DIR     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/driver)
@@ -99,6 +100,10 @@ zephyr_include_directories(
   ${COMMON_DIR}/config
   ${COMMON_DIR}/inc
   ${DRIVER_DIR}/gpio/inc
+  ${EMDRV_DIR}/common/inc
+  ${EMDRV_DIR}/dmadrv/config/s2_8ch/
+  ${EMDRV_DIR}/dmadrv/inc
+  ${EMDRV_DIR}/dmadrv/inc/s2_signals/
   ${EMLIB_DIR}/inc
   ${PERIPHERAL_DIR}/inc
   ${SERVICE_DIR}/clock_manager/inc
@@ -226,6 +231,9 @@ if(CONFIG_SOC_GECKO_GPIO)
     SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
   )
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMDRV_DIR}/dmadrv/src/dmadrv.c)
+
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_I2C          ${EMLIB_DIR}/src/em_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LETIMER      ${EMLIB_DIR}/src/em_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LEUART       ${EMLIB_DIR}/src/em_leuart.c)

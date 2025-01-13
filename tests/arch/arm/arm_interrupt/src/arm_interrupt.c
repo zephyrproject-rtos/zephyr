@@ -455,16 +455,17 @@ ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 #else
 ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 {
-	TC_PRINT("Skipped\n");
+	ztest_test_skip();
 }
 #endif /* CONFIG_USERSPACE */
 
-#if defined(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION)
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 /* Avoid compiler optimizing null pointer de-referencing. */
 ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 {
+	Z_TEST_SKIP_IFNDEF(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION);
+
 	int reason;
 
 	struct test_struct {
@@ -483,13 +484,6 @@ ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 		"expected_reason has not been reset (%d)\n", reason);
 }
 #pragma GCC pop_options
-#else
-ZTEST(arm_interrupt, test_arm_null_pointer_exception)
-{
-	TC_PRINT("Skipped\n");
-}
-
-#endif /* CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION */
 
 /**
  * @}

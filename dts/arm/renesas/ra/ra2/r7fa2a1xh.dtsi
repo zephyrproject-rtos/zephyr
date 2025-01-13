@@ -251,3 +251,8 @@
 	port-irq2-pins = <1>;
 	port-irq3-pins = <0>;
 };
+
+&dac_global {
+	has-chargepump;
+	has-davrefcr;
+};

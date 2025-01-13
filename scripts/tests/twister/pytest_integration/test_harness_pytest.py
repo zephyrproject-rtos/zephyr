@@ -18,6 +18,7 @@ from twisterlib.platform import Platform
 def testinstance() -> TestInstance:
     testsuite = TestSuite('.', 'samples/hello', 'unit.test')
     testsuite.harness_config = {}
+    testsuite.harness = 'pytest'
     testsuite.ignore_faults = False
     testsuite.sysbuild = False
     platform = Platform()

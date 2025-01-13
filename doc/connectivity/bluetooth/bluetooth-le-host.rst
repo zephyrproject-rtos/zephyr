@@ -21,7 +21,7 @@ host, and vice-versa.
 
 Perhaps the most important block above the HCI handling is the Generic
 Access Profile (GAP). GAP simplifies Bluetooth LE access by defining
-four distinct roles of BLE usage:
+four distinct roles of Bluetooth usage:
 
 * Connection-oriented roles
 
@@ -31,9 +31,9 @@ four distinct roles of BLE usage:
 
 * Connection-less roles
 
-  * Broadcaster (sending out BLE advertisements, e.g. a smart beacon)
+  * Broadcaster (sending out Bluetooth LE advertisements, e.g. a smart beacon)
 
-  * Observer (scanning for BLE advertisements)
+  * Observer (scanning for Bluetooth LE advertisements)
 
 Each role comes with its own build-time configuration option:
 :kconfig:option:`CONFIG_BT_PERIPHERAL`, :kconfig:option:`CONFIG_BT_CENTRAL`,
@@ -49,7 +49,7 @@ section.
 Peripheral role
 ===============
 
-Most Zephyr-based BLE devices will most likely be peripheral-role
+Most Zephyr-based Bluetooth LE devices will most likely be peripheral-role
 devices. This means that they perform connectable advertising and expose
 one or more GATT services. After registering services using the
 :c:func:`bt_gatt_service_register` API the application will typically

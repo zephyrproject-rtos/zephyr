@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
- * Copyright 2017, 2023-2024 NXP
+ * Copyright 2017, 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,9 +19,6 @@
 
 #if defined(CONFIG_PINCTRL_NXP_IOCON)
 #include <fsl_iopctl.h>
-#include <fsl_reset.h>
-#include <fsl_clock.h>
-#include <fsl_gpio.h>
 /* Use IOCON to configure electrical characteristic, set PORT_Type as void. */
 #define PORT_Type void
 #endif

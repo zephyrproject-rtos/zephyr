@@ -1,0 +1,269 @@
+/*
+ * Copyright (c) 2024-2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/silabs/siwx91x-clock.h>
+
+/ {
+	chosen {
+		zephyr,entropy = &rng0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flashctrl0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(191)>;
+	};
+
+	bt_hci0: bt_hci {
+		compatible = "silabs,siwx91x-bt-hci";
+		status = "disabled";
+	};
+
+	wifi0: wifi {
+		compatible = "silabs,siwx91x-wifi";
+		status = "disabled";
+	};
+
+	soc {
+		clock0: clock@46000000 {
+			compatible = "silabs,siwx91x-clock";
+			reg = <0x46000000 0x100>,
+			      <0x46000800 0x100>,
+			      <0x24041400 0x100>,
+			      <0x24048000 0x200>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		pinctrl0: pinctrl@46130000 {
+			compatible = "silabs,siwx91x-pinctrl";
+			reg = <0x46130000 0x1000>;
+		};
+
+		flashctrl0: flash-controller@12000000 {
+			compatible = "silabs,siwx91x-flash-controller";
+			reg = <0x12000000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8202000 {
+				compatible = "soc-nv-flash";
+				write-block-size = <1>;
+				erase-block-size = <4096>;
+			};
+		};
+
+		ulpuart: uart@24041800 {
+			compatible = "ns16550";
+			reg = <0x24041800 0x1000>;
+			interrupts = <12 0>;
+			reg-shift = <2>;
+			clocks = <&clock0 SIWX91X_CLK_ULP_UART>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart1: uart@44000000 {
+			compatible = "ns16550";
+			reg = <0x44000000 0x1000>;
+			interrupts = <38 0>;
+			reg-shift = <2>;
+			clocks = <&clock0 SIWX91X_CLK_UART1>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart2: uart@45020000 {
+			compatible = "ns16550";
+			reg = <0x45020000 0x1000>;
+			interrupts = <39 0>;
+			reg-shift = <2>;
+			clocks = <&clock0 SIWX91X_CLK_UART2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		rng0: rng@45090000 {
+			compatible = "silabs,siwx91x-rng";
+			reg = <0x45090000 0x8>;
+		};
+
+		egpio0: egpio@46130000 {
+			compatible = "silabs,siwx91x-gpio";
+			reg = <0x46130000 0x1260>;
+			interrupts = <52 0>, <53 0>, <54 0>, <55 0>,
+				     <56 0>, <57 0>, <58 0>, <59 0>;
+			interrupt-names = "PIN0", "PIN1", "PIN2", "PIN3",
+					  "PIN4", "PIN5", "PIN6", "PIN7";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpioa: gpio@0 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				gpio-reserved-ranges = <0 6>;
+				silabs,pads = [
+					ff ff ff ff  ff ff 01 02  03 04 05 06  07 ff ff 08
+				];
+				status = "okay";
+			};
+
+			gpiob: gpio@1 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <1>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				silabs,pads = [
+					ff ff ff ff  ff ff ff ff  ff 00 00 00  00 00 00 09
+				];
+				status = "okay";
+			};
+
+			gpioc: gpio@2 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <2>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				silabs,pads = [
+					09 09 09 ff  ff ff ff ff  ff ff ff ff  ff ff 0a 0b
+				];
+				status = "okay";
+			};
+
+			gpiod: gpio@3 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <10>;
+				silabs,pads = [
+					0c 0d 0e 0f  10 11 12 13  14 15 ff ff  ff ff ff ff
+				];
+				status = "okay";
+			};
+		};
+
+		egpio1: egpio@2404c000 {
+			compatible = "silabs,siwx91x-gpio";
+			reg = <0x2404C000 0x1260>;
+			interrupts = <18 0>;
+			interrupt-names = "ULP";
+			silabs,ulp;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ulpgpio: ulpgpio@0 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <12>;
+				gpio-reserved-ranges = <3 1>;
+				silabs,pads = [
+					16 17 18 19  1a 1b 1c 1d  1e 1f 20 21  ff ff ff ff
+				];
+				status = "okay";
+			};
+		};
+
+		uulpgpio: uulpgpio@24048600 {
+			compatible = "silabs,siwx91x-gpio-uulp";
+			reg = <0x24048600 0x30>, <0x12080000 0x18>;
+			reg-names = "ret", "int";
+			interrupts = <21 0>;
+			interrupt-names = "UULP";
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <5>;
+			status = "okay";
+		};
+
+		ulpi2c: i2c@24040000 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24040000 0x100>;
+			interrupts = <13 0>;
+			interrupt-names = "i2c2";
+			clocks = <&clock0 SIWX91X_CLK_ULP_I2C>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@44010000 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44010000 0x100>;
+			interrupts = <42 0>;
+			interrupt-names = "i2c0";
+			clocks = <&clock0 SIWX91X_CLK_I2C0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@47040000 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x47040000 0x100>;
+			interrupts = <61 0>;
+			interrupt-names = "i2c1";
+			clocks = <&clock0 SIWX91X_CLK_I2C1>;
+			status = "disabled";
+		};
+
+		dma0: dma@44030000 {
+			compatible = "silabs,siwx91x-dma";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44030000 0x82C>;
+			interrupts = <33 0>;
+			interrupt-names = "dma0";
+			clocks = <&clock0 SIWX91X_CLK_DMA0>;
+			silabs,sram-desc-addr = <0x2fc00>;
+			#dma-cells = < 1>;
+			dma-channels = <32>;
+			status = "disabled";
+		};
+
+		ulpdma: dma@24078000 {
+			compatible = "silabs,siwx91x-dma";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24078000 0x82C>;
+			interrupts = <10 0>;
+			interrupt-names = "ulpdma";
+			clocks = <&clock0 SIWX91X_CLK_ULP_DMA>;
+			silabs,sram-desc-addr = <0x24061c00>;
+			#dma-cells = < 1>;
+			dma-channels = <12>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <6>;
+};

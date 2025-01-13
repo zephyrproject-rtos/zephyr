@@ -1,0 +1,5 @@
+test_shell_harness:
+- command: "kernel cycles"
+  expected: "cycles: .* hw cycles"
+- command: "kernel version"
+  expected: "Zephyr version .*"

@@ -1252,6 +1252,8 @@ Release Notes:
   status: maintained
   maintainers:
     - ceolin
+  collaborators:
+    - valeriosetti
   files:
     - drivers/crypto/
     - dts/bindings/crypto/
@@ -1785,8 +1787,6 @@ Release Notes:
   maintainers:
     - Mani-Sadhasivam
     - simonguinot
-  collaborators:
-    - bbilas
   files:
     - drivers/led/
     - include/zephyr/drivers/led/
@@ -3571,6 +3571,7 @@ Raspberry Pi Pico Platforms:
   collaborators:
     - yonsch
     - threeeights
+    - ajf58
   files:
     - boards/raspberrypi/
     - boards/adafruit/kb2040/
@@ -4039,13 +4040,19 @@ Renesas RZ Platforms:
   status: maintained
   maintainers:
     - tgorochowik
+  collaborators:
+    - binhnguyen2434
+    - nhutnguyenkc
   files:
-    - boards/renesas/rzt2m_*/
+    - boards/renesas/rz*/
     - drivers/*/*rzt2m*
+    - drivers/*/*renesas_rz*
     - drivers/pinctrl/renesas/rz/
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
+    - dts/bindings/*/*renesas,rz*
     - soc/renesas/rzt2m/
+    - soc/renesas/rz/
   labels:
     - "platforms: Renesas RZ"
   description: >-
@@ -4127,6 +4134,17 @@ STM32 Wireless Platforms:
   description: >-
     STM32WB SOCs, dts files and related drivers. STM32WB development boards
     and ST bluetooth shields.
+
+Enclustra Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+  collaborators:
+    - tgorochowik
+  files:
+    - boards/enclustra/
+  labels:
+    - "platform: Enclustra"
 
 Espressif Platforms:
   status: maintained
@@ -4974,6 +4992,7 @@ West:
   collaborators:
     - yonsch
     - threeeights
+    - ajf58
   files:
     - modules/hal_rpi_pico/
   labels:
@@ -5573,6 +5592,15 @@ Random:
     - include/zephyr/random/
   labels:
     - "area: Random"
+
+Peregrine Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - boards/peregrine/
+  labels:
+    - "platform: Peregrine"
 
 # This area is to be converted to a subarea
 Testing with Renode:
