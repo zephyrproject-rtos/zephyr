@@ -43,6 +43,14 @@ config MCUBOOT_MODE_SINGLE_APP
 	  slots. In this mode application is not able to DFU its own update to secondary slot and
 	  all updates need to be performed using MCUboot serial recovery.
 
+config MCUBOOT_MODE_SWAP_USING_OFFSET
+	bool "Swap using offset"
+	select EXPERIMENTAL
+	help
+	  MCUboot expects slot0_partition and slot1_partition to be present in DT and application
+	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  in main application if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
 config MCUBOOT_MODE_SWAP_USING_MOVE
 	bool "Swap using move"
 	help
