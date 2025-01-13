@@ -32,7 +32,7 @@ if BOOTLOADER_MCUBOOT
 
 choice MCUBOOT_MODE
 	prompt "Mode of operation"
-	default MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH
+	default MCUBOOT_MODE_SWAP_USING_MOVE
 	help
 	  The operating mode of MCUboot (which will also be propagated to the application).
 
@@ -43,12 +43,18 @@ config MCUBOOT_MODE_SINGLE_APP
 	  slots. In this mode application is not able to DFU its own update to secondary slot and
 	  all updates need to be performed using MCUboot serial recovery.
 
-config MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH
-	bool "Swap without scratch (swap using move)"
+config MCUBOOT_MODE_SWAP_USING_MOVE
+	bool "Swap using move"
 	help
 	  MCUboot expects slot0_partition and slot1_partition to be present in DT and application
 	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
 	  in main application if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
+
+config MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH
+	bool "Swap without scratch (swap using move) [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This Kconfig is deprecated, use MCUBOOT_MODE_SWAP_USING_MOVE instead.
 
 config MCUBOOT_MODE_SWAP_SCRATCH
 	bool "Swap using scratch"
