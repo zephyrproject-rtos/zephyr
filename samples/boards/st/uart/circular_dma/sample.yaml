@@ -2,6 +2,8 @@ sample:
   name: UART driver sample
 tests:
   sample.boards.stm32.uart.circular_dma:
+    vendor_exclude:
+      - nxp
     integration_platforms:
       - nucleo_g071rb
     tags:
