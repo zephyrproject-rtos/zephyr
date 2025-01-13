@@ -212,11 +212,14 @@ zephyr_library_sources(
   ${HOSTAP_SRC_BASE}/eap_server/eap_server_identity.c
   ${HOSTAP_SRC_BASE}/eap_server/eap_server_methods.c
   ${HOSTAP_SRC_BASE}/eapol_auth/eapol_auth_sm.c
-  ${HOSTAP_SRC_BASE}/ap/mbo_ap.c
   ${HOSTAP_SRC_BASE}/ap/ctrl_iface_ap.c
   ${HOSTAP_SRC_BASE}/utils/crc32.c
   ${HOSTAP_SRC_BASE}/utils/ip_addr.c
 )
+
+if (CONFIG_WIFI_NM_WPA_SUPPLICANT_MBO)
+  zephyr_library_sources(${HOSTAP_SRC_BASE}/ap/mbo_ap.c)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
   ${HOSTAP_SRC_BASE}/ap/ieee802_11_he.c
