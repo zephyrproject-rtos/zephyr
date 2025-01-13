@@ -371,10 +371,11 @@ class KconfigCheck(ComplianceTest):
     doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
     path_hint = "<zephyr-base>"
 
-    def run(self, full=True, no_modules=False, filename="Kconfig", hwm=None):
-        self.no_modules = no_modules
+    # Top-level Kconfig file. The path can be relative to srctree (ZEPHYR_BASE).
+    FILENAME = "Kconfig"
 
-        kconf = self.parse_kconfig(filename=filename, hwm=hwm)
+    def run(self):
+        kconf = self.parse_kconfig()
 
         self.check_top_menu_not_too_long(kconf)
         self.check_no_pointless_menuconfigs(kconf)
@@ -382,8 +383,7 @@ class KconfigCheck(ComplianceTest):
         self.check_no_redefined_in_defconfig(kconf)
         self.check_no_enable_in_boolean_prompt(kconf)
         self.check_soc_name_sync(kconf)
-        if full:
-            self.check_no_undef_outside_kconfig(kconf)
+        self.check_no_undef_outside_kconfig(kconf)
 
     def get_modules(self, modules_file, settings_file):
         """
@@ -393,11 +393,6 @@ class KconfigCheck(ComplianceTest):
         This is needed to complete Kconfig sanity tests.
 
         """
-        if self.no_modules:
-            with open(modules_file, 'w') as fp_module_file:
-                fp_module_file.write("# Empty\n")
-            return
-
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
         zephyr_module_path = os.path.join(ZEPHYR_BASE, "scripts",
@@ -578,7 +573,7 @@ class KconfigCheck(ComplianceTest):
             for arch in v2_archs['archs']:
                 fp.write('source "' + (Path(arch['path']) / 'Kconfig').as_posix() + '"\n')
 
-    def parse_kconfig(self, filename="Kconfig", hwm=None):
+    def parse_kconfig(self):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
         this object for all tests to avoid having to reparse for each test.
@@ -638,7 +633,7 @@ class KconfigCheck(ComplianceTest):
             # them: so some warnings might get printed
             # twice. "warn_to_stderr=False" could unfortunately cause
             # some (other) warnings to never be printed.
-            return kconfiglib.Kconfig(filename=filename)
+            return kconfiglib.Kconfig(filename=self.FILENAME)
         except kconfiglib.KconfigError as e:
             self.failure(str(e))
             raise EndTest
@@ -1053,26 +1048,25 @@ class KconfigBasicCheck(KconfigCheck):
     references inside the Kconfig tree.
     """
     name = "KconfigBasic"
-    doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
-    path_hint = "<zephyr-base>"
 
-    def run(self):
-        super().run(full=False)
+    def check_no_undef_outside_kconfig(self, kconf):
+        pass
 
-class KconfigBasicNoModulesCheck(KconfigCheck):
+
+class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     """
     Checks if we are introducing any new warnings/errors with Kconfig when no
     modules are available. Catches symbols used in the main repository but
     defined only in a module.
     """
     name = "KconfigBasicNoModules"
-    doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
-    path_hint = "<zephyr-base>"
-    def run(self):
-        super().run(full=False, no_modules=True)
+
+    def get_modules(self, modules_file, settings_file):
+        with open(modules_file, 'w') as fp_module_file:
+            fp_module_file.write("# Empty\n")
 
 
-class KconfigHWMv2Check(KconfigCheck, ComplianceTest):
+class KconfigHWMv2Check(KconfigBasicCheck):
     """
     This runs the Kconfig test for board and SoC v2 scheme.
     This check ensures that all symbols inside the v2 scheme is also defined
@@ -1080,13 +1074,10 @@ class KconfigHWMv2Check(KconfigCheck, ComplianceTest):
     This ensures the board and SoC trees are fully self-contained and reusable.
     """
     name = "KconfigHWMv2"
-    doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
 
-    def run(self):
-        # Use dedicated Kconfig board / soc v2 scheme file.
-        # This file sources only v2 scheme tree.
-        kconfig_file = os.path.join(os.path.dirname(__file__), "Kconfig.board.v2")
-        super().run(full=False, hwm="v2", filename=kconfig_file)
+    # Use dedicated Kconfig board / soc v2 scheme file.
+    # This file sources only v2 scheme tree.
+    FILENAME = os.path.join(os.path.dirname(__file__), "Kconfig.board.v2")
 
 
 class Nits(ComplianceTest):
