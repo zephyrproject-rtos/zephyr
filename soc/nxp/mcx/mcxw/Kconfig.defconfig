@@ -14,6 +14,16 @@ config MCUX_FLASH_K4_API
 
 if BT
 
+config MAIN_STACK_SIZE
+	default 2560
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
+
 # Include intercore messaging component
 config NXP_RF_IMU
 	default y
