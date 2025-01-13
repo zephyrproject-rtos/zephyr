@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Polytech A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP TMPSNS
+
+compatible: "nxp,tmpsns"
+
+include: sensor-device.yaml
+
+properties:
+  clock-divider:
+    type: int
+    default: 3
+    description: |
+      Represents the number of clock cycles of the 24 MHz clock that TMPSNS counts between two
+      temperature readings.
+      The value must be between 1 and 65535.
