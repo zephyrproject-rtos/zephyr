@@ -926,6 +926,14 @@
 			status = "disabled";
 		};
 	};
+
+	flexio: flexio@416000 {
+		compatible = "nxp,flexio";
+		reg = <0x416000 0x1000>;
+		status = "disabled";
+		interrupts = <55 0>;
+		clocks = <&clkctl4 MCUX_FLEXIO0_CLK>;
+	};
 };
 
 &xspi0 {
