@@ -20,10 +20,21 @@ extern uint32_t _irq_vector_table[];
 
 #if defined(CONFIG_RISCV)
 #if defined(CONFIG_NRFX_CLIC)
-#define ISR1_OFFSET	15
-#define ISR3_OFFSET	16
-#define ISR5_OFFSET	17
-#define TRIG_CHECK_SIZE	18
+
+#if defined(CONFIG_SOC_SERIES_NRF54LX) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+#define ISR1_OFFSET	16
+#define ISR3_OFFSET	17
+#define ISR5_OFFSET	18
+#define TRIG_CHECK_SIZE	19
+#elif defined(CONFIG_SOC_NRF54H20_CPUPPR)
+#define ISR1_OFFSET	14
+#define ISR3_OFFSET	15
+#define ISR5_OFFSET	16
+#define TRIG_CHECK_SIZE	17
+#else
+#error "Target not supported"
+#endif
+
 #elif defined(CONFIG_RISCV_HAS_CLIC)
 #define ISR1_OFFSET	3
 #define ISR3_OFFSET	17
