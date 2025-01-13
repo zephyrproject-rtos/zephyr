@@ -92,3 +92,11 @@
 		status = "okay";
 	};
 };
+
+&wut0 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_INRO>;
+};
+
+&wut1 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_INRO>;
+};
