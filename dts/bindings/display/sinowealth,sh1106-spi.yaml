@@ -8,7 +8,7 @@ compatible: "sinowealth,sh1106"
 include: ["solomon,ssd1306fb-common.yaml", "spi-device.yaml"]
 
 properties:
-  data_cmd-gpios:
+  data-cmd-gpios:
     type: phandle-array
     required: true
     description: D/C# pin.
