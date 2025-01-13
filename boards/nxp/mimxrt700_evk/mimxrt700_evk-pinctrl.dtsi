@@ -57,4 +57,12 @@
 			input-enable;
 		};
 	};
+
+	flexio_pwm_default: flexio_pwm_default {
+		group0 {
+			pinmux = <FLEXIO_IO7_PIO2_7>;
+			drive-strength = "normal";
+			slew-rate = "slow";
+		};
+	};
 };
