@@ -32,13 +32,13 @@
 	DT_IRQ(SHIM_NRF_TWIS_NODE(id), priority)
 
 #define SHIM_NRF_TWIS_HAS_MEMORY_REGIONS(id) \
-	DT_NODE_HAS_PROP(id, memory_regions)
+	DT_NODE_HAS_PROP(SHIM_NRF_TWIS_NODE(id), memory_regions)
 
 #define SHIM_NRF_TWIS_LINKER_REGION_NAME(id) \
 	LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(SHIM_NRF_TWIS_NODE(id), memory_regions))
 
 #define SHIM_NRF_TWIS_BUF_ATTR_SECTION(id) \
-	__attribute__((__section__(SHIM_NRF_TWIS_LINKER_REGION_NAME, ())))
+	__attribute__((__section__(SHIM_NRF_TWIS_LINKER_REGION_NAME(id))))
 
 #define SHIM_NRF_TWIS_BUF_ATTR(id)								\
 	COND_CODE_1(										\

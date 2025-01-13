@@ -24,18 +24,18 @@ overlay=overlay_pst_conf
 RunTestFlash mesh_pst_cfg_check persistence_cfg_load -flash_rm \
     -- -argstest stack-cfg=1
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash mesh_pst_cfg_check_psa persistence_cfg_save -flash_erase \
     -- -argstest stack-cfg=0
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash mesh_pst_cfg_check_psa persistence_cfg_load -flash_rm \
     -- -argstest stack-cfg=0
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash mesh_pst_cfg_check_psa persistence_cfg_save -flash_erase \
     -- -argstest stack-cfg=1
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash mesh_pst_cfg_check_psa persistence_cfg_load -flash_rm \
     -- -argstest stack-cfg=1

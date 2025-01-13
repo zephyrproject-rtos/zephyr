@@ -6,11 +6,15 @@ tests:
     tags:
       - flash
       - shell
-    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED and dt_chosen_enabled('zephyr,flash-controller')
+            and not CONFIG_SOC_SERIES_BSIM_NRFXX
     platform_exclude:
       - stm32h7s78_dk
       - gd32f350r_eval
-    harness: keyboard
+    harness: shell
+    extra_configs:
+      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
     min_ram: 12
     integration_platforms:
       - qemu_x86
+      - native_sim

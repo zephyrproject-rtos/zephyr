@@ -776,6 +776,25 @@
 			interrupts = <37 0>;
 			status = "disabled";
 		};
+
+		usbotg_fs: usb@40080000 {
+			compatible = "st,stm32-otgfs";
+			reg = <0x40080000 0x40000>;
+			interrupts = <112 0>;
+			interrupt-names = "otgfs";
+			num-bidir-endpoints = <6>;
+			ram-size = <1280>;
+			maximum-speed = "full-speed";
+			phys = <&otgfs_phy>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 27U)>,
+				 <&rcc STM32_SRC_HSI48 OTGFS_SEL(0)>;
+			status = "disabled";
+		};
+	};
+
+	otgfs_phy: otgfs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 
 	die_temp: dietemp {

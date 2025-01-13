@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -107,6 +108,22 @@
 	 * and secure modes (0x50000000).
 	 */
 
+	lpadc0: adc@20c000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x20c000 0x304>;
+		interrupts = <15 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		clk-source = <0>;
+		voltage-ref= <1>;
+		calibration-average = <128>;
+		power-level = <0>;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+		clocks = <&clkctl3 MCUX_LPADC1_CLK>;
+	};
+
 	rstctl0: reset@0 {
 		compatible = "nxp,rstctl";
 		reg = <0x0 0x1000>;
@@ -153,6 +170,66 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0xa1000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	ctimer0: ctimer@28000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x28000 0x1000>;
+		interrupts = <3 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER0_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer1: ctimer@29000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x29000 0x1000>;
+		interrupts = <4 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER1_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer2: ctimer@2a000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2a000 0x1000>;
+		interrupts = <32 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER2_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer3: ctimer@2b000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2b000 0x1000>;
+		interrupts = <6 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER3_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer4: ctimer@2c000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2c000 0x1000>;
+		interrupts = <33 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl0 MCUX_CTIMER4_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
 	};
 
 	edma0: dma-controller@140000 {
@@ -926,6 +1003,29 @@
 			status = "disabled";
 		};
 	};
+
+	flexio: flexio@416000 {
+		compatible = "nxp,flexio";
+		reg = <0x416000 0x1000>;
+		status = "disabled";
+		interrupts = <55 0>;
+		clocks = <&clkctl4 MCUX_FLEXIO0_CLK>;
+	};
+
+	os_timer_cpu0: timers@207000 {
+		compatible = "nxp,os-timer";
+		reg = <0x207000 0x1000>;
+		interrupts = <34 0>;
+		status = "disabled";
+	};
+};
+
+&systick {
+	/*
+	 * RT700 cm33_cpu0 relies by default on the OS Timer for system
+	 * clock implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
 };
 
 &xspi0 {

@@ -20,12 +20,12 @@ RunTest mesh_pst_repr persistence_reprovisioning_device \
 	-flash=../results/mesh_pst_repr/flash.bin -flash_rm \
 	persistence_reprovisioning_provisioner
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTest mesh_pst_repr_psa persistence_reprovisioning_device \
     -flash=../results/mesh_pst_repr_psa/flash.bin -flash_erase \
 	persistence_reprovisioning_provisioner
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTest mesh_pst_repr_psa persistence_reprovisioning_device \
 	-flash=../results/mesh_pst_repr_psa/flash.bin -flash_rm \
 	persistence_reprovisioning_provisioner

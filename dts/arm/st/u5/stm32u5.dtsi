@@ -304,7 +304,7 @@
 			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x40036400 DT_SIZE_K(2)>;
 			/* BKPSRAMEN and RAMCFGEN clock enable */
-			clocks = <&rcc STM32_CLOCK(AHB1, 28U)>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 ((1 << 28) | (1 << 17))>;
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};

@@ -2053,8 +2053,12 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 
 	/* Get total value of all attributes to be collected */
 	frame_len -= sdp_client_get_total(session, buf, &total);
+	if (frame_len != total) {
+		LOG_ERR("Invalid attribute lists");
+		return 0;
+	}
 
-	if (total > net_buf_tailroom(session->rec_buf)) {
+	if (frame_len > net_buf_tailroom(session->rec_buf)) {
 		LOG_WRN("Not enough room for getting records data");
 		goto iterate;
 	}

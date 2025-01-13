@@ -27,10 +27,11 @@ config POSIX_SHARED_MEMORY_OBJECTS
 
 config POSIX_MAPPED_FILES
 	bool "POSIX memory-mapped files"
-	# disable Xtensa for now until linker issues are resolved
-	imply MMU if (CPU_HAS_MMU && !XTENSA)
 	help
 	  Select 'y' here and Zephyr will provide support for mmap(), msync(), and munmap().
+
+	  Note: This feature depends on hardware MMU support. If the underlying platform does not
+	  support an MMU, then affected POSIX API functions may return -1 and set errno to ENOTSUP.
 
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
@@ -43,16 +44,22 @@ config POSIX_MEMLOCK
 	help
 	  Select 'y' here and Zephyr will provide support for mlockall() and munlockall().
 
+	  Note: This feature depends on hardware MMU support as well as DEMAND_PAGING. If the
+	  underlying platform does not support an MMU or DEMAND_PAGING, then affected POSIX API
+	  functions will return -1 and set errno to ENOTSUP.
+
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
 
 config POSIX_MEMLOCK_RANGE
 	bool "POSIX range memory locking"
-	imply MMU if (CPU_HAS_MMU && ARCH_HAS_DEMAND_PAGING)
 	imply DEMAND_PAGING
 	help
 	  Select 'y' here and Zephyr will provide support for mlock() and munlock().
+
+	  Note: This feature depends on hardware MMU support. If the underlying platform does not
+	  support an MMU, then affected POSIX API functions will return -1 and set errno to ENOTSUP.
 
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html

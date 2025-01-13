@@ -628,7 +628,7 @@ struct bt_mesh_model_op {
  *  @return Mesh transmit value that can be used e.g. for the default
  *          values of the configuration model data.
  */
-#define BT_MESH_TRANSMIT(count, int_ms) ((count) | (((int_ms / 10) - 1) << 3))
+#define BT_MESH_TRANSMIT(count, int_ms) ((uint8_t)((count) | (((int_ms / 10) - 1) << 3)))
 
 /**
  *  @brief Decode transmit count from a transmit value.

@@ -13,6 +13,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/dfu/mcuboot.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -262,7 +263,10 @@ int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 		return IMG_MGMT_ERR_FLASH_CONFIG_QUERY_FAIL;
 	}
 
-	rc = img_mgmt_read(image_slot, 0, &hdr, sizeof(hdr));
+	rc = img_mgmt_read(image_slot,
+			   boot_get_image_start_offset(img_mgmt_flash_area_id(image_slot)),
+			   &hdr, sizeof(hdr));
+
 	if (rc != 0) {
 		return rc;
 	}
@@ -290,7 +294,8 @@ int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 	 * TLV. All images are required to have a hash TLV.  If the hash is missing, the image
 	 * is considered invalid.
 	 */
-	data_off = hdr.ih_hdr_size + hdr.ih_img_size;
+	data_off = hdr.ih_hdr_size + hdr.ih_img_size +
+		   boot_get_image_start_offset(img_mgmt_flash_area_id(image_slot));
 
 	rc = img_mgmt_find_tlvs(image_slot, &data_off, &data_end, IMAGE_TLV_PROT_INFO_MAGIC);
 	if (!rc) {

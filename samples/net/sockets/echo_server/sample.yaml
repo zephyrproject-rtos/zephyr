@@ -88,29 +88,17 @@ tests:
       - native_sim/native/64
       - native_posix
       - native_posix/native/64
-  sample.net.sockets.echo_server.nrf_openthread:
+  sample.net.sockets.echo_server.openthread:
     extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
     slow: true
     tags:
       - net
       - openthread
-    platform_allow: nrf52840dk/nrf52840
-    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
-  sample.net.sockets.echo_server.b91_openthread:
-    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
-    slow: true
-    tags:
-      - net
-      - openthread
-    platform_allow: tlsr9518adk80d
-    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
-  sample.net.sockets.echo_server.kw41z_openthread:
-    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
-    slow: true
-    tags:
-      - net
-      - openthread
-    platform_allow: frdm_kw41z
+    platform_allow:
+      - frdm_kw41z
+      - frdm_mcxw71
+      - nrf52840dk/nrf52840
+      - tlsr9518adk80d
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   sample.net.sockets.echo_server.rw612_openthread_rcp_host:
     build_only: true

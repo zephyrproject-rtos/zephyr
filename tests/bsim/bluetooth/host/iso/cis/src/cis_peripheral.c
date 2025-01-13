@@ -18,7 +18,7 @@
 
 extern enum bst_result_t bst_result;
 
-static DEFINE_FLAG(flag_data_received);
+DEFINE_FLAG_STATIC(flag_data_received);
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),

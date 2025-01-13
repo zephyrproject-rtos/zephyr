@@ -122,6 +122,7 @@ static bool switch_to_spim(void)
 {
 	int ret;
 	nrfx_err_t err;
+	uint32_t sck_pin;
 
 	PINCTRL_DT_DEFINE(SPIM_NODE);
 
@@ -155,8 +156,11 @@ static bool switch_to_spim(void)
 	}
 
 	/* Set initial state of SCK according to the SPI mode. */
-	nrfy_gpio_pin_write(nrfy_spim_sck_pin_get(spim.p_reg),
-			    (spim_config.mode <= NRF_SPIM_MODE_1) ? 0 : 1);
+	sck_pin = nrfy_spim_sck_pin_get(spim.p_reg);
+
+	if (sck_pin != NRF_SPIM_PIN_NOT_CONNECTED) {
+		nrfy_gpio_pin_write(sck_pin, (spim_config.mode <= NRF_SPIM_MODE_1) ? 0 : 1);
+	}
 
 	err = nrfx_spim_init(&spim, &spim_config, spim_handler, NULL);
 	if (err != NRFX_SUCCESS) {

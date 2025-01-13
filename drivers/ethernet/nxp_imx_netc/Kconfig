@@ -1,0 +1,99 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_NXP_IMX_NETC
+	bool "NXP IMX Ethernet and Network Controller (NETC) driver"
+	default y
+	depends on DT_HAS_NXP_IMX_NETC_PSI_ENABLED
+	select MDIO
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select ETH_DSA_SUPPORT
+	help
+	  Enable Ethernet and Network Controller (NETC) driver for NXP IMX SoCs.
+
+if ETH_NXP_IMX_NETC
+
+config ETH_NXP_IMX_MSGINTR
+	int "Message Interrupt module select"
+	default 1
+	help
+	  Message Interrupt module select.
+
+config ETH_NXP_IMX_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 2
+	help
+	  RX thread priority. RX thread is a cooperative thread.
+
+config ETH_NXP_IMX_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 1500
+	help
+	  RX thread stack size.
+
+config ETH_NXP_IMX_RX_BUDGET
+	int "RX thread budget"
+	default 128
+	range 1 1024
+	help
+	  The budget parameter places a limit on the amount of work the driver may
+	  do in the RX thread before yielding the processor, in case there is more
+	  work to do. This is to prevent the RX thread to starve other threads. Each
+	  received frame counts as one unit of work.
+
+config ETH_NXP_IMX_TX_RING_NUM
+	int "TX ring number"
+	default 1
+	range 1 1023
+	help
+	  TX ring number used. The actual maximum value may varies from platforms.
+
+config ETH_NXP_IMX_TX_RING_LEN
+	int "TX ring length"
+	default 8
+	range 8 256
+	help
+	  Length of the TX ring. The value must be a multiple of 8.
+
+config ETH_NXP_IMX_TX_RING_BUF_SIZE
+	int "TX ring data buffer size"
+	default 1000
+	range 64 1536
+	help
+	  Size, in bytes, of the TX data buffer. The size must be big enough to
+	  store one complete Ethernet frame, and be a multiple of 8.
+
+config ETH_NXP_IMX_RX_RING_NUM
+	int "RX ring number"
+	default 1
+	range 1 1023
+	help
+	  RX ring number used. The actual maximum value may varies from platforms.
+
+config ETH_NXP_IMX_RX_RING_LEN
+	int "RX ring length"
+	default 8
+	range 8 256
+	help
+	  Length of the RX ring. The value must be a multiple of 8.
+
+config ETH_NXP_IMX_RX_RING_BUF_SIZE
+	int "RX ring data buffer size"
+	default 1518
+	range 64 1536
+	help
+	  Size, in bytes, of the RX data buffer. The size must be big enough to
+	  store one complete Ethernet frame, and be a multiple of 8.
+
+endif # ETH_NXP_IMX_NETC
+
+if NET_DSA
+
+config DSA_NXP_IMX_NETC
+	bool "Support for NXP i.MX NETC"
+	default y
+	depends on DT_HAS_NXP_NETC_SWITCH_ENABLED
+	help
+	  Add support for NXP i.MX NETC DSA device driver.
+
+endif

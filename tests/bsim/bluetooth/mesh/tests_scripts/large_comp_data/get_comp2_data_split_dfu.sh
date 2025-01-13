@@ -10,14 +10,14 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #
 # Test procedure:
 # 0. Provisioning and setup. Server and client has same comp data.
-# 1. Client requests a sample exceeding the maximum avaialble payload from the
+# 1. Client requests a sample exceeding the maximum available payload from the
 #    server's composition data.
 # 2. Client fetch its local comp data.
 # 3. When server status arrive, remove status field data and compare received
 #    comp data with corresponding bytes in local comp data.
 # 4. Client requests the next sample from server's composition data.
 # 5. When server status arrive, remove status field data and compare received
-#    comp data with correspending bytes in local comp data.
+#    comp data with corresponding bytes in local comp data.
 # 6. Client merges the two samples and checks that the collected data is
 #    correctly merged, continuous, and matches its local comp data.
 overlay=overlay_pst_conf
@@ -25,7 +25,7 @@ RunTest mesh_lcd_test_comp2_data_split_dfu \
 	lcd_srv_comp_data_status_respond \
 	lcd_cli_split_comp_data_request -- -argstest page=2 comp-changed-mode=1
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTest mesh_lcd_test_comp2_data_split_dfu \
 	lcd_srv_comp_data_status_respond \
 	lcd_cli_split_comp_data_request -- -argstest page=2 comp-changed-mode=1

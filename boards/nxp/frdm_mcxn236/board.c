@@ -12,7 +12,7 @@
 #include "usb_phy.h"
 #include "usb.h"
 
-/* USB PHY condfiguration */
+/* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     0x04U
 #define BOARD_USB_PHY_TXCAL45DP 0x07U
 #define BOARD_USB_PHY_TXCAL45DM 0x07U

@@ -60,13 +60,6 @@
 		};
 	};
 
-	/omit-if-no-ref/ can120_default: can120_default {
-		group1 {
-			psels = <NRF_PSEL(CAN_RX, 9, 4)>,
-				<NRF_PSEL(CAN_TX, 9, 5)>;
-		};
-	};
-
 	/omit-if-no-ref/ pwm130_default: pwm130_default {
 		group1 {
 			psels = <NRF_PSEL(PWM_OUT0, 9, 2)>;

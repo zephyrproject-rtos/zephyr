@@ -71,6 +71,10 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| INTC      | on-chip    | external interrupt controller       |
++-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock control                       |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 

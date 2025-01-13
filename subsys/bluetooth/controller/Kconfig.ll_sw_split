@@ -95,7 +95,7 @@ config BT_LLL_VENDOR_OPENISA
 	  Use OpenISA Lower Link Layer implementation.
 
 # BT_CTLR_DF_SUPPORT is a wrapper for all DF features. Here we select features that are supported by
-# Zephyr's BLE Controller.
+# Zephyr's Bluetooth LE Controller.
 config BT_CTLR_DF_SUPPORT
 	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
 	select BT_CTLR_DF_CTE_TX_SUPPORT
@@ -973,11 +973,11 @@ config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 					  SOC_COMPATIBLE_NRF54LX)
 	help
 	  Implement the tIFS Trx SW switch with the same TIMER
-	  instance, as the one used for BLE event timing. Requires
+	  instance, as the one used for Bluetooth event timing. Requires
 	  SW switching be enabled. Using a single TIMER:
 	  (+) frees up one TIMER instance
 	  (+) removes jitter for HCTO implementation
-	  (-) introduces drifting to the absolute time inside BLE
+	  (-) introduces drifting to the absolute time inside Bluetooth
 	  events, that increases linearly with the number of
 	  packets exchanged in the event
 	  (-) makes it impossible to use most of the pre-programmed
@@ -1413,7 +1413,7 @@ endchoice
 
 source "subsys/bluetooth/controller/coex/Kconfig"
 
-comment "BLE Controller debug configuration"
+comment "Bluetooth LE Controller debug configuration"
 
 config BT_CTLR_PROFILE_ISR
 	bool "Profile radio ISR"
@@ -1427,7 +1427,7 @@ config BT_CTLR_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"
 	depends on BOARD_NRF51DK_NRF51822 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF52833DK_NRF52833 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
 	help
-	  Turn on debug GPIO toggling for the BLE Controller. This is useful
+	  Turn on debug GPIO toggling for the Bluetooth LE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
 

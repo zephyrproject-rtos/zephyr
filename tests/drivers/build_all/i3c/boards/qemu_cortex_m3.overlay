@@ -5,6 +5,12 @@
  */
 
 / {
+	test_fixed_clk: test-fixed-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <200000000>;
+		#clock-cells = <0>;
+	};
+
 	i3c0: i3c@88888888 {
 		compatible = "cdns,i3c";
 		#address-cells = <3>;
@@ -13,6 +19,18 @@
 		interrupt-parent = <&nvic>;
 		interrupts = <4 1>;
 		input-clock-frequency = <200000000>;
+		i3c-scl-hz = <12500000>;
+		i2c-scl-hz = <400000>;
+	};
+
+	i3c1: i3c@cccccccc {
+		compatible = "snps,designware-i3c";
+		#address-cells = <3>;
+		#size-cells = <0>;
+		reg = <0xcccccccc 0x400>;
+		interrupt-parent = <&nvic>;
+		interrupts = <8 1>;
+		clocks = <&test_fixed_clk>;
 		i3c-scl-hz = <12500000>;
 		i2c-scl-hz = <400000>;
 	};

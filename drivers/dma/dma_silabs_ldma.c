@@ -15,6 +15,7 @@
 #include <zephyr/sys/mem_blocks.h>
 
 #include "em_ldma.h"
+#include "dmadrv.h"
 
 #define DT_DRV_COMPAT silabs_ldma
 
@@ -480,17 +481,27 @@ static int dma_silabs_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
+bool dma_silabs_chan_filter(const struct device *dev, int channel, void *filter_param)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(filter_param);
+	return (DMADRV_AllocateChannelById(channel, 0) == ECODE_EMDRV_DMADRV_OK);
+}
+
+void dma_silabs_chan_release(const struct device *dev, uint32_t channel)
+{
+	ARG_UNUSED(dev);
+	Ecode_t err = DMADRV_FreeChannel(channel);
+
+	__ASSERT_NO_MSG(err == ECODE_EMDRV_DMADRV_OK);
+}
+
 static int dma_silabs_init(const struct device *dev)
 {
 	const struct dma_silabs_config *config = dev->config;
-	LDMA_Init_t dmaInit = {
-		/*  0x7 indicate that the 8 channels have round robin priority. */
-		.ldmaInitCtrlNumFixed = 0x7,
-		.ldmaInitIrqPriority = DMA_IRQ_PRIORITY,
-	};
 
 	/* Clock is managed by em_ldma */
-	LDMA_Init(&dmaInit);
+	DMADRV_Init();
 
 	/* LDMA_Init configure IRQ but we want IRQ to match with configured one in the dts*/
 	config->config_irq(dev);
@@ -502,7 +513,9 @@ static DEVICE_API(dma, dma_funcs) = {
 	.config = dma_silabs_configure,
 	.start = dma_silabs_start,
 	.stop = dma_silabs_stop,
-	.get_status = dma_silabs_get_status
+	.get_status = dma_silabs_get_status,
+	.chan_filter = dma_silabs_chan_filter,
+	.chan_release = dma_silabs_chan_release
 };
 
 int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct dma_config *config)

@@ -64,8 +64,8 @@ Hardware
 - 1 User LEDs
 - 3 User buttons
 - 1 Mini USB connector for power supply
-- SWD connector for FW programing
-- J-Link interface for FW programing
+- SWD connector for FW programming
+- J-Link interface for FW programming
 
 Supported Features
 ==================

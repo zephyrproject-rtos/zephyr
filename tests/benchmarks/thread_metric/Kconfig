@@ -3,8 +3,6 @@
 
 mainmenu "Eclipse ThreadX Thread-Metric RTOS Test Suite"
 
-source "Kconfig.zephyr"
-
 choice TM_TEST
 	prompt "Select a Thread-Metric test to execute"
 	default TM_PREEMPTIVE
@@ -81,3 +79,5 @@ config TM_SYNCHRONIZATION
 	  is reported every 30 seconds.
 
 endchoice
+
+source "Kconfig.zephyr"

@@ -14,6 +14,7 @@
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
 #include <zephyr/devicetree.h>
+#include <zephyr/psa/key_ids.h>
 #include <zephyr/toolchain.h>
 
 /**
@@ -509,5 +510,13 @@
 #ifdef CONFIG_OPENTHREAD_MLE_CHILD_TIMEOUT
 #define OPENTHREAD_CONFIG_MLE_CHILD_TIMEOUT_DEFAULT CONFIG_OPENTHREAD_MLE_CHILD_TIMEOUT
 #endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PSA_ITS_NVM_OFFSET
+ *
+ * NVM offset while using key refs.
+ *
+ */
+#define OPENTHREAD_CONFIG_PSA_ITS_NVM_OFFSET ZEPHYR_PSA_OPENTHREAD_KEY_ID_RANGE_BEGIN
 
 #endif  /* OPENTHREAD_CORE_ZEPHYR_CONFIG_H_ */

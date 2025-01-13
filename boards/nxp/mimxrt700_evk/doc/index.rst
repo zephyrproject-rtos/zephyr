@@ -58,6 +58,8 @@ the hardware features below.
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| CTIMER    | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
@@ -76,6 +78,10 @@ the hardware features below.
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
 | MRT       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| OS_TIMER  | on-chip    | os timer                            |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

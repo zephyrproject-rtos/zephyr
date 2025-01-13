@@ -70,11 +70,6 @@ static void dma_emul_work_handler(struct k_work *work);
 
 LOG_MODULE_REGISTER(dma_emul, CONFIG_DMA_LOG_LEVEL);
 
-static inline bool dma_emul_xfer_is_error_status(int status)
-{
-	return status < 0;
-}
-
 static inline const char *const dma_emul_channel_state_to_string(enum dma_emul_channel_state state)
 {
 	switch (state) {

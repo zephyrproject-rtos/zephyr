@@ -4,6 +4,7 @@ include(ExternalProject)
 
 if(CONFIG_HAS_RPI_PICO)
   zephyr_library()
+  zephyr_library_compile_options(-std=gnu11)
 
   set(rp2_common_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/rp2_common)
   set(rp2xxx_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/${CONFIG_SOC_SERIES})

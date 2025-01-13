@@ -58,10 +58,20 @@ static uint8_t dis_system_id[8] = {BT_BYTES_LIST_LE40((uint64_t)CONFIG_BT_DIS_SY
 #endif
 
 #if defined(CONFIG_BT_DIS_SETTINGS)
+#if defined(CONFIG_BT_DIS_MODEL_NUMBER)
+BUILD_ASSERT(sizeof(CONFIG_BT_DIS_MODEL_NUMBER_STR) <= CONFIG_BT_DIS_STR_MAX + 1);
+static uint8_t dis_model[CONFIG_BT_DIS_STR_MAX + 1] = CONFIG_BT_DIS_MODEL_NUMBER_STR;
+#elif defined(CONFIG_BT_DIS_MODEL_DEPRECATED_USED)
 BUILD_ASSERT(sizeof(CONFIG_BT_DIS_MODEL) <= CONFIG_BT_DIS_STR_MAX + 1);
-BUILD_ASSERT(sizeof(CONFIG_BT_DIS_MANUF) <= CONFIG_BT_DIS_STR_MAX + 1);
 static uint8_t dis_model[CONFIG_BT_DIS_STR_MAX + 1] = CONFIG_BT_DIS_MODEL;
+#endif
+#if defined(CONFIG_BT_DIS_MANUF_NAME)
+BUILD_ASSERT(sizeof(CONFIG_BT_DIS_MANUF_NAME_STR) <= CONFIG_BT_DIS_STR_MAX + 1);
+static uint8_t dis_manuf[CONFIG_BT_DIS_STR_MAX + 1] = CONFIG_BT_DIS_MANUF_NAME_STR;
+#elif defined(CONFIG_BT_DIS_MANUF_DEPRECATED_USED)
+BUILD_ASSERT(sizeof(CONFIG_BT_DIS_MANUF) <= CONFIG_BT_DIS_STR_MAX + 1);
 static uint8_t dis_manuf[CONFIG_BT_DIS_STR_MAX + 1] = CONFIG_BT_DIS_MANUF;
+#endif
 #if defined(CONFIG_BT_DIS_SERIAL_NUMBER)
 BUILD_ASSERT(sizeof(CONFIG_BT_DIS_SERIAL_NUMBER_STR) <= CONFIG_BT_DIS_STR_MAX + 1);
 static uint8_t dis_serial_number[CONFIG_BT_DIS_STR_MAX + 1] = CONFIG_BT_DIS_SERIAL_NUMBER_STR;
@@ -114,8 +124,16 @@ static uint8_t dis_ieee_rcdl[CONFIG_BT_DIS_STR_MAX + 1] = CONFIG_BT_DIS_IEEE_RCD
 
 #else /* CONFIG_BT_DIS_SETTINGS */
 
+#if defined(CONFIG_BT_DIS_MODEL_NUMBER)
+#define BT_DIS_MODEL_REF             CONFIG_BT_DIS_MODEL_NUMBER_STR
+#elif defined(CONFIG_BT_DIS_MODEL_DEPRECATED_USED)
 #define BT_DIS_MODEL_REF             CONFIG_BT_DIS_MODEL
+#endif
+#if defined(CONFIG_BT_DIS_MANUF_NAME)
+#define BT_DIS_MANUF_REF             CONFIG_BT_DIS_MANUF_NAME_STR
+#elif defined(CONFIG_BT_DIS_MANUF_DEPRECATED_USED)
 #define BT_DIS_MANUF_REF             CONFIG_BT_DIS_MANUF
+#endif
 #define BT_DIS_SERIAL_NUMBER_STR_REF CONFIG_BT_DIS_SERIAL_NUMBER_STR
 #define BT_DIS_FW_REV_STR_REF        CONFIG_BT_DIS_FW_REV_STR
 #define BT_DIS_HW_REV_STR_REF        CONFIG_BT_DIS_HW_REV_STR
@@ -128,12 +146,20 @@ static uint8_t dis_ieee_rcdl[CONFIG_BT_DIS_STR_MAX + 1] = CONFIG_BT_DIS_IEEE_RCD
 
 #endif /* CONFIG_BT_DIS_SETTINGS */
 
+#define BT_DIS_READ_STR_USED \
+	(CONFIG_BT_DIS_MODEL_NUMBER || CONFIG_BT_DIS_MODEL_DEPRECATED_USED || \
+	 CONFIG_BT_DIS_MANUF_NAME || CONFIG_BT_DIS_MANUF_DEPRECATED_USED || \
+	 CONFIG_BT_DIS_SERIAL_NUMBER || CONFIG_BT_DIS_FW_REV || CONFIG_BT_DIS_HW_REV || \
+	 CONFIG_BT_DIS_SW_REV || CONFIG_BT_DIS_IEEE_RCDL)
+
+#if BT_DIS_READ_STR_USED
 static ssize_t read_str(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			uint16_t len, uint16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, attr->user_data,
 				 strlen(attr->user_data));
 }
+#endif
 
 #if CONFIG_BT_DIS_PNP
 static ssize_t read_pnp_id(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
@@ -226,10 +252,16 @@ static ssize_t read_udi(struct bt_conn *conn, const struct bt_gatt_attr *attr, v
 BT_GATT_SERVICE_DEFINE(
 	dis_svc, BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
 
+#if defined(CONFIG_BT_DIS_MODEL_NUMBER) || defined(CONFIG_BT_DIS_MODEL_DEPRECATED_USED)
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
 			       read_str, NULL, BT_DIS_MODEL_REF),
+#endif
+
+#if defined(CONFIG_BT_DIS_MANUF_NAME) || defined(CONFIG_BT_DIS_MANUF_DEPRECATED_USED)
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
 			       read_str, NULL, BT_DIS_MANUF_REF),
+#endif
+
 #if CONFIG_BT_DIS_PNP
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_PNP_ID, BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
 			       read_pnp_id, NULL, &dis_pnp_id),
@@ -309,7 +341,10 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 	int nlen;
 	const char *next;
 
+	ARG_UNUSED(len);
+
 	nlen = settings_name_next(name, &next);
+#if defined(CONFIG_BT_DIS_MANUF_NAME) || defined(CONFIG_BT_DIS_MANUF_DEPRECATED_USED)
 	if (!strncmp(name, "manuf", nlen)) {
 		len = read_cb(store, &dis_manuf, sizeof(dis_manuf) - 1);
 		if (len < 0) {
@@ -321,6 +356,8 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 		}
 		return 0;
 	}
+#endif
+#if defined(CONFIG_BT_DIS_MODEL_NUMBER) || defined(CONFIG_BT_DIS_MODEL_DEPRECATED_USED)
 	if (!strncmp(name, "model", nlen)) {
 		len = read_cb(store, &dis_model, sizeof(dis_model) - 1);
 		if (len < 0) {
@@ -332,6 +369,7 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 		}
 		return 0;
 	}
+#endif
 #if defined(CONFIG_BT_DIS_SERIAL_NUMBER)
 	if (!strncmp(name, "serial", nlen)) {
 		len = read_cb(store, &dis_serial_number, sizeof(dis_serial_number) - 1);

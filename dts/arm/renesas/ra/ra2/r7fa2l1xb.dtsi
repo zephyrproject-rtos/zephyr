@@ -1,0 +1,11 @@
+/**
+ * Copyright (c) 2024 MUNIC SA
+ *
+ * Renesas R7FA2AL1AB MCU device tree
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	reg = <0x0 DT_SIZE_K(256)>;
+};

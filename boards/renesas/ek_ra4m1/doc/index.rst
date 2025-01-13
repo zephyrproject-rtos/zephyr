@@ -1,8 +1,5 @@
 .. zephyr:board:: ek_ra4m1
 
-RA4M1 Evaluation Kit
-####################
-
 Overview
 ********
 
@@ -87,6 +84,12 @@ The below features are currently supported on Zephyr for the ``ek_ra4m1`` board:
 +-----------+------------+----------------------+
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
+| ENTROPY   | on-chip    | entropy              |
++-----------+------------+----------------------+
+| PWM       | on-chip    | pwm                  |
++-----------+------------+----------------------+
+| I2C       | on-chip    | i2c                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
@@ -101,7 +104,7 @@ Flashing
 ========
 
 Program can be flashed to EK-RA4M1 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 

@@ -1,6 +1,6 @@
 sample:
   name: Bluetooth Peripheral
-  description: Demonstrates the BLE Peripheral role
+  description: Demonstrates the Bluetooth LE Peripheral role
 tests:
   sample.bluetooth.peripheral:
     harness: bluetooth

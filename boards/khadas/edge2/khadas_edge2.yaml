@@ -1,0 +1,9 @@
+identifier: khadas_edge2
+name: Khadas Edge2 (single core, non SMP)
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 8192
+vendor: khadas

@@ -9,6 +9,7 @@ tests:
     min_flash: 40
     platform_exclude:
       - nucleo_u031r8
+      - panb511evb/nrf54l15/cpuapp
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"

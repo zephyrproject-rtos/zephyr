@@ -47,12 +47,12 @@
 			channel-available-mask = <0x1a0670>;
 		};
 
-		pwm8: pwm8@40169800 {
+		pwm8: pwm8@40078800 {
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_8>;
 			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40169800 0x100>;
+			reg = <0x40078800 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -117,6 +117,7 @@
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <48000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
@@ -228,4 +229,12 @@
 	port-irqs = <&port_irq11>;
 	port-irq-names = "port-irq11";
 	port-irq11-pins = <1>;
+};
+
+&pwm2 {
+	clocks = <&pclkd MSTPD 5>;
+};
+
+&pwm3 {
+	clocks = <&pclkd MSTPD 5>;
 };

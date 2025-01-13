@@ -44,6 +44,8 @@
 #include <zephyr/toolchain/mwdt.h>
 #elif defined(__ARMCOMPILER_VERSION)
 #include <zephyr/toolchain/armclang.h>
+#elif defined(__IAR_SYSTEMS_ICC__)
+#include <zephyr/toolchain/iar.h>
 #elif defined(__llvm__) || (defined(_LINKER) && defined(__LLD_LINKER_CMD__))
 #include <zephyr/toolchain/llvm.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
@@ -143,6 +145,70 @@
  */
 #ifndef TOOLCHAIN_IGNORE_WSHADOW_END
 #define TOOLCHAIN_IGNORE_WSHADOW_END
+#endif
+
+/**
+ * @def TOOLCHAIN_PRAGMA
+ * @brief Helper for using pragma in macros.
+ */
+#ifdef TOOLCHAIN_HAS_PRAGMA_DIAG
+#define TOOLCHAIN_PRAGMA(x) _Pragma(#x)
+#else
+#define TOOLCHAIN_PRAGMA(x)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_WARNING
+ * @brief Disable the specified compiler warning for all compilers.
+ */
+#ifndef TOOLCHAIN_DISABLE_WARNING
+#define TOOLCHAIN_DISABLE_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_WARNING
+ * @brief Re-enable the specified compiler warning for all compilers.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_WARNING
+#define TOOLCHAIN_ENABLE_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_CLANG_WARNING
+ * @brief Disable the specified compiler warning for clang.
+ */
+#ifndef TOOLCHAIN_DISABLE_CLANG_WARNING
+#define TOOLCHAIN_DISABLE_CLANG_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_CLANG_WARNING
+ * @brief Re-enable the specified compiler warning for clang.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_CLANG_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_CLANG_WARNING
+#define TOOLCHAIN_ENABLE_CLANG_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_GCC_WARNING
+ * @brief Disable the specified compiler warning for gcc.
+ */
+#ifndef TOOLCHAIN_DISABLE_GCC_WARNING
+#define TOOLCHAIN_DISABLE_GCC_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_GCC_WARNING
+ * @brief Re-enable the specified compiler warning for gcc.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_GCC_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_GCC_WARNING
+#define TOOLCHAIN_ENABLE_GCC_WARNING(warning)
 #endif
 
 /*

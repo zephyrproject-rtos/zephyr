@@ -264,4 +264,13 @@ config HWINFO_NUMAKER_RMC
 	help
 	  Enable Nuvoton NuMaker hwinfo driver backed up by RMC
 
+config HWINFO_MAX32
+	bool "MAX32 hwinfo"
+	default y
+	depends on SOC_FAMILY_MAX32
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable MAX32 hwinfo driver.
+
 endif

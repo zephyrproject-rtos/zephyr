@@ -117,38 +117,6 @@ struct gpio_pca95xx_drv_data {
 #endif
 };
 
-static int read_port_reg(const struct device *dev, uint8_t reg, uint8_t pin,
-			 uint16_t *cache, uint16_t *buf)
-{
-	const struct gpio_pca95xx_config * const config = dev->config;
-	uint8_t b_buf;
-	int ret;
-
-	if (pin >= 8) {
-		reg++;
-	}
-
-	ret = i2c_reg_read_byte_dt(&config->bus, reg, &b_buf);
-	if (ret != 0) {
-		LOG_ERR("PCA95XX[0x%X]: error reading register 0x%X (%d)",
-			config->bus.addr, reg, ret);
-		return ret;
-	}
-
-	if (pin < 8) {
-		((uint8_t *)cache)[LOW_BYTE_LE16_IDX] = b_buf;
-	} else {
-		((uint8_t *)cache)[HIGH_BYTE_LE16_IDX] = b_buf;
-	}
-
-	*buf = *cache;
-
-	LOG_DBG("PCA95XX[0x%X]: Read: REG[0x%X] = 0x%X",
-		config->bus.addr, reg, b_buf);
-
-	return 0;
-}
-
 /**
  * @brief Read both port 0 and port 1 registers of certain register function.
  *
@@ -251,16 +219,6 @@ static int write_port_regs(const struct device *dev, uint8_t reg,
 	}
 
 	return ret;
-}
-
-static inline int update_input_reg(const struct device *dev, uint8_t pin,
-				   uint16_t *buf)
-{
-	struct gpio_pca95xx_drv_data * const drv_data =
-		(struct gpio_pca95xx_drv_data * const)dev->data;
-
-	return read_port_reg(dev, REG_INPUT_PORT0, pin,
-			     &drv_data->reg_cache.input, buf);
 }
 
 static inline int update_input_regs(const struct device *dev, uint16_t *buf)

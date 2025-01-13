@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_MAIN_STACK_SIZE=2048
-
 CONFIG_GPIO=y
 
 CONFIG_CONSOLE=y

@@ -34,6 +34,9 @@ config NRFS_HAS_PMIC_SERVICE
 config NRFS_HAS_RESET_SERVICE
 	bool
 
+config NRFS_HAS_SWEXT_SERVICE
+	bool
+
 config NRFS_HAS_TEMP_SERVICE
 	bool
 
@@ -123,6 +126,11 @@ config NRFS_GDPWR_SERVICE_ENABLED
 config NRFS_GDFS_SERVICE_ENABLED
 	bool "Global domain frequency scaling service"
 	depends on NRFS_HAS_GDFS_SERVICE
+	default y
+
+config NRFS_SWEXT_SERVICE_ENABLED
+	bool "SWEXT peripheral control service"
+	depends on NRFS_HAS_SWEXT_SERVICE
 	default y
 
 endmenu

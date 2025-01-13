@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(dut, LOG_LEVEL_DBG);
 
 extern unsigned long runtime_log_level;
 
-static DEFINE_FLAG(got_notification);
+DEFINE_FLAG_STATIC(got_notification);
 
 static uint8_t received_notification(struct bt_conn *conn,
 				     struct bt_gatt_subscribe_params *params,

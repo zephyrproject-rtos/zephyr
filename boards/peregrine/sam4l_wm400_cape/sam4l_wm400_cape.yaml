@@ -1,0 +1,24 @@
+# Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sam4l_wm400_cape
+name: SAM4L WM-400 Cape
+type: mcu
+arch: arm
+flash: 256
+ram: 32
+toolchain:
+  - zephyr
+supported:
+  - counter
+  - gpio
+  - entropy
+  - hwinfo
+  - i2c
+  - ieee802154
+  - spi
+  - uart
+  - usart
+  - usb_device
+  - watchdog
+vendor: peregrine

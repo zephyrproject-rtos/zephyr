@@ -6050,6 +6050,7 @@ sub process {
 
 # Check for __attribute__ aligned, prefer __aligned
 		if ($realfile !~ m@\binclude/uapi/@ &&
+		    $realfile !~ m@\binclude/zephyr/toolchain@ &&
 		    $line =~ /\b__attribute__\s*\(\s*\(.*aligned/) {
 			WARN("PREFER_ALIGNED",
 			     "__aligned(size) is preferred over __attribute__((aligned(size)))\n" . $herecurr);
@@ -6565,9 +6566,10 @@ sub process {
 		}
 
 # check for uses of __BYTE_ORDER__
-		while ($line =~ /\b(__BYTE_ORDER__)\b/g) {
-			ERROR("BYTE_ORDER",
-			      "Use of the '$1' macro is disallowed. Use CONFIG_(BIG|LITTLE)_ENDIAN instead\n" . $herecurr);
+		while ($realfile !~ m@^include/zephyr/toolchain@ &&
+		       $line =~ /\b(__BYTE_ORDER__)\b/g) {
+				ERROR("BYTE_ORDER",
+				      "Use of the '$1' macro is disallowed. Use CONFIG_(BIG|LITTLE)_ENDIAN instead\n" . $herecurr);
 		}
 
 # check for use of yield()

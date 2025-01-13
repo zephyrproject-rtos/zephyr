@@ -20,9 +20,9 @@
 
 extern enum bst_result_t bst_result;
 
-static DEFINE_FLAG(flag_is_connected);
-static DEFINE_FLAG(flag_short_subscribe);
-static DEFINE_FLAG(flag_long_subscribe);
+DEFINE_FLAG_STATIC(flag_is_connected);
+DEFINE_FLAG_STATIC(flag_short_subscribe);
+DEFINE_FLAG_STATIC(flag_long_subscribe);
 
 static struct bt_conn *g_conn;
 

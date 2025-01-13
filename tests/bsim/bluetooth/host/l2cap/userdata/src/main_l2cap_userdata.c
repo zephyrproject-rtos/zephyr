@@ -21,10 +21,10 @@ static struct bt_conn *default_conn;
 /* Pool to allocate a buffer that is too large to send */
 NET_BUF_POOL_DEFINE(buf_pool, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_SIZE), USER_DATA_SIZE, NULL);
 
-static DEFINE_FLAG(is_connected);
-static DEFINE_FLAG(is_sent);
-static DEFINE_FLAG(has_received);
-static DEFINE_FLAG(chan_connected);
+DEFINE_FLAG_STATIC(is_connected);
+DEFINE_FLAG_STATIC(is_sent);
+DEFINE_FLAG_STATIC(has_received);
+DEFINE_FLAG_STATIC(chan_connected);
 
 static void chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
 {

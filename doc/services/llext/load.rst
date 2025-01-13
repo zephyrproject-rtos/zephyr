@@ -60,6 +60,10 @@ The returned ``void *`` can then be cast to the appropriate type and used.
 A wrapper for calling a function with no arguments is provided in
 :c:func:`llext_call_fn`.
 
+Advanced users that need direct access to areas of the newly loaded extension
+may want to refer to :c:func:`llext_get_section_info` and other LLEXT
+inspection APIs.
+
 Cleaning up after use
 =====================
 

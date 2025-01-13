@@ -400,8 +400,8 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                 action="store_true", default=False,
                 help="""Don't aggregate coverage report statistics for all the test suites
                         selected to run with enabled coverage. Requires another reporting mode to be
-                        active (`--coverage-split`) to have at least one of these reporting modes.
-                        Default: %(default)s""")
+                        active (`--coverage-per-instance`) to have at least one of these reporting
+                        modes. Default: %(default)s""")
 
     parser.add_argument(
         "--test-config",
@@ -578,6 +578,11 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         which only removes artifacts of passing tests. If you wish to
         remove all artificats including those of failed tests, use 'all'.""")
 
+    parser.add_argument(
+        "--keep-artifacts", action="append", default=[],
+        help="""Keep specified artifacts when cleaning up at runtime. Multiple invocations
+        are possible."""
+    )
     test_xor_generator.add_argument(
         "-N", "--ninja", action="store_true",
         default=not any(a in sys.argv for a in ("-k", "--make")),

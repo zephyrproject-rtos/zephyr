@@ -112,6 +112,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		LOG_ERR("Failed to allocate section map, size %zu", sect_map_sz);
 		return -ENOMEM;
 	}
+	ext->alloc_size += sect_map_sz;
 	for (int i = 0; i < ext->sect_cnt; i++) {
 		ldr->sect_map[i].mem_idx = LLEXT_MEM_COUNT;
 		ldr->sect_map[i].offset = 0;
@@ -517,7 +518,8 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
-static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
+static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
+				const struct llext_load_param *ldr_parm)
 {
 	struct llext_symtable *exp_tab = &ext->exp_tab;
 	struct llext_symbol *sym;
@@ -545,7 +547,25 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 	}
 
 	for (i = 0; i < exp_tab->sym_cnt; i++, sym++) {
-		exp_tab->syms[i].name = sym->name;
+		/*
+		 * Offsets in objects, built for pre-defined addresses have to
+		 * be translated to memory locations for symbol name access
+		 * during dependency resolution.
+		 */
+		const char *name = NULL;
+
+		if (ldr_parm && ldr_parm->pre_located) {
+			ssize_t name_offset = llext_file_offset(ldr, (uintptr_t)sym->name);
+
+			if (name_offset > 0) {
+				name = llext_peek(ldr, name_offset);
+			}
+		}
+		if (!name) {
+			name = sym->name;
+		}
+
+		exp_tab->syms[i].name = name;
 		exp_tab->syms[i].addr = sym->addr;
 		LOG_DBG("sym %p name %s", sym->addr, sym->name);
 	}
@@ -730,7 +750,7 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
-	ret = llext_export_symbols(ldr, ext);
+	ret = llext_export_symbols(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to export, ret %d", ret);
 		goto out;
@@ -740,12 +760,13 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 
 out:
 	/*
-	 * Free resources only used during loading. Note that this exploits
-	 * the fact that freeing a NULL pointer has no effect.
+	 * Free resources only used during loading, unless explicitly requested.
+	 * Note that this exploits the fact that freeing a NULL pointer has no effect.
 	 */
 
-	llext_free(ldr->sect_map);
-	ldr->sect_map = NULL;
+	if (ret != 0 || !ldr_parm || !ldr_parm->keep_section_info) {
+		llext_free_inspection_data(ldr, ext);
+	}
 
 	/* Until proper inter-llext linking is implemented, the symbol table is
 	 * not useful outside of the loading process; keep it only if debugging
@@ -776,4 +797,15 @@ out:
 	llext_finalize(ldr);
 
 	return ret;
+}
+
+int llext_free_inspection_data(struct llext_loader *ldr, struct llext *ext)
+{
+	if (ldr->sect_map) {
+		ext->alloc_size -= ext->sect_cnt * sizeof(ldr->sect_map[0]);
+		llext_free(ldr->sect_map);
+		ldr->sect_map = NULL;
+	}
+
+	return 0;
 }

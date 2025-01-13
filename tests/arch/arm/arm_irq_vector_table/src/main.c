@@ -5,7 +5,7 @@
  */
 
 #if !defined(CONFIG_CPU_CORTEX_M)
-  #error project can only run on Cortex-M
+#error project can only run on Cortex-M
 #endif
 
 #include <zephyr/ztest.h>

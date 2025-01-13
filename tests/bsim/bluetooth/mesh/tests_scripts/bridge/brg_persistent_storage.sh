@@ -21,10 +21,10 @@ RunTestFlash mesh_brg_persistence \
 	brg_tester_persistence brg_bridge_simple
 
 # The same test but with PSA crypto
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash mesh_brg_persistence_psa \
 	brg_tester_persistence -flash_erase brg_bridge_simple -flash_erase
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash mesh_brg_persistence_psa \
 	brg_tester_persistence brg_bridge_simple

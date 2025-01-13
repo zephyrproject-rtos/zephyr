@@ -67,3 +67,7 @@ endif()
 if(CONFIG_BT_TMAP)
     target_sources(app PRIVATE btp_tmap.c)
 endif()
+
+if(CONFIG_BT_PBP)
+    target_sources(app PRIVATE btp_pbp.c)
+endif()

@@ -1,7 +1,4 @@
-.. _ek_ra6m3:
-
-RA6M3 Evaluation Kit
-####################
+.. zephyr:board:: ek_ra6m3
 
 Overview
 ********
@@ -20,7 +17,7 @@ The key features of the EK-RA6M3 board are categorized in three groups as follow
 - MCU and USB current measurement points for precision current consumption measurement
 - Multiple clock sources - RA6M3 MCU oscillator and sub-clock oscillator crystals,
   providing precision 24.000 MHz and 32,768 Hz reference clock.
-  Additional low precision clocks are avaialbe internal to the RA6M3 MCU
+  Additional low precision clocks are available internal to the RA6M3 MCU
 
 **System Control and Ecosystem Access**
 
@@ -59,15 +56,9 @@ The key features of the EK-RA6M3 board are categorized in three groups as follow
 - USB High Speed Host and Device (micro-AB connector)
 - 32 Mb (256 Mb) External Quad-SPI Flash
 
-.. figure:: ek_ra6m3.webp
-	:align: center
-	:alt: RA6M3 Evaluation Kit
-
-	EK-RA6M3 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
-Detailed hardware feature for the RA6M3 MCU group can be found at `RA6M3 Group User's Manual Hardware`_
+Detailed hardware features for the RA6M3 MCU group can be found at `RA6M3 Group User's Manual Hardware`_
 
 .. figure:: ra6m3_block_diagram.webp
 	:width: 442px
@@ -76,12 +67,12 @@ Detailed hardware feature for the RA6M3 MCU group can be found at `RA6M3 Group U
 
 	RA6M3 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detail hardware feature for the EK-RA6M3 MCU can be found at `EK-RA6M3 - User's Manual`_
+Detailed hardware features for the EK-RA6M3 MCU can be found at `EK-RA6M3 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for EK-RA6M3 board:
+The below features are currently supported on Zephyr for EK-RA6M3 board:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
@@ -104,11 +95,15 @@ The below features are currently supported on Zephyr OS for EK-RA6M3 board:
 +-----------+------------+----------------------+
 | USBHS     | on-chip    | udc                  |
 +-----------+------------+----------------------+
+| USBFS     | on-chip    | udc                  |
++-----------+------------+----------------------+
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
 | PWM       | on-chip    | pwm                  |
 +-----------+------------+----------------------+
 | FLASH     | on-chip    | flash                |
++-----------+------------+----------------------+
+| DAC       | on-chip    | dac                  |
 +-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
@@ -125,15 +120,15 @@ Flashing
 ========
 
 Program can be flashed to EK-RA6M3 via the on-board SEGGER J-Link debugger.
-SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
+SEGGER J-link's drivers are available at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
-  1. Connect to J-Link OB via USB port to host PC
+1. Connect to J-Link OB via USB port to host PC
 
-  2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA6M3 - User's Manual`_
+2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA6M3 - User's Manual`_
 
-  3. Execute west command
+3. Execute west command
 
 	.. code-block:: console
 
