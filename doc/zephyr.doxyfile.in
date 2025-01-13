@@ -2493,7 +2493,7 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_NET_UDP \
                          CONFIG_SCHED_CPU_MASK \
                          CONFIG_SCHED_DEADLINE \
-                         CONFIG_SCHED_DEADLINE \
+                         CONFIG_CBS \
                          CONFIG_SETTINGS_RUNTIME \
                          CONFIG_SMP \
                          CONFIG_SYS_CLOCK_EXISTS \

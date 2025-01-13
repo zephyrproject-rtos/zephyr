@@ -78,6 +78,7 @@ Zephyr offers a large and ever growing number of features including:
 
    * Cooperative and Preemptive Scheduling
    * Earliest Deadline First (EDF)
+   * Constant Bandwidth Server (CBS)
    * Meta IRQ scheduling implementing "interrupt bottom half" or "tasklet"
      behavior
    * Timeslicing: Enables time slicing between preemptible threads of equal

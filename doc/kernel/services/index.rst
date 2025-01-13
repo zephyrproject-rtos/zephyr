@@ -32,6 +32,7 @@ synchronization.
 
    threads/index.rst
    scheduling/index.rst
+   sched_server/cbs.rst
    threads/system_threads.rst
    threads/workqueue.rst
    threads/nothread.rst
