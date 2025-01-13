@@ -11,6 +11,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/pm/state.h>
 #include <zephyr/sys/device_mmio.h>
@@ -433,6 +434,12 @@ struct device_state {
 	 * invoked.
 	 */
 	bool initialized : 1;
+	/** Usage count. */
+	uint8_t usage;
+#if defined(CONFIG_MULTITHREADING) || defined(__DOXYGEN__)
+	/** Usage lock (@kconfig_dep{CONFIG_MULTITHREADING}). */
+	struct k_sem usage_lock;
+#endif
 };
 
 struct pm_device_base;
@@ -845,6 +852,21 @@ __syscall bool device_is_ready(const struct device *dev);
 __syscall int device_init(const struct device *dev);
 
 /**
+ * Get a device.
+ *
+ * When getting a device, its usage count will be increased and, if not yet
+ * initialized, its initialization routine will be called. This function will
+ * not return until device initialization has finished.
+ *
+ * @param dev Device instance
+ *
+ * @retval -errno Device failed to initialize.
+ * @retval >=0 Device was successfully initialized and can be used. Values > 0
+ * indicate the current reference count.
+ */
+__syscall int device_get(const struct device *dev);
+
+/**
  * @}
  */
 
@@ -861,9 +883,13 @@ __syscall int device_init(const struct device *dev);
  *
  * @param dev_id Device identifier.
  */
-#define Z_DEVICE_STATE_DEFINE(dev_id)                                          \
-	static Z_DECL_ALIGN(struct device_state) Z_DEVICE_STATE_NAME(dev_id)   \
-		__attribute__((__section__(".z_devstate")))
+#define Z_DEVICE_STATE_DEFINE(dev_id)                                                    \
+	static Z_DECL_ALIGN(struct device_state) Z_DEVICE_STATE_NAME(dev_id)             \
+		__attribute__((__section__(".z_devstate"))) = {                          \
+			IF_ENABLED(CONFIG_MULTITHREADING,                                \
+				   (.usage_lock = Z_SEM_INITIALIZER(                     \
+					Z_DEVICE_STATE_NAME(dev_id).usage_lock, 1, 1),)) \
+		}
 
 /**
  * @brief Device flags obtained from DT.

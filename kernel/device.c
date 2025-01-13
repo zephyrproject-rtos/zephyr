@@ -142,6 +142,61 @@ bool z_impl_device_is_ready(const struct device *dev)
 	return dev->state->initialized && (dev->state->init_res == 0U);
 }
 
+int z_impl_device_get(const struct device *dev)
+{
+	int ret = 0;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+#ifdef CONFIG_MULTITHREADING
+	if (!k_is_pre_kernel()) {
+		(void)k_sem_take(&dev->state->usage_lock, K_FOREVER);
+	}
+#endif
+
+	if (dev->state->usage == UINT8_MAX) {
+		ret = -EPERM;
+		goto out;
+	}
+
+	if ((dev->state->usage == 0U) && (dev->ops.init != NULL)) {
+		if (dev->state->initialized) {
+			if (dev->state->init_res != 0U) {
+				ret = dev->ops.init(dev);
+			}
+			dev->state->initialized = false;
+		} else {
+			ret = dev->ops.init(dev);
+		}
+	}
+
+	if (ret == 0) {
+		dev->state->usage++;
+		ret = dev->state->usage;
+	}
+
+out:
+#ifdef CONFIG_MULTITHREADING
+	if (!k_is_pre_kernel()) {
+		(void)k_sem_give(&dev->state->usage_lock);
+	}
+#endif
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_device_get(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	return z_impl_device_get(dev);
+}
+#include <zephyr/syscalls/device_get_mrsh.c>
+#endif
+
 #ifdef CONFIG_DEVICE_DEPS
 
 static int device_visitor(const device_handle_t *handles,
