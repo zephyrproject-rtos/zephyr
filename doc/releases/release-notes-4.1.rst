@@ -135,6 +135,13 @@ New APIs and options
     * :c:member:`bt_mesh_health_cli::update` callback can be used to periodically update the message
       published by the Health Client.
 
+* Build system
+
+  * Sysbuild
+
+    * The newly introduced MCUboot swap using offset mode can be selected from sysbuild by using
+      ``SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET``, this mode is experimental.
+
 * Crypto
 
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS`
