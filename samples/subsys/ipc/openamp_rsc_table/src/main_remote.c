@@ -33,8 +33,18 @@ LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 
 /* Constants derived from device tree */
 #define SHM_NODE		DT_CHOSEN(zephyr_ipc_shm)
-#define SHM_START_ADDR	DT_REG_ADDR(SHM_NODE)
-#define SHM_SIZE		DT_REG_SIZE(SHM_NODE)
+
+#if DT_NODE_HAS_PROP(SHM_NODE, ranges)
+static const uint32_t shm_start_addr = DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(SHM_NODE, 0);
+static const uint32_t shm_size = DT_RANGES_LENGTH_BY_IDX(SHM_NODE, 0);
+
+static metal_phys_addr_t val = DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(SHM_NODE, 0);
+static metal_phys_addr_t *shm_physmap_drv = &val;
+#else
+static const uint32_t shm_start_addr = DT_REG_ADDR(SHM_NODE);
+static const uint32_t shm_size = DT_REG_SIZE(SHM_NODE);
+static metal_phys_addr_t *shm_physmap_drv;
+#endif
 
 #define APP_TASK_STACK_SIZE (1024)
 
@@ -52,7 +62,7 @@ static struct k_thread thread_tty_data;
 static const struct device *const ipm_handle =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 
-static metal_phys_addr_t shm_physmap = SHM_START_ADDR;
+static metal_phys_addr_t shm_physmap = shm_start_addr;
 static metal_phys_addr_t rsc_tab_physmap;
 
 static struct metal_io_region shm_io_data; /* shared memory */
@@ -151,15 +161,15 @@ int platform_init(void)
 	}
 
 	/* declare shared memory region */
-	metal_io_init(shm_io, (void *)SHM_START_ADDR, &shm_physmap,
-		      SHM_SIZE, -1, 0, NULL);
+	metal_io_init(shm_io, (void *)shm_start_addr, &shm_physmap,
+		      shm_size, shm_physmap_drv, -1, 0, NULL);
 
 	/* declare resource table region */
 	rsc_table_get(&rsc_table, &rsc_size);
 	rsc_tab_physmap = (uintptr_t)rsc_table;
 
 	metal_io_init(rsc_io, rsc_table,
-		      &rsc_tab_physmap, rsc_size, -1, 0, NULL);
+		      &rsc_tab_physmap, rsc_size, NULL, -1, 0, NULL);
 
 	/* setup IPM */
 	if (!device_is_ready(ipm_handle)) {

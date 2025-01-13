@@ -421,7 +421,8 @@ device.
    * - zephyr,ipc_shm
      - A node whose ``reg`` is used by the OpenAMP subsystem to determine the
        base address and size of the shared memory (SHM) usable for
-       interprocess-communication (IPC)
+       interprocess-communication (IPC).
+       A ``ranges`` property is used in case the driver and device physical addresses are different.
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,log-uart
