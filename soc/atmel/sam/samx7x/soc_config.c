@@ -5,7 +5,7 @@
  */
 
 /** @file
- * @brief System module to support early Atmel SAM V71 MCU configuration
+ * @brief System module to support early Atmel SAM E70/S70/V70/V71 MCU series configuration
  */
 
 #include <zephyr/device.h>
@@ -19,7 +19,7 @@
  * This should be run early during the boot process but after basic hardware
  * initialization is done.
  */
-void atmel_samv71_config(void)
+void atmel_samx7x_config(void)
 {
 	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_DISABLE_ERASE_PIN)) {
 		/* Disable ERASE function on PB12 pin, this is controlled
