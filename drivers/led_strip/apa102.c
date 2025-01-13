@@ -12,6 +12,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 
+#define APA102_CHANNELS_PER_LED 4
+
 struct apa102_config {
 	struct spi_dt_spec bus;
 	size_t length;
@@ -74,6 +76,32 @@ static int apa102_update_rgb(const struct device *dev, struct led_rgb *pixels,
 	return apa102_update(dev, pixels, sizeof(struct led_rgb) * count);
 }
 
+/*
+ * Update the strip with the given channel values.
+ * Channels are expected to be ordered as follows for each LED:
+ *   - Dimming (5 bits)
+ *   - Blue (1 byte)
+ *   - Green (1 byte)
+ *   - Red (1 byte)
+ */
+static int apa102_update_channels(const struct device *dev,
+				  uint8_t *channels,
+				  size_t num_channels)
+{
+	__maybe_unused const struct apa102_config *config = dev->config;
+
+	if (num_channels > config->length * APA102_CHANNELS_PER_LED) {
+		return -ERANGE;
+	}
+
+	/* Append prefix to the dimming byte */
+	for (size_t i = 0; i < num_channels; i += APA102_CHANNELS_PER_LED) {
+		channels[i] = 0xE0 | channels[i];
+	}
+
+	return apa102_update(dev, channels, num_channels);
+}
+
 static size_t apa102_length(const struct device *dev)
 {
 	const struct apa102_config *config = dev->config;
@@ -94,6 +122,7 @@ static int apa102_init(const struct device *dev)
 
 static DEVICE_API(led_strip, apa102_api) = {
 	.update_rgb = apa102_update_rgb,
+	.update_channels = apa102_update_channels,
 	.length = apa102_length,
 };
 
