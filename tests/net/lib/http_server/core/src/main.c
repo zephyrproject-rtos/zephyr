@@ -226,6 +226,12 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 	0x93, 0x13, 0x7a, 0x88, 0x25, 0xb6, 0x50, 0xc3, 0xcb, 0xbc, 0xb8, 0x3f, \
 	0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x5f, 0x87, 0x49, 0x7c, 0xa5, 0x8a, 0xe8, \
 	0x19, 0xaa
+#define TEST_HTTP2_HEADERS_POST_ROOT_STREAM_1 \
+	0x00, 0x00, 0x21, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x83, 0x84, 0x86, 0x41, 0x8a, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc, \
+	0x78, 0x0f, 0x03, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90, 0x7a, 0x8a, 0xaa, \
+	0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83
+#define TEST_HTTP2_DATA_POST_ROOT_STREAM_1 TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
@@ -2152,6 +2158,90 @@ ZTEST(server_function_tests, test_http2_dynamic_post_response_header_long)
 	test_http2_dynamic_response_headers(request, req_offset, expected_headers,
 					    ARRAY_SIZE(expected_headers), true, &offset);
 	zassert_mem_equal(dynamic_response_headers_buffer, long_payload, strlen(long_payload));
+}
+
+ZTEST(server_function_tests, test_http1_409_method_not_allowed)
+{
+	static const char http1_request[] =
+		"POST / HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 13\r\n\r\n"
+		TEST_STATIC_PAYLOAD;
+	static const char expected_response[] =
+		"HTTP/1.1 405 Method Not Allowed\r\n";
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
+ZTEST(server_function_tests, test_http1_upgrade_409_method_not_allowed)
+{
+	static const char http1_request[] =
+		"POST / HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 13\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n\r\n"
+		TEST_STATIC_PAYLOAD;
+	const struct http_header expected_headers[] = {
+		{.name = ":status", .value = "405"}
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	/* Verify HTTP1 switching protocols response. */
+	expect_http1_switching_protocols(&offset);
+
+	/* Verify HTTP2 frames. */
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM,
+				   expected_headers, 1);
+}
+
+ZTEST(server_function_tests, test_http2_409_method_not_allowed)
+{
+	static const uint8_t request_post_static[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_ROOT_STREAM_1,
+		TEST_HTTP2_DATA_POST_ROOT_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	const struct http_header expected_headers[] = {
+		{.name = ":status", .value = "405"}
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_post_static,
+			 sizeof(request_post_static), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM,
+				   expected_headers, 1);
 }
 
 ZTEST(server_function_tests_no_init, test_http_server_start_stop)
