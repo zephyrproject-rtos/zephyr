@@ -55,7 +55,7 @@
 
 	rng: rng {
 		status = "okay";
-		compatible = "zephyr,native-posix-rng";
+		compatible = "nordic,nrf-cracen-ctrdrbg";
 	};
 
 	psa_rng: psa-rng {
