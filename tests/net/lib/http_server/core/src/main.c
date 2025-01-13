@@ -252,6 +252,7 @@ HTTP_RESOURCE_DEFINE(static_resource, test_http_service, "/",
 
 static uint8_t dynamic_payload[32];
 static size_t dynamic_payload_len = sizeof(dynamic_payload);
+static bool dynamic_error;
 
 static int dynamic_cb(struct http_client_ctx *client, enum http_data_status status,
 		      const struct http_request_ctx *request_ctx,
@@ -262,6 +263,10 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_data_status stat
 	if (status == HTTP_SERVER_DATA_ABORTED) {
 		offset = 0;
 		return 0;
+	}
+
+	if (dynamic_error) {
+		return -ENOMEM;
 	}
 
 	switch (client->method) {
@@ -667,6 +672,7 @@ static void expect_http2_headers_frame(size_t *offset, int stream_id, uint8_t fl
 	test_consume_data(offset, frame.length);
 }
 
+/* "payload" may be NULL to skip data frame content validation. */
 static void expect_http2_data_frame(size_t *offset, int stream_id,
 				    const uint8_t *payload, size_t payload_len,
 				    uint8_t flags)
@@ -679,11 +685,17 @@ static void expect_http2_data_frame(size_t *offset, int stream_id,
 	zassert_equal(frame.stream_identifier, stream_id,
 		      "Invalid data frame stream ID");
 	zassert_equal(frame.flags, flags, "Unexpected flags received");
-	zassert_equal(frame.length, payload_len, "Unexpected data frame length");
+	if (payload != NULL) {
+		zassert_equal(frame.length, payload_len,
+			      "Unexpected data frame length");
+	}
 
 	/* Verify data payload */
 	test_read_data(offset, frame.length);
-	zassert_mem_equal(buf, payload, payload_len, "Unexpected data payload");
+	if (payload != NULL) {
+		zassert_mem_equal(buf, payload, payload_len,
+				  "Unexpected data payload");
+	}
 	test_consume_data(offset, frame.length);
 }
 
@@ -2244,6 +2256,107 @@ ZTEST(server_function_tests, test_http2_409_method_not_allowed)
 				   expected_headers, 1);
 }
 
+ZTEST(server_function_tests, test_http1_500_internal_server_error)
+{
+	static const char http1_request[] =
+		"GET /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"Accept-Encoding: deflate, gzip, br\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 500 Internal Server Error\r\n";
+	size_t offset = 0;
+	int ret;
+
+	dynamic_error = true;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
+ZTEST(server_function_tests, test_http1_upgrade_500_internal_server_error)
+{
+	static const char http1_request[] =
+		"GET /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"Accept-Encoding: deflate, gzip, br\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n";
+	const struct http_header expected_headers[] = {
+		{.name = ":status", .value = "500"}
+	};
+	size_t offset = 0;
+	int ret;
+
+	dynamic_error = true;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	/* Verify HTTP1 switching protocols response. */
+	expect_http1_switching_protocols(&offset);
+
+	/* Verify HTTP2 frames. */
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS,
+				   expected_headers, 1);
+	/* Expect data frame with reason but don't check the content as it may
+	 * depend on libc being used (i. e. string returned by strerror()).
+	 */
+	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, NULL, 0,
+				HTTP2_FLAG_END_STREAM);
+}
+
+ZTEST(server_function_tests, test_http2_500_internal_server_error)
+{
+	static const uint8_t request_get_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	const struct http_header expected_headers[] = {
+		{.name = ":status", .value = "500"}
+	};
+	size_t offset = 0;
+	int ret;
+
+	dynamic_error = true;
+
+	ret = zsock_send(client_fd, request_get_dynamic,
+			 sizeof(request_get_dynamic), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS,
+				   expected_headers, 1);
+	/* Expect data frame with reason but don't check the content as it may
+	 * depend on libc being used (i. e. string returned by strerror()).
+	 */
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, NULL, 0,
+				HTTP2_FLAG_END_STREAM);
+}
+
 ZTEST(server_function_tests_no_init, test_http_server_start_stop)
 {
 	struct sockaddr_in sa = { 0 };
@@ -2590,6 +2703,7 @@ static void http_server_tests_before(void *fixture)
 	memset(&request_headers_clone, 0, sizeof(request_headers_clone));
 	memset(&request_headers_clone2, 0, sizeof(request_headers_clone2));
 	dynamic_payload_len = 0;
+	dynamic_error = false;
 
 	ret = http_server_start();
 	if (ret < 0) {
