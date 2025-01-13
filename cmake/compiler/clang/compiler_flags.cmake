@@ -109,7 +109,6 @@ check_set_compiler_property(PROPERTY warning_extended
                             -Wno-initializer-overrides
                             -Wno-section
                             -Wno-unused-variable
-                            -Wno-format-invalid-specifier
                             -Wno-gnu
 )
 
