@@ -1577,6 +1577,9 @@ static int udc_dwc2_ep_set_halt(const struct device *dev,
 	LOG_DBG("Set halt ep 0x%02x", cfg->addr);
 	if (ep_idx != 0) {
 		cfg->stat.halted = true;
+	} else if (!udc_buf_peek(dev, USB_CONTROL_EP_OUT)) {
+		/* Data stage is STALLed, allow receiving next SETUP */
+		dwc2_ctrl_feed_dout(dev, 8);
 	}
 
 	return 0;
