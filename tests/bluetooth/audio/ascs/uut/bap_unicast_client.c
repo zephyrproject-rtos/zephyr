@@ -3,8 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/ztest_assert.h>
 
 bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep)
 {

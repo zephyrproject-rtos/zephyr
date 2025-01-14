@@ -5,6 +5,9 @@
  */
 
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/fff.h>
 
 #include "cap_commander.h"
 

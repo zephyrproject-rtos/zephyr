@@ -9,8 +9,12 @@
  */
 
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -20,10 +24,13 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
+#include <sys/types.h>
 
 #include "assert.h"
-#include "ascs_internal.h"
 #include "bap_unicast_server.h"
 #include "bap_unicast_server_expects.h"
 #include "bap_stream.h"
@@ -32,11 +39,8 @@
 #include "gatt.h"
 #include "gatt_expects.h"
 #include "iso.h"
-#include "mock_kernel.h"
-#include "pacs.h"
 
 #include "test_common.h"
-#include "ztest_assert.h"
 
 DEFINE_FFF_GLOBALS;
 
@@ -193,7 +197,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 	/* Reset mock, as we expect ASE notification to be sent */
 	bt_gatt_notify_cb_reset();
 
-	/* Unregister the callbacks - whis will clean up the ASCS */
+	/* Unregister the callbacks - which will clean up the ASCS */
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 
 	/* Expected to notify the upper layers */
