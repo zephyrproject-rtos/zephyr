@@ -15,6 +15,7 @@ supported:
   - dma
   - watchdog
   - clock_control
+  - comparator
 testing:
   ignore_tags:
     - pm
