@@ -17,5 +17,5 @@ voltage on the same range.
 
 In the reference voltage case, the ADC is expected to be connected to a
 known voltage reference, whose value is informed, in millivolts, at
-property "reference_mv" from "zephyr,user" node. The test reads the ADC
+property "reference-mv" from "zephyr,user" node. The test reads the ADC
 to see if they match.
