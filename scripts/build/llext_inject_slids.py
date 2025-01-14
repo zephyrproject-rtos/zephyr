@@ -36,20 +36,22 @@ class LLEXTSymtabPreparator():
         self.elf = ELFFile(self.elf_fd)
 
     def _find_symtab(self):
-        supported_symtab_sections = [
-            ".symtab",
-            ".dynsym",
-        ]
+        e_type = self.elf.header['e_type']
+        if e_type == 'ET_DYN':
+            symtab_name = ".dynsym"
+        elif e_type == 'ET_REL':
+            symtab_name = ".symtab"
+        else:
+            self.log.error(f"unexpected ELF file type {e_type}")
+            return None
 
-        symtab = None
-        for section_name in supported_symtab_sections:
-            symtab = self.elf.get_section_by_name(section_name)
-            if not isinstance(symtab, SymbolTableSection):
-                self.log.debug(f"section {section_name} not found.")
-            else:
-                self.log.info(f"processing '{section_name}' symbol table...")
-                self.log.debug(f"(symbol table is at file offset 0x{symtab['sh_offset']:X})")
-                break
+        symtab = self.elf.get_section_by_name(symtab_name)
+        if not isinstance(symtab, SymbolTableSection):
+            self.log.debug(f"section {symtab_name} not found.")
+            return None
+
+        self.log.info(f"processing symbol table from '{symtab_name}'...")
+        self.log.debug(f"(symbol table is at file offset 0x{symtab['sh_offset']:X})")
         return symtab
 
     def _find_imports_in_symtab(self, symtab):
