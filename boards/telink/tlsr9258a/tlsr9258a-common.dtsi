@@ -186,7 +186,7 @@
 };
 
 &gpiod {
-	interrupts = <37 1>;
+	interrupts = <25 1>;
 	status = "okay";
 };
 
@@ -195,7 +195,7 @@
 };
 
 &gpiof {
-	interrupts = <38 1>;
+	interrupts = <26 1>;
 	status = "okay";
 };
 
