@@ -177,7 +177,6 @@ static int adc_sam0_channel_setup(const struct device *dev,
 #endif
 	}
 
-
 	uint32_t inputctrl = 0;
 
 	switch (channel_cfg->gain) {
@@ -255,7 +254,6 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		break;
 	}
 
-
 	return 0;
 }
 
@@ -325,6 +323,12 @@ static int start_read(const struct device *dev,
 	}
 
 	adc->AVGCTRL.reg = ADC_AVGCTRL_SAMPLENUM(sequence->oversampling);
+	if (sequence->oversampling < 4) {
+		adc->AVGCTRL.reg |= ADC_AVGCTRL_ADJRES(sequence->oversampling);
+	} else {
+		adc->AVGCTRL.reg |= ADC_AVGCTRL_ADJRES(4);
+	}
+
 	/* AVGCTRL is not synchronized */
 
 #ifdef CONFIG_SOC_SERIES_SAMD20
