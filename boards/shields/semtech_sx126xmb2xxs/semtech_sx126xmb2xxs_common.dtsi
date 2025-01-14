@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2024 Semtech Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/lora_lbm/sx126x.h>
+
+/ {
+	chosen {
+		zephyr,lora-transceiver = &lora_semtech_sx126xmb2xxs;
+	};
+	aliases {
+		lora-transceiver = &lora_semtech_sx126xmb2xxs;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	cs-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;
+
+	lora_semtech_sx126xmb2xxs: lora@0 {
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
+
+		reset-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>;
+
+		busy-gpios = <&arduino_header 9 GPIO_ACTIVE_HIGH>;
+
+		dio1-gpios = <&arduino_header 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		dio2-as-rf-switch;
+
+		reg-mode = <SX126X_REG_MODE_LDO>;
+
+		tcxo-wakeup-time = <0>;
+		tcxo-voltage = <SX126X_TCXO_SUPPLY_1_8V>;
+	};
+};
