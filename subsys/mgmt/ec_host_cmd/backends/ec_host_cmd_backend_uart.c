@@ -100,9 +100,6 @@ static int request_expected_size(const struct ec_host_cmd_request_header *r)
 		.ctx = &_name##_hc_uart,                                                           \
 	}
 
-/* Timeout after receiving first byte */
-#define UART_REQ_RX_TIMEOUT K_MSEC(150)
-
 /*
  * Max data size for a version 3 request/response packet. This is big enough
  * to handle a request/response header, flash write offset/size and 512 bytes
@@ -156,7 +153,8 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		if (hc_uart->state == UART_HOST_CMD_READY_TO_RX) {
 			hc_uart->rx_ctx->len = 0;
 			hc_uart->state = UART_HOST_CMD_RECEIVING;
-			k_work_reschedule(&hc_uart->timeout_work, UART_REQ_RX_TIMEOUT);
+			k_work_reschedule(&hc_uart->timeout_work,
+					  K_MSEC(CONFIG_EC_HOST_CMD_BACKEND_UART_TIMEOUT));
 		} else if (hc_uart->state == UART_HOST_CMD_PROCESSING ||
 			   hc_uart->state == UART_HOST_CMD_SENDING) {
 			LOG_ERR("UART HOST CMD ERROR: Received data while processing or sending");
