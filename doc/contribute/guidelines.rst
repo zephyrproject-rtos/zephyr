@@ -626,6 +626,19 @@ guidelines, maintainers may decide which style should be adopted.
 
 .. _Continuous Integration:
 
+Devicetree Style
+================
+
+.. _Devicetree sources coding style:
+   https://kernel.org/doc/html/latest/devicetree/bindings/dts-coding-style.html
+
+In general, follow the `Devicetree sources coding style`_, with the following
+exceptions:
+
+* Property names with underscores should be used only when strictly necessary
+  and already present in the upstream Linux kernel or other authoritative
+  third-party sources.
+
 Continuous Integration (CI)
 ===========================
 
