@@ -154,6 +154,8 @@ Display
         ...
     };
 
+* Renamed the devicetree propertys ``pclk_pol`` and ``data_cmd-gpios``
+  to ``pclk-pol`` and ``data-cmd-gpios``.
 
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
