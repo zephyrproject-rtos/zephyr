@@ -836,7 +836,7 @@ class ZephyrDomain(Domain):
         else:
             return
 
-        if elem:
+        if elem and "docname" in elem:
             if not node.get("refexplicit"):
                 contnode = [nodes.Text(elem["name"] if type != "board" else elem["full_name"])]
 
