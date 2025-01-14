@@ -19,6 +19,7 @@
 
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
+#define VIRT_VTIMER_NAME		arm_arch_timer
 struct zvm_arch_timer_info {
 	uint32_t virt_irq;
 	uint32_t phys_irq;
@@ -300,7 +301,13 @@ int arch_vcpu_timer_init(struct z_vcpu *vcpu)
 	return 0;
 }
 
-static void zvm_virt_ptimer_init(void)
+int arch_vcpu_timer_deinit(struct z_vcpu *vcpu)
+{
+	ARG_UNUSED(vcpu);
+	return 0;
+}
+
+static void virt_arm_ptimer_init(void)
 {
 	uint64_t cntp_ctl;
 
@@ -314,7 +321,7 @@ static void zvm_virt_ptimer_init(void)
 #endif
 }
 
-void zvm_virt_vtimer_init(void)
+static void virt_arm_vtimer_init(void)
 {
 	uint64_t cntv_ctl;
 
@@ -328,7 +335,7 @@ void zvm_virt_vtimer_init(void)
 #endif
 }
 
-int zvm_arch_vtimer_init(void)
+static int virt_arm_arch_timer_init(void)
 {
     /* get vtimer irq */
     zvm_global_vtimer_info.virt_irq = ARM_ARCH_VIRT_VTIMER_IRQ;
@@ -343,8 +350,35 @@ int zvm_arch_vtimer_init(void)
 		return -EINTR;
     }
 
-	zvm_virt_vtimer_init();
-	zvm_virt_ptimer_init();
+	virt_arm_vtimer_init();
+	virt_arm_ptimer_init();
 
 	return 0;
 }
+
+
+static struct virt_device_config virt_arm_arch_timer_cfg = {
+	.hirq_num = 0,
+	.device_config = NULL,
+};
+
+static struct virt_device_data virt_arm_arch_timer_data_port = {
+	.device_data = NULL,
+};
+
+/**
+ * @brief vserial device operations api.
+*/
+static const struct virt_device_api virt_arm_arch_timer_api = {
+	.init_fn = NULL,
+	.deinit_fn = NULL,
+	.virt_device_read = NULL,
+	.virt_device_write = NULL,
+};
+
+ZVM_VIRTUAL_DEVICE_DEFINE(virt_arm_arch_timer_init,
+			POST_KERNEL, CONFIG_VIRT_ARM_ARCH_TIMER_PRIORITY,
+			VIRT_VTIMER_NAME,
+			virt_arm_arch_timer_data_port,
+			virt_arm_arch_timer_cfg,
+			virt_arm_arch_timer_api);

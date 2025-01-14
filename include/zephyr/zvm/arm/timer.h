@@ -54,10 +54,8 @@ void simulate_timer_cntp_cval(struct z_vcpu *vcpu, int read, uint64_t *value);
  */
 void simulate_timer_cntp_ctl(struct z_vcpu *vcpu, int read, uint64_t *value);
 
-/**
- * @brief Init vtimer struct
- */
 int arch_vcpu_timer_init(struct z_vcpu *vcpu);
+int arch_vcpu_timer_deinit(struct z_vcpu *vcpu);
 
 /**
  * @brief Init zvm arch timer.

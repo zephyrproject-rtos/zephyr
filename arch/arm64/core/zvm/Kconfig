@@ -14,3 +14,19 @@ config ZVM_MAX_VM_XLAT_TABLES
 	  it will result in an assertion failure.
 
 endif # ARM_MMU
+
+config VIRT_ARM_ARCH_TIMER
+	bool "Enable VIRT ARM arch timer"
+	default y
+	help
+	  This option enables the ARM arch timer for the virtual machine.
+
+if VIRT_ARM_ARCH_TIMER
+
+config VIRT_ARM_ARCH_TIMER_PRIORITY
+	int "VIRT ARM arch timer priority"
+	default 78
+	help
+	  This option specifies the priority of the ARM arch timer for the virtual machine.
+
+endif # VIRT_ARM_ARCH_TIMER

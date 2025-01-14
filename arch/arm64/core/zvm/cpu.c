@@ -66,6 +66,16 @@ static int vcpu_virq_init(struct z_vcpu *vcpu)
     return 0;
 }
 
+static int vcpu_virq_deinit(struct z_vcpu *vcpu)
+{
+    struct gicv3_vcpuif_ctxt *ctxt;
+
+    ctxt = vcpu->arch->virq_data;
+    k_free(ctxt);
+
+    return 0;
+}
+
 static void vcpu_vgic_save(struct z_vcpu *vcpu)
 {
     vgicv3_state_save(vcpu, (struct gicv3_vcpuif_ctxt *)vcpu->arch->virq_data);
@@ -167,6 +177,16 @@ static void arch_vcpu_sys_regs_init(struct z_vcpu *vcpu)
     aarch64_c->sys_regs[VCPU_SPSR_EL1] = SPSR_MODE_EL1H;
 }
 
+static void arch_vcpu_sys_regs_deinit(struct z_vcpu *vcpu)
+{
+    int i;
+    struct zvm_vcpu_context *aarch64_c = &vcpu->arch->ctxt;
+
+    for (i = 0; i < VCPU_SYS_REG_NUM; i++) {
+        aarch64_c->sys_regs[i] = 0;
+    }
+}
+
 static void arch_vcpu_common_regs_init(struct z_vcpu *vcpu)
 {
     struct zvm_vcpu_context *ctxt;
@@ -179,7 +199,17 @@ static void arch_vcpu_common_regs_init(struct z_vcpu *vcpu)
                             DAIF_IRQ_BIT | DAIF_FIQ_BIT );
 }
 
+static void arch_vcpu_common_regs_deinit(struct z_vcpu *vcpu)
+{
+    ARG_UNUSED(vcpu);
+}
+
 static void arch_vcpu_fp_regs_init(struct z_vcpu *vcpu)
+{
+    ARG_UNUSED(vcpu);
+}
+
+static void arch_vcpu_fp_regs_deinit(struct z_vcpu *vcpu)
 {
     ARG_UNUSED(vcpu);
 }
@@ -392,6 +422,29 @@ int arch_vcpu_init(struct z_vcpu *vcpu)
     return ret;
 }
 
+int arch_vcpu_deinit(struct z_vcpu *vcpu)
+{
+    int ret = 0;
+
+    ret = arch_vcpu_timer_deinit(vcpu);
+    if(ret) {
+        ZVM_LOG_WARN("Deinit arch timer failed. \n");
+        return ret;
+    }
+
+    ret = vcpu_virq_deinit(vcpu);
+    if(ret) {
+        ZVM_LOG_WARN("Deinit virt cpu irq failed. \n");
+        return ret;
+    }
+
+    arch_vcpu_fp_regs_deinit(vcpu);
+    arch_vcpu_sys_regs_deinit(vcpu);
+    arch_vcpu_common_regs_deinit(vcpu);
+
+    return ret;
+}
+
 int zvm_arch_init(void *op)
 {
     ARG_UNUSED(op);
@@ -404,18 +457,5 @@ int zvm_arch_init(void *op)
     if(!is_gicv3_device_support()){
         return -ENODEV;
     }
-    ret = zvm_arch_vtimer_init();
-    if(ret) {
-        ZVM_LOG_ERR("Vtimer subsystem do not supported! \n");
-        return ret;
-    }
     return ret;
-}
-
-void arch_vcpu_destory(struct z_vcpu *vcpu)
-{
-    if(vcpu->arch->vtimer_context)
-        k_free(vcpu->arch->vtimer_context);
-    if(vcpu->arch->virq_data)
-        k_free(vcpu->arch->virq_data);
 }

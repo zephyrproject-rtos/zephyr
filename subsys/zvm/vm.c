@@ -407,7 +407,6 @@ int vm_delete(struct z_vm *vm)
     k_spinlock_key_t key;
     struct vm_mem_domain *vmem_dm = vm->vmem_domain;
     struct z_vcpu *vcpu;
-    struct vcpu_work *vwork;
 
     key = k_spin_lock(&vm->spinlock);
     /* delete vdev struct */
@@ -428,16 +427,7 @@ int vm_delete(struct z_vm *vm)
         if(!vcpu) {
             continue;
         }
-        /* release the used physical cpu*/
-        vm_cpu_reset(vcpu->cpu);
-        vwork = vcpu->work;
-        if(vwork){
-            k_free(vwork->vcpu_thread);
-        }
-
-        k_free(vcpu->arch);
-        k_free(vcpu->work);
-        k_free(vcpu);
+        vm_vcpu_deinit(vcpu);
     }
 
     k_free(vm->ops);

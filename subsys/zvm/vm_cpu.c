@@ -432,6 +432,24 @@ struct z_vcpu *vm_vcpu_init(struct z_vm *vm, uint16_t vcpu_id, char *vcpu_name)
     return vcpu;
 }
 
+int vm_vcpu_deinit(struct z_vcpu *vcpu)
+{
+    int ret = 0;
+
+    ret = arch_vcpu_deinit(vcpu);
+    if (ret) {
+        ZVM_LOG_WARN("Deinit arch vcpu error!");
+        return ret;
+    }
+
+    reset_idle_cpu(vcpu->cpu);
+    k_free(vcpu->work);
+    k_free(vcpu->arch);
+    k_free(vcpu);
+
+    return ret;
+}
+
 int vm_vcpu_ready(struct z_vcpu *vcpu)
 {
     return vcpu_state_switch(vcpu->work->vcpu_thread, _VCPU_STATE_READY);
@@ -450,9 +468,4 @@ int vm_vcpu_halt(struct z_vcpu *vcpu)
 int vm_vcpu_reset(struct z_vcpu *vcpu)
 {
     return vcpu_state_switch(vcpu->work->vcpu_thread, _VCPU_STATE_RESET);
-}
-
-void vm_cpu_reset(uint16_t cpu_id)
-{
-    reset_idle_cpu(cpu_id);
 }

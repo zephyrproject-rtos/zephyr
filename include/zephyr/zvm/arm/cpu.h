@@ -203,7 +203,7 @@ void switch_to_guest_sysreg(struct z_vcpu *vcpu);
 void switch_to_host_sysreg(struct z_vcpu *vcpu);
 
 int arch_vcpu_init(struct z_vcpu *vcpu);
-void arch_vcpu_destory(struct z_vcpu *vcpu);
+int arch_vcpu_deinit(struct z_vcpu *vcpu);
 
 int zvm_arch_init(void *op);
 

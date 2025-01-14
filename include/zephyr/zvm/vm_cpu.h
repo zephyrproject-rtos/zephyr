@@ -55,6 +55,11 @@ static struct k_spinlock cpu_mask_lock;
 struct z_vcpu *vm_vcpu_init(struct z_vm *vm, uint16_t vcpu_id, char *vcpu_name);
 
 /**
+ * @brief release vcpu struct.
+ */
+int vm_vcpu_deinit(struct z_vcpu *vcpu);
+
+/**
  * @brief the vcpu has below state:
  * running: vcpu is running, and is allocated to physical cpu.
  * ready: prepare to running.
@@ -78,11 +83,6 @@ void do_asm_vcpu_swap(struct k_thread *new_thread, struct k_thread *old_thread);
  * @brief vcpu ipi schduler to inform system schduler to schdule vcpu.
  */
 int vcpu_ipi_scheduler(uint32_t cpu_mask, uint32_t timeout);
-
-/**
- * @brief reset the vm cpu to idle.
- */
-void vm_cpu_reset(uint16_t cpu_id);
 
 static ALWAYS_INLINE int rt_get_idle_cpu(void) {
     for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
