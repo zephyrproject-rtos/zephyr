@@ -35,3 +35,21 @@ set(SYSBUILD_CURRENT_CMAKE_DIR)
 # This allows for board and SoC specific images to be included.
 sysbuild_add_subdirectory(boards)
 sysbuild_add_subdirectory(soc)
+
+# parse and add harness app list from SB_CONFIG_HARNESS_APPS.
+if(SB_CONFIG_HARNESS_APPS)
+  string(REPLACE "," ";" items "${SB_CONFIG_HARNESS_APPS}")
+  message("SB_CONFIG_HARNESS_APPS: ${SB_CONFIG_HARNESS_APPS}")
+  message("items: ${items}")
+
+  foreach(item IN LISTS items)
+    message("item: ${item}")
+    string(REPLACE "/" "_" app_name ${item})
+    message("app_name: ${app_name}")
+    ExternalZephyrProject_Add(
+        APPLICATION ${app_name}
+        SOURCE_DIR ${ZEPHYR_BASE}/${item}
+        BOARD ${BOARD}
+      )
+  endforeach()
+endif()
