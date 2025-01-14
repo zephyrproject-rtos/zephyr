@@ -20,7 +20,6 @@
 	struct arch_esf {                                                                          \
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
-		unsigned long tp;                                                                  \
 		struct soc_esf soc_context;                                                        \
                                                                                                    \
 		unsigned long t2;                                                                  \
@@ -43,7 +42,6 @@
 	struct arch_esf {                                                                          \
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
-		unsigned long tp;                                                                  \
 		struct soc_esf soc_context;                                                        \
                                                                                                    \
 		unsigned long ra;                                                                  \
@@ -79,7 +77,7 @@
  * Size of the SW managed part of the ESF in case of interrupt
  *   sizeof(__padding) + ... + sizeof(soc_context)
  */
-#define ESF_SW_IRQ_SIZEOF (0x20)
+#define ESF_SW_IRQ_SIZEOF (0x10)
 
 /*
  * VPR needs aligned(8) SP when doing HW stacking, if this condition is not fulfilled it will move
