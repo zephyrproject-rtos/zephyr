@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) CO LTD
+ * Copyright (c) 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,11 @@
 
 #include <errno.h>
 #include <hal/adc_hal.h>
+#include <hal/adc_oneshot_hal.h>
 #include <hal/adc_types.h>
 #include <soc/adc_periph.h>
-#include <esp_adc_cal.h>
+#include <esp_adc/adc_cali.h>
+#include <esp_adc/adc_cali_scheme.h>
 #include <esp_clk_tree.h>
 #include <esp_private/periph_ctrl.h>
 #include <esp_private/sar_periph_ctrl.h>
@@ -35,22 +37,7 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 #define ADC_RESOLUTION_MIN	SOC_ADC_DIGI_MIN_BITWIDTH
 #define ADC_RESOLUTION_MAX	SOC_ADC_DIGI_MAX_BITWIDTH
 
-#if CONFIG_SOC_SERIES_ESP32
-#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_VREF
-/* Due to significant measurement discrepancy in higher voltage range, we
- * clip the value instead of yet another correction. The IDF implementation
- * for ESP32-S2 is doing it, so we copy that approach in Zephyr driver
- */
-#define ADC_CLIP_MVOLT_12DB     2550
-#elif CONFIG_SOC_SERIES_ESP32S3
-#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP_FIT
-#else
-#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP
-#endif
-
-/* Validate if resolution in bits is within allowed values */
 #define VALID_RESOLUTION(r) ((r) >= ADC_RESOLUTION_MIN && (r) <= ADC_RESOLUTION_MAX)
-#define INVALID_RESOLUTION(r) (!VALID_RESOLUTION(r))
 
 /* Default internal reference voltage */
 #define ADC_ESP32_DEFAULT_VREF_INTERNAL (1100)
@@ -68,12 +55,12 @@ struct adc_esp32_conf {
 };
 
 struct adc_esp32_data {
+	adc_oneshot_hal_ctx_t hal;
 	adc_atten_t attenuation[SOC_ADC_MAX_CHANNEL_NUM];
 	uint8_t resolution[SOC_ADC_MAX_CHANNEL_NUM];
-	esp_adc_cal_characteristics_t chars[SOC_ADC_MAX_CHANNEL_NUM];
+	adc_cali_handle_t cal_handle[SOC_ADC_MAX_CHANNEL_NUM];
 	uint16_t meas_ref_internal;
 	uint16_t *buffer;
-	bool calibrate;
 #if defined(CONFIG_ADC_ESP32_DMA)
 	adc_hal_dma_ctx_t adc_hal_dma_ctx;
 	uint8_t *dma_buffer;
@@ -103,30 +90,6 @@ static inline int gain_to_atten(enum adc_gain gain, adc_atten_t *atten)
 	return 0;
 }
 
-#if !defined(CONFIG_ADC_ESP32_DMA)
-/* Convert voltage by inverted attenuation to support zephyr gain values */
-static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
-{
-	if (!val_mv) {
-		return;
-	}
-	switch (atten) {
-	case ADC_ATTEN_DB_2_5:
-		*val_mv = (*val_mv * 4) / 5; /* 1/ADC_GAIN_4_5 */
-		break;
-	case ADC_ATTEN_DB_6:
-		*val_mv = *val_mv >> 1; /* 1/ADC_GAIN_1_2 */
-		break;
-	case ADC_ATTEN_DB_12:
-		*val_mv = *val_mv / 4; /* 1/ADC_GAIN_1_4 */
-		break;
-	case ADC_ATTEN_DB_0: /* 1/ADC_GAIN_1 */
-	default:
-		break;
-	}
-}
-#endif /* !defined(CONFIG_ADC_ESP32_DMA) */
-
 static void adc_hw_calibration(adc_unit_t unit)
 {
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -141,26 +104,6 @@ static void adc_hw_calibration(adc_unit_t unit)
 #endif /* SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED */
 	}
 #endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
-}
-
-static bool adc_calibration_init(const struct device *dev)
-{
-	switch (esp_adc_cal_check_efuse(ADC_CALI_SCHEME)) {
-	case ESP_ERR_NOT_SUPPORTED:
-		LOG_WRN("Skip software calibration - Not supported!");
-		break;
-	case ESP_ERR_INVALID_VERSION:
-		LOG_WRN("Skip software calibration - Invalid version!");
-		break;
-	case ESP_OK:
-		LOG_DBG("Software calibration possible");
-		return true;
-	default:
-		LOG_ERR("Invalid arg");
-		break;
-	}
-
-	return false;
 }
 
 #if defined(CONFIG_ADC_ESP32_DMA)
@@ -384,10 +327,8 @@ static int adc_esp32_wait_for_dma_conv_done(const struct device *dev)
 
 static int adc_esp32_read(const struct device *dev, const struct adc_sequence *seq)
 {
-	const struct adc_esp32_conf *conf = dev->config;
 	struct adc_esp32_data *data = dev->data;
-	int reading;
-	uint32_t cal, cal_mv;
+	uint32_t acq_raw, acq_mv, result;
 
 	uint8_t channel_id = find_lsb_set(seq->channels) - 1;
 
@@ -417,7 +358,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 #endif /* !defined(CONFIG_ADC_ESP32_DMA) */
 	}
 
-	if (INVALID_RESOLUTION(seq->resolution)) {
+	if (!VALID_RESOLUTION(seq->resolution)) {
 		LOG_ERR("unsupported resolution (%d)", seq->resolution);
 		return -ENOTSUP;
 	}
@@ -430,55 +371,31 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 
 	data->resolution[channel_id] = seq->resolution;
 
-#if CONFIG_SOC_SERIES_ESP32C3
-	/* NOTE: nothing to set on ESP32C3 SoC */
-	if (conf->unit == ADC_UNIT_1) {
-		adc1_config_width(ADC_WIDTH_BIT_DEFAULT);
-	}
-#else
-	adc_set_data_width(conf->unit, data->resolution[channel_id]);
-#endif /* CONFIG_SOC_SERIES_ESP32C3 */
-
 #if !defined(CONFIG_ADC_ESP32_DMA)
-	/* Read raw value */
-	if (conf->unit == ADC_UNIT_1) {
-		reading = adc1_get_raw(channel_id);
-	}
-	if (conf->unit == ADC_UNIT_2) {
-		if (adc2_get_raw(channel_id, ADC_WIDTH_BIT_DEFAULT, &reading)) {
-			LOG_ERR("Conversion timeout on '%s' channel %d", dev->name, channel_id);
-			return -ETIMEDOUT;
-		}
-	}
 
-	/* Calibration scheme is available */
-	if (data->calibrate) {
-		data->chars[channel_id].bit_width = data->resolution[channel_id];
-		/* Get corrected voltage output */
-		cal = cal_mv = esp_adc_cal_raw_to_voltage(reading, &data->chars[channel_id]);
+	adc_oneshot_hal_setup(&data->hal, channel_id);
 
-#if CONFIG_SOC_SERIES_ESP32
-		if (data->attenuation[channel_id] == ADC_ATTEN_DB_12) {
-			if (cal > ADC_CLIP_MVOLT_12DB) {
-				cal = ADC_CLIP_MVOLT_12DB;
-			}
-		}
-#endif /* CONFIG_SOC_SERIES_ESP32 */
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+	adc_set_hw_calibration_code(data->hal.unit, data->attenuation[channel_id]);
+#endif  /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
 
-		/* Fit according to selected attenuation */
-		atten_to_gain(data->attenuation[channel_id], &cal);
-		if (data->meas_ref_internal > 0) {
-			cal = (cal << data->resolution[channel_id]) / data->meas_ref_internal;
-		}
+	adc_oneshot_hal_convert(&data->hal, &acq_raw);
+
+	if (data->cal_handle[channel_id]) {
+		adc_cali_raw_to_voltage(data->cal_handle[channel_id], acq_raw, &acq_mv);
+
+		LOG_DBG("ADC acquisition [unit: %u, chan: %u, acq_raw: %u, acq_mv: %u]",
+			data->hal.unit, channel_id, acq_raw, acq_mv);
+
+		result = acq_mv;
 	} else {
-		LOG_DBG("Using uncalibrated values!");
-		/* Uncalibrated raw value */
-		cal = reading;
+		LOG_WRN("ADC values are raw (uncalibrated)");
+		result = acq_raw;
 	}
 
 	/* Store result */
-	data->buffer = (uint16_t *) seq->buffer;
-	data->buffer[0] = cal;
+	data->buffer = (uint16_t *)seq->buffer;
+	data->buffer[0] = result;
 
 #else /* !defined(CONFIG_ADC_ESP32_DMA) */
 
@@ -567,7 +484,7 @@ static int adc_esp32_read_async(const struct device *dev,
 static int adc_esp32_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg)
 {
 	const struct adc_esp32_conf *conf = (const struct adc_esp32_conf *)dev->config;
-	struct adc_esp32_data *data = (struct adc_esp32_data *) dev->data;
+	struct adc_esp32_data *data = (struct adc_esp32_data *)dev->data;
 
 	if (cfg->channel_id >= conf->channel_count) {
 		LOG_ERR("Unsupported channel id '%d'", cfg->channel_id);
@@ -594,26 +511,46 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 		return -ENOTSUP;
 	}
 
-	/* Prepare channel */
-	if (conf->unit == ADC_UNIT_1) {
-		adc1_config_channel_atten(cfg->channel_id, data->attenuation[cfg->channel_id]);
-	}
-	if (conf->unit == ADC_UNIT_2) {
-		adc2_config_channel_atten(cfg->channel_id, data->attenuation[cfg->channel_id]);
-	}
+	adc_oneshot_hal_chan_cfg_t config = {
+		.atten = data->attenuation[cfg->channel_id],
+		.bitwidth = data->resolution[cfg->channel_id],
+	};
 
-	if (data->calibrate) {
-		esp_adc_cal_value_t cal = esp_adc_cal_characterize(conf->unit,
-						data->attenuation[cfg->channel_id],
-						data->resolution[cfg->channel_id],
-						data->meas_ref_internal,
-						&data->chars[cfg->channel_id]);
-		if (cal >= ESP_ADC_CAL_VAL_NOT_SUPPORTED) {
-			LOG_ERR("Calibration error or not supported");
-			return -EIO;
-		}
-		LOG_DBG("Using ADC calibration method %d", cal);
-	}
+	adc_oneshot_hal_channel_config(&data->hal, &config, cfg->channel_id);
+
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+	adc_cali_curve_fitting_config_t cal_config = {
+		.unit_id = conf->unit,
+		.chan = cfg->channel_id,
+		.atten = data->attenuation[cfg->channel_id],
+		.bitwidth = data->resolution[cfg->channel_id],
+	};
+
+	LOG_DBG("Curve fitting calib [unit_id: %u, chan: %u, atten: %u, bitwidth: %u]",
+		conf->unit, cfg->channel_id, data->attenuation[cfg->channel_id],
+		data->resolution[cfg->channel_id]);
+
+	adc_cali_create_scheme_curve_fitting(&cal_config,
+					     &data->cal_handle[cfg->channel_id]);
+#endif /* ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED */
+
+#if ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+	adc_cali_line_fitting_config_t cal_config = {
+		.unit_id = conf->unit,
+		.atten = data->attenuation[cfg->channel_id],
+		.bitwidth = data->resolution[cfg->channel_id],
+#if CONFIG_SOC_SERIES_ESP32
+		.default_vref = data->meas_ref_internal
+#endif
+	};
+
+	LOG_DBG("Line fitting calib [unit_id: %u, chan: %u, atten: %u, bitwidth: %u]",
+		conf->unit, cfg->channel_id, data->attenuation[cfg->channel_id],
+		data->resolution[cfg->channel_id]);
+
+	adc_cali_create_scheme_line_fitting(&cal_config,
+				&data->cal_handle[cfg->channel_id]);
+#endif /* ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED */
 
 #if defined(CONFIG_ADC_ESP32_DMA)
 
@@ -651,14 +588,18 @@ static int adc_esp32_init(const struct device *dev)
 {
 	struct adc_esp32_data *data = (struct adc_esp32_data *) dev->data;
 	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *) dev->config;
+	uint32_t clock_src_hz = 0;
 
-	adc_hw_calibration(conf->unit);
+	esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_src_hz);
 
-#if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
-	if (conf->unit == ADC_UNIT_2) {
-		adc2_init_code_calibration();
-	}
-#endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
+	adc_oneshot_hal_cfg_t config = {
+		.unit = conf->unit,
+		.work_mode = ADC_HAL_SINGLE_READ_MODE,
+		.clk_src = ADC_DIGI_CLK_SRC_DEFAULT,
+		.clk_src_freq_hz = clock_src_hz,
+	};
+
+	adc_oneshot_hal_init(&data->hal, &config);
 
 #if defined(CONFIG_ADC_ESP32_DMA)
 	if (!device_is_ready(conf->gpio_port)) {
@@ -689,19 +630,16 @@ static int adc_esp32_init(const struct device *dev)
 
 #endif /* defined(CONFIG_ADC_ESP32_DMA) */
 
-	for (uint8_t i = 0; i < ARRAY_SIZE(data->resolution); i++) {
+	for (uint8_t i = 0; i < SOC_ADC_MAX_CHANNEL_NUM; i++) {
 		data->resolution[i] = ADC_RESOLUTION_MAX;
-	}
-
-	for (uint8_t i = 0; i < ARRAY_SIZE(data->attenuation); i++) {
 		data->attenuation[i] = ADC_ATTEN_DB_0;
+		data->cal_handle[i] = NULL;
 	}
 
 	/* Default reference voltage. This could be calibrated externaly */
 	data->meas_ref_internal = ADC_ESP32_DEFAULT_VREF_INTERNAL;
 
-	/* Check if calibration is possible */
-	data->calibrate = adc_calibration_init(dev);
+	adc_hw_calibration(conf->unit);
 
 	return 0;
 }
@@ -742,6 +680,9 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 	};									\
 										\
 	static struct adc_esp32_data adc_esp32_data_##inst = {			\
+		.hal = {	\
+			.dev = (adc_oneshot_soc_handle_t)DT_INST_REG_ADDR(inst),\
+		},	\
 	};									\
 										\
 DEVICE_DT_INST_DEFINE(inst, &adc_esp32_init, NULL,				\
