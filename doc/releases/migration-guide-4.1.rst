@@ -231,6 +231,12 @@ PWM
 
 * Renamed the ``compatible`` from ``nxp,kinetis-ftm-pwm`` to :dtcompatible:`nxp,ftm-pwm`.
 
+SDHC
+====
+
+* Renamed the device tree property from ``power_delay_ms`` to ``power-delay-ms```
+* Renamed the device tree property from ``max_current_330`` to ``max-current-330``
+
 Sensors
 =======
 
