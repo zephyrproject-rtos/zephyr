@@ -3,7 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -12,10 +19,11 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/ztest_assert.h>
+#include <sys/types.h>
 
 #include "bap_unicast_server.h"
 #include "bap_stream.h"
-#include "gatt_expects.h"
 #include "conn.h"
 #include "gatt.h"
 #include "iso.h"
@@ -355,7 +363,7 @@ void test_preamble_state_releasing(struct bt_conn *conn, uint8_t ase_id,
 	test_preamble_state_streaming(conn, ase_id, stream, chan, source);
 	test_ase_control_client_release(conn, ase_id);
 
-	/* Reset the mocks espacially the function call count */
+	/* Reset the mocks especially the function call count */
 	mock_bap_unicast_server_cleanup();
 	mock_bt_iso_cleanup();
 	mock_bap_stream_cleanup();
