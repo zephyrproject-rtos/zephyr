@@ -265,6 +265,18 @@ LOG_MODULE_REGISTER(nxp_irqstr);
 #define DISPATCHER_REGMAP(disp) \
 	(((const struct irqsteer_config *)disp->dev->config)->regmap_phys)
 
+#if defined(CONFIG_XTENSA)
+#define irqsteer_arch_irq_enable(irq)     xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+#define irqsteer_arch_irq_disable(irq)    xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+#define irqsteer_arch_irq_is_enabled(irq) xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+#elif defined(CONFIG_ARM)
+#define irqsteer_arch_irq_enable(irq)     arm_irq_enable(irq);
+#define irqsteer_arch_irq_disable(irq)    arm_irq_disable(irq);
+#define irqsteer_arch_irq_is_enabled(irq) arm_irq_is_enabled(irq);
+#else
+#error ARCH not supported
+#endif
+
 struct irqsteer_config {
 	uint32_t regmap_phys;
 	uint32_t regmap_size;
@@ -336,13 +348,11 @@ static void _irqstr_disp_enable_disable(struct irqsteer_dispatcher *disp,
 	uint32_t regmap = DISPATCHER_REGMAP(disp);
 
 	if (enable) {
-		xtensa_irq_enable(XTENSA_IRQ_NUMBER(disp->irq));
-
+		irqsteer_arch_irq_enable(disp->irq);
 		IRQSTEER_EnableMasterInterrupt(UINT_TO_IRQSTEER(regmap), disp->irq);
 	} else {
 		IRQSTEER_DisableMasterInterrupt(UINT_TO_IRQSTEER(regmap), disp->irq);
-
-		xtensa_irq_disable(XTENSA_IRQ_NUMBER(disp->irq));
+		irqsteer_arch_irq_disable(disp->irq);
 	}
 }
 
@@ -467,9 +477,9 @@ void z_soc_irq_enable_disable(uint32_t irq, bool enable)
 	if (irq_get_level(irq) == 1) {
 		/* LEVEL 1 interrupts are DSP direct */
 		if (enable) {
-			xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+			irqsteer_arch_irq_enable(irq);
 		} else {
-			xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+			irqsteer_arch_irq_disable(irq);
 		}
 		return;
 	}
@@ -513,8 +523,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	bool enabled;
 
 	if (irq_get_level(irq) == 1) {
-		/* LEVEL 1 interrupts are DSP direct */
-		return xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+		return irqsteer_arch_irq_is_enabled(irq);
 	}
 
 	parent_irq = irq_parent_level_2(irq);
