@@ -353,6 +353,14 @@
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_WDOG1CLK>;
 			status = "disabled";
 		};
+
+		acmp0: acmp@0x5a008000 {
+			compatible = "silabs,acmp";
+			reg = <0x5a008000 0x4000>;
+			interrupts = <41 0>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
+			status = "disabled";
+		};
 	};
 };
 

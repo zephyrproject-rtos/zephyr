@@ -437,6 +437,14 @@
 			#io-channel-cells = <1>;
 		};
 
+		acmp0: acmp@5a008000 {
+			compatible = "silabs,acmp";
+			reg = <0x5a008000 0x4000>;
+			interrupts = <48 0>;
+			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
+			status = "disabled";
+		};
+
 		se: semailbox@4c000000 {
 			compatible = "silabs,gecko-semailbox";
 			reg = <0x4c000000 0x1000>;

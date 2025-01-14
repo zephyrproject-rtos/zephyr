@@ -34,6 +34,13 @@
 			reg = <0x5003c460 0x4>;
 			clock-frequency = <DT_FREQ_M(38)>;
 		};
+		acmp0: acmp@5a008000 {
+			compatible = "silabs,acmp";
+			reg = <0x5a008000 0x4000>;
+			interrupts = <48 0>;
+			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
+			status = "disabled";
+		};
 	};
 };
 

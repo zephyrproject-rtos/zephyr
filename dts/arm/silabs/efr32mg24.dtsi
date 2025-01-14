@@ -434,6 +434,14 @@
 			interrupts = <53 0>;
 			status = "disabled";
 		};
+
+		acmp0: acmp@59008000 {
+			compatible = "silabs,acmp";
+			reg = <0x59008000 0x4000>;
+			interrupts = <40 0>;
+			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
+			status = "disabled";
+		};
 	};
 
 
