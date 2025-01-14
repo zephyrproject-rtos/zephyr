@@ -40,17 +40,17 @@ extern void z_arm_reserved(void);
  */
 
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-void arch_irq_enable(unsigned int irq)
+void arm_irq_enable(unsigned int irq)
 {
 	arm_gic_irq_enable(irq);
 }
 
-void arch_irq_disable(unsigned int irq)
+void arm_irq_disable(unsigned int irq)
 {
 	arm_gic_irq_disable(irq);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int arm_irq_is_enabled(unsigned int irq)
 {
 	return arm_gic_irq_is_enabled(irq);
 }

@@ -34,17 +34,11 @@ GTEXT(z_soc_irq_eoi)
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #else
 
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+extern void arm_irq_enable(unsigned int irq);
+extern void arm_irq_disable(unsigned int irq);
+extern int arm_irq_is_enabled(unsigned int irq);
 
-extern void arch_irq_enable(unsigned int irq);
-extern void arch_irq_disable(unsigned int irq);
-extern int arch_irq_is_enabled(unsigned int irq);
-
-/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
-				   uint32_t flags);
-
-#else
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
 
 /*
  * When a custom interrupt controller is specified, map the architecture
@@ -69,7 +63,14 @@ void z_soc_irq_eoi(unsigned int irq);
 #define z_arm_irq_priority_set(irq, prio, flags)	\
 	z_soc_irq_priority_set(irq, prio, flags)
 
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#else
+
+#define arch_irq_enable(irq)     arm_irq_enable(irq)
+#define arch_irq_disable(irq)    arm_irq_disable(irq)
+#define arch_irq_is_enabled(irq) arm_irq_is_enabled(irq)
+/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
+extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
+#endif
 
 extern void z_arm_int_exit(void);
 
