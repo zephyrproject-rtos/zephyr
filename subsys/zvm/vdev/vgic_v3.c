@@ -262,6 +262,24 @@ static int vdev_gicv3_init(struct z_vm *vm, struct vgicv3_dev *gicv3_vdev, uint3
 	return 0;
 }
 
+static int vdev_gicv3_deinit(struct z_vm *vm, struct vgicv3_dev *gicv3_vdev)
+{
+	ARG_UNUSED(vm);
+	int i = 0;
+    struct virt_gic_gicd *gicd = &gicv3_vdev->gicd;
+    struct virt_gic_gicr *gicr;
+
+	for (i = 0; i < MIN(VGIC_RDIST_SIZE/VGIC_RD_SGI_SIZE, vm->vcpu_num); i++) {
+		gicr = gicv3_vdev->gicr[i];
+		k_free(gicr->gicr_rd_reg_base);
+		k_free(gicr->gicr_sgi_reg_base);
+		k_free(gicr);
+	}
+	k_free(gicd->gicd_regs_base);
+
+	return 0;
+}
+
 /**
  * @brief init vm gic device for each vm. Including:
  * 1. creating virt device for vm.
@@ -312,6 +330,30 @@ static int vm_vgicv3_init(const struct device *dev, struct z_vm *vm, struct z_vi
 	return 0;
 }
 
+static int vm_vgicv3_deinit(const struct device *dev, struct z_vm *vm, struct z_virt_dev *vdev_desc)
+{
+	ARG_UNUSED(dev);
+	int ret;
+	struct vgicv3_dev *vgicv3;
+
+	vgicv3 = (struct vgicv3_dev *)vdev_desc->priv_vdev;
+	if(!vgicv3){
+		ZVM_LOG_WARN("Can not find virt gicv3 device! \n");
+		return 0;
+	}
+	ret = vdev_gicv3_deinit(vm, vgicv3);
+	if(ret){
+		ZVM_LOG_WARN("Deinit virt gicv3 error \n");
+		return 0;
+	}
+	k_free(vgicv3);
+
+	vdev_desc->priv_vdev = NULL;
+	vdev_desc->priv_data = NULL;
+	ret = vm_virt_dev_remove(vm, vdev_desc);
+	return ret;
+}
+
 /**
  * @brief The init function of vgic, it provides the
  * gic hardware device information to ZVM.
@@ -346,6 +388,7 @@ static struct virt_device_data virt_gicv3_data_port = {
 */
 static const struct virt_device_api virt_gicv3_api = {
 	.init_fn = vm_vgicv3_init,
+	.deinit_fn = vm_vgicv3_deinit,
 	.virt_device_read = vgic_vdev_mem_read,
 	.virt_device_write = vgic_vdev_mem_write,
 };

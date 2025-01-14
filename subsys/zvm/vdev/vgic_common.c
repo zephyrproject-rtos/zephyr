@@ -106,8 +106,7 @@ static int vgic_set_virq(struct z_vcpu *vcpu, struct virt_irq_desc *desc)
     struct vcpu_virt_irq_block *vb = &vcpu->virq_block;
 
     if (!is_vm_irq_valid(vcpu->vm, desc->virq_flags)) {
-        ZVM_LOG_WARN("VM can not recieve virq signal, \
-						VM's name: %s.", vcpu->vm->vm_name);
+        ZVM_LOG_WARN("VM can not recieve virq signal, VM's name: %s.", vcpu->vm->vm_name);
         return -ESRCH;
     }
 
@@ -166,8 +165,7 @@ static int vgic_unset_virq(struct z_vcpu *vcpu, struct virt_irq_desc *desc)
     struct vcpu_virt_irq_block *vb = &vcpu->virq_block;
 
     if (!is_vm_irq_valid(vcpu->vm, desc->virq_flags)) {
-        ZVM_LOG_WARN("VM can not recieve virq signal, \
-						VM's name: %s.", vcpu->vm->vm_name);
+        ZVM_LOG_WARN("VM can not recieve virq signal, VM's name: %s.", vcpu->vm->vm_name);
         return -ESRCH;
     }
 

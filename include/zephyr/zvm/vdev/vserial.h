@@ -51,12 +51,15 @@ static inline void *get_virt_serial_device(struct virt_serial *vserial)
 }
 
 
-/** Create a virtual serial port */
+/**
+ * @brief Create a virtual serial port
+ */
 struct virt_serial * virt_serial_create(const char *name,
 				       int (*send) (struct virt_serial *, unsigned char *, int ),
 				       void *priv);
-
-/** Destroy a virtual serial port */
+/**
+ * @brief Destroy a virtual serial port
+ */
 int virt_serial_destroy(struct virt_serial *vserial);
 
 /** Count of available virtual serial ports */

@@ -403,29 +403,24 @@ int vm_vcpus_reset(struct z_vm *vm)
 
 int vm_delete(struct z_vm *vm)
 {
-    int ret=0;
-
-    struct _dnode *dev_list = &vm->vdev_list;
-    struct  _dnode *d_node, *ds_node;
-    struct z_virt_dev *vdev;
+    int ret = 0;
     k_spinlock_key_t key;
     struct vm_mem_domain *vmem_dm = vm->vmem_domain;
     struct z_vcpu *vcpu;
     struct vcpu_work *vwork;
 
     key = k_spin_lock(&vm->spinlock);
-
     /* delete vdev struct */
-    SYS_DLIST_FOR_EACH_NODE_SAFE(dev_list, d_node, ds_node){
-        vdev = CONTAINER_OF(d_node, struct z_virt_dev, vdev_node);
-        if (vdev->dev_pt_flag) {
-            /* remove vdev from vm. */
-            vm_virt_dev_remove(vm, vdev);
-        }
+    ret = vm_device_deinit(vm);
+    if (ret) {
+        ZVM_LOG_WARN("Delete vm devices failed! \n");
     }
 
     /* remove all the partition in the vmem_domain */
     ret = vm_mem_apart_remove(vmem_dm);
+    if(ret) {
+        ZVM_LOG_WARN("Delete vm mem domain failed! \n");
+    }
 
     /* delete vcpu struct */
     for(int i = 0; i < vm->vcpu_num; i++){

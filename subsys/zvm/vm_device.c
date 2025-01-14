@@ -72,7 +72,7 @@ struct z_virt_dev *vm_virt_dev_add_no_memmap(struct z_vm *vm, const char *dev_na
     vm_dev->hirq = dev_hirq;
     vm_dev->vm = vm;
 
-    /*Init private data and vdev*/
+    /* Init private data and vdev */
     vm_dev->priv_data = NULL;
     vm_dev->priv_vdev = NULL;
 
@@ -358,6 +358,28 @@ int vm_device_init(struct z_vm *vm)
         break;
     default:
         break;
+    }
+
+    return ret;
+}
+
+int vm_device_deinit(struct z_vm *vm)
+{
+    int ret = 0;
+    struct _dnode *dev_list = &vm->vdev_list;
+    struct  _dnode *d_node, *ds_node;
+    struct z_virt_dev *vdev;
+    const struct virtual_device_instance *vdevice_instance;
+
+    SYS_DLIST_FOR_EACH_NODE_SAFE(dev_list, d_node, ds_node){
+        vdev = CONTAINER_OF(d_node, struct z_virt_dev, vdev_node);
+        vdevice_instance = (const struct virtual_device_instance *)vdev->priv_data;
+        if(vdevice_instance != NULL) {
+            if(vdevice_instance->api->deinit_fn){
+                ret = vdevice_instance->api->deinit_fn(NULL, vm, vdev);
+                ZVM_LOG_INFO("Remove virt_serial: %s.\n", vdev->name);
+            }
+        }
     }
 
     return ret;

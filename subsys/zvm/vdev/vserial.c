@@ -26,44 +26,6 @@ static struct k_thread tx_it_emulator_thread_data;
 K_SEM_DEFINE(connect_vm_sem, 0, 1);
 K_THREAD_STACK_DEFINE(tx_it_emulator_thread_stack, 1024);
 
-int virt_serial_destroy(struct virt_serial *vserial)
-{
-	bool found;
-	struct virt_serial *vs;
-
-	if (!vserial) {
-		return -EIO;
-	}
-	k_mutex_lock(&virt_serial_ctrl.virt_serial_list_lock,K_FOREVER);
-
-	if (sys_dlist_is_empty(&virt_serial_ctrl.virt_serial_list)) {
-		k_mutex_unlock(&virt_serial_ctrl.virt_serial_list_lock);
-		return -EIO;
-	}
-
-	vs = NULL;
-	found = false;
-	sys_dnode_t*vserial_node ;
-
-	SYS_DLIST_FOR_EACH_NODE(&virt_serial_ctrl.virt_serial_list, vserial_node) {
-		vs = CONTAINER_OF(vserial_node, struct virt_serial, node);
-		if (strcmp(vs->name, vserial->name) == 0) {
-			found = true;
-			break;
-		}
-	}
-
-	if (!found) {
-		k_mutex_unlock(&virt_serial_ctrl.virt_serial_list_lock);
-		return -EBUSY;
-	}
-
-	sys_dlist_remove(&vs->node);
-	k_free(vs);
-	k_mutex_unlock(&virt_serial_ctrl.virt_serial_list_lock);
-	return 0;
-}
-
 uint32_t virt_serial_count(void)
 {
 	uint32_t retval = 0;
@@ -86,12 +48,12 @@ uint32_t virt_serial_count(void)
 
 struct virt_serial* get_vserial(uint8_t vmid)
 {
-	struct virt_serial *serial=NULL;
+	struct virt_serial *serial = NULL;
 	struct virt_serial *tmpserial ;
 	sys_dnode_t *vserial_node;
 	SYS_DLIST_FOR_EACH_NODE(&virt_serial_ctrl.virt_serial_list, vserial_node) {
 		tmpserial = CONTAINER_OF(vserial_node, struct virt_serial , node);
-		if (((struct z_vm *)(tmpserial->vm))->vmid==vmid) {
+		if (((struct z_vm *)(tmpserial->vm))->vmid == vmid) {
 			serial = tmpserial;
 		}
 
@@ -108,20 +70,18 @@ struct virt_serial *virt_serial_create(const char *name,
 				       int (*send) (struct virt_serial *, unsigned char *, int ),
 				       void *priv)
 {
-	bool found;
-	struct virt_serial *vserial;
+	bool found = false;
+	struct virt_serial *vserial = NULL;
 	struct virt_pl011 *v_s;
+	sys_dnode_t *vserial_node;
 
 	if (!name) {
 		return NULL;
 	}
-	vserial = NULL;
-	found = false;
 
 	k_mutex_lock(&virt_serial_ctrl.virt_serial_list_lock, K_FOREVER);
-	sys_dnode_t *vserial_node;
 	SYS_DLIST_FOR_EACH_NODE(&virt_serial_ctrl.virt_serial_list, vserial_node) {
-		vserial = CONTAINER_OF(vserial_node, struct virt_serial , node);
+		vserial = CONTAINER_OF(vserial_node, struct virt_serial, node);
 		if (strcmp(name, vserial->name) == 0) {
 			found = true;
 			break;
@@ -130,7 +90,7 @@ struct virt_serial *virt_serial_create(const char *name,
 
 	if (found) {
 		k_mutex_unlock(&virt_serial_ctrl.virt_serial_list_lock);
-		struct virt_pl011 *v_s = (struct virt_pl011 *)priv;
+		v_s = (struct virt_pl011 *)priv;
 		vserial->send = send;
 		vserial->vm = v_s->vm;
 		vserial->priv = priv;
@@ -138,7 +98,7 @@ struct virt_serial *virt_serial_create(const char *name,
 		return vserial;
 	}
 
-	vserial = k_calloc(1,(sizeof(struct virt_serial)));
+	vserial = k_calloc(1, (sizeof(struct virt_serial)));
 	if (!vserial) {
 		k_mutex_unlock(&virt_serial_ctrl.virt_serial_list_lock);
 		return NULL;
@@ -158,21 +118,31 @@ struct virt_serial *virt_serial_create(const char *name,
 	vserial->vm = v_s->vm;
 	vserial->priv = priv;
 	sys_dnode_init(&vserial->node);
-	sys_dlist_append(&virt_serial_ctrl.virt_serial_list,&vserial->node);
+	sys_dlist_append(&virt_serial_ctrl.virt_serial_list, &vserial->node);
 	k_mutex_unlock(&virt_serial_ctrl.virt_serial_list_lock);
-	ZVM_LOG_INFO("Create virt_serial:%s for %s\n",name,v_s->vm->vm_name);
+	ZVM_LOG_INFO("Create virt_serial:%s for %s\n",name, v_s->vm->vm_name);
 
 	return vserial;
 }
 
-static void vserial_it_emulator_thread(void *ctrl,void *arg2,void *arg3)
+int virt_serial_destroy(struct virt_serial *vserial)
+{
+	const struct shell *shell = shell_backend_uart_get_ptr();
+	shell->ctx->bypass = NULL;
+	sys_dlist_remove(&vserial->node);
+	k_free(vserial);
+
+	return 0;
+}
+
+static void vserial_it_emulator_thread(void *ctrl, void *arg2, void *arg3)
 {
 	struct virt_pl011 *vpl011;
 	while (1) {
-		k_sem_take(&connect_vm_sem,K_FOREVER);
+		k_sem_take(&connect_vm_sem, K_FOREVER);
 		vpl011 = (struct virt_pl011 *)virt_serial_ctrl.connecting_virt_serial->priv;
 		while (virt_serial_ctrl.connecting) {
-			if (vpl011->enabled&vpl011->level) {
+			if (vpl011->enabled & vpl011->level) {
 				set_virq_to_vm(virt_serial_ctrl.connecting_virt_serial->vm,vpl011->irq);
 			}
 			k_sleep(K_MSEC(1));
@@ -247,8 +217,8 @@ int switch_virtual_serial_handler(const struct shell *shell, size_t argc, char *
 			return 0;
 		}
 		id = id - 48;
-		if (id>CONFIG_MAX_VM_NUM-1) {
-			ZVM_LOG_WARN("Max VM ID is %d\n",CONFIG_MAX_VM_NUM-1);
+		if (id > CONFIG_MAX_VM_NUM - 1) {
+			ZVM_LOG_WARN("Max VM ID is %d\n", CONFIG_MAX_VM_NUM - 1);
 			return 0;
 		}
         if (!(BIT(id) & zvm_overall_info->alloced_vmid)) {

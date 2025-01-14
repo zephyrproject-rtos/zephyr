@@ -13,7 +13,7 @@
 
 #define VSERIAL_REG_BASE DT_REG_ADDR(DT_INST(0, arm_pl011))
 #define VSERIAL_REG_SIZE DT_REG_SIZE(DT_INST(0, arm_pl011))
-#define VSERIAL_HIRQ_NUM DT_NUM_IRQS(DT_INST(0, arm_pl011))
+#define VSERIAL_HIRQ_NUM DT_IRQN(DT_INST(0, arm_pl011))
 
 #define ARM_PL011_ID {0x11, 0x10, 0x14, 0x00, 0x0d, 0xf0, 0x05, 0xb1}
 #define PL011_INT_TX			0x20

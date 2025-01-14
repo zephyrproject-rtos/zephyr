@@ -12,10 +12,8 @@
 
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
-
 #define DEV_DATA(dev) \
 	((struct virt_device_data *)(dev)->data)
-
 
 static const struct virtual_device_instance *serial_virtual_device_instance;
 
@@ -142,11 +140,6 @@ static int pl011_virt_serial_send(struct virt_serial *serial, unsigned char *dat
 	return 0;
 }
 
-/**
- * @brief init vm vserial device for each vm. Including:
- * 1. creating virt device for vm.
- * 2. building memory map for this device.
-*/
 static int vm_virt_serial_init(const struct device *dev, struct z_vm *vm, struct z_virt_dev *vdev_desc)
 {
 	ARG_UNUSED(dev);
@@ -167,7 +160,7 @@ static int vm_virt_serial_init(const struct device *dev, struct z_vm *vm, struct
 	}
 
 	/* Init virtual device for vm. */
-	virq = VSERIAL_HIRQ_NUM + 32;
+	virq = VSERIAL_HIRQ_NUM;
 	virt_dev = vm_virt_dev_add(vm, TOSTRING(VIRT_SERIAL_NAME), false, false, serial_base,
 						serial_base, serial_size, virq, virq);
 	if(!virt_dev) {
@@ -202,6 +195,24 @@ static int vm_virt_serial_init(const struct device *dev, struct z_vm *vm, struct
 	return 0;
 }
 
+static int vm_virt_serial_deinit(const struct device *dev, struct z_vm *vm, struct z_virt_dev *vdev_desc)
+{
+	ARG_UNUSED(dev);
+	int ret = 0;
+	struct virt_pl011 *vpl011;
+
+	vpl011 = (struct virt_pl011 *)vdev_desc->priv_vdev;
+	if (vpl011->vserial) {
+		virt_serial_destroy(vpl011->vserial);
+	}
+	k_free(vpl011);
+
+	vdev_desc->priv_data = NULL;
+	vdev_desc->priv_vdev = NULL;
+	ret = vm_virt_dev_remove(vm, vdev_desc);
+	return ret;
+}
+
 static int virt_pl011_init(void)
 {
 	int i;
@@ -232,6 +243,7 @@ static struct virt_device_data virt_pl011_data_port = {
 */
 static const struct virt_device_api virt_pl011_api = {
 	.init_fn = vm_virt_serial_init,
+	.deinit_fn = vm_virt_serial_deinit,
 	.virt_device_read = vserial_vdev_mem_read,
 	.virt_device_write = vserial_vdev_mem_write,
 };

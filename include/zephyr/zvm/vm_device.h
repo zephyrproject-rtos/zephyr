@@ -100,11 +100,11 @@ struct virt_device_config {
 };
 
 /**
- * @brief A virt device api for init or read/write device.
+ * @brief A virt device api for init/deinit or read/write device.
 */
 struct virt_device_api {
     int (*init_fn)(const struct device *dev, struct z_vm *vm, struct z_virt_dev *vdev_desc);
-
+    int (*deinit_fn)(const struct device *dev, struct z_vm *vm, struct z_virt_dev *vdev_desc);
     int (*virt_device_write)(struct z_virt_dev *vdev, uint64_t addr, uint64_t *value, uint16_t size);
     int (*virt_device_read)(struct z_virt_dev *vdev, uint64_t addr, uint64_t *value, uint16_t size);
 #ifdef CONFIG_VIRT_DEVICE_INTERRUPT_DRIVEN
@@ -257,10 +257,10 @@ int vm_vdev_pause(struct z_vcpu *vcpu);
  * 2. Rerun the fault code and access the physical device memory.
 */
 int handle_vm_device_emulate(struct z_vm *vm, uint64_t pa_addr);
-// int handle_vm_device_emulate(struct z_vm *vm, uint64_t pa_addr, int write, uint64_t *value);
 
 void virt_device_irq_callback_data_set(int irq, int priority, void *user_data);
 
 int vm_device_init(struct z_vm *vm);
+int vm_device_deinit(struct z_vm *vm);
 
 #endif /* ZEPHYR_INCLUDE_ZVM_VM_DEVICE_H_ */
