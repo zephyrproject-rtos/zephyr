@@ -152,6 +152,8 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 {
 	int table_cnt, i;
+	int shstrtab_ndx = ldr->hdr.e_shstrndx;
+	int strtab_ndx = -1;
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 
@@ -171,28 +173,28 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 			shdr->sh_link,
 			shdr->sh_info);
 
-		switch (shdr->sh_type) {
-		case SHT_SYMTAB:
-		case SHT_DYNSYM:
+		if (shdr->sh_type == SHT_SYMTAB && ldr->hdr.e_type == ET_REL) {
 			LOG_DBG("symtab at %d", i);
 			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
+			strtab_ndx = shdr->sh_link;
 			table_cnt++;
-			break;
-		case SHT_STRTAB:
-			if (ldr->hdr.e_shstrndx == i) {
-				LOG_DBG("shstrtab at %d", i);
-				ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
-				ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
-			} else {
-				LOG_DBG("strtab at %d", i);
-				ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
-				ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
-			}
+		} else if (shdr->sh_type == SHT_DYNSYM && ldr->hdr.e_type == ET_DYN) {
+			LOG_DBG("dynsym at %d", i);
+			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
+			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
+			strtab_ndx = shdr->sh_link;
 			table_cnt++;
-			break;
-		default:
-			break;
+		} else if (shdr->sh_type == SHT_STRTAB && i == shstrtab_ndx) {
+			LOG_DBG("shstrtab at %d", i);
+			ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
+			ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
+			table_cnt++;
+		} else if (shdr->sh_type == SHT_STRTAB && i == strtab_ndx) {
+			LOG_DBG("strtab at %d", i);
+			ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
+			ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
+			table_cnt++;
 		}
 	}
 
@@ -395,9 +397,10 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
-			if (ldr->hdr.e_type == ET_DYN) {
+			if ((ldr->hdr.e_type == ET_DYN) &&
+			    (x->sh_flags & SHF_ALLOC) && (y->sh_flags & SHF_ALLOC)) {
 				/*
-				 * Test all merged VMA ranges for overlaps
+				 * Test regions that have VMA ranges for overlaps
 				 */
 				if ((x->sh_addr <= y->sh_addr &&
 				     x->sh_addr + x->sh_size > y->sh_addr) ||
