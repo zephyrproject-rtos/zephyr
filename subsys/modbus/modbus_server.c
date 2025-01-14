@@ -309,7 +309,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	const uint16_t regs_limit = 125;
 	const uint8_t request_len = 4;
 	uint8_t *presp;
-	uint16_t err;
+	uint16_t err = 0;
 	uint16_t reg_addr;
 	uint16_t reg_qty;
 	uint16_t num_bytes;
@@ -421,7 +421,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	const uint16_t regs_limit = 125;
 	const uint8_t request_len = 4;
 	uint8_t *presp;
-	int err;
+	int err = 0;
 	uint16_t reg_addr;
 	uint16_t reg_qty;
 	uint16_t num_bytes;
