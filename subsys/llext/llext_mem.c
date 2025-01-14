@@ -170,6 +170,22 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_LLEXT_LOG_LEVEL_DBG)) {
+		LOG_DBG("gdb add-symbol-file flags:");
+		for (int i = 0; i < ext->sect_cnt; ++i) {
+			elf_shdr_t *shdr = ext->sect_hdrs + i;
+			enum llext_mem mem_idx = ldr->sect_map[i].mem_idx;
+			const char *name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB,
+							shdr->sh_name);
+
+			/* only show sections mapped to program memory */
+			if (mem_idx < LLEXT_MEM_EXPORT) {
+				LOG_DBG("-s %s 0x%zx", name,
+					(size_t)ext->mem[mem_idx] + ldr->sect_map[i].offset);
+			}
+		}
+	}
+
 	return 0;
 }
 
