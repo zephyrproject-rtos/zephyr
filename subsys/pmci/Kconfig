@@ -8,6 +8,7 @@ menu "Platform Management Communication Infrastruction (PMCI)"
 # zephyr-keep-sorted-start
 
 source "subsys/pmci/mctp/Kconfig"
+source "subsys/pmci/pldm/Kconfig"
 
 # zephyr-keep-sorted-stop
 
