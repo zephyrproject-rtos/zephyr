@@ -339,12 +339,12 @@ ZTEST(arp_fn_tests, test_arp)
 	struct net_ipv4_hdr *ipv4;
 	int len;
 
-	struct in_addr dst = { { { 192, 168, 0, 2 } } };
+	struct in_addr dst = { { { 192, 0, 2, 2 } } };
 	struct in_addr dst_far = { { { 10, 11, 12, 13 } } };
 	struct in_addr dst_far2 = { { { 172, 16, 14, 186 } } };
-	struct in_addr src = { { { 192, 168, 0, 1 } } };
+	struct in_addr src = { { { 192, 0, 2, 1 } } };
 	struct in_addr netmask = { { { 255, 255, 255, 0 } } };
-	struct in_addr gw = { { { 192, 168, 0, 42 } } };
+	struct in_addr gw = { { { 192, 0, 2, 42 } } };
 
 	net_arp_init();
 
