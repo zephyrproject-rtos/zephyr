@@ -1,0 +1,57 @@
+/**
+ * Copyright (c) 2021-2024 MUNIC SA
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * DTS for Renesas EK-RA2L1 eval. board
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra2/ra2l1.dtsi>
+#include <renesas/ra/ra2/r7fa2l1xb.dtsi>
+#include <renesas/ra/ra2/r7fa2l1xxxxfp.dtsi>
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "ek_ra2l1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RA2L1";
+	compatible = "renesas,r7fa2l1abxxfp", "renesas,ra2l1";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport5 3 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
