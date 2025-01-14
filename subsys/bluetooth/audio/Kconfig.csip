@@ -35,7 +35,7 @@ config BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT
 	  Enables support encrypting the SIRK.
 
 config BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
-	int "Coordinated Set Identification Profle max service instance count"
+	int "Coordinated Set Identification Profile max service instance count"
 	default 1
 	range 1 $(UINT8_MAX)
 	help
