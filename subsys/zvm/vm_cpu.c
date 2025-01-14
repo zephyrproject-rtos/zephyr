@@ -315,13 +315,11 @@ int vcpu_ipi_scheduler(uint32_t cpu_mask, uint32_t timeout)
 int vcpu_thread_entry(struct z_vcpu *vcpu)
 {
     int ret = 0;
-    ZVM_LOG_INFO("\n** Start running vcpu: %s-%d. \n", vcpu->vm->vm_name, vcpu->vcpu_id);
-    do{
+
+    do {
         ret = arch_vcpu_run(vcpu);
     }while(ret >= 0);
-    ZVM_LOG_INFO("\n** Stop running vcpu: %s-%d. \n", vcpu->vm->vm_name, vcpu->vcpu_id);
     vm_delete(vcpu->vm);
-
     return ret;
 }
 

@@ -353,8 +353,6 @@ int arch_vcpu_init(struct z_vcpu *vcpu)
     struct vcpu_arch *vcpu_arch = vcpu->arch;
     struct vm_arch *vm_arch = vcpu->vm->arch;
 
-    vcpu->cpu = _current_cpu->id;
-
     vcpu_arch->hcr_el2 = HCR_VM_FLAGS ;
     vcpu_arch->guest_mdcr_el2 = 0;
     vcpu_arch->host_mdcr_el2 = 0;

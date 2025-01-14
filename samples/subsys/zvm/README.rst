@@ -142,5 +142,6 @@ Enter the following command in the console:
     - Chenglai Xiong (openEuler sig-Zephyr Maintainer), email: xiongcl@hnu.edu.cn
     - Wei Ren (openEuler sig-Zephyr Maintainer), email: dfrd-renw@dfmc.com.cn
     - Xingyu Hu, email: huxingyu@hnu.edu.cn
+    - Yuhao Hu, email: ahui@hun.edu.cn
 
     For more information, see the `ZVM Main page <https://gitee.com/openeuler/zvm>`__.

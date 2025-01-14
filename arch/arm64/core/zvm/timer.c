@@ -68,7 +68,7 @@ static int arm_arch_virt_vtimer_compare_isr(void *dev)
 	ctxt->cntv_ctl = cntvctl | CNTV_CTL_IMASK_BIT;
 
 	ret = set_virq_to_vcpu(vcpu, ctxt->virt_virq);
-	if(ret){
+	if(ret) {
 		k_spin_unlock(&virt_vtimer_lock, key);
 		ZVM_LOG_WARN("Set vtimer irq to vm failed! \n");
 		return ret;

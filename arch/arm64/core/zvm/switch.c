@@ -562,7 +562,7 @@ void* z_vm_lower_sync_handler(uint64_t esr_elx)
 {
     struct z_vcpu *vcpu = _current_vcpu;
     if (vcpu == NULL) {
-        ZVM_LOG_WARN("Get vcpu struct failed ");
+        ZVM_LOG_WARN("EL2 sync occur, get vcpu struct failed ");
     }
 
 	vcpu->arch->fault.esr_el2 = esr_elx;
@@ -574,7 +574,7 @@ void* z_vm_lower_irq_handler(struct arch_esf *esf_ctxt)
     ARG_UNUSED(esf_ctxt);
     struct z_vcpu *vcpu = _current_vcpu;
     if (vcpu == NULL) {
-        ZVM_LOG_WARN("Get vcpu struct failed ");
+        ZVM_LOG_WARN("EL2 irq occur, get vcpu struct failed ");
     }
 
     return (void *)vcpu;

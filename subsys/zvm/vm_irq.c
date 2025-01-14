@@ -141,8 +141,9 @@ void vm_device_irq_init(struct z_vm *vm, struct z_virt_dev *vm_dev)
 	desc = get_virt_irq_desc(vm->vcpus[DEFAULT_VCPU], vm_dev->virq);
     if(vm_dev->dev_pt_flag) {
         desc->virq_flags |= VIRQ_HW_FLAG;
+        ZVM_LOG_INFO("Add hardware interrupt support for %s device !\n", vm_dev->name);
     }else {
-        ZVM_LOG_WARN("There is no supported virtual interrupt for %s device !\n", vm_dev->name);
+        ZVM_LOG_INFO("Add software interrupt support for %s device !\n", vm_dev->name);
     }
     desc->id = desc->virq_num;
     desc->pirq_num = vm_dev->hirq;

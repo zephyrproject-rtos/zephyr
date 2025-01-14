@@ -199,7 +199,9 @@ int zvm_delete_guest(size_t argc, char **argv)
 	switch (vm->vm_status) {
 	case VM_STATE_RUNNING:
 		ZVM_LOG_INFO("This vm is running!\n Try to stop and delete it!\n");
-		vm_vcpus_halt(vm);
+		vm_vcpus_pause(vm);
+		barrier_isync_fence_full();
+		vm_delete(vm);
 		break;
 	case VM_STATE_PAUSE:
 		ZVM_LOG_INFO("This vm is paused!\n Just delete it!\n");

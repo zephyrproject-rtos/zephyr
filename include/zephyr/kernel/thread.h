@@ -371,14 +371,13 @@ struct k_thread {
 	/** threads waiting in k_thread_suspend() */
 	_wait_q_t  halt_queue;
 #endif /* CONFIG_SMP */
-
-	/** arch-specifics: must always be at the end */
-	struct _thread_arch arch;
-
 	/* The point for vcpu struct here */
 #ifdef CONFIG_ZVM
 	void *vcpu_struct;
 #endif
+	/** arch-specifics: must always be at the end */
+	struct _thread_arch arch;
+
 };
 
 typedef struct k_thread _thread_t;
