@@ -1,0 +1,20 @@
+# Nordic CryptoCell 310 (AES electronic codebook mode encryption)
+
+# Copyright (c) 2025 GARDENA GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_NRF52_CC310_AES
+	bool "nrf52 cryptocell AES driver"
+	default y
+	depends on DT_HAS_ARM_CRYPTOCELL_310_ENABLED
+	help
+	  Enable hardware accelerated AES driver.
+
+
+config CRYPTO_NRF52_CC310_AES_MAX_SESSION
+	int "max allowed sessions"
+	default 1
+	depends on CRYPTO_NRF52_CC310_AES
+	help
+	  This can be used to tweak the amount of sessions the driver
+	  can handle in parallel.
