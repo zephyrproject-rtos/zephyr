@@ -19,7 +19,8 @@ is referenced by its memory address.
 
 A pipe has the following key property:
 
-* A **size** that indicates the capacity of the pipe's ring buffer.
+* A **size** that indicates the capacity of the pipe's ring buffer. Note that a
+  size of zero defines a pipe with no ring buffer.
 
 A pipe must be initialized before it can be used. When initialized, the pipe
 is empty.
@@ -27,12 +28,16 @@ is empty.
 Threads interact with the pipe as follows:
 
 - **Writing**: Data is synchronously written, either in whole or in part, to
-  a pipe by a thread. If the pipe's ring buffer is full, the operation blocks
-  until sufficient space becomes available or the specified timeout expires.
+  a pipe by a thread. Accepted data is either copied directly to the waiting
+  reader(s) or to the pipe's ring buffer. If the ring buffer is full or simply
+  absent, the operation blocks until sufficient space becomes available or
+  the specified timeout expires.
 
 - **Reading**: Data is synchronously read, either in whole or in part, from a
-  pipe by a thread. If the pipe's ring buffer is empty, the operation blocks
-  until data becomes available or the specified timeout expires.
+  pipe by a thread. Accepted data is either copied from the pipe's ring buffer
+  or directly from the waiting sender(s). If the ring buffer is empty or simply
+  absent, the operation blocks until data becomes available or the specified
+  timeout expires.
 
 - **Resetting**: A thread can reset a pipe, which resets its internal state and
   ends all pending read and write operations with an error code.
@@ -65,6 +70,9 @@ ring buffer:
     K_PIPE_DEFINE(my_pipe, 100, 4);
 
 This has the same effect as the code above.
+
+When no ring buffer is used, the buffer pointer argument should be NULL and
+the size argument should be 0.
 
 Writing to a Pipe
 =================
