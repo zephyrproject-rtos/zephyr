@@ -10,8 +10,8 @@ tests:
   bluetooth.host.gatt.settings:
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_settings_prj_conf
-  bluetooth.host.gatt.settings_2:
+  bluetooth.host.gatt.settings_priv:
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_gatt_settings_prj_2_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_settings_overlay-privacy_conf
     extra_args:
-      EXTRA_CONF_FILE=prj_2.conf
+      EXTRA_CONF_FILE=overlay-privacy.conf

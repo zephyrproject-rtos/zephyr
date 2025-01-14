@@ -12,6 +12,5 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_host_l2cap_credits_prj_conf
   bluetooth.host.l2cap.credits_ecred:
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_credits_prj_ecred_conf
-    extra_args:
-      CONF_FILE=prj_ecred.conf
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_credits_prj_conf_overlay-ecred_conf
+    extra_args: EXTRA_CONF_FILE="overlay-ecred.conf"
