@@ -3271,7 +3271,7 @@ int bt_ascs_unregister(void)
 	}
 
 	err = bt_gatt_service_unregister(&ascs_svc);
-	/* If unregistration was succesfull, make sure to reset ascs_attrs so it can be used for
+	/* If unregistration was successful, make sure to reset ascs_attrs so it can be used for
 	 * new registrations
 	 */
 	if (err != 0) {

@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -33,6 +34,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
+#include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
 #include "audio.h"
 

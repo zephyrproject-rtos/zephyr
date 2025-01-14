@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/toolchain.h>
 
 #include "audio_internal.h"
 

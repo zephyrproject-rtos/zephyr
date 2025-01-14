@@ -13,6 +13,7 @@
 #ifndef AUDIO_SHELL_AUDIO_H
 #define AUDIO_SHELL_AUDIO_H
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -32,7 +33,6 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
 
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2
