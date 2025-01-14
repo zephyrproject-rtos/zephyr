@@ -1,0 +1,53 @@
+# Copyright 2025 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+config GECKO_ACMP
+	bool "SiLabs Gecko ACMP driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_ACMP_ENABLED
+	select SOC_GECKO_ACMP
+	select PM_DEVICE if PM && SOC_FAMILY_SILABS_S2
+	help
+	  Enable the SiLabs Gecko ACMP driver.
+
+if GECKO_ACMP
+
+config GECKO_ACMP_TRIGGER
+	bool "ACMP trigger support"
+	default y
+	help
+	  Enable trigger support for the SiLabs Gecko ACMP.
+
+config GECKO_ACMP_TRIGGER_CHECK_STATE
+	bool "ACMP trigger check state"
+	default n
+	depends on GECKO_ACMP_TRIGGER
+	help
+	  ISR request a trigger: check the current ACMP state coherency
+	  in workqueue before throwing the trigger callback.
+
+config GECKO_ACMP_EDGE_COUNTER
+	bool "ACMP edge counter support"
+	default n
+	depends on GECKO_ACMP_TRIGGER
+	help
+	  Enable edge counter support for the SiLabs Gecko ACMP.
+	  Processed directly in ISR context.
+
+config GECKO_ACMP_DISABLE_ON_SUSPEND
+	bool "ACMP peripheral disable on suspend"
+	default n
+	depends on PM_DEVICE
+	help
+	  ACMP peripheral will be disabled on device suspension.
+
+config GECKO_ACMP_DISABLE_INTERRUPT_ON_SUSPEND
+	bool "ACMP trigger support"
+	default y
+	depends on PM_DEVICE
+	depends on GECKO_ACMP_TRIGGER
+	help
+	  Disable ISR before suspending device.
+	  ACMP ISR will wakeup device from sleep up to EM3.
+
+endif # GECKO_ACMP

@@ -191,6 +191,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CORE
   ${EMLIB_DIR}/src/em_core.c
   ${COMMON_DIR}/src/sl_core_cortexm.c
 )
+zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_ACMP         ${EMLIB_DIR}/src/em_acmp.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CRYOTIMER    ${EMLIB_DIR}/src/em_cryotimer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EMU          ${EMLIB_DIR}/src/em_emu.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_GPIO         ${EMLIB_DIR}/src/em_gpio.c)

@@ -82,6 +82,7 @@ zephyr_compile_definitions(
 )
 
 zephyr_library_sources(                                    ${EMLIB_DIR}/src/em_system.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_ACMP         ${EMLIB_DIR}/src/em_acmp.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_ADC          ${EMLIB_DIR}/src/em_adc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_BURTC        ${EMLIB_DIR}/src/em_burtc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CMU          ${EMLIB_DIR}/src/em_cmu.c)
