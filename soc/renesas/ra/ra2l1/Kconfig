@@ -1,0 +1,14 @@
+# Copyright (c) 2024 MUNIC SA
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA2L1
+	select ARM
+	select CPU_CORTEX_M23
+	select CPU_HAS_ARM_MPU
+	select HAS_RENESAS_RA_FSP
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CLOCK_CONTROL_RENESAS_RA_CGC if CLOCK_CONTROL
+	select HAS_SWO
+	select SOC_EARLY_INIT_HOOK
