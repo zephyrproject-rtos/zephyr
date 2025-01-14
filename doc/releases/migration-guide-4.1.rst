@@ -206,6 +206,11 @@ Controller Area Network (CAN)
 * Renamed the :dtcompatible:`infineon,xmc4xxx-can-node` devicetree property ``clock_div8`` to
   ``clock-div8`` (:github:`83782`).
 
+DMA
+===
+* Renamed the devicetree propertys ``nxp,a_on`` and ``dma_channels``
+  to ``nxp,a-on`` and ``dma-channels``.
+
 Display
 =======
 
