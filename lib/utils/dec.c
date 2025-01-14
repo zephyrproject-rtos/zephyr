@@ -11,6 +11,10 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value)
 	uint8_t divisor = 100;
 	uint8_t num_digits = 0;
 	uint8_t digit;
+	
+	if (buf == NULL || buflen < 4) {
+        	return 0;
+    	}
 
 	while ((buflen > 0) && (divisor > 0)) {
 		digit = value / divisor;
