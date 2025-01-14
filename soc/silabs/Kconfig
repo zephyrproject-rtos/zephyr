@@ -23,6 +23,11 @@ config SOC_GECKO_CORE
 	help
 	  Set if the Core interrupt handling (CORE) HAL module is used.
 
+config SOC_SILABS_ACMP
+	bool
+	help
+	  Set if the Analog comparator (ACMP) HAL module is used.
+
 config SOC_GECKO_ADC
 	bool
 	help
