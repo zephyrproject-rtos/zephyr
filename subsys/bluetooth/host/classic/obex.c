@@ -1916,6 +1916,74 @@ int bt_obex_action_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *b
 	return err;
 }
 
+#define BT_OBEX_HEADER_ENCODING(header_id) (0xc0 & (header_id))
+#define BT_OBEX_HEADER_ENCODING_UNICODE    0x00
+#define BT_OBEX_HEADER_ENCODING_BYTE_SEQ   0x40
+#define BT_OBEX_HEADER_ENCODING_1_BYTE     0x80
+#define BT_OBEX_HEADER_ENCODING_4_BYTES    0xc0
+
+#define BT_OBEX_UFT16_LEAD_SURROGATE_START  0xd800
+#define BT_OBEX_UFT16_LEAD_SURROGATE_END    0xdbff
+#define BT_OBEX_UFT16_TRAIL_SURROGATE_START 0xdc00
+#define BT_OBEX_UFT16_TRAIL_SURROGATE_END   0xdfff
+
+#define BT_OBEX_UFT16_NULL_TERMINATED 0x0000
+
+#define BT_OBEX_UFT16_CODE_OCTETS 0x02
+
+static bool bt_obex_unicode_is_valid(uint16_t len, const uint8_t *str)
+{
+	uint16_t index = 0;
+	uint16_t code;
+
+	if ((len < BT_OBEX_UFT16_CODE_OCTETS) || (len % BT_OBEX_UFT16_CODE_OCTETS)) {
+		LOG_WRN("Invalid string length %d", len);
+		return false;
+	}
+
+	code = sys_get_be16(&str[len - BT_OBEX_UFT16_CODE_OCTETS]);
+	if (code != BT_OBEX_UFT16_NULL_TERMINATED) {
+		LOG_WRN("Invalid terminated unicode %04x", code);
+		return false;
+	}
+
+	while ((index + 1) < len) {
+		code = sys_get_be16(&str[index]);
+		if ((code >= BT_OBEX_UFT16_LEAD_SURROGATE_START) &&
+		    (code <= BT_OBEX_UFT16_LEAD_SURROGATE_END)) {
+			/* Find the trail surrogate */
+			index += sizeof(code);
+			if ((index + 1) >= len) {
+				LOG_WRN("Invalid length, trail surrogate missing");
+				return false;
+			}
+
+			code = sys_get_be16(&str[index]);
+			if ((code < BT_OBEX_UFT16_TRAIL_SURROGATE_START) ||
+			    (code > BT_OBEX_UFT16_TRAIL_SURROGATE_END)) {
+				LOG_WRN("Invalid trail surrogate %04x at %d", code, index);
+				return false;
+			}
+		} else if ((code >= BT_OBEX_UFT16_TRAIL_SURROGATE_START) &&
+			   (code <= BT_OBEX_UFT16_TRAIL_SURROGATE_END)) {
+			LOG_WRN("Abnormal trail surrogate %04x at %d", code, index);
+			return false;
+		}
+		index += sizeof(code);
+	}
+
+	return true;
+}
+
+static bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str)
+{
+	if (BT_OBEX_HEADER_ENCODING(id) == BT_OBEX_HEADER_ENCODING_UNICODE) {
+		return bt_obex_unicode_is_valid(len, str);
+	}
+
+	return true;
+}
+
 int bt_obex_add_header_count(struct net_buf *buf, uint32_t count)
 {
 	size_t total;
@@ -1939,14 +2007,19 @@ int bt_obex_add_header_name(struct net_buf *buf, uint16_t len, const uint8_t *na
 {
 	size_t total;
 
-	if (!buf || !name) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !name || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_NAME, len, name)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_NAME);
@@ -1959,14 +2032,19 @@ int bt_obex_add_header_type(struct net_buf *buf, uint16_t len, const uint8_t *ty
 {
 	size_t total;
 
-	if (!buf || !type) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !type || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_TYPE, len, type)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_TYPE);
@@ -1998,14 +2076,19 @@ int bt_obex_add_header_time_iso_8601(struct net_buf *buf, uint16_t len, const ui
 {
 	size_t total;
 
-	if (!buf || !t) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !t || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_TIME_ISO_8601, len, t)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_TIME_ISO_8601);
@@ -2037,14 +2120,19 @@ int bt_obex_add_header_description(struct net_buf *buf, uint16_t len, const uint
 {
 	size_t total;
 
-	if (!buf || !dec) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !dec || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_DES, len, dec)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_DES);
@@ -2057,14 +2145,19 @@ int bt_obex_add_header_target(struct net_buf *buf, uint16_t len, const uint8_t *
 {
 	size_t total;
 
-	if (!buf || !target) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !target || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_TARGET, len, target)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_TARGET);
@@ -2077,14 +2170,19 @@ int bt_obex_add_header_http(struct net_buf *buf, uint16_t len, const uint8_t *ht
 {
 	size_t total;
 
-	if (!buf || !http) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !http || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_HTTP, len, http)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_HTTP);
@@ -2097,14 +2195,19 @@ int bt_obex_add_header_body(struct net_buf *buf, uint16_t len, const uint8_t *bo
 {
 	size_t total;
 
-	if (!buf || !body) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !body || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_BODY, len, body)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_BODY);
@@ -2117,14 +2220,19 @@ int bt_obex_add_header_end_body(struct net_buf *buf, uint16_t len, const uint8_t
 {
 	size_t total;
 
-	if (!buf || !body) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !body || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_END_BODY, len, body)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_END_BODY);
@@ -2137,14 +2245,19 @@ int bt_obex_add_header_who(struct net_buf *buf, uint16_t len, const uint8_t *who
 {
 	size_t total;
 
-	if (!buf || !who) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !who || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_WHO, len, who)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_WHO);
@@ -2176,14 +2289,19 @@ int bt_obex_add_header_app_param(struct net_buf *buf, uint16_t len, const uint8_
 {
 	size_t total;
 
-	if (!buf || !app_param) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !app_param || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_APP_PARAM, len, app_param)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_APP_PARAM);
@@ -2196,14 +2314,19 @@ int bt_obex_add_header_auth_challenge(struct net_buf *buf, uint16_t len, const u
 {
 	size_t total;
 
-	if (!buf || !auth) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !auth || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_AUTH_CHALLENGE, len, auth)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_AUTH_CHALLENGE);
@@ -2216,14 +2339,19 @@ int bt_obex_add_header_auth_rsp(struct net_buf *buf, uint16_t len, const uint8_t
 {
 	size_t total;
 
-	if (!buf || !auth) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !auth || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_AUTH_RSP, len, auth)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_AUTH_RSP);
@@ -2255,14 +2383,19 @@ int bt_obex_add_header_wan_uuid(struct net_buf *buf, uint16_t len, const uint8_t
 {
 	size_t total;
 
-	if (!buf || !uuid) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !uuid || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_WAN_UUID, len, uuid)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_WAN_UUID);
@@ -2275,14 +2408,19 @@ int bt_obex_add_header_obj_class(struct net_buf *buf, uint16_t len, const uint8_
 {
 	size_t total;
 
-	if (!buf || !obj_class) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !obj_class || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_OBJECT_CLASS, len, obj_class)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_OBJECT_CLASS);
@@ -2296,14 +2434,19 @@ int bt_obex_add_header_session_param(struct net_buf *buf, uint16_t len,
 {
 	size_t total;
 
-	if (!buf || !session_param) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !session_param || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_SESSION_PARAM, len, session_param)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_SESSION_PARAM);
@@ -2354,14 +2497,19 @@ int bt_obex_add_header_dest_name(struct net_buf *buf, uint16_t len, const uint8_
 {
 	size_t total;
 
-	if (!buf || !dest_name) {
-		LOG_WRN("Invalid buf");
+	if (!buf || !dest_name || !len) {
+		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
 
 	total = sizeof(uint8_t) + sizeof(len) + len;
 	if (net_buf_tailroom(buf) < total) {
 		return -ENOMEM;
+	}
+
+	if (!bt_obex_string_is_valid(BT_OBEX_HEADER_ID_DEST_NAME, len, dest_name)) {
+		LOG_WRN("Invalid string");
+		return -EINVAL;
 	}
 
 	net_buf_add_u8(buf, BT_OBEX_HEADER_ID_DEST_NAME);
@@ -2426,12 +2574,6 @@ int bt_obex_add_header_srm_param(struct net_buf *buf, uint8_t srm_param)
 	net_buf_add_u8(buf, srm_param);
 	return 0;
 }
-
-#define BT_OBEX_HEADER_ENCODING(header_id) (0xc0 & (header_id))
-#define BT_OBEX_HEADER_ENCODING_UNICODE    0x00
-#define BT_OBEX_HEADER_ENCODING_BYTE_SEQ   0x40
-#define BT_OBEX_HEADER_ENCODING_1_BYTE     0x80
-#define BT_OBEX_HEADER_ENCODING_4_BYTES    0xc0
 
 int bt_obex_header_parse(struct net_buf *buf,
 			 bool (*func)(struct bt_obex_hdr *hdr, void *user_data), void *user_data)
