@@ -84,7 +84,7 @@
 			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(320)>;
 			riscv,isa = "rv32emc";
-			nordic,bus-width = <64>;
+			nordic,bus-width = <32>;
 
 			cpuflpr_vevif_rx: mailbox {
 				compatible = "nordic,nrf-vevif-task-rx";
