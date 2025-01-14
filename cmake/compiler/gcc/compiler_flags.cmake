@@ -121,7 +121,7 @@ if (NOT CONFIG_NEWLIB_LIBC AND
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
 
-set_compiler_property(PROPERTY no_printf_return_value -fno-printf-return-value)
+check_set_compiler_property(PROPERTY no_printf_return_value -fno-printf-return-value)
 
 set_property(TARGET compiler-cpp PROPERTY nostdincxx "-nostdinc++")
 
