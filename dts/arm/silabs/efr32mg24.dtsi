@@ -286,7 +286,7 @@
 		};
 
 		eusart0: eusart@5b010000 {
-			compatible = "silabs,gecko-spi-eusart";
+			compatible = "silabs,eusart-spi";
 			reg = <0x5B010000 0x4000>;
 			interrupts = <11 0>, <12 0>;
 			interrupt-names = "rx", "tx";
@@ -295,7 +295,7 @@
 		};
 
 		eusart1: eusart@500a0000 {
-			compatible = "silabs,gecko-spi-eusart";
+			compatible = "silabs,eusart-spi";
 			reg = <0x500A0000 0x4000>;
 			interrupts = <13 0>, <14 0>;
 			interrupt-names = "rx", "tx";
