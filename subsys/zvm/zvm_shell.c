@@ -17,6 +17,7 @@
 #include <zephyr/zvm/vm.h>
 #include <zephyr/zvm/vm_device.h>
 #include <zephyr/zvm/vm_manager.h>
+#include <zephyr/zvm/vdev/vserial.h>
 
 
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
@@ -36,6 +37,8 @@ LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
     "You can use 'zvm delete -n 0' to delete vm with vmid equal to 0. \n"
 #define SHELL_HELP_UPDATE_VM "Update vm. \n" \
     "vm update is not supported now. \n"
+#define SHELL_HELP_CONNECT_VIRTUAL_SERIAL "Switch virtual serial. \n" \
+    "You can use 'zvm look 0' to connect available virtual serial. \n"
 
 static struct k_spinlock shell_vmops_lock;
 
@@ -163,6 +166,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_zvm,
     SHELL_CMD(delete, NULL, SHELL_HELP_DELETE_VM, cmd_zvm_delete),
     SHELL_CMD(info, NULL, SHELL_HELP_LIST_VM, cmd_zvm_info) ,
     SHELL_CMD(update, NULL, SHELL_HELP_UPDATE_VM, cmd_zvm_update),
+    SHELL_CMD(look, NULL, SHELL_HELP_CONNECT_VIRTUAL_SERIAL, switch_virtual_serial_handler),
     SHELL_SUBCMD_SET_END
 );
 

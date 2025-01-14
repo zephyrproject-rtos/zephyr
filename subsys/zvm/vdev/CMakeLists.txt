@@ -14,8 +14,3 @@ zephyr_sources_ifdef(
     vgic_common.c
     vgic_v3.c
 )
-
-zephyr_sources_ifdef(
-    CONFIG_SOC_QEMU_MAX
-    pt_device_qemu_max.c
-)
