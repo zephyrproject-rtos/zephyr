@@ -233,7 +233,7 @@
 		};
 
 		usart0: usart@5005c000 {
-			compatible = "silabs,gecko-spi-usart";
+			compatible = "silabs,usart-spi";
 			reg = <0x5005C000 0x400>;
 			interrupt-names = "rx", "tx";
 			#address-cells = <1>;
