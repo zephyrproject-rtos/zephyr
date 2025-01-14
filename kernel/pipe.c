@@ -79,6 +79,65 @@ void z_impl_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size
 	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe, buffer, buffer_size);
 }
 
+struct pipe_buf_spec {
+	uint8_t * const data;
+	const size_t len;
+	size_t used;
+};
+
+static size_t copy_to_pending_readers(struct k_pipe *pipe,
+				      const uint8_t *data, size_t len)
+{
+	struct k_thread *reader;
+	struct pipe_buf_spec *reader_buf;
+	size_t copy_size, written = 0;
+
+	/*
+	 * Attempt a direct data copy to waiting readers if any.
+	 * The copy has to be done under the scheduler lock to ensure all the
+	 * needed data is copied to the target thread whose buffer spec lives
+	 * on that thread's stack, and then the thread unpended only if it
+	 * received all the data it wanted, without racing with a potential
+	 * thread timeout/cancellation event.
+	 */
+	do {
+		LOCK_SCHED_SPINLOCK {
+			reader = _priq_wait_best(&pipe->data.waitq);
+			if (reader == NULL) {
+				K_SPINLOCK_BREAK;
+			}
+
+			reader_buf = reader->base.swap_data;
+			copy_size = MIN(len - written,
+					reader_buf->len - reader_buf->used);
+			memcpy(&reader_buf->data[reader_buf->used],
+			       &data[written], copy_size);
+			written += copy_size;
+			reader_buf->used += copy_size;
+
+			if (reader_buf->used < reader_buf->len) {
+				/* This reader wants more: don't unpend. */
+				reader = NULL;
+			} else {
+				/*
+				 * This reader has received all the data
+				 * it was waiting for: wake it up with
+				 * the scheduler lock still held.
+				 */
+				unpend_thread_no_timeout(reader);
+				z_abort_thread_timeout(reader);
+			}
+		}
+		if (reader != NULL) {
+			/* rest of thread wake-up outside the scheduler lock */
+			z_thread_return_value_set_with_data(reader, 0, NULL);
+			z_ready_thread(reader);
+		}
+	} while (reader != NULL && written < len);
+
+	return written;
+}
+
 int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_timeout_t timeout)
 {
 	int rc;
@@ -100,7 +159,14 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 		}
 
 		if (pipe_empty(pipe)) {
-			z_sched_wake(&pipe->data, 0, NULL);
+			if (pipe->waiting != 0) {
+				written += copy_to_pending_readers(pipe, &data[written],
+								   len - written);
+				if (written >= len) {
+					rc = written;
+					break;
+				}
+			}
 #ifdef CONFIG_POLL
 			z_handle_obj_poll_events(&pipe->poll_events,
 						 K_POLL_STATE_PIPE_DATA_AVAILABLE);
@@ -129,8 +195,8 @@ exit:
 
 int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout_t timeout)
 {
+	struct pipe_buf_spec buf = { data, len, 0 };
 	int rc;
-	size_t read = 0;
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
 
@@ -146,21 +212,24 @@ int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout
 			z_sched_wake(&pipe->space, 0, NULL);
 		}
 
-		read += ring_buf_get(&pipe->buf, &data[read], len - read);
-		if (likely(read == len)) {
-			rc = read;
+		buf.used += ring_buf_get(&pipe->buf, &data[buf.used], len - buf.used);
+		if (likely(buf.used == len)) {
+			rc = buf.used;
 			break;
 		}
 
 		if (unlikely(pipe_closed(pipe))) {
-			rc = read ? read : -EPIPE;
+			rc = buf.used ? buf.used : -EPIPE;
 			break;
 		}
+
+		/* provide our "direct copy" info to potential writers */
+		_current->base.swap_data = &buf;
 
 		rc = wait_for(&pipe->data, pipe, &key, end);
 		if (rc != 0) {
 			if (rc == -EAGAIN) {
-				rc = read ? read : -EAGAIN;
+				rc = buf.used ? buf.used : -EAGAIN;
 			}
 			break;
 		}
