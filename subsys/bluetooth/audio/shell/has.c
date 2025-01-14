@@ -20,7 +20,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
 
 static int preset_select(uint8_t index, bool sync)
