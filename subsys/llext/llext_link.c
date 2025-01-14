@@ -345,6 +345,11 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			continue;
 		}
 
+		if (!(ext->sect_hdrs[shdr->sh_info].sh_flags & SHF_ALLOC)) {
+			/* ignore relocations acting on volatile (debug) sections */
+			continue;
+		}
+
 		LOG_DBG("relocation section %s (%d) acting on section %d has %zd relocations",
 			name, i, shdr->sh_info, (size_t)rel_cnt);
 
