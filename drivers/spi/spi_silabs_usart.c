@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT silabs_gecko_spi_usart
+#define DT_DRV_COMPAT silabs_usart_spi
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_gecko);
+LOG_MODULE_REGISTER(spi_silabs_usart);
 #include "spi_context.h"
 
 #include <zephyr/sys/sys_io.h>
@@ -33,12 +33,12 @@ LOG_MODULE_REGISTER(spi_gecko);
 #ifdef CONFIG_CLOCK_CONTROL
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_silabs.h>
-#define GET_GECKO_USART_CLOCK(idx)                            \
+#define GET_USART_CLOCK(idx)                            \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
 	.clock_cfg = SILABS_DT_INST_CLOCK_CFG(idx),
 #elif DT_NODE_HAS_PROP(n, peripheral_id)
 #define CLOCK_USART(id) _CONCAT(cmuClock_USART, id)
-#define GET_GECKO_USART_CLOCK(n) \
+#define GET_USART_CLOCK(n) \
 	.clock = CLOCK_USART(DT_INST_PROP(n, peripheral_id)),
 #else
 #if (USART_COUNT == 1)
@@ -77,7 +77,7 @@ LOG_MODULE_REGISTER(spi_gecko);
 #else
 #error "Undefined number of USARTs."
 #endif /* USART_COUNT */
-#define GET_GECKO_USART_CLOCK(id) \
+#define GET_USART_CLOCK(id) \
 	.clock = CLOCK_USART((USART_TypeDef *)DT_INST_REG_ADDR(id)),
 #endif /* DT_NODE_HAS_PROP(n, peripheral_id) */
 
@@ -86,11 +86,11 @@ LOG_MODULE_REGISTER(spi_gecko);
 
 /* Structure Declarations */
 
-struct spi_gecko_data {
+struct spi_silabs_usart_data {
 	struct spi_context ctx;
 };
 
-struct spi_gecko_config {
+struct spi_silabs_usart_config {
 	USART_TypeDef *base;
 #ifdef CONFIG_CLOCK_CONTROL
 	const struct device *clock_dev;
@@ -117,16 +117,16 @@ static int spi_config(const struct device *dev,
 		      const struct spi_config *config,
 		      uint16_t *control)
 {
-	const struct spi_gecko_config *gecko_config = dev->config;
-	struct spi_gecko_data *data = dev->data;
-	mem_addr_t ctrl_reg = (mem_addr_t)&gecko_config->base->CTRL;
+	const struct spi_silabs_usart_config *usart_config = dev->config;
+	struct spi_silabs_usart_data *data = dev->data;
+	mem_addr_t ctrl_reg = (mem_addr_t)&usart_config->base->CTRL;
 	uint32_t spi_frequency;
 
 #ifdef CONFIG_CLOCK_CONTROL
 	int err;
 
-	err = clock_control_get_rate(gecko_config->clock_dev,
-				     (clock_control_subsys_t)&gecko_config->clock_cfg,
+	err = clock_control_get_rate(usart_config->clock_dev,
+				     (clock_control_subsys_t)&usart_config->clock_cfg,
 				     &spi_frequency);
 	if (err) {
 		return err;
@@ -134,7 +134,7 @@ static int spi_config(const struct device *dev,
 	/* Max supported SPI frequency is half the source clock */
 	spi_frequency /= 2;
 #else
-	spi_frequency = CMU_ClockFreqGet(gecko_config->clock) / 2;
+	spi_frequency = CMU_ClockFreqGet(usart_config->clock) / 2;
 #endif
 
 	if (config->operation & SPI_HALF_DUPLEX) {
@@ -174,39 +174,39 @@ static int spi_config(const struct device *dev,
 	 * user has configured the controller to, and the max frequency for the
 	 * transaction.
 	 */
-	if (gecko_config->clock_frequency > spi_frequency) {
+	if (usart_config->clock_frequency > spi_frequency) {
 		LOG_ERR("SPI clock-frequency too high");
 		return -EINVAL;
 	}
-	spi_frequency = MIN(gecko_config->clock_frequency, spi_frequency);
+	spi_frequency = MIN(usart_config->clock_frequency, spi_frequency);
 	if (config->frequency) {
 		spi_frequency = MIN(config->frequency, spi_frequency);
 	}
-	USART_BaudrateSyncSet(gecko_config->base, 0, spi_frequency);
+	USART_BaudrateSyncSet(usart_config->base, 0, spi_frequency);
 
 	/* Set Loopback */
 	if (config->operation & SPI_MODE_LOOP) {
-		gecko_config->base->CTRL |= USART_CTRL_LOOPBK;
+		usart_config->base->CTRL |= USART_CTRL_LOOPBK;
 	} else {
-		gecko_config->base->CTRL &= ~USART_CTRL_LOOPBK;
+		usart_config->base->CTRL &= ~USART_CTRL_LOOPBK;
 	}
 
 	/* Set CPOL */
 	if (config->operation & SPI_MODE_CPOL) {
-		gecko_config->base->CTRL |= USART_CTRL_CLKPOL;
+		usart_config->base->CTRL |= USART_CTRL_CLKPOL;
 	} else {
-		gecko_config->base->CTRL &= ~USART_CTRL_CLKPOL;
+		usart_config->base->CTRL &= ~USART_CTRL_CLKPOL;
 	}
 
 	/* Set CPHA */
 	if (config->operation & SPI_MODE_CPHA) {
-		gecko_config->base->CTRL |= USART_CTRL_CLKPHA;
+		usart_config->base->CTRL |= USART_CTRL_CLKPHA;
 	} else {
-		gecko_config->base->CTRL &= ~USART_CTRL_CLKPHA;
+		usart_config->base->CTRL &= ~USART_CTRL_CLKPHA;
 	}
 
 	/* Set word size */
-	gecko_config->base->FRAME = usartDatabits8
+	usart_config->base->FRAME = usartDatabits8
 	    | USART_FRAME_STOPBITS_DEFAULT
 	    | USART_FRAME_PARITY_DEFAULT;
 
@@ -216,7 +216,7 @@ static int spi_config(const struct device *dev,
 	return 0;
 }
 
-static void spi_gecko_send(USART_TypeDef *usart, uint8_t frame)
+static void spi_silabs_usart_send(USART_TypeDef *usart, uint8_t frame)
 {
 	/* Write frame to register */
 	USART_Tx(usart, frame);
@@ -226,18 +226,18 @@ static void spi_gecko_send(USART_TypeDef *usart, uint8_t frame)
 	}
 }
 
-static uint8_t spi_gecko_recv(USART_TypeDef *usart)
+static uint8_t spi_silabs_usart_recv(USART_TypeDef *usart)
 {
 	/* Return data inside rx register */
 	return (uint8_t)usart->RXDATA;
 }
 
-static bool spi_gecko_transfer_ongoing(struct spi_gecko_data *data)
+static bool spi_silabs_usart_transfer_ongoing(struct spi_silabs_usart_data *data)
 {
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
 
-static inline uint8_t spi_gecko_next_tx(struct spi_gecko_data *data)
+static inline uint8_t spi_silabs_usart_next_tx(struct spi_silabs_usart_data *data)
 {
 	uint8_t tx_frame = 0;
 
@@ -248,17 +248,17 @@ static inline uint8_t spi_gecko_next_tx(struct spi_gecko_data *data)
 	return tx_frame;
 }
 
-static int spi_gecko_shift_frames(USART_TypeDef *usart,
-				  struct spi_gecko_data *data)
+static int spi_silabs_usart_shift_frames(USART_TypeDef *usart,
+				  struct spi_silabs_usart_data *data)
 {
 	uint8_t tx_frame;
 	uint8_t rx_frame;
 
-	tx_frame = spi_gecko_next_tx(data);
-	spi_gecko_send(usart, tx_frame);
+	tx_frame = spi_silabs_usart_next_tx(data);
+	spi_silabs_usart_send(usart, tx_frame);
 	spi_context_update_tx(&data->ctx, 1, 1);
 
-	rx_frame = spi_gecko_recv(usart);
+	rx_frame = spi_silabs_usart_recv(usart);
 
 	if (spi_context_rx_buf_on(&data->ctx)) {
 		UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
@@ -268,28 +268,28 @@ static int spi_gecko_shift_frames(USART_TypeDef *usart,
 }
 
 
-static void spi_gecko_xfer(const struct device *dev,
+static void spi_silabs_usart_xfer(const struct device *dev,
 			   const struct spi_config *config)
 {
 	int ret;
-	struct spi_gecko_data *data = dev->data;
+	struct spi_silabs_usart_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
-	const struct spi_gecko_config *gecko_config = dev->config;
+	const struct spi_silabs_usart_config *usart_config = dev->config;
 
 	spi_context_cs_control(ctx, true);
 
 	do {
-		ret = spi_gecko_shift_frames(gecko_config->base, data);
-	} while (!ret && spi_gecko_transfer_ongoing(data));
+		ret = spi_silabs_usart_shift_frames(usart_config->base, data);
+	} while (!ret && spi_silabs_usart_transfer_ongoing(data));
 
 	spi_context_cs_control(ctx, false);
 	spi_context_complete(ctx, dev, 0);
 }
 
 #ifndef CONFIG_PINCTRL
-static void spi_gecko_init_pins(const struct device *dev)
+static void spi_silabs_usart_init_pins(const struct device *dev)
 {
-	const struct spi_gecko_config *config = dev->config;
+	const struct spi_silabs_usart_config *config = dev->config;
 
 	GPIO_PinModeSet(config->pin_rx.port, config->pin_rx.pin,
 			 config->pin_rx.mode, config->pin_rx.out);
@@ -316,11 +316,11 @@ static void spi_gecko_init_pins(const struct device *dev)
 
 /* API Functions */
 
-static int spi_gecko_init(const struct device *dev)
+static int spi_silabs_usart_init(const struct device *dev)
 {
 	int err;
-	const struct spi_gecko_config *config = dev->config;
-	struct spi_gecko_data *data = dev->data;
+	const struct spi_silabs_usart_config *config = dev->config;
+	struct spi_silabs_usart_data *data = dev->data;
 	USART_InitSync_TypeDef usartInit = USART_INITSYNC_DEFAULT;
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio
@@ -359,7 +359,7 @@ static int spi_gecko_init(const struct device *dev)
 	}
 #else
 	/* Initialize USART pins */
-	spi_gecko_init_pins(dev);
+	spi_silabs_usart_init_pins(dev);
 #endif /* CONFIG_PINCTRL */
 
 	err = spi_context_cs_configure_all(&data->ctx);
@@ -375,12 +375,12 @@ static int spi_gecko_init(const struct device *dev)
 	return 0;
 }
 
-static int spi_gecko_transceive(const struct device *dev,
+static int spi_silabs_usart_transceive(const struct device *dev,
 				const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
 {
-	struct spi_gecko_data *data = dev->data;
+	struct spi_silabs_usart_data *data = dev->data;
 	uint16_t control = 0;
 	int ret;
 
@@ -393,7 +393,7 @@ static int spi_gecko_transceive(const struct device *dev,
 	}
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
-	spi_gecko_xfer(dev, config);
+	spi_silabs_usart_xfer(dev, config);
 
 	spi_context_release(&data->ctx, ret);
 
@@ -401,7 +401,7 @@ static int spi_gecko_transceive(const struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_gecko_transceive_async(const struct device *dev,
+static int spi_silabs_usart_transceive_async(const struct device *dev,
 				      const struct spi_config *config,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
@@ -411,10 +411,10 @@ static int spi_gecko_transceive_async(const struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_gecko_release(const struct device *dev,
+static int spi_silabs_usart_release(const struct device *dev,
 			     const struct spi_config *config)
 {
-	struct spi_gecko_data *data = dev->data;
+	struct spi_silabs_usart_data *data = dev->data;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -422,51 +422,51 @@ static int spi_gecko_release(const struct device *dev,
 }
 
 /* Device Instantiation */
-static DEVICE_API(spi, spi_gecko_api) = {
-	.transceive = spi_gecko_transceive,
+static DEVICE_API(spi, spi_silabs_usart_api) = {
+	.transceive = spi_silabs_usart_transceive,
 #ifdef CONFIG_SPI_ASYNC
-	.transceive_async = spi_gecko_transceive_async,
+	.transceive_async = spi_silabs_usart_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_gecko_release,
+	.release = spi_silabs_usart_release,
 };
 
 #ifdef CONFIG_PINCTRL
 #define SPI_INIT(n)				    \
 	PINCTRL_DT_INST_DEFINE(n);			    \
-	static struct spi_gecko_data spi_gecko_data_##n = { \
-		SPI_CONTEXT_INIT_LOCK(spi_gecko_data_##n, ctx), \
-		SPI_CONTEXT_INIT_SYNC(spi_gecko_data_##n, ctx), \
+	static struct spi_silabs_usart_data spi_silabs_usart_data_##n = { \
+		SPI_CONTEXT_INIT_LOCK(spi_silabs_usart_data_##n, ctx), \
+		SPI_CONTEXT_INIT_SYNC(spi_silabs_usart_data_##n, ctx), \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	}; \
-	static struct spi_gecko_config spi_gecko_cfg_##n = { \
+	static struct spi_silabs_usart_config spi_silabs_usart_cfg_##n = { \
 	    .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 	    .base = (USART_TypeDef *) \
 		 DT_INST_REG_ADDR(n), \
-	    GET_GECKO_USART_CLOCK(n) \
+	    GET_USART_CLOCK(n) \
 	    .clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000) \
 	}; \
 	SPI_DEVICE_DT_INST_DEFINE(n, \
-			spi_gecko_init, \
+			spi_silabs_usart_init, \
 			NULL, \
-			&spi_gecko_data_##n, \
-			&spi_gecko_cfg_##n, \
+			&spi_silabs_usart_data_##n, \
+			&spi_silabs_usart_cfg_##n, \
 			POST_KERNEL, \
 			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_gecko_api);
+			&spi_silabs_usart_api);
 #else
 #define SPI_INIT(n)				    \
-	static struct spi_gecko_data spi_gecko_data_##n = { \
-		SPI_CONTEXT_INIT_LOCK(spi_gecko_data_##n, ctx), \
-		SPI_CONTEXT_INIT_SYNC(spi_gecko_data_##n, ctx), \
+	static struct spi_silabs_usart_data spi_silabs_usart_data_##n = { \
+		SPI_CONTEXT_INIT_LOCK(spi_silabs_usart_data_##n, ctx), \
+		SPI_CONTEXT_INIT_SYNC(spi_silabs_usart_data_##n, ctx), \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	}; \
-	static struct spi_gecko_config spi_gecko_cfg_##n = { \
+	static struct spi_silabs_usart_config spi_silabs_usart_cfg_##n = { \
 	    .base = (USART_TypeDef *) \
 		 DT_INST_REG_ADDR(n), \
-	    GET_GECKO_USART_CLOCK(n) \
+	    GET_USART_CLOCK(n) \
 	    .clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000), \
 	    .pin_rx = { DT_INST_PROP_BY_IDX(n, location_rx, 1), \
 			DT_INST_PROP_BY_IDX(n, location_rx, 2), \
@@ -482,13 +482,13 @@ static DEVICE_API(spi, spi_gecko_api) = {
 	    .loc_clk = DT_INST_PROP_BY_IDX(n, location_clk, 0), \
 	}; \
 	SPI_DEVICE_DT_INST_DEFINE(n, \
-			spi_gecko_init, \
+			spi_silabs_usart_init, \
 			NULL, \
-			&spi_gecko_data_##n, \
-			&spi_gecko_cfg_##n, \
+			&spi_silabs_usart_data_##n, \
+			&spi_silabs_usart_cfg_##n, \
 			POST_KERNEL, \
 			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_gecko_api);
+			&spi_silabs_usart_api);
 #endif /* CONFIG_PINCTRL */
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)
