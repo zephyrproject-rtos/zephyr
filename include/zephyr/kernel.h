@@ -4998,8 +4998,8 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  * This routine initializes a pipe object, prior to its first use.
  *
  * @param pipe Address of the pipe.
- * @param buffer Address of the pipe's buffer.
- * @param buffer_size Size of the pipe's buffer.
+ * @param buffer Address of the pipe's buffer, or NULL if no ring buffer is used.
+ * @param buffer_size Size of the pipe's buffer, or zero if no ring buffer is used.
  */
 __syscall void k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size);
 
@@ -5247,7 +5247,8 @@ struct k_pipe {
  * @code extern struct k_pipe <name>; @endcode
  *
  * @param name Name of the pipe.
- * @param pipe_buffer_size Size of the pipe's ring buffer (in bytes).
+ * @param pipe_buffer_size Size of the pipe's ring buffer (in bytes)
+ *                         or zero if no ring buffer is used.
  * @param pipe_align Alignment of the pipe's ring buffer (power of 2).
  *
  */
