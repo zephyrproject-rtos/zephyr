@@ -232,6 +232,57 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 }
 #endif
 
+static enum net_verdict ethernet_protocol_input(uint16_t type,
+						struct net_if *iface,
+						struct net_pkt *pkt)
+{
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	switch (type) {
+	case NET_ETH_PTYPE_EAPOL:
+		return NET_CONTINUE;
+	case NET_ETH_PTYPE_IP:
+		net_pkt_set_family(pkt, AF_INET);
+		return NET_CONTINUE;
+	case NET_ETH_PTYPE_IPV6:
+		net_pkt_set_family(pkt, AF_INET6);
+		return NET_CONTINUE;
+#if defined(CONFIG_NET_ARP)
+	case NET_ETH_PTYPE_ARP:
+		net_pkt_set_family(pkt, AF_INET);
+		NET_DBG("ARP packet from %s received",
+			net_sprint_ll_addr((uint8_t *)hdr->src.addr,
+					   sizeof(struct net_eth_addr)));
+
+		if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
+		    net_ipv4_acd_input(iface, pkt) == NET_DROP) {
+			return NET_DROP;
+		}
+
+		return net_arp_input(pkt, hdr);
+#endif
+#if defined(CONFIG_NET_L2_PTP)
+#if defined(CONFIG_NET_GPTP)
+	case NET_ETH_PTYPE_PTP:
+		return net_gptp_recv(iface, pkt);
+#endif
+#endif
+#if defined(CONFIG_NET_LLDP)
+	case NET_ETH_PTYPE_LLDP:
+		return net_lldp_recv(iface, pkt);
+#endif
+	default:
+		if (IS_ENABLED(CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE)) {
+			return NET_CONTINUE;
+		}
+
+		NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", type,
+			net_if_get_by_iface(iface), iface);
+		eth_stats_update_unknown_protocol(iface);
+		return NET_DROP;
+	}
+}
+
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
 {
@@ -310,39 +361,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		}
 	}
 
-	switch (type) {
-	case NET_ETH_PTYPE_IP:
-	case NET_ETH_PTYPE_ARP:
-		net_pkt_set_family(pkt, AF_INET);
-		break;
-	case NET_ETH_PTYPE_IPV6:
-		net_pkt_set_family(pkt, AF_INET6);
-		break;
-	case NET_ETH_PTYPE_EAPOL:
-		break;
-#if defined(CONFIG_NET_L2_PTP)
-	case NET_ETH_PTYPE_PTP:
-		break;
-#endif
-	case NET_ETH_PTYPE_LLDP:
-#if defined(CONFIG_NET_LLDP)
-		net_buf_pull(pkt->frags, hdr_len);
-		return net_lldp_recv(iface, pkt);
-#else
-		NET_DBG("LLDP Rx agent not enabled");
-		goto drop;
-#endif
-	default:
-		if (IS_ENABLED(CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE)) {
-			break;
-		}
-
-		NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", type,
-			net_if_get_by_iface(iface), iface);
-		eth_stats_update_unknown_protocol(iface);
-		return NET_DROP;
-	}
-
 	/* Set the pointers to ll src and dst addresses */
 	lladdr = net_pkt_lladdr_src(pkt);
 	lladdr->addr = hdr->src.addr;
@@ -392,28 +410,12 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt) + hdr_len);
 
-	if (IS_ENABLED(CONFIG_NET_ARP) && type == NET_ETH_PTYPE_ARP) {
-		NET_DBG("ARP packet from %s received",
-			net_sprint_ll_addr((uint8_t *)hdr->src.addr,
-					   sizeof(struct net_eth_addr)));
-
-		if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
-		    net_ipv4_acd_input(iface, pkt) == NET_DROP) {
-			return NET_DROP;
-		}
-
-		return net_arp_input(pkt, hdr);
-	}
-
-	if (IS_ENABLED(CONFIG_NET_GPTP) && type == NET_ETH_PTYPE_PTP) {
-		return net_gptp_recv(iface, pkt);
-	}
-
 	if (type != NET_ETH_PTYPE_EAPOL) {
 		ethernet_update_length(iface, pkt);
 	}
 
-	return NET_CONTINUE;
+	return ethernet_protocol_input(type, iface, pkt);
+
 drop:
 	eth_stats_update_errors_rx(iface);
 	return NET_DROP;
