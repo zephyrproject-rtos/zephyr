@@ -19,5 +19,5 @@ board_runner_args(linkserver "--core=cm7")
 board_runner_args(jlink "--device=MIMXRT1189xxx8_M7" "--speed=4000" "--no-reset" "--tool-opt=-jlinkscriptfile ${RT1180_BOARD_DIR}/jlinkscript/evkmimxrt1180_cm7.jlinkscript" "--tool-opt=-ir")
 endif()
 
-include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
