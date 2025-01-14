@@ -73,7 +73,7 @@
 };
 
 &eusart1 {
-	compatible = "silabs,gecko-spi-eusart";
+	compatible = "silabs,eusart-spi";
 
 	#address-cells = <1>;
 	#size-cells = <0>;

@@ -1,6 +1,6 @@
-description: GECKO EUSART SPI
+description: Silabs EUSART SPI
 
-compatible: "silabs,gecko-spi-eusart"
+compatible: "silabs,eusart-spi"
 
 include: [spi-controller.yaml, pinctrl-device.yaml]
 
