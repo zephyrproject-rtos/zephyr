@@ -3,11 +3,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include "zephyr/bluetooth/audio/bap.h"
-#include "test_common.h"
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/ztest_assert.h>
 
 #include "bap_broadcast_assistant.h"
+#include "test_common.h"
 
 static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
 

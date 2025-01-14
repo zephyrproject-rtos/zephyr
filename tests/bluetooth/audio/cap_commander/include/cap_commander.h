@@ -7,6 +7,8 @@
 #ifndef MOCKS_CAP_COMMANDER_H_
 #define MOCKS_CAP_COMMANDER_H_
 
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/fff.h>
 #include <zephyr/bluetooth/audio/cap.h>
 

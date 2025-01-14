@@ -7,8 +7,10 @@
 #ifndef MOCKS_PACS_H_
 #define MOCKS_PACS_H_
 
-#include <zephyr/fff.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/fff.h>
 
 void mock_bt_pacs_init(void);
 void mock_bt_pacs_cleanup(void);
