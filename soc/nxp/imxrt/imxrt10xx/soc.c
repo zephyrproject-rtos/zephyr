@@ -1,5 +1,5 @@
 /*
- * Copyright  2017-2023 NXP
+ * Copyright  2017-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -243,8 +243,9 @@ static ALWAYS_INLINE void clock_init(void)
 				kIOMUXC_GPR_ENET2RefClkMode, true);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && \
-	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
+#if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && \
+	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)) ||\
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh1)) && (CONFIG_UHC_NXP_EHCI)))
 	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
 	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
@@ -254,8 +255,9 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && \
-	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
+#if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && \
+	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)) ||\
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh2)) && (CONFIG_UHC_NXP_EHCI)))
 	CLOCK_EnableUsbhs1PhyPllClock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
 	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
