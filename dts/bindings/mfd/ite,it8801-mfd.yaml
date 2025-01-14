@@ -51,6 +51,7 @@ properties:
 
   irq-gpios:
     type: phandle-array
+    required: true
     description: |
       An interrupt can be asserted on SMB_INT# pin to notify
       the host-side since an effective interrupt occurs.
