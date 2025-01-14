@@ -14,6 +14,11 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/toolchain.h>
 
+#define PRINT_REGULATOR_NAME(inst, sh) \
+    if (DT_NODE_HAS_PROP(inst, regulator_name)) { \
+        shell_print(sh, "%s", DT_NODE_FULL_NAME(inst)); \
+    }
+
 static int strtomicro(char *inp, char units, int32_t *val)
 {
 	size_t len, start, end;
@@ -522,6 +527,16 @@ static int cmd_shipmode(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_print(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	DT_FOREACH_STATUS_OKAY_NODE_VARGS(PRINT_REGULATOR_NAME, sh);
+
+	return 0;
+}
+
 static bool device_is_regulator(const struct device *dev)
 {
 	return DEVICE_API_IS(regulator, dev);
@@ -609,6 +624,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Enable regulator ship mode\n"
 		      "Usage: shipmode <device>",
 		      cmd_shipmode, 2, 0),
+	SHELL_CMD(print, &dsub_device_name,
+		  "Print the node names of all devices that have the 'regulator_name' property.\n"
+		  "Usage: print",
+		  cmd_print),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(regulator, &sub_regulator_cmds, "Regulator playground",
