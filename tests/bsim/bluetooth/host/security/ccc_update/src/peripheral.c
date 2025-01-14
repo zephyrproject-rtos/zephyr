@@ -272,12 +272,8 @@ static void check_ccc_handle(void)
 	struct bt_gatt_attr *service_notify_attr =
 		bt_gatt_find_by_uuid(NULL, 0, &notify_characteristic_uuid.uuid);
 
-	struct bt_gatt_attr attr = {
-		.uuid = BT_UUID_GATT_CHRC,
-		.user_data = &(struct bt_gatt_chrc){
-			.value_handle = bt_gatt_attr_get_handle(service_notify_attr)}};
-
-	struct bt_gatt_attr *ccc_attr = bt_gatt_find_by_uuid(&attr, 0, BT_UUID_GATT_CCC);
+	struct bt_gatt_attr *ccc_attr =
+		bt_gatt_find_by_uuid(service_notify_attr, 0, BT_UUID_GATT_CCC);
 	uint16_t actual_ccc_handle = bt_gatt_attr_get_handle(ccc_attr);
 
 	__ASSERT(actual_ccc_handle == CCC_HANDLE,
