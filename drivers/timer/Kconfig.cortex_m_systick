@@ -86,5 +86,11 @@ config CORTEX_M_SYSTICK_LPM_TIMER_COUNTER
 
 	  The device is selected by property "/chosen/cortex-m-idle-timer".
 
+config CORTEX_M_SYSTICK_LPM_TIMER_HOOKS
+	bool "Hook-based timer"
+	help
+	  Use hooks in the SysTick driver to configure the low-power mode timer.
+	  Refer to `include/drivers/timer/cortex_m_systick.h` for more details.
+
 endif # PM
 endchoice # CORTEX_M_SYSTICK_LPM_TIMER
