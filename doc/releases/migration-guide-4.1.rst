@@ -187,6 +187,11 @@ I2C
 
 * Renamed the ``compatible`` from ``nxp,imx-lpi2c`` to :dtcompatible:`nxp,lpi2c`.
 
+I2S
+===
+
+* Renamed the device tree property from ``fifo_depth`` to ``fifo-depth``.
+
 Input
 =====
 
