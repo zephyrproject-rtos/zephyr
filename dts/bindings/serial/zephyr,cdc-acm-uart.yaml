@@ -21,3 +21,8 @@ properties:
     default: 1024
     description: |
       Size of the virtual CDC ACM UART RX FIFO
+
+  label:
+    description: |
+      The string defined by the label property is also used for the USB
+      interface string descriptor.
