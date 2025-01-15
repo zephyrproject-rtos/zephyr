@@ -954,7 +954,7 @@ static int ext2_add_direntry(struct ext2_inode *dir, struct ext2_direntry *entry
 	}
 
 	uint32_t offset = 0;
-	uint16_t reclen;
+	uint16_t reclen = 0;
 
 	struct ext2_disk_direntry *de = 0;
 
