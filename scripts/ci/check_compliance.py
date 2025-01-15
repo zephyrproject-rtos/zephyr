@@ -251,7 +251,7 @@ class BoardYmlCheck(ComplianceTest):
     """
     name = "BoardYml"
     doc = "Check the board.yml file format"
-    path_hint = "<zephyr-base>"
+    path_hint = "<git-top>"
 
     def check_board_file(self, file, vendor_prefixes):
         """Validate a single board file."""
@@ -332,7 +332,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
     """
     name = "DevicetreeBindings"
     doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
-    path_hint = "<zephyr-base>"
+    path_hint = "<git-top>"
 
     def run(self, full=True):
         dts_bindings = self.parse_dt_bindings()
@@ -369,7 +369,7 @@ class KconfigCheck(ComplianceTest):
     """
     name = "Kconfig"
     doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
-    path_hint = "<zephyr-base>"
+    path_hint = "<git-top>"
 
     # Top-level Kconfig file. The path can be relative to srctree (ZEPHYR_BASE).
     FILENAME = "Kconfig"
@@ -1036,6 +1036,7 @@ class KconfigBasicCheck(KconfigCheck):
     references inside the Kconfig tree.
     """
     name = "KconfigBasic"
+    path_hint = "<git-top>"
 
     def check_no_undef_outside_kconfig(self, kconf):
         pass
