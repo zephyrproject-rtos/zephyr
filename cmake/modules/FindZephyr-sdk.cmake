@@ -155,9 +155,9 @@ if(("zephyr-gnu" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
         endif()
       endforeach()
 
-      if (NOT ${Zephyr-sdk_FOUND})
-        # This means no compatible Zephyr SDK versions were found, set the version
-        # back to the minimum version so that it is displayed in the error text.
+      if (NOT ${Zephyr-sdk_FOUND} AND Zephyr-sdk_FIND_REQUIRED)
+        # This means no compatible Zephyr SDK versions were found and REQUIRED was specified, then
+        # set the version back to the minimum version so that it is displayed in the error text.
         find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION_COMPLETE} REQUIRED CONFIG PATHS ${zephyr_sdk_search_paths})
       endif()
     endif()
