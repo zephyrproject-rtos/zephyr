@@ -1,4 +1,4 @@
-# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: Ambiq MSPI controller
@@ -14,9 +14,6 @@ properties:
   interrupts:
     required: true
 
-  ambiq,pwrcfg:
-    required: true
-
   ce-gpios:
     required: true
 
@@ -30,41 +27,27 @@ properties:
     description: |
       Define the DMA command queue buffer size in (4-byte) words
 
-  ambiq,rx-config:
-    type: array
-    default: [2, 0, 0, 0, 1, 0, 0, 0, 0, 0]
+  ambiq,rbx:
+    type: boolean
     description: |
-      Array of tuples to configure the rx parameters
-      default =
-      <
-        .ui8DQSturn,
-        .bRxHI,
-        .bTaForth,
-        .bHyperIO,
-        .ui8RxSmp,
-        .bRBX,
-        .bWBX,
-        .bSCLKRxHalt,
-        .bRxCapEXT,
-        .ui8Sfturn,
-      >
+      Define the Ambiq MSPI controller read boundary crossing feature enable.
 
-  ambiq,dqs-config:
-    type: array
-    default: [0, 0, 0, 0, 16, 0, 0, 0, 0, 0]
+  ambiq,wbx:
+    type: boolean
     description: |
-      Array of tuples to configure the dqs parameters
+      Define the Ambiq MSPI controller write boundary crossing feature enable.
 
-      default =
-      <
-        .bDQSEnable             = 0,
-        .bDQSSyncNeg            = 0,
-        .bEnableFineDelay       = 0,
-        .ui8TxDQSDelay          = 0,
-        .ui8RxDQSDelay          = 16,
-        .ui8RxDQSDelayNeg       = 0,
-        .bRxDQSDelayNegEN       = 0,
-        .ui8RxDQSDelayHi        = 0,
-        .ui8RxDQSDelayNegHi     = 0,
-        .bRxDQSDelayHiEN        = 0,
-      >
+  ambiq,apmemory:
+    type: boolean
+    description: |
+      Define the Ambiq MSPI controller APMemory specific support enable.
+
+  ambiq,hyperbus:
+    type: boolean
+    description: |
+        Define the Ambiq MSPI controller HyperBus specific support enable.
+
+  ambiq,clkond4:
+    type: boolean
+    description: |
+        Define the Ambiq MSPI controller clock on D4 feature enable.
