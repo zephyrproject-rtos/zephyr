@@ -26,8 +26,13 @@ ARCH_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'arch-schema.yml')
 with open(ARCH_SCHEMA_PATH, 'r') as f:
     arch_schema = yaml.load(f.read(), Loader=SafeLoader)
 
+SIP_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'sip-schema.yml')
+with open(SIP_SCHEMA_PATH, 'r') as f:
+    sip_schema = yaml.load(f.read(), Loader=SafeLoader)
+
 SOC_YML = 'soc.yml'
 ARCHS_YML_PATH = PurePath('arch/archs.yml')
+SIP_YML = 'sip.yml'
 
 class Systems:
 
@@ -270,7 +275,11 @@ def add_args(parser):
                         help='''Format string to use to list each soc.''')
     parser.add_argument("--cmakeformat", default=None,
                         help='''CMake format string to use to list each arch/soc.''')
-
+    parser.add_argument("--sip-root", dest='sip_roots', default=[],
+                        type=Path, action='append',
+                        help='add a sip root, may be given more than once')
+    parser.add_argument("--sip", default=None, help='lookup the specific sip')
+    parser.add_argument("--sips", action='store_true', help='lookup all sips')
 
 def dump_v2_archs(args):
     archs = find_v2_archs(args)
@@ -324,7 +333,6 @@ def dump_v2_system(args, type, system):
 
     print(info)
 
-
 def dump_v2_systems(args):
     systems = find_v2_systems(args)
 
@@ -338,9 +346,105 @@ def dump_v2_systems(args):
         dump_v2_system(args, 'soc', s)
 
 
+@dataclass
+class Sip:
+    name: str
+    vendor: str
+    socs: list[str]
+    folder: str
+
+
+class SipList:
+    def __init__(self, sips: list[Sip]):
+        self._list = sips
+        self._map = {}
+        for sip in sips:
+            self._map[sip.name] = sip
+
+    def __iter__(self) -> list[Sip]:
+        return iter(self._list)
+
+    def get(self, name) -> Sip:
+        return self._map.get(name)
+
+
+class SipLoader:
+    @staticmethod
+    def from_file(sip_yml: Path) -> List[Sip]:
+        sips = []
+
+        try:
+            with open(sip_yml, 'r') as f:
+                data = yaml.load(f, Loader=SafeLoader)
+            pykwalify.core.Core(source_data=data, schema_data=sip_schema).validate()
+        except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
+            sys.exit(f'ERROR: Malformed yaml {sip_yml.as_posix()}', e)
+
+        for s in data.get('sips', []):
+            sips.append(
+                Sip(
+                    s['name'],
+                    str(sip_yml.parts[-2]),
+                    s['socs'],
+                    sip_yml.parent.as_posix()
+                )
+            )
+
+        return sips
+
+
+def find_sips(args):
+    yml_files = []
+    sips = []
+
+    for root in unique_paths(args.sip_roots):
+        yml_files.extend(sorted((root / 'sip').rglob(SIP_YML)))
+
+    for sip_yml in yml_files:
+        if sip_yml.is_file():
+            sips.extend(SipLoader.from_file(sip_yml))
+
+    if args.sip:
+        sips = [s for s in sips if s.name == args.sip]
+
+    return SipList(sips)
+
+
+def dump_sip(args, s: Sip):
+    if args.cmakeformat is not None:
+        info = args.cmakeformat.format(
+            TYPE = 'TYPE;' + 'sip',
+            NAME = 'NAME;' + s.name,
+            VENDOR = 'VENDOR;' + s.vendor,
+            SOCS = 'SOCS;' + ';'.join(s.socs),
+            DIR = 'DIR;' + s.folder,
+            HWM='HWM;' + 'v2'
+        )
+    else:
+        info = args.format.format(
+            type = 'sip',
+            name = s.name,
+            vendor = s.vendor,
+            socs = s.socs,
+            dir = s.folder,
+            hwm = 'v2'
+        )
+
+    print(info)
+
+
+def dump_sips(args):
+    sips = find_sips(args)
+
+    for s in sips:
+        dump_sip(args, s)
+
+
 if __name__ == '__main__':
     args = parse_args()
     if any([args.socs, args.soc, args.soc_series, args.soc_family]):
         dump_v2_systems(args)
     if args.archs or args.arch is not None:
         dump_v2_archs(args)
+    if any([args.sips, args.sip]):
+        dump_sips(args)

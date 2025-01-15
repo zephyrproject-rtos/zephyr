@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+type: map
+mapping:
+  sips:
+    required: true
+    type: seq
+    sequence:
+      - type: map
+        mapping:
+          name:
+            required: true
+            type: str
+          socs:
+            required: true
+            type: seq
+            sequence:
+              - type: str
