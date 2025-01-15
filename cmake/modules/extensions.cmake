@@ -5652,6 +5652,7 @@ function(add_llext_target target_name)
     target_link_options(${llext_lib_target} PRIVATE
       $<TARGET_PROPERTY:linker,partial_linking>)
     set_target_properties(${llext_lib_target} PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
       SUFFIX ${CMAKE_C_OUTPUT_EXTENSION})
     set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
 
@@ -5664,6 +5665,9 @@ function(add_llext_target target_name)
 
     # Create a shared library
     add_library(${llext_lib_target} SHARED ${source_files})
+    set_target_properties(${llext_lib_target} PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
+    )
     set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
 
     # Add the llext flags to the linking step as well
@@ -5692,11 +5696,14 @@ function(add_llext_target target_name)
     zephyr_generated_headers
   )
 
+  # Make sure the intermediate output directory exists.
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/llext)
+
   # Set up an intermediate processing step between compilation and packaging
   # to be used to support POST_BUILD commands on targets that do not use a
   # dynamic library.
   set(llext_proc_target ${target_name}_llext_proc)
-  set(llext_pkg_input ${PROJECT_BINARY_DIR}/${target_name}_debug.elf)
+  set(llext_pkg_input ${PROJECT_BINARY_DIR}/llext/${target_name}_debug.elf)
   add_custom_target(${llext_proc_target} DEPENDS ${llext_pkg_input})
   set_property(TARGET ${llext_proc_target} PROPERTY has_post_build_cmds 0)
 
@@ -5799,7 +5806,7 @@ function(add_llext_command)
   # ARM uses an object file representation so there is no link step.
   if(CONFIG_ARM AND LLEXT_PRE_BUILD)
     message(FATAL_ERROR
-	    "add_llext_command: PRE_BUILD not supported on this arch")
+            "add_llext_command: PRE_BUILD not supported on this arch")
   endif()
 
   # Determine the build step and the target to attach the command to
