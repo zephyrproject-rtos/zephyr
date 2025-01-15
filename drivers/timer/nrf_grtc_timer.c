@@ -47,6 +47,8 @@
 	((uint64_t)sys_clock_hw_cycles_per_sec() / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 #define COUNTER_SPAN (GRTC_SYSCOUNTERL_VALUE_Msk | ((uint64_t)GRTC_SYSCOUNTERH_VALUE_Msk << 32))
+#define MAX_ABS_TICKS (COUNTER_SPAN / CYC_PER_TICK)
+
 #define MAX_TICKS                                                                                  \
 	(((COUNTER_SPAN / CYC_PER_TICK) > INT_MAX) ? INT_MAX : (COUNTER_SPAN / CYC_PER_TICK))
 
@@ -289,30 +291,17 @@ void z_nrf_grtc_timer_abort(int32_t chan)
 
 uint64_t z_nrf_grtc_timer_get_ticks(k_timeout_t t)
 {
-	uint64_t curr_time;
-	int64_t curr_tick;
-	int64_t result;
-	int64_t abs_ticks;
-	int64_t grtc_ticks;
+	int64_t abs_ticks = Z_TICK_ABS(t.ticks);
 
-	curr_time = counter();
-	curr_tick = sys_clock_tick_get();
-
-	grtc_ticks = t.ticks * CYC_PER_TICK;
-	abs_ticks = Z_TICK_ABS(t.ticks);
 	if (Z_IS_TIMEOUT_RELATIVE(t)) {
+		int64_t grtc_ticks = t.ticks * CYC_PER_TICK;
+
 		return (grtc_ticks > (int64_t)COUNTER_SPAN) ?
-			-EINVAL : (curr_time + grtc_ticks);
+			-EINVAL : (counter() + grtc_ticks);
 	}
 
 	/* absolute timeout */
-	result = (abs_ticks - curr_tick) * CYC_PER_TICK;
-
-	if (result > (int64_t)COUNTER_SPAN) {
-		return -EINVAL;
-	}
-
-	return curr_time + result;
+	return (abs_ticks > MAX_ABS_TICKS) ? -EINVAL : (abs_ticks * CYC_PER_TICK);
 }
 
 int z_nrf_grtc_timer_capture_prepare(int32_t chan)
