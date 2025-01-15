@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -87,7 +87,7 @@ int zvm_new_guest(size_t argc, char **argv)
 	}
 	ZVM_LOG_INFO("** Init VM devices successful! \n");
 
-   	ret = vm_mem_init(new_vm);
+	ret = vm_mem_init(new_vm);
 	if(ret < 0){
 		return ret;
 	}

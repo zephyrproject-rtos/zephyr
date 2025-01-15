@@ -7,4 +7,3 @@ config SOC_QEMU_MAX
 	select CPU_CORTEX_A55
 	select QEMU_TARGET
 	select GIC_V3
-

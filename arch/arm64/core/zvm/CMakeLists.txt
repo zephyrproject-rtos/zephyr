@@ -12,5 +12,3 @@ zephyr_library_sources(
   hyp_entry.S
   hyp_vector.S
 )
-
-

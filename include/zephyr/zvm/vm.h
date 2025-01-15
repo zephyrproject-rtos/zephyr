@@ -1,12 +1,12 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_VM_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_VM_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_VM_H_
+#define ZEPHYR_INCLUDE_ZVM_VM_H_
 
 #include <zephyr/toolchain/gcc.h>
 #include <stddef.h>
@@ -243,4 +243,4 @@ int vm_ipi_handler(struct z_vm *vm);
 
 int vm_create(struct z_os_info *vm_info, struct z_vm *new_vm);
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_VM_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_VM_H_ */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -148,7 +148,7 @@ int arch_vm_mem_domain_init(struct k_mem_domain *domain, uint32_t vmid);
 
 /**
  * @brief translate guest physical address to host physical address
- * 
+ *
  * @param vm the pointer to guest
  * @param gpa guset physical address need to be translate
  * @return uint64_t host physical address

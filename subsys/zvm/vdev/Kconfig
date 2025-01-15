@@ -36,7 +36,7 @@ endif
 config VM_VSERIAL
 	bool "VM VSERIAL that get from vm."
 	help
-	  	This option is used for building memory that get from overlay.
+		This option is used for building memory that get from overlay.
 
 if VM_VSERIAL
 
