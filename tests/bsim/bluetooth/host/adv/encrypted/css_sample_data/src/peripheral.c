@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "babblekit/testcase.h"
 #include "common.h"
 
 extern const struct test_sample_data *sample_data;
@@ -25,7 +26,7 @@ static void create_adv(struct bt_le_ext_adv **adv)
 
 	err = bt_le_ext_adv_create(&params, NULL, adv);
 	if (err) {
-		FAIL("Failed to create advertiser (%d)\n", err);
+		TEST_FAIL("Failed to create advertiser (%d)", err);
 	}
 }
 
@@ -42,7 +43,7 @@ static void start_adv(struct bt_le_ext_adv *adv)
 
 	err = bt_le_ext_adv_start(adv, &start_params);
 	if (err) {
-		FAIL("Failed to start advertiser (%d)\n", err);
+		TEST_FAIL("Failed to start advertiser (%d)", err);
 	}
 
 	LOG_DBG("Advertiser started");
@@ -60,23 +61,21 @@ static void set_ad_data(struct bt_le_ext_adv *adv)
 	if (size_ead != sample_data->size_ead) {
 		LOG_ERR("Size of ead: %zu\n", size_ead);
 		LOG_ERR("Size of sample_ead: %zu", sample_data->size_ead);
-		FAIL("Computed size of encrypted data does not match the size of the encrypted "
-		     "data from the sample. (data set %d)\n",
-		     data_set);
+		TEST_FAIL("Computed size of encrypted data does not match the size of the encrypted"
+			  " data from the sample. (data set %d)", data_set);
 	}
 
 	err = bt_test_ead_encrypt(sample_data->session_key, sample_data->iv,
 				  sample_data->randomizer_little_endian, sample_data->ad_data,
 				  size_ad_data, ead);
 	if (err != 0) {
-		FAIL("Error during encryption.\n");
+		TEST_FAIL("Error during encryption.");
 	} else if (memcmp(ead, sample_data->ead, sample_data->size_ead) != 0) {
 		LOG_HEXDUMP_ERR(ead, size_ead, "Encrypted data from bt_ead_encrypt:");
 		LOG_HEXDUMP_ERR(sample_data->ead, sample_data->size_ead,
 				"Encrypted data from sample:");
-		FAIL("Encrypted AD data does not match the ones provided in the sample. (data set "
-		     "%d)\n",
-		     data_set);
+		TEST_FAIL("Encrypted AD data does not match the ones provided in the sample. (data"
+			  " set %d)", data_set);
 	}
 
 	LOG_HEXDUMP_DBG(ead, size_ead, "Encrypted data:");
@@ -87,10 +86,10 @@ static void set_ad_data(struct bt_le_ext_adv *adv)
 
 	err = bt_le_ext_adv_set_data(adv, &ead_struct, 1, NULL, 0);
 	if (err) {
-		FAIL("Failed to set advertising data (%d)\n", err);
+		TEST_FAIL("Failed to set advertising data (%d)", err);
 	}
 
-	PASS("Peripheral test passed. (data set %d)\n", data_set);
+	TEST_PASS("Peripheral test passed. (data set %d)", data_set);
 }
 
 void test_peripheral(void)
@@ -102,7 +101,7 @@ void test_peripheral(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth init failed (err %d)", err);
 	}
 
 	LOG_DBG("Bluetooth initialized");

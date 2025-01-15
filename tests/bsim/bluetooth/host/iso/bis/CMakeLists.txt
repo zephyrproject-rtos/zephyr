@@ -10,7 +10,6 @@ add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
 target_link_libraries(app PRIVATE babblekit)
 
 target_sources(app PRIVATE
-  src/common.c
   src/bis_broadcaster.c
   src/bis_receiver.c
   src/main.c
