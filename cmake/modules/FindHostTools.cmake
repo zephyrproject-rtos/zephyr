@@ -50,7 +50,7 @@ endif()
 
 find_package(Deprecated COMPONENTS CROSS_COMPILE)
 
-find_package(Zephyr-sdk 0.16)
+find_package(Zephyr-sdk 0.16 REQUIRED)
 
 # gperf is an optional dependency
 find_program(GPERF gperf)
