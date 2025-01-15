@@ -11,6 +11,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/timer/cortex_m_systick.h>
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
@@ -76,7 +77,7 @@ static cycle_t announced_cycles;
  */
 static volatile uint32_t overflow_cyc;
 
-#ifdef CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER)
 /* This local variable indicates that the timeout was set right before
  * entering idle state.
  *
@@ -94,7 +95,7 @@ static uint32_t idle_timer_pre_idle;
 
 /* Idle timer used for timer while entering the idle state */
 static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m_idle_timer));
-#endif /* CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER */
+#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
 
 /* This internal function calculates the amount of HW cycles that have
  * elapsed since the last time the absolute HW cycles counter has been
@@ -185,7 +186,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 	cycle_count += overflow_cyc;
 	overflow_cyc = 0;
 
-#ifdef CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER)
 	/* Rare case, when the interrupt was triggered, with previously programmed
 	 * LOAD value, just before entering the idle mode (SysTick is clocked) or right
 	 * after exiting the idle mode, before executing the procedure in the
@@ -197,7 +198,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 
 		return;
 	}
-#endif /* CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER */
+#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
 
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* In TICKLESS mode, the SysTick.LOAD is re-programmed
@@ -244,7 +245,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-#ifdef CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER)
 	if (idle) {
 		uint64_t timeout_us =
 			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
@@ -272,7 +273,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 		return;
 	}
-#endif /* CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER */
+#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t delay;
@@ -378,7 +379,7 @@ uint64_t sys_clock_cycle_get_64(void)
 
 void sys_clock_idle_exit(void)
 {
-#ifdef CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER)
 	if (timeout_idle) {
 		cycle_t systick_diff, missed_cycles;
 		uint32_t idle_timer_diff, idle_timer_post, dcycles, dticks;
@@ -432,7 +433,7 @@ void sys_clock_idle_exit(void)
 		/* We've alredy performed all needed operations */
 		timeout_idle = false;
 	}
-#endif /* CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER */
+#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
 
 	if (last_load == TIMER_STOPPED) {
 		/* We really don’t know here how much time has passed,
