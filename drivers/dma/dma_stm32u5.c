@@ -274,7 +274,9 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_BLOCK);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
 		/* Assuming not cyclic transfer */
-		stream->busy = false;
+		if (stream->cyclic == false) {
+			stream->busy = false;
+		}
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
