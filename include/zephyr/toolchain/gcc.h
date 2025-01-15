@@ -103,6 +103,10 @@
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() ALIAS_OF(real_func)
 
+#if TOOLCHAIN_GCC_VERSION < 400500
+#define __builtin_unreachable() __builtin_trap()
+#endif
+
 #if defined(CONFIG_ARCH_POSIX) && !defined(_ASMLANGUAGE)
 #include <zephyr/arch/posix/posix_trace.h>
 
