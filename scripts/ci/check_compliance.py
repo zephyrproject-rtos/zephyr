@@ -1077,6 +1077,7 @@ flagged.
         "MCUBOOT_CLEANUP_ARM_CORE", # Used in (sysbuild-based) test
         "MCUBOOT_DOWNGRADE_PREVENTION", # but symbols are defined in MCUboot
                                         # itself.
+        "MCUBOOT_LOG_LEVEL_DBG",
         "MCUBOOT_LOG_LEVEL_INF",
         "MCUBOOT_LOG_LEVEL_WRN",        # Used in example adjusting MCUboot
                                         # config,
