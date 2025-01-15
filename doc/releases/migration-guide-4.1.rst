@@ -195,6 +195,11 @@ I2S
 Input
 =====
 
+LED
+===
+
+* Renamed the device tree property ``max_curr_opt`` to ``max-curr-opt``.`
+
 PWM
 ===
 
