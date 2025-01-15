@@ -292,8 +292,6 @@ int main(void)
 			seq_num[chan]++;
 		}
 
-		is_first_iso_data_send = false;
-
 		if ((iso_send_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
 			printk("Sending value %u\n", iso_send_count);
 		}
@@ -313,6 +311,20 @@ int main(void)
 
 		/* Reset drift compensation value */
 		drift_comp_us = 0;
+
+		/* Adjust time-of-arrival, to reduce transport latency when Controller elects to use
+		 * PTO for SDU interval equals ISO interval.
+		 * TODO: Use actual PTO returned by the Controller.
+		 */
+		if (is_first_iso_data_send) {
+			is_first_iso_data_send = false;
+
+			/* Assuming PTO = 1, lets sample closer to actual transmission by the
+			 * Controller.
+			 */
+			sleep_us += BIG_SDU_INTERVAL_US;
+			delta_ts -= BIG_SDU_INTERVAL_US;
+		}
 
 		/* Sleep, simulating source ISO data sampling */
 		uint32_t ts_curr;
