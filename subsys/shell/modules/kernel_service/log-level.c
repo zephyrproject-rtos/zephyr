@@ -34,6 +34,7 @@ static int cmd_kernel_log_level_set(const struct shell *sh, size_t argc, char **
 	/* log_filter_set() takes an int16_t for the source ID */
 	if (source_id < 0) {
 		shell_error(sh, "Unable to find log source: %s", argv[1]);
+		return -EINVAL;
 	}
 
 	log_filter_set(NULL, 0, (int16_t)source_id, severity);
