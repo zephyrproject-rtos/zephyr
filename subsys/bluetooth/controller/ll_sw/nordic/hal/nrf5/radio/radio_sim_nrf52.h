@@ -6,12 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * This header needs lots of types and macros, instead of relaying on
- * good inclusion order let's pull them through soc.h
- */
-#include <soc.h>
-
 /* Use the NRF_RTC instance for coarse radio event scheduling */
 #define NRF_RTC NRF_RTC0
 
@@ -156,9 +150,8 @@
  */
 #define HAL_RADIO_NRF52833_RXEN_RXIDLE_RX_2M_DEFAULT_NO_HW_TIFS_NS 129000
 #define HAL_RADIO_NRF52833_RXEN_RXIDLE_RX_2M_DEFAULT_NO_HW_TIFS_US \
-	HAL_RADIO_NS2US_CEIL(\
+	HAL_RADIO_NS2US_CEIL( \
 		HAL_RADIO_NRF52833_RXEN_RXIDLE_RX_2M_DEFAULT_NO_HW_TIFS_NS)
-
 
 /* RXEN->RXIDLE + RXIDLE->RX (with fast Radio ramp-up mode)
  * in microseconds for LE Coded PHY [S2].
