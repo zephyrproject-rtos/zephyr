@@ -83,6 +83,8 @@ struct usbd_cdc_acm_desc {
 struct cdc_acm_uart_data {
 	/* Pointer to the associated USBD class node */
 	struct usbd_class_data *c_data;
+	/* Pointer to the interface description node or NULL */
+	struct usbd_desc_node *const if_desc_data;
 	/* Pointer to the class interface descriptors */
 	struct usbd_cdc_acm_desc *const desc;
 	const struct usb_desc_header **const fs_desc;
@@ -488,12 +490,21 @@ static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 
 static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 {
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
 
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
+
+	if (data->if_desc_data != NULL) {
+		if (usbd_add_descriptor(uds_ctx, data->if_desc_data)) {
+			LOG_ERR("Failed to add interface string descriptor");
+		} else {
+			desc->if0.iInterface = usbd_str_desc_get_idx(data->if_desc_data);
+		}
+	}
 
 	return 0;
 }
@@ -1259,12 +1270,21 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 			  &usbd_cdc_acm_api,					\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
 										\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (				\
+	USBD_DESC_STRING_DEFINE(cdc_acm_if_desc_data_##n,			\
+				DT_INST_PROP(n, label),				\
+				USBD_DUT_STRING_INTERFACE);			\
+	))									\
+										\
 	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
 	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
 										\
 	static struct cdc_acm_uart_data uart_data_##n = {			\
 		.line_coding = CDC_ACM_DEFAULT_LINECODING,			\
 		.c_data = &cdc_acm_##n,						\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (			\
+		.if_desc_data = &cdc_acm_if_desc_data_##n,			\
+		))								\
 		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
 		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
 		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
