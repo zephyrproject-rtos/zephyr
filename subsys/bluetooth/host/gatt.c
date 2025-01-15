@@ -101,21 +101,23 @@ static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 #if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
 
-static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, uint16_t len, uint16_t offset,
-			 uint8_t flags)
+static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
+			  uint16_t len, uint16_t offset, uint8_t flags)
 {
-	char value[CONFIG_BT_DEVICE_NAME_MAX] = {};
+	/* adding one to fit the terminating null character */
+	char value[CONFIG_BT_DEVICE_NAME_MAX + 1] = {};
 
-	if (offset >= sizeof(value)) {
+	if (offset >= CONFIG_BT_DEVICE_NAME_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (offset + len >= sizeof(value)) {
+	if (offset + len > CONFIG_BT_DEVICE_NAME_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	memcpy(value, buf, len);
+
+	value[len] = '\0';
 
 	bt_set_name(value);
 
