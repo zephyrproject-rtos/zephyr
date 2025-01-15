@@ -23,7 +23,7 @@
 BENCH_BMEM char msg[MAX_MSG];
 BENCH_BMEM char data_bench[MESSAGE_SIZE];
 
-BENCH_DMEM struct k_pipe *test_pipes[] = {&PIPE_SMALLBUFF, &PIPE_BIGBUFF};
+BENCH_DMEM struct k_pipe *test_pipes[] = {&PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF};
 BENCH_BMEM char sline[SLINE_LEN + 1];
 
 /*
@@ -70,6 +70,7 @@ K_MBOX_DEFINE(MAILB1);
 
 K_MUTEX_DEFINE(DEMO_MUTEX);
 
+K_PIPE_DEFINE(PIPE_NOBUFF, 0, 4);
 K_PIPE_DEFINE(PIPE_SMALLBUFF, 256, 4);
 K_PIPE_DEFINE(PIPE_BIGBUFF, 4096, 4);
 
@@ -187,7 +188,7 @@ int main(void)
 	k_thread_access_grant(&recv_thread, &DEMOQX1, &DEMOQX4, &DEMOQX192,
 			      &MB_COMM, &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3,
 			      &SEM4, &STARTRCV, &DEMO_MUTEX,
-			      &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
+			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
 
 	k_thread_start(&recv_thread);
 	k_thread_start(&test_thread);
@@ -211,7 +212,7 @@ int main(void)
 	k_thread_access_grant(&test_thread, &DEMOQX1, &DEMOQX4, &DEMOQX192,
 			      &MB_COMM, &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3,
 			      &SEM4, &STARTRCV, &DEMO_MUTEX,
-			      &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
+			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
 
 	k_thread_start(&recv_thread);
 	k_thread_start(&test_thread);
@@ -235,11 +236,11 @@ int main(void)
 	k_thread_access_grant(&test_thread, &DEMOQX1, &DEMOQX4, &DEMOQX192,
 			      &MB_COMM, &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3,
 			      &SEM4, &STARTRCV, &DEMO_MUTEX,
-			      &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
+			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
 	k_thread_access_grant(&recv_thread, &DEMOQX1, &DEMOQX4, &DEMOQX192,
 			      &MB_COMM, &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3,
 			      &SEM4, &STARTRCV, &DEMO_MUTEX,
-			      &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
+			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
 
 	k_thread_start(&recv_thread);
 	k_thread_start(&test_thread);

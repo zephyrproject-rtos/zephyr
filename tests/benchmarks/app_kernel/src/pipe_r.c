@@ -36,7 +36,7 @@ void piperecvtask(void)
 	/* matching (ALL_N) */
 
 	for (getsize = 8; getsize <= MESSAGE_SIZE_PIPE; getsize <<= 1) {
-		for (pipe = 0; pipe < 2; pipe++) {
+		for (pipe = 0; pipe < 3; pipe++) {
 			getcount = NR_OF_PIPE_RUNS;
 			pipeget(test_pipes[pipe], _ALL_N, getsize,
 				getcount, &gettime);
@@ -52,7 +52,7 @@ void piperecvtask(void)
 		/* non-matching (1_TO_N) */
 		for (getsize = (MESSAGE_SIZE_PIPE); getsize >= 8; getsize >>= 1) {
 			getcount = MESSAGE_SIZE_PIPE / getsize;
-			for (pipe = 0; pipe < 2; pipe++) {
+			for (pipe = 0; pipe < 3; pipe++) {
 				/* size*count == MESSAGE_SIZE_PIPE */
 				pipeget(test_pipes[pipe], _1_TO_N,
 						getsize, getcount, &gettime);

@@ -90,7 +90,7 @@ void pipe_test(void)
 	PRINT_STRING(dashline);
 
 	for (putsize = 8U; putsize <= MESSAGE_SIZE_PIPE; putsize <<= 1) {
-		for (pipe = 0; pipe < 2; pipe++) {
+		for (pipe = 0; pipe < 3; pipe++) {
 			putcount = NR_OF_PIPE_RUNS;
 			pipeput(test_pipes[pipe], _ALL_N, putsize, putcount,
 				 &puttime[pipe]);
@@ -125,7 +125,7 @@ void pipe_test(void)
 
 	for (putsize = 8U; putsize <= (MESSAGE_SIZE_PIPE); putsize <<= 1) {
 		putcount = MESSAGE_SIZE_PIPE / putsize;
-		for (pipe = 0; pipe < 2; pipe++) {
+		for (pipe = 0; pipe < 3; pipe++) {
 			pipeput(test_pipes[pipe], _1_TO_N, putsize,
 					 putcount, &puttime[pipe]);
 			/* size*count == MESSAGE_SIZE_PIPE */
