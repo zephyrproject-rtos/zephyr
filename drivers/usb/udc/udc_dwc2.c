@@ -658,17 +658,19 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	sys_write32(doeptsiz, doeptsiz_reg);
 
 	if (priv->bufferdma) {
-		if (!dwc2_dma_buffer_ok_to_use(dev, buf->data, xfersize, cfg->mps)) {
+		void *data = net_buf_tail(buf);
+
+		if (!dwc2_dma_buffer_ok_to_use(dev, data, xfersize, cfg->mps)) {
 			/* Cannot continue unless buffer is bounced. Device will
 			 * cease to function. Is fatal error appropriate here?
 			 */
 			return;
 		}
 
-		sys_write32((uint32_t)buf->data,
+		sys_write32((uint32_t)data,
 			    (mem_addr_t)&base->out_ep[ep_idx].doepdma);
 
-		sys_cache_data_invd_range(buf->data, xfersize);
+		sys_cache_data_invd_range(data, xfersize);
 	}
 
 	sys_write32(doepctl, doepctl_reg);
@@ -2495,7 +2497,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	}
 
 	if (priv->bufferdma && bcnt) {
-		sys_cache_data_invd_range(buf->data, bcnt);
+		sys_cache_data_invd_range(net_buf_tail(buf), bcnt);
 		net_buf_add(buf, bcnt);
 	}
 
