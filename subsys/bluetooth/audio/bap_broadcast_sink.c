@@ -1096,22 +1096,6 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 	return 0;
 }
 
-static uint8_t bit_count(uint32_t bitfield)
-{
-#ifdef POPCOUNT
-	return POPCOUNT(bitfield);
-#else
-	uint8_t cnt = 0U;
-
-	while (bitfield != 0U) {
-		cnt += bitfield & 1U;
-		bitfield >>= 1U;
-	}
-
-	return cnt;
-#endif
-}
-
 struct sync_base_info_data {
 	struct bt_audio_codec_cfg codec_cfgs[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	struct bt_audio_codec_cfg *subgroup_codec_cfg;
@@ -1296,7 +1280,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	}
 
 	/* Validate that number of bits set is within supported range */
-	bis_count = bit_count(indexes_bitfield);
+	bis_count = sys_count_bits(&indexes_bitfield, sizeof(indexes_bitfield));
 	if (bis_count > CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT) {
 		LOG_DBG("Cannot sync to more than %d streams (%u was requested)",
 			CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT, bis_count);
