@@ -30,12 +30,6 @@ LOG_MODULE_REGISTER(pca953x, CONFIG_GPIO_LOG_LEVEL);
 #define REG_INPUT_LATCH_PORT0		0x42
 #define REG_INT_MASK_PORT0		0x45
 
-/* Number of pins supported by the device */
-#define NUM_PINS 8
-
-/* Max to select all pins supported on the device. */
-#define ALL_PINS ((uint8_t)BIT_MASK(NUM_PINS))
-
 /** Cache of the output configuration and data of the pins. */
 struct pca953x_pin_state {
 	uint8_t dir;
@@ -478,7 +472,10 @@ static DEVICE_API(gpio, api_table) = {
 	.manage_callback = gpio_pca953x_manage_callback,
 };
 
+#define GET_NGPIOS(n) DT_INST_PROP(n, ngpios)
+
 #define GPIO_PCA953X_INIT(n)							\
+	BUILD_ASSERT((GET_NGPIOS(n) == 4) || (GET_NGPIOS(n) == 8));    \
 	static const struct pca953x_config pca953x_cfg_##n = {			\
 		.i2c = I2C_DT_SPEC_INST_GET(n),					\
 		.common = {							\
@@ -492,8 +489,8 @@ static DEVICE_API(gpio, api_table) = {
 										\
 	static struct pca953x_drv_data pca953x_drvdata_##n = {			\
 		.lock = Z_SEM_INITIALIZER(pca953x_drvdata_##n.lock, 1, 1),	\
-		.pin_state.dir = ALL_PINS,					\
-		.pin_state.output = ALL_PINS,					\
+		.pin_state.dir = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),  \
+		.pin_state.output = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),  \
 	};									\
 	DEVICE_DT_INST_DEFINE(n,						\
 		gpio_pca953x_init,						\
