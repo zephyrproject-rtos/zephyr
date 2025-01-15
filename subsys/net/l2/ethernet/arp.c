@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_arp, CONFIG_NET_ARP_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 
 #include "arp.h"
+#include "ipv4.h"
 #include "net_private.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
@@ -1013,3 +1014,28 @@ void net_arp_init(void)
 			  K_SECONDS(CONFIG_NET_ARP_GRATUITOUS_INTERVAL));
 #endif /* defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION) */
 }
+
+static enum net_verdict arp_recv(struct net_if *iface,
+				 uint16_t ptype,
+				 struct net_pkt *pkt)
+{
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ptype);
+
+	net_pkt_set_family(pkt, AF_INET);
+
+	NET_DBG("ARP packet from %s received",
+		net_sprint_ll_addr((uint8_t *)hdr->src.addr,
+				   sizeof(struct net_eth_addr)));
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
+	    net_ipv4_acd_input(iface, pkt) == NET_DROP) {
+		return NET_DROP;
+	}
+
+	return net_arp_input(pkt, hdr);
+}
+
+ETH_NET_L3_REGISTER(ARP, NET_ETH_PTYPE_ARP, arp_recv);

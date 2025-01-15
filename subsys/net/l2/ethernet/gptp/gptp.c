@@ -320,9 +320,19 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	}
 }
 
-enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt)
+static enum net_verdict net_gptp_recv(struct net_if *iface, uint16_t ptype,
+				      struct net_pkt *pkt)
 {
 	struct gptp_hdr *hdr = GPTP_HDR(pkt);
+
+	ARG_UNUSED(ptype);
+
+	if (!(net_eth_is_addr_ptp_multicast(
+		      (struct net_eth_addr *)net_pkt_lladdr_dst(pkt)->addr) ||
+	      net_eth_is_addr_lldp_multicast(
+		      (struct net_eth_addr *)net_pkt_lladdr_dst(pkt)->addr))) {
+		return NET_DROP;
+	}
 
 	if ((hdr->ptp_version != GPTP_VERSION) ||
 			(hdr->transport_specific != GPTP_TRANSPORT_802_1_AS)) {
@@ -345,6 +355,8 @@ enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt)
 	/* Message not propagated up in the stack. */
 	return NET_DROP;
 }
+
+ETH_NET_L3_REGISTER(gPTP, NET_ETH_PTYPE_PTP, net_gptp_recv);
 
 static void gptp_init_clock_ds(void)
 {
