@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MCTP
-	bool "Management Component Transport Protocol"
+	bool "Management Component Transport Protocol [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enable the MCTP Subsystem and Module Usage
 
