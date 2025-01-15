@@ -307,7 +307,7 @@ static int to_zephyr_irq(uint32_t regmap, uint32_t irq,
 {
 	int i, idx;
 
-	idx = irq;
+	idx = irq - FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
 
 	for (i = dispatcher->master_index - 1; i >= 0; i--) {
 		idx -= IRQSTEER_GetMasterIrqCount(UINT_TO_IRQSTEER(regmap), i);
@@ -325,10 +325,10 @@ static int to_system_irq(uint32_t regmap, int irq, int master_index)
 		irq += IRQSTEER_GetMasterIrqCount(UINT_TO_IRQSTEER(regmap), i);
 	}
 
-	return irq;
+	return irq + FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
 }
 
-/* used to convert zephyr INTID to system INTID */
+/* used to convert zephyr INTID (level 2) to system INTID */
 static int from_zephyr_irq(uint32_t regmap, uint32_t irq, uint32_t master_index)
 {
 	int i, idx;
@@ -339,7 +339,7 @@ static int from_zephyr_irq(uint32_t regmap, uint32_t irq, uint32_t master_index)
 		idx += IRQSTEER_GetMasterIrqCount(UINT_TO_IRQSTEER(regmap), i);
 	}
 
-	return idx;
+	return idx + FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
 }
 
 static void _irqstr_disp_enable_disable(struct irqsteer_dispatcher *disp,
