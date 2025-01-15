@@ -1,7 +1,7 @@
 /** @file
  *  @brief Bluetooth Common Audio Profile (CAP) Acceptor broadcast.
  *
- *  Copyright (c) 2024 Nordic Semiconductor ASA
+ *  Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -459,7 +459,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 	LOG_INF("BIS sync request received for %p: 0x%08x", recv_state, bis_sync_req[0]);
 
-	if (new_bis_sync_req != BT_BAP_BIS_SYNC_NO_PREF && POPCOUNT(new_bis_sync_req) > 1U) {
+	if (new_bis_sync_req != BT_BAP_BIS_SYNC_NO_PREF &&
+	    sys_count_bits(&new_bis_sync_req, sizeof(new_bis_sync_req)) > 1U) {
 		LOG_WRN("Rejecting BIS sync request for 0x%08X as we do not support that",
 			new_bis_sync_req);
 
