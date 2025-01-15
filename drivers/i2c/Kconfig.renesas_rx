@@ -21,4 +21,12 @@ config I2C_RENESAS_RX_CALLBACK
 	help
 	  Enable Callback support for the I2C Driver
 
+config RENESAS_RX_I2C_DTC
+	bool "Renesas RX I2C transfer through DTC"
+	default y
+	depends on DT_HAS_RENESAS_RX_DTC_ENABLED
+	select RENESAS_RX_DTC
+	help
+	  Enable Using DTC module to transfer data
+
 endif # I2C_RENESAS_RX_RIIC
