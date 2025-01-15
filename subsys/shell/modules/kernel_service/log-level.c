@@ -17,6 +17,8 @@ static int cmd_kernel_log_level_set(const struct shell *sh, size_t argc, char **
 
 	uint8_t severity = shell_strtoul(argv[2], 10, &err);
 
+	shell_warn(sh, "This command is deprecated as it is a duplicate. "
+		       "Use 'log enable' command from logging commands set.");
 	if (err) {
 		shell_error(sh, "Unable to parse log severity (err %d)", err);
 
