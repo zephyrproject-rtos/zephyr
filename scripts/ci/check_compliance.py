@@ -80,6 +80,42 @@ def get_files(filter=None, paths=None):
             files.remove(file)
     return files
 
+def get_module_setting_root(root, settings_file):
+    """
+    Parse the Zephyr module generated settings file given by 'settings_file'
+    and return all root settings defined by 'root'.
+    """
+    # Invoke the script directly using the Python executable since this is
+    # not a module nor a pip-installed Python utility
+    root_paths = []
+
+    if os.path.exists(settings_file):
+        with open(settings_file, 'r') as fp_setting_file:
+            content = fp_setting_file.read()
+
+        lines = content.strip().split('\n')
+        for line in lines:
+            root = root.upper()
+            if line.startswith(f'"{root}_ROOT":'):
+                _, root_path = line.split(":", 1)
+                root_paths.append(Path(root_path.strip('"')))
+    return root_paths
+
+def get_vendor_prefixes(path, errfn = print) -> set[str]:
+    vendor_prefixes = set()
+    with open(path) as fp:
+        for line in fp.readlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            try:
+                vendor, _ = line.split("\t", 2)
+                vendor_prefixes.add(vendor)
+            except ValueError:
+                errfn(f"Invalid line in {path}:\"{line}\".")
+                errfn("Did you forget the tab character?")
+    return vendor_prefixes
+
 class FmtdFailure(Failure):
     def __init__(
         self, severity, title, file, line=None, col=None, desc="", end_line=None, end_col=None
@@ -120,19 +156,21 @@ class ComplianceTest:
       Link to documentation related to what's being tested
 
     path_hint:
-      The path the test runs itself in. This is just informative and used in
-      the message that gets printed when running the test.
+      The path the test runs itself in. By default it uses the magic string
+      "<git-top>" which refers to the top-level repository directory.
 
-      There are two magic strings that can be used instead of a path:
-      - The magic string "<zephyr-base>" can be used to refer to the
-      environment variable ZEPHYR_BASE or, when missing, the calculated base of
-      the zephyr tree
-      - The magic string "<git-top>" refers to the top-level repository
-      directory. This avoids running 'git' to find the top-level directory
-      before main() runs (class variable assignments run when the 'class ...'
-      statement runs). That avoids swallowing errors, because main() reports
-      them to GitHub
+      This avoids running 'git' to find the top-level directory before main()
+      runs (class variable assignments run when the 'class ...' statement
+      runs). That avoids swallowing errors, because main() reports them to
+      GitHub.
+
+      Subclasses may override the default with a specific path or one of the
+      magic strings below:
+      - "<zephyr-base>" can be used to refer to the environment variable
+        ZEPHYR_BASE or, when missing, the calculated base of the zephyr tree.
     """
+    path_hint = "<git-top>"
+
     def __init__(self):
         self.case = TestCase(type(self).name, "Guidelines")
         # This is necessary because Failure can be subclassed, but since it is
@@ -204,7 +242,6 @@ class CheckPatch(ComplianceTest):
     """
     name = "Checkpatch"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
-    path_hint = "<git-top>"
 
     def run(self):
         checkpatch = ZEPHYR_BASE / 'scripts' / 'checkpatch.pl'
@@ -263,7 +300,6 @@ class BoardYmlCheck(ComplianceTest):
     """
     name = "BoardYml"
     doc = "Check the board.yml file format"
-    path_hint = "<zephyr-base>"
 
     def check_board_file(self, file, vendor_prefixes):
         """Validate a single board file."""
@@ -278,20 +314,19 @@ class BoardYmlCheck(ComplianceTest):
                                           desc=desc)
 
     def run(self):
-        vendor_prefixes = ["others"]
-        with open(os.path.join(ZEPHYR_BASE, "dts", "bindings", "vendor-prefixes.txt")) as fp:
-            for line in fp.readlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                try:
-                    vendor, _ = line.split("\t", 2)
-                    vendor_prefixes.append(vendor)
-                except ValueError:
-                    self.error(f"Invalid line in vendor-prefixes.txt:\"{line}\".")
-                    self.error("Did you forget the tab character?")
+        path = resolve_path_hint(self.path_hint)
 
-        path = Path(ZEPHYR_BASE)
+        vendor_prefixes = {"others"}
+        # add vendor prefixes from the main zephyr repo
+        vendor_prefixes |= get_vendor_prefixes(ZEPHYR_BASE / "dts" / "bindings" / "vendor-prefixes.txt", self.error)
+
+        # add vendor prefixes from the current repo
+        dts_roots = get_module_setting_root('dts', path / "zephyr" / "module.yml")
+        for dts_root in dts_roots:
+            vendor_prefix_file = dts_root / "dts" / "bindings" / "vendor-prefixes.txt"
+            if vendor_prefix_file.exists():
+                vendor_prefixes |= get_vendor_prefixes(vendor_prefix_file, self.error)
+
         for file in path.glob("**/board.yml"):
             self.check_board_file(file, vendor_prefixes)
 
@@ -302,7 +337,6 @@ class ClangFormatCheck(ComplianceTest):
     """
     name = "ClangFormat"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#clang-format for more details."
-    path_hint = "<git-top>"
 
     def run(self):
         exe = f"clang-format-diff.{'exe' if platform.system() == 'Windows' else 'py'}"
@@ -344,7 +378,6 @@ class DevicetreeBindingsCheck(ComplianceTest):
     """
     name = "DevicetreeBindings"
     doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
-    path_hint = "<zephyr-base>"
 
     def run(self, full=True):
         dts_bindings = self.parse_dt_bindings()
@@ -381,7 +414,6 @@ class KconfigCheck(ComplianceTest):
     """
     name = "Kconfig"
     doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
-    path_hint = "<zephyr-base>"
 
     # Top-level Kconfig file. The path can be relative to srctree (ZEPHYR_BASE).
     FILENAME = "Kconfig"
@@ -436,27 +468,6 @@ class KconfigCheck(ComplianceTest):
                     modules_dir / module / 'Kconfig'
                 ))
             fp_module_file.write(content)
-
-    def get_module_setting_root(self, root, settings_file):
-        """
-        Parse the Zephyr module generated settings file given by 'settings_file'
-        and return all root settings defined by 'root'.
-        """
-        # Invoke the script directly using the Python executable since this is
-        # not a module nor a pip-installed Python utility
-        root_paths = []
-
-        if os.path.exists(settings_file):
-            with open(settings_file, 'r') as fp_setting_file:
-                content = fp_setting_file.read()
-
-            lines = content.strip().split('\n')
-            for line in lines:
-                root = root.upper()
-                if line.startswith(f'"{root}_ROOT":'):
-                    _, root_path = line.split(":", 1)
-                    root_paths.append(Path(root_path.strip('"')))
-        return root_paths
 
     def get_kconfig_dts(self, kconfig_dts_file, settings_file):
         """
@@ -1146,6 +1157,7 @@ class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     defined only in a module.
     """
     name = "KconfigBasicNoModules"
+    path_hint = "<zephyr-base>"
 
     def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
         with open(modules_file, 'w') as fp_module_file:
@@ -1212,6 +1224,7 @@ class SysbuildKconfigBasicNoModulesCheck(SysbuildKconfigCheck, KconfigBasicNoMod
     but defined only in a module.
     """
     name = "SysbuildKconfigBasicNoModules"
+    path_hint = "<zephyr-base>"
 
 
 class Nits(ComplianceTest):
@@ -1221,7 +1234,6 @@ class Nits(ComplianceTest):
     """
     name = "Nits"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
-    path_hint = "<git-top>"
 
     def run(self):
         # Loop through added/modified files
@@ -1315,7 +1327,6 @@ class GitDiffCheck(ComplianceTest):
     """
     name = "GitDiffCheck"
     doc = "Git conflict markers and whitespace errors are not allowed in added changes"
-    path_hint = "<git-top>"
 
     def run(self):
         offending_lines = []
@@ -1343,7 +1354,6 @@ class GitLint(ComplianceTest):
     """
     name = "Gitlint"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
-    path_hint = "<git-top>"
 
     def run(self):
         # By default gitlint looks for .gitlint configuration only in
@@ -1366,7 +1376,6 @@ class PyLint(ComplianceTest):
     """
     name = "Pylint"
     doc = "See https://www.pylint.org/ for more details"
-    path_hint = "<git-top>"
 
     def run(self):
         # Path to pylint configuration file
@@ -1441,9 +1450,6 @@ class Identity(ComplianceTest):
     """
     name = "Identity"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
-    # git rev-list and git log don't depend on the current (sub)directory
-    # unless explicited
-    path_hint = "<git-top>"
 
     def run(self):
         for shaidx in get_shas(COMMIT_RANGE):
@@ -1484,7 +1490,6 @@ class BinaryFiles(ComplianceTest):
     """
     name = "BinaryFiles"
     doc = "No binary files allowed."
-    path_hint = "<git-top>"
 
     def run(self):
         BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/")
@@ -1507,7 +1512,6 @@ class ImageSize(ComplianceTest):
     """
     name = "ImageSize"
     doc = "Check the size of image files."
-    path_hint = "<git-top>"
 
     def run(self):
         SIZE_LIMIT = 250 << 10
@@ -1537,7 +1541,6 @@ class MaintainersFormat(ComplianceTest):
     """
     name = "MaintainersFormat"
     doc = "Check that MAINTAINERS file parses correctly."
-    path_hint = "<git-top>"
 
     def run(self):
         MAINTAINERS_FILES = ["MAINTAINERS.yml", "MAINTAINERS.yaml"]
@@ -1557,7 +1560,6 @@ class ModulesMaintainers(ComplianceTest):
     """
     name = "ModulesMaintainers"
     doc = "Check that all modules have a MAINTAINERS entry."
-    path_hint = "<git-top>"
 
     def run(self):
         MAINTAINERS_FILES = ["MAINTAINERS.yml", "MAINTAINERS.yaml"]
@@ -1592,7 +1594,6 @@ class YAMLLint(ComplianceTest):
     """
     name = "YAMLLint"
     doc = "Check YAML files with YAMLLint."
-    path_hint = "<git-top>"
 
     def run(self):
         config_file = ZEPHYR_BASE / ".yamllint"
@@ -1623,7 +1624,6 @@ class SphinxLint(ComplianceTest):
 
     name = "SphinxLint"
     doc = "Check Sphinx/reStructuredText files with sphinx-lint."
-    path_hint = "<git-top>"
 
     # Checkers added/removed to sphinx-lint's default set
     DISABLE_CHECKERS = ["horizontal-tab", "missing-space-before-default-role"]
@@ -1665,7 +1665,6 @@ class KeepSorted(ComplianceTest):
     """
     name = "KeepSorted"
     doc = "Check for blocks of code or config that should be kept sorted."
-    path_hint = "<git-top>"
 
     MARKER = "zephyr-keep-sorted"
 
@@ -1761,7 +1760,6 @@ class Ruff(ComplianceTest):
     """
     name = "Ruff"
     doc = "Check python files with ruff."
-    path_hint = "<git-top>"
 
     def run(self):
         for file in get_files(filter="d"):
@@ -1809,7 +1807,6 @@ class TextEncoding(ComplianceTest):
     """
     name = "TextEncoding"
     doc = "Check the encoding of text files."
-    path_hint = "<git-top>"
 
     ALLOWED_CHARSETS = ["us-ascii", "utf-8"]
 
