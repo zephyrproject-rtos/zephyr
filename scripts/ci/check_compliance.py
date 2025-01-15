@@ -224,7 +224,7 @@ class CheckPatch(ComplianceTest):
             cmd = [checkpatch]
 
         cmd.extend(['--mailback', '--no-tree', '-'])
-        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
+        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', '--', ':!*.diff', ':!*.patch', COMMIT_RANGE),
                                 stdout=subprocess.PIPE,
                                 cwd=GIT_TOP)
         try:
@@ -1327,7 +1327,7 @@ class GitDiffCheck(ComplianceTest):
         for shaidx in get_shas(COMMIT_RANGE):
             # Ignore non-zero return status code
             # Reason: `git diff --check` sets the return code to the number of offending lines
-            diff = git("diff", f"{shaidx}^!", "--check", ignore_non_zero=True)
+            diff = git("diff", f"{shaidx}^!", "--check", "--", ":!*.diff", ":!*.patch", ignore_non_zero=True)
 
             lines = p.findall(diff)
             lines = map(lambda x: f"{shaidx}: {x}", lines)
