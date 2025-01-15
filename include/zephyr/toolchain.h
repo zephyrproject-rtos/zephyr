@@ -145,6 +145,70 @@
 #define TOOLCHAIN_IGNORE_WSHADOW_END
 #endif
 
+/**
+ * @def TOOLCHAIN_PRAGMA
+ * @brief Helper for using pragma in macros.
+ */
+#ifdef TOOLCHAIN_HAS_PRAGMA_DIAG
+#define TOOLCHAIN_PRAGMA(x) _Pragma(#x)
+#else
+#define TOOLCHAIN_PRAGMA(x)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_WARNING
+ * @brief Disable the specified compiler warning for all compilers.
+ */
+#ifndef TOOLCHAIN_DISABLE_WARNING
+#define TOOLCHAIN_DISABLE_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_WARNING
+ * @brief Re-enable the specified compiler warning for all compilers.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_WARNING
+#define TOOLCHAIN_ENABLE_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_CLANG_WARNING
+ * @brief Disable the specified compiler warning for clang.
+ */
+#ifndef TOOLCHAIN_DISABLE_CLANG_WARNING
+#define TOOLCHAIN_DISABLE_CLANG_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_CLANG_WARNING
+ * @brief Re-enable the specified compiler warning for clang.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_CLANG_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_CLANG_WARNING
+#define TOOLCHAIN_ENABLE_CLANG_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_GCC_WARNING
+ * @brief Disable the specified compiler warning for gcc.
+ */
+#ifndef TOOLCHAIN_DISABLE_GCC_WARNING
+#define TOOLCHAIN_DISABLE_GCC_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_GCC_WARNING
+ * @brief Re-enable the specified compiler warning for gcc.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_GCC_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_GCC_WARNING
+#define TOOLCHAIN_ENABLE_GCC_WARNING(warning)
+#endif
+
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
  * and that they match the Kconfig option that is used in the code itself to
