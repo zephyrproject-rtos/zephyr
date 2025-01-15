@@ -102,6 +102,10 @@ New APIs and options
 
     * LE Connection Subrating is no longer experimental.
 
+* Other
+
+  * :c:func:`count_bits`
+
 New Boards
 **********
 
