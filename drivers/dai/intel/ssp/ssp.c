@@ -743,7 +743,8 @@ static int dai_ssp_poll_for_register_delay(uint32_t reg, uint32_t mask,
 					   uint32_t val, uint64_t us)
 {
 	if (!WAIT_FOR((sys_read32(reg) & mask) == val, us, k_busy_wait(1))) {
-		LOG_ERR("poll timeout reg %u mask %u val %u us %u", reg, mask, val, (uint32_t)us);
+		LOG_ERR("poll timeout reg[%#x]=%#x, waited for: mask %#x, val %#x, us %u", reg,
+			sys_read32(reg), mask, val, (uint32_t)us);
 		return -EIO;
 	}
 
