@@ -273,6 +273,11 @@ static inline void *spi_context_get_next_buf(const struct spi_buf **current,
 					     size_t *buf_len,
 					     uint8_t dfs)
 {
+	/* Validate data frame size */
+	if (dfs == 0) {
+		*buf_len = 0;
+		return NULL;
+	}
 	/* This loop skips zero-length buffers in the set, if any. */
 	while (*count) {
 		if (((*current)->len / dfs) != 0) {
