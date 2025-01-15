@@ -91,6 +91,10 @@ zephyr_linker_section_configure(
   KEEP SORT NAME
 )
 
+if(CONFIG_NETWORKING)
+  zephyr_iterable_section(NAME net_l3_register KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
+endif()
+
 if(CONFIG_NET_SOCKETS)
   zephyr_iterable_section(NAME net_socket_register KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 endif()

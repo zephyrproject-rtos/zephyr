@@ -226,16 +226,6 @@ typedef enum net_verdict (*net_lldp_recv_cb_t)(struct net_if *iface,
 int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb);
 
 /**
- * @brief Parse LLDP packet
- *
- * @param iface Network interface
- * @param pkt Network packet
- *
- * @return Return the policy for network buffer
- */
-enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt);
-
-/**
  * @brief Set LLDP protocol data unit (LLDPDU) for the network interface.
  *
  * @param iface Network interface
