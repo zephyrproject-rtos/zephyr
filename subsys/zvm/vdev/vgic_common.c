@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -33,7 +33,7 @@ static int virt_irq_set_type(struct z_vcpu *vcpu, uint32_t offset, uint32_t *val
 
 	/**
 	 * Per-register control 16 interrupt signals.
-	 * @TODO: This may be more simple for reduce
+	 * TODO: This may be more simple for reduce
 	 * time.
 	*/
 	for (i = 0; i < 16; i++, irq++) {
@@ -62,7 +62,7 @@ static int virt_irq_set_type(struct z_vcpu *vcpu, uint32_t offset, uint32_t *val
 
 /**
  * @breif: this type value is got from desc.
- * @TODO: may be direct read from vgic register.
+ * TODO: may be direct read from vgic register.
 */
 static int virt_irq_get_type(struct z_vcpu *vcpu, uint32_t offset, uint32_t *value)
 {

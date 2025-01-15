@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -506,7 +506,7 @@ int vgicv3_raise_sgi(struct z_vcpu *vcpu, unsigned long sgi_value)
 				/*Each cluster has CONFIG_MP_NUM_CPUS*/
 				tmp_id = aff1 * CONFIG_MP_NUM_CPUS + bit;
 				sys_set_bits((uintptr_t)&target_vcpu_list, BIT(tmp_id));
-				/*@TODO: May need modified to vm->vcpu_num. */
+				/*TODO: May need modified to vm->vcpu_num. */
 				if(++sgi_num > CONFIG_MAX_VCPU_PER_VM || tmp_id >= CONFIG_MAX_VCPU_PER_VM) {
 					ZVM_LOG_WARN("The target cpu list is too long.");
 					return -ESRCH;

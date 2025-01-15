@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -223,7 +223,7 @@ static ALWAYS_INLINE int vgic_irq_enable(struct z_vcpu *vcpu, uint32_t virt_irq)
     }
     desc->virq_flags |= VIRQ_ENABLED_FLAG;
 	if (virt_irq > VM_LOCAL_VIRQ_NR) {
-		/*@TODO: How to route virtual device's irq to vcpu. */
+		/*TODO: How to route virtual device's irq to vcpu. */
 		if (desc->virq_flags & VIRQ_HW_FLAG && vcpu->vcpu_id == 0) {
             if (desc->pirq_num > VM_LOCAL_VIRQ_NR)
                 irq_enable(desc->pirq_num);

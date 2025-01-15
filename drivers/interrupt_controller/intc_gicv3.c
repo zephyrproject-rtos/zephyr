@@ -264,6 +264,7 @@ void arm_gic_eoi(unsigned int intid)
 	write_sysreg(intid, ICC_EOIR1_EL1);
 }
 
+#ifdef	CONFIG_ZVM
 void arm_gic_eoi_deactive(unsigned int intid, bool no_deactive)
 {
 	/**
@@ -276,6 +277,7 @@ void arm_gic_eoi_deactive(unsigned int intid, bool no_deactive)
 	}
 	barrier_isync_fence_full();
 }
+#endif /* CONFIG_ZVM */
 
 void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 		   uint16_t target_list)

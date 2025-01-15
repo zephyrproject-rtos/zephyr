@@ -340,6 +340,7 @@ unsigned int arm_gic_get_active(void);
  */
 void arm_gic_eoi(unsigned int irq);
 
+#ifdef CONFIG_ZVM
 /**
  * @brief Deactive interrupt after eoi
  *
@@ -347,6 +348,7 @@ void arm_gic_eoi(unsigned int irq);
  * @param no_deactive: no need deactive flag
  */
 void arm_gic_eoi_deactive(unsigned int intid, bool no_deactive);
+#endif /* CONFIG_ZVM */
 
 #ifdef CONFIG_SMP
 /**

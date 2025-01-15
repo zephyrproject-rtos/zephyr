@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -113,7 +113,7 @@ struct zvm_manage_info {
 
     struct z_vm *vms[CONFIG_MAX_VM_NUM];
 
-    /* @TODO: try to add a flag to describe the running vm and pending vm list */
+    /* TODO: try to add a flag to describe the running vm and pending vm list */
 
     /** Each bit of this value represents a virtual machine id.
      * When the value of a bit is 1,

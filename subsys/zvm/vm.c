@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -477,7 +477,7 @@ int z_parse_new_vm_args(size_t argc, char **argv, struct z_os_info *vm_info,
 			ret = get_os_info_by_type(vm_info);
 			continue;
 		case 'n':
-            /* @TODO: support allocate vmid chosen by user later */
+            /* TODO: support allocate vmid chosen by user later */
 		default:
             ZVM_LOG_WARN("Input error! \n");
 			ZVM_LOG_WARN("Please input \" zvm new -t + os_name \" command to new a vm! \n");

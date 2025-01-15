@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -130,7 +130,7 @@ struct gicv3_list_reg {
  * 2. SGI_base
  * 3. VLPI_base
  * 4. Reserved
- * @TODO: support vlpi later.
+ * TODO: support vlpi later.
 */
 struct virt_gic_gicr {
 	uint32_t vcpu_id;

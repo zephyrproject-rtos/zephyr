@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -80,7 +80,7 @@ int load_os_image(struct z_vm *vm)
 
 /**
  * @brief This function aim to init zvm dev on zvm init stage
- * @TODO: may add later
+ * TODO: may add later
  * @return int
  */
 static int zvm_dev_ops_init()
@@ -224,7 +224,7 @@ struct zvm_dev_lists* get_zvm_dev_lists(void)
  * All works include:
  * 1. Checkout hardware support for  hypervisor；
  * 2. Initialize struct variable "zvm_overall_info";
- * 3. @TODO: Init zvm dev and opration function.
+ * 3. TODO: Init zvm dev and opration function.
  */
 static int zvm_init(void)
 {

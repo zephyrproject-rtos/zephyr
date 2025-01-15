@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -51,12 +51,7 @@ struct vm_ops {
     vtimer_init_t   vtimer_init;
 };
 
-/**
- * @file APIs which realted to vm.
- *
- * All vm command include create, set, run, update, list, halt and delete vm.
- * These APIs will be called by subsys/zvm/shell.c.
- */
+
 int zvm_new_guest(size_t argc, char **argv);
 int zvm_run_guest(size_t argc, char **argv);
 int zvm_pause_guest(size_t argc, char **argv);

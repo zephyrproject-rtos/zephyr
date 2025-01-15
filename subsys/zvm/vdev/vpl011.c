@@ -1,4 +1,11 @@
 
+/*
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Yuhao Hu, Qingqiao Wang and etc.
+ * Copyright 2024-2025 openEuler SIG-Zephyr
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/zvm/zvm.h>

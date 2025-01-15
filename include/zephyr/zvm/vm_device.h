@@ -169,8 +169,6 @@ struct device_chosen {
 /**
  * @brief Get virtual device.
  *
- * @param[in] idx  Pointer to the virtual device instance.
- *
  * @return    Pointer to the virtual device instance.
  */
 static inline const struct virtual_device_instance *zvm_virtual_device_get(uint32_t idx)
@@ -197,8 +195,6 @@ static inline int zvm_virtual_devices_count_get(void)
  * @param dev virt device structure.
  * @param cb Pointer to the callback function.
  * @param user_data Data to pass to callback function.
- *
- * @return N/A
  */
 static inline void vdev_irq_callback_user_data_set(const struct device *dev,
 						   void *cb, void *user_data)
@@ -250,7 +246,7 @@ int vm_unmap_ptdev(struct z_virt_dev *vdev, uint64_t vm_dev_base,
 int vm_vdev_pause(struct z_vcpu *vcpu);
 
 /**
- * @brief Handle VM's device memory access. When @pa_addr is
+ * @brief Handle VM's device memory access. When pa_addr is
  * located at a idle device, something need to do:
  * 1. Building a stage-2 translation table for this vm, which
  * can directly access this memory later.

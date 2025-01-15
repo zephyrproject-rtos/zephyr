@@ -16,6 +16,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/shell/shell_uart.h>
 
+
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
 extern struct zvm_manage_info *zvm_overall_info;
@@ -127,8 +128,8 @@ struct virt_serial *virt_serial_create(const char *name,
 
 int virt_serial_destroy(struct virt_serial *vserial)
 {
-	const struct shell *shell = shell_backend_uart_get_ptr();
-	shell->ctx->bypass = NULL;
+	const struct shell *vs_shell = shell_backend_uart_get_ptr();
+	vs_shell->ctx->bypass = NULL;
 	sys_dlist_remove(&vserial->node);
 	k_free(vserial);
 
@@ -177,17 +178,17 @@ SYS_INIT(virt_serial_ctrl_init, POST_KERNEL, CONFIG_VIRT_SERIAL_CTRL_INIT_PRIORI
 
 void uart_poll_out_to_host(unsigned char data)
 {
-	const struct shell *shell = shell_backend_uart_get_ptr();
-	const struct device *dev=((struct shell_uart_common *)shell->iface->ctx)->dev;
+	const struct shell *vs_shell = shell_backend_uart_get_ptr();
+	const struct device *dev=((struct shell_uart_common *)vs_shell->iface->ctx)->dev;
 	uart_poll_out(dev,data);
 }
 
-void transfer(const struct shell *shell, uint8_t *data, size_t len)
+void transfer(const struct shell *vs_shell, uint8_t *data, size_t len)
 {
 	uint8_t *rdata;
 
 	if (data[0] == EXIT_VSERIAL_KEY) {
-		shell_set_bypass(shell, NULL);
+		shell_set_bypass(vs_shell, NULL);
 		((struct virt_pl011 *)(virt_serial_ctrl.connecting_virt_serial->priv))->connecting= false;
 		virt_serial_ctrl.connecting = false;
 		virt_serial_ctrl.connecting_vm_id = 0;
@@ -199,7 +200,7 @@ void transfer(const struct shell *shell, uint8_t *data, size_t len)
 	}
 }
 
-int switch_virtual_serial_handler(const struct shell *shell, size_t argc, char **argv)
+int switch_virtual_serial_handler(const struct shell *vs_shell, size_t argc, char **argv)
 {
 	uint8_t id;
 	uint8_t *data;
@@ -233,13 +234,13 @@ int switch_virtual_serial_handler(const struct shell *shell, size_t argc, char *
 		}
 
 		if (virt_serial_ctrl.connecting) {
-			shell_set_bypass(shell, transfer);
+			shell_set_bypass(vs_shell, transfer);
 			k_sem_give(&connect_vm_sem);
 			data = k_malloc(sizeof(uint8_t));
 			*data = '\r';
-			shell_uart = (struct shell_uart_int_driven *)shell->iface->ctx;
+			shell_uart = (struct shell_uart_int_driven *)vs_shell->iface->ctx;
 			ring_buf_put(&shell_uart->rx_ringbuf, data, 1);
-			shell_fprintf(shell,SHELL_VT100_COLOR_YELLOW,"Connecting VM ID:%d\n", id);
+			shell_fprintf(vs_shell, SHELL_VT100_COLOR_YELLOW, "Connecting VM ID:%d\n", id);
 		}
     } else {
         ZVM_LOG_INFO("Reachable virtual serial:\n");

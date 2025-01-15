@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 /**
  * @brief Construct a new vcpu virt irq block. Setting
  * a default description.
- * @TODO: all the local irq is inited here, may should be
+ * TODO: all the local irq is inited here, may should be
  * init when vtimer init.
  */
 static void init_vcpu_virt_irq_desc(struct vcpu_virt_irq_block *virq_block)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -348,7 +348,7 @@ int vm_device_init(struct z_vm *vm)
         }
 	}
 
-    /* @TODO: scan the dtb and get the device's node. */
+    /* TODO: scan the dtb and get the device's node. */
     /* Board specific device init, for example fig debugger. */
     switch (vm->os->info.os_type){
     case OS_TYPE_ZEPHYR:

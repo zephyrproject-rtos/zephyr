@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -14,18 +14,8 @@
 #include <zephyr/zvm/arm/switch.h>
 #include <zephyr/zvm/vm_device.h>
 
-/**
- * Software irq flags, which is used to
- * set the status of virt irq desc:
- * @VIRQ_HW_FLAG: this irq desc has a related hardware device,
- * not a fully emualted interrupt.
- * @VIRQ_PENDING_FLAG: irq desc is pending, and when eret to
- * vm, this irq will assert. (1)This flag is set when virt irq is
- * set to vm or virt irq is not process by vm(but vm exit). (2)This
- * flag is unset when virt irq is inject to hardware device, which
- * will assert vm's irq.
-*/
-#define VIRQ_HW_FLAG                BIT(0)      /*@TODO: HW_FLAG may not enbaled for each spi.*/
+/*TODO: HW_FLAG may not enbaled for each spi.*/
+#define VIRQ_HW_FLAG                BIT(0)
 #define VIRQ_PENDING_FLAG		    BIT(1)
 #define VIRQ_ACTIVED_FLAG           BIT(2)
 #define VIRQ_ENABLED_FLAG		    BIT(3)
@@ -143,7 +133,7 @@ bool vcpu_irq_exist(struct z_vcpu *vcpu);
 int vcpu_wait_for_irq(struct z_vcpu *vcpu);
 
 /**
- * @brief init the irq desc when add @vm_dev.
+ * @brief init the irq desc when add vm_dev.
 */
 void vm_device_irq_init(struct z_vm *vm, struct z_virt_dev *vm_dev);
 

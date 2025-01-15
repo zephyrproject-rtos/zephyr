@@ -1,12 +1,12 @@
 /*
- * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Charlie, Xingyu Hu and etc.;
+ * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_VM_MM_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_VM_MM_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_VM_MM_H_
+#define ZEPHYR_INCLUDE_ZVM_VM_MM_H_
 
 #include <zephyr/kernel.h>
 #include <stdint.h>
@@ -95,12 +95,9 @@ struct vm_mem_domain {
 };
 
 /**
- * @brief Map virtual addr 'vpart' to physical addr 'phy'.
- * this function aim to build the page table for virt addr to phys addr.
- *
- * @param vmem_domain : vm's mm struct
- * @param vpart : vpart for each task
- * @return int : 0--success, other for error code.
+ * @brief Map/unMap virtual addr 'vpart' to physical addr 'phy'.
+ * this function aim to build/release the page table for
+ * virt addr to phys addr.
  */
 int map_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart, uint64_t unit_msize);
 int unmap_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart);
@@ -147,11 +144,7 @@ int vm_mem_apart_remove(struct vm_mem_domain *vmem_dm);
 int arch_vm_mem_domain_init(struct k_mem_domain *domain, uint32_t vmid);
 
 /**
- * @brief translate guest physical address to host physical address
- * 
- * @param vm the pointer to guest
- * @param gpa guset physical address need to be translate
- * @return uint64_t host physical address
+ * @brief translate guest physical address to host physical address.
  */
 uint64_t vm_gpa_to_hpa(struct z_vm *vm, uint64_t gpa, struct vm_mem_partition *vpart);
 
@@ -161,4 +154,4 @@ void vm_host_memory_write(uint64_t hpa, void *src, size_t len);
 void vm_guest_memory_read(struct z_vm *vm, uint64_t gpa, void *dst, size_t len);
 void vm_guest_memory_write(struct z_vm *vm, uint64_t gpa, void *src, size_t len);
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_VM_MM_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_VM_MM_H_ */

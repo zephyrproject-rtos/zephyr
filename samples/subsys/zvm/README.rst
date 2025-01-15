@@ -33,7 +33,6 @@ ZVM requires support for ARMv8.1+ cores, such as Cortex-A55 and A76 processors. 
     :board: qemu_max
     :goals: build
     :compact:
-    :supported-os: Zephyr, GNU/Linux
 
 For other ARMv8.1+ compatible boards, you need to add the corresponding overlay files in the samples/subsys/zvm/boards directory.
 
@@ -95,7 +94,7 @@ Sample output
     zvm_host:~#
 
 3. Launching and Connecting to the Corresponding VM:
-------------------------------------------------
+------------------------------------------------------------
 
 In the ZVM window, enter the following command to view the supported commands on the platform:
 
