@@ -15,7 +15,6 @@ set(LLEXT_REMOVE_FLAGS
   -fno-pie
   -ffunction-sections
   -fdata-sections
-  -g.*
   -Os
 )
 

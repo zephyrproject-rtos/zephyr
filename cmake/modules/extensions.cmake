@@ -5700,7 +5700,7 @@ function(add_llext_target target_name)
   # to be used to support POST_BUILD commands on targets that do not use a
   # dynamic library.
   set(llext_proc_target ${target_name}_llext_proc)
-  set(llext_pkg_input ${PROJECT_BINARY_DIR}/${target_name}.llext.pkg_input)
+  set(llext_pkg_input ${PROJECT_BINARY_DIR}/${target_name}_debug.elf)
   add_custom_target(${llext_proc_target} DEPENDS ${llext_pkg_input})
   set_property(TARGET ${llext_proc_target} PROPERTY has_post_build_cmds 0)
 
@@ -5733,49 +5733,19 @@ function(add_llext_target target_name)
     set(slid_inject_cmd ${CMAKE_COMMAND} -E true)
   endif()
 
-  # Type-specific packaging of the built binary file into an .llext file
-  if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
-
-    # No packaging required, simply copy the object file
-    add_custom_command(
-      OUTPUT ${llext_pkg_output}
-      COMMAND ${CMAKE_COMMAND} -E copy ${llext_pkg_input} ${llext_pkg_output}
-      COMMAND ${slid_inject_cmd}
-      DEPENDS ${llext_proc_target} ${llext_pkg_input}
-    )
-
-  elseif(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE)
-
-    # Need to remove just some sections from the relocatable object
-    # (using strip in this case would remove _all_ symbols)
-    add_custom_command(
-      OUTPUT ${llext_pkg_output}
-      COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
-              $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-      COMMAND ${slid_inject_cmd}
-      DEPENDS ${llext_proc_target} ${llext_pkg_input}
-    )
-
-  elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
-
-    # Need to strip the shared library of some sections
-    add_custom_command(
-      OUTPUT ${llext_pkg_output}
-      COMMAND $<TARGET_PROPERTY:bintools,strip_command>
-              $<TARGET_PROPERTY:bintools,strip_flag>
-              $<TARGET_PROPERTY:bintools,strip_flag_remove_section>.xt.*
-              $<TARGET_PROPERTY:bintools,strip_flag_infile>${llext_pkg_input}
-              $<TARGET_PROPERTY:bintools,strip_flag_outfile>${llext_pkg_output}
-              $<TARGET_PROPERTY:bintools,strip_flag_final>
-      COMMAND ${slid_inject_cmd}
-      DEPENDS ${llext_proc_target} ${llext_pkg_input}
-    )
-
-  endif()
+  # Remove sections that are unused by the llext loader
+  add_custom_command(
+    OUTPUT ${llext_pkg_output}
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_strip_unneeded>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    COMMAND ${slid_inject_cmd}
+    DEPENDS ${llext_proc_target} ${llext_pkg_input}
+  )
 
   # Add user-visible target and dependency, and fill in properties
   get_filename_component(output_name ${llext_pkg_output} NAME)

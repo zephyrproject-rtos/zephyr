@@ -5,7 +5,6 @@
 set(LLEXT_REMOVE_FLAGS
   -ffunction-sections
   -fdata-sections
-  -g.*
   -Os
   -mcpu=.*
 )
