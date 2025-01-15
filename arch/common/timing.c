@@ -22,13 +22,21 @@ void arch_timing_stop(void)
 
 timing_t arch_timing_counter_get(void)
 {
+#if CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+	return k_cycle_get_64();
+#else
 	return k_cycle_get_32();
+#endif
 }
 
 uint64_t arch_timing_cycles_get(volatile timing_t *const start,
 				volatile timing_t *const end)
 {
+#if CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
 	return (*end - *start);
+#else
+	return ((uint32_t)*end - (uint32_t)*start);
+#endif
 }
 
 
