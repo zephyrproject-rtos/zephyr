@@ -6,25 +6,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "babblekit/testcase.h"
+#include "babblekit/sync.h"
 #include "common.h"
 
 static void test_peripheral_main(void)
 {
 	int err;
 
-	backchannel_init();
+	TEST_ASSERT(bk_sync_init() == 0, "Failed to open backchannel");
 
 	peripheral_setup_and_connect();
 
 	/*
 	 * we need to sync with peer to ensure that we get collisions
 	 */
-	backchannel_sync_send();
-	backchannel_sync_wait();
+	bk_sync_send();
+	bk_sync_wait();
 
 	err = bt_eatt_connect(default_conn, CONFIG_BT_EATT_MAX);
 	if (err) {
-		FAIL("Sending credit based connection request failed (err %d)\n", err);
+		TEST_FAIL("Sending credit based connection request failed (err %d)", err);
 	}
 
 	while (bt_eatt_count(default_conn) < CONFIG_BT_EATT_MAX) {
@@ -36,23 +38,23 @@ static void test_peripheral_main(void)
 
 	disconnect();
 
-	PASS("EATT Peripheral tests Passed\n");
+	TEST_PASS("EATT Peripheral tests Passed");
 }
 
 static void test_central_main(void)
 {
 	int err;
 
-	backchannel_init();
+	TEST_ASSERT(bk_sync_init() == 0, "Failed to open backchannel");
 
 	central_setup_and_connect();
 
-	backchannel_sync_wait();
-	backchannel_sync_send();
+	bk_sync_wait();
+	bk_sync_send();
 
 	err = bt_eatt_connect(default_conn, CONFIG_BT_EATT_MAX);
 	if (err) {
-		FAIL("Sending credit based connection request failed (err %d)\n", err);
+		TEST_FAIL("Sending credit based connection request failed (err %d)", err);
 	}
 
 	while (bt_eatt_count(default_conn) < CONFIG_BT_EATT_MAX) {
@@ -61,22 +63,18 @@ static void test_central_main(void)
 
 	wait_for_disconnect();
 
-	PASS("EATT Central tests Passed\n");
+	TEST_PASS("EATT Central tests Passed");
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral Collision",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_peripheral_main,
 	},
 	{
 		.test_id = "central",
 		.test_descr = "Central Collision",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_central_main,
 	},
 	BSTEST_END_MARKER,
