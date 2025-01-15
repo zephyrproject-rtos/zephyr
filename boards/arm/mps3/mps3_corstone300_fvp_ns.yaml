@@ -7,8 +7,6 @@ type: mcu
 arch: arm
 ram: 2048
 flash: 512
-# Related issue #81656
-twister: false
 toolchain:
   - gnuarmemb
   - zephyr
