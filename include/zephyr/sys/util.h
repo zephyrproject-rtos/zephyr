@@ -792,6 +792,41 @@ static inline bool util_eq(const void *m1, size_t len1, const void *m2, size_t l
 	return len1 == len2 && (m1 == m2 || util_memeq(m1, m2, len1));
 }
 
+/**
+ * @brief Returns the number of bits set in a value
+ *
+ * @param value The value to count number of bits set of
+ * @param len The number of octets in @p value
+ */
+static inline size_t sys_count_bits(const void *value, size_t len)
+{
+	size_t cnt = 0U;
+	size_t i = 0U;
+
+#ifdef POPCOUNT
+	for (; i < len / sizeof(unsigned int); i++) {
+		unsigned int val;
+		(void)memcpy(&val, (const uint8_t *)value + i * sizeof(unsigned int),
+			     sizeof(unsigned int));
+
+		cnt += POPCOUNT(val);
+	}
+	i *= sizeof(unsigned int); /* convert to a uint8_t index for the remainder (if any) */
+#endif
+
+	for (; i < len; i++) {
+		uint8_t value_u8 = ((const uint8_t *)value)[i];
+
+		/* Implements Brian Kernighan’s Algorithm to count bits */
+		while (value_u8) {
+			value_u8 &= (value_u8 - 1);
+			cnt++;
+		}
+	}
+
+	return cnt;
+}
+
 #ifdef __cplusplus
 }
 #endif
