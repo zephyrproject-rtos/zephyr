@@ -457,11 +457,13 @@ static int adxl345_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if CONFIG_ADXL345_STREAM
 	rc = adxl345_reg_write_byte(dev, ADXL345_FIFO_CTL_REG, ADXL345_FIFO_STREAM_MODE);
 	if (rc < 0) {
 		LOG_ERR("FIFO enable failed\n");
 		return -EIO;
 	}
+#endif
 
 	rc = adxl345_reg_write_byte(dev, ADXL345_DATA_FORMAT_REG, ADXL345_RANGE_8G);
 	if (rc < 0) {
