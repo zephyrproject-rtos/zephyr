@@ -602,6 +602,50 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x2000>;
 		};
 
+		mspi0: mspi@MSPI0_BASE_NAME {
+			compatible = "ambiq,mspi-controller";
+			reg = <MSPI0_REG_BASE MSPI0_REG_SIZE>,
+			      <MSPI0_APERTURE_BASE_ADDR MSPI0_APERTURE_MAX_SIZE>;
+			clock-frequency = <125000000>;
+			interrupts = <20 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		mspi1: mspi@MSPI1_BASE_NAME {
+			compatible = "ambiq,mspi-controller";
+			reg = <MSPI1_REG_BASE MSPI1_REG_SIZE>,
+			      <MSPI1_APERTURE_BASE_ADDR MSPI1_APERTURE_MAX_SIZE>;
+			clock-frequency = <96000000>;
+			interrupts = <21 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		mspi2: mspi@MSPI2_BASE_NAME {
+			compatible = "ambiq,mspi-controller";
+			reg = <MSPI2_REG_BASE MSPI2_REG_SIZE>,
+			      <MSPI2_APERTURE_BASE_ADDR MSPI2_APERTURE_MAX_SIZE>;
+			clock-frequency = <96000000>;
+			interrupts = <22 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		mspi3: mspi@MSPI3_BASE_NAME {
+			compatible = "ambiq,mspi-controller";
+			reg = <MSPI3_REG_BASE MSPI3_REG_SIZE>,
+			      <MSPI3_APERTURE_BASE_ADDR MSPI3_APERTURE_MAX_SIZE>;
+			clock-frequency = <125000000>;
+			interrupts = <54 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		sdio0: sdio@SDIO0_BASE_NAME {
 			compatible = "ambiq,sdio";
 			reg = <SDIO0_REG_BASE SDIO0_REG_SIZE>;
