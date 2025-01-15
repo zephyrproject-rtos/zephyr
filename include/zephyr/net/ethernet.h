@@ -1262,6 +1262,16 @@ static inline bool net_eth_is_vlan_interface(struct net_if *iface)
 	ETH_NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
+ * @brief Ethernet L3 protocol register macro.
+ *
+ * @param name Name of the L3 protocol.
+ * @param ptype Ethernet protocol type.
+ * @param handler Handler function for this protocol type.
+ */
+#define ETH_NET_L3_REGISTER(name, ptype, handler) \
+	NET_L3_REGISTER(&NET_L2_GET_NAME(ETHERNET), name, ptype, handler)
+
+/**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.
  * This happens when cable is connected.
  *
