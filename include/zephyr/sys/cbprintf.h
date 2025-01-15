@@ -293,7 +293,7 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
 #ifdef __CHECKER__
 typedef int (*cbprintf_cb)(int c, void *ctx);
 #else
-typedef int (*cbprintf_cb)(/* int c, void *ctx */);
+typedef int (*cbprintf_cb)(int c, ... /* void *ctx */);
 #endif
 
 /* Create local cbprintf_cb type to make calng-based compilers happy when handles
