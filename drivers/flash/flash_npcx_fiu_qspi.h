@@ -97,7 +97,6 @@ void qspi_npcx_fiu_mutex_lock_configure(const struct device *dev,
  */
 void qspi_npcx_fiu_mutex_unlock(const struct device *dev);
 
-#if defined(CONFIG_FLASH_NPCX_FIU_DRA_V2)
 /**
  * @brief Set the size of the address space allocated for SPI device.
  *
@@ -105,7 +104,6 @@ void qspi_npcx_fiu_mutex_unlock(const struct device *dev);
  * @param cfg Pointer to the configuration for the device on qspi bus.
  */
 void qspi_npcx_fiu_set_spi_size(const struct device *dev, const struct npcx_qspi_cfg *cfg);
-#endif
 
 #ifdef __cplusplus
 }
