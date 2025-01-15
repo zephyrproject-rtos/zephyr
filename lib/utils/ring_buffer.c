@@ -152,8 +152,6 @@ uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size)
 	uint32_t total_size = 0U;
 	int err;
 
-	size = MIN(size, ring_buf_size_get(buf));
-
 	do {
 		partial_size = ring_buf_get_claim(buf, &src, size);
 		__ASSERT_NO_MSG(data != NULL);
