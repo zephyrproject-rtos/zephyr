@@ -40,18 +40,37 @@ ZTEST(nrf_grtc_timer, test_get_ticks)
 
 	for (uint32_t i = 0; i < NUMBER_OF_TRIES; i++) {
 		/* Absolute timeout 1ms in the past */
-		t = Z_TIMEOUT_TICKS(Z_TICK_ABS(sys_clock_tick_get() - K_MSEC(1).ticks));
+		uint64_t curr_tick;
+		uint64_t curr_grtc_tick;
+		uint64_t curr_tick2;
 
-		exp_ticks = z_nrf_grtc_timer_read() - K_MSEC(1).ticks * CYC_PER_TICK;
+		do {
+			/* GRTC and system tick must be read during single system tick. */
+			curr_tick = sys_clock_tick_get();
+			curr_grtc_tick = z_nrf_grtc_timer_read();
+			curr_tick2 = sys_clock_tick_get();
+		} while (curr_tick != curr_tick2);
+
+		t = Z_TIMEOUT_TICKS(Z_TICK_ABS(curr_tick - K_MSEC(1).ticks));
+
+		exp_ticks = curr_grtc_tick - K_MSEC(1).ticks * CYC_PER_TICK;
 		ticks = z_nrf_grtc_timer_get_ticks(t);
+
 		zassert_true((ticks >= (exp_ticks - CYC_PER_TICK + 1)) &&
 				     (ticks <= (exp_ticks + GRTC_SLEW_TICKS)),
 			     "Unexpected result %" PRId64 " (expected: %" PRId64 ")", ticks,
 			     exp_ticks);
 
 		/* Absolute timeout 10ms in the future */
-		t = Z_TIMEOUT_TICKS(Z_TICK_ABS(sys_clock_tick_get() + K_MSEC(10).ticks));
-		exp_ticks = z_nrf_grtc_timer_read() + K_MSEC(10).ticks * CYC_PER_TICK;
+		do {
+			/* GRTC and system tick must be read during single system tick. */
+			curr_tick = sys_clock_tick_get();
+			curr_grtc_tick = z_nrf_grtc_timer_read();
+			curr_tick2 = sys_clock_tick_get();
+		} while (curr_tick != curr_tick2);
+
+		t = Z_TIMEOUT_TICKS(Z_TICK_ABS(curr_tick + K_MSEC(10).ticks));
+		exp_ticks = curr_grtc_tick + K_MSEC(10).ticks * CYC_PER_TICK;
 		ticks = z_nrf_grtc_timer_get_ticks(t);
 		zassert_true((ticks >= (exp_ticks - CYC_PER_TICK + 1)) &&
 				     (ticks <= (exp_ticks + GRTC_SLEW_TICKS)),
