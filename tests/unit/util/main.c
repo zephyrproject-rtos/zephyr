@@ -1,13 +1,20 @@
 /*
  * Copyright (c) 2019 Oticon A/S
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/sys/util_utf8.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <zephyr/ztest.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_utf8.h>
+#include <zephyr/ztest.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
 
 ZTEST(util, test_u8_to_dec) {
 	char text[4];
@@ -843,6 +850,26 @@ ZTEST(util, test_mem_xor_128)
 
 	mem_xor_128(dst, src1, src2);
 	zassert_mem_equal(expected_result, dst, 16);
+}
+
+ZTEST(util, test_sys_count_bits)
+{
+	uint8_t zero = 0U;
+	uint8_t u8 = 29U;
+	uint16_t u16 = 29999U;
+	uint32_t u32 = 2999999999U;
+	uint64_t u64 = 123456789012345ULL;
+	uint8_t u8_arr[] = {u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8,
+			    u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8};
+
+	zassert_equal(sys_count_bits(&zero, sizeof(zero)), 0);
+	zassert_equal(sys_count_bits(&u8, sizeof(u8)), 4);
+	zassert_equal(sys_count_bits(&u16, sizeof(u16)), 10);
+	zassert_equal(sys_count_bits(&u32, sizeof(u32)), 20);
+	zassert_equal(sys_count_bits(&u64, sizeof(u64)), 23);
+
+	zassert_equal(sys_count_bits(u8_arr, sizeof(u8_arr)), 128);
+	zassert_equal(sys_count_bits(&u8_arr[1], sizeof(u8_arr) - sizeof(u8_arr[0])), 124);
 }
 
 ZTEST(util, test_CONCAT)
