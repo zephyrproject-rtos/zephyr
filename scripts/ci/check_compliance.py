@@ -1030,6 +1030,7 @@ flagged.
         "BOOT_SIGNATURE_TYPE_NONE",       # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_RSA",        # MCUboot setting used by sysbuild
         "BOOT_SWAP_USING_MOVE", # Used in sysbuild for MCUboot configuration
+        "BOOT_SWAP_USING_OFFSET", # Used in sysbuild for MCUboot configuration
         "BOOT_SWAP_USING_SCRATCH", # Used in sysbuild for MCUboot configuration
         "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
                              # symbol is defined in MCUboot itself.
