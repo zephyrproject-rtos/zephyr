@@ -25,3 +25,14 @@ signals externally on the EVK.  These are the HW changes required to run this te
         - Short BCLK J1-pin9  (SAI1_RX_BCLK/P3_18) to J3-pin15 (SAI0_TX_BCLK/P2_6)
         - Short SYNC J1-pin13 (SAI1_RX_FS/P3_19)   to J3-pin13 (SAI0_TX_FS/P2_7)
         - Short Data J1-pin15 (SAI1_RXD0/P3_21)    to J3-pin7  (SAI0_TXD0/P2_2)
+
+MIMXRT1060-EVK[B/C]:
+This board uses a single SAI and connects the TX and RX signals by shorting externally on the EVK.
+These are the HW changes required to run this test on MIMXRT1060-EVK[B/C]:
+- Remove jumper J99
+- Short BCLK J23-pin5  (SAI1_RX_BCLK  / GPIO_AD_B1_11) to J23-pin23 (SAI1_TX_BCLK  / GPIO_AD_B1_14)
+- Short SYNC J23-pin9  (SAI1_RX_SYNC  / GPIO_AD_B1_10) to J23-pin16 (SAI1_TX_SYNC  / GPIO_AD_B1_15)
+- Short Data J23-pin11 (SAI1_RX_DATA0 / GPIO_AD_B1_12) to J23-pin17 (SAI1_TX_DATA0 / GPIO_AD_B1_13)
+
+- NOTE: these connections cause contention with the following signals/features:
+	- camera CSI_D[2-7]
