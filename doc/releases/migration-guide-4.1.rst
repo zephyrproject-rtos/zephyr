@@ -172,6 +172,16 @@ Entropy
 GNSS
 ====
 
+GPIO
+====
+
+* Renamed the device tree property ``pin_mask`` to ``pin-mask``.
+* Renamed the device tree property ``pinmux_mask`` to ``pinmux-mask``.
+* Renamed the device tree property ``vbatts_pins`` to ``vbatts-pins``.
+* Renamed the device tree property ``bit_per_gpio`` to ``bit-per-gpio``.
+* Renamed the device tree property ``off_val`` to ``off-val``.
+* Renamed the device tree property ``on_val`` to ``on-val``.
+
 I2C
 ===
 
