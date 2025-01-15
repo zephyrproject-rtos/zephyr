@@ -1155,6 +1155,12 @@ test_i2c_npm2100: npm2100@9f {
 	};
 };
 
+test_i2c_mlx90394: mlx90394@a0 {
+	compatible = "melexis,mlx90394";
+	status = "okay";
+	reg = <0xa0>;
+};
+
 test_i2c_scd40: scd40@a1 {
 	compatible = "sensirion,scd40";
 	reg = <0xa1>;
