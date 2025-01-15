@@ -29,6 +29,20 @@ config MSPI_AMBIQ_AP4
 	help
 	  Enable driver for Ambiq MSPI.
 
+config MSPI_AMBIQ_AP5
+	bool "Ambiq Apollo5 series MSPI driver"
+	default y
+	depends on DT_HAS_AMBIQ_MSPI_CONTROLLER_ENABLED
+	depends on SOC_SERIES_APOLLO5X
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_MSPI
+	select MSPI_XIP
+	select MSPI_SCRAMBLE
+	select MSPI_TIMING
+	select GPIO
+	help
+	  Enable driver for Ambiq MSPI.
+
 config MSPI_AMBIQ_BUFF_RAM_LOCATION
 	hex "byte offset to SRAM_BASE_ADDRESS"
 	default 0x50000
@@ -39,6 +53,6 @@ config MSPI_AMBIQ_BUFF_ALIGNMENT
 	int "byte alignment of the MSPI buffer"
 	default 8 if MSPI_AMBIQ_AP3
 	default 16 if MSPI_AMBIQ_AP4
-	default 4
+	default AMBIQ_CACHEABLE_DMA_BUFFER_ALIGNMENT if MSPI_AMBIQ_AP5
 	help
 	  This option specifies the mspi buffer alignment
