@@ -164,7 +164,7 @@ struct vm_desc {
  * Recommend:Consider deleting
  */
 struct vm_vcpu_num {
-    uint16_t totle_vcpu_id;
+    uint16_t count;
     struct k_spinlock vcpu_id_lock;
 };
 
@@ -181,15 +181,19 @@ struct z_vm {
     bool reboot;
 
     uint32_t vm_status;
+
 	uint32_t vcpu_num;
+    struct vm_vcpu_num vm_vcpu_id_count;
+
     uint32_t vtimer_offset;
 
-    struct vm_vcpu_num vm_vcpu_id;
     struct vm_virt_irq_block vm_irq_block;
 
     struct k_spinlock spinlock;
 
     struct z_vcpu **vcpus;
+    struct k_sem *vcpu_exit_sem;
+
     struct vm_arch *arch;
     struct vm_mem_domain *vmem_domain;
     struct z_os *os;

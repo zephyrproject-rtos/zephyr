@@ -521,9 +521,6 @@ int arch_vcpu_run(struct z_vcpu *vcpu)
 		return -ESRCH;
 	}
 
-    if (vcpu->vm->vm_status == VM_STATE_HALT) {
-        ret = -ESRCH;
-    }
     return ret;
 }
 

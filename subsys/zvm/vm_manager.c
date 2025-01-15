@@ -187,6 +187,7 @@ int zvm_pause_guest(size_t argc, char **argv)
 int zvm_delete_guest(size_t argc, char **argv)
 {
 	uint16_t vm_id;
+	int i;
 	struct z_vm *vm;
 
 	vm_id = z_parse_delete_vm_args(argc, argv);
@@ -199,7 +200,11 @@ int zvm_delete_guest(size_t argc, char **argv)
 	switch (vm->vm_status) {
 	case VM_STATE_RUNNING:
 		ZVM_LOG_INFO("This vm is running!\n Try to stop and delete it!\n");
-		vm_vcpus_pause(vm);
+		vm_vcpus_halt(vm);
+
+        for (i = 0; i < vm->vcpu_num; i++) {
+            k_sem_take(&vm->vcpu_exit_sem[i], K_FOREVER);
+        }
 		barrier_isync_fence_full();
 		vm_delete(vm);
 		break;

@@ -69,9 +69,10 @@ static void vcpu_timer_event_pause(struct z_vcpu *vcpu)
 static void vcpu_context_switch(struct k_thread *new_thread,
             struct k_thread *old_thread)
 {
+    struct z_vcpu *old_vcpu;
 
     if (VCPU_THREAD(old_thread)) {
-        struct z_vcpu *old_vcpu = old_thread->vcpu_struct;
+        old_vcpu = old_thread->vcpu_struct;
 
         save_vcpu_context(old_thread);
         switch (old_vcpu->vcpu_state) {
@@ -212,7 +213,7 @@ static void vcpu_state_to_halted(struct z_vcpu *vcpu)
         ZVM_LOG_WARN("Invalid cpu state here. \n");
         break;
     }
-    vcpu_ipi_scheduler(VCPU_IPI_MASK_ALL,0);
+    vcpu_ipi_scheduler(VCPU_IPI_MASK_ALL, 0);
 
 }
 
@@ -318,8 +319,17 @@ int vcpu_thread_entry(struct z_vcpu *vcpu)
 
     do {
         ret = arch_vcpu_run(vcpu);
-    }while(ret >= 0);
-    vm_delete(vcpu->vm);
+
+        if (vcpu->vm->vm_status == VM_STATE_HALT) {
+            /*TODO: Disable all the allocated irq. */
+            arch_vcpu_timer_deinit(vcpu);
+            break;
+        }
+
+    } while(ret >= 0);
+
+    k_sem_give(&vcpu->vm->vcpu_exit_sem[vcpu->vcpu_id]);
+
     return ret;
 }
 
@@ -420,9 +430,9 @@ struct z_vcpu *vm_vcpu_init(struct z_vm *vm, uint16_t vcpu_id, char *vcpu_name)
     vcpu->resume_signal = false;
     vcpu->waitq_flag = false;
 
-    key = k_spin_lock(&vcpu->vm->vm_vcpu_id.vcpu_id_lock);
-    vcpu->vcpu_id = vcpu->vm->vm_vcpu_id.totle_vcpu_id++;
-    k_spin_unlock(&vcpu->vm->vm_vcpu_id.vcpu_id_lock, key);
+    key = k_spin_lock(&vcpu->vm->vm_vcpu_id_count.vcpu_id_lock);
+    vcpu->vcpu_id = vcpu->vm->vm_vcpu_id_count.count++;
+    k_spin_unlock(&vcpu->vm->vm_vcpu_id_count.vcpu_id_lock, key);
 
     if (arch_vcpu_init(vcpu)) {
         k_free(vcpu);

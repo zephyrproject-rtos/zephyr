@@ -189,8 +189,8 @@ int vm_create(struct z_os_info *vm_info, struct z_vm *new_vm)
         return -ENXIO;
     }
 
-    vm->vm_vcpu_id.totle_vcpu_id = 0;
-    ZVM_SPINLOCK_INIT(&vm->vm_vcpu_id.vcpu_id_lock);
+    vm->vm_vcpu_id_count.count = 0;
+    ZVM_SPINLOCK_INIT(&vm->vm_vcpu_id_count.vcpu_id_lock);
     ZVM_SPINLOCK_INIT(&vm->spinlock);
 
     char vmid_str[4];
@@ -264,6 +264,13 @@ int vm_vcpus_create(uint16_t vcpu_num, struct z_vm *vm)
         ZVM_LOG_WARN("Vcpus struct init error !\n");
         return -ENXIO;
     }
+
+    vm->vcpu_exit_sem = (struct k_sem *)k_malloc(sizeof(struct k_sem));
+    if(!(vm->vcpu_exit_sem)) {
+        ZVM_LOG_WARN("Vcpu exit sem init error! \n");
+        return -ENXIO;
+    }
+
     return 0;
 }
 
@@ -283,14 +290,19 @@ int vm_vcpus_init(struct z_vm *vm)
         snprintk(vcpu_name, VCPU_NAME_LEN - 1, "%s-vcpu%d", vm->vm_name, i);
 
         vcpu = vm_vcpu_init(vm, i, vcpu_name);
+        if(!vcpu) {
+            ZVM_LOG_WARN("Vcpu-%d init failed! \n", i);
+            return -ENODEV;
+        }
 
         sys_dlist_init(&vcpu->vcpu_lists);
         vm->vcpus[i] = vcpu;
         vcpu->next_vcpu = NULL;
-
         if (i) {
             vm->vcpus[i-1]->next_vcpu = vcpu;
         }
+
+        k_sem_init(&vm->vcpu_exit_sem[i], 0, 1);
 
         vcpu->is_poweroff = true;
         if (i == 0) {
@@ -332,10 +344,7 @@ int vm_vcpus_pause(struct z_vm *vm)
 {
     uint16_t i=0;
     struct z_vcpu *vcpu;
-    struct k_thread *thread, *cur_thread;
     k_spinlock_key_t key;
-    ARG_UNUSED(thread);
-    ARG_UNUSED(cur_thread);
 
     key = k_spin_lock(&vm->spinlock);
     for(i = 0; i < vm->vcpu_num; i++){
@@ -428,6 +437,10 @@ int vm_delete(struct z_vm *vm)
             continue;
         }
         vm_vcpu_deinit(vcpu);
+    }
+
+    if(vm->vcpu_exit_sem) {
+        k_free(vm->vcpu_exit_sem);
     }
 
     k_free(vm->ops);

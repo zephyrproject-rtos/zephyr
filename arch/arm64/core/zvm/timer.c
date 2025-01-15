@@ -304,6 +304,16 @@ int arch_vcpu_timer_init(struct z_vcpu *vcpu)
 int arch_vcpu_timer_deinit(struct z_vcpu *vcpu)
 {
 	ARG_UNUSED(vcpu);
+	uint64_t cnt_ctl;
+
+	cnt_ctl = read_cntv_ctl_el02();
+	cnt_ctl &= ~CNTV_CTL_ENABLE_BIT;
+	write_cntv_ctl_el02(cnt_ctl);
+
+	cnt_ctl = read_cntp_ctl_el02();
+	cnt_ctl &= ~CNTP_CTL_ENABLE_BIT;
+	write_cntp_ctl_el02(cnt_ctl);
+
 	return 0;
 }
 
