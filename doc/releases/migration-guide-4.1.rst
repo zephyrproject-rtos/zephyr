@@ -299,6 +299,8 @@ SPI
 
 * Renamed the ``compatible`` from ``nxp,imx-lpspi`` to :dtcompatible:`nxp,lpspi`.
 * Renamed the ``compatible`` from ``nxp,kinetis-dspi`` to :dtcompatible:`nxp,dspi`.
+* Renamed the ``compatible`` from ``silabs,gecko-spi-usart`` to :dtcompatible:`silabs,usart-spi`.
+* Renamed the ``compatible`` from ``silabs,gecko-spi-eusart`` to :dtcompatible:`silabs,eusart-spi`.
 
 Regulator
 =========
