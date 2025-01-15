@@ -63,11 +63,14 @@ uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size)
 
 	do {
 		partial_size = ring_buf_put_claim(buf, &dst, size);
+		if (partial_size == 0) {
+			break;
+		}
 		memcpy(dst, data, partial_size);
 		total_size += partial_size;
 		size -= partial_size;
 		data += partial_size;
-	} while (size && partial_size);
+	} while (size != 0);
 
 	err = ring_buf_put_finish(buf, total_size);
 	__ASSERT_NO_MSG(err == 0);
@@ -130,13 +133,16 @@ uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size)
 
 	do {
 		partial_size = ring_buf_get_claim(buf, &src, size);
+		if (partial_size == 0) {
+			break;
+		}
 		if (data) {
 			memcpy(data, src, partial_size);
 			data += partial_size;
 		}
 		total_size += partial_size;
 		size -= partial_size;
-	} while (size && partial_size);
+	} while (size != 0);
 
 	err = ring_buf_get_finish(buf, total_size);
 	__ASSERT_NO_MSG(err == 0);
@@ -154,12 +160,15 @@ uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size)
 
 	do {
 		partial_size = ring_buf_get_claim(buf, &src, size);
+		if (partial_size == 0) {
+			break;
+		}
 		__ASSERT_NO_MSG(data != NULL);
 		memcpy(data, src, partial_size);
 		data += partial_size;
 		total_size += partial_size;
 		size -= partial_size;
-	} while (size && partial_size);
+	} while (size != 0);
 
 	/* effectively unclaim total_size bytes */
 	err = ring_buf_get_finish(buf, 0);
@@ -206,11 +215,14 @@ int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 
 	do {
 		partial_size = ring_buf_put_claim(buf, &dst, size);
+		if (partial_size == 0) {
+			break;
+		}
 		memcpy(dst, data, partial_size);
 		size -= partial_size;
 		total_size += partial_size;
 		data += partial_size;
-	} while (size && partial_size);
+	} while (size != 0);
 	__ASSERT_NO_MSG(size == 0);
 
 	err = ring_buf_put_finish(buf, total_size);
@@ -252,13 +264,16 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 
 	do {
 		partial_size = ring_buf_get_claim(buf, &src, size);
+		if (partial_size == 0) {
+			break;
+		}
 		if (data) {
 			memcpy(data, src, partial_size);
 			data += partial_size;
 		}
 		total_size += partial_size;
 		size -= partial_size;
-	} while (size && partial_size);
+	} while (size != 0);
 
 	err = ring_buf_get_finish(buf, total_size);
 	__ASSERT_NO_MSG(err == 0);
