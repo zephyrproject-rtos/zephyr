@@ -345,7 +345,7 @@
 		interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 					<GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "common", "error";
-		clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
+		clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 14>;
 		clk-source = <0>;
 		status = "disabled";
 	};
