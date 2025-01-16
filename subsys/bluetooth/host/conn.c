@@ -952,13 +952,14 @@ struct bt_conn *get_conn_ready(void)
 			__ASSERT_NO_MSG(prev != &conn->_conn_ready);
 			sys_slist_remove(&bt_dev.le.conn_ready, prev, &conn->_conn_ready);
 			(void)atomic_set(&conn->_conn_ready_lock, 0);
-			bt_conn_unref(conn);
 
 			/* Append connection to list if it still has data */
 			if (conn->has_data(conn)) {
 				LOG_DBG("appending %p to back of TX queue", conn);
 				bt_conn_data_ready(conn);
 			}
+
+			return conn;
 		}
 
 		return bt_conn_ref(conn);
