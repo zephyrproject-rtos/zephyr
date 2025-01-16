@@ -88,16 +88,6 @@ Dealing with external components
    in binary form, this page describes the process and guidelines for :ref:`contributing binary
    blobs <blobs-process>` to the project.
 
-Zephyr Contributor Badge
-========================
-
-When your first contribution to the Zephyr project gets merged, you'll become eligible to claim your
-Zephyr Contributor Badge. This digital badge can be displayed on your website, blog, social media
-profile, etc. It will allow you to showcase your involvement in the Zephyr project and help raise
-its awareness.
-
-You may apply for your Contributor Badge by filling out the `Zephyr Contributor Badge form`_.
-
 Need help along the way?
 ========================
 
@@ -107,4 +97,3 @@ You may join our Discord_ channel or use the `Developer Mailing List`_.
 
 .. _Discord: https://chat.zephyrproject.org
 .. _Developer Mailing List: https://lists.zephyrproject.org/g/devel
-.. _Zephyr Contributor Badge form: https://forms.gle/oCw9iAPLhUsHTapc8
