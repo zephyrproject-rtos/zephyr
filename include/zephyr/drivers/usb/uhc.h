@@ -81,6 +81,10 @@ struct uhc_transfer {
 	uint8_t ep;
 	/** Maximum packet size */
 	uint16_t mps;
+	/** Interval, used for periodic transfers only */
+	uint16_t interval;
+	/** Start frame, used for periodic transfers only */
+	uint16_t start_frame;
 	/** Flag marks request buffer is queued */
 	unsigned int queued : 1;
 	/** Control stage status, up to the driver to use it or not */

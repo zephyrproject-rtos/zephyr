@@ -49,6 +49,7 @@ struct uhc_vrt_data {
 	struct uhc_transfer *last_xfer;
 	struct uhc_vrt_frame frame;
 	struct k_timer sof_timer;
+	uint16_t frame_number;
 	uint8_t req;
 };
 
@@ -222,6 +223,16 @@ static void vrt_assemble_frame(const struct device *dev)
 		 */
 		if (bm & BIT(idx)) {
 			continue;
+		}
+
+		if (tmp->interval) {
+			if (tmp->start_frame != priv->frame_number) {
+				continue;
+			}
+
+			tmp->start_frame = priv->frame_number + tmp->interval;
+			LOG_DBG("Interrupt transfer s.f. %u f.n. %u interval %u",
+				tmp->start_frame, priv->frame_number, tmp->interval);
 		}
 
 		bm |= BIT(idx);
@@ -410,6 +421,7 @@ static void xfer_work_handler(struct k_work *work)
 
 		switch (ev->type) {
 		case UHC_VRT_EVT_SOF:
+			priv->frame_number++;
 			vrt_xfer_cleanup_cancelled(dev);
 			vrt_assemble_frame(dev);
 			schedule = true;
@@ -533,6 +545,14 @@ static int uhc_vrt_bus_resume(const struct device *dev)
 static int uhc_vrt_enqueue(const struct device *dev,
 			   struct uhc_transfer *const xfer)
 {
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	if (xfer->interval) {
+		xfer->start_frame = priv->frame_number + xfer->interval;
+		LOG_DBG("New interrupt transfer s.f. %u f.n. %u interval %u",
+			xfer->start_frame, priv->frame_number, xfer->interval);
+	}
+
 	uhc_xfer_append(dev, xfer);
 
 	return 0;
