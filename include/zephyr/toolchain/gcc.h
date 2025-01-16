@@ -679,13 +679,6 @@ do {                                                                    \
 #define FUNC_NO_STACK_PROTECTOR
 #endif
 
-#define TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wshadow\"")
-
-#define TOOLCHAIN_IGNORE_WSHADOW_END \
-	_Pragma("GCC diagnostic pop")
-
 #endif /* !_LINKER */
 
 #define TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER "-Waddress-of-packed-member"
