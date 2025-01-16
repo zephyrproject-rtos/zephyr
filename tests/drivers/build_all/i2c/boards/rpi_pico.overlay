@@ -1,0 +1,33 @@
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	i2c_pio_default: i2c_pio_default {
+		group1 {
+			pinmux = <PIO0_P2>, <PIO0_P3>;
+			raspberrypi,oe-override = <RP2_GPIO_OVERRIDE_INVERT>;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+};
+
+&pio0 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	i2c_pio: i2c_pio@0 {
+		compatible = "raspberrypi,pico-pio-i2c";
+		status = "okay";
+		reg = <0 1>;
+
+		pinctrl-0 = <&i2c_pio_default>;
+		pinctrl-names = "default";
+
+		clock-frequency = <500000>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
