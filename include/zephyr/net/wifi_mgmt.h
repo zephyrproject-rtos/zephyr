@@ -552,8 +552,8 @@ struct wifi_connect_req_params {
 	const uint8_t *key2_passwd;
 	/** key2 passwd length, max 128 */
 	uint8_t key2_passwd_length;
-	/** wpa3 enterprise mode */
-	enum wifi_wpa3_enterprise_type wpa3_ent_mode;
+	/** suiteb or suiteb-192 */
+	uint8_t suiteb_type;
 	/** TLS cipher */
 	uint8_t TLS_cipher;
 	/** eap version */
