@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -213,6 +213,16 @@
 			compatible = "espressif,esp32-temp";
 			friendly-name = "coretemp";
 			reg = <0x60040058 0x4>;
+			status = "disabled";
+		};
+
+		adc0: adc@60040000 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x60040000 4>;
+			clocks = <&rtc ESP32_SARADC_MODULE>;
+			unit = <1>;
+			channel-count = <5>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 	};
