@@ -691,6 +691,11 @@ test_i2c_wsen_pdus_25131308XXXXX: wsen_pdus_25131308XXXXX@65 {
 	sensor-type = < 4 >;
 };
 
+test_i2c_veml6031: veml6031@29 {
+	compatible = "vishay,veml6031";
+	reg = <0x29>;
+};
+
 test_i2c_veml7700: veml7700@66 {
 	compatible = "vishay,veml7700";
 	reg = <0x66>;
