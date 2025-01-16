@@ -39,10 +39,10 @@ const STRUCT_SECTION_ITERABLE_NAMED(test_ram_named, D, ram8) = {0x04};
 const STRUCT_SECTION_ITERABLE_NAMED(test_ram_named, B, ram9) = {0x02};
 
 /* declare in random order to check that the linker is sorting numerically */
-const STRUCT_SECTION_ITERABLE(test_ram_numeric, ramn_1) = {0x01};
-const STRUCT_SECTION_ITERABLE(test_ram_numeric, ramn_10) = {0x03};
-const STRUCT_SECTION_ITERABLE(test_ram_numeric, ramn_11) = {0x04};
 const STRUCT_SECTION_ITERABLE(test_ram_numeric, ramn_3) = {0x02};
+const STRUCT_SECTION_ITERABLE(test_ram_numeric, ramn_1) = {0x01};
+const STRUCT_SECTION_ITERABLE(test_ram_numeric, ramn_99999) = {0x04};
+const STRUCT_SECTION_ITERABLE(test_ram_numeric, ramn_11) = {0x03};
 
 #define NAMED_ALT_EXPECT 0x4273
 
@@ -134,10 +134,10 @@ const STRUCT_SECTION_ITERABLE_NAMED(test_rom_named, D, rom8) = {0x40};
 const STRUCT_SECTION_ITERABLE_NAMED(test_rom_named, B, rom9) = {0x20};
 
 /* declare in random order to check that the linker is sorting numerically */
-const STRUCT_SECTION_ITERABLE(test_rom_numeric, romn_1) = {0x10};
-const STRUCT_SECTION_ITERABLE(test_rom_numeric, romn_10) = {0x30};
-const STRUCT_SECTION_ITERABLE(test_rom_numeric, romn_11) = {0x40};
 const STRUCT_SECTION_ITERABLE(test_rom_numeric, romn_3) = {0x20};
+const STRUCT_SECTION_ITERABLE(test_rom_numeric, romn_1) = {0x10};
+const STRUCT_SECTION_ITERABLE(test_rom_numeric, romn_99999) = {0x40};
+const STRUCT_SECTION_ITERABLE(test_rom_numeric, romn_11) = {0x30};
 
 /* alternate naming */
 const STRUCT_SECTION_ITERABLE_NAMED_ALTERNATE(test_rom_named, romn_alt, R, romn_73) = {0x73};
