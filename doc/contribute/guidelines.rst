@@ -12,6 +12,34 @@ This document explains how to participate in project conversations, log bugs
 and enhancement requests, and submit patches to the project so your patch will
 be accepted quickly in the codebase.
 
+
+Prerequisites
+*************
+
+.. _Zephyr Project website: https://zephyrproject.org
+
+As a contributor, you'll want to be familiar with the Zephyr project, how to
+configure, install, and use it as explained in the `Zephyr Project website`_
+and how to set up your development environment as introduced in the Zephyr
+:ref:`getting_started`.
+
+You should be familiar with common developer tools such as Git and CMake, and
+platforms such as GitHub.
+
+If you haven't already done so, you'll need to create a (free) GitHub account
+on https://github.com and have Git tools available on your development system.
+
+.. note::
+   The Zephyr development workflow supports all 3 major operating systems
+   (Linux, macOS, and Windows) but some of the tools used in the sections below
+   are only available on Linux and macOS. On Windows, instead of running these
+   tools yourself, you will need to rely on the Continuous Integration (CI)
+   service using Github Actions, which runs automatically on GitHub when you submit
+   your Pull Request (PR).  You can see any failure results in the workflow
+   details link near the end of the PR conversation list. See
+   `Continuous Integration`_ for more information
+
+
 .. _licensing_requirements:
 
 Licensing
@@ -155,32 +183,6 @@ Additional requirements:
 
 - If you are altering an existing commit created by someone else, you must add
   your Signed-off-by: line without removing the existing one.
-
-Prerequisites
-*************
-
-.. _Zephyr Project website: https://zephyrproject.org
-
-As a contributor, you'll want to be familiar with the Zephyr project, how to
-configure, install, and use it as explained in the `Zephyr Project website`_
-and how to set up your development environment as introduced in the Zephyr
-:ref:`getting_started`.
-
-You should be familiar with common developer tools such as Git and CMake, and
-platforms such as GitHub.
-
-If you haven't already done so, you'll need to create a (free) GitHub account
-on https://github.com and have Git tools available on your development system.
-
-.. note::
-   The Zephyr development workflow supports all 3 major operating systems
-   (Linux, macOS, and Windows) but some of the tools used in the sections below
-   are only available on Linux and macOS. On Windows, instead of running these
-   tools yourself, you will need to rely on the Continuous Integration (CI)
-   service using Github Actions, which runs automatically on GitHub when you submit
-   your Pull Request (PR).  You can see any failure results in the workflow
-   details link near the end of the PR conversation list. See
-   `Continuous Integration`_ for more information
 
 .. _source_tree_v2:
 
