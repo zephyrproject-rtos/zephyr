@@ -396,7 +396,8 @@ do {                                                                    \
 
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV) \
 	|| defined(CONFIG_XTENSA) || defined(CONFIG_ARM64) \
-	|| defined(CONFIG_MIPS) || defined(CONFIG_RX)
+	|| defined(CONFIG_MIPS) || defined(CONFIG_RX) \
+	|| defined(CONFIG_OPENRISC)
 #define GTEXT(sym) .global sym; .type sym, %function
 #define GDATA(sym) .global sym; .type sym, %object
 #define WTEXT(sym) .weak sym; .type sym, %function
