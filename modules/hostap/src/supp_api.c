@@ -956,10 +956,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 
 		if (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
-			params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
-			params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
-			uint8_t sae_pwe = 0;
-
+		    params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
+		    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
 			if (params->sae_password) {
 				if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
 				    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
@@ -982,23 +980,14 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
-			switch (params->security) {
-			case WIFI_SECURITY_TYPE_SAE_HNP:
-				sae_pwe = 0;
-				break;
-			case WIFI_SECURITY_TYPE_SAE_H2E:
-				sae_pwe = 1;
-				break;
-			case WIFI_SECURITY_TYPE_SAE_AUTO:
-				sae_pwe = 2;
-				break;
-			default:
-				sae_pwe = 0;
-				break;
-			}
-
-			if (!wpa_cli_cmd_v("set sae_pwe %d", sae_pwe)) {
-				goto out;
+			if (params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
+			    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+				if (!wpa_cli_cmd_v("set sae_pwe %d",
+						   (params->security == WIFI_SECURITY_TYPE_SAE_H2E)
+							   ? 1
+							   : 2)) {
+					goto out;
+				}
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE%s", resp.network_id,
