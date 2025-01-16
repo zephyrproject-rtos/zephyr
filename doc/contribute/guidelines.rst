@@ -370,11 +370,6 @@ this:
 You need to change text in square brackets (``[like this]``) above to
 fit your commit.
 
-Examples and more details follow.
-
-Example
--------
-
 Here is an example of a good commit message.
 
 .. code-block:: none
