@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCM Core to Host module
+
+compatible: "nuvoton,npcm-c2h"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
