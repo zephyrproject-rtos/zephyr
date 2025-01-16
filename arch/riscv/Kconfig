@@ -124,6 +124,11 @@ config RISCV_SOC_HAS_ISR_STACKING
 	    saved on the stack by the hardware, and the registers saved by the
 	    software macros. The structure must be called 'struct arch_esf'.
 
+	  - SOC_ISR_STACKING_ESR_INIT: macro guarded by !_ASMLANGUAGE.
+	    Some hardware stacked registers should be initialized on init
+	    stack with proper values. This prevents from incorrect behavior
+	    on entry context switch when initial stack is restored.
+
 config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	bool
 	help
