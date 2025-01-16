@@ -174,21 +174,8 @@ int usbh_req_set_address(struct usb_device *const udev,
 {
 	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7;
 	const uint8_t bRequest = USB_SREQ_SET_ADDRESS;
-	int ret;
 
-	ret = usbh_req_setup(udev, bmRequestType, bRequest, addr, 0, 0, NULL);
-	if (ret == 0) {
-		udev->addr = addr;
-		if (addr == 0) {
-			udev->state = USB_STATE_DEFAULT;
-		}
-
-		if (addr != 0 && udev->state == USB_STATE_DEFAULT) {
-			udev->state = USB_STATE_ADDRESSED;
-		}
-	}
-
-	return ret;
+	return usbh_req_setup(udev, bmRequestType, bRequest, addr, 0, 0, NULL);
 }
 
 int usbh_req_set_cfg(struct usb_device *const udev,
@@ -196,22 +183,8 @@ int usbh_req_set_cfg(struct usb_device *const udev,
 {
 	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7;
 	const uint8_t bRequest = USB_SREQ_SET_CONFIGURATION;
-	int ret;
 
-	/* Ignore the required state change condition for now. */
-	ret = usbh_req_setup(udev, bmRequestType, bRequest, cfg, 0, 0, NULL);
-	if (ret == 0) {
-		udev->actual_cfg = cfg;
-		if (cfg == 0) {
-			udev->state = USB_STATE_ADDRESSED;
-		}
-
-		if (cfg != 0 && udev->state == USB_STATE_ADDRESSED) {
-			udev->state = USB_STATE_CONFIGURED;
-		}
-	}
-
-	return ret;
+	return usbh_req_setup(udev, bmRequestType, bRequest, cfg, 0, 0, NULL);
 }
 
 int usbh_req_get_cfg(struct usb_device *const udev,

@@ -36,19 +36,60 @@ enum usb_device_state {
 };
 
 /**
+ * @brief USB device operating speed
+ */
+enum usb_device_speed {
+	/** Device is probably not connected */
+	USB_SPEED_UNKNOWN,
+	/** Low speed */
+	USB_SPEED_SPEED_LS,
+	/** Full speed */
+	USB_SPEED_SPEED_FS,
+	/** High speed */
+	USB_SPEED_SPEED_HS,
+	/** Super speed */
+	USB_SPEED_SPEED_SS,
+};
+
+#define UHC_INTERFACES_MAX 32
+
+struct usb_host_interface {
+	struct usb_desc_header *dhp;
+	uint8_t alternate;
+};
+
+struct usb_host_ep {
+	struct usb_ep_descriptor *desc;
+};
+
+/**
  * Host representation of a USB device
  */
 struct usb_device {
+	/** dlist node */
+	sys_dnode_t node;
 	/** An opaque pointer to the host context to which this device belongs */
 	void *ctx;
+	/** Device mutex */
+	struct k_mutex mutex;
 	/** USB device descriptor */
 	struct usb_device_descriptor dev_desc;
 	/** Device state */
 	enum usb_device_state state;
+	/** Device speed */
+	enum usb_device_speed speed;
 	/** Actual active device configuration */
 	uint8_t actual_cfg;
 	/** Device address */
 	uint8_t addr;
+	/** Pointer to actual device configuration descriptor */
+	void *cfg_desc;
+	/** Pointers to device interfaces */
+	struct usb_host_interface ifaces[UHC_INTERFACES_MAX + 1];
+	/** Pointers to device OUT endpoints */
+	struct usb_host_ep ep_out[16];
+	/** Pointers to device IN endpoints */
+	struct usb_host_ep ep_in[16];
 };
 
 /**
