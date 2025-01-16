@@ -21,6 +21,9 @@
 	_CONCAT(_##struct_type, _list_start) = .; \
 	KEEP(*(SORT(._##struct_type.static.*_?_*))); \
 	KEEP(*(SORT(._##struct_type.static.*_??_*))); \
+	KEEP(*(SORT(._##struct_type.static.*_???_*))); \
+	KEEP(*(SORT(._##struct_type.static.*_????_*))); \
+	KEEP(*(SORT(._##struct_type.static.*_?????_*))); \
 	_CONCAT(_##struct_type, _list_end) = .
 
 #define Z_LINK_ITERABLE_ALIGNED(struct_type, align) \
