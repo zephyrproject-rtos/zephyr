@@ -394,7 +394,7 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr, int
 	}
 
 	/* ignore if invalid RSSI */
-	if (rssi == 0xff) {
+	if (rssi == (int8_t)0xff) {
 		return NULL;
 	}
 
