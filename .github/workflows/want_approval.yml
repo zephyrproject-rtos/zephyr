@@ -1,0 +1,32 @@
+name: Want approval
+
+on:
+  pull_request:
+    types:
+      - edited
+      - opened
+      - reopened
+      - synchronize
+  pull_request_review:
+
+jobs:
+  want-approval:
+    name: Want approval check
+    if: ${{ contains(github.event.pull_request.body, 'WANT_APPROVAL') }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install Python dependencies
+        run: |
+          pip install PyGithub
+
+      - name: Run the check script
+        run: |
+          ./scripts/ci/want_approval.py -p "${{ github.event.pull_request.number }}"
