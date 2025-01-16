@@ -530,15 +530,14 @@ extern "C" {
  */
 #if Z_C_GENERIC
 #define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ...) ({\
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	int _rv; \
 	if ((flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS) { \
 		_rv = 0; \
 	} else { \
 		_rv = Z_CBPRINTF_PCHAR_COUNT(flags, __VA_ARGS__) > 0 ? 1 : 0; \
 	} \
-	_Pragma("GCC diagnostic pop")\
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	_rv; \
 })
 #else
@@ -722,18 +721,6 @@ do { \
 #define Z_CBPRINTF_PACK_ARG(arg_idx, arg) \
 	Z_CBPRINTF_PACK_ARG2(arg_idx, _pbuf, _pkg_len, _pkg_offset, _pmax, arg)
 
-/* When using clang additional warning needs to be suppressed since each
- * argument of fmt string is used for sizeof() which results in the warning
- * if argument is a string literal. Suppression is added here instead of
- * the macro which generates the warning to not slow down the compiler.
- */
-#ifdef __clang__
-#define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
-	_Pragma("GCC diagnostic ignored \"-Wsizeof-array-decay\"")
-#else
-#define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY
-#endif
-
 /* Allocation to avoid using VLA and alloca. Alloc frees space when leaving
  * a function which can lead to increased stack usage if logging is used
  * multiple times. VLA is not always available.
@@ -778,9 +765,11 @@ do { \
 #define Z_CBPRINTF_STATIC_PACKAGE_GENERIC(buf, _inlen, _outlen, _align_offset, \
 					  flags, ... /* fmt, ... */) \
 do { \
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
-	Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
+	/* When using clang additional warning needs to be suppressed since each */ \
+	/* argument of fmt string is used for sizeof() which results in the warning */ \
+	/* if argument is a string literal. */ \
+	TOOLCHAIN_DISABLE_CLANG_WARNING("-Wsizeof-array-decay"); \
 	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
 		     (IS_ENABLED(CONFIG_XTENSA) && \
 		      !((_align_offset) % CBPRINTF_PACKAGE_ALIGNMENT)), \
@@ -858,7 +847,8 @@ do { \
 			   (pkg_hdr.desc.pkg_flags = flags)); \
 		*_len_loc = pkg_hdr; \
 	} \
-	_Pragma("GCC diagnostic pop") \
+	TOOLCHAIN_ENABLE_CLANG_WARNING("-Wsizeof-array-decay"); \
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 } while (false)
 
 #if Z_C_GENERIC
