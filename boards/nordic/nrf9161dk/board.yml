@@ -2,10 +2,11 @@ board:
   name: nrf9161dk
   full_name: nRF9161 DK
   vendor: nordic
-  socs:
+  sips:
   - name: nrf9161
     variants:
     - name: 'ns'
+      soc: nrf9120
   revision:
     format: major.minor.patch
     default: "0.9.0"

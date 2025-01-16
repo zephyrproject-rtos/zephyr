@@ -3,6 +3,8 @@ board:
   full_name: CTHINGS.CO Connectivity Card
   socs:
     - name: nrf52840
+  sips:
     - name: nrf9161
       variants:
         - name: 'ns'
+          soc: 'nrf9120'

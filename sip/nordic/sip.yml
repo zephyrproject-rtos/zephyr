@@ -1,0 +1,10 @@
+sips:
+  - name: nrf9131
+    socs:
+      - nrf9120
+  - name: nrf9151
+    socs:
+      - nrf9120
+  - name: nrf9161
+    socs:
+      - nrf9120
