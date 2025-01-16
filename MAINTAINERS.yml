@@ -5696,3 +5696,15 @@ zbus:
     - "area: llext"
   tests:
     - llext
+
+OpenRISC Arch:
+  status: maintained
+  maintainers:
+    - jhol
+  files:
+    - arch/openrisc/
+    - include/zephyr/arch/openrisc/
+  labels:
+    - "area: OpenRISC"
+  tests:
+    - arch.openrisc

@@ -9,6 +9,8 @@ archs:
     path: mips
   - name: nios2
     path: nios2
+  - name: openrisc
+    path: openrisc
   - name: posix
     path: posix
   - name: riscv
