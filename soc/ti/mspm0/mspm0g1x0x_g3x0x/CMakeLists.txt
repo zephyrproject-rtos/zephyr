@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if(CONFIG_SOC_MSPM0G1106)
+	zephyr_compile_definitions(-D__MSPM0G1106__)
+elseif(CONFIG_SOC_MSPM0G1107)
+	zephyr_compile_definitions(-D__MSPM0G1107__)
+elseif(CONFIG_SOC_MSPM0G1506)
+	zephyr_compile_definitions(-D__MSPM0G1506__)
+elseif(CONFIG_SOC_MSPM0G1507)
+	zephyr_compile_definitions(-D__MSPM0G1507__)
+elseif(CONFIG_SOC_MSPM0G3106)
+	zephyr_compile_definitions(-D__MSPM0G3106__)
+elseif(CONFIG_SOC_MSPM0G3107)
+	zephyr_compile_definitions(-D__MSPM0G3107__)
+elseif(CONFIG_SOC_MSPM0G3506)
+	zephyr_compile_definitions(-D__MSPM0G3506__)
+elseif(CONFIG_SOC_MSPM0G3507)
+	zephyr_compile_definitions(-D__MSPM0G3507__)
+endif()
+
+zephyr_sources(soc.c)
+zephyr_include_directories(.)
