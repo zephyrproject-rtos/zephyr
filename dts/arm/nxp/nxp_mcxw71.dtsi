@@ -86,10 +86,6 @@
 			};
 		};
 
-		smu2: sram@489c0000 {
-			ranges = <0x0 0x489c0000 DT_SIZE_K(40)>;
-		};
-
 		peripheral: peripheral@50000000 {
 			ranges = <0x0 0x50000000 0x10000000>;
 			#address-cells = <1>;
@@ -123,18 +119,6 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
-};
-
-&smu2 {
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	rpmsgmem: memory@8800 {
-		compatible = "zephyr,memory-region","mmio-sram";
-		reg = <0x8800 DT_SIZE_K(6)>;
-		zephyr,memory-region = "rpmsg_sh_mem";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
-	};
 };
 
 &pbridge2 {
@@ -385,5 +369,20 @@
 		nxp,kinetis-port = <&portc>;
 		reg = <0x30000 0x128>;
 		interrupts = <63 0>, <64 0>;
+	};
+};
+
+&fast_peripheral1 {
+	smu2: smu2@1c0000 {
+		ranges = <0x0 0x1c0000 DT_SIZE_K(40)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		rpmsgmem: memory@8800 {
+			compatible = "zephyr,memory-region","mmio-sram";
+			reg = <0x8800 DT_SIZE_K(6)>;
+			zephyr,memory-region = "rpmsg_sh_mem";
+			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		};
 	};
 };
