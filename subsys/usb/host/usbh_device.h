@@ -16,10 +16,23 @@ typedef int (*usbh_udev_cb_t)(struct usb_device *const udev,
 			      struct uhc_transfer *const xfer);
 
 /*
- * Get a device to work on, there will only be one for the first time
- * until we implement USB device configuration/management.
+ * This will return the first available USB device; for a single-point
+ * connection without hub support, this is the device connected directly to the
+ * host controller.
  */
 struct usb_device *usbh_device_get_any(struct usbh_contex *const ctx);
+
+/* Allocate/free USB device */
+struct usb_device *usbh_device_alloc(struct usbh_contex *const uhs_ctx);
+void usbh_device_free(struct usb_device *const udev);
+
+/* Reset and configure new USB device */
+int usbh_device_init(struct usb_device *const udev);
+
+/* Set USB device interface alternate */
+int usbh_device_interface_set(struct usb_device *const udev,
+			      const uint8_t iface, const uint8_t alt,
+			      const bool dry);
 
 /* Wrappers around to avoid glue UHC calls. */
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
