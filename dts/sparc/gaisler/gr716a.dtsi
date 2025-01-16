@@ -126,5 +126,23 @@
 			#gpio-cells = <2>;
 			status = "disabled";
 		};
+
+		spi0: spi@80309000 {
+			compatible = "gaisler,spictrl";
+			reg = <0x80309000 0x100>;
+			interrupts = <11>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@8030a000 {
+			compatible = "gaisler,spictrl";
+			reg = <0x8030a000 0x100>;
+			interrupts = <12>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };

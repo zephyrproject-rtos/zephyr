@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Frontgrade Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+description: GRLIB SPICTRL
+
+compatible: "gaisler,spictrl"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  cs-output:
+    type: int
+    required: true
+    description: |
+      Use SPICTRL chip select SLVSEL0..SLVSEL31.
