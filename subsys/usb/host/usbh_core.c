@@ -96,16 +96,14 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
+	struct usbh_contex *uhs_ctx;
 	struct uhc_event event;
 
 	while (true) {
 		k_msgq_get(&usbh_msgq, &event, K_FOREVER);
 
-		STRUCT_SECTION_FOREACH(usbh_contex, uhs_ctx) {
-			if (uhs_ctx->dev == event.dev) {
-				usbh_event_handler(uhs_ctx, &event);
-			}
-		}
+		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
+		usbh_event_handler(uhs_ctx, &event);
 	}
 }
 
@@ -113,7 +111,7 @@ int usbh_init_device_intl(struct usbh_contex *const uhs_ctx)
 {
 	int ret;
 
-	ret = uhc_init(uhs_ctx->dev, usbh_event_carrier);
+	ret = uhc_init(uhs_ctx->dev, usbh_event_carrier, uhs_ctx);
 	if (ret != 0) {
 		LOG_ERR("Failed to init device driver");
 		return ret;
