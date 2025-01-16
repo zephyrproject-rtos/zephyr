@@ -288,7 +288,8 @@ uhc_disable_error:
 	return ret;
 }
 
-int uhc_init(const struct device *dev, uhc_event_cb_t event_cb)
+int uhc_init(const struct device *dev,
+	     uhc_event_cb_t event_cb, const void *const event_ctx)
 {
 	const struct uhc_api *api = dev->api;
 	struct uhc_data *data = dev->data;
@@ -306,6 +307,7 @@ int uhc_init(const struct device *dev, uhc_event_cb_t event_cb)
 	}
 
 	data->event_cb = event_cb;
+	data->event_ctx = event_ctx;
 	sys_dlist_init(&data->ctrl_xfers);
 	sys_dlist_init(&data->bulk_xfers);
 
