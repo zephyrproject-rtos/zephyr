@@ -50,8 +50,8 @@ struct adc_esp32_conf {
 	const clock_control_subsys_t clock_subsys;
 	adc_unit_t unit;
 	uint8_t channel_count;
-#if defined(CONFIG_ADC_ESP32_DMA)
 	const struct device *gpio_port;
+#if defined(CONFIG_ADC_ESP32_DMA)
 	const struct device *dma_dev;
 	uint8_t dma_channel;
 #endif /* defined(CONFIG_ADC_ESP32_DMA) */
@@ -556,11 +556,13 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 #endif /* ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED */
 
 #if defined(CONFIG_ADC_ESP32_DMA)
-
 	if (!SOC_ADC_DIG_SUPPORTED_UNIT(conf->unit)) {
 		LOG_ERR("ADC2 dma mode is no longer supported, please use ADC1!");
 		return -EINVAL;
 	}
+#endif /* defined(CONFIG_ADC_ESP32_DMA) */
+
+	/* GPIO config for ADC mode */
 
 	int io_num = adc_channel_io_map[conf->unit][cfg->channel_id];
 
@@ -581,8 +583,6 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 		LOG_ERR("Error disconnecting io (%d)", io_num);
 		return err;
 	}
-
-#endif /* defined(CONFIG_ADC_ESP32_DMA) */
 
 	return 0;
 }
@@ -614,11 +614,12 @@ static int adc_esp32_init(const struct device *dev)
 
 	sar_periph_ctrl_adc_oneshot_power_acquire();
 
-#if defined(CONFIG_ADC_ESP32_DMA)
 	if (!device_is_ready(conf->gpio_port)) {
 		LOG_ERR("gpio0 port not ready");
 		return -ENODEV;
 	}
+
+#if defined(CONFIG_ADC_ESP32_DMA)
 
 	if (k_sem_init(&data->dma_conv_wait_lock, 0, 1)) {
 		LOG_ERR("dma_conv_wait_lock initialization failed!");
@@ -666,9 +667,9 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 	.ref_internal  = ADC_ESP32_DEFAULT_VREF_INTERNAL,
 };
 
-#if defined(CONFIG_ADC_ESP32_DMA)
-
 #define ADC_ESP32_CONF_GPIO_PORT_INIT	.gpio_port = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
+
+#if defined(CONFIG_ADC_ESP32_DMA)
 
 #define ADC_ESP32_CONF_DMA_INIT(n)	.dma_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),     \
 					(DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0))),           \
@@ -678,7 +679,6 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 					(0xff)),
 #else
 
-#define ADC_ESP32_CONF_GPIO_PORT_INIT
 #define ADC_ESP32_CONF_DMA_INIT(inst)
 
 #endif /* defined(CONFIG_ADC_ESP32_DMA) */
