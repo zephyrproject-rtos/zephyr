@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor_clock.h>
 #include "bma4xx.h"
 #include "bma4xx_interrupt.h"
 #include "bma4xx_defs.h"
@@ -48,7 +49,7 @@ int bma4xx_reset(const struct device *dev)
 
 static uint16_t bma4xx_compute_fifo_wm(const struct bma4xx_config *new_cfg)
 {
-	int64_t modr;
+	int64_t nodr;
 	const bool accel_enabled = new_cfg->accel_pwr_mode != 0;
 	const bool aux_enabled = new_cfg->aux_pwr_mode != 0;
 
@@ -69,15 +70,16 @@ static uint16_t bma4xx_compute_fifo_wm(const struct bma4xx_config *new_cfg)
 		return -EINVAL;
 	}
 
-	modr = sensor_value_to_micro(&val) / 1000;
+	/* Measured in nHz */
+	nodr = sensor_value_to_micro(&val) * INT64_C(1000);
 
-	/* Convert 'modr' to bytes * batch_ticks / msec */
-	modr *= (int64_t)new_cfg->batch_ticks * pkt_size;
+	/* Convert 'nodr' to bytes * batch_ticks / nsec */
+	nodr *= (int64_t)new_cfg->batch_ticks * pkt_size;
 
-	/* 'modr' = byte_ticks_per_msec / kticks_per_sec */
-	modr = DIV_ROUND_UP(modr, CONFIG_SYS_CLOCK_TICKS_PER_SEC * INT64_C(1000));
+	/* 'nodr' = byte_ticks_per_nsec * sensor_ns_per_tick = bytes */
+	nodr = sensor_clock_cycles_to_ns(nodr);
 
-	return (uint16_t)MIN(modr, 0x3ff);
+	return (uint16_t)MIN(nodr, 0x3ff);
 }
 
 #endif /* CONFIG_BMA4XX_STREAM */
