@@ -22,6 +22,7 @@
 #include <zephyr/types.h>
 
 #include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 static struct bt_micp_mic_ctlr *micp_mic_ctlr;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
@@ -32,15 +33,14 @@ static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 				      int err, uint8_t aics_count)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Discovery failed (%d)", err);
+		bt_shell_error("Discovery failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "Discovery done with %u AICS",
-			    aics_count);
+		bt_shell_print("Discovery done with %u AICS", aics_count);
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 		if (bt_micp_mic_ctlr_included_get(mic_ctlr,
 						  &micp_included) != 0) {
-			shell_error(ctx_shell, "Could not get included services");
+			bt_shell_error("Could not get included services");
 		}
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 	}
@@ -50,9 +50,9 @@ static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 					  int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Mute write failed (%d)", err);
+		bt_shell_error("Mute write failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "Mute write completed");
+		bt_shell_print("Mute write completed");
 	}
 }
 
@@ -60,9 +60,9 @@ static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 					    int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Unmute write failed (%d)", err);
+		bt_shell_error("Unmute write failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "Unmute write completed");
+		bt_shell_print("Unmute write completed");
 	}
 }
 
@@ -70,9 +70,9 @@ static void micp_mic_ctlr_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err,
 				  uint8_t mute)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Mute get failed (%d)", err);
+		bt_shell_error("Mute get failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "Mute value %u", mute);
+		bt_shell_print("Mute value %u", mute);
 	}
 }
 
@@ -82,53 +82,45 @@ static struct bt_micp_included micp_included;
 static void micp_mic_ctlr_aics_set_gain_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Set gain failed (%d) for inst %p",
-			    err, inst);
+		bt_shell_error("Set gain failed (%d) for inst %p", err, inst);
 	} else {
-		shell_print(ctx_shell, "Gain set for inst %p", inst);
+		bt_shell_print("Gain set for inst %p", inst);
 	}
 }
 
 static void micp_mic_ctlr_aics_unmute_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Unmute failed (%d) for inst %p",
-			    err, inst);
+		bt_shell_error("Unmute failed (%d) for inst %p", err, inst);
 	} else {
-		shell_print(ctx_shell, "Unmuted inst %p", inst);
+		bt_shell_print("Unmuted inst %p", inst);
 	}
 }
 
 static void micp_mic_ctlr_aics_mute_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Mute failed (%d) for inst %p",
-			    err, inst);
+		bt_shell_error("Mute failed (%d) for inst %p", err, inst);
 	} else {
-		shell_print(ctx_shell, "Muted inst %p", inst);
+		bt_shell_print("Muted inst %p", inst);
 	}
 }
 
 static void micp_mic_ctlr_aics_set_manual_mode_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "Set manual mode failed (%d) for inst %p",
-			    err, inst);
+		bt_shell_error("Set manual mode failed (%d) for inst %p", err, inst);
 	} else {
-		shell_print(ctx_shell, "Manual mode set for inst %p", inst);
+		bt_shell_print("Manual mode set for inst %p", inst);
 	}
 }
 
 static void micp_mic_ctlr_aics_automatic_mode_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "Set automatic mode failed (%d) for inst %p",
-			    err, inst);
+		bt_shell_error("Set automatic mode failed (%d) for inst %p", err, inst);
 	} else {
-		shell_print(ctx_shell, "Automatic mode set for inst %p",
-			    inst);
+		bt_shell_print("Automatic mode set for inst %p", inst);
 	}
 }
 
@@ -136,13 +128,12 @@ static void micp_mic_ctlr_aics_state_cb(struct bt_aics *inst, int err,
 					int8_t gain, uint8_t mute, uint8_t mode)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS state get failed (%d) for "
-			    "inst %p", err, inst);
+		bt_shell_error("AICS state get failed (%d) for inst %p",
+			       err, inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p state gain %d, mute %u, "
-			    "mode %u", inst, gain, mute, mode);
+		bt_shell_print("AICS inst %p state gain %d, mute %u, mode %u",
+			       inst, gain, mute, mode);
 	}
-
 }
 
 static void micp_mic_ctlr_aics_gain_setting_cb(struct bt_aics *inst, int err,
@@ -150,51 +141,42 @@ static void micp_mic_ctlr_aics_gain_setting_cb(struct bt_aics *inst, int err,
 					       int8_t maximum)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS gain settings get failed (%d) for "
-			    "inst %p", err, inst);
+		bt_shell_error("AICS gain settings get failed (%d) for inst %p",
+			       err, inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p gain settings units %u, "
-			    "min %d, max %d", inst, units, minimum,
-			    maximum);
+		bt_shell_print("AICS inst %p gain settings units %u, min %d, max %d",
+			       inst, units, minimum, maximum);
 	}
-
 }
 
 static void micp_mic_ctlr_aics_input_type_cb(struct bt_aics *inst, int err,
 					     uint8_t input_type)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS input type get failed (%d) for "
-			    "inst %p", err, inst);
+		bt_shell_error("AICS input type get failed (%d) for inst %p", err, inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p input type %u",
-			    inst, input_type);
+		bt_shell_print("AICS inst %p input type %u", inst, input_type);
 	}
-
 }
 
 static void micp_mic_ctlr_aics_status_cb(struct bt_aics *inst, int err,
 					 bool active)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS status get failed (%d) for "
-			    "inst %p", err, inst);
+		bt_shell_error("AICS status get failed (%d) for inst %p", err, inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p status %s",
-			    inst, active ? "active" : "inactive");
+		bt_shell_print("AICS inst %p status %s",
+			       inst, active ? "active" : "inactive");
 	}
-
 }
 
 static void micp_mic_ctlr_aics_description_cb(struct bt_aics *inst, int err,
 					      char *description)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS description get failed (%d) for "
-			    "inst %p", err, inst);
+		bt_shell_error("AICS description get failed (%d) for inst %p", err, inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p description %s",
-			    inst, description);
+		bt_shell_print("AICS inst %p description %s", inst, description);
 	}
 }
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
@@ -226,10 +208,6 @@ static int cmd_micp_mic_ctlr_discover(const struct shell *sh, size_t argc,
 				    char **argv)
 {
 	int result;
-
-	if (ctx_shell == NULL) {
-		ctx_shell = sh;
-	}
 
 	result = bt_micp_mic_ctlr_cb_register(&micp_cbs);
 	if (result != 0) {

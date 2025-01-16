@@ -151,7 +151,7 @@ ARC arch:
 ARM arch:
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - microbuilder
     - carlocaione
@@ -159,7 +159,6 @@ ARM arch:
     - MaureenHelm
     - stephanosio
     - bbolen
-    - wearyzen
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -195,8 +194,6 @@ ARM64 arch:
 ARM Platforms:
   status: maintained
   maintainers:
-    - ithinuel
-  collaborators:
     - wearyzen
   files:
     - boards/arm/mps*/
@@ -408,7 +405,6 @@ Bluetooth Host:
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -524,7 +520,6 @@ Bluetooth ISO:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/shell/host/iso.rst
     - samples/bluetooth/iso_*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -3144,6 +3139,7 @@ Open AMP:
     - carlocaione
   collaborators:
     - uLipe
+    - iuliana-prodan
   files:
     - lib/open-amp/
     - samples/subsys/ipc/openamp/
@@ -3934,6 +3930,19 @@ OpenTitan Platforms:
   description: >-
     OpenTitan boards, SOCs, dts files and related drivers.
 
+Realtek EC Platforms:
+  status: maintained
+  maintainers:
+    - JasonLin-RealTek
+  files:
+    - boards/realtek/
+    - drivers/*/*rts5912*
+    - dts/bindings/*/*rts5912*
+    - dts/arm/realtek/ec/
+    - soc/realtek/ec/
+  labels:
+    - "platform: Realtek EC"
+
 Renesas SmartBond Platforms:
   status: maintained
   maintainers:
@@ -4691,10 +4700,9 @@ West:
 "West project: cmsis_6":
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - tomi-font
-    - wearyzen
   files: []
   labels:
     - "area: CMSIS_6"
@@ -4789,8 +4797,6 @@ West:
   status: maintained
   maintainers:
     - kristofer-jonsson-arm
-    - ithinuel
-  collaborators:
     - wearyzen
   files:
     - drivers/misc/ethos_u/
@@ -5036,6 +5042,18 @@ West:
   labels:
     - "area: Rust"
 
+"West project: libmctp":
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - nashif
+    - inteljiangwe1
+  files:
+    - samples/modules/mctp/
+  labels:
+    - "area: MCTP"
+
 "West project: libmetal":
   status: odd fixes
   collaborators:
@@ -5106,7 +5124,6 @@ West:
     - d3zd3z
     - ceolin
   collaborators:
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
@@ -5194,6 +5211,7 @@ West:
   collaborators:
     - carlocaione
     - uLipe
+    - iuliana-prodan
   files:
     - modules/Kconfig.open-amp
   labels:
@@ -5296,7 +5314,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
@@ -5316,7 +5333,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
   files: []
   labels:
@@ -5329,7 +5345,6 @@ West:
     - sgrrzhf
   collaborators:
     - carlocaione
-    - ithinuel
     - wearyzen
   files:
     - modules/trusted-firmware-a/
@@ -5342,7 +5357,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
   files: []
   labels:
@@ -5547,6 +5561,7 @@ zbus:
     - cmake/llext-edk.cmake
     - samples/subsys/llext/
     - include/zephyr/llext/
+    - tests/misc/llext-edk/
     - tests/subsys/llext/
     - subsys/llext/
     - doc/services/llext/

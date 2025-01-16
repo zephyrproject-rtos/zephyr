@@ -18,6 +18,12 @@ properties:
       A phandle reference to the device tree node that contains the pinmux
       port associated with this GPIO controller.
 
+  gpio-port-offest:
+    type: int
+    default: 0
+    description: |
+      Describes an offset between inst index and actual GPIO port number.
+
 gpio-cells:
   - pin
   - flags

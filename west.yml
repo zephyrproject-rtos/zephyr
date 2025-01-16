@@ -162,7 +162,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e52371024732a47a67fa9c889fbccd0aa6355f3a
+      revision: 51bf6d7bb2ee053e52f09709097e2444777c868c
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -178,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: a9b75e0d1827b6ef1f8ca82784b38ed2079bac5a
+      revision: 468e955eb49b8a731474ff194ca17b6e6a08c2d9
       path: modules/hal/infineon
       groups:
         - hal
@@ -188,12 +188,12 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 71eba057c0cb7fc11b6f33eb40a82f1ebe2c571c
+      revision: fa2431a906ffb560160d40739d7cf04169551103
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
-      revision: c563b0e56dfa7e3915637b12b3428e6de36012be
+      revision: ecea8cdbd1a7d557563b47ad304ee9ba7a8709e5
       path: modules/hal/nordic
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 0ac830233092247c26f5dd01a07b0a484532ea4c
+      revision: c15dd51d7af27593e38b65b1443a350e9d2de64f
       path: modules/hal/nxp
       groups:
         - hal
@@ -219,7 +219,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 64fce2e5bd31fb7aaf16de8fbd0141a4ca23fdf8
+      revision: 5d115875b0b63030c24cf8b0f01288026392c30b
       groups:
         - hal
     - name: hal_rpi_pico
@@ -228,7 +228,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 6371fa823663b11090b0b30561a8b9196d4ef981
+      revision: 220aac68ab8abaf5b0cf157ddb590a326f656e50
       path: modules/hal/silabs
       groups:
         - hal
@@ -274,10 +274,13 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 516cf575760be783498eff901e994d1944bdb105
+      revision: b4c42d88afc5ee04751fe258db757c4ef70abb09
     - name: liblc3
       revision: bb85f7dde4195bfc0fca9e9c7c2eed0f8694203c
       path: modules/lib/liblc3
+    - name: libmctp
+      revision: b97860e78998551af99931ece149eeffc538bdb1
+      path: modules/lib/libmctp
     - name: libmetal
       revision: 3e8781aae9d7285203118c05bc01d4eb0ca565a7
       path: modules/hal/libmetal
@@ -324,7 +327,7 @@ manifest:
       revision: 52bb1783521c62c019451cee9b05b8eda9d7425f
       path: modules/lib/open-amp
     - name: openthread
-      revision: 2aeb8b833ba760ec29d5f340dd1ce7bcb61c5d56
+      revision: 3ae741f95e7dfb391dec35c48742862049eb62e8
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio

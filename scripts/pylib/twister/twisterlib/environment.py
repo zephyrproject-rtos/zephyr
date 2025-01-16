@@ -275,6 +275,12 @@ Artificially long but functional example:
         will extend the pytest_args from the harness_config in YAML file.
         """)
 
+    parser.add_argument(
+        "--ctest-args", action="append",
+        help="""Pass additional arguments to the ctest subprocess. This parameter
+        will extend the ctest_args from the harness_config in YAML file.
+        """)
+
     valgrind_asan_group.add_argument(
         "--enable-valgrind", action="store_true",
         help="""Run binary through valgrind and check for several memory access

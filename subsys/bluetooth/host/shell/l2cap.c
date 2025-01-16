@@ -30,7 +30,7 @@
 #include <zephyr/shell/shell.h>
 
 #include "host/shell/bt.h"
-#include "host/shell/bt_shell_private.h"
+#include "common/bt_shell_private.h"
 
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)

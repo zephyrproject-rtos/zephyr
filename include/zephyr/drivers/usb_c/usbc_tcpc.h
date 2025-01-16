@@ -83,6 +83,8 @@ enum tcpc_alert {
  * @brief TCPC Status register
  */
 enum tcpc_status_reg {
+	/** The Altert register */
+	TCPC_ALERT_STATUS,
 	/** The CC Status register */
 	TCPC_CC_STATUS,
 	/** The Power Status register */
@@ -837,10 +839,11 @@ static inline int tcpc_set_low_power_mode(const struct device *dev, bool enable)
 }
 
 /**
- * @brief Enables the reception of SOP Prime messages
+ * @brief Enables the reception of SOP Prime and optionally SOP Double Prime messages
  *
  * @param dev     Runtime device structure
- * @param enable  Can receive SOP Prime messages when true, else it can not
+ * @param enable  Can receive SOP Prime messages and SOP Double Prime messages when true,
+ *		  else it can not
  *
  * @retval 0 on success
  * @retval -EIO on failure

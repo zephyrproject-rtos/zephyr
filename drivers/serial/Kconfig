@@ -187,6 +187,7 @@ rsource "Kconfig.mcux_flexcomm"
 rsource "Kconfig.mcux_iuart"
 rsource "Kconfig.mcux_lpsci"
 rsource "Kconfig.mcux_lpuart"
+rsource "Kconfig.mec5"
 rsource "Kconfig.miv"
 rsource "Kconfig.msp432p4xx"
 rsource "Kconfig.native_posix"
@@ -229,5 +230,7 @@ rsource "Kconfig.xmc4xxx"
 source "drivers/serial/Kconfig.si32"
 
 source "drivers/serial/Kconfig.wch_usart"
+
+source "drivers/serial/Kconfig.realtek_rts5912"
 
 endif # SERIAL

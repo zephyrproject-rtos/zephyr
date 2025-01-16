@@ -140,11 +140,11 @@ static ALWAYS_INLINE void clock_init(void)
 		CLOCK_EnableClock(kCLOCK_PortC);
 	}
 
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_kinetis_lpuart, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_lpuart, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpuart0);
 	}
 
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), nxp_kinetis_lpuart, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), nxp_lpuart, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpuart1);
 	}
 

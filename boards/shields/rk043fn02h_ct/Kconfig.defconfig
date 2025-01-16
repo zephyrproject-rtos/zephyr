@@ -8,9 +8,6 @@ if LVGL
 config INPUT
 	default y
 
-config INPUT_FT5336_INTERRUPT
-	default y
-
 # LVGL should allocate buffers equal to size of display
 config LV_Z_VDB_SIZE
 	default 100

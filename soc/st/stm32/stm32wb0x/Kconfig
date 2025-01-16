@@ -10,6 +10,7 @@ config SOC_SERIES_STM32WB0X
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_HAS_ARM_MPU
 	select HAS_STM32CUBE
+	select SOC_EARLY_INIT_HOOK
 	# WB0x has a ROM bootloader executed at reset,
 	# which makes the following option required
 	select INIT_ARCH_HW_AT_BOOT

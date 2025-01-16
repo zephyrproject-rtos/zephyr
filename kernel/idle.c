@@ -24,7 +24,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
-	__ASSERT_NO_MSG(arch_current_thread()->base.prio >= 0);
+	__ASSERT_NO_MSG(_current->base.prio >= 0);
 
 	while (true) {
 		/* SMP systems without a working IPI can't actual
@@ -85,7 +85,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 * explicitly yield in the idle thread otherwise
 		 * nothing else will run once it starts.
 		 */
-		if (_kernel.ready_q.cache != arch_current_thread()) {
+		if (_kernel.ready_q.cache != _current) {
 			z_swap_unlocked();
 		}
 # endif /* !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC) */

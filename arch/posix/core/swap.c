@@ -23,7 +23,7 @@
 int arch_swap(unsigned int key)
 {
 	/*
-	 * struct k_thread * arch_current_thread() is the currently running thread
+	 * struct k_thread * _current is the currently running thread
 	 * struct k_thread * _kernel.ready_q.cache contains the next thread to
 	 * run (cannot be NULL)
 	 *
@@ -34,8 +34,8 @@ int arch_swap(unsigned int key)
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
 	z_thread_mark_switched_out();
 #endif
-	arch_current_thread()->callee_saved.key = key;
-	arch_current_thread()->callee_saved.retval = -EAGAIN;
+	_current->callee_saved.key = key;
+	_current->callee_saved.retval = -EAGAIN;
 
 	/* retval may be modified with a call to
 	 * arch_thread_return_value_set()
@@ -47,10 +47,10 @@ int arch_swap(unsigned int key)
 
 	posix_thread_status_t *this_thread_ptr  =
 		(posix_thread_status_t *)
-		arch_current_thread()->callee_saved.thread_status;
+		_current->callee_saved.thread_status;
 
 
-	arch_current_thread_set(_kernel.ready_q.cache);
+	z_current_thread_set(_kernel.ready_q.cache);
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
 	z_thread_mark_switched_in();
 #endif
@@ -66,9 +66,9 @@ int arch_swap(unsigned int key)
 
 	/* When we continue, _kernel->current points back to this thread */
 
-	irq_unlock(arch_current_thread()->callee_saved.key);
+	irq_unlock(_current->callee_saved.key);
 
-	return arch_current_thread()->callee_saved.retval;
+	return _current->callee_saved.retval;
 }
 
 
@@ -94,7 +94,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	z_thread_mark_switched_out();
 #endif
 
-	arch_current_thread_set(_kernel.ready_q.cache);
+	z_current_thread_set(_kernel.ready_q.cache);
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	z_thread_mark_switched_in();

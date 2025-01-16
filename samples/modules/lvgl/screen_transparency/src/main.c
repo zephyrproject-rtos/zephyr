@@ -44,7 +44,7 @@ int main(void)
 	}
 
 	display_get_capabilities(display_dev, &display_caps);
-	if (!(display_caps.supported_pixel_formats | PIXEL_FORMAT_ARGB_8888)) {
+	if (!(display_caps.supported_pixel_formats & PIXEL_FORMAT_ARGB_8888)) {
 		LOG_ERR("Display does not support ARGB8888 mode");
 		return -ENOTSUP;
 	}

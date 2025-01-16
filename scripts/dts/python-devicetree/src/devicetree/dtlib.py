@@ -381,10 +381,9 @@ class Property:
           unsigned.
         """
         if self.type is not Type.NUM:
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = < (number) >;', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = < (number) >;', not '{self}'")
 
         return int.from_bytes(self.value, "big", signed=signed)
 
@@ -402,10 +401,9 @@ class Property:
           unsigned.
         """
         if self.type not in (Type.NUM, Type.NUMS):
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = < (number) (number) ... >;', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = < (number) (number) ... >;', not '{self}'")
 
         return [int.from_bytes(self.value[i:i + 4], "big", signed=signed)
                 for i in range(0, len(self.value), 4)]
@@ -421,10 +419,9 @@ class Property:
             foo = [ 01 ... ];
         """
         if self.type is not Type.BYTES:
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = [ (byte) (byte) ... ];', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} "
+                 f"in {self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = [ (byte) (byte) ... ];', not '{self}'")
 
         return self.value
 
@@ -441,10 +438,9 @@ class Property:
         not valid UTF-8.
         """
         if self.type is not Type.STRING:
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = \"string\";', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} "
+                 f"in {self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = \"string\";', not '{self}'")
 
         try:
             ret = self.value.decode("utf-8")[:-1]  # Strip null
@@ -467,10 +463,9 @@ class Property:
         Also raises DTError if any of the strings are not valid UTF-8.
         """
         if self.type not in (Type.STRING, Type.STRINGS):
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = \"string\", \"string\", ... ;', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = \"string\", \"string\", ... ;', not '{self}'")
 
         try:
             ret = self.value.decode("utf-8").split("\0")[:-1]
@@ -491,10 +486,9 @@ class Property:
             foo = < &bar >;
         """
         if self.type is not Type.PHANDLE:
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = < &foo >;', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = < &foo >;', not '{self}'")
 
         return self.node.dt.phandle2node[int.from_bytes(self.value, "big")]
 
@@ -517,10 +511,9 @@ class Property:
             return self.type is Type.NUMS and not self.value
 
         if not type_ok():
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "'{0} = < &foo &bar ... >;', not '{3}'"
-                 .format(self.name, self.node.path,
-                         self.node.dt.filename, self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with "
+                 f"'{self.name} = < &foo &bar ... >;', not '{self}'")
 
         return [self.node.dt.phandle2node[int.from_bytes(self.value[i:i + 4],
                                                          "big")]
@@ -539,10 +532,10 @@ class Property:
         For the second case, DTError is raised if the path does not exist.
         """
         if self.type not in (Type.PATH, Type.STRING):
-            _err("expected property '{0}' on {1} in {2} to be assigned with "
-                 "either '{0} = &foo' or '{0} = \"/path/to/node\"', not '{3}'"
-                 .format(self.name, self.node.path, self.node.dt.filename,
-                         self))
+            _err(f"expected property '{self.name}' on {self.node.path} in "
+                 f"{self.node.dt.filename} to be assigned with either "
+                 f"'{self.name} = &foo' or '{self.name} = \"/path/to/node\"', "
+                 f"not '{self}'")
 
         try:
             path = self.value.decode("utf-8")[:-1]

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: ch32v
+  series:
+  - name: qingke-v2
+    socs:
+    - name: ch32v003

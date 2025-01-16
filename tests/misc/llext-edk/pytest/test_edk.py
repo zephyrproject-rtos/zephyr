@@ -10,16 +10,22 @@ from pathlib import Path
 from subprocess import check_output
 
 import pytest
+import yaml
 from twister_harness import DeviceAdapter
 
 logger = logging.getLogger(__name__)
 
+
 def test_edk(unlaunched_dut: DeviceAdapter):
-    # Need to have the ZEPHYR_SDK_INSTALL_DIR environment variable set,
-    # otherwise can't actually build the edk
-    if os.environ.get("ZEPHYR_SDK_INSTALL_DIR") is None:
-        logger.warning("ZEPHYR_SDK_INSTALL_DIR is not set, skipping test")
-        pytest.skip("ZEPHYR_SDK_INSTALL_DIR is not set")
+    # Get the SDK path from build_info.yml
+    build_dir = str(unlaunched_dut.device_config.build_dir)
+    with open(Path(build_dir) / "build_info.yml") as f:
+        build_info = yaml.safe_load(f)
+        if build_info["cmake"]["toolchain"]["name"] != "zephyr":
+            logger.warning("This test requires the Zephyr SDK to be used, skipping")
+            pytest.skip("The Zephyr SDK must be used")
+
+        sdk_dir = build_info["cmake"]["toolchain"]["path"]
 
     # Can we build the edk?
     command = [
@@ -64,6 +70,7 @@ def test_edk(unlaunched_dut: DeviceAdapter):
             # knows where the EDK is installed
             edk_dir = Path(tempdir) / "llext-edk"
             env = os.environ.copy()
+            env.update({"ZEPHYR_SDK_INSTALL_DIR": sdk_dir})
             env.update({"LLEXT_EDK_INSTALL_DIR": edk_dir})
 
             # Build the extension using the edk
@@ -92,7 +99,7 @@ def test_edk(unlaunched_dut: DeviceAdapter):
                 "--build-dir",
                 unlaunched_dut.device_config.build_dir,
                 "--",
-                f"-DEXTENSION_DIR={tempdir_extension}/build/"
+                f"-DEXTENSION_DIR={tempdir_extension}/build/",
             ]
             logger.debug(f"west command: {command}")
             output = check_output(command, text=True)

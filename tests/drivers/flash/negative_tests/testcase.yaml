@@ -5,5 +5,6 @@ common:
 tests:
   drivers.flash.negative_tests:
     platform_allow:
+      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp

@@ -59,9 +59,9 @@ Architectures
 * Common
 
   * Introduced :kconfig:option:`CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL`, which can be selected when
-    an architecture implemented and enabled its own :c:func:`arch_current_thread` and
+    an architecture implements :c:func:`arch_current_thread` and
     :c:func:`arch_current_thread_set` functions for faster retrieval of the current CPU's thread
-    pointer. When enabled, ``_current`` variable will be routed to the
+    pointer. When enabled, the ``_current`` symbol will be routed to
     :c:func:`arch_current_thread` (:github:`80716`).
 
 * ARC
@@ -241,6 +241,33 @@ Drivers and Sensors
 * SDHC
 
 * Sensors
+
+  * Sensor Clock
+
+    * The asynchronous sensor API now supports external clock sources. To use an external clock source
+      with the asynchronous sensor API, the following configurations are required:
+
+      * Enable one of the Kconfig options:
+        :kconfig:option:`CONFIG_SENSOR_CLOCK_COUNTER`,
+        :kconfig:option:`CONFIG_SENSOR_CLOCK_RTC`, or
+        :kconfig:option:`CONFIG_SENSOR_CLOCK_SYSTEM`.
+
+      * If not using the system clock, define the ``zephyr,sensor-clock`` property in the device tree to specify
+        the external clock source.
+
+        A typical configuration in the device tree structure is as follows:
+
+        .. code-block:: devicetree
+
+          / {
+            chosen {
+              zephyr,sensor-clock = &timer0;
+            };
+          };
+
+          &timer0 {
+            status = "okay";
+          };
 
 * Serial
 

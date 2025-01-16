@@ -19,3 +19,6 @@ mypy
 
 # used for mocking functions in pytest
 mock>=4.0.1
+
+# used for JUnit XML parsing in CTest harness
+junitparser

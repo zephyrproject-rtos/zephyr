@@ -96,12 +96,12 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	 */
 # ifndef CONFIG_ARM64
 	__ASSERT(arch_irq_unlocked(key) ||
-		 arch_current_thread()->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
+		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
 		 "Context switching while holding lock!");
 # endif /* CONFIG_ARM64 */
 #endif /* CONFIG_SPIN_VALIDATE */
 
-	old_thread = arch_current_thread();
+	old_thread = _current;
 
 	z_check_stack_sentinel();
 
@@ -133,7 +133,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif /* CONFIG_SMP */
 		z_thread_mark_switched_out();
 		z_sched_switch_spin(new_thread);
-		arch_current_thread_set(new_thread);
+		z_current_thread_set(new_thread);
 
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice(new_thread);
@@ -146,7 +146,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 
 #ifdef CONFIG_SMP
-		/* Now add arch_current_thread() back to the run queue, once we are
+		/* Now add _current back to the run queue, once we are
 		 * guaranteed to reach the context switch in finite
 		 * time.  See z_sched_switch_spin().
 		 */
@@ -174,7 +174,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		irq_unlock(key);
 	}
 
-	return arch_current_thread()->swap_retval;
+	return _current->swap_retval;
 }
 
 static inline int z_swap_irqlock(unsigned int key)
@@ -235,30 +235,6 @@ static inline void z_swap_unlocked(void)
  *
  * The memory of the dummy thread can be completely uninitialized.
  */
-static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
-{
-	dummy_thread->base.thread_state = _THREAD_DUMMY;
-#ifdef CONFIG_SCHED_CPU_MASK
-	dummy_thread->base.cpu_mask = -1;
-#endif /* CONFIG_SCHED_CPU_MASK */
-	dummy_thread->base.user_options = K_ESSENTIAL;
-#ifdef CONFIG_THREAD_STACK_INFO
-	dummy_thread->stack_info.start = 0U;
-	dummy_thread->stack_info.size = 0U;
-#endif /* CONFIG_THREAD_STACK_INFO */
-#ifdef CONFIG_USERSPACE
-	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
-#endif /* CONFIG_USERSPACE */
-#if (K_HEAP_MEM_POOL_SIZE > 0)
-	k_thread_system_pool_assign(dummy_thread);
-#else
-	dummy_thread->resource_pool = NULL;
-#endif /* K_HEAP_MEM_POOL_SIZE */
+void z_dummy_thread_init(struct k_thread *dummy_thread);
 
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	dummy_thread->base.slice_ticks = 0;
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-
-	arch_current_thread_set(dummy_thread);
-}
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSWAP_H_ */

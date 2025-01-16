@@ -49,13 +49,13 @@ procpu_dram_len = procpu_dram_end - procpu_dram_org;
 MEMORY
 {
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
-  mcuboot_hdr (R):  org = 0x0,  len = 0x20
-  metadata (R):     org = 0x20, len = 0x20
-  FLASH (R):        org = 0x40, len = FLASH_SIZE - 0x40
+  mcuboot_hdr (R): org = 0x0,  len = 0x20
+  metadata (R):    org = 0x20, len = 0x60
+  FLASH (R):       org = 0x80, len = FLASH_SIZE - 0x80
 #else
   /* Make safety margin in the FLASH memory size so the
    * (esp_img_header + (n*esp_seg_headers)) would fit */
-  FLASH (R):        org = 0x0, len = FLASH_SIZE - 0x100
+  FLASH (R):       org = 0x0, len = FLASH_SIZE - 0x100
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   iram0_0_seg(RX): org = procpu_iram_org, len = procpu_iram_len
@@ -76,11 +76,19 @@ MEMORY
 
   /* RTC fast memory (executable). Persists over deep sleep.
    */
-  rtc_iram_seg(RWX): org = 0x600fe000, len = 0x2000
+  rtc_iram_seg(RWX): org = 0x600fe000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
 
-  /* RTC fast memory (same block as above), viewed from data bus
-   */
-  rtc_data_seg(RW): org = 0x600fe000, len = 0x2000
+  /* We reduced the size of rtc_iram_seg by CONFIG_RESERVE_RTC_MEM value.
+     It reserves the amount of RTC fast memory that we use for this memory segment.
+     This segment is intended for keeping:
+       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
+     The aim of this is to keep data that will not be moved around and have a fixed address.
+  */
+#if (CONFIG_RESERVE_RTC_MEM > 0)
+  rtc_reserved_seg(RW): org = 0x600fe000 + 0x2000 - CONFIG_RESERVE_RTC_MEM,
+                        len = CONFIG_RESERVE_RTC_MEM
+#endif
 
   /* RTC slow memory (data accessible). Persists over deep sleep.
    */
@@ -140,6 +148,42 @@ SECTIONS
     LONG(ADDR(.dram0.data))
     LONG(LOADADDR(.dram0.data))
     LONG(LOADADDR(.dram0.end) + SIZEOF(.dram0.end) - LOADADDR(.dram0.data))
+
+    /* RTC_IRAM metadata:
+     * 8. Destination address (VMA) for RTC_IRAM region
+     * 9. Flash offset (LMA) for start of RTC_IRAM region
+     * 10. Size of RTC_IRAM region
+     */
+    LONG(ADDR(.rtc.text))
+    LONG(LOADADDR(.rtc.text))
+    LONG(SIZEOF(.rtc.text))
+
+    /* RTC_DRAM metadata:
+     * 11. Destination address (VMA) for RTC_DRAM region
+     * 12. Flash offset (LMA) for start of RTC_DRAM region
+     * 13. Size of RTC_DRAM region
+     */
+    LONG(ADDR(.rtc.data))
+    LONG(LOADADDR(.rtc.data))
+    LONG(SIZEOF(.rtc.data))
+
+    /* IROM metadata:
+     * 14. Destination address (VMA) for IROM region
+     * 15. Flash offset (LMA) for start of IROM region
+     * 16. Size of IROM region
+     */
+    LONG(ADDR(.flash.text))
+    LONG(LOADADDR(.flash.text))
+    LONG(SIZEOF(.flash.text))
+
+    /* DROM metadata:
+     * 17. Destination address (VMA) for DROM region
+     * 18. Flash offset (LMA) for start of DROM region
+     * 19. Size of DROM region
+     */
+    LONG(ADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata_end) - LOADADDR(.flash.rodata))
   } > metadata
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
@@ -156,11 +200,13 @@ SECTIONS
   .rtc.text :
   {
     . = ALIGN(4);
-    _rtc_fast_start = ABSOLUTE(.);
     _rtc_text_start = ABSOLUTE(.);
-    *(.rtc.entry.literal .rtc.text)
+    _rtc_fast_start = ABSOLUTE(.);
+    *(.rtc.literal .rtc.literal.*)
+    *(.rtc.text .rtc.text.*)
+    *(.rtc.entry.literal)
     *(.rtc.entry.text)
-    _rtc_text_end = ABSOLUTE(.);
+    . = ALIGN(4);
   } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
 
   /* This section located in RTC FAST Memory area.
@@ -171,30 +217,27 @@ SECTIONS
   {
     . = ALIGN(4);
     _rtc_force_fast_start = ABSOLUTE(.);
-
     *(.rtc.force_fast .rtc.force_fast.*)
-    . = ALIGN(4) ;
+    . = ALIGN(4);
     _rtc_force_fast_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(rtc_data_seg, ROMABLE_REGION)
+  } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
   /* RTC data section holds data marked with
    * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
    */
   .rtc.data :
   {
+  . = ALIGN(4);
     _rtc_data_start = ABSOLUTE(.);
-    *(.rtc.data)
-    *(.rtc.rodata)
+    *(.rtc.data .rtc.data.*)
+    *(.rtc.rodata .rtc.rodata.*)
     _rtc_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
   .rtc.bss (NOLOAD) :
   {
     _rtc_bss_start = ABSOLUTE(.);
-
-    *(.rtc.data)
-    *(.rtc.rodata)
-
+    *(.rtc.bss .rtc.bss.*)
     _rtc_bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(rtc_slow_seg)
 
@@ -203,13 +246,11 @@ SECTIONS
    * User data marked with RTC_NOINIT_ATTR will be placed
    * into this section. See the file "esp_attr.h" for more information.
    */
-  .rtc_noinit (NOLOAD):
+  .rtc_noinit (NOLOAD) :
   {
     . = ALIGN(4);
-    _rtc_noinit_start = ABSOLUTE(.);
     *(.rtc_noinit .rtc_noinit.*)
     . = ALIGN(4) ;
-    _rtc_noinit_end = ABSOLUTE(.);
   } GROUP_LINK_IN(rtc_slow_seg)
 
   /* This section located in RTC SLOW Memory area.
@@ -225,12 +266,23 @@ SECTIONS
     _rtc_force_slow_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
+ /**
+   * This section holds RTC data that should have fixed addresses.
+   * The data are not initialized at power-up and are retained during deep sleep.
+   */
+#if (CONFIG_RESERVE_RTC_MEM > 0)
+  .rtc_reserved (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _rtc_reserved_start = ABSOLUTE(.);
+    *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
+    _rtc_reserved_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(rtc_reserved_seg)
+#endif
+
   /* Get size of rtc slow data based on rtc_data_location alias */
   _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
   _rtc_fast_length = (_rtc_force_fast_end - _rtc_fast_start);
-
-  ASSERT((_rtc_slow_length <= LENGTH(rtc_slow_seg)), "RTC_SLOW segment data does not fit.")
-  ASSERT((_rtc_fast_length <= LENGTH(rtc_data_seg)), "RTC_FAST segment data does not fit.")
 
   /* --- END OF RTC --- */
 
@@ -949,7 +1001,7 @@ SECTIONS
 
     _spiram_heap_start = ABSOLUTE(.);
     . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE - (_spiram_heap_start - _ext_ram_bss_start);
-    . = ALIGN(4);
+    . = ALIGN(16);
 
     _ext_ram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(ext_dram_seg)

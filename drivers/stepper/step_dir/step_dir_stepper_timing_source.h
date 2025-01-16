@@ -20,10 +20,11 @@ typedef int (*stepper_timing_source_init)(const struct device *dev);
  * @brief Update the stepper timing source.
  *
  * @param dev Pointer to the device structure.
- * @param velocity Velocity in microsteps per second.
+ * @param microstep_interval_ns Step interval in nanoseconds.
  * @return 0 on success, or a negative error code on failure.
  */
-typedef int (*stepper_timing_source_update)(const struct device *dev, uint32_t velocity);
+typedef int (*stepper_timing_source_update)(const struct device *dev,
+					    uint64_t microstep_interval_ns);
 
 /**
  * @brief Start the stepper timing source.

@@ -152,7 +152,7 @@
 
 zephyr_udc0: &usbhs {
 	status = "okay";
-	phy_handle = <&usbphy1>;
+	phy-handle = <&usbphy1>;
 };
 
 &usbphy1 {

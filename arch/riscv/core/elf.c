@@ -43,6 +43,13 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 static inline int riscv_relocation_fits(long long jump_target, long long max_distance,
 					elf_word reloc_type)
 {
+	/*
+	 * two's complement encoding
+	 * e.g., [-128=0b10000000, 127=0b01111111] encodable with 8 bits
+	 */
+	if (jump_target < 0) {
+		max_distance++;
+	}
 	if (llabs(jump_target) > max_distance) {
 		LOG_ERR("%lld byte relocation is not possible for type %" PRIu64 " (max %lld)!",
 			jump_target, (uint64_t)reloc_type, max_distance);

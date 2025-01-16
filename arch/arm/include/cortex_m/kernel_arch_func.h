@@ -87,8 +87,8 @@ extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 static ALWAYS_INLINE int arch_swap(unsigned int key)
 {
 	/* store off key and return value */
-	arch_current_thread()->arch.basepri = key;
-	arch_current_thread()->arch.swap_return_value = -EAGAIN;
+	_current->arch.basepri = key;
+	_current->arch.swap_return_value = -EAGAIN;
 
 	/* set pending bit to make sure we will take a PendSV exception */
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
@@ -99,7 +99,7 @@ static ALWAYS_INLINE int arch_swap(unsigned int key)
 	/* Context switch is performed here. Returning implies the
 	 * thread has been context-switched-in again.
 	 */
-	return arch_current_thread()->arch.swap_return_value;
+	return _current->arch.swap_return_value;
 }
 
 

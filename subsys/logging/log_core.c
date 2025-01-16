@@ -992,4 +992,19 @@ static int enable_logger(void)
 	return 0;
 }
 
+#ifdef CONFIG_LOG_MODE_DEFERRED
+void log_flush(void)
+{
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		while (log_data_pending()) {
+			k_sleep(K_MSEC(10));
+		}
+		k_sleep(K_MSEC(10));
+	} else {
+		while (LOG_PROCESS()) {
+		}
+	}
+}
+#endif
+
 SYS_INIT(enable_logger, POST_KERNEL, CONFIG_LOG_CORE_INIT_PRIORITY);

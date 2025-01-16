@@ -254,7 +254,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 		     "There is no power state defined");
 
 	/* make sure this is idle thread */
-	zassert_true(z_is_idle_thread_object(arch_current_thread()));
+	zassert_true(z_is_idle_thread_object(_current));
 	zassert_true(ticks == _kernel.idle);
 	zassert_false(k_can_yield());
 	idle_entered = true;
@@ -276,7 +276,7 @@ static void notify_pm_state_entry(enum pm_state state)
 	/* enter suspend */
 	zassert_true(notify_app_entry == true,
 		     "Notification to enter suspend was not sent to the App");
-	zassert_true(z_is_idle_thread_object(arch_current_thread()));
+	zassert_true(z_is_idle_thread_object(_current));
 	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE);
 
 	pm_device_state_get(device_dummy, &device_power_state);
@@ -301,7 +301,7 @@ static void notify_pm_state_exit(enum pm_state state)
 	/* leave suspend */
 	zassert_true(notify_app_exit == true,
 		     "Notification to leave suspend was not sent to the App");
-	zassert_true(z_is_idle_thread_object(arch_current_thread()));
+	zassert_true(z_is_idle_thread_object(_current));
 	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE);
 
 	/* at this point, devices are active again*/

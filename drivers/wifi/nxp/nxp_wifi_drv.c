@@ -503,17 +503,27 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_uap_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_uap_network.security.psk, params->psk, params->psk_length);
-		}
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-		else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2;
-			nxp_wlan_uap_network.security.key_mgmt |= WLAN_KEY_MGMT_PSK_SHA256;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_uap_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_uap_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_uap_network.security.pwe_derivation = 1;
+			nxp_wlan_uap_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_uap_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_uap_network.security.pwe_derivation = 2;
+			nxp_wlan_uap_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_uap_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2_WPA3_SAE_MIXED;
 			nxp_wlan_uap_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_uap_network.security.psk, params->psk, params->psk_length);
-		}
-#endif
-		else if (params->security == WIFI_SECURITY_TYPE_SAE) {
-			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA3_SAE;
 			nxp_wlan_uap_network.security.password_len = params->psk_length;
 			strncpy(nxp_wlan_uap_network.security.password, params->psk,
 				params->psk_length);
@@ -899,17 +909,27 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
-		}
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-		else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
-			nxp_wlan_network.security.key_mgmt |= WLAN_KEY_MGMT_PSK_SHA256;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_network.security.pwe_derivation = 1;
+			nxp_wlan_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
+			nxp_wlan_network.security.pwe_derivation = 2;
+			nxp_wlan_network.security.password_len = params->psk_length;
+			strncpy(nxp_wlan_network.security.password, params->psk,
+				params->psk_length);
+		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
+			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2_WPA3_SAE_MIXED;
 			nxp_wlan_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
-		}
-#endif
-		else if (params->security == WIFI_SECURITY_TYPE_SAE) {
-			nxp_wlan_network.security.type = WLAN_SECURITY_WPA3_SAE;
 			nxp_wlan_network.security.password_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.password, params->psk,
 				params->psk_length);
@@ -1212,6 +1232,26 @@ static int nxp_wifi_11k_cfg(const struct device *dev, struct wifi_11k_params *pa
 		params->enable_11k = wlan_get_host_11k_status();
 	} else {
 		wlan_host_11k_cfg(params->enable_11k);
+	}
+
+	return 0;
+}
+
+static int nxp_wifi_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params)
+{
+	int ret = WM_SUCCESS;
+
+	if (params != NULL) {
+		if (strlen(params->ssid) > WIFI_SSID_MAX_LEN) {
+			LOG_ERR("ssid too long");
+			return -EINVAL;
+		}
+
+		ret = wlan_host_11k_neighbor_req(params->ssid);
+		if (ret != WM_SUCCESS) {
+			LOG_ERR("send neighbor report request fail");
+			return -EAGAIN;
+		}
 	}
 
 	return 0;
@@ -1866,6 +1906,7 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 #endif
 #ifdef CONFIG_NXP_WIFI_11K
 	.cfg_11k = nxp_wifi_11k_cfg,
+	.send_11k_neighbor_request = nxp_wifi_11k_neighbor_request,
 #endif
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,

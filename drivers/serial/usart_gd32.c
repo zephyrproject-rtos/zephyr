@@ -335,7 +335,7 @@ static DEVICE_API(uart, usart_gd32_driver_api) = {
 		.clkid = DT_INST_CLOCKS_CELL(n, id),				\
 		.reset = RESET_DT_SPEC_INST_GET(n),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
+		.parity = DT_INST_ENUM_IDX(n, parity),				\
 		 GD32_USART_IRQ_HANDLER_FUNC_INIT(n)				\
 	};									\
 	DEVICE_DT_INST_DEFINE(n, usart_gd32_init,				\

@@ -45,11 +45,14 @@ struct ifx_cat1_spi_data {
 
 static int32_t get_hw_block_num(CySCB_Type *reg_addr)
 {
+	extern const uint8_t _CYHAL_SCB_BASE_ADDRESS_INDEX[_SCB_ARRAY_SIZE];
+	extern CySCB_Type *const _CYHAL_SCB_BASE_ADDRESSES[_SCB_ARRAY_SIZE];
+
 	uint32_t i;
 
 	for (i = 0u; i < _SCB_ARRAY_SIZE; i++) {
 		if (_CYHAL_SCB_BASE_ADDRESSES[i] == reg_addr) {
-			return i;
+			return _CYHAL_SCB_BASE_ADDRESS_INDEX[i];
 		}
 	}
 

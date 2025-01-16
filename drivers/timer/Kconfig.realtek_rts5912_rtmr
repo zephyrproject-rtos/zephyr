@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+config REALTEK_RTS5912_RTMR
+	bool "Realtek RTS5912 RTOS Timer"
+	default y if DT_HAS_REALTEK_RTS5912_RTMR_ENABLED
+	select TICKLESS_CAPABLE
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	help
+	  This module implements a kernel device driver for the Realtek
+	  RTS5912 series RTOS timer.

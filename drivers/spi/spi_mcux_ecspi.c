@@ -93,7 +93,8 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		transfer.txData = NULL;
 	}
 
-	transfer.dataSize = data->dfs;
+	/* Burst length is set in the configure step */
+	transfer.dataSize = 1;
 
 	status = ECSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
@@ -163,7 +164,7 @@ static int spi_mcux_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (spi_cfg->slave > kECSPI_Channel3) {
+	if (!spi_cs_is_gpio(spi_cfg) && spi_cfg->slave > kECSPI_Channel3) {
 		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, kECSPI_Channel3);
 		return -EINVAL;
 	}
@@ -181,7 +182,8 @@ static int spi_mcux_configure(const struct device *dev,
 
 	ECSPI_MasterGetDefaultConfig(&master_config);
 
-	master_config.channel = (ecspi_channel_source_t)spi_cfg->slave;
+	master_config.channel =
+		spi_cs_is_gpio(spi_cfg) ? kECSPI_Channel0 : (ecspi_channel_source_t)spi_cfg->slave;
 	master_config.channelConfig.polarity =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 		? kECSPI_PolarityActiveLow

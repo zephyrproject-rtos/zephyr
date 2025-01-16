@@ -37,7 +37,6 @@ zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_DSPI spi_mcux_dspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_ECSPI spi_mcux_ecspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_FLEXCOMM spi_mcux_flexcomm.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_FLEXIO spi_mcux_flexio.c)
-zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_LPSPI spi_mcux_lpspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NPCX_SPIP spi_npcx_spip.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NRFX_SPI spi_nrfx_spi.c spi_nrfx_common.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NRFX_SPIM spi_nrfx_spim.c spi_nrfx_common.c)
@@ -65,3 +64,5 @@ zephyr_library_sources_ifdef(CONFIG_SPI_XEC_QMSPI_LDMA spi_xec_qmspi_ldma.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_XLNX_AXI_QUADSPI spi_xlnx_axi_quadspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_XMC4XXX spi_xmc4xxx.c)
 # zephyr-keep-sorted-stop
+
+add_subdirectory(spi_nxp_lpspi)

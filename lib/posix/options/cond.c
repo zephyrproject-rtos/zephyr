@@ -17,7 +17,9 @@ LOG_MODULE_REGISTER(pthread_cond, CONFIG_PTHREAD_COND_LOG_LEVEL);
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
+__pinned_bss
 static struct k_condvar posix_cond_pool[CONFIG_MAX_PTHREAD_COND_COUNT];
+
 SYS_BITARRAY_DEFINE_STATIC(posix_cond_bitarray, CONFIG_MAX_PTHREAD_COND_COUNT);
 
 /*
@@ -209,6 +211,7 @@ int pthread_cond_destroy(pthread_cond_t *cvar)
 	return 0;
 }
 
+__boot_func
 static int pthread_cond_pool_init(void)
 {
 	int err;

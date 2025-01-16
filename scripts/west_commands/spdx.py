@@ -74,8 +74,9 @@ class ZephyrSpdx(WestCommand):
         if query_ready:
             self.inf("initialized; run `west build` then run `west spdx`")
         else:
-            self.err("Couldn't create CMake file-based API query directory")
-            self.err("You can manually create an empty file at $BUILDDIR/.cmake/api/v1/query/codemodel-v2")
+            self.die("Couldn't create CMake file-based API query directory\n"
+                     "You can manually create an empty file at "
+                     "$BUILDDIR/.cmake/api/v1/query/codemodel-v2")
 
     def do_run_spdx(self, args):
         if not args.build_dir:
@@ -110,4 +111,5 @@ class ZephyrSpdx(WestCommand):
             # create the directory
             os.makedirs(cfg.spdxDir, exist_ok=False)
 
-        makeSPDX(cfg)
+        if not makeSPDX(cfg):
+            self.die("Failed to create SPDX output")

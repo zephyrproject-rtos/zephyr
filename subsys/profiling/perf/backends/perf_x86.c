@@ -67,7 +67,7 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 	 */
 
 	buf[idx++] = (uintptr_t)isf->eip;
-	while (valid_stack((uintptr_t)fp, arch_current_thread())) {
+	while (valid_stack((uintptr_t)fp, _current)) {
 		if (idx >= size) {
 			return 0;
 		}

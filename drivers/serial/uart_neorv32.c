@@ -491,8 +491,7 @@ static DEVICE_API(uart, neorv32_uart_driver_api) = {
 	static struct neorv32_uart_data neorv32_uart_##n##_data = {	\
 		.uart_cfg = {						\
 			.baudrate = DT_PROP(node_id, current_speed),	\
-			.parity = DT_ENUM_IDX_OR(node_id, parity,	\
-						 UART_CFG_PARITY_NONE),	\
+			.parity = DT_ENUM_IDX(node_id, parity),		\
 			.stop_bits = UART_CFG_STOP_BITS_1,		\
 			.data_bits = UART_CFG_DATA_BITS_8,		\
 			.flow_ctrl = DT_PROP(node_id, hw_flow_control) ? \

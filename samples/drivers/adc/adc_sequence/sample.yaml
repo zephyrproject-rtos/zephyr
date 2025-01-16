@@ -13,6 +13,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - ucans32k1sic
       - frdm_mcxc242
+      - stm32f3_disco
     integration_platforms:
       - nrf52840dk/nrf52840
     harness: console

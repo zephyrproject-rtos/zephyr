@@ -52,13 +52,17 @@ static struct mspi_dev_cfg device_cfg[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, MSPI_DEVICE_CONFIG_DT, (,))
 };
 
+#if CONFIG_MSPI_XIP
 static struct mspi_xip_cfg xip_cfg[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, MSPI_XIP_CONFIG_DT, (,))
 };
+#endif
 
+#if CONFIG_MSPI_SCRAMBLE
 static struct mspi_scramble_cfg scramble_cfg[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, MSPI_SCRAMBLE_CONFIG_DT, (,))
 };
+#endif
 
 ZTEST(mspi_api, test_mspi_api)
 {
@@ -105,7 +109,11 @@ ZTEST(mspi_api, test_mspi_api)
 
 		ret = mspi_register_callback(mspi_bus, &dev_id[dev_idx],
 					     MSPI_BUS_XFER_COMPLETE, NULL, NULL);
-		zassert_equal(ret, 0, "mspi_register_callback failed.");
+		if (ret == -ENOTSUP) {
+			printf("mspi_register_callback not supported.\n");
+		} else {
+			zassert_equal(ret, 0, "mspi_register_callback failed.");
+		}
 
 		ret = mspi_get_channel_status(mspi_bus, 0);
 		zassert_equal(ret, 0, "mspi_get_channel_status failed.");

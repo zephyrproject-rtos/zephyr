@@ -1,8 +1,13 @@
+# Copyright (c) 2024, Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
 description: Atmel SAM0 multi-protocol (UART, SPI, I2C) SERCOM unit
 
 compatible: "atmel,sam0-sercom"
 
-include: base.yaml
+include:
+  - name: base.yaml
+  - name: atmel,assigned-clocks.yaml
 
 properties:
   reg:

@@ -83,12 +83,17 @@ BUILD_ASSERT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS + CONFIG_POSIX_PTHREAD_ATT
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 static void posix_thread_recycle(void);
+
+__pinned_data
 static sys_dlist_t posix_thread_q[] = {
 	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_READY_Q]),
 	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_RUN_Q]),
 	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_DONE_Q]),
 };
+
+__pinned_bss
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
+
 static SYS_SEM_DEFINE(pthread_pool_lock, 1, 1);
 static int pthread_concurrency;
 
@@ -1536,6 +1541,7 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 	return ret;
 }
 
+__boot_func
 static int posix_thread_pool_init(void)
 {
 	ARRAY_FOR_EACH_PTR(posix_thread_pool, th) {

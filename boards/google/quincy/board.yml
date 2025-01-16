@@ -1,0 +1,6 @@
+board:
+  name: google_quincy
+  full_name: Quincy
+  vendor: google
+  socs:
+    - name: npcx9mfp

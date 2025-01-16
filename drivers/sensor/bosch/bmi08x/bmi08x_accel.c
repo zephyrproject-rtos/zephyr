@@ -454,16 +454,41 @@ static int bmi08x_temp_channel_get(const struct device *dev, struct sensor_value
 {
 	uint16_t temp_raw = 0U;
 	int32_t temp_micro = 0;
+	int16_t temp_int11 = 0;
 	int ret;
 
 	ret = bmi08x_accel_word_read(dev, BMI08X_REG_TEMP_MSB, &temp_raw);
-	if (ret < 0) {
+	if (!ret) {
+		temp_int11 = (temp_raw & 0xFF) << 3;
+	} else {
+		LOG_ERR("Error reading BMI08X_REG_TEMP_MSB. (err %d)", ret);
 		return ret;
 	}
 
-	/* the scale is 1/2^5/LSB = 31250 micro degrees */
-	temp_micro = BMI08X_TEMP_OFFSET * 1000000ULL + temp_raw * 31250ULL;
+	if (temp_raw == 0x80) {
+		/* temperature invalid */
+		LOG_ERR("BMI08X returned invalid temperature.");
+		return -ENODATA;
+	}
 
+	ret = bmi08x_accel_word_read(dev, BMI08X_REG_TEMP_LSB, &temp_raw);
+	if (!ret) {
+		temp_int11 |= (temp_raw & 0xE0) >> 5;
+	} else {
+		LOG_ERR("Error reading BMI08X_REG_TEMP_LSB. (err %d)", ret);
+		return ret;
+	}
+	/*
+	 * int11 type ranges in [-1024, 1023]
+	 * the 11st bit declares +/-
+	 * if larger than 1023, it is negative.
+	 */
+	if (temp_int11 > 1023) {
+		temp_int11 -= 2048;
+	}
+	/* the value ranges in [-504, 496] */
+	/* the scale is 0.125°C/LSB = 125 micro degrees */
+	temp_micro = temp_int11 * 125 + 23 * 1000000;
 	val->val1 = temp_micro / 1000000ULL;
 	val->val2 = temp_micro % 1000000ULL;
 

@@ -118,6 +118,14 @@ ADC
 
 * Renamed the ``compatible`` from ``nxp,kinetis-adc12`` to :dtcompatible:`nxp,adc12`.
 
+Counter
+=======
+
+* Renamed the devicetree property ``primary_source`` to ``primary-source``.
+* Renamed the devicetree property ``secondary_source`` to ``secondary-source``.
+* Renamed the devicetree property ``filter_count`` to ``filter-count``.
+* Renamed the devicetree property ``filter_period`` to ``filter-period``.
+
 Controller Area Network (CAN)
 =============================
 
@@ -146,6 +154,8 @@ Display
         ...
     };
 
+* Renamed the devicetree propertys ``pclk_pol`` and ``data_cmd-gpios``
+  to ``pclk-pol`` and ``data-cmd-gpios``.
 
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
@@ -162,10 +172,25 @@ Entropy
 GNSS
 ====
 
+GPIO
+====
+
+* Renamed the device tree property ``pin_mask`` to ``pin-mask``.
+* Renamed the device tree property ``pinmux_mask`` to ``pinmux-mask``.
+* Renamed the device tree property ``vbatts_pins`` to ``vbatts-pins``.
+* Renamed the device tree property ``bit_per_gpio`` to ``bit-per-gpio``.
+* Renamed the device tree property ``off_val`` to ``off-val``.
+* Renamed the device tree property ``on_val`` to ``on-val``.
+
 I2C
 ===
 
 * Renamed the ``compatible`` from ``nxp,imx-lpi2c`` to :dtcompatible:`nxp,lpi2c`.
+
+I2S
+===
+
+* Renamed the device tree property from ``fifo_depth`` to ``fifo-depth``.
 
 Input
 =====
@@ -223,6 +248,12 @@ PWM
 
 * Renamed the ``compatible`` from ``nxp,kinetis-ftm-pwm`` to :dtcompatible:`nxp,ftm-pwm`.
 
+SDHC
+====
+
+* Renamed the device tree property from ``power_delay_ms`` to ``power-delay-ms```
+* Renamed the device tree property from ``max_current_330`` to ``max-current-330``
+
 Sensors
 =======
 
@@ -237,10 +268,17 @@ Stepper
   * Renamed the ``compatible`` from ``zephyr,gpio-steppers`` to :dtcompatible:`zephyr,gpio-stepper`.
   * Renamed the ``stepper_set_actual_position`` function to :c:func:`stepper_set_reference_position`.
   * Renamed the ``stepper_enable_constant_velocity_mode`` function to :c:func:`stepper_run`.
+    The function does not take a velocity parameter anymore. Set the desired speed using the
+    :c:func:`stepper_set_microstep_interval` function beforehand.
   * Renamed the ``stepper_move`` function to :c:func:`stepper_move_by`.
   * Renamed the ``stepper_set_target_position`` function to :c:func:`stepper_move_to`.
+  * Renamed the ``stepper_set_max_velocity`` function to :c:func:`stepper_set_microstep_interval`.
+    The function now takes the step interval in nanoseconds. This allows for a more precise control.
+  * Deprecating setting max velocity via :c:func:`stepper_run`.
   * The :kconfig:option:`STEPPER_ADI_TMC_RAMP_GEN` is now deprecated and is replaced with the new
     :kconfig:option:`STEPPER_ADI_TMC5041_RAMP_GEN` option.
+  * To control the velocity for :dtcompatible:`adi,tmc5041` stepper driver, use
+    :c:func:`tmc5041_stepper_set_max_velocity` or :c:func:`tmc5041_stepper_set_ramp`.
 
 SPI
 ===
@@ -261,6 +299,11 @@ Timer
 
 * Renamed the ``compatible`` from ``nxp,kinetis-ftm`` to :dtcompatible:`nxp,ftm` and relocate it
   under ``dts/bindings/timer``.
+
+USB
+===
+
+* Renamed the devicetree property names ``phy_handle`` to ``phy-handle``.
 
 Video
 =====
@@ -408,10 +451,6 @@ Stream Flash
 
 Architectures
 *************
-
-* Common
-
-  * ``_current`` is deprecated, used :c:func:`arch_current_thread` instead.
 
 * native/POSIX
 

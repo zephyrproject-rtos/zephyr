@@ -70,7 +70,7 @@ SECTION_FUNC(TEXT, z_arm_do_swap)
 
 #if defined(CONFIG_FPU_SHARING)
     ldrb r0, [r2, #_thread_offset_to_user_options]
-    tst r0, #K_FP_REGS /* arch_current_thread()->base.user_options & K_FP_REGS */
+    tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
     beq out_fp_inactive
 
     mov ip, #FPEXC_EN
@@ -152,7 +152,7 @@ out_fp_inactive:
 
 #if defined(CONFIG_FPU_SHARING)
     ldrb r0, [r2, #_thread_offset_to_user_options]
-    tst r0, #K_FP_REGS /* arch_current_thread()->base.user_options & K_FP_REGS */
+    tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
     beq in_fp_inactive
 
     mov r3, #FPEXC_EN

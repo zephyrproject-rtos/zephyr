@@ -21,6 +21,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 
 #include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 static int preset_select(uint8_t index, bool sync)
 {
@@ -29,7 +30,7 @@ static int preset_select(uint8_t index, bool sync)
 
 static void preset_name_changed(uint8_t index, const char *name)
 {
-	shell_print(ctx_shell, "Preset name changed index %u name %s", index, name);
+	bt_shell_print("Preset name changed index %u name %s", index, name);
 }
 
 static const struct bt_has_preset_ops preset_ops = {

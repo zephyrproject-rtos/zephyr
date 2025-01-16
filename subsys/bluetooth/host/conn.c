@@ -854,10 +854,18 @@ void bt_conn_data_ready(struct bt_conn *conn)
 		 *
 		 * This reference will be consumed when the conn is popped off
 		 * the list (in `get_conn_ready`).
+		 *
+		 * The `bt_dev.le.conn_ready` list is accessed by the tx_processor
+		 * which runs in a workqueue, but `bt_conn_data_ready` can be called
+		 * from different threads so we need to make sure that nothing will
+		 * trigger a thread switch while we are manipulating the list since
+		 * sys_slist_*() functions are not thread safe.
 		 */
 		bt_conn_ref(conn);
+		k_sched_lock();
 		sys_slist_append(&bt_dev.le.conn_ready,
 				 &conn->_conn_ready);
+		k_sched_unlock();
 		LOG_DBG("raised");
 	} else {
 		LOG_DBG("already in list");

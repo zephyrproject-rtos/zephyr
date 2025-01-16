@@ -22,6 +22,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_br);
 
+#define RSSI_INVALID 127
+
 struct bt_br_discovery_result *discovery_results;
 static size_t discovery_results_size;
 static size_t discovery_results_count;
@@ -394,7 +396,7 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr, int
 	}
 
 	/* ignore if invalid RSSI */
-	if (rssi == 0xff) {
+	if (rssi == RSSI_INVALID) {
 		return NULL;
 	}
 
@@ -512,7 +514,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	int i;
 	struct bt_br_discovery_cb *listener, *next;
 
-	result = get_result_slot(&evt->bdaddr, 0xff);
+	result = get_result_slot(&evt->bdaddr, RSSI_INVALID);
 	if (!result) {
 		return;
 	}

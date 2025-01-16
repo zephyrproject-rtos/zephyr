@@ -19,7 +19,9 @@ struct posix_barrier {
 	uint32_t count;
 };
 
+__pinned_bss
 static struct posix_barrier posix_barrier_pool[CONFIG_MAX_PTHREAD_BARRIER_COUNT];
+
 SYS_BITARRAY_DEFINE_STATIC(posix_barrier_bitarray, CONFIG_MAX_PTHREAD_BARRIER_COUNT);
 
 /*
@@ -195,6 +197,7 @@ int pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
 	return 0;
 }
 
+__boot_func
 static int pthread_barrier_pool_init(void)
 {
 	int err;

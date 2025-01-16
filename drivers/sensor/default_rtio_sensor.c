@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor_clock.h>
 #include <zephyr/dsp/types.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/rtio/work.h>
@@ -119,11 +120,21 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 	const struct sensor_chan_spec *const channels = cfg->channels;
 	const int num_output_samples = compute_num_samples(channels, cfg->count);
 	uint32_t min_buf_len = compute_min_buf_len(num_output_samples);
-	uint64_t timestamp_ns = k_ticks_to_ns_floor64(k_uptime_ticks());
-	int rc = sensor_sample_fetch(dev);
+	uint64_t cycles;
+	int rc;
+
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
+	uint64_t timestamp_ns = sensor_clock_cycles_to_ns(cycles);
 	uint8_t *buf;
 	uint32_t buf_len;
 
+	rc = sensor_sample_fetch(dev);
 	/* Check that the fetch succeeded */
 	if (rc != 0) {
 		LOG_WRN("Failed to fetch samples");

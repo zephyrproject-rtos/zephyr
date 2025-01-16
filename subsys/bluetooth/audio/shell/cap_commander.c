@@ -29,42 +29,42 @@ static void cap_discover_cb(struct bt_conn *conn, int err,
 			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "discover failed (%d)", err);
+		bt_shell_error("discover failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "discovery completed%s", csis_inst == NULL ? "" : " with CSIS");
+	bt_shell_print("discovery completed%s", csis_inst == NULL ? "" : " with CSIS");
 }
 
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
 static void cap_volume_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Volume change failed (%d)", err);
+		bt_shell_error("Volume change failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Volume change completed");
+	bt_shell_print("Volume change completed");
 }
 
 static void cap_volume_mute_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Volume mute change failed (%d)", err);
+		bt_shell_error("Volume mute change failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Volume mute change completed");
+	bt_shell_print("Volume mute change completed");
 }
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Volume offset change failed (%d)", err);
+		bt_shell_error("Volume offset change failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Volume offset change completed");
+	bt_shell_print("Volume offset change completed");
 }
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
@@ -73,22 +73,22 @@ static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 static void cap_microphone_mute_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Microphone mute change failed (%d)", err);
+		bt_shell_error("Microphone mute change failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Microphone mute change completed");
+	bt_shell_print("Microphone mute change completed");
 }
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static void cap_microphone_gain_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Microphone gain change failed (%d)", err);
+		bt_shell_error("Microphone gain change failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Microphone gain change completed");
+	bt_shell_print("Microphone gain change completed");
 }
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
@@ -97,33 +97,33 @@ static void cap_microphone_gain_changed_cb(struct bt_conn *conn, int err)
 static void cap_broadcast_reception_start_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Broadcast reception start failed (%d)", err);
+		bt_shell_error("Broadcast reception start failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Broadcast reception start completed");
+	bt_shell_print("Broadcast reception start completed");
 }
 
 static void cap_broadcast_reception_stop_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Broadcast reception stop failed (%d) for conn %p", err,
-			    (void *)conn);
+		bt_shell_error("Broadcast reception stop failed (%d) for conn %p", err,
+			       (void *)conn);
 		return;
 	}
 
-	shell_print(ctx_shell, "Broadcast reception stop completed");
+	bt_shell_print("Broadcast reception stop completed");
 }
 
 static void cap_distribute_broadcast_code_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Distribute broadcast code failed (%d) for conn %p", err,
-			    (void *)conn);
+		bt_shell_error("Distribute broadcast code failed (%d) for conn %p", err,
+			       (void *)conn);
 		return;
 	}
 
-	shell_print(ctx_shell, "Distribute broadcast code completed");
+	bt_shell_error("Distribute broadcast code completed");
 }
 #endif
 
@@ -170,10 +170,6 @@ static int cmd_cap_commander_discover(const struct shell *sh, size_t argc, char 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
-	}
-
-	if (ctx_shell == NULL) {
-		ctx_shell = sh;
 	}
 
 	if (!cbs_registered) {

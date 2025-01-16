@@ -73,8 +73,6 @@ zephyr_library_sources_ifdef(CONFIG_SOC_DIE_PSOC6_04
   ${hal_cat1a_dir}/source/triggers/cyhal_triggers_psoc6_04.c)
 
 # High level interface for interacting with CAT1 hardware
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC     ${hal_dir}/source/cyhal_adc_sar.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC     ${hal_dir}/source/cyhal_analog_common.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_FLASH   ${hal_dir}/source/cyhal_nvm.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C     ${hal_dir}/source/cyhal_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPTIMER ${hal_dir}/source/cyhal_lptimer.c)
@@ -85,11 +83,24 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER   ${hal_dir}/source/cyhal
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TRNG    ${hal_dir}/source/cyhal_trng.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART    ${hal_dir}/source/cyhal_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT     ${hal_dir}/source/cyhal_wdt.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA     ${hal_dir}/source/cyhal_dma.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA     ${hal_dir}/source/cyhal_dma_dw.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA     ${hal_dir}/source/cyhal_dma_dmac.c)
 
 if(CONFIG_USE_INFINEON_ADC OR CONFIG_USE_INFINEON_SMIF)
   zephyr_library_sources(${hal_dir}/source/cyhal_dma.c)
   zephyr_library_sources(${hal_dir}/source/cyhal_dma_dmac.c)
   zephyr_library_sources(${hal_dir}/source/cyhal_dma_dw.c)
+endif()
+
+if(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
+  zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC     ${hal_dir}/source/cyhal_adc_mic.c)
+else()
+  zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC     ${hal_dir}/source/cyhal_adc_sar.c)
+endif()
+
+if(CONFIG_USE_INFINEON_ADC)
+  zephyr_library_sources(${hal_dir}/source/cyhal_analog_common.c)
 endif()
 
 if(CONFIG_USE_INFINEON_TIMER)

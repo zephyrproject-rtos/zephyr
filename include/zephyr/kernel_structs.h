@@ -174,7 +174,7 @@ struct _cpu {
 #endif
 
 #ifdef CONFIG_SMP
-	/* True when arch_current_thread() is allowed to context switch */
+	/* True when _current is allowed to context switch */
 	uint8_t swap_ok;
 #endif
 
@@ -260,15 +260,27 @@ extern atomic_t _cpus_active;
  * another SMP CPU.
  */
 bool z_smp_cpu_mobile(void);
-
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
 			arch_curr_cpu(); })
 
+__attribute_const__ struct k_thread *z_smp_current_get(void);
+#define _current z_smp_current_get()
+
 #else
 #define _current_cpu (&_kernel.cpus[0])
-#endif /* CONFIG_SMP */
+#define _current _kernel.cpus[0].current
+#endif
 
-#define _current arch_current_thread() __DEPRECATED_MACRO
+/* This is always invoked from a context where preemption is disabled */
+#define z_current_thread_set(thread) ({ _current_cpu->current = (thread); })
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL
+#undef _current
+#define _current arch_current_thread()
+#undef z_current_thread_set
+#define z_current_thread_set(thread) \
+	arch_current_thread_set(({ _current_cpu->current = (thread); }))
+#endif
 
 /* kernel wait queue record */
 #ifdef CONFIG_WAITQ_SCALABLE

@@ -8,5 +8,5 @@ compatible: nxp,ehci
 include: "nxp,mcux-usbd.yaml"
 
 properties:
-  phy_handle:
+  phy-handle:
     type: phandle

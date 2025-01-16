@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Michael Hope
+# Copyright (c) 2024 Jianxiong Gu
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_CH32V
+	select RISCV
+	select BUILD_OUTPUT_HEX
+	select CH32V00X_SYSTICK
+	select ATOMIC_OPERATIONS_C
+	imply XIP
+
+if SOC_FAMILY_CH32V
+
+config VECTOR_TABLE_SIZE
+	int "Number of Interrupt and Exception Vectors"
+	range 20 256
+	help
+	  This option defines the total number of interrupt and exception
+	  vectors in the vector table.
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_CH32V

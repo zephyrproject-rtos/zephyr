@@ -8,9 +8,6 @@ if LVGL
 config INPUT
 	default y
 
-config INPUT_FT5336_INTERRUPT
-	default y
-
 if MIPI_DSI_MCUX_2L
 # Enable color swap in driver
 

@@ -544,5 +544,29 @@
 			interrupts = <164 6>;
 			status = "disabled";
 		};
+
+		dma0: dw@40280000 {
+			#dma-cells = <1>;
+			compatible = "infineon,cat1-dma";
+			reg = <0x40280000 0x8700>;
+			dma-channels = <16>;
+			interrupts = <50 6>, /* CH0 */
+					<51 6>, /* CH1 */
+					<52 6>, /* CH2 */
+					<53 6>, /* CH3 */
+					<54 6>, /* CH4 */
+					<55 6>, /* CH5 */
+					<56 6>, /* CH6 */
+					<57 6>, /* CH7 */
+					<58 6>, /* CH8 */
+					<59 6>, /* CH9 */
+					<60 6>, /* CH10 */
+					<61 6>, /* CH11 */
+					<62 6>, /* CH12 */
+					<63 6>, /* CH13 */
+					<64 6>, /* CH14 */
+					<65 6>;  /* CH15 */
+			status = "disabled";
+		};
 	};
 };

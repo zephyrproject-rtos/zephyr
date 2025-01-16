@@ -28,6 +28,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
+/* clang-format off */
+
 /* Static configuration */
 struct pwm_sam0_config {
 	Tc *regs;
@@ -36,15 +38,10 @@ struct pwm_sam0_config {
 	uint8_t counter_size;
 	uint16_t prescaler;
 	uint32_t freq;
-
-#ifdef MCLK
 	volatile uint32_t *mclk;
 	uint32_t mclk_mask;
+	uint32_t gclk_gen;
 	uint16_t gclk_id;
-#else
-	uint32_t pm_apbcmask;
-	uint16_t gclk_clkctrl_id;
-#endif
 };
 
 #define COUNTER_8BITS 8U
@@ -133,19 +130,19 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel, uint3
 static int pwm_sam0_init(const struct device *dev)
 {
 	const struct pwm_sam0_config *const cfg = dev->config;
-	int retval;
-	Tc *regs = cfg->regs;
 	uint8_t counter_size = cfg->counter_size;
+	Tc *regs = cfg->regs;
+	int retval;
 
-	/* Enable the clocks */
-#ifdef MCLK
-	GCLK->PCHCTRL[cfg->gclk_id].reg =
-		GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN;
 	*cfg->mclk |= cfg->mclk_mask;
+
+#ifdef MCLK
+	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_CHEN
+					| GCLK_PCHCTRL_GEN(cfg->gclk_gen);
 #else
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
-	PM->APBCMASK.reg |= cfg->pm_apbcmask;
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN
+			  | GCLK_CLKCTRL_GEN(cfg->gclk_gen)
+			  | GCLK_CLKCTRL_ID(cfg->gclk_id);
 #endif
 
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -185,30 +182,31 @@ static DEVICE_API(pwm, pwm_sam0_driver_api) = {
 	.get_cycles_per_sec = pwm_sam0_get_cycles_per_sec,
 };
 
-#ifdef MCLK
-#define PWM_SAM0_INIT_CLOCKS(inst)                                                                 \
-	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(inst),                              \
-	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(inst, mclk, bit)),                            \
-	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, gclk, periph_ch)
-#else
-#define PWM_SAM0_INIT_CLOCKS(inst)                                                                 \
-	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(inst, pm, bit)),                            \
-	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, gclk, clkctrl_id)
-#endif
+#define ASSIGNED_CLOCKS_CELL_BY_NAME						\
+	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
-#define PWM_SAM0_INIT(inst)                                                                        \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static const struct pwm_sam0_config pwm_sam0_config_##inst = {                             \
-		.regs = (Tc *)DT_INST_REG_ADDR(inst),                                              \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.channels = DT_INST_PROP(inst, channels),                                          \
-		.counter_size = DT_INST_PROP(inst, counter_size),                                  \
-		.prescaler = UTIL_CAT(TC_CTRLA_PRESCALER_DIV, DT_INST_PROP(inst, prescaler)),      \
-		.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / DT_INST_PROP(inst, prescaler),              \
-		PWM_SAM0_INIT_CLOCKS(inst),                                                        \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &pwm_sam0_init, NULL, NULL, &pwm_sam0_config_##inst,           \
-			      POST_KERNEL, CONFIG_PWM_TC_INIT_PRIORITY, &pwm_sam0_driver_api);
+#define PWM_SAM0_INIT(inst)							\
+	PINCTRL_DT_INST_DEFINE(inst)						\
+	static const struct pwm_sam0_config pwm_sam0_config_##inst = {		\
+		.regs = (Tc *)DT_INST_REG_ADDR(inst),				\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
+		.channels = DT_INST_PROP(inst, channels),			\
+		.counter_size = DT_INST_PROP(inst, counter_size),		\
+		.prescaler = UTIL_CAT(TC_CTRLA_PRESCALER_DIV,			\
+				      DT_INST_PROP(inst, prescaler)),		\
+		.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ /				\
+			DT_INST_PROP(inst, prescaler),		\
+		.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(inst, gclk, gen),	\
+		.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, gclk, id),		\
+		.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(inst),	\
+		.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(inst, bit),	\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(inst, &pwm_sam0_init, NULL,			\
+			      NULL, &pwm_sam0_config_##inst,			\
+			      POST_KERNEL, CONFIG_PWM_TC_INIT_PRIORITY,		\
+			      &pwm_sam0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_SAM0_INIT)
+
+/* clang-format on */

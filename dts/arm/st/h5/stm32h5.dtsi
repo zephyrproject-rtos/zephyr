@@ -39,6 +39,15 @@
 				reg = <0xe000ed90 0x40>;
 			};
 		};
+
+		power-states {
+			stop: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <20>;
+			};
+		};
 	};
 
 	clocks {
@@ -135,15 +144,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 28U)>;
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
-		};
-
-		power-states {
-			stop: state0 {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <1>;
-				min-residency-us = <20>;
-			};
 		};
 
 		rcc: rcc@44020c00 {

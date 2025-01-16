@@ -17,5 +17,4 @@ supported:
 testing:
   ignore_tags:
     - pm
-    - hwinfo
 vendor: silabs

@@ -233,7 +233,8 @@ enum {
 #define __z_posix_sysconf_SC_BC_SCALE_MAX                 _POSIX2_BC_SCALE_MAX
 #define __z_posix_sysconf_SC_BC_STRING_MAX                _POSIX2_BC_STRING_MAX
 #define __z_posix_sysconf_SC_2_C_BIND                     _POSIX2_C_BIND
-#define __z_posix_sysconf_SC_2_C_DEV                      _POSIX2_C_DEV
+#define __z_posix_sysconf_SC_2_C_DEV                                                               \
+	COND_CODE_1(_POSIX2_C_DEV > 0, (_POSIX2_C_DEV), (-1))
 #define __z_posix_sysconf_SC_2_CHAR_TERM                  (-1L)
 #define __z_posix_sysconf_SC_COLL_WEIGHTS_MAX             _POSIX2_COLL_WEIGHTS_MAX
 #define __z_posix_sysconf_SC_DELAYTIMER_MAX               _POSIX_DELAYTIMER_MAX
@@ -250,7 +251,8 @@ enum {
 #define __z_posix_sysconf_SC_2_PBS_TRACK                  (-1L)
 #define __z_posix_sysconf_SC_2_SW_DEV                     (-1L)
 #define __z_posix_sysconf_SC_2_UPE                        (-1L)
-#define __z_posix_sysconf_SC_2_VERSION                    _POSIX2_VERSION
+#define __z_posix_sysconf_SC_2_VERSION                                                             \
+	COND_CODE_1(_POSIX2_VERSION > 0, (_POSIX2_VERSION), (-1))
 #define __z_posix_sysconf_SC_XOPEN_CRYPT                  (-1L)
 #define __z_posix_sysconf_SC_XOPEN_ENH_I18N               (-1L)
 #define __z_posix_sysconf_SC_XOPEN_REALTIME               (-1L)

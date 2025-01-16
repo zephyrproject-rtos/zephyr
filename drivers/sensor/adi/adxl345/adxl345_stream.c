@@ -6,7 +6,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
-
+#include <zephyr/drivers/sensor_clock.h>
 #include "adxl345.h"
 
 LOG_MODULE_DECLARE(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
@@ -159,7 +159,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	hdr->int_status = data->status1;
 	hdr->is_full_res = data->is_full_res;
 	hdr->selected_range = data->selected_range;
-	hdr->accel_odr = cfg->odr;
+	hdr->accel_odr = data->odr;
 	hdr->sample_set_size = sample_set_size;
 
 	uint32_t buf_avail = buf_len;
@@ -358,11 +358,21 @@ void adxl345_stream_irq_handler(const struct device *dev)
 {
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
 	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
+	uint64_t cycles;
+	int rc;
 
 	if (data->sqe == NULL) {
 		return;
 	}
-	data->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(data->sqe, rc);
+		return;
+	}
+
+	data->timestamp = sensor_clock_cycles_to_ns(cycles);
 	struct rtio_sqe *write_status_addr = rtio_sqe_acquire(data->rtio_ctx);
 	struct rtio_sqe *read_status_reg = rtio_sqe_acquire(data->rtio_ctx);
 	struct rtio_sqe *check_status_reg = rtio_sqe_acquire(data->rtio_ctx);

@@ -69,6 +69,14 @@
 				status = "okay";
 				reg = <0x5>;
 			};
+
+			test_rv8803: rv8803@6 {
+				compatible = "microcrystal,rv8803";
+				status = "okay";
+				reg = <0x6>;
+				int-gpios = <&test_gpio 0 0>;
+				clkout-frequency = <1024>;
+			};
 		};
 	};
 };

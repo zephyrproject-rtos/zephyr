@@ -16,6 +16,7 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from enum import Enum
 
+import junitparser.junitparser as junit
 from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
@@ -955,6 +956,142 @@ class Bsim(Harness):
         logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')
         shutil.copy(original_exe_path, new_exe_path)
 
+class Ctest(Harness):
+    def configure(self, instance: TestInstance):
+        super().configure(instance)
+        self.running_dir = instance.build_dir
+        self.report_file = os.path.join(self.running_dir, 'report.xml')
+        self.ctest_log_file_path = os.path.join(self.running_dir, 'twister_harness.log')
+        self._output = []
+
+    def ctest_run(self, timeout):
+        assert self.instance is not None
+        try:
+            cmd = self.generate_command()
+            self.run_command(cmd, timeout)
+        except Exception as err:
+            logger.error(str(err))
+            self.status = TwisterStatus.FAIL
+            self.instance.reason = str(err)
+        finally:
+            self.instance.record(self.recording)
+            self._update_test_status()
+
+    def generate_command(self):
+        config = self.instance.testsuite.harness_config
+        handler: Handler = self.instance.handler
+        ctest_args_yaml = config.get('ctest_args', []) if config else []
+        command = [
+            'ctest',
+            '--build-nocmake',
+            '--test-dir',
+            self.running_dir,
+            '--output-junit',
+            self.report_file,
+            '--output-log',
+            self.ctest_log_file_path,
+            '--output-on-failure',
+        ]
+        base_timeout = handler.get_test_timeout()
+        command.extend(['--timeout', str(base_timeout)])
+        command.extend(ctest_args_yaml)
+
+        if handler.options.ctest_args:
+            command.extend(handler.options.ctest_args)
+
+        return command
+
+    def run_command(self, cmd, timeout):
+        with subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        ) as proc:
+            try:
+                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+                reader_t.start()
+                reader_t.join(timeout)
+                if reader_t.is_alive():
+                    terminate_process(proc)
+                    logger.warning('Timeout has occurred. Can be extended in testspec file. '
+                                   f'Currently set to {timeout} seconds.')
+                    self.instance.reason = 'Ctest timeout'
+                    self.status = TwisterStatus.FAIL
+                proc.wait(timeout)
+            except subprocess.TimeoutExpired:
+                self.status = TwisterStatus.FAIL
+                proc.kill()
+
+        if proc.returncode in (ExitCode.INTERRUPTED, ExitCode.USAGE_ERROR, ExitCode.INTERNAL_ERROR):
+            self.status = TwisterStatus.ERROR
+            self.instance.reason = f'Ctest error - return code {proc.returncode}'
+            with open(self.ctest_log_file_path, 'w') as log_file:
+                log_file.write(shlex.join(cmd) + '\n\n')
+                log_file.write('\n'.join(self._output))
+
+    def _output_reader(self, proc):
+        self._output = []
+        while proc.stdout.readable() and proc.poll() is None:
+            line = proc.stdout.readline().decode().strip()
+            if not line:
+                continue
+            self._output.append(line)
+            logger.debug(f'CTEST: {line}')
+            self.parse_record(line)
+        proc.communicate()
+
+    def _update_test_status(self):
+        if self.status == TwisterStatus.NONE:
+            self.instance.testcases = []
+            try:
+                self._parse_report_file(self.report_file)
+            except Exception as e:
+                logger.error(f'Error when parsing file {self.report_file}: {e}')
+                self.status = TwisterStatus.FAIL
+            finally:
+                if not self.instance.testcases:
+                    self.instance.init_cases()
+
+        self.instance.status = self.status if self.status != TwisterStatus.NONE else \
+                               TwisterStatus.FAIL
+        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+            self.instance.reason = self.instance.reason or 'Ctest failed'
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
+
+    def _parse_report_file(self, report):
+        suite = junit.JUnitXml.fromfile(report)
+        if suite is None:
+            self.status = TwisterStatus.SKIP
+            self.instance.reason = 'No tests collected'
+            return
+
+        assert isinstance(suite, junit.TestSuite)
+
+        if suite.failures and suite.failures > 0:
+            self.status = TwisterStatus.FAIL
+            self.instance.reason = f"{suite.failures}/{suite.tests} ctest scenario(s) failed"
+        elif suite.errors and suite.errors > 0:
+            self.status = TwisterStatus.ERROR
+            self.instance.reason = 'Error during ctest execution'
+        elif suite.skipped and suite.skipped > 0:
+            self.status = TwisterStatus.SKIP
+        else:
+            self.status = TwisterStatus.PASS
+        self.instance.execution_time = suite.time
+
+        for case in suite:
+            tc = self.instance.add_testcase(f"{self.id}.{case.name}")
+            tc.duration = case.time
+            if any(isinstance(r, junit.Failure) for r in case.result):
+                tc.status = TwisterStatus.FAIL
+                tc.output = case.system_out
+            elif any(isinstance(r, junit.Error) for r in case.result):
+                tc.status = TwisterStatus.ERROR
+                tc.output = case.system_out
+            elif any(isinstance(r, junit.Skipped) for r in case.result):
+                tc.status = TwisterStatus.SKIP
+            else:
+                tc.status = TwisterStatus.PASS
 
 class HarnessImporter:
 

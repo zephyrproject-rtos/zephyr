@@ -125,7 +125,7 @@ ZTEST(mem_protect, test_permission_inheritance)
 
 struct k_heap *z_impl_ret_resource_pool_ptr(void)
 {
-	return arch_current_thread()->resource_pool;
+	return _current->resource_pool;
 }
 
 static inline struct k_heap *z_vrfy_ret_resource_pool_ptr(void)

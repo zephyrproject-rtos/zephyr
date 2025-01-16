@@ -25,6 +25,7 @@ config INPUT_FT5336_PERIOD
 
 config INPUT_FT5336_INTERRUPT
 	bool "Interrupt"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_FOCALTECH_FT5336),int-gpios)
 	help
 	  Enable interrupt support (requires GPIO).
 

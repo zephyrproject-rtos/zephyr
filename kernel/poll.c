@@ -290,7 +290,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 {
 	int events_registered;
 	k_spinlock_key_t key;
-	struct z_poller *poller = &arch_current_thread()->poller;
+	struct z_poller *poller = &_current->poller;
 
 	poller->is_polling = true;
 	poller->mode = MODE_POLL;

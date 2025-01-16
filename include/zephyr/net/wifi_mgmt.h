@@ -505,6 +505,8 @@ struct wifi_scan_result {
 	uint8_t channel;
 	/** Security type */
 	enum wifi_security_type security;
+	/** WPA3 enterprise type */
+	enum wifi_wpa3_enterprise_type wpa3_ent_type;
 	/** MFP options */
 	enum wifi_mfp_options mfp;
 	/** RSSI */
@@ -553,8 +555,8 @@ struct wifi_connect_req_params {
 	const uint8_t *key2_passwd;
 	/** key2 passwd length, max 128 */
 	uint8_t key2_passwd_length;
-	/** suiteb or suiteb-192 */
-	uint8_t suiteb_type;
+	/** wpa3 enterprise mode */
+	enum wifi_wpa3_enterprise_type wpa3_ent_mode;
 	/** TLS cipher */
 	uint8_t TLS_cipher;
 	/** eap version */
@@ -684,6 +686,8 @@ struct wifi_iface_status {
 	enum wifi_iface_mode iface_mode;
 	/** Link mode, see enum wifi_link_mode */
 	enum wifi_link_mode link_mode;
+	/** WPA3 enterprise type */
+	enum wifi_wpa3_enterprise_type wpa3_ent_type;
 	/** Security type, see enum wifi_security_type */
 	enum wifi_security_type security;
 	/** MFP options, see enum wifi_mfp_options */

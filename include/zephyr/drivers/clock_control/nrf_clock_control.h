@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
-#ifdef NRF_CLOCK
+#if defined(NRF_CLOCK) && !defined(NRF_LFRC)
 #include <hal/nrf_clock.h>
 #endif
 #include <zephyr/sys/onoff.h>
