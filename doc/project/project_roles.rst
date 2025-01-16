@@ -71,6 +71,16 @@ Contributor change requests or approval on pull requests are not counted with
 respect to accepting and merging a pull request. However, Contributors comments
 and requested changes should still be considered by the pull request author.
 
+Zephyr Contributor Badge
+++++++++++++++++++++++++
+
+When your first contribution to the Zephyr project gets merged, you'll become eligible to claim your
+Zephyr Contributor Badge. This digital badge can be displayed on your website, blog, social media
+profile, etc. It will allow you to showcase your involvement in the Zephyr project and help raise
+its awareness.
+
+You may apply for your Contributor Badge by filling out the `Zephyr Contributor Badge form`_.
+
 .. _collaborator:
 
 Collaborator
@@ -403,3 +413,6 @@ Merge Criteria
   * Coding Guidelines
   * Static Analysis (Coverity)
   * Documentation coverage (APIs)
+
+
+.. _Zephyr Contributor Badge form: https://forms.gle/oCw9iAPLhUsHTapc8
