@@ -16,14 +16,29 @@ uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 
 	base = buf->put_base;
 	wrap_size = buf->put_head - base;
+
+	/*
+	 * Same line as the one after the "if" below, however here this causes
+	 * "west build -p -b qemu_x86/atom tests/subsys/tracing/tracing_api
+	 *     -T tracing.transport.uart.async.test"
+	 * to fail when used here.
+	 */
+	free_space = buf->size - (buf->put_head - buf->get_tail);
+
 	if (unlikely(wrap_size >= buf->size)) {
 		/* put_base is not yet adjusted */
 		wrap_size -= buf->size;
 		base += buf->size;
 	}
+
+	/*
+	 * Duplicate of the line above. However when this line is used here
+	 * instead and the other one commented out then the test passes.
+	 */
+	/*free_space = buf->size - (buf->put_head - buf->get_tail);*/
+
 	wrap_size = buf->size - wrap_size;
 
-	free_space = ring_buf_space_get(buf);
 	size = MIN(size, free_space);
 	size = MIN(size, wrap_size);
 
