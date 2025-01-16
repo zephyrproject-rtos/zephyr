@@ -964,26 +964,6 @@
 	CONFIG_NRF52_ANOMALY_109_WORKAROUND_EGU_INSTANCE
 #endif
 
-#ifdef CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG
-#define NRF_SKIP_CLOCK_CONFIGURATION
-#endif
-
-#ifdef CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF
-#define NRF_DISABLE_FICR_TRIMCNF
-#endif
-
-#ifdef CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE
-#define NRF_SKIP_GLITCHDETECTOR_DISABLE
-#endif
-
-/*
- * Inject code to skip TAMPC setup for nRF54L20 and nRF54L09. It is not supported for now.
- * It needs to be removed when support is provided.
- */
-#if defined(CONFIG_SOC_NRF54L20_ENGA_CPUAPP) || defined(CONFIG_SOC_NRF54L09_ENGA_CPUAPP)
-#define NRF_SKIP_TAMPC_SETUP
-#endif
-
 #if	DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_dppic_global) || \
 	DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_dppic_local)
 #ifndef NRFX_DPPI_ENABLED
