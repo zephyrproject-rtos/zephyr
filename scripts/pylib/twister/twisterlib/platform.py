@@ -157,6 +157,7 @@ class Platform:
           "arm64": ["zephyr", "cross-compile"],
           "mips": ["zephyr", "xtools"],
           "nios2": ["zephyr", "xtools"],
+          "openrisc": ["zephyr", "xtools"],
           "riscv": ["zephyr", "cross-compile"],
           "posix": ["host", "llvm"],
           "sparc": ["zephyr", "xtools"],
