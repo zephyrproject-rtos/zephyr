@@ -199,6 +199,8 @@ struct uhc_data {
 	sys_dlist_t bulk_xfers;
 	/** Callback to submit an UHC event to upper layer */
 	uhc_event_cb_t event_cb;
+	/** Opaque pointer to store higher layer context */
+	const void *event_ctx;
 	/** USB host controller status */
 	atomic_t status;
 	/** Driver private data */
@@ -477,12 +479,14 @@ int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
  *
  * @param[in] dev      Pointer to device struct of the driver instance
  * @param[in] event_cb Event callback from the higher layer (USB host stack)
+ * @param[in] event_ctx Opaque pointer to higher layer context
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EINVAL on parameter error (no callback is passed)
  * @retval -EALREADY already initialized
  */
-int uhc_init(const struct device *dev, uhc_event_cb_t event_cb);
+int uhc_init(const struct device *dev,
+	     uhc_event_cb_t event_cb, const void *const event_ctx);
 
 /**
  * @brief Enable USB host controller
@@ -538,6 +542,23 @@ static inline struct uhc_device_caps uhc_caps(const struct device *dev)
 	struct uhc_data *data = dev->data;
 
 	return data->caps;
+}
+
+/**
+ * @brief Get pointer to higher layer context
+ *
+ * The address of the context is passed as an argument to the uhc_init()
+ * function and is stored in the uhc data.
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ *
+ * @return Opaque pointer to higher layer context
+ */
+static inline const void *uhc_get_event_ctx(const struct device *dev)
+{
+	struct uhc_data *data = dev->data;
+
+	return data->event_ctx;
 }
 
 /**
