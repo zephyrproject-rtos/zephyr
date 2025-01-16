@@ -18,6 +18,8 @@ General Guidelines
    contributor_expectations.rst
    coding_guidelines/index.rst
    proposals_and_rfcs.rst
+   modifying_contributions.rst
+
 
 :ref:`contribute_guidelines`
    Learn about the overall process and guidelines for contributing to the Zephyr project.
@@ -40,6 +42,10 @@ General Guidelines
 :ref:`rfcs`
    Learn when and how to submit RFCs (Request for Comments) for new features and changes to the
    project.
+
+:ref:`modifying_contributions`
+   Guidelines for modifying contributions made by other developers and how to deal with stale pull
+   requests.
 
 Documentation
 =============
