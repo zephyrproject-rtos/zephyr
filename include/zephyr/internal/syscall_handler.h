@@ -372,9 +372,7 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 #define K_SYSCALL_VERIFY_MSG(expr, fmt, ...) ({ \
 	bool expr_copy = !(expr); \
 	if (expr_copy) { \
-		TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_SHADOW) \
 		LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL); \
-		TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_SHADOW) \
 		LOG_ERR("syscall %s failed check: " fmt, \
 			__func__, ##__VA_ARGS__); \
 	} \
