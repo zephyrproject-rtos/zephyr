@@ -156,12 +156,6 @@ Additional requirements:
 - If you are altering an existing commit created by someone else, you must add
   your Signed-off-by: line without removing the existing one.
 
-- If you forget to add the Signed-off-by: line, you can add it to your previous
-  commit by running ``git commit --amend -s``.
-
-- If you've pushed your changes to GitHub already you'll need to force push
-  your branch after this with ``git push -f``.
-
 Prerequisites
 *************
 
