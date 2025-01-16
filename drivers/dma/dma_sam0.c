@@ -415,7 +415,9 @@ static int dma_sam0_init(const struct device *dev)
 
 	/* Reset the DMA controller */
 	DMAC->CTRL.bit.DMAENABLE = 0;
+#ifdef DMAC_CTRL_CRCENABLE
 	DMAC->CTRL.bit.CRCENABLE = 0;
+#endif
 	DMAC->CTRL.bit.SWRST = 1;
 	while (DMAC->CTRL.bit.SWRST) {
 	}
