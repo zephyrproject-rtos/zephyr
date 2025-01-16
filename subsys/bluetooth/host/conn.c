@@ -912,47 +912,44 @@ struct bt_conn *get_conn_ready(void)
 	sys_snode_t *prev = NULL;
 
 	if (dont_have_viewbufs()) {
-		/* We will get scheduled again when the (view) buffers are freed. If
-		 * you hit this a lot, try increasing `CONFIG_BT_CONN_FRAG_COUNT`
+		/* We will get scheduled again when the (view) buffers are freed. If you
+		 * hit this a lot, try increasing `CONFIG_BT_CONN_FRAG_COUNT`
 		 */
 		LOG_DBG("no view bufs");
 		return NULL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_dev.le.conn_ready, conn, tmp,
-					  _conn_ready) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_dev.le.conn_ready, conn, tmp, _conn_ready) {
+		__ASSERT_NO_MSG(tmp != conn);
+
 		/* Iterate over the list of connections that have data to send
 		 * and return the first one that can be sent.
 		 */
 
 		if (cannot_send_to_controller(conn)) {
-			/* When buffers are full, try next connection.
-			 */
+			/* When buffers are full, try next connection. */
 			LOG_DBG("no LL bufs for %p", conn);
 			prev = &conn->_conn_ready;
 			continue;
 		}
 
 		if (dont_have_tx_context(conn)) {
-			/* When TX contexts are not available, try next connection.
-			 */
+			/* When TX contexts are not available, try next connection. */
 			LOG_DBG("no TX contexts for %p", conn);
 			prev = &conn->_conn_ready;
 			continue;
 		}
 
 		CHECKIF(dont_have_methods(conn)) {
-			/* When a connection is missing mandatory methods, try next
-			 * connection.
-			 */
-			LOG_DBG("conn %p (type %d) is missing mandatory methods",
-				conn, conn->type);
+			/* When a connection is missing mandatory methods, try next connection. */
+			LOG_DBG("conn %p (type %d) is missing mandatory methods", conn, conn->type);
 			prev = &conn->_conn_ready;
 			continue;
 		}
 
 		if (should_stop_tx(conn)) {
 			/* Move reference off the list */
+			__ASSERT_NO_MSG(prev != &conn->_conn_ready);
 			sys_slist_remove(&bt_dev.le.conn_ready, prev, &conn->_conn_ready);
 			(void)atomic_set(&conn->_conn_ready_lock, 0);
 			bt_conn_unref(conn);
