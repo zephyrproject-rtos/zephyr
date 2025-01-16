@@ -350,6 +350,7 @@
 		adc0: adc@3f440018 {
 			compatible = "espressif,esp32-adc";
 			reg = <0x3f440018 100>;
+			clocks = <&rtc ESP32_PERIPH_SARADC_MODULE>;
 			unit = <1>;
 			channel-count = <10>;
 			#io-channel-cells = <1>;
@@ -359,6 +360,7 @@
 		adc1: adc@3f440028 {
 			compatible = "espressif,esp32-adc";
 			reg = <0x3f440028 100>;
+			clocks = <&rtc ESP32_PERIPH_SARADC_MODULE>;
 			unit = <2>;
 			channel-count = <10>;
 			#io-channel-cells = <1>;

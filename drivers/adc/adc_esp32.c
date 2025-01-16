@@ -30,6 +30,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
@@ -45,6 +46,8 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 #define ADC_DMA_BUFFER_SIZE	DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
 
 struct adc_esp32_conf {
+	const struct device *clock_dev;
+	const clock_control_subsys_t clock_subsys;
 	adc_unit_t unit;
 	uint8_t channel_count;
 #if defined(CONFIG_ADC_ESP32_DMA)
@@ -588,7 +591,15 @@ static int adc_esp32_init(const struct device *dev)
 {
 	struct adc_esp32_data *data = (struct adc_esp32_data *) dev->data;
 	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *) dev->config;
-	uint32_t clock_src_hz = 0;
+	uint32_t clock_src_hz;
+
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+	if (!device_is_ready(conf->clock_dev)) {
+		return -ENODEV;
+	}
+
+	clock_control_on(conf->clock_dev, conf->clock_subsys);
+#endif
 
 	esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_src_hz);
 
@@ -600,6 +611,8 @@ static int adc_esp32_init(const struct device *dev)
 	};
 
 	adc_oneshot_hal_init(&data->hal, &config);
+
+	sar_periph_ctrl_adc_oneshot_power_acquire();
 
 #if defined(CONFIG_ADC_ESP32_DMA)
 	if (!device_is_ready(conf->gpio_port)) {
@@ -673,6 +686,9 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 #define ESP32_ADC_INIT(inst)							\
 										\
 	static const struct adc_esp32_conf adc_esp32_conf_##inst = {		\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),	\
+		.clock_subsys =	\
+			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),	\
 		.unit = DT_PROP(DT_DRV_INST(inst), unit) - 1,			\
 		.channel_count = DT_PROP(DT_DRV_INST(inst), channel_count),	\
 		ADC_ESP32_CONF_GPIO_PORT_INIT                                   \
