@@ -204,6 +204,14 @@ static inline void trigger_irq(int irq)
 	z_mips_enter_irq(irq);
 }
 
+#elif defined(CONFIG_OPENRISC)
+extern void z_openrisc_enter_irq(int);
+
+static inline void trigger_irq(int irq)
+{
+	z_openrisc_enter_irq(irq);
+}
+
 #elif defined(CONFIG_CPU_CORTEX_R5) && defined(CONFIG_VIM)
 
 extern void z_vim_arm_enter_irq(int);
