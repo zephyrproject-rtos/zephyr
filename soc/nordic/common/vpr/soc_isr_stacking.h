@@ -62,6 +62,13 @@
 
 #endif /* DT_PROP(VPR_CPU, nordic_bus_width) == 64 */
 
+/*
+ * VPR stacked mcause needs to have proper value on initial stack.
+ * Initial mret will restore this value.
+ */
+#define SOC_ISR_STACKING_ESR_INIT                                                                  \
+	stack_init->_mcause = 0;
+
 #else /* _ASMLANGUAGE */
 
 /*
