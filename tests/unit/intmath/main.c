@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/test_toolchain.h>
 
 /* Built-time math test.  Zephyr code depends on a standard C ABI with
  * 2's complement signed math.  As this isn't technically guaranteed
@@ -16,9 +17,7 @@
  * will warn about it helpfully.  But obviously integer overflow is
  * the whole point here, so turn that warning off.
  */
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Woverflow"
-#endif
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_OVERFLOW)
 
 /* Two's complement negation check: "-N" must equal "(~N)+1" */
 #define NEG_CHECK(T, N) BUILD_ASSERT((-((T)N)) == (~((T)N)) + 1)
@@ -26,10 +25,7 @@
 /* Checks that MAX+1==MIN in the given type */
 #define ROLLOVER_CHECK(T, MAX, MIN) BUILD_ASSERT((T)((T)1 + (T)MAX) == (T)MIN)
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winteger-overflow"
-#endif
+TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_INTEGER_OVERFLOW)
 
 ROLLOVER_CHECK(unsigned int, 0xffffffff, 0);
 ROLLOVER_CHECK(unsigned short, 0xffff, 0);
@@ -56,9 +52,7 @@ NEG_CHECK(int, 0x80000000);
 NEG_CHECK(int, 0x7fffffff);
 ROLLOVER_CHECK(int, 2147483647, -2147483648);
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_INTEGER_OVERFLOW)
 
 /**
  * @addtogroup kernel_common_tests
