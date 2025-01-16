@@ -4394,6 +4394,7 @@ OpenRISC Arch:
     - arch/openrisc/
     - drivers/timer/*openrisc*
     - include/zephyr/arch/openrisc/
+    - soc/qemu/or1k/
   labels:
     - "area: OpenRISC"
   tests:
