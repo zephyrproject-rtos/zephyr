@@ -766,10 +766,6 @@ do { \
 					  flags, ... /* fmt, ... */) \
 do { \
 	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
-	/* When using clang additional warning needs to be suppressed since each */ \
-	/* argument of fmt string is used for sizeof() which results in the warning */ \
-	/* if argument is a string literal. */ \
-	TOOLCHAIN_DISABLE_CLANG_WARNING("-Wsizeof-array-decay"); \
 	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
 		     (IS_ENABLED(CONFIG_XTENSA) && \
 		      !((_align_offset) % CBPRINTF_PACKAGE_ALIGNMENT)), \
@@ -847,7 +843,6 @@ do { \
 			   (pkg_hdr.desc.pkg_flags = flags)); \
 		*_len_loc = pkg_hdr; \
 	} \
-	TOOLCHAIN_ENABLE_CLANG_WARNING("-Wsizeof-array-decay"); \
 	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 } while (false)
 
