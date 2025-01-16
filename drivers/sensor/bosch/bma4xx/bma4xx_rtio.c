@@ -9,6 +9,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/rtio/work.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include "bma4xx.h"
 #include "bma4xx_decoder.h"
@@ -89,6 +90,7 @@ static void bma4xx_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 	struct bma4xx_encoded_data *edata;
 	uint8_t *buf;
 	uint32_t buf_len;
+	uint64_t cycles;
 	int rc;
 
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
@@ -105,8 +107,15 @@ static void bma4xx_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 		edata->header.is_fifo = false;
 	}
 	edata->header.accel_fs = bma4xx->cfg.accel_fs_range;
-	/* TODO: Use sensor clock */
-	edata->header.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
+	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	rc = bma4xx_get_accel_data(dev, &edata->accel_xyz);
 	if (rc != 0) {
