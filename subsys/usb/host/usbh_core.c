@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022,2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,13 +20,27 @@ LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
 static K_KERNEL_STACK_DEFINE(usbh_stack, CONFIG_USBH_STACK_SIZE);
 static struct k_thread usbh_thread_data;
 
+static K_KERNEL_STACK_DEFINE(usbh_bus_stack, CONFIG_USBH_STACK_SIZE);
+static struct k_thread usbh_bus_thread_data;
+
 K_MSGQ_DEFINE(usbh_msgq, sizeof(struct uhc_event),
+	      CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
+
+K_MSGQ_DEFINE(usbh_bus_msgq, sizeof(struct uhc_event),
 	      CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
 
 static int usbh_event_carrier(const struct device *dev,
 			      const struct uhc_event *const event)
 {
-	return k_msgq_put(&usbh_msgq, event, K_NO_WAIT);
+	int err;
+
+	if (event->type == UHC_EVT_EP_REQUEST) {
+		err = k_msgq_put(&usbh_msgq, event, K_NO_WAIT);
+	} else {
+		err = k_msgq_put(&usbh_bus_msgq, event, K_NO_WAIT);
+	}
+
+	return err;
 }
 
 static int discard_ep_request(struct usbh_contex *const ctx,
@@ -46,18 +60,6 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
 					    struct uhc_event *const event)
 {
 	int ret = 0;
-
-	if (event->type == UHC_EVT_EP_REQUEST) {
-		struct usb_device *const udev = event->xfer->udev;
-		usbh_udev_cb_t cb = event->xfer->cb;
-
-		if (event->xfer->cb) {
-			ret = cb(udev, event->xfer);
-		} else {
-			ret = discard_ep_request(ctx, event->xfer);
-		}
-		return ret;
-	}
 
 	switch (event->type) {
 	case UHC_EVT_DEV_CONNECTED_LS:
@@ -90,7 +92,7 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
 	return ret;
 }
 
-static void usbh_thread(void *p1, void *p2, void *p3)
+static void usbh_bus_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
@@ -100,10 +102,40 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	struct uhc_event event;
 
 	while (true) {
-		k_msgq_get(&usbh_msgq, &event, K_FOREVER);
+		k_msgq_get(&usbh_bus_msgq, &event, K_FOREVER);
 
 		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
 		usbh_event_handler(uhs_ctx, &event);
+	}
+}
+
+static void usbh_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct usbh_contex *uhs_ctx;
+	struct uhc_event event;
+	usbh_udev_cb_t cb;
+	int ret;
+
+	while (true) {
+		k_msgq_get(&usbh_msgq, &event, K_FOREVER);
+
+		__ASSERT(event.type == UHC_EVT_EP_REQUEST, "Wrong event type");
+		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
+		cb = event.xfer->cb;
+
+		if (event.xfer->cb) {
+			ret = cb(event.xfer->udev, event.xfer);
+		} else {
+			ret = discard_ep_request(uhs_ctx, event.xfer);
+		}
+
+		if (ret) {
+			LOG_ERR("Failed to handle request completion callback");
+		}
 	}
 }
 
@@ -137,6 +169,14 @@ static int uhs_pre_init(void)
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 
 	k_thread_name_set(&usbh_thread_data, "usbh");
+
+	k_thread_create(&usbh_bus_thread_data, usbh_bus_stack,
+			K_KERNEL_STACK_SIZEOF(usbh_bus_stack),
+			usbh_bus_thread,
+			NULL, NULL, NULL,
+			K_PRIO_COOP(9), 0, K_NO_WAIT);
+
+	k_thread_name_set(&usbh_thread_data, "usbh_bus");
 
 	return 0;
 }
