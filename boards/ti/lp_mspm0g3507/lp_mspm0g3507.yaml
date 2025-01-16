@@ -1,0 +1,15 @@
+identifier: lp_mspm0g3507
+name: LP_MSPM0G3507
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 128
+supported:
+  - gpio
+  - pinctrl
+  - uart
+vendor: ti
