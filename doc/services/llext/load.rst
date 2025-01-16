@@ -94,13 +94,7 @@ If any of this happens, the following tips may help understand the issue:
   the issue.
 
 * Use a debugger to inspect the memory and registers to try to understand what
-  is happening.
-
-  .. note::
-     When using GDB, the ``add_symbol_file`` command may be used to load the
-     debugging information and symbols from the ELF file. Make sure to specify
-     the proper offset (usually the start of the ``.text`` section, reported
-     as ``region 0`` in the debug logs.)
+  is happening. See :ref:`Debugging extensions <llext_debug>` for more details.
 
 If the issue persists, please open an issue in the GitHub repository, including
 all the above information.
