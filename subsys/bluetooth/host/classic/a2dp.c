@@ -505,7 +505,6 @@ static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp)
 			memset(&a2dp->get_capabilities_param, 0U,
 			       sizeof(a2dp->get_capabilities_param));
 			a2dp->get_capabilities_param.req.func = bt_a2dp_get_capabilities_cb;
-			a2dp->get_capabilities_param.buf = NULL;
 			a2dp->get_capabilities_param.stream_endpoint_id =
 				a2dp->discover_cb_param->seps_info[a2dp->get_cap_index].id;
 			err = bt_avdtp_get_capabilities(&a2dp->session,
@@ -597,7 +596,6 @@ int bt_a2dp_discover(struct bt_a2dp *a2dp, struct bt_a2dp_discover_param *param)
 	memset(&a2dp->discover_cb_param, 0U, sizeof(a2dp->discover_cb_param));
 	a2dp->discover_cb_param = param;
 	a2dp->discover_param.req.func = bt_a2dp_discover_cb;
-	a2dp->discover_param.buf = NULL;
 
 	err = bt_avdtp_discover(&a2dp->session, &a2dp->discover_param);
 	if (err) {
