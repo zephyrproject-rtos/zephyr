@@ -76,16 +76,6 @@ The default configuration can be found in the defconfig file:
 
 Other hardware features are not currently supported
 
-Fetch Binary Blobs
-******************
-
-To support Bluetooth or Wi-Fi, frdm_rw612 requires fetching binary blobs, which can be
-achieved by running the following command:
-
-.. code-block:: console
-
-   west blobs fetch hal_nxp
-
 Programming and Debugging
 *************************
 
@@ -147,6 +137,34 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS zephyr-v3.6.0 *****
    Hello World! frdm_rw612
 
+SRAM Bus Access Partitioning
+****************************
+
+RW612 supports shared access of the SRAM from both the code bus and data bus.
+The bus used to access the SRAM is determined using two separate memory mapped address spaces.
+The application can configure the partitioning of the SRAM access regions by a devicetree overlay.
+For example, below is part of an overlay to change the whole SRAM to be used for data.
+
+.. code-block:: devicetree
+
+   &sram_data {
+        reg = <0x0 DT_SIZE_K(1216)>;
+   };
+
+
+Wireless Connectivity Support
+*****************************
+
+Fetch Binary Blobs
+==================
+
+To support Bluetooth or Wi-Fi, frdm_rw612 requires fetching binary blobs, which can be
+achieved by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
 Bluetooth
 =========
 
@@ -168,7 +186,7 @@ frdm_rw612 platform supports the monolithic feature. The required binary blob
 with the application image directly, forming one single monolithic image.
 
 Resources
-=========
+*********
 
 .. _RW612 Website:
    https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/wireless-mcu-with-integrated-tri-radiobr1x1-wi-fi-6-plus-bluetooth-low-energy-5-3-802-15-4:RW612
