@@ -54,6 +54,7 @@ $defs:
           - arm64
           - mips
           - nios2
+          - openrisc
           - posix
           - riscv
           - rx
