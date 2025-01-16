@@ -24,7 +24,8 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 \
-  -testid=broadcast_source -RealEncryption=1 -rs=69 -D=3
+  -testid=broadcast_source -RealEncryption=1 -rs=69 -D=3 \
+  -start_offset=5e3
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -D=3 -sim_length=60e6 $@
