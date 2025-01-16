@@ -5703,6 +5703,7 @@ OpenRISC Arch:
     - jhol
   files:
     - arch/openrisc/
+    - boards/qemu/or1k/
     - drivers/timer/*openrisc*
     - include/zephyr/arch/openrisc/
     - soc/qemu/or1k/

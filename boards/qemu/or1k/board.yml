@@ -1,0 +1,6 @@
+board:
+  name: qemu_or1k
+  full_name: QEMU Emulation for OpenRISC 1000
+  vendor: qemu
+  socs:
+  - name: qemu_or1k
