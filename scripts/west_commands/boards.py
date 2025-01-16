@@ -78,6 +78,7 @@ class Boards(WestCommand):
             'arch_root': [ZEPHYR_BASE],
             'board_root': [ZEPHYR_BASE],
             'soc_root': [ZEPHYR_BASE],
+            'sip_root': [ZEPHYR_BASE],
         }
 
         for module in zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest):
@@ -89,6 +90,7 @@ class Boards(WestCommand):
         args.arch_roots += module_settings['arch_root']
         args.board_roots += module_settings['board_root']
         args.soc_roots += module_settings['soc_root']
+        args.sip_roots += module_settings['sip_root']
 
         for board in list_boards.find_boards(args):
             if name_re is not None and not name_re.search(board.name):

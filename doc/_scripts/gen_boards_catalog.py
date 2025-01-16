@@ -203,6 +203,7 @@ def get_catalog(generate_hw_features=False):
         "arch_root": [ZEPHYR_BASE],
         "board_root": [ZEPHYR_BASE],
         "soc_root": [ZEPHYR_BASE],
+        "sip_root": [ZEPHYR_BASE],
     }
 
     for module in zephyr_module.parse_modules(ZEPHYR_BASE):
@@ -211,11 +212,12 @@ def get_catalog(generate_hw_features=False):
             if root is not None:
                 module_settings[key].append(Path(module.project) / root)
 
-    Args = namedtuple("args", ["arch_roots", "board_roots", "soc_roots", "board_dir", "board"])
+    Args = namedtuple("args", ["arch_roots", "board_roots", "soc_roots", "soc_roots", "board_dir", "board"])
     args_find_boards = Args(
         arch_roots=module_settings["arch_root"],
         board_roots=module_settings["board_root"],
         soc_roots=module_settings["soc_root"],
+        sip_roots=module_settings["sip_root"],
         board_dir=[],
         board=None,
     )

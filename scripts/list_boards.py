@@ -88,6 +88,26 @@ class Soc:
         return Soc(soc.name, variants=[Variant.from_dict(v) for v in variants])
 
 
+@dataclass
+class Sip:
+    name: str
+    socs: list[Soc]
+
+    @staticmethod
+    def from_sip(name: str,
+                 variants: list[dict],
+                 siplist: list_hardware.SipList,
+                 systems: list_hardware.Systems):
+        sip = siplist.get(name)
+        if sip is None:
+            return None
+        socs = []
+        for soc in sip.socs:
+            soc_variants = [v for v in variants if v['soc'] == soc]
+            socs.append(Soc.from_soc(systems.get_soc(soc), soc_variants))
+        return Sip(name, socs)
+
+
 @dataclass(frozen=True)
 class Board:
     name: str
@@ -103,6 +123,7 @@ class Board:
     revisions: List[str] = field(default_factory=list, compare=False)
     socs: List[Soc] = field(default_factory=list, compare=False)
     variants: List[str] = field(default_factory=list, compare=False)
+    sips: List[Sip] = field(default_factory=list, compare=False)
 
     @property
     def dir(self):
@@ -222,7 +243,7 @@ def find_arch2board_set_in(root, arches, board_dir):
     return ret
 
 
-def load_v2_boards(board_name, board_yml, systems):
+def load_v2_boards(board_name, board_yml, systems, siplist):
     boards = {}
     board_extensions = []
     if board_yml.is_file():
@@ -275,6 +296,9 @@ def load_v2_boards(board_name, board_yml, systems):
             socs = [Soc.from_soc(systems.get_soc(s['name']), s.get('variants', []))
                     for s in board.get('socs', {})]
 
+            sips = [Sip.from_sip(s['name'], s.get('variants', []), siplist, systems)
+                    for s in board.get('sips', {})]
+
             boards[board['name']] = Board(
                 name=board['name'],
                 directories=[board_yml.parent],
@@ -287,6 +311,7 @@ def load_v2_boards(board_name, board_yml, systems):
                            board.get('revision', {}).get('revisions', [])],
                 socs=socs,
                 variants=[Variant.from_dict(v) for v in board.get('variants', [])],
+                sips=sips,
                 hwm='v2',
             )
             board_qualifiers = board_v2_qualifiers(boards[board['name']])
@@ -325,8 +350,15 @@ def find_v2_board_dirs(args):
 
 
 def find_v2_boards(args):
-    root_args = argparse.Namespace(**{'soc_roots': args.soc_roots})
+    root_args = argparse.Namespace(
+        **{
+            'soc_roots': args.soc_roots,
+            'sip_roots': args.sip_roots,
+            'sip': None
+        }
+    )
     systems = list_hardware.find_v2_systems(root_args)
+    siplist = list_hardware.find_sips(root_args)
 
     boards = {}
     board_extensions = []
@@ -338,7 +370,7 @@ def find_v2_boards(args):
             board_files.extend((root / 'boards').rglob(BOARD_YML))
 
     for board_yml in board_files:
-        b, e = load_v2_boards(args.board, board_yml, systems)
+        b, e = load_v2_boards(args.board, board_yml, systems, siplist)
         conflict_boards = set(boards.keys()).intersection(b.keys())
         if conflict_boards:
             sys.exit(f'ERROR: Board(s): {conflict_boards}, defined multiple times.\n'
@@ -373,7 +405,9 @@ def add_args(parser):
                         help='lookup the specific board, fail if not found')
     parser.add_argument("--board-dir", default=[], type=Path, action='append',
                         help='Only look for boards at the specific location')
-
+    parser.add_argument("--sip-root", dest='sip_roots', default=[],
+                        type=Path, action='append',
+                        help='add a sip root, may be given more than once')
 
 def add_args_formatting(parser):
     parser.add_argument("--cmakeformat", default=None,
@@ -404,8 +438,22 @@ def board_v2_qualifiers(board):
 
     for v in board.variants:
         qualifiers_list.extend(variant_v2_qualifiers(v))
-    return qualifiers_list
 
+    for sip in board.sips:
+        for soc in sip.socs:
+            if soc.cpuclusters:
+                for cpucluster in soc.cpuclusters:
+                    id_str = sip.name + '/' + soc.name + '/' + cpucluster.name
+                    qualifiers_list.append(id_str)
+                    for variant in cpucluster.variants:
+                        qualifiers_list.extend(variant_v2_qualifiers(variant, id_str))
+            else:
+                id_str = sip.name + '/' + soc.name
+                qualifiers_list.append(id_str)
+                for variant in soc.variants:
+                    qualifiers_list.extend(variant_v2_qualifiers(variant, id_str))
+
+    return qualifiers_list
 
 def board_v2_qualifiers_csv(board):
     # Return in csv (comma separated value) format

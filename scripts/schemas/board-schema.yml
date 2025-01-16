@@ -36,6 +36,25 @@ schema;extend-variant-schema:
           required: true
           type: str
 
+schema;sip-variant-schema:
+  required: false
+  type: seq
+  sequence:
+    - type: map
+      mapping:
+        name:
+          required: true
+          type: str
+        soc:
+          required: false
+          type: str
+        cpucluster:
+          required: false
+          type: str
+        variants:
+          required: false
+          include: variant-schema
+
 schema;board-schema:
   type: map
   mapping:
@@ -89,6 +108,17 @@ schema;board-schema:
               type: str
             variants:
               include: variant-schema
+    sips:
+      required: false
+      type: seq
+      sequence:
+        - type: map
+          mapping:
+            name:
+              required: true
+              type: str
+            variants:
+              include: sip-variant-schema
     variants:
       include: extend-variant-schema
 

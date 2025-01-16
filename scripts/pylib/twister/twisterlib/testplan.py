@@ -442,10 +442,11 @@ class TestPlan:
         board_roots = [Path(os.path.dirname(root)) for root in self.env.board_roots]
         soc_roots = self.env.soc_roots
         arch_roots = self.env.arch_roots
+        sip_roots = self.env.sip_roots
 
         platform_config = self.test_config.get('platforms', {})
 
-        for platform in generate_platforms(board_roots, soc_roots, arch_roots):
+        for platform in generate_platforms(board_roots, soc_roots, arch_roots, sip_roots):
             if not platform.twister:
                 continue
             self.platforms.append(platform)

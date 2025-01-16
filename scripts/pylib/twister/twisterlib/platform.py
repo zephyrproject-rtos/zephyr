@@ -189,7 +189,7 @@ class Platform:
         return f"<{self.name} on {self.arch}>"
 
 
-def generate_platforms(board_roots, soc_roots, arch_roots):
+def generate_platforms(board_roots, soc_roots, arch_roots, sip_roots):
     """Initialize and yield all Platform instances.
 
     Using the provided board/soc/arch roots, determine the available
@@ -205,7 +205,7 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
     legacy_files = []
 
     lb_args = Namespace(board_roots=board_roots, soc_roots=soc_roots, arch_roots=arch_roots,
-                        board=None, board_dir=None)
+                        sip_roots=sip_roots, board=None, board_dir=None)
 
     for board in list_boards.find_v2_boards(lb_args).values():
         for board_dir in board.directories:

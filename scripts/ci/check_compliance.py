@@ -511,8 +511,12 @@ class KconfigCheck(ComplianceTest):
         board_roots.insert(0, Path(ZEPHYR_BASE))
         soc_roots = self.get_module_setting_root('soc', settings_file)
         soc_roots.insert(0, Path(ZEPHYR_BASE))
+        sip_roots = self.get_module_setting_root('sip', settings_file)
+        sip_roots.insert(0, Path(ZEPHYR_BASE))
         root_args = argparse.Namespace(**{'board_roots': board_roots,
-                                          'soc_roots': soc_roots, 'board': None,
+                                          'soc_roots': soc_roots,
+                                          'sip_roots': sip_roots,
+                                          'board': None,
                                           'board_dir': []})
         v2_boards = list_boards.find_v2_boards(root_args).values()
 

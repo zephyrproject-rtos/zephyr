@@ -157,11 +157,13 @@ endif()
 list(TRANSFORM ARCH_ROOT PREPEND "--arch-root=" OUTPUT_VARIABLE arch_root_args)
 list(TRANSFORM BOARD_ROOT PREPEND "--board-root=" OUTPUT_VARIABLE board_root_args)
 list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
+list(TRANSFORM SIP_ROOT PREPEND "--sip-root=" OUTPUT_VARIABLE sip_root_args)
 
 set(list_boards_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_boards.py
             ${arch_root_args} ${board_root_args} --arch-root=${ZEPHYR_BASE}
-            ${soc_root_args} --soc-root=${ZEPHYR_BASE}
+            ${soc_root_args} --soc-root=${ZEPHYR_BASE} --sip-root=${ZEPHYR_BASE}
+            ${sip_root_args}
 )
 
 if(NOT BOARD_DIR)
