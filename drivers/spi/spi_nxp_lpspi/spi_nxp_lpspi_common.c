@@ -89,6 +89,8 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
 	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
 	master_config.pinCfg = config->data_pin_config;
+	master_config.dataOutConfig = config->output_config ? kLpspiDataOutTristate :
+							      kLpspiDataOutRetained;
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
 	LPSPI_SetDummyData(base, 0);

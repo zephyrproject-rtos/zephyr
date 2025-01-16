@@ -41,6 +41,7 @@ struct spi_mcux_config {
 	uint32_t transfer_delay;
 	const struct pinctrl_dev_config *pincfg;
 	lpspi_pin_config_t data_pin_config;
+	bool output_config;
 };
 
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
@@ -118,6 +119,7 @@ int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 					   DT_INST_PROP(n, transfer_delay)),                       \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.data_pin_config = DT_INST_ENUM_IDX(n, data_pin_config),                           \
+		.output_config = DT_INST_PROP(n, tristate_output),                                 \
 	};
 
 #define SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
