@@ -595,7 +595,7 @@ class DeviceHandler(Handler):
                         # --probe=#<number> select by probe index
                         # --probe=<serial number> select by probe serial number
                         command.append(f"--probe={board_id}")
-                    elif runner == "stm32cubeprogrammer":
+                    elif runner == "stm32cubeprogrammer" and product != "BOOT-SERIAL":
                         command.append(f"--tool-opt=sn={board_id}")
 
                     # Receive parameters from runner_params field.
