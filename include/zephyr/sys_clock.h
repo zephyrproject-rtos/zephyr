@@ -115,12 +115,14 @@ typedef struct {
 /** @} */
 
 /** @cond INTERNAL_HIDDEN */
-#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {0})
+#define Z_TIMEOUT_NO_WAIT_INIT {0}
+#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) Z_TIMEOUT_NO_WAIT_INIT)
 #if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
-#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { (t) })
+#define Z_TIMEOUT_TICKS_INIT(t) { (t) }
 #else
-#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { .ticks = (t) })
+#define Z_TIMEOUT_TICKS_INIT(t) { .ticks = (t) }
 #endif
+#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) Z_TIMEOUT_TICKS_INIT(t))
 #define Z_FOREVER Z_TIMEOUT_TICKS(K_TICKS_FOREVER)
 
 #ifdef CONFIG_TIMEOUT_64BIT
