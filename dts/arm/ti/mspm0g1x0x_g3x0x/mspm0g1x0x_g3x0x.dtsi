@@ -20,8 +20,64 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "arm,cortex-m0plus";
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
 			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cpu-power-states = <&run0 &run1 &run2
+					    &stop0 &stop1 &stop2
+					    &stdby0>;
+		};
+
+		power-states {
+			run0: runsleep0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "active";
+				substate-id = <1>;
+			};
+			run1: runsleep1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "active";
+				substate-id = <2>;
+			};
+			run2: runsleep2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "active";
+				substate-id = <3>;
+			};
+
+			stop0: stop0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+			};
+			stop1: stop1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+			};
+			stop2: stop2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <3>;
+			};
+
+			stdby0: standby0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				substate-id = <1>;
+			};
+			/* TODO / FIXME:
+			- only RTC, TIMG0 and TIMG1 is available in this state
+			- enabling support for this state will be needing interrupt
+			any of RTC, TIMG0 and TIMG1
+			stdby1: standby1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				substate-id = <49>;
+			};
+			*/
 		};
 	};
 
