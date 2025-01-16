@@ -640,7 +640,7 @@ static void avdtp_open_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8_
 	k_work_cancel_delayable(&session->timeout_work);
 	avdtp_set_status(req, buf, msg_type);
 
-	if (msg_type == BT_AVDTP_ACCEPT && req->status == BT_AVDTP_SUCCESS) {
+	if (req->status == BT_AVDTP_SUCCESS) {
 		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPENING);
 
 		/* wait the media l2cap is established */
@@ -815,7 +815,7 @@ static void avdtp_close_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	k_work_cancel_delayable(&session->timeout_work);
 	avdtp_set_status(req, buf, msg_type);
 
-	if (msg_type == BT_AVDTP_ACCEPT && req->status == BT_AVDTP_SUCCESS) {
+	if (req->status == BT_AVDTP_SUCCESS) {
 		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_CLOSING);
 
 		if (!avdtp_media_disconnect(CTRL_REQ(req)->sep)) {
