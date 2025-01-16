@@ -66,6 +66,16 @@ config MIPS
 	help
 	  MIPS architecture
 
+config OPENRISC
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_BUILTIN
+	select BIG_ENDIAN
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  OpenRISC architecture
+
 config SPARC
 	bool
 	select ARCH_IS_SET
