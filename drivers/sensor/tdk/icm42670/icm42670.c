@@ -785,7 +785,7 @@ static int icm42670_fetch_from_registers(const struct device *dev, enum sensor_c
 	int res = 0;
 	uint8_t int_status;
 
-	LOG_ERR("Fetch from reg");
+	LOG_DBG("Fetch from reg");
 
 	icm42670_lock(dev);
 
