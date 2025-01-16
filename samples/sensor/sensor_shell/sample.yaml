@@ -30,7 +30,7 @@ tests:
       - nrf52840dk/nrf52840
     filter: dt_compat_enabled("bosch,bma4xx")
     extra_conf_files:
-      - boards/bma4xx/bma4xx_temp_enabled.config
+      - boards/bma4xx/bma4xx_temp_enabled.conf
     extra_dtc_overlay_files:
       - boards/bma4xx/nrf52833_40_bma4xx.overlay
   sample.sensor.shell.bma4xx.fifo.disabled:

@@ -75,7 +75,6 @@ static uint16_t bma4xx_compute_fifo_wm(const struct bma4xx_config *new_cfg)
 	modr *= (int64_t)new_cfg->batch_ticks * pkt_size;
 
 	/* 'modr' = byte_ticks_per_msec / kticks_per_sec */
-	/* TODO: Use sensor clock instead */
 	modr = DIV_ROUND_UP(modr, CONFIG_SYS_CLOCK_TICKS_PER_SEC * INT64_C(1000));
 
 	return (uint16_t)MIN(modr, 0x3ff);

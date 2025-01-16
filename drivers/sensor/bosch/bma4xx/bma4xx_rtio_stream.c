@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT bosch_bma4xx
 
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include "bma4xx.h"
 #include "bma4xx_defs.h"
@@ -319,13 +320,21 @@ void bma4xx_fifo_event(const struct device *dev)
 	const struct bma4xx_config *drv_cfg = dev->config;
 	struct rtio_iodev *iodev = drv_data->iodev;
 	struct rtio *r = drv_data->r;
+	uint64_t cycles;
+	int rc;
 
 	if (drv_data->streaming_sqe == NULL) {
 		return;
 	}
 
-	/* TODO: Use sensor clock instead */
-	drv_data->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(drv_data->streaming_sqe, rc);
+		return;
+	}
+
+	drv_data->timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	struct rtio_sqe *write_int_reg = rtio_sqe_acquire(r);
 	struct rtio_sqe *read_int_reg = rtio_sqe_acquire(r);
