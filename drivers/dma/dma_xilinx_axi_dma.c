@@ -359,8 +359,7 @@ uint32_t dma_xilinx_axi_dma_last_received_frame_length(const struct device *dev)
 	return data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM].last_rx_size;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER)
 static inline void
 dma_xilinx_axi_dma_acknowledge_interrupt(struct dma_xilinx_axi_dma_channel *channel_data)
 {
@@ -371,10 +370,9 @@ dma_xilinx_axi_dma_acknowledge_interrupt(struct dma_xilinx_axi_dma_channel *chan
 
 	dma_xilinx_axi_dma_write_reg(&channel_data->channel_regs->dmacr, dmacr);
 }
-#pragma GCC diagnostic pop
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER)
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER)
 static bool dma_xilinx_axi_dma_channel_has_error(
 	const struct dma_xilinx_axi_dma_channel *channel_data,
 	volatile const struct dma_xilinx_axi_dma_sg_descriptor *descriptor)
@@ -441,7 +439,7 @@ static bool dma_xilinx_axi_dma_channel_has_error(
 
 	return error;
 }
-#pragma GCC diagnostic pop
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER)
 
 static int
 dma_xilinx_axi_dma_clean_up_sg_descriptors(const struct device *dev,
@@ -522,12 +520,11 @@ dma_xilinx_axi_dma_clean_up_sg_descriptors(const struct device *dev,
 		processed_packets++;
 	}
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 	/* this clears the IRQ */
 	/* FIXME write the same value back... */
 	dma_xilinx_axi_dma_write_reg(&channel_data->channel_regs->dmasr, 0xffffffff);
-#pragma GCC diagnostic pop
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 
 	/* writes must commit before returning from ISR */
 	barrier_dmem_fence_full();
@@ -615,8 +612,7 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 		channel == XILINX_AXI_DMA_TX_CHANNEL_NUM ? "TX" : "RX", tail_descriptor,
 		channel_data->current_transfer_end_index);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 	if (dma_xilinx_axi_dma_read_reg(&channel_data->channel_regs->dmasr) &
 	    XILINX_AXI_DMA_REGS_DMASR_HALTED) {
 
@@ -636,7 +632,7 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 					     (uint32_t)(uintptr_t)first_unprocessed_descriptor);
 #endif
 	}
-#pragma GCC diagnostic pop
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 
 	/* current descriptor MUST be set before tail descriptor */
 	barrier_dmem_fence_full();
@@ -669,8 +665,7 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 
 		LOG_DBG("New DMACR value: %" PRIx32, new_control);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+		TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 		dma_xilinx_axi_dma_write_reg(&channel_data->channel_regs->dmacr, new_control);
 		/* need to make sure start was committed before writing tail */
 		barrier_dmem_fence_full();
@@ -685,7 +680,7 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 	dma_xilinx_axi_dma_write_reg(&channel_data->channel_regs->taildesc,
 				     (uint32_t)(uintptr_t)current_descriptor);
 #endif
-#pragma GCC diagnostic pop
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 
 	dma_xilinx_axi_dma_enable_cache();
 
@@ -717,10 +712,9 @@ static int dma_xilinx_axi_dma_stop(const struct device *dev, uint32_t channel)
 	/* RS = 0 --> DMA will complete ongoing transactions and then go into hold */
 	new_control = new_control & ~XILINX_AXI_DMA_REGS_DMACR_RS;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 	dma_xilinx_axi_dma_write_reg(&channel_data->channel_regs->dmacr, new_control);
-#pragma GCC diagnostic pop
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 
 	/* commit before returning to caller */
 	barrier_dmem_fence_full();
@@ -743,13 +737,12 @@ static int dma_xilinx_axi_dma_get_status(const struct device *dev, uint32_t chan
 
 	memset(stat, 0, sizeof(*stat));
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 	stat->busy = !(dma_xilinx_axi_dma_read_reg(&channel_data->channel_regs->dmasr) &
 		       XILINX_AXI_DMA_REGS_DMASR_IDLE) &&
 		     !(dma_xilinx_axi_dma_read_reg(&channel_data->channel_regs->dmasr) &
 		       XILINX_AXI_DMA_REGS_DMASR_HALTED);
-#pragma GCC diagnostic pop
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 	stat->dir = channel_data->last_transfer_direction;
 
 	/* FIXME fill hardware-specific fields */
@@ -944,14 +937,13 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 
 	if (!data->device_has_been_reset) {
 		LOG_INF("Soft-resetting the DMA core!");
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+		TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 		/* this resets BOTH RX and TX channels, although it is triggered in per-channel
 		 * DMACR
 		 */
 		dma_xilinx_axi_dma_write_reg(&data->channels[channel].channel_regs->dmacr,
 					     XILINX_AXI_DMA_REGS_DMACR_RESET);
-#pragma GCC diagnostic pop
+		TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER);
 		data->device_has_been_reset = true;
 	}
 
