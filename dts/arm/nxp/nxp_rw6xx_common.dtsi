@@ -75,6 +75,11 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	/* RW6XX SRAM can be access by either code or data bus, determined
+	 * by the address used to access the memory.
+	 * Applications can override the reg properties of either
+	 * sram_data or sram_code nodes to change the balance of SRAM access partitioning.
+	 */
 	sram_data: memory@40000 {
 		compatible = "mmio-sram";
 		reg = <0x40000 DT_SIZE_K(960)>;
