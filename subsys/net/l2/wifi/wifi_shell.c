@@ -3707,7 +3707,7 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		  "[-d, --domain-match]: Server domain name constraint.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
-		 2, 40);
+		 2, 19);
 
 SHELL_SUBCMD_ADD((wifi), disconnect, NULL,
 		 "Disconnect from the Wi-Fi AP.\n",
