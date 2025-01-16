@@ -1153,8 +1153,8 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.pll_num = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, num, value, 0),      \
 		.pll_den = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, den, value, 0),      \
 		.mclk_control_base = DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(i2s_id), pinmuxes)),       \
-		.mclk_pin_mask = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, function),        \
-		.mclk_pin_offset = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, pin),           \
+		.mclk_pin_mask = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, mask),            \
+		.mclk_pin_offset = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, offset),        \
 		.clk_sub_sys =                                                                     \
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),       \
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),                             \
