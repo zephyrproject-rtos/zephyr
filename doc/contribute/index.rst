@@ -15,9 +15,9 @@ General Guidelines
    :hidden:
 
    guidelines.rst
+   contributor_expectations.rst
    coding_guidelines/index.rst
    proposals_and_rfcs.rst
-   contributor_expectations.rst
 
 :ref:`contribute_guidelines`
    Learn about the overall process and guidelines for contributing to the Zephyr project.
