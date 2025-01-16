@@ -1,7 +1,14 @@
 # Copyright (c) 2021, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: i.MX IOMUXC node
+description: |
+  i.MX IOMUXC node
+
+  The specifier space "pinmux" of this binding should have two cells describing
+  the resources needed from the GPR registers.
+  For each specifier, the first cell should be the offset of the GPR register in bytes
+  from the base address of the GPR device base address. The second cell should be a
+  bitmask indicating which bits in the specified register are relevant to the referencing device.
 
 compatible: "nxp,imx-gpr"
 
@@ -12,5 +19,5 @@ properties:
     required: true
 
 pinmux-cells:
-  - pin
-  - function
+  - offset
+  - mask
