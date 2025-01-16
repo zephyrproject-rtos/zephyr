@@ -43,6 +43,47 @@ static int usbh_event_carrier(const struct device *dev,
 	return err;
 }
 
+static void dev_connected_handler(struct usbh_contex *const ctx,
+				  const struct uhc_event *const event)
+{
+
+	LOG_DBG("Device connected event");
+	if (ctx->root != NULL) {
+		LOG_ERR("Device already connected");
+		usbh_device_free(ctx->root);
+		ctx->root = NULL;
+	}
+
+	ctx->root = usbh_device_alloc(ctx);
+	if (ctx->root == NULL) {
+		LOG_ERR("Failed allocate new device");
+		return;
+	}
+
+	ctx->root->state = USB_STATE_DEFAULT;
+
+	if (event->type == UHC_EVT_DEV_CONNECTED_HS) {
+		ctx->root->speed = USB_SPEED_SPEED_HS;
+	} else {
+		ctx->root->speed = USB_SPEED_SPEED_FS;
+	}
+
+	if (usbh_device_init(ctx->root)) {
+		LOG_ERR("Failed to reset new USB device");
+	}
+}
+
+static void dev_removed_handler(struct usbh_contex *const ctx)
+{
+	if (ctx->root != NULL) {
+		usbh_device_free(ctx->root);
+		ctx->root = NULL;
+		LOG_DBG("Device removed");
+	} else {
+		LOG_DBG("Spurious device removed event");
+	}
+}
+
 static int discard_ep_request(struct usbh_contex *const ctx,
 			      struct uhc_transfer *const xfer)
 {
@@ -63,12 +104,14 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
 
 	switch (event->type) {
 	case UHC_EVT_DEV_CONNECTED_LS:
+		LOG_ERR("Low speed device not supported (connected event)");
+		break;
 	case UHC_EVT_DEV_CONNECTED_FS:
 	case UHC_EVT_DEV_CONNECTED_HS:
-		LOG_DBG("Device connected event");
+		dev_connected_handler(ctx, event);
 		break;
 	case UHC_EVT_DEV_REMOVED:
-		LOG_DBG("Device removed event");
+		dev_removed_handler(ctx);
 		break;
 	case UHC_EVT_RESETED:
 		LOG_DBG("Bus reset");
@@ -148,6 +191,8 @@ int usbh_init_device_intl(struct usbh_contex *const uhs_ctx)
 		LOG_ERR("Failed to init device driver");
 		return ret;
 	}
+
+	sys_dlist_init(&uhs_ctx->udevs);
 
 	STRUCT_SECTION_FOREACH(usbh_class_data, cdata) {
 		/*
