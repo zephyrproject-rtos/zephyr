@@ -41,6 +41,7 @@ struct ssd1306_config {
 	union ssd1306_bus bus;
 	struct gpio_dt_spec data_cmd;
 	struct gpio_dt_spec reset;
+	struct gpio_dt_spec supply;
 	ssd1306_bus_ready_fn bus_ready;
 	ssd1306_write_bus_fn write_bus;
 	ssd1306_bus_name_fn bus_name;
@@ -220,18 +221,32 @@ static inline int ssd1306_set_iref_mode(const struct device *dev)
 
 static int ssd1306_resume(const struct device *dev)
 {
+	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
 		SSD1306_DISPLAY_ON,
 	};
+
+	/* Turn on supply if pin connected */
+	if (config->supply.port) {
+		gpio_pin_set_dt(&config->supply, 1);
+		k_sleep(K_MSEC(SSD1306_SUPPLY_DELAY));
+	}
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static int ssd1306_suspend(const struct device *dev)
 {
+	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
 		SSD1306_DISPLAY_OFF,
 	};
+
+	/* Turn off supply if pin connected */
+	if (config->supply.port) {
+		gpio_pin_set_dt(&config->supply, 0);
+		k_sleep(K_MSEC(SSD1306_SUPPLY_DELAY));
+	}
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
@@ -402,6 +417,11 @@ static int ssd1306_init_device(const struct device *dev)
 	};
 
 	data->pf = config->color_inversion ? PIXEL_FORMAT_MONO10 : PIXEL_FORMAT_MONO01;
+	/* Turn on supply if pin connected */
+	if (config->supply.port) {
+		gpio_pin_set_dt(&config->supply, 1);
+		k_sleep(K_MSEC(SSD1306_SUPPLY_DELAY));
+	}
 
 	/* Reset if pin connected */
 	if (config->reset.port) {
@@ -452,6 +472,7 @@ static int ssd1306_init_device(const struct device *dev)
 static int ssd1306_init(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
+	int ret;
 
 	k_sleep(K_TIMEOUT_ABS_MS(config->ready_time_ms));
 
@@ -460,13 +481,27 @@ static int ssd1306_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (config->reset.port) {
-		int ret;
+	if (config->supply.port) {
+		ret = gpio_pin_configure_dt(&config->supply,
+					    GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+		if (!gpio_is_ready_dt(&config->supply)) {
+			LOG_ERR("Supply GPIO device not ready");
+			return -ENODEV;
+		}
+	}
 
+	if (config->reset.port) {
 		ret = gpio_pin_configure_dt(&config->reset,
 					    GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			return ret;
+		}
+		if (!gpio_is_ready_dt(&config->reset)) {
+			LOG_ERR("Reset GPIO device not ready");
+			return -ENODEV;
 		}
 	}
 
@@ -506,6 +541,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 	static struct ssd1306_data data##node_id;                                                  \
 	static const struct ssd1306_config config##node_id = {                                     \
 		.reset = GPIO_DT_SPEC_GET_OR(node_id, reset_gpios, {0}),                           \
+		.supply = GPIO_DT_SPEC_GET_OR(node_id, supply_gpios, {0}),                         \
 		.height = DT_PROP(node_id, height),                                                \
 		.width = DT_PROP(node_id, width),                                                  \
 		.segment_offset = DT_PROP(node_id, segment_offset),                                \
