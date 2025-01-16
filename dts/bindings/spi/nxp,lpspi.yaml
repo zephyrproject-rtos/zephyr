@@ -43,3 +43,10 @@ properties:
     description: |
       Configures which pins (SDO and SDI) are used for input and output data
       during single bit transfers.
+
+  tristate-output:
+    type: boolean
+    description:
+      Configures whether or not the output data is tristated between accesses
+      (when PCS is negated). If set, the output will be tristated when PCS is negated,
+      otherwise the output line retains the last value when PCS is negated.
