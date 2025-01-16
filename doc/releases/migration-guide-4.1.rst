@@ -285,6 +285,8 @@ SPI
 
 * Renamed the ``compatible`` from ``nxp,imx-lpspi`` to :dtcompatible:`nxp,lpspi`.
 * Renamed the ``compatible`` from ``nxp,kinetis-dspi`` to :dtcompatible:`nxp,dspi`.
+* Renamed the device tree property ``port_sel`` to ``port-sel``.
+* Renamed the device tree property ``chip_select`` to ``chip-select``.
 
 Regulator
 =========
