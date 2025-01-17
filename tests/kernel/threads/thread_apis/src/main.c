@@ -326,7 +326,7 @@ static void do_join_from_isr(const void *arg)
 static int join_scenario_interval(enum control_method m, int64_t *interval)
 {
 	k_timeout_t timeout = K_FOREVER;
-	int ret;
+	int ret = 0;
 
 	LOG_DBG("ztest_thread: method %d, create join_thread", m);
 	k_thread_create(&join_thread, join_stack, STACK_SIZE, join_entry,
