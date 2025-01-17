@@ -19,6 +19,7 @@ tests:
       - qemu_arc/qemu_arc_em
       - qemu_arc/qemu_arc_hs
       - qemu_arc/qemu_arc_hs6x
+      - qemu_or1k
       - qemu_riscv32
       - qemu_riscv32e
       - qemu_riscv64

@@ -366,7 +366,7 @@ do {                                                                    \
 
 #if defined(CONFIG_ARM) || defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) \
 	|| defined(CONFIG_XTENSA) || defined(CONFIG_ARM64) \
-	|| defined(CONFIG_MIPS)
+	|| defined(CONFIG_MIPS) || defined(CONFIG_OPENRISC)
 #define GTEXT(sym) .global sym; .type sym, %function
 #define GDATA(sym) .global sym; .type sym, %object
 #define WTEXT(sym) .weak sym; .type sym, %function
@@ -548,7 +548,8 @@ do {                                                                    \
 		"\n\t.type\t" #name ",@object")
 
 #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || \
-	defined(CONFIG_XTENSA) || defined(CONFIG_MIPS)
+	defined(CONFIG_XTENSA) || defined(CONFIG_MIPS) || \
+	defined(CONFIG_OPENRISC)
 
 /* No special prefixes necessary for constants in this arch AFAICT */
 #define GEN_ABSOLUTE_SYM(name, value)		\
