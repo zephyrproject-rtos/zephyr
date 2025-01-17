@@ -565,9 +565,6 @@ ZTEST(arp_fn_tests, test_arp)
 
 	net_pkt_unref(pkt);
 
-	/* Clear the ARP cache so that old entries do not confuse the tests */
-	net_arp_clear_cache(iface);
-
 	/* Then feed in ARP request */
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_eth_hdr) +
 					sizeof(struct net_arp_hdr),
