@@ -149,7 +149,7 @@ static void common_lower_bound_check(int selection, clockid_t clock_id, int flag
 				     uint32_t ns)
 {
 	int r;
-	uint64_t actual_ns;
+	uint64_t actual_ns = 0;
 	uint64_t exp_ns;
 	uint64_t now;
 	uint64_t then;
