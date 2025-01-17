@@ -47,6 +47,7 @@ enum {
 	BT_RFCOMM_CHAN_HSP_AG,
 	BT_RFCOMM_CHAN_HSP_HS,
 	BT_RFCOMM_CHAN_SPP,
+	BT_RFCOMM_CHAN_DYNAMIC_START,
 };
 
 struct bt_rfcomm_dlc;
@@ -125,7 +126,16 @@ struct bt_rfcomm_dlc {
 };
 
 struct bt_rfcomm_server {
-	/** Server Channel */
+	/** Server Channel
+	 *
+	 *  Possible values:
+	 *  0           A dynamic value will be auto-allocated when bt_rfcomm_server_register() is
+	 *              called.
+	 *
+	 *  0x01 - 0x1e Dynamically allocated. May be pre-set by the application before server
+	 *              registration (not recommended however), or auto-allocated by the stack
+	 *              if the 0 is passed.
+	 */
 	uint8_t channel;
 
 	/** Server accept callback
@@ -134,11 +144,13 @@ struct bt_rfcomm_server {
 	 *  authorization.
 	 *
 	 *  @param conn The connection that is requesting authorization
+	 *  @param server Pointer to the server structure this callback relates to
 	 *  @param dlc Pointer to received the allocated dlc
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*accept)(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc);
+	int (*accept)(struct bt_conn *conn, struct bt_rfcomm_server *server,
+		      struct bt_rfcomm_dlc **dlc);
 
 	struct bt_rfcomm_server	*_next;
 };
