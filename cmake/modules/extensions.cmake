@@ -4991,6 +4991,7 @@ endfunction()
 #                         [VMA <region|group>] [LMA <region|group>]
 #                         [ADDRESS <address>] [ALIGN <alignment>]
 #                         [SUBALIGN <alignment>] [FLAGS <flags>]
+#                         [MIN_SIZE <minimum size>] [MAX_SIZE <maximum size>]
 #                         [HIDDEN] [NOINPUT] [NOINIT]
 #                         [PASS [NOT] <name>]
 #   )
@@ -5044,6 +5045,8 @@ endfunction()
 #  Note: Regarding all alignment attributes. Not all linkers may handle alignment
 #        in identical way. For example the Scatter file will align both load and
 #        execution address (LMA and VMA) to be aligned when given the ALIGN attribute.
+# MIN_SIZE <size>     : Pad section so that it at least <size> bytes in size.
+# MAX_SIZE <size>     : Check that the sections is not larger than <size> bytes.
 # NOINPUT             : No default input sections will be defined, to setup input
 #                       sections for section <name>, the corresponding
 #                       `zephyr_linker_section_configure()` must be used.
@@ -5064,7 +5067,7 @@ endfunction()
 #
 function(zephyr_linker_section)
   set(options     "ALIGN_WITH_INPUT;HIDDEN;NOINIT;NOINPUT")
-  set(single_args "ADDRESS;ALIGN;ENDALIGN;GROUP;KVMA;LMA;NAME;SUBALIGN;TYPE;VMA")
+  set(single_args "ADDRESS;ALIGN;ENDALIGN;GROUP;KVMA;LMA;NAME;SUBALIGN;TYPE;VMA;MIN_SIZE;MAX_SIZE")
   set(multi_args  "PASS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
@@ -5272,7 +5275,8 @@ endfunction()
 # Usage:
 #   zephyr_linker_section_configure(SECTION <section> [ALIGN <alignment>]
 #                                   [PASS [NOT] <name>] [PRIO <no>] [SORT <sort>]
-#                                   [ANY] [FIRST] [KEEP]
+#                                   [MIN_SIZE <minimum size>] [MAX_SIZE <maximum size>]
+#                                   [ANY] [FIRST] [KEEP] [INPUT <input>]
 #   )
 #
 # Configure an output section with additional input sections.
@@ -5288,6 +5292,8 @@ endfunction()
 #                       first section in output.
 # SORT <NAME>         : Sort the input sections according to <type>.
 #                       Currently only `NAME` is supported.
+# MIN_SIZE <size>     : Pad section so that it at least <size> bytes in size.
+# MAX_SIZE <size>     : Check that the sections is not larger than <size> bytes.
 # KEEP                : Do not eliminate input section during linking
 # PRIO                : The priority of the input section. Per default, input
 #                       sections order is not guaranteed by all linkers, but
@@ -5310,10 +5316,9 @@ endfunction()
 # ANY                 : ANY section flag in scatter file.
 #                       The FLAGS and ANY arguments only has effect for scatter files.
 # INPUT <input>       : Input section name or list of input section names.
-#
 function(zephyr_linker_section_configure)
   set(options     "ANY;FIRST;KEEP")
-  set(single_args "ALIGN;OFFSET;PRIO;SECTION;SORT")
+  set(single_args "ALIGN;OFFSET;PRIO;SECTION;SORT;MIN_SIZE;MAX_SIZE")
   set(multi_args  "FLAGS;INPUT;PASS;SYMBOLS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
