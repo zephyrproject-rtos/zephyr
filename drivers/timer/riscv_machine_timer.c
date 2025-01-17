@@ -20,11 +20,10 @@
 #define MTIMECMP_REG DT_INST_REG_ADDR_BY_IDX(0, 1)
 #define TIMER_IRQN   DT_INST_IRQN(0)
 
-#define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() \
-				/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* the unsigned long cast limits divisions to native CPU register width */
-#define cycle_diff_t unsigned long
+#define cycle_diff_t   unsigned long
 #define CYCLE_DIFF_MAX (~(cycle_diff_t)0)
 
 /*
@@ -46,11 +45,11 @@
  * consecutive set bits coming from the original max values to produce a
  * nicer literal for assembly generation.
  */
-#define CYCLES_MAX_1	((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
-#define CYCLES_MAX_2	((uint64_t)CYCLE_DIFF_MAX)
-#define CYCLES_MAX_3	MIN(CYCLES_MAX_1, CYCLES_MAX_2)
-#define CYCLES_MAX_4	(CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
-#define CYCLES_MAX	(CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
+#define CYCLES_MAX_1 ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
+#define CYCLES_MAX_2 ((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_3 MIN(CYCLES_MAX_1, CYCLES_MAX_2)
+#define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
+#define CYCLES_MAX   (CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
 
 static struct k_spinlock lock;
 static uint64_t last_count;
@@ -195,5 +194,4 @@ void smp_timer_init(void)
 }
 #endif
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
