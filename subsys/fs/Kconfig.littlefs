@@ -125,4 +125,11 @@ config FS_LITTLEFS_DISK_VERSION
 	  to maintain backward compatibility with existing littlefs
 	  with the same major disk version.
 
+config FS_LITTLEFS_DISK_VERSION_NUMBER
+	hex "Default littlefs disk version"
+	default 0
+	depends on FS_LITTLEFS_DISK_VERSION
+	help
+	  Set to 0 to use the latest littlefs disk version (LFS_DISK_VERSION).
+
 endif # FILE_SYSTEM_LITTLEFS
