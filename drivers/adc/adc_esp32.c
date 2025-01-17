@@ -35,15 +35,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 
-#define ADC_RESOLUTION_MIN	SOC_ADC_DIGI_MIN_BITWIDTH
-#define ADC_RESOLUTION_MAX	SOC_ADC_DIGI_MAX_BITWIDTH
+#define ADC_RESOLUTION_MIN SOC_ADC_DIGI_MIN_BITWIDTH
+#define ADC_RESOLUTION_MAX SOC_ADC_DIGI_MAX_BITWIDTH
 
 #define VALID_RESOLUTION(r) ((r) >= ADC_RESOLUTION_MIN && (r) <= ADC_RESOLUTION_MAX)
 
 /* Default internal reference voltage */
 #define ADC_ESP32_DEFAULT_VREF_INTERNAL (1100)
 
-#define ADC_DMA_BUFFER_SIZE	DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
+#define ADC_DMA_BUFFER_SIZE DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
 
 struct adc_esp32_conf {
 	const struct device *clock_dev;
@@ -126,7 +126,6 @@ static void IRAM_ATTR adc_esp32_dma_conv_done(const struct device *dma_dev, void
 static int adc_esp32_dma_start(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct adc_esp32_conf *conf = dev->config;
-	struct adc_esp32_data *data = dev->data;
 
 	int err = 0;
 	struct dma_config dma_cfg = {0};
@@ -189,13 +188,14 @@ static int adc_esp32_dma_stop(const struct device *dev)
 }
 
 static int adc_esp32_fill_digi_pattern(const struct device *dev, const struct adc_sequence *seq,
-			void *pattern_config, uint32_t *pattern_len, uint32_t *unit_attenuation)
+				       void *pattern_config, uint32_t *pattern_len,
+				       uint32_t *unit_attenuation)
 {
 	const struct adc_esp32_conf *conf = dev->config;
 	struct adc_esp32_data *data = dev->data;
 
 	adc_digi_pattern_config_t *adc_digi_pattern_config =
-					(adc_digi_pattern_config_t *)pattern_config;
+		(adc_digi_pattern_config_t *)pattern_config;
 	const uint32_t unit_atten_uninit = 999;
 	uint32_t channel_mask = 1, channels_copy = seq->channels;
 
@@ -246,7 +246,7 @@ static void adc_esp32_digi_start(const struct device *dev, void *pattern_config,
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
 	adc_set_hw_calibration_code(conf->unit, unit_attenuation);
-#endif  /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
+#endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
 
 #if SOC_ADC_ARBITER_SUPPORTED
 	if (conf->unit == ADC_UNIT_2) {
@@ -254,7 +254,7 @@ static void adc_esp32_digi_start(const struct device *dev, void *pattern_config,
 
 		adc_hal_arbiter_config(&config);
 	}
-#endif  /* SOC_ADC_ARBITER_SUPPORTED */
+#endif /* SOC_ADC_ARBITER_SUPPORTED */
 
 	adc_hal_digi_ctrlr_cfg_t adc_hal_digi_ctrlr_cfg;
 	soc_module_clk_t clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
@@ -264,7 +264,7 @@ static void adc_esp32_digi_start(const struct device *dev, void *pattern_config,
 				     &clk_src_freq_hz);
 
 	adc_hal_digi_ctrlr_cfg.conv_mode =
-		(conf->unit == ADC_UNIT_1)?ADC_CONV_SINGLE_UNIT_1:ADC_CONV_SINGLE_UNIT_2;
+		(conf->unit == ADC_UNIT_1) ? ADC_CONV_SINGLE_UNIT_1 : ADC_CONV_SINGLE_UNIT_2;
 	adc_hal_digi_ctrlr_cfg.clk_src = clk_src;
 	adc_hal_digi_ctrlr_cfg.clk_src_freq_hz = clk_src_freq_hz;
 	adc_hal_digi_ctrlr_cfg.sample_freq_hz = sample_freq_hz;
@@ -331,7 +331,6 @@ static int adc_esp32_wait_for_dma_conv_done(const struct device *dev)
 static int adc_esp32_read(const struct device *dev, const struct adc_sequence *seq)
 {
 	struct adc_esp32_data *data = dev->data;
-	uint32_t acq_raw, acq_mv, result;
 
 	uint8_t channel_id = find_lsb_set(seq->channels) - 1;
 
@@ -376,11 +375,13 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 
 #if !defined(CONFIG_ADC_ESP32_DMA)
 
+	uint32_t acq_raw, acq_mv, result;
+
 	adc_oneshot_hal_setup(&data->hal, channel_id);
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
 	adc_set_hw_calibration_code(data->hal.unit, data->attenuation[channel_id]);
-#endif  /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
+#endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
 
 	adc_oneshot_hal_convert(&data->hal, &acq_raw);
 
@@ -406,15 +407,14 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	uint32_t adc_pattern_len, unit_attenuation;
 	adc_digi_pattern_config_t adc_digi_pattern_config[SOC_ADC_MAX_CHANNEL_NUM];
 
-	err = adc_esp32_fill_digi_pattern(dev, seq, &adc_digi_pattern_config,
-						 &adc_pattern_len,  &unit_attenuation);
+	err = adc_esp32_fill_digi_pattern(dev, seq, &adc_digi_pattern_config, &adc_pattern_len,
+					  &unit_attenuation);
 	if (err || adc_pattern_len == 0) {
 		return -EINVAL;
 	}
 
 	const struct adc_sequence_options *options = seq->options;
-	uint32_t sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH,
-		 number_of_samplings = 1;
+	uint32_t sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH, number_of_samplings = 1;
 
 	if (options != NULL) {
 		number_of_samplings = seq->buffer_size / (adc_pattern_len * sizeof(uint16_t));
@@ -429,7 +429,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		return -EINVAL;
 	}
 
-	if (sample_freq_hz < SOC_ADC_SAMPLE_FREQ_THRES_LOW  ||
+	if (sample_freq_hz < SOC_ADC_SAMPLE_FREQ_THRES_LOW ||
 	    sample_freq_hz > SOC_ADC_SAMPLE_FREQ_THRES_HIGH) {
 		LOG_ERR("ADC sampling frequency out of range: %uHz", sample_freq_hz);
 		return -EINVAL;
@@ -437,7 +437,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 
 	uint32_t number_of_adc_samples = number_of_samplings * adc_pattern_len;
 	uint32_t number_of_adc_dma_data_bytes =
-			number_of_adc_samples * SOC_ADC_DIGI_DATA_BYTES_PER_CONV;
+		number_of_adc_samples * SOC_ADC_DIGI_DATA_BYTES_PER_CONV;
 
 	if (number_of_adc_dma_data_bytes > ADC_DMA_BUFFER_SIZE) {
 		LOG_ERR("dma buffer size insufficient to store a complete sequence!");
@@ -472,8 +472,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_esp32_read_async(const struct device *dev,
-				const struct adc_sequence *sequence,
+static int adc_esp32_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				struct k_poll_signal *async)
 {
 	(void)(dev);
@@ -488,6 +487,7 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 {
 	const struct adc_esp32_conf *conf = (const struct adc_esp32_conf *)dev->config;
 	struct adc_esp32_data *data = (struct adc_esp32_data *)dev->data;
+	adc_atten_t old_atten = data->attenuation[cfg->channel_id];
 
 	if (cfg->channel_id >= conf->channel_count) {
 		LOG_ERR("Unsupported channel id '%d'", cfg->channel_id);
@@ -521,39 +521,42 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 
 	adc_oneshot_hal_channel_config(&data->hal, &config, cfg->channel_id);
 
+	if ((data->cal_handle[cfg->channel_id] == NULL) ||
+	    (data->attenuation[cfg->channel_id] != old_atten)) {
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-	adc_cali_curve_fitting_config_t cal_config = {
-		.unit_id = conf->unit,
-		.chan = cfg->channel_id,
-		.atten = data->attenuation[cfg->channel_id],
-		.bitwidth = data->resolution[cfg->channel_id],
-	};
+		adc_cali_curve_fitting_config_t cal_config = {
+			.unit_id = conf->unit,
+			.chan = cfg->channel_id,
+			.atten = data->attenuation[cfg->channel_id],
+			.bitwidth = data->resolution[cfg->channel_id],
+		};
 
-	LOG_DBG("Curve fitting calib [unit_id: %u, chan: %u, atten: %u, bitwidth: %u]",
-		conf->unit, cfg->channel_id, data->attenuation[cfg->channel_id],
-		data->resolution[cfg->channel_id]);
+		LOG_DBG("Curve fitting calib [unit_id: %u, chan: %u, atten: %u, bitwidth: %u]",
+			conf->unit, cfg->channel_id, data->attenuation[cfg->channel_id],
+			data->resolution[cfg->channel_id]);
 
-	adc_cali_create_scheme_curve_fitting(&cal_config,
-					     &data->cal_handle[cfg->channel_id]);
+		adc_cali_create_scheme_curve_fitting(&cal_config,
+						     &data->cal_handle[cfg->channel_id]);
 #endif /* ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED */
 
 #if ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
-	adc_cali_line_fitting_config_t cal_config = {
-		.unit_id = conf->unit,
-		.atten = data->attenuation[cfg->channel_id],
-		.bitwidth = data->resolution[cfg->channel_id],
+		adc_cali_line_fitting_config_t cal_config = {
+			.unit_id = conf->unit,
+			.atten = data->attenuation[cfg->channel_id],
+			.bitwidth = data->resolution[cfg->channel_id],
 #if CONFIG_SOC_SERIES_ESP32
-		.default_vref = data->meas_ref_internal
+			.default_vref = data->meas_ref_internal
 #endif
-	};
+		};
 
-	LOG_DBG("Line fitting calib [unit_id: %u, chan: %u, atten: %u, bitwidth: %u]",
-		conf->unit, cfg->channel_id, data->attenuation[cfg->channel_id],
-		data->resolution[cfg->channel_id]);
+		LOG_DBG("Line fitting calib [unit_id: %u, chan: %u, atten: %u, bitwidth: %u]",
+			conf->unit, cfg->channel_id, data->attenuation[cfg->channel_id],
+			data->resolution[cfg->channel_id]);
 
-	adc_cali_create_scheme_line_fitting(&cal_config,
-				&data->cal_handle[cfg->channel_id]);
+		adc_cali_create_scheme_line_fitting(&cal_config,
+						    &data->cal_handle[cfg->channel_id]);
 #endif /* ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED */
+	}
 
 #if defined(CONFIG_ADC_ESP32_DMA)
 	if (!SOC_ADC_DIG_SUPPORTED_UNIT(conf->unit)) {
@@ -589,8 +592,8 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 
 static int adc_esp32_init(const struct device *dev)
 {
-	struct adc_esp32_data *data = (struct adc_esp32_data *) dev->data;
-	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *) dev->config;
+	struct adc_esp32_data *data = (struct adc_esp32_data *)dev->data;
+	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *)dev->config;
 	uint32_t clock_src_hz;
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
@@ -601,7 +604,8 @@ static int adc_esp32_init(const struct device *dev)
 	clock_control_on(conf->clock_dev, conf->clock_subsys);
 #endif
 
-	esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_src_hz);
+	esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT,
+				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_src_hz);
 
 	adc_oneshot_hal_cfg_t config = {
 		.unit = conf->unit,
@@ -626,8 +630,7 @@ static int adc_esp32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	data->adc_hal_dma_ctx.rx_desc = k_aligned_alloc(sizeof(uint32_t),
-							sizeof(dma_descriptor_t));
+	data->adc_hal_dma_ctx.rx_desc = k_aligned_alloc(sizeof(uint32_t), sizeof(dma_descriptor_t));
 	if (!data->adc_hal_dma_ctx.rx_desc) {
 		LOG_ERR("rx_desc allocation failed!");
 		return -ENOMEM;
@@ -660,21 +663,22 @@ static int adc_esp32_init(const struct device *dev)
 
 static DEVICE_API(adc, api_esp32_driver_api) = {
 	.channel_setup = adc_esp32_channel_setup,
-	.read          = adc_esp32_read,
+	.read = adc_esp32_read,
 #ifdef CONFIG_ADC_ASYNC
-	.read_async    = adc_esp32_read_async,
+	.read_async = adc_esp32_read_async,
 #endif /* CONFIG_ADC_ASYNC */
-	.ref_internal  = ADC_ESP32_DEFAULT_VREF_INTERNAL,
+	.ref_internal = ADC_ESP32_DEFAULT_VREF_INTERNAL,
 };
 
-#define ADC_ESP32_CONF_GPIO_PORT_INIT	.gpio_port = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
+#define ADC_ESP32_CONF_GPIO_PORT_INIT .gpio_port = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
 
 #if defined(CONFIG_ADC_ESP32_DMA)
 
-#define ADC_ESP32_CONF_DMA_INIT(n)	.dma_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),     \
+#define ADC_ESP32_CONF_DMA_INIT(n)                                                                 \
+	.dma_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),     \
 					(DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0))),           \
-					(NULL)),                                                   \
-					.dma_channel = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), \
+					(NULL)),                          \
+		 .dma_channel = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), \
 					(DT_INST_DMAS_CELL_BY_IDX(n, 0, channel)),                 \
 					(0xff)),
 #else
@@ -683,29 +687,24 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 
 #endif /* defined(CONFIG_ADC_ESP32_DMA) */
 
-#define ESP32_ADC_INIT(inst)							\
-										\
-	static const struct adc_esp32_conf adc_esp32_conf_##inst = {		\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),	\
-		.clock_subsys =	\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),	\
-		.unit = DT_PROP(DT_DRV_INST(inst), unit) - 1,			\
-		.channel_count = DT_PROP(DT_DRV_INST(inst), channel_count),	\
-		ADC_ESP32_CONF_GPIO_PORT_INIT                                   \
-		ADC_ESP32_CONF_DMA_INIT(inst)                                   \
-	};									\
-										\
-	static struct adc_esp32_data adc_esp32_data_##inst = {			\
-		.hal = {	\
-			.dev = (adc_oneshot_soc_handle_t)DT_INST_REG_ADDR(inst),\
-		},	\
-	};									\
-										\
-DEVICE_DT_INST_DEFINE(inst, &adc_esp32_init, NULL,				\
-		&adc_esp32_data_##inst,						\
-		&adc_esp32_conf_##inst,						\
-		POST_KERNEL,							\
-		CONFIG_ADC_INIT_PRIORITY,					\
-		&api_esp32_driver_api);
+#define ESP32_ADC_INIT(inst)                                                                       \
+                                                                                                   \
+	static const struct adc_esp32_conf adc_esp32_conf_##inst = {                               \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),         \
+		.unit = DT_PROP(DT_DRV_INST(inst), unit) - 1,                                      \
+		.channel_count = DT_PROP(DT_DRV_INST(inst), channel_count),                        \
+		ADC_ESP32_CONF_GPIO_PORT_INIT ADC_ESP32_CONF_DMA_INIT(inst)};                      \
+                                                                                                   \
+	static struct adc_esp32_data adc_esp32_data_##inst = {                                     \
+		.hal =                                                                             \
+			{                                                                          \
+				.dev = (adc_oneshot_soc_handle_t)DT_INST_REG_ADDR(inst),           \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &adc_esp32_init, NULL, &adc_esp32_data_##inst,                 \
+			      &adc_esp32_conf_##inst, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
+			      &api_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_ADC_INIT)
