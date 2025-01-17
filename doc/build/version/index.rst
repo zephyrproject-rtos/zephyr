@@ -39,19 +39,19 @@ field to a single byte (note that there may be further restrictions depending up
 is used for, e.g. bootloaders might only support some of these fields or might place limits on the
 maximum values of fields):
 
-+---------------+----------------------------------------+
-| Field         | Data type                              |
-+---------------+----------------------------------------+
-| VERSION_MAJOR | Numerical (0-255)                      |
-+---------------+----------------------------------------+
-| VERSION_MINOR | Numerical (0-255)                      |
-+---------------+----------------------------------------+
-| PATCHLEVEL    | Numerical (0-255)                      |
-+---------------+----------------------------------------+
-| VERSION_TWEAK | Numerical (0-255)                      |
-+---------------+----------------------------------------+
-| EXTRAVERSION  | Alphanumerical (Lowercase a-z and 0-9) |
-+---------------+----------------------------------------+
++---------------+-------------------------------------------+
+| Field         | Data type                                 |
++---------------+-------------------------------------------+
+| VERSION_MAJOR | Numerical (0-255)                         |
++---------------+-------------------------------------------+
+| VERSION_MINOR | Numerical (0-255)                         |
++---------------+-------------------------------------------+
+| PATCHLEVEL    | Numerical (0-255)                         |
++---------------+-------------------------------------------+
+| VERSION_TWEAK | Numerical (0-255)                         |
++---------------+-------------------------------------------+
+| EXTRAVERSION  | Alphanumerical (Lowercase a-z and 0-9, .) |
++---------------+-------------------------------------------+
 
 When an application is configured using CMake, the version file will be automatically processed,
 and will be checked automatically each time the version is changed, so CMake does not need to be
