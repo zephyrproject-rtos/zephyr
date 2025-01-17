@@ -138,14 +138,6 @@ static void set_mtimecmp(uint64_t time)
 #endif
 }
 
-static void set_divider(void)
-{
-#ifdef MTIMER_HAS_DIVIDER
-	*(volatile uint32_t *)MTIMEDIV_REG =
-		CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER;
-#endif
-}
-
 static uint64_t mtime(void)
 {
 #ifdef CONFIG_64BIT
@@ -240,9 +232,6 @@ uint64_t sys_clock_cycle_get_64(void)
 
 static int sys_clock_driver_init(void)
 {
-
-	set_divider();
-
 	IRQ_CONNECT(TIMER_IRQN, 0, timer_isr, NULL, 0);
 	last_ticks = mtime() / CYC_PER_TICK;
 	last_count = last_ticks * CYC_PER_TICK;
