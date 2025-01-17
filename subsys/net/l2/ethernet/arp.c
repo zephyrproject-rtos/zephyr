@@ -78,6 +78,9 @@ static struct arp_entry *arp_entry_find(sys_slist_t *list,
 
 		if (entry->iface == iface &&
 		    net_ipv4_addr_cmp(&entry->ip, dst)) {
+			NET_DBG("found dst %s",
+				net_sprint_ipv4_addr(dst));
+
 			return entry;
 		}
 
@@ -463,7 +466,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	NET_DBG("ARP using ll %s for IP %s",
 		net_sprint_ll_addr(net_pkt_lladdr_dst(pkt)->addr,
 				   sizeof(struct net_eth_addr)),
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
+		net_sprint_ipv4_addr(NET_IPV4_HDR(pkt)->dst));
 
 	return pkt;
 }
@@ -691,10 +694,10 @@ void net_arp_update(struct net_if *iface,
 		net_pkt_lladdr_dst(pkt)->addr =
 			(uint8_t *) &NET_ETH_HDR(pkt)->dst.addr;
 
-		NET_DBG("iface %d (%p) dst %s pending %p frag %p",
+		NET_DBG("iface %d (%p) dst %s pending %p frag %p ptype 0x%04x",
 			net_if_get_by_iface(iface), iface,
 			net_sprint_ipv4_addr(&entry->ip),
-			pkt, pkt->frags);
+			pkt, pkt->frags, net_pkt_ll_proto_type(pkt));
 
 		/* We directly send the packet without first queueing it.
 		 * The pkt has already been queued for sending, once by
