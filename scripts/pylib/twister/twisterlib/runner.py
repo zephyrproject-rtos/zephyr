@@ -44,7 +44,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
 from twisterlib.coverage import run_coverage_instance
 from twisterlib.environment import TwisterEnv
-from twisterlib.harness import Ctest, HarnessImporter, Pytest
+from twisterlib.harness import Ctest, HarnessImporter, Pytest, Bsim
 from twisterlib.log_helper import log_command
 from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance
@@ -1773,6 +1773,8 @@ class ProjectBuilder(FilterBuilder):
                 harness.pytest_run(instance.handler.get_test_timeout())
             elif isinstance(harness, Ctest):
                 harness.ctest_run(instance.handler.get_test_timeout())
+            elif isinstance(harness, Bsim):
+                harness.bsim_run(instance.handler.get_test_timeout())
             else:
                 instance.handler.handle(harness)
 
