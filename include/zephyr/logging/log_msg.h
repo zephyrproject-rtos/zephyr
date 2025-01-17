@@ -569,9 +569,9 @@ do { \
 #define Z_LOG_MSG_CREATE2(_try_0cpy, _mode, _cstr_cnt,  _domain_id, _source, \
 			   _level, _data, _dlen, ...) \
 do { \
-	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	FOR_EACH_IDX(Z_LOG_LOCAL_ARG_CREATE, (;), __VA_ARGS__); \
-	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	Z_LOG_MSG_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
