@@ -280,6 +280,8 @@ Serial
 ======
 
 * Renamed the ``compatible`` from ``nxp,kinetis-lpuart`` to :dtcompatible:`nxp,lpuart`.
+* Silabs Usart driver has been split for Series 2 :dtcompatible:`silabs,usart-uart`
+  and  Series 0/1 ``silabs,gecko-usart``
 
 Stepper
 =======
