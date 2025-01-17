@@ -1,0 +1,15 @@
+# Copyright (c) 2025, Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_SILABS_USART
+	bool "Silabs USART UART driver"
+	default y
+	depends on DT_HAS_SILABS_USART_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SOC_GECKO_USART
+	select PINCTRL
+	select CLOCK_CONTROL
+	select PM_DEVICE if PM
+	help
+	  Enable the Silicon Labs usart driver.
