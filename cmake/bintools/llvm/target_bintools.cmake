@@ -44,6 +44,8 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_section_remove "--remove-s
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_only "--only-section=")
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_rename "--rename-section;")
 
+set_property(TARGET bintools PROPERTY elfconvert_flag_lma_adjust "--change-section-lma;")
+
 # llvm-objcopy doesn't support gap fill argument.
 set_property(TARGET bintools PROPERTY elfconvert_flag_gapfill "")
 set_property(TARGET bintools PROPERTY elfconvert_flag_srec_len "--srec-len=")
