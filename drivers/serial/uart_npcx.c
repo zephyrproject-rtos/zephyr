@@ -1066,6 +1066,9 @@ static int uart_npcx_init(const struct device *dev)
 	/* Disable all UART tx FIFO interrupts */
 	uart_npcx_dis_all_tx_interrupts(dev);
 
+	/* Disable rx FIFO not empty interrupt */
+	uart_npcx_irq_rx_disable(dev);
+
 	/* Clear UART rx FIFO */
 	uart_npcx_clear_rx_fifo(dev);
 
