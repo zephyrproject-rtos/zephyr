@@ -70,6 +70,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	/* Set SP_EL1 */
 	msr     sp_el1, x24
 
+#if	defined(CONFIG_HAS_ARM_VHE)
+	msr		SPsel, #1
+	mov     sp, x24
+#endif
 	b	out
 1:
 	/* Disable alignment fault checking */
@@ -238,6 +242,13 @@ switch_el:
 	mov_imm	x0, (SPSR_DAIF_MASK | SPSR_MODE_EL1T)
 	msr	spsr_el2, x0
 
+	/* Is VHE mode? */
+	mrs x0,	hcr_el2
+	and x0, x0,	#HCR_E2H_BIT
+	cbz	x0,	nvhe_branch
+	b 1f
+
+nvhe_branch:
 	adr	x0, 1f
 	msr	elr_el2, x0
 	eret

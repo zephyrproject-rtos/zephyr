@@ -8,6 +8,8 @@
 #include <zephyr/sys/barrier.h>
 #include "boot.h"
 
+uint64_t cpu_vmpidr_el2_list[CONFIG_MP_MAX_NUM_CPUS] = {0};
+
 void z_arm64_el2_init(void);
 
 void __weak z_arm64_el_highest_plat_init(void)
@@ -151,9 +153,30 @@ void z_arm64_el2_init(void)
 	zero_cnthp_ctl_el2();
 #endif
 
+#ifdef CONFIG_ARM64_SET_VPIDR_EL2
+	reg = read_midr_el1();
+	write_vpidr_el2(reg);
+#endif
+
 #ifdef CONFIG_ARM64_SET_VMPIDR_EL2
 	reg = read_mpidr_el1();
 	write_vmpidr_el2(reg);
+#endif
+
+#if defined(CONFIG_ZVM) && defined(CONFIG_HAS_ARM_VHE)
+	reg = read_hcr_el2();
+	reg |= HCR_VHE_FLAGS;
+	write_hcr_el2(reg);
+
+	reg = read_mpidr_el1();
+	cpu_vmpidr_el2_list[MPIDR_TO_CORE(GET_MPIDR())] = reg;
+
+	/* Disable CP15 trapping to EL2 of EL1 accesses to System register  */
+	zero_sysreg(hstr_el2);
+	/* Disable Debug related register  */
+	zero_sysreg(mdcr_el2);
+	/* Init stage-2 translation table base register  */
+	zero_sysreg(vttbr_el2);
 #endif
 
 	/*
@@ -187,6 +210,7 @@ void z_arm64_el1_init(void)
 	write_sctlr_el1(reg);
 
 	write_cntv_cval_el0(~(uint64_t)0);
+	write_cntp_cval_el0(~(uint64_t)0);
 	/*
 	 * Enable these if/when we use the corresponding timers.
 	 * write_cntp_cval_el0(~(uint64_t)0);
