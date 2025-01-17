@@ -744,6 +744,7 @@ static uint8_t handle_string_long_read(struct bt_conn *conn, uint8_t err,
 	uint16_t offset = params->single.offset;
 	uint8_t inst_index = tbs_index(conn, inst);
 	const char *received_string;
+	uint16_t str_length;
 	int tbs_err = err;
 
 	if ((tbs_err == 0) && (data != NULL) &&
@@ -779,44 +780,38 @@ static uint8_t handle_string_long_read(struct bt_conn *conn, uint8_t err,
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	if (inst->net_buf.len == 0) {
-		received_string = NULL;
-	} else {
-		uint16_t str_length = inst->net_buf.len;
+	str_length = inst->net_buf.len;
 
-		/* Ensure there is space for string termination */
-		if (net_buf_simple_tailroom(&inst->net_buf) < 1) {
+	/* Ensure there is space for string termination */
+	if (net_buf_simple_tailroom(&inst->net_buf) < 1) {
+		LOG_DBG("Truncating string");
+		if (truncatable) {
+			/* Truncate */
+			str_length--;
+		} else {
+			tbs_err = BT_ATT_ERR_INSUFFICIENT_RESOURCES;
+		}
+	}
+
+	if (tbs_err == 0) {
+		char *str_data;
+
+		/* Get a reference to the string buffer */
+		str_data = net_buf_simple_pull_mem(&inst->net_buf, inst->net_buf.len);
+
+		/* All strings are UTF-8, truncate properly if needed */
+		str_data[str_length] = '\0';
+		received_string = utf8_trunc(str_data);
+
+		/* The string might have been truncated */
+		if (strlen(received_string) < str_length) {
 			LOG_DBG("Truncating string");
-			if (truncatable) {
-				/* Truncate */
-				str_length--;
-			} else {
+			if (!truncatable) {
 				tbs_err = BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 			}
 		}
 
-		if (tbs_err == 0) {
-			char *str_data;
-
-			/* Get a reference to the string buffer */
-			str_data = net_buf_simple_pull_mem(&inst->net_buf,
-							   inst->net_buf.len);
-
-			/* All strings are UTF-8, truncate properly if needed */
-			str_data[str_length] = '\0';
-			received_string = utf8_trunc(str_data);
-
-			/* The string might have been truncated */
-			if (strlen(received_string) < str_length) {
-				LOG_DBG("Truncating string");
-				if (!truncatable) {
-					tbs_err =
-					      BT_ATT_ERR_INSUFFICIENT_RESOURCES;
-				}
-			}
-
-			LOG_DBG("%s", received_string);
-		}
+		LOG_DBG("%s", received_string);
 	}
 
 	if (tbs_err) {
@@ -950,7 +945,7 @@ static uint8_t read_uri_list_cb(struct bt_conn *conn, uint8_t err,
 {
 	bt_tbs_client_read_string_cb cb = NULL;
 
-	LOG_DBG("Read bearer UCI");
+	LOG_DBG("Read bearer URI list");
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->uri_list != NULL) {
 		cb = tbs_client_cbs->uri_list;
