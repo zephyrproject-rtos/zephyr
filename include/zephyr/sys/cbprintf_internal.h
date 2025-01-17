@@ -530,14 +530,14 @@ extern "C" {
  */
 #if Z_C_GENERIC
 #define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ...) ({\
-	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	int _rv; \
 	if ((flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS) { \
 		_rv = 0; \
 	} else { \
 		_rv = Z_CBPRINTF_PCHAR_COUNT(flags, __VA_ARGS__) > 0 ? 1 : 0; \
 	} \
-	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	_rv; \
 })
 #else
@@ -765,7 +765,7 @@ do { \
 #define Z_CBPRINTF_STATIC_PACKAGE_GENERIC(buf, _inlen, _outlen, _align_offset, \
 					  flags, ... /* fmt, ... */) \
 do { \
-	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	/* When using clang additional warning needs to be suppressed since each */ \
 	/* argument of fmt string is used for sizeof() which results in the warning */ \
 	/* if argument is a string literal. */ \
@@ -848,7 +848,7 @@ do { \
 		*_len_loc = pkg_hdr; \
 	} \
 	TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_SIZEOF_ARRAY_DECAY); \
-	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 } while (false)
 
 #if Z_C_GENERIC
