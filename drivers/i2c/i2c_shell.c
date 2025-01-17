@@ -336,9 +336,14 @@ static int cmd_i2c_speed(const struct shell *shell_ctx, size_t argc, char **argv
 	return 0;
 }
 
+static bool device_is_i2c(const struct device *dev)
+{
+	return DEVICE_API_IS(i2c, dev) || DEVICE_API_IS(i3c, dev);
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_i2c);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
