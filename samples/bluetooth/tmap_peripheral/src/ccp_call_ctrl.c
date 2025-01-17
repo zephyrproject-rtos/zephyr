@@ -7,6 +7,7 @@
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
@@ -138,6 +139,12 @@ int ccp_originate_call(void)
 {
 	int err;
 	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
+
+	/* If remote_uri is empty then we cannot place a call */
+	if (remote_uri[0] == '\0') {
+		printk("Remote does not support any URI schemes, cannot place call\n");
+		return -ENOENT;
+	}
 
 	strcpy(uri, remote_uri);
 	strcat(uri, URI_SEPARATOR);
