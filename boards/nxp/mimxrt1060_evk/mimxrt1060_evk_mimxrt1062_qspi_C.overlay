@@ -43,6 +43,12 @@
 		clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 18>;
 		clock-names = "mclk";
 	};
+
+&usdhc1 {
+	/* Use dat3 detection method */
+	detect-dat3;
+	pinctrl-4 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "slow", "med", "fast", "nopull";
 };
 
 /* MIMXRT1060-EVK/EVKB have the is25wp064 flash module, but EVKC has w25q128jw */
