@@ -344,6 +344,8 @@ success:
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	atomic_dec(&pool->avail_count);
 	__ASSERT_NO_MSG(atomic_get(&pool->avail_count) >= 0);
+	pool->max_used = MAX(pool->max_used,
+			     pool->buf_count - atomic_get(&pool->avail_count));
 #endif
 	return buf;
 }
