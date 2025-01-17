@@ -19,13 +19,7 @@
 #include <em_gpio.h>
 #endif /* CONFIG_PINCTRL */
 
-#ifdef CONFIG_CLOCK_CONTROL
-#include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/clock_control_silabs.h>
-#define GET_GECKO_USART_CLOCK(idx)                            \
-	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
-	.clock_cfg = SILABS_DT_INST_CLOCK_CFG(idx),
-#elif DT_NODE_HAS_PROP(id, peripheral_id)
+#if DT_NODE_HAS_PROP(id, peripheral_id)
 #define USART_PREFIX cmuClock_USART
 #define UART_PREFIX cmuClock_UART
 #define CLOCK_USART(id) _CONCAT(USART_PREFIX, id)
@@ -130,12 +124,7 @@ struct uart_gecko_config {
 	const struct pinctrl_dev_config *pcfg;
 #endif /* CONFIG_PINCTRL */
 	USART_TypeDef *base;
-#ifdef CONFIG_CLOCK_CONTROL
-	const struct device *clock_dev;
-	const struct silabs_clock_control_cmu_config clock_cfg;
-#else
 	CMU_Clock_TypeDef clock;
-#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -650,14 +639,7 @@ static int uart_gecko_init(const struct device *dev)
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio driver */
 	/* Enable USART clock */
-#ifdef CONFIG_CLOCK_CONTROL
-	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
-	if (err < 0) {
-		return err;
-	}
-#else
 	CMU_ClockEnable(config->clock, true);
-#endif
 
 	/* Init USART */
 	usartInit.baudrate = uart_cfg->baudrate;
@@ -686,31 +668,6 @@ static int uart_gecko_init(const struct device *dev)
 
 	return 0;
 }
-
-#ifdef CONFIG_PM_DEVICE
-static int uart_gecko_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	__maybe_unused const struct uart_gecko_config *config = dev->config;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-#ifdef USART_STATUS_TXIDLE
-		/* Wait for TX FIFO to flush before suspending */
-		while (!(USART_StatusGet(config->base) & USART_STATUS_TXIDLE)) {
-		}
-#endif
-		break;
-
-	case PM_DEVICE_ACTION_RESUME:
-		break;
-
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif
 
 static DEVICE_API(uart, uart_gecko_driver_api) = {
 	.poll_in = uart_gecko_poll_in,
