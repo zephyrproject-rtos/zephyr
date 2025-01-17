@@ -1,7 +1,4 @@
-.. _mcb_ra8t1:
-
-RA8T1 Evaluation Kit
-####################
+.. zephyr:board:: mck_ra8t1
 
 Overview
 ********
@@ -20,7 +17,7 @@ MCK-RA8T1 kit includes the items below:
 
 .. figure:: mck_ra8t1_product_contents.jpg
 	:align: center
-	:alt: RA8T1 Evaluation Kit
+	:alt: RA8T1 Motor Control Kit
 
 	MCK-RA8T1 product contents (Credit: Renesas Electronics Corporation)
 
@@ -54,12 +51,6 @@ The specifications of the CPU board are shown below:
 - Ethrnet connector
 - microSD card connector
 
-.. figure:: mck_ra8t1.jpg
-	:align: center
-	:alt: RA8T1 Evaluation Kit
-
-	CPU Board Layout (Credit: Renesas Electronics Corporation)
-
 **Onboard debugger**
 
 This product has the onboard debugger circuit, J-Link On-Board (hereinafter called “J-Link-OB”). You can
@@ -67,7 +58,7 @@ write a program (firmware) of RA8T1 with it.
 
 Hardware
 ********
-Detail Hardware feature for the RA8T1 MCU group can be found at `RA8T1 Group User's Manual Hardware`_
+Detailed Hardware features for the RA8T1 MCU group can be found at `RA8T1 Group User's Manual Hardware`_
 
 .. figure:: ra8t1_block_diagram.png
 	:width: 442px
@@ -76,12 +67,12 @@ Detail Hardware feature for the RA8T1 MCU group can be found at `RA8T1 Group Use
 
 	RA8T1 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detail Hardware feature for the  MCB-RA8T1 board can be found at `MCB-RA8T1 - User's Manual`_
+Detailed Hardware features for the  MCB-RA8T1 board can be found at `MCB-RA8T1 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for MCB-RA8T1 board:
+The below features are currently supported on Zephyr for MCB-RA8T1 board:
 
 +--------------+------------+----------------------+
 | Interface    | Controller | Driver/Component     |
@@ -144,11 +135,11 @@ SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
-  1. Connect to J-Link OB via USB port to host PC
+1. Connect to J-Link OB via USB port to host PC
 
-  2. Make sure J-Link OB jumper is in default configuration as describe in `MCB-RA8T1 - User's Manual`_
+2. Make sure J-Link OB jumper is in default configuration as describe in `MCB-RA8T1 - User's Manual`_
 
-  3. Execute west command
+3. Execute west command
 
 	.. code-block:: console
 
