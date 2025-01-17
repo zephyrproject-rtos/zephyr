@@ -789,13 +789,13 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 		lookahead_size = CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE;
 	}
 
-#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+#ifdef CONFIG_FS_LITTLEFS_MULTIVERSION
 	uint32_t disk_version = lcp->disk_version;
 
 	if (disk_version == 0) {
 		disk_version = LFS_DISK_VERSION;
 	}
-#endif /* CONFIG_FS_LITTLEFS_DISK_VERSION */
+#endif /* CONFIG_FS_LITTLEFS_MULTIVERSION */
 
 	/* No, you don't get to override this. */
 	lfs_size_t block_count = 0;
@@ -881,12 +881,12 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 		lcp->sync = lfs_api_sync;
 	}
 
-#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+#ifdef CONFIG_FS_LITTLEFS_MULTIVERSION
 	lcp->disk_version = disk_version;
 	LOG_INF("partition disk version: %u.%u",
 		(uint32_t)FS_LITTLEFS_DISK_VERSION_MAJOR_GET(disk_version),
 		(uint32_t)FS_LITTLEFS_DISK_VERSION_MINOR_GET(disk_version));
-#endif /* CONFIG_FS_LITTLEFS_DISK_VERSION */
+#endif /* CONFIG_FS_LITTLEFS_MULTIVERSION */
 
 	lcp->block_size = block_size;
 	lcp->block_count = block_count;
@@ -1060,7 +1060,7 @@ static const struct fs_file_system_t littlefs_fs = {
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
 #define FS_PARTITION(inst) DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), partition, 0)
-#ifdef CONFIG_FS_LITTLEFS_DISK_VERSION
+#ifdef CONFIG_FS_LITTLEFS_MULTIVERSION
 #define FS_DISK_VERSION(inst) \
 	.disk_version = DT_INST_PROP_OR(inst, disk_version, LFS_DISK_VERSION),
 #else
