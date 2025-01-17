@@ -987,5 +987,23 @@
 				      IT51XXX_IRQ_TIMER7_DW IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 		};
+
+		kbd: kbd@f01d00 {
+			compatible = "ite,it51xxx-kbd";
+			reg = <0x00f01d00 0x29>;
+			interrupt-parent = <&intc>;
+			interrupts = <IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+			wucctrl = <&wuc_wu30   /* KSI[0] */
+				   &wuc_wu31   /* KSI[1] */
+				   &wuc_wu32   /* KSI[2] */
+				   &wuc_wu33   /* KSI[3] */
+				   &wuc_wu34   /* KSI[4] */
+				   &wuc_wu35   /* KSI[5] */
+				   &wuc_wu36   /* KSI[6] */
+				   &wuc_wu37>; /* KSI[7] */
+			kso16-gpios = <&gpioc 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		};
 	};
 };
