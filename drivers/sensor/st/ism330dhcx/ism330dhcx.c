@@ -713,6 +713,15 @@ static int ism330dhcx_init_chip(const struct device *dev)
 
 	k_busy_wait(100);
 
+	/*
+	 * Set device_conf bit to 1 for a proper configuration
+	 * as stated in DS chapter paragraph 9.20
+	 */
+	if (ism330dhcx_device_conf_set(ism330dhcx->ctx, 1) < 0) {
+		LOG_DBG("Failed setting device_conf bit");
+		return -EIO;
+	}
+
 	LOG_DBG("accel range is %d", cfg->accel_range);
 	if (ism330dhcx_accel_range_set(dev, cfg->accel_range) < 0) {
 		LOG_DBG("failed to set accelerometer full-scale");
