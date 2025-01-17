@@ -115,10 +115,17 @@
 		};
 
 		clint: clint@2000000 {
-			compatible = "starfive,jh7100-clint", "sifive,clint0";
+			compatible = "sifive,clint0";
 			interrupts-extended = <&cpu0intctrl 3 &cpu0intctrl 7
 					       &cpu1intctrl 3 &cpu1intctrl 7>;
 			reg = <0x0 0x2000000 0x0 0x10000>;
+		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&cpu0intctrl 7 &cpu1intctrl 7>;
+			reg = <0x0 0x200bff8 0x0 0x8 0x0 0x2004000 0x0 0x8>;
+			reg-names = "mtime", "mtimecmp";
 		};
 
 		plic: plic@c000000 {

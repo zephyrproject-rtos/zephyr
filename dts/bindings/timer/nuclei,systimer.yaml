@@ -9,15 +9,9 @@ description: |
 
 compatible: "nuclei,systimer"
 
-include: base.yaml
+include: "riscv,machine-timer.yaml"
 
 properties:
-  reg:
-    required: true
-
-  interrupts:
-    required: true
-
   clk-divider:
     type: int
     description: |
