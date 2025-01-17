@@ -17,7 +17,7 @@ GTEXT(__rom_header)
  * 0x6c47 (minor).  The manifest format is documented here:
  * https://github.com/lowRISC/opentitan/blob/689a163294e1791bd30cfe096decf7f9233abad4/sw/host/opentitanlib/src/image/manifest.rs#L205
  */
-SECTION_FUNC(rom_header, __rom_header)
+SECTION_VAR(rom_header, __rom_header)
 	.rept(225)
 	.word 0
 	.endr
