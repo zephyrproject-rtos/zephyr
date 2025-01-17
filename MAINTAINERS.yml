@@ -1999,6 +1999,20 @@ Release Notes:
   tests:
     - drivers.sdhc
 
+"Drivers: SENT":
+  status: maintained
+  maintainers:
+    - congnguyenhuu
+  files:
+    - drivers/sent/
+    - include/zephyr/drivers/sent/
+    - dts/bindings/sent/
+    - doc/hardware/peripherals/sent.rst
+  labels:
+    - "area: SENT"
+  tests:
+    - drivers.sent
+
 "Drivers: Serial/UART":
   status: maintained
   maintainers:
