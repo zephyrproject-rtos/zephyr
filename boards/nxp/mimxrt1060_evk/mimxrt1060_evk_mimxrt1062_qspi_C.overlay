@@ -13,3 +13,10 @@
 	gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
 	label = "User LED1";
 };
+
+&usdhc1 {
+	/* Use dat3 detection method */
+	detect-dat3;
+	pinctrl-4 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "slow", "med", "fast", "nopull";
+};
