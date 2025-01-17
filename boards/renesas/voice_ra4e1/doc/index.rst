@@ -1,8 +1,5 @@
 .. zephyr:board:: voice_ra4e1
 
-RA4E1 Voice User Reference Kit
-##############################
-
 Overview
 ********
 

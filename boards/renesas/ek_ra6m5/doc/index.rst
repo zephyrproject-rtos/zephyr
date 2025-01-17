@@ -1,7 +1,4 @@
-.. _ek_ra6m5:
-
-RA6M5 Evaluation Kit
-####################
+.. zephyr:board:: ek_ra6m5
 
 Overview
 ********
@@ -62,15 +59,9 @@ The key features of the EK-RA6M5 board are categorized in three groups as follow
 - 64 Mb (512 Mb) External Octo-SPI Flash
 - CAN (3-pin header)
 
-.. figure:: ek_ra6m5.webp
-	:align: center
-	:alt: RA6M5 Evaluation Kit
-
-	EK-RA6M5 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
-
 Hardware
 ********
-Detailed hardware feature for the RA6M5 MCU group can be found at `RA6M5 Group User's Manual Hardware`_
+Detailed hardware features for the RA6M5 MCU group can be found at `RA6M5 Group User's Manual Hardware`_
 
 .. figure:: ra6m5_block_diagram.webp
 	:width: 442px
@@ -79,12 +70,12 @@ Detailed hardware feature for the RA6M5 MCU group can be found at `RA6M5 Group U
 
 	RA6M5 Block diagram (Credit: Renesas Electronics Corporation)
 
-Detailed hardware feature for the EK-RA6M5 MCU can be found at `EK-RA6M5 - User's Manual`_
+Detailed hardware features for the EK-RA6M5 MCU can be found at `EK-RA6M5 - User's Manual`_
 
 Supported Features
 ==================
 
-The below features are currently supported on Zephyr OS for EK-RA6M5 board:
+The below features are currently supported on Zephyr for EK-RA6M5 board:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
@@ -138,11 +129,11 @@ SEGGER J-link's drivers are avaialbe at https://www.segger.com/downloads/jlink/
 
 To flash the program to board
 
-  1. Connect to J-Link OB via USB port to host PC
+1. Connect to J-Link OB via USB port to host PC
 
-  2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA6M5 - User's Manual`_
+2. Make sure J-Link OB jumper is in default configuration as describe in `EK-RA6M5 - User's Manual`_
 
-  3. Execute west command
+3. Execute west command
 
 	.. code-block:: console
 
