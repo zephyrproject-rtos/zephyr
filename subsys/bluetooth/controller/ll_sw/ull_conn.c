@@ -1074,7 +1074,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	if (done->extra.trx_cnt) {
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
-		} else if (lll->role) {
+		} else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
 			if (!conn->periph.drift_skip) {
 				ull_drift_ticks_get(done, &ticks_drift_plus,
 						    &ticks_drift_minus);
@@ -1103,6 +1103,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 		/* Reset connection failed to establish countdown */
 		conn->connect_expire = 0U;
+	} else {
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			conn->periph.drift_skip = 0U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
 	}
 
 	elapsed_event = latency_event + lll->lazy_prepare + 1U;
