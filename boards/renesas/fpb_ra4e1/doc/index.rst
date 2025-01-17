@@ -1,8 +1,5 @@
 .. zephyr:board:: fpb_ra4e1
 
-RA4E1 Fast Prototyping Board
-############################
-
 Overview
 ********
 

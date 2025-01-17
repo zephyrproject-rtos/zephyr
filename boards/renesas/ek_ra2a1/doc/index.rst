@@ -1,7 +1,4 @@
-.. _ek_ra2a1:
-
-RA2A1 Evaluation Kit
-####################
+.. zephyr:board:: ek_ra2a1
 
 Overview
 ********
@@ -30,12 +27,6 @@ Renesas RA2A1 Microcontroller Group has following features
 - Low Power Asynchronous General-Purpose Timer x 2
 - Watchdog Timer
 - 49 Input/Output pins
-
-.. figure:: ek_ra2a1.webp
-	:align: center
-	:alt: RA2A1 Evaluation Kit
-
-	EK-RA2A1 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
 
 Hardware
 ********
