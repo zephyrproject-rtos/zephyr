@@ -114,19 +114,25 @@ static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
 	PR("Network buffer pools:\n");
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-	PR("Address\t\tTotal\tAvail\tName\n");
+	PR("Address\t\tTotal\tAvail\tMaxUsed\tName\n");
+#if defined(CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION)
+	PR("%p\t%d\t%u\t%u\tRX\n", rx, rx->info.num_blocks,
+	   k_mem_slab_num_free_get(rx), rx->info.max_used);
 
-	PR("%p\t%d\t%u\tRX\n",
+	PR("%p\t%d\t%u\t%u\tTX\n", tx, tx->info.num_blocks,
+	   k_mem_slab_num_free_get(tx), tx->info.max_used);
+#else
+	PR("%p\t%d\t%u\t-\tRX\n",
 	       rx, rx->info.num_blocks, k_mem_slab_num_free_get(rx));
 
-	PR("%p\t%d\t%u\tTX\n",
+	PR("%p\t%d\t%u\t-\tTX\n",
 	       tx, tx->info.num_blocks, k_mem_slab_num_free_get(tx));
+#endif
+	PR("%p\t%d\t%ld\t%d\tRX DATA (%s)\n", rx_data, rx_data->buf_count,
+	   atomic_get(&rx_data->avail_count), rx_data->max_used, rx_data->name);
 
-	PR("%p\t%d\t%ld\tRX DATA (%s)\n", rx_data, rx_data->buf_count,
-	   atomic_get(&rx_data->avail_count), rx_data->name);
-
-	PR("%p\t%d\t%ld\tTX DATA (%s)\n", tx_data, tx_data->buf_count,
-	   atomic_get(&tx_data->avail_count), tx_data->name);
+	PR("%p\t%d\t%ld\t%d\tTX DATA (%s)\n", tx_data, tx_data->buf_count,
+	   atomic_get(&tx_data->avail_count), tx_data->max_used, tx_data->name);
 #else
 	PR("Address\t\tTotal\tName\n");
 
