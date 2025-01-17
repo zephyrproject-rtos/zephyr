@@ -964,6 +964,34 @@ class Ztest(Test):
 
 class Bsim(Harness):
 
+    DEFAULT_VERBOSITY = 2
+    DEFAULT_SIM_LENGTH = 60e6
+
+    def __init__(self):
+        super().__init__()
+        self._bsim_out_path = os.getenv('BSIM_OUT_PATH', '')
+        self._exe_path = None
+        self._tc_output = []
+
+    @property
+    def exe_path(self):
+        if self._exe_path:
+            return self._exe_path
+
+        if not self._bsim_out_path:
+            logger.warning('Cannot copy bsim exe - BSIM_OUT_PATH not provided.')
+            return self._exe_path
+
+        new_exe_name: str = self.instance.testsuite.harness_config.get('bsim_exe_name', '')
+        if new_exe_name:
+            new_exe_name = f'bs_{self.instance.platform.name}_{new_exe_name}'
+        else:
+            new_exe_name = f'bs_{self.instance.name}'
+
+        new_exe_name = new_exe_name.replace(os.path.sep, '_').replace('.', '_').replace('@', '_')
+        self._exe_path = os.path.join(self._bsim_out_path, 'bin', new_exe_name)
+        return self._exe_path
+
     def build(self):
         """
         Copying the application executable to BabbleSim's bin directory enables
@@ -978,23 +1006,91 @@ class Bsim(Harness):
             logger.warning('Cannot copy bsim exe - cannot find original executable.')
             return
 
-        bsim_out_path: str = os.getenv('BSIM_OUT_PATH', '')
-        if not bsim_out_path:
-            logger.warning('Cannot copy bsim exe - BSIM_OUT_PATH not provided.')
+        logger.debug(f'Copying executable from {original_exe_path} to {self.exe_path}')
+        shutil.copy(original_exe_path, self.exe_path)
+
+    def _run_cmd(self, cmd, timeout):
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              cwd=os.path.join(self._bsim_out_path, 'bin')) as proc:
+            try:
+                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+                reader_t.start()
+                reader_t.join(timeout)
+                if reader_t.is_alive():
+                    terminate_process(proc)
+                    logger.warning('Timeout has occurred. Can be extended in testspec file. '
+                                   f'Currently set to {timeout} seconds.')
+                    self.status = TwisterStatus.FAIL
+                proc.wait(timeout)
+            except subprocess.TimeoutExpired:
+                self.status = TwisterStatus.FAIL
+                proc.kill()
+
+        if self.status == TwisterStatus.NONE:
+            self.status = TwisterStatus.FAIL if proc.returncode != 0 else TwisterStatus.PASS
+        else:
+            self.status = TwisterStatus.FAIL \
+                if proc.returncode != 0 or self.status in [TwisterStatus.ERROR, TwisterStatus.FAIL] \
+                else TwisterStatus.PASS
+
+    def _output_reader(self, proc):
+        while proc.stdout.readable() and proc.poll() is None:
+            line = proc.stdout.readline().decode().strip()
+            if not line:
+                continue
+            logger.debug(line)
+            self._tc_output.append(line)
+        proc.communicate()
+
+    def _generate_commands(self):
+        bsim_phy_path = os.path.join(self._bsim_out_path, 'bin', 'bs_2G4_phy_v1')
+        suite_id = f'-s={self.instance.name.split(os.path.sep)[-1].replace(".", "_")}'
+
+        cfg = self.instance.testsuite.harness_config
+        verbosity = f'-v={cfg.get("bsim_verbosity", self.DEFAULT_VERBOSITY)}'
+        sim_length = f'-sim_length={cfg.get("bsim_sim_length", self.DEFAULT_SIM_LENGTH)}'
+        extra_args = cfg.get('bsim_options', [])
+        test_ids = cfg.get('bsim_test_ids', [])
+        if not test_ids:
+            logger.error('No test ids specified for bsim test')
+            self.status = TwisterStatus.ERROR
             return
 
-        new_exe_name: str = self.instance.testsuite.harness_config.get('bsim_exe_name', '')
-        if new_exe_name:
-            new_exe_name = f'bs_{self.instance.platform.name}_{new_exe_name}'
-        else:
-            new_exe_name = self.instance.name
-            new_exe_name = f'bs_{new_exe_name}'
+        cmds = [[self.exe_path, verbosity, suite_id, f'-d={i}', f'-testid={t_id}'] + extra_args
+                for i, t_id in enumerate(test_ids)]
+        cmds.append([bsim_phy_path, verbosity, suite_id, f'-D={len(test_ids)}', sim_length])
 
-        new_exe_name = new_exe_name.replace(os.path.sep, '_').replace('.', '_').replace('@', '_')
+        return cmds
 
-        new_exe_path: str = os.path.join(bsim_out_path, 'bin', new_exe_name)
-        logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')
-        shutil.copy(original_exe_path, new_exe_path)
+    def bsim_run(self, timeout):
+        try:
+            threads = []
+            start_time = time.time()
+            for cmd in self._generate_commands():
+                t = threading.Thread(target=lambda c=cmd: self._run_cmd(c, timeout))
+                threads.append(t)
+                t.start()
+
+            for t in threads:
+                t.join(timeout=timeout)
+
+            self.instance.execution_time = time.time() - start_time
+        finally:
+            self._update_test_status()
+
+    def _update_test_status(self):
+        if not self.instance.testcases:
+            self.instance.init_cases()
+
+        # currently there is alays one testcase per bsim suite
+        self.instance.testcases[0].status = self.status if self.status != TwisterStatus.NONE else \
+                                            TwisterStatus.FAIL
+        self.instance.status = self.instance.testcases[0].status
+        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+            logger.warning(f'BSIM test failed: {self.instance.reason}')
+            self.instance.reason = self.instance.reason or 'Bsim test failed'
+            self.instance.testcases[0].output = '\n'.join(self._tc_output)
+
 
 class Ctest(Harness):
     def configure(self, instance: TestInstance):
