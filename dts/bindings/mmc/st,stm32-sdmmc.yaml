@@ -5,6 +5,11 @@ compatible: "st,stm32-sdmmc"
 include: [mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
+  disk-name:
+    type: string
+    description: |
+      Disk name.
+
   clocks:
     required: true
 
