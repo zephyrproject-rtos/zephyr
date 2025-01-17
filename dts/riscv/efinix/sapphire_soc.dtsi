@@ -65,6 +65,13 @@
 			reg = <0xf8b00000 0x10000>;
 		};
 
+		mtimer: timer@f8b0bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&hlic 7>;
+			reg = <0xf8b0bff8 0x8 0xf8b04000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+		};
+
 		timer0: timer@e0002800 {
 			compatible = "efinix,sapphire-timer0";
 			reg = <0xe0002800 0x40>;
