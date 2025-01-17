@@ -98,7 +98,7 @@ oob:
 	msr	daifset, #(DAIFSET_IRQ_BIT)
 
 	/* Signal end-of-interrupt */
-	ldp	x0, xzr, [sp], #16
+	ldp	x0, xzr, [sp]
 
 spurious_continue:
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
@@ -106,6 +106,18 @@ spurious_continue:
 #else
 	bl	z_soc_irq_eoi
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+
+	ldp	x0, xzr, [sp]
+#ifdef	CONFIG_ZVM
+	/* switch handle preprocess */
+	bl zvm_switch_handle_pre
+	mov x1, x0
+	ldp	x0, xzr, [sp], #16
+	/* passthrough device may need deactive */
+	bl arm_gic_eoi_deactive
+#else
+	ldp	x0, xzr, [sp], #16
+#endif
 
 #ifdef CONFIG_TRACING
 	bl	sys_trace_isr_exit
