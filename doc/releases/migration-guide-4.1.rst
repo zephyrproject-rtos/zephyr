@@ -175,6 +175,25 @@ Entropy
   processor needs to get random data before BT is fully enabled.
   (:github:`79931`)
 
+Ethernet
+========
+
+* Silabs gecko ethernet changes:
+
+  * Renamed the devicetree property ``location-phy_mdc`` to ``location-phy-mdc``.
+  * Renamed the devicetree property ``location-phy_mdio`` to ``location-phy-mdio``.
+  * Renamed the devicetree property ``location-rmii_refclk`` to ``location-phy-refclk``.
+  * Renamed the devicetree property ``location-rmii_crs_dv`` to ``location-phy-crs-dv``.
+  * Renamed the devicetree property ``location-rmii_txd0`` to ``location-phy-txd0``.
+  * Renamed the devicetree property ``location-rmii_txd1`` to ``location-phy-txd1``.
+  * Renamed the devicetree property ``location-rmii_tx_en`` to ``location-phy-tx-en``.
+  * Renamed the devicetree property ``location-rmii_rxd0`` to ``location-phy-rxd0``.
+  * Renamed the devicetree property ``location-rmii_rxd1`` to ``location-phy-rxd1``.
+  * Renamed the devicetree property ``location-rmii_rx_er`` to ``location-phy-rx-er``.
+  * Renamed the devicetree property ``location-phy_pwr_enable`` to ``location-phy-pwr-enable``.
+  * Renamed the devicetree property ``location-phy_reset`` to ``location-phy-reset``.
+  * Renamed the devicetree property ``location-phy_interrupt`` to ``location-phy-interrupt``.
+
 GNSS
 ====
 
