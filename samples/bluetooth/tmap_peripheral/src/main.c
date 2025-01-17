@@ -289,9 +289,10 @@ int main(void)
 		err = ccp_originate_call();
 		if (err != 0) {
 			printk("Error sending call originate command!\n");
+		} else {
+			/* Start timer to send terminate call command */
+			k_work_schedule(&call_terminate_set_work, K_MSEC(2000));
 		}
-		/* Start timer to send terminate call command */
-		k_work_schedule(&call_terminate_set_work, K_MSEC(2000));
 	}
 
 	if (peer_is_ums) {
