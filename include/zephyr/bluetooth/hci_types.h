@@ -590,6 +590,12 @@ struct bt_hci_rp_write_conn_accept_timeout {
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
 
+#define BT_HCI_OP_READ_CLASS_OF_DEVICE          BT_OP(BT_OGF_BASEBAND, 0x0023) /* 0x0c23 */
+struct bt_hci_rp_read_class_of_device {
+	uint8_t  status;
+	uint8_t  class_of_device[3];
+} __packed;
+
 #define BT_COD(major_service, major_device, minor_device)                         \
 	(((uint32_t)major_service << 13) | ((uint32_t)major_device << 8) |            \
 	 ((uint32_t)minor_device << 2))
