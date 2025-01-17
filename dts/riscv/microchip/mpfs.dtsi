@@ -114,6 +114,17 @@
 			reg = <0x2000000 0x10000>;
 		};
 
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&hlic0 7
+						&hlic1 7
+						&hlic2 7
+						&hlic3 7
+						&hlic4 7>;
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+		};
+
 		plic: interrupt-controller@c000000 {
 			compatible = "sifive,plic-1.0.0";
 			#interrupt-cells = <2>;

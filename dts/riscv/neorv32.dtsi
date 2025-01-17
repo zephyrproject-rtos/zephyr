@@ -65,9 +65,9 @@
 		ranges;
 
 		mtimer: timer@ffffff90 {
-			compatible = "neorv32-machine-timer";
-			reg = <0xffffff90 0x10>;
-			interrupts = <7>;
+			compatible = "riscv,machine-timer";
+			reg = <0xffffff90 0x8 0xffffff98 0x8>;
+			interrupts-extended = <&intc 7>;
 		};
 
 		uart0: serial@ffffffa0 {

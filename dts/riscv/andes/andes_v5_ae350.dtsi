@@ -215,8 +215,8 @@
 		};
 
 		mtimer: timer@e6000000 {
-			compatible = "andestech,machine-timer";
-			reg = <0xe6000000 0x10>;
+			compatible = "riscv,machine-timer";
+			reg = <0xe6000000 0x8 0xe6000008 0x8>;
 			interrupts-extended = <&cpu0_intc 7 &cpu1_intc 7
 					       &cpu2_intc 7 &cpu3_intc 7
 					       &cpu4_intc 7 &cpu5_intc 7
