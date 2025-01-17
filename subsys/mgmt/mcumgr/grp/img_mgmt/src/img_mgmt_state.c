@@ -285,13 +285,14 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 			return_slot = other_slot;
 		}
 	}
+
+out:
 #else
 	if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &over) < 0) {
 		return_slot = other_slot;
 	}
 #endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
 
-out:
 	if (type != NULL) {
 		*type = lt;
 	}
