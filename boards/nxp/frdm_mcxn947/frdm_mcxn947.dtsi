@@ -149,6 +149,10 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
@@ -158,15 +162,15 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		 */
 		slot0_partition: partition@14000 {
 			label = "image-0";
-			reg = <0x00014000 DT_SIZE_K(884)>;
+			reg = <0x00014000 DT_SIZE_K(888)>;
 		};
-		slot1_partition: partition@F1000 {
+		slot1_partition: partition@F2000 {
 			label = "image-1";
-			reg = <0x000F1000 DT_SIZE_K(884)>;
+			reg = <0x000F2000 DT_SIZE_K(888)>;
 		};
-		cpu1_partition: partition@1CE000 {
+		cpu1_partition: partition@1D0000 {
 			label = "cpu1-image";
-			reg = <0x001CE000 DT_SIZE_K(200)>;
+			reg = <0x001D0000 DT_SIZE_K(192)>;
 		};
 		/* storage_partition is placed in WINBOND flash memory*/
 	};
