@@ -1,0 +1,45 @@
+# Copyright (c) 2025 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmosic I2S
+
+compatible: "atmosic,atm-i2s"
+
+include: i2s-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  sck-out-pin:
+    type: int
+    required: false
+    description: SCK OUT pin to use
+
+  ws-out-pin:
+    type: int
+    required: false
+    description: WS OUT pin to use
+
+  sd-out-pin:
+    type: int
+    required: false
+    description: SD OUT pin to use
+
+  sck-in-pin:
+    type: int
+    required: false
+    description: SCK IN pin to use
+
+  ws-in-pin:
+    type: int
+    required: false
+    description: WS IN pin to use
+
+  sd-in-pin:
+    type: int
+    required: false
+    description: SD IN pin to use

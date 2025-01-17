@@ -63,6 +63,14 @@ config THREAD_NAME
 	bool
 	default y if COVERAGE_GCOV
 
+config OVERRIDE_FRAME_POINTER_DEFAULT
+	bool
+	default y if COVERAGE_GCOV
+
+config OMIT_FRAME_POINTER
+	bool
+	default y if COVERAGE_GCOV
+
 endif # ENTROPY_ATM_TRNG
 
 endif # SOC_FAMILY_ATM

@@ -5,7 +5,7 @@
  *
  * @brief Atmosic Flash Driver
  *
- * Copyright (C) Atmosic 2018-2024
+ * Copyright (C) Atmosic 2018-2025
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -841,8 +841,16 @@ static void get_bp_divisor(uint32_t bp_freq, uint8_t *divisor)
 #define CLOCK_16_MHZ 16000000
 #define MAX_SE_STALL_WIP_VALUE \
 	((1 << QSPI_REMOTE_AHB_SETUP_6__SE_STALL_WIP__WIDTH) - 1)
+#ifdef QSPI_REMOTE_AHB_SETUP_8__PP_STALL_WIP_MSB__WIDTH
+// include the extended MSB bits in setup_8
+#define MAX_PP_STALL_WIP_VALUE \
+	((1 << (QSPI_REMOTE_AHB_SETUP_5__PP_STALL_WIP__WIDTH + \
+		QSPI_REMOTE_AHB_SETUP_8__PP_STALL_WIP_MSB__WIDTH)) - \
+	 1)
+#else
 #define MAX_PP_STALL_WIP_VALUE \
 	((1 << QSPI_REMOTE_AHB_SETUP_5__PP_STALL_WIP__WIDTH) - 1)
+#endif
 #define MAX_STALL_WLE_VALUE \
 	((1 << QSPI_REMOTE_AHB_SETUP_5__STALL_WLE__WIDTH) - 1)
 #define MAX_STALL_WE2PP_VALUE \
@@ -896,7 +904,11 @@ static void scale_qspi_settings(uint32_t bp_freq, uint32_t qspi_clk)
 				 pp_stall_wip);
 	}
 	QSPI_REMOTE_AHB_SETUP_5__PP_STALL_WIP__MODIFY(ahb_setup5, pp_stall_wip);
-
+#ifdef QSPI_REMOTE_AHB_SETUP_8__PP_STALL_WIP_MSB__WIDTH
+	QSPI_REMOTE_AHB_SETUP_8__PP_STALL_WIP_MSB__MODIFY(
+		CMSDK_QSPI->REMOTE_AHB_SETUP_8,
+		pp_stall_wip >> QSPI_REMOTE_AHB_SETUP_5__PP_STALL_WIP__WIDTH);
+#endif
 	// scale STALL WLE
 	uint32_t stall_wle = QSPI_REMOTE_AHB_SETUP_5__STALL_WLE__READ(ahb_setup5);
 	stall_wle *= scale_factor;

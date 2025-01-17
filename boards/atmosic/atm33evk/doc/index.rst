@@ -292,8 +292,6 @@ West atm_arch commands
 +-----------------------------------------------------------------------------+------------------------------------------------------------+
 | Command Arguments                                                           |  Description                                               |
 +=============================================================================+============================================================+
-| -atm_isp_path ATM_ISP_PATH, --atm_isp_path ATM_ISP_PATH                     |  specify atm_isp exe path                                  |
-+-----------------------------------------------------------------------------+------------------------------------------------------------+
 | -d, --debug                                                                 |  debug enabled, default false                              |
 +-----------------------------------------------------------------------------+------------------------------------------------------------+
 | -s, --show                                                                  |  show archive                                              |
@@ -322,14 +320,14 @@ West atm_arch commands
 +-----------------------------------------------------------------------------+------------------------------------------------------------+
 | -atmwstk_file ATMWSTK_FILE, --atmwstk_file ATMWSTK_FILE                     |  atmwstk file path (.elf or .bin)                          |
 +-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -sec_dbg_enable , --sec_dbg_enable                                          |  secure debug enable                                       |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -sec_dbg_key , --sec_dbg_key                                                |  secure debug key path                                     |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
+| -sec_dbg_static_unlock , --sec_dbg_static_unlock                            |  secure debug static challenge enable                      |
++-----------------------------------------------------------------------------+------------------------------------------------------------+
 | -openocd_pkg_root OPENOCD_PKG_ROOT, --openocd_pkg_root OPENOCD_PKG_ROOT     |  Path to directory where openocd and its scripts are found |
 +-----------------------------------------------------------------------------+------------------------------------------------------------+
-
-
-When ``-DCONFIG_SPE_PATH`` has been specified, the parition_info information will merge from the build_dir of the application and spe to the build_dir of the application and named as parition_info.map.merge.
-
-* When not using SPE, the ``-p`` option should be <build_dir>/zephyr/parition_info.map
-* When using SPE, the ``-p`` option should be <build_dir>/zephyr/parition_info.map.merge
 
 When building with wireless stack, the ``-DCONFIG_USE_ATMWSTK=y -DCONFIG_ATMWSTK=\"<ATMWSTK>\"``, the wireless stack elf file should be packed within the isp file as well::
 
@@ -353,53 +351,46 @@ Generate .atm isp file
 
 * replace ``<APP_NAME>`` with the application name.
 
-Without SPE::
+With MCUboot::
 
   west atm_arch -o <BOARD>_<APP_NAME>.atm \
     -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
     --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
-    --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.elf \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
-
-With SPE::
-
-  west atm_arch -o <BOARD>_<APP_NAME>.atm \
-    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
-    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
-    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
-    --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.elf \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+    --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.elf
 
 Without ATMWSTK::
 
   west atm_arch -o <BOARD>_<APP_NAME>.atm \
-    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
-    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin
 
 Without MCUboot::
 
   west atm_arch -o <BOARD>_<APP_NAME>.atm \
-    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
+    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.bin \
+    --spe_file build/<BOARD>/<SPE>/zephyr/zephyr.bin
+
+With MCUboot and secure debug::
+
+  west atm_arch -o <BOARD>_<APP_NAME>.atm \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.bin \
     --spe_file build/<BOARD>/<SPE>/zephyr/zephyr.bin \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+    --sec_dbg_enable
 
 Show and Flash atm isp file
 ---------------------------
 
 show command::
 
-  west atm_arch -i <BOARD>_beacon.atm \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
-    --show
+  west atm_arch -i <BOARD>_beacon.atm --show
 
 flash command::
 
   west atm_arch -i <BOARD>_beacon.atm \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
     --openocd_pkg_root openair/modules/hal_atmosic \
     --burn
 

@@ -298,29 +298,24 @@ Without MCUBOOT::
 
   west atm_arch -o <BOARD>_beacon.atm \
     -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
-    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.bin \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.bin
 
 With MCUBOOT::
 
   west atm_arch -o <BOARD>_beacon.atm \
     -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
-    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin
 
 Show and Flash atm isp file
 ---------------------------
 
 show commnad::
 
-  west atm_arch -i <BOARD>_beacon.atm \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
-    --show
+  west atm_arch -i <BOARD>_beacon.atm --show
 
 flash commnad::
 
   west atm_arch -i <BOARD>_beacon.atm \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
     --openocd_pkg_root openair/modules/hal_atmosic \
     --burn

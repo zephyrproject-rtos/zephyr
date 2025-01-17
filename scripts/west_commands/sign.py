@@ -108,20 +108,6 @@ class Sign(Forceable):
                             help='suppress non-error output')
         self.add_force_arg(parser)
 
-        parser.add_argument('--bin_file', metavar='BIN',
-                           help='''Input bin file name with path
-                           (default: zephyr.bin in the default build
-                           directory, next to zephyr.elf)''')
-
-        parser.add_argument('--hex_file', metavar='HEX',
-                           help='''Input hex file name with path
-                           (default: zephyr.hex in the default build
-                           directory, next to zephyr.elf)''')
-
-        parser.add_argument('--image_num', metavar='IMAGE', default=0,
-                           help='''Image number: 0 or 1
-                           (default: 0 for single image signing''')
-
         # general options
         group = parser.add_argument_group('tool control options')
         group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
@@ -251,8 +237,8 @@ class ImgtoolSigner(Signer):
         vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
-        flash = self.edt_flash_node(command, b, args.quiet, args.image_num)
-        align, addr, size = self.edt_flash_params(command, flash, args.image_num)
+        flash = self.edt_flash_node(command, b, args.quiet)
+        align, addr, size = self.edt_flash_params(command, flash)
 
         if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
             command.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
@@ -261,14 +247,14 @@ class ImgtoolSigner(Signer):
         kernel = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
         if 'bin' in formats:
-            in_bin = pathlib.Path(args.bin_file) if args.bin_file else b / 'zephyr' / f'{kernel}.bin'
+            in_bin = b / 'zephyr' / f'{kernel}.bin'
             if not in_bin.is_file():
                 command.die(f"no unsigned .bin found at {in_bin}")
             in_bin = os.fspath(in_bin)
         else:
             in_bin = None
         if 'hex' in formats:
-            in_hex = pathlib.Path(args.hex_file) if args.hex_file else b / 'zephyr' / f'{kernel}.hex'
+            in_hex = b / 'zephyr' / f'{kernel}.hex'
             if not in_hex.is_file():
                 command.die(f"no unsigned .hex found at {in_hex}")
             in_hex = os.fspath(in_hex)
@@ -341,7 +327,7 @@ class ImgtoolSigner(Signer):
             return None
 
     @staticmethod
-    def edt_flash_node(cmd, b, quiet=False, image_num=0):
+    def edt_flash_node(cmd, b, quiet=False):
         # Get the EDT Node corresponding to the zephyr,flash chosen DT
         # node; 'b' is the build directory as a pathlib object.
 
@@ -360,49 +346,39 @@ class ImgtoolSigner(Signer):
 
         # By convention, the zephyr,flash chosen node contains the
         # partition information about the zephyr image to sign.
-        chosen_node = 'zephyr,flash' if image_num == 0 else 'zephyr,flash_image1'
-        flash = edt.chosen_node(chosen_node)
+        flash = edt.chosen_node('zephyr,flash')
         if not flash:
-            cmd.die('devicetree has no chosen {} node, image {};'.format(chosen_node, image_num),
-                    "can't infer flash write block or slot sizes")
+            cmd.die('devicetree has no chosen zephyr,flash node;',
+                    "can't infer flash write block or slot0_partition slot sizes")
 
         return flash
 
     @staticmethod
-    def edt_flash_params(cmd, flash, image_num=0):
+    def edt_flash_params(cmd, flash):
         # Get the flash device's write alignment and offset from the
-        # primary slot and the size from secondary slot, out of the
-        # build directory's devicetree. The secondary slot size is used,
+        # slot0_partition and the size from slot1_partition , out of the
+        # build directory's devicetree. slot1_partition size is used,
         # when available, because in swap-move mode it can be one sector
-        # smaller. When not available, fallback to the primary slot (single slot dfu).
+        # smaller. When not available, fallback to slot0_partition (single slot dfu).
 
         # The node must have a "partitions" child node, which in turn
-        # must have child nodes with labels for primary or secondary slots that correspond
-        # to the image image number.
-        # By convention, the slots for consumption by imgtool are linked into these partitions.
-        # Image 0 uses slot0_partition/slot1_partition labels for primary/secondary
-        # Image 1 uses slot2_partition/slot3_partition labels for primary/secondary
+        # must have child nodes with label slot0_partition and may have a child node
+        # with label slot1_partition. By convention, the slots for consumption by
+        # imgtool are linked into these partitions.
         if 'partitions' not in flash.children:
             cmd.die("DT zephyr,flash chosen node has no partitions,",
                     "can't find partitions for MCUboot slots")
 
         partitions = flash.children['partitions']
-        if image_num == 0:
-            primary_slot = 'slot0_partition'
-            secondary_slot = 'slot1_partition'
-        else:
-            primary_slot = 'slot2_partition'
-            secondary_slot = 'slot3_partition'
-
         slots = {
             label: node for node in partitions.children.values()
                         for label in node.labels
-                        if label in set([primary_slot, secondary_slot])
+                        if label in set(['slot0_partition', 'slot1_partition'])
         }
 
-        if primary_slot not in slots:
-            cmd.die("DT zephyr,flash chosen node has no {} partition,",
-                    "can't determine its address".format(primary_slot))
+        if 'slot0_partition' not in slots:
+            cmd.die("DT zephyr,flash chosen node has no slot0_partition partition,",
+                    "can't determine its address")
 
         # Die on missing or zero alignment or slot_size.
         if "write-block-size" not in flash.props:
@@ -414,14 +390,14 @@ class ImgtoolSigner(Signer):
                     'DT flash device write-block-size {}'.format(align))
 
         # The partitions node, and its subnode, must provide
-        # the size of secondary or primary slot partition via the regs property.
-        slot_key = secondary_slot if secondary_slot in slots else primary_slot
+        # the size of slot1_partition or slot0_partition partition via the regs property.
+        slot_key = 'slot1_partition' if 'slot1_partition' in slots else 'slot0_partition'
         if not slots[slot_key].regs:
             cmd.die(f'{slot_key} flash partition has no regs property;',
                     "can't determine size of slot")
 
-        # always use addr of primary slot, which is where slots are run
-        addr = slots[primary_slot].regs[0].addr
+        # always use addr of slot0_partition, which is where slots are run
+        addr = slots['slot0_partition'].regs[0].addr
 
         size = slots[slot_key].regs[0].size
         if size == 0:

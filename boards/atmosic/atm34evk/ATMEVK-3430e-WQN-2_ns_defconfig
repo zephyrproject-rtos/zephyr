@@ -30,6 +30,3 @@ CONFIG_GPIO=y
 
 # Watchdog
 CONFIG_WATCHDOG=y
-
-# onboard stacked flash part
-CONFIG_FLASH=y

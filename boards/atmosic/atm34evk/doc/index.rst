@@ -337,51 +337,33 @@ West atm_arch commands
 | -openocd_pkg_root OPENOCD_PKG_ROOT, --openocd_pkg_root OPENOCD_PKG_ROOT     |  Path to directory where openocd and its scripts are found |
 +-----------------------------------------------------------------------------+------------------------------------------------------------+
 
-When ``-DCONFIG_SPE_PATH`` has been sepcified, the parition_info infomation will merge from build_dir of application and spe to build_dir of application and named as parition_info.map.merge.
-
-* When not use SPE, the ``-p`` option should be <build_dir>/zehpyr/parition_info.map
-* When use SPE, the ``-p`` option should be <build_dir>/zehpyr/parition_info.map.merge
-
 Generate atm isp file
 ---------------------
 
-Without SPE::
+With MCUBOOT::
 
   west atm_arch -o <BOARD>_beacon.atm \
     -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
-    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
-
-With SPE::
-
-  west atm_arch -o <BOARD>_beacon.atm \
-    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
-    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
-    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin
 
 Without MCUBOOT::
 
   west atm_arch -o <BOARD>_beacon.atm \
-    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.bin \
-    --spe_file build/<BOARD>/<SPE>/zephyr/zephyr.bin \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+    --spe_file build/<BOARD>/<SPE>/zephyr/zephyr.bin
 
 Show and Flash atm isp file
 ---------------------------
 
 show commnad::
 
-  west atm_arch -i <BOARD>_beacon.atm \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
-    --show
+  west atm_arch -i <BOARD>_beacon.atm --show
 
 flash commnad::
 
   west atm_arch -i <BOARD>_beacon.atm \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
     --openocd_pkg_root atmosic-private/modules/hal_atmosic/ATM34xx \
     --burn
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Atmosic
+ * Copyright (c) 2021-2025 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,6 +113,13 @@
 	rts-pin = <13>;
 	cts-pin = <12>;
 };
+
+&i2s {
+	sck-out-pin = <3>;
+	ws-out-pin = <4>;
+	sd-out-pin = <5>;
+};
+
 
 arduino_i2c: &i2c0 {};
 arduino_spi: &spi1 {};

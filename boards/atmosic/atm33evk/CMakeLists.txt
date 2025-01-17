@@ -114,7 +114,13 @@ endfunction()
 function(atm_partition_info)
   if(EXISTS "${CONFIG_GEN_PARTITION_INFO_SCRIPT}")
     # Extensionless prefix of any output file.
-    set(output_file ${ZEPHYR_BINARY_DIR}/partition_info.map)
+    if (CONFIG_TRUSTED_EXECUTION_NONSECURE AND CONFIG_SPE_PATH)
+	set(output_file ${ZEPHYR_BINARY_DIR}/partition_info.map.app)
+	set(spe_output_file ${spe_path}/zephyr/partition_info.map)
+	set(output_file_merge ${ZEPHYR_BINARY_DIR}/partition_info.map)
+    else()
+	set(output_file ${ZEPHYR_BINARY_DIR}/partition_info.map)
+    endif()
     set(dt_file ${ZEPHYR_BINARY_DIR}/zephyr.dts)
     set(EXT_ARGS)
     if(CONFIG_BOOTLOADER_MCUBOOT)
@@ -149,12 +155,10 @@ function(atm_partition_info)
         -p ${CONFIG_SOC} -f ${CONFIG_SOC_SERIES} -b ${BOARD} ${EXT_ARGS}
     )
     if (CONFIG_TRUSTED_EXECUTION_NONSECURE AND CONFIG_SPE_PATH)
-	set(input_file2 ${spe_path}/zephyr/partition_info.map)
-        set(output_file_merge ${ZEPHYR_BINARY_DIR}/partition_info.map.merge)
 	message("Merge Partition Info Map File to ${output_file_merge}")
 	set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-	COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_PARTITION_INFO_SCRIPT} merge -i1 ${input_file2} -i2 ${output_file} -o ${output_file_merge}
-        )
+	COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_PARTITION_INFO_SCRIPT} merge -i1 ${spe_output_file} -i2 ${output_file} -o ${output_file_merge}
+	)
     endif()
   else()
     message("west build can't find ${CONFIG_GEN_PARTITION_INFO_SCRIPT}, ignore generate partition info")
@@ -184,6 +188,31 @@ function(atm_generate_tag_data_bin_file)
   else()
     message("west build can't find 'CONFIG_GEN_TAG_DATA_BIN_FILE_SCRIPT', ignore generate tag data bin file")
   endif()
+endfunction()
+
+# copy ATMWSTK file to ZEPHYR_BINARY_DIR and tranfer to bin and hex format
+function(atmswstk_image)
+  if (NOT CONFIG_ATMWSTK_PATH)
+      message(FATAL_ERROR "atmwstk overwrite requireds CONFIG_ATMWSTK_PATH")
+  endif()
+  set(ATMWSTK_FILENAME "atmwstk_${CONFIG_ATMWSTK}")
+  set(ATMWSTK_FILE_PATH "${CONFIG_ATMWSTK_PATH}/${ATMWSTK_FILENAME}.elf")
+  if(NOT EXISTS "${ATMWSTK_FILE_PATH}")
+    message(FATAL_ERROR "west build can't find ${ATMWSTK_FILE_PATH}")
+  endif()
+  set(ATMWSTK_ELF ${ZEPHYR_BINARY_DIR}/${ATMWSTK_FILENAME}.elf)
+  set(ATMWSTK_BIN ${ZEPHYR_BINARY_DIR}/${ATMWSTK_FILENAME}.bin)
+  set(ATMWSTK_HEX ${ZEPHYR_BINARY_DIR}/${ATMWSTK_FILENAME}.hex)
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${CMAKE_COMMAND} -E copy ${ATMWSTK_FILE_PATH} ${ATMWSTK_ELF}
+    COMMAND ${CMAKE_OBJCOPY} ${ATMWSTK_ELF} -O binary ${ATMWSTK_BIN}
+    COMMAND ${CMAKE_OBJCOPY} ${ATMWSTK_ELF} -O ihex ${ATMWSTK_HEX}
+  )
+  set(atmwstk_byproducts)
+  list(APPEND atmwstk_byproducts ${ATMWSTK_ELF})
+  list(APPEND atmwstk_byproducts ${ATMWSTK_BIN})
+  list(APPEND atmwstk_byproducts ${ATMWSTK_HEX})
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${atmwstk_byproducts})
 endfunction()
 
 # Handle additional atm33 tasks
@@ -219,6 +248,9 @@ function(zephyr_atmosic_tasks)
     if(CONFIG_ATM_SETTINGS AND NOT CONFIG_AUTO_TEST)
       atm_generate_tag_data_bin_file()
     endif()
+  endif()
+  if (CONFIG_USE_ATMWSTK AND CONFIG_ATMWSTK)
+    atmswstk_image()
   endif()
 endfunction()
 

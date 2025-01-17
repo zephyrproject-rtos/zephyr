@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Atmosic
+ * Copyright (c) 2021-2025 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -407,8 +407,8 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 		vbatt = result;
 	}
 
-	LOG_INF("sample_x4: %u, zerovolt: %u, result: %f V", sample_x4, gadc_zerovolt_meas_x4,
-		(double)result);
+	LOG_DBG("channel: %d, sample_x4: %u, zerovolt: %u, result: %f V", ch, sample_x4,
+		gadc_zerovolt_meas_x4, (double)result);
 
 	return (uint16_t)((result * 1000.0f) + 0.5f);
 }

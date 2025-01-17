@@ -1,0 +1,20 @@
+# I2S driver configuration options
+
+# Copyright (c) 2025 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_ATM
+	bool "Atmosic controller driver"
+	default y
+	depends on DT_HAS_ATMOSIC_ATM_I2S_ENABLED
+	select CONFIG_ATM_DMA
+	help
+	  Enable I2S support on the ATM family of processors.
+
+if I2S_ATM
+
+config I2S_SAMPLE_WIDTH_32
+	bool
+	default y
+
+endif # I2S_ATM

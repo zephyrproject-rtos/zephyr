@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2021-2024 Atmosic
+ * Copyright (c) 2021-2025 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,7 +176,7 @@ typedef enum {
 	GAIN_EXT_MAX,
 } gadc_gain_ext_t;
 
-static gadc_gain_ext_t gext;
+static gadc_gain_ext_t gext[CHANNEL_NUM_MAX];
 static gadc_gain_ext_t const gextmap[CHANNEL_NUM_MAX][GAIN_EXT_MAX] = {
 	{GAIN_EXT_END}, // unused, invalid channel
 	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
@@ -244,43 +244,43 @@ static void gadc_start_measurement(struct device const *dev, GADC_CHANNEL_ID ch)
 
 	switch (ch) {
 	case VBATT: {
-		DGADC_GAIN_CONFIG0__CH1_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH1_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case VSTORE: {
-		DGADC_GAIN_CONFIG0__CH2_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH2_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case CORE: {
-		DGADC_GAIN_CONFIG0__CH3_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH3_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case TEMP: {
-		DGADC_GAIN_CONFIG0__CH4_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH4_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case PORT1_DIFFERENTIAL: {
-		DGADC_GAIN_CONFIG0__CH5_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH5_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case PORT0_DIFFERENTIAL: {
-		DGADC_GAIN_CONFIG0__CH6_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH6_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case PORT1_SINGLE_ENDED_0: {
-		DGADC_GAIN_CONFIG0__CH7_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH7_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case PORT1_SINGLE_ENDED_1: {
-		DGADC_GAIN_CONFIG0__CH8_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH8_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case PORT0_SINGLE_ENDED_0: {
-		DGADC_GAIN_CONFIG0__CH9_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH9_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case PORT0_SINGLE_ENDED_1: {
-		DGADC_GAIN_CONFIG0__CH10_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext);
+		DGADC_GAIN_CONFIG0__CH10_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case LI_ION_BATT: {
-		DGADC_GAIN_CONFIG1__CH11_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG1, gext);
+		DGADC_GAIN_CONFIG1__CH11_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG1, gext[ch]);
 		pmu_set_liion_measurement(true);
 	} break;
 	case UNUSED:
 	case CHANNEL_NUM_MAX:
 	default: {
-		LOG_INF("Invalid channel: %d", ch);
+		LOG_ERR("Invalid channel: %d", ch);
 		ASSERT_ERR(0);
 	} break;
 	}
@@ -398,28 +398,30 @@ static int gadc_atm_channel_setup(struct device const *dev,
 		return -EINVAL;
 	}
 
+	gadc_gain_ext_t gainext;
 	switch (channel_cfg->gain) {
 	case ADC_GAIN_1_4:
-		gext = GAIN_EXT_QUARTER;
+		gainext = GAIN_EXT_QUARTER;
 		break;
 	case ADC_GAIN_1_2:
-		gext = GAIN_EXT_HALF;
+		gainext = GAIN_EXT_HALF;
 		break;
 	case ADC_GAIN_1:
-		gext = GAIN_EXT_X1;
+		gainext = GAIN_EXT_X1;
 		break;
 	case ADC_GAIN_2:
-		gext = GAIN_EXT_X2;
+		gainext = GAIN_EXT_X2;
 		break;
 	default:
 		LOG_ERR("Invalid channel gain");
 		return -EINVAL;
 	}
 
-	if (!gadc_ext_valid(channel_cfg->channel_id, gext)) {
-		LOG_ERR("Invalid gext (%d) for channel (%d)", gext, channel_cfg->channel_id);
+	if (!gadc_ext_valid(channel_cfg->channel_id, gainext)) {
+		LOG_ERR("Invalid gext (%d) for channel (%d)", gainext, channel_cfg->channel_id);
 		return -EINVAL;
 	}
+	gext[channel_cfg->channel_id] = gainext;
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
 		LOG_ERR("Invalid channel reference");
@@ -471,7 +473,7 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 		pmu_set_liion_measurement(false);
 	}
 
-	ASSERT_ERR(gext < GAIN_EXT_MAX);
+	ASSERT_ERR(gext[ch] < GAIN_EXT_MAX);
 
 	if (CAL_PRESENT(misc_cal, GADC_GAIN_OFFSET[chmap[ch]])) {
 		struct gadc_cal_s const *gadc_cal =
@@ -491,7 +493,7 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 							 gadc_cal->c1_exponent + (127 - 31),
 						 .number.sign = sign };
 
-		LOG_INF("Found cal for gext %u, channel %u, offset_x2 %d, gain %f", gext, ch,
+		LOG_DBG("Found cal for gext %u, channel %u, offset_x2 %d, gain %f", gext[ch], ch,
 			offset_x2, (double)gain.value);
 
 		float c1;
@@ -504,10 +506,10 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 			// Single and Diff channels need gext multiplier applied
 			if (misc_cal.version <= 16) {
 				// Previously calibrated with 1/4
-				c1 = gain.value / (2 << gext);
+				c1 = gain.value / (2 << gext[ch]);
 			} else {
 				// Now calibrated with x1
-				c1 = (2 * gain.value) / (1 << gext);
+				c1 = (2 * gain.value) / (1 << gext[ch]);
 			}
 		}
 		// result = C1*((D*E) + C0)
@@ -533,7 +535,7 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 		case PORT1_SINGLE_ENDED_1: // fall-through
 		case PORT0_SINGLE_ENDED_1: {
 			// Need to invert sign
-			c1_nominal = -0.00391f / (2 << gext);
+			c1_nominal = -0.00391f / (2 << gext[ch]);
 		} break;
 		case CORE: // fall-through
 		case VBATT: // fall-through
@@ -545,14 +547,14 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 		case CHANNEL_NUM_MAX: // fall-through
 		default: {
 			// Extra divide by 2 for sample_x2_signed
-			c1_nominal = 0.00391f / (2 << gext);
+			c1_nominal = 0.00391f / (2 << gext[ch]);
 		} break;
 		}
 
 		result = c1_nominal * (sample_x2_signed * sample_scaling);
 	}
-	LOG_INF("raw: %x, samplie_x2: %u, result: %f V", raw_fifo.value, sample_x2_signed,
-		(double)result);
+	LOG_DBG("channel: %d, raw: %#x, samplie_x2: %u, result: %f V", ch, raw_fifo.value,
+		sample_x2_signed, (double)result);
 
 	return (uint16_t)(result * 1000.0f);
 }

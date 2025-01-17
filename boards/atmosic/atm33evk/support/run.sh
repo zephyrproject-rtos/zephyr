@@ -53,7 +53,6 @@ readonly PLATFORM_HAL=modules/hal/atmosic/ATM33xx-5
 readonly PLATFORM_HAL_LIB=openair/modules/hal_atmosic/ATM33xx-5
 readonly SPE=openair/samples/spe
 readonly MCUBOOT=bootloader/mcuboot/boot/zephyr
-readonly ATMISP=modules/hal/atmosic_lib/tools/atm_arch/bin/$(get_ostype)/atm_isp
 readonly CMAKE_OBJCOPY=${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin/arm-zephyr-eabi-objcopy
 
 ################################################################################
@@ -275,11 +274,13 @@ is_unset ATM_SECURE_DEBUG || {
 
 is_set DEPENDENCIES && [[ -n $APP ]] && [[ -z $FLASH_ONLY ]] && {
     GEN_ARCH=1
-    [[ -e $ATMISP ]] || die "$ATMISP not exist"
     [[ -z $ATMWSTK ]] || {
 	[[ -e $CMAKE_OBJCOPY ]] || die "$CMAKE_OBJCOPY not exist"
     }
-    WARCH=(west atm_arch -atm_isp_path $ATMISP -o ${BOARD}_arch.atm)
+    WARCH=(west atm_arch -o ${BOARD}_arch.atm)
+    [[ -n $ATM_SECURE_DEBUG ]] && {
+        WARCH+=(--sec_dbg_enable)
+    }
 }
 
 if [ $BUILD -ne 0 ]
@@ -322,7 +323,6 @@ then
 			 -DDTS_EXTRA_CPPFLAGS=${DTS_EXTRAS} -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\" \
 			 ${WBUILD_CMAKE_OPTS[@]}
 	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(--app_file build/${BOARD}_ns/$APP/zephyr/zephyr.signed.bin)
-	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(-p build/${BOARD}_ns/$APP/zephyr/partition_info.map.merge)
     else
 	is_unset DEPENDENCIES || ${WBUILD[@]} -s $SPE -b $BOARD -d build/$BOARD/$SPE -- $CMAKE_DEF_BOARD_ROOT -DDTS_EXTRA_CPPFLAGS=${DTS_EXTRAS} ${X_SPE_OPTS[@]}
 	WBUILD_APP=(${WBUILD[@]} -s $APP -b ${BOARD}//ns -d build/${BOARD}_ns/$APP -- -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\" ${NS_EXTRAS} \
@@ -338,7 +338,6 @@ then
 	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(--spe_file build/$BOARD/$SPE/zephyr/zephyr.bin)
 	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(--app_file build/${BOARD}_ns/$APP/zephyr/zephyr.bin)
 	fi
-	[[ $GEN_ARCH -eq 1 ]] && WARCH+=(-p build/${BOARD}_ns/$APP/zephyr/partition_info.map.merge)
     fi
     if [[ $GEN_ARCH -eq 1 ]]
     then
@@ -347,6 +346,7 @@ then
 	    ${CMAKE_OBJCOPY} -O binary $PLATFORM_HAL_LIB/drivers/ble/atmwstk_${ATMWSTK}.elf $PLATFORM_HAL_LIB/drivers/ble/atmwstk_${ATMWSTK}.bin
 	    WARCH+=(--atmwstk_file $PLATFORM_HAL_LIB/drivers/ble/atmwstk_${ATMWSTK}.bin)
 	fi
+	WARCH+=(-p build/${BOARD}_ns/$APP/zephyr/partition_info.map)
 	${WARCH[@]}
     fi
 elif [ $FLASH -eq 0 ]
@@ -415,8 +415,8 @@ fi
 
 # 3) Program the tag data file
 [[ -n $BPTH ]] || BPTH=build/${BOARD}_ns/$APP
-SETTINGS_FILE="build/${BOARD}_ns/${APP}/zephyr/zephyr_settings.hex"
-FACTORY_FILE="build/${BOARD}_ns/${APP}/zephyr/zephyr_factory.hex"
+SETTINGS_FILE="${BPTH}/zephyr/zephyr_settings.hex"
+FACTORY_FILE="${BPTH}/zephyr/zephyr_factory.hex"
 if [ -e "$SETTINGS_FILE" ]; then
     WFLASH_SETTINGS=(${WFLASH[@]} -d $BPTH --hex-file $SETTINGS_FILE)
     [[ -z $APP ]] || WFLASH_SETTINGS+=(--noreset)

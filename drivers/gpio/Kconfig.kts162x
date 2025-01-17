@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_KTS162X
+	bool "KTS162X I2C GPIO chip"
+	default y
+	depends on DT_HAS_KINETIC_KTS162X_ENABLED
+	select I2C
+	help
+	  Enable driver for KTS162X I2C GPIO expander.
+
+config GPIO_KTS162X_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_KTS162X
+	help
+	  Device driver initialization priority.
+
+config GPIO_KTS1620
+	bool "KTS1620"
+	default y
+	depends on GPIO_KTS162X
+	help
+	  Select KTS1620 register map

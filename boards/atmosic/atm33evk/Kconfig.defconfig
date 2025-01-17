@@ -15,10 +15,6 @@ config ENTROPY_GENERATOR
 config BT_HCI_ACL_FLOW_CONTROL
 	default n
 
-config BT_AUTO_PHY_UPDATE
-	default n
-	# To avoid procedure collision.
-
 endif # BT
 
 if SERIAL

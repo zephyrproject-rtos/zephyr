@@ -1,5 +1,5 @@
 # Copyright (c) 2017 Linaro Limited.
-# Copyright (c) Atmosic 2021-2024
+# Copyright (c) Atmosic 2021-2025
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -41,7 +41,9 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                  erase_flash=False,
                  noreset=False, gdb_config=None,
                  use_elf=None,
+                 factory_data_file=False,
                  fast_load=False,
+                 atmwstk=None,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT):
@@ -116,19 +118,53 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
         is_split_img = self.build_config.getboolean('CONFIG_ATM_SPLIT_IMG')
         if cfg.hex_file is not None:
             if is_split_img:
-                # Runner hexfile string could include multiple files, delimited by ','
-                self.hex_name = [Path(hex_f).as_posix() for hex_f in cfg.hex_file.split(",")]
-                self.bin_name = [Path(bin_f).as_posix() for bin_f in cfg.bin_file.split(",")]
+                # Runner hexfile string could include multiple files,
+                # delimited by ','
+                self.hex_name = [Path(hex_f).as_posix() \
+                                 for hex_f in cfg.hex_file.split(",")]
+                self.bin_name = [Path(hex_f).with_suffix(".bin").as_posix() \
+                                 for hex_f in cfg.hex_file.split(",")]
             else:
                 self.hex_name = [Path(cfg.hex_file).as_posix()]
-                self.bin_name = [Path(cfg.bin_file).as_posix()]
+                self.bin_name = \
+                    [Path(cfg.hex_file).with_suffix(".bin").as_posix()]
+        if atmwstk:
+            atmwstk_bin_name = f"{atmwstk}.bin"
+            atmwstk_hex_name = f"{atmwstk}.hex"
+            atmwstk_elf_name = f"{atmwstk}.elf"
+            self.bin_name.append(Path(atmwstk_bin_name).as_posix())
+            self.hex_name.append(Path(atmwstk_hex_name).as_posix())
+            self.elf_name.append(Path(atmwstk_elf_name).as_posix())
+        if factory_data_file:
+            factory_hex_path = os.path.join(cfg.build_dir, 'zephyr', 'zephyr_factory.hex')
+            if os.path.exists(factory_hex_path):
+                self.hex_name.append(Path(factory_hex_path).as_posix())
+            factory_bin_path = os.path.join(cfg.build_dir, 'zephyr', 'zephyr_factory.bin')
+            if os.path.exists(factory_bin_path):
+                self.bin_name.append(Path(factory_bin_path).as_posix())
+            factory_elf_path = os.path.join(cfg.build_dir, 'zephyr', 'zephyr_factory.elf')
+            if os.path.exists(factory_elf_path):
+                self.elf_name.append(Path(factory_elf_path).as_posix())
+            settings_hex_path = os.path.join(cfg.build_dir, 'zephyr', 'zephyr_settings.hex')
+            if os.path.exists(settings_hex_path):
+                self.hex_name.append(Path(settings_hex_path).as_posix())
+            settings_bin_path = os.path.join(cfg.build_dir, 'zephyr', 'zephyr_settings.bin')
+            if os.path.exists(settings_bin_path):
+                self.bin_name.append(Path(settings_bin_path).as_posix())
+            settings_elf_path = os.path.join(cfg.build_dir, 'zephyr', 'zephyr_settings.elf')
+            if os.path.exists(settings_elf_path):
+                self.elf_name.append(Path(settings_elf_path).as_posix())
+
 
         self.use_elf = use_elf
         if fast_load and not use_elf:
             self.fast_load = True
             self.fl_bin = os.path.join(os.path.dirname(openocd_config), 'fast_load', 'fast_load.bin')
             # The objdump locate at the same directory with gdb
-            objdump = cfg.gdb.replace("-gdb", "-objdump")
+            objdump = cfg.gdb.replace("-gdb-py", "-objdump").replace("-gdb", "-objdump")
+            if not os.path.exists(objdump):
+                self.logger.error("<fast_load> %s not exist", objdump)
+                sys.exit(1)
             self.fl_prog_addr = None
 
             for file in self.hex_name:
@@ -137,7 +173,7 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                 match = pattern.search(content.stdout)
                 if match:
                     hex_addr = '0x' + match.group(1)
-                    int_addr = int(hex_addr,16) & 0xEFFFFFFF
+                    int_addr = int(hex_addr, 16) & 0xEFFFFFFF
                     if self.fl_prog_addr is None:
                         self.fl_prog_addr = hex(int_addr)
                     else:
@@ -188,9 +224,14 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                             dest='use_elf',
                             help='Use ELF rather than HEX')
 
+        parser.add_argument('--factory_data_file', default=False, required=False, action='store_true',
+                            help='Enable factory data file')
+
         parser.add_argument('--fast_load', default=False, required=False, action='store_true',
                             help='Enable fast load feature')
 
+        parser.add_argument('--atmwstk', required=False,
+                            help='atmwstk path and file prefix of bin, elf and hex to be programmed at the same time')
         # debug argument(s)
         parser.add_argument('--gdb_config', required=False,
                             help='if given, overrides default config file')
@@ -211,7 +252,7 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
             jlink=args.jlink, atm_openocd_base=args.atm_openocd_base, no_atm_openocd=args.no_atm_openocd,
             openocd_config=args.openocd_config, gdb_config=args.gdb_config,
             verify=args.verify, noreset=args.noreset, use_elf=args.use_elf,
-            erase_flash=args.erase_flash, fast_load=args.fast_load)
+            erase_flash=args.erase_flash, factory_data_file=args.factory_data_file, fast_load=args.fast_load, atmwstk=args.atmwstk)
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
@@ -280,7 +321,7 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                 sys.exit(1)
 
         if self.fast_load:
-            if self.cfg.bin_file is None:
+            if not self.bin_name:
                 self.logger.error('The fast load requires bin file')
                 sys.exit(1)
         if self.cfg.hex_file is None and self.use_elf is None:
@@ -325,9 +366,10 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                 if self.verify:
                     cmd_flash += ['-c atm_verify_flash ' + image[1]]
             else:
-                cmd_flash += ['-c atm_load_rram ' + image[0]]
-                if self.verify:
-                    cmd_flash += ['-c atm_verify_rram ' + image[0]]
+                for img in image:
+                    cmd_flash += ['-c atm_load_rram ' + img]
+                    if self.verify:
+                        cmd_flash += ['-c atm_verify_rram ' + img]
         if not self.noreset and not self.fast_load:
             cmd_flash += ['-c set _RESET_HARD_ON_EXIT 1']
         cmd_flash += ['-c exit']
@@ -336,19 +378,19 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
         if self.fast_load:
             with _temp_environ(FAST_LOAD='1'):
                 self.check_call(cmd_flash)
+                self.do_reset_target
+                cmd_flash = cmd_prefix
+                cmd_flash += ['-c init']
+                cmd_flash += ['-c verify_rom_version']
                 if self.verify:
-                    self.do_reset_target
-                    cmd_flash = cmd_prefix
-                    cmd_flash += ['-c init']
-                    cmd_flash += ['-c verify_rom_version']
                     addr_list = self.fl_prog_addr.split(',')
                     for index, addr in enumerate(addr_list):
                         cmd_flash += ['-c atm_verify_rram ' + self.bin_name[index] + ' ' + addr]
-                    if not self.noreset:
-                        cmd_flash += ['-c set _RESET_HARD_ON_EXIT 1']
-                    cmd_flash += ['-c exit']
-                    cmd_flash = [item.replace("\\", "/") for item in cmd_flash]
-                    self.check_call(cmd_flash)
+                if not self.noreset:
+                    cmd_flash += ['-c set _RESET_HARD_ON_EXIT 1']
+                cmd_flash += ['-c exit']
+                cmd_flash = [item.replace("\\", "/") for item in cmd_flash]
+                self.check_call(cmd_flash)
         else:
             self.check_call(cmd_flash)
 

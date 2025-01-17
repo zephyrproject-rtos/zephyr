@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Atmosic
+ * Copyright (c) 2023-2025 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,4 +119,10 @@
 	tx-pin = <19>;
 	rts-pin = <17>;
 	cts-pin = <20>;
+};
+
+&i2s {
+	sck-out-pin = <18>;
+	ws-out-pin = <19>;
+	sd-out-pin = <20>;
 };

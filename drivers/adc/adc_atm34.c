@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2023-2024 Atmosic
+ * Copyright (c) 2023-2025 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -252,25 +252,53 @@ static void gadc_start_measurement(struct device const *dev, GADC_CHANNEL_ID ch)
 		DGADC_GAIN_CONFIG0__CH4_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
 	} break;
 	case PORT1_DIFFERENTIAL: {
+#ifdef DGADC_GAIN_CONFIG1__CH5_GAIN_SEL__MODIFY
+		DGADC_GAIN_CONFIG1__CH5_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG1, gext[ch]);
+#else
 		DGADC_GAIN_CONFIG0__CH5_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
+#endif
 	} break;
 	case PORT0_DIFFERENTIAL: {
+#ifdef DGADC_GAIN_CONFIG1__CH6_GAIN_SEL__MODIFY
+		DGADC_GAIN_CONFIG1__CH6_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG1, gext[ch]);
+#else
 		DGADC_GAIN_CONFIG0__CH6_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
+#endif
 	} break;
 	case PORT1_SINGLE_ENDED_0: {
+#ifdef DGADC_GAIN_CONFIG1__CH7_GAIN_SEL__MODIFY
+		DGADC_GAIN_CONFIG1__CH7_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG1, gext[ch]);
+#else
 		DGADC_GAIN_CONFIG0__CH7_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
+#endif
 	} break;
 	case PORT1_SINGLE_ENDED_1: {
+#ifdef DGADC_GAIN_CONFIG1__CH8_GAIN_SEL__MODIFY
+		DGADC_GAIN_CONFIG1__CH8_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG1, gext[ch]);
+#else
 		DGADC_GAIN_CONFIG0__CH8_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
+#endif
 	} break;
 	case PORT0_SINGLE_ENDED_0: {
+#ifdef DGADC_GAIN_CONFIG2__CH9_GAIN_SEL__MODIFY
+		DGADC_GAIN_CONFIG2__CH9_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG2, gext[ch]);
+#else
 		DGADC_GAIN_CONFIG0__CH9_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
+#endif
 	} break;
 	case PORT0_SINGLE_ENDED_1: {
+#ifdef DGADC_GAIN_CONFIG2__CH10_GAIN_SEL__MODIFY
+		DGADC_GAIN_CONFIG2__CH10_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG2, gext[ch]);
+#else
 		DGADC_GAIN_CONFIG0__CH10_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG0, gext[ch]);
+#endif
 	} break;
 	case LI_ION_BATT: {
+#ifdef DGADC_GAIN_CONFIG2__CH11_GAIN_SEL__MODIFY
+		DGADC_GAIN_CONFIG2__CH11_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG2, gext[ch]);
+#else
 		DGADC_GAIN_CONFIG1__CH11_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG1, gext[ch]);
+#endif
 		WRPR_CTRL_PUSH(CMSDK_PMU, WRPR_CTRL__CLK_ENABLE)
 		{
 			uint32_t gadc_ctrl = PMU_READ(GADC, GADC_CTRL_REG_ADDR);
@@ -280,12 +308,16 @@ static void gadc_start_measurement(struct device const *dev, GADC_CHANNEL_ID ch)
 		WRPR_CTRL_POP();
 	} break;
 	case CALIBRATION: {
+#ifdef DGADC_GAIN_CONFIG2__CH12_GAIN_SEL__MODIFY
+		DGADC_GAIN_CONFIG2__CH12_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG2, gext[ch]);
+#else
 		DGADC_GAIN_CONFIG1__CH12_GAIN_SEL__MODIFY(CMSDK_GADC->GAIN_CONFIG1, gext[ch]);
+#endif
 	} break;
 	case UNUSED:
 	case CHANNEL_NUM_MAX:
 	default: {
-		LOG_INF("Invalid channel: %d", ch);
+		LOG_ERR("Invalid channel: %d", ch);
 		ASSERT_ERR(0);
 	} break;
 	}
@@ -317,7 +349,7 @@ static void gadc_start_measurement(struct device const *dev, GADC_CHANNEL_ID ch)
 static void gadc_calibrate_offset(gadc_gain_ext_t gainext, int16_t sample)
 {
 	int16_t result = -sample;
-	LOG_INF("%s: %u %d", __func__, gainext, result);
+	LOG_DBG("%s: %u %d", __func__, gainext, result);
 	switch (gainext) {
 	case GAIN_EXT_X1:
 		gcal.offset_comp0 = DGADC_OFFSET_COMP0__OFFSET__WRITE(result);
@@ -525,6 +557,8 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 	} else if (ch == TEMP) {
 		result = (((result * 1000) - VPTAT_at_25) / SLOPE_T) + 25;
 	}
+
+	LOG_DBG("channel: %d, raw: %#x, result: %f V", ch, raw_fifo.value, (double)result);
 
 	return (uint16_t)(result * 1000.0f);
 }

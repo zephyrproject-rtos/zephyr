@@ -1,0 +1,10 @@
+
+&i2s {
+	status = "okay";
+};
+
+/ {
+	aliases {
+		i2s-tx = &i2s;
+	};
+};

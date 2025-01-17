@@ -115,7 +115,7 @@ function(zephyr_mcuboot_tasks)
   endif()
 
   if(CONFIG_BOOT_MAX_IMG_SECTORS)
-    set(imgtool_extra --max-sectors "${CONFIG_BOOT_MAX_IMG_SECTORS}" ${imgtool_extra})
+    set(imgtool_args --max-sectors "${CONFIG_BOOT_MAX_IMG_SECTORS}" ${imgtool_args})
   endif()
 
   if(CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY)
