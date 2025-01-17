@@ -1,0 +1,7 @@
+board:
+  name: qemu_max
+  vendor: arm
+  socs:
+  - name: qemu_max
+    variants:
+    - name: smp
