@@ -249,7 +249,7 @@ zephyr_uhc1: &usbh2 {
 &usdhc1 {
 	status = "okay";
 	power-delay-ms = <1000>;
-	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	pwr-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 	status = "okay";
 	pinctrl-0 = <&pinmux_usdhc1>;
@@ -261,6 +261,10 @@ zephyr_uhc1: &usbh2 {
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";
+		status = "okay";
+	};
+	nxp_wifi {
+		compatible = "nxp,wifi";
 		status = "okay";
 	};
 };
