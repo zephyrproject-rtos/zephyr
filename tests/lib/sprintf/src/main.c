@@ -12,6 +12,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/test_toolchain.h>
 #include <stdio.h>
 #include <stdarg.h>
 
