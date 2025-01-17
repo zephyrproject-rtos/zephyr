@@ -34,3 +34,12 @@ set_compiler_property(PROPERTY no_position_independent "")
 
 # Remove after testing that -Wshadow works
 set_compiler_property(PROPERTY warning_shadow_variables)
+
+# xt-clang is usually based on older version of clang, and
+# Zephyr main targets more recent versions. Because of this,
+# some newer compiler flags may cause warnings where twister
+# would mark as test being failed. To workaround that,
+# add -Wno-unknown-warning-option to suppress those warnings.
+check_set_compiler_property(APPEND PROPERTY warning_extended
+                            -Wno-unknown-warning-option
+)
