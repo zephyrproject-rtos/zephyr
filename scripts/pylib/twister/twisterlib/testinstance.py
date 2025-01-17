@@ -226,7 +226,8 @@ class TestInstance:
             'gtest',
             'robot',
             'ctest',
-            'shell'
+            'shell',
+            'bsim'
             ]:
             can_run = True
             # if we have a fixture that is also being supplied on the

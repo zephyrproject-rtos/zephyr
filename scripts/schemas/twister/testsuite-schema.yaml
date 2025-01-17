@@ -180,6 +180,22 @@ schema;scenario-schema:
         "bsim_exe_name":
           type: str
           required: false
+        "bsim_test_ids":
+          type: seq
+          required: false
+          sequence:
+            - type: str
+        "bsim_verbosity":
+          type: int
+          required: false
+        "bsim_sim_length":
+          type: float
+          required: false
+        "bsim_options":
+          type: seq
+          required: false
+          sequence:
+            - type: str
     "min_ram":
       type: int
       required: false
