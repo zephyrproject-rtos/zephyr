@@ -206,31 +206,28 @@
 		};
 
 		usart0: usart@50058000 { /* USART0 */
-			compatible = "silabs,gecko-usart";
+			compatible = "silabs,usart-uart";
 			reg = <0x50058000 0x400>;
 			interrupts = <11 0>, <12 0>;
 			interrupt-names = "rx", "tx";
-			peripheral-id = <0>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
 		usart1: usart@5005c000 { /* USART1 */
-			compatible = "silabs,gecko-usart";
+			compatible = "silabs,usart-uart";
 			reg = <0x5005c000 0x400>;
 			interrupts = <13 0>, <14 0>;
 			interrupt-names = "rx", "tx";
-			peripheral-id = <1>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
 		usart2: usart@50060000 { /* USART2 */
-			compatible = "silabs,gecko-usart";
+			compatible = "silabs,usart-uart";
 			reg = <0x50060000 0x400>;
 			interrupts = <15 0>, <16 0>;
 			interrupt-names = "rx", "tx";
-			peripheral-id = <2>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
