@@ -256,13 +256,15 @@ static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool has_
 	switch (mode) {
 	case IEEE802154_ADDR_MODE_EXTENDED:
 		addr->len = IEEE802154_EXT_ADDR_LENGTH;
-		addr->addr = has_pan_id ? ll->plain.addr.ext_addr : ll->comp.addr.ext_addr;
+		BUILD_ASSERT(offsetof(struct ieee802154_address, ext_addr) == 0);
+		addr->addr = (uint8_t*)(has_pan_id ? &ll->plain.addr : &ll->comp.addr);
 		break;
 
 	case IEEE802154_ADDR_MODE_SHORT:
 		addr->len = IEEE802154_SHORT_ADDR_LENGTH;
-		addr->addr = (uint8_t *)(has_pan_id ? &ll->plain.addr.short_addr
-						    : &ll->comp.addr.short_addr);
+		BUILD_ASSERT(offsetof(struct ieee802154_address, short_addr) == 0);
+		addr->addr = (uint8_t *)(has_pan_id ? &ll->plain.addr
+						    : &ll->comp.addr);
 		break;
 
 	case IEEE802154_ADDR_MODE_NONE:
