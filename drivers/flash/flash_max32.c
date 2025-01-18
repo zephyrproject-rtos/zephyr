@@ -11,7 +11,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 
-#include "flc.h"
+#include "wrap_max32_flc.h"
 
 struct max32_flash_dev_config {
 	uint32_t flash_base;
@@ -77,7 +77,7 @@ static int api_write(const struct device *dev, off_t address, const void *buffer
 
 	key = irq_lock();
 
-	ret = MXC_FLC_Write(address, length, (uint32_t *)buffer);
+	ret = Wrap_MXC_FLC_Write(address, length, (uint32_t *)buffer);
 
 	irq_unlock(key);
 
