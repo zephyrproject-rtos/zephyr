@@ -5,7 +5,7 @@
 
 /dts-v1/;
 #include <espressif/esp32s3/esp32s3_r2.dtsi>
-#include <espressif/partitions_0x0_amp.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
 	model = "ESP32-S3-Touch-LCD-1.28 APPCPU";
