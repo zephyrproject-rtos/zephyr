@@ -162,7 +162,18 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 		}
 
 		if (pipe_empty(pipe)) {
-			if (pipe->waiting != 0) {
+			if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+				/*
+				 * Systems that enabled this option don't have
+				 * their stacks in coherent memory. Given our
+				 * pipe_buf_spec is stored on the stack, and
+				 * readers may also have their destination
+				 * buffer on their stack too, it is not worth
+				 * supporting direct-to-readers copy with them.
+				 * Simply wake up all pending readers instead.
+				 */
+				need_resched = z_sched_wake_all(&pipe->data, 0, NULL);
+			} else if (pipe->waiting != 0) {
 				written += copy_to_pending_readers(pipe, &need_resched,
 								   &data[written],
 								   len - written);
