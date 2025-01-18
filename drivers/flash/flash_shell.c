@@ -329,7 +329,7 @@ static int cmd_test(const struct shell *sh, size_t argc, char *argv[])
 const static uint8_t speed_types[][4] = { "B", "KiB", "MiB", "GiB" };
 const static uint32_t speed_divisor = 1024;
 
-static int read_write_erase_validate(const struct shell *sh, size_t argc, char *argv[],
+static int read_write_validate(const struct shell *sh, size_t argc, char *argv[],
 				     uint32_t *size, uint32_t *repeat)
 {
 	if (argc < 4) {
@@ -343,6 +343,30 @@ static int read_write_erase_validate(const struct shell *sh, size_t argc, char *
 	if (*size == 0 || *size > CONFIG_FLASH_SHELL_BUFFER_SIZE) {
 		shell_error(sh, "<size> must be between 0x1 and 0x%x.",
 			    CONFIG_FLASH_SHELL_BUFFER_SIZE);
+		return -EINVAL;
+	}
+
+	if (*repeat == 0 || *repeat > 10) {
+		shell_error(sh, "<repeat> must be between 1 and 10.");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int erase_validate(const struct shell *sh, size_t argc, char *argv[],
+				     uint32_t *size, uint32_t *repeat)
+{
+	if (argc < 4) {
+		shell_error(sh, "Missing parameters: <device> <offset> <size> <repeat>");
+		return -EINVAL;
+	}
+
+	*size = strtoul(argv[2], NULL, 0);
+	*repeat = strtoul(argv[3], NULL, 0);
+
+	if (*size == 0) {
+		shell_error(sh, "<size> must be not equal 0.");
 		return -EINVAL;
 	}
 
@@ -391,7 +415,7 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char *argv[])
 		return result;
 	}
 
-	result = read_write_erase_validate(sh, argc, argv, &size, &repeat);
+	result = read_write_validate(sh, argc, argv, &size, &repeat);
 	if (result) {
 		return result;
 	}
@@ -435,7 +459,7 @@ static int cmd_write_test(const struct shell *sh, size_t argc, char *argv[])
 		return result;
 	}
 
-	result = read_write_erase_validate(sh, argc, argv, &size, &repeat);
+	result = read_write_validate(sh, argc, argv, &size, &repeat);
 	if (result) {
 		return result;
 	}
@@ -483,13 +507,9 @@ static int cmd_erase_test(const struct shell *sh, size_t argc, char *argv[])
 		return result;
 	}
 
-	result = read_write_erase_validate(sh, argc, argv, &size, &repeat);
+	result = erase_validate(sh, argc, argv, &size, &repeat);
 	if (result) {
 		return result;
-	}
-
-	for (uint32_t i = 0; i < size; i++) {
-		test_arr[i] = (uint8_t)i;
 	}
 
 	while (repeat--) {
@@ -532,7 +552,7 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char *argv[
 		return result_erase;
 	}
 
-	result_erase = read_write_erase_validate(sh, argc, argv, &size, &repeat);
+	result_erase = read_write_validate(sh, argc, argv, &size, &repeat);
 	if (result_erase) {
 		return result_erase;
 	}
