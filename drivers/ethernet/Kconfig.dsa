@@ -45,6 +45,14 @@ config DSA_KSZ_TAIL_TAGGING
 	help
 	  Add support for tail tagging on DSA device.
 
+config DSA_TAG_SIZE
+	int "DSA tag size in bytes"
+	default 1 if DSA_KSZ8794 || DSA_KSZ8863
+	default 0
+	depends on DSA_KSZ_TAIL_TAGGING
+	help
+	  Set the DSA tag length in bytes.
+
 config DSA_SPI
 	bool "Support for PHY SPI interface"
 	depends on SPI && (DSA_KSZ8794 || DSA_KSZ8863)
