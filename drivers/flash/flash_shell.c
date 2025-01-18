@@ -480,7 +480,7 @@ static int cmd_write_test(const struct shell *sh, size_t argc, char *argv[])
 
 		++loops;
 		total_time += loop_time;
-		shell_print(sh, "Loop #%u done in %llu ticks.", loops, loop_time);
+		shell_print(sh, "Loop #%u done in %llu ms.", loops, loop_time);
 	}
 
 	if (result == 0) {
