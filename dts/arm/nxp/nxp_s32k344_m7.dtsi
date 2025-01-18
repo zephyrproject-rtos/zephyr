@@ -90,6 +90,7 @@
 			eirq0: eirq@40290010 {
 				compatible = "nxp,s32-siul2-eirq";
 				reg = <0x40290010 0xb4>;
+				#address-cells = <0>;
 				interrupts = <53 0>, <54 0>, <55 0>, <56 0>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
