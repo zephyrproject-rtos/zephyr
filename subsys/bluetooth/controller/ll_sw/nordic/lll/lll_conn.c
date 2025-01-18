@@ -263,6 +263,8 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	e->type = EVENT_DONE_EXTRA_TYPE_CONN;
 	e->trx_cnt = 0U;
 	e->crc_valid = 0U;
+	e->is_aborted = 1U;
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	e->mic_state = LLL_CONN_MIC_NONE;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
