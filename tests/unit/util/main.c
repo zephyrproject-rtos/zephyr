@@ -597,6 +597,28 @@ ZTEST(util, test_GET_ARGS_LESS_N) {
 	zassert_equal(d[0], 3);
 }
 
+ZTEST(util, test_GET_ARGS_FIRST_N)
+{
+	uint8_t a[] = {GET_ARGS_FIRST_N(0, 1, 2, 3)};
+	uint8_t b[] = {GET_ARGS_FIRST_N(1, 1, 2, 3)};
+	uint8_t c[] = {GET_ARGS_FIRST_N(2, 1, 2, 3)};
+	uint8_t d[] = {GET_ARGS_FIRST_N(3, 1, 2, 3)};
+
+	zassert_equal(sizeof(a), 0);
+
+	zassert_equal(sizeof(b), 1);
+	zassert_equal(b[0], 1);
+
+	zassert_equal(sizeof(c), 2);
+	zassert_equal(c[0], 1);
+	zassert_equal(c[1], 2);
+
+	zassert_equal(sizeof(d), 3);
+	zassert_equal(d[0], 1);
+	zassert_equal(d[1], 2);
+	zassert_equal(d[2], 3);
+}
+
 ZTEST(util, test_mixing_GET_ARG_and_FOR_EACH) {
 	#undef TEST_MACRO
 	#define TEST_MACRO(x) x,
