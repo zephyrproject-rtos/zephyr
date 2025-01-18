@@ -133,7 +133,7 @@ static uint16_t bt_att_mtu(struct bt_att_chan *chan)
 /* Descriptor of application-specific authorization callbacks that are used
  * with the CONFIG_BT_GATT_AUTHORIZATION_CUSTOM Kconfig enabled.
  */
-const static struct bt_gatt_authorization_cb *authorization_cb;
+static const struct bt_gatt_authorization_cb *authorization_cb;
 
 /* ATT connection specific data */
 struct bt_att {
