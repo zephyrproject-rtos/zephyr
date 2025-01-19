@@ -201,6 +201,7 @@ static void ns_bind_cb(struct rpmsg_device *rdev, const char *name, uint32_t des
 		 * call by the HOST core.
 		 */
 		strncpy(rpmsg_ept->name, name, sizeof(rpmsg_ept->name));
+		rpmsg_ept->name[RPMSG_NAME_SIZE - 1] = '\0';
 		rpmsg_ept->dest = dest;
 		k_mutex_unlock(&rpmsg_inst->mtx);
 	}
@@ -403,6 +404,7 @@ static struct ipc_rpmsg_ept *register_ept_on_host(struct ipc_rpmsg_instance *rpm
 		 * not registered the endpoint yet. Cache it.
 		 */
 		strncpy(rpmsg_ept->name, cfg->name, sizeof(rpmsg_ept->name));
+		rpmsg_ept->name[RPMSG_NAME_SIZE - 1] = '\0';
 		k_mutex_unlock(&rpmsg_inst->mtx);
 	}
 
@@ -426,6 +428,7 @@ static struct ipc_rpmsg_ept *register_ept_on_remote(struct ipc_rpmsg_instance *r
 	rpmsg_ept->ep.priv = rpmsg_ept;
 
 	strncpy(rpmsg_ept->name, cfg->name, sizeof(rpmsg_ept->name));
+	rpmsg_ept->name[RPMSG_NAME_SIZE - 1] = '\0';
 
 	err = ipc_rpmsg_register_ept(rpmsg_inst, RPMSG_REMOTE, rpmsg_ept);
 	if (err != 0) {
