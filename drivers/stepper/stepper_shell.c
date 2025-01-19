@@ -67,9 +67,9 @@ static void print_callback(const struct device *dev, const enum stepper_event ev
 	}
 }
 
-static bool stepper_device_check(const struct device *dev)
+static bool device_is_stepper(const struct device *dev)
 {
-	return DEVICE_API_IS(stepper, dev) && device_is_ready(dev);
+	return DEVICE_API_IS(stepper, dev);
 }
 
 static const struct stepper_direction_map stepper_direction_map[] = {
@@ -119,7 +119,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_stepper_microstep, cmd_stepper_microstep);
 
 static void cmd_pos_stepper_motor_name(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_filter(idx, stepper_device_check);
+	const struct device *dev = shell_device_filter(idx, device_is_stepper);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -131,7 +131,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_pos_stepper_motor_name, cmd_pos_stepper_motor_name
 
 static void cmd_pos_stepper_motor_name_dir(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_filter(idx, stepper_device_check);
+	const struct device *dev = shell_device_filter(idx, device_is_stepper);
 
 	if (dev != NULL) {
 		entry->syntax = dev->name;
@@ -147,7 +147,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_pos_stepper_motor_name_dir, cmd_pos_stepper_motor_
 
 static void cmd_pos_stepper_motor_name_microstep(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_filter(idx, stepper_device_check);
+	const struct device *dev = shell_device_filter(idx, device_is_stepper);
 
 	if (dev != NULL) {
 		entry->syntax = dev->name;
