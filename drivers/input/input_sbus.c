@@ -123,7 +123,7 @@ static void input_sbus_input_report_thread(const struct device *dev, void *dummy
 
 	uint8_t i, channel;
 	uint8_t *sbus_channel_data = &data->sbus_frame[1]; /* Omit header */
-	uint16_t value;
+	uint32_t value;
 	int bits_read;
 	unsigned int key;
 	int ret;
