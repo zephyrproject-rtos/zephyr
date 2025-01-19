@@ -212,6 +212,11 @@ GPIO
 * Renamed the device tree property ``off_val`` to ``off-val``.
 * Renamed the device tree property ``on_val`` to ``on-val``.
 
+HWSPINLOCK
+==========
+
+* Renamed the DeviceTree property ``num_locks`` to ``num-locks``.
+
 I2C
 ===
 
