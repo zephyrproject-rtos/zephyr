@@ -42,11 +42,6 @@ struct __thread_entry {
 
 struct k_thread;
 
-/*
- * This _pipe_desc structure is used by the pipes kernel module when
- * CONFIG_PIPES has been selected.
- */
-
 struct _pipe_desc {
 	sys_dnode_t      node;
 	unsigned char   *buffer;         /* Position in src/dest buffer */
@@ -357,11 +352,6 @@ struct k_thread {
 	/** Paging statistics */
 	struct k_mem_paging_stats_t paging_stats;
 #endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
-
-#ifdef CONFIG_PIPES
-	/** Pipe descriptor used with blocking k_pipe operations */
-	struct _pipe_desc pipe_desc;
-#endif /* CONFIG_PIPES */
 
 #ifdef CONFIG_OBJ_CORE_THREAD
 	struct k_obj_core  obj_core;
