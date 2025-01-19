@@ -16,6 +16,7 @@ General Guidelines
 
    guidelines.rst
    contributor_expectations.rst
+   reviewer_expectations.rst
    coding_guidelines/index.rst
    proposals_and_rfcs.rst
    modifying_contributions.rst
@@ -31,6 +32,10 @@ General Guidelines
 :ref:`contributor-expectations`
    This document is another mandatory read that describes the expected behavior of *all*
    contributors to the project.
+
+:ref:`reviewer-expectations`
+   This document is another mandatory read that describes the expected behavior when revieweing
+   contributions to the project.
 
 :ref:`coding_guidelines`
    Code contributions are expected to follow a set of coding guidelines to ensure consistency and
