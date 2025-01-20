@@ -11,13 +11,13 @@
 / {
 	soc {
 
-		/delete-node/ memory@0;
+		/delete-node/ memory@40000;
 
-		ram_ilm_retention: memory@0 {
+		ram_ilm_retention: memory@40000 {
 			compatible = "mmio-sram";
 		};
 
-		ram_ilm_nonretention: memory@18000 {
+		ram_ilm_nonretention: memory@60000 {
 			compatible = "mmio-sram";
 		};
 	};
@@ -43,9 +43,9 @@
 };
 
 &ram_ilm_retention {
-	reg = <0x00000000 0x00018000>;
+	reg = <0x00040000 0x00020000>;
 };
 
 &ram_ilm_nonretention {
-	reg = <0x00018000 0x00028000>;
+	reg = <0x00060000 0x00020000>;
 };

@@ -11,13 +11,30 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/linker-tool.h>
 
+/**
+ * @brief Linker script for the Telink TLx SoCs.
+ * This script differentiates memory configurations for various Telink SoCs:
+ * 	TL321x SoCs have limited RAM and use a single memory section.
+ *	TL721x SoCs do not require this single-section layout and instead.
+ * implement separate RAM sections.
+ */
+
 MEMORY
 {
-#if SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+#if !CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+	#if CONFIG_SOC_RISCV_TELINK_TL721X
+	RAMILM       (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_ilm)),              LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_ilm))
+	#elif CONFIG_SOC_RISCV_TELINK_TL321X
 
-    RAM_ILM_N    (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_ilm_nonretention)), LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_ilm_nonretention))
+	#endif
+#else
+	#if CONFIG_SOC_RISCV_TELINK_TL721X
+	RAM_ILM_N    (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_ilm_nonretention)), LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_ilm_nonretention))
+	RAM_DLM      (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_dlm)),              LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_dlm))
+	#elif CONFIG_SOC_RISCV_TELINK_TL321X
 
-#endif /* SOC_SERIES_RISCV_TELINK_TLX_RETENTION */
+	#endif
+#endif /* CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION */
 }
 
 #include <zephyr/arch/riscv/common/linker.ld>

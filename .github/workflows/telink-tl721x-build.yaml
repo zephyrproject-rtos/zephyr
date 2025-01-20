@@ -107,15 +107,20 @@ jobs:
         cd ..
         west build -b tl7218                   -d build_ot_echo_client_tl7218            zephyr/samples/net/sockets/echo_client                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\"
 
+    - name: Build TL721X net/sockets/echo_client for OpenThread with PM deep-sleep
+      run: |
+        cd ..
+        west build -b tl7218_retention         -d build_ot_echo_client_pm_deep_tl7218    zephyr/samples/net/sockets/echo_client                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_SOC_SERIES_RISCV_TELINK_TLX_NON_RETENTION_RAM_CODE=y
+
     - name: Build TL721X subsys/usb/console for USB driver
       run: |
         cd ..
-        west build -b tl7218                   -d build_usb_console_tl7218              zephyr/samples/subsys/usb/console                         -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl7218                   -d build_usb_console_tl7218               zephyr/samples/subsys/usb/console                        -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
     - name: Build TL721X crypto/mbedtls
       run: |
         cd ..
-        west build -b tl7218                   -d build_crypto_mbedtls_tl7218           zephyr/tests/crypto/mbedtls                               -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_MBEDTLS_ECP_C=y -DCONFIG_MBEDTLS_ECP_ALL_ENABLED=y
+        west build -b tl7218                   -d build_crypto_mbedtls_tl7218            zephyr/tests/crypto/mbedtls                              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_MBEDTLS_ECP_C=y -DCONFIG_MBEDTLS_ECP_ALL_ENABLED=y
 
     - name: Collect artifacts
       run: |
@@ -133,6 +138,7 @@ jobs:
         cp ../build_ot_cli_tl7218/zephyr/zephyr.bin                    telink_build_artifacts/tl7218_ot_cli.bin
         cp ../build_ot_echo_server_tl7218/zephyr/zephyr.bin            telink_build_artifacts/tl7218_ot_echo_server.bin
         cp ../build_ot_echo_client_tl7218/zephyr/zephyr.bin            telink_build_artifacts/tl7218_ot_echo_client.bin
+        cp ../build_ot_echo_client_pm_deep_tl7218/zephyr/zephyr.bin    telink_build_artifacts/tl7218_ot_echo_client_pm_retention.bin
         cp ../build_crypto_mbedtls_tl7218/zephyr/zephyr.bin            telink_build_artifacts/tl7218_mbedtls.bin
         cp ../build_spi_flash_tl7218/zephyr/zephyr.bin                 telink_build_artifacts/tl7218_spi_flash.bin
 

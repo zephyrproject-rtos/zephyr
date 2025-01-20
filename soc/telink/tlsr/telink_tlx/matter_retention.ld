@@ -26,7 +26,7 @@ SECTION_DATA_PROLOGUE(ram_dlm_bss,(NOLOAD),)
 	*(.bss)
 
 	/* Moving the BLE controller stack (HAL) */
-	"*b9x_bt.c.obj*"(".noinit.*" ".bss.*")
+	"*tlx_bt.c.obj*"(".noinit.*" ".bss.*")
 
 	/* Moving the Zephyr BLE data */
 	"*att.c.obj*"(".noinit.*" ".bss.*")
@@ -50,9 +50,9 @@ SECTION_DATA_PROLOGUE(ram_code_ble,,)
 	. = ALIGN(4);
 	*(.ram_code_ble)
 	*(".ram_code_ble.*")
-	"*b9x_bt.c.obj*"(.ram_code)
+	"*tlx_bt.c.obj*"(.ram_code)
 
 	PROVIDE (_RAMCODE_BLE_VMA_END = .);
 	PROVIDE (_RAMCODE_BLE_VMA_START = ADDR(ram_code_ble));
 	PROVIDE (_RAMCODE_BLE_LMA_START = LOADADDR(ram_code_ble));
-} GROUP_DATA_LINK_IN(TELINK_RAM_CODE_REGION, ROMABLE_REGION)
+} GROUP_DATA_LINK_IN(TELINK_RAM_CODE_BLE_REGION, ROMABLE_REGION)
