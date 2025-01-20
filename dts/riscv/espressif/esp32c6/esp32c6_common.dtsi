@@ -76,9 +76,15 @@
 		};
 
 		sramlp: memory@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x50000000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "SRAMLP ";
+
+			shmlp: memory@0 {
+				reg = <0x0 0x10>;
+			};
 		};
 
 		intc: interrupt-controller@60010000 {
