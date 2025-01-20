@@ -65,55 +65,45 @@ Categories/Labels
 -----------------
 
 Hotfix
-++++++
+  Any change that is a fix to an issue that blocks developers from doing their
+  daily work, for example CI breakage, Test breakage, Minor documentation fixes
+  that impact the user experience.
 
-Any change that is a fix to an issue that blocks developers from doing their
-daily work, for example CI breakage, Test breakage, Minor documentation fixes
-that impact the user experience.
-
-Such fixes can be merged at any time after they have passed CI checks. Depending
-on the fix, severity, and availability of someone to review them (other than the
-author) they can be merged with justification without review by one of the
-project owners.
+  Such fixes can be merged at any time after they have passed CI checks. Depending
+  on the fix, severity, and availability of someone to review them (other than the
+  author) they can be merged with justification without review by one of the
+  project owners.
 
 Trivial
-+++++++
+  Trivial changes are those that appear obvious enough and do not require maintainer or code-owner
+  involvement. Such changes should not change the logic or the design of a
+  subsystem or component. For example a trivial change can be:
 
-Trivial changes are those that appear obvious enough and do not require maintainer or code-owner
-involvement. Such changes should not change the logic or the design of a
-subsystem or component. For example a trivial change can be:
-
-- Documentation changes
-- Configuration changes
-- Minor Build System tweaks
-- Minor optimization to code logic without changing the logic
-- Test changes and fixes
-- Sample modifications to support additional configuration or boards etc.
+  - Documentation changes
+  - Configuration changes
+  - Minor Build System tweaks
+  - Minor optimization to code logic without changing the logic
+  - Test changes and fixes
+  - Sample modifications to support additional configuration or boards etc.
 
 Maintainer
-+++++++++++
-
-Any changes that touch the logic or the original design of a subsystem or
-component will need to be reviewed by the code owner or the designated subsystem
-maintainer. If the code changes is initiated by a contributor or developer other
-than the owner the pull request needs to be assigned to the code owner who will
-have to drive the pull request to a mergeable state by giving feedback to the
-author and asking for more reviews from other developers.
+  Any changes that touch the logic or the original design of a subsystem or
+  component will need to be reviewed by the code owner or the designated subsystem
+  maintainer. If the code changes is initiated by a contributor or developer other
+  than the owner the pull request needs to be assigned to the code owner who will
+  have to drive the pull request to a mergeable state by giving feedback to the
+  author and asking for more reviews from other developers.
 
 Security
-+++++++++++
-
-Changes that appear to have an impact to the overall security of the system need
-to be reviewed by a security expert from the security working group.
+  Changes that appear to have an impact to the overall security of the system need
+  to be reviewed by a security expert from the security working group.
 
 TSC and Working Groups
-++++++++++++++++++++++
-
-Changes that introduce new features or functionality or change the way the
-overall system works need to be reviewed by the TSC or the responsible Working
-Group. For example for :ref:`breaking API changes <breaking_api_changes>`, the
-proposal needs to be presented in the Architecture meeting so that the relevant
-stakeholders are made aware of the change.
+  Changes that introduce new features or functionality or change the way the
+  overall system works need to be reviewed by the TSC or the responsible Working
+  Group. For example for :ref:`breaking API changes <breaking_api_changes>`, the
+  proposal needs to be presented in the Architecture meeting so that the relevant
+  stakeholders are made aware of the change.
 
 A Pull-Request should have an Assignee
 =======================================
