@@ -6,12 +6,14 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
 simulation_id=$(guess_test_long_name)_ecred
-bsim_exe=./bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf_overlay-ecred_conf
+bsim_exe=./bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central -rs=420
-Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral -rs=100
+Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -rs=420 \
+    -testid=l2cap/credits_seg_recv/ecred/central
+Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -rs=100 \
+    -testid=l2cap/credits_seg_recv/ecred/peripheral
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} -D=2 -sim_length=30e6 $@
 

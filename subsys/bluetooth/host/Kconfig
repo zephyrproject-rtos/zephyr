@@ -1080,6 +1080,13 @@ config BT_TESTING
 	  This option enables custom Bluetooth testing interface.
 	  Shall only be used for testing purposes.
 
+config BT_TESTING_CFG
+	bool "Bluetooth Testing config"
+	depends on BT_TESTING
+	help
+	  This option enables custom Bluetooth testing config interface.
+	  Shall only be used for testing purposes.
+
 config BT_CONN_DISABLE_SECURITY
 	bool "Disable security"
 	depends on BT_TESTING

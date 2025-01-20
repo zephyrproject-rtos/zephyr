@@ -1,0 +1,12 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.l2cap.combined:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_combined_build_prj_conf

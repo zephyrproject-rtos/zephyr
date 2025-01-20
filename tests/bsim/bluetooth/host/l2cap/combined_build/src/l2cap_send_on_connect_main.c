@@ -10,6 +10,7 @@
 
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
+#include <zephyr/bluetooth/testing_cfg.h>
 
 extern enum bst_result_t bst_result;
 
@@ -99,7 +100,7 @@ static void connect_l2cap_channel(void)
 
 	channel.chan.ops = &l2cap_ops;
 
-	if (IS_ENABLED(CONFIG_BT_L2CAP_ECRED)) {
+	if (bt_testing_cfg_val.l2cap_ecred) {
 		err = bt_l2cap_ecred_chan_connect(default_conn, chans, server.psm);
 		if (err) {
 			TEST_FAIL("Failed to send ecred connection request (err %d)", err);
@@ -203,7 +204,16 @@ static void test_peripheral_main(void)
 
 	WAIT_FOR_FLAG_UNSET(is_connected);
 
-TEST_PASS("Test passed");
+	TEST_PASS("L2CAP SEND ON CONNECT Peripheral passed");
+}
+
+static void test_ecred_peripheral_main(void)
+{
+	bt_testing_cfg_val = (struct bt_testing_cfg){
+		.l2cap_ecred = true,
+	};
+
+	test_peripheral_main();
 }
 
 static void test_central_main(void)
@@ -235,19 +245,38 @@ static void test_central_main(void)
 
 	WAIT_FOR_FLAG_UNSET(is_connected);
 
-	TEST_PASS("Test passed");
+	TEST_PASS("L2CAP SEND ON CONNECT Central passed");
+}
+
+static void test_ecred_central_main(void)
+{
+	bt_testing_cfg_val = (struct bt_testing_cfg){
+		.l2cap_ecred = true,
+	};
+
+	test_central_main();
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
-		.test_id = "peripheral",
-		.test_descr = "Peripheral",
+		.test_id = "l2cap/send_on_connect/peripheral",
+		.test_descr = "Peripheral L2CAP send on connect",
 		.test_main_f = test_peripheral_main,
 	},
 	{
-		.test_id = "central",
-		.test_descr = "Central",
+		.test_id = "l2cap/send_on_connect/central",
+		.test_descr = "Central L2CAP send on connect",
 		.test_main_f = test_central_main,
+	},
+	{
+		.test_id = "l2cap/send_on_connect/ecred/peripheral",
+		.test_descr = "Peripheral L2CAP send on connect ecred",
+		.test_main_f = test_ecred_peripheral_main
+	},
+	{
+		.test_id = "l2cap/send_on_connect/ecred/central",
+		.test_descr = "Central L2CAP send on connect ecred",
+		.test_main_f = test_ecred_central_main
 	},
 	BSTEST_END_MARKER,
 };

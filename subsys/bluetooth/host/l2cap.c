@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/testing_cfg.h>
 
 #define LOG_DBG_ENABLED IS_ENABLED(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
 
@@ -343,7 +344,9 @@ static void init_le_chan_private(struct bt_l2cap_le_chan *le_chan)
 	le_chan->_sdu = NULL;
 	le_chan->_sdu_len = 0;
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
-	le_chan->_sdu_len_done = 0;
+	if (bt_testing_cfg_val.l2cap_seg_recv) {
+		le_chan->_sdu_len_done = 0;
+	}
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 	memset(&le_chan->_pdu_ready, 0, sizeof(le_chan->_pdu_ready));
@@ -615,7 +618,7 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 	}
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
-	if (le->ident) {
+	if (le->ident && bt_testing_cfg_val.l2cap_ecred) {
 		struct bt_l2cap_chan *echan[BT_L2CAP_ECRED_CHAN_MAX_PER_REQ];
 		struct bt_l2cap_chan *ch;
 		int i = 0;
@@ -1370,7 +1373,7 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	}
 
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
-	if (!(*chan)->ops->recv == !(*chan)->ops->seg_recv) {
+	if (!(*chan)->ops->recv == !(*chan)->ops->seg_recv && bt_testing_cfg_val.l2cap_seg_recv) {
 		LOG_ERR("Exactly one of 'recv' or 'seg_recv' must be set");
 		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
 	}
@@ -2167,6 +2170,32 @@ static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
+static bool l2cap_recv_try_ecred(struct bt_l2cap_sig_hdr *hdr, struct bt_l2cap *l2cap,
+				 struct net_buf *buf)
+{
+	if (!bt_testing_cfg_val.l2cap_ecred) {
+		return false;
+	}
+
+#if defined(CONFIG_BT_L2CAP_ECRED)
+	switch (hdr->code) {
+	case BT_L2CAP_ECRED_CONN_REQ:
+		le_ecred_conn_req(l2cap, hdr->ident, buf);
+		return true;
+	case BT_L2CAP_ECRED_CONN_RSP:
+		le_ecred_conn_rsp(l2cap, hdr->ident, buf);
+		return true;
+	case BT_L2CAP_ECRED_RECONF_REQ:
+		le_ecred_reconf_req(l2cap, hdr->ident, buf);
+		return true;
+	case BT_L2CAP_ECRED_RECONF_RSP:
+		le_ecred_reconf_rsp(l2cap, hdr->ident, buf);
+		return true;
+	}
+#endif
+	return false;
+}
+
 static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_le_chan *l2chan = CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
@@ -2194,6 +2223,10 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
+	if (l2cap_recv_try_ecred(hdr, l2cap, buf)) {
+		return 0;
+	}
+
 	switch (hdr->code) {
 	case BT_L2CAP_CONN_PARAM_RSP:
 		le_conn_param_rsp(l2cap, buf);
@@ -2217,20 +2250,6 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_L2CAP_CMD_REJECT:
 		reject_cmd(l2cap, hdr->ident, buf);
 		break;
-#if defined(CONFIG_BT_L2CAP_ECRED)
-	case BT_L2CAP_ECRED_CONN_REQ:
-		le_ecred_conn_req(l2cap, hdr->ident, buf);
-		break;
-	case BT_L2CAP_ECRED_CONN_RSP:
-		le_ecred_conn_rsp(l2cap, hdr->ident, buf);
-		break;
-	case BT_L2CAP_ECRED_RECONF_REQ:
-		le_ecred_reconf_req(l2cap, hdr->ident, buf);
-		break;
-	case BT_L2CAP_ECRED_RECONF_RSP:
-		le_ecred_reconf_rsp(l2cap, hdr->ident, buf);
-		break;
-#endif /* defined(CONFIG_BT_L2CAP_ECRED) */
 #else
 	case BT_L2CAP_CMD_REJECT:
 		/* Ignored */

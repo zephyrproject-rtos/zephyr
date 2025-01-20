@@ -91,7 +91,7 @@ static struct bt_l2cap_server test_l2cap_server = {
 	.psm = TEST_DATA_L2CAP_PSM,
 };
 
-void entrypoint_dut(void)
+void entrypoint_einprogress_dut(void)
 {
 	struct net_buf *ack_buf;
 	struct bt_conn *conn = NULL;
@@ -120,5 +120,5 @@ void entrypoint_dut(void)
 	err = bt_l2cap_chan_recv_complete(&le_chan.chan, ack_buf);
 	TEST_ASSERT(!err);
 
-	TEST_PASS_AND_EXIT("dut");
+	TEST_PASS_AND_EXIT("L2CAP EINPROGRESS dut passed");
 }

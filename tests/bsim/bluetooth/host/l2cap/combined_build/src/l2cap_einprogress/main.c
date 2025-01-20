@@ -7,8 +7,8 @@
 #include "bstests.h"
 #include "babblekit/testcase.h"
 
-extern void entrypoint_dut(void);
-extern void entrypoint_tester(void);
+extern void entrypoint_einprogress_dut(void);
+extern void entrypoint_einprogress_tester(void);
 extern enum bst_result_t bst_result;
 
 static void test_end_cb(void)
@@ -22,26 +22,17 @@ static const struct bst_test_instance entrypoints[] = {
 	{
 		.test_id = "l2cap/einprogress/dut",
 		.test_delete_f = test_end_cb,
-		.test_main_f = entrypoint_dut,
+		.test_main_f = entrypoint_einprogress_dut,
 	},
 	{
 		.test_id = "l2cap/einprogress/tester",
 		.test_delete_f = test_end_cb,
-		.test_main_f = entrypoint_tester,
+		.test_main_f = entrypoint_einprogress_tester,
 	},
 	BSTEST_END_MARKER,
 };
 
-static struct bst_test_list *install(struct bst_test_list *tests)
+struct bst_test_list *test_main_l2cap_einprogress_install(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, entrypoints);
 };
-
-bst_test_install_t test_installers[] = {install, NULL};
-
-int main(void)
-{
-	bst_main();
-
-	return 0;
-}

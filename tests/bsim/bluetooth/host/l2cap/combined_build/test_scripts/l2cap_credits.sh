@@ -10,8 +10,10 @@ bsim_exe=./bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central -rs=420
-Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral -rs=100
+Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -rs=420 \
+    -testid=l2cap/credits/central
+Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -rs=100 \
+    -testid=l2cap/credits/peripheral
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} -D=2 -sim_length=30e6 $@
 

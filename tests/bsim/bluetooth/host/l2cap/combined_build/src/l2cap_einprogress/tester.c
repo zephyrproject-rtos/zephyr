@@ -39,7 +39,7 @@ static struct bt_l2cap_le_chan le_chan = {
 
 NET_BUF_POOL_DEFINE(test_pool, 1, BT_L2CAP_SDU_BUF_SIZE(0), CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-void entrypoint_tester(void)
+void entrypoint_einprogress_tester(void)
 {
 	struct net_buf *sdu;
 	struct bt_conn *conn = NULL;
@@ -68,5 +68,5 @@ void entrypoint_tester(void)
 	err = bt_l2cap_chan_send(&le_chan.chan, sdu);
 	__ASSERT(!err, "err: %d", err);
 
-	TEST_PASS("tester");
+	TEST_PASS("L2CAP EINPROGRESS tester passed");
 }

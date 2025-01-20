@@ -18,8 +18,9 @@
 
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
+#include <zephyr/bluetooth/testing_cfg.h>
 
-#define LOG_MODULE_NAME main
+#define LOG_MODULE_NAME main_credits
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
 
@@ -39,15 +40,15 @@ NET_BUF_POOL_DEFINE(sdu_pool, 1, BT_L2CAP_SDU_BUF_SIZE(L2CAP_MTU),
 static uint8_t tx_data[SDU_LEN];
 static uint16_t rx_cnt;
 
-K_SEM_DEFINE(sdu_received, 0, 1);
+static K_SEM_DEFINE(sdu_received, 0, 1);
 
-struct test_ctx {
+static struct test_ctx {
 	struct bt_l2cap_le_chan le_chan;
 	size_t tx_left;
 	struct net_buf *rx_sdu;
 } test_ctx;
 
-int l2cap_chan_send(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
+static int l2cap_chan_send(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
 {
 	LOG_DBG("chan %p conn %u data %p len %d", chan, bt_conn_index(chan->conn), data, len);
 
@@ -69,12 +70,12 @@ int l2cap_chan_send(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
 	return ret;
 }
 
-struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
+static struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
 {
 	return net_buf_alloc(&sdu_pool, K_NO_WAIT);
 }
 
-void continue_sending(struct test_ctx *ctx)
+static void continue_sending(struct test_ctx *ctx)
 {
 	struct bt_l2cap_chan *chan = &ctx->le_chan.chan;
 
@@ -87,7 +88,7 @@ void continue_sending(struct test_ctx *ctx)
 	}
 }
 
-void sent_cb(struct bt_l2cap_chan *chan)
+static void sent_cb(struct bt_l2cap_chan *chan)
 {
 	LOG_DBG("%p", chan);
 
@@ -98,7 +99,7 @@ void sent_cb(struct bt_l2cap_chan *chan)
 	continue_sending(&test_ctx);
 }
 
-int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	LOG_DBG("len %d", buf->len);
 	rx_cnt++;
@@ -116,7 +117,7 @@ int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return -EINPROGRESS;
 }
 
-void l2cap_chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
+static void l2cap_chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
 {
 	struct bt_l2cap_le_chan *chan =
 		CONTAINER_OF(l2cap_chan, struct bt_l2cap_le_chan, chan);
@@ -132,7 +133,7 @@ void l2cap_chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
 		chan->rx.mps);
 }
 
-void l2cap_chan_disconnected_cb(struct bt_l2cap_chan *chan)
+static void l2cap_chan_disconnected_cb(struct bt_l2cap_chan *chan)
 {
 	UNSET_FLAG(flag_l2cap_connected);
 	LOG_DBG("%p", chan);
@@ -146,7 +147,7 @@ static struct bt_l2cap_chan_ops ops = {
 	.sent = sent_cb,
 };
 
-int server_accept_cb(struct bt_conn *conn, struct bt_l2cap_server *server,
+static int server_accept_cb(struct bt_conn *conn, struct bt_l2cap_server *server,
 		     struct bt_l2cap_chan **chan)
 {
 	struct bt_l2cap_le_chan *le_chan = &test_ctx.le_chan;
@@ -355,6 +356,15 @@ static void connect_l2cap_ecred_channel(struct bt_conn *conn, void *data)
 	WAIT_FOR_FLAG(flag_l2cap_connected);
 }
 
+static void test_ecred_peripheral_main(void)
+{
+	bt_testing_cfg_val = (struct bt_testing_cfg){
+		.l2cap_ecred = true,
+	};
+
+	test_peripheral_main();
+}
+
 static void test_central_main(void)
 {
 	LOG_DBG("*L2CAP CREDITS Central started*");
@@ -373,7 +383,7 @@ static void test_central_main(void)
 
 	/* Connect L2CAP channels */
 	LOG_DBG("Connect L2CAP channels");
-	if (IS_ENABLED(CONFIG_BT_L2CAP_ECRED)) {
+	if (bt_testing_cfg_val.l2cap_ecred) {
 		bt_conn_foreach(BT_CONN_TYPE_LE, connect_l2cap_ecred_channel, NULL);
 	} else {
 		bt_conn_foreach(BT_CONN_TYPE_LE, connect_l2cap_channel, NULL);
@@ -393,16 +403,34 @@ static void test_central_main(void)
 	TEST_PASS("L2CAP CREDITS Central passed");
 }
 
+static void test_ecred_central_main(void)
+{
+	bt_testing_cfg_val = (struct bt_testing_cfg){
+		.l2cap_ecred = true,
+	};
+
+	test_central_main();
+}
+
 static const struct bst_test_instance test_def[] = {
 	{
-		.test_id = "peripheral",
+		.test_id = "l2cap/credits/peripheral",
 		.test_descr = "Peripheral L2CAP CREDITS",
 		.test_main_f = test_peripheral_main
 	},
 	{
-		.test_id = "central",
+		.test_id = "l2cap/credits/central",
 		.test_descr = "Central L2CAP CREDITS",
 		.test_main_f = test_central_main
+	},
+	{	.test_id = "l2cap/credits/ecred/peripheral",
+		.test_descr = "Peripheral L2CAP CREDITS ECRED",
+		.test_main_f = test_ecred_peripheral_main
+	},
+	{
+		.test_id = "l2cap/credits/ecred/central",
+		.test_descr = "Central L2CAP CREDITS ECRED",
+		.test_main_f = test_ecred_central_main
 	},
 	BSTEST_END_MARKER
 };
@@ -410,18 +438,4 @@ static const struct bst_test_instance test_def[] = {
 struct bst_test_list *test_main_l2cap_credits_install(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, test_def);
-}
-
-extern struct bst_test_list *test_main_l2cap_credits_install(struct bst_test_list *tests);
-
-bst_test_install_t test_installers[] = {
-	test_main_l2cap_credits_install,
-	NULL
-};
-
-int main(void)
-{
-	bst_main();
-
-	return 0;
 }
