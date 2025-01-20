@@ -15,6 +15,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/random/random.h>
+#include <zephyr/pm/device_runtime.h>
 /* RX and TX pins have to be connected together*/
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))
@@ -329,6 +330,22 @@ ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 		.flags = 0
 	};
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (async) {
+#if DT_NODE_EXISTS(DT_NODELABEL(uart120)) && DT_NODE_HAS_STATUS(DT_NODELABEL(uart120), okay)
+			if (uart_dev == DEVICE_DT_GET(DT_NODELABEL(uart120))) {
+				ztest_test_skip();
+			}
+#endif
+		} else {
+			/* If only polling API is available then UART device is initially
+			 * suspended which means that RX is disabled and poll_in won't work.
+			 * Device must be explicitly enabled.
+			 */
+			pm_device_runtime_get(uart_dev);
+		}
+	}
+
 	/* Setup counter which will periodically enable/disable UART RX,
 	 * Disabling RX should lead to flow control being activated.
 	 */
@@ -388,6 +405,10 @@ ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 
 	err = counter_stop(counter_dev);
 	zassert_true(err >= 0);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) && !async) {
+		pm_device_runtime_put(uart_dev);
+	}
 }
 
 void *uart_mix_setup(void)
