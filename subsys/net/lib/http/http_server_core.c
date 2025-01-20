@@ -700,16 +700,19 @@ closing:
 	return ret;
 }
 
-/* Compare two strings where the terminator is either "\0" or "?" */
-static int compare_strings(const char *s1, const char *s2)
+/* Compare a path and a resource string. The path string comes from the HTTP request and may be
+ * terminated by either '?' or '\0'. The resource string is registered along with the resource and
+ * may only be terminated by `\0`.
+ */
+static int compare_strings(const char *path, const char *resource)
 {
-	while ((*s1 && *s2) && (*s1 == *s2) && (*s1 != '?')) {
-		s1++;
-		s2++;
+	while ((*path && *resource) && (*path == *resource) && (*path != '?')) {
+		path++;
+		resource++;
 	}
 
-	/* Check if both strings have reached their terminators or '?' */
-	if ((*s1 == '\0' || *s1 == '?') && (*s2 == '\0' || *s2 == '?')) {
+	/* Check if both strings have reached their terminators */
+	if ((*path == '\0' || *path == '?') && (*resource == '\0')) {
 		return 0; /* Strings are equal */
 	}
 

@@ -342,6 +342,10 @@ ZTEST(http_service, test_HTTP_RESOURCE_WILDCARD)
 	zassert_true(len > 0, "Length not set");
 	zassert_equal(res, RES(3), "Resource mismatch");
 
+	res = CHECK_PATH(service_D, "/fb", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
 	res = CHECK_PATH(service_A, "/fs/index.html", &len);
 	zassert_not_null(res, "Cannot find resource");
 	zassert_true(len > 0, "Length not set");
