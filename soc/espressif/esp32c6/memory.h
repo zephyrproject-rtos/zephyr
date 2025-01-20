@@ -5,15 +5,18 @@
 #pragma once
 
 /* LP-SRAM (16kB) memory */
-#define LPSRAM_IRAM_START  DT_REG_ADDR(DT_NODELABEL(sramlp))
-#define LPSRAM_SIZE        DT_REG_SIZE(DT_NODELABEL(sramlp))
+#define LPSRAM_IRAM_START      DT_REG_ADDR(DT_NODELABEL(sramlp))
+#define LPSRAM_SIZE            DT_REG_SIZE(DT_NODELABEL(sramlp))
+#define ULP_SHARED_MEM         DT_REG_SIZE(DT_NODELABEL(shmlp))
+#define ULP_COPROC_RESERVE_MEM (0x4000)
+
 /* HP-SRAM (512kB) memory */
-#define HPSRAM_START       DT_REG_ADDR(DT_NODELABEL(sramhp))
-#define HPSRAM_SIZE        DT_REG_SIZE(DT_NODELABEL(sramhp))
-#define HPSRAM_DRAM_START  HPSRAM_START
-#define HPSRAM_IRAM_START  HPSRAM_START
+#define HPSRAM_START          DT_REG_ADDR(DT_NODELABEL(sramhp))
+#define HPSRAM_SIZE           DT_REG_SIZE(DT_NODELABEL(sramhp))
+#define HPSRAM_DRAM_START     HPSRAM_START
+#define HPSRAM_IRAM_START     HPSRAM_START
 /* ICache size is fixed to 32KB on ESP32-C6 */
-#define ICACHE_SIZE        0x8000
+#define ICACHE_SIZE           0x8000
 
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
@@ -27,13 +30,13 @@
  *  buffers area (0x4087c610).
  */
 
-#define DRAM_BUFFERS_START       0x4086ad08
-#define DRAM_BUFFERS_END         0x4087c610
-#define DRAM_STACK_START         DRAM_BUFFERS_END
-#define DRAM_ROM_BSS_DATA_START  0x4087e610
+#define DRAM_BUFFERS_START      0x4086ad08
+#define DRAM_BUFFERS_END        0x4087c610
+#define DRAM_STACK_START        DRAM_BUFFERS_END
+#define DRAM_ROM_BSS_DATA_START 0x4087e610
 
 /* Set the limit for the application runtime dynamic allocations */
-#define DRAM_RESERVED_START      DRAM_BUFFERS_END
+#define DRAM_RESERVED_START DRAM_BUFFERS_END
 
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
@@ -49,14 +52,14 @@
 
 /* Start of the lower region is determined by region size and the end of the higher region */
 #define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_SRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
-#define BOOTLOADER_IRAM_SEG_START (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
-#define BOOTLOADER_DRAM_SEG_START (BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
+#define BOOTLOADER_IRAM_SEG_START       (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
+#define BOOTLOADER_DRAM_SEG_START        (BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE
-#define FLASH_SIZE         CONFIG_FLASH_SIZE
+#define FLASH_SIZE CONFIG_FLASH_SIZE
 #else
-#define FLASH_SIZE         0x400000
+#define FLASH_SIZE 0x400000
 #endif
 
 /* Cached memory */
