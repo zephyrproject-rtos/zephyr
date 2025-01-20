@@ -806,8 +806,6 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IPV6);
-
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 	/* If we have already fragmented the packet, the fragment id will
 	 * contain a proper value and we can skip other checks.
