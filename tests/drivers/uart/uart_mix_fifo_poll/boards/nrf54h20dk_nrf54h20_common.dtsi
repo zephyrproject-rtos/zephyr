@@ -49,6 +49,7 @@ dut: &uart137 {
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	hw-flow-control;
+	zephyr,pm-device-runtime-auto;
 };
 
 dut2: &uart120 {
@@ -57,6 +58,7 @@ dut2: &uart120 {
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	hw-flow-control;
+	zephyr,pm-device-runtime-auto;
 };
 
 counter_dev: &timer137 {
