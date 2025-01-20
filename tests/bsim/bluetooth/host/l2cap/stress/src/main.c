@@ -20,16 +20,38 @@
 
 #define LOG_MODULE_NAME main
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
 
 static DEFINE_FLAG(is_connected);
 static DEFINE_FLAG(flag_l2cap_connected);
 
-#define NUM_PERIPHERALS 6
+#define NUM_PERIPHERALS 1
 #define L2CAP_CHANS     NUM_PERIPHERALS
 #define SDU_NUM         20
 #define SDU_LEN         3000
 #define RESCHEDULE_DELAY K_MSEC(100)
+
+static struct k_work_q dut_work_q;
+static K_THREAD_STACK_DEFINE(dut_work_stack, 1024);
+
+static void heavy_work_handler(struct k_work *work)
+{
+	// Let devices send some data
+	k_sleep(K_SECONDS(2));
+
+	LOG_INF("Heavy work started");
+	k_busy_wait(100 * 1000);
+	LOG_INF("Heavy work done");
+
+	// TODO: Uncomment if doesn't fail from the first attempt
+#if 0
+	k_sleep(K_MSEC(100));
+	k_work_submit_to_queue(&dut_work_q, work);
+#endif
+}
+
+static K_WORK_DEFINE(heavy_work, heavy_work_handler);
+
 
 static void sdu_destroy(struct net_buf *buf)
 {
@@ -47,12 +69,12 @@ static void rx_destroy(struct net_buf *buf)
 
 /* Only one SDU per link will be transmitted at a time */
 NET_BUF_POOL_DEFINE(sdu_tx_pool,
-		    CONFIG_BT_MAX_CONN, BT_L2CAP_SDU_BUF_SIZE(SDU_LEN),
+		    120, BT_L2CAP_SDU_BUF_SIZE(SDU_LEN),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, sdu_destroy);
 
 /* Only one SDU per link will be received at a time */
 NET_BUF_POOL_DEFINE(sdu_rx_pool,
-		    CONFIG_BT_MAX_CONN, BT_L2CAP_SDU_BUF_SIZE(SDU_LEN),
+		    120, BT_L2CAP_SDU_BUF_SIZE(SDU_LEN),
 		    8, rx_destroy);
 
 static uint8_t tx_data[SDU_LEN];
@@ -311,6 +333,11 @@ static void test_peripheral_main(void)
 		tx_data[i] = (uint8_t)i;
 	}
 
+	k_work_queue_start(&dut_work_q, dut_work_stack,
+			   K_THREAD_STACK_SIZEOF(dut_work_stack),
+			   K_PRIO_COOP(CONFIG_BT_RX_PRIO + 1), NULL);
+	k_thread_name_set(&dut_work_q.thread, "DUT workq");
+
 	err = bt_enable(NULL);
 	if (err) {
 		TEST_FAIL("Can't enable Bluetooth (err %d)", err);
@@ -333,6 +360,8 @@ static void test_peripheral_main(void)
 	int psm = l2cap_server_register(BT_SECURITY_L1);
 
 	LOG_DBG("Registered server PSM %x", psm);
+
+	k_work_submit_to_queue(&dut_work_q, &heavy_work);
 
 	LOG_DBG("Peripheral waiting for transfer completion");
 	while (rx_cnt < SDU_NUM) {
