@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2023 Nordic Semiconductor ASA
+# Copyright (c) 2020-2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 # This file includes extra build system logic that is enabled when
@@ -52,23 +52,8 @@ function(zephyr_mcuboot_tasks)
     endif()
   endforeach()
 
-  # Find imgtool. Even though west is installed, imgtool might not be.
-  # The user may also have a custom manifest which doesn't include
-  # MCUboot.
-  #
-  # Therefore, go with an explicitly installed imgtool first, falling
-  # back on mcuboot/scripts/imgtool.py.
-  if(IMGTOOL)
-    set(imgtool_path "${IMGTOOL}")
-  elseif(DEFINED ZEPHYR_MCUBOOT_MODULE_DIR)
-    set(IMGTOOL_PY "${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts/imgtool.py")
-    if(EXISTS "${IMGTOOL_PY}")
-      set(imgtool_path "${IMGTOOL_PY}")
-    endif()
-  endif()
-
   # No imgtool, no signed binaries.
-  if(NOT DEFINED imgtool_path)
+  if(NOT DEFINED IMGTOOL)
     message(FATAL_ERROR "Can't sign images for MCUboot: can't find imgtool. To fix, install imgtool with pip3, or add the mcuboot repository to the west manifest and ensure it has a scripts/imgtool.py file.")
     return()
   endif()
@@ -94,7 +79,7 @@ function(zephyr_mcuboot_tasks)
   endif()
 
   # Basic 'imgtool sign' command with known image information.
-  set(imgtool_sign ${PYTHON_EXECUTABLE} ${imgtool_path} sign
+  set(imgtool_sign ${PYTHON_EXECUTABLE} ${IMGTOOL} sign
       --version ${CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION} --header-size ${CONFIG_ROM_START_OFFSET}
       --slot-size ${slot_size})
 
