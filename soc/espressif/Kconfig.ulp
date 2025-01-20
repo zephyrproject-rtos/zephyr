@@ -2,8 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Ultra Low Power (ULP) Co-processor"
+
 config ULP_COPROC_ENABLED
 	bool "Ultra Low Power (ULP) Co-processor"
+	default y if SOC_ESP32C6_LPCORE
+	select SOC_LATE_INIT_HOOK if SOC_ESP32C6_HPCORE
 	help
 	  Enable this feature if you plan to use the ULP Co-processor.
 	  Once this option is enabled, further ULP co-processor configuration will appear in the menu.
@@ -29,7 +32,7 @@ config ULP_COPROC_TYPE_LP_CORE
 endchoice
 
 menu "ULP RISC-V Settings"
-depends on ULP_COPROC_TYPE_RISCV
+	depends on ULP_COPROC_TYPE_RISCV
 
 config ULP_RISCV_INTERRUPT_ENABLE
 	bool "ULP RISC-V interrupts"
@@ -39,6 +42,7 @@ config ULP_RISCV_INTERRUPT_ENABLE
 endmenu
 
 menu "ULP Debugging Options"
+
 config ULP_PANIC_OUTPUT_ENABLE
 	bool "Panic handler outputs to LP UART"
 	depends on ULP_COPROC_TYPE_LP_CORE
