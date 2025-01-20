@@ -57,7 +57,7 @@
 				interrupts = <152 0>;
 				interrupt-names = "COMMON";
 				nxp,mdio = <&enet2_mdio>;
-				nxp,ptp-clock = <&enet_ptp_clock>;
+				nxp,ptp-clock = <&enet2_ptp_clock>;
 				status = "disabled";
 			};
 			enet2_mdio: mdio {
