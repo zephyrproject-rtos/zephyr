@@ -70,6 +70,9 @@ Deprecated APIs and options
   of a new ``arduino_uno_r4`` board with revisions (``arduino_uno_r4@minima`` and
   ``arduino_uno_r4@wifi``).
 
+* ``esp32c6_devkitc`` board target has been deprecated and renamed to
+  ``esp32c6_devkitc/esp32c6/hpcore``.
+
 New APIs and options
 ====================
 
