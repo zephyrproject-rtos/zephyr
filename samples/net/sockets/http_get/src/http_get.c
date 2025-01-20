@@ -30,7 +30,7 @@
 #endif
 
 /* HTTP server to connect to */
-#define HTTP_HOST "www.google.com"
+#define HTTP_HOST "google.com"
 /* Port to connect to, as string */
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #define HTTP_PORT "443"
