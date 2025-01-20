@@ -147,13 +147,6 @@ static void counter_top_handler(const struct device *dev, void *user_data)
 
 static void init_test(int idx)
 {
-	int err;
-	struct counter_top_cfg top_cfg = {
-		.callback = counter_top_handler,
-		.user_data = NULL,
-		.flags = 0
-	};
-
 	memset(source, 0, sizeof(source));
 	async_rx_enabled = false;
 	uart_dev = duts[idx].dev;
@@ -170,19 +163,6 @@ static void init_test(int idx)
 			uart_irq_callback_set(uart_dev, int_driven_callback);
 		}
 	}
-
-	/* Setup counter which will periodically enable/disable UART RX,
-	 * Disabling RX should lead to flow control being activated.
-	 */
-	zassert_true(device_is_ready(counter_dev));
-
-	top_cfg.ticks = counter_us_to_ticks(counter_dev, 1000);
-
-	err = counter_set_top_value(counter_dev, &top_cfg);
-	zassert_true(err >= 0);
-
-	err = counter_start(counter_dev);
-	zassert_true(err >= 0);
 }
 
 static void rx_isr(void)
@@ -343,6 +323,24 @@ ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 	int repeat = CONFIG_STRESS_TEST_REPS;
 	int err;
 	int num_of_contexts = ARRAY_SIZE(test_data);
+	struct counter_top_cfg top_cfg = {
+		.callback = counter_top_handler,
+		.user_data = NULL,
+		.flags = 0
+	};
+
+	/* Setup counter which will periodically enable/disable UART RX,
+	 * Disabling RX should lead to flow control being activated.
+	 */
+	zassert_true(device_is_ready(counter_dev));
+
+	top_cfg.ticks = counter_us_to_ticks(counter_dev, 1000);
+
+	err = counter_set_top_value(counter_dev, &top_cfg);
+	zassert_true(err >= 0);
+
+	err = counter_start(counter_dev);
+	zassert_true(err >= 0);
 
 	for (int i = 0; i < ARRAY_SIZE(test_data); i++) {
 		init_buf(txbuf[i], sizeof(txbuf[i]), i);
@@ -387,6 +385,9 @@ ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 				"%d: Unexpected rx bytes count (%d/%d)",
 				i, source[i].cnt, repeat);
 	}
+
+	err = counter_stop(counter_dev);
+	zassert_true(err >= 0);
 }
 
 void *uart_mix_setup(void)
