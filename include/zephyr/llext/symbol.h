@@ -92,7 +92,7 @@ struct llext_symtable {
 /* Extension build: add exported symbols to llext table */
 #define Z_LL_EXTENSION_SYMBOL_NAMED(sym_ident, sym_name)			\
 	static const struct llext_const_symbol					\
-			Z_GENERIC_SECTION(".exported_sym") __used		\
+			Z_GENERIC_SECTION(.exported_sym) __used			\
 			__llext_sym_ ## sym_name = {				\
 		.name = STRINGIFY(sym_name), .addr = (const void *)&sym_ident,	\
 	}
@@ -135,7 +135,7 @@ struct llext_symtable {
 #elif defined(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
 /* SLID-enabled LLEXT application: export symbols, names in separate section */
 #define Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)				\
-	static const char Z_GENERIC_SECTION("llext_exports_strtab") __used	\
+	static const char Z_GENERIC_SECTION(llext_exports_strtab) __used	\
 		__llext_sym_name_ ## sym_name[] = STRINGIFY(sym_name);		\
 	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,		\
 					     __llext_sym_ ## sym_name) = {	\
