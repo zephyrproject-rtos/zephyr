@@ -31,11 +31,11 @@ static struct k_thread cmd_thread;
 #define CMD_QUEUED 2
 struct btp_buf {
 	intptr_t _reserved;
+	uint8_t rsp[BTP_MTU];
 	union {
 		uint8_t data[BTP_MTU];
 		struct btp_hdr hdr;
 	};
-	uint8_t rsp[BTP_MTU];
 };
 
 static struct btp_buf cmd_buf[CMD_QUEUED];
