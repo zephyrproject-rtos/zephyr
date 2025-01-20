@@ -25,7 +25,7 @@ MEMORY
 	#if CONFIG_SOC_RISCV_TELINK_TL721X
 	RAMILM       (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_ilm)),              LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_ilm))
 	#elif CONFIG_SOC_RISCV_TELINK_TL321X
-
+	RAM_ILM_N    (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_ilm_non_retention)),LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_ilm_non_retention))
 	#endif
 #else
 	#if CONFIG_SOC_RISCV_TELINK_TL721X

@@ -53,6 +53,10 @@
 			compatible = "mmio-sram";
 		};
 
+		ram_ilm_non_retention: memory@80000 {
+			compatible = "mmio-sram";
+		};
+
 		mtimer: timer@c6000000 {
 			compatible = "telink,machine-timer";
 			reg = <0xc6000000 0x10000>;
