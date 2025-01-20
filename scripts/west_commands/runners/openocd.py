@@ -9,10 +9,15 @@
 
 import re
 import subprocess
+from os import name as os_name
 from os import path
 from pathlib import Path
 
 from zephyr_ext_common import ZEPHYR_BASE
+
+if os_name != "nt":
+    import sys
+    import termios
 
 try:  # noqa SIM105
     from elftools.elf.elffile import ELFFile
@@ -422,12 +427,29 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         elif command == 'rtt':
             self.print_rttserver_message()
             server_proc = self.popen_ignore_int(server_cmd)
+
+            if os_name != 'nt':
+                # Save the terminal settings
+                fd = sys.stdin.fileno()
+                new_term = termios.tcgetattr(fd)
+                old_term = termios.tcgetattr(fd)
+
+                # New terminal setting unbuffered
+                new_term[3] = new_term[3] & ~termios.ICANON & ~termios.ECHO
+                termios.tcsetattr(fd, termios.TCSAFLUSH, new_term)
+            else:
+                fd = None
+                old_term = None
+
             try:
                 # run the binary with gdb, set up the rtt server (runs to completion)
                 subprocess.run(gdb_cmd)
                 # run the rtt client in the foreground
                 self.run_telnet_client('localhost', self.rtt_port)
             finally:
+                if old_term is not None and fd is not None:
+                    termios.tcsetattr(fd, termios.TCSAFLUSH, old_term)
+
                 server_proc.terminate()
                 server_proc.wait()
 
