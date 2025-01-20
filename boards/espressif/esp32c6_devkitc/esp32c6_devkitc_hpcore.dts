@@ -12,7 +12,7 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "esp32c6_devkitc";
+	model = "esp32c6_devkitc HP Core";
 	compatible = "espressif,esp32c6";
 
 	chosen {
