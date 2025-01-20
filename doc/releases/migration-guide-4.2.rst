@@ -293,6 +293,13 @@ SPI
 Other subsystems
 ****************
 
+ZBus
+====
+
+* The function :c:func:`zbus_chan_add_obs` now requires a :c:struct:`zbus_observer_node` as an argument,
+  which was previously allocated through :c:func:`k_malloc` internally. The structure must remain valid
+  in memory until :c:func:`zbus_chan_rem_obs` is called.
+
 Modules
 *******
 
