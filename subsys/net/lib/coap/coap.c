@@ -1172,7 +1172,7 @@ bool coap_packet_is_request(const struct coap_packet *cpkt)
 {
 	uint8_t code = coap_header_get_code(cpkt);
 
-	return !(code & ~COAP_REQUEST_MASK);
+	return (code != COAP_CODE_EMPTY) && !(code & ~COAP_REQUEST_MASK);
 }
 
 int coap_handle_request_len(struct coap_packet *cpkt,
@@ -1183,7 +1183,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
 			    struct sockaddr *addr, socklen_t addr_len)
 {
 	if (!coap_packet_is_request(cpkt)) {
-		return 0;
+		return -ENOTSUP;
 	}
 
 	/* FIXME: deal with hierarchical resources */
