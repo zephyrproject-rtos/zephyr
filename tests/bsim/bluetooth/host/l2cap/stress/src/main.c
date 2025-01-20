@@ -42,7 +42,7 @@ static void tx_power_get(struct bt_conn *conn)
 
 	err = bt_conn_le_get_tx_power_level(conn, &power_level);
 	if (err) {
-		FAIL("Failed to get tx power level (err %d)", err);
+		TEST_FAIL("Failed to get tx power level (err %d)", err);
 	}
 
 	LOG_INF("Tx power level: %d", power_level.current_level);
