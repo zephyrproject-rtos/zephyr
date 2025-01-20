@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +56,10 @@
 	};
 };
 
+&edma0 {
+	status = "okay";
+};
+
 &systick {
 	status = "okay";
 };
@@ -68,6 +72,15 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_lpuart>;
+	pinctrl-names = "default";
+};
+
+&lpspi14 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI14 RX and TX */
+	dmas = <&edma0 0 73>, <&edma0 1 74>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi14>;
 	pinctrl-names = "default";
 };
 

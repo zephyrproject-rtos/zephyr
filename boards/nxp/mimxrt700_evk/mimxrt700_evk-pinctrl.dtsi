@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -31,6 +31,18 @@
 			pinmux = <LP_FLEXCOMM19_P1_PIO8_15>;
 			slew-rate = "normal";
 			drive-strength = "normal";
+		};
+	};
+
+	pinmux_lpspi14: pinmux_lpspi14 {
+		group0 {
+			pinmux = <LPSPI14_SOUT_PIO3_0>,
+				<LPSPI14_SCK_PIO3_1>,
+				<LPSPI14_SIN_PIO3_2>,
+				<LPSPI14_PCS0_PIO3_3>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
 		};
 	};
 };
