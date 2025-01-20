@@ -1116,6 +1116,11 @@ static int b9x_tx(const struct device *dev,
 
 	do {
 
+		if (net_pkt_ieee802154_mac_hdr_rdy(pkt)) {
+			LOG_WRN("The packet is encrypted and sent directly\n");
+			break;
+		}
+
 		net_pkt_set_ieee802154_frame_secured(pkt, false);
 		net_pkt_set_ieee802154_mac_hdr_rdy(pkt, false);
 
