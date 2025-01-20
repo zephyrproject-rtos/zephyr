@@ -369,6 +369,11 @@ Bluetooth Mesh
   set as deprecated. Default option for platforms that do not support TF-M
   is :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`.
 
+* Mesh explicitly depends on the Secure Storage subsystem if storing into
+  non-volatile memory (:kconfig:option:`CONFIG_BT_SETTINGS`) is enabled and
+  Mbed TLS library (:kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`) is used.
+  Applications should be built with :kconfig:option:`CONFIG_SECURE_STORAGE` enabled.
+
 Bluetooth Audio
 ===============
 
