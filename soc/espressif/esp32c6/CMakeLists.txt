@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_sources(
+zephyr_sources_ifdef(CONFIG_SOC_ESP32C6_HPCORE
   vectors.S
   soc_irq.S
   soc_irq.c
@@ -8,17 +8,26 @@ zephyr_sources(
   ../common/loader.c
   )
 
+zephyr_sources_ifdef(CONFIG_SOC_ESP32C6_LPCORE
+  vector_table_lpcore.S
+  vectors_lpcore.S
+  start_lpcore.S
+  soc_lpcore.c
+  )
+
 zephyr_include_directories(.)
 
-zephyr_sources_ifndef(CONFIG_BOOTLOADER_MCUBOOT hw_init.c)
-
-zephyr_library_sources_ifdef(CONFIG_PM power.c)
-zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+if(CONFIG_SOC_ESP32C6_HPCORE)
+  zephyr_sources_ifndef(CONFIG_BOOTLOADER_MCUBOOT hw_init.c)
+  zephyr_library_sources_ifdef(CONFIG_PM power.c)
+  zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+  zephyr_sources_ifdef(CONFIG_ULP_COPROC_ENABLED hpcore_init_ulp.c)
+endif()
 
 # get flash size to use in esptool as string
 math(EXPR esptoolpy_flashsize "${CONFIG_FLASH_SIZE} / 0x100000")
 
-if(NOT CONFIG_BOOTLOADER_MCUBOOT)
+if(NOT CONFIG_BOOTLOADER_MCUBOOT AND NOT CONFIG_SOC_ESP32C6_LPCORE)
 
   if(CONFIG_BUILD_OUTPUT_BIN)
     # make ESP ROM loader compatible image
@@ -42,18 +51,26 @@ if(NOT CONFIG_BOOTLOADER_MCUBOOT)
 
 endif()
 
-# get code-partition slot0 address
-dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
+if(CONFIG_SOC_ESP32C6_HPCORE)
+  # Get code-partition slot0 address
+  dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
+elseif(CONFIG_SOC_ESP32C6_LPCORE)
+  dt_nodelabel(dts_partition_path NODELABEL "slot0_lpcore_partition")
+endif()
 dt_reg_addr(img_0_off PATH ${dts_partition_path})
 
 # get code-partition boot address
 dt_nodelabel(dts_partition_path NODELABEL "boot_partition")
 dt_reg_addr(boot_off PATH ${dts_partition_path})
 
-if(CONFIG_BOOTLOADER_MCUBOOT)
+if(CONFIG_SOC_ESP32C6_HPCORE)
+  if(CONFIG_BOOTLOADER_MCUBOOT)
+    board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
+  else()
+    board_finalize_runner_args(esp32 "--esp-app-address=${boot_off}")
+  endif()
+elseif(CONFIG_SOC_ESP32C6_LPCORE)
   board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
-else()
-  board_finalize_runner_args(esp32 "--esp-app-address=${boot_off}")
 endif()
 
 if(CONFIG_MCUBOOT)
@@ -71,6 +88,8 @@ endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.ld CACHE INTERNAL "")
+elseif(CONFIG_SOC_ESP32C6_LPCORE)
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default_lpcore.ld CACHE INTERNAL "")
 else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default.ld CACHE INTERNAL "")
 endif()

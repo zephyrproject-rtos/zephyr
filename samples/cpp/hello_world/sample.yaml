@@ -22,3 +22,4 @@ tests:
       - intel_ish_5_4_1
       - intel_ish_5_6_0
       - intel_ish_5_8_0
+      - esp32c6_devkitc/esp32c6/lpcore
