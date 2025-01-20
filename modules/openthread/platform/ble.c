@@ -438,7 +438,7 @@ otError otPlatBleGapAdvStart(otInstance *aInstance, uint16_t aInterval)
 	ARG_UNUSED(aInstance);
 	ARG_UNUSED(aInterval);
 
-	int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	int err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_2, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 
 	if (err != 0 && err != -EALREADY) {
 		LOG_WRN("Advertising failed to start (err %d)", err);
