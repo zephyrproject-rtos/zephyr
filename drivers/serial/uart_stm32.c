@@ -930,9 +930,20 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 	unsigned int key;
 #endif
 
-	if (config->de_enable) {
-		gpio_pin_set(config->de_pin.port, config->de_pin.pin, config->de_invert);
-	}
+#if HAS_DRIVER_ENABLE
+    if (config->de_enable && IS_UART_DRIVER_ENABLE_INSTANCE(config->usart))
+	{
+        /* do nothing here for DE, hardware will handle it */
+    }
+	else
+#endif
+    {
+        /* Software DE control over GPIO */
+        if (config->de_enable)
+		{
+            gpio_pin_set(config->de_pin.port, config->de_pin.pin, config->de_invert);
+        }
+    }
 
 #ifdef CONFIG_PM
 	key = irq_lock();
@@ -951,14 +962,27 @@ static void uart_stm32_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
-	if (config->de_enable) {
-		if (config->de_deassert_time_us) {
-			k_timer_start(&data->rs485_timer, K_USEC(config->de_deassert_time_us),
-				      K_NO_WAIT);
-		} else {
-			gpio_pin_set(config->de_pin.port, config->de_pin.pin, !config->de_invert);
-		}
-	}
+
+#if HAS_DRIVER_ENABLE
+    if (!(config->de_enable && IS_UART_DRIVER_ENABLE_INSTANCE(config->usart)))
+	{
+#endif
+        if (config->de_enable)
+		{
+            if (config->de_deassert_time_us)
+			{
+                k_timer_start(&data->rs485_timer,
+                              K_USEC(config->de_deassert_time_us),
+                              K_NO_WAIT);
+            }
+			else
+			{
+                gpio_pin_set(config->de_pin.port, config->de_pin.pin, !config->de_invert);
+            }
+        }
+#if HAS_DRIVER_ENABLE
+    }
+#endif
 
 #ifdef CONFIG_PM
 
