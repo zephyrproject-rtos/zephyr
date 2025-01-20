@@ -19,6 +19,6 @@ overlay=overlay_pst_conf
 RunTest mesh_lcd_test_max_metadata_access_payload \
 	lcd_cli_max_sdu_metadata_request lcd_srv_metadata_status_respond
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTest mesh_lcd_test_max_metadata_access_payload_psa \
 	lcd_cli_max_sdu_metadata_request lcd_srv_metadata_status_respond

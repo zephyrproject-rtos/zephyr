@@ -246,22 +246,26 @@ static void bridge_entry_remove(uint16_t src, uint16_t dst, uint16_t net_idx1, u
 static void tester_bridge_configure(void)
 {
 	uint8_t status;
-	int err;
 
 	LOG_INF("Configuring bridge...");
 
+	ASSERT_OK(
+		bt_mesh_cfg_cli_net_transmit_set(0, BRIDGE_ADDR, BT_MESH_TRANSMIT(2, 20), &status));
+	if (status != BT_MESH_TRANSMIT(2, 20)) {
+		FAIL("Net transmit set failed (status %u)", status);
+	}
+
 	for (int i = 0; i < remote_nodes; i++) {
-		err = bt_mesh_cfg_cli_net_key_add(0, BRIDGE_ADDR, i + 1, subnet_keys[i], &status);
-		if (err || status) {
-			FAIL("NetKey add failed (err %d, status %u)", err, status);
-			return;
+		ASSERT_OK(bt_mesh_cfg_cli_net_key_add(0, BRIDGE_ADDR, i + 1, subnet_keys[i],
+						      &status));
+		if (status) {
+			FAIL("NetKey add failed (status %u)", status);
 		}
 	}
 
 	ASSERT_OK(bt_mesh_brg_cfg_cli_set(0, BRIDGE_ADDR, BT_MESH_BRG_CFG_ENABLED, &status));
 	if (status != BT_MESH_BRG_CFG_ENABLED) {
 		FAIL("Subnet bridge set failed (status %u)", status);
-		return;
 	}
 
 	/* Disable Relay feature to avoid interference in the test. */
@@ -271,7 +275,6 @@ static void tester_bridge_configure(void)
 					    BT_MESH_TRANSMIT(2, 20), &status, &transmit));
 	if (status) {
 		FAIL("Relay set failed (status %u)", status);
-		return;
 	}
 
 	LOG_INF("Bridge configured");
