@@ -197,6 +197,12 @@ config USE_RZ_FSP_EXT_IRQ
 	bool
 	help
 	  Enable RZ FSP External IRQ driver
+
+config USE_RZ_FSP_DMA
+	bool
+	help
+	  Enable RZ FSP DMA driver
+
 config USE_RZ_FSP_MHU
 	bool
 	help

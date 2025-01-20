@@ -1,0 +1,39 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RZ DMA controller
+
+  channel: Select channel for data transmitting
+
+  config: A 32bit mask specifying the DMA channel configuration
+
+   Example of devicetree configuration
+
+   &ssi0 {
+        status = "okay";
+
+        dmas = <&dma0 0 RZ_DMA_PERIPH_TO_MEM>, <&dma0 5 RZ_DMA_MEM_TO_PERIPH>
+        dma-names = "rx", "tx";
+   };
+
+compatible: "renesas,rz-dma"
+
+include: [dma-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  "#dma-cells":
+    const: 2
+
+dma-cells:
+  - channel
+  - config
