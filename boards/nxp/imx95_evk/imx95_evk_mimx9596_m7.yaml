@@ -17,4 +17,7 @@ supported:
   - uart
   - i2c
   - pwm
+testing:
+  binaries:
+    - flash.bin
 vendor: nxp
