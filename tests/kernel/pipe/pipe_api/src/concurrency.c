@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(k_pipe_concurrency, LOG_LEVEL_DBG);
 ZTEST_SUITE(k_pipe_concurrency, NULL, NULL, NULL, NULL, NULL);
 
 static const int partial_wait_time = 2000;
-static const int dummy_data_size = 16;
+#define DUMMY_DATA_SIZE 16
 static struct k_thread thread;
 static K_THREAD_STACK_DEFINE(stack, 1024);
 
@@ -29,7 +29,7 @@ static void thread_reset(void *arg1, void *arg2, void *arg3)
 
 static void thread_write(void *arg1, void *arg2, void *arg3)
 {
-	uint8_t garbage[dummy_data_size];
+	uint8_t garbage[DUMMY_DATA_SIZE] = {};
 
 	zassert_true(k_pipe_write((struct k_pipe *)arg1, garbage, sizeof(garbage),
 		K_MSEC(partial_wait_time)) == sizeof(garbage), "Failed to write to pipe");
@@ -37,7 +37,7 @@ static void thread_write(void *arg1, void *arg2, void *arg3)
 
 static void thread_read(void *arg1, void *arg2, void *arg3)
 {
-	uint8_t garbage[dummy_data_size];
+	uint8_t garbage[DUMMY_DATA_SIZE];
 
 	zassert_true(k_pipe_read((struct k_pipe *)arg1, garbage, sizeof(garbage),
 		K_MSEC(partial_wait_time)) == sizeof(garbage), "Failed to read from pipe");
@@ -47,7 +47,7 @@ ZTEST(k_pipe_concurrency, test_close_on_read)
 {
 	k_tid_t tid;
 	struct k_pipe pipe;
-	uint8_t buffer[dummy_data_size];
+	uint8_t buffer[DUMMY_DATA_SIZE];
 	uint8_t res;
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -65,8 +65,8 @@ ZTEST(k_pipe_concurrency, test_close_on_write)
 {
 	k_tid_t tid;
 	struct k_pipe pipe;
-	uint8_t buffer[dummy_data_size];
-	uint8_t garbage[dummy_data_size];
+	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t garbage[DUMMY_DATA_SIZE];
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
 	zassert_true(sizeof(garbage) == k_pipe_write(&pipe, garbage, sizeof(garbage), K_MSEC(1000)),
@@ -86,7 +86,7 @@ ZTEST(k_pipe_concurrency, test_reset_on_read)
 {
 	k_tid_t tid;
 	struct k_pipe pipe;
-	uint8_t buffer[dummy_data_size];
+	uint8_t buffer[DUMMY_DATA_SIZE];
 	uint8_t res;
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -107,8 +107,8 @@ ZTEST(k_pipe_concurrency, test_reset_on_write)
 {
 	k_tid_t tid;
 	struct k_pipe pipe;
-	uint8_t buffer[dummy_data_size];
-	uint8_t garbage[dummy_data_size];
+	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t garbage[DUMMY_DATA_SIZE];
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
 	zassert_true(sizeof(garbage) == k_pipe_write(&pipe, garbage, sizeof(garbage), K_MSEC(1000)),
@@ -130,8 +130,8 @@ ZTEST(k_pipe_concurrency, test_partial_read)
 {
 	k_tid_t tid;
 	struct k_pipe pipe;
-	uint8_t buffer[dummy_data_size];
-	uint8_t garbage[dummy_data_size];
+	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t garbage[DUMMY_DATA_SIZE];
 	size_t write_size = sizeof(garbage)/2;
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -150,8 +150,8 @@ ZTEST(k_pipe_concurrency, test_partial_write)
 {
 	k_tid_t tid;
 	struct k_pipe pipe;
-	uint8_t buffer[dummy_data_size];
-	uint8_t garbage[dummy_data_size];
+	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t garbage[DUMMY_DATA_SIZE];
 	size_t read_size = sizeof(garbage)/2;
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
