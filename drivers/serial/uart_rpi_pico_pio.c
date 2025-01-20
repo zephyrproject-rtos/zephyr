@@ -39,15 +39,15 @@ RPI_PICO_PIO_DEFINE_PROGRAM(uart_tx, 0, 3,
 		/* .wrap */
 );
 
-RPI_PICO_PIO_DEFINE_PROGRAM(uart_rx, 0, 8,
+RPI_PICO_PIO_DEFINE_PROGRAM(uart_rx, 1, 8,
+	0x20a0, /*  0: wait   1 pin, 0                    */
 		/*  .wrap_target */
-	0x2020, /*  0: wait   0 pin, 0                    */
-	0xea27, /*  1: set    x, 7                   [10] */
-	0x4001, /*  2: in     pins, 1                     */
-	0x0642, /*  3: jmp    x--, 2                 [6]  */
-	0x00c8, /*  4: jmp    pin, 8                      */
-	0xc014, /*  5: irq    nowait 4 rel                */
-	0x20a0, /*  6: wait   1 pin, 0                    */
+	0x2020, /*  1: wait   0 pin, 0                    */
+	0xea27, /*  2: set    x, 7                   [10] */
+	0x4001, /*  3: in     pins, 1                     */
+	0x0643, /*  4: jmp    x--, 3                 [6]  */
+	0x00c8, /*  5: jmp    pin, 8                      */
+	0xc014, /*  6: irq    nowait 4 rel                */
 	0x0000, /*  7: jmp    0                           */
 	0x8020, /*  8: push   block                       */
 		/*  .wrap */
