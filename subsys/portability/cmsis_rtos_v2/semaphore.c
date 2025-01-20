@@ -8,7 +8,7 @@
 #include <string.h>
 #include "wrapper.h"
 
-K_MEM_SLAB_DEFINE(cv2_semaphore_slab, sizeof(struct cv2_sem),
+K_MEM_SLAB_DEFINE(cmsis_rtos_semaphore_cb_slab, sizeof(struct cmsis_rtos_semaphore_cb),
 		  CONFIG_CMSIS_V2_SEMAPHORE_MAX_COUNT, 4);
 
 static const osSemaphoreAttr_t init_sema_attrs = {
@@ -24,7 +24,7 @@ static const osSemaphoreAttr_t init_sema_attrs = {
 osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 			       const osSemaphoreAttr_t *attr)
 {
-	struct cv2_sem *semaphore;
+	struct cmsis_rtos_semaphore_cb *semaphore;
 
 	if (k_is_in_isr()) {
 		return NULL;
@@ -34,9 +34,9 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 		attr = &init_sema_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_semaphore_slab,
-			     (void **)&semaphore, K_MSEC(100)) == 0) {
-		(void)memset(semaphore, 0, sizeof(struct cv2_sem));
+	if (k_mem_slab_alloc(&cmsis_rtos_semaphore_cb_slab, (void **)&semaphore, K_MSEC(100)) ==
+	    0) {
+		(void)memset(semaphore, 0, sizeof(struct cmsis_rtos_semaphore_cb));
 	} else {
 		return NULL;
 	}
@@ -44,11 +44,9 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 	k_sem_init(&semaphore->z_semaphore, initial_count, max_count);
 
 	if (attr->name == NULL) {
-		strncpy(semaphore->name, init_sema_attrs.name,
-			sizeof(semaphore->name) - 1);
+		strncpy(semaphore->name, init_sema_attrs.name, sizeof(semaphore->name) - 1);
 	} else {
-		strncpy(semaphore->name, attr->name,
-			sizeof(semaphore->name) - 1);
+		strncpy(semaphore->name, attr->name, sizeof(semaphore->name) - 1);
 	}
 
 	return (osSemaphoreId_t)semaphore;
@@ -59,7 +57,7 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
  */
 osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *) semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 	int status;
 
 	if (semaphore_id == NULL) {
@@ -76,8 +74,7 @@ osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 	} else if (timeout == 0U) {
 		status = k_sem_take(&semaphore->z_semaphore, K_NO_WAIT);
 	} else {
-		status = k_sem_take(&semaphore->z_semaphore,
-				    K_TICKS(timeout));
+		status = k_sem_take(&semaphore->z_semaphore, K_TICKS(timeout));
 	}
 
 	if (status == -EBUSY) {
@@ -91,7 +88,7 @@ osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 
 uint32_t osSemaphoreGetCount(osSemaphoreId_t semaphore_id)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 
 	if (semaphore_id == NULL) {
 		return 0;
@@ -105,15 +102,14 @@ uint32_t osSemaphoreGetCount(osSemaphoreId_t semaphore_id)
  */
 osStatus_t osSemaphoreRelease(osSemaphoreId_t semaphore_id)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *) semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 
 	if (semaphore_id == NULL) {
 		return osErrorParameter;
 	}
 
 	/* All tokens have already been released */
-	if (k_sem_count_get(&semaphore->z_semaphore) ==
-	    semaphore->z_semaphore.limit) {
+	if (k_sem_count_get(&semaphore->z_semaphore) == semaphore->z_semaphore.limit) {
 		return osErrorResource;
 	}
 
@@ -127,7 +123,7 @@ osStatus_t osSemaphoreRelease(osSemaphoreId_t semaphore_id)
  */
 osStatus_t osSemaphoreDelete(osSemaphoreId_t semaphore_id)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 
 	if (semaphore_id == NULL) {
 		return osErrorParameter;
@@ -142,14 +138,14 @@ osStatus_t osSemaphoreDelete(osSemaphoreId_t semaphore_id)
 	 * supported in Zephyr.
 	 */
 
-	k_mem_slab_free(&cv2_semaphore_slab, (void *)semaphore);
+	k_mem_slab_free(&cmsis_rtos_semaphore_cb_slab, (void *)semaphore);
 
 	return osOK;
 }
 
 const char *osSemaphoreGetName(osSemaphoreId_t semaphore_id)
 {
-	struct cv2_sem *semaphore = (struct cv2_sem *)semaphore_id;
+	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 
 	if (!k_is_in_isr() && (semaphore_id != NULL)) {
 		return semaphore->name;
