@@ -36,27 +36,27 @@ RunTestFlash blob_recover_phase \
    blob_cli_stop -flash_rm blob_srv_stop -flash_rm -- -argstest expected-phase=4
 
 # The same test but with PSA crypto
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash blob_recover_phase_psa \
    blob_cli_stop -flash_erase blob_srv_stop -flash_erase -- -argstest expected-phase=1
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash blob_recover_phase_psa \
    blob_cli_stop blob_srv_stop -- -argstest expected-phase=2
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash blob_recover_phase_psa \
    blob_cli_stop blob_srv_stop -- -argstest expected-phase=3
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash blob_recover_phase_psa \
    blob_cli_stop -flash_rm blob_srv_stop -flash_rm -- -argstest expected-phase=4
 
 # Test reaching suspended state and continuation after reboot on new procedure.
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash blob_recover_phase_psa \
    blob_cli_stop -flash_erase blob_srv_stop -flash_erase -- -argstest expected-phase=5
 
-overlay="overlay_pst_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
 RunTestFlash blob_recover_phase_psa \
    blob_cli_stop -flash_rm blob_srv_stop -flash_rm -- -argstest expected-phase=4

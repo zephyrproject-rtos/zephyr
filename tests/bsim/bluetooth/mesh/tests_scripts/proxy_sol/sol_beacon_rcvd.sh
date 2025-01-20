@@ -13,7 +13,7 @@ RunTest proxy_sol_beacon_rcvd \
 	proxy_sol_tester_beacon_rcvd \
 	proxy_sol_iut_beacon_send
 
-overlay="overlay_pst_conf_overlay_gatt_conf_overlay_psa_conf"
+overlay="overlay_pst_conf_overlay_ss_conf_overlay_gatt_conf_overlay_psa_conf"
 RunTest proxy_sol_beacon_rcvd_psa \
 	proxy_sol_tester_beacon_rcvd \
 	proxy_sol_iut_beacon_send
