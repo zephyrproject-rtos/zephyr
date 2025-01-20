@@ -155,6 +155,36 @@
 		#clock-cells = <1>;
 	};
 
+	edma0: dma-controller@140000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
+		dma-channels = <16>;
+		dma-requests = <105>;
+		reg = <0x140000 0x1000>;
+		interrupts = <59 0>, <60 0>, <61 0>, <62 0>,
+			<63 0>, <64 0>, <65 0>, <66 0>,
+			<67 0>, <68 0>, <69 0>, <70 0>,
+			<71 0>, <72 0>, <73 0>, <74 0>;
+		no-error-irq;
+		status = "disabled";
+	};
+
+	edma1: dma-controller@160000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
+		dma-channels = <16>;
+		dma-requests = <105>;
+		reg = <0x160000 0x1000>;
+		interrupts = <75 0>, <76 0>, <77 0>, <78 0>,
+			<79 0>, <80 0>, <81 0>, <82 0>,
+			<83 0>, <84 0>, <85 0>, <86 0>,
+			<87 0>, <88 0>, <89 0>, <90 0>;
+		no-error-irq;
+		status = "disabled";
+	};
+
 	syscon0: syscon@2000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x2000 0x1000>;
@@ -294,7 +324,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM0_CLK>;
 			status = "disabled";
 		};
-		flexcomm0_lpspi0: lpspi@110000 {
+		flexcomm0_lpspi0: spi@110000 {
 			compatible = "nxp,lpspi";
 			reg = <0x110000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM0_CLK>;
@@ -329,7 +359,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM1_CLK>;
 			status = "disabled";
 		};
-		flexcomm1_lpspi1: lpspi@111000 {
+		flexcomm1_lpspi1: spi@111000 {
 			compatible = "nxp,lpspi";
 			reg = <0x111000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM1_CLK>;
@@ -364,7 +394,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM2_CLK>;
 			status = "disabled";
 		};
-		flexcomm2_lpspi2: lpspi@112000 {
+		flexcomm2_lpspi2: spi@112000 {
 			compatible = "nxp,lpspi";
 			reg = <0x112000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM2_CLK>;
@@ -399,7 +429,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM3_CLK>;
 			status = "disabled";
 		};
-		flexcomm3_lpspi3: lpspi@113000 {
+		flexcomm3_lpspi3: spi@113000 {
 			compatible = "nxp,lpspi";
 			reg = <0x113000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM3_CLK>;
@@ -434,7 +464,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM4_CLK>;
 			status = "disabled";
 		};
-		flexcomm4_lpspi4: lpspi@171000 {
+		flexcomm4_lpspi4: spi@171000 {
 			compatible = "nxp,lpspi";
 			reg = <0x171000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM4_CLK>;
@@ -469,7 +499,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM5_CLK>;
 			status = "disabled";
 		};
-		flexcomm5_lpspi5: lpspi@172000 {
+		flexcomm5_lpspi5: spi@172000 {
 			compatible = "nxp,lpspi";
 			reg = <0x172000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM5_CLK>;
@@ -504,7 +534,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM6_CLK>;
 			status = "disabled";
 		};
-		flexcomm6_lpspi6: lpspi@173000 {
+		flexcomm6_lpspi6: spi@173000 {
 			compatible = "nxp,lpspi";
 			reg = <0x173000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM6_CLK>;
@@ -539,7 +569,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM7_CLK>;
 			status = "disabled";
 		};
-		flexcomm7_lpspi7: lpspi@174000 {
+		flexcomm7_lpspi7: spi@174000 {
 			compatible = "nxp,lpspi";
 			reg = <0x174000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM7_CLK>;
@@ -574,7 +604,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM8_CLK>;
 			status = "disabled";
 		};
-		flexcomm8_lpspi8: lpspi@199000 {
+		flexcomm8_lpspi8: spi@199000 {
 			compatible = "nxp,lpspi";
 			reg = <0x199000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM8_CLK>;
@@ -609,7 +639,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM9_CLK>;
 			status = "disabled";
 		};
-		flexcomm9_lpspi9: lpspi@19a000 {
+		flexcomm9_lpspi9: spi@19a000 {
 			compatible = "nxp,lpspi";
 			reg = <0x19a000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM9_CLK>;
@@ -644,7 +674,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM10_CLK>;
 			status = "disabled";
 		};
-		flexcomm10_lpspi10: lpspi@19b000 {
+		flexcomm10_lpspi10: spi@19b000 {
 			compatible = "nxp,lpspi";
 			reg = <0x19b000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM10_CLK>;
@@ -679,7 +709,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM11_CLK>;
 			status = "disabled";
 		};
-		flexcomm11_lpspi11: lpspi@19c000 {
+		flexcomm11_lpspi11: spi@19c000 {
 			compatible = "nxp,lpspi";
 			reg = <0x19c000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM11_CLK>;
@@ -714,7 +744,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM12_CLK>;
 			status = "disabled";
 		};
-		flexcomm12_lpspi12: lpspi@19d000 {
+		flexcomm12_lpspi12: spi@19d000 {
 			compatible = "nxp,lpspi";
 			reg = <0x19d000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM12_CLK>;
@@ -749,7 +779,7 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM13_CLK>;
 			status = "disabled";
 		};
-		flexcomm13_lpspi13: lpspi@19e000 {
+		flexcomm13_lpspi13: spi@19e000 {
 			compatible = "nxp,lpspi";
 			reg = <0x19e000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM13_CLK>;
