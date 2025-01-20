@@ -116,9 +116,11 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 			int ret = net_ipv4_igmp_join(iface,
 					&net_sin(&v4_ctx[i].dispatcher.local_addr)->sin_addr,
 					NULL);
-			if (ret < 0) {
-				NET_DBG("Cannot add IPv4 multicast address to iface %d",
-					net_if_get_by_iface(iface));
+			if (ret < 0 && ret != -EALREADY) {
+				NET_DBG("Cannot add IPv4 multicast address %s to iface %d (%d)",
+					net_sprint_ipv4_addr(&net_sin(
+						&v4_ctx[i].dispatcher.local_addr)->sin_addr),
+					net_if_get_by_iface(iface), ret);
 			}
 		}
 #endif /* defined(CONFIG_NET_IPV4) */
