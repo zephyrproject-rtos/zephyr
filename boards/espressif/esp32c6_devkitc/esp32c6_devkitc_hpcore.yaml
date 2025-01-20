@@ -1,5 +1,5 @@
-identifier: esp32c6_devkitc
-name: ESP32-C6
+identifier: esp32c6_devkitc/esp32c6/hpcore
+name: ESP32-C6-DevKitC HP Core
 vendor: espressif
 type: mcu
 arch: riscv

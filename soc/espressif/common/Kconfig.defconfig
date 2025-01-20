@@ -4,7 +4,7 @@
 if SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
 
 config GEN_ISR_TABLES
-	default y
+	default y if !SOC_ESP32C6_LPCORE
 
 config GEN_SW_ISR_TABLE
 	default y
@@ -13,7 +13,7 @@ config GEN_IRQ_VECTOR_TABLE
 	default n
 
 config DYNAMIC_INTERRUPTS
-	default y
+	default y if !SOC_ESP32C6_LPCORE
 
 config ISR_STACK_SIZE
 	default 2048

@@ -1,19 +1,19 @@
 common:
   integration_platforms:
-    - esp32c6_devkitc
+    - esp32c6_devkitc/esp32c6/hpcore
 tests:
   boards.esp32.rtc_clk:
     platform_allow:
       - esp32_devkitc_wrover/esp32/procpu
       - esp32c3_devkitm
-      - esp32c6_devkitc
+      - esp32c6_devkitc/esp32c6/hpcore
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
   boards.esp32.rtc_clk.xtal:
     platform_allow:
       - esp32_devkitc_wrover/esp32/procpu
       - esp32c3_devkitm
-      - esp32c6_devkitc
+      - esp32c6_devkitc/esp32c6/hpcore
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
     harness_config:
