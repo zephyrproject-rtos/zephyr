@@ -1033,13 +1033,12 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_PKT_ALLOC_STATS)
 	uint32_t start_time = k_cycle_get_32();
-	size_t total_size = size;
+	size_t total_size = size + headroom;
 #else
 	ARG_UNUSED(pkt);
 #endif
-	ARG_UNUSED(headroom);
 
-	buf = net_buf_alloc_len(pool, size, timeout);
+	buf = net_buf_alloc_len(pool, size + headroom, timeout);
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_FRAG_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
