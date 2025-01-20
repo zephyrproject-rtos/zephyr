@@ -454,8 +454,6 @@ drop:
 
 enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 {
-	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
-
 	if (IS_ENABLED(CONFIG_NET_IPV4_PMTU)) {
 		struct net_pmtu_entry *entry;
 		struct sockaddr_in dst = {
