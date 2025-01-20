@@ -22,6 +22,9 @@ set(arduino_uno_r4_minima_DEPRECATED
 set(arduino_uno_r4_wifi_DEPRECATED
     arduino_uno_r4@wifi
 )
+set(esp32c6_devkitc_DEPRECATED
+    esp32c6_devkitc/esp32c6/hpcore
+)
 set(qemu_xtensa_DEPRECATED
     qemu_xtensa/dc233c
 )

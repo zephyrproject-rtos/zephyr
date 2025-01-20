@@ -18,3 +18,25 @@ config MAIN_STACK_SIZE
 	default 2048
 
 endif # SOC_SERIES_ESP32C6
+
+if SOC_ESP32C6_LPCORE
+
+config GEN_ISR_TABLES
+	default n
+
+config SYS_CLOCK_EXISTS
+	default n
+
+config KERNEL_MEM_POOL
+	default n
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 0
+
+config MULTITHREADING
+	default n
+
+config NUM_PREEMPT_PRIORITIES
+	default 0
+
+endif
