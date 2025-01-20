@@ -18,6 +18,7 @@ General Guidelines
    contributor_expectations.rst
    reviewer_expectations.rst
    coding_guidelines/index.rst
+   style_guidelines.rst
    proposals_and_rfcs.rst
    modifying_contributions.rst
 
@@ -41,8 +42,9 @@ General Guidelines
    Code contributions are expected to follow a set of coding guidelines to ensure consistency and
    readability across the code base.
 
-   This page describes these guidelines and introduces important considerations regarding the use of
-   :ref:`inclusive language <coding_guideline_inclusive_language>`.
+:ref:`coding_style`
+   Code contributions are expected to follow a set of style guidelines to ensure consistency and
+   readability across the code base.
 
 :ref:`rfcs`
    Learn when and how to submit RFCs (Request for Comments) for new features and changes to the
