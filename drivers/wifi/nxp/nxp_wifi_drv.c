@@ -492,6 +492,11 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 			nxp_wlan_uap_network.channel = params->channel;
 		}
 
+		if (nxp_wlan_uap_network.channel == 0) {
+			nxp_wlan_uap_network.acs_band =
+				(params->band == WIFI_FREQ_BAND_5_GHZ) ? 1 : 0;
+		}
+
 		if (params->mfp == WIFI_MFP_REQUIRED) {
 			nxp_wlan_uap_network.security.mfpc = true;
 			nxp_wlan_uap_network.security.mfpr = true;
@@ -1103,8 +1108,13 @@ static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_statu
 				status->link_mode = WIFI_3;
 			}
 
-			status->band = nxp_wlan_uap_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
-									 : WIFI_FREQ_BAND_2_4_GHZ;
+			if (nxp_wlan_uap_network.channel != 0) {
+				status->band = nxp_wlan_uap_network.channel > 14 ?
+					WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+			} else {
+				status->band = nxp_wlan_uap_network.acs_band;
+			}
+
 			status->security = nxp_wifi_key_mgmt_to_zephyr(
 				nxp_wlan_uap_network.security.key_mgmt,
 				nxp_wlan_uap_network.security.pwe_derivation);
