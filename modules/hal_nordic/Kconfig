@@ -23,6 +23,7 @@ menuconfig NRF_802154_RADIO_DRIVER
 	depends on HAS_HW_NRF_RADIO_IEEE802154
 	select DYNAMIC_INTERRUPTS
 	select ENTROPY_GENERATOR
+	select CLOCK_CONTROL
 	depends on !$(dt_nodelabel_enabled,timer1)
 	help
 	  This option enables nRF IEEE 802.15.4 radio driver in Zephyr. Note,
