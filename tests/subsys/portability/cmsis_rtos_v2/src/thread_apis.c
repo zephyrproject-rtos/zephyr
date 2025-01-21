@@ -6,7 +6,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
+#include <zephyr/portability/cmsis_types.h>
 
 #define STACKSZ CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
@@ -361,5 +362,27 @@ ZTEST(cmsis_thread_apis, test_thread_joinable_terminate)
 	zassert_equal(status, osOK, "osThreadTerminate failed.");
 
 	osDelay(k_ms_to_ticks_ceil32(DELTA_MS));
+}
+
+static K_THREAD_STACK_DEFINE(test_stack7, STACKSZ);
+static struct cmsis_rtos_thread_cb test_cb7;
+static const osThreadAttr_t os_thread7_attr = {
+	.name = "Thread7",
+	.cb_mem = &test_cb7,
+	.cb_size = sizeof(test_cb7),
+	.stack_mem = &test_stack7,
+	.stack_size = STACKSZ,
+	.priority = osPriorityNormal,
+};
+static void thread7(void *argument)
+{
+	printf("Thread 7 ran\n");
+}
+ZTEST(cmsis_thread_apis, test_thread_apis_static_allocation)
+{
+	osThreadId_t id;
+
+	id = osThreadNew(thread7, NULL, &os_thread7_attr);
+	zassert_not_null(id, "Failed to create thread with osThreadNew using static cb/stack");
 }
 ZTEST_SUITE(cmsis_thread_apis, NULL, NULL, NULL, NULL, NULL);

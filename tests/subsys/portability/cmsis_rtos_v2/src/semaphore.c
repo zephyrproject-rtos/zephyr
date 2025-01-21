@@ -6,7 +6,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
+#include <zephyr/portability/cmsis_types.h>
 
 #define WAIT_TICKS    5
 #define TIMEOUT_TICKS (10 + WAIT_TICKS)
@@ -102,5 +103,22 @@ ZTEST(cmsis_semaphore, test_semaphore)
 
 	status = osSemaphoreDelete(semaphore_id);
 	zassert_true(status == osOK, "semaphore delete failure");
+}
+
+static struct cmsis_rtos_semaphore_cb semaphore_cb2;
+static const osSemaphoreAttr_t semaphore_attrs2 = {
+	.name = "Semaphore2",
+	.attr_bits = 0,
+	.cb_mem = &semaphore_cb2,
+	.cb_size = sizeof(semaphore_cb2),
+};
+ZTEST(cmsis_semaphore, test_semaphore_static_allocation)
+{
+	osSemaphoreId_t id;
+
+	id = osSemaphoreNew(1, 1, &semaphore_attrs2);
+	zassert_not_null(id, "Failed creating semaphores using static cb");
+
+	zassert_true(osSemaphoreDelete(id) == osOK, "semaphore delete failure");
 }
 ZTEST_SUITE(cmsis_semaphore, NULL, NULL, NULL, NULL, NULL);
