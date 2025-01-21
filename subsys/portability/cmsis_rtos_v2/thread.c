@@ -26,10 +26,12 @@ static const osThreadAttr_t init_thread_attrs = {
 };
 
 static sys_dlist_t thread_list;
-static struct cmsis_rtos_thread_cb cmsis_rtos_thread_cb_pool[CONFIG_CMSIS_V2_THREAD_MAX_COUNT];
 static atomic_t thread_num;
-static atomic_t thread_num_dynamic;
 
+static atomic_t num_dynamic_cb;
+static struct cmsis_rtos_thread_cb cmsis_rtos_thread_cb_pool[CONFIG_CMSIS_V2_THREAD_MAX_COUNT];
+
+static atomic_t num_dynamic_stack;
 #if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
 static K_THREAD_STACK_ARRAY_DEFINE(cmsis_rtos_thread_stack_pool,
 				   CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT,
@@ -129,8 +131,12 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 		cv2_prio = attr->priority;
 	}
 
-	if ((attr->stack_mem == NULL) &&
-	    (thread_num_dynamic >= CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT)) {
+	if (attr->cb_mem == NULL && num_dynamic_cb >= CONFIG_CMSIS_V2_THREAD_MAX_COUNT) {
+		return NULL;
+	}
+
+	if (attr->stack_mem == NULL &&
+	    num_dynamic_stack >= CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT) {
 		return NULL;
 	}
 
@@ -154,21 +160,20 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 		}
 	}
 
-	prio = cmsis_to_zephyr_priority(cv2_prio);
+	this_thread_num = atomic_inc(&thread_num);
 
-	this_thread_num = atomic_inc((atomic_t *)&thread_num);
-
-	tid = &cmsis_rtos_thread_cb_pool[this_thread_num];
+	uint32_t this_dynamic_cb = atomic_inc(&num_dynamic_cb);
+	tid = &cmsis_rtos_thread_cb_pool[this_dynamic_cb];
 	tid->attr_bits = attr->attr_bits;
 
 #if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
 	if (attr->stack_mem == NULL) {
-		uint32_t this_thread_num_dynamic;
+		uint32_t this_dynamic_stack;
 		__ASSERT(CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE > 0,
 			 "dynamic stack size must be configured to be non-zero\n");
-		this_thread_num_dynamic = atomic_inc((atomic_t *)&thread_num_dynamic);
+		this_dynamic_stack = atomic_inc(&num_dynamic_stack);
 		stack_size = CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE;
-		stack = cmsis_rtos_thread_stack_pool[this_thread_num_dynamic];
+		stack = cmsis_rtos_thread_stack_pool[this_dynamic_stack];
 	} else
 #endif
 	{
@@ -191,6 +196,8 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 
 	k_sem_init(&tid->join_guard, 0, 1);
 	tid->has_joined = FALSE;
+
+	prio = cmsis_to_zephyr_priority(cv2_prio);
 
 	(void)k_thread_create(&tid->z_thread, stack, stack_size, zephyr_thread_wrapper, (void *)arg,
 			      tid, threadfunc, prio, 0, K_NO_WAIT);
