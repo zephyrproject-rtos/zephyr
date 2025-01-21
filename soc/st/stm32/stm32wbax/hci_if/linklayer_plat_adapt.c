@@ -119,7 +119,7 @@ void LINKLAYER_PLAT_TriggerSwLowIT(uint8_t priority)
 {
 	uint8_t low_isr_priority = RADIO_INTR_PRIO_LOW_Z;
 
-	LOG_DBG("Priotity: %d", priority);
+	LOG_DBG("Priority: %d", priority);
 
 	/* Check if a SW low interrupt as already been raised.
 	 * Nested call far radio low isr are not supported
@@ -238,10 +238,23 @@ void LINKLAYER_PLAT_RCOStopClbr(void)
 /* Required only for RCO module usage in the context of LSI2 calibration */
 }
 
+/* TODO: To do when porting the temperature measurement function and thread */
 void LINKLAYER_PLAT_RequestTemperature(void) {}
 
 void LINKLAYER_PLAT_SCHLDR_TIMING_UPDATE_NOT(Evnt_timing_t *p_evnt_timing) {}
 
-void LINKLAYER_PLAT_EnableOSContextSwitch(void) {}
+void LINKLAYER_PLAT_EnableOSContextSwitch(void)
+{
+	/* No implementation is needed. However, this function may be used to notify
+	 * upper layers that the link layer has just finished a critical radio job
+	 * (radio channels' calibration).
+	 **/
+}
 
-void LINKLAYER_PLAT_DisableOSContextSwitch(void) {}
+void LINKLAYER_PLAT_DisableOSContextSwitch(void)
+{
+	/* No implementation is needed. However, this function may be used to notify upper layers
+	 * that the link layer is running a critical radio job (radio channels' calibration);
+	 * A sequence of radio ISRs will appear in the next few milli seconds.
+	 **/
+}
