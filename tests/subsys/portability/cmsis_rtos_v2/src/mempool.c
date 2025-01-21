@@ -6,7 +6,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
+#include <zephyr/portability/cmsis_types.h>
 
 #define MAX_BLOCKS    10
 #define TIMEOUT_TICKS 10
@@ -123,5 +124,29 @@ ZTEST(cmsis_mempool, test_mempool)
 	zassert_true(mp_id != NULL, "mempool creation failed");
 
 	mempool_common_tests(mp_id, mp_attrs.name);
+}
+
+static struct cmsis_rtos_mempool_cb mempool_cb2;
+static const osMemoryPoolAttr_t mp_attrs2 = {
+	.name = "TestMempool2",
+	.attr_bits = 0,
+	.cb_mem = &mempool_cb2,
+	.cb_size = sizeof(mempool_cb2),
+	.mp_mem = sample_mem,
+	.mp_size = sizeof(struct mem_block) * MAX_BLOCKS,
+};
+/**
+ * @brief Test memory pool allocation and free
+ *
+ * @see osMemoryPoolNew(), osMemoryPoolAlloc(), osMemoryPoolFree(),
+ */
+ZTEST(cmsis_mempool, test_mempool_static_allocation)
+{
+	osMemoryPoolId_t mp_id;
+
+	mp_id = osMemoryPoolNew(MAX_BLOCKS, sizeof(struct mem_block), &mp_attrs2);
+	zassert_true(mp_id != NULL, "mempool creation failed");
+
+	mempool_common_tests(mp_id, mp_attrs2.name);
 }
 ZTEST_SUITE(cmsis_mempool, NULL, NULL, NULL, NULL, NULL);

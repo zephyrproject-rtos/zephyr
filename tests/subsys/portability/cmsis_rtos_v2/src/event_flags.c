@@ -6,7 +6,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
+#include <zephyr/portability/cmsis_types.h>
 
 #include <zephyr/irq_offload.h>
 #include <zephyr/kernel_structs.h>
@@ -213,5 +214,22 @@ ZTEST(cmsis_event_flags, test_event_flags)
 	test_event_flags_no_wait_timeout();
 	test_event_flags_signalled();
 	test_event_flags_isr();
+}
+
+static struct cmsis_rtos_event_cb event_cb2;
+static const osEventFlagsAttr_t event_flags_attrs2 = {
+	.name = "Event2",
+	.attr_bits = 0,
+	.cb_mem = &event_cb2,
+	.cb_size = sizeof(event_cb2),
+};
+ZTEST(cmsis_event_flags, test_event_flags_static_allocation)
+{
+	osEventFlagsId_t id;
+
+	id = osEventFlagsNew(&event_flags_attrs2);
+	zassert_not_null(id, "Failed creating event flags using static cb");
+
+	zassert_true(osEventFlagsDelete(evt_id) == osOK, "EventFlagsDelete failed");
 }
 ZTEST_SUITE(cmsis_event_flags, NULL, NULL, NULL, NULL, NULL);

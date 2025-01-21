@@ -6,7 +6,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
+#include <zephyr/portability/cmsis_types.h>
 
 #define WAIT_TICKS    5
 #define TIMEOUT_TICKS (10 + WAIT_TICKS)
@@ -167,5 +168,22 @@ ZTEST(cmsis_mutex, test_mutex_lock_timeout)
 	osDelay(TIMEOUT_TICKS);
 
 	osMutexDelete(mutex_id);
+}
+
+static struct cmsis_rtos_mutex_cb mutex_cb2;
+static const osMutexAttr_t mutex_attrs2 = {
+	.name = "Mutex2",
+	.attr_bits = osMutexPrioInherit,
+	.cb_mem = &mutex_cb2,
+	.cb_size = sizeof(mutex_cb2),
+};
+ZTEST(cmsis_mutex, test_mutex_static_allocation)
+{
+	osMutexId_t id;
+
+	id = osMutexNew(&mutex_attrs2);
+	zassert_not_null(id, "Failed creating mutex using static cb");
+
+	zassert_true(osMutexDelete(id) == osOK, "osMutexDelete failed");
 }
 ZTEST_SUITE(cmsis_mutex, NULL, NULL, NULL, NULL, NULL);
