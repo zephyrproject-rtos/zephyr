@@ -1,3 +1,16 @@
 name: serial-console
 append:
   EXTRA_CONF_FILE: serial-console.conf
+boards:
+  /nrf52_bsim.*/:
+    append:
+      EXTRA_CONF_FILE: serial-console-bsim.conf
+      EXTRA_DTC_OVERLAY_FILE: bsim-console_nrf52_bsim.overlay
+  /nrf5340bsim.*/:
+    append:
+      EXTRA_CONF_FILE: serial-console-bsim.conf
+      EXTRA_DTC_OVERLAY_FILE: bsim-console_nrf5340bsim.overlay
+  /nrf54l15bsim.*/:
+    append:
+      EXTRA_CONF_FILE: serial-console-bsim.conf
+      EXTRA_DTC_OVERLAY_FILE: bsim-console_nrf54l15bsim.overlay
