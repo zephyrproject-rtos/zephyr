@@ -862,8 +862,15 @@ static int ethernet_l2_alloc(struct net_if *iface, struct net_pkt *pkt,
 			     size_t size, enum net_ip_protocol proto,
 			     k_timeout_t timeout)
 {
-	return net_pkt_alloc_buffer_with_reserve(pkt, size,
-						 get_reserve_ll_header_size(iface),
+	size_t reserve = get_reserve_ll_header_size(iface);
+	struct ethernet_config config;
+
+	if (net_eth_get_hw_config(iface, ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM,
+				  &config) == 0) {
+		reserve += config.extra_tx_pkt_headroom;
+	}
+
+	return net_pkt_alloc_buffer_with_reserve(pkt, size, reserve,
 						 proto, timeout);
 }
 #else

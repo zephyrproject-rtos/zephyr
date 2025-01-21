@@ -234,7 +234,8 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_T1S_PARAM,
 	ETHERNET_CONFIG_TYPE_TXINJECTION_MODE,
 	ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT,
-	ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT
+	ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT,
+	ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM,
 };
 
 enum ethernet_qav_param_type {
@@ -529,6 +530,8 @@ struct ethernet_config {
 		enum ethernet_checksum_support chksum_support;
 
 		struct ethernet_filter filter;
+
+		uint16_t extra_tx_pkt_headroom;
 	};
 };
 
