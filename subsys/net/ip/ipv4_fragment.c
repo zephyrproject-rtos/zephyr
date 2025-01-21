@@ -441,6 +441,8 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	net_pkt_cursor_backup(pkt, &cur_pkt);
 	net_pkt_cursor_backup(frag_pkt, &cur);
 
+	net_pkt_set_ll_proto_type(frag_pkt, net_pkt_ll_proto_type(pkt));
+
 	/* Copy the original IPv4 headers back to the fragment packet */
 	if (net_pkt_copy(frag_pkt, pkt, net_pkt_ip_hdr_len(pkt))) {
 		goto fail;
