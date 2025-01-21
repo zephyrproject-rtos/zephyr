@@ -157,6 +157,12 @@ Display
 * Renamed the devicetree propertys ``pclk_pol`` and ``data_cmd-gpios``
   to ``pclk-pol`` and ``data-cmd-gpios``.
 
+DAC
+===
+
+* Renamed the devicetree properties ``voltage_reference`` and ``power_down_mode``
+  to ``voltage-reference`` and ``power-down-mode``.
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
