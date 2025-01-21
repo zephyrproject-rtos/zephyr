@@ -140,7 +140,6 @@
 };
 
 &spi0 {
-	compatible = "ambiq,spi";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
@@ -149,7 +148,6 @@
 };
 
 &i2c3 {
-	compatible = "ambiq,i2c";
 	pinctrl-0 = <&i2c3_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -196,7 +194,6 @@
 };
 
 &adc0 {
-	compatible = "ambiq,adc";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 	status = "disabled";
