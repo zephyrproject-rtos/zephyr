@@ -672,12 +672,10 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'c':
 			channel = strtol(state->optarg, &endptr, 10);
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 			if (iface_mode == WIFI_MODE_AP && channel == 0) {
 				params->channel = channel;
 				break;
 			}
-#endif
 			for (band = 0; band < ARRAY_SIZE(all_bands); band++) {
 				offset += snprintf(bands_str + offset,
 						   sizeof(bands_str) - offset,
