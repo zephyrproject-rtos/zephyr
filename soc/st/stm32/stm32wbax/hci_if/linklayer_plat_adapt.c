@@ -238,10 +238,15 @@ void LINKLAYER_PLAT_RCOStopClbr(void)
 /* Required only for RCO module usage in the context of LSI2 calibration */
 }
 
-void LINKLAYER_PLAT_RequestTemperature(void) {}
-
 void LINKLAYER_PLAT_SCHLDR_TIMING_UPDATE_NOT(Evnt_timing_t *p_evnt_timing) {}
 
-void LINKLAYER_PLAT_EnableOSContextSwitch(void) {}
+void LINKLAYER_PLAT_EnableOSContextSwitch(void) {
+    k_sched_unlock();
+}
 
-void LINKLAYER_PLAT_DisableOSContextSwitch(void) {}
+void LINKLAYER_PLAT_DisableOSContextSwitch(void) {
+    k_sched_lock();
+}
+
+/* TODO: To do when porting the temperature measurement function and thread */
+void LINKLAYER_PLAT_RequestTemperature(void) {}
