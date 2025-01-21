@@ -9,6 +9,7 @@
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_HOST_KEYS_H_
 #define ZEPHYR_SUBSYS_BLUETOOTH_HOST_KEYS_H_
 
+#include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
 /** @cond INTERNAL_HIDDEN */
@@ -54,7 +55,7 @@ struct bt_irk {
 
 static inline bool bt_irk_eq(struct bt_irk const *a, struct bt_irk const *b)
 {
-	return (memcmp(a->val, b->val, sizeof(a->val)) == 0);
+	return util_memeq(a->val, b->val, sizeof(a->val));
 }
 
 struct bt_csrk {
