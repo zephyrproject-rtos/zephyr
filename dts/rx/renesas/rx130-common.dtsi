@@ -552,8 +552,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A000 0x20>;
 			clocks = <&pclkb MSTPB 31>;
-			status = "disabled";
 			channel = <0>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -567,8 +568,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
-			status = "disabled";
 			channel = <1>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -582,8 +584,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A0A0 0x20>;
 			clocks = <&pclkb MSTPB 26>;
-			status = "disabled";
 			channel = <5>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -597,8 +600,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A0C0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
-			status = "disabled";
 			channel = <6>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -612,8 +616,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A100 0x20>;
 			clocks = <&pclkb MSTPC 27>;
-			status = "disabled";
 			channel = <8>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
