@@ -194,6 +194,7 @@
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <200000000>;
 				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
