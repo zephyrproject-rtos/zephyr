@@ -993,7 +993,7 @@ config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 endif # BT_DF
 
 config BT_ECC
-	bool "ECDH key generation support"
+	bool
 	select MBEDTLS if !BUILD_WITH_TFM
 	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
 	select PSA_WANT_ALG_ECDH
@@ -1002,8 +1002,8 @@ config BT_ECC
 	imply MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
 	select BT_LONG_WQ
 	help
-	  If this option is set PSA Crypto API library is used for performing ECDH
-	  operations needed e.g. by LE Secure Connections.
+	  If this option is set, internal APIs will be available to perform ECDH operations
+	  through the long work queue. operations needed e.g. by LE Secure Connections.
 
 endif # BT_HCI_HOST
 
