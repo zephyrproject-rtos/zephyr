@@ -15,14 +15,6 @@ config ESP_SPIRAM
 menu "SPI RAM config"
 	depends on ESP_SPIRAM
 
-config ESP_HEAP_SEARCH_ALL_REGIONS
-	bool "Search for all available heap regions"
-	default y
-	help
-	  This configuration enables searching all available heap
-	  regions. If the region of desired capability is exhausted,
-	  memory will be allocated from other available region.
-
 config ESP_SPIRAM_HEAP_SIZE
 	int "Size of SPIRAM heap"
 	default 262134 if SYS_HEAP_SMALL_ONLY
