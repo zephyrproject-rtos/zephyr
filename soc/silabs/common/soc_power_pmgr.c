@@ -60,7 +60,9 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	LOG_DBG("Entry to energy mode %d", energy_mode);
 
-	if (energy_mode != SL_POWER_MANAGER_EM0) {
+	if (energy_mode == SL_POWER_MANAGER_EM4) {
+		sl_power_manager_enter_em4();
+	} else if (energy_mode != SL_POWER_MANAGER_EM0) {
 		sl_power_manager_add_em_requirement(energy_mode);
 		sl_power_manager_sleep();
 		k_cpu_idle();
