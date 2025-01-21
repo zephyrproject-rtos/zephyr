@@ -60,18 +60,12 @@ void lock_unlock_check(const void *arg)
 ZTEST(cmsis_kernel, test_kernel_apis)
 {
 	versionInfo version = {
-		.os_info = {
-			.api = 0xfefefefe,
-			.kernel = 0xfdfdfdfd,
-		},
-		.info = "local function call info is uninitialized"
+		.os_info = {.api = 0xfefefefe, .kernel = 0xfdfdfdfd},
+		.info = "local function call info is uninitialized",
 	};
 	versionInfo version_irq = {
-		.os_info = {
-			.api = 0xfcfcfcfc,
-			.kernel = 0xfbfbfbfb,
-		},
-		.info = "irq_offload function call info is uninitialized"
+		.os_info = {.api = 0xfcfcfcfc, .kernel = 0xfbfbfbfb},
+		.info = "irq_offload function call info is uninitialized",
 	};
 
 	get_version_check(&version);
