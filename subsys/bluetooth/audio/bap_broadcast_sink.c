@@ -649,46 +649,51 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
 	struct bt_bap_broadcast_sink_cb *listener;
 	int base_size;
-	int ret;
 
 	/* Base is NULL if the data does not contain a valid BASE */
 	if (base == NULL) {
 		return true;
 	}
 
-	if (atomic_test_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_BIGINFO_RECEIVED)) {
-		ret = base_get_bis_count(base);
-
-		if (ret < 0) {
-			LOG_DBG("Invalid BASE: %d", ret);
-			return false;
-		} else if (ret != sink->biginfo_num_bis) {
-			LOG_DBG("BASE contains different amount of BIS (%u) than reported by "
-				"BIGInfo (%u)",
-				ret, sink->biginfo_num_bis);
-			return false;
-		}
-	}
-
 	/* We provide the BASE without the service data UUID */
 	base_size = bt_bap_base_get_size(base);
+	if (base_size != sink->base_size || memcmp(base, sink->base, base_size) != 0) {
+		/* New BASE, parse */
 
-	/* Store newest BASE info until we are BIG synced */
-	if (sink->big == NULL) {
-		sink->qos_cfg.pd = bt_bap_base_get_pres_delay(base);
+		if (atomic_test_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_BIGINFO_RECEIVED)) {
+			int ret;
 
-		sink->subgroup_count = 0;
-		sink->valid_indexes_bitfield = 0;
-		bt_bap_base_foreach_subgroup(base, base_decode_subgroup_cb, sink);
+			ret = base_get_bis_count(base);
 
-		LOG_DBG("Updating BASE for sink %p with %d subgroups\n", sink,
-			sink->subgroup_count);
+			if (ret < 0) {
+				LOG_DBG("Invalid BASE: %d", ret);
+				return false;
+			} else if (ret != sink->biginfo_num_bis) {
+				LOG_DBG("BASE contains different amount of BIS (%u) than reported "
+					"by BIGInfo (%u)",
+					ret, sink->biginfo_num_bis);
+				return false;
+			}
+		}
 
-		memcpy(sink->base, base, base_size);
-	}
+		/* Store newest BASE info until we are BIG synced */
+		if (sink->big == NULL) {
+			sink->qos_cfg.pd = bt_bap_base_get_pres_delay(base);
 
-	if (atomic_test_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_SRC_ID_VALID)) {
-		update_recv_state_base(sink, base);
+			sink->subgroup_count = 0;
+			sink->valid_indexes_bitfield = 0;
+			bt_bap_base_foreach_subgroup(base, base_decode_subgroup_cb, sink);
+
+			LOG_DBG("Updating BASE for sink %p with %d subgroups\n", sink,
+				sink->subgroup_count);
+
+			memcpy(sink->base, base, base_size);
+			sink->base_size = base_size;
+		}
+
+		if (atomic_test_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_SRC_ID_VALID)) {
+			update_recv_state_base(sink, base);
+		}
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
@@ -726,6 +731,7 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 
 	if (sink != NULL) {
 		sink->pa_sync = NULL;
+		sink->base_size = 0U;
 	}
 }
 
