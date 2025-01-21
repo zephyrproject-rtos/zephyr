@@ -39,11 +39,14 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 
 	__ASSERT(!(attr->attr_bits & osMutexRobust), "Zephyr does not support osMutexRobust.\n");
 
-	if (k_mem_slab_alloc(&cmsis_rtos_mutex_cb_slab, (void **)&mutex, K_MSEC(100)) == 0) {
-		memset(mutex, 0, sizeof(struct cmsis_rtos_mutex_cb));
-	} else {
+	if (attr->cb_mem != NULL) {
+		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_mutex_cb), "Invalid cb_size\n");
+		mutex = (struct cmsis_rtos_mutex_cb *)attr->cb_mem;
+	} else if (k_mem_slab_alloc(&cmsis_rtos_mutex_cb_slab, (void **)&mutex, K_MSEC(100)) != 0) {
 		return NULL;
 	}
+	memset(mutex, 0, sizeof(struct cmsis_rtos_mutex_cb));
+	mutex->is_cb_dynamic_allocation = attr->cb_mem == NULL;
 
 	k_mutex_init(&mutex->z_mutex);
 	mutex->state = attr->attr_bits;
@@ -130,8 +133,9 @@ osStatus_t osMutexDelete(osMutexId_t mutex_id)
 	/* The status code "osErrorResource" (mutex specified by parameter
 	 * mutex_id is in an invalid mutex state) is not supported in Zephyr.
 	 */
-
-	k_mem_slab_free(&cmsis_rtos_mutex_cb_slab, (void *)mutex);
+	if (mutex->is_cb_dynamic_allocation) {
+		k_mem_slab_free(&cmsis_rtos_mutex_cb_slab, (void *)mutex);
+	}
 
 	return osOK;
 }
