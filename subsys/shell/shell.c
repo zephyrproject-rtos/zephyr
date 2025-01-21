@@ -672,7 +672,7 @@ static int execute(const struct shell *sh)
 
 	/* Below loop is analyzing subcommands of found root command. */
 	while ((argc != 1) && (cmd_lvl < CONFIG_SHELL_ARGC_MAX)
-		&& args_left > 0) {
+		&& (args_left > 0)) {
 		quote = z_shell_make_argv(&argc, argvp, cmd_buf, 2);
 		cmd_buf = (char *)argvp[1];
 
