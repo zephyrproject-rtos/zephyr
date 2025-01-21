@@ -46,11 +46,15 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 		attr = &init_mslab_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_mem_slab, (void **)&mslab, K_MSEC(100)) == 0) {
-		(void)memset(mslab, 0, sizeof(struct cmsis_rtos_mempool_cb));
-	} else {
+	if (attr->cb_mem != NULL) {
+		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_mempool_cb),
+			 "Invalid cb_size\n");
+		mslab = (struct cmsis_rtos_mempool_cb *)attr->cb_mem;
+	} else if (k_mem_slab_alloc(&cv2_mem_slab, (void **)&mslab, K_MSEC(100)) != 0) {
 		return NULL;
 	}
+	(void)memset(mslab, 0, sizeof(struct cmsis_rtos_mempool_cb));
+	mslab->is_cb_dynamic_allocation = attr->cb_mem == NULL;
 
 	if (attr->mp_mem == NULL) {
 		__ASSERT((block_count * block_size) <= CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
@@ -58,7 +62,9 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 
 		mslab->pool = k_calloc(block_count, block_size);
 		if (mslab->pool == NULL) {
-			k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
+			if (mslab->is_cb_dynamic_allocation) {
+				k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
+			}
 			return NULL;
 		}
 		mslab->is_dynamic_allocation = TRUE;
@@ -68,9 +74,10 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 	}
 
 	int rc = k_mem_slab_init(&mslab->z_mslab, mslab->pool, block_size, block_count);
-
 	if (rc != 0) {
-		k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
+		if (mslab->is_cb_dynamic_allocation) {
+			k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
+		}
 		if (attr->mp_mem == NULL) {
 			k_free(mslab->pool);
 		}
@@ -137,9 +144,9 @@ osStatus_t osMemoryPoolFree(osMemoryPoolId_t mp_id, void *block)
 	 *       osErrorResource: the memory pool specified by parameter mp_id
 	 *       is in an invalid memory pool state.
 	 */
-
-	k_mem_slab_free((struct k_mem_slab *)(&mslab->z_mslab), (void *)block);
-
+	if (mslab->is_cb_dynamic_allocation) {
+		k_mem_slab_free((struct k_mem_slab *)(&mslab->z_mslab), (void *)block);
+	}
 	return osOK;
 }
 
@@ -236,7 +243,8 @@ osStatus_t osMemoryPoolDelete(osMemoryPoolId_t mp_id)
 	if (mslab->is_dynamic_allocation) {
 		k_free(mslab->pool);
 	}
-	k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
-
+	if (mslab->is_cb_dynamic_allocation) {
+		k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
+	}
 	return osOK;
 }
