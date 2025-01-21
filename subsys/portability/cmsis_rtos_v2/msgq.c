@@ -44,11 +44,14 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 		attr = &init_msgq_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cmsis_rtos_msgq_cb_slab, (void **)&msgq, K_MSEC(100)) == 0) {
-		(void)memset(msgq, 0, sizeof(struct cmsis_rtos_msgq_cb));
-	} else {
+	if (attr->cb_mem != NULL) {
+		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_msgq_cb), "Invalid cb_size\n");
+		msgq = (struct cmsis_rtos_msgq_cb *)attr->cb_mem;
+	} else if (k_mem_slab_alloc(&cmsis_rtos_msgq_cb_slab, (void **)&msgq, K_MSEC(100)) != 0) {
 		return NULL;
 	}
+	(void)memset(msgq, 0, sizeof(struct cmsis_rtos_msgq_cb));
+	msgq->is_cb_dynamic_allocation = attr->cb_mem == NULL;
 
 	if (attr->mq_mem == NULL) {
 		__ASSERT((msg_count * msg_size) <= CONFIG_CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE,
@@ -57,12 +60,16 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 #if (K_HEAP_MEM_POOL_SIZE > 0)
 		msgq->pool = k_calloc(msg_count, msg_size);
 		if (msgq->pool == NULL) {
-			k_mem_slab_free(&cmsis_rtos_msgq_cb_slab, (void *)msgq);
+			if (msgq->is_cb_dynamic_allocation) {
+				k_mem_slab_free(&cmsis_rtos_msgq_cb_slab, (void *)msgq);
+			}
 			return NULL;
 		}
 		msgq->is_dynamic_allocation = TRUE;
 #else
-		k_mem_slab_free(&cmsis_rtos_msgq_cb_slab, (void *)msgq);
+		if (msgq->is_cb_dynamic_allocation) {
+			k_mem_slab_free(&cmsis_rtos_msgq_cb_slab, (void *)msgq);
+		}
 		return NULL;
 #endif
 	} else {
@@ -275,7 +282,8 @@ osStatus_t osMessageQueueDelete(osMessageQueueId_t msgq_id)
 	if (msgq->is_dynamic_allocation) {
 		k_free(msgq->pool);
 	}
-	k_mem_slab_free(&cmsis_rtos_msgq_cb_slab, (void *)msgq);
-
+	if (msgq->is_cb_dynamic_allocation) {
+		k_mem_slab_free(&cmsis_rtos_msgq_cb_slab, (void *)msgq);
+	}
 	return osOK;
 }

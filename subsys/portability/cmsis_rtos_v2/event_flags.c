@@ -35,11 +35,15 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 		attr = &init_event_flags_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cmsis_rtos_event_cb_slab, (void **)&events, K_MSEC(100)) == 0) {
-		memset(events, 0, sizeof(struct cmsis_rtos_event_cb));
-	} else {
+	if (attr->cb_mem != NULL) {
+		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_event_cb), "Invalid cb_size\n");
+		events = (struct cmsis_rtos_event_cb *)attr->cb_mem;
+	} else if (k_mem_slab_alloc(&cmsis_rtos_event_cb_slab, (void **)&events, K_MSEC(100)) !=
+		   0) {
 		return NULL;
 	}
+	memset(events, 0, sizeof(struct cmsis_rtos_event_cb));
+	events->is_cb_dynamic_allocation = attr->cb_mem == NULL;
 
 	k_poll_signal_init(&events->poll_signal);
 	k_poll_event_init(&events->poll_event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
@@ -247,8 +251,8 @@ osStatus_t osEventFlagsDelete(osEventFlagsId_t ef_id)
 	/* The status code "osErrorParameter" (the value of the parameter
 	 * ef_id is incorrect) is not supported in Zephyr.
 	 */
-
-	k_mem_slab_free(&cmsis_rtos_event_cb_slab, (void *)events);
-
+	if (events->is_cb_dynamic_allocation) {
+		k_mem_slab_free(&cmsis_rtos_event_cb_slab, (void *)events);
+	}
 	return osOK;
 }

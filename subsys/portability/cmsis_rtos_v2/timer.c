@@ -51,11 +51,14 @@ osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type, void *argument,
 		attr = &init_timer_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cmsis_rtos_timer_cb_slab, (void **)&timer, K_MSEC(100)) == 0) {
-		(void)memset(timer, 0, sizeof(struct cmsis_rtos_timer_cb));
-	} else {
+	if (attr->cb_mem != NULL) {
+		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_timer_cb), "Invalid cb_size\n");
+		timer = (struct cmsis_rtos_timer_cb *)attr->cb_mem;
+	} else if (k_mem_slab_alloc(&cmsis_rtos_timer_cb_slab, (void **)&timer, K_MSEC(100)) != 0) {
 		return NULL;
 	}
+	(void)memset(timer, 0, sizeof(struct cmsis_rtos_timer_cb));
+	timer->is_cb_dynamic_allocation = attr->cb_mem == NULL;
 
 	timer->callback_function = func;
 	timer->arg = argument;
@@ -142,7 +145,9 @@ osStatus_t osTimerDelete(osTimerId_t timer_id)
 		timer->status = NOT_ACTIVE;
 	}
 
-	k_mem_slab_free(&cmsis_rtos_timer_cb_slab, (void *)timer);
+	if (timer->is_cb_dynamic_allocation) {
+		k_mem_slab_free(&cmsis_rtos_timer_cb_slab, (void *)timer);
+	}
 	return osOK;
 }
 
