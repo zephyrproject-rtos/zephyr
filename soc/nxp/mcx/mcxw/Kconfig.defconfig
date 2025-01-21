@@ -17,6 +17,12 @@ if BT
 config MAIN_STACK_SIZE
 	default 2560
 
+config BT_LONG_WQ_STACK_SIZE
+	default 2560
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
 if SHELL
 
 config SHELL_STACK_SIZE
