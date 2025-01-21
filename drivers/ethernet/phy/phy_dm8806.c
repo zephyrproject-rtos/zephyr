@@ -302,26 +302,20 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 {
 	uint8_t ret;
 	uint16_t data;
-	uint16_t req_speed;
+	uint16_t req_speed = 0;
 	const struct phy_dm8806_config *cfg = dev->config;
 
-	req_speed = adv_speeds;
-	switch (req_speed) {
-	case LINK_HALF_10BASE_T:
-		req_speed = MODE_10_BASET_HALF_DUPLEX;
-		break;
-
-	case LINK_FULL_10BASE_T:
-		req_speed = MODE_10_BASET_FULL_DUPLEX;
-		break;
-
-	case LINK_HALF_100BASE_T:
-		req_speed = MODE_100_BASET_HALF_DUPLEX;
-		break;
-
-	case LINK_FULL_100BASE_T:
-		req_speed = MODE_100_BASET_FULL_DUPLEX;
-		break;
+	if ((adv_speeds & LINK_FULL_100BASE_T) > 0) {
+		req_speed |= DM8806_100B_TX_FULL;
+	}
+	if ((adv_speeds & LINK_HALF_100BASE_T) > 0) {
+		req_speed |= DM8806_100B_TX_HALF;
+	}
+	if ((adv_speeds & LINK_FULL_10BASE_T) > 0) {
+		req_speed |= DM8806_10B_TX_FULL;
+	}
+	if ((adv_speeds & LINK_HALF_10BASE_T) > 0) {
+		req_speed |= DM8806_10B_TX_HALF;
 	}
 
 	/* Power down */
@@ -339,31 +333,20 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	}
 	k_busy_wait(500);
 
-	/* Turn off the auto-negotiation process. */
-	ret = mdio_read(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
+	/* Update auto negotiation advertisement register */
+	ret = mdio_read(cfg->mdio, cfg->phy_addr, PORTX_AUTO_NEGOTIATION_ADVERTISEMENT_REGISTER,
+			&data);
+	data &= ~(DM8806_100B_TX_FULL | DM8806_100B_TX_HALF | DM8806_10B_TX_FULL |
+		  DM8806_10B_TX_HALF);
+	data |= req_speed;
 	if (ret) {
-		LOG_ERR("Failed to write data to DM8806");
-		return ret;
-	}
-	k_busy_wait(500);
-	data &= ~(AUTO_NEGOTIATION);
-	ret = mdio_write(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
-	if (ret) {
-		LOG_ERR("Failed to write data to DM8806");
+		LOG_ERR("Failes to read data drom DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
 
-	/* Change the link speed. */
-	ret = mdio_read(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
-	if (ret) {
-		LOG_ERR("Failed to read data from DM8806");
-		return ret;
-	}
-	k_busy_wait(500);
-	data &= ~(LINK_SPEED | DUPLEX_MODE);
-	data |= req_speed;
-	ret = mdio_write(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
+	ret = mdio_write(cfg->mdio, cfg->phy_addr, PORTX_AUTO_NEGOTIATION_ADVERTISEMENT_REGISTER,
+			 data);
 	if (ret) {
 		LOG_ERR("Failed to write data to DM8806");
 		return ret;
@@ -384,7 +367,23 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 		return ret;
 	}
 	k_busy_wait(500);
-	return -ENOTSUP;
+
+	/* Restart auto negotiation */
+	ret = mdio_read(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, &data);
+	if (ret) {
+		LOG_ERR("Failes to read data drom DM8806");
+		return ret;
+	}
+	k_busy_wait(500);
+	data |= RESTART_AUTO_NEGOTIATION;
+	ret = mdio_write(cfg->mdio, cfg->phy_addr, PORTX_PHY_CONTROL_REGISTER, data);
+	if (ret) {
+		LOG_ERR("Failed to write data to DM8806");
+		return ret;
+	}
+	k_busy_wait(500);
+
+	return ret;
 }
 
 static int phy_dm8806_reg_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
