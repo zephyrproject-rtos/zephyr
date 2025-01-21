@@ -26,6 +26,9 @@ if (DEFINED CONFIG_MCUX_CORE_SUFFIX)
   string (REGEX REPLACE "^_" "" core_id "${CONFIG_MCUX_CORE_SUFFIX}")
 endif()
 
+# Definitions to load device drivers
+set(CONFIG_MCUX_HW_DEVICE_CORE "${MCUX_DEVICE}${CONFIG_MCUX_CORE_SUFFIX}")
+
 # Define CPU macro
 zephyr_compile_definitions("CPU_${CONFIG_SOC_PART_NUMBER}${CONFIG_MCUX_CORE_SUFFIX}")
 
