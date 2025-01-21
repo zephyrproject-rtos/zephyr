@@ -194,6 +194,14 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_event(priv->dev, UDC_EVT_SOF, 0);
 }
 
+static void udc_stm32_flush_tx_fifo(const struct device *dev)
+{
+	struct udc_stm32_data *priv = udc_get_private(dev);
+	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+
+	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, NULL, 0);
+}
+
 static int udc_stm32_tx(const struct device *dev, uint8_t ep,
 			struct net_buf *buf)
 {
@@ -230,7 +238,11 @@ static int udc_stm32_tx(const struct device *dev, uint8_t ep,
 		/* Wait for an empty package from the host.
 		 * This also flushes the TX FIFO to the host.
 		 */
-		usbd_ctrl_feed_dout(dev, 0);
+		if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)) {
+			udc_stm32_flush_tx_fifo(dev);
+		} else {
+			usbd_ctrl_feed_dout(dev, 0);
+		}
 	}
 
 	return 0;
