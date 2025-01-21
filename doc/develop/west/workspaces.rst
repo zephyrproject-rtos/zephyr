@@ -156,6 +156,7 @@ The following are example source code topologies supported by west.
 - T1: star topology, zephyr is the manifest repository
 - T2: star topology, a Zephyr application is the manifest repository
 - T3: forest topology, freestanding manifest repository
+- T4: star topology, top level workspace repository contains apps and manifest
 
 T1: Star topology, zephyr is the manifest repository
 ====================================================
@@ -321,3 +322,72 @@ v2.5.0 and its modules, then add the ``app1`` and ``app2`` projects:
 
 You can also do this "by hand" by copy/pasting :file:`zephyr/west.yml`
 as shown :ref:`above <west-t2>` for the T2 topology, with the same caveats.
+
+T4: Single repo, multi app
+===========================
+
+- One top level git repository containing manifest and app
+- Useful for those supporting multiple applications or downstream
+  distributions with "central" repository
+- All apps share the same west manifest
+
+A workspace using this topology looks like this:
+
+.. code-block:: none
+
+   west-workspace/         # .git/ project
+   ├── app1/
+   │   ├── CMakeLists.txt
+   │   ├── prj.conf
+   │   └── src/
+   │       └── main.c
+   ├── app2/
+   │   ├── CMakeLists.txt
+   │   ├── prj.conf
+   │   └── src/
+   │       └── main.c
+   ├── .west/
+   │   └── config          # West configuration
+   ├── manifest/
+   │   └── west.yml        # main manifest with optional import(s) and override(s)
+   ├── modules/
+   │   └── lib/
+   │       └── zcbor/      # .git/ project from either the main manifest or
+   │                       #       from some import
+   │
+   └── zephyr/             # .git/ project
+       └── west.yml        # This can be partially imported with lower precedence or ignored.
+                           # Only the 'manifest-rev' version can be imported.
+
+Here is an example T4 :file:`manifest/west.yml` which uses
+:ref:`west-manifest-import`, available since west 0.7, to import Zephyr
+v2.5.0 and its modules:
+
+.. code-block:: yaml
+
+   manifest:
+     remotes:
+       - name: zephyrproject-rtos
+         url-base: https://github.com/zephyrproject-rtos
+       - name: your-git-server
+         url-base: https://git.example.com/your-company
+     defaults:
+       remote: your-git-server
+     projects:
+       - name: zephyr
+         remote: zephyrproject-rtos
+         revision: v4.4.0
+         import:
+            name-allowlist:
+              # Add upstream modules that need to be version tracked by
+              # zephyr/west.yml here. If a project/module needs to have a
+              # fixed version, they can be added to the list of projects
+              # defined above
+              - hal_your_hal
+              - cmsis
+              - mcuboot
+              - mbedtls
+              - zcbor
+
+     self:
+       path: manifest
