@@ -52,11 +52,45 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #define VLAN_TAG_4 400
 #define VLAN_TAG_5 500
 #define VLAN_TAG_6 600
+#define VLAN_TAG_7 700
 
 #define NET_ETH_MAX_COUNT 2
 
 #define MY_IPV6_ADDR "2001:db8:200::2"
 #define MY_IPV6_ADDR_SRV "2001:db8:200::1"
+
+/* ICMPv6 Echo Request from 2001:db8::2 to 2001:db8::1,
+ * src mac 00:00:5e:00:53:ff dst 02:00:5e:00:53:31
+ * VLAN tag 0, priority 0
+ */
+static unsigned char icmpv6_echo_request[] = {
+/* 0000 */  0x02, 0x00, 0x5e, 0x00, 0x53, 0x31, 0x00, 0x00,
+	    0x5e, 0x00, 0x53, 0xff, 0x81, 0x00, 0x00, 0x00,
+/* 0010 */  0x86, 0xdd, 0x60, 0x00, 0x00, 0x00, 0x00, 0x08,
+	    0x3a, 0x40, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00,
+/* 0020 */  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	    0x00, 0x02, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00,
+/* 0030 */  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	    0x00, 0x01, 0x80, 0x00, 0x24, 0x48, 0x00, 0x00,
+/* 0040 */  0x00, 0x00,
+};
+
+/* ICMPv6 Echo Reply from 2001:db8::1 to 2001:db8::2,
+ * src mac 02:00:5e:00:53:31 dst 00:00:5e:00:53:08
+ * No VLAN tag.
+ */
+static unsigned char icmpv6_echo_reply[] = {
+/* 1st fragment with Ethernet header */
+	0x00, 0x00, 0x5e, 0x00, 0x53, 0x08, 0x00, 0x00,
+	0x5e, 0x00, 0x53, 0x08, 0x86, 0xdd,
+/* 2nd fragment, with IPv6 header and ICMPv6 Echo Reply */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x3a, 0x40,
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	0x81, 0x00, 0x23, 0x48, 0x00, 0x00, 0x00, 0x00,
+};
 
 /* Interface 1 addresses */
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
@@ -75,14 +109,20 @@ static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
+/* Peer addresses */
+static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
+
 /* Keep track of all ethernet interfaces */
 static struct net_if *eth_interfaces[NET_ETH_MAX_COUNT];
 static struct net_if *vlan_interfaces[NET_VLAN_MAX_COUNT];
 static struct net_if *dummy_interfaces[2];
 static struct net_if *embed_ll_interface;
+static struct net_if *test_iface;
 
 static bool test_failed;
 static bool test_started;
+static bool expecting_vlan_tag_0;
 
 static K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
@@ -126,6 +166,26 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_context *context = dev->data;
 	int ret;
+
+	if (expecting_vlan_tag_0) {
+		uint8_t reply[sizeof(icmpv6_echo_reply) - sizeof(struct net_eth_hdr)];
+		uint16_t ptype;
+
+		expecting_vlan_tag_0 = false;
+		test_iface = net_pkt_iface(pkt);
+		net_pkt_cursor_init(pkt);
+		net_pkt_set_overwrite(pkt, true);
+		net_pkt_skip(pkt, sizeof(struct net_eth_hdr) - 2);
+		net_pkt_read_be16(pkt, &ptype);
+		zassert_equal(ptype, NET_ETH_PTYPE_IPV6, "Invalid ptype 0x%04x", ptype);
+		net_pkt_read(pkt, reply, sizeof(reply));
+		zassert_mem_equal(reply, icmpv6_echo_reply + sizeof(struct net_eth_hdr),
+				  sizeof(reply) - sizeof(struct net_eth_hdr),
+				  "Invalid ICMPv6 Echo Reply");
+
+		k_sem_give(&wait_data);
+		return 0;
+	}
 
 	if (!IS_ENABLED(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER)) {
 		/* There should be at least two net_buf. The first one should contain
@@ -973,6 +1033,90 @@ ZTEST(net_vlan, test_vlan_enable_disable_all)
 {
 	test_vlan_enable_all();
 	test_vlan_disable_all();
+}
+
+static bool add_peer_neighbor(struct net_if *iface, struct in6_addr *addr,
+			      uint8_t *lladdr)
+{
+	struct net_linkaddr ll_addr = {
+		.addr = lladdr,
+		.len = 6,
+		.type = NET_LINK_ETHERNET
+	};
+	struct net_nbr *nbr;
+
+	nbr = net_ipv6_nbr_add(iface, addr, &ll_addr, false,
+			       NET_IPV6_NBR_STATE_REACHABLE);
+	if (!nbr) {
+		DBG("Cannot add dst %s to neighbor cache\n",
+		    net_sprint_ipv6_addr(addr));
+		return false;
+	}
+
+	DBG("Adding dst %s as [%s] to nbr cache\n",
+	    net_sprint_ipv6_addr(addr),
+	    net_sprint_ll_addr(ll_addr.addr, 6));
+
+	return true;
+}
+
+ZTEST(net_vlan, test_vlan_tag_0)
+{
+	struct eth_context *context;
+	const struct device *dev;
+	struct net_if *iface;
+	struct net_pkt *pkt;
+	int ret;
+
+	iface = vlan_interfaces[0];
+
+	dev = net_if_get_device(eth_interfaces[0]);
+	context = dev->data;
+
+	/* Set the receiving mac address of the example packet */
+	memcpy(&icmpv6_echo_request[0], context->mac_addr, 6);
+
+	net_if_down(eth_interfaces[0]);
+	net_if_down(vlan_interfaces[0]);
+
+	/* Setup the interfaces */
+	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_7);
+	zassert_equal(ret, 0, "Cannot enable %d (%d)", VLAN_TAG_7, ret);
+
+	net_if_up(eth_interfaces[0]);
+	net_if_up(vlan_interfaces[0]);
+
+	ret = add_peer_neighbor(iface, &peer_addr, &icmpv6_echo_request[0]);
+	zassert_true(ret, "Cannot add neighbor");
+
+	/* Create ICMPv6 echo request packet, then send it to the Ethernet
+	 * interface. Expect the ICMPv6 echo response to be sent back to the
+	 * same interface.
+	 */
+	pkt = net_pkt_rx_alloc_with_buffer(iface,
+					   sizeof(icmpv6_echo_request),
+					   AF_INET6,
+					   IPPROTO_ICMPV6,
+					   K_NO_WAIT);
+	zassert_not_null(pkt, "Cannot allocate pkt");
+
+	ret = net_pkt_write(pkt, icmpv6_echo_request, sizeof(icmpv6_echo_request));
+	zassert_equal(ret, 0, "Cannot write to pkt");
+
+	expecting_vlan_tag_0 = true;
+	test_iface = eth_interfaces[0];
+
+	/* Make sure that the reply packet is sent to the correct interface */
+	ret = net_recv_data(eth_interfaces[0], pkt);
+	zassert_false(ret < 0, "Cannot receive data (%d)", ret);
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		DBG("Timeout while waiting interface data\n");
+		zassert_false(true, "Timeout");
+	}
+
+	zassert_false(expecting_vlan_tag_0, "VLAN tag 0 not received");
+	zassert_equal(test_iface, eth_interfaces[0], "Wrong interface");
 }
 
 ZTEST_SUITE(net_vlan, NULL, setup, NULL, NULL, NULL);
