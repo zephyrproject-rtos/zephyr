@@ -5,7 +5,7 @@ common:
   tags:
     - drivers
     - interrupt
-  filter: CONFIG_MULTI_LEVEL_INTERRUPTS and not CONFIG_LEGACY_MULTI_LEVEL_TABLE_GENERATION
+  filter: CONFIG_MULTI_LEVEL_INTERRUPTS
   platform_allow:
     - m2gl025_miv/miv
     - qemu_riscv32/qemu_virt_riscv32
