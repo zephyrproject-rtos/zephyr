@@ -298,14 +298,16 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 				goto drop;
 			}
 
-			/* We could call VLAN interface directly but then the
-			 * interface statistics would not get updated so route
-			 * the call via Virtual L2 layer.
-			 */
-			if (net_if_l2(net_pkt_iface(pkt))->recv != NULL) {
-				verdict = net_if_l2(net_pkt_iface(pkt))->recv(iface, pkt);
-				if (verdict == NET_DROP) {
-					goto drop;
+			if (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_PRIORITY) {
+				/* We could call VLAN interface directly but then the
+				 * interface statistics would not get updated so route
+				 * the call via Virtual L2 layer.
+				 */
+				if (net_if_l2(net_pkt_iface(pkt))->recv != NULL) {
+					verdict = net_if_l2(net_pkt_iface(pkt))->recv(iface, pkt);
+					if (verdict == NET_DROP) {
+						goto drop;
+					}
 				}
 			}
 		}
