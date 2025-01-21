@@ -16,21 +16,6 @@ config SEMIHOST
 	  This option is compatible with hardware and with QEMU, through the
 	  (automatic) use of the -semihosting-config switch when invoking it.
 
-config LEGACY_MULTI_LEVEL_TABLE_GENERATION
-	bool "Auto generates the multi-level interrupt LUT (deprecated)"
-	default y
-	select DEPRECATED
-	depends on MULTI_LEVEL_INTERRUPTS
-	depends on !PLIC
-	depends on !NXP_IRQSTEER
-	depends on !RV32M1_INTMUX
-	depends on !CAVS_ICTL
-	depends on !DW_ICTL_ACE
-	depends on !DW_ICTL
-	help
-	  A make-shift Kconfig to continue generating the multi-level interrupt LUT
-	  with the legacy way using DT macros.
-
 config ISR_TABLE_SHELL
 	bool "Shell command to dump the ISR tables"
 	depends on GEN_SW_ISR_TABLE
