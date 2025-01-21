@@ -62,7 +62,11 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 	spi_frequency /= 2;
 
 	if (spi_context_configured(&data->ctx, config)) {
-		/* Already configured. No need to do it again. */
+		/* Already configured. No need to do it again, but must re-enable in case
+		 * TXEN/RXEN were cleared due to deep sleep.
+		 */
+		EUSART_Enable(eusart_config->base, eusartEnable);
+
 		return 0;
 	}
 
@@ -144,9 +148,6 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 	EUSART_SpiInit(eusart_config->base, &eusartInit);
 
 	data->ctx.config = config;
-
-	/* Enable the peripheral */
-	eusart_config->base->CMD = (uint32_t)eusartEnable;
 
 	return 0;
 }
