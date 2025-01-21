@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #include "udc_dwc2_vendor_quirks.h"
 
 enum dwc2_drv_event_type {
+	/* USB connection speed determined after bus reset */
+	DWC2_DRV_EVT_ENUM_DONE,
 	/* Trigger next transfer, must not be used for control OUT */
 	DWC2_DRV_EVT_XFER,
 	/* Setup packet received */
@@ -383,6 +385,42 @@ static bool dwc2_ep_is_iso(struct udc_ep_config *const cfg)
 	return (cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) == USB_EP_TYPE_ISO;
 }
 
+static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	struct net_buf *buf;
+	size_t alloc_len = length;
+
+	if (dwc2_in_buffer_dma_mode(dev)) {
+		/* Control OUT buffers must be multiple of bMaxPacketSize0 */
+		alloc_len = ROUND_UP(length, 64);
+	}
+
+	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, alloc_len);
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
+
+	udc_buf_put(ep_cfg, buf);
+	k_event_post(&priv->xfer_new, BIT(16));
+	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
+
+	return 0;
+}
+
+static void dwc2_ensure_setup_ready(const struct device *dev)
+{
+	if (dwc2_in_completer_mode(dev)) {
+		/* In Completer mode EP0 can always receive SETUP data */
+		return;
+	}
+
+	if (!udc_buf_peek(dev, USB_CONTROL_EP_OUT)) {
+		dwc2_ctrl_feed_dout(dev, 8);
+	}
+}
+
 static bool dwc2_dma_buffer_ok_to_use(const struct device *dev, void *buf,
 				      uint32_t xfersize, uint16_t mps)
 {
@@ -708,6 +746,26 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 	} else {
 		int err = dwc2_tx_fifo_write(dev, cfg, buf);
 
+		if (cfg->addr == USB_CONTROL_EP_IN) {
+			/* Feed a buffer for the next setup packet after arming
+			 * IN endpoint with the data. This is necessary both in
+			 * IN Data Stage (Control Read Transfer) and IN Status
+			 * Stage (Control Write Transfers and Control Transfers
+			 * without Data Stage).
+			 *
+			 * The buffer must be fed here in Buffer DMA mode to
+			 * allow receiving premature SETUP. This inevitably does
+			 * automatically arm the buffer for OUT Status Stage.
+			 *
+			 * The buffer MUST NOT be fed here in Completer mode to
+			 * avoid race condition where the next Control Write
+			 * Transfer Data Stage is received into the buffer.
+			 */
+			if (dwc2_in_buffer_dma_mode(dev)) {
+				dwc2_ctrl_feed_dout(dev, 8);
+			}
+		}
+
 		if (err) {
 			LOG_ERR("Failed to start write to TX FIFO, ep 0x%02x (err: %d)",
 				cfg->addr, err);
@@ -724,39 +782,35 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 	udc_ep_set_busy(dev, cfg->addr, true);
 }
 
-static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
-{
-	struct udc_dwc2_data *const priv = udc_get_private(dev);
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-	size_t alloc_len = length;
-
-	if (dwc2_in_buffer_dma_mode(dev)) {
-		/* Control OUT buffers must be multiple of bMaxPacketSize0 */
-		alloc_len = ROUND_UP(length, 64);
-	}
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, alloc_len);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	udc_buf_put(ep_cfg, buf);
-	dwc2_prep_rx(dev, buf, ep_cfg);
-	LOG_DBG("feed buf %p", buf);
-
-	return 0;
-}
-
 static int dwc2_handle_evt_setup(const struct device *dev)
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct net_buf *buf;
 	int err;
 
-	buf = udc_buf_get(dev, USB_CONTROL_EP_OUT);
+	/* In Completer mode SETUP data is received without preparing endpoint 0
+	 * transfer beforehand. In Buffer DMA the SETUP can be copied to any EP0
+	 * OUT buffer. If there is any buffer queued, it is obsolete now.
+	 */
+	k_event_clear(&priv->xfer_finished, BIT(0) | BIT(16));
+
+	buf = udc_buf_get_all(dev, USB_CONTROL_EP_OUT);
+	if (buf) {
+		net_buf_unref(buf);
+	}
+
+	buf = udc_buf_get_all(dev, USB_CONTROL_EP_IN);
+	if (buf) {
+		net_buf_unref(buf);
+	}
+
+	udc_ep_set_busy(dev, USB_CONTROL_EP_OUT, false);
+	udc_ep_set_busy(dev, USB_CONTROL_EP_IN, false);
+
+	/* Allocate buffer and copy received SETUP for processing */
+	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, 8);
 	if (buf == NULL) {
-		LOG_ERR("No buffer queued for control ep");
+		LOG_ERR("No buffer available for control ep");
 		return -ENODATA;
 	}
 
@@ -773,29 +827,16 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 		/*  Allocate and feed buffer for data OUT stage */
 		LOG_DBG("s:%p|feed for -out-", buf);
 
-		/* Allocate at least 8 bytes in case the host decides to send
-		 * SETUP DATA instead of OUT DATA packet.
-		 */
-		err = dwc2_ctrl_feed_dout(dev, MAX(udc_data_stage_length(buf), 8));
+		err = dwc2_ctrl_feed_dout(dev, udc_data_stage_length(buf));
 		if (err == -ENOMEM) {
 			err = udc_submit_ep_event(dev, buf, err);
 		}
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
 		LOG_DBG("s:%p|feed for -in-status", buf);
 
-		err = dwc2_ctrl_feed_dout(dev, 8);
-		if (err == -ENOMEM) {
-			err = udc_submit_ep_event(dev, buf, err);
-		}
-
 		err = udc_ctrl_submit_s_in_status(dev);
 	} else {
 		LOG_DBG("s:%p|feed >setup", buf);
-
-		err = dwc2_ctrl_feed_dout(dev, 8);
-		if (err == -ENOMEM) {
-			err = udc_submit_ep_event(dev, buf, err);
-		}
 
 		err = udc_ctrl_submit_s_status(dev);
 	}
@@ -806,6 +847,7 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 static inline int dwc2_handle_evt_dout(const struct device *dev,
 				       struct udc_ep_config *const cfg)
 {
+	struct udc_data *data = dev->data;
 	struct net_buf *buf;
 	int err = 0;
 
@@ -822,25 +864,14 @@ static inline int dwc2_handle_evt_dout(const struct device *dev,
 			/* s-in-status finished */
 			LOG_DBG("dout:%p| status, feed >s", buf);
 
-			/* Feed a buffer for the next setup packet */
-			err = dwc2_ctrl_feed_dout(dev, 8);
-			if (err == -ENOMEM) {
-				err = udc_submit_ep_event(dev, buf, err);
-			}
-
 			/* Status stage finished, notify upper layer */
 			udc_ctrl_submit_status(dev, buf);
-		} else {
-			/*
-			 * For all other cases we feed with a buffer
-			 * large enough for setup packet.
-			 */
-			LOG_DBG("dout:%p| data, feed >s", buf);
 
-			err = dwc2_ctrl_feed_dout(dev, 8);
-			if (err == -ENOMEM) {
-				err = udc_submit_ep_event(dev, buf, err);
+			if (dwc2_in_buffer_dma_mode(dev)) {
+				dwc2_ctrl_feed_dout(dev, 8);
 			}
+		} else {
+			LOG_DBG("dout:%p| data, feed >s", buf);
 		}
 
 		/* Update to next stage of control transfer */
@@ -848,6 +879,13 @@ static inline int dwc2_handle_evt_dout(const struct device *dev,
 
 		if (udc_ctrl_stage_is_status_in(dev)) {
 			err = udc_ctrl_submit_s_out_status(dev, buf);
+		}
+
+		if (data->stage == CTRL_PIPE_STAGE_ERROR) {
+			/* Allow receiving next SETUP. USB stack won't queue any
+			 * buffer because it has no clue about this transfer.
+			 */
+			dwc2_ensure_setup_ready(dev);
 		}
 	} else {
 		err = udc_submit_ep_event(dev, buf, 0);
@@ -892,10 +930,12 @@ static int dwc2_handle_evt_din(const struct device *dev,
 		udc_ctrl_update_stage(dev, buf);
 
 		if (udc_ctrl_stage_is_status_out(dev)) {
-			/*
-			 * IN transfer finished, release buffer,
-			 * control OUT buffer should be already fed.
-			 */
+			if (dwc2_in_completer_mode(dev)) {
+				/* Allow OUT status stage */
+				dwc2_ctrl_feed_dout(dev, 8);
+			}
+
+			/* IN transfer finished, release buffer. */
 			net_buf_unref(buf);
 		}
 
@@ -1322,13 +1362,7 @@ static int dwc2_ep_control_enable(const struct device *dev,
 	dxepctl0 |= USB_DWC2_DEPCTL_USBACTEP;
 
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		int ret;
-
 		dwc2_flush_rx_fifo(dev);
-		ret = dwc2_ctrl_feed_dout(dev, 8);
-		if (ret) {
-			return ret;
-		}
 	} else {
 		dwc2_flush_tx_fifo(dev, 0);
 	}
@@ -1613,9 +1647,9 @@ static int udc_dwc2_ep_set_halt(const struct device *dev,
 	LOG_DBG("Set halt ep 0x%02x", cfg->addr);
 	if (ep_idx != 0) {
 		cfg->stat.halted = true;
-	} else if (!udc_buf_peek(dev, USB_CONTROL_EP_OUT)) {
-		/* Data stage is STALLed, allow receiving next SETUP */
-		dwc2_ctrl_feed_dout(dev, 8);
+	} else {
+		/* Data/Status stage is STALLed, allow receiving next SETUP */
+		dwc2_ensure_setup_ready(dev);
 	}
 
 	return 0;
@@ -2341,6 +2375,8 @@ static void dwc2_handle_enumdone(const struct device *dev)
 	dsts = sys_read32((mem_addr_t)&base->dsts);
 	priv->enumspd = usb_dwc2_get_dsts_enumspd(dsts);
 	priv->enumdone = 1;
+
+	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENUM_DONE));
 }
 
 static inline int dwc2_read_fifo_setup(const struct device *dev, uint8_t ep,
@@ -3039,6 +3075,12 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		}
 
 		config->irq_enable_func(dev);
+	}
+
+	if (evt & BIT(DWC2_DRV_EVT_ENUM_DONE)) {
+		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENUM_DONE));
+
+		dwc2_ensure_setup_ready(dev);
 	}
 
 	udc_unlock_internal(dev);
