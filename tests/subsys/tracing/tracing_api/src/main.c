@@ -67,8 +67,15 @@ static void tracing_backends_output(
 	/* Check the output data. */
 #ifdef CONFIG_TRACING_ASYNC
 	if (async_tracing_api) {
-		/* Define static 'i' is for guaranteeing all strings of 0 ~ end
-		 * of the array string_tracked are tested.
+		/* This verification should run only once, hence the static
+		 * `i`. As soon as the tracing thread has a chance to run,
+		 * right at the sleep at the async version of
+		 * test_tracing_sys_api, it should have everything needed
+		 * for this check on its buffer, which is sent here.
+		 * Should SMP be ever enabled for this test, this logic
+		 * will break down and one will need some sort of internal
+		 * buffer to keep track of the tracing strings (or do the
+		 * verification in some other way).
 		 */
 		static int i;
 
@@ -184,8 +191,8 @@ ZTEST(tracing_api, test_tracing_sys_api)
 
 	/* wait for some actions finished */
 	k_sleep(K_MSEC(100));
-	zassert_true(tracing_api_found, "Failded to check output from backend");
-	zassert_true(tracing_api_not_found == false, "Failded to check output from backend");
+	zassert_true(tracing_api_found, "Failed to check output from backend");
+	zassert_true(tracing_api_not_found == false, "Failed to check output from backend");
 	async_tracing_api = false;
 }
 #else
