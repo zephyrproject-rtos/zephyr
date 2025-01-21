@@ -240,12 +240,14 @@ void LINKLAYER_PLAT_RCOStopClbr(void)
 
 void LINKLAYER_PLAT_SCHLDR_TIMING_UPDATE_NOT(Evnt_timing_t *p_evnt_timing) {}
 
-void LINKLAYER_PLAT_EnableOSContextSwitch(void) {
-    k_sched_unlock();
+void LINKLAYER_PLAT_EnableOSContextSwitch(void)
+{
+	k_sched_unlock();
 }
 
-void LINKLAYER_PLAT_DisableOSContextSwitch(void) {
-    k_sched_lock();
+void LINKLAYER_PLAT_DisableOSContextSwitch(void)
+{
+	k_sched_lock();
 }
 
 /* TODO: To do when porting the temperature measurement function and thread */

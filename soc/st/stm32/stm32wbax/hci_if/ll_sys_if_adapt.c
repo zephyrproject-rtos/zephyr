@@ -39,4 +39,5 @@ void ll_sys_bg_process_init(void)
 }
 
 /* TODO: Implement temperature measurement thread after
-   implementing temperature measurement request function */
+ * implementing temperature measurement request function
+ **/
