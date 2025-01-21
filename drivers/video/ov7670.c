@@ -210,8 +210,8 @@ static const struct ov7670_reg ov7670_init_regtbl[] = {
 	{OV7670_MVFP, 0x00}, /* MVFP: Mirror/VFlip,Normal image */
 
 	/* configure the output timing */
-	/* PCLK does not toggle during horizontal blank, one PCLK, one pixel */
-	{OV7670_COM10, 0x20}, /* COM10 */
+	/* Free running PCLK, default VSYNC, HSYNC and PCLK */
+	{OV7670_COM10, 0x00}, /* COM10 */
 	{OV7670_COM12, 0x00}, /* COM12,No HREF when VSYNC is low */
 	/* Brightness Control, with signal -128 to +128, 0x00 is middle value */
 	{OV7670_BRIGHT, 0x2f},
