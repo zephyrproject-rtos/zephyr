@@ -11,7 +11,7 @@ schema;patch-schema:
     - type: map
       mapping:
 
-        # The path to the patch file, relative to the root of the module
+        # The path to the patch file, relative to patch-base
         # E.g. zephyr/kernel-pipe-fix-not-k-no-wait-and-ge-min-xfer-bytes.patch
         path:
           required: true
