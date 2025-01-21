@@ -671,23 +671,6 @@ static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 #define ethernet_update_tx_stats(...)
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-static void ethernet_remove_l2_header(struct net_pkt *pkt)
-{
-	size_t reserve = get_reserve_ll_header_size(net_pkt_iface(pkt));
-	struct net_buf *buf;
-
-	/* Remove the buffer added in ethernet_fill_header() */
-	if (reserve == 0U) {
-		buf = pkt->buffer;
-		pkt->buffer = buf->frags;
-		buf->frags = NULL;
-
-		net_pkt_frag_unref(buf);
-	} else {
-		net_buf_pull(pkt->buffer, reserve);
-	}
-}
-
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ethernet_api *api = net_if_get_device(iface)->api;
@@ -794,14 +777,12 @@ send:
 	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
 	if (ret != 0) {
 		eth_stats_update_errors_tx(iface);
-		ethernet_remove_l2_header(pkt);
 		goto arp_error;
 	}
 
 	ethernet_update_tx_stats(iface, pkt);
 
 	ret = net_pkt_get_len(pkt);
-	ethernet_remove_l2_header(pkt);
 
 	net_pkt_unref(pkt);
 error:
