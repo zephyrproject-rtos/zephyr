@@ -8,17 +8,12 @@
 #include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 
-#define WAIT_TICKS      5
-#define TIMEOUT_TICKS   (10 + WAIT_TICKS)
-#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
+#define WAIT_TICKS    5
+#define TIMEOUT_TICKS (10 + WAIT_TICKS)
+#define STACKSZ       CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 int max_mtx_cnt = CONFIG_CMSIS_V2_MUTEX_MAX_COUNT;
-const osMutexAttr_t mutex_attr = {
-	"myMutex",
-	osMutexRecursive | osMutexPrioInherit,
-	NULL,
-	0U
-};
+const osMutexAttr_t mutex_attr = {"myMutex", osMutexRecursive | osMutexPrioInherit, NULL, 0U};
 
 void cleanup_max_mutex(osMutexId_t *mutex_ids)
 {
@@ -59,8 +54,7 @@ ZTEST(cmsis_mutex, test_mutex)
 
 	/* Try deleting invalid mutex object */
 	status = osMutexDelete(mutex_id);
-	zassert_true(status == osErrorParameter,
-		     "Invalid Mutex deleted unexpectedly!");
+	zassert_true(status == osErrorParameter, "Invalid Mutex deleted unexpectedly!");
 
 	mutex_id = osMutexNew(&mutex_attr);
 	zassert_true(mutex_id != NULL, "Mutex1 creation failed");
@@ -124,8 +118,7 @@ void tThread_entry_lock_timeout(void *arg)
 	zassert_true(status == osErrorResource, "Mutex unexpectedly released");
 
 	id = osMutexGetOwner((osMutexId_t)arg);
-	zassert_not_equal(id, osThreadGetId(),
-			  "Unexpectedly, current thread is the mutex owner!");
+	zassert_not_equal(id, osThreadGetId(), "Unexpectedly, current thread is the mutex owner!");
 
 	/* This delay ensures that the mutex gets released by the other
 	 * thread in the meantime
@@ -141,17 +134,15 @@ void tThread_entry_lock_timeout(void *arg)
 }
 
 static K_THREAD_STACK_DEFINE(test_stack, STACKSZ);
-static osThreadAttr_t thread_attr = {
-	.name = "Mutex_check",
-	.attr_bits = osThreadDetached,
-	.cb_mem = NULL,
-	.cb_size = 0,
-	.stack_mem = &test_stack,
-	.stack_size = STACKSZ,
-	.priority = osPriorityNormal,
-	.tz_module = 0,
-	.reserved = 0
-};
+static osThreadAttr_t thread_attr = {.name = "Mutex_check",
+				     .attr_bits = osThreadDetached,
+				     .cb_mem = NULL,
+				     .cb_size = 0,
+				     .stack_mem = &test_stack,
+				     .stack_size = STACKSZ,
+				     .priority = osPriorityNormal,
+				     .tz_module = 0,
+				     .reserved = 0};
 
 ZTEST(cmsis_mutex, test_mutex_lock_timeout)
 {
