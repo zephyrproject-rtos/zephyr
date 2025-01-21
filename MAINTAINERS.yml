@@ -4039,13 +4039,19 @@ Renesas RZ Platforms:
   status: maintained
   maintainers:
     - tgorochowik
+  collaborators:
+    - binhnguyen2434
+    - nhutnguyenkc
   files:
-    - boards/renesas/rzt2m_*/
+    - boards/renesas/rz*/
     - drivers/*/*rzt2m*
+    - drivers/*/*renesas_rz*
     - drivers/pinctrl/renesas/rz/
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
+    - dts/bindings/*/*renesas,rz*
     - soc/renesas/rzt2m/
+    - soc/renesas/rz/
   labels:
     - "platforms: Renesas RZ"
   description: >-
