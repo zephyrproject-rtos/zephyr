@@ -220,6 +220,7 @@ static void test_friend_overflow(void)
 	bt_mesh_test_friendship_evt_clear(BT_MESH_TEST_FRIEND_POLLED);
 
 	k_sleep(K_SECONDS(3));
+	LOG_INF(":)");
 
 	LOG_INF("Testing overflow with only unsegmented messages...");
 
