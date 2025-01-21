@@ -96,6 +96,9 @@ Bluetooth
   * :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` has been deprecated and
     :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA` has been added.
 
+  * The ECDH HCI command/event emulation layer has been removed, meaning the host will now always
+    do direct calls to PSA to perform these operations.
+
 * HCI Drivers
 
 * Mesh

@@ -437,6 +437,9 @@ Bluetooth Host
   makes a device vulnerable for downgrade attacks. If an application still needs to use LE legacy
   pairing, it should disable :kconfig:option:`CONFIG_BT_SMP_SC_PAIR_ONLY` manually.
 
+* The prompt for :kconfig:option:`CONFIG_BT_ECC` has been removed, since it only offers an internal
+  API, meaning internal users should explicitly select it in their respective Kconfig options.
+
 Bluetooth Crypto
 ================
 
