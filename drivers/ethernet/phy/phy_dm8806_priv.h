@@ -116,7 +116,14 @@
 /* Interrupt Mask & Control Register Register Address. */
 #define INT_MASK_CTRL_REG_ADDR 0x19u
 
-#define PORT5_MAC_CONTROL     0x15u
+/* Switch Register offset  */
+#define DM8806_P0_ENERGY_EFFICIENT_ETH_CTRL_PHY_ADDR 0x08u
+/* Energy Efficient Ethernet Control Register Address. */
+#define DM8806_P0_ENERGY_EFFICIENT_ETH_CTRL_REG_ADDR 0x1eu
+/* Energy Efficient Ethernet enable bit */
+#define DM8806_EEE_EN                                BIT(15)
+
+#define DM8806_PORT5_MAC_CONTROL     0x15u
 /* Port 5 Force Speed control bit */
 #define P5_SPEED_100M         ~BIT(0)
 /* Port 5 Force Duplex control bit */

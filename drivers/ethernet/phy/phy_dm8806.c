@@ -207,7 +207,7 @@ static int phy_dm8806_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = mdio_read(cfg->mdio, PHY_ADDRESS_18H, PORT5_MAC_CONTROL, &val);
+	ret = mdio_read(cfg->mdio, PHY_ADDRESS_18H, DM8806_PORT5_MAC_CONTROL, &val);
 	if (ret) {
 		LOG_ERR("Failed to read PORT5_MAC_CONTROL: %i", ret);
 		return ret;
@@ -217,7 +217,7 @@ static int phy_dm8806_init(const struct device *dev)
 	val |= (P5_50M_INT_CLK_SOURCE | P5_50M_CLK_OUT_ENABLE | P5_EN_FORCE);
 	val &= (P5_SPEED_100M | P5_FULL_DUPLEX | P5_FORCE_LINK_ON);
 
-	ret = mdio_write(cfg->mdio, PHY_ADDRESS_18H, PORT5_MAC_CONTROL, val);
+	ret = mdio_write(cfg->mdio, PHY_ADDRESS_18H, DM8806_PORT5_MAC_CONTROL, val);
 	if (ret) {
 		LOG_ERR("Failed to write PORT5_MAC_CONTROL, %i", ret);
 		return ret;
@@ -236,6 +236,28 @@ static int phy_dm8806_init(const struct device *dev)
 		LOG_ERR("Failed to write IRQ_LED_CONTROL, %i", ret);
 		return ret;
 	}
+
+#ifndef CONFIG_PHY_DM8806_ENABLE_ENERGY_EFFICIENT_MODE
+	/* Disable - 802.3az Energy Efficient Ethernet for all 5 ports
+	 * The switch chip DM8806 only works reliably in this mode.
+	 */
+	for (uint32_t port_address = DM8806_P0_ENERGY_EFFICIENT_ETH_CTRL_PHY_ADDR;
+	     port_address <= DM8806_P0_ENERGY_EFFICIENT_ETH_CTRL_PHY_ADDR + 5; port_address++) {
+		ret = mdio_read(cfg->mdio, port_address, ENERGY_EFFICIENT_ETH_CTRL_REG_ADDR, &val);
+		if (ret) {
+			LOG_ERR("Failed to read ENERGY_EFFICIENT_ETH_CTRL_REG, %i", ret);
+			return ret;
+			S
+		}
+		val &= (~EEE_EN);
+		ret = mdio_write(cfg->mdio, port_address,
+				 DM8806_P0_ENERGY_EFFICIENT_ETH_CTRL_REG_ADDR, val);
+		if (ret) {
+			LOG_ERR("Failed to write ENERGY_EFFICIENT_ETH_CTRL_REG, %i", ret);
+			return ret;
+		}
+	}
+#endif /* CONFIG_PHY_DM8806_ENABLE_ENERGY_EFFICIENT_MODE */
 
 #ifdef CONFIG_PHY_DM8806_TRIGGER
 	ret = phy_dm8806_init_interrupt(dev);
