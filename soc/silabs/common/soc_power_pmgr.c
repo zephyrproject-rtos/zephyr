@@ -63,9 +63,16 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	if (energy_mode == SL_POWER_MANAGER_EM4) {
 		sl_power_manager_enter_em4();
 	} else if (energy_mode != SL_POWER_MANAGER_EM0) {
+		/* Calling the tracing and hook functions provided in arch_cpu_idle(). */
+#if defined(CONFIG_TRACING)
+		sys_trace_idle();
+#endif
+#if CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
+		z_arm_on_enter_cpu_idle_prepare();
+#endif
+
 		sl_power_manager_add_em_requirement(energy_mode);
 		sl_power_manager_sleep();
-		k_cpu_idle();
 		sl_power_manager_remove_em_requirement(energy_mode);
 	}
 
