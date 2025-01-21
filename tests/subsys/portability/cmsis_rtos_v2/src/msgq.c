@@ -6,7 +6,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <cmsis_os2.h>
+#include <zephyr/portability/cmsis_os2.h>
+#include <zephyr/portability/cmsis_types.h>
 
 struct sample_data {
 	int data1;
@@ -147,7 +148,7 @@ ZTEST(cmsis_msgq, test_messageq)
 	osThreadId_t tid;
 
 	message_id = osMessageQueueNew(Q_LEN, sizeof(struct sample_data), &init_mem_attrs);
-	zassert_true(message_id != NULL, "Message creation failed");
+	zassert_true(message_id != NULL, "Message Queue creation failed");
 
 	tid = osThreadNew(send_msg_thread, NULL, &thread_attr);
 	zassert_true(tid != NULL, "Thread creation failed");
@@ -176,6 +177,27 @@ ZTEST(cmsis_msgq, test_messageq)
 	/* After reset msgq must be empty */
 	zassert_equal(osMessageQueueGetCount(message_id), 0,
 		      "Something's wrong with osMessageQueueGetCount!");
+
+	status = osMessageQueueDelete(message_id);
+	zassert_true(status == osOK, "osMessageQueueDelete failure");
+}
+
+static struct cmsis_rtos_msgq_cb msgq_cb2;
+static const osMessageQueueAttr_t msgq_attrs2 = {
+	.name = "TestMsgQ2",
+	.attr_bits = 0,
+	.cb_mem = &msgq_cb2,
+	.cb_size = sizeof(msgq_cb2),
+	.mq_mem = sample_mem,
+	.mq_size = sizeof(struct sample_data) * Q_LEN,
+};
+ZTEST(cmsis_msgq, test_messageq_static_allocation)
+{
+	osMessageQueueId_t message_id;
+	osStatus_t status;
+
+	message_id = osMessageQueueNew(Q_LEN, sizeof(struct sample_data), &msgq_attrs2);
+	zassert_true(message_id != NULL, "Message Queue creation failed with static cb");
 
 	status = osMessageQueueDelete(message_id);
 	zassert_true(status == osOK, "osMessageQueueDelete failure");
