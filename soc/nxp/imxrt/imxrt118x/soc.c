@@ -510,27 +510,21 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 		sts = ELE_BaseAPI_GetFwStatus(MU_RT_S3MUA, &ele_fw_sts);
 	} while (sts != kStatus_Success);
 
-	do {
 #if defined(CONFIG_SOC_MIMXRT1189_CM33)
-		/* Release TRDC A to CM33 core */
-		sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM33_ID);
+	/* Release TRDC A to CM33 core */
+	(void)ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM33_ID);
 #elif defined(CONFIG_SOC_MIMXRT1189_CM7)
-		/* Release TRDC A to CM7 core */
-		sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM7_ID);
+	/* Release TRDC A to CM7 core */
+	(void)ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM7_ID);
 #endif
-	} while (ELE_IS_FAILED(sts));
 
+#if defined(CONFIG_SOC_MIMXRT1189_CM33)
 	/* Release TRDC W to CM33 core */
-	do {
-#if defined(CONFIG_SOC_MIMXRT1189_CM33)
-		/* Release TRDC A to CM33 core */
-		sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM33_ID);
+	(void)ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM33_ID);
 #elif defined(CONFIG_SOC_MIMXRT1189_CM7)
-		/* Release TRDC A to CM7 core */
-		sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM7_ID);
+	/* Release TRDC W to CM7 core */
+	(void)ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM7_ID);
 #endif
-	} while (ELE_IS_FAILED(sts));
-
 
 	/* Set the master domain access configuration for eDMA3/eDMA4 */
 	trdc_non_processor_domain_assignment_t edmaAssignment;
