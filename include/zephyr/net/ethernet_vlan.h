@@ -31,6 +31,9 @@ extern "C" {
 /** Unspecified VLAN tag value */
 #define NET_VLAN_TAG_UNSPEC 0x0fff
 
+/** VLAN ID for forwarding to the native interface (priority tagging) */
+#define NET_VLAN_TAG_PRIORITY 0x0000
+
 /**
  * @brief Get VLAN identifier from TCI.
  *
