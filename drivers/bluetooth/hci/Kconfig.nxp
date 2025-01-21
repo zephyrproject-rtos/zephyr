@@ -69,7 +69,7 @@ endif # BT_NXP
 if BT_H4_NXP_CTLR
 
 config BT_NXP_NW612
-	bool "NXP IW612 Chipset"
+	bool "NW612 firmware for NXP IW612 Chipset"
 	help
 	  NXP IW612 Chipset supports Wi-Fi? 802.11a/b/g/n/ac/ax + Bluetooth? 5.3
 	  BR/EDR/LE + IEEE802.1.5.4 up to 601 Mbps data rate on Wi-Fi? and 2Mbps
