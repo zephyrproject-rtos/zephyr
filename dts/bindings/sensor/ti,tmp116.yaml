@@ -25,3 +25,15 @@ properties:
       - 0x280 # TMP116_DT_ODR_4000_MS
       - 0x300 # TMP116_DT_ODR_8000_MS
       - 0x380 # TMP116_DT_ODR_16000_MS
+  oversampling:
+    type: int
+    default: 0x20
+    enum: [0, 0x20, 0x40, 0x60]
+    description: |
+      Set number of sample to averaging in one readout.
+      Default is power-up configuration (8 samples).
+
+      - 0    # TMP116_DT_OVERSAMPLING_1
+      - 0x20 # TMP116_DT_OVERSAMPLING_8
+      - 0x40 # TMP116_DT_OVERSAMPLING_32
+      - 0x60 # TMP116_DT_OVERSAMPLING_64

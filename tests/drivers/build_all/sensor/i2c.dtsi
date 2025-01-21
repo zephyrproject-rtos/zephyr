@@ -480,6 +480,7 @@ test_i2c_tmp116: tmp116@47 {
 	compatible = "ti,tmp116";
 	reg = <0x47>;
 	odr = <TMP116_DT_ODR_125_MS>;
+	oversampling = <TMP116_DT_OVERSAMPLING_32>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {
