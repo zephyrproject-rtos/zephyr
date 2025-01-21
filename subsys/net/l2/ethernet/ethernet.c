@@ -353,7 +353,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	net_buf_pull(pkt->frags, hdr_len);
 
 	STRUCT_SECTION_FOREACH(net_l3_register, l3) {
-		if (l3->ptype != type || l3->l2 != &NET_L2_GET_NAME(ETHERNET)) {
+		if (l3->ptype != type || l3->l2 != &NET_L2_GET_NAME(ETHERNET) ||
+		    l3->handler == NULL) {
 			continue;
 		}
 
