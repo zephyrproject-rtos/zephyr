@@ -274,7 +274,6 @@ static int usart_wch_irq_update(const struct device *dev)
 static void usart_wch_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				       void *user_data)
 {
-	const struct usart_wch_config *config = dev->config;
 	struct usart_wch_data *data = dev->data;
 
 	data->cb = cb;
