@@ -34,17 +34,17 @@ extern void z_arm_reserved(void);
 
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 
-void arch_irq_enable(unsigned int irq)
+void arm_irq_enable(unsigned int irq)
 {
 	NVIC_EnableIRQ((IRQn_Type)irq);
 }
 
-void arch_irq_disable(unsigned int irq)
+void arm_irq_disable(unsigned int irq)
 {
 	NVIC_DisableIRQ((IRQn_Type)irq);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int arm_irq_is_enabled(unsigned int irq)
 {
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
 }

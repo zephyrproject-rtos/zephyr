@@ -11,13 +11,44 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
+# multi-level interrupts
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 16
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 234
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 224
+
+config 3RD_LEVEL_INTERRUPTS
+	default n
+
 config NUM_IRQS
-	default 230
+	default 250 # 2ND_LVL_ISR_TBL_OFFSET + MAX_IRQ_PER_AGGREGATOR * NUM_2ND_LEVEL_AGGREGATORS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 800000000
 
 config CACHE_MANAGEMENT
 	default y
+
+config ETH_NXP_IMX_MSGINTR
+	default 2
 
 endif # SOC_MIMX9596_M7

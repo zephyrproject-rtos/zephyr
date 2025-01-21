@@ -29,18 +29,37 @@
 /* MSGINTR */
 #define NETC_MSGINTR_CHANNEL 0
 
+#if DT_IRQ_HAS_IDX(DT_NODELABEL(netc), 0)
+#define NETC_MSGINTR_IRQ DT_IRQN_BY_IDX(DT_NODELABEL(netc), 0)
+#endif
+
 #if (CONFIG_ETH_NXP_IMX_MSGINTR == 1)
-#define NETC_MSGINTR     MSGINTR1
+#define NETC_MSGINTR MSGINTR1
+#ifndef NETC_MSGINTR_IRQ
 #define NETC_MSGINTR_IRQ MSGINTR1_IRQn
+#endif
 #elif (CONFIG_ETH_NXP_IMX_MSGINTR == 2)
-#define NETC_MSGINTR     MSGINTR2
+#define NETC_MSGINTR MSGINTR2
+#ifndef NETC_MSGINTR_IRQ
 #define NETC_MSGINTR_IRQ MSGINTR2_IRQn
+#endif
 #else
 #error "Current CONFIG_ETH_NXP_IMX_MSGINTR not support"
 #endif
 
 /* Timeout for various operations */
 #define NETC_TIMEOUT K_MSEC(20)
+
+#define NETC_PHY_MODE(node_id)                                                                     \
+	DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii)                                       \
+	? kNETC_MiiMode                                                                            \
+	: (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rmii)                                   \
+		   ? kNETC_RmiiMode                                                                \
+		   : (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii)                       \
+			      ? kNETC_RgmiiMode                                                    \
+			      : (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, gmii)             \
+					 ? kNETC_GmiiMode                                          \
+					 : kNETC_RmiiMode)))
 
 /* Helper macros to convert from Zephyr PHY speed to NETC speed/duplex types */
 #define PHY_TO_NETC_SPEED(x)                                                                       \
@@ -85,6 +104,7 @@
 struct netc_eth_config {
 	uint16_t si_idx;
 	const struct device *phy_dev;
+	netc_hw_mii_mode_t phy_mode;
 	void (*generate_mac)(uint8_t *mac_addr);
 	void (*bdr_init)(netc_bdr_config_t *bdr_config, netc_rx_bdr_config_t *rx_bdr_config,
 			 netc_tx_bdr_config_t *tx_bdr_config);
