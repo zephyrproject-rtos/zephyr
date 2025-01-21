@@ -250,7 +250,7 @@ void simulate_timer_cntp_ctl(struct z_vcpu *vcpu, int read, uint64_t *value)
  * This needs to be done when the vcpu is created. The step is below:
  * 1. Init vtimer and ptimer register.
  * 2. Add a timer expiry function for vcpu.
- * 3. Add a callbak function.
+ * 3. Add a callback function.
  */
 int arch_vcpu_timer_init(struct z_vcpu *vcpu)
 {

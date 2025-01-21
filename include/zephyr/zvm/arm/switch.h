@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_SWITCH_H__
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_SWITCH_H__
+#ifndef ZEPHYR_INCLUDE_ZVM_ARM_SWITCH_H__
+#define ZEPHYR_INCLUDE_ZVM_ARM_SWITCH_H__
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/arm64/exception.h>
@@ -95,4 +95,4 @@ bool zvm_switch_handle_pre(uint32_t irq);
  */
 uint64_t get_zvm_host_context(void);
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_SWITCH_H__ */
+#endif /* ZEPHYR_INCLUDE_ZVM_ARM_SWITCH_H__ */

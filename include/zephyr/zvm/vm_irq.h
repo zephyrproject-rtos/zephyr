@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_VM_IRQ_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_VM_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_VM_IRQ_H_
+#define ZEPHYR_INCLUDE_ZVM_VM_IRQ_H_
 
 #include <stdint.h>
 #include <zephyr/sys/dlist.h>
@@ -142,4 +142,4 @@ void vm_device_irq_init(struct z_vm *vm, struct z_virt_dev *vm_dev);
  */
 int vm_irq_block_init(struct z_vm *vm);
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_VM_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_VM_IRQ_H_ */

@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_CPU_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_CPU_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_ARM_CPU_H_
+#define ZEPHYR_INCLUDE_ZVM_ARM_CPU_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/arm64/cpu.h>
@@ -207,4 +207,4 @@ int arch_vcpu_deinit(struct z_vcpu *vcpu);
 
 int zvm_arch_init(void *op);
 
-#endif  /*ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_CPU_H_*/
+#endif  /*ZEPHYR_INCLUDE_ZVM_ARM_CPU_H_*/

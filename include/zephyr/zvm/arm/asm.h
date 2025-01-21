@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_ASM_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_ASM_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_ARM_ASM_H_
+#define ZEPHYR_INCLUDE_ZVM_ARM_ASM_H_
 
 #define ARM_VM_EXCEPTION_SYNC	        (0x01)
 #define ARM_VM_EXCEPTION_IRQ	        (0x02)
@@ -28,4 +28,4 @@
 
 #define ARM_VM_SERROR_PENDING(x)	  !!((x) & (1U << 31))
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_ASM_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_ARM_ASM_H_ */

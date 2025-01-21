@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_MM_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_MM_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_ARM_MM_H_
+#define ZEPHYR_INCLUDE_ZVM_ARM_MM_H_
 
 #include <zephyr/kernel.h>
 #include <stdint.h>
@@ -123,4 +123,4 @@ int arch_vm_mem_domain_partition_remove(struct k_mem_domain *domain,
  */
 int arch_mem_domain_init(struct k_mem_domain *domain);
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_MM_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_ARM_MM_H_ */

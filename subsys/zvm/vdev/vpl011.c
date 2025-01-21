@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Yuhao Hu, Qingqiao Wang and etc.
  * Copyright 2024-2025 openEuler SIG-Zephyr

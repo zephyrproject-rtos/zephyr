@@ -166,7 +166,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_zvm,
     SHELL_CMD(delete, NULL, SHELL_HELP_DELETE_VM, cmd_zvm_delete),
     SHELL_CMD(info, NULL, SHELL_HELP_LIST_VM, cmd_zvm_info) ,
     SHELL_CMD(update, NULL, SHELL_HELP_UPDATE_VM, cmd_zvm_update),
+#ifdef CONFIG_ENABLE_VM_VSERIAL
     SHELL_CMD(look, NULL, SHELL_HELP_CONNECT_VIRTUAL_SERIAL, switch_virtual_serial_handler),
+#endif
     SHELL_SUBCMD_SET_END
 );
 

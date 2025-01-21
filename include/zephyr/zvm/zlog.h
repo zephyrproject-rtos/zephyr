@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_ZLOG_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_ZLOG_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_ZLOG_H_
+#define ZEPHYR_INCLUDE_ZVM_ZLOG_H_
 
 #include <zephyr/kernel.h>
 
@@ -43,4 +43,4 @@ do {\
 
 #endif
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_ZLOG_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_ZLOG_H_ */

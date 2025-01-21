@@ -1,18 +1,20 @@
-# Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
-# Copyright 2024-2025 openEuler SIG-Zephyr
-# SPDX-License-Identifier: Apache-2.0
-
-# Basic board infomation
 CONFIG_ARM_ARCH_TIMER=y
-CONFIG_QEMU_ICOUNT=n
 
-CONFIG_ARMV8_A_NS=y
+# Cache management
 CONFIG_CACHE_MANAGEMENT=y
-CONFIG_TIMEOUT_64BIT=y
-CONFIG_ARM64_SET_VMPIDR_EL2=y
-CONFIG_ARM64_SET_VPIDR_EL2=y
 
 # Enable UART driver
 CONFIG_SERIAL=y
-CONFIG_UART_PL011=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable serial port
 CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# Avoid timing skew in tests
+CONFIG_QEMU_ICOUNT=y
+
+# MMU Options
+CONFIG_MAX_XLAT_TABLES=32

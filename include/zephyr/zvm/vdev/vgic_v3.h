@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_VGIC_V3_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_VGIC_V3_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_ARM_VGIC_V3_H_
+#define ZEPHYR_INCLUDE_ZVM_ARM_VGIC_V3_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
@@ -431,4 +431,4 @@ static ALWAYS_INLINE void gicv3_update_lr(struct z_vcpu *vcpu, struct virt_irq_d
 	}
 }
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_VGIC_V3_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_ARM_VGIC_V3_H_ */

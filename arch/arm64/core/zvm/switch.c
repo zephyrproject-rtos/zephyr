@@ -17,7 +17,7 @@
 #include <zephyr/zvm/arm/timer.h>
 #include <zephyr/zvm/vdev/vgic_v3.h>
 #include <zephyr/zvm/vdev/vgic_common.h>
-#include <zephyr/zvm/vdev/virt_psci.h>
+#include <zephyr/zvm/vdev/vpsci.h>
 #include <zephyr/zvm/vm_cpu.h>
 
 

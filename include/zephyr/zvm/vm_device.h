@@ -79,7 +79,7 @@ struct virt_device_data {
     uint16_t vdevice_type;
     /* Get the virt device data port*/
     void *device_data;
-#ifdef CONFIG_VIRT_DEVICE_INTERRUPT_DRIVEN
+#ifdef CONFIG_ENABLE_VIRT_DEVICE_INTERRUPT_DRIVEN
     virt_device_irq_callback_user_data_set_t irq_cb;
     void *irq_cb_data;
 #endif
@@ -107,7 +107,7 @@ struct virt_device_api {
     int (*deinit_fn)(const struct device *dev, struct z_vm *vm, struct z_virt_dev *vdev_desc);
     int (*virt_device_write)(struct z_virt_dev *vdev, uint64_t addr, uint64_t *value, uint16_t size);
     int (*virt_device_read)(struct z_virt_dev *vdev, uint64_t addr, uint64_t *value, uint16_t size);
-#ifdef CONFIG_VIRT_DEVICE_INTERRUPT_DRIVEN
+#ifdef CONFIG_ENABLE_VIRT_DEVICE_INTERRUPT_DRIVEN
     void (*virt_irq_callback_set)(const struct device *dev, void *cb, void *user_data);
 #endif
     /* Get the device driver api, if the device driver is initialed in host */
@@ -199,7 +199,7 @@ static inline int zvm_virtual_devices_count_get(void)
 static inline void vdev_irq_callback_user_data_set(const struct device *dev,
 						   void *cb, void *user_data)
 {
-#ifdef CONFIG_VIRT_DEVICE_INTERRUPT_DRIVEN
+#ifdef CONFIG_ENABLE_VIRT_DEVICE_INTERRUPT_DRIVEN
 	const struct virt_device_api *api =
 		(const struct virt_device_api *)dev->api;
 

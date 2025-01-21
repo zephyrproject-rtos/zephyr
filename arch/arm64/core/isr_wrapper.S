@@ -113,8 +113,8 @@ spurious_continue:
 	bl zvm_switch_handle_pre
 	mov x1, x0
 	ldp	x0, xzr, [sp], #16
-	/* passthrough device may need deactive */
-	bl arm_gic_eoi_deactive
+	/* passthrough device may need deactivate */
+	bl arm_gic_eoi_deactivate
 #else
 	ldp	x0, xzr, [sp], #16
 #endif

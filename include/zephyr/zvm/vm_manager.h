@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_VM_MANAGER_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_VM_MANAGER_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_VM_MANAGER_H_
+#define ZEPHYR_INCLUDE_ZVM_VM_MANAGER_H_
 
 #include <errno.h>
 #include <zephyr/arch/arm64/cpu.h>
@@ -70,4 +70,4 @@ void zvm_shutdown_guest(struct z_vm *vm);
 void zvm_reboot_guest(struct z_vm *vm);
 
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_VM_MANAGER_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_VM_MANAGER_H_ */

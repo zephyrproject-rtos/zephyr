@@ -54,8 +54,8 @@ source "subsys/usb/device/Kconfig"
 source "subsys/usb/device_next/Kconfig"
 source "subsys/usb/host/Kconfig"
 source "subsys/usb/usb_c/Kconfig"
-source "subsys/zvm/Kconfig"
 source "subsys/zbus/Kconfig"
+source "subsys/zvm/Kconfig"
 # zephyr-keep-sorted-stop
 
 config MODULES

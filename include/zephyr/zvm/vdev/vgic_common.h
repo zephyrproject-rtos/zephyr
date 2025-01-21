@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_VGIC_COMMON_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_VGIC_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_ARM_VGIC_COMMON_H_
+#define ZEPHYR_INCLUDE_ZVM_ARM_VGIC_COMMON_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
@@ -279,4 +279,4 @@ static ALWAYS_INLINE bool vgic_irq_test_bit(struct z_vcpu *vcpu, uint32_t spi_nr
 	return false;
 }
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_VGIC_COMMON_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_ARM_VGIC_COMMON_H_ */

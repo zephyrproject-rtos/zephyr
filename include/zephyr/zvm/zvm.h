@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_H_
+#define ZEPHYR_INCLUDE_ZVM_H_
 
 #include <stdint.h>
 #include <zephyr/devicetree.h>
@@ -209,4 +209,4 @@ int get_pcpu_cache_clean(uint64_t cpu_mpidr);
 
 void reset_pcpu_cache_clean(uint64_t cpu_mpidr);
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_H_ */

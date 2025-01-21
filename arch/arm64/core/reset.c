@@ -210,7 +210,9 @@ void z_arm64_el1_init(void)
 	write_sctlr_el1(reg);
 
 	write_cntv_cval_el0(~(uint64_t)0);
+#if defined(CONFIG_HAS_ARM_VHE)
 	write_cntp_cval_el0(~(uint64_t)0);
+#endif
 	/*
 	 * Enable these if/when we use the corresponding timers.
 	 * write_cntp_cval_el0(~(uint64_t)0);

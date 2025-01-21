@@ -1,7 +1,8 @@
 identifier: qemu_max/qemu_max/smp
 name: QEMU Emulation for MAX SMP (ARM)
 type: qemu
-simulation: qemu
+simulation:
+  - name: qemu
 arch: arm64
 toolchain:
   - zephyr
@@ -14,4 +15,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
-vendor: arm
+vendor: qemu

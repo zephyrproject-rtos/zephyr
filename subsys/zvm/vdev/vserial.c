@@ -172,7 +172,7 @@ static int virt_serial_ctrl_init(void)
 	return 0;
 }
 
-SYS_INIT(virt_serial_ctrl_init, POST_KERNEL, CONFIG_VIRT_SERIAL_CTRL_INIT_PRIORITY);
+SYS_INIT(virt_serial_ctrl_init, POST_KERNEL, CONFIG_VIRT_SERIAL_CTRL_BLOCK_INIT_PRIORITY);
 
 
 

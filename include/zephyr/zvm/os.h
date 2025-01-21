@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_OS_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_OS_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_OS_H_
+#define ZEPHYR_INCLUDE_ZVM_OS_H_
 
 #include <zephyr/kernel.h>
 #include <stdint.h>
@@ -82,4 +82,4 @@ int load_vm_image(struct vm_mem_domain *vmem_domain, struct z_os *os);
 
 int vm_os_create(struct z_os* os, struct z_os_info *vm_info);
 
-#endif  /* ZEPHYR_INCLUDE_VIRTUALIZATION_OS_H_ */
+#endif  /* ZEPHYR_INCLUDE_ZVM_OS_H_ */
