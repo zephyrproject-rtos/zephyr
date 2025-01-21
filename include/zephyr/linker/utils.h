@@ -24,8 +24,8 @@
 static inline bool linker_is_in_rodata(const void *addr)
 {
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
-	extern const char lnkr_pinned_rodata_start[];
-	extern const char lnkr_pinned_rodata_end[];
+	extern char lnkr_pinned_rodata_start[];
+	extern char lnkr_pinned_rodata_end[];
 
 	if (((const char *)addr >= (const char *)lnkr_pinned_rodata_start) &&
 	    ((const char *)addr < (const char *)lnkr_pinned_rodata_end)) {
