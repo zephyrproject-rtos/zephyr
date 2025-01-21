@@ -44,6 +44,13 @@
 			};
 		};
 	};
+
+	soc {
+		temp: temp {
+			compatible = "nxp,tmpsns";
+			status = "disabled";
+		};
+	};
 };
 
 &peripheral {

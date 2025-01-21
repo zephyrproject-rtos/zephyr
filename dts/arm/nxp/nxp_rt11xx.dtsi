@@ -1307,6 +1307,11 @@
 				status = "disabled";
 			};
 		};
+
+		temp: temp {
+			compatible = "nxp,tmpsns";
+			status = "disabled";
+		};
 	};
 };
 
