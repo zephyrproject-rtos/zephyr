@@ -112,6 +112,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 	void *stack;
 	size_t stack_size;
 	uint32_t this_thread_num;
+	uint32_t this_dynamic_cb;
 
 	if (k_is_in_isr()) {
 		return NULL;
@@ -162,8 +163,13 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 
 	this_thread_num = atomic_inc(&thread_num);
 
-	uint32_t this_dynamic_cb = atomic_inc(&num_dynamic_cb);
-	tid = &cmsis_rtos_thread_cb_pool[this_dynamic_cb];
+	if (attr->cb_mem == NULL) {
+		this_dynamic_cb = atomic_inc(&num_dynamic_cb);
+		tid = &cmsis_rtos_thread_cb_pool[this_dynamic_cb];
+	} else {
+		tid = (struct cmsis_rtos_thread_cb *)attr->cb_mem;
+	}
+
 	tid->attr_bits = attr->attr_bits;
 
 #if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
