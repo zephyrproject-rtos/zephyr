@@ -94,6 +94,8 @@ The Zephyr ``imx95_evk/mimx9596/m7`` board target supports the following hardwar
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| NETC      | on-chip    | ethernet, mdio                      |
++-----------+------------+-------------------------------------+
 
 The Zephyr ``imx95_evk/mimx9596/a55`` and ``imx95_evk/mimx9596/a55/smp`` board targets support
 the following hardware features:
@@ -140,6 +142,12 @@ SPI
 
 The EVK board need to be reworked to solder R1217/R1218/R1219/R1220 with 0R resistances.
 SPI1 on J35 is enabled for M7.
+
+Ethernet
+--------
+
+NETC driver supports to manage the Physical Station Interface (PSI).
+The first ENET1 port is enabled for M7.
 
 
 Programming and Debugging (A55)
