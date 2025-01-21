@@ -26,7 +26,9 @@
  * @details Check if static array allocations are sized as expected.
  */
 
+TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_GNU_FOLDING_CONSTANT);
 char static_array1[Z_POW2_CEIL(1)];
+TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_GNU_FOLDING_CONSTANT);
 char static_array2[Z_POW2_CEIL(2)];
 char static_array3[Z_POW2_CEIL(3)];
 char static_array4[Z_POW2_CEIL(4)];
