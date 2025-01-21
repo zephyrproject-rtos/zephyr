@@ -34,12 +34,16 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 		attr = &init_sema_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cmsis_rtos_semaphore_cb_slab, (void **)&semaphore, K_MSEC(100)) ==
-	    0) {
-		(void)memset(semaphore, 0, sizeof(struct cmsis_rtos_semaphore_cb));
-	} else {
+	if (attr->cb_mem != NULL) {
+		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_semaphore_cb),
+			 "Invalid cb_size\n");
+		semaphore = (struct cmsis_rtos_semaphore_cb *)attr->cb_mem;
+	} else if (k_mem_slab_alloc(&cmsis_rtos_semaphore_cb_slab, (void **)&semaphore,
+				    K_MSEC(100)) != 0) {
 		return NULL;
 	}
+	(void)memset(semaphore, 0, sizeof(struct cmsis_rtos_semaphore_cb));
+	semaphore->is_cb_dynamic_allocation = attr->cb_mem == NULL;
 
 	k_sem_init(&semaphore->z_semaphore, initial_count, max_count);
 
@@ -137,8 +141,9 @@ osStatus_t osSemaphoreDelete(osSemaphoreId_t semaphore_id)
 	 * parameter semaphore_id is in an invalid semaphore state) is not
 	 * supported in Zephyr.
 	 */
-
-	k_mem_slab_free(&cmsis_rtos_semaphore_cb_slab, (void *)semaphore);
+	if (semaphore->is_cb_dynamic_allocation) {
+		k_mem_slab_free(&cmsis_rtos_semaphore_cb_slab, (void *)semaphore);
+	}
 
 	return osOK;
 }
