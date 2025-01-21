@@ -921,19 +921,6 @@ int z_ztest_run_test_suite(const char *name, bool shuffle,
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
 
-static void __ztest_init_unit_test_result_for_suite(struct ztest_suite_node *suite)
-{
-	struct ztest_unit_test *test = NULL;
-
-	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
-		test->stats->run_count = 0;
-		test->stats->skip_count = 0;
-		test->stats->fail_count = 0;
-		test->stats->pass_count = 0;
-		test->stats->duration_worst_ms = 0;
-	}
-}
-
 /* Show one line summary for a test suite.
  */
 static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
@@ -1092,9 +1079,6 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 	z_ztest_shuffle(shuffle, (void **)suites_to_run, (intptr_t)_ztest_suite_node_list_start,
 			ZTEST_SUITE_COUNT, sizeof(struct ztest_suite_node));
 	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
-		__ztest_init_unit_test_result_for_suite(suites_to_run[i]);
-	}
-	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
 		count += __ztest_run_test_suite(suites_to_run[i], state, shuffle, suite_iter,
 						case_iter, param);
 		/* Stop running tests if we have a critical error or if we have a failure and
@@ -1108,7 +1092,6 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 #else
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
-		__ztest_init_unit_test_result_for_suite(ptr);
 		count += __ztest_run_test_suite(ptr, state, shuffle, suite_iter, case_iter, param);
 		/* Stop running tests if we have a critical error or if we have a failure and
 		 * FAIL_FAST was set
@@ -1365,7 +1348,6 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
-		__ztest_init_unit_test_result_for_suite(ptr);
 		if (strcmp(shell_command, "run-testcase") == 0) {
 			count += __ztest_run_test_suite(ptr, NULL, shuffle, 1, repeat_iter, param);
 		} else if (strcmp(shell_command, "run-testsuite") == 0) {
