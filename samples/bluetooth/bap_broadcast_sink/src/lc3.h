@@ -42,13 +42,6 @@
 #define LC3_MAX_NUM_SAMPLES_STEREO (LC3_MAX_NUM_SAMPLES_MONO * 2U)
 
 /**
- * @brief Returns the number of active streams using an LC3 codec
- *
- * @return the number of active streams using an LC3 codec
- */
-size_t lc3_get_rx_streaming_cnt(void);
-
-/**
  * @brief Enables LC3 for a stream
  *
  * This will initialize the LC3 decoder given the @p stream codec configuration

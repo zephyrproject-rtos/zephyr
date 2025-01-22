@@ -890,7 +890,7 @@ static int init(void)
 		lc3_init();
 	}
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 		usb_init();
 	}
 

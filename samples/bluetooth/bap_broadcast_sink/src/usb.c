@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/usb/udc_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
@@ -28,11 +29,12 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
-#include <zephyr/usb/usb_device.h>
-#include <zephyr/usb/class/usb_audio.h>
+#include <zephyr/usb/class/usbd_uac2.h>
+#include <zephyr/usb/usbd.h>
+
+#include <sample_usbd.h>
 
 #include "lc3.h"
-#include "stream_rx.h"
 #include "usb.h"
 
 LOG_MODULE_REGISTER(usb, CONFIG_LOG_DEFAULT_LEVEL);
@@ -47,6 +49,8 @@ LOG_MODULE_REGISTER(usb, CONFIG_LOG_DEFAULT_LEVEL);
 #define USB_OUT_RING_BUF_SIZE    (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
 #define USB_IN_RING_BUF_SIZE     (USB_MONO_FRAME_SIZE * USB_ENQUEUE_COUNT)
 
+#define IN_TERMINAL_ID UAC2_ENTITY_ID(DT_NODELABEL(in_terminal))
+
 struct decoded_sdu {
 	int16_t right_frames[CONFIG_MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
 	int16_t left_frames[CONFIG_MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
@@ -57,66 +61,75 @@ struct decoded_sdu {
 } decoded_sdu;
 
 RING_BUF_DECLARE(usb_out_ring_buf, USB_OUT_RING_BUF_SIZE);
-NET_BUF_POOL_DEFINE(usb_out_buf_pool, USB_ENQUEUE_COUNT, USB_STEREO_FRAME_SIZE, 0, net_buf_destroy);
+K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, ROUND_UP(USB_STEREO_FRAME_SIZE, UDC_BUF_GRANULARITY),
+			 USB_ENQUEUE_COUNT, UDC_BUF_ALIGN);
+static volatile bool terminal_enabled;
 
 /* USB consumer callback, called every 1ms, consumes data from ring-buffer */
-static void usb_data_request_cb(const struct device *dev)
+static void uac2_sof_cb(const struct device *dev, void *user_data)
 {
-	uint8_t usb_audio_data[USB_STEREO_FRAME_SIZE] = {0};
-	struct net_buf *pcm_buf;
+	void *pcm_buf;
 	uint32_t size;
 	int err;
 
-	if (lc3_get_rx_streaming_cnt() == 0) {
-		/* no-op as we have no streams that receive data */
+	if (!terminal_enabled) {
+		/* Simply discard the data then */
+		(void)ring_buf_get(&usb_out_ring_buf, NULL, USB_STEREO_FRAME_SIZE);
 		return;
 	}
 
-	pcm_buf = net_buf_alloc(&usb_out_buf_pool, K_NO_WAIT);
-	if (pcm_buf == NULL) {
+	err = k_mem_slab_alloc(&usb_out_buf_pool, &pcm_buf, K_NO_WAIT);
+	if (err != 0) {
 		LOG_WRN("Could not allocate pcm_buf");
 		return;
 	}
 
-	/* This may fail without causing issues since usb_audio_data is 0-initialized */
-	size = ring_buf_get(&usb_out_ring_buf, usb_audio_data, sizeof(usb_audio_data));
+	size = ring_buf_get(&usb_out_ring_buf, pcm_buf, USB_STEREO_FRAME_SIZE);
+	if (size != USB_STEREO_FRAME_SIZE) {
+		/* If we could not fill the buffer, zero-fill the rest (possibly all) */
+		memset(((uint8_t *)pcm_buf) + size, 0, USB_STEREO_FRAME_SIZE - size);
+	}
 
-	net_buf_add_mem(pcm_buf, usb_audio_data, sizeof(usb_audio_data));
+	if (CONFIG_INFO_REPORTING_INTERVAL > 0) {
+		if (size != 0) {
+			static size_t cnt;
 
-	if (size != 0) {
-		static size_t cnt;
+			if (++cnt % (CONFIG_INFO_REPORTING_INTERVAL * 10) == 0U) {
+				LOG_INF("[%zu]: Sending USB audio", cnt);
+			}
+		} else {
+			static size_t cnt;
 
-		if (CONFIG_INFO_REPORTING_INTERVAL > 0 &&
-		    (++cnt % (CONFIG_INFO_REPORTING_INTERVAL * 10)) == 0U) {
-			LOG_INF("[%zu]: Sending USB audio", cnt);
-		}
-	} else {
-		static size_t cnt;
-
-		if (CONFIG_INFO_REPORTING_INTERVAL > 0 &&
-		    (++cnt % (CONFIG_INFO_REPORTING_INTERVAL * 10)) == 0U) {
-			LOG_INF("[%zu]: Sending empty USB audio", cnt);
+			if (++cnt % (CONFIG_INFO_REPORTING_INTERVAL * 10) == 0U) {
+				LOG_INF("[%zu]: Sending empty USB audio", cnt);
+			}
 		}
 	}
 
-	err = usb_audio_send(dev, pcm_buf, sizeof(usb_audio_data));
+	err = usbd_uac2_send(dev, IN_TERMINAL_ID, pcm_buf, USB_STEREO_FRAME_SIZE);
 	if (err != 0) {
-		static size_t cnt;
+		if (CONFIG_INFO_REPORTING_INTERVAL > 0) {
+			static size_t cnt;
 
-		cnt++;
-		if (CONFIG_INFO_REPORTING_INTERVAL > 0 &&
-		    (cnt % (CONFIG_INFO_REPORTING_INTERVAL * 10)) == 0) {
-			LOG_ERR("Failed to send USB audio: %d (%zu)", err, cnt);
+			if (cnt++ % (CONFIG_INFO_REPORTING_INTERVAL * 10) == 0) {
+				LOG_ERR("[%zu]: Failed to send USB audio: %d", cnt, err);
+			}
 		}
 
-		net_buf_unref(pcm_buf);
-	}
+		k_mem_slab_free(&usb_out_buf_pool, pcm_buf);
+	} /* USB owns the buffer which will be released in uac2_buf_release_cb */
 }
 
-static void usb_data_written_cb(const struct device *dev, struct net_buf *buf, size_t size)
+static void uac2_buf_release_cb(const struct device *dev, uint8_t terminal, void *buf,
+				void *user_data)
 {
-	/* Unreference the buffer now that the USB is done with it */
-	net_buf_unref(buf);
+	k_mem_slab_free(&usb_out_buf_pool, buf);
+}
+
+static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
+			       bool microframes, void *user_data)
+{
+	terminal_enabled = enabled;
 }
 
 static void usb_send_frames_to_usb(void)
@@ -214,6 +227,12 @@ int usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16_t *
 	const bool is_mono = chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
 	const uint8_t ts_jitter_us = 100; /* timestamps may have jitter */
 	static size_t cnt;
+
+	if (!terminal_enabled) {
+		/* Simply discard the data then */
+		/* TODO: Consider if we still want to decode the incoming audio */
+		return 0;
+	}
 
 	if (CONFIG_INFO_REPORTING_INTERVAL > 0 && (++cnt % CONFIG_INFO_REPORTING_INTERVAL) == 0U) {
 		LOG_INF("[%zu]: Adding USB audio frame", cnt);
@@ -319,11 +338,13 @@ void usb_clear_frames_to_usb(void)
 
 int usb_init(void)
 {
-	const struct device *hs_dev = DEVICE_DT_GET(DT_NODELABEL(hs_0));
-	static const struct usb_audio_ops usb_ops = {
-		.data_request_cb = usb_data_request_cb,
-		.data_written_cb = usb_data_written_cb,
+	const struct device *mic_dev = DEVICE_DT_GET(DT_NODELABEL(uac2_microphone));
+	static struct uac2_ops usb_audio_ops = {
+		.sof_cb = uac2_sof_cb,
+		.buf_release_cb = uac2_buf_release_cb,
+		.terminal_update_cb = terminal_update_cb,
 	};
+	struct usbd_context *sample_usbd;
 	static bool initialized;
 	int err;
 
@@ -331,15 +352,20 @@ int usb_init(void)
 		return -EALREADY;
 	}
 
-	if (!device_is_ready(hs_dev)) {
-		LOG_ERR("Cannot get USB Headset Device");
+	if (!device_is_ready(mic_dev)) {
+		LOG_ERR("Cannot get USB Microphone Device");
 		return -EIO;
 	}
 
-	usb_audio_register(hs_dev, &usb_ops);
-	err = usb_enable(NULL);
+	usbd_uac2_set_ops(mic_dev, &usb_audio_ops, NULL);
+
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		return -ENODEV;
+	}
+
+	err = usbd_enable(sample_usbd);
 	if (err != 0) {
-		LOG_ERR("Failed to enable USB");
 		return err;
 	}
 
