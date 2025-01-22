@@ -69,7 +69,8 @@ extern "C" {
 		/* Do turbo logging only if argument fits in 32 bit word. */                       \
 		if (!Z_LOG_STMESP_1_ARG_CHECK(__VA_ARGS__)) {                                      \
 			COND_CODE_1(CONFIG_LOG_FRONTEND_STMESP_TURBO_DROP_OTHERS, (),              \
-				(Z_LOG(_level, __VA_ARGS__)));                             \
+				(Z_LOG(_level, __VA_ARGS__)));                                     \
+			break;                                                                     \
 		}                                                                                  \
 		if (!Z_LOG_LEVEL_ALL_CHECK(_level, __log_current_const_data, _source)) {           \
 			break;                                                                     \
