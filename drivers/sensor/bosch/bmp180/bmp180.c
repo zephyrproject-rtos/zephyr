@@ -278,10 +278,16 @@ static void bmp180_compensate_temp(struct bmp180_data *data)
 {
 	int32_t partial_data1;
 	int32_t partial_data2;
+	int32_t divisor;
 	struct bmp180_cal_data *cal = &data->cal;
 
 	partial_data1 = (data->raw_temp - cal->ac6) * cal->ac5 / 0x8000;
-	partial_data2 = cal->mc * 0x800 / (partial_data1 + cal->md);
+
+	/* Check divisor before division */
+	divisor = partial_data1 + cal->md;
+	__ASSERT(divisor != 0, "divisor is zero: partial_data1=%d, md=%d", partial_data1, cal->md);
+
+	partial_data2 = cal->mc * 0x800 / divisor;
 
 	/* Store for pressure calculation */
 	data->comp_temp = (partial_data1 + partial_data2);
