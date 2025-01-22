@@ -101,6 +101,7 @@ bool bt_pub_key_is_valid(const uint8_t key[BT_PUB_KEY_LEN])
 		return true;
 	}
 
+	LOG_ERR("psa_import_key() returned status %d", ret);
 	return false;
 }
 
@@ -120,18 +121,20 @@ static void generate_pub_key(struct k_work *work)
 	uint8_t tmp_pub_key_buf[BT_PUB_KEY_LEN + 1];
 	size_t tmp_len;
 	int err;
+	psa_status_t ret;
 
 	set_key_attributes(&attr);
 
-	if (psa_generate_key(&attr, &key_id) != PSA_SUCCESS) {
-		LOG_ERR("Failed to generate ECC key");
+	ret = psa_generate_key(&attr, &key_id);
+	if (ret != PSA_SUCCESS) {
+		LOG_ERR("Failed to generate ECC key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
 		goto done;
 	}
 
-	if (psa_export_public_key(key_id, tmp_pub_key_buf, sizeof(tmp_pub_key_buf),
-				  &tmp_len) != PSA_SUCCESS) {
-		LOG_ERR("Failed to export ECC public key");
+	ret = psa_export_public_key(key_id, tmp_pub_key_buf, sizeof(tmp_pub_key_buf), &tmp_len);
+	if (ret != PSA_SUCCESS) {
+		LOG_ERR("Failed to export ECC public key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
 		goto done;
 	}
@@ -141,15 +144,16 @@ static void generate_pub_key(struct k_work *work)
 	 */
 	memcpy(ecc.public_key_be, &tmp_pub_key_buf[1], BT_PUB_KEY_LEN);
 
-	if (psa_export_key(key_id, ecc.private_key_be, BT_PRIV_KEY_LEN,
-			&tmp_len) != PSA_SUCCESS) {
-		LOG_ERR("Failed to export ECC private key");
+	ret = psa_export_key(key_id, ecc.private_key_be, BT_PRIV_KEY_LEN, &tmp_len);
+	if (ret != PSA_SUCCESS) {
+		LOG_ERR("Failed to export ECC private key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
 		goto done;
 	}
 
-	if (psa_destroy_key(key_id) != PSA_SUCCESS) {
-		LOG_ERR("Failed to destroy ECC key ID");
+	ret = psa_destroy_key(key_id);
+	if (ret != PSA_SUCCESS) {
+		LOG_ERR("Failed to destroy ECC key ID %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
 		goto done;
 	}
@@ -184,6 +188,7 @@ static void generate_dh_key(struct k_work *work)
 
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 	psa_key_id_t key_id;
+	psa_status_t ret;
 	/* PSA expects secp256r1 public key to start with a predefined 0x04 byte
 	 * at the beginning the buffer.
 	 */
@@ -195,23 +200,25 @@ static void generate_dh_key(struct k_work *work)
 	const uint8_t *priv_key = (IS_ENABLED(CONFIG_BT_USE_DEBUG_KEYS) ?
 				   debug_private_key_be :
 				   ecc.private_key_be);
-	if (psa_import_key(&attr, priv_key, BT_PRIV_KEY_LEN, &key_id) != PSA_SUCCESS) {
+	ret = psa_import_key(&attr, priv_key, BT_PRIV_KEY_LEN, &key_id);
+	if (ret != PSA_SUCCESS) {
 		err = -EIO;
-		LOG_ERR("Failed to import the private key for key agreement");
+		LOG_ERR("Failed to import the private key for key agreement %d", ret);
 		goto exit;
 	}
 
 	memcpy(&tmp_pub_key_buf[1], ecc.public_key_be, BT_PUB_KEY_LEN);
-	if (psa_raw_key_agreement(PSA_ALG_ECDH, key_id, tmp_pub_key_buf,
-				  sizeof(tmp_pub_key_buf), ecc.dhkey_be, BT_DH_KEY_LEN,
-				  &tmp_len) != PSA_SUCCESS) {
+	ret = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, tmp_pub_key_buf, sizeof(tmp_pub_key_buf),
+				    ecc.dhkey_be, BT_DH_KEY_LEN, &tmp_len);
+	if (ret != PSA_SUCCESS) {
 		err = -EIO;
-		LOG_ERR("Raw key agreement failed");
+		LOG_ERR("Raw key agreement failed %d", ret);
 		goto exit;
 	}
 
-	if (psa_destroy_key(key_id) != PSA_SUCCESS) {
-		LOG_ERR("Failed to destroy the key");
+	ret = psa_destroy_key(key_id);
+	if (ret != PSA_SUCCESS) {
+		LOG_ERR("Failed to destroy the key %d", ret);
 		err = -EIO;
 		goto exit;
 	}
