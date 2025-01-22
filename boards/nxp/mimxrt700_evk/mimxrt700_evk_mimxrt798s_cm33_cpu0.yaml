@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - i2c
   - uart
   - spi
 vendor: nxp
