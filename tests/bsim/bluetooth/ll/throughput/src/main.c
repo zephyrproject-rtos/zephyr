@@ -16,7 +16,12 @@
 #include "time_machine.h"
 #include "bstests.h"
 
-#define COUNT      5000   /* Arbitrary GATT Write Cmd iterations used */
+/* There are 13 iterations of PHY update every 3 seconds, and ~ 100 write
+ * commands in one second when transmitting on 2M PHY. 11000 write commands
+ * are sufficient to complete all 13 iterations of PHY update and last one
+ * request to be on 2M PHY. 2M PHY throughput is used as pass verdict.
+ */
+#define COUNT 11000   /* Arbitrary GATT Write Cmd iterations used */
 
 /* Write Throughput calculation:
  *  Measure interval = 1 s
