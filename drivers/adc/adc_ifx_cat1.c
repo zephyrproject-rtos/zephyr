@@ -22,9 +22,11 @@
 LOG_MODULE_REGISTER(ifx_cat1_adc, CONFIG_ADC_LOG_LEVEL);
 
 #if defined(PASS_SARMUX_PADS0_PORT)
-	#define _ADCSAR_PORT PASS_SARMUX_PADS0_PORT
+#define _ADC_PORT PASS_SARMUX_PADS0_PORT
+#elif defined(ADCMIC_GPIO_ADC_IN0_PORT)
+#define _ADC_PORT ADCMIC_GPIO_ADC_IN0_PORT
 #else
-	#error The selected device does not supported ADC
+#error The selected device does not supported ADC
 #endif
 
 #define ADC_CAT1_EVENTS_MASK (CYHAL_ADC_EOS | CYHAL_ADC_ASYNC_READ_COMPLETE)
@@ -33,15 +35,25 @@ LOG_MODULE_REGISTER(ifx_cat1_adc, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CAT1_RESOLUTION             (12u)
 #define ADC_CAT1_REF_INTERNAL_MV        (1200u)
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
+#define IFX_ADC_NUM_CHANNELS                                                                       \
+	ARRAY_SIZE(cyhal_pin_map_adcmic_gpio_adc_in)
+#else
+#define IFX_ADC_NUM_CHANNELS CY_SAR_SEQ_NUM_CHANNELS
+#endif
+
 struct ifx_cat1_adc_data {
 	struct adc_context ctx;
 	const struct device *dev;
 	cyhal_adc_t adc_obj;
-	cyhal_adc_channel_t adc_chan_obj[CY_SAR_SEQ_NUM_CHANNELS];
+	cyhal_adc_channel_t adc_chan_obj[IFX_ADC_NUM_CHANNELS];
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
 	uint32_t channels;
 	uint32_t channels_mask;
+#ifdef CONFIG_SOC_FAMILY_INFINEON_CAT1B
+	struct k_work adc_worker_thread;
+#endif
 };
 
 struct ifx_cat1_adc_config {
@@ -74,13 +86,42 @@ static void _cyhal_adc_event_callback(void *callback_arg, cyhal_adc_event_t even
 	LOG_DBG("%s ISR triggered.", dev->name);
 }
 
+#ifdef CONFIG_SOC_FAMILY_INFINEON_CAT1B
+static void ifx_cat1_adc_worker(struct k_work *adc_worker_thread)
+{
+	struct ifx_cat1_adc_data *data =
+		CONTAINER_OF(adc_worker_thread, struct ifx_cat1_adc_data, adc_worker_thread);
+
+	uint32_t channels = data->channels;
+	int32_t result;
+	uint32_t channel_id;
+
+	while (channels != 0) {
+		channel_id = find_lsb_set(channels) - 1;
+		channels &= ~BIT(channel_id);
+
+		result = cyhal_adc_read(&data->adc_chan_obj[channel_id]);
+		/* Legacy API for BWC. Convert from signed to unsigned by adding 0x800 to
+		 * convert the lowest signed 12-bit number to 0x0.
+		 */
+		*data->buffer = (uint16_t)(result + 0x800);
+		data->buffer++;
+	}
+	adc_context_on_sampling_done(&data->ctx, data->dev);
+}
+#endif
+
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct ifx_cat1_adc_data *data = CONTAINER_OF(ctx, struct ifx_cat1_adc_data, ctx);
 
 	data->repeat_buffer = data->buffer;
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
+	k_work_submit(&data->adc_worker_thread);
+#else
 	Cy_SAR_StartConvert(data->adc_obj.base, CY_SAR_START_CONVERT_SINGLE_SHOT);
+#endif
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx,
@@ -99,10 +140,10 @@ static int ifx_cat1_adc_channel_setup(const struct device *dev,
 	struct ifx_cat1_adc_data *data = dev->data;
 	cy_rslt_t result;
 
-	cyhal_gpio_t vplus = CYHAL_GET_GPIO(_ADCSAR_PORT, channel_cfg->input_positive);
-	cyhal_gpio_t vminus = channel_cfg->differential ?
-			      CYHAL_GET_GPIO(_ADCSAR_PORT, channel_cfg->input_negative) :
-			      CYHAL_ADC_VNEG;
+	cyhal_gpio_t vplus = CYHAL_GET_GPIO(_ADC_PORT, channel_cfg->input_positive);
+	cyhal_gpio_t vminus = channel_cfg->differential
+				      ? CYHAL_GET_GPIO(_ADC_PORT, channel_cfg->input_negative)
+				      : CYHAL_ADC_VNEG;
 	uint32_t acquisition_ns = ADC_CAT1_DEFAULT_ACQUISITION_NS;
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
@@ -158,7 +199,7 @@ static int validate_buffer_size(const struct adc_sequence *sequence)
 	int active_channels = 0;
 	int total_buffer_size;
 
-	for (int i = 0; i < CY_SAR_SEQ_NUM_CHANNELS; i++) {
+	for (int i = 0; i < IFX_ADC_NUM_CHANNELS; i++) {
 		if (sequence->channels & BIT(i)) {
 			active_channels++;
 		}
@@ -250,7 +291,7 @@ static int ifx_cat1_adc_init(const struct device *dev)
 	data->dev = dev;
 
 	/* Initialize ADC. The ADC block which can connect to the input pin is selected */
-	result = cyhal_adc_init(&data->adc_obj, CYHAL_GET_GPIO(_ADCSAR_PORT, 0), NULL);
+	result = cyhal_adc_init(&data->adc_obj, CYHAL_GET_GPIO(_ADC_PORT, 0), NULL);
 	if (result != CY_RSLT_SUCCESS) {
 		LOG_ERR("ADC initialization failed. Error: 0x%08X\n", (unsigned int)result);
 		return -EIO;
@@ -274,23 +315,25 @@ static DEVICE_API(adc, adc_cat1_driver_api) = {
 	#endif
 	.ref_internal = ADC_CAT1_REF_INTERNAL_MV
 };
+#ifdef CONFIG_SOC_FAMILY_INFINEON_CAT1B
+#define ADC_WORKER_THREAD_INIT() .adc_worker_thread = Z_WORK_INITIALIZER(ifx_cat1_adc_worker),
+#else
+#define ADC_WORKER_THREAD_INIT()
+#endif
 
 /* Macros for ADC instance declaration */
-#define INFINEON_CAT1_ADC_INIT(n)					       \
-	static struct ifx_cat1_adc_data ifx_cat1_adc_data##n = {	       \
-		ADC_CONTEXT_INIT_TIMER(ifx_cat1_adc_data##n, ctx),	       \
-		ADC_CONTEXT_INIT_LOCK(ifx_cat1_adc_data##n, ctx),	       \
-		ADC_CONTEXT_INIT_SYNC(ifx_cat1_adc_data##n, ctx),	       \
-	};								       \
-									       \
-	static const struct ifx_cat1_adc_config adc_cat1_cfg_##n = {	       \
-		.irq_priority = DT_INST_IRQ(n, priority),		       \
-	};								       \
-									       \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_adc_init,			       \
-			      NULL, &ifx_cat1_adc_data##n,		       \
-			      &adc_cat1_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	       \
+#define INFINEON_CAT1_ADC_INIT(n)                                                                  \
+	static struct ifx_cat1_adc_data ifx_cat1_adc_data##n = {                                   \
+		ADC_CONTEXT_INIT_TIMER(ifx_cat1_adc_data##n, ctx),                                 \
+		ADC_CONTEXT_INIT_LOCK(ifx_cat1_adc_data##n, ctx),                                  \
+		ADC_CONTEXT_INIT_SYNC(ifx_cat1_adc_data##n, ctx), ADC_WORKER_THREAD_INIT()};       \
+                                                                                                   \
+	static const struct ifx_cat1_adc_config adc_cat1_cfg_##n = {                               \
+		.irq_priority = DT_INST_IRQ(n, priority),                                          \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_adc_init, NULL, &ifx_cat1_adc_data##n,                   \
+			      &adc_cat1_cfg_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,            \
 			      &adc_cat1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_ADC_INIT)
