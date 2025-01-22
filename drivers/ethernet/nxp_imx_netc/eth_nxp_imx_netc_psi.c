@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(nxp_imx_eth_psi);
 #include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 
-#include "eth.h"
+#include "../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 
 static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link_state *state,
