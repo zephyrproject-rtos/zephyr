@@ -21,6 +21,7 @@ Hardware
 - Transmit power: up to +20 dBm
 - Operation frequency: 868-915 MHz
 - Crystals for LFXO (32.768 kHz) and HFXO (39 MHz).
+- Low-power 128x128 pixel Memory LCD
 
 For more information about the EFR32ZG23 SoC and BRD4210A board, refer to these
 documents:
@@ -86,6 +87,16 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 | PB2   | GPIO        | LED0                                |
 +-------+-------------+-------------------------------------+
 | PB3   | GPIO        | Push Button 1                       |
++-------+-------------+-------------------------------------+
+| PC1   | USART0_TX   | Display SPI MOSI                    |
++-------+-------------+-------------------------------------+
+| PC3   | USART0_CLK  | Display SPI Clock                   |
++-------+-------------+-------------------------------------+
+| PC6   | GPIO        | Display COM Inversion               |
++-------+-------------+-------------------------------------+
+| PC8   | GPIO        | Display SPI Chip Select             |
++-------+-------------+-------------------------------------+
+| PC9   | GPIO        | Display Enable                      |
 +-------+-------------+-------------------------------------+
 | PD3   | GPIO        | LED1                                |
 +-------+-------------+-------------------------------------+
