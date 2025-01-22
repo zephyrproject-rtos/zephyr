@@ -101,6 +101,17 @@ config LLEXT_EXPORT_BUILTINS_BY_SLID
 	  up symbols from the built-in table by name. It also
 	  requires the LLEXTs to be post-processed after build.
 
+config LLEXT_IMPORT_ALL_GLOBALS
+	bool "Import all global symbols from extensions"
+	help
+	  When loading an extension, by default only symbols that are mentioned
+	  in the '.exported_sym' section (possibly via EXPORT_SYMBOL) are made
+	  available to the Zephyr core.
+
+	  This option instead allows all global symbols from extensions to be
+	  used by the main application. This is useful to load basic extensions
+	  that have been compiled without the full Zephyr EDK.
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"

@@ -516,29 +516,35 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 
 static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 {
-	elf_shdr_t *shdr = ldr->sects + LLEXT_MEM_EXPORT;
+	struct llext_symtable *exp_tab = &ext->exp_tab;
 	struct llext_symbol *sym;
 	unsigned int i;
 
-	if (shdr->sh_size < sizeof(struct llext_symbol)) {
-		/* Not found, no symbols exported */
+	if (IS_ENABLED(CONFIG_LLEXT_IMPORT_ALL_GLOBALS)) {
+		/* Use already discovered global symbols */
+		exp_tab->sym_cnt = ext->sym_tab.sym_cnt;
+		sym = ext->sym_tab.syms;
+	} else {
+		/* Only use symbols in the .exported_sym section */
+		exp_tab->sym_cnt = ldr->sects[LLEXT_MEM_EXPORT].sh_size
+				   / sizeof(struct llext_symbol);
+		sym = ext->mem[LLEXT_MEM_EXPORT];
+	}
+
+	if (!exp_tab->sym_cnt) {
+		/* No symbols exported */
 		return 0;
 	}
 
-	struct llext_symtable *exp_tab = &ext->exp_tab;
-
-	exp_tab->sym_cnt = shdr->sh_size / sizeof(struct llext_symbol);
 	exp_tab->syms = llext_alloc(exp_tab->sym_cnt * sizeof(struct llext_symbol));
 	if (!exp_tab->syms) {
 		return -ENOMEM;
 	}
 
-	for (i = 0, sym = ext->mem[LLEXT_MEM_EXPORT];
-	     i < exp_tab->sym_cnt;
-	     i++, sym++) {
+	for (i = 0; i < exp_tab->sym_cnt; i++, sym++) {
 		exp_tab->syms[i].name = sym->name;
 		exp_tab->syms[i].addr = sym->addr;
-		LOG_DBG("sym %p name %s in %p", sym->addr, sym->name, exp_tab->syms + i);
+		LOG_DBG("sym %p name %s", sym->addr, sym->name);
 	}
 
 	return 0;
