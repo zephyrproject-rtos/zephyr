@@ -437,7 +437,6 @@
 ]
 "./scripts/dts/python-devicetree/src/devicetree/dtlib.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
     "UP037",    # https://docs.astral.sh/ruff/rules/quoted-annotation
 ]

@@ -20,9 +20,7 @@ import re
 import string
 import sys
 import textwrap
-from typing import (Any, Iterable,
-                    NamedTuple, NoReturn, Optional,
-                    TYPE_CHECKING, Union)
+from typing import (Any, NamedTuple, NoReturn, TYPE_CHECKING)
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -85,7 +83,7 @@ class Node:
     # Public interface
     #
 
-    def __init__(self, name: str, parent: Optional['Node'], dt: 'DT'):
+    def __init__(self, name: str, parent: 'Node' | None, dt: 'DT'):
         """
         Node constructor. Not meant to be called directly by clients.
         """
@@ -141,7 +139,7 @@ class Node:
 
         return "/" + "/".join(reversed(node_names))
 
-    def node_iter(self) -> Iterable['Node']:
+    def node_iter(self) -> list['Node']:
         """
         Returns a generator for iterating over the node and its children,
         recursively.
@@ -674,7 +672,7 @@ class _FileStackElt(NamedTuple):
     contents: str
     pos: int
 
-_TokVal = Union[int, str]
+_TokVal = int | str
 
 class _Token(NamedTuple):
     id: int
@@ -732,7 +730,7 @@ class DT:
     # Public interface
     #
 
-    def __init__(self, filename: Optional[str], include_path: Iterable[str] = (),
+    def __init__(self, filename: str | None, include_path: list[str] = (),
                  force: bool = False):
         """
         Parses a DTS file to create a DT instance. Raises OSError if 'filename'
@@ -753,7 +751,7 @@ class DT:
         """
         # Remember to update __deepcopy__() if you change this.
 
-        self._root: Optional[Node] = None
+        self._root: Node | None = None
         self.alias2node: dict[str, Node] = {}
         self.label2node: dict[str, Node] = {}
         self.label2prop: dict[str, Property] = {}
@@ -873,7 +871,7 @@ class DT:
         node.parent = new_parent
         new_parent.nodes[new_name] = node
 
-    def node_iter(self) -> Iterable[Node]:
+    def node_iter(self) -> list[Node]:
         """
         Returns a generator for iterating over all nodes in the devicetree.
 
@@ -1013,7 +1011,7 @@ class DT:
     # Parsing
     #
 
-    def _parse_file(self, filename: str, include_path: Iterable[str]):
+    def _parse_file(self, filename: str, include_path: list[str]):
         self._include_path = list(include_path)
 
         with open(filename, encoding="utf-8") as f:
@@ -1023,7 +1021,7 @@ class DT:
         self._filestack: list[_FileStackElt] = []
 
         self._lexer_state: int = _DEFAULT
-        self._saved_token: Optional[_Token] = None
+        self._saved_token: _Token | None = None
 
         self._lineno: int = 1
 
@@ -2006,7 +2004,7 @@ class DT:
 # Public functions
 #
 
-def to_num(data: bytes, length: Optional[int] = None,
+def to_num(data: bytes, length: int | None = None,
            signed: bool = False) -> int:
     """
     Converts the 'bytes' array 'data' to a number. The value is expected to be
