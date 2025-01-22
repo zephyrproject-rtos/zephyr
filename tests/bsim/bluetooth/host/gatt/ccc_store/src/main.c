@@ -4,31 +4,12 @@
 
 #include <zephyr/kernel.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
 #include "bstests.h"
-#include <string.h>
+#include <stdlib.h>
 
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_bsim_ccc_store, LOG_LEVEL_DBG);
-
-#define FAIL(...)                                                                                  \
-	do {                                                                                       \
-		bst_result = Failed;                                                               \
-		bs_trace_error_time_line(__VA_ARGS__);                                             \
-	} while (0)
-
-#define PASS(...)                                                                                  \
-	do {                                                                                       \
-		bst_result = Passed;                                                               \
-		bs_trace_info_time(1, __VA_ARGS__);                                                \
-	} while (0)
-
-extern enum bst_result_t bst_result;
-
-#define WAIT_TIME_S 60
-#define WAIT_TIME   (WAIT_TIME_S * 1e6)
 
 static int n_times;
 
@@ -45,41 +26,23 @@ static void peripheral_main(void)
 	run_peripheral(n_times);
 }
 
-void test_tick(bs_time_t HW_device_time)
-{
-	if (bst_result != Passed) {
-		bst_result = Failed;
-		bs_trace_error_time_line("Test failed (not passed after %d seconds)\n",
-					 WAIT_TIME_S);
-	}
-}
-
 static void test_args(int argc, char **argv)
 {
 	__ASSERT(argc == 1, "Please specify only 1 test argument\n");
 
-	n_times = atol(argv[0]);
-}
-
-static void test_ccc_store_init(void)
-{
-	bst_ticker_set_next_tick_absolute(WAIT_TIME);
+	n_times = strtol(argv[0], NULL, 10);
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central device",
-		.test_pre_init_f = test_ccc_store_init,
-		.test_tick_f = test_tick,
 		.test_main_f = central_main,
 		.test_args_f = test_args,
 	},
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral device",
-		.test_pre_init_f = test_ccc_store_init,
-		.test_tick_f = test_tick,
 		.test_main_f = peripheral_main,
 		.test_args_f = test_args,
 	},

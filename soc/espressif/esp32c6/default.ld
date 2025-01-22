@@ -139,25 +139,41 @@ SECTIONS
     LONG(LOADADDR(.dram0.data))
     LONG(LOADADDR(.dram0.end) - LOADADDR(.dram0.data))
 
-
     /* LP_IRAM metadata:
      * 8. Destination address (VMA) for LP_IRAM region
      * 9. Flash offset (LMA) for start of LP_IRAM region
-     * 10. Size of RTC region
+     * 10. Size of LP_IRAM region
      */
     LONG(ADDR(.rtc.text))
     LONG(LOADADDR(.rtc.text))
     LONG(SIZEOF(.rtc.text))
 
     /* LP_DATA metadata:
-     * 11. Destination address (VMA) for LP_DATA region
-     * 12. Flash offset (LMA) for start of LP_DATA region
-     * 13. Size of RTC region
+     * 11. Destination address (VMA) for LP_DRAM region
+     * 12. Flash offset (LMA) for start of LP_DRAM region
+     * 13. Size of LP_DRAM region
      */
     LONG(ADDR(.rtc.data))
     LONG(LOADADDR(.rtc.data))
     LONG(SIZEOF(.rtc.data))
 
+    /* IROM metadata:
+     * 14. Destination address (VMA) for IROM region
+     * 15. Flash offset (LMA) for start of IROM region
+     * 16. Size of IROM region
+     */
+    LONG(ADDR(.flash.text))
+    LONG(LOADADDR(.flash.text))
+    LONG(SIZEOF(.flash.text))
+
+    /* DROM metadata:
+     * 17. Destination address (VMA) for DROM region
+     * 18. Flash offset (LMA) for start of DROM region
+     * 19. Size of DROM region
+     */
+    LONG(ADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata_end) - LOADADDR(.flash.rodata))
   } > metadata
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 

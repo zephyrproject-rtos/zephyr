@@ -1219,3 +1219,16 @@ static int init(void)
 }
 
 SYS_INIT(init, APPLICATION, 0);
+
+static enum net_verdict eapol_recv(struct net_if *iface, uint16_t ptype,
+				   struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ptype);
+
+	net_pkt_set_family(pkt, AF_UNSPEC);
+
+	return NET_CONTINUE;
+}
+
+ETH_NET_L3_REGISTER(EAPOL, NET_ETH_PTYPE_EAPOL, eapol_recv);

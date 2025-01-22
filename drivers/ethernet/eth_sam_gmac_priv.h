@@ -208,7 +208,7 @@ enum queue_idx {
 #endif
 
 /** Minimal ring buffer implementation */
-struct ring_buf {
+struct ring_buffer {
 	uint32_t *buf;
 	uint16_t len;
 	uint16_t head;
@@ -242,9 +242,9 @@ struct gmac_queue {
 	struct net_buf **rx_frag_list;
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
-	struct ring_buf tx_frag_list;
+	struct ring_buffer tx_frag_list;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-	struct ring_buf tx_frames;
+	struct ring_buffer tx_frames;
 #endif
 #endif
 

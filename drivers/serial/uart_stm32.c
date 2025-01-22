@@ -2345,18 +2345,13 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
  */
 #define STM32_UART_CHECK_DT_PARITY(index)				\
 BUILD_ASSERT(								\
-	!(DT_INST_ENUM_IDX_OR(index, parity, STM32_UART_DEFAULT_PARITY)	\
-					== UART_CFG_PARITY_MARK ||	\
-	DT_INST_ENUM_IDX_OR(index, parity, STM32_UART_DEFAULT_PARITY)	\
-					== UART_CFG_PARITY_SPACE),	\
+	!(DT_INST_ENUM_IDX(index, parity) == UART_CFG_PARITY_MARK ||	\
+	DT_INST_ENUM_IDX(index, parity) == UART_CFG_PARITY_SPACE),	\
 	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
 	" has unsupported parity configuration");			\
 BUILD_ASSERT(								\
-	!(DT_INST_ENUM_IDX_OR(index, parity, STM32_UART_DEFAULT_PARITY)	\
-					!= UART_CFG_PARITY_NONE	&&	\
-	DT_INST_ENUM_IDX_OR(index, data_bits,				\
-			    STM32_UART_DEFAULT_DATA_BITS)		\
-					== UART_CFG_DATA_BITS_9),	\
+	!(DT_INST_ENUM_IDX(index, parity) != UART_CFG_PARITY_NONE &&	\
+	DT_INST_ENUM_IDX(index, data_bits) == UART_CFG_DATA_BITS_9),	\
 	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
 		" has unsupported parity + data bits combination");
 
@@ -2367,32 +2362,18 @@ BUILD_ASSERT(								\
 #ifdef LL_USART_DATAWIDTH_7B
 #define STM32_UART_CHECK_DT_DATA_BITS(index)				\
 BUILD_ASSERT(								\
-	!(DT_INST_ENUM_IDX_OR(index, data_bits,				\
-			      STM32_UART_DEFAULT_DATA_BITS)		\
-					== UART_CFG_DATA_BITS_5 ||	\
-		(DT_INST_ENUM_IDX_OR(index, data_bits,			\
-				    STM32_UART_DEFAULT_DATA_BITS)	\
-					== UART_CFG_DATA_BITS_6 &&	\
-		DT_INST_ENUM_IDX_OR(index, parity,			\
-				    STM32_UART_DEFAULT_PARITY)		\
-					== UART_CFG_PARITY_NONE)),	\
+	!(DT_INST_ENUM_IDX(index, data_bits) == UART_CFG_DATA_BITS_5 ||	\
+	(DT_INST_ENUM_IDX(index, data_bits) == UART_CFG_DATA_BITS_6 &&	\
+	DT_INST_ENUM_IDX(index, parity) == UART_CFG_PARITY_NONE)),	\
 	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
 		" has unsupported data bits configuration");
 #else
 #define STM32_UART_CHECK_DT_DATA_BITS(index)				\
 BUILD_ASSERT(								\
-	!(DT_INST_ENUM_IDX_OR(index, data_bits,				\
-			      STM32_UART_DEFAULT_DATA_BITS)		\
-					== UART_CFG_DATA_BITS_5 ||	\
-	DT_INST_ENUM_IDX_OR(index, data_bits,				\
-			    STM32_UART_DEFAULT_DATA_BITS)		\
-					== UART_CFG_DATA_BITS_6 ||	\
-		(DT_INST_ENUM_IDX_OR(index, data_bits,			\
-			    STM32_UART_DEFAULT_DATA_BITS)		\
-					== UART_CFG_DATA_BITS_7 &&	\
-		DT_INST_ENUM_IDX_OR(index, parity,			\
-				    STM32_UART_DEFAULT_PARITY)		\
-					== UART_CFG_PARITY_NONE)),	\
+	!(DT_INST_ENUM_IDX(index, data_bits) == UART_CFG_DATA_BITS_5 ||	\
+	DT_INST_ENUM_IDX(index, data_bits) == UART_CFG_DATA_BITS_6 ||	\
+	(DT_INST_ENUM_IDX(index, data_bits) == UART_CFG_DATA_BITS_7 &&	\
+	DT_INST_ENUM_IDX(index, parity) == UART_CFG_PARITY_NONE)),	\
 	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
 		" has unsupported data bits configuration");
 #endif
@@ -2404,9 +2385,7 @@ BUILD_ASSERT(								\
 #ifndef LL_USART_STOPBITS_0_5
 #define STM32_UART_CHECK_DT_STOP_BITS_0_5(index)			\
 BUILD_ASSERT(								\
-	!(DT_INST_ENUM_IDX_OR(index, stop_bits,				\
-			      STM32_UART_DEFAULT_STOP_BITS)		\
-					== UART_CFG_STOP_BITS_0_5),	\
+	DT_INST_ENUM_IDX(index, stop_bits) != UART_CFG_STOP_BITS_0_5,	\
 	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
 		" has unsupported stop bits configuration");
 /* LPUARTs don't support 0.5 stop bits configurations */
@@ -2414,9 +2393,7 @@ BUILD_ASSERT(								\
 #define STM32_UART_CHECK_DT_STOP_BITS_0_5(index)			\
 BUILD_ASSERT(								\
 	!(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart) &&			\
-	  DT_INST_ENUM_IDX_OR(index, stop_bits,				\
-			      STM32_UART_DEFAULT_STOP_BITS)		\
-					== UART_CFG_STOP_BITS_0_5),	\
+	DT_INST_ENUM_IDX(index, stop_bits) == UART_CFG_STOP_BITS_0_5),	\
 	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
 		" has unsupported stop bits configuration");
 #endif
@@ -2428,9 +2405,7 @@ BUILD_ASSERT(								\
 #ifndef LL_USART_STOPBITS_1_5
 #define STM32_UART_CHECK_DT_STOP_BITS_1_5(index)			\
 BUILD_ASSERT(								\
-	DT_INST_ENUM_IDX_OR(index, stop_bits,				\
-			    STM32_UART_DEFAULT_STOP_BITS)		\
-					!= UART_CFG_STOP_BITS_1_5,	\
+	DT_INST_ENUM_IDX(index, stop_bits) != UART_CFG_STOP_BITS_1_5,	\
 	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
 		" has unsupported stop bits configuration");
 /* LPUARTs don't support 1.5 stop bits configurations */
@@ -2438,9 +2413,7 @@ BUILD_ASSERT(								\
 #define STM32_UART_CHECK_DT_STOP_BITS_1_5(index)			\
 BUILD_ASSERT(								\
 	!(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart) &&			\
-	  DT_INST_ENUM_IDX_OR(index, stop_bits,				\
-			      STM32_UART_DEFAULT_STOP_BITS)		\
-					== UART_CFG_STOP_BITS_1_5),	\
+	DT_INST_ENUM_IDX(index, stop_bits) == UART_CFG_STOP_BITS_1_5),	\
 	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
 		" has unsupported stop bits configuration");
 #endif
@@ -2454,14 +2427,10 @@ static const struct stm32_pclken pclken_##index[] =			\
 					    STM32_DT_INST_CLOCKS(index);\
 									\
 static struct uart_config uart_cfg_##index = {				\
-	.baudrate  = DT_INST_PROP_OR(index, current_speed,		\
-				     STM32_UART_DEFAULT_BAUDRATE),	\
-	.parity    = DT_INST_ENUM_IDX_OR(index, parity,			\
-					 STM32_UART_DEFAULT_PARITY),	\
-	.stop_bits = DT_INST_ENUM_IDX_OR(index, stop_bits,		\
-					 STM32_UART_DEFAULT_STOP_BITS),	\
-	.data_bits = DT_INST_ENUM_IDX_OR(index, data_bits,		\
-					 STM32_UART_DEFAULT_DATA_BITS),	\
+	.baudrate = DT_INST_PROP(index, current_speed),			\
+	.parity = DT_INST_ENUM_IDX(index, parity),			\
+	.stop_bits = DT_INST_ENUM_IDX(index, stop_bits),		\
+	.data_bits = DT_INST_ENUM_IDX(index, data_bits),		\
 	.flow_ctrl = DT_INST_PROP(index, hw_flow_control)		\
 					? UART_CFG_FLOW_CTRL_RTS_CTS	\
 					: UART_CFG_FLOW_CTRL_NONE,	\

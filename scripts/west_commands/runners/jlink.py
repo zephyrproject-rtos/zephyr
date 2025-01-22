@@ -330,9 +330,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                         break
                     except ConnectionRefusedError:
                         time.sleep(0.1)
-                sock.shutdown(socket.SHUT_RDWR)
-                time.sleep(0.1)
-                self.run_telnet_client('localhost', self.rtt_port)
+                self.run_telnet_client('localhost', self.rtt_port, sock)
             except Exception as e:
                 self.logger.error(e)
             finally:

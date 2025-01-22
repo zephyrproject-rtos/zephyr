@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,7 +59,6 @@ static uint32_t broadcaster_broadcast_id;
 static struct audio_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 static uint32_t requested_bis_sync;
-static struct bt_le_ext_adv *ext_adv;
 static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
 static uint8_t recv_state_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
@@ -251,7 +250,18 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 		return;
 	}
 
-	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
+	if (requested_bis_sync == 0) {
+		bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
+	} else {
+		if ((requested_bis_sync & base_bis_index_bitfield) != requested_bis_sync) {
+			FAIL("Assistant has request BIS indexes 0x%08x that is not in the BASE "
+			     "0x%08x\n",
+			     requested_bis_sync, base_bis_index_bitfield);
+			return;
+		}
+
+		bis_index_bitfield = requested_bis_sync & bis_index_mask;
+	}
 
 	SET_FLAG(flag_base_received);
 }
@@ -617,6 +627,12 @@ static int init(void)
 	static struct bt_pacs_cap vs_cap = {
 		.codec_cap = &vs_codec_cap,
 	};
+	const struct bt_bap_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -626,6 +642,12 @@ static int init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		FAIL("Could not register PACS (err %d)\n", err);
+		return err;
+	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err) {
@@ -771,7 +793,7 @@ static void test_broadcast_sync(const uint8_t broadcast_code[BT_ISO_BROADCAST_CO
 {
 	int err;
 
-	printk("Syncing sink %p\n", g_sink);
+	printk("Syncing sink %p to 0x%08x\n", g_sink, bis_index_bitfield);
 	err = bt_bap_broadcast_sink_sync(g_sink, bis_index_bitfield, streams, broadcast_code);
 	if (err != 0) {
 		FAIL("Unable to sync the sink: %d\n", err);
@@ -893,39 +915,6 @@ static void test_broadcast_delete_inval(void)
 	err = bt_bap_broadcast_sink_delete(NULL);
 	if (err == 0) {
 		FAIL("bt_bap_broadcast_sink_delete did not fail with NULL sink\n");
-		return;
-	}
-}
-
-static void test_start_adv(void)
-{
-	const struct bt_data ad[] = {
-		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-		BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
-			      BT_UUID_16_ENCODE(BT_UUID_PACS_VAL)),
-		BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
-	};
-	int err;
-
-	/* Create a connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
-	if (err != 0) {
-		FAIL("Failed to create advertising set (err %d)\n", err);
-
-		return;
-	}
-
-	err = bt_le_ext_adv_set_data(ext_adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err != 0) {
-		FAIL("Failed to set advertising data (err %d)\n", err);
-
-		return;
-	}
-
-	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err != 0) {
-		FAIL("Failed to start advertising set (err %d)\n", err);
-
 		return;
 	}
 }
@@ -1144,6 +1133,7 @@ static void test_sink_encrypted_incorrect_code(void)
 
 static void broadcast_sink_with_assistant(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = init();
@@ -1152,7 +1142,7 @@ static void broadcast_sink_with_assistant(void)
 		return;
 	}
 
-	test_start_adv();
+	setup_connectable_adv(&ext_adv);
 	WAIT_FOR_FLAG(flag_connected);
 
 	printk("Waiting for PA sync request\n");
@@ -1200,6 +1190,7 @@ static void broadcast_sink_with_assistant(void)
 
 static void broadcast_sink_with_assistant_incorrect_code(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = init();
@@ -1208,7 +1199,7 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 		return;
 	}
 
-	test_start_adv();
+	setup_connectable_adv(&ext_adv);
 	WAIT_FOR_FLAG(flag_connected);
 
 	printk("Waiting for PA sync request\n");

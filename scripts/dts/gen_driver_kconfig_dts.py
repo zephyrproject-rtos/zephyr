@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 #
 # Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+# Copyright (c) 2025 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import os
-import sys
-import re
 
 import yaml
 try:
@@ -16,22 +15,33 @@ try:
 except ImportError:
     from yaml import SafeLoader     # type: ignore
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
-                                'src'))
+
+HEADER = """\
+# Generated devicetree Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0"""
+
+
+KCONFIG_TEMPLATE = """
+DT_COMPAT_{COMPAT} := {compat}
+
+config DT_HAS_{COMPAT}_ENABLED
+\tdef_bool $(dt_compat_enabled,$(DT_COMPAT_{COMPAT}))"""
+
+
+# Character translation table used to derive Kconfig symbol names
+TO_UNDERSCORES = str.maketrans("-,.@/+", "______")
+
 
 def binding_paths(bindings_dirs):
-    # Returns a list with the paths to all bindings (.yaml files) in
-    # 'bindings_dirs'
-
-    binding_paths = []
+    # Yields paths to all bindings (.yaml files) in 'bindings_dirs'
 
     for bindings_dir in bindings_dirs:
         for root, _, filenames in os.walk(bindings_dir):
             for filename in filenames:
-                if filename.endswith(".yaml") or filename.endswith(".yml"):
-                    binding_paths.append(os.path.join(root, filename))
+                if filename.endswith((".yaml", ".yml")):
+                    yield os.path.join(root, filename)
 
-    return binding_paths
 
 def parse_args():
     # Returns parsed command-line arguments
@@ -45,56 +55,38 @@ def parse_args():
 
     return parser.parse_args()
 
-def printfile(s):
-    print(s, file=kconfig_file)
-
-def str2ident(s):
-    # Converts 's' to a form suitable for (part of) an identifier
-
-    return re.sub('[-,.@/+]', '_', s.upper())
-
-def compat2kconfig(compat):
-    compat_ident = str2ident(compat)
-
-    printfile(f'')
-    printfile(f'DT_COMPAT_{compat_ident} := {compat}')
-    printfile(f'')
-    printfile(f'config DT_HAS_{compat_ident}_ENABLED')
-    printfile(f'\tdef_bool $(dt_compat_enabled,$(DT_COMPAT_{compat_ident}))')
 
 def main():
-    global kconfig_file
     args = parse_args()
 
-    compat_list = []
+    compats = set()
 
     for binding_path in binding_paths(args.bindings_dirs):
         with open(binding_path, encoding="utf-8") as f:
-            contents = f.read()
-
             try:
-                # Parsed PyYAML output (Python lists/dictionaries/strings/etc.,
-                # representing the file)
-                raw = yaml.load(contents, Loader=SafeLoader)
+                # Parsed PyYAML representation graph. For our purpose,
+                # we don't need the whole file converted into a dict.
+                root = yaml.compose(f, Loader=SafeLoader)
             except yaml.YAMLError as e:
                 print(f"WARNING: '{binding_path}' appears in binding "
                       f"directories but isn't valid YAML: {e}")
                 continue
-        if raw is None or 'compatible' not in raw:
+
+        if not isinstance(root, yaml.MappingNode):
             continue
-
-        compat_list.append(raw['compatible'])
-
-    # Remove any duplicates and sort the list
-    compat_list = sorted(set(compat_list))
+        for key, node in root.value:
+            if key.value == "compatible" and isinstance(node, yaml.ScalarNode):
+                compats.add(node.value)
+                break
 
     with open(args.kconfig_out, "w", encoding="utf-8") as kconfig_file:
-        printfile(f'# Generated devicetree Kconfig')
-        printfile(f'#')
-        printfile(f'# SPDX-License-Identifier: Apache-2.0')
+        print(HEADER, file=kconfig_file)
 
-        for c in compat_list:
-            compat2kconfig(c)
+        for c in sorted(compats):
+            out = KCONFIG_TEMPLATE.format(
+                compat=c, COMPAT=c.upper().translate(TO_UNDERSCORES)
+            )
+            print(out, file=kconfig_file)
 
 
 if __name__ == "__main__":

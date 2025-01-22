@@ -10,6 +10,8 @@
 #include <errno.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor_clock.h>
+
 LOG_MODULE_REGISTER(ICM42688_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT invensense_icm42688
@@ -183,6 +185,8 @@ int icm42688_encode(const struct device *dev, const struct sensor_chan_spec *con
 {
 	struct icm42688_dev_data *data = dev->data;
 	struct icm42688_encoded_data *edata = (struct icm42688_encoded_data *)buf;
+	uint64_t cycles;
+	int rc;
 
 	edata->channels = 0;
 
@@ -190,10 +194,15 @@ int icm42688_encode(const struct device *dev, const struct sensor_chan_spec *con
 		edata->channels |= icm42688_encode_channel(channels[i].chan_type);
 	}
 
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		return rc;
+	}
+
 	edata->header.is_fifo = false;
 	edata->header.accel_fs = data->cfg.accel_fs;
 	edata->header.gyro_fs = data->cfg.gyro_fs;
-	edata->header.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
 }

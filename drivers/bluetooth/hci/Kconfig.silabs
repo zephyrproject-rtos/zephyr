@@ -1,0 +1,49 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+menu "EFR32 Bluetooth Controller Configuration"
+	depends on BT_SILABS_EFR32
+
+config BT_SILABS_EFR32_BUFFER_MEMORY
+	int "Memory buffer size"
+	default 6144
+	help
+	  Select the size of allocated memory buffer for the Silicon Labs
+	  Bluetooth Library. If set too low the capacity of the link layer may
+	  suffer.
+
+config BT_SILABS_EFR32_USER_ADVERTISERS
+	int "User advertisement sets"
+	default 1
+	help
+	  Amount of advertisement sets reserved for application.
+
+config BT_SILABS_EFR32_ACCEPT_LIST_SIZE
+	int "Accept list size"
+	default 1
+	help
+	  Accept list size.
+
+config BT_SILABS_EFR32_COMPLETED_PACKETS_THRESHOLD
+	int "Completed packet reporting threshold"
+	default 1
+	help
+	  Completed packet reporting threshold value.
+
+config BT_SILABS_EFR32_COMPLETED_PACKETS_TIMEOUT
+	int "Completed packet report event timeout"
+	default 3
+	help
+	  Completed packet report event timeout.
+
+config BT_SILABS_EFR32_ACCEPT_LINK_LAYER_STACK_SIZE
+	int "Link layer stack size"
+	default 1024
+	help
+	  Link layer stack size.
+
+config BT_SILABS_EFR32_LL_THREAD_PRIO
+	# Hidden option for Co-Operative Link Layer thread priority
+	def_int 0
+
+endmenu

@@ -214,6 +214,10 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
 
 	ctx = get_vlan(iface, tag);
 	if (ctx == NULL) {
+		if (tag == NET_VLAN_TAG_PRIORITY) {
+			return iface;
+		}
+
 		return NULL;
 	}
 

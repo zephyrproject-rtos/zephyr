@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ *	Andrew Davis <afd@ti.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	pinctrl: pinctrl@f4000 {
+		compatible = "ti,k3-pinctrl";
+		reg = <0x000f4000 0x2ac>;
+		status = "okay";
+	};
+
+	gpio0: gpio@600010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600010 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <92>;
+		status = "disabled";
+	};
+
+	gpio1: gpio@601010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00601010 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <52>;
+		status = "disabled";
+	};
+
+	uart0: uart@2800000 {
+		compatible = "ns16550";
+		reg = <0x02800000 0x100>;
+		clock-frequency = <48000000>;
+		interrupts = <0 210 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart1: uart@2810000 {
+		compatible = "ns16550";
+		reg = <0x02810000 0x100>;
+		clock-frequency = <48000000>;
+		interrupts = <0 211 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart2: uart@2820000 {
+		compatible = "ns16550";
+		reg = <0x02820000 0x100>;
+		clock-frequency = <48000000>;
+		interrupts = <0 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart3: uart@2830000 {
+		compatible = "ns16550";
+		reg = <0x02830000 0x100>;
+		clock-frequency = <48000000>;
+		interrupts = <0 213 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart4: uart@2840000 {
+		compatible = "ns16550";
+		reg = <0x02840000 0x100>;
+		clock-frequency = <48000000>;
+		interrupts = <0 214 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart5: uart@2850000 {
+		compatible = "ns16550";
+		reg = <0x02850000 0x100>;
+		clock-frequency = <48000000>;
+		interrupts = <0 215 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart6: uart@2860000 {
+		compatible = "ns16550";
+		reg = <0x02860000 0x100>;
+		clock-frequency = <48000000>;
+		interrupts = <0 216 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+};

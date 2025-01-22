@@ -203,60 +203,17 @@ out:
 
 #include <zephyr/logging/log_ctrl.h>
 
-static void llext_log_flush(void)
-{
-#ifdef CONFIG_LOG_MODE_DEFERRED
-	extern struct k_thread logging_thread;
-	int cur_prio = k_thread_priority_get(k_current_get());
-	int log_prio = k_thread_priority_get(&logging_thread);
-	int target_prio;
-	bool adjust_cur, adjust_log;
-
-	/*
-	 * Our goal is to raise the logger thread priority above current, but if
-	 * current has the highest possble priority, both need to be adjusted,
-	 * particularly if the logger thread has the lowest possible priority
-	 */
-	if (log_prio < cur_prio) {
-		adjust_cur = false;
-		adjust_log = false;
-		target_prio = 0;
-	} else if (cur_prio == K_HIGHEST_THREAD_PRIO) {
-		adjust_cur = true;
-		adjust_log = true;
-		target_prio = cur_prio;
-		k_thread_priority_set(k_current_get(), cur_prio + 1);
-	} else {
-		adjust_cur = false;
-		adjust_log = true;
-		target_prio = cur_prio - 1;
-	}
-
-	/* adjust logging thread priority if needed */
-	if (adjust_log) {
-		k_thread_priority_set(&logging_thread, target_prio);
-	}
-
-	log_thread_trigger();
-	k_yield();
-
-	if (adjust_log) {
-		k_thread_priority_set(&logging_thread, log_prio);
-	}
-	if (adjust_cur) {
-		k_thread_priority_set(&logging_thread, cur_prio);
-	}
-#endif
-}
-
 int llext_unload(struct llext **ext)
 {
 	__ASSERT(*ext, "Expected non-null extension");
 	struct llext *tmp = *ext;
 
-	k_mutex_lock(&llext_lock, K_FOREVER);
+	/* Flush pending log messages, as the deferred formatting may be referencing
+	 * strings/args in the extension we are about to unload
+	 */
+	log_flush();
 
-	llext_log_flush();
+	k_mutex_lock(&llext_lock, K_FOREVER);
 
 	__ASSERT(tmp->use_count, "A valid LLEXT cannot have a zero use-count!");
 

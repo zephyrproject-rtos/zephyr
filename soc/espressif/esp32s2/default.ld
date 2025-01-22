@@ -90,7 +90,7 @@ MEMORY
 #endif
 
 #ifdef CONFIG_ESP_SPIRAM
-  ext_data_ram_seg(RW): org = 0x3f800000, len = CONFIG_ESP_SPIRAM_SIZE /* OR 0x780000 */
+  ext_ram_seg(RW): org = 0x3f800000, len = CONFIG_ESP_SPIRAM_SIZE /* OR 0x780000 */
 #endif /* CONFIG_ESP_SPIRAM */
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -145,24 +145,41 @@ SECTIONS
     LONG(LOADADDR(.dram0.data))
     LONG(LOADADDR(.dram0.data_end) - LOADADDR(.dram0.data))
 
-    /* RTC_TEXT metadata:
-     * 8. Destination address (VMA) for RTC_TEXT region
-     * 9. Flash offset (LMA) for start of RTC_TEXT region
-     * 10. Size of RTC region
+    /* RTC_IRAM metadata:
+     * 8. Destination address (VMA) for RTC_IRAM region
+     * 9. Flash offset (LMA) for start of RTC_IRAM region
+     * 10. Size of RTC_IRAM region
      */
     LONG(ADDR(.rtc.text))
     LONG(LOADADDR(.rtc.text))
     LONG(SIZEOF(.rtc.text))
 
-    /* RTC_DATA metadata:
-     * 11. Destination address (VMA) for RTC_DATA region
-     * 12. Flash offset (LMA) for start of RTC_DATA region
-     * 13. Size of RTC region
+    /* RTC_DRAM metadata:
+     * 11. Destination address (VMA) for RTC_DRAM region
+     * 12. Flash offset (LMA) for start of RTC_DRAM region
+     * 13. Size of RTC_DRAM region
      */
     LONG(ADDR(.rtc.data))
     LONG(LOADADDR(.rtc.data))
     LONG(SIZEOF(.rtc.data))
 
+    /* IROM metadata:
+     * 14. Destination address (VMA) for IROM region
+     * 15. Flash offset (LMA) for start of IROM region
+     * 16. Size of IROM region
+     */
+    LONG(ADDR(.flash.text))
+    LONG(LOADADDR(.flash.text))
+    LONG(SIZEOF(.flash.text))
+
+    /* DROM metadata:
+     * 17. Destination address (VMA) for DROM region
+     * 18. Flash offset (LMA) for start of DROM region
+     * 19. Size of DROM region
+     */
+    LONG(ADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata))
+    LONG(LOADADDR(.flash.rodata_end) - LOADADDR(.flash.rodata))
   } > metadata
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
@@ -762,18 +779,11 @@ SECTIONS
 
 #ifdef CONFIG_ESP_SPIRAM
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
-  .ext_ram.bss (NOLOAD):
+  .ext_ram (NOLOAD):
   {
-    _ext_ram_data_start = ABSOLUTE(.);
-    _ext_ram_bss_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
-    . = ALIGN(4);
-    _ext_ram_bss_end = ABSOLUTE(.);
-  } > ext_data_ram_seg
-
-  .ext_ram_noinit (NOLOAD) :
-  {
+    _ext_ram_start = ABSOLUTE(.);
     _ext_ram_noinit_start = ABSOLUTE(.);
+
 #ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
     *libdrivers__wifi.a:(.noinit .noinit.*)
     *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
@@ -781,13 +791,26 @@ SECTIONS
     *libsubsys__net__ip.a:(.noinit .noinit.*)
     *libsubsys__net.a:(.noinit .noinit.*)
 #endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+    . = ALIGN(16);
+
+    *(.ext_ram_noinit*)
+    *(.ext_ram_noinit.*)
+
+    . = ALIGN(16);
     _ext_ram_noinit_end = ABSOLUTE(.);
+
+    _ext_ram_bss_start = ABSOLUTE(.);
+
+    *(.ext_ram.bss*)
+
+    . = ALIGN(16);
+    _ext_ram_bss_end = ABSOLUTE(.);
 
     _spiram_heap_start = ABSOLUTE(.);
     . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
 
-    _ext_ram_data_end = ABSOLUTE(.);
-  } > ext_data_ram_seg
+    _ext_ram_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(ext_ram_seg)
 #endif /* CONFIG_ESP_SPIRAM */
 
   .dram0.noinit (NOLOAD) :
@@ -987,6 +1010,6 @@ SECTIONS
   /* --- XTENSA GLUE AND DEBUG END --- */
 
 #ifdef CONFIG_ESP_SPIRAM
-ASSERT(((_ext_ram_data_end - _ext_ram_data_start) <= CONFIG_ESP_SPIRAM_SIZE),
+ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_ESP_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
 #endif /* CONFIG_ESP_SPIRAM */

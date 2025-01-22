@@ -9,6 +9,7 @@ common:
     - nrf9160dk/nrf9160
     - nrf5340dk/nrf5340/cpuapp
     - nrf5340bsim/nrf5340/cpuapp
+    - nrf54l09pdk/nrf54l09/cpuapp
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54l20pdk/nrf54l20/cpuapp
     - nrf54l15bsim/nrf54l15/cpuapp

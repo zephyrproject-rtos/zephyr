@@ -324,7 +324,6 @@ config NET_SOCKETS_CAN_RECEIVERS
 
 config NET_SOCKETPAIR
 	bool "Support for socketpair"
-	select PIPES
 	help
 	  Communicate over a pair of connected, unnamed UNIX domain sockets.
 

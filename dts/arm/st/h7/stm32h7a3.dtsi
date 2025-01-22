@@ -56,7 +56,7 @@
 			status = "disabled";
 		};
 
-		octospi1: octospi@52005000 {
+		octospi1: spi@52005000 {
 			compatible = "st,stm32-ospi";
 			reg = <0x52005000 0x1000>;
 			interrupts = <92 0>;
@@ -68,7 +68,7 @@
 			status = "disabled";
 		};
 
-		octospi2: octospi@5200a000 {
+		octospi2: spi@5200a000 {
 			compatible = "st,stm32-ospi";
 			reg = <0x5200a000 0x1000>;
 			interrupts = <150 0>;

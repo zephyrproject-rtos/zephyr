@@ -244,6 +244,10 @@ config BT_RPA
 	bool
 	depends on BT_HOST_CRYPTO || BT_CTLR_CRYPTO
 
+config BT_PRIVATE_SHELL
+	bool
+	default n
+
 config BT_ASSERT
 	bool "Custom Bluetooth assert implementation"
 	default y

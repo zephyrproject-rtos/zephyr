@@ -52,7 +52,6 @@ child-binding:
             bus-type = "BUS_A";
             channel-mask = <0x07FFFFF>;
             prescaler = <1>;
-            period = <65535>;
             mode = <MCB_UP_COUNTER>;
             freeze;
             status = "okay";
@@ -103,13 +102,6 @@ child-binding:
         enum:
           - "MCB_UP_COUNTER"
           - "MCB_UP_DOWN_COUNTER"
-
-      period:
-        type: int
-        required: true
-        description: |
-          Default period (in ticks) for master bus at boot time. This determines PWM period
-          for channels use this bus as reference timebase. Could be in range [2 ... 65535]
 
       freeze:
         type: boolean

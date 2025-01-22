@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# The Myra is technically a SiP (System-in-Package) that consists of
+# the STM32G491REI6 MCU and additional components like FRAM. So for
+# Antmicro Myra SiP Baseboard the STM32G491XX SoC is to be indicated as
+# the build target, but since the Myra SiP is what a user can actually
+# see on a board, using only STM32G491XX in the Zephyr build
+# infrastructure might be confusing. That's why in the top level of SoC
+# definitions (for user-configurable options in Kconfig, for example)
+# the Myra term is used and STM32G491XX underneath.
+config SOC_MYRA
+	bool
+	help
+	  Antmicro Myra System-in-Package
+
+config SOC
+	default "myra" if SOC_MYRA

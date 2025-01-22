@@ -1188,7 +1188,7 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 	.clock_subsys =								\
 	(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),			\
 	.baud_rate = DT_INST_PROP(n, current_speed),				\
-	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),		\
+	.parity = DT_INST_ENUM_IDX(n, parity),					\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)					\
 	UART_MCUX_FLEXCOMM_ASYNC_CFG(n)						\

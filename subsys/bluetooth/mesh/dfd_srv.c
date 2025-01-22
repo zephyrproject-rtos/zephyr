@@ -35,12 +35,8 @@ BUILD_ASSERT((DFD_UPLOAD_START_MSG_MAXLEN + BT_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_
 	     "The Firmware Distribution Upload Start message does not fit into the maximum "
 	     "incoming SDU size.");
 
-#define DFD_RECEIVERS_LIST_MSG_MAXLEN (4 + CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX * 5)
-
-BUILD_ASSERT((DFD_RECEIVERS_LIST_MSG_MAXLEN + BT_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_RECEIVERS_LIST) +
-	      BT_MESH_MIC_SHORT) <= BT_MESH_TX_SDU_MAX,
-	     "The Firmware Distribution Receivers List message does not fit into the maximum "
-	     "outgoing SDU size.");
+#define DFD_RECEIVERS_LIST_MSG_MAXLEN (BT_MESH_TX_SDU_MAX - BT_MESH_MIC_SHORT - \
+				       BT_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_RECEIVERS_LIST))
 
 #define DFD_RECEIVERS_ADD_MSG_MAXLEN (CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX * 3)
 

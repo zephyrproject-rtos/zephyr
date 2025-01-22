@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_QINGKE_V2A
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config MAIN_STACK_SIZE
+	default 512
+
+config IDLE_STACK_SIZE
+	default 256
+
+config ISR_STACK_SIZE
+	default 256
+
+config CLOCK_CONTROL
+	default y
+
+rsource "Kconfig.defconfig.*"
+
+endif # SOC_SERIES_QINGKE_V2A

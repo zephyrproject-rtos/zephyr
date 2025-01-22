@@ -28,6 +28,7 @@
 
 				#atmel,pin-cells = <2>;
 				#gpio-cells = <2>;
+
 				gpio-controller;
 			};
 		};

@@ -92,6 +92,8 @@ The Zephyr ``imx95_evk/mimx9596/m7`` board target supports the following hardwar
 +-----------+------------+-------------------------------------+
 | TPM       | on-chip    | tpm                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 The Zephyr ``imx95_evk/mimx9596/a55`` and ``imx95_evk/mimx9596/a55/smp`` board targets support
 the following hardware features:
@@ -108,6 +110,8 @@ the following hardware features:
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+| TPM       | on-chip    | tpm                                 |
 +-----------+------------+-------------------------------------+
 
 System Clock
@@ -130,6 +134,12 @@ Two channels are enabled on TPM2 for PWM for M7. Signals can be observerd with
 oscilloscope.
 Channel 2 signal routed to resistance R881.
 Channel 3 signal routed to resistance R882.
+
+SPI
+---
+
+The EVK board need to be reworked to solder R1217/R1218/R1219/R1220 with 0R resistances.
+SPI1 on J35 is enabled for M7.
 
 
 Programming and Debugging (A55)

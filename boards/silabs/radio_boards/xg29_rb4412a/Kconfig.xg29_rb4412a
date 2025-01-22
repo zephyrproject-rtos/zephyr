@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XG29_RB4412A
+	select SOC_PART_NUMBER_EFR32MG29B140F1024IM40

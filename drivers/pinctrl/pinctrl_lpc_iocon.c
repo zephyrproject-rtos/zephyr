@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, NXP
+ * Copyright 2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,22 +11,40 @@
 #include <fsl_clock.h>
 #endif
 
+/* IOCON register addresses. */
+static uint32_t volatile *iocon[] = {
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon)))
+	(uint32_t *)DT_REG_ADDR(DT_NODELABEL(iocon)),
+#else
+	NULL,
+#endif
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon1)))
+	(uint32_t *)DT_REG_ADDR(DT_NODELABEL(iocon1)),
+#else
+	NULL,
+#endif
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon2)))
+	(uint32_t *)DT_REG_ADDR(DT_NODELABEL(iocon2)),
+#else
+	NULL,
+#endif
+};
+
 #define OFFSET(mux) (((mux) & 0xFFF00000) >> 20)
 #define TYPE(mux) (((mux) & 0xC0000) >> 18)
+#define INDEX(mux)  (((mux) & 0x38000) >> 15)
 
 #define IOCON_TYPE_D 0x0
 #define IOCON_TYPE_I 0x1
 #define IOCON_TYPE_A 0x2
 
-static volatile uint32_t *iocon =
-	(volatile uint32_t *)DT_REG_ADDR(DT_NODELABEL(iocon));
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	for (uint8_t i = 0; i < pin_cnt; i++) {
 		uint32_t pin_mux = pins[i];
 		uint32_t offset = OFFSET(pin_mux);
+		uint8_t index = INDEX(pin_mux);
 
 		/* Check if this is an analog or i2c type pin */
 		switch (TYPE(pin_mux)) {
@@ -44,7 +62,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			__ASSERT_NO_MSG(TYPE(pin_mux) <= IOCON_TYPE_A);
 		}
 		/* Set pinmux */
-		*(iocon + offset) = pin_mux;
+		*(iocon[index] + offset) = pin_mux;
+
 	}
 	return 0;
 }

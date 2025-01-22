@@ -7,3 +7,5 @@ tests:
       - i2c_target
     platform_allow:
       - b_u585i_iot02a
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp

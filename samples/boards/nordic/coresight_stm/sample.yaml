@@ -15,7 +15,7 @@ tests:
     harness_config:
       pytest_dut_scope: session
       pytest_root:
-        - "pytest/test_stm.py::test_STM_dictionary_mode"
+        - "pytest/test_stm.py::test_sample_STM_dictionary_mode"
     required_snippets:
       - nordic-log-stm-dict
     extra_args:
@@ -27,7 +27,7 @@ tests:
     harness_config:
       pytest_dut_scope: session
       pytest_root:
-        - "pytest/test_stm.py::test_STM_decoded"
+        - "pytest/test_stm.py::test_sample_STM_decoded"
     required_snippets:
       - nordic-log-stm
     extra_args:

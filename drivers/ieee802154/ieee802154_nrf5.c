@@ -585,7 +585,7 @@ static int nrf5_tx(const struct device *dev,
 		return -EMSGSIZE;
 	}
 
-	LOG_DBG("%p (%u)", payload, payload_len);
+	LOG_DBG("%p (%u)", (void *)payload, payload_len);
 
 	nrf5_radio->tx_psdu[0] = payload_len + IEEE802154_FCS_LENGTH;
 	memcpy(nrf5_radio->tx_psdu + 1, payload, payload_len);

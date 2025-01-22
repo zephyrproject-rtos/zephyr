@@ -156,6 +156,7 @@ struct adxl345_dev_data {
 	struct adxl345_fifo_config fifo_config;
 	uint8_t is_full_res;
 	uint8_t selected_range;
+	enum adxl345_odr odr;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_callback gpio_cb;
 
@@ -204,6 +205,7 @@ struct adxl345_sample {
 	uint8_t res: 7;
 #endif /* CONFIG_ADXL345_STREAM */
 	uint8_t selected_range;
+	bool is_full_res;
 	int16_t x;
 	int16_t y;
 	int16_t z;

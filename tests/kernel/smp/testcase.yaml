@@ -31,6 +31,9 @@ tests:
       - smp
     ignore_faults: true
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
+    platform_exclude:
+      - qemu_riscv64/qemu_virt_riscv64/smp # qemu_riscv64 doesn't support custom ROM offset
+      - qemu_riscv32/qemu_virt_riscv32/smp # qemu_riscv32 doesn't support custom ROM offset
     extra_configs:
       - CONFIG_SCHED_CPU_MASK=y
       - CONFIG_ROM_START_OFFSET=0x80

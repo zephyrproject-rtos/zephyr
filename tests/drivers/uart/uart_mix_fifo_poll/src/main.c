@@ -15,6 +15,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/random/random.h>
+#include <zephyr/pm/device_runtime.h>
 /* RX and TX pins have to be connected together*/
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))
@@ -50,7 +51,7 @@ static struct dut_data duts[] = {
 		.dev = DEVICE_DT_GET(UART_NODE),
 		.name = DT_NODE_FULL_NAME(UART_NODE),
 	},
-#if DT_NODE_EXISTS(DT_NODELABEL(dut2))
+#if DT_NODE_EXISTS(DT_NODELABEL(dut2)) && DT_NODE_HAS_STATUS(DT_NODELABEL(dut2), okay)
 	{
 		.dev = DEVICE_DT_GET(DT_NODELABEL(dut2)),
 		.name = DT_NODE_FULL_NAME(DT_NODELABEL(dut2)),
@@ -147,13 +148,6 @@ static void counter_top_handler(const struct device *dev, void *user_data)
 
 static void init_test(int idx)
 {
-	int err;
-	struct counter_top_cfg top_cfg = {
-		.callback = counter_top_handler,
-		.user_data = NULL,
-		.flags = 0
-	};
-
 	memset(source, 0, sizeof(source));
 	async_rx_enabled = false;
 	uart_dev = duts[idx].dev;
@@ -170,19 +164,6 @@ static void init_test(int idx)
 			uart_irq_callback_set(uart_dev, int_driven_callback);
 		}
 	}
-
-	/* Setup counter which will periodically enable/disable UART RX,
-	 * Disabling RX should lead to flow control being activated.
-	 */
-	zassert_true(device_is_ready(counter_dev));
-
-	top_cfg.ticks = counter_us_to_ticks(counter_dev, 1000);
-
-	err = counter_set_top_value(counter_dev, &top_cfg);
-	zassert_true(err >= 0);
-
-	err = counter_start(counter_dev);
-	zassert_true(err >= 0);
 }
 
 static void rx_isr(void)
@@ -343,6 +324,40 @@ ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 	int repeat = CONFIG_STRESS_TEST_REPS;
 	int err;
 	int num_of_contexts = ARRAY_SIZE(test_data);
+	struct counter_top_cfg top_cfg = {
+		.callback = counter_top_handler,
+		.user_data = NULL,
+		.flags = 0
+	};
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (async) {
+#if DT_NODE_EXISTS(DT_NODELABEL(uart120)) && DT_NODE_HAS_STATUS(DT_NODELABEL(uart120), okay)
+			if (uart_dev == DEVICE_DT_GET(DT_NODELABEL(uart120))) {
+				ztest_test_skip();
+			}
+#endif
+		} else {
+			/* If only polling API is available then UART device is initially
+			 * suspended which means that RX is disabled and poll_in won't work.
+			 * Device must be explicitly enabled.
+			 */
+			pm_device_runtime_get(uart_dev);
+		}
+	}
+
+	/* Setup counter which will periodically enable/disable UART RX,
+	 * Disabling RX should lead to flow control being activated.
+	 */
+	zassert_true(device_is_ready(counter_dev));
+
+	top_cfg.ticks = counter_us_to_ticks(counter_dev, 1000);
+
+	err = counter_set_top_value(counter_dev, &top_cfg);
+	zassert_true(err >= 0);
+
+	err = counter_start(counter_dev);
+	zassert_true(err >= 0);
 
 	for (int i = 0; i < ARRAY_SIZE(test_data); i++) {
 		init_buf(txbuf[i], sizeof(txbuf[i]), i);
@@ -386,6 +401,13 @@ ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 		zassert_equal(source[i].cnt, repeat,
 				"%d: Unexpected rx bytes count (%d/%d)",
 				i, source[i].cnt, repeat);
+	}
+
+	err = counter_stop(counter_dev);
+	zassert_true(err >= 0);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) && !async) {
+		pm_device_runtime_put(uart_dev);
 	}
 }
 

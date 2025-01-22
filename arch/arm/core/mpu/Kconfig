@@ -8,6 +8,7 @@ if CPU_HAS_MPU
 config ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 	int
 	default 256 if ARM_MPU && ARMV6_M_ARMV8_M_BASELINE && !ARMV8_M_BASELINE
+	default 128 if ARM_MPU && FPU_SHARING && MPU_STACK_GUARD
 	default 64 if ARM_MPU && AARCH32_ARMV8_R
 	default 32 if ARM_MPU
 	default 4

@@ -106,6 +106,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->soc_context = soc_esf_init;
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_ISR_STACKING
+	SOC_ISR_STACKING_ESR_INIT;
+#endif
+
 	thread->callee_saved.sp = (unsigned long)stack_init;
 
 	/* where to go when returning from z_riscv_switch() */

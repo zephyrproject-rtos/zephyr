@@ -7,14 +7,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
+#include <stddef.h>
+#include <errno.h>
+#include <zephyr/kernel.h>
+#include <zephyr/types.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include <testlib/conn.h>
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 
-#include "common.h"
-
-CREATE_FLAG(flag_is_connected);
+static DEFINE_FLAG(flag_is_connected);
 
 static struct bt_conn *g_conn;
 
@@ -25,7 +30,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
+		TEST_FAIL("Failed to connect to %s (%u)", addr, err);
 		return;
 	}
 
@@ -82,13 +87,13 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct ne
 	printk("Stopping scan\n");
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		FAIL("Could not stop scan: %d");
+		TEST_FAIL("Could not stop scan: %d");
 		return;
 	}
 
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &conn);
 	if (err != 0) {
-		FAIL("Could not connect to peer: %d", err);
+		TEST_FAIL("Could not connect to peer: %d", err);
 	}
 	printk("%s: connected to found device\n", __func__);
 
@@ -125,7 +130,7 @@ static void start_adv(void)
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
+		TEST_FAIL("Advertising failed to start (err %d)", err);
 		return;
 	}
 
@@ -138,7 +143,7 @@ static void test_peripheral_main(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth init failed (err %d)", err);
 		return;
 	}
 
@@ -161,13 +166,13 @@ static void test_peripheral_main(void)
 
 	err = bt_disable();
 	if (err != 0) {
-		FAIL("Bluetooth disable failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth disable failed (err %d)", err);
 		return;
 	}
 
 	printk("Bluetooth successfully disabled\n");
 
-	PASS("Peripheral device passed\n");
+	TEST_PASS("Peripheral device passed");
 }
 
 static void test_central_main(void)
@@ -177,14 +182,14 @@ static void test_central_main(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		FAIL("Bluetooth discover failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth discover failed (err %d)", err);
 	}
 	printk("Bluetooth initialized\n");
 	bt_conn_cb_register(&conn_callbacks);
 	/* Connect to peer device after conn_callbacks registered*/
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {
-		FAIL("Scanning failed to start (err %d)\n", err);
+		TEST_FAIL("Scanning failed to start (err %d)", err);
 	}
 
 	printk("Scanning successfully started\n");
@@ -194,7 +199,7 @@ static void test_central_main(void)
 	err = bt_conn_disconnect(g_conn, 0x13);
 
 	if (err != 0) {
-		FAIL("Disconnect failed (err %d)\n", err);
+		TEST_FAIL("Disconnect failed (err %d)", err);
 		return;
 	}
 
@@ -203,40 +208,36 @@ static void test_central_main(void)
 	/* Reconnect to the device after conn_callbacks unregistered */
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {
-		FAIL("Scanning failed to start (err %d)\n", err);
+		TEST_FAIL("Scanning failed to start (err %d)", err);
 	}
 	printk("Scanning successfully started\n");
 
 	k_sleep(K_SECONDS(1));
 	bt_conn_foreach(BT_CONN_TYPE_LE, connection_info, &conn_count);
 	if (!conn_count) {
-		FAIL("Reconnect to peer device failed!");
+		TEST_FAIL("Reconnect to peer device failed!");
 	}
 
 	/* flag_is_connected not set means no conn_callbacks being called */
 	if (flag_is_connected) {
-		FAIL("Unregister conn_callback didn't work");
+		TEST_FAIL("Unregister conn_callback didn't work");
 	}
 	printk("Unregister connection callbacks succeed!\n");
 
 	err = bt_disable();
 	if (err != 0) {
-		FAIL("Bluetooth disable failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth disable failed (err %d)", err);
 	}
 	printk("Bluetooth successfully disabled\n");
 
-	PASS("Central device passed\n");
+	TEST_PASS("Central device passed");
 }
 
 static const struct bst_test_instance test_def[] = {{.test_id = "peripheral",
 						     .test_descr = "Peripheral device",
-						     .test_pre_init_f = test_init,
-						     .test_tick_f = test_tick,
 						     .test_main_f = test_peripheral_main},
 						    {.test_id = "central",
 						     .test_descr = "Central device",
-						     .test_pre_init_f = test_init,
-						     .test_tick_f = test_tick,
 						     .test_main_f = test_central_main},
 						    BSTEST_END_MARKER};
 

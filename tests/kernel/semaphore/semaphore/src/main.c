@@ -980,7 +980,6 @@ void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
 {
 	int timeout = POINTER_TO_INT(p1);
 	int64_t start_ticks, end_ticks, diff_ticks;
-	size_t bytes_written;
 
 	start_ticks = k_uptime_get();
 
@@ -994,8 +993,7 @@ void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
 		     "time mismatch - expected at least %d, got %lld",
 		     timeout, diff_ticks);
 
-	k_pipe_put(&timeout_info_pipe, &timeout, sizeof(int),
-		   &bytes_written, sizeof(int), K_FOREVER);
+	k_pipe_write(&timeout_info_pipe, (uint8_t *)&timeout, sizeof(int), K_FOREVER);
 
 }
 
@@ -1011,10 +1009,9 @@ ZTEST(semaphore_1cpu, test_sem_multiple_take_and_timeouts)
 	}
 
 	static uint32_t timeout;
-	size_t bytes_read;
 
 	k_sem_reset(&simple_sem);
-	k_pipe_flush(&timeout_info_pipe);
+	k_pipe_reset(&timeout_info_pipe);
 
 	/* Multiple threads timeout and the sequence in which it times out
 	 * is pushed into a pipe and checked later on.
@@ -1028,8 +1025,7 @@ ZTEST(semaphore_1cpu, test_sem_multiple_take_and_timeouts)
 	}
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		k_pipe_get(&timeout_info_pipe, &timeout, sizeof(int),
-			   &bytes_read, sizeof(int), K_FOREVER);
+		k_pipe_read(&timeout_info_pipe, (uint8_t *)&timeout, sizeof(int), K_FOREVER);
 		zassert_equal(timeout, QSEC2MS(i + 1),
 			     "timeout did not occur properly: %d != %d",
 				 timeout, QSEC2MS(i + 1));
@@ -1043,10 +1039,10 @@ ZTEST(semaphore_1cpu, test_sem_multiple_take_and_timeouts)
 
 void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
 {
+	int rc;
 	int timeout = POINTER_TO_INT(p1);
 	struct k_sem *sema = p2;
 	int64_t start_ticks, end_ticks, diff_ticks;
-	size_t bytes_written;
 	struct timeout_info info = {
 		.timeout = timeout,
 		.sema = sema
@@ -1064,8 +1060,10 @@ void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
 		     "time mismatch - expected at least %d, got %lld",
 		     timeout, diff_ticks);
 
-	k_pipe_put(&timeout_info_pipe, &info, sizeof(struct timeout_info),
-		   &bytes_written, sizeof(struct timeout_info), K_FOREVER);
+	rc = k_pipe_write(&timeout_info_pipe, (uint8_t *)&info, sizeof(struct timeout_info),
+		   K_FOREVER);
+	zassert_true(rc == sizeof(struct timeout_info),
+		     "k_pipe_write failed: %d", rc);
 }
 
 /**
@@ -1075,11 +1073,11 @@ void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
  */
 ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
 {
+	int rc;
 	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
 		ztest_test_skip();
 	}
 
-	size_t bytes_read;
 	struct timeout_info seq_info[] = {
 		{ SEC2MS(2), &simple_sem },
 		{ SEC2MS(1), &multiple_thread_sem },
@@ -1092,7 +1090,7 @@ ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
 
 	k_sem_reset(&simple_sem);
 	k_sem_reset(&multiple_thread_sem);
-	k_pipe_flush(&timeout_info_pipe);
+	k_pipe_reset(&timeout_info_pipe);
 	memset(&retrieved_info, 0, sizeof(struct timeout_info));
 
 	/* Multiple threads timeout on different semaphores and the sequence
@@ -1108,13 +1106,10 @@ ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
 	}
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		k_pipe_get(&timeout_info_pipe,
-			   &retrieved_info,
-			   sizeof(struct timeout_info),
-			   &bytes_read,
-			   sizeof(struct timeout_info),
-			   K_FOREVER);
-
+		rc = k_pipe_read(&timeout_info_pipe, (uint8_t *)&retrieved_info,
+			sizeof(struct timeout_info), K_FOREVER);
+		zassert_true(rc == sizeof(struct timeout_info),
+			     "k_pipe_read failed: %d", rc);
 
 		zassert_true(retrieved_info.timeout == SEC2MS(i + 1),
 			     "timeout did not occur properly");

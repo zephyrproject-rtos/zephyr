@@ -19,4 +19,5 @@ tests:
       - sltb010a/efr32bg22c224f512im40
       - xg24_rb4187c/efr32mg24b220f1536im48
       - xg27_dk2602a/efr32bg27c140f768im40
+      - xg29_rb4412a/efr32mg29b140f1024im40
     build_only: true

@@ -84,7 +84,7 @@
 			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(320)>;
 			riscv,isa = "rv32emc";
-			nordic,bus-width = <64>;
+			nordic,bus-width = <32>;
 
 			cpuflpr_vevif_rx: mailbox {
 				compatible = "nordic,nrf-vevif-task-rx";
@@ -385,9 +385,8 @@
 				status = "disabled";
 				cc-num = <8>;
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
+				clocks = <&hfxo>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -397,9 +396,8 @@
 				status = "disabled";
 				cc-num = <8>;
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
+				clocks = <&hfxo>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -409,9 +407,8 @@
 				status = "disabled";
 				cc-num = <8>;
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
+				clocks = <&hfxo>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -627,7 +624,6 @@
 				interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
 				clocks = <&hsfll120>;
 				prescaler = <0>;
 			};
@@ -640,7 +636,6 @@
 				interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
 				clocks = <&hsfll120>;
 				prescaler = <0>;
 			};

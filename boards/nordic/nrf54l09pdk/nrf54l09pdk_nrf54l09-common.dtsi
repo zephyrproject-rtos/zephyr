@@ -10,7 +10,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 1";
 		};
 		led1: led_1 {

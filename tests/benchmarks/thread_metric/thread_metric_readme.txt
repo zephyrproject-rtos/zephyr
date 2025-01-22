@@ -123,6 +123,27 @@ tm_memory_allocation_test.c                   Basic memory allocation test
 tm_porting_layer_zephyr.c                     Specific porting layer source
                                                  code for Zephyr
 
+2.5. Test execution with Twister tool
+
+When the test suite is executed by Twister it takes parameters from testcase.yaml
+file, in particular:
+
+    * check expected benchmark output presence at least three times to collect
+      measurements from 3 consequtive intervals for each of the benchmark tests.
+
+    * use 300 sec. timeout on each benchmark test from this suite;
+      it is expected to be at least twice bigger than normally needed
+      to collect measurements 3 times with 30 sec. intervals on most of the
+      platforms except some simulators.
+
+    * parse benchmark output to extract measurements and errors when
+      it happens e.g. on counters diverged from average; Twister records
+      this data in twister.json and recording.csv report files for analysis.
+
+For more details see Twister testcase.yaml documentation and 'harness_config:'
+parameters.
+
+
 3 Porting
 
 3.1 Porting Layer
@@ -216,7 +237,7 @@ measurement tests:
     of memory. If successful, a TM_SUCCESS is returned.
 
 
-2.2 Porting Requirements Checklist
+3.2 Porting Requirements Checklist
 
 The following requirements are made in order to ensure fair benchmarks
 are achieved on each RTOS performing the test:

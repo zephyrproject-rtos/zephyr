@@ -23,9 +23,6 @@ config GPIO_AXP192_INIT_PRIORITY
 config REGULATOR_FIXED_INIT_PRIORITY
 	default 75
 
-config INPUT_FT5336_INTERRUPT
-	default y if INPUT
-
 config INPUT
 	default y
 

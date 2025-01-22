@@ -160,6 +160,13 @@ int boot_read_bank_header(uint8_t area_id,
 			  size_t header_size);
 
 /**
+ * @brief Get the flash area id for the active image slot.
+ *
+ * @return flash area id for the active image slot
+ */
+uint8_t boot_fetch_active_slot(void);
+
+/**
  * @brief Check if the currently running image is confirmed as OK.
  *
  * MCUboot can perform "test" upgrades. When these occur, a new

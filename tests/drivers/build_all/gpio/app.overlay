@@ -172,8 +172,8 @@
 						gpio-controller;
 						#gpio-cells = <2>;
 						ngpios = <8>;
-						pin_mask = <0xff>;
-						pinmux_mask = <0xf7>;
+						pin-mask = <0xff>;
+						pinmux-mask = <0xf7>;
 					};
 
 					gpio@1 {
@@ -182,7 +182,7 @@
 						gpio-controller;
 						#gpio-cells = <2>;
 						ngpios = <8>;
-						pin_mask = <0xff>;
+						pin-mask = <0xff>;
 					};
 				};
 			};
@@ -201,8 +201,8 @@
 						gpio-controller;
 						#gpio-cells = <2>;
 						ngpios = <8>;
-						pin_mask = <0xdc>;
-						pinmux_mask = <0xff>;
+						pin-mask = <0xdc>;
+						pinmux-mask = <0xff>;
 					};
 				};
 			};
@@ -221,8 +221,8 @@
 						gpio-controller;
 						#gpio-cells = <2>;
 						ngpios = <8>;
-						pin_mask = <0xdc>;
-						pinmux_mask = <0xff>;
+						pin-mask = <0xdc>;
+						pinmux-mask = <0xff>;
 					};
 				};
 			};
@@ -440,6 +440,7 @@
 				    &test_gpio 0 0
 				    &test_gpio 0 0
 				    &test_gpio 0 0
+				    &test_gpio 0 0
 				    &test_gpio 0 0>;
 
 			test_spi_mcp23s17: mcp23s17@0 {
@@ -593,6 +594,21 @@
 				drdy-gpios = <&test_gpio 0 0>;
 				fault-gpios = <&test_gpio 0 0>;
 				latch-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max22017: max22017_mfd@b {
+				compatible = "adi,max22017";
+				status = "okay";
+				reg = <0x0b>;
+				spi-max-frequency = <0>;
+
+				max22017_gpio0: max22017_gpio {
+					compatible = "adi,max22017-gpio";
+					status = "okay";
+					gpio-controller;
+					ngpios = <5>;
+					#gpio-cells = <2>;
+				};
 			};
 		};
 	};

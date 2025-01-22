@@ -41,4 +41,11 @@ config LWM2M_APP_SERVER
 	  When port number is missing, CONFIG_LWM2M_PEER_PORT is used instead.
 	  IPv6 addresses must be enclosed in square brackets, for example "coap://[fd00::1]".
 
+config WAIT_DNS_SERVER_ADDITION
+	bool "Wait DNS server addition before considering connection to be up"
+	depends on MODEM_HL7800 && !DNS_SERVER_IP_ADDRESSES
+	help
+	  Make sure we get DNS server addresses from the network
+	  before considering the connection to be up.
+
 source "Kconfig.zephyr"

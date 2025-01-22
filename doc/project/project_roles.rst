@@ -350,6 +350,7 @@ Release Activity
 Merge Criteria
 ++++++++++++++
 
+* All :ref:`pr_requirements` must be met.
 * Minimal of 2 approvals, including an approval by the designated assignee.
 * Pull requests should be reviewed by at least a maintainer or collaborator of
   each affected area; Unless the changes to a given area are considered trivial

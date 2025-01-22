@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-
+#include <zephyr/drivers/sensor_clock.h>
 #include "icm42688.h"
 #include "icm42688_decoder.h"
 #include "icm42688_reg.h"
@@ -292,12 +292,21 @@ void icm42688_fifo_event(const struct device *dev)
 	struct icm42688_dev_data *drv_data = dev->data;
 	struct rtio_iodev *spi_iodev = drv_data->spi_iodev;
 	struct rtio *r = drv_data->r;
+	uint64_t cycles;
+	int rc;
 
 	if (drv_data->streaming_sqe == NULL) {
 		return;
 	}
 
-	drv_data->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(drv_data->streaming_sqe, err);
+		return;
+	}
+
+	drv_data->timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	/*
 	 * Setup rtio chain of ops with inline calls to make decisions

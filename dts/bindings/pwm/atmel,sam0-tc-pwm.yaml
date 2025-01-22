@@ -1,4 +1,5 @@
 # Copyright (c) 2020 Google LLC.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: Atmel SAM0 TC in PWM mode
@@ -9,6 +10,7 @@ include:
   - name: base.yaml
   - name: pwm-controller.yaml
   - name: pinctrl-device.yaml
+  - name: atmel,assigned-clocks.yaml
 
 properties:
   reg:
@@ -21,6 +23,12 @@ properties:
     required: true
 
   clock-names:
+    required: true
+
+  atmel,assigned-clocks:
+    required: true
+
+  atmel,assigned-clock-names:
     required: true
 
   channels:

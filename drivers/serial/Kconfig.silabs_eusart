@@ -1,0 +1,15 @@
+# Copyright (c) 2024, Yishai Jaffe
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_SILABS_EUSART
+	bool "Silabs EUSART UART driver"
+	default y
+	depends on DT_HAS_SILABS_EUSART_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SOC_GECKO_EUSART
+	select PINCTRL
+	select CLOCK_CONTROL
+	select PM_DEVICE if PM
+	help
+	  Enable the eusart uart driver.

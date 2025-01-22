@@ -33,7 +33,8 @@
 LOG_MODULE_REGISTER(bt_mesh_pb_gatt_client);
 
 static struct {
-	const uint8_t *target;
+	bool target_set;
+	uint8_t target_uuid[16];
 	struct bt_mesh_proxy_role *srv;
 } server;
 
@@ -55,7 +56,7 @@ static void pb_gatt_connected(struct bt_conn *conn, void *user_data)
 	server.srv = bt_mesh_proxy_role_setup(conn, bt_mesh_gatt_send,
 					      pb_gatt_msg_recv);
 
-	server.target = NULL;
+	server.target_set = false;
 
 	bt_mesh_pb_gatt_cli_start(conn);
 }
@@ -91,8 +92,8 @@ int bt_mesh_pb_gatt_cli_setup(const uint8_t uuid[16])
 		return -EBUSY;
 	}
 
-	server.target = uuid;
-
+	memcpy(server.target_uuid, uuid, 16);
+	server.target_set = true;
 	return 0;
 }
 
@@ -112,8 +113,8 @@ void bt_mesh_pb_gatt_cli_adv_recv(const struct bt_le_scan_recv_info *info,
 
 	uuid = net_buf_simple_pull_mem(buf, 16);
 
-	if (server.target &&
-	    !memcmp(server.target, uuid, 16)) {
+	if (server.target_set &&
+	    !memcmp(server.target_uuid, uuid, 16)) {
 		(void)bt_mesh_gatt_cli_connect(info->addr, &pbgatt, NULL);
 		return;
 	}

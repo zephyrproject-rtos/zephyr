@@ -66,15 +66,14 @@ static void gmap_discover_cb(struct bt_conn *conn, int err, enum bt_gmap_role ro
 			     struct bt_gmap_feat features)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "gmap discovery (err %d)", err);
+		bt_shell_error("gmap discovery (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell,
-		    "gmap discovered for conn %p:\n\trole 0x%02x\n\tugg_feat 0x%02x\n\tugt_feat "
-		    "0x%02x\n\tbgs_feat 0x%02x\n\tbgr_feat 0x%02x",
-		    conn, role, features.ugg_feat, features.ugt_feat, features.bgs_feat,
-		    features.bgr_feat);
+	bt_shell_print("gmap discovered for conn %p:\n\trole 0x%02x\n\tugg_feat 0x%02x\n\tugt_feat "
+		       "0x%02x\n\tbgs_feat 0x%02x\n\tbgr_feat 0x%02x",
+		       conn, role, features.ugg_feat, features.ugt_feat, features.bgs_feat,
+		       features.bgr_feat);
 }
 
 static const struct bt_gmap_cb gmap_cb = {
@@ -197,10 +196,6 @@ static int cmd_gmap_discover(const struct shell *sh, size_t argc, char **argv)
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
-	}
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
 	}
 
 	err = bt_gmap_discover(default_conn);

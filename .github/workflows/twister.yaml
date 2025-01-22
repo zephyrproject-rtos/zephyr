@@ -160,7 +160,7 @@ jobs:
           fi
 
       - if: github.event_name == 'schedule'
-        name: Run Tests with Twister (Daily)
+        name: Run Tests with Twister (Weekly)
         id: run_twister_sched
         run: |
           export ZEPHYR_BASE=${PWD}

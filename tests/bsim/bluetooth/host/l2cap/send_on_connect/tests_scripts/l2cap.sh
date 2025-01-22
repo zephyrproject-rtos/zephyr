@@ -25,10 +25,12 @@ simulation_id="l2cap_send_on_connect_ecred"
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_ecred_conf \
+Execute \
+    ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_conf_overlay-ecred_conf \
     -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_ecred_conf \
+Execute \
+    ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_conf_overlay-ecred_conf \
     -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \

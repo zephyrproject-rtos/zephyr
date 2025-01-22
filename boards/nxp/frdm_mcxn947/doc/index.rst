@@ -97,20 +97,53 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | FLEXIO    | on-chip    | flexio                              |
 +-----------+------------+-------------------------------------+
+| SAI       | on-chip    | i2s                                 |
++-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
 |           |            | :ref:`lcd_par_s035`                 |
 +-----------+------------+-------------------------------------+
 | MRT       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 
+Dual Core samples
+*****************
+
++-----------+-------------------+----------------------+
+| Core      | Boot Address      | Comment              |
++===========+===================+======================+
+| CPU0      | 0x10000000[1856K] | primary core flash   |
++-----------+-------------------+----------------------+
+| CPU1      | 0x101d0000[192K]  | secondary core flash |
++-----------+-------------------+----------------------+
+
++----------+------------------+-----------------------+
+| Memory   | Address[Size]    | Comment               |
++==========+==================+=======================+
+| srama    | 0x20000000[320k] | CPU0 ram              |
++----------+------------------+-----------------------+
+| sramg    | 0x20050000[64k]  | CPU1 ram              |
++----------+------------------+-----------------------+
+| sramh    | 0x20060000[32k]  | Shared memory         |
++----------+------------------+-----------------------+
+
 Targets available
 ==================
 
 The default configuration file
 :zephyr_file:`boards/nxp/frdm_mcxn947/frdm_mcxn947_mcxn947_cpu0_defconfig`
-only enables the first core.
+only enables the first core. CPU0 is the only target that can run standalone.
 
-Other hardware features are not currently supported by the port.
+CPU1 does not work without CPU0 enabling it.
+
+To enable CPU1, create System Build application project and enable the
+second core with config :kconfig:option:`CONFIG_SECOND_CORE_MCUX`.
+
+Please have a look at some already enabled samples:
+
+- :zephyr_file:`samples/subsys/ipc/ipc_service/static_vrings`
+- :zephyr_file:`samples/subsys/ipc/openamp`
+- :zephyr_file:`samples/drivers/mbox`
+- :zephyr_file:`samples/drivers/mbox_data`
 
 Connections and IOs
 ===================
@@ -121,9 +154,13 @@ can be used to configure the functionality of a pin.
 +------------+-----------------+----------------------------+
 | Name       | Function        | Usage                      |
 +============+=================+============================+
-| P0_PIO1_8  | UART            | UART RX                    |
+| P0_PIO1_8  | UART            | UART RX cpu0               |
 +------------+-----------------+----------------------------+
-| P1_PIO1_9  | UART            | UART TX                    |
+| P1_PIO1_9  | UART            | UART TX cpu0               |
++------------+-----------------+----------------------------+
+| P4_PIO4_3  | UART            | UART RX cpu1               |
++------------+-----------------+----------------------------+
+| P4_PIO4_2  | UART            | UART TX cpu1               |
 +------------+-----------------+----------------------------+
 
 System Clock
@@ -206,6 +243,25 @@ see the following message in the terminal:
    *** Booting Zephyr OS build v3.6.0-479-g91faa20c6741 ***
    Hello World! frdm_mcxn947/mcxn947/cpu0
 
+Building a dual-core image
+--------------------------
+
+The dual-core samples are run using ``frdm_mcxn947/mcxn947/cpu0`` target.
+
+Images built for ``frdm_mcxn947/mcxn947/cpu1`` will be loaded from flash
+and executed on the second core when :kconfig:option:`CONFIG_SECOND_CORE_MCUX` is selected.
+
+For an example of building for both cores with System Build, see
+:zephyr_file:`samples/subsys/ipc/ipc_service/static_vrings`
+
+Here is an example for the :zephyr:code-sample:`mbox_data` application.
+
+.. zephyr-app-commands::
+   :app: zephyr/samples/drivers/mbox_data
+   :board: frdm_mcxn947/mcxn947/cpu0
+   :goals: flash
+   :west-args: --sysbuild
+
 Flashing to QSPI
 ================
 
@@ -261,6 +317,14 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v3.6.0-479-g91faa20c6741 ***
    Hello World! frdm_mcxn947/mcxn947/cpu0
 
+Debugging a dual-core image
+---------------------------
+
+For dual core builds, the secondary core should be placed into a loop,
+then a debugger can be attached.
+As a reference please see (`AN13264`_, section 4.2.3 for more information).
+The reference is for the RT1170 but similar technique can be also used here.
+
 Troubleshooting
 ===============
 
@@ -287,3 +351,6 @@ Troubleshooting
 
 .. _FRDM-MCXN947 Schematics:
    https://www.nxp.com/webapp/Download?colCode=90818-MCXN947SH
+
+.. _AN13264:
+   https://www.nxp.com/docs/en/application-note/AN13264.pdf

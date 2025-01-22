@@ -239,18 +239,8 @@ void net_if_ipv6_start_dad(struct net_if *iface,
  * @brief Initialize Precision Time Protocol Layer.
  */
 void net_gptp_init(void);
-
-/**
- * @brief Process a ptp message.
- *
- * @param buf Buffer with a valid PTP Ethernet type.
- *
- * @return Return the policy for network buffer.
- */
-enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
 #else
 #define net_gptp_init()
-#define net_gptp_recv(iface, pkt) NET_DROP
 #endif /* CONFIG_NET_GPTP */
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)

@@ -24,13 +24,6 @@ config MEMC
 
 endif # DISPLAY
 
-if INPUT
-
-config INPUT_FT5336_INTERRUPT
-	default y
-
-endif # INPUT
-
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 

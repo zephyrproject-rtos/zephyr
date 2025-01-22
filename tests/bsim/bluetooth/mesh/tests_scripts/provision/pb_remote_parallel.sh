@@ -14,12 +14,14 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_prov_pb_remote_parallel \
 	prov_provisioner_pb_remote_client_parallel \
 	prov_device_pb_remote_server_unproved \
-	prov_device_pb_adv_no_oob \
-	prov_device_pb_adv_no_oob
+	prov_device_no_oob \
+	prov_device_no_oob \
+	-- -argstest prov-brearer=1
 
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_remote_parallel_psa \
 	prov_provisioner_pb_remote_client_parallel \
 	prov_device_pb_remote_server_unproved \
-	prov_device_pb_adv_no_oob \
-	prov_device_pb_adv_no_oob
+	prov_device_no_oob \
+	prov_device_no_oob \
+	-- -argstest prov-brearer=1

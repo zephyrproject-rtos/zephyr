@@ -16,6 +16,7 @@
 		zephyr,sram = &dram1;
 		zephyr,flash = &cram1;
 		zephyr,canbus = &flexcan0;
+		zephyr,flash-controller = &s26hs512t;
 	};
 
 	aliases {

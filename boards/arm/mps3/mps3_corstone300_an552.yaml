@@ -10,7 +10,6 @@ flash: 512
 toolchain:
   - gnuarmemb
   - zephyr
-  - xtools
 supported:
   - gpio
 testing:

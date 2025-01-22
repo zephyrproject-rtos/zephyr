@@ -70,6 +70,8 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 		goto error;
 	}
 
+	client->http1_headers_sent = true;
+
 	ret = http_server_sendall(client, tmp, strlen(tmp));
 	if (ret < 0) {
 		NET_DBG("Cannot write to socket (%d)", ret);

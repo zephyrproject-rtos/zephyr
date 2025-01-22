@@ -15,7 +15,7 @@
 #include <soc.h>
 #endif
 
-/* Helper funciton for getting numer of bytes being written to the bufer. */
+/* Helper function for getting number of bytes being written to the buffer. */
 static uint32_t idx_occupied(uint32_t len, uint32_t wr_idx, uint32_t rd_idx)
 {
 	/* It is implicitly assumed wr_idx and rd_idx cannot differ by more then len. */

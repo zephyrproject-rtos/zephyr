@@ -32,6 +32,7 @@
 #include <zephyr/shell/shell.h>
 
 #include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
@@ -59,19 +60,18 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		shell_error(ctx_shell, "Failed to connect to %s (%u)",
-			    addr, err);
+		bt_shell_error("Failed to connect to %s (%u)", addr, err);
 		return;
 	}
 
 	conn_index = bt_conn_index(conn);
 
-	shell_print(ctx_shell, "[%u]: Connected to %s", conn_index, addr);
+	bt_shell_print("[%u]: Connected to %s", conn_index, addr);
 
 	/* TODO: Handle RPAs */
 
 	conns[conn_index] = bt_conn_ref(conn);
-	shell_print(ctx_shell, "Member[%u] connected", conn_index);
+	bt_shell_print("Member[%u] connected", conn_index);
 }
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
@@ -94,25 +94,24 @@ static void csip_discover_cb(struct bt_conn *conn,
 	uint8_t conn_index;
 
 	if (err != 0) {
-		shell_error(ctx_shell, "discover failed (%d)", err);
+		bt_shell_error("discover failed (%d)", err);
 		return;
 	}
 
 	if (set_count == 0) {
-		shell_warn(ctx_shell, "Device has no sets");
+		bt_shell_warn("Device has no sets");
 		return;
 	}
 
 	conn_index = bt_conn_index(conn);
 
-	shell_print(ctx_shell, "Found %zu sets on member[%u]",
-		    set_count, conn_index);
+	bt_shell_print("Found %zu sets on member[%u]", set_count, conn_index);
 
 	for (size_t i = 0U; i < set_count; i++) {
-		shell_print(ctx_shell, "CSIS[%zu]: %p", i, &member->insts[i]);
-		shell_print(ctx_shell, "\tRank: %u", member->insts[i].info.rank);
-		shell_print(ctx_shell, "\tSet Size: %u", member->insts[i].info.set_size);
-		shell_print(ctx_shell, "\tLockable: %u", member->insts[i].info.lockable);
+		bt_shell_print("CSIS[%zu]: %p", i, &member->insts[i]);
+		bt_shell_print("\tRank: %u", member->insts[i].info.rank);
+		bt_shell_print("\tSet Size: %u", member->insts[i].info.set_size);
+		bt_shell_print("\tLockable: %u", member->insts[i].info.lockable);
 	}
 
 	set_members[conn_index] = member;
@@ -121,21 +120,21 @@ static void csip_discover_cb(struct bt_conn *conn,
 static void csip_set_coordinator_lock_set_cb(int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Lock sets failed (%d)", err);
+		bt_shell_error("Lock sets failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Set locked");
+	bt_shell_print("Set locked");
 }
 
 static void csip_set_coordinator_release_set_cb(int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Lock sets failed (%d)", err);
+		bt_shell_error("Lock sets failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Set released");
+	bt_shell_print("Set released");
 }
 
 static void csip_set_coordinator_ordered_access_cb(
@@ -197,19 +196,18 @@ static bool csip_found(struct bt_data *data, void *user_data)
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
 		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		shell_print(ctx_shell, "Found CSIP advertiser with address %s",
-			    addr_str);
+		bt_shell_print("Found CSIP advertiser with address %s", addr_str);
 
 		if (is_discovered(addr)) {
-			shell_print(ctx_shell, "Set member already found");
+			bt_shell_print("Set member already found");
 			/* Stop parsing */
 			return false;
 		}
 
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
-		shell_print(ctx_shell, "Found member (%u / %u)",
-			    members_found, cur_inst->info.set_size);
+		bt_shell_print("Found member (%u / %u)",
+			       members_found, cur_inst->info.set_size);
 
 		if (members_found == cur_inst->info.set_size) {
 			int err;
@@ -220,9 +218,7 @@ static bool csip_found(struct bt_data *data, void *user_data)
 
 			err = bt_le_scan_stop();
 			if (err != 0) {
-				shell_error(ctx_shell,
-					    "Failed to stop scan: %d",
-					    err);
+				bt_shell_error("Failed to stop scan: %d", err);
 			}
 		}
 
@@ -237,14 +233,14 @@ static void discover_members_timer_handler(struct k_work *work)
 {
 	int err;
 
-	shell_error(ctx_shell, "Could not find all members (%u / %u)",
-		    members_found, cur_inst->info.set_size);
+	bt_shell_error("Could not find all members (%u / %u)",
+		       members_found, cur_inst->info.set_size);
 
 	bt_le_scan_cb_unregister(&csip_set_coordinator_scan_callbacks);
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		shell_error(ctx_shell, "Failed to stop scan: %d", err);
+		bt_shell_error("Failed to stop scan: %d", err);
 	}
 }
 
@@ -279,10 +275,6 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 
 			return -ENOEXEC;
 		}
-	}
-
-	if (ctx_shell == NULL) {
-		ctx_shell = sh;
 	}
 
 	conn = conns[member_index];

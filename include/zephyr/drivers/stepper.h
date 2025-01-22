@@ -117,12 +117,12 @@ typedef int (*stepper_enable_t)(const struct device *dev, const bool enable);
 typedef int (*stepper_move_by_t)(const struct device *dev, const int32_t micro_steps);
 
 /**
- * @brief Set the max velocity in microsteps per seconds.
+ * @brief Set the time interval between steps in nanoseconds.
  *
- * @see stepper_set_max_velocity() for details.
+ * @see stepper_set_microstep_interval() for details.
  */
-typedef int (*stepper_set_max_velocity_t)(const struct device *dev,
-					  const uint32_t micro_steps_per_second);
+typedef int (*stepper_set_microstep_interval_t)(const struct device *dev,
+						const uint64_t microstep_interval_ns);
 
 /**
  * @brief Set the micro-step resolution
@@ -168,12 +168,11 @@ typedef int (*stepper_move_to_t)(const struct device *dev, const int32_t micro_s
 typedef int (*stepper_is_moving_t)(const struct device *dev, bool *is_moving);
 
 /**
- * @brief Run the stepper with a given velocity in a given direction
+ * @brief Run the stepper with a given step interval in a given direction
  *
  * @see stepper_run() for details.
  */
-typedef int (*stepper_run_t)(const struct device *dev, const enum stepper_direction direction,
-			     const uint32_t value);
+typedef int (*stepper_run_t)(const struct device *dev, const enum stepper_direction direction);
 
 /**
  * @brief Callback function for stepper events
@@ -195,7 +194,7 @@ typedef int (*stepper_set_event_callback_t)(const struct device *dev,
 __subsystem struct stepper_driver_api {
 	stepper_enable_t enable;
 	stepper_move_by_t move_by;
-	stepper_set_max_velocity_t set_max_velocity;
+	stepper_set_microstep_interval_t set_microstep_interval;
 	stepper_set_micro_step_res_t set_micro_step_res;
 	stepper_get_micro_step_res_t get_micro_step_res;
 	stepper_set_reference_position_t set_reference_position;
@@ -251,29 +250,33 @@ static inline int z_impl_stepper_move_by(const struct device *dev, const int32_t
 }
 
 /**
- * @brief Set the target velocity to be reached by the motor
+ * @brief Set the time interval between steps in microseconds
  *
  * @details For controllers such as DRV8825 where you
  * toggle the STEP Pin, the pulse_length would have to be calculated based on this parameter in the
- * driver. For controllers where velocity can be set, this parameter corresponds to max_velocity
- * @note Setting max velocity does not set the motor into motion, a combination of set_max_velocity
- * and move is required to set the motor into motion.
+ * driver.
+ * @note Setting step interval does not set the motor into motion, a combination of
+ * set_microstep_interval and move is required to set the motor into motion.
  *
  * @param dev pointer to the stepper motor controller instance
- * @param micro_steps_per_second speed in microsteps per second
+ * @param microstep_interval_ns time interval between steps in microseconds
  *
  * @retval -EIO General input / output error
- * @retval -EINVAL If the requested velocity is not supported
+ * @retval -EINVAL If the requested step interval is not supported
  * @retval 0 Success
  */
-__syscall int stepper_set_max_velocity(const struct device *dev, uint32_t micro_steps_per_second);
+__syscall int stepper_set_microstep_interval(const struct device *dev,
+					     uint64_t microstep_interval_ns);
 
-static inline int z_impl_stepper_set_max_velocity(const struct device *dev,
-						  const uint32_t micro_steps_per_second)
+static inline int z_impl_stepper_set_microstep_interval(const struct device *dev,
+							const uint64_t microstep_interval_ns)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	return api->set_max_velocity(dev, micro_steps_per_second);
+	if (api->set_microstep_interval == NULL) {
+		return -ENOSYS;
+	}
+	return api->set_microstep_interval(dev, microstep_interval_ns);
 }
 
 /**
@@ -419,36 +422,31 @@ static inline int z_impl_stepper_is_moving(const struct device *dev, bool *is_mo
 }
 
 /**
- * @brief Run the stepper with a given velocity in a given direction
+ * @brief Run the stepper with a given step interval in a given direction
  *
- * @details If velocity > 0, motor shall be set into motion and run incessantly until and unless
- * stalled or stopped using some other command, for instance, motor_enable(false).
- * This function is non-blocking.
+ * @details The motor shall be set into motion and run continuously until
+ * stalled or stopped using some other command, for instance, motor_enable(false). This
+ * function is non-blocking.
  *
  * @param dev pointer to the stepper motor controller instance
  * @param direction The direction to set
- * @param velocity The velocity to set in microsteps per second
- *                 - > 0: Run the stepper with the given velocity in a given direction
- *                 - 0: Stop the stepper
  *
  * @retval -ECANCELED If the stepper is disabled
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_run(const struct device *dev, enum stepper_direction direction,
-			  uint32_t velocity);
+__syscall int stepper_run(const struct device *dev, enum stepper_direction direction);
 
 static inline int z_impl_stepper_run(const struct device *dev,
-				     const enum stepper_direction direction,
-				     const uint32_t velocity)
+				     const enum stepper_direction direction)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->run == NULL) {
 		return -ENOSYS;
 	}
-	return api->run(dev, direction, velocity);
+	return api->run(dev, direction);
 }
 
 /**

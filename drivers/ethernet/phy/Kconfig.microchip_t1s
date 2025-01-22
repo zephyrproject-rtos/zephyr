@@ -1,0 +1,22 @@
+# Copyright 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PHY_MICROCHIP_T1S
+	bool "Microchip 10BASE-T1S Ethernet PHYs Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_T1S_PHY_ENABLED
+	depends on MDIO
+	select PHY_OA_TC14_PLCA_LIB
+	help
+	  Enable Microchip's LAN8650/1 Rev.B0/B1 Internal PHYs and
+	  LAN8670/1/2 Rev.C1/C2 PHYs Driver.
+
+if PHY_MICROCHIP_T1S
+
+config PHY_MICROCHIP_T1S_INIT_PRIORITY
+	int "Microchip T1S PHY init priority"
+	default 82
+	help
+	  Microchip T1S phy device driver initialization priority.
+
+endif

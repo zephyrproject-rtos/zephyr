@@ -7,7 +7,6 @@ simulation:
 arch: sparc
 toolchain:
   - zephyr
-  - xtools
 supported:
   - netif
   - spi

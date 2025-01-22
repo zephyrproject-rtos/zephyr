@@ -195,7 +195,7 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE 
 # Inject code to skip TAMPC setup for nRF54L20 and nRF54L09. It is not supported for now.
 # It needs to be removed when support is provided.
 if(CONFIG_SOC_NRF54L20_ENGA_CPUAPP OR CONFIG_SOC_NRF54L09_ENGA_CPUAPP)
-  zephyr_compile_definitions(NRF_SKIP_TAMPC_SETUP)
+	  zephyr_compile_definitions(NRF_SKIP_TAMPC_SETUP)
 endif()
 
 if(CONFIG_SOC_COMPATIBLE_NRF54LX AND CONFIG_NRFX_GPPI)

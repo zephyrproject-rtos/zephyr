@@ -6,7 +6,6 @@ simulation:
 arch: xtensa
 toolchain:
   - zephyr
-  - xtools
 testing:
   default: true
   ignore_tags:

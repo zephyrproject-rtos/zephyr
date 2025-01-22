@@ -40,7 +40,7 @@ static void drv8424_emul_before(void *f)
 static void drv8424_emul_after(void *f)
 {
 	struct drv8424_emul_fixture *fixture = f;
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE, 0);
+	(void)stepper_enable(fixture->dev, false);
 }
 
 ZTEST_F(drv8424_emul, test_enable_on_gpio_pins)

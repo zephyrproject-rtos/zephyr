@@ -126,6 +126,20 @@ ACPI:
   tests:
     - acpi
 
+Antmicro platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  collaborators:
+    - kgugala
+  files:
+    - boards/antmicro/
+    - soc/antmicro/
+    - dts/arm/antmicro/
+  labels:
+    - "platform: Antmicro"
+
 ARC arch:
   status: maintained
   maintainers:
@@ -151,7 +165,7 @@ ARC arch:
 ARM arch:
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - microbuilder
     - carlocaione
@@ -159,7 +173,6 @@ ARM arch:
     - MaureenHelm
     - stephanosio
     - bbolen
-    - wearyzen
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -195,8 +208,6 @@ ARM64 arch:
 ARM Platforms:
   status: maintained
   maintainers:
-    - ithinuel
-  collaborators:
     - wearyzen
   files:
     - boards/arm/mps*/
@@ -408,7 +419,6 @@ Bluetooth Host:
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -524,7 +534,6 @@ Bluetooth ISO:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/shell/host/iso.rst
     - samples/bluetooth/iso_*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -4705,10 +4714,9 @@ West:
 "West project: cmsis_6":
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - tomi-font
-    - wearyzen
   files: []
   labels:
     - "area: CMSIS_6"
@@ -4803,8 +4811,6 @@ West:
   status: maintained
   maintainers:
     - kristofer-jonsson-arm
-    - ithinuel
-  collaborators:
     - wearyzen
   files:
     - drivers/misc/ethos_u/
@@ -5050,6 +5056,18 @@ West:
   labels:
     - "area: Rust"
 
+"West project: libmctp":
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - nashif
+    - inteljiangwe1
+  files:
+    - samples/modules/mctp/
+  labels:
+    - "area: MCTP"
+
 "West project: libmetal":
   status: odd fixes
   collaborators:
@@ -5120,7 +5138,6 @@ West:
     - d3zd3z
     - ceolin
   collaborators:
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
@@ -5311,7 +5328,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
@@ -5331,7 +5347,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
   files: []
   labels:
@@ -5344,7 +5359,6 @@ West:
     - sgrrzhf
   collaborators:
     - carlocaione
-    - ithinuel
     - wearyzen
   files:
     - modules/trusted-firmware-a/
@@ -5357,7 +5371,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
   files: []
   labels:
@@ -5562,6 +5575,7 @@ zbus:
     - cmake/llext-edk.cmake
     - samples/subsys/llext/
     - include/zephyr/llext/
+    - tests/misc/llext-edk/
     - tests/subsys/llext/
     - subsys/llext/
     - doc/services/llext/

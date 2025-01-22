@@ -15,9 +15,9 @@
 	compatible = "silabs,xg23_rb4210a", "silabs,efr32zg23";
 
 	chosen {
-		zephyr,console = &usart0;
-		zephyr,shell-uart = &usart0;
-		zephyr,uart-pipe = &usart0;
+		zephyr,console = &eusart0;
+		zephyr,shell-uart = &eusart0;
+		zephyr,uart-pipe = &eusart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -109,9 +109,10 @@
 	clocks = <&lfxo>;
 };
 
-&usart0 {
+&eusart0 {
+	compatible = "silabs,eusart-uart";
 	current-speed = <115200>;
-	pinctrl-0 = <&usart0_default>;
+	pinctrl-0 = <&eusart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };

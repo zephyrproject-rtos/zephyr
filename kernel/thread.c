@@ -1123,3 +1123,30 @@ void k_thread_abort_cleanup_check_reuse(struct k_thread *thread)
 }
 
 #endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+
+void z_dummy_thread_init(struct k_thread *dummy_thread)
+{
+	dummy_thread->base.thread_state = _THREAD_DUMMY;
+#ifdef CONFIG_SCHED_CPU_MASK
+	dummy_thread->base.cpu_mask = -1;
+#endif /* CONFIG_SCHED_CPU_MASK */
+	dummy_thread->base.user_options = K_ESSENTIAL;
+#ifdef CONFIG_THREAD_STACK_INFO
+	dummy_thread->stack_info.start = 0U;
+	dummy_thread->stack_info.size = 0U;
+#endif /* CONFIG_THREAD_STACK_INFO */
+#ifdef CONFIG_USERSPACE
+	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
+#endif /* CONFIG_USERSPACE */
+#if (K_HEAP_MEM_POOL_SIZE > 0)
+	k_thread_system_pool_assign(dummy_thread);
+#else
+	dummy_thread->resource_pool = NULL;
+#endif /* K_HEAP_MEM_POOL_SIZE */
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	dummy_thread->base.slice_ticks = 0;
+#endif /* CONFIG_TIMESLICE_PER_THREAD */
+
+	z_current_thread_set(dummy_thread);
+}

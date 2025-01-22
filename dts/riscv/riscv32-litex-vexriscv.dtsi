@@ -298,7 +298,7 @@
 				"rx_stat",
 				"rx_conf",
 				"fifo";
-			fifo_depth = <256>;
+			fifo-depth = <256>;
 			status = "disabled";
 		};
 		i2s_tx: i2s_tx@e000b000 {
@@ -321,7 +321,7 @@
 				"tx_stat",
 				"tx_conf",
 				"fifo";
-			fifo_depth = <256>;
+			fifo-depth = <256>;
 			status = "disabled";
 		};
 		clock-outputs {

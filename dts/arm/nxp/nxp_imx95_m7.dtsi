@@ -148,6 +148,26 @@
 			status = "disabled";
 		};
 
+		lpspi3: spi@42550000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42550000 0x4000>;
+			interrupts = <61 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI3>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		lpspi4: spi@42560000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42560000 0x4000>;
+			interrupts = <62 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI4>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		lpuart3: serial@42570000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42570000 DT_SIZE_K(64)>;
@@ -253,6 +273,46 @@
 			status = "disabled";
 		};
 
+		lpspi5: spi@426f0000 {
+			compatible = "nxp,lpspi";
+			reg = <0x426f0000 0x4000>;
+			interrupts = <177 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI5>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		lpspi6: spi@42700000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42700000 0x4000>;
+			interrupts = <178 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI6>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		lpspi7: spi@42710000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42710000 0x4000>;
+			interrupts = <179 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI7>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		lpspi8: spi@42720000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42720000 0x4000>;
+			interrupts = <180 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI8>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		tpm1: pwm@44310000 {
 			compatible = "nxp,kinetis-tpm";
 			reg = <0x44310000 0x88>;
@@ -293,6 +353,26 @@
 			interrupts = <14 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C2>;
 			status = "disabled";
+		};
+
+		lpspi1: spi@44360000 {
+			compatible = "nxp,lpspi";
+			reg = <0x44360000 0x4000>;
+			interrupts = <16 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		lpspi2: spi@44370000 {
+			compatible = "nxp,lpspi";
+			reg = <0x44370000 0x4000>;
+			interrupts = <17 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPSPI2>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		lpuart1: serial@44380000 {

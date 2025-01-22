@@ -25,7 +25,7 @@
 #include <errno.h>
 
 #include "host/shell/bt.h"
-#include "host/shell/bt_shell_private.h"
+#include "common/bt_shell_private.h"
 
 static int check_cs_sync_antenna_selection_input(uint16_t input)
 {

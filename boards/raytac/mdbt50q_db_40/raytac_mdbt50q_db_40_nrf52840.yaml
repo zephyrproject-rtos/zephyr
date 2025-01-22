@@ -12,7 +12,6 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - ble

@@ -1,0 +1,20 @@
+# Copyright 2024 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MDIO_LAN865X
+	bool "LAN865X MDIO driver"
+	default y
+	depends on DT_HAS_MICROCHIP_LAN865X_MDIO_ENABLED
+	depends on ETH_LAN865X
+	help
+	  Enable LAN865X MDIO driver.
+
+if MDIO_LAN865X
+
+config MDIO_LAN865X_INIT_PRIORITY
+	int "LAN865X MDIO init priority"
+	default 81
+	help
+	  LAN865X MDIO device driver initialization priority.
+
+endif

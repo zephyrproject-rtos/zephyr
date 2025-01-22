@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/net/mdio.h>
 #include "oa_tc6.h"
 
 #include <zephyr/logging/log.h>
@@ -19,12 +20,12 @@ LOG_MODULE_REGISTER(oa_tc6, CONFIG_ETHERNET_LOG_LEVEL);
 
 int oa_tc6_reg_read(struct oa_tc6 *tc6, const uint32_t reg, uint32_t *val)
 {
-	uint8_t buf[OA_TC6_HDR_SIZE + 12] = { 0 };
-	struct spi_buf tx_buf = { .buf = buf, .len = sizeof(buf) };
-	const struct spi_buf_set tx = {	.buffers = &tx_buf, .count = 1 };
-	struct spi_buf rx_buf = { .buf = buf, .len = sizeof(buf) };
-	const struct spi_buf_set rx = {	.buffers = &rx_buf, .count = 1 };
-	uint32_t rv, rvn, hdr_bkp, *hdr = (uint32_t *) &buf[0];
+	uint8_t buf[OA_TC6_HDR_SIZE + 12] = {0};
+	struct spi_buf tx_buf = {.buf = buf, .len = sizeof(buf)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	struct spi_buf rx_buf = {.buf = buf, .len = sizeof(buf)};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
+	uint32_t rv, rvn, hdr_bkp, *hdr = (uint32_t *)&buf[0];
 	int ret = 0;
 
 	/*
@@ -36,12 +37,10 @@ int oa_tc6_reg_read(struct oa_tc6 *tc6, const uint32_t reg, uint32_t *val)
 		rx_buf.len -= sizeof(rvn);
 	}
 
-	*hdr = FIELD_PREP(OA_CTRL_HDR_DNC, 0) |
-		FIELD_PREP(OA_CTRL_HDR_WNR, 0) |
-		FIELD_PREP(OA_CTRL_HDR_AID, 0) |
-		FIELD_PREP(OA_CTRL_HDR_MMS, reg >> 16) |
-		FIELD_PREP(OA_CTRL_HDR_ADDR, reg) |
-		FIELD_PREP(OA_CTRL_HDR_LEN, 0); /* To read single register len = 0 */
+	*hdr = FIELD_PREP(OA_CTRL_HDR_DNC, 0) | FIELD_PREP(OA_CTRL_HDR_WNR, 0) |
+	       FIELD_PREP(OA_CTRL_HDR_AID, 0) | FIELD_PREP(OA_CTRL_HDR_MMS, reg >> 16) |
+	       FIELD_PREP(OA_CTRL_HDR_ADDR, reg) |
+	       FIELD_PREP(OA_CTRL_HDR_LEN, 0); /* To read single register len = 0 */
 	*hdr |= FIELD_PREP(OA_CTRL_HDR_P, oa_tc6_get_parity(*hdr));
 	hdr_bkp = *hdr;
 	*hdr = sys_cpu_to_be32(*hdr);
@@ -76,13 +75,13 @@ int oa_tc6_reg_read(struct oa_tc6 *tc6, const uint32_t reg, uint32_t *val)
 
 int oa_tc6_reg_write(struct oa_tc6 *tc6, const uint32_t reg, uint32_t val)
 {
-	uint8_t buf_tx[OA_TC6_HDR_SIZE + 12] = { 0 };
-	uint8_t buf_rx[OA_TC6_HDR_SIZE + 12] = { 0 };
-	struct spi_buf tx_buf = { .buf = buf_tx, .len = sizeof(buf_tx) };
-	const struct spi_buf_set tx = {	.buffers = &tx_buf, .count = 1 };
-	struct spi_buf rx_buf = { .buf = buf_rx, .len = sizeof(buf_rx) };
-	const struct spi_buf_set rx = {	.buffers = &rx_buf, .count = 1	};
-	uint32_t rv, rvn, hdr_bkp, *hdr = (uint32_t *) &buf_tx[0];
+	uint8_t buf_tx[OA_TC6_HDR_SIZE + 12] = {0};
+	uint8_t buf_rx[OA_TC6_HDR_SIZE + 12] = {0};
+	struct spi_buf tx_buf = {.buf = buf_tx, .len = sizeof(buf_tx)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	struct spi_buf rx_buf = {.buf = buf_rx, .len = sizeof(buf_rx)};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
+	uint32_t rv, rvn, hdr_bkp, *hdr = (uint32_t *)&buf_tx[0];
 	int ret;
 
 	/*
@@ -94,12 +93,10 @@ int oa_tc6_reg_write(struct oa_tc6 *tc6, const uint32_t reg, uint32_t val)
 		rx_buf.len -= sizeof(rvn);
 	}
 
-	*hdr = FIELD_PREP(OA_CTRL_HDR_DNC, 0) |
-		FIELD_PREP(OA_CTRL_HDR_WNR, 1) |
-		FIELD_PREP(OA_CTRL_HDR_AID, 0) |
-		FIELD_PREP(OA_CTRL_HDR_MMS, reg >> 16) |
-		FIELD_PREP(OA_CTRL_HDR_ADDR, reg) |
-		FIELD_PREP(OA_CTRL_HDR_LEN, 0); /* To read single register len = 0 */
+	*hdr = FIELD_PREP(OA_CTRL_HDR_DNC, 0) | FIELD_PREP(OA_CTRL_HDR_WNR, 1) |
+	       FIELD_PREP(OA_CTRL_HDR_AID, 0) | FIELD_PREP(OA_CTRL_HDR_MMS, reg >> 16) |
+	       FIELD_PREP(OA_CTRL_HDR_ADDR, reg) |
+	       FIELD_PREP(OA_CTRL_HDR_LEN, 0); /* To read single register len = 0 */
 	*hdr |= FIELD_PREP(OA_CTRL_HDR_P, oa_tc6_get_parity(*hdr));
 	hdr_bkp = *hdr;
 	*hdr = sys_cpu_to_be32(*hdr);
@@ -143,8 +140,7 @@ int oa_tc6_reg_write(struct oa_tc6 *tc6, const uint32_t reg, uint32_t val)
 	return ret;
 }
 
-int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg,
-		   uint32_t mask, uint32_t val)
+int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg, uint32_t mask, uint32_t val)
 {
 	uint32_t tmp;
 	int ret;
@@ -163,10 +159,74 @@ int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg,
 	return oa_tc6_reg_write(tc6, reg, tmp);
 }
 
+int oa_tc6_mdio_read(struct oa_tc6 *tc6, uint8_t prtad, uint8_t regad, uint16_t *data)
+{
+	return oa_tc6_reg_read(
+		tc6, OA_TC6_PHY_STD_REG_ADDR_BASE | (regad & OA_TC6_PHY_STD_REG_ADDR_MASK),
+		(uint32_t *)data);
+}
+
+int oa_tc6_mdio_write(struct oa_tc6 *tc6, uint8_t prtad, uint8_t regad, uint16_t data)
+{
+	return oa_tc6_reg_write(
+		tc6, OA_TC6_PHY_STD_REG_ADDR_BASE | (regad & OA_TC6_PHY_STD_REG_ADDR_MASK), data);
+}
+
+static int oa_tc6_get_phy_c45_mms(int devad)
+{
+	switch (devad) {
+	case MDIO_MMD_PCS:
+		return OA_TC6_PHY_C45_PCS_MMS2;
+	case MDIO_MMD_PMAPMD:
+		return OA_TC6_PHY_C45_PMA_PMD_MMS3;
+	case MDIO_MMD_VENDOR_SPECIFIC2:
+		return OA_TC6_PHY_C45_VS_PLCA_MMS4;
+	case MDIO_MMD_AN:
+		return OA_TC6_PHY_C45_AUTO_NEG_MMS5;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+int oa_tc6_mdio_read_c45(struct oa_tc6 *tc6, uint8_t prtad, uint8_t devad, uint16_t regad,
+			 uint16_t *data)
+{
+	uint32_t tmp;
+	int ret;
+
+	ret = oa_tc6_get_phy_c45_mms(devad);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = oa_tc6_reg_read(tc6, (ret << 16) | regad, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*data = (uint16_t)tmp;
+
+	return 0;
+}
+
+int oa_tc6_mdio_write_c45(struct oa_tc6 *tc6, uint8_t prtad, uint8_t devad, uint16_t regad,
+			  uint16_t data)
+{
+	int ret;
+
+	ret = oa_tc6_get_phy_c45_mms(devad);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return oa_tc6_reg_write(tc6, (ret << 16) | regad, (uint32_t)data);
+}
+
 int oa_tc6_set_protected_ctrl(struct oa_tc6 *tc6, bool prote)
 {
-	int ret = oa_tc6_reg_rmw(tc6, OA_CONFIG0, OA_CONFIG0_PROTE,
-				 prote ? OA_CONFIG0_PROTE : 0);
+	int ret;
+
+	ret = oa_tc6_reg_rmw(tc6, OA_CONFIG0, OA_CONFIG0_PROTE, prote ? OA_CONFIG0_PROTE : 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -199,18 +259,15 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 
 	/* Transform struct net_pkt content into chunks */
 	for (i = 1; i <= chunks; i++) {
-		hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) |
-			FIELD_PREP(OA_DATA_HDR_DV, 1) |
-			FIELD_PREP(OA_DATA_HDR_NORX, 1) |
-			FIELD_PREP(OA_DATA_HDR_SWO, 0);
+		hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 1) |
+		      FIELD_PREP(OA_DATA_HDR_NORX, 1) | FIELD_PREP(OA_DATA_HDR_SWO, 0);
 
 		if (i == 1) {
 			hdr |= FIELD_PREP(OA_DATA_HDR_SV, 1);
 		}
 
 		if (i == chunks) {
-			hdr |= FIELD_PREP(OA_DATA_HDR_EBO, len - 1) |
-				FIELD_PREP(OA_DATA_HDR_EV, 1);
+			hdr |= FIELD_PREP(OA_DATA_HDR_EBO, len - 1) | FIELD_PREP(OA_DATA_HDR_EV, 1);
 		}
 
 		hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
@@ -277,8 +334,8 @@ static int oa_tc6_update_status(struct oa_tc6 *tc6, uint32_t ftr)
 	return 0;
 }
 
-int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_tx,
-				     uint32_t hdr, uint32_t *ftr)
+int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_tx, uint32_t hdr,
+			      uint32_t *ftr)
 {
 	struct spi_buf tx_buf[2];
 	struct spi_buf rx_buf[2];
@@ -318,9 +375,8 @@ int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
 {
 	uint32_t hdr;
 
-	hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) |
-		FIELD_PREP(OA_DATA_HDR_DV, 0) |
-		FIELD_PREP(OA_DATA_HDR_NORX, 1);
+	hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 0) |
+	      FIELD_PREP(OA_DATA_HDR_NORX, 1);
 	hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
 
 	return oa_tc6_chunk_spi_transfer(tc6, NULL, NULL, hdr, ftr);
@@ -445,7 +501,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 
 	return 0;
 
- unref_buf:
+unref_buf:
 	net_buf_unref(buf_rx);
 	return ret;
 }

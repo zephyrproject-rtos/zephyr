@@ -1,4 +1,5 @@
 # Copyright (c) 2018 omSquare s.r.o.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: Atmel SAM0 RTC
@@ -8,12 +9,20 @@ compatible: "atmel,sam0-rtc"
 include:
   - name: rtc.yaml
   - name: pinctrl-device.yaml
+  - name: atmel,assigned-clocks.yaml
 
 properties:
   reg:
     required: true
 
-  clock-generator:
-    type: int
-    description: clock generator index
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  atmel,assigned-clocks:
+    required: true
+
+  atmel,assigned-clock-names:
     required: true

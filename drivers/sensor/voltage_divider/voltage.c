@@ -40,6 +40,14 @@ static int fetch(const struct device *dev, enum sensor_channel chan)
 	/* Wait until sampling is valid */
 	k_sleep(data->earliest_sample);
 
+	/* configure the active channel to be converted */
+	ret = adc_channel_setup_dt(&config->voltage.port);
+	if (ret != 0) {
+		LOG_ERR("adc_setup failed: %d", ret);
+		return ret;
+	}
+
+	/* start conversion */
 	ret = adc_read(config->voltage.port.dev, &data->sequence);
 	if (ret != 0) {
 		LOG_ERR("adc_read: %d", ret);

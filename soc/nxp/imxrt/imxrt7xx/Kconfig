@@ -1,0 +1,58 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMXRT798S_CM33_CPU0
+	select CPU_CORTEX_M33
+	select CLOCK_CONTROL
+	select CPU_CORTEX_M_HAS_DWT
+	select ARM
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select HAS_MCUX
+	select HAS_MCUX_SYSCON
+	select HAS_MCUX_CACHE
+	select SOC_RESET_HOOK
+
+config SOC_MIMXRT798S_CM33_CPU1
+	select CPU_CORTEX_M33
+	select CLOCK_CONTROL
+	select CPU_CORTEX_M_HAS_DWT
+	select ARM
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select HAS_MCUX
+	select HAS_MCUX_SYSCON
+
+if SOC_SERIES_IMXRT7XX
+
+if NXP_IMXRT_BOOT_HEADER
+
+config IMAGE_VECTOR_TABLE_OFFSET
+	default 0x4000
+
+endif # NXP_IMXRT_BOOT_HEADER
+
+config GLIKEY_MCUX_GLIKEY
+	default y
+	bool "Use glikey MCUX Driver"
+
+config IMXRT7XX_CODE_CACHE
+	bool "Code cache"
+	default y if HAS_MCUX_CACHE
+	help
+	  Enable code cache for XSPI region at boot. If this Kconfig is
+	  cleared, the CACHE64 controller will be disabled during SOC init
+
+config MCUX_CORE_SUFFIX
+	default "_cm33_core0" if SOC_MIMXRT798S_CM33_CPU0
+	default "_cm33_core1" if SOC_MIMXRT798S_CM33_CPU1
+
+endif # SOC_SERIES_IMXRT7XX

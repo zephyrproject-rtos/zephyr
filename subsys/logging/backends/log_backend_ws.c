@@ -15,11 +15,6 @@ LOG_MODULE_REGISTER(log_backend_ws, CONFIG_LOG_DEFAULT_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
 
-/* Set this to 1 if you want to see what is being sent to server */
-#define DEBUG_PRINTING 0
-
-#define DBG(fmt, ...) IF_ENABLED(DEBUG_PRINTING, (printk(fmt, ##__VA_ARGS__)))
-
 static bool ws_init_done;
 static bool panic_mode;
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_WS_OUTPUT_DEFAULT;
@@ -66,17 +61,19 @@ static int ws_console_out(struct log_backend_ws_ctx *ctx, int c)
 	unsigned int cnt = 0;
 	int ret = 0;
 
-	if (pos >= (sizeof(output_buf) - 1)) {
-		printnow = true;
+	__ASSERT_NO_MSG(pos < sizeof(output_buf));
+
+	if ((c != '\n') && (c != '\r')) {
+		output_buf[pos++] = c;
 	} else {
-		if ((c != '\n') && (c != '\r')) {
-			output_buf[pos++] = c;
-		} else {
-			printnow = true;
-		}
+		printnow = true;
 	}
 
-	if (printnow) {
+	if (pos >= sizeof(output_buf)) {
+		printnow = true;
+	}
+
+	if (pos > 0 && printnow) {
 		while (ctx->sock >= 0 && cnt < max_cnt) {
 			ret = ws_send_all(ctx->sock, output_buf, pos);
 			if (ret < 0) {
@@ -103,13 +100,14 @@ static int ws_console_out(struct log_backend_ws_ctx *ctx, int c)
 		}
 	}
 
-	return cnt;
+	return ret;
 }
 
 static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
 	struct log_backend_ws_ctx *ctx = (struct log_backend_ws_ctx *)output_ctx;
 	int ret = -ENOMEM;
+	int sent = 0;
 
 	if (ctx == NULL || ctx->sock == -1) {
 		return length;
@@ -118,14 +116,21 @@ static int line_out(uint8_t *data, size_t length, void *output_ctx)
 	for (int i = 0; i < length; i++) {
 		ret = ws_console_out(ctx, data[i]);
 		if (ret < 0) {
-			goto fail;
+			break;
 		}
+
+		sent++;
 	}
 
-	length = ret;
+	/* In case we've managed to buffer/send anything, return the actual
+	 * number of bytes processed. Otherwise, assume the data was dropped
+	 * to avoid busy looping endlessly (which could happen in case of fatal
+	 * socket failures or persistent EAGAIN).
+	 */
+	if (sent > 0) {
+		length = sent;
+	}
 
-	DBG(data);
-fail:
 	return length;
 }
 
@@ -188,7 +193,7 @@ int log_backend_ws_unregister(int fd)
 	struct log_backend_ws_ctx *ctx = log_output_ws.control_block->ctx;
 
 	if (ctx->sock != fd) {
-		DBG("Websocket sock mismatch (%d vs %d)", ctx->sock, fd);
+		LOG_DBG("Websocket sock mismatch (%d vs %d)", ctx->sock, fd);
 	}
 
 	ctx->sock = -1;

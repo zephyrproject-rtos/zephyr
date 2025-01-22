@@ -19,7 +19,7 @@
 		irq-gpios = <&arduino_header 8 GPIO_ACTIVE_LOW>;
 
 		pclk = <5>;
-		pclk_pol = <1>;
+		pclk-pol = <1>;
 		cspread = <1>;
 		swizzle = <0>;
 		vsize = <272>;

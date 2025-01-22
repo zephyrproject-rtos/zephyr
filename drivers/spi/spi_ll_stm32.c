@@ -462,7 +462,7 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg,
 	struct spi_stm32_data *data)
 {
-	uint16_t operation = data->ctx.config->operation;
+	spi_operation_t operation = data->ctx.config->operation;
 
 	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
 		spi_stm32_shift_m(cfg, data);

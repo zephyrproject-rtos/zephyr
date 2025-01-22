@@ -7,6 +7,7 @@ common:
     - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
     # platforms that are always skipped by the runtime filter
     - qemu_cortex_m0
+    - mps2/an383
     - qemu_xtensa/dc233c/mmu
   integration_platforms:
     - qemu_cortex_a9          # ARM Cortex-A9 (ARMv7-A ISA)
@@ -122,4 +123,22 @@ tests:
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
+      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
+
+  # Test the export device IDs by hash feature on a single architecture in
+  # both normal and SLID mode.
+  llext.devices_by_hash:
+    arch_allow: arm
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH=y
+  llext.devices_by_hash_slid_linking:
+    arch_allow: arm
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y

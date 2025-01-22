@@ -27,10 +27,10 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_prov_pb_remote_provisioning_timeout \
 	prov_provisioner_pb_remote_client_provision_timeout \
 	prov_device_pb_remote_server_unproved_unresponsive \
-	prov_device_unresponsive
+	prov_device_unresponsive -- -argstest prov-brearer=1
 
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_remote_provisioning_timeout_psa \
 	prov_provisioner_pb_remote_client_provision_timeout \
 	prov_device_pb_remote_server_unproved_unresponsive \
-	prov_device_unresponsive
+	prov_device_unresponsive -- -argstest prov-brearer=1

@@ -87,26 +87,82 @@ Changes which require an RFC proposal include:
 Maintainers have the discretion to request that contributors create an RFC for
 PRs that are too large or complicated.
 
+.. _pr_requirements:
+
 PR Requirements
 ***************
 
 - Each commit in the PR must provide a commit message following the
   :ref:`commit-guidelines`.
 
+- No fixup or merge commits are allowed, see :ref:`Contribution workflow` for
+  more information.
+
 - The PR description must include a summary of the changes and their rationales.
 
 - All files in the PR must comply with :ref:`Licensing
   Requirements<licensing_requirements>`.
 
-- Follow the Zephyr :ref:`coding_style` and :ref:`coding_guidelines`.
+- The code must follow the Zephyr :ref:`coding_style` and :ref:`coding_guidelines`.
 
-- PRs must pass all CI checks. This is a requirement to merge the PR.
+- The PR must pass all CI checks, as described in :ref:`merge_criteria`.
   Contributors may mark a PR as draft and explicitly request reviewers to
   provide early feedback, even with failing CI checks.
 
-- When breaking a PR into multiple commits, each commit must build cleanly. The
+- When breaking up a PR into multiple commits, each commit must build cleanly. The
   CI system does not enforce this policy, so it is the PR author's
   responsibility to verify.
+
+- Commits in a pull request should represent clear, logical units of change that are easy to review
+  and maintain bisectability. The following guidelines expand on this principle:
+
+  1. Distinct, Logical Units of Change
+
+     Each commit should correspond to a self-contained, meaningful change. For example, adding a
+     feature, fixing a bug, or refactoring existing code should be separate commits. Avoid mixing
+     different types of changes (e.g., feature implementation and unrelated refactoring) in the same
+     commit.
+
+  2. Retain Bisectability
+
+     Every commit in the pull request must build successfully and pass all relevant tests. This
+     ensures that git bisect can be used effectively to identify the specific commit that introduced
+     a bug or issue.
+
+  3. Squash Intermediary or Non-Final Development History
+
+     During development, commits may include intermediary changes (e.g., partial implementations,
+     temporary files, or debugging code). These should be squashed or rewritten before submitting the
+     pull request. Remove non-final artifacts, such as:
+
+     * Temporary renaming of files that are later renamed again.
+     * Code that was rewritten or significantly changed in later commits.
+
+  4. Ensure Clean History Before Submission
+
+     Use interactive rebasing (git rebase -i) to clean up the commit history before submitting the
+     pull request. This helps in:
+
+     * Squashing small, incomplete commits into a single cohesive commit.
+     * Ensuring that each commit remains bisectable.
+     * Maintaining proper attribution of authorship while improving clarity.
+
+  5. Renaming and Code Rewrites
+
+     If files or code are renamed or rewritten in later commits during development, squash or rewrite
+     earlier commits to reflect the final structure. This ensures that:
+
+     * The history remains clean and easy to follow.
+     * Bisectability is preserved by eliminating redundant renaming or partial rewrites.
+
+  6. Attribution of Authorship
+
+     While cleaning up the commit history, ensure that authorship attribution remains accurate.
+
+  7. Readable and Reviewable History
+
+     The final commit history should be easy to understand for future maintainers. Logical units of
+     change should be grouped into commits that tell a clear, coherent story of the work done.
 
 - When major new functionality is added, tests for the new functionality shall
   be added to the automated test suite. All API functions should have test cases
@@ -132,6 +188,13 @@ PR Requirements
 
 - Changes to APIs must increment the API version number according to the API
   version rules.
+
+- Documentation must be added and/or updated to reflect the changes in the code
+  introduced by the PR. The documentation changes must use the proper
+  terminology as present in the existing pages, and must be written in American
+  English. If you include images as part of the documentation, those must follow
+  the rules in :ref:`doc_images`. Please refer to :ref:`doc_guidelines` for
+  additional information.
 
 - PRs must also satisfy all :ref:`merge_criteria` before a member of the release
   engineering team merges the PR into the zephyr tree.
@@ -305,10 +368,27 @@ Reviewer Expectations
   they address all non-blocking comments. PR authors should acknowledge every
   review comment in some way, even if it's just with an emoticon.
 
-- Reviewers shall be *clear* and *concise* what changes they are requesting when the
+- Style changes that the reviewer disagrees with but that are not documented as
+  part of the project can be pointed out as non-blocking, but cannot constitute
+  a reason for a request for changes. The reviewer can optionally correct any
+  potential inconsistencies in the tree, document the new guidelines or rules,
+  and then enforce them as part of the review.
+
+- Whenever requesting style related changes, reviewers should be able to point
+  out the corresponding guideline, rule or rationale in the project's
+  documentation.  This does not apply to certain types of requests for changes,
+  notably those specific to the changes being submitted (e.g. the use of a
+  particular data structure or the choice of locking primitives).
+
+- Reviewers shall be *clear* about what changes they are requesting when the
   "Request Changes" option is used. Requested changes shall be in the scope of
   the PR in question and following the contribution and style guidelines of the
-  project.
+  project. Furthermore, reviewers must be able to point back to the exact issues
+  in the PR that triggered a request for changes.
+
+- Reviewers should not request changes for issues which are automatically
+  caught by CI, as this causes the pull request to remain blocked even after CI
+  failures have been addressed and may unnecessarily delay it from being merged.
 
 - Reviewers shall not close a PR due to technical or structural disagreement.
   If requested changes cannot be resolved within the review process, the

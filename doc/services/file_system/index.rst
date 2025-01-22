@@ -51,11 +51,11 @@ Samples for the VFS are mainly supplied in ``samples/subsys/fs``, although vario
 VFS usage are provided as important functionalities in samples for different subsystems.
 Here is the list of samples worth looking at:
 
-- ``samples/subsys/fs/fat_fs`` is an example of FAT file system usage with SDHC media;
-- ``samples/subsys/shell/fs`` is an example of Shell fs subsystem, using internal flash partition
-	formatted to LittleFS;
-- ``samples/subsys/usb/mass/`` example of USB Mass Storage device that uses FAT FS driver with RAM
-	or SPI connected FLASH, or LittleFS in flash, depending on the sample configuration.
+- :zephyr:code-sample:`fs` is an example of FAT file system usage with SDHC media;
+- :zephyr:code-sample:`shell-fs` is an example of Shell fs subsystem, using internal flash partition
+  formatted to LittleFS;
+- :zephyr:code-sample:`usb-mass` example of USB Mass Storage device that uses FAT FS driver with RAM
+  or SPI connected FLASH, or LittleFS in flash, depending on the sample configuration.
 
 API Reference
 *************

@@ -427,11 +427,9 @@ static void uart_rzt2m_isr(const struct device *dev)
 		.uart_cfg =                                                                        \
 			{                                                                          \
 				.baudrate = DT_INST_ENUM_IDX(n, current_speed),                    \
-				.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),    \
-				.stop_bits =                                                       \
-					DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1),   \
-				.data_bits =                                                       \
-					DT_INST_ENUM_IDX_OR(n, data_bits, UART_CFG_DATA_BITS_8),   \
+				.parity = DT_INST_ENUM_IDX(n, parity),                             \
+				.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),                       \
+				.data_bits = DT_INST_ENUM_IDX(n, data_bits),                       \
 			},                                                                         \
 	};                                                                                         \
 	UART_RZT2M_CONFIG_FUNC(n);                                                                 \
