@@ -35,12 +35,23 @@
 #   $ cmake -DBOARD=<board> -B build -S samples/hello_world -DEXTRA_CONF_FILE=foo.conf \
 #           -DMODULES=dts -P <ZEPHYR_BASE>/cmake/package_helper.cmake
 #
-# Note: the samples CMakeLists.txt file is not processed by package helper, so
-#       any 'set(<var> <value>)' specified before 'find_package(Zephyr)' must be
+# Note 1 
+#       The samples CMakeLists.txt file is not processed by package helper, so
+#       any 'set(<var> <value>)' specified AFTER 'find_package(Zephyr)' must be
 #       manually applied, for example if the CMakeLists.txt contains:
-#          set(EXTRA_CONF_FILE foo.conf)
+#
 #          find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-#       the 'foo.conf' must be specified using '-DEXTRA_CONF_FILE=foo.conf'
+#          set(EXTRA_CONF_FILE foo.conf)
+#
+#       then the 'foo.conf' must be specified using '-DEXTRA_CONF_FILE=foo.conf'
+# Note 2
+#       It is possible to specify multiple additional .conf files as follows:
+#
+#          set(EXTRA_CONF_FILE foo.conf bar.conf)
+#
+#       Or, via the command line using 
+#
+#          -DEXTRA_CONF_FILE=foo.conf;bar.conf
 
 cmake_minimum_required(VERSION 3.20.5)
 
