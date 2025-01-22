@@ -104,7 +104,15 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 _rom_store_table = 0;
 
 /* Used as a pointer to the heap end */
-_heap_sentry = DRAM_RESERVED_START;
+_esp_heap_sentry = DRAM_RESERVED_START;
+_heap_sentry = _esp_heap_sentry - CONFIG_ESP_HEAP_MIN_SIZE;
+
+_sys_heap_size = _heap_sentry - _end;
+_esp_heap_size = _esp_heap_sentry - _heap_sentry;
+
+#ifdef CONFIG_ESP_HEAP_RUNTIME
+ASSERT((_end <= _heap_sentry), "Not enough space to fulfill ESP heap runtime needs!")
+#endif
 
 SECTIONS
 {

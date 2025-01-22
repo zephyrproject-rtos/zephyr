@@ -100,7 +100,16 @@ REGION_ALIAS("rtc_data_location", rtc_iram_seg );
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
 
-_heap_sentry = DRAM_RESERVED_START;
+/* Heap size calculations */
+_esp_heap_sentry = DRAM_RESERVED_START;
+_heap_sentry = DRAM_RESERVED_START - CONFIG_ESP_HEAP_MIN_SIZE;
+
+_sys_heap_size = _heap_sentry - _end;
+_esp_heap_size = _esp_heap_sentry - _heap_sentry;
+
+#ifdef CONFIG_ESP_HEAP_RUNTIME
+ASSERT((_end <= _heap_sentry), "Not enough space to fulfill ESP heap runtime needs!")
+#endif
 
 SECTIONS
 {

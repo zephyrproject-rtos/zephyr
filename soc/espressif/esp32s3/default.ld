@@ -102,11 +102,20 @@ MEMORY
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
 
-/* Used as a pointer to the heap end */
+/* Heap size calculations differs between the APPCPU and PROCPU */
 #ifdef CONFIG_SOC_ENABLE_APPCPU
-_heap_sentry = procpu_dram_end;
+_heap_sentry = procpu_dram_end - CONFIG_ESP_HEAP_MIN_SIZE;
+_esp_heap_sentry = procpu_dram_end;
 #else
-_heap_sentry = DRAM_RESERVED_START;
+_heap_sentry = DRAM_RESERVED_START - CONFIG_ESP_HEAP_MIN_SIZE;
+_esp_heap_sentry = DRAM_RESERVED_START;
+#endif
+
+_sys_heap_size = _heap_sentry - _end;
+_esp_heap_size = _esp_heap_sentry - _heap_sentry;
+
+#ifdef CONFIG_ESP_HEAP_RUNTIME
+ASSERT((_end <= _heap_sentry), "Not enough space to fulfill ESP heap runtime needs!")
 #endif
 
 SECTIONS
