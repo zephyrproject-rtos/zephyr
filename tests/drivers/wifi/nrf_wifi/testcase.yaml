@@ -14,24 +14,13 @@ tests:
     extra_configs:
       - CONFIG_NRF70_RADIO_TEST=y
       - CONFIG_NETWORKING=n
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT=n
   drivers.wifi.build.scan_only:
     extra_configs:
-      - CONFIG_NRF70_SCAN_ONLY=y
-      - CONFIG_NETWORKING=y
-      - CONFIG_NET_DHCPV4=n
-      - CONFIG_NET_NATIVE=n
-      - CONFIG_NET_OFFLOAD=y
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT=n
+      - CONFIG_WIFI_USAGE_MODE_SCAN_ONLY=y
   drivers.wifi.build.raw_scan_results:
     extra_configs:
+      - CONFIG_WIFI_USAGE_MODE_SCAN_ONLY=y
       - CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS=y
-      - CONFIG_NRF70_SCAN_ONLY=y
-      - CONFIG_NETWORKING=y
-      - CONFIG_NET_DHCPV4=n
-      - CONFIG_NET_NATIVE=n
-      - CONFIG_NET_OFFLOAD=y
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT=n
   drivers.wifi.build.raw_tx:
     extra_configs:
       - CONFIG_NRF70_RAW_DATA_TX=y
@@ -45,11 +34,9 @@ tests:
     extra_configs:
       - CONFIG_NRF70_OFFLOADED_RAW_TX=y
       - CONFIG_NETWORKING=n
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT=n
-      - CONFIG_NET_L2_WIFI_MGMT=n
   drivers.wifi.build.softap:
     extra_configs:
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_AP=y
+      - CONFIG_WIFI_USAGE_MODE_STA_AP=y
   drivers.wifi.build.p2p:
     extra_configs:
       - CONFIG_NRF70_P2P_MODE=y
