@@ -75,20 +75,19 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 +-------+-------------+-------------------------------------+
 | Name  | Function    | Usage                               |
 +=======+=============+=====================================+
-| PB2   | GPIO        | LED0                                |
+| PA8   | EUSART0_TX  | UART Console TX                     |
 +-------+-------------+-------------------------------------+
-| PD3   | GPIO        | LED1                                |
+| PA9   | EUSART0_RX  | UART Console RX                     |
++-------+-------------+-------------------------------------+
+| PB0   | GPIO        | Board Controller Enable             |
 +-------+-------------+-------------------------------------+
 | PB1   | GPIO        | Push Button 0                       |
 +-------+-------------+-------------------------------------+
+| PB2   | GPIO        | LED0                                |
++-------+-------------+-------------------------------------+
 | PB3   | GPIO        | Push Button 1                       |
 +-------+-------------+-------------------------------------+
-| PB0   | GPIO        | Board Controller Enable             |
-|       |             | VCOM_ENABLE                         |
-+-------+-------------+-------------------------------------+
-| PA8   | USART0_TX   | UART Console VCOM_TX US0_TX         |
-+-------+-------------+-------------------------------------+
-| PA9   | USART0_RX   | UART Console VCOM_RX US0_RX         |
+| PD3   | GPIO        | LED1                                |
 +-------+-------------+-------------------------------------+
 
 The default configuration can be found in
