@@ -183,7 +183,7 @@ ZTEST(tracing_api, test_tracing_sys_api)
 	sys_trace_k_timer_init(&timer, NULL, NULL);
 
 	/* wait for some actions finished */
-	k_sleep(K_MSEC(100));
+	k_sleep(K_MSEC(200));
 	zassert_true(tracing_api_found, "Failed to check output from backend");
 	zassert_true(tracing_api_not_found == false, "Failed to check output from backend");
 	async_tracing_api = false;
