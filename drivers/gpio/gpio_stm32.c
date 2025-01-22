@@ -714,8 +714,9 @@ static int gpio_stm32_init(const struct device *dev)
 
 	data->dev = dev;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		return -ENODEV;
+	ret = device_get(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE));
+	if (ret < 0) {
+		return ret;
 	}
 
 #if (defined(PWR_CR2_IOSV) || defined(PWR_SVMCR_IO2SV)) && \
