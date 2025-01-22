@@ -38,14 +38,14 @@ contains the processor's information and the datasheet.
 Hardware
 ********
 
-The ``nrf52840dongle/nrf52840`` has two external oscillators. The frequency of
+The ``nrf52840dongle_nrf52840`` has two external oscillators. The frequency of
 the slow clock is 32.768 kHz. The frequency of the main clock
 is 32 MHz.
 
 Supported Features
 ==================
 
-The ``nrf52840dongle/nrf52840`` board configuration supports the following
+The ``nrf52840dongle_nrf52840`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -105,7 +105,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52840dongle/nrf52840`` board configuration can be
+Applications for the ``nrf52840dongle_nrf52840`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details).
 
 Flashing
@@ -144,7 +144,7 @@ device. Make sure ``nrfutil`` is installed before proceeding.
 
    .. zephyr-app-commands::
       :app: zephyr/samples/basic/blinky
-      :board: nrf52840dongle/nrf52840
+      :board: nrf52840dongle/nrf52840dongle_nrf52840
       :goals: build
 
 #. Package the application for the bootloader using ``nrfutil``:
@@ -190,7 +190,7 @@ to the zephyr repository on your computer.
 
    .. zephyr-app-commands::
       :app: mcuboot/boot/zephyr
-      :board: nrf52840dongle/nrf52840
+      :board: nrf52840dongle/nrf52840dongle_nrf52840
       :build-dir: mcuboot
       :goals: build
 
@@ -232,7 +232,7 @@ over Bluetooth).
 
    .. zephyr-app-commands::
       :app: zephyr/samples/subsys/mgmt/mcumgr/smp_svr
-      :board: nrf52840dongle/nrf52840
+      :board: nrf52840dongle/nrf52840dongle_nrf52840
       :build-dir: smp_svr
       :goals: build
 
@@ -269,7 +269,7 @@ name.
 
    .. zephyr-app-commands::
       :app: zephyr/samples/basic/blinky
-      :board: nrf52840dongle/nrf52840
+      :board: nrf52840dongle/nrf52840dongle_nrf52840
       :build-dir: blinky
       :goals: build
       :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y
@@ -302,7 +302,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nrf52840dongle/nrf52840
+   :board: nrf52840dongle/nrf52840dongle_nrf52840
    :goals: build flash
 
 Observe the LED on the board blinking.
@@ -310,7 +310,7 @@ Observe the LED on the board blinking.
 Debugging
 =========
 
-The ``nrf52840dongle/nrf52840`` board does not have an on-board J-Link debug IC
+The ``nrf52840dongle_nrf52840`` board does not have an on-board J-Link debug IC
 as some nRF5x development boards, however, instructions from the
 :ref:`nordic_segger` page also apply to this board, with the additional step
 of connecting an external debugger.
