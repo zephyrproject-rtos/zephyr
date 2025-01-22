@@ -439,6 +439,28 @@ static int phy_dm8806_init(const struct device *dev)
 		return ret;
 	}
 
+	if (!IS_ENABLED(CONFIG_PHY_DM8806_ENERGY_EFFICIENT_MODE)) {
+		/* Disable - 802.3az Energy Efficient Ethernet
+		 * The switch chip DM8806 only works reliably in this mode.
+		 */
+		for (uint32_t port_address = DM8806_SWITCH_REGISTER_OFFSET;
+		     port_address <= DM8806_SWITCH_REGISTER_OFFSET + 5; port_address++) {
+			ret = mdio_read(cfg->mdio, port_address,
+					DM8806_ENERGY_EFFICIENT_ETH_CTRL_REG_ADDR, &val);
+			if (ret) {
+				LOG_ERR("Failed to read ENERGY_EFFICIENT_ETH_CTRL_REG, %i", ret);
+				return ret;
+			}
+			val &= (~DM8806_EEE_EN);
+			ret = mdio_write(cfg->mdio, port_address,
+					 DM8806_ENERGY_EFFICIENT_ETH_CTRL_REG_ADDR, val);
+			if (ret) {
+				LOG_ERR("Failed to write ENERGY_EFFICIENT_ETH_CTRL_REG, %i", ret);
+				return ret;
+			}
+		}
+	} /* CONFIG_PHY_DM8806_ENERGY_EFFICIENT_MODE */
+
 #ifdef CONFIG_PHY_DM8806_TRIGGER
 	ret = phy_dm8806_init_interrupt(dev);
 	if (ret != 0) {
