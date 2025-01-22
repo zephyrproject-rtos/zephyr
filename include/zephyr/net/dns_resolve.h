@@ -156,13 +156,14 @@ enum dns_socket_type {
 
 struct dns_resolve_context;
 struct mdns_responder_context;
+struct dns_socket_dispatcher;
 
 /**
  * @typedef dns_socket_dispatcher_cb
  * @brief Callback used when the DNS socket dispatcher has found a handler for
  * this type of socket.
  *
- * @param ctx DNS resolve or mDNS responder context.
+ * @param ctx struct dns_socket_dispatcher context.
  * @param sock Socket which is seeing traffic.
  * @param addr Socket address of the peer that sent the DNS packet.
  * @param addrlen Length of the socket address.
@@ -171,7 +172,7 @@ struct mdns_responder_context;
  *
  * @return 0 if ok, <0 if error
  */
-typedef int (*dns_socket_dispatcher_cb)(void *ctx, int sock,
+typedef int (*dns_socket_dispatcher_cb)(struct dns_socket_dispatcher *ctx, int sock,
 					struct sockaddr *addr, size_t addrlen,
 					struct net_buf *buf, size_t data_len);
 

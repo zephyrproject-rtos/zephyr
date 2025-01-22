@@ -583,7 +583,8 @@ static int dns_read(int sock,
 		if (!strncasecmp(hostname, result->data + 1, hostname_len) &&
 		    (result->len - 1) >= hostname_len &&
 		    &(result->data + 1)[hostname_len] == lquery) {
-			NET_DBG("%s query to our hostname %s.local", "mDNS",
+			NET_DBG("%s %s %s to our hostname %s.local", "mDNS",
+				family == AF_INET ? "IPv4" : "IPv6", "query",
 				hostname);
 			send_response(sock, family, src_addr, addrlen,
 				      result, qtype);
@@ -668,13 +669,11 @@ static void setup_ipv4_addr(struct sockaddr_in *local_addr)
 #define INTERFACE_NAME_LEN 0
 #endif
 
-static int dispatcher_cb(void *my_ctx, int sock,
+static int dispatcher_cb(struct dns_socket_dispatcher *ctx, int sock,
 			 struct sockaddr *addr, size_t addrlen,
 			 struct net_buf *dns_data, size_t len)
 {
 	int ret;
-
-	ARG_UNUSED(my_ctx);
 
 	ret = dns_read(sock, dns_data, len, addr, addrlen);
 	if (ret < 0 && ret != -EINVAL && ret != -ENOENT) {

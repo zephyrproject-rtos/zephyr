@@ -201,11 +201,11 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 	}
 }
 
-static int dispatcher_cb(void *my_ctx, int sock,
+static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 			 struct sockaddr *addr, size_t addrlen,
 			 struct net_buf *dns_data, size_t len)
 {
-	struct dns_resolve_context *ctx = my_ctx;
+	struct dns_resolve_context *ctx = my_ctx->resolve_ctx;
 	struct net_buf *dns_cname = NULL;
 	uint16_t query_hash = 0U;
 	uint16_t dns_id = 0U;
