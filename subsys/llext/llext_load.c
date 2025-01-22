@@ -536,7 +536,16 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 	for (i = 0, sym = ext->mem[LLEXT_MEM_EXPORT];
 	     i < exp_tab->sym_cnt;
 	     i++, sym++) {
-		exp_tab->syms[i].name = sym->name;
+		/*
+		 * Offsets in ET_REL ELF objects, built for pre-defined addresses
+		 * have to be translated to memory locations for symbol name
+		 * access during dependency resolution.
+		 */
+		ssize_t name_offset = llext_file_offset(ldr, (uintptr_t)sym->name);
+		const char *name = ldr->hdr.e_type == ET_REL && name_offset >= 0 ?
+			llext_peek(ldr, name_offset) : sym->name;
+
+		exp_tab->syms[i].name = name;
 		exp_tab->syms[i].addr = sym->addr;
 		LOG_DBG("sym %p name %s in %p", sym->addr, sym->name, exp_tab->syms + i);
 	}
