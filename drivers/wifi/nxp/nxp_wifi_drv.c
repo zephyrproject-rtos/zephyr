@@ -1089,7 +1089,7 @@ static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_statu
 
 			status->rssi = nxp_wlan_uap_network.rssi;
 
-			status->channel = nxp_wlan_uap_network.channel;
+			wlan_get_uap_channel(&status->channel);
 
 			status->beacon_interval = nxp_wlan_uap_network.beacon_period;
 
