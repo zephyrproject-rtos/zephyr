@@ -72,10 +72,6 @@ config NRF70_SYSTEM_WITH_RAW_MODES
 	help
 	  Select this option to enable system mode of the nRF70 driver with raw modes.
 
-config NRF70_SYSTEM_MODE_COMMON
-	bool
-	default y if NRF70_SYSTEM_MODE
-
 config NET_L2_ETHERNET
 	default y if (!NRF70_RADIO_TEST && !NRF70_OFFLOADED_RAW_TX)
 
