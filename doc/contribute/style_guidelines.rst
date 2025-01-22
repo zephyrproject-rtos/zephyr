@@ -4,6 +4,11 @@
 Coding Style Guidelines
 #######################
 
+.. toctree::
+   :maxdepth: 1
+
+   style/cmake.rst
+
 C Code and General Style
 ************************
 

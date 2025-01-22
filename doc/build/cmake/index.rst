@@ -44,7 +44,7 @@ source file :file:`src/main.c`, behavior that we surely do not want. The
 paths of a target library.
 
 When introducing build system code using CMake or adding new CMake files,
-please follow the style guidlines outline :ref:`here <cmake-style>`.
+please follow the style guidelines outlined :ref:`here <cmake-style>`.
 
 
 Build and Configuration Phases
