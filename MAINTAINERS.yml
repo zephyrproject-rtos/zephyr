@@ -929,8 +929,6 @@ Devicetree:
     - include/zephyr/dt-bindings/dt-util.h
     - dts/binding-template.yaml
     - dts/bindings/base/
-  files-exclude:
-    - dts/common/nordic/
   labels:
     - "area: Devicetree"
   tests:
@@ -3464,7 +3462,7 @@ ADI Platforms:
 Broadcom Platforms:
   status: odd fixes
   files:
-    - dts/arm/broadcom/
+    - dts/*/broadcom/
     - soc/brcm/
     - boards/brcm/
 
@@ -4153,8 +4151,7 @@ Espressif Platforms:
     - drivers/*/*esp32*.c
     - boards/espressif/
     - soc/espressif/
-    - dts/xtensa/espressif/
-    - dts/riscv/espressif/
+    - dts/*/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/espressif/
     - tests/boards/espressif/
