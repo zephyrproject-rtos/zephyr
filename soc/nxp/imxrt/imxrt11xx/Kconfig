@@ -42,7 +42,6 @@ config SOC_SERIES_IMXRT11XX
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
-	select HAS_MCUX_XBARA
 	select HAS_SWO
 	select HAS_PM
 

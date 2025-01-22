@@ -87,7 +87,6 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_PWM
 	select HAS_MCUX_SRC
-	select HAS_MCUX_XBARA
 
 config SOC_MIMXRT1062
 	select HAS_MCUX_ELCDIF
@@ -107,7 +106,6 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_I2S
 	select HAS_MCUX_ADC_ETC
 	select HAS_MCUX_SRC
-	select HAS_MCUX_XBARA
 
 config SOC_MIMXRT1064
 	select HAS_MCUX_ELCDIF
