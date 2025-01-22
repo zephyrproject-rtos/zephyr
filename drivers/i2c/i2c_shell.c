@@ -61,10 +61,10 @@ static int cmd_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f");
 	for (uint8_t i = 0; i <= last; i += 16) {
-		shell_fprintf(sh, SHELL_NORMAL, "%02x: ", i);
+		shell_fprintf_normal(sh, "%02x: ", i);
 		for (uint8_t j = 0; j < 16; j++) {
 			if (i + j < first || i + j > last) {
-				shell_fprintf(sh, SHELL_NORMAL, "   ");
+				shell_fprintf_normal(sh, "   ");
 				continue;
 			}
 
@@ -76,10 +76,10 @@ static int cmd_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 			msgs[0].len = 0U;
 			msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 			if (i2c_transfer(dev, &msgs[0], 1, i + j) == 0) {
-				shell_fprintf(sh, SHELL_NORMAL, "%02x ", i + j);
+				shell_fprintf_normal(sh, "%02x ", i + j);
 				++cnt;
 			} else {
-				shell_fprintf(sh, SHELL_NORMAL, "-- ");
+				shell_fprintf_normal(sh, "-- ");
 			}
 		}
 		shell_print(sh, "");
