@@ -26,7 +26,7 @@ config PINCTRL_IMX_SCMI
 # TODO: Find better place for this option
 config MCUX_XBARA
 	bool "MCUX XBARA driver"
-	depends on HAS_MCUX_XBARA
+	depends on DT_HAS_NXP_MCUX_XBAR_ENABLED
 	help
 	  Enable the MCUX XBARA driver.
 
