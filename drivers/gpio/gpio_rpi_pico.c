@@ -96,6 +96,37 @@ static int gpio_rpi_configure(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_rpi_get_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t *flags)
+{
+	struct gpio_rpi_data *data = dev->data;
+
+	*flags = 0;
+
+	/* RP2xxxx supports Bus Keeper mode where both pull-up and pull-down are enabled. */
+	if (gpio_is_pulled_up(pin)) {
+		*flags |= GPIO_PULL_UP;
+	}
+	if (gpio_is_pulled_down(pin)) {
+		*flags |= GPIO_PULL_DOWN;
+	}
+
+	if (gpio_get_dir(pin)) {
+		*flags |= gpio_get_out_level(pin) ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+		if (data->single_ended_mask & BIT(pin)) {
+			*flags |=
+				data->open_drain_mask & BIT(pin) ? GPIO_OPEN_DRAIN : GPIO_PUSH_PULL;
+		}
+	}
+
+	if (pads_bank0_hw->io[pin] & PADS_BANK0_GPIO0_IE_BITS) {
+		*flags |= GPIO_INPUT;
+	}
+
+	return 0;
+}
+#endif
+
 static int gpio_rpi_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	*value = gpio_get_all();
@@ -235,6 +266,9 @@ static int gpio_rpi_port_get_direction(const struct device *port, gpio_port_pins
 
 static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 	.pin_configure = gpio_rpi_configure,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_rpi_get_config,
+#endif
 	.port_get_raw = gpio_rpi_port_get_raw,
 	.port_set_masked_raw = gpio_rpi_port_set_masked_raw,
 	.port_set_bits_raw = gpio_rpi_port_set_bits_raw,
