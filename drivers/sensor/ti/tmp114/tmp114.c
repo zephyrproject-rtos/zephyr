@@ -38,13 +38,11 @@ struct tmp114_dev_config {
 	struct i2c_dt_spec bus;
 };
 
-static int tmp114_reg_read(const struct device *dev, uint8_t reg,
-			   uint16_t *val)
+static int tmp114_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 {
 	const struct tmp114_dev_config *cfg = dev->config;
 
-	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2)
-	    < 0) {
+	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2) < 0) {
 		return -EIO;
 	}
 
@@ -53,8 +51,7 @@ static int tmp114_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int tmp114_reg_write(const struct device *dev, uint8_t reg,
-			    uint16_t val)
+static int tmp114_reg_write(const struct device *dev, uint8_t reg, uint16_t val)
 {
 	const struct tmp114_dev_config *cfg = dev->config;
 	uint8_t tx_buf[3] = {reg, val >> 8, val & 0xFF};
@@ -116,8 +113,7 @@ static int tmp114_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int tmp114_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int tmp114_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct tmp114_data *drv_data = dev->data;
@@ -165,10 +161,8 @@ static int tmp114_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int tmp114_attr_set(const struct device *dev,
-			   enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int tmp114_attr_set(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	int16_t value;
 	int rc;
