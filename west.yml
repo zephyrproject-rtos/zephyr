@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: a7dc61f89063c1008f24ee21575c68d0165de91b
+      revision: 5576d444d203e8973f7e8f5be18263b3d8a7bb1f
       path: modules/hal/nxp
       groups:
         - hal
@@ -321,7 +321,7 @@ manifest:
       revision: 71bcaa88c97977647d387217dab99f7d6f026815
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 68b018473527fa90237b1abad7ee2568a665bb44
+      revision: 23160ca8417e2cfebbce887f01a355483954824c
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 52bb1783521c62c019451cee9b05b8eda9d7425f

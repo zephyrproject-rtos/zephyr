@@ -157,6 +157,12 @@ Display
 * Renamed the devicetree propertys ``pclk_pol`` and ``data_cmd-gpios``
   to ``pclk-pol`` and ``data-cmd-gpios``.
 
+DAC
+===
+
+* Renamed the devicetree properties ``voltage_reference`` and ``power_down_mode``
+  to ``voltage-reference`` and ``power-down-mode``.
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
@@ -280,6 +286,8 @@ Serial
 ======
 
 * Renamed the ``compatible`` from ``nxp,kinetis-lpuart`` to :dtcompatible:`nxp,lpuart`.
+* Silabs Usart driver has been split for Series 2 :dtcompatible:`silabs,usart-uart`
+  and  Series 0/1 ``silabs,gecko-usart``
 
 Stepper
 =======
@@ -298,6 +306,16 @@ Stepper
     :kconfig:option:`STEPPER_ADI_TMC5041_RAMP_GEN` option.
   * To control the velocity for :dtcompatible:`adi,tmc5041` stepper driver, use
     :c:func:`tmc5041_stepper_set_max_velocity` or :c:func:`tmc5041_stepper_set_ramp`.
+  * Renamed the DeviceTree property ``en_spreadcycle`` to ``en-spreadcycle``.
+  * Renamed the DeviceTree property ``i_scale_analog`` to ``i-scale-analog``.
+  * Renamed the DeviceTree property ``index_optw`` to ``index-otpw``.
+  * Renamed the DeviceTree property ``ìndex_step`` to ``index-step``.
+  * Renamed the DeviceTree property ``internal_rsense`` to ``internal-rsense``.
+  * Renamed the DeviceTree property ``lock_gconf`` to ``lock-gconf``.
+  * Renamed the DeviceTree property ``mstep_reg_select`` to ``mstep-reg-select``.
+  * Renamed the DeviceTree property ``pdn_disable`` to ``pdn-disable``.
+  * Renamed the DeviceTree property ``poscmp_enable`` to ``poscmp-enable``.
+  * Renamed the DeviceTree property ``test_mode`` to ``test-mode``.
 
 SPI
 ===
@@ -445,6 +463,12 @@ Other Subsystems
 
 Flash map
 =========
+
+Filesystem
+==========
+
+* The EXT2 Kconfig symbol ``CONFIG_MAX_FILES`` has been renamed to
+  :kconfig:option:`CONFIG_EXT2_MAX_FILES`.
 
 hawkBit
 =======

@@ -609,6 +609,8 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 
 	net_pkt_cursor_init(pkt);
 
+	net_pkt_set_ll_proto_type(frag_pkt, net_pkt_ll_proto_type(pkt));
+
 	/* We copy original headers back to the fragment packet
 	 * Note that we insert the right next header to point to fragment header
 	 */

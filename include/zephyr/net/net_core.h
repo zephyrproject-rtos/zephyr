@@ -186,8 +186,7 @@ struct net_l3_register {
 		.handler = _handler,					\
 		.name = STRINGIFY(_name),				\
 		.l2 = _l2_type,						\
-	};								\
-	BUILD_ASSERT((_handler) != NULL, "Handler is not defined")
+	};
 
 /* @endcond */
 

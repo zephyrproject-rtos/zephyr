@@ -276,11 +276,10 @@
 		};
 
 		usart0: usart@5005c000 {
-			compatible = "silabs,gecko-usart";
+			compatible = "silabs,usart-uart";
 			reg = <0x5005C000 0x306c>;
 			interrupts = <9 0>, <10 0>;
 			interrupt-names = "rx", "tx";
-			peripheral-id = <0>;
 			clocks = <&cmu CLOCK_USART0 CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};

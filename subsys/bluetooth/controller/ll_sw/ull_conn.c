@@ -1074,7 +1074,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	if (done->extra.trx_cnt) {
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
-		} else if (lll->role) {
+		} else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
 			if (!conn->periph.drift_skip) {
 				ull_drift_ticks_get(done, &ticks_drift_plus,
 						    &ticks_drift_minus);
@@ -1103,6 +1103,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 		/* Reset connection failed to establish countdown */
 		conn->connect_expire = 0U;
+	} else {
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			conn->periph.drift_skip = 0U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
 	}
 
 	elapsed_event = latency_event + lll->lazy_prepare + 1U;
@@ -2179,8 +2185,9 @@ static void ull_conn_update_ticker(struct ll_conn *conn,
 
 	/* start periph/central with new timings */
 	uint8_t ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
-	uint32_t ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_conn, ticker_stop_conn_op_cb, (void *)conn);
+	uint32_t ticker_status = ticker_stop_abs(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+						 ticker_id_conn, ticks_at_expire,
+						 ticker_stop_conn_op_cb, (void *)conn);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 	ticker_status = ticker_start(
