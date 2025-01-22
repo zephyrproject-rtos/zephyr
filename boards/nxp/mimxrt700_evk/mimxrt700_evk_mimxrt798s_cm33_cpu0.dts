@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt7xx_cm33_cpu0.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "mimxrt700_evk-pinctrl.dtsi"
 
@@ -84,6 +85,16 @@
 	pinctrl-names = "default";
 };
 
+&flexcomm8{
+	status = "okay";
+};
+
+&flexcomm8_lpi2c8 {
+	pinctrl-0 = <&pinmux_flexcomm8_i2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -115,3 +126,5 @@
 		write-block-size = <2>;
 	};
 };
+
+p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
