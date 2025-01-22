@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -332,9 +332,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm0_lpi2c0: lpi2c@110000 {
+		flexcomm0_lpi2c0: lpi2c@110800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x110000 0x1000>;
+			reg = <0x110800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM0_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -367,9 +367,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm1_lpi2c1: lpi2c@111000 {
+		flexcomm1_lpi2c1: lpi2c@111800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x111000 0x1000>;
+			reg = <0x111800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM1_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -402,9 +402,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm2_lpi2c2: lpi2c@112000 {
+		flexcomm2_lpi2c2: lpi2c@112800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x112000 0x1000>;
+			reg = <0x112800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM2_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -437,9 +437,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm3_lpi2c3: lpi2c@113000 {
+		flexcomm3_lpi2c3: lpi2c@113800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x113000 0x1000>;
+			reg = <0x113800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM3_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -472,9 +472,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm4_lpi2c4: lpi2c@171000 {
+		flexcomm4_lpi2c4: lpi2c@171800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x171000 0x1000>;
+			reg = <0x171800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM4_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -507,9 +507,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm5_lpi2c5: lpi2c@172000 {
+		flexcomm5_lpi2c5: lpi2c@172800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x172000 0x1000>;
+			reg = <0x172800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM5_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -542,9 +542,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm6_lpi2c6: lpi2c@173000 {
+		flexcomm6_lpi2c6: lpi2c@173800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x173000 0x1000>;
+			reg = <0x173800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM6_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -577,9 +577,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm7_lpi2c7: lpi2c@174000 {
+		flexcomm7_lpi2c7: lpi2c@174800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x174000 0x1000>;
+			reg = <0x174800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM7_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -612,9 +612,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm8_lpi2c8: lpi2c@199000 {
+		flexcomm8_lpi2c8: lpi2c@199800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x199000 0x1000>;
+			reg = <0x199800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM8_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -647,9 +647,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm9_lpi2c9: lpi2c@19a000 {
+		flexcomm9_lpi2c9: lpi2c@19a800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x19a000 0x1000>;
+			reg = <0x19a800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM9_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -682,9 +682,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm10_lpi2c10: lpi2c@19b000 {
+		flexcomm10_lpi2c10: lpi2c@19b800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x19b000 0x1000>;
+			reg = <0x19b800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM10_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -717,9 +717,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm11_lpi2c11: lpi2c@19c000 {
+		flexcomm11_lpi2c11: lpi2c@19c800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x19c000 0x1000>;
+			reg = <0x19c800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM11_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -752,9 +752,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm12_lpi2c12: lpi2c@19d000 {
+		flexcomm12_lpi2c12: lpi2c@19d800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x19d000 0x1000>;
+			reg = <0x19d800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM12_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -787,9 +787,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm13_lpi2c13: lpi2c@19e000 {
+		flexcomm13_lpi2c13: lpi2c@19e800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x19e000 0x1000>;
+			reg = <0x19e800 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM13_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
