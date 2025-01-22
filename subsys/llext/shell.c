@@ -124,7 +124,7 @@ static int cmd_llext_list(const struct shell *sh, size_t argc, char *argv[])
 	return llext_iterate(llext_shell_list_cb, &sl);
 }
 
-static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE];
+static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE] __aligned(Z_KERNEL_STACK_OBJ_ALIGN);
 
 static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 {
