@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Andrew Featherstone <andrew.featherstone@gmail.com>
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		/* Choice of pins on the header is arbitrary, but doesn't
+		 * conflict with the external pulldown.
+		 */
+		out-gpios = <&pico_header 16 0>;
+		in-gpios = <&pico_header 17 0>;
+	};
+};
