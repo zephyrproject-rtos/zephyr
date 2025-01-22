@@ -40,6 +40,7 @@ struct tmp114_data {
 struct tmp114_dev_config {
 	struct i2c_dt_spec bus;
 	uint16_t odr;
+	bool oversampling;
 };
 
 static int tmp114_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
@@ -282,6 +283,14 @@ static int tmp114_init(const struct device *dev)
 		return rc;
 	}
 
+	val.val1 = cfg->oversampling ? 1 : 0;
+	val.val2 = 0;
+
+	rc = tmp114_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_OVERSAMPLING, &val);
+	if (rc < 0) {
+		return rc;
+	}
+
 	return 0;
 }
 
@@ -290,6 +299,7 @@ static int tmp114_init(const struct device *dev)
 	static const struct tmp114_dev_config tmp114_config_##_num = { \
 		.bus = I2C_DT_SPEC_INST_GET(_num), \
 		.odr = DT_INST_PROP(_num, odr), \
+		.oversampling = DT_INST_PROP(_num, oversampling), \
 	}; \
 	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp114_init, NULL, \
 		&tmp114_data_##_num, &tmp114_config_##_num, POST_KERNEL, \
