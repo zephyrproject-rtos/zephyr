@@ -8,3 +8,4 @@ tests:
   tracing.transport.uart.sync.test:
     extra_configs:
       - CONFIG_TRACING_SYNC=y
+      - CONFIG_TRACING_BUFFER_SIZE=32
