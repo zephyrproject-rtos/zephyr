@@ -58,10 +58,11 @@ config ESP32_WIFI_STA_AUTO_DHCPV4
 
 config ESP32_WIFI_AP_STA_MODE
 	bool "Activates the Station/AP co-existence mode."
+	default y if WIFI_USAGE_MODE_STA_AP
 	depends on WIFI_NM
 	help
 	  The Station/AP coexistence mode allows the ESP32 to operate as both a station and
-	  an access point simultaneously. This mode is not enabled by default.
+	  an access point simultaneously.
 
 config ESP32_WIFI_STA_RECONNECT
 	bool "WiFi connection retry"
