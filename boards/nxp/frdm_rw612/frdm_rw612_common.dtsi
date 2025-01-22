@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,8 @@
 		zephyr,flash = &w25q512jvfiq;
 		zephyr,console = &flexcomm3;
 		zephyr,shell-uart = &flexcomm3;
+		zephyr,flash-controller = &w25q512jvfiq;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
