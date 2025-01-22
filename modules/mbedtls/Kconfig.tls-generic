@@ -138,6 +138,7 @@ config MBEDTLS_ECDH_C
 config MBEDTLS_ECDSA_C
 	bool "Elliptic curve DSA library"
 	depends on MBEDTLS_ECP_C
+	select MBEDTLS_ASN1_PARSE_C
 
 config MBEDTLS_ECJPAKE_C
 	bool "Elliptic curve J-PAKE library"
@@ -373,6 +374,9 @@ config MBEDTLS_MD
 
 config MBEDTLS_GENPRIME_ENABLED
 	bool "prime-number generation code."
+
+config MBEDTLS_ASN1_PARSE_C
+	bool "Support for ASN1 parser functions"
 
 config MBEDTLS_PEM_CERTIFICATE_FORMAT
 	bool "Support for PEM certificate format"
