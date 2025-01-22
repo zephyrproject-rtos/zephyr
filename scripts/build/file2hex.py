@@ -43,7 +43,11 @@ def parse_args():
 
 
 def get_nice_string(list_or_iterator):
-    return ", ".join("0x" + str(x) for x in list_or_iterator)
+    # Convert into comma separated list form.
+    s = ", ".join("0x" + str(x) for x in list_or_iterator)
+
+    # Format the list to eight values per line.
+    return "\n".join(s[i:i+47] for i in range(0, len(s), 48))
 
 
 def make_hex(chunk):
@@ -71,11 +75,11 @@ def main():
         with open(args.file, "rb") as fp:
             fp.seek(args.offset)
             if args.length < 0:
-                for chunk in iter(lambda: fp.read(8), b''):
+                for chunk in iter(lambda: fp.read(1024), b''):
                     make_hex(chunk)
             else:
                 remainder = args.length
-                for chunk in iter(lambda: fp.read(min(8, remainder)), b''):
+                for chunk in iter(lambda: fp.read(min(1024, remainder)), b''):
                     make_hex(chunk)
                     remainder = remainder - len(chunk)
 
