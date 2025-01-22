@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_REG_AMODE1_DEF           0x14
 #define GC2145_REG_OUTPUT_FMT           0x84
 #define GC2145_REG_OUTPUT_FMT_RGB565    0x06
+#define GC2145_REG_OUTPUT_FMT_YCBYCR    0x02
 #define GC2145_REG_SYNC_MODE            0x86
 #define GC2145_REG_SYNC_MODE_DEF        0x23
 #define GC2145_REG_SYNC_MODE_COL_SWITCH 0x10
@@ -699,18 +700,22 @@ struct gc2145_data {
 		.height_min = height, .height_max = height, .width_step = 0, .height_step = 0,     \
 	}
 
-enum resolutions {
-	QVGA_RESOLUTION = 0,
-	VGA_RESOLUTION,
-	UXGA_RESOLUTION,
-	RESOLUTIONS_MAX,
-};
+#define RESOLUTION_QVGA_W	320
+#define RESOLUTION_QVGA_H	240
+
+#define RESOLUTION_VGA_W	640
+#define RESOLUTION_VGA_H	480
+
+#define RESOLUTION_UXGA_W	1600
+#define RESOLUTION_UXGA_H	1200
 
 static const struct video_format_cap fmts[] = {
-	[QVGA_RESOLUTION] = GC2145_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),   /* QVGA */
-	[VGA_RESOLUTION] = GC2145_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),    /* VGA  */
-	[UXGA_RESOLUTION] = GC2145_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_RGB565), /* UXGA */
-	[RESOLUTIONS_MAX] = {0},
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_RGB565),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_RGB565),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_RGB565),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_YUYV),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_YUYV),
+	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_YUYV),
 };
 
 static int gc2145_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint8_t value)
@@ -893,13 +898,17 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 		return ret;
 	}
 
-	if (output_format != VIDEO_PIX_FMT_RGB565) {
+	/* Map format to sensor format */
+	if (output_format == VIDEO_PIX_FMT_RGB565) {
+		output_format = GC2145_REG_OUTPUT_FMT_RGB565;
+	} else if (output_format == VIDEO_PIX_FMT_YUYV) {
+		output_format = GC2145_REG_OUTPUT_FMT_YCBYCR;
+	} else {
 		LOG_ERR("Image format not supported");
 		return -ENOTSUP;
 	}
 
-	/* Disable JPEG compression and set output to RGB565 */
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT, GC2145_REG_OUTPUT_FMT_RGB565);
+	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT, output_format);
 	if (ret < 0) {
 		return ret;
 	}
@@ -909,13 +918,11 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 	return 0;
 }
 
-static int gc2145_set_resolution(const struct device *dev, enum resolutions res)
+static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t h)
 {
 	int ret;
 	const struct gc2145_config *cfg = dev->config;
 
-	uint16_t w;
-	uint16_t h;
 	uint16_t win_w;
 	uint16_t win_h;
 	uint16_t c_ratio;
@@ -925,29 +932,22 @@ static int gc2145_set_resolution(const struct device *dev, enum resolutions res)
 	uint16_t win_x;
 	uint16_t win_y;
 
-	if (res >= RESOLUTIONS_MAX) {
-		return -EIO;
-	}
-
-	w = fmts[res].width_min;
-	h = fmts[res].height_min;
-
 	/* Add the subsampling factor depending on resolution */
-	switch (res) {
-	case QVGA_RESOLUTION:
+	switch (w) {
+	case RESOLUTION_QVGA_W:
 		c_ratio = 3;
 		r_ratio = 3;
 		break;
-	case VGA_RESOLUTION:
+	case RESOLUTION_VGA_W:
 		c_ratio = 2;
 		r_ratio = 2;
 		break;
-	case UXGA_RESOLUTION:
+	case RESOLUTION_UXGA_W:
 		c_ratio = 1;
 		r_ratio = 1;
 		break;
 	default:
-		LOG_ERR("Unsupported resolution %d", res);
+		LOG_ERR("Unsupported resolution %d %d", w, h);
 		return -EIO;
 	};
 
@@ -1027,14 +1027,8 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 			  struct video_format *fmt)
 {
 	struct gc2145_data *drv_data = dev->data;
-	enum resolutions res = RESOLUTIONS_MAX;
+	size_t res = ARRAY_SIZE(fmts);
 	int ret;
-
-	/* We only support RGB565 formats */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565) {
-		LOG_ERR("gc2145 camera supports only RGB565");
-		return -ENOTSUP;
-	}
 
 	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
 		/* nothing to do */
@@ -1042,14 +1036,14 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	}
 
 	/* Check if camera is capable of handling given format */
-	for (int i = 0; i < RESOLUTIONS_MAX; i++) {
+	for (int i = 0; i < ARRAY_SIZE(fmts); i++) {
 		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height &&
 		    fmts[i].pixelformat == fmt->pixelformat) {
-			res = (enum resolutions)i;
+			res = i;
 			break;
 		}
 	}
-	if (res == RESOLUTIONS_MAX) {
+	if (res == ARRAY_SIZE(fmts)) {
 		LOG_ERR("Image format not supported");
 		return -ENOTSUP;
 	}
@@ -1064,7 +1058,8 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	}
 
 	/* Set window size */
-	ret = gc2145_set_resolution(dev, res);
+	ret = gc2145_set_resolution(dev, fmt->width, fmt->height);
+
 	if (ret < 0) {
 		LOG_ERR("Failed to set the resolution");
 		return ret;
@@ -1161,9 +1156,9 @@ static int gc2145_init(const struct device *dev)
 
 	/* set default/init format QVGA RGB565 */
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = fmts[QVGA_RESOLUTION].width_min;
-	fmt.height = fmts[QVGA_RESOLUTION].height_min;
-	fmt.pitch = fmts[QVGA_RESOLUTION].width_min * 2;
+	fmt.width = RESOLUTION_QVGA_W;
+	fmt.height = RESOLUTION_QVGA_H;
+	fmt.pitch = RESOLUTION_QVGA_W * 2;
 
 	ret = gc2145_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret) {
