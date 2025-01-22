@@ -82,6 +82,7 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	uint8_t tid;
 	bt_avctp_pkt_type_t pkt_type;
 	bt_avctp_cr_t cr;
+	int err;
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("invalid AVCTP header received");
@@ -117,7 +118,13 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			if (!rsp) {
 				return -ENOMEM;
 			}
-			return bt_avctp_send(session, rsp);
+
+			err = bt_avctp_send(session, rsp);
+			if (err < 0) {
+				net_buf_unref(rsp);
+				LOG_ERR("AVCTP send fail, err = %d", err);
+				return err;
+			}
 		}
 		return 0; /* No need to report to the upper layer */
 	}
@@ -189,16 +196,7 @@ struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
 
 int bt_avctp_send(struct bt_avctp *session, struct net_buf *buf)
 {
-	int err;
-
-	err = bt_l2cap_chan_send(&session->br_chan.chan, buf);
-	if (err < 0) {
-		net_buf_unref(buf);
-		LOG_ERR("L2CAP send fail err = %d", err);
-		return err;
-	}
-
-	return err;
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
 int bt_avctp_register(const struct bt_avctp_event_cb *cb)
