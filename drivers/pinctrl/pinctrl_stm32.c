@@ -206,6 +206,7 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 static int stm32_pin_configure(uint32_t pin, uint32_t pin_cgf, uint32_t pin_func)
 {
 	const struct device *port_device;
+	int ret;
 
 	if (STM32_PORT(pin) >= gpio_ports_cnt) {
 		return -EINVAL;
@@ -213,11 +214,16 @@ static int stm32_pin_configure(uint32_t pin, uint32_t pin_cgf, uint32_t pin_func
 
 	port_device = gpio_ports[STM32_PORT(pin)];
 
-	if ((port_device == NULL) || (!device_is_ready(port_device))) {
-		return -ENODEV;
+	ret = device_get(port_device);
+	if (ret < 0) {
+		return ret;
 	}
 
-	return gpio_stm32_configure(port_device, STM32_PIN(pin), pin_cgf, pin_func);
+	ret = gpio_stm32_configure(port_device, STM32_PIN(pin), pin_cgf, pin_func);
+
+	(void)device_put(port_device);
+
+	return ret;
 }
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,

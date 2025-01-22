@@ -1815,18 +1815,21 @@ static int uart_stm32_async_init(const struct device *dev)
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
 	struct uart_stm32_data *data = dev->data;
+	int ret;
 
 	data->uart_dev = dev;
 
 	if (data->dma_rx.dma_dev != NULL) {
-		if (!device_is_ready(data->dma_rx.dma_dev)) {
-			return -ENODEV;
+		ret = device_get(data->dma_rx.dma_dev);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
 	if (data->dma_tx.dma_dev != NULL) {
-		if (!device_is_ready(data->dma_tx.dma_dev)) {
-			return -ENODEV;
+		ret = device_get(data->dma_tx.dma_dev);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
@@ -1998,9 +2001,10 @@ static int uart_stm32_clocks_enable(const struct device *dev)
 
 	__uart_stm32_get_clock(dev);
 
-	if (!device_is_ready(data->clock)) {
+	err = device_get(data->clock);
+	if (err < 0) {
 		LOG_ERR("clock control device not ready");
-		return -ENODEV;
+		return err;
 	}
 
 	/* enable clock */
@@ -2029,12 +2033,14 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	USART_TypeDef *usart = config->usart;
 	struct uart_stm32_data *data = dev->data;
 	struct uart_config *uart_cfg = data->uart_cfg;
+	int ret;
 
 	LL_USART_Disable(usart);
 
-	if (!device_is_ready(config->reset.dev)) {
+	ret = device_get(config->reset.dev);
+	if (ret < 0) {
 		LOG_ERR("reset controller not ready");
-		return -ENODEV;
+		return ret;
 	}
 
 	/* Reset UART to default state using RCC */
@@ -2173,6 +2179,10 @@ static int uart_stm32_init(const struct device *dev)
 	return 0;
 #endif
 }
+
+static const struct device_ops uart_stm32_ops = {
+	.init = uart_stm32_init,
+};
 
 #ifdef CONFIG_PM_DEVICE
 static void uart_stm32_suspend_setup(const struct device *dev)
@@ -2464,7 +2474,7 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);			\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    uart_stm32_init,					\
+		    &uart_stm32_ops,					\
 		    PM_DEVICE_DT_INST_GET(index),			\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
