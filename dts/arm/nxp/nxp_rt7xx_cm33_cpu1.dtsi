@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -232,9 +232,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm17_lpi2c17: lpi2c@326000 {
+		flexcomm17_lpi2c17: lpi2c@326800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x326000 0x1000>;
+			reg = <0x326800 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -267,9 +267,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm18_lpi2c18: lpi2c@327000 {
+		flexcomm18_lpi2c18: lpi2c@327800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x327000 0x1000>;
+			reg = <0x327800 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -302,9 +302,9 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm19_lpi2c19: lpi2c@328000 {
+		flexcomm19_lpi2c19: lpi2c@328800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x328000 0x1000>;
+			reg = <0x328800 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -337,14 +337,25 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		flexcomm20_lpi2c20: lpi2c@329000 {
+		flexcomm20_lpi2c20: lpi2c@329800 {
 			compatible = "nxp,lpi2c";
-			reg = <0x329000 0x1000>;
+			reg = <0x329800 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
+	};
+
+	/* LPFlexcomm15 only support LPI2C function. */
+	lpi2c15: i2c@213000 {
+		compatible = "nxp,lpi2c";
+		reg = <0x213000 0x1000>;
+		interrupts = <14 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clkctl4 MCUX_LPI2C15_CLK>;
+		status = "disabled";
 	};
 };
 
