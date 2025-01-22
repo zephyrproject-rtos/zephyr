@@ -728,6 +728,11 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 			LOG_ERR("Failed to link, ret %d", ret);
 			goto out;
 		}
+	} else {
+		ret = llext_dependency_restore(ldr, ext);
+		if (ret != 0) {
+			goto out;
+		}
 	}
 
 	ret = llext_export_symbols(ldr, ext);

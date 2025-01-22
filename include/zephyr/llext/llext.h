@@ -67,6 +67,7 @@ struct llext_loader;
 
 /* Maximim number of dependency LLEXTs */
 #define LLEXT_MAX_DEPENDENCIES 8
+#define LLEXT_MAX_NAME_LENGTH 16
 
 /**
  * @brief Structure describing a linkable loadable extension
@@ -86,7 +87,7 @@ struct llext {
 	/** @endcond */
 
 	/** Name of the llext */
-	char name[16];
+	char name[LLEXT_MAX_NAME_LENGTH];
 
 	/** Lookup table of memory regions */
 	void *mem[LLEXT_MEM_COUNT];

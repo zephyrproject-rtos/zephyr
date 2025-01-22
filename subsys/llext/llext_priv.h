@@ -67,5 +67,6 @@ int llext_link(struct llext_loader *ldr, struct llext *ext,
 	       const struct llext_load_param *ldr_parm);
 ssize_t llext_file_offset(struct llext_loader *ldr, uintptr_t offset);
 void llext_dependency_remove_all(struct llext *ext);
+int llext_dependency_restore(struct llext_loader *ldr, struct llext *ext);
 
 #endif /* ZEPHYR_SUBSYS_LLEXT_PRIV_H_ */

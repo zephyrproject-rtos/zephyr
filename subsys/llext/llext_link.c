@@ -75,7 +75,8 @@ ssize_t llext_file_offset(struct llext_loader *ldr, uintptr_t offset)
  * dependency array is always "dense" - it cannot have NULL entries between
  * valid ones.
  */
-static int llext_dependency_add(struct llext *ext, struct llext *dependency)
+static int llext_dependency_add(struct llext_loader *ldr, struct llext *ext,
+				struct llext *dependency)
 {
 	unsigned int i;
 
@@ -86,6 +87,7 @@ static int llext_dependency_add(struct llext *ext, struct llext *dependency)
 
 		if (!ext->dependency[i]) {
 			ext->dependency[i] = dependency;
+			memcpy(ldr->dependency[i], dependency->name, sizeof(ldr->dependency[i]));
 			dependency->use_count++;
 
 			return 0;
@@ -108,6 +110,25 @@ void llext_dependency_remove_all(struct llext *ext)
 		__ASSERT(ext->dependency[i]->use_count, "LLEXT dependency use-count underrun!");
 		/* No need to NULL-ify the pointer - ext is freed after this */
 	}
+}
+
+int llext_dependency_restore(struct llext_loader *ldr, struct llext *ext)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(ext->dependency) && ldr->dependency[i][0]; i++) {
+		ext->dependency[i] = llext_by_name(ldr->dependency[i]);
+
+		if (!ext->dependency[i]) {
+			LOG_ERR("Dependency %s no longer available, re-linking required",
+				ldr->dependency[i]);
+			return -ENOENT;
+		}
+
+		ext->dependency[i]->use_count++;
+	}
+
+	return 0;
 }
 
 struct llext_extension_sym {
@@ -255,7 +276,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 
 				link_addr = llext_find_extension_sym(name, &dep);
 				if (link_addr) {
-					llext_dependency_add(ext, dep);
+					llext_dependency_add(ldr, ext, dep);
 				}
 			}
 
@@ -416,7 +437,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 					link_addr = (uintptr_t)llext_find_extension_sym(name, &dep);
 					if (link_addr) {
-						llext_dependency_add(ext, dep);
+						llext_dependency_add(ldr, ext, dep);
 					}
 				}
 

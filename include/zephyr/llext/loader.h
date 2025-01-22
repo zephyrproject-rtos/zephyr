@@ -99,6 +99,7 @@ struct llext_loader {
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[LLEXT_MEM_COUNT];
 	struct llext_elf_sect_map *sect_map;
+	char dependency[LLEXT_MAX_DEPENDENCIES][LLEXT_MAX_NAME_LENGTH];
 	/** @endcond */
 };
 
