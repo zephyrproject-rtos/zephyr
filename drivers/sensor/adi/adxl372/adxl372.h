@@ -312,6 +312,7 @@ struct adxl372_data {
 	const struct adxl372_transfer_function *hw_tf;
 	struct adxl372_fifo_config fifo_config;
 	enum adxl372_act_proc_mode act_proc_mode;
+	enum adxl372_odr odr;
 #ifdef CONFIG_ADXL372_TRIGGER
 	struct gpio_callback gpio_cb;
 

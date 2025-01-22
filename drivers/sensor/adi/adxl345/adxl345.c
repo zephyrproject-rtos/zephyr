@@ -229,7 +229,7 @@ static int adxl345_attr_set_odr(const struct device *dev,
 				const struct sensor_value *val)
 {
 	enum adxl345_odr odr;
-	struct adxl345_dev_config *cfg = (struct adxl345_dev_config *)dev->config;
+	struct adxl345_dev_data *data = dev->data;
 
 	switch (val->val1) {
 	case 12:
@@ -257,7 +257,7 @@ static int adxl345_attr_set_odr(const struct device *dev,
 	int ret = adxl345_set_odr(dev, odr);
 
 	if (ret == 0) {
-		cfg->odr = odr;
+		data->odr = odr;
 	}
 
 	return ret;

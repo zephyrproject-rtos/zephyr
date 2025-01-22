@@ -213,7 +213,7 @@ static void adxl372_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	hdr->is_fifo = 1;
 	hdr->timestamp = data->timestamp;
 	hdr->int_status = data->status1;
-	hdr->accel_odr = cfg->odr;
+	hdr->accel_odr = data->odr;
 	hdr->sample_set_size = sample_set_size;
 
 	if ((cfg->fifo_config.fifo_format == ADXL372_X_FIFO) ||
