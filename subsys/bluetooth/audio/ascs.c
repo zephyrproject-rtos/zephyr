@@ -3255,6 +3255,7 @@ void bt_ascs_cleanup(void)
 int bt_ascs_unregister(void)
 {
 	int err;
+	static struct k_work_sync sync;
 	struct bt_gatt_attr _ascs_attrs[] = BT_ASCS_SERVICE_DEFINITION();
 
 	if (!ascs.registered) {
@@ -3263,11 +3264,11 @@ int bt_ascs_unregister(void)
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
-		if (ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE) {
-			LOG_DBG("[%zu] ase %p not in idle state: %s", i, &ascs.ase_pool[i].ep,
-				bt_bap_ep_state_str(ascs.ase_pool[i].ep.status.state));
-			return -EBUSY;
-		}
+		k_work_flush(&ascs.ase_pool[i].state_transition_work, &sync);
+
+		__ASSERT(ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE,
+			 "[%zu] ase %p not in idle state: %s", i, &ascs.ase_pool[i].ep,
+			 bt_bap_ep_state_str(ascs.ase_pool[i].ep.status.state));
 	}
 
 	err = bt_gatt_service_unregister(&ascs_svc);
