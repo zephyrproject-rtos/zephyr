@@ -456,7 +456,7 @@ static int nrf_wifi_util_dump_rpu_stats(const struct shell *sh,
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct rpu_op_stats stats;
+	struct rpu_sys_op_stats stats;
 	enum rpu_stats_type stats_type = RPU_STATS_TYPE_ALL;
 	int ret;
 
@@ -491,7 +491,7 @@ static int nrf_wifi_util_dump_rpu_stats(const struct shell *sh,
 	fmac_dev_ctx = ctx->rpu_ctx;
 
 	memset(&stats, 0, sizeof(struct rpu_op_stats));
-	status = nrf_wifi_fmac_stats_get(fmac_dev_ctx, 0, &stats);
+	status = nrf_wifi_sys_fmac_stats_get(fmac_dev_ctx, 0, &stats);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		shell_fprintf(sh,
