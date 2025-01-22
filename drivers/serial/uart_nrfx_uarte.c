@@ -2391,6 +2391,18 @@ static int uarte_instance_init(const struct device *dev,
 	return pm_device_driver_init(dev, uarte_nrfx_pm_action);
 }
 
+static int uarte_deinit(const struct device *dev)
+{
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+
+	uarte_pm_suspend(dev);
+
+	nrf_uarte_txrx_pins_disconnect(uarte);
+	nrf_uarte_hwfc_pins_disconnect(uarte);
+
+	return 0;
+}
+
 #define UARTE_IRQ_CONFIGURE(idx, isr_handler)				       \
 	do {								       \
 		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), \
@@ -2538,6 +2550,7 @@ static int uarte_instance_init(const struct device *dev,
 									       \
 	static const struct device_ops uarte_##idx##_ops = {		       \
 		.init = uarte_##idx##_init,				       \
+		.deinit = uarte_deinit,					       \
 	};								       \
 									       \
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action,		       \
