@@ -42,7 +42,7 @@ def main():
     if args.zephyr_base:
         os.environ['ZEPHYR_BASE'] = args.zephyr_base
 
-    print("Parsing " + args.kconfig_file)
+    print(f"Parsing {args.kconfig_file}")
     kconf = Kconfig(args.kconfig_file, warn_to_stderr=False,
                     suppress_traceback=True)
 
@@ -111,7 +111,7 @@ def main():
 
         # Put a blank line between warnings to make them easier to read
         for warning in kconf.warnings:
-            print("\n" + warning, file=sys.stderr)
+            print(f"\n{warning}", file=sys.stderr)
 
             if not error_out and not re.search(warn_only, warning):
                 # The warning is not a warn_only, fail the Kconfig.
@@ -140,9 +140,9 @@ def check_no_promptless_assign(kconf):
     for sym in kconf.unique_defined_syms:
         if sym.user_value is not None and promptless(sym):
             err(f"""\
-{sym.name_and_loc} is assigned in a configuration file, but is not directly
-user-configurable (has no prompt). It gets its value indirectly from other
-symbols. """ + SYM_INFO_HINT.format(sym))
+                {sym.name_and_loc} is assigned in a configuration file, but is not directly
+                user-configurable (has no prompt). It gets its value indirectly from other
+                symbols. """ + SYM_INFO_HINT.format(sym))
 
 
 def check_assigned_sym_values(kconf):
@@ -164,8 +164,8 @@ def check_assigned_sym_values(kconf):
             user_value = TRI_TO_STR[user_value]
 
         if user_value != sym.str_value:
-            msg = f"{sym.name_and_loc} was assigned the value '{user_value}'" \
-                  f" but got the value '{sym.str_value}'. "
+            msg = (f"{sym.name_and_loc} was assigned the value '{user_value}'"
+                   f" but got the value '{sym.str_value}'. ")
 
             # List any unsatisfied 'depends on' dependencies in the warning
             mdeps = missing_deps(sym)
@@ -180,11 +180,8 @@ def check_assigned_sym_values(kconf):
                         estr = f"({estr})"
                     expr_strs.append(f"{estr} "
                                      f"(={TRI_TO_STR[expr_value(expr)]})")
-
-                msg += "Check these unsatisfied dependencies: " + \
-                    ", ".join(expr_strs) + ". "
-
-            warn(msg + SYM_INFO_HINT.format(sym))
+            msg += f"Check these unsatisfied dependencies: {', '.join(expr_strs)}. "
+            warn(f"{msg}{SYM_INFO_HINT.format(sym)}")
 
 
 def missing_deps(sym):
@@ -230,19 +227,19 @@ def check_assigned_choice_values(kconf):
            choice.user_selection is not choice.selection:
 
             warn(f"""\
-The choice symbol {choice.user_selection.name_and_loc} was selected (set =y),
-but {choice.selection.name_and_loc if choice.selection else "no symbol"} ended
-up as the choice selection. """ + SYM_INFO_HINT.format(choice.user_selection))
+                The choice symbol {choice.user_selection.name_and_loc} was selected (set =y),
+                but {choice.selection.name_and_loc if choice.selection else "no symbol"} ended
+                up as the choice selection. """ + SYM_INFO_HINT.format(choice.user_selection))
 
 
 # Hint on where to find symbol information. Used like
 # SYM_INFO_HINT.format(sym).
 SYM_INFO_HINT = """\
-See http://docs.zephyrproject.org/latest/kconfig.html#CONFIG_{0.name} and/or
-look up {0.name} in the menuconfig/guiconfig interface. The Application
-Development Primer, Setting Configuration Values, and Kconfig - Tips and Best
-Practices sections of the manual might be helpful too.\
-"""
+                See http://docs.zephyrproject.org/latest/kconfig.html#CONFIG_{0.name} and/or
+                look up {0.name} in the menuconfig/guiconfig interface. The Application
+                Development Primer, Setting Configuration Values, and Kconfig - Tips and Best
+                Practices sections of the manual might be helpful too.\
+                """
 
 
 def check_deprecated(kconf):
@@ -326,11 +323,11 @@ def warn(msg):
     # reference link, and add some extra newlines to set the message off from
     # surrounding text (this usually gets printed as part of spammy CMake
     # output)
-    print("\n" + textwrap.fill("warning: " + msg, 100) + "\n", file=sys.stderr)
+    print(f"\n{textwrap.fill(f'warning: {msg}', 100)}\n", file=sys.stderr)
 
 
 def err(msg):
-    sys.exit("\n" + textwrap.fill("error: " + msg, 100) + "\n")
+    sys.exit(f"\n{textwrap.fill(f'error: {msg}', 100)}\n")
 
 
 if __name__ == "__main__":

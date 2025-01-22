@@ -63,17 +63,16 @@ def compare_with_hardened_conf(kconf, hardened_kconf_filename):
 
 def display_results(options):
     # header
-    print('{:^50}|{:^13}|{:^20}'.format('name', 'current', 'recommended'), end='')
-    print('||{:^28}\n'.format('check result'), end='')
+    print(f"{'name':^50}|{'current':^13}|{'recommended':^20}", end='')
+    print(f"||{'check result':^28}\n", end='')
     print('=' * 116)
 
-    # results, only printing options that have failed for now. It simplify the readability.
+    # results, only printing options that have failed for now. It simplifies readability.
     # TODO: add command line option to show all results
     for opt in options:
         if opt.result == 'FAIL' and opt.symbol.visibility != 0:
-            print('CONFIG_{:<43}|{:^13}|{:^20}'.format(
-                opt.name, opt.current, opt.recommended), end='')
-            print('||{:^28}\n'.format(opt.result), end='')
+            print(f"CONFIG_{opt.name:<43}|{opt.current:^13}|{opt.recommended:^20}", end='')
+            print(f"||{opt.result:^28}\n", end='')
     print()
 
 
