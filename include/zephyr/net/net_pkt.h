@@ -1257,11 +1257,6 @@ static inline void net_pkt_set_stats_tick(struct net_pkt *pkt, uint32_t tick)
 #endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
 	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
-static inline size_t net_pkt_get_len(struct net_pkt *pkt)
-{
-	return net_buf_frags_len(pkt->frags);
-}
-
 static inline uint8_t *net_pkt_data(struct net_pkt *pkt)
 {
 	return pkt->frags->data;
@@ -2475,6 +2470,18 @@ static inline int net_pkt_write_le16(struct net_pkt *pkt, uint16_t data)
  * @return Amount of data which can be read from current pkt cursor
  */
 size_t net_pkt_remaining_data(struct net_pkt *pkt);
+
+/**
+ * @brief Get the total amount of bytes stored in a packet.
+ *
+ * @param pkt Network packet
+ *
+ * @return Total amount of bytes stored in a packet.
+ */
+static inline size_t net_pkt_get_len(struct net_pkt *pkt)
+{
+	return net_buf_frags_len(pkt->frags);
+}
 
 /**
  * @brief Update the overall length of a packet
