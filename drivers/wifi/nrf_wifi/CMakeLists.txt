@@ -103,3 +103,7 @@ if (CONFIG_NRF_WIFI_PATCHES_BUILTIN)
     ${gen_dir}/nrf70.bin.inc
   )
 endif()
+
+if(CONFIG_WIFI_NRF7000 AND NOT CONFIG_WIFI_USAGE_MODE_SCAN_ONLY)
+  message(WARNING "nRF7000 only supports WIFI_USAGE_MODE_SCAN_ONLY")
+endif()
