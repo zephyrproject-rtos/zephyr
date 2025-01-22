@@ -264,5 +264,5 @@ zephyr_udc0: &usbd {
 };
 
 /* Include default memory partition configuration file */
-#include <common/nordic/nrf5340_cpuapp_partition.dtsi>
+#include <nordic/nrf5340_cpuapp_partition.dtsi>
 #include "nrf5340_audio_dk_nrf5340_shared.dtsi"

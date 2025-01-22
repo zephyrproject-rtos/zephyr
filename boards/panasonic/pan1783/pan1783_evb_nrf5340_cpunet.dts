@@ -20,4 +20,4 @@
 };
 
 /* Include default shared RAM configuration file */
-#include <common/nordic/nrf5340_shared_sram_partition.dtsi>
+#include <nordic/nrf5340_shared_sram_partition.dtsi>

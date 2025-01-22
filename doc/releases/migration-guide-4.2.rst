@@ -79,6 +79,13 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+Devicetree
+==========
+
+* Many of the vendor-specific and arch-specific files that were in dts/common have been moved
+  to more specific locations. Therefore, any dts files which ``#include <common/some_file.dtsi>``
+  a file from in the zephyr tree will need to be changed to just ``#include <some_file.dtsi>``.
+
 DAI
 ===
 

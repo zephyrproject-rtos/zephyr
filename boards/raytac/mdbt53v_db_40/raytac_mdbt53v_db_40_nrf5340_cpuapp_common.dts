@@ -160,4 +160,4 @@
 };
 
 /* Include default memory partition configuration file */
-#include <common/nordic/nrf5340_cpuapp_partition.dtsi>
+#include <nordic/nrf5340_cpuapp_partition.dtsi>
