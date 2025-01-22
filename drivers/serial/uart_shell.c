@@ -103,13 +103,13 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_uart_cmds,
 	SHELL_CMD_ARG(baudrate, &dsub_device_name,
-			  "Configure UART device baudrate\n"
-			  "Usage: baudrate <device> <baudrate>",
-			  cmd_uart_baudrate, 3, 0),
+		      "Configure UART device baudrate\n"
+		      "Usage: baudrate <device> <baudrate>",
+		      cmd_uart_baudrate, 3, 0),
 	SHELL_CMD_ARG(fc, &dsub_device_name,
-			  "Configure UART device flow control\n"
-			  "Usage: fc <device> <none|rtscts|dtrdsr|rs485>",
-			  cmd_uart_flow_control, 3, 0),
+		      "Configure UART device flow control\n"
+		      "Usage: fc <device> <none|rtscts|dtrdsr|rs485>",
+		      cmd_uart_flow_control, 3, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 
