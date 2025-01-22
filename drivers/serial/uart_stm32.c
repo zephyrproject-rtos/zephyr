@@ -2180,8 +2180,35 @@ static int uart_stm32_init(const struct device *dev)
 #endif
 }
 
+static int uart_stm32_deinit(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
+	USART_TypeDef *usart = config->usart;
+
+	/* TODO: is this correct? */
+	while (!LL_USART_IsActiveFlag_TC(usart)) {}
+
+	/* Reset UART to default state using RCC */
+	(void)reset_line_toggle_dt(&config->reset);
+
+	(void)clock_control_off(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_RESET);
+
+#ifdef CONFIG_UART_ASYNC_API
+	(void)device_put(data->dma_tx.dma_dev);
+	(void)device_put(data->dma_rx.dma_dev);
+#endif
+	(void)device_put(config->reset.dev);
+	(void)device_put(data->clock);
+
+	return 0;
+}
+
 static const struct device_ops uart_stm32_ops = {
 	.init = uart_stm32_init,
+	.deinit = uart_stm32_deinit,
 };
 
 #ifdef CONFIG_PM_DEVICE
