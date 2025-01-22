@@ -370,9 +370,9 @@ Reviewer Expectations
 
 - Style changes that the reviewer disagrees with but that are not documented as
   part of the project can be pointed out as non-blocking, but cannot constitute
-  a reason for a request for changes. The reviewer can optionally correct any
-  potential inconsistencies in the tree, document the new guidelines or rules,
-  and then enforce them as part of the review.
+  a reason for a request for changes. The reviewer can optionally propose and
+  document new guidelines or rules, and then enforce them after they've been
+  evaluated, reviewed, agreed and merged.
 
 - Whenever requesting style related changes, reviewers should be able to point
   out the corresponding guideline, rule or rationale in the project's
