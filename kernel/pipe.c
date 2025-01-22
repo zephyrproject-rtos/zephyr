@@ -89,7 +89,7 @@ struct pipe_buf_spec {
 static size_t copy_to_pending_readers(struct k_pipe *pipe, bool *need_resched,
 				      const uint8_t *data, size_t len)
 {
-	struct k_thread *reader;
+	struct k_thread *reader = NULL;
 	struct pipe_buf_spec *reader_buf;
 	size_t copy_size, written = 0;
 
