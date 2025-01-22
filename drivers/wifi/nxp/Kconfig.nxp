@@ -535,11 +535,16 @@ config NXP_WIFI_MAX_PRIO
 	help
 	  This option sets Wi-Fi max priority in the Wi-Fi driver.
 
+# Preserve the legacy default enabled features
+choice WIFI_USAGE_MODE
+	default WIFI_USAGE_MODE_STA_AP
+endchoice
+
 config NXP_WIFI_SOFTAP_SUPPORT
 	bool "Wi-Fi SoftAP Support"
 	select NET_DHCPV4_SERVER
 	select WIFI_NM_HOSTAPD_AP if WIFI_NM_WPA_SUPPLICANT
-	default y
+	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
 	help
 	  Option to enable Wi-Fi SoftAP functions in the Wi-Fi driver.
 
