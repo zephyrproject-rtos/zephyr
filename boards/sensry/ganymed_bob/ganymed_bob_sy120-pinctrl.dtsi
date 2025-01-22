@@ -55,6 +55,15 @@
 		bias-pull-up;
 	};
 
+	/* MDIO */
+	/omit-if-no-ref/ mdio_io: mdio_io {
+		pinmux = <SY1XX_RGMII0_PAD_CFG3 SY1XX_PAD(0)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ mdio_clk: mdio_clk {
+		pinmux = <SY1XX_RGMII0_PAD_CFG3 SY1XX_PAD(1)>;
+	};
 };
 
 
