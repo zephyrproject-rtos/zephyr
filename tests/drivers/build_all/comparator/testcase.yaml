@@ -4,6 +4,16 @@ common:
     - drivers
     - comparator
 tests:
+  drivers.build_all.comparator.silabs_acmp.vsense_avdd:
+    extra_args:
+      - DTC_OVERLAY_FILE="silabs_acmp/vsense_avdd.overlay"
+    platform_allow:
+      - xg23_rb4210a
+      - xg24_dk2601b
+      - xg24_ek2703a
+      - xg24_rb4187c
+      - xg27_dk2602a
+      - xg29_rb4412a
   drivers.build_all.comparator.nrf_comp.diff:
     extra_args:
       - DTC_OVERLAY_FILE="nrf_comp/diff.overlay"
