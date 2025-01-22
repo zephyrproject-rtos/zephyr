@@ -75,6 +75,7 @@ function(pre_dt_module_run)
         include
         include/zephyr
         dts/common
+        dts/vendor
         ${arch_include}
         dts
         )
