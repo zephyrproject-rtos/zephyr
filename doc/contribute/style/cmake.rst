@@ -3,10 +3,10 @@
 .. _cmake-style:
 
 CMake Style Guidelines
-======================
+######################
 
 General Formatting
-------------------
+******************
 
 - **Indentation**: Use **2 spaces** for indentation. Avoid tabs to ensure
   consistency across different environments.
@@ -30,7 +30,7 @@ General Formatting
      endif()
 
 Commands and Syntax
--------------------
+*******************
 
 - **Lowercase Commands**: Always use **lowercase** CMake commands (e.g.,
   ``add_executable``, ``find_package``). This improves readability and
@@ -59,7 +59,7 @@ Commands and Syntax
      target_sources(my_target PRIVATE src/file1.cpp src/file2.cpp)
 
 Variable Naming
----------------
+***************
 
 - **Use Uppercase for Cache Variables or variables shared across CMake files**:
   When defining cache variables using ``option`` or ``set(... CACHE ...)``, use
@@ -85,7 +85,7 @@ Variable Naming
      set(MYPROJECT_SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 
 Quoting
--------
+*******
 
 - **Quote Strings and Variables**: Always quote string literals and variables
   to prevent unintended behavior, especially when dealing with paths or
@@ -107,7 +107,7 @@ Quoting
      option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 Avoid Hardcoding Paths
-----------------------
+**********************
 
 - Use CMake variables (``CMAKE_SOURCE_DIR``, ``CMAKE_BINARY_DIR``,
   ``CMAKE_CURRENT_SOURCE_DIR``) instead of hardcoding paths.
@@ -117,7 +117,7 @@ Avoid Hardcoding Paths
      set(output_dir "${CMAKE_BINARY_DIR}/bin")
 
 Conditional Logic
------------------
+*****************
 
 - Use ``if``, ``elseif``, and ``else`` with proper indentation, and close with
   ``endif()``.
@@ -129,7 +129,7 @@ Conditional Logic
      endif()
 
 Documentation
--------------
+*************
 
 - Use comments to document complex logic in the CMake files.
 
