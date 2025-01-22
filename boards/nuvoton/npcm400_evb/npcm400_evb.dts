@@ -21,6 +21,7 @@
 
 	aliases {
 		watchdog0 = &twd;
+		rtc = &rtc;
 	};
 
 	zephyr,user {
@@ -287,5 +288,10 @@
 };
 
 &c2h {
+	status = "okay";
+};
+
+&rtc {
+	alarms_count = <1>;
 	status = "okay";
 };

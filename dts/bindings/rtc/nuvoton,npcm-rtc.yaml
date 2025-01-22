@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCM-RTC node
+
+compatible: "nuvoton,npcm-rtc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: false
+  alarms_count:
+    type: int
+    required: false
+  rtc-wk:
+    type: phandle
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and rtc alarm signal.
+        For example, the WUI mapping on NPCM4 would be
+           rtc-wk = <&wui_rtc>;

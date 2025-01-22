@@ -1,0 +1,12 @@
+# NPCM RTC Driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_NPCM
+	bool "Nuvoton NPCM RTC driver"
+	depends on DT_HAS_NUVOTON_NPCM_RTC_ENABLED
+	help
+	  This option enables the RTC driver for Nuvoton NPCM family of
+	  processors.
+	  Say y if you wish to enable NPCM RTC.

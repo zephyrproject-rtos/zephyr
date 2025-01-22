@@ -690,6 +690,12 @@
 			reg = <0x4000e000 0x2000>;
 			status = "disabled";
 		};
+
+		rtc: rtc_sib{
+			compatible = "nuvoton,npcm-rtc";
+			rtc-wk = <&wui_rtc>;
+			status = "disabled";
+		};
 	};
 
 	soc-id {
