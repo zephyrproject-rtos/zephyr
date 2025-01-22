@@ -497,6 +497,7 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
 #define SILABS_USART_INIT(idx)                                                                     \
 	SILABS_USART_IRQ_HANDLER(idx);                                                             \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	PM_DEVICE_DT_INST_DEFINE(idx, uart_silabs_pm_action);                                      \
                                                                                                    \
 	static struct uart_config uart_cfg_##idx = {                                               \
 		.baudrate = DT_INST_PROP(idx, current_speed),                                      \
@@ -521,8 +522,6 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, uart_silabs_init, PM_DEVICE_DT_INST_GET(idx),                   \
 			      &uart_silabs_data_##idx, &uart_silabs_cfg_##idx, PRE_KERNEL_1,       \
-			      CONFIG_SERIAL_INIT_PRIORITY, &uart_silabs_driver_api);               \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(idx, uart_silabs_pm_action);
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_silabs_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SILABS_USART_INIT)
