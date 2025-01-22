@@ -21,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &ls0xx_ls013b7dh03;
 	};
 
 	aliases {
@@ -122,6 +123,26 @@
 	pinctrl-0 = <&eusart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&eusart1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+
+	ls0xx_ls013b7dh03: ls0xx@0 {
+		compatible = "sharp,ls0xx";
+		spi-max-frequency = <DT_FREQ_K(1100)>;
+		reg = <0>;
+		width = <128>;
+		height = <128>;
+		extcomin-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+		extcomin-frequency = <60>;
+		disp-en-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &i2c0 {

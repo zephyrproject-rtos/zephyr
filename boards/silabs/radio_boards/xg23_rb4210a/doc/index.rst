@@ -22,6 +22,7 @@ Hardware
 - Operation frequency: 868-915 MHz
 - Crystals for LFXO (32.768 kHz) and HFXO (39 MHz).
 - Silicon Labs Si7021 relative humidity and temperature sensor
+- Low-power 128x128 pixel Memory LCD
 
 For more information about the EFR32ZG23 SoC and BRD4210A board, refer to these
 documents:
@@ -88,11 +89,19 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 +-------+-------------+-------------------------------------+
 | PB3   | GPIO        | Push Button 1                       |
 +-------+-------------+-------------------------------------+
+| PC1   | EUSART1_TX  | Display SPI MOSI                    |
++-------+-------------+-------------------------------------+
+| PC3   | EUSART1_CLK | Display SPI Clock                   |
++-------+-------------+-------------------------------------+
 | PC5   | I2C0_SCL    | Si7021 I2C Clock                    |
++-------+-------------+-------------------------------------+
+| PC6   | GPIO        | Display COM Inversion               |
 +-------+-------------+-------------------------------------+
 | PC7   | I2C0_SDA    | Si7021 I2C Data                     |
 +-------+-------------+-------------------------------------+
-| PC9   | GPIO        | Si7021 Enable                       |
+| PC8   | GPIO        | Display SPI Chip Select             |
++-------+-------------+-------------------------------------+
+| PC9   | GPIO        | Display/Si7021 Enable               |
 +-------+-------------+-------------------------------------+
 | PD3   | GPIO        | LED1                                |
 +-------+-------------+-------------------------------------+
