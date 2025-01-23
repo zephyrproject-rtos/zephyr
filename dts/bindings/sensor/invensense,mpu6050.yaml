@@ -16,3 +16,39 @@ properties:
       The INT signal default configuration is active-high.  The
       property value should ensure the flags properly describe the
       signal that is presented to the driver.
+
+  accel-fs:
+    type: int
+    default: 2
+    description: |
+      Accelerometer full-scale range.
+      An X value represents a range of +/- X g.
+      The power-on reset state of the sensor matches the default value of 2.
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
+
+  gyro-fs:
+    type: int
+    default: 250
+    description: |
+      Gyroscope full-scale range.
+      An X value represents a range of +/- X deg/s.
+      The power-on reset state of the sensor matches the default value of 250.
+    enum:
+      - 250
+      - 500
+      - 1000
+      - 2000
+
+  smplrt-div:
+    type: int
+    default: 0
+    description: |
+      The base sample rate is 8 kHz for the gyroscope and 1 kHz for
+      the accelerometer.
+      A division factor of X sets the sample rate to: baserate / (1 + X).
+      Valid values for X are 0 through 255.
+      The power-on reset state of the sensor matches the default value of 0.
