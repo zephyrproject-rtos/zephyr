@@ -60,9 +60,10 @@ struct l2ch {
 
 static bool metrics;
 
-static int32_t g_l2cap_send_count;
-static uint8_t g_l2cap_send_length;
-struct k_timer g_l2cap_send_timer;
+static bool unblock_send_timer_initialized;
+static uint32_t unblock_send_count;
+static uint8_t unblock_send_length;
+static struct k_work_delayable unblock_send_timer;
 
 static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
@@ -414,13 +415,13 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-static void g_l2cap_send_timer_cb(struct k_timer *timer)
+static void unblock_send_timer_cb(struct k_work *work)
 {
 	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 	int ret, len = DATA_MTU;
 	struct net_buf *buf;
 
-	len = MIN(l2ch_chan.ch.tx.mtu, g_l2cap_send_length);
+	len = MIN(l2ch_chan.ch.tx.mtu, unblock_send_length);
 
 	buf = net_buf_alloc(&data_tx_pool, K_NO_WAIT);
 	if (buf) {
@@ -429,31 +430,37 @@ static void g_l2cap_send_timer_cb(struct k_timer *timer)
 
 		ret = bt_l2cap_chan_send(&l2ch_chan.ch.chan, buf);
 		if (ret >= 0) {
-			g_l2cap_send_count--;
-			if (g_l2cap_send_count == 0) {
-				k_timer_stop(&g_l2cap_send_timer);
-			}
+			unblock_send_count--;
 		}
+	}
+	if (unblock_send_count == 0) {
+		k_work_cancel_delayable(&unblock_send_timer);
+	} else {
+		k_work_reschedule(&unblock_send_timer, K_MSEC(30));
 	}
 }
 
-K_TIMER_DEFINE(g_l2cap_send_timer, g_l2cap_send_timer_cb, NULL);
 
 static int cmd_unblock_send(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (argc > 1) {
-		g_l2cap_send_count = strtoul(argv[1], NULL, 10);
+		unblock_send_count = strtoul(argv[1], NULL, 10);
 	}
 	if (argc > 2) {
-		g_l2cap_send_length = strtoul(argv[2], NULL, 10);
-		if (g_l2cap_send_length > DATA_MTU) {
+		unblock_send_length = strtoul(argv[2], NULL, 10);
+		if (unblock_send_length > DATA_MTU) {
 			shell_print(sh,
 			"Length exceeds TX MTU for the channel");
 			return -ENOEXEC;
 		}
 	}
 
-	k_timer_start(&g_l2cap_send_timer, K_MSEC(30), K_MSEC(30));
+	if (!unblock_send_timer_initialized) {
+		k_work_init_delayable(&unblock_send_timer, unblock_send_timer_cb);
+		unblock_send_timer_initialized = true;
+	}
+
+	k_work_schedule(&unblock_send_timer, K_MSEC(30));
 	return 0;
 }
 
