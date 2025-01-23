@@ -164,6 +164,12 @@ extern int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 				     void *user_data,
 				     int32_t timeout,
 				     bool use_cache);
+#include <zephyr/net/socket_service.h>
+extern int dns_resolve_init_with_svc(struct dns_resolve_context *ctx,
+				     const char *servers[],
+				     const struct sockaddr *servers_sa[],
+				     const struct net_socket_service_desc *svc,
+				     uint16_t port);
 #endif /* CONFIG_DNS_RESOLVER */
 
 #if defined(CONFIG_NET_TEST)
