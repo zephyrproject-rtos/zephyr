@@ -481,7 +481,7 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 static void process(const struct log_backend *const backend,
 		union log_msg_generic *msg)
 {
-	uint32_t flags = log_backend_std_get_flags();
+	uint32_t flags = log_backend_std_get_flags() & ~LOG_OUTPUT_FLAG_COLORS;
 
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
 
