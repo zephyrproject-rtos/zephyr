@@ -1167,6 +1167,7 @@ static void uart_ra_sci_eri_isr(const struct device *dev)
 #endif
 
 #define UART_RA_SCI_INIT(index)                                                                    \
+	RENESAS_RA_FOREACH_IRQ_CHECK(DT_INST_PARENT(index));                                       \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(index));                                                  \
 	static const struct uart_ra_sci_config uart_ra_sci_config_##index = {                      \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(index)),                          \
