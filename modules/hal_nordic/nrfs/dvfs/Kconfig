@@ -17,6 +17,7 @@ config NRFS_LOCAL_DOMAIN_DVFS_TEST
 
 config NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT
 	bool "Local domain scale down after init"
+	select DEPRECATED
 	help
 	  Request lowest oppoint after DVFS initialization.
 
