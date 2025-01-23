@@ -184,6 +184,12 @@ config CLOCK_CONTROL_NRF2
 
 if CLOCK_CONTROL_NRF2
 
+config CLOCK_CONTROL_NRF2_HSFLL_REQ_LOW_FREQ
+	bool "Local domain scale down after init"
+	default y if NRFS_DVFS_LOCAL_DOMAIN
+	help
+	  Request the lowest operating point after DVFS initialization.
+
 config CLOCK_CONTROL_NRF2_NRFS_DVFS_TIMEOUT_MS
 	int "Timeout waiting for nrfs dvfs service callback in milliseconds"
 	default 2000
