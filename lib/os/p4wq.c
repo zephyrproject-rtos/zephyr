@@ -104,7 +104,14 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 			if (!thread_was_requeued(_current)) {
 				sys_dlist_remove(&w->dlnode);
 				w->thread = NULL;
-				k_sem_give(&w->done_sem);
+
+				if (queue->done_handler) {
+					k_spin_unlock(&queue->lock, k);
+					queue->done_handler(w);
+					k = k_spin_lock(&queue->lock);
+				} else {
+					k_sem_give(&w->done_sem);
+				}
 			}
 		} else {
 			z_pend_curr(&queue->lock, k, &queue->waitq, K_FOREVER);
@@ -152,6 +159,7 @@ static int static_init(void)
 
 			if (!i || (pp->flags & K_P4WQ_QUEUE_PER_THREAD)) {
 				k_p4wq_init(q);
+				q->done_handler = pp->done_handler;
 			}
 
 			q->flags = pp->flags;
@@ -296,7 +304,14 @@ bool k_p4wq_cancel(struct k_p4wq *queue, struct k_p4wq_work *item)
 
 	if (ret) {
 		rb_remove(&queue->queue, &item->rbnode);
-		k_sem_give(&item->done_sem);
+
+		if (queue->done_handler) {
+			k_spin_unlock(&queue->lock, k);
+			queue->done_handler(item);
+			k = k_spin_lock(&queue->lock);
+		} else {
+			k_sem_give(&item->done_sem);
+		}
 	}
 
 	k_spin_unlock(&queue->lock, k);
