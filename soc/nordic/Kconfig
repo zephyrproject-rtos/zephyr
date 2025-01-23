@@ -197,10 +197,4 @@ config NRF_PLATFORM_HALTIUM
 	  this option. This allows to easily enable common functionality on
 	  SoCs based on the Haltium platform.
 
-config DEPRECATED_UART_NRFX_UARTE_LEGACY_SHIM
-	bool
-	default y if !UART_NRFX_UARTE_LEGACY_SHIM
-	depends on UART_NRFX_UARTE
-	select DEPRECATED
-
 endif # SOC_FAMILY_NORDIC_NRF

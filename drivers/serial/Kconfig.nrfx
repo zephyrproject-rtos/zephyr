@@ -35,6 +35,12 @@ config UART_NRFX_UARTE_LEGACY_SHIM
 	help
 	  Disabling this option is deprecated.
 
+config DEPRECATED_UART_NRFX_UARTE_LEGACY_SHIM
+	bool
+	default y if !UART_NRFX_UARTE_LEGACY_SHIM
+	depends on UART_NRFX_UARTE
+	select DEPRECATED
+
 config UART_NRFX_UARTE_ENHANCED_RX
 	bool "Enhanced RX handling"
 	depends on UART_ASYNC_API
