@@ -826,7 +826,7 @@ static int rv8803_init(const struct device *dev)
 	return 0;
 }
 
-static const struct rtc_driver_api rv8803_driver_api = {
+static DEVICE_API(rtc, rv8803_driver_api) = {
 	.set_time = rv8803_set_time,
 	.get_time = rv8803_get_time,
 #ifdef CONFIG_RTC_ALARM
