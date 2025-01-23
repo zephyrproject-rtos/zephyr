@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Yonatan Schachter
+ * Copyright (c) 2025, Andrew Featherstone
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -193,6 +194,19 @@ static int gpio_rpi_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
+static uint32_t gpio_rpi_get_pending_int(const struct device *dev)
+{
+	io_bank0_irq_ctrl_hw_t *irq_ctrl_base =
+		get_core_num() ? &io_bank0_hw->proc1_irq_ctrl : &io_bank0_hw->proc0_irq_ctrl;
+	ARRAY_FOR_EACH_PTR(irq_ctrl_base->ints, p) {
+		if (*p) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 	.pin_configure = gpio_rpi_configure,
 	.port_get_raw = gpio_rpi_port_get_raw,
@@ -202,6 +216,7 @@ static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 	.port_toggle_bits = gpio_rpi_port_toggle_bits,
 	.pin_interrupt_configure = gpio_rpi_pin_interrupt_configure,
 	.manage_callback = gpio_rpi_manage_callback,
+	.get_pending_int = gpio_rpi_get_pending_int,
 };
 
 static void gpio_rpi_isr(const struct device *dev)
