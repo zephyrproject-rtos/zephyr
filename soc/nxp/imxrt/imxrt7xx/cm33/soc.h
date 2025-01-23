@@ -27,6 +27,14 @@ extern "C" {
 void xspi_clock_safe_config(void);
 void xspi_setup_clock(XSPI_Type *base, uint32_t src, uint32_t divider);
 
+#if CONFIG_MIPI_DSI
+void imxrt_pre_init_display_interface(void);
+
+void imxrt_post_init_display_interface(void);
+
+void imxrt_deinit_display_interface(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
