@@ -33,7 +33,9 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32H7_FLASH_TIMEOUT (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
+#define STM32H7_FLASH_TIMEOUT     (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
+/* No information in documentation about that. */
+#define STM32H7_FLASH_OPT_TIMEOUT_MS 800
 
 #define STM32H7_M4_FLASH_SIZE DT_PROP_OR(DT_INST(0, st_stm32_nv_flash), bank2_flash_size, 0)
 #ifdef CONFIG_CPU_CORTEX_M4
@@ -62,39 +64,63 @@ struct flash_stm32_sector_t {
 	volatile uint32_t *sr;
 };
 
-static __unused int write_optsr(const struct device *dev, uint32_t mask, uint32_t value)
+static __unused int commit_optb(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	int rc;
+	int64_t timeout_time = k_uptime_get() + STM32H7_FLASH_OPT_TIMEOUT_MS;
+
+	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
+	barrier_dsync_fence_full();
+	while (regs->OPTSR_CUR & FLASH_OPTSR_OPT_BUSY) {
+		if (k_uptime_get() > timeout_time) {
+			LOG_ERR("Timeout writing option bytes.");
+			return -ETIMEDOUT;
+		}
+	}
+
+	return 0;
+}
+
+static __unused int write_opt(const struct device *dev, uint32_t mask, uint32_t value,
+			      uintptr_t cur, bool commit)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	/* PRG register always follows CUR register. */
+	uintptr_t prg = cur + 4;
+	int rc = 0;
 
 	if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
 		LOG_ERR("Option bytes locked");
 		return -EIO;
 	}
 
-	if ((regs->OPTSR_CUR & mask) == value) {
-		/* Done already */
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		LOG_ERR("Err flash no idle");
+		return rc;
+	}
+
+	if ((sys_read32(cur) & mask) == value) {
 		return 0;
 	}
 
-	rc = flash_stm32_wait_flash_idle(dev);
-	if (rc < 0) {
-		LOG_ERR("Err flash no idle");
-		return rc;
-	}
+	sys_write32((sys_read32(cur) & ~mask) | value, prg);
 
-	regs->OPTSR_PRG = (regs->OPTSR_CUR & ~mask) | value;
-	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
-	/* Make sure previous write is completed. */
-	barrier_dsync_fence_full();
-
-	rc = flash_stm32_wait_flash_idle(dev);
-	if (rc < 0) {
-		LOG_ERR("Err flash no idle");
-		return rc;
+	if (commit) {
+		/* Make sure previous write is completed before committing option bytes. */
+		barrier_dsync_fence_full();
+		rc = commit_optb(dev);
 	}
 
 	return rc;
+}
+
+static __unused int write_optsr(const struct device *dev, uint32_t mask, uint32_t value)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	uintptr_t cur = (uintptr_t)regs + offsetof(FLASH_TypeDef, OPTSR_CUR);
+
+	return write_opt(dev, mask, value, cur, true);
 }
 
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
