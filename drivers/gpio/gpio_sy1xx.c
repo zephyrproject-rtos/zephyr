@@ -150,7 +150,7 @@ int sy1xx_gpio_driver_port_toggle_bits(const struct device *dev, gpio_port_pins_
 }
 
 /* Define the GPIO API structure */
-static const struct gpio_driver_api sy1xx_gpio_driver_api = {
+static DEVICE_API(gpio, sy1xx_gpio_driver_api) = {
 	.pin_configure = sy1xx_gpio_driver_configure,
 	.port_get_raw = sy1xx_gpio_driver_port_get_raw,
 	.port_set_masked_raw = sy1xx_gpio_driver_port_set_masked_raw,

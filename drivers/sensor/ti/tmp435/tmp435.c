@@ -143,7 +143,7 @@ static int tmp435_channel_get(const struct device *dev, enum sensor_channel chan
 	return ret;
 }
 
-static const struct sensor_driver_api tmp435_driver_api = {
+static DEVICE_API(sensor, tmp435_driver_api) = {
 	.sample_fetch = tmp435_sample_fetch,
 	.channel_get = tmp435_channel_get,
 };

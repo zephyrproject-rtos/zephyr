@@ -674,7 +674,7 @@ static void ifx_cat1_dma_isr(struct ifx_cat1_dma_irq_context *irq_context)
 	}
 }
 
-static const struct dma_driver_api ifx_cat1_dma_api = {
+static DEVICE_API(dma, ifx_cat1_dma_api) = {
 	.config = ifx_cat1_dma_configure,
 	.start = ifx_cat1_dma_start,
 	.stop = ifx_cat1_dma_stop,

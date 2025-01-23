@@ -531,7 +531,7 @@ static int phy_mc_t1s_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ethphy_driver_api mc_t1s_phy_api = {
+static DEVICE_API(ethphy, mc_t1s_phy_api) = {
 	.get_link = phy_mc_t1s_get_link,
 	.cfg_link = phy_mc_t1s_cfg_link,
 	.link_cb_set = phy_mc_t1s_link_cb_set,

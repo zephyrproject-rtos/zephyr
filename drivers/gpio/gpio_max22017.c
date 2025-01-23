@@ -383,7 +383,7 @@ static int gpio_adi_max22017_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_adi_max22017_api = {
+static DEVICE_API(gpio, gpio_adi_max22017_api) = {
 	.pin_configure = gpio_adi_max22017_configure,
 	.port_set_masked_raw = gpio_adi_max22017_port_set_masked_raw,
 	.port_set_bits_raw = gpio_adi_max22017_port_set_bits_raw,
