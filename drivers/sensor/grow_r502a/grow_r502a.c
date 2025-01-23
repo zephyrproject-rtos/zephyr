@@ -101,7 +101,14 @@ static int r502a_validate_rx_packet(union r502a_packet *rx_packet)
 		return -EINVAL;
 	}
 
-	cks_start_idx = sys_be16_to_cpu(rx_packet->len) - R502A_CHECKSUM_LEN;
+	const uint16_t packet_len = sys_be16_to_cpu(rx_packet->len);
+
+	if (packet_len < R502A_CHECKSUM_LEN || packet_len > CONFIG_R502A_DATA_PKT_SIZE) {
+		LOG_ERR("Invalid packet length %d", packet_len);
+		return -EINVAL;
+	}
+
+	cks_start_idx = packet_len - R502A_CHECKSUM_LEN;
 
 	recv_cks = sys_get_be16(&rx_packet->data[cks_start_idx]);
 
