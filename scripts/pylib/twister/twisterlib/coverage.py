@@ -33,6 +33,8 @@ class CoverageTool:
         self.output_formats = None
         self.coverage_capture = True
         self.coverage_report = True
+        self.coverage_per_instance = False
+        self.instances = {}
 
     @staticmethod
     def factory(tool, jobs=None):
@@ -156,9 +158,12 @@ class CoverageTool:
         coverage_completed = self.capture_data(outdir) if self.coverage_capture else True
         if not coverage_completed or not self.coverage_report:
             return coverage_completed, {}
+        build_dirs = None
+        if not self.coverage_capture and self.coverage_report and self.coverage_per_instance:
+            build_dirs = [instance.build_dir for instance in self.instances.values()]
         reports = {}
         with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
-            ret, reports = self._generate(outdir, coveragelog)
+            ret, reports = self._generate(outdir, coveragelog, build_dirs)
             if ret == 0:
                 report_log = {
                     "html": "HTML report generated: {}".format(
@@ -269,7 +274,8 @@ class Lcov(CoverageTool):
         ] + parallel + args
         return self.run_command(cmd, coveragelog)
 
-    def _generate(self, outdir, coveragelog):
+
+    def _generate(self, outdir, coveragelog, build_dirs=None):
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
 
@@ -317,6 +323,10 @@ class Gcovr(CoverageTool):
         self.ignore_branch_patterns = []
         self.output_formats = "html"
         self.version = self.get_version()
+        # Different ifdef-ed implementations of the same function should not be
+        # in conflict treated by GCOVR as separate objects for coverage statistics.
+        self.options = ["-v", "--merge-mode-functions=separate"]
+
 
     def get_version(self):
         try:
@@ -355,27 +365,19 @@ class Gcovr(CoverageTool):
     def _flatten_list(list):
         return [a for b in list for a in b]
 
-    def _generate(self, outdir, coveragelog):
-        coverage_file = os.path.join(outdir, "coverage.json")
-        coverage_summary = os.path.join(outdir, "coverage_summary.json")
-        ztest_file = os.path.join(outdir, "ztest.json")
-
+    def collect_coverage(self, outdir, coverage_file, ztest_file, coveragelog):
         excludes = Gcovr._interleave_list("-e", self.ignores)
         if len(self.ignore_branch_patterns) > 0:
             # Last pattern overrides previous values, so merge all patterns together
             merged_regex = "|".join([f"({p})" for p in self.ignore_branch_patterns])
             excludes += ["--exclude-branches-by-pattern", merged_regex]
 
-        # Different ifdef-ed implementations of the same function should not be
-        # in conflict treated by GCOVR as separate objects for coverage statistics.
-        mode_options = ["--merge-mode-functions=separate"]
-
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
-        cmd = ["gcovr", "-v", "-r", self.base_dir,
+        cmd = ["gcovr", "-r", self.base_dir,
                "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
                "--gcov-executable", self.gcov_tool,
                "-e", "tests/*"]
-        cmd += excludes + mode_options + ["--json", "-o", coverage_file, outdir]
+        cmd += excludes + self.options + ["--json", "-o", coverage_file, outdir]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running: {cmd_str}")
         coveragelog.write(f"Running: {cmd_str}\n")
@@ -383,9 +385,9 @@ class Gcovr(CoverageTool):
         ret = subprocess.call(cmd, stdout=coveragelog, stderr=coveragelog)
         if ret:
             logger.error(f"GCOVR failed with {ret}")
-            return ret, {}
+            return ret, []
 
-        cmd = ["gcovr", "-v", "-r", self.base_dir] + mode_options
+        cmd = ["gcovr", "-r", self.base_dir] + self.options
         cmd += ["--gcov-executable", self.gcov_tool,
                 "-f", "tests/ztest", "-e", "tests/ztest/test/*",
                 "--json", "-o", ztest_file, outdir]
@@ -396,12 +398,40 @@ class Gcovr(CoverageTool):
         ret = subprocess.call(cmd, stdout=coveragelog, stderr=coveragelog)
         if ret:
             logger.error(f"GCOVR ztest stage failed with {ret}")
-            return ret, {}
+            return ret, []
 
-        if os.path.exists(ztest_file) and os.path.getsize(ztest_file) > 0:
-            files = [coverage_file, ztest_file]
+        return ret, [file_ for file_ in [coverage_file, ztest_file]
+                     if os.path.exists(file_) and os.path.getsize(file_) > 0]
+
+
+    def _generate(self, outdir, coveragelog, build_dirs=None):
+        coverage_file = os.path.join(outdir, "coverage.json")
+        coverage_summary = os.path.join(outdir, "coverage_summary.json")
+        ztest_file = os.path.join(outdir, "ztest.json")
+
+        ret = 0
+        cmd_ = []
+        files = []
+        if build_dirs:
+            for dir_ in build_dirs:
+                files_ = [fname for fname in
+                            [os.path.join(dir_, "coverage.json"),
+                             os.path.join(dir_, "ztest.json")]
+                          if os.path.exists(fname)]
+                if not files_:
+                    logger.debug(f"Coverage merge no files in: {dir_}")
+                    continue
+                files += files_
+            logger.debug(f"Coverage merge {len(files)} reports in {outdir}")
+            ztest_file = None
+            cmd_ = ["--json-pretty", "--json", coverage_file]
         else:
-            files = [coverage_file]
+            ret, files = self.collect_coverage(outdir, coverage_file, ztest_file, coveragelog)
+            logger.debug(f"Coverage collected {len(files)} reports from: {outdir}")
+
+        if not files:
+            logger.warning(f"No coverage files to compose report for {outdir}")
+            return ret, {}
 
         subdir = os.path.join(outdir, "coverage")
         os.makedirs(subdir, exist_ok=True)
@@ -422,7 +452,8 @@ class Gcovr(CoverageTool):
             [report_options[r] for r in self.output_formats.split(',')]
         )
 
-        cmd = ["gcovr", "-v", "-r", self.base_dir] + mode_options + gcovr_options + tracefiles
+        cmd = ["gcovr", "-r", self.base_dir] + self.options + gcovr_options + tracefiles
+        cmd += cmd_
         cmd += ["--json-summary-pretty", "--json-summary", coverage_summary]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running: {cmd_str}")
@@ -468,7 +499,8 @@ def choose_gcov_tool(options, is_system_gcov):
     return gcov_tool
 
 
-def run_coverage_tool(options, outdir, is_system_gcov, coverage_capture, coverage_report):
+def run_coverage_tool(options, outdir, is_system_gcov, instances,
+                      coverage_capture, coverage_report):
     coverage_tool = CoverageTool.factory(options.coverage_tool, jobs=options.jobs)
     if not coverage_tool:
         return False, {}
@@ -476,6 +508,8 @@ def run_coverage_tool(options, outdir, is_system_gcov, coverage_capture, coverag
     coverage_tool.gcov_tool = str(choose_gcov_tool(options, is_system_gcov))
     logger.debug(f"Using gcov tool: {coverage_tool.gcov_tool}")
 
+    coverage_tool.instances = instances
+    coverage_tool.coverage_per_instance = options.coverage_per_instance
     coverage_tool.coverage_capture = coverage_capture
     coverage_tool.coverage_report = coverage_report
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
@@ -509,6 +543,7 @@ def run_coverage(options, testplan):
             break
 
     return run_coverage_tool(options, options.outdir, is_system_gcov,
+                             instances=testplan.instances,
                              coverage_capture=False,
                              coverage_report=True)
 
@@ -518,5 +553,6 @@ def run_coverage_instance(options, instance):
     """
     is_system_gcov = has_system_gcov(instance.platform)
     return run_coverage_tool(options, instance.build_dir, is_system_gcov,
+                             instances={instance.name: instance},
                              coverage_capture=True,
                              coverage_report=options.coverage_per_instance)
