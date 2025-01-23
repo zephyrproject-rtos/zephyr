@@ -26,6 +26,11 @@
 			drive-push-pull;
 			output-high;
 		};
+		group1 {
+			pins = <EUSART1_RX_PC2>;
+			input-enable;
+			silabs,input-filter;
+		};
 	};
 
 	i2c0_default: i2c0_default {
