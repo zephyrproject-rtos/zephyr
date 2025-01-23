@@ -1333,13 +1333,14 @@ static void query_timeout(struct k_work *work)
 	k_mutex_unlock(&pending_query->ctx->lock);
 }
 
-int dns_resolve_name(struct dns_resolve_context *ctx,
-		     const char *query,
-		     enum dns_query_type type,
-		     uint16_t *dns_id,
-		     dns_resolve_cb_t cb,
-		     void *user_data,
-		     int32_t timeout)
+int dns_resolve_name_internal(struct dns_resolve_context *ctx,
+			      const char *query,
+			      enum dns_query_type type,
+			      uint16_t *dns_id,
+			      dns_resolve_cb_t cb,
+			      void *user_data,
+			      int32_t timeout,
+			      bool use_cache)
 {
 	k_timeout_t tout;
 	struct net_buf *dns_data = NULL;
@@ -1414,18 +1415,25 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 
 try_resolve:
 #ifdef CONFIG_DNS_RESOLVER_CACHE
-	ret = dns_cache_find(&dns_cache, query, cached_info, ARRAY_SIZE(cached_info));
-	if (ret > 0) {
-		/* The query was cached, no
-		 * need to continue further.
-		 */
-		for (size_t cache_index = 0; cache_index < ret; cache_index++) {
-			cb(DNS_EAI_INPROGRESS, &cached_info[cache_index], user_data);
-		}
-		cb(DNS_EAI_ALLDONE, NULL, user_data);
+	if (use_cache) {
+		ret = dns_cache_find(&dns_cache, query, cached_info,
+				     ARRAY_SIZE(cached_info));
+		if (ret > 0) {
+			/* The query was cached, no
+			 * need to continue further.
+			 */
+			for (size_t cache_index = 0; cache_index < ret; cache_index++) {
+				cb(DNS_EAI_INPROGRESS, &cached_info[cache_index],
+				   user_data);
+			}
 
-		return 0;
+			cb(DNS_EAI_ALLDONE, NULL, user_data);
+
+			return 0;
+		}
 	}
+#else
+	ARG_UNUSED(use_cache);
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
@@ -1571,6 +1579,18 @@ fail:
 	k_mutex_unlock(&ctx->lock);
 
 	return ret;
+}
+
+int dns_resolve_name(struct dns_resolve_context *ctx,
+		     const char *query,
+		     enum dns_query_type type,
+		     uint16_t *dns_id,
+		     dns_resolve_cb_t cb,
+		     void *user_data,
+		     int32_t timeout)
+{
+	return dns_resolve_name_internal(ctx, query, type, dns_id, cb,
+					 user_data, timeout, true);
 }
 
 /* Must be invoked with context lock held */
