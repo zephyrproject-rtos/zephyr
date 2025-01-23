@@ -4,5 +4,3 @@ board:
   vendor: nxp
   socs:
     - name: rw612
-      variants:
-        - name: ns
