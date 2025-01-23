@@ -2303,6 +2303,7 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 	return 0;
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_wifi_sta();
@@ -2327,6 +2328,7 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif
 
 static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -3655,10 +3657,12 @@ SHELL_SUBCMD_ADD((wifi), 11k_neighbor_request, NULL,
 		 cmd_wifi_11k_neighbor_request,
 		 1, 2);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 SHELL_SUBCMD_ADD((wifi), 11v_btm_query, NULL,
 		 "<query_reason: The reason code for a BSS transition management query>.\n",
 		 cmd_wifi_btm_query,
 		 2, 0);
+#endif
 
 SHELL_SUBCMD_ADD((wifi), channel, NULL,
 		 "wifi channel setting\n"
