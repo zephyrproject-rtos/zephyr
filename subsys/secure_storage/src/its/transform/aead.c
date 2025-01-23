@@ -5,6 +5,7 @@
 #include <zephyr/secure_storage/its/transform.h>
 #include <zephyr/secure_storage/its/transform/aead_get.h>
 #include <zephyr/sys/__assert.h>
+#include <mbedtls/platform_util.h>
 
 static psa_status_t psa_aead_crypt(psa_key_usage_t operation, secure_storage_its_uid_t uid,
 				   const uint8_t nonce
