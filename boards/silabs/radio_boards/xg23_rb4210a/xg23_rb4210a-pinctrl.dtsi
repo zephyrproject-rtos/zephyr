@@ -26,5 +26,10 @@
 			drive-push-pull;
 			output-high;
 		};
+		group1 {
+			pins = <USART0_RX_PC2>;
+			input-enable;
+			silabs,input-filter;
+		};
 	};
 };
