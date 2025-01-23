@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 
 extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
-#define MDNS_LISTEN_PORT 5353
+#define MDNS_LISTEN_PORT CONFIG_MDNS_RESPONDER_PORT
 
 #define MDNS_TTL CONFIG_MDNS_RESPONDER_TTL /* In seconds */
 
@@ -127,7 +127,7 @@ static void create_ipv6_addr(struct sockaddr_in6 *addr)
 
 	/* Well known IPv6 ff02::fb address */
 	net_ipv6_addr_create(&addr->sin6_addr,
-			     0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
+			     0xff02, 0, 0, 0, 0, 0, 0, CONFIG_MDNS_RESPONDER_MCAST_IP & 0xFFFF);
 }
 
 static void create_ipv4_addr(struct sockaddr_in *addr)
@@ -136,7 +136,7 @@ static void create_ipv4_addr(struct sockaddr_in *addr)
 	addr->sin_port = htons(MDNS_LISTEN_PORT);
 
 	/* Well known IPv4 224.0.0.251 address */
-	addr->sin_addr.s_addr = htonl(0xE00000FB);
+	addr->sin_addr.s_addr = htonl(0xE0000000 | (CONFIG_MDNS_RESPONDER_MCAST_IP & 0xFFFF));
 }
 
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
