@@ -126,7 +126,8 @@ static struct bt_rfcomm_dlc rfcomm_dlc = {
 	.mtu = 30,
 };
 
-static int rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
+static int rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
+			 struct bt_rfcomm_dlc **dlc)
 {
 	bt_shell_print("Incoming RFCOMM conn %p", conn);
 

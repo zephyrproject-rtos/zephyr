@@ -248,6 +248,28 @@ static uint32_t dwc2_get_iept_xfersize(const struct device *dev, const uint32_t 
 	}
 }
 
+static uint32_t dwc2_get_oept_pktctn(const struct device *dev, const uint32_t idx)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+
+	if (idx == 0) {
+		return usb_dwc2_get_doeptsiz0_pktcnt(UINT32_MAX);
+	} else {
+		return priv->max_pktcnt;
+	}
+}
+
+static uint32_t dwc2_get_oept_xfersize(const struct device *dev, const uint32_t idx)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+
+	if (idx == 0) {
+		return usb_dwc2_get_doeptsiz0_xfersize(UINT32_MAX);
+	} else {
+		return priv->max_xfersize;
+	}
+}
+
 static void dwc2_flush_rx_fifo(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
@@ -580,10 +602,15 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t doeptsiz_reg = (mem_addr_t)&base->out_ep[ep_idx].doeptsiz;
 	mem_addr_t doepctl_reg = dwc2_get_dxepctl_reg(dev, ep_idx);
+	uint32_t max_xfersize, max_pktcnt;
+	const uint32_t addnl = USB_MPS_ADDITIONAL_TRANSACTIONS(cfg->mps);
 	uint32_t pktcnt;
 	uint32_t doeptsiz;
 	uint32_t doepctl;
 	uint32_t xfersize;
+
+	max_xfersize = dwc2_get_oept_xfersize(dev, ep_idx);
+	max_pktcnt = dwc2_get_oept_pktctn(dev, ep_idx);
 
 	/* Clear NAK and set endpoint enable */
 	doepctl = sys_read32(doepctl_reg);
@@ -591,7 +618,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 
 	if (dwc2_ep_is_iso(cfg)) {
 		xfersize = USB_MPS_TO_TPL(cfg->mps);
-		pktcnt = 1 + USB_MPS_ADDITIONAL_TRANSACTIONS(cfg->mps);
+		pktcnt = 1 + addnl;
 
 		if (xfersize > net_buf_tailroom(buf)) {
 			LOG_ERR("ISO RX buffer too small");
@@ -608,14 +635,18 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 		xfersize = net_buf_tailroom(buf);
 
 		/* Do as many packets in a single transfer as possible */
-		if (xfersize > priv->max_xfersize) {
-			xfersize = ROUND_DOWN(priv->max_xfersize, USB_MPS_TO_TPL(cfg->mps));
+		if (xfersize > max_xfersize) {
+			xfersize = ROUND_DOWN(max_xfersize, USB_MPS_TO_TPL(cfg->mps));
 		}
 
 		pktcnt = DIV_ROUND_UP(xfersize, USB_MPS_EP_SIZE(cfg->mps));
 	}
 
-	pktcnt = DIV_ROUND_UP(xfersize, udc_mps_ep_size(cfg));
+	if (pktcnt > max_pktcnt) {
+		pktcnt = ROUND_DOWN(max_pktcnt, (1 + addnl));
+		xfersize = pktcnt * udc_mps_ep_size(cfg);
+	}
+
 	doeptsiz = usb_dwc2_set_doeptsizn_pktcnt(pktcnt) |
 		   usb_dwc2_set_doeptsizn_xfersize(xfersize);
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
@@ -627,17 +658,19 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	sys_write32(doeptsiz, doeptsiz_reg);
 
 	if (priv->bufferdma) {
-		if (!dwc2_dma_buffer_ok_to_use(dev, buf->data, xfersize, cfg->mps)) {
+		void *data = net_buf_tail(buf);
+
+		if (!dwc2_dma_buffer_ok_to_use(dev, data, xfersize, cfg->mps)) {
 			/* Cannot continue unless buffer is bounced. Device will
 			 * cease to function. Is fatal error appropriate here?
 			 */
 			return;
 		}
 
-		sys_write32((uint32_t)buf->data,
+		sys_write32((uint32_t)data,
 			    (mem_addr_t)&base->out_ep[ep_idx].doepdma);
 
-		sys_cache_data_invd_range(buf->data, xfersize);
+		sys_cache_data_invd_range(data, xfersize);
 	}
 
 	sys_write32(doepctl, doepctl_reg);
@@ -1546,6 +1579,9 @@ static int udc_dwc2_ep_set_halt(const struct device *dev,
 	LOG_DBG("Set halt ep 0x%02x", cfg->addr);
 	if (ep_idx != 0) {
 		cfg->stat.halted = true;
+	} else if (!udc_buf_peek(dev, USB_CONTROL_EP_OUT)) {
+		/* Data stage is STALLed, allow receiving next SETUP */
+		dwc2_ctrl_feed_dout(dev, 8);
 	}
 
 	return 0;
@@ -2461,7 +2497,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	}
 
 	if (priv->bufferdma && bcnt) {
-		sys_cache_data_invd_range(buf->data, bcnt);
+		sys_cache_data_invd_range(net_buf_tail(buf), bcnt);
 		net_buf_add(buf, bcnt);
 	}
 

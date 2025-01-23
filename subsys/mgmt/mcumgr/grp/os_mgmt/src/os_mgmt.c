@@ -450,7 +450,7 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	struct zcbor_string query = { 0 };
 	size_t decoded;
-	bool ok;
+	bool ok = true;
 	bool has_output = false;
 
 #if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK)

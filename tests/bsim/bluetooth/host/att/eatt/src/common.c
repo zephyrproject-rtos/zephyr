@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "babblekit/testcase.h"
 #include "common.h"
 #include "argparse.h"
 
@@ -30,7 +31,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 			default_conn = NULL;
 		}
 
-		FAIL("Failed to connect to %s (%u)\n", addr, conn_err);
+		TEST_FAIL("Failed to connect to %s (%u)", addr, conn_err);
 		return;
 	}
 
@@ -77,30 +78,16 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	err = bt_le_scan_stop();
 	if (err) {
-		FAIL("Stop LE scan failed (err %d)\n", err);
+		TEST_FAIL("Stop LE scan failed (err %d)", err);
 	}
 
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
 				&default_conn);
 	if (err) {
-		FAIL("Create conn failed (err %d)\n", err);
+		TEST_FAIL("Create conn failed (err %d)", err);
 	}
 
 	printk("Device connected\n");
-}
-
-void test_init(void)
-{
-	bst_ticker_set_next_tick_absolute(60e6); /* 60 seconds */
-	bst_result = In_progress;
-}
-
-void test_tick(bs_time_t HW_device_time)
-{
-	if (bst_result != Passed) {
-		bst_result = Failed;
-		bs_trace_error_time_line("Test eatt finished.\n");
-	}
 }
 
 void central_setup_and_connect(void)
@@ -109,12 +96,12 @@ void central_setup_and_connect(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Can't enable Bluetooth (err %d)\n", err);
+		TEST_FAIL("Can't enable Bluetooth (err %d)", err);
 	}
 
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
 	if (err) {
-		FAIL("Scanning failed to start (err %d)\n", err);
+		TEST_FAIL("Scanning failed to start (err %d)", err);
 	}
 
 	while (!is_connected) {
@@ -123,7 +110,7 @@ void central_setup_and_connect(void)
 
 	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
 	if (err) {
-		FAIL("Failed to start encryption procedure\n");
+		TEST_FAIL("Failed to start encryption procedure");
 	}
 
 	while (!is_encrypted) {
@@ -137,12 +124,12 @@ void peripheral_setup_and_connect(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Can't enable Bluetooth (err %d)\n", err);
+		TEST_FAIL("Can't enable Bluetooth (err %d)", err);
 	}
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
-		FAIL("Advertising failed to start (err %d)\n", err);
+		TEST_FAIL("Advertising failed to start (err %d)", err);
 	}
 
 	while (!is_connected) {
@@ -168,56 +155,10 @@ void disconnect(void)
 
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
-		FAIL("Disconnection failed (err %d)\n", err);
+		TEST_FAIL("Disconnection failed (err %d)", err);
 	}
 
 	while (is_connected) {
 		k_sleep(K_MSEC(100));
 	}
-}
-
-
-#define CHANNEL_ID 0
-#define MSG_SIZE 1
-
-void backchannel_init(void)
-{
-	uint device_number = get_device_nbr();
-	uint peer_number = device_number ^ 1;
-	uint device_numbers[] = { peer_number };
-	uint channel_numbers[] = { CHANNEL_ID };
-	uint *ch;
-
-	ch = bs_open_back_channel(device_number, device_numbers, channel_numbers,
-				  ARRAY_SIZE(channel_numbers));
-	if (!ch) {
-		FAIL("Unable to open backchannel\n");
-	}
-}
-
-void backchannel_sync_send(void)
-{
-	uint8_t sync_msg[MSG_SIZE] = { get_device_nbr() };
-
-	printk("Sending sync\n");
-	bs_bc_send_msg(CHANNEL_ID, sync_msg, ARRAY_SIZE(sync_msg));
-}
-
-void backchannel_sync_wait(void)
-{
-	uint8_t sync_msg[MSG_SIZE];
-
-	while (true) {
-		if (bs_bc_is_msg_received(CHANNEL_ID) > 0) {
-			bs_bc_receive_msg(CHANNEL_ID, sync_msg, ARRAY_SIZE(sync_msg));
-			if (sync_msg[0] != get_device_nbr()) {
-				/* Received a message from another device, exit */
-				break;
-			}
-		}
-
-		k_sleep(K_MSEC(1));
-	}
-
-	printk("Sync received\n");
 }

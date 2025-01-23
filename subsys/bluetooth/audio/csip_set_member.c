@@ -145,21 +145,16 @@ static int sirk_encrypt(struct bt_conn *conn, const struct bt_csip_sirk *sirk,
 			struct bt_csip_sirk *enc_sirk)
 {
 	int err;
-	uint8_t *k;
+	const uint8_t *k;
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
-		static uint8_t test_k[] = {0x67, 0x6e, 0x1b, 0x9b,
-					   0xd4, 0x48, 0x69, 0x6f,
-					   0x06, 0x1e, 0xc6, 0x22,
-					   0x3c, 0xe5, 0xce, 0xd9};
-		static bool swapped;
-
-		if (!swapped && IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
-			/* Swap test_k to little endian */
-			sys_mem_swap(test_k, 16);
-			swapped = true;
-		}
+		static const uint8_t test_k[] = {
+			/* Sample data is in big-endian, we need it in little-endian. */
++                       REVERSE_ARGS(0x67, 0x6e, 0x1b, 0x9b,
+				     0xd4, 0x48, 0x69, 0x6f,
+				     0x06, 0x1e, 0xc6, 0x22,
+				     0x3c, 0xe5, 0xce, 0xd9) };
 		LOG_DBG("Encrypting test SIRK");
 		k = test_k;
 	} else {

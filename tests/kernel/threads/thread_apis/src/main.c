@@ -157,7 +157,7 @@ ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 	/* Non-Secure images cannot normally access memory outside the image
 	 * flash and ram.
 	 */
-	ret = k_thread_name_set(NULL, (const char *)0xFFFFFFF0);
+	ret = k_thread_name_set(NULL, (const char *)CONFIG_THREAD_API_UNMAPPED_ADDRESS);
 	zassert_equal(ret, -EFAULT, "accepted nonsense string (%d)", ret);
 #endif
 	ret = k_thread_name_set(NULL, unreadable_string);

@@ -1,0 +1,51 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 Quad Serial Peripheral Interface (QSPI) Secure Flash Protection SFP MDAD.
+
+  The SFP MDAD performs first-level checks on input transactions, based on the secure attribute
+  and MGID associated with each transaction.
+
+compatible: "nxp,s32-qspi-sfp-mdad"
+
+child-binding:
+
+  properties:
+    secure-attribute:
+      type: int
+      required: true
+      description: |
+        Selects the secure attribute, defined in dt-bindings/qspi/nxp-s32-qspi.h:
+        - NXP_S32_QSPI_NON_SECURE: Allow the bus attribute for this master to non-secure
+        - NXP_S32_QSPI_SECURE: Allow the bus attribute for this master to secure
+        Allowed combinations:
+        - NXP_S32_QSPI_NON_SECURE
+        - NXP_S32_QSPI_SECURE
+        - NXP_S32_QSPI_NON_SECURE | NXP_S32_QSPI_SECURE
+
+    mask-type:
+      type: string
+      enum:
+        - AND
+        - OR
+      default: AND
+      description: |
+        Selects the mask type:
+        - AND: AND-ed mask
+        - OR: OR-ed mask
+        The default corresponds to the reset value of the register field.
+
+    mask:
+      type: int
+      default: 0
+      description: |
+        Defines the mask value for the ID-Match comparison.
+        Valid range: 0 - 63. The default corresponds to the
+        reset value of the register field.
+
+    domain-id:
+      type: int
+      required: true
+      description: |
+        Domain ID Reference value of the Domain-ID (MID) for MID-comparison.
+        Valid range: 0 - 63.

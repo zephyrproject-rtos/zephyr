@@ -53,7 +53,8 @@ class Harness:
         self.capture_coverage = False
         self.next_pattern = 0
         self.record = None
-        self.record_pattern = None
+        self.record_patterns = []
+        self.record_merge = False
         self.record_as_json = None
         self.recording = []
         self.ztest = False
@@ -99,7 +100,8 @@ class Harness:
             self.ordered = config.get('ordered', True)
             self.record = config.get('record', {})
             if self.record:
-                self.record_pattern = re.compile(self.record.get("regex", ""))
+                self.record_patterns = [re.compile(p) for p in self.record.get("regex", [])]
+                self.record_merge = self.record.get("merge", False)
                 self.record_as_json = self.record.get("as_json")
 
     def build(self):
@@ -125,17 +127,27 @@ class Harness:
                     record[k] = { 'ERROR': { 'msg': str(parse_error), 'doc': record[k] } }
         return record
 
-    def parse_record(self, line) -> re.Match:
-        match = None
-        if self.record_pattern:
-            match = self.record_pattern.search(line)
+    def parse_record(self, line) -> int:
+        match_cnt = 0
+        for record_pattern in self.record_patterns:
+            match = record_pattern.search(line)
             if match:
+                match_cnt += 1
                 rec = self.translate_record(
                     { k:v.strip() for k,v in match.groupdict(default="").items() }
                 )
-                self.recording.append(rec)
-        return match
-    #
+                if self.record_merge and len(self.recording) > 0:
+                    for k,v in rec.items():
+                        if k in self.recording[0]:
+                            if isinstance(self.recording[0][k], list):
+                                self.recording[0][k].append(v)
+                            else:
+                                self.recording[0][k] = [self.recording[0][k], v]
+                        else:
+                            self.recording[0][k] = v
+                else:
+                    self.recording.append(rec)
+        return match_cnt
 
     def process_test(self, line):
 

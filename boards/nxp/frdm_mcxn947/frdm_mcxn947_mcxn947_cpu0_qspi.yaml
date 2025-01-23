@@ -13,7 +13,6 @@ flash: 8192
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - can

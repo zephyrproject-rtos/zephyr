@@ -18,6 +18,9 @@ zephyr_include_directories(
   )
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/common/testlib testlib)
+add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
+
 target_link_libraries(app PRIVATE
   testlib
+  babblekit
 )

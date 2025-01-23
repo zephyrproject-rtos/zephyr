@@ -6,7 +6,6 @@ simulation:
   - name: qemu
 toolchain:
   - zephyr
-  - xtools
 testing:
   default: true
   only_tags:

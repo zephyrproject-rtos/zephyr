@@ -4,11 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
+#include <zephyr/types.h>
+#include <stddef.h>
+#include <errno.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
+
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 #include "common.h"
 
 extern enum bst_result_t bst_result;
 
-CREATE_FLAG(flag_is_chrc_ctx_validated);
+static DEFINE_FLAG(flag_is_chrc_ctx_validated);
 
 static struct bt_conn *g_conn;
 
@@ -19,7 +32,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
+		TEST_FAIL("Failed to connect to %s (%u)", addr, err);
 		return;
 	}
 
@@ -87,7 +100,7 @@ static ssize_t write_test_chrc(struct test_chrc_ctx *chrc_ctx,
 	}
 
 	if (flags != 0) {
-		FAIL("Invalid flags %u\n", flags);
+		TEST_FAIL("Invalid flags %u", flags);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
@@ -240,14 +253,14 @@ static ssize_t write_cp_chrc(struct bt_conn *conn,
 		pass = authorized_chrc_operation_validate();
 		log_str = "authorized";
 	} else {
-		FAIL("Invalid value of CP write counter %u\n", cp_write_cnt);
+		TEST_FAIL("Invalid value of CP write counter %u", cp_write_cnt);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
 	if (pass) {
 		printk("Correct context for %s chrc\n", log_str);
 	} else {
-		FAIL("Invalid context for %s chrc\n", log_str);
+		TEST_FAIL("Invalid context for %s chrc", log_str);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
@@ -327,7 +340,7 @@ static void test_main(void)
 
 	err = bt_gatt_authorization_cb_register(&gatt_authorization_callbacks);
 	if (err) {
-		FAIL("Registering GATT authorization callbacks failed (err %d)\n", err);
+		TEST_FAIL("Registering GATT authorization callbacks failed (err %d)", err);
 		return;
 	}
 
@@ -335,7 +348,7 @@ static void test_main(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth init failed (err %d)", err);
 		return;
 	}
 
@@ -343,7 +356,7 @@ static void test_main(void)
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
+		TEST_FAIL("Advertising failed to start (err %d)", err);
 		return;
 	}
 
@@ -351,14 +364,12 @@ static void test_main(void)
 
 	WAIT_FOR_FLAG(flag_is_chrc_ctx_validated);
 
-	PASS("GATT server passed\n");
+	TEST_PASS("GATT server passed");
 }
 
 static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},
 	BSTEST_END_MARKER

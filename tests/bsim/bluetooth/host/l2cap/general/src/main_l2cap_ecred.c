@@ -6,7 +6,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "common.h"
+#include <stddef.h>
+
+#include <zephyr/types.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/l2cap.h>
+
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+#include "babblekit/sync.h"
 
 #define LOG_MODULE_NAME main_l2cap_ecred
 #include <zephyr/logging/log.h>
@@ -54,8 +66,8 @@ struct channel {
 };
 static struct channel channels[L2CAP_CHANNELS];
 
-CREATE_FLAG(is_connected);
-CREATE_FLAG(unsequenced_data);
+static DEFINE_FLAG(is_connected);
+static DEFINE_FLAG(unsequenced_data);
 
 #define T_STACK_SIZE 512
 #define T_PRIORITY 5
@@ -90,22 +102,23 @@ static int chan_recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 
 	LOG_DBG("received_iterration %i sdus_received %i, chan_id: %d, data_length: %d",
 		received_iterration, chan->sdus_received, chan->chan_id, buf->len);
-	if (!TEST_FLAG(unsequenced_data) && received_iterration != chan->sdus_received) {
-		FAIL("Received out of sequence data.");
+	if (!IS_FLAG_SET(unsequenced_data) && received_iterration != chan->sdus_received) {
+		TEST_FAIL("Received out of sequence data.");
 	}
 
 	const int retval = memcmp(buf->data + sizeof(received_iterration),
 			    chan->payload + sizeof(received_iterration),
 			    buf->len - sizeof(received_iterration));
 	if (retval) {
-		FAIL("Payload received didn't match expected value memcmp returned %i", retval);
+		TEST_FAIL("Payload received didn't match expected value memcmp returned %i",
+			  retval);
 	}
 
 	/*By the time we rx on long msg channel we should have already rx on short msg channel*/
 	if (chan->chan_id == 0) {
 		if (channels[SHORT_MSG_CHAN_IDX].sdus_received !=
 			(channels[LONG_MSG_CHAN_IDX].sdus_received + 1)) {
-			FAIL("Didn't receive on short msg channel first");
+			TEST_FAIL("Didn't receive on short msg channel first");
 		}
 	}
 
@@ -232,7 +245,7 @@ static void connect_num_channels(uint8_t num_l2cap_channels)
 		struct channel *chan = get_free_channel();
 
 		if (!chan) {
-			FAIL("failed, chan not free");
+			TEST_FAIL("failed, chan not free");
 			return;
 		}
 
@@ -243,7 +256,7 @@ static void connect_num_channels(uint8_t num_l2cap_channels)
 						     servers[0].psm);
 
 	if (err) {
-		FAIL("can't connect ecred %d ", err);
+		TEST_FAIL("can't connect ecred %d ", err);
 	}
 }
 
@@ -297,7 +310,7 @@ static void register_l2cap_server(void)
 
 	server = get_free_server();
 	if (!server) {
-		FAIL("Failed to get free server");
+		TEST_FAIL("Failed to get free server");
 		return;
 	}
 
@@ -305,7 +318,7 @@ static void register_l2cap_server(void)
 	server->psm = 0;
 
 	if (bt_l2cap_server_register(server) < 0) {
-		FAIL("Failed to get free server");
+		TEST_FAIL("Failed to get free server");
 		return;
 	}
 
@@ -319,7 +332,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (conn_err) {
-		FAIL("Failed to connect to %s (%u)", addr, conn_err);
+		TEST_FAIL("Failed to connect to %s (%u)", addr, conn_err);
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 		return;
@@ -340,7 +353,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	LOG_DBG("%s (reason 0x%02x)", addr, reason);
 
 	if (default_conn != conn) {
-		FAIL("Conn mismatch disconnect %s %s)", default_conn, conn);
+		TEST_FAIL("Conn mismatch disconnect %s %s)", default_conn, conn);
 		return;
 	}
 
@@ -363,7 +376,7 @@ static void send_sdu(int iteration, int chan_idx, int bytes)
 	sys_put_le32(iteration, channels[chan_idx].payload);
 
 	if (channels[chan_idx].buf != 0) {
-		FAIL("Buf should have been deallocated by now");
+		TEST_FAIL("Buf should have been deallocated by now");
 		return;
 	}
 
@@ -374,7 +387,7 @@ static void send_sdu(int iteration, int chan_idx, int bytes)
 	}
 
 	if (buf == NULL) {
-		FAIL("Failed to get buff on ch %i, iteration %i should never happen", chan_idx,
+		TEST_FAIL("Failed to get buff on ch %i, iteration %i should never happen", chan_idx,
 		     chan_idx);
 	}
 
@@ -388,7 +401,7 @@ static void send_sdu(int iteration, int chan_idx, int bytes)
 	LOG_DBG("bt_l2cap_chan_send returned: %i", ret);
 
 	if (ret < 0) {
-		FAIL("Error: send failed error: %i", ret);
+		TEST_FAIL("Error: send failed error: %i", ret);
 		channels[chan_idx].buf = 0;
 		net_buf_unref(buf);
 	}
@@ -412,7 +425,7 @@ static void send_sdu_concurrently(void)
 								&channels[k].work);
 
 			if (err < 0) {
-				FAIL("Failed to submit work to the queue, error: %d", err);
+				TEST_FAIL("Failed to submit work to the queue, error: %d", err);
 			}
 		}
 
@@ -436,14 +449,14 @@ static int change_mtu_on_channels(int num_channels, int new_mtu)
 
 static void test_peripheral_main(void)
 {
-	device_sync_init(PERIPHERAL_ID);
+	TEST_ASSERT(bk_sync_init() == 0, "Failed to open backchannel");
 	LOG_DBG("*L2CAP ECRED Peripheral started*");
 	init_workqs();
 	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Can't enable Bluetooth (err %d)", err);
+		TEST_FAIL("Can't enable Bluetooth (err %d)", err);
 		return;
 	}
 
@@ -451,13 +464,13 @@ static void test_peripheral_main(void)
 	LOG_DBG("Connectable advertising...");
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
-		FAIL("Advertising failed to start (err %d)", err);
+		TEST_FAIL("Advertising failed to start (err %d)", err);
 		return;
 	}
 
 	LOG_DBG("Advertising started.");
 	LOG_DBG("Peripheral waiting for connection...");
-	WAIT_FOR_FLAG_SET(is_connected);
+	WAIT_FOR_FLAG(is_connected);
 	LOG_DBG("Peripheral Connected.");
 	register_l2cap_server();
 	connect_num_channels(L2CAP_CHANNELS);
@@ -472,7 +485,7 @@ static void test_peripheral_main(void)
 	k_sem_take(&all_chan_conn_sem, K_FOREVER);
 
 	LOG_DBG("Send sync after reconnection");
-	device_sync_send();
+	bk_sync_send();
 
 	/* Send bytes on both channels and expect ch 1 to receive all of them before ch 0 *********/
 	LOG_DBG("############# Send bytes on both channels concurrently");
@@ -483,20 +496,20 @@ static void test_peripheral_main(void)
 	err = change_mtu_on_channels(L2CAP_CHANNELS, CONFIG_BT_L2CAP_TX_MTU + 10);
 
 	if (err) {
-		FAIL("MTU change failed (err %d)\n", err);
+		TEST_FAIL("MTU change failed (err %d)", err);
 	}
 
 	/* Read from both devices (Central and Peripheral) at the same time **********************/
 	LOG_DBG("############# Read from both devices (Central and Peripheral) at the same time");
 	LOG_DBG("Wait for sync before sending the msg");
-	device_sync_wait();
+	bk_sync_wait();
 	LOG_DBG("Received sync");
 	send_sdu(0, 1, 10);
 
 	k_sem_take(&sent_sem, K_FOREVER);
 	disconnect_all_channels();
 	WAIT_FOR_FLAG_UNSET(is_connected);
-	PASS("L2CAP ECRED Peripheral tests Passed");
+	TEST_PASS("L2CAP ECRED Peripheral tests Passed");
 	bs_trace_silent_exit(0);
 }
 
@@ -508,14 +521,14 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	err = bt_le_scan_stop();
 	if (err) {
-		FAIL("Stop LE scan failed (err %d)", err);
+		TEST_FAIL("Stop LE scan failed (err %d)", err);
 		return;
 	}
 
 	param = BT_LE_CONN_PARAM_DEFAULT;
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, param, &default_conn);
 	if (err) {
-		FAIL("Create conn failed (err %d)", err);
+		TEST_FAIL("Create conn failed (err %d)", err);
 		return;
 	}
 }
@@ -529,40 +542,40 @@ static void test_central_main(void)
 		.window = BT_GAP_SCAN_FAST_WINDOW,
 	};
 
-	device_sync_init(CENTRAL_ID);
+	TEST_ASSERT(bk_sync_init() == 0, "Failed to open backchannel");
 
 	LOG_DBG("*L2CAP ECRED Central started*");
 	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Can't enable Bluetooth (err %d)\n", err);
+		TEST_FAIL("Can't enable Bluetooth (err %d)", err);
 		return;
 	}
 	LOG_DBG("Central Bluetooth initialized.\n");
 
 	err = bt_le_scan_start(&scan_param, device_found);
 	if (err) {
-		FAIL("Scanning failed to start (err %d)\n", err);
+		TEST_FAIL("Scanning failed to start (err %d)", err);
 		return;
 	}
 
 	LOG_DBG("Scanning successfully started\n");
 
 	LOG_DBG("Central waiting for connection...\n");
-	WAIT_FOR_FLAG_SET(is_connected);
+	WAIT_FOR_FLAG(is_connected);
 	LOG_DBG("Central Connected.\n");
 	register_l2cap_server();
 
 	LOG_DBG("Wait for sync after reconnection");
-	device_sync_wait();
+	bk_sync_wait();
 	LOG_DBG("Received sync");
 
 	/* Read from both devices (Central and Peripheral) at the same time **********************/
 	LOG_DBG("############# Read from both devices (Central and Peripheral) at the same time");
 	LOG_DBG("Send sync for SDU send");
 	SET_FLAG(unsequenced_data);
-	device_sync_send();
+	bk_sync_send();
 	send_sdu(0, 1, 10);
 
 	/* Wait until all of the channels are disconnected */
@@ -577,7 +590,7 @@ static void test_central_main(void)
 
 	if (channels[LONG_MSG_CHAN_IDX].sdus_received < SDU_SEND_COUNT ||
 	    channels[SHORT_MSG_CHAN_IDX].sdus_received < SDU_SEND_COUNT) {
-		FAIL("received less than %i", SDU_SEND_COUNT);
+		TEST_FAIL("received less than %i", SDU_SEND_COUNT);
 	}
 
 	/* Disconnect */
@@ -587,28 +600,24 @@ static void test_central_main(void)
 	LOG_DBG("Central tried to disconnect");
 
 	if (err) {
-		FAIL("Disconnection failed (err %d)", err);
+		TEST_FAIL("Disconnection failed (err %d)", err);
 		return;
 	}
 
 	LOG_DBG("Central Disconnected.");
 
-	PASS("L2CAP ECRED Central tests Passed\n");
+	TEST_PASS("L2CAP ECRED Central tests Passed");
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral L2CAP ECRED",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_peripheral_main
 	},
 	{
 		.test_id = "central",
 		.test_descr = "Central L2CAP ECRED",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_central_main
 	},
 	BSTEST_END_MARKER

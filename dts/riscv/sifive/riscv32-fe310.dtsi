@@ -65,6 +65,12 @@
 			interrupts-extended = <&hlic 3 &hlic 7>;
 			reg = <0x2000000 0x10000>;
 		};
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&hlic 7>;
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+		};
 		debug: debug-controller@0 {
 			compatible = "sifive,debug-013", "riscv,debug-013";
 			interrupts-extended = <&hlic 65535>;

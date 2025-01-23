@@ -6,6 +6,8 @@
 
 #include <stdbool.h>
 
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 #include "common.h"
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -16,7 +18,7 @@
 
 extern enum bst_result_t bst_result;
 
-CREATE_FLAG(flag_data_received);
+static DEFINE_FLAG(flag_data_received);
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -85,7 +87,7 @@ static int iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan 
 	printk("Incoming request from %p\n", (void *)info->acl);
 
 	if (iso_chan.iso) {
-		FAIL("No channels available\n");
+		TEST_FAIL("No channels available");
 
 		return -ENOMEM;
 	}
@@ -120,7 +122,7 @@ static void init(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Bluetooth enable failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth enable failed (err %d)", err);
 
 		return;
 	}
@@ -133,7 +135,7 @@ static void init(void)
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
-		FAIL("Unable to register ISO server (err %d)\n", err);
+		TEST_FAIL("Unable to register ISO server (err %d)", err);
 
 		return;
 	}
@@ -145,14 +147,14 @@ static void adv_connect(void)
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
-		FAIL("Advertising failed to start (err %d)\n", err);
+		TEST_FAIL("Advertising failed to start (err %d)", err);
 
 		return;
 	}
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR_FLAG_SET(flag_connected);
+	WAIT_FOR_FLAG(flag_connected);
 }
 
 static void test_main(void)
@@ -163,8 +165,8 @@ static void test_main(void)
 		adv_connect();
 		bt_testlib_conn_wait_free();
 
-		if (TEST_FLAG(flag_data_received)) {
-			PASS("Test passed\n");
+		if (IS_FLAG_SET(flag_data_received)) {
+			TEST_PASS("Test passed");
 		}
 	}
 }
@@ -173,8 +175,6 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	BSTEST_END_MARKER,

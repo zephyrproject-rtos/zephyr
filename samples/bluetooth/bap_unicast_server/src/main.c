@@ -721,9 +721,16 @@ static int set_available_contexts(void)
 	return 0;
 }
 
+
 int main(void)
 {
 	struct bt_le_ext_adv *adv;
+	const struct bt_bap_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -733,6 +740,12 @@ int main(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		printk("Could not register PACS (err %d)\n", err);
+		return 0;
+	}
 
 	bt_bap_unicast_server_register(&param);
 	bt_bap_unicast_server_register_cb(&unicast_server_cb);

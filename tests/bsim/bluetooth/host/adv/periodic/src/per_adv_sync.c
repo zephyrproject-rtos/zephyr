@@ -3,18 +3,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <errno.h>
 #include <zephyr/kernel.h>
-
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
-
 #include <zephyr/types.h>
+#include <zephyr/sys_clock.h>
 #include <zephyr/sys/printk.h>
-
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -23,12 +25,12 @@ static struct bt_conn *g_conn;
 static bt_addr_le_t per_addr;
 static uint8_t per_sid;
 
-CREATE_FLAG(flag_connected);
-CREATE_FLAG(flag_bonded);
-CREATE_FLAG(flag_per_adv);
-CREATE_FLAG(flag_per_adv_sync);
-CREATE_FLAG(flag_per_adv_sync_lost);
-CREATE_FLAG(flag_per_adv_recv);
+static DEFINE_FLAG(flag_connected);
+static DEFINE_FLAG(flag_bonded);
+static DEFINE_FLAG(flag_per_adv);
+static DEFINE_FLAG(flag_per_adv_sync);
+static DEFINE_FLAG(flag_per_adv_sync_lost);
+static DEFINE_FLAG(flag_per_adv_recv);
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -37,7 +39,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != BT_HCI_ERR_SUCCESS) {
-		FAIL("Failed to connect to %s: %u\n", addr, err);
+		TEST_FAIL("Failed to connect to %s: %u", addr, err);
 		return;
 	}
 
@@ -77,24 +79,24 @@ static struct bt_conn_auth_info_cb auto_info_cbs = {
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	if (!TEST_FLAG(flag_connected) &&
+	if (!IS_FLAG_SET(flag_connected) &&
 	    info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
 		int err;
 
 		printk("Stopping scan\n");
 		err = bt_le_scan_stop();
 		if (err != 0) {
-			FAIL("Failed to stop scan: %d", err);
+			TEST_FAIL("Failed to stop scan: %d", err);
 			return;
 		}
 
 		err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN,
 					BT_LE_CONN_PARAM_DEFAULT, &g_conn);
 		if (err != 0) {
-			FAIL("Could not connect to peer: %d", err);
+			TEST_FAIL("Could not connect to peer: %d", err);
 			return;
 		}
-	} else if (!TEST_FLAG(flag_per_adv) && info->interval != 0U) {
+	} else if (!IS_FLAG_SET(flag_per_adv) && info->interval != 0U) {
 
 		per_sid = info->sid;
 		bt_addr_le_copy(&per_addr, info->addr);
@@ -142,7 +144,7 @@ static void recv_cb(struct bt_le_per_adv_sync *recv_sync,
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	uint8_t buf_data_len;
 
-	if (TEST_FLAG(flag_per_adv_recv)) {
+	if (IS_FLAG_SET(flag_per_adv_recv)) {
 		return;
 	}
 
@@ -154,7 +156,7 @@ static void recv_cb(struct bt_le_per_adv_sync *recv_sync,
 		buf_data_len = (uint8_t)net_buf_simple_pull_le16(buf);
 		if (buf->data[0] - 1 != sizeof(mfg_data) ||
 			memcmp(buf->data, mfg_data, sizeof(mfg_data))) {
-			FAIL("Unexpected adv data received\n");
+			TEST_FAIL("Unexpected adv data received");
 		}
 		net_buf_simple_pull(buf, ARRAY_SIZE(mfg_data));
 	}
@@ -175,7 +177,7 @@ static void common_init(void)
 	err = bt_enable(NULL);
 
 	if (err) {
-		FAIL("Bluetooth init failed: %d\n", err);
+		TEST_FAIL("Bluetooth init failed: %d", err);
 		return;
 	}
 
@@ -195,7 +197,7 @@ static void start_scan(void)
 			       BT_LE_SCAN_CODED_ACTIVE : BT_LE_SCAN_ACTIVE,
 			       NULL);
 	if (err) {
-		FAIL("Failed to start scan: %d\n", err);
+		TEST_FAIL("Failed to start scan: %d", err);
 		return;
 	}
 	printk("done.\n");
@@ -214,7 +216,7 @@ static void create_pa_sync(struct bt_le_per_adv_sync **sync)
 	sync_create_param.timeout = 0x0a;
 	err = bt_le_per_adv_sync_create(&sync_create_param, sync);
 	if (err) {
-		FAIL("Failed to create periodic advertising sync: %d\n", err);
+		TEST_FAIL("Failed to create periodic advertising sync: %d", err);
 		return;
 	}
 	printk("done.\n");
@@ -231,7 +233,7 @@ static void start_bonding(void)
 	printk("Setting security...");
 	err = bt_conn_set_security(g_conn, BT_SECURITY_L2);
 	if (err) {
-		FAIL("Failed to set security: %d\n", err);
+		TEST_FAIL("Failed to set security: %d", err);
 		return;
 	}
 	printk("done.\n");
@@ -253,7 +255,7 @@ static void main_per_adv_sync(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 
-	PASS("Periodic advertising sync passed\n");
+	TEST_PASS("Periodic advertising sync passed");
 }
 
 static void main_per_adv_sync_app_not_scanning(void)
@@ -271,7 +273,7 @@ static void main_per_adv_sync_app_not_scanning(void)
 	printk("Stopping scan\n");
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		FAIL("Failed to stop scan: %d", err);
+		TEST_FAIL("Failed to stop scan: %d", err);
 		return;
 	}
 
@@ -280,7 +282,7 @@ static void main_per_adv_sync_app_not_scanning(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 
-	PASS("Periodic advertising sync passed\n");
+	TEST_PASS("Periodic advertising sync passed");
 }
 
 static void main_per_adv_conn_sync(void)
@@ -305,7 +307,7 @@ static void main_per_adv_conn_sync(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 
-	PASS("Periodic advertising sync passed\n");
+	TEST_PASS("Periodic advertising sync passed");
 }
 
 static void main_per_adv_conn_privacy_sync(void)
@@ -336,7 +338,7 @@ static void main_per_adv_conn_privacy_sync(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 
-	PASS("Periodic advertising sync passed\n");
+	TEST_PASS("Periodic advertising sync passed");
 }
 
 static void main_per_adv_long_data_sync(void)
@@ -359,7 +361,7 @@ static void main_per_adv_long_data_sync(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 #endif
-	PASS("Periodic advertising long data sync passed\n");
+	TEST_PASS("Periodic advertising long data sync passed");
 }
 
 static const struct bst_test_instance per_adv_sync[] = {
@@ -367,8 +369,6 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_id = "per_adv_sync",
 		.test_descr = "Basic periodic advertising sync test. "
 			      "Will just sync to a periodic advertiser.",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_sync
 	},
 	{
@@ -376,8 +376,6 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_descr = "Basic periodic advertising sync test but where "
 			      "the app stopped scanning before creating sync."
 			      "Expect the host to start scanning automatically.",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_sync_app_not_scanning
 	},
 	{
@@ -385,8 +383,6 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_descr = "Periodic advertising sync test, but where there "
 			      "is a connection between the advertiser and the "
 			      "synchronized device.",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_sync
 	},
 	{
@@ -394,8 +390,6 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_descr = "Periodic advertising sync test, but where "
 			      "advertiser and synchronized device are bonded and using  "
 			      "privacy",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_privacy_sync
 	},
 	{
@@ -403,8 +397,6 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_descr = "Periodic advertising sync test with larger "
 			      "data length. Test is used to verify that "
 			      "reassembly of long data is handeled correctly.",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_long_data_sync
 	},
 	BSTEST_END_MARKER

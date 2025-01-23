@@ -59,6 +59,16 @@ family:
       - name: efr32zg23
         socs:
           - name: efr32zg23b020f512im48
+      - name: efr32bg29
+        socs:
+          - name: efr32bg29b140f1024im40
+          - name: efr32bg29b220f1024cj45
+          - name: efr32bg29b221f1024cj45
+          - name: efr32bg29b230f1024cm40
+      - name: efr32mg29
+        socs:
+          - name: efr32mg29b140f1024im40
+          - name: efr32mg29b230f1024cm40
   - name: silabs_sim3
     series:
       - name: sim3u

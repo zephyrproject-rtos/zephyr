@@ -10,7 +10,6 @@ flash: 384
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - counter

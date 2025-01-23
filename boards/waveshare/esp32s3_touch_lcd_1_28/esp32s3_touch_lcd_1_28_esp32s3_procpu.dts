@@ -9,7 +9,7 @@
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <espressif/partitions_0x0_amp.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
 	model = "ESP32-S3-Touch-LCD-1.28 PROCPU";

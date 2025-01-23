@@ -15,3 +15,8 @@ tests:
       - esp32c6_devkitc
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
+
+  drivers.pwm.gpio_loopback.nrf:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp

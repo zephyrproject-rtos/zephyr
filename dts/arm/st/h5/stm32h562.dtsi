@@ -258,7 +258,7 @@
 			status = "disabled";
 		};
 
-		xspi1: xspi@47001400 {
+		xspi1: spi@47001400 {
 			compatible = "st,stm32-xspi";
 			reg = <0x47001400 0x400>;
 			interrupts = <78 0>;

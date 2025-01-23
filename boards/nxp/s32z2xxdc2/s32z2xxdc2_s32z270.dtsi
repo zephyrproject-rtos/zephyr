@@ -5,6 +5,7 @@
  */
 
 #include "s32z2xxdc2_s32z270_pinctrl.dtsi"
+#include <zephyr/dt-bindings/qspi/nxp-s32-qspi.h>
 
 &swt0 {
 	status = "okay";
@@ -57,4 +58,70 @@
 
 &sar_adc1 {
 	vref-mv = <1800>;
+};
+
+&qspi0 {
+	pinctrl-0 = <&qspi0_default>;
+	pinctrl-names = "default";
+	data-rate = "DDR";
+	column-space = <3>;
+	word-addressable;
+	hold-time-2x;
+	a-dll-freq-enable;
+	a-dll-ref-counter = <2>;
+	a-dll-resolution = <2>;
+	a-dll-coarse-delay = <2>;
+	a-dll-fine-delay = <2>;
+	a-dll-mode = "AUTO UPDATE";
+	a-rx-clock-source = "EXTERNAL DQS";
+	ahb-buffers-masters = <0 1 2 3>;
+	ahb-buffers-sizes = <256 256 256 256>;
+	ahb-buffers-all-masters;
+	status = "okay";
+
+	sfp_mdad {
+		compatible = "nxp,s32-qspi-sfp-mdad";
+
+		mdad_0: mdad_0 {
+			domain-id = <0>;
+			secure-attribute = <NXP_S32_QSPI_SECURE>;
+		};
+	};
+
+	sfp_frad {
+		compatible = "nxp,s32-qspi-sfp-frad";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		frad_0: frad@0 {
+			reg = <0x0 DT_SIZE_M(512)>;
+			master-domain-acp-policy = <NXP_S32_QSPI_SECURE>;
+		};
+	};
+
+	s26hs512t: s26hs512t@0 {
+		compatible = "nxp,s32-qspi-hyperflash";
+		reg = <0>;
+		jedec-id = [00 34 00 7b 00 1a 00 0f 00 90];
+		device-id-word-addr = <0x800>;
+		size = <DT_SIZE_M(512)>;
+		write-block-size = <2>;
+		read-latency-cycles = <16>;
+		max-program-buffer-size = <256>;
+		vcc-mv = <1800>;
+		drive-strength-ohm = <27>;
+		ppw-sectors-addr-mapping = "LOW";
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 0x10000>;
+			};
+		};
+	};
 };

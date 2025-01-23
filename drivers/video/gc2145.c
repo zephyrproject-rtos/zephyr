@@ -681,6 +681,9 @@ static const struct gc2145_reg default_regs[] = {
 
 struct gc2145_config {
 	struct i2c_dt_spec i2c;
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	struct gpio_dt_spec pwdn_gpio;
+#endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	struct gpio_dt_spec reset_gpio;
 #endif
@@ -1126,10 +1129,18 @@ static int gc2145_init(const struct device *dev)
 {
 	struct video_format fmt;
 	int ret;
-
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	const struct gc2145_config *cfg = dev->config;
+	(void) cfg;
 
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
+	if (ret) {
+		return ret;
+	}
+
+	k_sleep(K_MSEC(10));
+#endif
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
@@ -1166,6 +1177,9 @@ static int gc2145_init(const struct device *dev)
 /* Unique Instance */
 static const struct gc2145_config gc2145_cfg_0 = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	.pwdn_gpio = GPIO_DT_SPEC_INST_GET(0, pwdn_gpios),
+#endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #endif
@@ -1181,6 +1195,12 @@ static int gc2145_init_0(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+	if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
+		LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
+		return -ENODEV;
+	}
+#endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);

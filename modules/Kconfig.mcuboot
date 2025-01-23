@@ -12,7 +12,7 @@ config MCUBOOT
 
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
-	select USE_DT_CODE_PARTITION
+	select USE_DT_CODE_PARTITION if !MCUBOOT_BOOTLOADER_MODE_RAM_LOAD
 	imply INIT_ARCH_HW_AT_BOOT if ARCH_SUPPORTS_ARCH_HW_INIT
 	depends on !MCUBOOT
 	help

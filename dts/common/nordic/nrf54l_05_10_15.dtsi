@@ -185,7 +185,7 @@
 				cc-num = <6>;
 				max-bit-width = <32>;
 				interrupts = <85 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(128)>;
+				clocks = <&hfpll>;
 				prescaler = <0>;
 			};
 
@@ -214,7 +214,7 @@
 				cc-num = <8>;
 				max-bit-width = <32>;
 				interrupts = <133 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(32)>;
+				clocks = <&hfxo>;
 				prescaler = <0>;
 			};
 

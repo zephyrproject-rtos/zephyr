@@ -37,6 +37,13 @@
 				interrupt-names = "soft0", "timer0";
 			};
 
+			mtimer: timer@200bff8 {
+				compatible = "riscv,machine-timer";
+				interrupts-extended = <&cpu0_intc 7>;
+				reg = <0x200bff8 0x8 0x2004000 0x8>;
+				reg-names = "mtime", "mtimecmp";
+			};
+
 			uart0: serial@10000000{
 				compatible = "ns16550", "snps,dw-apb-uart";
 				reg = <0x10000000 0x400>;

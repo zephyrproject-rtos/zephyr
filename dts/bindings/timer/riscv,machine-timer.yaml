@@ -1,0 +1,14 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: RISC-V Machine Timer.
+
+compatible: "riscv,machine-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts-extended:
+    required: true

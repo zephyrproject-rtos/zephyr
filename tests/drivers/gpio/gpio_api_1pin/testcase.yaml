@@ -13,6 +13,9 @@ tests:
     platform_exclude:
       - mps2/an385
       - mps2/an521/cpu0
+      - mps2/an383
+      - mps2/an386
+      - mps2/an500
       - neorv32
   drivers.gpio.1pin.aw9523b:
     tags:

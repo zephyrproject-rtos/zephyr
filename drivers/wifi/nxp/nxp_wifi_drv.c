@@ -196,10 +196,12 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	case WLAN_REASON_CONNECT_FAILED:
 		net_if_dormant_on(g_mlan.netif);
 		LOG_WRN("WLAN: connect failed");
+		wifi_mgmt_raise_connect_result_event(g_mlan.netif, WIFI_STATUS_CONN_FAIL);
 		break;
 	case WLAN_REASON_NETWORK_NOT_FOUND:
 		net_if_dormant_on(g_mlan.netif);
 		LOG_WRN("WLAN: nxp_wlan_network not found");
+		wifi_mgmt_raise_connect_result_event(g_mlan.netif, WIFI_STATUS_CONN_AP_NOT_FOUND);
 		break;
 	case WLAN_REASON_NETWORK_AUTH_FAILED:
 		LOG_WRN("WLAN: nxp_wlan_network authentication failed");
@@ -210,6 +212,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 			auth_fail = 0;
 		}
 		net_if_dormant_on(g_mlan.netif);
+		wifi_mgmt_raise_connect_result_event(g_mlan.netif, WIFI_STATUS_CONN_WRONG_PASSWORD);
 		break;
 	case WLAN_REASON_ADDRESS_SUCCESS:
 		LOG_DBG("wlan_network mgr: DHCP new lease");
@@ -706,6 +709,17 @@ static int nxp_wifi_process_results(unsigned int count)
 #endif
 		if (scan_result.wpa3_sae) {
 			res.security = WIFI_SECURITY_TYPE_SAE;
+		}
+
+		if (scan_result.wpa3_entp) {
+			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_ONLY;
+			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+		} else if (scan_result.wpa3_1x_sha256) {
+			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB;
+			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
+		} else if (scan_result.wpa3_1x_sha384) {
+			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB_192;
+			res.security = WIFI_SECURITY_TYPE_EAP_TLS;
 		}
 
 		if (scan_result.ap_mfpr) {

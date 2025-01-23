@@ -330,14 +330,14 @@ cmd_write_channels(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-static bool device_is_led_and_ready(const struct device *dev)
+static bool device_is_led(const struct device *dev)
 {
-	return device_is_ready(dev) && DEVICE_API_IS(led, dev);
+	return DEVICE_API_IS(led, dev);
 }
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_filter(idx, device_is_led_and_ready);
+	const struct device *dev = shell_device_filter(idx, device_is_led);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

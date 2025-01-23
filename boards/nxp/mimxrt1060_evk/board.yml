@@ -9,7 +9,8 @@ boards:
           - name: "hyperflash"
     revision:
       format: "letter"
-      default: "A"
+      default: "C"
       revisions:
         - name: "A"
         - name: "B"
+        - name: "C"

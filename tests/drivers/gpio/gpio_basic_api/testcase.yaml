@@ -56,8 +56,9 @@ tests:
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
-      - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1060_evk@A/mimxrt1062/qspi
       - mimxrt1060_evk@B/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
       - lpcxpresso55s69/lpc55s69/cpu0
       - lpcxpresso55s36
   drivers.gpio.2pin_arduino_customized:
@@ -71,7 +72,6 @@ tests:
       - mimxrt1020_evk
       - mimxrt1040_evk
       - mimxrt1060_evk/mimxrt1062/qspi
-      - mimxrt1060_evk@B/mimxrt1062/qspi
       - lpcxpresso55s69/lpc55s69/cpu0
       - lpcxpresso55s36
       - nucleo_wb09ke

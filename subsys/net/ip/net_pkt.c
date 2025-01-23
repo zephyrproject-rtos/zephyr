@@ -1033,13 +1033,12 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_PKT_ALLOC_STATS)
 	uint32_t start_time = k_cycle_get_32();
-	size_t total_size = size;
+	size_t total_size = size + headroom;
 #else
 	ARG_UNUSED(pkt);
 #endif
-	ARG_UNUSED(headroom);
 
-	buf = net_buf_alloc_len(pool, size, timeout);
+	buf = net_buf_alloc_len(pool, size + headroom, timeout);
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_FRAG_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
@@ -1337,6 +1336,16 @@ int net_pkt_alloc_buffer_with_reserve(struct net_pkt *pkt,
 	return 0;
 }
 
+static bool is_pkt_tx(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	if ((pkt->context != NULL) && (get_tx_slab(pkt->context) != NULL)) {
+		return pkt->slab == get_tx_slab(pkt->context);
+	}
+#endif
+	return pkt->slab == &tx_pkts;
+}
+
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 			       size_t size,
@@ -1364,7 +1373,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 
 	iface = net_pkt_iface(pkt);
 
-	if (iface != NULL && net_if_l2(iface)->alloc != NULL) {
+	if (iface != NULL && is_pkt_tx(pkt) && net_if_l2(iface)->alloc != NULL) {
 		ret = net_if_l2(iface)->alloc(iface, pkt, size, proto, timeout);
 		if (ret != -ENOTSUP) {
 			return ret;

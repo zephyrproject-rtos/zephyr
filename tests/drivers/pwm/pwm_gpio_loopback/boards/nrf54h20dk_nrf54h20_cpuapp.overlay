@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test requires wire connection between:
+ *  - PWM130 OUT[0] at P0.00 <-> GPIO input at P0.01
+ *  - PWM120 OUT[0] at P7.00 <-> GPIO input at P1.09
+ *  - PWM120 OUT[1] at P7.01 <-> GPIO input at P1.05
+ */
+
+/ {
+	zephyr,user {
+		pwms = <&pwm130 0 160000 PWM_POLARITY_NORMAL>,
+			<&pwm120 0 80000 PWM_POLARITY_NORMAL>,
+			<&pwm120 1 80000 PWM_POLARITY_NORMAL>;
+		gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>,
+			<&gpio1 9 GPIO_ACTIVE_HIGH>,
+			<&gpio1 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	pwm130_default: pwm130_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 0)>;
+		};
+	};
+
+	pwm130_sleep: pwm130_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 0)>;
+			low-power-enable;
+		};
+	};
+
+	pwm120_default: pwm120_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>,
+				<NRF_PSEL(PWM_OUT1, 7, 1)>;
+		};
+	};
+	pwm120_sleep: pwm120_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>,
+				<NRF_PSEL(PWM_OUT1, 7, 1)>;
+			low-power-enable;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&pwm120 {
+	status = "okay";
+	pinctrl-0 = <&pwm120_default>;
+	pinctrl-1 = <&pwm120_sleep>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&dma_fast_region>;
+};
+
+&dma_fast_region {
+	status = "okay";
+};

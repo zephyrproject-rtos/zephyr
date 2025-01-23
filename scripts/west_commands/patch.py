@@ -5,9 +5,11 @@
 import argparse
 import hashlib
 import os
+import re
 import shlex
 import subprocess
 import textwrap
+import urllib.request
 from pathlib import Path
 
 import pykwalify.core
@@ -15,9 +17,10 @@ import yaml
 from west.commands import WestCommand
 
 try:
+    from yaml import CSafeDumper as SafeDumper
     from yaml import CSafeLoader as SafeLoader
 except ImportError:
-    from yaml import SafeLoader
+    from yaml import SafeDumper, SafeLoader
 
 WEST_PATCH_SCHEMA_PATH = Path(__file__).parents[1] / "schemas" / "patch-schema.yml"
 with open(WEST_PATCH_SCHEMA_PATH) as f:
@@ -60,6 +63,11 @@ class Patch(WestCommand):
 
                 Run "west patch list" to list patches.
                 See "west patch list --help" for details.
+
+            Fetching Patches:
+
+                Run "west patch gh-fetch" to fetch patches from Github.
+                See "west patch gh-fetch --help" for details.
 
             YAML File Format:
 
@@ -166,6 +174,67 @@ class Patch(WestCommand):
             ),
         )
 
+        gh_fetch_arg_parser = subparsers.add_parser(
+            "gh-fetch",
+            help="Fetch patch from Github",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=textwrap.dedent(
+                """
+            Fetching Patches from Github:
+
+                Run "west patch gh-fetch" to fetch a PR from Github and store it as a patch.
+                The meta data is generated and appended to the provided patches.yml file.
+
+                If no patches.yml file exists, it will be created.
+            """
+            ),
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-o",
+            "--owner",
+            action="store",
+            default="zephyrproject-rtos",
+            help="Github repository owner",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-r",
+            "--repo",
+            action="store",
+            default="zephyr",
+            help="Github repository",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-pr",
+            "--pull-request",
+            metavar="ID",
+            action="store",
+            required=True,
+            type=int,
+            help="Github Pull Request ID",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-m",
+            "--module",
+            metavar="DIR",
+            action="store",
+            required=True,
+            type=Path,
+            help="Module path",
+        )
+        gh_fetch_arg_parser.add_argument(
+            "-s",
+            "--split-commits",
+            action="store_true",
+            help="Create patch files for each commit instead of a single patch for the entire PR",
+        )
+        gh_fetch_arg_parser.add_argument(
+            '-t',
+            '--token',
+            metavar='FILE',
+            dest='tokenfile',
+            help='File containing GitHub token (alternatively, use GITHUB_TOKEN env variable)',
+        )
+
         subparsers.add_parser(
             "list",
             help="List patches",
@@ -197,26 +266,32 @@ class Patch(WestCommand):
         if args.west_workspace.is_relative_to(_WEST_TOPDIR):
             args.west_workspace = topdir / args.west_workspace.relative_to(_WEST_TOPDIR)
 
+    def load_yml(self, args, allow_missing):
+        if not os.path.isfile(args.patch_yml):
+            if not allow_missing:
+                self.inf(f"no patches to apply: {args.patch_yml} not found")
+                return None
+
+            # Return the schema defaults
+            return pykwalify.core.Core(source_data={}, schema_data=patches_schema).validate()
+
+        try:
+            with open(args.patch_yml) as f:
+                yml = yaml.load(f, Loader=SafeLoader)
+            return pykwalify.core.Core(source_data=yml, schema_data=patches_schema).validate()
+        except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
+            self.die(f"ERROR: Malformed yaml {args.patch_yml}: {e}")
+
     def do_run(self, args, _):
         self.filter_args(args)
-
-        if not os.path.isfile(args.patch_yml):
-            self.inf(f"no patches to apply: {args.patch_yml} not found")
-            return
 
         west_config = Path(args.west_workspace) / ".west" / "config"
         if not os.path.isfile(west_config):
             self.die(f"{args.west_workspace} is not a valid west workspace")
 
-        try:
-            with open(args.patch_yml) as f:
-                yml = yaml.load(f, Loader=SafeLoader)
-            if not yml:
-                self.inf(f"{args.patch_yml} is empty")
-                return
-            pykwalify.core.Core(source_data=yml, schema_data=patches_schema).validate()
-        except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
-            self.die(f"ERROR: Malformed yaml {args.patch_yml}: {e}")
+        yml = self.load_yml(args, args.subcommand in ["gh-fetch"])
+        if yml is None:
+            return
 
         if not args.subcommand:
             args.subcommand = "list"
@@ -225,6 +300,7 @@ class Patch(WestCommand):
             "apply": self.apply,
             "clean": self.clean,
             "list": self.list,
+            "gh-fetch": self.gh_fetch,
         }
 
         method[args.subcommand](args, yml, args.modules)
@@ -347,6 +423,72 @@ class Patch(WestCommand):
             if mods and Path(patch_info["module"]) not in mods:
                 continue
             self.inf(patch_info)
+
+    def gh_fetch(self, args, yml, mods=None):
+        if mods:
+            self.die(
+                "Module filters are not available for the gh-fetch subcommand, "
+                "pass a single -m/--module argument after the subcommand."
+            )
+
+        try:
+            from github import Auth, Github
+        except ImportError:
+            self.die("PyGithub not found; can be installed with 'pip install PyGithub'")
+
+        gh = Github(auth=Auth.Token(args.tokenfile) if args.tokenfile else None)
+        pr = gh.get_repo(f"{args.owner}/{args.repo}").get_pull(args.pull_request)
+        args.patch_base.mkdir(parents=True, exist_ok=True)
+
+        if args.split_commits:
+            for cm in pr.get_commits():
+                subject = cm.commit.message.splitlines()[0]
+                filename = "-".join(filter(None, re.split("[^a-zA-Z0-9]+", subject))) + ".patch"
+
+                # No patch URL is provided by the API, but appending .patch to the HTML works too
+                urllib.request.urlretrieve(f"{cm.html_url}.patch", args.patch_base / filename)
+
+                patch_info = {
+                    "path": filename,
+                    "sha256sum": self.get_file_sha256sum(args.patch_base / filename),
+                    "module": str(args.module),
+                    "author": cm.commit.author.name or "Hidden",
+                    "email": cm.commit.author.email or "hidden@github.com",
+                    "date": cm.commit.author.date.strftime("%Y-%m-%d"),
+                    "upstreamable": True,
+                    "merge-pr": pr.html_url,
+                    "merge-status": pr.merged,
+                }
+
+                yml.setdefault("patches", []).append(patch_info)
+        else:
+            filename = "-".join(filter(None, re.split("[^a-zA-Z0-9]+", pr.title))) + ".patch"
+            urllib.request.urlretrieve(pr.patch_url, args.patch_base / filename)
+
+            patch_info = {
+                "path": filename,
+                "sha256sum": self.get_file_sha256sum(args.patch_base / filename),
+                "module": str(args.module),
+                "author": pr.user.name or "Hidden",
+                "email": pr.user.email or "hidden@github.com",
+                "date": pr.created_at.strftime("%Y-%m-%d"),
+                "upstreamable": True,
+                "merge-pr": pr.html_url,
+                "merge-status": pr.merged,
+            }
+
+            yml.setdefault("patches", []).append(patch_info)
+
+        args.patch_yml.parent.mkdir(parents=True, exist_ok=True)
+        with open(args.patch_yml, "w") as f:
+            yaml.dump(yml, f, Dumper=SafeDumper)
+
+    @staticmethod
+    def get_file_sha256sum(filename: Path) -> str:
+        with open(filename, "rb") as fp:
+            digest = hashlib.file_digest(fp, "sha256")
+
+        return digest.hexdigest()
 
     @staticmethod
     def get_mod_paths(args, yml):

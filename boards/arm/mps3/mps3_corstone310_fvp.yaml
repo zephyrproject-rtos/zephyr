@@ -13,7 +13,6 @@ simulation:
 toolchain:
   - gnuarmemb
   - zephyr
-  - xtools
 supported:
   - gpio
 testing:

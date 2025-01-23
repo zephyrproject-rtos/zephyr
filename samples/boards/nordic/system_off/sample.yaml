@@ -112,12 +112,6 @@ tests:
         - "system off demo"
         - "Retained data not supported"
         - "Entering system off; change signal level at comparator input to restart"
-        - "system off demo"
-        - "Retained data not supported"
-        - "Entering system off; change signal level at comparator input to restart"
-        - "system off demo"
-        - "Retained data not supported"
-        - "Entering system off; change signal level at comparator input to restart"
   sample.boards.nrf.system_off.retained_mem.lpcomp_wakeup:
     extra_args:
       - "DTC_OVERLAY_FILE=
@@ -140,11 +134,5 @@ tests:
         - "Retained data: INVALID"
         - "Boot count: 1"
         - "Off count: 0"
-        - "Active Ticks:"
-        - "Entering system off; change signal level at comparator input to restart"
-        - "system off demo"
-        - "Retained data: valid"
-        - "Boot count: 2"
-        - "Off count: 1"
         - "Active Ticks:"
         - "Entering system off; change signal level at comparator input to restart"

@@ -10,7 +10,21 @@ config UART_MAX32
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select PINCTRL
+	select SERIAL_SUPPORT_ASYNC if DT_HAS_ADI_MAX32_DMA_ENABLED
+	select DMA if UART_ASYNC_API
 	help
 	  This option enables the UART driver for MAX32 family of
 	  processors.
 	  Say y if you wish to use serial port on MAX32 MCU.
+
+if UART_MAX32
+
+config UART_TX_CACHE_LEN
+	int "TX cache buffer size"
+	range 8 64
+	default 8
+	help
+	  Size of UART transmit buffer that is used when source buffer
+	  is not located in a DMA-able region.
+
+endif # UART_MAX32

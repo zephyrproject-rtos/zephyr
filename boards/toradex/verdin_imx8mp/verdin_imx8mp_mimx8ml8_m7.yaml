@@ -13,6 +13,5 @@ flash: 128
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - uart

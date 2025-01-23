@@ -5,7 +5,7 @@
 
 config FAT_FILESYSTEM_ELM
 	bool "ELM FAT file system support"
-	depends on FILE_SYSTEM
+	depends on FILE_SYSTEM_LIB_LINK
 	select DISK_ACCESS
 	help
 	  Use the ELM FAT File system implementation.

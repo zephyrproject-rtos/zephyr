@@ -10,7 +10,8 @@ tests:
       - renode
     harness_config:
       record:
-        regex: "RECORD:(?P<metrics>.*)"
+        regex:
+          - "RECORD:(?P<metrics>.*)"
         as_json: ['metrics']
   kernel.timer.timer_behavior_external:
     filter: dt_compat_enabled("test-kernel-timer-behavior-external")
@@ -20,7 +21,8 @@ tests:
                     'address=127.0.0.1,port=10430,channel=1,sample-rate=6_250_000,threshold-volts=3.3']
       fixture: gpio_timerout
       record:
-        regex: "RECORD:(?P<metrics>.*)"
+        regex:
+          - "RECORD:(?P<metrics>.*)"
         as_json: ['metrics']
     extra_configs:
       - CONFIG_TIMER_EXTERNAL_TEST=y

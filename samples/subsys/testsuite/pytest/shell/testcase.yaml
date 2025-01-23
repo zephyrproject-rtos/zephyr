@@ -12,3 +12,17 @@ tests:
       - test_framework
       - pytest
       - shell
+  sample.pytest.shell.vt100_colors_off:
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
+    min_ram: 40
+    harness: pytest
+    extra_configs:
+      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_SHELL_VT100_COLORS=n
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
+    tags:
+      - test_framework
+      - pytest
+      - shell

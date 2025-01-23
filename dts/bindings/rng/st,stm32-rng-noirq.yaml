@@ -1,0 +1,17 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Random Number Generator without interrupt line
+
+compatible: "st,stm32-rng-noirq"
+
+include:
+  - name: st,stm32-rng.yaml
+    property-blocklist:
+      - interrupts
+
+properties:
+  generation-delay-ns:
+    type: int
+    description: |
+      Delay between the generation of two random samples, in nanoseconds.

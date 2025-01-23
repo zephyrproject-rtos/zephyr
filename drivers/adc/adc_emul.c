@@ -394,24 +394,34 @@ static int adc_emul_start_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int adc_emul_read_async(const struct device *dev,
+static int adc_emul_read_common(const struct device *dev,
 			       const struct adc_sequence *sequence,
+			       bool is_async,
 			       struct k_poll_signal *async)
 {
 	struct adc_emul_data *data = dev->data;
 	int err;
 
-	adc_context_lock(&data->ctx, async ? true : false, async);
+	adc_context_lock(&data->ctx, is_async, async);
 	err = adc_emul_start_read(dev, sequence);
 	adc_context_release(&data->ctx, err);
 
 	return err;
 }
 
+#ifdef CONFIG_ADC_ASYNC
+static int adc_emul_read_async(const struct device *dev,
+			       const struct adc_sequence *sequence,
+			       struct k_poll_signal *async)
+{
+	return adc_emul_read_common(dev, sequence, true, async);
+}
+#endif
+
 static int adc_emul_read(const struct device *dev,
 			 const struct adc_sequence *sequence)
 {
-	return adc_emul_read_async(dev, sequence, NULL);
+	return adc_emul_read_common(dev, sequence, false, NULL);
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)

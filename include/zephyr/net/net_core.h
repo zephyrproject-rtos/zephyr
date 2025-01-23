@@ -21,6 +21,7 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/net/net_timeout.h>
+#include <zephyr/net/net_linkaddr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,6 +154,39 @@ int net_send_data(struct net_pkt *pkt);
 #define NET_TC_RX_COUNT 0
 #define NET_TC_COUNT 0
 #endif /* CONFIG_NET_TC_TX_COUNT && CONFIG_NET_TC_RX_COUNT */
+
+/**
+ * @brief Registration information for a given L3 handler. Note that
+ *        the layer number (L3) just refers to something that is on top
+ *        of L2. So for example IPv6 is L3 and IPv4 is L3, but Ethernet
+ *        based LLDP, gPTP are more in the layer 2.5 but we consider them
+ *        as L3 here for simplicity.
+ */
+struct net_l3_register {
+	/** Store also the name of the L3 type in order to be able to
+	 * print it later.
+	 */
+	const char * const name;
+	/** What L2 layer this is for */
+	const struct net_l2 * const l2;
+	/** Handler function for the given protocol type */
+	enum net_verdict (*handler)(struct net_if *iface,
+				    uint16_t ptype,
+				    struct net_pkt *pkt);
+	/** Protocol type */
+	uint16_t ptype;
+};
+
+#define NET_L3_GET_NAME(l3_name, ptype) __net_l3_register_##l3_name##_##ptype
+
+#define NET_L3_REGISTER(_l2_type, _name, _ptype, _handler)		\
+	static const STRUCT_SECTION_ITERABLE(net_l3_register,		\
+				    NET_L3_GET_NAME(_name, _ptype)) = { \
+		.ptype = _ptype,					\
+		.handler = _handler,					\
+		.name = STRINGIFY(_name),				\
+		.l2 = _l2_type,						\
+	};
 
 /* @endcond */
 

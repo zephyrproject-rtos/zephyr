@@ -717,7 +717,8 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr);
  *
  * @param attr A Characteristic Attribute.
  *
- * @note The ``user_data`` of the attribute must of type @ref bt_gatt_chrc.
+ * @note The ``user_data`` of the attribute must of type @ref bt_gatt_chrc and the ``uuid`` shall be
+ * BT_UUID_GATT_CHRC
  *
  * @return the handle of the corresponding Characteristic Value. The value will
  *         be zero (the invalid handle) if @p attr was not a characteristic

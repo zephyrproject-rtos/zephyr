@@ -11,3 +11,7 @@ tests:
   net.vlan.header_reserved:
     extra_configs:
       - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=y
+  net.vlan.header_reserved.variable_size:
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=y
+      - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y

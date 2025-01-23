@@ -8,35 +8,35 @@
  * Enable Radio on Event Timer tick:
  * wire the EVENT_TIMER EVENTS_COMPARE[0] event to RADIO TASKS_TXEN/RXEN task.
  */
-#define HAL_RADIO_ENABLE_TX_ON_TICK_PPI 6
-#define HAL_RADIO_ENABLE_RX_ON_TICK_PPI 6
+#define HAL_RADIO_ENABLE_TX_ON_TICK_PPI 9
+#define HAL_RADIO_ENABLE_RX_ON_TICK_PPI 9
 
 /*******************************************************************************
  * Capture event timer on Address reception:
  * wire the RADIO EVENTS_ADDRESS event to the
  * EVENT_TIMER TASKS_CAPTURE[<address timer>] task.
  */
-#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 9
+#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 11
 
 /*******************************************************************************
  * Disable Radio on HCTO:
  * wire the EVENT_TIMER EVENTS_COMPARE[<HCTO timer>] event
  * to the RADIO TASKS_DISABLE task.
  */
-#define HAL_RADIO_DISABLE_ON_HCTO_PPI 10
+#define HAL_RADIO_DISABLE_ON_HCTO_PPI 12
 
 /*******************************************************************************
  * Capture event timer on Radio end:
  * wire the RADIO EVENTS_END event to the
  * EVENT_TIMER TASKS_CAPTURE[<radio end timer>] task.
  */
-#define HAL_RADIO_END_TIME_CAPTURE_PPI 11
+#define HAL_RADIO_END_TIME_CAPTURE_PPI 13
 
 /*******************************************************************************
  * Start event timer on RTC tick:
  * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
  */
-#define HAL_EVENT_TIMER_START_PPI 7
+#define HAL_EVENT_TIMER_START_PPI 8
 #define HAL_PPIB_SEND_EVENT_TIMER_START_PPI \
 	_CONCAT(NRF_PPIB_TASK_SEND_, HAL_EVENT_TIMER_START_PPI)
 #define HAL_PPIB_RECEIVE_EVENT_TIMER_START_PPI \
@@ -47,7 +47,7 @@
  * wire the RADIO EVENTS_READY event to the
  * EVENT_TIMER TASKS_CAPTURE[<radio ready timer>] task.
  */
-#define HAL_RADIO_READY_TIME_CAPTURE_PPI 8
+#define HAL_RADIO_READY_TIME_CAPTURE_PPI 10
 
 /*******************************************************************************
  * Trigger encryption task upon address reception:
@@ -55,34 +55,44 @@
  *
  * Note: we do not need an additional PPI, since we have already set up
  * a PPI to publish RADIO ADDRESS event.
+ * Note: For nRF54L, CCM is started on RADIO PAYLOAD, hence need an explicit
+ * PPI channel.
  */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#define HAL_TRIGGER_CRYPT_PPI 7
+#else /* CONFIG_SOC_COMPATIBLE_NRF54LX */
 #define HAL_TRIGGER_CRYPT_PPI HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI
+#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
+#define HAL_PPIB_SEND_TRIGGER_CRYPT_PPI \
+	_CONCAT(NRF_PPIB_TASK_SEND_, HAL_TRIGGER_CRYPT_PPI)
+#define HAL_PPIB_RECEIVE_TRIGGER_CRYPT_PPI \
+	_CONCAT(NRF_PPIB_EVENT_RECEIVE_, HAL_TRIGGER_CRYPT_PPI)
 
 /*******************************************************************************
  * Trigger automatic address resolution on Bit counter match:
  * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
  */
-#define HAL_TRIGGER_AAR_PPI 12
+#define HAL_TRIGGER_AAR_PPI 6
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED) && \
 	defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 /*******************************************************************************
  * Trigger Radio Rate override upon Rateboost event.
  */
-#define HAL_TRIGGER_RATEOVERRIDE_PPI 13
+#define HAL_TRIGGER_RATEOVERRIDE_PPI 3
 #endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 /******************************************************************************/
-#define HAL_ENABLE_PALNA_PPI 5
+#define HAL_ENABLE_PALNA_PPI 2
 
 #if defined(HAL_RADIO_FEM_IS_NRF21540)
-#define HAL_DISABLE_PALNA_PPI 4
+#define HAL_DISABLE_PALNA_PPI 0
 #else
 #define HAL_DISABLE_PALNA_PPI HAL_ENABLE_PALNA_PPI
 #endif
 
-#define HAL_ENABLE_FEM_PPI 3
+#define HAL_ENABLE_FEM_PPI 1
 #define HAL_DISABLE_FEM_PPI HAL_DISABLE_PALNA_PPI
 
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN || HAL_RADIO_GPIO_HAVE_LNA_PIN */
@@ -94,16 +104,16 @@
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.
  *
- * Note: In case of HW TIFS support or single timer configuration we do not need
- * an additional PPI, since we have already set up a PPI to publish RADIO END
- * event. In other case separate PPI is used because packet end is marked by
- * PHYEND event while last bit or CRC is marked by END event.
+ * Note: In case of single timer configuration we do not need an additional PPI,
+ * since we have already set up a PPI to publish RADIO END event. In other case
+ * separate PPI is used because packet end is marked by PHYEND event while last
+ * bit or CRC is marked by END event.
  */
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-#define HAL_SW_SWITCH_TIMER_CLEAR_PPI 24
-#else /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI HAL_RADIO_END_TIME_CAPTURE_PPI
-#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#define HAL_SW_SWITCH_TIMER_CLEAR_PPI 24
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
@@ -162,11 +172,11 @@
  * when direction finding RX and PHY is set to PHY1M. Due to that it can be shared with Radio Rate
  * override.
  */
-#define HAL_TRIGGER_CRYPT_DELAY_PPI 13
+#define HAL_TRIGGER_CRYPT_DELAY_PPI 3
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 /* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
  * auto-switch for TIFS. 'index' must be 0 or 1.
  */
-#define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
+#define SW_SWITCH_TIMER_TASK_GROUP_BASE 4
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */

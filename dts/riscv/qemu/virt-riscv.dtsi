@@ -193,5 +193,19 @@
 					       &hlic6 0x03 &hlic6 0x07
 					       &hlic7 0x03 &hlic7 0x07>;
 		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&hlic0 7
+						&hlic1 7
+						&hlic2 7
+						&hlic3 7
+						&hlic4 7
+						&hlic5 7
+						&hlic6 7
+						&hlic7 7>;
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+		};
 	};
 };

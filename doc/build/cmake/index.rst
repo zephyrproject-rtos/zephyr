@@ -43,6 +43,9 @@ source file :file:`src/main.c`, behavior that we surely do not want. The
 ``PUBLIC`` keyword could however be useful when modifying the include
 paths of a target library.
 
+When introducing build system code using CMake or adding new CMake files,
+please follow the style guidlines outline :ref:`here <cmake-style>`.
+
 
 Build and Configuration Phases
 ==============================

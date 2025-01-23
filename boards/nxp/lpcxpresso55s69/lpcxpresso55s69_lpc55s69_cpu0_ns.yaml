@@ -13,7 +13,6 @@ flash: 96
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - arduino_spi

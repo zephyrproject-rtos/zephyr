@@ -23,7 +23,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_mcp23xxx);
 
-#define MCP23XXX_RESET_TIME_US 1
+#define MCP23XXX_RESET_TIME_US 2
 
 /**
  * @brief Reads given register from mcp23xxx.

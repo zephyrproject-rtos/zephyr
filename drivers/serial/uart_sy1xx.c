@@ -11,10 +11,12 @@
 #include <zephyr/sys/printk.h>
 #include <udma.h>
 #include <pad_ctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 struct sy1xx_uart_config {
 	uint32_t base;
 	uint32_t inst;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 typedef struct {
@@ -259,28 +261,11 @@ static int sy1xx_uart_init(const struct device *dev)
 	sy1xx_udma_enable_clock(SY1XX_UDMA_MODULE_UART, config->inst);
 
 	/* PAD config */
-	uint32_t pad_config_tx =
-		SY1XX_PAD_CONFIG(0, SY1XX_PAD_SMT_DISABLE, SY1XX_PAD_SLEW_LOW, SY1XX_PAD_PULLUP_DIS,
-				 SY1XX_PAD_PULLDOWN_DIS, SY1XX_PAD_DRIVE_2PF, SY1XX_PAD_PMOD_NORMAL,
-				 SY1XX_PAD_DIR_OUTPUT);
+	int32_t ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
-	uint32_t pad_config_rx =
-		SY1XX_PAD_CONFIG(8, SY1XX_PAD_SMT_DISABLE, SY1XX_PAD_SLEW_LOW, SY1XX_PAD_PULLUP_DIS,
-				 SY1XX_PAD_PULLDOWN_DIS, SY1XX_PAD_DRIVE_2PF, SY1XX_PAD_PMOD_NORMAL,
-				 SY1XX_PAD_DIR_INPUT);
-
-	uint32_t pad_config_cts =
-		SY1XX_PAD_CONFIG(16, SY1XX_PAD_SMT_DISABLE, SY1XX_PAD_SLEW_LOW, SY1XX_PAD_PULLUP_EN,
-				 SY1XX_PAD_PULLDOWN_DIS, SY1XX_PAD_DRIVE_2PF, SY1XX_PAD_PMOD_NORMAL,
-				 SY1XX_PAD_DIR_INPUT);
-
-	uint32_t pad_config_rts =
-		SY1XX_PAD_CONFIG(24, SY1XX_PAD_SMT_DISABLE, SY1XX_PAD_SLEW_LOW,
-				 SY1XX_PAD_PULLUP_DIS, SY1XX_PAD_PULLDOWN_DIS, SY1XX_PAD_DRIVE_2PF,
-				 SY1XX_PAD_PMOD_NORMAL, SY1XX_PAD_DIR_OUTPUT);
-
-	sys_write32((pad_config_tx | pad_config_rx | pad_config_cts | pad_config_rts),
-		    SY1XX_PAD_CONFIG_ADDR_UART + (config->inst * 4 + 0));
+	if (ret < 0) {
+		return ret;
+	}
 
 	sy1xx_uartConfig_t default_config = {
 		.baudrate = 1000000,
@@ -306,9 +291,12 @@ static DEVICE_API(uart, sy1xx_uart_driver_api) = {
 
 #define SYS1XX_UART_INIT(n)                                                                        \
                                                                                                    \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
 	static const struct sy1xx_uart_config sy1xx_uart_##n##_cfg = {                             \
 		.base = (uint32_t)DT_INST_REG_ADDR(n),                                             \
 		.inst = (uint32_t)DT_INST_PROP(n, instance),                                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 	};                                                                                         \
                                                                                                    \
 	static struct sy1xx_uart_data __attribute__((section(".udma_access")))                     \

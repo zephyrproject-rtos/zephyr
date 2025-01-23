@@ -157,6 +157,12 @@ Display
 * Renamed the devicetree propertys ``pclk_pol`` and ``data_cmd-gpios``
   to ``pclk-pol`` and ``data-cmd-gpios``.
 
+DAC
+===
+
+* Renamed the devicetree properties ``voltage_reference`` and ``power_down_mode``
+  to ``voltage-reference`` and ``power-down-mode``.
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
@@ -194,6 +200,11 @@ I2S
 
 Input
 =====
+
+LED
+===
+
+* Renamed the device tree property ``max_curr_opt`` to ``max-curr-opt``.`
 
 PWM
 ===
@@ -257,10 +268,26 @@ SDHC
 Sensors
 =======
 
+  * The :dtcompatible:`we,wsen-pdus` driver has been renamed to
+    :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        pdus:pdus-25131308XXXXX@78 {
+          compatible = "we,wsen-pdus-25131308XXXXX";
+          reg = < 0x78 >;
+          sensor-type = < 4 >;
+        };
+      };
+
 Serial
 ======
 
 * Renamed the ``compatible`` from ``nxp,kinetis-lpuart`` to :dtcompatible:`nxp,lpuart`.
+* Silabs Usart driver has been split for Series 2 :dtcompatible:`silabs,usart-uart`
+  and  Series 0/1 ``silabs,gecko-usart``
 
 Stepper
 =======
@@ -279,12 +306,24 @@ Stepper
     :kconfig:option:`STEPPER_ADI_TMC5041_RAMP_GEN` option.
   * To control the velocity for :dtcompatible:`adi,tmc5041` stepper driver, use
     :c:func:`tmc5041_stepper_set_max_velocity` or :c:func:`tmc5041_stepper_set_ramp`.
+  * Renamed the DeviceTree property ``en_spreadcycle`` to ``en-spreadcycle``.
+  * Renamed the DeviceTree property ``i_scale_analog`` to ``i-scale-analog``.
+  * Renamed the DeviceTree property ``index_optw`` to ``index-otpw``.
+  * Renamed the DeviceTree property ``ìndex_step`` to ``index-step``.
+  * Renamed the DeviceTree property ``internal_rsense`` to ``internal-rsense``.
+  * Renamed the DeviceTree property ``lock_gconf`` to ``lock-gconf``.
+  * Renamed the DeviceTree property ``mstep_reg_select`` to ``mstep-reg-select``.
+  * Renamed the DeviceTree property ``pdn_disable`` to ``pdn-disable``.
+  * Renamed the DeviceTree property ``poscmp_enable`` to ``poscmp-enable``.
+  * Renamed the DeviceTree property ``test_mode`` to ``test-mode``.
 
 SPI
 ===
 
 * Renamed the ``compatible`` from ``nxp,imx-lpspi`` to :dtcompatible:`nxp,lpspi`.
 * Renamed the ``compatible`` from ``nxp,kinetis-dspi`` to :dtcompatible:`nxp,dspi`.
+* Renamed the ``compatible`` from ``silabs,gecko-spi-usart`` to :dtcompatible:`silabs,usart-spi`.
+* Renamed the ``compatible`` from ``silabs,gecko-spi-eusart`` to :dtcompatible:`silabs,eusart-spi`.
 
 Regulator
 =========
@@ -348,6 +387,11 @@ Bluetooth Mesh
   set as deprecated. Default option for platforms that do not support TF-M
   is :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`.
 
+* Mesh explicitly depends on the Secure Storage subsystem if storing into
+  non-volatile memory (:kconfig:option:`CONFIG_BT_SETTINGS`) is enabled and
+  Mbed TLS library (:kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`) is used.
+  Applications should be built with :kconfig:option:`CONFIG_SECURE_STORAGE` enabled.
+
 Bluetooth Audio
 ===============
 
@@ -363,6 +407,12 @@ Bluetooth Audio
     * :kconfig:option:`CONFIG_BT_ISO_SYNC_RECEIVER`
     * :kconfig:option:`CONFIG_BT_PAC_SNK`
     * :kconfig:option:`CONFIG_BT_PAC_SRC`
+
+* PACS have been changed to support dynamic, runtime configuration. This means that PACS now has
+  to be registered with :c:func:`bt_pacs_register` before it can be used. In addition,
+  :c:func:`bt_pacs_register` also have to be called before :c:func:`bt_ascs_register` can be
+  be called. All Kconfig options still remain. Runtime configuration cannot override a disabled
+  Kconfig option. (:github:`83730`)
 
 Bluetooth Classic
 =================
@@ -424,6 +474,12 @@ Other Subsystems
 
 Flash map
 =========
+
+Filesystem
+==========
+
+* The EXT2 Kconfig symbol ``CONFIG_MAX_FILES`` has been renamed to
+  :kconfig:option:`CONFIG_EXT2_MAX_FILES`.
 
 hawkBit
 =======

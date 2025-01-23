@@ -1,0 +1,30 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Single Port Gigabit Ethernet Copper PHY with GMII/RGMII/MII/RMII Interfaces
+
+compatible: "microchip,vsc8541"
+
+include: [ethernet-phy.yaml]
+
+on-bus: mdio
+
+properties:
+  reg:
+    required: true
+    description: |
+      5-bit MDIO PHY address for the attached PHY.
+
+  reset-gpios:
+    type: phandle-array
+    description: GPIO connected to MAC PHY reset signal pin. Reset is active low.
+
+  microchip,interface-type:
+    type: string
+    required: true
+    description: Which type of phy connection the phy is set up for
+    enum:
+      - "mii"
+      - "rmii"
+      - "gmii"
+      - "rgmii"

@@ -44,9 +44,10 @@
 		};
 
 		mtimer: machine-timer@90000 {
-			compatible = "niosv-machine-timer";
-			reg = <0x90000 0x10>;
-			interrupts = <7>;
+			compatible = "riscv,machine-timer";
+			reg = <0x90000 0x8 0x90008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&intc 7>;
 		};
 
 		uart0: serial@90078 {

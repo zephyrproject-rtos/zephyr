@@ -22,22 +22,22 @@
 
 static struct gpio_callback gpio_cb;
 
-#define PWM_COUNT                      DT_PROP_LEN(DT_PATH(zephyr_user), pwms)
-#define PWM_CONFIG_ENTRY(idx, node_id) PWM_DT_SPEC_GET_BY_IDX(node_id, idx)
-#define PWM_CONFIG_ARRAY(node_id)                                                                  \
+#define TEST_PWM_COUNT                      DT_PROP_LEN(DT_PATH(zephyr_user), pwms)
+#define TEST_PWM_CONFIG_ENTRY(idx, node_id) PWM_DT_SPEC_GET_BY_IDX(node_id, idx)
+#define TEST_PWM_CONFIG_ARRAY(node_id)                                                             \
 	{                                                                                          \
-		LISTIFY(PWM_COUNT, PWM_CONFIG_ENTRY, (,), node_id)                                 \
+		LISTIFY(TEST_PWM_COUNT, TEST_PWM_CONFIG_ENTRY, (,), node_id)                       \
 	}
 
-#define GPIO_COUNT                      DT_PROP_LEN(DT_PATH(zephyr_user), gpios)
-#define GPIO_CONFIG_ENTRY(idx, node_id) GPIO_DT_SPEC_GET_BY_IDX(node_id, gpios, idx)
-#define GPIO_CONFIG_ARRAY(node_id)                                                                 \
+#define TEST_GPIO_COUNT                      DT_PROP_LEN(DT_PATH(zephyr_user), gpios)
+#define TEST_GPIO_CONFIG_ENTRY(idx, node_id) GPIO_DT_SPEC_GET_BY_IDX(node_id, gpios, idx)
+#define TEST_GPIO_CONFIG_ARRAY(node_id)                                                            \
 	{                                                                                          \
-		LISTIFY(GPIO_COUNT, GPIO_CONFIG_ENTRY, (,), node_id)                               \
+		LISTIFY(TEST_GPIO_COUNT, TEST_GPIO_CONFIG_ENTRY, (,), node_id)                     \
 	}
 
-static const struct pwm_dt_spec pwms_dt[] = PWM_CONFIG_ARRAY(DT_PATH(zephyr_user));
-static const struct gpio_dt_spec gpios_dt[] = GPIO_CONFIG_ARRAY(DT_PATH(zephyr_user));
+static const struct pwm_dt_spec pwms_dt[] = TEST_PWM_CONFIG_ARRAY(DT_PATH(zephyr_user));
+static const struct gpio_dt_spec gpios_dt[] = TEST_GPIO_CONFIG_ARRAY(DT_PATH(zephyr_user));
 
 static struct test_context {
 	uint32_t last_edge_time;
@@ -218,7 +218,7 @@ static void test_run(const struct pwm_dt_spec *pwm_dt, const struct gpio_dt_spec
 
 ZTEST(pwm_gpio_loopback, test_pwm)
 {
-	for (int i = 0; i < PWM_COUNT; i++) {
+	for (int i = 0; i < TEST_PWM_COUNT; i++) {
 		zassert_true(device_is_ready(pwms_dt[i].dev), "PWM device is not ready");
 		zassert_true(device_is_ready(gpios_dt[i].port), "GPIO device is not ready");
 
@@ -238,7 +238,7 @@ ZTEST(pwm_gpio_loopback, test_pwm)
 
 ZTEST(pwm_gpio_loopback, test_pwm_cross)
 {
-	for (int i = 0; i < PWM_COUNT; i++) {
+	for (int i = 0; i < TEST_PWM_COUNT; i++) {
 		/* Test case: [Duty: 40%] */
 		test_run(&pwms_dt[i], &gpios_dt[i], 40, true);
 	}
@@ -246,7 +246,7 @@ ZTEST(pwm_gpio_loopback, test_pwm_cross)
 	/* Set all channels and check if they retain the original
 	 * configuration without calling pwm_set again
 	 */
-	for (int i = 0; i < PWM_COUNT; i++) {
+	for (int i = 0; i < TEST_PWM_COUNT; i++) {
 		test_run(&pwms_dt[i], &gpios_dt[i], 40, false);
 	}
 }

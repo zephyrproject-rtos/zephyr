@@ -22,7 +22,6 @@
 	};
 
 	/delete-node/ cpus;
-	/delete-node/ clocks;
 	/delete-node/ sw-pwm;
 
 	soc {
@@ -56,7 +55,7 @@
 
 	rng: rng {
 		status = "okay";
-		compatible = "zephyr,native-posix-rng";
+		compatible = "nordic,nrf-cracen-ctrdrbg";
 	};
 
 	psa_rng: psa-rng {

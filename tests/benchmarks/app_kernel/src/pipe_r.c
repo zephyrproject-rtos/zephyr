@@ -95,12 +95,9 @@ int pipeget(struct k_pipe *pipe, enum pipe_options option, int size, int count,
 	for (i = 0; option == _1_TO_N || (i < count); i++) {
 		size_t sizexferd = 0;
 		size_t size2xfer = MIN(size, size2xfer_total - sizexferd_total);
-		int ret;
 
-		ret = k_pipe_get(pipe, data_recv, size2xfer,
-				 &sizexferd, option, K_FOREVER);
-
-		if (ret != 0) {
+		sizexferd = k_pipe_read(pipe, data_recv, size2xfer, K_FOREVER);
+		if (sizexferd  < 0) {
 			return 1;
 		}
 

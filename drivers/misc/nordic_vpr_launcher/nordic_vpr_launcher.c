@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
@@ -38,6 +39,11 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 		LOG_DBG("Loading VPR (%p) from %p to %p (%zu bytes)", config->vpr,
 			(void *)config->src_addr, (void *)config->exec_addr, config->size);
 		memcpy((void *)config->exec_addr, (void *)config->src_addr, config->size);
+#if defined(CONFIG_DCACHE)
+		LOG_DBG("Writing back cache with loaded VPR (from %p %zu bytes)",
+			(void *)config->exec_addr, config->size);
+		sys_cache_data_flush_range((void *)config->exec_addr, config->size);
+#endif
 	}
 #endif
 

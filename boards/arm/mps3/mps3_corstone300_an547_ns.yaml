@@ -16,7 +16,6 @@ simulation:
 toolchain:
   - gnuarmemb
   - zephyr
-  - xtools
 testing:
   default: true
   only_tags:

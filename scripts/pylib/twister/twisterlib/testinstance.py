@@ -105,9 +105,12 @@ class TestInstance:
                 self.recording.extend(recording)
 
             filename = os.path.join(self.build_dir, fname_csv)
+            fieldnames = set()
+            for r in self.recording:
+                fieldnames.update(r)
             with open(filename, 'w') as csvfile:
                 cw = csv.DictWriter(csvfile,
-                                    fieldnames = self.recording[0].keys(),
+                                    fieldnames = sorted(list(fieldnames)),
                                     lineterminator = os.linesep,
                                     quoting = csv.QUOTE_NONNUMERIC)
                 cw.writeheader()

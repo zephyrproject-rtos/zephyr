@@ -5202,7 +5202,11 @@ function(zephyr_iterable_section)
   endif()
 
   if(SECTION_NUMERIC)
-    set(INPUT "._${SECTION_NAME}.static.*_?_*;._${SECTION_NAME}.static.*_??_*")
+    set(INPUT "._${SECTION_NAME}.static.*_?_*;"
+              "._${SECTION_NAME}.static.*_??_*;"
+              "._${SECTION_NAME}.static.*_???_*;"
+              "._${SECTION_NAME}.static.*_????_*;"
+              "._${SECTION_NAME}.static.*_?????_*")
   else()
     set(INPUT "._${SECTION_NAME}.static.*")
   endif()

@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32BG29 || SOC_SERIES_EFR32MG29
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 70
+
+config PM
+	default n
+	select UART_INTERRUPT_DRIVEN if SERIAL_SUPPORT_INTERRUPT
+
+choice PM_POLICY
+	default PM_POLICY_DEFAULT
+	depends on PM
+endchoice
+
+endif

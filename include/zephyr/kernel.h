@@ -22,6 +22,7 @@
 #include <zephyr/tracing/tracing_macros.h>
 #include <zephyr/sys/mem_stats.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/ring_buffer.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -4991,6 +4992,18 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  * @{
  */
 
+/**
+ * @brief initialize a pipe
+ *
+ * This routine initializes a pipe object, prior to its first use.
+ *
+ * @param pipe Address of the pipe.
+ * @param buffer Address of the pipe's buffer, or NULL if no ring buffer is used.
+ * @param buffer_size Size of the pipe's buffer, or zero if no ring buffer is used.
+ */
+__syscall void k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size);
+
+#ifdef CONFIG_PIPES
 /** Pipe Structure */
 struct k_pipe {
 	unsigned char *buffer;          /**< Pipe buffer: may be NULL */
@@ -5061,19 +5074,7 @@ struct k_pipe {
 		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**
- * @brief Initialize a pipe.
- *
- * This routine initializes a pipe object, prior to its first use.
- *
- * @param pipe Address of the pipe.
- * @param buffer Address of the pipe's ring buffer, or NULL if no ring buffer
- *               is used.
- * @param size Size of the pipe's ring buffer (in bytes), or zero if no ring
- *             buffer is used.
- */
-void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size);
-
-/**
+ * @deprecated Dynamic allocation of pipe buffers will be removed in the new k_pipe API.
  * @brief Release a pipe's allocated buffer
  *
  * If a pipe object was given a dynamically allocated buffer via
@@ -5084,9 +5085,10 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size);
  * @retval 0 on success
  * @retval -EAGAIN nothing to cleanup
  */
-int k_pipe_cleanup(struct k_pipe *pipe);
+__deprecated int k_pipe_cleanup(struct k_pipe *pipe);
 
 /**
+ * @deprecated Dynamic allocation of pipe buffers will be removed in the new k_pipe API.
  * @brief Initialize a pipe and allocate a buffer for it
  *
  * Storage for the buffer region will be allocated from the calling thread's
@@ -5101,9 +5103,10 @@ int k_pipe_cleanup(struct k_pipe *pipe);
  * @retval 0 on success
  * @retval -ENOMEM if memory couldn't be allocated
  */
-__syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
+__deprecated __syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
 
 /**
+ * @deprecated k_pipe_put() is replaced by k_pipe_write(...) in the new k_pipe API.
  * @brief Write data to a pipe.
  *
  * This routine writes up to @a bytes_to_write bytes of data to @a pipe.
@@ -5121,11 +5124,12 @@ __syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
  * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were written.
  */
-__syscall int k_pipe_put(struct k_pipe *pipe, const void *data,
+__deprecated __syscall int k_pipe_put(struct k_pipe *pipe, const void *data,
 			 size_t bytes_to_write, size_t *bytes_written,
 			 size_t min_xfer, k_timeout_t timeout);
 
 /**
+ * @deprecated k_pipe_get() is replaced by k_pipe_read(...) in the new k_pipe API.
  * @brief Read data from a pipe.
  *
  * This routine reads up to @a bytes_to_read bytes of data from @a pipe.
@@ -5144,11 +5148,12 @@ __syscall int k_pipe_put(struct k_pipe *pipe, const void *data,
  * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were read.
  */
-__syscall int k_pipe_get(struct k_pipe *pipe, void *data,
+__deprecated  __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
 			 size_t bytes_to_read, size_t *bytes_read,
 			 size_t min_xfer, k_timeout_t timeout);
 
 /**
+ * @deprecated k_pipe_read_avail() will be removed in the new k_pipe API.
  * @brief Query the number of bytes that may be read from @a pipe.
  *
  * @param pipe Address of the pipe.
@@ -5156,9 +5161,10 @@ __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
  * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
  *         result is zero for unbuffered pipes.
  */
-__syscall size_t k_pipe_read_avail(struct k_pipe *pipe);
+__deprecated  __syscall size_t k_pipe_read_avail(struct k_pipe *pipe);
 
 /**
+ * @deprecated k_pipe_write_avail() will be removed in the new k_pipe API.
  * @brief Query the number of bytes that may be written to @a pipe
  *
  * @param pipe Address of the pipe.
@@ -5166,9 +5172,10 @@ __syscall size_t k_pipe_read_avail(struct k_pipe *pipe);
  * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
  *         result is zero for unbuffered pipes.
  */
-__syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
+__deprecated __syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
 
 /**
+ * @deprecated k_pipe_flush() will be removed in the new k_pipe API.
  * @brief Flush the pipe of write data
  *
  * This routine flushes the pipe. Flushing the pipe is equivalent to reading
@@ -5178,9 +5185,10 @@ __syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
  *
  * @param pipe Address of the pipe.
  */
-__syscall void k_pipe_flush(struct k_pipe *pipe);
+__deprecated __syscall void k_pipe_flush(struct k_pipe *pipe);
 
 /**
+ * @deprecated k_pipe_buffer_flush will be removed in the new k_pipe API.
  * @brief Flush the pipe's internal buffer
  *
  * This routine flushes the pipe's internal buffer. This is equivalent to
@@ -5191,14 +5199,129 @@ __syscall void k_pipe_flush(struct k_pipe *pipe);
  *
  * @param pipe Address of the pipe.
  */
-__syscall void k_pipe_buffer_flush(struct k_pipe *pipe);
+__deprecated __syscall void k_pipe_buffer_flush(struct k_pipe *pipe);
 
+#else /* CONFIG_PIPES */
+
+enum pipe_flags {
+	PIPE_FLAG_OPEN = BIT(0),
+	PIPE_FLAG_RESET = BIT(1),
+};
+
+struct k_pipe {
+	size_t waiting;
+	struct ring_buf buf;
+	struct k_spinlock lock;
+	_wait_q_t data;
+	_wait_q_t space;
+	uint8_t flags;
+
+	Z_DECL_POLL_EVENT
+#ifdef CONFIG_OBJ_CORE_PIPE
+	struct k_obj_core  obj_core;
+#endif
+	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+#define Z_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)	\
+{								\
+	.buf = RING_BUF_INIT(pipe_buffer, pipe_buffer_size),	\
+	.data = Z_WAIT_Q_INIT(&obj.data),			\
+	.space = Z_WAIT_Q_INIT(&obj.space),			\
+	.flags = PIPE_FLAG_OPEN,				\
+	.waiting = 0,						\
+	Z_POLL_EVENT_OBJ_INIT(obj)				\
+}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Statically define and initialize a pipe.
+ *
+ * The pipe can be accessed outside the module where it is defined using:
+ *
+ * @code extern struct k_pipe <name>; @endcode
+ *
+ * @param name Name of the pipe.
+ * @param pipe_buffer_size Size of the pipe's ring buffer (in bytes)
+ *                         or zero if no ring buffer is used.
+ * @param pipe_align Alignment of the pipe's ring buffer (power of 2).
+ *
+ */
+#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
+	static unsigned char __noinit __aligned(pipe_align)		\
+		_k_pipe_buf_##name[pipe_buffer_size];			\
+	STRUCT_SECTION_ITERABLE(k_pipe, name) =				\
+		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
+
+
+/**
+ * @brief Write data to a pipe
+ *
+ * This routine writes up to @a len bytes of data to @a pipe.
+ * If the pipe is full, the routine will block until the data can be written or the timeout expires.
+ *
+ * @param pipe Address of the pipe.
+ * @param data Address of data to write.
+ * @param len Size of data (in bytes).
+ * @param timeout Waiting period to wait for the data to be written.
+ *
+ * @retval number of bytes written on success
+ * @retval -EAGAIN if no data could be written before the timeout expired
+ * @retval -ECANCELED if the write was interrupted by k_pipe_reset(..)
+ * @retval -EPIPE if the pipe was closed
+ */
+__syscall int k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len,
+			   k_timeout_t timeout);
+
+/**
+ * @brief Read data from a pipe
+ * This routine reads up to @a len bytes of data from @a pipe.
+ * If the pipe is empty, the routine will block until the data can be read or the timeout expires.
+ *
+ * @param pipe Address of the pipe.
+ * @param data Address to place the data read from pipe.
+ * @param len Requested number of bytes to read.
+ * @param timeout Waiting period to wait for the data to be read.
+ *
+ * @retval number of bytes read on success
+ * @retval -EAGAIN if no data could be read before the timeout expired
+ * @retval -ECANCELED if the read was interrupted by k_pipe_reset(..)
+ * @retval -EPIPE if the pipe was closed
+ */
+__syscall int k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len,
+			  k_timeout_t timeout);
+
+/**
+ * @brief Reset a pipe
+ * This routine resets the pipe, discarding any unread data and unblocking any threads waiting to
+ * write or read, causing the waiting threads to return with -ECANCELED. Calling k_pipe_read(..) or
+ * k_pipe_write(..) when the pipe is resetting but not yet reset will return -ECANCELED.
+ * The pipe is left open after a reset and can be used as normal.
+ *
+ * @param pipe Address of the pipe.
+ */
+__syscall void k_pipe_reset(struct k_pipe *pipe);
+
+/**
+ * @brief Close a pipe
+ *
+ * This routine closes a pipe. Any threads that were blocked on the pipe
+ * will be unblocked and receive an error code.
+ *
+ * @param pipe Address of the pipe.
+ */
+__syscall void k_pipe_close(struct k_pipe *pipe);
+#endif /* CONFIG_PIPES */
 /** @} */
 
 /**
  * @cond INTERNAL_HIDDEN
  */
-
 struct k_mem_slab_info {
 	uint32_t num_blocks;
 	size_t   block_size;
@@ -5895,9 +6018,7 @@ struct k_poll_event {
 		struct k_fifo *fifo, *typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
 		struct k_queue *queue, *typed_K_POLL_TYPE_DATA_AVAILABLE;
 		struct k_msgq *msgq, *typed_K_POLL_TYPE_MSGQ_DATA_AVAILABLE;
-#ifdef CONFIG_PIPES
 		struct k_pipe *pipe, *typed_K_POLL_TYPE_PIPE_DATA_AVAILABLE;
-#endif
 	};
 };
 

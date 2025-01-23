@@ -60,6 +60,9 @@ runners:
         - mimxrt1176/cm7
         - mimxrt1176/cm4
       - qualifiers:
+        - mimxrt1189/cm33
+        - mimxrt1189/cm7
+      - qualifiers:
         - mimxrt595s/cm33
         - mimxrt595s/f1
       - qualifiers:
@@ -77,6 +80,9 @@ runners:
       - qualifiers:
         - mimxrt1176/cm7
         - mimxrt1176/cm4
+      - qualifiers:
+        - mimxrt1189/cm33
+        - mimxrt1189/cm7
       - qualifiers:
         - mimxrt595s/cm33
         - mimxrt595s/f1

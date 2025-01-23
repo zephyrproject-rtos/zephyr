@@ -114,3 +114,16 @@ static int ptp_init(void)
 }
 
 SYS_INIT(ptp_init, APPLICATION, CONFIG_PTP_INIT_PRIO);
+
+static enum net_verdict ptp_recv(struct net_if *iface, uint16_t ptype,
+				 struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ptype);
+
+	net_pkt_set_family(pkt, AF_UNSPEC);
+
+	return NET_CONTINUE;
+}
+
+ETH_NET_L3_REGISTER(PTP, NET_ETH_PTYPE_PTP, ptp_recv);

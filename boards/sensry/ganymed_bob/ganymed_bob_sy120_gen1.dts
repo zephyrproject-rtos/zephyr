@@ -4,6 +4,7 @@
 /dts-v1/;
 
 #include <sensry/ganymed-sy1xx.dtsi>
+#include "ganymed_bob_sy120-pinctrl.dtsi"
 
 / {
 

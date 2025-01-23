@@ -48,10 +48,10 @@
 		};
 
 		mtimer: timer@e6000000 {
-			compatible = "telink,machine-timer";
-			reg = <0xe6000000 0x10000>;
-			interrupts = <7 0>;
-			interrupt-parent = <&plic0>;
+			compatible = "riscv,machine-timer";
+			reg = <0xe6000000 0x8 0xe6000008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&plic0 7 0>;
 		};
 
 		flash_mspi: flash-controller@80140100 {

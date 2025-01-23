@@ -49,14 +49,14 @@ static void fini_fn(void)
 	number |= 4;
 }
 
-static const void *const preinit_fn_ptrs[] __used Z_GENERIC_SECTION(".preinit_array") = {
+static const void *const preinit_fn_ptrs[] __used Z_GENERIC_SECTION(.preinit_array) = {
 	preinit_fn_1,
 	preinit_fn_2
 };
-static const void *const init_fn_ptrs[] __used Z_GENERIC_SECTION(".init_array") = {
+static const void *const init_fn_ptrs[] __used Z_GENERIC_SECTION(.init_array) = {
 	init_fn
 };
-static const void *const fini_fn_ptrs[] __used Z_GENERIC_SECTION(".fini_array") = {
+static const void *const fini_fn_ptrs[] __used Z_GENERIC_SECTION(.fini_array) = {
 	fini_fn
 };
 

@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/icmp.h>
+#include <zephyr/net/ethernet.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"

@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/virtual.h>
+#include <zephyr/net/ethernet.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -141,6 +142,8 @@ int net_ipv6_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 	    net_pkt_skip(pkt, net_pkt_ipv6_ext_len(pkt))) {
 		return -ENOBUFS;
 	}
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IPV6);
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    next_header_proto == IPPROTO_UDP) {

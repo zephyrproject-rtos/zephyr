@@ -16,12 +16,18 @@ nvic: &cpuapp_nvic {};
 / {
 	chosen {
 		zephyr,bt-hci = &bt_hci_controller;
+		zephyr,entropy = &rng;
 	};
 
 	soc {
 		compatible = "simple-bus";
 		interrupt-parent = <&cpuapp_nvic>;
 		ranges;
+	};
+
+	rng: rng {
+		status = "okay";
+		compatible = "nordic,nrf-cracen-ctrdrbg";
 	};
 
 	psa_rng: psa-rng {

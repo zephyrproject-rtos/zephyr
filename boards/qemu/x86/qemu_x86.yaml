@@ -7,7 +7,6 @@ arch: x86
 ram: 3000
 toolchain:
   - zephyr
-  - xtools
   - llvm
 supported:
   - pci

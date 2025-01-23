@@ -6,6 +6,7 @@ config UART_RENESAS_RZ_SCIF
 	default y
 	depends on DT_HAS_RENESAS_RZ_SCIF_UART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	select USE_RZ_FSP_SCIF_UART
 	select PINCTRL
 	help

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include "utils.h"
 #include "main.h"
 #include "argparse.h"
@@ -41,8 +42,8 @@ static void test_args(int argc, char **argv)
 {
 	__ASSERT(argc == 3, "Please specify only 3 test arguments\n");
 
-	test_round = atol(argv[0]);
-	final_round = atol(argv[1]);
+	test_round = strtol(argv[0], NULL, 10);
+	final_round = strtol(argv[1], NULL, 10);
 	settings_file = argv[2];
 
 	bs_trace_raw(0, "Test round %u\n", test_round);

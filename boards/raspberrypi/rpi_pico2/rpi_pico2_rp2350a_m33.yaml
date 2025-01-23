@@ -7,7 +7,6 @@ ram: 520
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - clock

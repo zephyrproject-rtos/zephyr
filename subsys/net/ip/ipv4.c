@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/virtual.h>
+#include <zephyr/net/ethernet.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
@@ -133,6 +134,7 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 	}
 
 	net_pkt_set_data(pkt, &ipv4_access);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    next_header_proto == IPPROTO_UDP) {

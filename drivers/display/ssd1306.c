@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_PANEL_VCOM_DESEL_LEVEL	0x20
 #define SSD1306_PANEL_PUMP_VOLTAGE	SSD1306_SET_PUMP_VOLTAGE_90
 
+#define SSD1306_PANEL_VCOM_DESEL_LEVEL_SSD1309  0x34
+
 #ifndef SSD1306_ADDRESSING_MODE
 #define SSD1306_ADDRESSING_MODE		(SSD1306_SET_MEM_ADDRESSING_HORIZONTAL)
 #endif
@@ -41,6 +43,7 @@ struct ssd1306_config {
 	union ssd1306_bus bus;
 	struct gpio_dt_spec data_cmd;
 	struct gpio_dt_spec reset;
+	struct gpio_dt_spec supply;
 	ssd1306_bus_ready_fn bus_ready;
 	ssd1306_write_bus_fn write_bus;
 	ssd1306_bus_name_fn bus_name;
@@ -55,6 +58,7 @@ struct ssd1306_config {
 	bool com_invdir;
 	bool com_sequential;
 	bool color_inversion;
+	bool ssd1309_compatible;
 	bool sh1106_compatible;
 	int ready_time_ms;
 	bool use_internal_iref;
@@ -65,6 +69,7 @@ struct ssd1306_data {
 };
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309fb, i2c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, i2c))
 static bool ssd1306_bus_ready_i2c(const struct device *dev)
 {
@@ -92,6 +97,7 @@ static const char *ssd1306_bus_name_i2c(const struct device *dev)
 #endif
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309fb, spi) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, spi))
 static bool ssd1306_bus_ready_spi(const struct device *dev)
 {
@@ -167,7 +173,8 @@ static inline int ssd1306_set_timing_setting(const struct device *dev)
 			     SSD1306_SET_CHARGE_PERIOD,
 			     config->prechargep,
 			     SSD1306_SET_VCOM_DESELECT_LEVEL,
-			     SSD1306_PANEL_VCOM_DESEL_LEVEL};
+			     config->ssd1309_compatible ? SSD1306_PANEL_VCOM_DESEL_LEVEL_SSD1309 :
+				SSD1306_PANEL_VCOM_DESEL_LEVEL};
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
@@ -220,18 +227,32 @@ static inline int ssd1306_set_iref_mode(const struct device *dev)
 
 static int ssd1306_resume(const struct device *dev)
 {
+	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
 		SSD1306_DISPLAY_ON,
 	};
+
+	/* Turn on supply if pin connected */
+	if (config->supply.port) {
+		gpio_pin_set_dt(&config->supply, 1);
+		k_sleep(K_MSEC(SSD1306_SUPPLY_DELAY));
+	}
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static int ssd1306_suspend(const struct device *dev)
 {
+	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
 		SSD1306_DISPLAY_OFF,
 	};
+
+	/* Turn off supply if pin connected */
+	if (config->supply.port) {
+		gpio_pin_set_dt(&config->supply, 0);
+		k_sleep(K_MSEC(SSD1306_SUPPLY_DELAY));
+	}
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
@@ -402,6 +423,11 @@ static int ssd1306_init_device(const struct device *dev)
 	};
 
 	data->pf = config->color_inversion ? PIXEL_FORMAT_MONO10 : PIXEL_FORMAT_MONO01;
+	/* Turn on supply if pin connected */
+	if (config->supply.port) {
+		gpio_pin_set_dt(&config->supply, 1);
+		k_sleep(K_MSEC(SSD1306_SUPPLY_DELAY));
+	}
 
 	/* Reset if pin connected */
 	if (config->reset.port) {
@@ -428,12 +454,14 @@ static int ssd1306_init_device(const struct device *dev)
 		return -EIO;
 	}
 
-	if (ssd1306_set_charge_pump(dev)) {
-		return -EIO;
-	}
+	if (!config->ssd1309_compatible) {
+		if (ssd1306_set_charge_pump(dev)) {
+			return -EIO;
+		}
 
-	if (ssd1306_set_iref_mode(dev)) {
-		return -EIO;
+		if (ssd1306_set_iref_mode(dev)) {
+			return -EIO;
+		}
 	}
 
 	if (ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true)) {
@@ -452,6 +480,7 @@ static int ssd1306_init_device(const struct device *dev)
 static int ssd1306_init(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
+	int ret;
 
 	k_sleep(K_TIMEOUT_ABS_MS(config->ready_time_ms));
 
@@ -460,13 +489,27 @@ static int ssd1306_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (config->reset.port) {
-		int ret;
+	if (config->supply.port) {
+		ret = gpio_pin_configure_dt(&config->supply,
+					    GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+		if (!gpio_is_ready_dt(&config->supply)) {
+			LOG_ERR("Supply GPIO device not ready");
+			return -ENODEV;
+		}
+	}
 
+	if (config->reset.port) {
 		ret = gpio_pin_configure_dt(&config->reset,
 					    GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			return ret;
+		}
+		if (!gpio_is_ready_dt(&config->reset)) {
+			LOG_ERR("Reset GPIO device not ready");
+			return -ENODEV;
 		}
 	}
 
@@ -506,6 +549,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 	static struct ssd1306_data data##node_id;                                                  \
 	static const struct ssd1306_config config##node_id = {                                     \
 		.reset = GPIO_DT_SPEC_GET_OR(node_id, reset_gpios, {0}),                           \
+		.supply = GPIO_DT_SPEC_GET_OR(node_id, supply_gpios, {0}),                         \
 		.height = DT_PROP(node_id, height),                                                \
 		.width = DT_PROP(node_id, width),                                                  \
 		.segment_offset = DT_PROP(node_id, segment_offset),                                \
@@ -517,6 +561,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 		.com_sequential = DT_PROP(node_id, com_sequential),                                \
 		.prechargep = DT_PROP(node_id, prechargep),                                        \
 		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
+		.ssd1309_compatible = DT_NODE_HAS_COMPAT(node_id, solomon_ssd1309fb),              \
 		.sh1106_compatible = DT_NODE_HAS_COMPAT(node_id, sinowealth_sh1106),               \
 		.ready_time_ms = DT_PROP(node_id, ready_time_ms),                                  \
 		.use_internal_iref = DT_PROP(node_id, use_internal_iref),                          \
@@ -528,4 +573,5 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ssd1306_driver_api);
 
 DT_FOREACH_STATUS_OKAY(solomon_ssd1306fb, SSD1306_DEFINE)
+DT_FOREACH_STATUS_OKAY(solomon_ssd1309fb, SSD1306_DEFINE)
 DT_FOREACH_STATUS_OKAY(sinowealth_sh1106, SSD1306_DEFINE)

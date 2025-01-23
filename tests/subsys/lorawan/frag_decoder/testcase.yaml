@@ -7,6 +7,7 @@ tests:
       - native_sim
     extra_configs:
       - CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH=y
+      - CONFIG_NATIVE_EXTRA_CMDLINE_ARGS="seed=1"
   lorawan.frag_decoder.lowmem.high_redundancy:
     platform_allow:
       - native_sim
@@ -19,3 +20,4 @@ tests:
     extra_configs:
       - CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM=y
       - CONFIG_LORAWAN_FRAG_TRANSPORT_MAX_REDUNDANCY=10
+      - CONFIG_NATIVE_EXTRA_CMDLINE_ARGS="seed=1"

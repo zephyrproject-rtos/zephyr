@@ -151,8 +151,13 @@ schema;scenario-schema:
           required: false
           mapping:
             "regex":
-              type: str
+              type: seq
               required: true
+              sequence:
+                - type: str
+            "merge":
+              type: bool
+              required: false
             "as_json":
               type: seq
               required: false

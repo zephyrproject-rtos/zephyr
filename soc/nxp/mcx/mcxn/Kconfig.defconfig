@@ -27,4 +27,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config FLASH_FILL_BUFFER_SIZE
 	default 128
 
+# The existing SAI diver cannot initialize the PLL on the board,
+# so the PLL settings will not be performed in the driver.
+config I2S_HAS_PLL_SETTING
+	default n
+
 endif # SOC_SERIES_MCXN

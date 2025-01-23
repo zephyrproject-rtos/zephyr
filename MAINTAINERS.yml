@@ -126,6 +126,20 @@ ACPI:
   tests:
     - acpi
 
+Antmicro platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  collaborators:
+    - kgugala
+  files:
+    - boards/antmicro/
+    - soc/antmicro/
+    - dts/arm/antmicro/
+  labels:
+    - "platform: Antmicro"
+
 ARC arch:
   status: maintained
   maintainers:

@@ -116,7 +116,6 @@ required for best test coverage for this specific board:
   toolchain:
     - zephyr
     - gnuarmemb
-    - xtools
   supported:
     - arduino_gpio
     - arduino_i2c
@@ -626,12 +625,20 @@ harness_config: <harness configuration options>
         Check the regular expression strings in orderly or randomly fashion
 
     record: <recording options> (optional)
-      regex: <regular expression> (required)
-        The regular expression with named subgroups to match data fields
-        at the test's output lines where the test provides some custom data
+      regex: <list of regular expressions> (required)
+        Regular expressions with named subgroups to match data fields found
+        in the test instance's output lines where it provides some custom data
         for further analysis. These records will be written into the build
         directory ``recording.csv`` file as well as ``recording`` property
         of the test suite object in ``twister.json``.
+
+        With several regular expressions given, each of them will be applied
+        to each output line producing either several different records from
+        the same output line, or different records from different lines,
+        or similar records from different lines.
+
+        The .CSV file will have as many columns as there are fields detected
+        in all records; missing values are filled by empty strings.
 
         For example, to extract three data fields ``metric``, ``cycles``,
         ``nanoseconds``:
@@ -639,13 +646,22 @@ harness_config: <harness configuration options>
         .. code-block:: yaml
 
           record:
-            regex: "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
+            regex:
+              - "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
+
+      merge: <True|False> (default False)
+        Allows to keep only one record in a test instance with all the data
+        fields extracted by the regular expressions. Fields with the same name
+        will be put into lists ordered as their appearance in recordings.
+        It is possible for such multi value fields to have different number
+        of values depending on the regex rules and the test's output.
 
       as_json: <list of regex subgroup names> (optional)
-        Data fields, extracted by the regular expression into named subgroups,
+        Data fields, extracted by the regular expressions into named subgroups,
         which will be additionally parsed as JSON encoded strings and written
         into ``twister.json`` as nested ``recording`` object properties.
-        The corresponding ``recording.csv`` columns will contain strings as-is.
+        The corresponding ``recording.csv`` columns will contain JSON strings
+        as-is.
 
         Using this option, a test log can convey layered data structures
         passed from the test image for further analysis with summary results,

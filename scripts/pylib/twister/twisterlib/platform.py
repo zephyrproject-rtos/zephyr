@@ -149,18 +149,18 @@ class Platform:
 
         support_toolchain_variants = {
           # we don't provide defaults for 'arc' intentionally: some targets can't be built with GNU
-          # toolchain ("zephyr", "cross-compile", "xtools" options) and for some targets we haven't
-          # provided MWDT compiler / linker options in corresponding SoC file in Zephyr, so these
-          # targets can't be built with ARC MWDT toolchain ("arcmwdt" option) by Zephyr build system
-          # Instead for 'arc' we rely on 'toolchain' option in board yaml configuration.
-          "arm": ["zephyr", "gnuarmemb", "xtools", "armclang", "llvm"],
+          # toolchain ("zephyr", "cross-compile" options) and for some targets we haven't provided
+          # MWDT compiler / linker options in corresponding SoC file in Zephyr, so these targets
+          # can't be built with ARC MWDT toolchain ("arcmwdt" option) by Zephyr build system Instead
+          # for 'arc' we rely on 'toolchain' option in board yaml configuration.
+          "arm": ["zephyr", "gnuarmemb", "armclang", "llvm"],
           "arm64": ["zephyr", "cross-compile"],
-          "mips": ["zephyr", "xtools"],
-          "nios2": ["zephyr", "xtools"],
+          "mips": ["zephyr"],
+          "nios2": ["zephyr"],
           "riscv": ["zephyr", "cross-compile"],
           "posix": ["host", "llvm"],
-          "sparc": ["zephyr", "xtools"],
-          "x86": ["zephyr", "xtools", "llvm"],
+          "sparc": ["zephyr"],
+          "x86": ["zephyr", "llvm"],
           # Xtensa is not listed on purpose, since there is no single toolchain
           # that is supported on all board targets for xtensa.
         }
