@@ -131,7 +131,7 @@
 	#size-cells = <0>;
 	pinctrl-0 = <&eusart1_default>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>, <&gpioc 4 GPIO_ACTIVE_LOW>;
 
 	ls0xx_ls013b7dh03: ls0xx@0 {
 		compatible = "sharp,ls0xx";
@@ -142,6 +142,18 @@
 		extcomin-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 		extcomin-frequency = <60>;
 		disp-en-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+	};
+
+	mx25r80: mx25r8035f@1 {
+		compatible = "jedec,spi-nor";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(33)>;
+		size = <DT_SIZE_M(8)>;
+		jedec-id = [c2 28 14];
+		has-dpd;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		t-enter-dpd = <0>;
+		mxicy,mx25r-power-mode = "low-power";
 	};
 };
 
