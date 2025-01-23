@@ -264,7 +264,7 @@ struct z_device_mmio_rom {
  * @param node_id DTS node_id
  */
 #define DEVICE_MMIO_ROM_INIT(node_id) \
-	._mmio = Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
+	{ ._mmio = Z_DEVICE_MMIO_ROM_INITIALIZER(node_id) }
 
 /**
  * @def DEVICE_MMIO_MAP(device, flags)
