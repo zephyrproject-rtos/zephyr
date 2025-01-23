@@ -218,6 +218,21 @@ static DEVICE_API(nrf_clock_control, hsfll_drv_api) = {
 static struct hsfll_dev_data hsfll_data;
 #endif
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF2_HSFLL_REQ_LOW_FREQ
+static int dvfs_low_init(void)
+{
+	static const k_timeout_t timeout = K_MSEC(CONFIG_CLOCK_CONTROL_NRF2_NRFS_DVFS_TIMEOUT_MS);
+	static const struct device *hsfll_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(cpu)));
+	static const struct nrf_clock_spec clk_spec = {
+		.frequency = HSFLL_FREQ_LOW
+	};
+
+	return nrf_clock_control_request_sync(hsfll_dev, &clk_spec, timeout);
+}
+
+SYS_INIT(dvfs_low_init, APPLICATION, 0);
+#endif
+
 DEVICE_DT_INST_DEFINE(0, hsfll_init, NULL,
 		      COND_CODE_1(CONFIG_NRFS_DVFS_LOCAL_DOMAIN,
 				  (&hsfll_data),
