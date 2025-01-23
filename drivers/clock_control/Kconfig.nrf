@@ -179,7 +179,6 @@ config CLOCK_CONTROL_NRF2
 	depends on SOC_SERIES_NRF54HX && !RISCV_CORE_NORDIC_VPR
 	select ONOFF
 	select NRFS if HAS_NRFS
-	imply NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT if NRFS_DVFS_LOCAL_DOMAIN
 	help
 	  Support for nRF clock control devices.
 
