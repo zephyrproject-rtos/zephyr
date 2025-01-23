@@ -100,7 +100,7 @@ static void bt_ready(int err)
 		printk("BR/EDR set/rest connectable failed (err %d)\n", err);
 		return;
 	}
-	err = bt_br_set_discoverable(true);
+	err = bt_br_set_discoverable(true, false);
 	if (err) {
 		printk("BR/EDR set discoverable failed (err %d)\n", err);
 		return;
