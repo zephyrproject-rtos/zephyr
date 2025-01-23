@@ -111,7 +111,7 @@ static void send_http1_500(struct http_client_ctx *client, int error_code)
 
 	(void)snprintk(http_response, sizeof(http_response),
 		       HTTP_500_RESPONSE_TEMPLATE,
-		       (int)sizeof("Internal Server Error\r\n") - 1 + desc_len,
+		       sizeof("Internal Server Error\r\n") - 1 + desc_len,
 		       desc_separator, error_desc);
 	(void)http_server_sendall(client, http_response, strlen(http_response));
 }
