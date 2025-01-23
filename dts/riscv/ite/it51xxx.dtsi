@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 #include <zephyr/dt-bindings/pwm/it8xxx2_pwm.h>
 #include <zephyr/dt-bindings/sensor/it8xxx2_tach.h>
+#include <zephyr/dt-bindings/sensor/it51xxx_vcmp.h>
 
 / {
 	#address-cells = <1>;
@@ -79,6 +80,38 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		vcmp_base: vcmp_base@f04500 {
+			compatible = "ite,it51xxx-vcmp_base";
+			reg = <0xf04500 0xc1>;
+		};
+
+		vcmp0: vcmp@f04520 {
+			compatible = "ite,it51xxx-vcmp";
+			reg = <0xf04520 0x08>;
+			interrupts = <IT51XXX_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_0>;
+			status = "disabled";
+		};
+
+		vcmp1: vcmp@f04528 {
+			compatible = "ite,it51xxx-vcmp";
+			reg = <0xf04528 0x08>;
+			interrupts = <IT51XXX_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_1>;
+			status = "disabled";
+		};
+
+		vcmp2: vcmp@f0452c {
+			compatible = "ite,it51xxx-vcmp";
+			reg = <0xf0452c 0x08>;
+			interrupts = <IT51XXX_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_2>;
+			status = "disabled";
 		};
 
 		gpiogcr: gpio-gcr@f01600 {

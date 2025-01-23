@@ -147,3 +147,11 @@
 	pinctrl-0 = <&adc0_ch3_gpi3_default>;
 	pinctrl-names = "default";
 };
+
+/* voltage comparator for test */
+&vcmp1 {
+	status = "okay";
+	comparison = <IT51XXX_VCMP_GREATER>;
+	threshold-mv = <2000>;
+	io-channels = <&adc0 3>;
+};

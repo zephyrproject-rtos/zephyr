@@ -1,0 +1,90 @@
+# ITE Voltage Comparator driver configuration options
+
+# Copyright (c) 2025 ITE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config VCMP_IT51XXX
+	bool "ITE it51xxx Voltage Comparator"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_VCMP_ENABLED
+	depends on SOC_IT51XXX && ADC_ITE_IT51XXX
+	help
+	  This option enables the ITE it51xxx voltage comparator,
+	  it51xxx supports three 10-bit threshold voltage comparator
+	  channels, and the input of each comparator comes from ADC pin.
+
+if VCMP_IT51XXX
+
+choice VCMP_IT51XXX_SCAN_PERIOD
+	prompt "VCMP_IT51XXX_SCAN_PERIOD"
+	default VCMP_IT51XXX_SCAN_PERIOD_600US
+
+config VCMP_IT51XXX_SCAN_PERIOD_100US
+	bool "VCMP_IT51XXX_SCAN_PERIOD_100US"
+
+config VCMP_IT51XXX_SCAN_PERIOD_200US
+	bool "VCMP_IT51XXX_SCAN_PERIOD_200US"
+
+config VCMP_IT51XXX_SCAN_PERIOD_400US
+	bool "VCMP_IT51XXX_SCAN_PERIOD_400US"
+
+config VCMP_IT51XXX_SCAN_PERIOD_600US
+	bool "VCMP_IT51XXX_SCAN_PERIOD_600US"
+
+config VCMP_IT51XXX_SCAN_PERIOD_800US
+	bool "VCMP_IT51XXX_SCAN_PERIOD_800US"
+
+config VCMP_IT51XXX_SCAN_PERIOD_1MS
+	bool "VCMP_IT51XXX_SCAN_PERIOD_1MS"
+
+config VCMP_IT51XXX_SCAN_PERIOD_1_5MS
+	bool "VCMP_IT51XXX_SCAN_PERIOD_1_5MS"
+
+config VCMP_IT51XXX_SCAN_PERIOD_2MS
+	bool "VCMP_IT51XXX_SCAN_PERIOD_2MS"
+
+config VCMP_IT51XXX_SCAN_PERIOD_2_5MS
+	bool "VCMP_IT51XXX_SCAN_PERIOD_2_5MS"
+
+config VCMP_IT51XXX_SCAN_PERIOD_3MS
+	bool "VCMP_IT51XXX_SCAN_PERIOD_3MS"
+
+config VCMP_IT51XXX_SCAN_PERIOD_4MS
+	bool "VCMP_IT51XXX_SCAN_PERIOD_4MS"
+
+config VCMP_IT51XXX_SCAN_PERIOD_5MS
+	bool "VCMP_IT51XXX_SCAN_PERIOD_5MS"
+
+endchoice
+
+config VCMP_IT51XXX_INIT_PRIORITY
+	int "ITE it51xxx voltage comparator device instance init priority"
+	default SENSOR_INIT_PRIORITY
+	help
+	  This option sets ITE voltage comparator device instance init priority.
+
+config VCMP_IT51XXX_WORKQUEUE
+	bool "ITE it51xxx voltage comparator threshold detection uses internal work queue"
+	help
+	  Threshold detection ISR utilizes system work queue for calling
+	  trigger handlers; set this option to use dedicated work queue instead.
+
+if VCMP_IT51XXX_WORKQUEUE
+
+config VCMP_IT51XXX_WORKQUEUE_PRIORITY
+	int "ITE it51xxx voltage comparator threshold detection work queue priority"
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  This option sets internal ITE voltage comparator threshold detection
+	  workqueue priority.
+
+config VCMP_IT51XXX_WORKQUEUE_STACK_SIZE
+	int "ITE it51xxx voltage comparator threshold detection work queue stack size"
+	default 768
+	help
+	  This option sets internal ITE voltage comparator threshold detection
+	  workqueue stack size.
+
+endif # VCMP_IT51XXX_WORKQUEUE
+
+endif # VCMP_IT51XXX
