@@ -62,8 +62,7 @@ struct flash_stm32_sector_t {
 	volatile uint32_t *sr;
 };
 
-static __unused int write_optb(const struct device *dev, uint32_t mask,
-			       uint32_t value)
+static __unused int write_optsr(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
@@ -73,7 +72,7 @@ static __unused int write_optb(const struct device *dev, uint32_t mask,
 		return -EIO;
 	}
 
-	if ((regs->OPTCR & mask) == value) {
+	if ((regs->OPTSR_CUR & mask) == value) {
 		/* Done already */
 		return 0;
 	}
@@ -84,12 +83,8 @@ static __unused int write_optb(const struct device *dev, uint32_t mask,
 		return rc;
 	}
 
-	regs->OPTCR = (regs->OPTCR & ~mask) | value;
-#ifdef CONFIG_SOC_SERIES_STM32H7RSX
-	regs->OPTCR |= FLASH_OPTCR_PG_OPT;
-#else
+	regs->OPTSR_PRG = (regs->OPTSR_CUR & ~mask) | value;
 	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
-#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 	/* Make sure previous write is completed. */
 	barrier_dsync_fence_full();
 
@@ -99,7 +94,7 @@ static __unused int write_optb(const struct device *dev, uint32_t mask,
 		return rc;
 	}
 
-	return 0;
+	return rc;
 }
 
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
@@ -112,8 +107,7 @@ uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 
 void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 {
-	write_optb(dev, FLASH_OPTSR_RDP_Msk,
-		(uint32_t)level << FLASH_OPTSR_RDP_Pos);
+	write_optsr(dev, FLASH_OPTSR_RDP_Msk, (uint32_t)level << FLASH_OPTSR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
