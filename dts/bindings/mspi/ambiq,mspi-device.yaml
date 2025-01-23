@@ -62,3 +62,18 @@ properties:
         .ui32RxDQSDelay    = 0,
         .ui32RXDQSDelayEXT = 0,
       >
+  # temporary workout binding
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET line. If specified, the flash chip will be reset at initialization.
+
+  t-reset-pulse:
+    type: int
+    description: |
+      Minimum duration, in nanoseconds, of an active pulse on the RESET line.
+
+  t-reset-recovery:
+    type: int
+    description: |
+      Minimum time, in nanoseconds, the flash chip needs to recover after reset.

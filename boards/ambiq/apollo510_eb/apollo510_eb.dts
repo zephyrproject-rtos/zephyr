@@ -156,10 +156,12 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&mspi1_default>;
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_psram>;
-	pinctrl-names = "default","sleep","psram";
+	pinctrl-3 = <&mspi1_flash>;
+	pinctrl-names = "default","sleep","psram","flash";
 	status = "okay";
 
-	ce-gpios = <&gpio32_63 21 GPIO_ACTIVE_LOW>;
+	ce-gpios = <&gpio32_63 21 GPIO_ACTIVE_LOW>,
+		   <&gpio32_63 21 GPIO_ACTIVE_LOW>;
 
 	cmdq-buffer-location = "SRAM_NO_CACHE";
 	cmdq-buffer-size = <256>;
@@ -170,7 +172,7 @@ zephyr_udc0: &usb {
 		compatible = "ambiq,mspi-device", "mspi-aps6404l";
 		size = <DT_SIZE_M(64)>;
 		reg = <0>;
-		status = "okay";
+		status = "disabled";
 		mspi-max-frequency = <48000000>;
 		mspi-io-mode = "MSPI_IO_MODE_QUAD";
 		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
@@ -183,8 +185,33 @@ zephyr_udc0: &usb {
 		tx-dummy = <0>;
 		xip-config = <1 0 DT_SIZE_M(8) 0>;
 		ce-break-config = <1024 3>;
-		ambiq,timing-config-mask = <3>;
-		ambiq,timing-config = <0 6 0 0 0 0 16 0>;
+		ambiq,timing-config-mask = <0x62>;
+		ambiq,timing-config = <0 6 1 0 0 0 16 0>;
+	};
+
+	is25wx064: is25wx064@1 {
+		compatible = "ambiq,mspi-device", "mspi-is25xX0xx";
+		size = <DT_SIZE_M(64)>;
+		reg = <1>;
+		status = "okay";
+		mspi-max-frequency = <96000000>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL_1_8_8";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-dqs-enable;
+		mspi-hardware-ce-num = <0>;
+		read-command = <0xCC>;
+		write-command = <0x8E>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <16>;
+		tx-dummy = <0>;
+		xip-config = <1 0 DT_SIZE_M(8) 0>;
+		ce-break-config = <0 0>;
+		ambiq,timing-config-mask = <0x62>;
+		ambiq,timing-config = <0 16 1 0 0 5 23 0>;
+		reset-gpios = <&gpio32_63 22 GPIO_ACTIVE_LOW>;
+		t-reset-pulse = <10000000>; /* min tSHRH */
+		t-reset-recovery = <200000000>; /* typical tSSE */
 	};
 };
 
