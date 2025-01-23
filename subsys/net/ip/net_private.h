@@ -154,6 +154,18 @@ extern void mdns_init_responder(void);
 static inline void mdns_init_responder(void) { }
 #endif /* CONFIG_MDNS_RESPONDER */
 
+#if defined(CONFIG_DNS_RESOLVER)
+#include <zephyr/net/dns_resolve.h>
+extern int dns_resolve_name_internal(struct dns_resolve_context *ctx,
+				     const char *query,
+				     enum dns_query_type type,
+				     uint16_t *dns_id,
+				     dns_resolve_cb_t cb,
+				     void *user_data,
+				     int32_t timeout,
+				     bool use_cache);
+#endif /* CONFIG_DNS_RESOLVER */
+
 #if defined(CONFIG_NET_TEST)
 extern void loopback_enable_address_swap(bool swap_addresses);
 #endif /* CONFIG_NET_TEST */
