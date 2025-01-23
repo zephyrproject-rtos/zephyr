@@ -1048,9 +1048,6 @@ void z_impl_k_yield(void)
 
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
-#ifdef CONFIG_SMP
-	z_mark_thread_as_queued(_current);
-#endif
 	runq_yield();
 
 	update_cache(1);
