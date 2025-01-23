@@ -348,18 +348,20 @@ static int bind_to_iface(int sock, const struct sockaddr *addr, int if_index)
 /* Must be invoked with context lock held */
 static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 				   const char *servers[],
-				   const struct sockaddr *servers_sa[])
+				   const struct sockaddr *servers_sa[],
+				   const struct net_socket_service_desc *svc,
+				   uint16_t port)
 {
 #if defined(CONFIG_NET_IPV6)
 	struct sockaddr_in6 local_addr6 = {
 		.sin6_family = AF_INET6,
-		.sin6_port = 0,
+		.sin6_port = htons(port),
 	};
 #endif
 #if defined(CONFIG_NET_IPV4)
 	struct sockaddr_in local_addr4 = {
 		.sin_family = AF_INET,
-		.sin_port = 0,
+		.sin_port = htons(port),
 	};
 #endif
 	struct sockaddr *local_addr = NULL;
@@ -461,7 +463,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			addr_len = sizeof(struct sockaddr_in6);
 
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
-			    ctx->servers[i].is_mdns) {
+			    ctx->servers[i].is_mdns && port == 0) {
 				local_addr6.sin6_port = htons(5353);
 			}
 #else
@@ -475,7 +477,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			addr_len = sizeof(struct sockaddr_in);
 
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
-			    ctx->servers[i].is_mdns) {
+			    ctx->servers[i].is_mdns && port == 0) {
 				local_addr4.sin_port = htons(5353);
 			}
 #else
@@ -558,8 +560,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			continue;
 		}
 
-		ret = register_dispatcher(ctx, &resolve_svc, &ctx->servers[i], local_addr,
-						  addr6, addr4);
+		ret = register_dispatcher(ctx, svc, &ctx->servers[i], local_addr,
+					  addr6, addr4);
 		if (ret < 0) {
 			if (ret == -EALREADY) {
 				goto skip_event;
@@ -582,11 +584,11 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 skip_event:
 
 #if defined(CONFIG_NET_IPV6)
-		local_addr6.sin6_port = 0;
+		local_addr6.sin6_port = htons(port);
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-		local_addr4.sin_port = 0;
+		local_addr4.sin_port = htons(port);
 #endif
 
 		count++;
@@ -608,8 +610,10 @@ fail:
 	return ret;
 }
 
-int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
-		     const struct sockaddr *servers_sa[])
+int dns_resolve_init_with_svc(struct dns_resolve_context *ctx, const char *servers[],
+			      const struct sockaddr *servers_sa[],
+			      const struct net_socket_service_desc *svc,
+			      uint16_t port)
 {
 	if (!ctx) {
 		return -ENOENT;
@@ -623,7 +627,14 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 	/* As this function is called only once during system init, there is no
 	 * reason to acquire lock.
 	 */
-	return dns_resolve_init_locked(ctx, servers, servers_sa);
+	return dns_resolve_init_locked(ctx, servers, servers_sa, svc, port);
+}
+
+int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
+		     const struct sockaddr *servers_sa[])
+{
+	return dns_resolve_init_with_svc(ctx, servers, servers_sa,
+					 &resolve_svc, 0);
 }
 
 /* Check whether a slot is available for use, or optionally whether it can be
@@ -1769,7 +1780,7 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 		}
 	}
 
-	err = dns_resolve_init_locked(ctx, servers, servers_sa);
+	err = dns_resolve_init_locked(ctx, servers, servers_sa, &resolve_svc, 0);
 
 unlock:
 	k_mutex_unlock(&ctx->lock);
