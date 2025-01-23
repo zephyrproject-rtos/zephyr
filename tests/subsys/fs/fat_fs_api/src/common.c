@@ -89,6 +89,10 @@ int wipe_partition(void)
 		return TC_FAIL;
 	}
 
+	if (sector_count > 64) {
+		/* partition only in first 32k */
+		sector_count = 64;
+	}
 	sector_wr_size = MIN(sector_size, ARRAY_SIZE(erase_buffer));
 	sector_wr_jmp = sector_wr_size / sector_wr_size;
 	TC_PRINT("For "DISK_NAME" using sector write size %"PRIu32" to write %"PRIu32" at once\n",
