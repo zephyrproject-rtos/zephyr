@@ -74,6 +74,7 @@ enum {
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
+	BT_DEV_LIMITED_DISCOVERABLE_MODE,
 #endif /* CONFIG_BT_CLASSIC */
 
 	/* Total number of flags - must be at the end of the enum */

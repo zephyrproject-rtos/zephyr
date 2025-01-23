@@ -297,20 +297,21 @@ static int cmd_l2cap_register(const struct shell *sh,
 static int cmd_discoverable(const struct shell *sh,
 			    size_t argc, char *argv[])
 {
-	int err;
-	const char *action;
+	int err = 0;
+	bool enable;
+	bool limited = false;
 
-	action = argv[1];
-
-	if (!strcmp(action, "on")) {
-		err = bt_br_set_discoverable(true);
-	} else if (!strcmp(action, "off")) {
-		err = bt_br_set_discoverable(false);
-	} else {
+	enable = shell_strtobool(argv[1], 10, &err);
+	if (err) {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
+	if (argc > 2 && !strcmp(argv[2], "limited")) {
+		limited = true;
+	}
+
+	err = bt_br_set_discoverable(enable, limited);
 	if (err) {
 		shell_print(sh, "BR/EDR set/reset discoverable failed "
 			    "(err %d)", err);
@@ -544,7 +545,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(discovery, NULL,
 		      "<value: on, off> [length: 1-48] [mode: limited]",
 		      cmd_discovery, 2, 2),
-	SHELL_CMD_ARG(iscan, NULL, "<value: on, off>", cmd_discoverable, 2, 0),
+	SHELL_CMD_ARG(iscan, NULL, "<value: on, off> [mode: limited]",
+		      cmd_discoverable, 2, 1),
 	SHELL_CMD_ARG(l2cap-register, NULL, "<psm>", cmd_l2cap_register, 2, 0),
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
