@@ -20,6 +20,7 @@ supported:
   - uart
   - dma
   - watchdog
+  - comparator
 testing:
   ignore_tags:
     - pm

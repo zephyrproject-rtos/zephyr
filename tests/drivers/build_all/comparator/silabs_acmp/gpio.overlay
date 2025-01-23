@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Silicon Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/comparator/silabs/silabs-acmp.h>
+
+&acmp0 {
+	status = "okay";
+	hysteresis-mode = "disabled";
+	accuracy-mode = "low";
+	input-range = "full";
+	input-positive = <ACMP_INPUT_PC3>;
+	input-negative = <ACMP_INPUT_VREFDIV1V25>;
+	vref-divider = <63>;
+};
