@@ -43,6 +43,14 @@ Deprecated in this release
   the same functionality in their application code by reconnecting to the peer when the
   :c:member:`bt_conn_cb.disconnected` callback is invoked.
 
+* Deprecated the :c:func:`stream_flash_erase_page` from Stream Flash API. The same functionality
+  can be achieved using :c:func:`flash_area_erase` or :c:func:`flash_erase`. Nevertheless
+  erasing of a device, while stream flash is supposed to do so, as configured, will result in
+  data lost from stream flash. There are only two situations where device should be erased
+  directly:
+    1) when Stream Flash is not configured to do erase on its own
+    2) when erase is used for removal of a data prior or after Stream Flash uses the designated area.
+
 * Deprecated TinyCrypt library. The reasons for this are (:github:`43712`):
 
   * The upstream version of this library is no longer maintained.
