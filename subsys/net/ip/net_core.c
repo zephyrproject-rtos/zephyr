@@ -483,8 +483,17 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 	if (NET_TC_RX_COUNT == 0) {
 		net_process_rx_packet(pkt);
 	} else {
-		net_tc_submit_to_rx_queue(tc, pkt);
+		if (net_tc_submit_to_rx_queue(tc, pkt) != NET_OK) {
+			goto drop;
+		}
 	}
+
+	return;
+
+drop:
+	net_pkt_unref(pkt);
+	/* TODO add statistics */
+	return;
 }
 
 /* Called by driver when a packet has been received */
