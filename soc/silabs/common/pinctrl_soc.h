@@ -73,14 +73,30 @@ typedef struct pinctrl_soc_pin {
 	 .en_bit =                                                                                 \
 		 (FIELD_GET(SILABS_PINCTRL_HAVE_EN_MASK, DT_PROP_BY_IDX(node, prop, idx))          \
 			  ? FIELD_GET(SILABS_PINCTRL_EN_BIT_MASK, DT_PROP_BY_IDX(node, prop, idx)) \
-			  : 0xFF),                                                                 \
+			  : SILABS_PINCTRL_UNUSED),                                                \
 	 .route_offset = FIELD_GET(SILABS_PINCTRL_ROUTE_MASK, DT_PROP_BY_IDX(node, prop, idx)),    \
 	 .mode = Z_PINCTRL_SILABS_MODE_INIT(node),                                                 \
 	 .dout = Z_PINCTRL_SILABS_DOUT_INIT(node)},
 
+#define Z_PINCTRL_STATE_ABUS_INIT(node, prop, idx)                                                 \
+	{                                                                                          \
+		.base_offset =                                                                     \
+			FIELD_GET(SILABS_PINCTRL_ABUS_BUS_MASK, DT_PROP_BY_IDX(node, prop, idx)),  \
+		.route_offset = FIELD_GET(SILABS_PINCTRL_ABUS_PERIPH_MASK,                         \
+					  DT_PROP_BY_IDX(node, prop, idx)),                        \
+		.en_bit = SILABS_PINCTRL_ANALOG,                                                   \
+		.mode = FIELD_GET(SILABS_PINCTRL_ABUS_PARITY_MASK,                                 \
+				  DT_PROP_BY_IDX(node, prop, idx)),                                \
+	},
+
+#define Z_PINCTRL_SILABS_DISPATCH(group)                                                           \
+	IF_ENABLED(DT_NODE_HAS_PROP(group, pins),                                                  \
+		   (DT_FOREACH_PROP_ELEM(group, pins, Z_PINCTRL_STATE_PIN_INIT)))                  \
+	IF_ENABLED(DT_NODE_HAS_PROP(group, silabs_analog_bus),                                     \
+		   (DT_FOREACH_PROP_ELEM(group, silabs_analog_bus, Z_PINCTRL_STATE_ABUS_INIT)))
+
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)                                                   \
-	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop), DT_FOREACH_PROP_ELEM, pins,             \
-				Z_PINCTRL_STATE_PIN_INIT)}
+	{DT_FOREACH_CHILD(DT_PHANDLE(node_id, prop), Z_PINCTRL_SILABS_DISPATCH)}
 
 #else
 
