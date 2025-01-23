@@ -19,6 +19,13 @@ struct k_p4wq_work;
 typedef void (*k_p4wq_handler_t)(struct k_p4wq_work *work);
 
 /**
+ * Optional P4 Queue done callback.
+ * Will be called after the memory structure is not used anymore by the p4wq.
+ * If it is not used it must be set to NULL.
+ */
+typedef void (*k_p4wq_done_handler_t)(struct k_p4wq_work *work);
+
+/**
  * @brief P4 Queue Work Item
  *
  * User-populated struct representing a single work item.  The
@@ -74,6 +81,11 @@ struct k_p4wq {
 
 	/* K_P4WQ_* flags above */
 	uint32_t flags;
+
+	/* done handler which is called every time after work was successfully executed
+	 * and k_p4wq_work is not needed by p4wq anymore
+	 */
+	k_p4wq_done_handler_t done_handler;
 };
 
 struct k_p4wq_initparam {
@@ -83,6 +95,7 @@ struct k_p4wq_initparam {
 	struct k_thread *threads;
 	struct z_thread_stack_element *stacks;
 	uint32_t flags;
+	k_p4wq_done_handler_t done_handler;
 };
 
 /**
@@ -95,8 +108,9 @@ struct k_p4wq_initparam {
  * @param name Symbol name of the struct k_p4wq that will be defined
  * @param n_threads Number of threads in the work queue pool
  * @param stack_sz Requested stack size of each thread, in bytes
+ * @param dn_handler Function pointer to handler of type k_p4wq_done_handler_t
  */
-#define K_P4WQ_DEFINE(name, n_threads, stack_sz)			\
+#define K_P4WQ_DEFINE_WITH_DONE_HANDLER(name, n_threads, stack_sz, dn_handler)			\
 	static K_THREAD_STACK_ARRAY_DEFINE(_p4stacks_##name,		\
 					   n_threads, stack_sz);	\
 	static struct k_thread _p4threads_##name[n_threads];		\
@@ -109,7 +123,18 @@ struct k_p4wq_initparam {
 		.stacks = &(_p4stacks_##name[0][0]),			\
 		.queue = &name,						\
 		.flags = 0,						\
+		.done_handler = dn_handler,			\
 	}
+
+/**
+ * @brief Statically initialize a P4 Work Queue
+ *
+ * Same like K_P4WQ_DEFINE_WITH_DONE_HANDLER but without an
+ * optional handler which is called everytime when work is executed
+ * and not used anymore by the p4wq
+ */
+#define K_P4WQ_DEFINE(name, n_threads, stack_sz)			\
+	K_P4WQ_DEFINE_WITH_DONE_HANDLER(name, n_threads, stack_sz, NULL)
 
 /**
  * @brief Statically initialize an array of P4 Work Queues
@@ -122,8 +147,9 @@ struct k_p4wq_initparam {
  * @param n_threads Number of threads and work queues
  * @param stack_sz Requested stack size of each thread, in bytes
  * @param flg Flags
+ * @param dn_handler Function pointer to handler of type k_p4wq_done_handler_t
  */
-#define K_P4WQ_ARRAY_DEFINE(name, n_threads, stack_sz, flg)		\
+#define K_P4WQ_ARRAY_DEFINE_WITH_DONE_HANDLER(name, n_threads, stack_sz, flg, dn_handler) \
 	static K_THREAD_STACK_ARRAY_DEFINE(_p4stacks_##name,		\
 					   n_threads, stack_sz);	\
 	static struct k_thread _p4threads_##name[n_threads];		\
@@ -136,7 +162,18 @@ struct k_p4wq_initparam {
 		.stacks = &(_p4stacks_##name[0][0]),			\
 		.queue = name,						\
 		.flags = K_P4WQ_QUEUE_PER_THREAD | flg,			\
+		.done_handler = dn_handler,							\
 	}
+
+/**
+ * @brief Statically initialize an array of P4 Work Queues
+ *
+ * Same like K_P4WQ_ARRAY_DEFINE_WITH_DONE_HANDLER but without an
+ * optional handler which is called everytime when work is executed
+ * and not used anymore by the p4wq
+ */
+#define K_P4WQ_ARRAY_DEFINE(name, n_threads, stack_sz, flg)		\
+	K_P4WQ_ARRAY_DEFINE_WITH_DONE_HANDLER(name, n_threads, stack_sz, flg, NULL)
 
 /**
  * @brief Initialize P4 Queue
