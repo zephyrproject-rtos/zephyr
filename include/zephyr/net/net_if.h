@@ -614,6 +614,9 @@ struct net_traffic_class {
 	/** Fifo for handling this Tx or Rx packet */
 	struct k_fifo fifo;
 
+	/** Semaphore for tracking the available slots in the fifo */
+	struct k_sem fifo_slot;
+
 	/** Traffic class handler thread */
 	struct k_thread handler;
 
