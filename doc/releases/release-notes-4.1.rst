@@ -88,6 +88,15 @@ Deprecated APIs and options
 
 * :kconfig:option:`CONFIG_NATIVE_APPLICATION` has been deprecated.
 
+* Deprecated the :c:func:`stream_flash_erase_page` from Stream Flash API. The same functionality
+  can be achieved using :c:func:`flash_area_erase` or :c:func:`flash_erase`. Nevertheless
+  erasing of a device, while stream flash is supposed to do so, as configured, will result in
+  data lost from stream flash. There are only two situations where device should be erased
+  directly:
+
+  1. when Stream Flash is not configured to do erase on its own
+  2. when erase is used for removal of a data prior or after Stream Flash uses the designated area.
+
 * For the native_sim target :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT` has been
   switched to ``n`` by default, and this option has been deprecated.
 
