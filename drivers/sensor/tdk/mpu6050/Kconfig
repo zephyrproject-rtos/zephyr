@@ -53,20 +53,4 @@ config MPU6050_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-config MPU6050_ACCEL_FS
-	int "Accelerometer full-scale range"
-	default 2
-	help
-	  Magnetometer full-scale range.
-	  An X value for the config represents a range of +/- X g. Valid
-	  values are 2, 4, 8 and 16.
-
-config MPU6050_GYRO_FS
-	int "Gyroscope full-scale range"
-	default 250
-	help
-	  Gyroscope full-scale range.
-	  An X value for the config represents a range of +/- X degrees/second.
-	  Valid values are 250, 500, 1000, 2000.
-
 endif # MPU6050
