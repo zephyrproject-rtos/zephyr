@@ -77,6 +77,8 @@ void metairq_thread(void *p1, void *p2, void *p3)
 
 	k_msleep(WAIT_MS);
 
+	zassert_not_equal(coop_cnt2, LOOP_CNT, "thread2 wasn't preempted");
+
 	printk("give sem1\n");
 	k_sem_give(&coop_sem1);
 
@@ -112,6 +114,8 @@ void coop_thread1(void *p1, void *p2, void *p3)
 	zassert_equal(cnt1, 1, "Unexpected cnt1 at end: %d", cnt1);
 	cnt2 = coop_cnt2;
 	zassert_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at end: %d", cnt2);
+
+	printk("thread1 end\n");
 
 	k_sem_give(&coop_sem1);
 }
@@ -154,6 +158,8 @@ void coop_thread2(void *p1, void *p2, void *p3)
 	zassert_equal(cnt1, 0, "Unexpected cnt1 at end: %d", cnt1);
 	cnt2 = coop_cnt2;
 	zassert_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at end: %d", cnt2);
+
+	printk("thread2 end\n");
 
 	k_sem_give(&coop_sem2);
 }
