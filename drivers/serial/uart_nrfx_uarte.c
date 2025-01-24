@@ -111,16 +111,18 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #include <nrf/gpd.h>
 
 /* Macro must resolve to literal 0 or 1 */
-#define INSTANCE_IS_FAST(unused, prefix, idx, _)						\
+#define INSTANCE_IS_FAST_PD(unused, prefix, idx, _)						\
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(idx)),					\
 		    (COND_CODE_1(DT_NODE_HAS_PROP(UARTE(idx), power_domains),			\
 			(IS_EQ(DT_PHA(UARTE(idx), power_domains, id), NRF_GPD_FAST_ACTIVE1)),	\
 			(0))), (0))
 
-#if UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_FAST, (||), (0))
-/* Fast instance requires special PM treatment so device runtime PM must be enabled. */
+#if UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_FAST_PD, (||), (0))
+/* Instance in fast power domain (PD) requires special PM treatment so device runtime PM must
+ * be enabled.
+ */
 BUILD_ASSERT(IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME));
-#define UARTE_ANY_FAST 1
+#define UARTE_ANY_FAST_PD 1
 #endif
 #endif
 
@@ -293,7 +295,7 @@ struct uarte_nrfx_data {
  * @retval false if device PM is not ISR safe.
  */
 #define IS_PM_ISR_SAFE(dev) \
-	(!IS_ENABLED(UARTE_ANY_FAST) ||\
+	(!IS_ENABLED(UARTE_ANY_FAST_PD) ||\
 	 COND_CODE_1(CONFIG_PM_DEVICE,\
 			((dev->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE))), \
 			(0)))
@@ -309,7 +311,7 @@ struct uarte_nrfx_config {
 #ifdef CONFIG_HAS_NORDIC_DMM
 	void *mem_reg;
 #endif
-#ifdef UARTE_ANY_FAST
+#ifdef UARTE_ANY_FAST_PD
 	const struct device *clk_dev;
 	struct nrf_clock_spec clk_spec;
 #endif
@@ -662,7 +664,7 @@ static void uarte_periph_enable(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 
 	(void)data;
-#ifdef UARTE_ANY_FAST
+#ifdef UARTE_ANY_FAST_PD
 	if (config->clk_dev) {
 		int err;
 
@@ -2218,7 +2220,7 @@ static void uarte_pm_suspend(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 
 	(void)data;
-#ifdef UARTE_ANY_FAST
+#ifdef UARTE_ANY_FAST_PD
 	if (cfg->clk_dev) {
 		int err;
 
@@ -2427,13 +2429,13 @@ static int uarte_instance_init(const struct device *dev,
  * which is using nrfs (IPC) are initialized later.
  */
 #define UARTE_INIT_LEVEL(idx) \
-	COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _), (POST_KERNEL), (PRE_KERNEL_1))
+	COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _), (POST_KERNEL), (PRE_KERNEL_1))
 
 /* Get initialization priority of an instance. Instances that requires clock control
  * which is using nrfs (IPC) are initialized later.
  */
 #define UARTE_INIT_PRIO(idx)								\
-	COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _),				\
+	COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),				\
 		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY)),	\
 		    (CONFIG_SERIAL_INIT_PRIORITY))
 
@@ -2518,7 +2520,7 @@ static int uarte_instance_init(const struct device *dev,
 		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
 			(.timer = NRFX_TIMER_INSTANCE(			       \
 				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
-		IF_ENABLED(INSTANCE_IS_FAST(_, /*empty*/, idx, _),	       \
+		IF_ENABLED(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),	       \
 			(.clk_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(UARTE(idx))), \
 			 .clk_spec = {					       \
 				.frequency = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),\
@@ -2537,7 +2539,7 @@ static int uarte_instance_init(const struct device *dev,
 	}								       \
 									       \
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action,		       \
-			    COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _),\
+			    COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),\
 				    (0), (PM_DEVICE_ISR_SAFE)));	       \
 									       \
 	DEVICE_DT_DEFINE(UARTE(idx),					       \
