@@ -292,6 +292,13 @@ static int ifx_cat1_sdio_init(const struct device *dev)
 	data->cyhal_sdio_config.resource = &data->hw_resource;
 	data->cyhal_sdio_config.host_config = &host_config,
 	data->cyhal_sdio_config.card_config = &sd_host_sd_card_config,
+	data->cyhal_sdio_config.gpios.cmd = NC;
+	data->cyhal_sdio_config.gpios.clk = NC;
+	data->cyhal_sdio_config.gpios.data[0] = NC;
+	data->cyhal_sdio_config.gpios.data[1] = NC;
+	data->cyhal_sdio_config.gpios.data[2] = NC;
+	data->cyhal_sdio_config.gpios.data[3] = NC;
+	data->cyhal_sdio_config.clock = NULL;
 
 	ret = cyhal_sdio_init_cfg(&data->sdio_obj, &data->cyhal_sdio_config);
 	if (ret != CY_RSLT_SUCCESS) {
