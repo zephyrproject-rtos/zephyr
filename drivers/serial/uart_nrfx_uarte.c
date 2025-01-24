@@ -1165,6 +1165,14 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 
 	nrf_uarte_rx_buffer_set(uarte, buf, len);
 
+	if (IS_ENABLED(UARTE_ANY_FAST_PD) && (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+		/* Spurious RXTO event was seen on fast instance (UARTE120) thus
+		 * RXTO interrupt is kept enabled only when RX is active.
+		 */
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
+		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_RXTO_MASK);
+	}
+
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 
@@ -1637,6 +1645,12 @@ static void rxto_isr(const struct device *dev)
 
 #ifdef CONFIG_UART_NRFX_UARTE_ENHANCED_RX
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	if (IS_ENABLED(UARTE_ANY_FAST_PD) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+		/* Spurious RXTO event was seen on fast instance (UARTE120) thus
+		 * RXTO interrupt is kept enabled only when RX is active.
+		 */
+		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_RXTO_MASK);
+	}
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 	nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_FRAME_TIMEOUT_STOPRX);
 #endif
