@@ -352,8 +352,14 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 		return -EINVAL;
 	}
 
-	dns_msg->answer_offset = dns_msg->query_offset + qname_size +
-				 DNS_QTYPE_LEN + DNS_QCLASS_LEN;
+	offset = dns_msg->query_offset + qname_size +
+		 DNS_QTYPE_LEN + DNS_QCLASS_LEN;
+
+	if (offset >= dns_msg->msg_size) {
+		return -ENOMEM;
+	}
+
+	dns_msg->answer_offset = offset;
 
 	return 0;
 }
