@@ -43,3 +43,11 @@ config UART_ESP32_RX_FIFO_THRESH
 	range 1 127
 	help
 	  Configure the RX FIFO threshold for ESP32 UART driver.
+
+config LPUART_ESP32
+	bool "ESP32 LP UART driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_LPUART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable the ESP32 LP UART.
