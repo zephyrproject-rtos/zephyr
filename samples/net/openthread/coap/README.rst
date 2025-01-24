@@ -1,5 +1,3 @@
-:orphan:
-
 .. zephyr:code-sample:: ot-coap
    :name: OpenThread CoAP client and server application
    :relevant-api: openthread
