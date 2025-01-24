@@ -120,6 +120,23 @@ ZTEST(pinctrl_api, test_apply_state)
 #endif
 }
 
+/**
+ * @brief Test that pinctrl_apply_partial_state() works as expected.
+ */
+ZTEST(pinctrl_api, test_apply_partial_state)
+{
+	zassert_not_ok(pinctrl_apply_partial_state(pcfg1, PINCTRL_STATE_MYSTATE, 2, 2));
+	zassert_ok(pinctrl_apply_partial_state(pcfg1, PINCTRL_STATE_MYSTATE, 1, 2));
+
+	zassert_equal(pcfg1->states[1].pins + 1, pinctrl_configure_pins_fake.arg0_val);
+	zassert_equal(2, pinctrl_configure_pins_fake.arg1_val);
+#ifdef CONFIG_PINCTRL_STORE_REG
+	zassert_equal(1, pinctrl_configure_pins_fake.arg2_val);
+#else
+	zassert_equal(PINCTRL_REG_NONE, pinctrl_configure_pins_fake.arg2_val);
+#endif
+}
+
 /** Test device 0 alternative pins for default state */
 PINCTRL_DT_STATE_PINS_DEFINE(DT_PATH(zephyr_user), test_device0_alt_default);
 /** Test device 0 alternative pins for sleep state */
