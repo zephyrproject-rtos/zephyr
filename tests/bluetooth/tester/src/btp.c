@@ -90,7 +90,6 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 		struct btp_hdr *hdr;
 		uint8_t status;
 		uint16_t rsp_len = 0;
-		uint16_t len;
 
 		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 		hdr = (struct btp_hdr *)cmd->data;
@@ -98,11 +97,13 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 		LOG_DBG("cmd service 0x%02x opcode 0x%02x index 0x%02x",
 			hdr->service, hdr->opcode, hdr->index);
 
-		len = sys_le16_to_cpu(hdr->len);
-
 		btp = find_btp_handler(hdr->service, hdr->opcode);
 		if (btp) {
-			if (btp->index != hdr->index) {
+			uint16_t len = sys_le16_to_cpu(hdr->len);
+
+			if (len > BTP_DATA_MAX_SIZE) {
+				status = BTP_STATUS_FAILED;
+			} else if (btp->index != hdr->index) {
 				status = BTP_STATUS_FAILED;
 			} else if ((btp->expect_len >= 0) && (btp->expect_len != len)) {
 				status = BTP_STATUS_FAILED;
@@ -111,7 +112,8 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 						   cmd->rsp, &rsp_len);
 			}
 
-			__ASSERT_NO_MSG((rsp_len + sizeof(struct btp_hdr)) <= BTP_MTU);
+			/* This means that caller likely overwrote rsp buffer */
+			__ASSERT_NO_MSG(rsp_len <= BTP_DATA_MAX_SIZE);
 		} else {
 			status = BTP_STATUS_UNKNOWN_CMD;
 		}
