@@ -350,15 +350,14 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 		return;
 	}
 
+	size_t len = net_pkt_get_len(pkt);
 	uint8_t prio = net_pkt_priority(pkt);
 	uint8_t tc = net_tx_priority2tc(prio);
 
-	net_stats_update_tc_sent_pkt(iface, tc);
-	net_stats_update_tc_sent_bytes(iface, tc, net_pkt_get_len(pkt));
-	net_stats_update_tc_sent_priority(iface, tc, prio);
+	net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
 #if NET_TC_TX_COUNT > 1
-	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
+	NET_DBG("TC %d with len %zu prio %d pkt %p", tc, len, prio, pkt);
 #endif
 
 	/* For highest priority packet, skip the TX queue and push directly to
@@ -367,8 +366,6 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 	 */
 	if ((IS_ENABLED(CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO) &&
 	     prio >= NET_PRIORITY_CA) || NET_TC_TX_COUNT == 0) {
-		net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
-
 		net_if_tx(net_pkt_iface(pkt), pkt);
 	} else {
 		if (net_tc_submit_to_tx_queue(tc, pkt) != NET_OK) {
@@ -379,11 +376,14 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 #endif
 	}
 
+	net_stats_update_tc_sent_pkt(iface, tc);
+	net_stats_update_tc_sent_bytes(iface, tc, len);
+	net_stats_update_tc_sent_priority(iface, tc, prio);
 	return;
 
 drop:
 	net_pkt_unref(pkt);
-	/* TODO add statistics */
+	net_stats_update_tc_sent_dropped(iface, tc);
 	return;
 }
 #endif /* CONFIG_NET_NATIVE */
