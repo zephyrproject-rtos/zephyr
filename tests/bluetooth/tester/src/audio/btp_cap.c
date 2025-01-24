@@ -24,6 +24,8 @@ static struct btp_bap_unicast_group *u_group;
 
 extern struct bt_csip_set_coordinator_set_member *btp_csip_set_members[CONFIG_BT_MAX_CONN];
 
+static uint8_t cap_inhibit_setting_up_ext_ad;
+
 static struct bt_bap_stream *stream_unicast_to_bap(struct btp_bap_unicast_stream *stream)
 {
 	return &stream->audio_stream.cap_stream.bap_stream;
@@ -534,7 +536,6 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 {
 	int err;
 	struct bt_le_adv_param param = *BT_LE_EXT_ADV_NCONN;
-	uint32_t broadcast_id;
 
 	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
@@ -542,13 +543,6 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	struct bt_data base_ad[2];
 	struct bt_data per_ad;
-
-	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-	if (err) {
-		printk("Unable to generate broadcast ID: %d\n", err);
-
-		return -EINVAL;
-	}
 
 	*gap_settings = BIT(BTP_GAP_SETTINGS_DISCOVERABLE) |
 			BIT(BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
@@ -561,12 +555,15 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 	base_ad[1].type = BT_DATA_NAME_COMPLETE;
 	base_ad[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
 	base_ad[1].data = CONFIG_BT_DEVICE_NAME;
-	err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad, 2, NULL,
-					     0, gap_settings);
-	if (err != 0) {
-		LOG_DBG("Failed to create extended advertising instance: %d", err);
 
-		return -EINVAL;
+	if (!cap_inhibit_setting_up_ext_ad) {
+		err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad,
+						     2, NULL, 0, gap_settings);
+		if (err != 0) {
+			LOG_DBG("Failed to create extended advertising instance: %d", err);
+
+			return -EINVAL;
+		}
 	}
 
 	err = tester_gap_padv_configure(BT_LE_PER_ADV_PARAM(BT_GAP_PER_ADV_FAST_INT_MIN_2,
@@ -950,4 +947,10 @@ uint8_t tester_init_cap(void)
 uint8_t tester_unregister_cap(void)
 {
 	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t cap_extern_ext_ad_setup(void)
+{
+	cap_inhibit_setting_up_ext_ad = true;
+	return 0;
 }
