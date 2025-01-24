@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "${ZEPHYR_BASE}/share/sysbuild/Kconfig"
+
+config REMOTE_BOARD
+	string "The board used for remote target"
+	default "nrf5340dk/nrf5340/cpunet" if BOARD_NRF5340DK_NRF5340_CPUAPP
+	default "nrf5340dk/nrf5340/cpunet" if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
+	default "nrf54h20dk/nrf54h20/cpurad" if BOARD_NRF54H20DK_NRF54H20_CPUAPP
