@@ -256,7 +256,7 @@ static const struct ov7670_reg ov7670_init_regtbl[] = {
 
 	/* display , need retain */
 	{OV7670_COM15, 0xD0}, /* Common Control 15 */
-	{OV7670_TSLB, 0x0C},  /* Line Buffer Test Option */
+	{OV7670_TSLB, 0x04},  /* Reserved */
 	{OV7670_COM13, 0x80}, /* Common Control 13 */
 	{OV7670_MANU, 0x11},  /* Manual U Value */
 	{OV7670_MANV, 0xFF},  /* Manual V Value */
