@@ -589,6 +589,9 @@ static void *read_abort_setup(void)
 
 ZTEST_USER(uart_async_read_abort, test_read_abort)
 {
+	struct uart_config cfg;
+	int err;
+	uint32_t t_us;
 #if NOCACHE_MEM
 	static __aligned(32) uint8_t rx_buf[100] __used __NOCACHE;
 	static __aligned(32) uint8_t tx_buf[100] __used __NOCACHE;
@@ -600,17 +603,26 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	memset(rx_buf, 0, sizeof(rx_buf));
 	memset(tx_buf, 1, sizeof(tx_buf));
 
-	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), 50 * USEC_PER_MSEC);
+	err = uart_config_get(uart_dev, &cfg);
+	zassert_equal(err, 0);
+
+	/* Lets aim to abort after transmitting ~20 bytes (200 bauds) */
+	t_us = (20 * 10 * 1000000) / cfg.baudrate;
+
+	err = uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), 50 * USEC_PER_MSEC);
+	zassert_equal(err, 0);
 	k_sem_give(&rx_buf_coherency);
 
-	uart_tx(uart_dev, tx_buf, 5, 100 * USEC_PER_MSEC);
+	err = uart_tx(uart_dev, tx_buf, 5, 100 * USEC_PER_MSEC);
+	zassert_equal(err, 0);
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
 	zassert_equal(memcmp(tx_buf, rx_buf, 5), 0, "Buffers not equal");
 
-	uart_tx(uart_dev, tx_buf, 95, 100 * USEC_PER_MSEC);
+	err = uart_tx(uart_dev, tx_buf, 95, 100 * USEC_PER_MSEC);
+	zassert_equal(err, 0);
 
-	k_timer_start(&read_abort_timer, K_USEC(300), K_NO_WAIT);
+	k_timer_start(&read_abort_timer, K_USEC(t_us), K_NO_WAIT);
 
 	/* RX will be aborted from k_timer timeout */
 
