@@ -94,6 +94,25 @@ function(create_group)
   set(${OBJECT_OBJECT} GROUP_${OBJECT_NAME} PARENT_SCOPE)
 endfunction()
 
+function(is_active_in_pass ret_ptr current_pass pass_rules)
+  list(FIND pass_rules "NOT" have_not) # -1 if there is no NOT
+  list(FIND pass_rules ${current_pass} found_current)
+
+  if(found_current GREATER_EQUAL "0")
+    set(found_current "1")
+  endif()
+
+  if(have_not GREATER_EQUAL "0")
+    math(EXPR found_current "-1 * ${found_current}")
+  endif()
+
+  if(${found_current} GREATER -1)
+    set(${ret_ptr} "1" PARENT_SCOPE)
+  else()
+    set(${ret_ptr} "0" PARENT_SCOPE)
+  endif()
+endfunction()
+
 function(create_section)
   set(single_args "NAME;ADDRESS;ALIGN_WITH_INPUT;TYPE;ALIGN;ENDALIGN;SUBALIGN;VMA;LMA;NOINPUT;NOINIT;NOSYMBOLS;GROUP;SYSTEM")
   set(multi_args  "PASS")
@@ -101,8 +120,8 @@ function(create_section)
   cmake_parse_arguments(SECTION "" "${single_args}" "${multi_args}" ${ARGN})
 
   if(DEFINED SECTION_PASS)
-    if(NOT (${SECTION_PASS} IN_LIST PASS))
-      # This section is not active in this pass, ignore.
+    is_active_in_pass(active ${PASS} "${SECTION_PASS}")
+    if(NOT ${active})
       return()
     endif()
   endif()
@@ -141,8 +160,8 @@ function(create_section)
       endif()
 
       if(DEFINED SETTINGS_PASS)
-        if(NOT (${SETTINGS_PASS} IN_LIST PASS))
-          # This section setting is not active in this pass, ignore.
+        is_active_in_pass(active ${PASS} "${SETTINGS_PASS}")
+        if(NOT ${active})
           continue()
         endif()
       endif()
