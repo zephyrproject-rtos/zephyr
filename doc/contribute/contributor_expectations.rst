@@ -109,10 +109,6 @@ PR Requirements
   Contributors may mark a PR as draft and explicitly request reviewers to
   provide early feedback, even with failing CI checks.
 
-- When breaking up a PR into multiple commits, each commit must build cleanly. The
-  CI system does not enforce this policy, so it is the PR author's
-  responsibility to verify.
-
 - Commits in a pull request should represent clear, logical units of change that are easy to review
   and maintain bisectability. The following guidelines expand on this principle:
 
