@@ -10,7 +10,7 @@
 #include <openthread/platform/messagepool.h>
 
 #define LOG_MODULE_NAME net_otPlat_messagepool
-#define LOG_LEVEL       CONFIG_OPENTHREAD_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
