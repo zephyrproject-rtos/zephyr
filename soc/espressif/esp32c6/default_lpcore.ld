@@ -54,6 +54,8 @@ SECTIONS
         __text_region_start = ABSOLUTE(.);
         *(.text)
         *(.text*)
+        *(.iram1)
+        *(.iram1.*)
         __text_region_end = ABSOLUTE(.);
     } >ram
 
@@ -104,11 +106,13 @@ SECTIONS
 
     .bss ALIGN(4) :
     {
+        __bss_start = .;
         *(.bss)
         *(.bss*)
         *(.sbss)
         *(.sbss*)
         PROVIDE(end = .);
+        __bss_end = .;
         _heap_sentry = .;
     } >ram
 
