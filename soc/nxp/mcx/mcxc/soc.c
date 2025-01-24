@@ -96,9 +96,13 @@ static void clock_init(void)
 	CLOCK_SetSimConfig(&simConfig_BOARD_BootClockRUN);
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = DT_PROP(DT_NODELABEL(cpu0), clock_frequency);
-	/* Set LPUART0 clock source. */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
+	/* Set LPUART0 clock source. */
 	CLOCK_SetLpuart0Clock(LPUART_CLOCK_SEL(lpuart0));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
+	/* Set LPUART1 clock source. */
+	CLOCK_SetLpuart1Clock(LPUART_CLOCK_SEL(lpuart1));
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_tpm)
 	/* All TPM instances share common clock source for counter clock.
