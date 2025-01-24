@@ -7,10 +7,11 @@
 #define DT_DRV_COMPAT silabs_gecko_iadc
 
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_silabs.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #include <em_iadc.h>
-#include <em_cmu.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -45,6 +46,8 @@ struct adc_gecko_config {
 	IADC_Config_t config;
 	IADC_TypeDef *base;
 	const struct pinctrl_dev_config *pcfg;
+	const struct device *clock_dev;
+	const struct silabs_clock_control_cmu_config clock_cfg;
 	void (*irq_cfg_func)(void);
 };
 
@@ -364,10 +367,10 @@ static int adc_gecko_init(const struct device *dev)
 	const struct adc_gecko_config *config = dev->config;
 	struct adc_gecko_data *data = dev->data;
 
-	CMU_ClockEnable(cmuClock_IADC0, true);
-
-	/* Select clock for IADC */
-	CMU_ClockSelectSet(cmuClock_IADCCLK, cmuSelect_FSRCO);  /* FSRCO - 20MHz */
+	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
+	if (err < 0) {
+		return err;
+	}
 
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0 && err != -ENOENT) {
@@ -400,6 +403,8 @@ static DEVICE_API(adc, api_gecko_adc_driver_api) = {
 	const static struct adc_gecko_config adc_gecko_config_##n = {	\
 		.base = (IADC_TypeDef *)DT_INST_REG_ADDR(n),\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
+		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(n),		\
 		.irq_cfg_func = adc_gecko_config_func_##n,		\
 	};								\
 	static struct adc_gecko_data adc_gecko_data_##n = {		\
