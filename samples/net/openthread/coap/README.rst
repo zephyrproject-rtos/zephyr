@@ -78,7 +78,7 @@ Checking Thread network state
 
 Open a console on both server and client boards then check the sate:
 
-.. code-block::
+.. code-block:: console
 
    server:~$ ot state
    router
@@ -109,7 +109,7 @@ This requires an `OpenThread Border Router`_ with NAT64 support enabled on the s
 First, check that the server (or the client) is connected to the otbr and
 can use NAT64:
 
-.. code-block::
+.. code-block:: console
 
    server:~$ ot netdata show
    router
@@ -133,7 +133,7 @@ Thread network to contact devices on Thread network.
 
 We should have an IPv6 address using the prefix:
 
-.. code-block::
+.. code-block:: console
 
    server:~$ ot ipaddr
    fd78:b9ce:5477:9c6e:0:ff:fe00:a800
@@ -147,7 +147,7 @@ to contact the CoAP server outside of the Thread network.
 
 We could also check that we could access internet from Thread network:
 
-.. code-block::
+.. code-block:: console
 
    server:~$ ot ping 8.8.8.8
    Pinging synthesized IPv6 address: fd6f:cb3a:802:2:0:0:808:808
@@ -159,14 +159,14 @@ If everything is working, then, we could start controlling the LED from a comput
 To do that, let's use aiocoap-client, a tool written in python.
 First, install it:
 
-.. code-block::
+.. code-block:: shell
 
    pip install aiocoap
 
 
 Then, send a request to the server to toggle the LED:
 
-.. code-block::
+.. code-block:: shell
 
     aiocoap-client -m PUT --payload '{"led_id":0,"state":2}'  coap://[fd6f:cb3a:802:1:f0ec:c1e2:c1bb:744]/led
 
