@@ -151,6 +151,21 @@ struct ipc_service_cb {
 	 */
 	void (*bound)(void *priv);
 
+	/** @brief The endpoint unbound by the remote.
+	 *
+	 *  This callback is called when the endpoint binding is removed. It may happen on
+	 *  different reasons, e.g. when the remote deregistered the endpoint, connection was
+	 *  lost, or remote CPU got reset.
+	 *
+	 *  You may want to do some cleanup, resetting, e.t.c. and after that if you want to bound
+	 *  again, you can register the endpoint. When the remote becomes available again and it
+	 *  also registers the endpoint, the binding will be reestablished and the `bound()`
+	 *  callback will be called.
+	 *
+	 *  @param[in] priv Private user data.
+	 */
+	void (*unbound)(void *priv);
+
 	/** @brief New packet arrived.
 	 *
 	 *  This callback is called when new data is received.
