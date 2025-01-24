@@ -66,7 +66,7 @@
 	addi sp, sp, __struct_arch_esf_SIZEOF	;
 
 /* imports */
-GTEXT(_Fault)
+GTEXT(z_mips_fault)
 
 GTEXT(_k_neg_eagain)
 GTEXT(z_thread_mark_switched_in)
@@ -125,7 +125,7 @@ SECTION_FUNC(exception.other, _mips_interrupt)
 
 unhandled:
 	move a0, sp
-	jal _Fault
+	jal z_mips_fault
 	eret
 
 is_kernel_syscall:
