@@ -55,7 +55,9 @@
 	pinmux_lpspi1: pinmux_lpspi1 {
 		group0 {
 			pinmux = <LPSPI1_SIN_PTB1>,
-				 <LPSPI1_SOUT_PTB3>;
+				 <LPSPI1_SCK_PTB2>,
+				 <LPSPI1_SOUT_PTB3>,
+				 <LPSPI1_PCS0_PTB0>;
 			slew-rate = "fast";
 			drive-strength = "low";
 		};
