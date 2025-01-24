@@ -9,5 +9,5 @@
 
 / {
 	model = "STMicroelectronics STM32N6570 Discovery Kit board";
-	compatible = "st,stm32n6570-dk";
+	compatible = "st,stm32n6570-dk-serial-boot";
 };
