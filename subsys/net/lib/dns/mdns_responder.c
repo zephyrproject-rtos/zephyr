@@ -84,6 +84,8 @@ static struct k_work_q mdns_work_q;
 static K_KERNEL_STACK_DEFINE(mdns_work_q_stack, CONFIG_MDNS_WORKQ_STACK_SIZE);
 struct k_work_delayable init_listener_timer;
 static int failed_probes;
+static int announce_count;
+static bool do_announce;
 
 /* Collect added/deleted IP addresses to announce them */
 struct mdns_monitor_iface_addr {
@@ -366,6 +368,7 @@ static int send_response(int sock,
 	ret = zsock_sendto(sock, query->data, query->len, 0,
 			   (struct sockaddr *)&dst, dst_len);
 	if (ret < 0) {
+		ret = -errno;
 		NET_DBG("Cannot send %s reply (%d)", "mDNS", ret);
 	} else {
 		net_stats_update_dns_sent(iface);
@@ -610,9 +613,9 @@ static int dns_read(int sock,
 		if (!strncasecmp(hostname, result->data + 1, hostname_len) &&
 		    (result->len - 1) >= hostname_len &&
 		    &(result->data + 1)[hostname_len] == lquery) {
-			NET_DBG("%s %s %s to our hostname %s.local", "mDNS",
+			NET_DBG("%s %s %s to our hostname %s%s", "mDNS",
 				family == AF_INET ? "IPv4" : "IPv6", "query",
-				hostname);
+				hostname, ".local");
 			send_response(sock, family, src_addr, addrlen,
 				      result, qtype);
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
@@ -687,6 +690,7 @@ static int add_address(struct net_if *iface, sa_family_t family,
 		mon_if[first_free].added = true;
 		mon_if[first_free].updated = true;
 		mon_if[first_free].iface = iface;
+		mon_if[first_free].addr.family = family;
 
 		memcpy(&mon_if[first_free].addr.in_addr, address, expected_len);
 
@@ -774,9 +778,9 @@ static int send_probe(struct mdns_responder_context *ctx)
 	uint16_t local_port;
 	int ret;
 
-	NET_DBG("%s %s %s to our hostname %s.local iface %d", "mDNS",
+	NET_DBG("%s %s %s to our hostname %s%s iface %d", "mDNS",
 		ctx->dispatcher.local_addr.sa_family == AF_INET ? "IPv4" : "IPv6",
-		"probe", hostname, net_if_get_by_iface(ctx->iface));
+		"probe", hostname, ".local", net_if_get_by_iface(ctx->iface));
 
 	ret = 0;
 	do {
@@ -808,7 +812,7 @@ static int send_probe(struct mdns_responder_context *ctx)
 		goto out;
 	}
 
-	snprintk(query, sizeof(query), "%s.local", hostname);
+	snprintk(query, sizeof(query), "%s%s", hostname, ".local");
 
 	ret = k_sem_init(&ud.wait_data, 0, 1);
 	if (ret < 0) {
@@ -1455,9 +1459,246 @@ static int init_listener(void)
 }
 
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
+
+#define ANNOUNCE_TIMEOUT 1 /* in seconds, RFC 6762 ch 8.3 */
+
+/* ATM we do only .local announcing, SD announcing is TODO */
+
+static int send_unsolicited_response(struct net_if *iface,
+				     int sock,
+				     sa_family_t family,
+				     struct sockaddr *src_addr,
+				     size_t addrlen,
+				     struct net_buf *answer)
+{
+	socklen_t dst_len;
+	int ret;
+
+	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
+		    (struct sockaddr_in6), (struct sockaddr_in)) dst;
+
+	ret = setup_dst_addr(sock, family, (struct sockaddr *)&dst, &dst_len);
+	if (ret < 0) {
+		NET_DBG("unable to set up the response address");
+		return ret;
+	}
+
+	ret = zsock_sendto(sock, answer->data, answer->len, 0,
+			   (struct sockaddr *)&dst, dst_len);
+	if (ret < 0) {
+		ret = -errno;
+	} else {
+		net_stats_update_dns_sent(iface);
+	}
+
+	return ret;
+}
+
+static struct net_buf *create_unsolicited_mdns_answer(struct net_if *iface,
+						      const char *name,
+						      uint32_t ttl,
+						      struct mdns_monitor_iface_addr *addr_list,
+						      size_t addr_list_len)
+{
+	struct net_buf *answer;
+	uint16_t answer_count;
+	int len;
+
+	answer = net_buf_alloc(&mdns_msg_pool, BUF_ALLOC_TIMEOUT);
+	if (answer == NULL) {
+		return NULL;
+	}
+
+	setup_dns_hdr(answer->data, 1);
+	net_buf_add(answer, DNS_MSG_HEADER_SIZE);
+
+	answer_count = 0U;
+
+	for (size_t i = 0; i < addr_list_len; i++) {
+		uint16_t type;
+		size_t left;
+
+		if (!addr_list[i].in_use) {
+			continue;
+		}
+
+		if (iface != addr_list[i].iface) {
+			continue;
+		}
+
+		if (addr_list[i].addr.family == AF_INET) {
+			type = DNS_RR_TYPE_A;
+		} else if (addr_list[i].addr.family == AF_INET6) {
+			type = DNS_RR_TYPE_AAAA;
+		} else {
+			NET_DBG("Unknown family %d", addr_list[i].addr.family);
+
+			net_buf_unref(answer);
+			return NULL;
+		}
+
+		if (answer_count == 0) {
+			len = strlen(name);
+		}
+
+		left = net_buf_tailroom(answer);
+		if ((answer_count == 0 &&
+		     left < (1 + len + 1 + 5 + 1 + 2 + 2 + 4 + 4 +
+			     (type == DNS_RR_TYPE_A ? 4 : 16))) ||
+		    (answer_count > 0 &&
+		     left < (1 + 1 + 2 + 2 + 4 + 4 +
+			     (type == DNS_RR_TYPE_A ? 4 : 16)))) {
+			NET_DBG("No more space (%u left)", left);
+			net_buf_unref(answer);
+			return NULL;
+		}
+
+		if (answer_count == 0) {
+			net_buf_add_u8(answer, len);
+			net_buf_add_mem(answer, name, len);
+			net_buf_add_u8(answer, sizeof(".local") - 2);
+			net_buf_add_mem(answer, &".local"[1], sizeof(".local") - 2);
+			net_buf_add_u8(answer, 0U);
+		} else {
+			/* Add pointer to the name (compression) */
+			net_buf_add_u8(answer, 0xc0);
+			net_buf_add_u8(answer, 0x0c);
+		}
+
+		net_buf_add_be16(answer, type);
+		net_buf_add_be16(answer, DNS_CLASS_IN);
+		net_buf_add_be32(answer, ttl);
+
+		if (type == DNS_RR_TYPE_A) {
+			net_buf_add_be16(answer, 4);
+			net_buf_add_mem(answer, &addr_list[i].addr.in_addr, 4);
+		} else if (type == DNS_RR_TYPE_AAAA) {
+			net_buf_add_be16(answer, 16);
+			net_buf_add_mem(answer, &addr_list[i].addr.in6_addr, 16);
+		}
+
+		answer_count++;
+	}
+
+	/* Adjust the answer count in the header */
+	if (answer_count > 1) {
+		UNALIGNED_PUT(htons(answer_count), (uint16_t *)&answer->data[6]);
+	}
+
+	return answer;
+}
+
+static int send_announce(const char *name)
+{
+	struct net_buf *answer;
+	int ret;
+
+#if defined(CONFIG_NET_IPV4)
+	struct sockaddr_in dst_addr4;
+
+	create_ipv4_addr(&dst_addr4);
+
+	ARRAY_FOR_EACH(v4_ctx, i) {
+		if (v4_ctx[i].sock < 0 || v4_ctx[i].iface == NULL ||
+		    !net_if_is_up(v4_ctx[i].iface)) {
+			continue;
+		}
+
+		answer = create_unsolicited_mdns_answer(v4_ctx[i].iface,
+							name,
+							MDNS_TTL,
+							mon_if,
+							ARRAY_SIZE(mon_if));
+		if (answer == NULL) {
+			continue;
+		}
+
+		ret = send_unsolicited_response(v4_ctx[i].iface,
+						v4_ctx[i].sock,
+						AF_INET,
+						(struct sockaddr *)&dst_addr4,
+						sizeof(dst_addr4),
+						answer);
+
+		net_buf_unref(answer);
+
+		if (ret < 0) {
+			NET_DBG("Cannot send %s announce (%d)", "mDNS", ret);
+			continue;
+		}
+
+		NET_DBG("Announcing %s responder for %s%s (iface %d)",
+			"mDNS", name, ".local", net_if_get_by_iface(v4_ctx[i].iface));
+	}
+#endif /* defined(CONFIG_NET_IPV4) */
+
+#if defined(CONFIG_NET_IPV6)
+	struct sockaddr_in6 dst_addr6;
+
+	create_ipv6_addr(&dst_addr6);
+
+	ARRAY_FOR_EACH(v6_ctx, i) {
+		if (v6_ctx[i].sock < 0 || v6_ctx[i].iface == NULL ||
+		    !net_if_is_up(v6_ctx[i].iface)) {
+			continue;
+		}
+
+		answer = create_unsolicited_mdns_answer(v6_ctx[i].iface,
+							name,
+							MDNS_TTL,
+							mon_if,
+							ARRAY_SIZE(mon_if));
+		if (answer == NULL) {
+			continue;
+		}
+
+		ret = send_unsolicited_response(v6_ctx[i].iface,
+						v6_ctx[i].sock,
+						AF_INET6,
+						(struct sockaddr *)&dst_addr6,
+						sizeof(dst_addr6),
+						answer);
+
+		net_buf_unref(answer);
+
+		if (ret < 0) {
+			NET_DBG("Cannot send %s announce (%d)", "mDNS", ret);
+			continue;
+		}
+
+		NET_DBG("Announcing %s responder for %s%s (iface %d)",
+			"mDNS", name, ".local", net_if_get_by_iface(v6_ctx[i].iface));
+	}
+#endif /* defined(CONFIG_NET_IPV6) */
+
+	return 0;
+}
+
+static void announce_start(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	char name[DNS_MAX_NAME_SIZE + 1];
+	int ret;
+
+	snprintk(name, sizeof(name), "%s", net_hostname_get());
+
+	ret = send_announce(name);
+	if (ret < 0) {
+		NET_DBG("Cannot send %s announce (%d)", "mDNS", ret);
+		return;
+	}
+
+	do_announce = true;
+	announce_count++;
+
+	ret = k_work_reschedule_for_queue(&mdns_work_q, dwork, K_SECONDS(ANNOUNCE_TIMEOUT));
+	if (ret < 0) {
+		NET_DBG("Cannot schedule %s work (%d)", "announce", ret);
+	}
+}
+
 static void do_init_listener(struct k_work *work)
 {
-	ARG_UNUSED(work);
 	int ret;
 
 	if (failed_probes) {
@@ -1465,11 +1706,20 @@ static void do_init_listener(struct k_work *work)
 		return;
 	}
 
-	NET_DBG("Probing done, starting %s responder", "mDNS");
+	if (do_announce) {
+		if (announce_count < 1) {
+			announce_start(work);
+		}
+	} else {
+		NET_DBG("Probing done, starting %s responder", "mDNS");
 
-	ret = init_listener();
-	if (ret) {
-		NET_ERR("Cannot start %s responder", "mDNS");
+		ret = init_listener();
+		if (ret) {
+			NET_ERR("Cannot start %s responder", "mDNS");
+		}
+
+		announce_start(work);
+		announce_count = 0;
 	}
 }
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
