@@ -7,6 +7,7 @@ tests:
   drivers.retained_mem.api.ram:
     platform_allow:
       - qemu_cortex_m3
+      - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54l09pdk/nrf54l09/cpuapp
