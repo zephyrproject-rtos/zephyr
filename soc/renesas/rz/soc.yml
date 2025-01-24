@@ -6,3 +6,6 @@ family:
           - name: r9a08g045s33gbg
             cpuclusters:
               - name: cm33
+      - name: rzt2l
+        socs:
+          - name: r9a07g074m04gbg
