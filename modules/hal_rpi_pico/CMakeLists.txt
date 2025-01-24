@@ -104,9 +104,11 @@ if(CONFIG_HAS_RPI_PICO)
           ${rp2_common_dir}/hardware_uart/include)
 
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_FLASH
-          ${rp2_common_dir}/hardware_flash/flash.c)
+          ${rp2_common_dir}/hardware_flash/flash.c
+          ${rp2_common_dir}/hardware_xip_cache/xip_cache.c)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_FLASH
-          ${rp2_common_dir}/hardware_flash/include)
+          ${rp2_common_dir}/hardware_flash/include
+          ${rp2_common_dir}/hardware_xip_cache/include)
 
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_PWM
           ${rp2_common_dir}/hardware_pwm/include)
