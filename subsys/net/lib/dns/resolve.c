@@ -782,7 +782,8 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 
 	ret = dns_unpack_response_header(dns_msg, *dns_id);
 	if (ret < 0) {
-		ret = DNS_EAI_FAIL;
+		errno = -ret;
+		ret = DNS_EAI_SYSTEM;
 		goto quit;
 	}
 
@@ -797,7 +798,8 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 	ret = dns_unpack_response_query(dns_msg);
 	if (ret < 0) {
 		if (ret == -ENOMEM) {
-			ret = DNS_EAI_FAIL;
+			errno = -ret;
+			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
 
@@ -828,7 +830,8 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		ret = dns_unpack_answer(dns_msg, answer_ptr, &ttl,
 					&answer_type);
 		if (ret < 0) {
-			ret = DNS_EAI_FAIL;
+			errno = -ret;
+			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
 
@@ -902,14 +905,16 @@ query_known:
 
 			if (dns_msg->response_length < address_size) {
 				/* it seems this is a malformed message */
-				ret = DNS_EAI_FAIL;
+				errno = EMSGSIZE;
+				ret = DNS_EAI_SYSTEM;
 				goto quit;
 			}
 
 			if ((dns_msg->response_position + address_size) >
 			    dns_msg->msg_size) {
 				/* Too short message */
-				ret = DNS_EAI_FAIL;
+				errno = EMSGSIZE;
+				ret = DNS_EAI_SYSTEM;
 				goto quit;
 			}
 
@@ -955,6 +960,7 @@ query_known:
 
 		*query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
 		if (*query_idx < 0) {
+			errno = ENOENT;
 			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
@@ -977,6 +983,7 @@ query_known:
 						     net_buf_max_len(dns_cname),
 						     dns_msg, pos);
 				if (ret < 0) {
+					errno = -ret;
 					ret = DNS_EAI_SYSTEM;
 					goto quit;
 				}
