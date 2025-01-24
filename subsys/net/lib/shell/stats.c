@@ -368,22 +368,24 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 	PR("RX traffic class statistics:\n");
 
 #if defined(CONFIG_NET_PKT_RXTIME_STATS)
-	PR("TC  Priority\tRecv pkts\tbytes\ttime\n");
+	PR("TC  Priority\tRecv pkts\tDrop pkts\tbytes\ttime\n");
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
 		net_stats_t count = GET_STAT(iface,
 					     tc.recv[i].rx_time.count);
 		if (count == 0) {
-			PR("[%d] %s (%d)\t%d\t\t%d\t-\n", i,
+			PR("[%d] %s (%d)\t%d\t%d\t\t%d\t-\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
+			   GET_STAT(iface, tc.recv[i].dropped),
 			   GET_STAT(iface, tc.recv[i].bytes));
 		} else {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%u us%s\n", i,
+			PR("[%d] %s (%d)\t%d\t%d\t\t%d\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
+			   GET_STAT(iface, tc.recv[i].dropped),
 			   GET_STAT(iface, tc.recv[i].bytes),
 			   (uint32_t)(GET_STAT(iface,
 					    tc.recv[i].rx_time.sum) /
@@ -392,13 +394,14 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 		}
 	}
 #else
-	PR("TC  Priority\tRecv pkts\tbytes\n");
+	PR("TC  Priority\tRecv pkts\tDrop pkts\tbytes\n");
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
-		PR("[%d] %s (%d)\t%d\t\t%d\n", i,
+		PR("[%d] %s (%d)\t%d\t%d\t\t%d\n", i,
 		   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 		   GET_STAT(iface, tc.recv[i].priority),
 		   GET_STAT(iface, tc.recv[i].pkts),
+		   GET_STAT(iface, tc.recv[i].dropped),
 		   GET_STAT(iface, tc.recv[i].bytes));
 	}
 #endif /* CONFIG_NET_PKT_RXTIME_STATS */
