@@ -831,7 +831,9 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			ret = DNS_EAI_FAIL;
 			goto quit;
 		}
+	}
 
+	if (dns_header_qdcount(dns_msg->msg) < 1 && *dns_id == 0) {
 		/* mDNS responses to do not have the query part so the
 		 * answer starts immediately after the header.
 		 */
@@ -859,28 +861,58 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		}
 
 		switch (dns_msg->response_type) {
-		case DNS_RESPONSE_IP:
+		case DNS_RESPONSE_IP: {
+			int query_name_len;
+
 			if (*query_idx >= 0) {
 				goto query_known;
 			}
 
 			query_name = dns_msg->msg + dns_msg->query_offset;
 
+			query_name_len = strlen(query_name);
+
 			/* Convert the query name to small case so that our
 			 * hash checker can find it.
 			 */
-			for (size_t i = 0, n = strlen(query_name); i < n; i++) {
+			for (size_t i = 0, n = query_name_len; i < n; i++) {
 				query_name[i] = tolower(query_name[i]);
 			}
 
 			/* Add \0 and query type (A or AAAA) to the hash */
 			*query_hash = crc16_ansi(query_name,
-						 strlen(query_name) + 1 + 2);
+						 query_name_len + 1 + 2);
 
 			*query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
 			if (*query_idx < 0) {
-				ret = DNS_EAI_SYSTEM;
-				goto quit;
+				/* Re-check if this was a mDNS probe query */
+				if (IS_ENABLED(CONFIG_MDNS_RESPONDER_PROBE) && *dns_id == 0) {
+					uint16_t orig_qtype;
+
+					orig_qtype = sys_get_be16(&query_name[query_name_len + 1]);
+
+					/* Replace the query type with ANY as that was used
+					 * when creating the hash.
+					 */
+					sys_put_be16(DNS_RR_TYPE_ANY,
+						     &query_name[query_name_len + 1]);
+
+					*query_hash = crc16_ansi(query_name,
+								 query_name_len + 1 + 2);
+
+					sys_put_be16(orig_qtype, &query_name[query_name_len + 1]);
+
+					*query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
+					if (*query_idx < 0) {
+						errno = ENOENT;
+						ret = DNS_EAI_SYSTEM;
+						goto quit;
+					}
+				} else {
+					errno = ENOENT;
+					ret = DNS_EAI_SYSTEM;
+					goto quit;
+				}
 			}
 
 query_known:
@@ -891,6 +923,7 @@ query_known:
 					goto quit;
 				}
 
+rr_qtype_a:
 				address_size = DNS_IPV4_LEN;
 				addr = (uint8_t *)&net_sin(&info.ai_addr)->
 								sin_addr;
@@ -905,6 +938,7 @@ query_known:
 					goto quit;
 				}
 
+rr_qtype_aaaa:
 				/* We cannot resolve IPv6 address if IPv6 is
 				 * disabled. The reason being that
 				 * "struct sockaddr" does not have enough space
@@ -921,6 +955,20 @@ query_known:
 				ret = DNS_EAI_FAMILY;
 				goto quit;
 #endif
+			} else if (ctx->queries[*query_idx].query_type ==
+				   (enum dns_query_type)DNS_RR_TYPE_ANY) {
+				/* If we did ANY query, we need to check what
+				 * type of answer we got. Currently only A or AAAA
+				 * are supported.
+				 */
+				if (answer_type == DNS_RR_TYPE_A) {
+					goto rr_qtype_a;
+				} else if (answer_type == DNS_RR_TYPE_AAAA) {
+					goto rr_qtype_aaaa;
+				} else {
+					ret = DNS_EAI_ADDRFAMILY;
+					goto quit;
+				}
 			} else {
 				ret = DNS_EAI_FAMILY;
 				goto quit;
@@ -952,7 +1000,7 @@ query_known:
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
 			items++;
 			break;
-
+		}
 		case DNS_RESPONSE_CNAME_NO_IP:
 			/* Instead of using the QNAME at DNS_QUERY_POS,
 			 * we will use this CNAME
