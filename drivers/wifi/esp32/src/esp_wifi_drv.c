@@ -568,6 +568,11 @@ static int esp32_wifi_connect(const struct device *dev,
 		return -EIO;
 	}
 
+#if defined(CONFIG_ESP32_WIFI_STA_SCAN_ALL)
+	wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+	wifi_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+#endif
+
 	if (params->channel == WIFI_CHANNEL_ANY) {
 		wifi_config.sta.channel = 0U;
 		data->status.channel = 0U;
