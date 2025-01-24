@@ -928,15 +928,7 @@ Cross-referencing files in the Zephyr tree
 ==========================================
 
 Special roles are available to reference files in the Zephyr tree. For example, referencing this
-very file can be done using the :rst:role:`zephyr_file` role, like this::
-
-   Check out :zephyr_file:`doc/contribute/documentation/guidelines.rst` for more information.
-
-This would render as:
-
-   Check out :zephyr_file:`doc/contribute/documentation/guidelines.rst` for more information.
-
-You may use the :rst:role:`zephyr_raw` role instead if you want to reference the "raw" content.
+very file can be done using the :rst:role:`zephyr_file` role.
 
 .. rst:role:: zephyr_file
 
@@ -947,6 +939,8 @@ You may use the :rst:role:`zephyr_raw` role instead if you want to reference the
    Will render as:
 
       Check out :zephyr_file:`doc/contribute/documentation/guidelines.rst` for more information.
+
+You may use the :rst:role:`zephyr_raw` role instead if you want to reference the "raw" content.
 
 .. rst:role:: zephyr_raw
 
