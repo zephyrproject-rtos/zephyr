@@ -47,20 +47,23 @@ extern "C" {
  * The structure contains configuration data.
  */
 struct pbuf_cfg {
-	volatile uint32_t *rd_idx_loc;	/* Address of the variable holding
-					 * index value of the first valid byte
-					 * in data[].
-					 */
-	volatile uint32_t *wr_idx_loc;	/* Address of the variable holding
-					 * index value of the first free byte
-					 * in data[].
-					 */
-	uint32_t dcache_alignment;	/* CPU data cache line size in bytes.
-					 * Used for validation - TODO: To be
-					 * replaced by flags.
-					 */
-	uint32_t len;			/* Length of data[] in bytes. */
-	uint8_t *data_loc;		/* Location of the data[]. */
+	volatile uint32_t *rd_idx_loc;	 /* Address of the variable holding
+					  * index value of the first valid byte
+					  * in data[].
+					  */
+	volatile uint32_t *handshake_loc;/* Address of the variable holding
+					  * handshake information.
+					  */
+	volatile uint32_t *wr_idx_loc;	 /* Address of the variable holding
+					  * index value of the first free byte
+					  * in data[].
+					  */
+	uint32_t dcache_alignment;	 /* CPU data cache line size in bytes.
+					  * Used for validation - TODO: To be
+					  * replaced by flags.
+					  */
+	uint32_t len;			 /* Length of data[] in bytes. */
+	uint8_t *data_loc;		 /* Location of the data[]. */
 };
 
 /**
@@ -111,16 +114,21 @@ struct pbuf {
  * @param mem_addr	Memory address for pbuf.
  * @param size		Size of the memory.
  * @param dcache_align	Data cache alignment.
+ * @param use_handshake	Add handshake word inside shared memory that can be access with
+ *			@ref pbuf_handshake_read and @ref pbuf_handshake_write.
  */
-#define PBUF_CFG_INIT(mem_addr, size, dcache_align)					\
+#define PBUF_CFG_INIT(mem_addr, size, dcache_align, use_handshake)			\
 {											\
 	.rd_idx_loc = (uint32_t *)(mem_addr),						\
-	.wr_idx_loc = (uint32_t *)((uint8_t *)(mem_addr) +				\
-				MAX(dcache_align, _PBUF_IDX_SIZE)),			\
+	.handshake_loc = use_handshake ? (uint32_t *)((uint8_t *)(mem_addr) +		\
+				_PBUF_IDX_SIZE) : NULL,					\
+	.wr_idx_loc = (uint32_t *)((uint8_t *)(mem_addr) + MAX(dcache_align,		\
+				(use_handshake ? 2 : 1) * _PBUF_IDX_SIZE)),		\
 	.data_loc = (uint8_t *)((uint8_t *)(mem_addr) +					\
-				MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE),	\
-	.len = (uint32_t)((uint32_t)(size) - MAX(dcache_align, _PBUF_IDX_SIZE) -	\
-				_PBUF_IDX_SIZE),					\
+				MAX(dcache_align, (use_handshake ? 2 : 1) *		\
+						  _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE),	\
+	.len = (uint32_t)((uint32_t)(size) - MAX(dcache_align,				\
+			(use_handshake ? 2 : 1) * _PBUF_IDX_SIZE) - _PBUF_IDX_SIZE),	\
 	.dcache_alignment = (dcache_align),						\
 }
 
@@ -140,9 +148,11 @@ struct pbuf {
  * @param name			Name of the pbuf.
  * @param mem_addr		Memory address for pbuf.
  * @param size			Size of the memory.
- * @param dcache_align	Data cache line size.
+ * @param dcache_align		Data cache line size.
+ * @param use_handshake		Add handshake word inside shared memory that can be access with
+ *				@ref pbuf_handshake_read and @ref pbuf_handshake_write.
  */
-#define PBUF_DEFINE(name, mem_addr, size, dcache_align)					\
+#define PBUF_DEFINE(name, mem_addr, size, dcache_align, use_handshake, compatibility)	\
 	BUILD_ASSERT(dcache_align >= 0,							\
 			"Cache line size must be non negative.");			\
 	BUILD_ASSERT((size) > 0 && IS_PTR_ALIGNED_BYTES(size, _PBUF_IDX_SIZE),		\
@@ -151,8 +161,10 @@ struct pbuf {
 			"Misaligned memory.");						\
 	BUILD_ASSERT(size >= (MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE +	\
 			_PBUF_MIN_DATA_LEN), "Insufficient size.");			\
+	BUILD_ASSERT(!(compatibility) || (dcache_align) >= 8,				\
+		"Data cache alignment must be at least 8 if compatibility is enabled.");\
 	static PBUF_MAYBE_CONST struct pbuf_cfg cfg_##name =				\
-			PBUF_CFG_INIT(mem_addr, size, dcache_align);			\
+			PBUF_CFG_INIT(mem_addr, size, dcache_align, use_handshake);	\
 	static struct pbuf name = {							\
 		.cfg = &cfg_##name,							\
 	}
@@ -222,6 +234,40 @@ int pbuf_write(struct pbuf *pb, const char *buf, uint16_t len);
  *		-EAGAIN, if not whole message is ready yet.
  */
 int pbuf_read(struct pbuf *pb, char *buf, uint16_t len);
+
+/**
+ * @brief Read handshake word from pbuf.
+ *
+ * The pb must be defined with "PBUF_DEFINE" with "use_handshake" set.
+ *
+ * @param pb		A buffer from which data will be read.
+ * @retval uint32_t	The handshake word value.
+ */
+uint32_t pbuf_handshake_read(struct pbuf *pb);
+
+/**
+ * @brief Write handshake word to pbuf.
+ *
+ * The pb must be defined with "PBUF_DEFINE" with "use_handshake" set.
+ *
+ * @param pb		A buffer to which data will be written.
+ * @param value		A handshake value.
+ */
+void pbuf_handshake_write(struct pbuf *pb, uint32_t value);
+
+/**
+ * @brief Get first buffer from pbuf.
+ *
+ * This function retrieves buffer located at the beginning of queue.
+ * It will be continuous block since it is the first buffer.
+ *
+ * @param pb		A buffer from which data will be read.
+ * @param[out] buf	A pointer to output pointer to the date of the first buffer.
+ * @param[out] len	A pointer to output length the first buffer.
+ * @retval		0 on success.
+ *			-EINVAL when there is no buffer at the beginning of queue.
+ */
+int pbuf_get_initial_buf(struct pbuf *pb, volatile char **buf, uint16_t *len);
 
 /**
  * @}
