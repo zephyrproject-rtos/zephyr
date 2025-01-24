@@ -171,7 +171,7 @@ not_interrupt:
 
 _exception_enter_fault:
 	/* If we get here, the exception wasn't in interrupt or an
-	 * invocation of irq_oflload(). Let _Fault() handle it in
+	 * invocation of irq_offload(). Let _Fault() handle it in
 	 * C domain
 	 */
 
