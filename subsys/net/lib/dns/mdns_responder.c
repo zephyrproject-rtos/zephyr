@@ -818,7 +818,7 @@ static int init_listener(void)
 
 		ret = register_dispatcher(&v6_ctx[i], &v6_svc, (struct sockaddr *)&local_addr6,
 					  ifindex, ipv6_fds, ARRAY_SIZE(ipv6_fds));
-		if (ret < 0) {
+		if (ret < 0 && ret != -EALREADY) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv6", "mDNS", ret);
 			zsock_close(v6);
@@ -911,7 +911,7 @@ static int init_listener(void)
 
 		ret = register_dispatcher(&v4_ctx[i], &v4_svc, (struct sockaddr *)&local_addr4,
 					  ifindex, ipv4_fds, ARRAY_SIZE(ipv4_fds));
-		if (ret < 0) {
+		if (ret < 0 && ret != -EALREADY) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv4", "mDNS", ret);
 			zsock_close(v4);
