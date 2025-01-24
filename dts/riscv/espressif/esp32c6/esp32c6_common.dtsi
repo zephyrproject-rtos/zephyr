@@ -263,6 +263,13 @@
 			current-speed = <115200>;
 		};
 
+		lp_uart: uart@600b1400 {
+			compatible = "espressif,esp32-lpuart";
+			reg = <0x600b1400 DT_SIZE_K(4)>;
+			status = "disabled";
+			current-speed = <115200>;
+		};
+
 		usb_serial: uart@6000f000 {
 			compatible = "espressif,esp32-usb-serial";
 			reg = <0x6000F000 0x1000>;
