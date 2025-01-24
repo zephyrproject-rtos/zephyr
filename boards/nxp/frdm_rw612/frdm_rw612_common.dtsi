@@ -24,6 +24,7 @@
 		zephyr,shell-uart = &flexcomm3;
 		zephyr,flash-controller = &w25q512jvfiq;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm3;
 	};
 
 	leds {
