@@ -203,7 +203,7 @@ static bool bad_stack_pointer(struct arch_esf *esf)
 	return false;
 }
 
-void _Fault(struct arch_esf *esf)
+void z_riscv_fault(struct arch_esf *esf)
 {
 #ifdef CONFIG_USERSPACE
 	/*
