@@ -126,6 +126,16 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME));
 #endif
 #endif
 
+#define INSTANCE_IS_HIGH_SPEED(unused, prefix, idx, _) \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(prefix##idx)),				\
+	    ((NRF_PERIPH_GET_FREQUENCY(UARTE(prefix##idx)) > NRF_UARTE_BASE_FREQUENCY_16MHZ)),	\
+	    (0))
+
+/* Macro determines if there is any high speed instance (instance that is driven using
+ * clock that is faster than 16 MHz).
+ */
+#define UARTE_ANY_HIGH_SPEED (UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_HIGH_SPEED, (||), (0)))
+
 #ifdef UARTE_ANY_CACHE
 /* uart120 instance does not retain BAUDRATE register when ENABLE=0. When this instance
  * is used then baudrate must be set after enabling the peripheral and not before.
@@ -255,6 +265,17 @@ struct uarte_nrfx_data {
 
 /* If enabled then UARTE peripheral is using memory which is cacheable. */
 #define UARTE_CFG_FLAG_CACHEABLE BIT(3)
+
+/* Formula for getting the baudrate settings is following:
+ * 2^12 * (2^20 / (f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
+ * drives the UARTE.
+ *
+ * @param f_pclk Frequency of the clock that drives the peripheral.
+ * @param baudrate Desired baudrate.
+ *
+ * @return Baudrate setting to be written to the BAUDRATE register
+ */
+#define UARTE_GET_CUSTOM_BAUDRATE(f_pclk, baudrate) ((BIT(20) / (f_pclk / baudrate)) << 12)
 
 /* Macro for converting numerical baudrate to register value. It is convenient
  * to use this approach because for constant input it can calculate nrf setting
@@ -495,16 +516,17 @@ static void uarte_nrfx_isr_int(const void *arg)
 static int baudrate_set(const struct device *dev, uint32_t baudrate)
 {
 	const struct uarte_nrfx_config *config = dev->config;
+	nrf_uarte_baudrate_t nrf_baudrate;
+
 	/* calculated baudrate divisor */
-	nrf_uarte_baudrate_t nrf_baudrate = NRF_BAUDRATE(baudrate);
+	if (UARTE_ANY_HIGH_SPEED && (config->clock_freq > NRF_UARTE_BASE_FREQUENCY_16MHZ)) {
+		nrf_baudrate = UARTE_GET_CUSTOM_BAUDRATE(config->clock_freq, baudrate);
+	} else {
+		nrf_baudrate = NRF_BAUDRATE(baudrate);
+	}
 
 	if (nrf_baudrate == 0) {
 		return -EINVAL;
-	}
-
-	/* scale baudrate setting */
-	if (config->clock_freq > 0U) {
-		nrf_baudrate /= config->clock_freq / NRF_UARTE_BASE_FREQUENCY_16MHZ;
 	}
 
 #ifdef UARTE_BAUDRATE_RETENTION_WORKAROUND
@@ -2413,17 +2435,21 @@ static int uarte_instance_init(const struct device *dev,
 #define UARTE_DISABLE_RX_INIT(node_id) \
 	.disable_rx = DT_PROP(node_id, disable_rx)
 
-/* Get frequency of the clock that driver the UARTE peripheral. Clock node can
- * have fixed or variable frequency. For fast UARTE use highest supported frequency.
- */
-#define UARTE_GET_BAUDRATE_DIV(idx) \
-	(NRF_PERIPH_GET_FREQUENCY(UARTE(idx)) / NRF_UARTE_BASE_FREQUENCY_16MHZ)
+/* Get frequency divider that is used to adjust the BAUDRATE value. */
+#define UARTE_GET_BAUDRATE_DIV(f_pclk) (f_pclk / NRF_UARTE_BASE_FREQUENCY_16MHZ)
 
 /* When calculating baudrate we need to take into account that high speed instances
  * must have baudrate adjust to the ratio between UARTE clocking frequency and 16 MHz.
+ * Additionally, >1Mbaud speeds are calculated using a formula.
  */
+#define UARTE_GET_BAUDRATE2(f_pclk, current_speed)					\
+	((f_pclk > NRF_UARTE_BASE_FREQUENCY_16MHZ) && (current_speed > 1000000)) ?	\
+		UARTE_GET_CUSTOM_BAUDRATE(f_pclk, current_speed) :			\
+		(NRF_BAUDRATE(current_speed) / UARTE_GET_BAUDRATE_DIV(f_pclk))
+
+/* Convert DT current-speed to a value that is written to the BAUDRATE register. */
 #define UARTE_GET_BAUDRATE(idx) \
-	(NRF_BAUDRATE(UARTE_PROP(idx, current_speed)) / UARTE_GET_BAUDRATE_DIV(idx))
+	UARTE_GET_BAUDRATE2(NRF_PERIPH_GET_FREQUENCY(UARTE(idx)), UARTE_PROP(idx, current_speed))
 
 /* Get initialization level of an instance. Instances that requires clock control
  * which is using nrfs (IPC) are initialized later.
@@ -2488,12 +2514,11 @@ static int uarte_instance_init(const struct device *dev,
 			    (.int_driven = &uarte##idx##_int_driven,))	       \
 	};								       \
 	COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE, (),		       \
-		(BUILD_ASSERT(NRF_BAUDRATE(UARTE_PROP(idx, current_speed)) > 0,\
-			  "Unsupported baudrate");))			       \
+		(BUILD_ASSERT(UARTE_GET_BAUDRATE(idx) > 0,		       \
+			      "Unsupported baudrate");))		       \
 	static const struct uarte_nrfx_config uarte_##idx##z_config = {	       \
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,		       \
-		    (IF_ENABLED(DT_CLOCKS_HAS_IDX(UARTE(idx), 0),	       \
-			   (.clock_freq = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),))), \
+			(.clock_freq = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),),  \
 		    (IF_ENABLED(UARTE_HAS_FRAME_TIMEOUT,		       \
 			(.baudrate = UARTE_PROP(idx, current_speed),))	       \
 		     .nrf_baudrate = UARTE_GET_BAUDRATE(idx),		       \
