@@ -5055,6 +5055,10 @@ endfunction()
 #                       It is possible to negate <name>, such as `PASS NOT <name>`.
 #                       For example, `PASS NOT TEST` means the call is effective
 #                       on all but the `TEST` linker pass iteration.
+#                       You can have mulitple PASS <name> (in which the section will
+#                       be active in all of the phases) or you can have multiple
+#                       PASS NOT <name> in which case the section will be active in
+#                       passes other than any of the <name>.
 #
 # Note: VMA and LMA are mutual exclusive with GROUP
 #
@@ -5093,14 +5097,7 @@ function(zephyr_linker_section)
   endif()
 
   if(DEFINED SECTION_PASS)
-    list(LENGTH SECTION_PASS pass_length)
-    if(${pass_length} GREATER 1)
-      list(GET SECTION_PASS 0 pass_elem_0)
-      if((NOT (${pass_elem_0} STREQUAL "NOT")) OR (${pass_length} GREATER 2))
-        message(FATAL_ERROR "zephyr_linker_section(PASS takes maximum "
-          "a single argument of the form: '<pass name>' or 'NOT <pass_name>'.")
-      endif()
-    endif()
+    zephyr_linker_check_pass_param("zephyr_linker_section" "${SECTION_PASS}")
   endif()
 
   set(SECTION)
@@ -5312,6 +5309,7 @@ endfunction()
 # FLAGS <flags>       : Special section flags such as "+RO", +XO, "+ZI".
 # ANY                 : ANY section flag in scatter file.
 #                       The FLAGS and ANY arguments only has effect for scatter files.
+# INPUT <input>       : Input section name or list of input section names.
 #
 function(zephyr_linker_section_configure)
   set(options     "ANY;FIRST;KEEP")
@@ -5332,14 +5330,7 @@ function(zephyr_linker_section_configure)
   endif()
 
   if(DEFINED SECTION_PASS)
-    list(LENGTH SECTION_PASS pass_length)
-    if(${pass_length} GREATER 1)
-      list(GET SECTION_PASS 0 pass_elem_0)
-      if((NOT (${pass_elem_0} STREQUAL "NOT")) OR (${pass_length} GREATER 2))
-        message(FATAL_ERROR "zephyr_linker_section_configure(PASS takes maximum "
-          "a single argument of the form: '<pass name>' or 'NOT <pass_name>'.")
-      endif()
-    endif()
+    zephyr_linker_check_pass_param("zephyr_linker_section_configure" "${SECTION_PASS}")
   endif()
 
   set(SECTION)
@@ -5407,6 +5398,30 @@ macro(zephyr_linker_arg_val_list list arguments)
       list(APPEND ${list} ${arg} "${${list}_${arg}}")
     endif()
   endforeach()
+endmacro()
+
+
+# Internal helper that checks if we have consistent PASS arguments.
+# If the first element is NOT, check that all even elements are NOT, otherwise
+# check that no element is NOT
+macro(zephyr_linker_check_pass_param function_name SECTION_PASS)
+  list(GET SECTION_PASS 0 FIRST_ELEMENT)
+  if("${FIRST_ELEMENT}" STREQUAL "NOT")
+    # Check that all even elements are NOT
+    list(LENGTH SECTION_PASS length)
+    math(EXPR last_index "${length}-1")
+    foreach(I RANGE 0 ${last_index} 2)
+      list(GET SECTION_PASS ${I} ELEMENT)
+      if(NOT "${ELEMENT}" STREQUAL "NOT")
+        message(FATAL_ERROR "Even element ${I} is not NOT")
+      endif()
+    endforeach()
+  else()
+    list(FIND SECTION_PASS "NOT" NOT_AT)
+    if(NOT("${NOT_AT}" STREQUAL "-1"))
+      message(FATAL_ERROR "zephyr_linker_section(PASS requires only NOT or no NOT")
+    endif()
+  endif()
 endmacro()
 
 ########################################################
