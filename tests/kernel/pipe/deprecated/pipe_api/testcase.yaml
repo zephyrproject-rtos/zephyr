@@ -3,4 +3,3 @@ tests:
     tags:
       - kernel
       - userspace
-    extra_args: CMAKE_C_FLAGS="-D__deprecated='' -D__DEPRECATED_MACRO=''"
