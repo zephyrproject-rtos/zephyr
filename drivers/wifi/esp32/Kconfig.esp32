@@ -54,6 +54,13 @@ config ESP32_WIFI_STA_RECONNECT
 	help
 	  Set auto WiFI reconnection when disconnected.
 
+config ESP32_WIFI_STA_SCAN_ALL
+	bool "Scan all available APs when connecting in station mode"
+	help
+	  When connecting in station mode, scan all channels and connect to the channel with the
+	  highest RSSI. Without this, a fast scan is performed which connects to the first AP
+	  found.
+
 config ESP32_WIFI_SW_COEXIST_ENABLE
 	bool
 	help
