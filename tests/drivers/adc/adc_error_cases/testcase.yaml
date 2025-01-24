@@ -1,3 +1,8 @@
+common:
+  tags:
+    - adc
+    - drivers
+
 tests:
   drivers.adc_error_cases:
     depends_on: adc
