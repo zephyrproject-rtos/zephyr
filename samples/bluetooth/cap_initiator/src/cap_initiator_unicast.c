@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(cap_initiator_unicast, LOG_LEVEL_INF);
 /* We use the same config for both sink and source streams
  * For simplicity we use the mandatory configuration 16_2_1
  */
-static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
+static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_48_3_1(
 	BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 static struct bt_bap_unicast_group *unicast_group;
 uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
@@ -814,6 +814,8 @@ int cap_initiator_unicast(void)
 	}
 
 	LOG_INF("CAP initiator unicast initialized");
+
+	bt_set_bondable(false);
 
 	while (true) {
 		err = reset_cap_initiator();
