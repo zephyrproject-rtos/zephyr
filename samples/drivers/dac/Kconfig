@@ -1,0 +1,16 @@
+# Private config options for dac sample
+
+# Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DAC sample application"
+
+source "Kconfig.zephyr"
+
+ZEPHYR_USER := zephyr,user
+
+config DAC_SAMPLE_RUN
+	bool "Run DAC sample application"
+	default y if $(dt_node_has_prop,/$(ZEPHYR_USER),dac)
+	help
+	  platform supports dac sample
