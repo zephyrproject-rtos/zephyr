@@ -1,0 +1,9 @@
+# Copyright 2022 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config ULP_REMOTE_BOARD
+	string
+	default "esp32c6_devkitc/esp32c6/lpcore" if $(BOARD) = "esp32c6_devkitc"

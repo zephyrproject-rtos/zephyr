@@ -1,0 +1,8 @@
+set pagination off
+target extended-remote :3333
+
+mon reset halt
+maintenance flush register-cache
+
+add-symbol build/hello_ulp_lpcore/zephyr/zephyr.elf
+thb lp_uart_esp32_param_config
