@@ -17,3 +17,6 @@ config SOC_SERIES_STM32N6X
 	select SOC_RESET_HOOK
 	select TRUSTED_EXECUTION_SECURE
 	select BUILD_OUTPUT_BIN
+
+config STM32N6_BOOT_SERIAL
+	bool "Serial boot target (USB)"
