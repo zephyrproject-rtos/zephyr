@@ -53,6 +53,12 @@ _is_user_context_return:
 _not_checking_user_context:
 	rsr a2, ZSR_SYSCALL_SCRATCH
 #endif
+
+	/* Need to disable any interrupts while we are saving
+	 * register content to avoid any interferences.
+	 */
+	rsil a0, 0xf
+
 	rsr a0, ZSR_CPU
 	l32i a0, a0, ___cpu_t_current_OFFSET
 	l32i a0, a0, _thread_offset_to_psp
@@ -71,15 +77,12 @@ _not_checking_user_context:
 	rsr.epc1 a2
 	s32i a2, a0, ___xtensa_irq_bsa_t_pc_OFFSET
 
-#if XCHAL_HAVE_NMI
-	movi a2, PS_WOE|PS_INTLEVEL(XCHAL_NMILEVEL)
-#elif XCHAL_HAVE_INTERRUPTS
-	movi a2, PS_WOE|PS_INTLEVEL(XCHAL_NUM_INTLEVELS)
-#else
-#error Xtensa core with no interrupt support is used
-#endif
+	/* Need to setup PS so we can spill all registers.
+	 * EXCM and RING bits need to be cleared as CPU
+	 * needs to run in kernel and non-exception modes
+	 * for window rotation to work.
+	 */
 	rsr.ps a3
-	or a3, a3, a2
 	movi a2, ~(PS_EXCM | PS_RING_MASK)
 	and a3, a3, a2
 	wsr.ps a3
