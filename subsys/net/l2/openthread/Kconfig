@@ -89,6 +89,18 @@ config OPENTHREAD_LOG_LEVEL
 	default 4 if OPENTHREAD_LOG_LEVEL_INFO
 	default 5 if OPENTHREAD_LOG_LEVEL_DEBG
 	default 0
+	help
+	  Log level for OpenThread stack.
+
+config OPENTHREAD_PLATFORM_LOG_LEVEL
+	int
+	default 1 if OPENTHREAD_LOG_LEVEL_CRIT
+	default 2 if OPENTHREAD_LOG_LEVEL_WARN
+	default 3 if OPENTHREAD_LOG_LEVEL_NOTE || OPENTHREAD_LOG_LEVEL_INFO
+	default 4 if OPENTHREAD_LOG_LEVEL_DEBG
+	default 0
+	help
+	  Log level for OpenThread Zephyr platform.
 
 menuconfig OPENTHREAD_L2_DEBUG
 	bool "OpenThread L2 log support"
