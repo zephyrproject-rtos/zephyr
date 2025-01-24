@@ -126,6 +126,7 @@ struct llext {
 	unsigned int sect_cnt;
 	elf_shdr_t *sect_hdrs;
 	bool sect_hdrs_on_heap;
+	bool pre_located;
 	/** @endcond */
 };
 

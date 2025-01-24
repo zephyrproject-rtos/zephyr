@@ -741,6 +741,8 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
+	ext->pre_located = ldr_parm->pre_located;
+
 	llext_adjust_mmu_permissions(ext);
 
 out:

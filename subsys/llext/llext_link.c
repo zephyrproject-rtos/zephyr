@@ -125,6 +125,16 @@ int llext_dependency_restore(struct llext_loader *ldr, struct llext *ext)
 			return -ENOENT;
 		}
 
+		if (!ext->dependency[i]->pre_located) {
+			/*
+			 * The dependency could've been reloaded, so if its
+			 * addresses aren't fixed, re-linking is required
+			 */
+			LOG_ERR("Dependency %s isn't pre-located, re-linking required",
+				ldr->dependency[i]);
+			return -EINVAL;
+		}
+
 		ext->dependency[i]->use_count++;
 	}
 
