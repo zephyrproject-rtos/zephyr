@@ -11,7 +11,7 @@ rsource "*/Kconfig.defconfig"
 # based on the Haltium platform SoCs where clock control is not needed
 # for the system timer
 config CLOCK_CONTROL
-	default y if SYS_CLOCK_EXISTS && !NRF_PLATFORM_HALTIUM
+	default y if SYS_CLOCK_EXISTS && !NRF_PLATFORM_HALTIUM && !RISCV_CORE_NORDIC_VPR
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000 if NRF_GRTC_TIMER
