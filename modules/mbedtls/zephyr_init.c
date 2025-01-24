@@ -1,9 +1,3 @@
-/** @file
- * @brief mbed TLS initialization
- *
- * Initialize the mbed TLS library like setup the heap etc.
- */
-
 /*
  * Copyright (c) 2017 Intel Corporation
  * Copyright (c) 2024 Nordic Semiconductor ASA
@@ -51,12 +45,6 @@ static int _mbedtls_init(void)
 
 #if defined(CONFIG_MBEDTLS_DEBUG_LEVEL)
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
-#endif
-
-#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
-	if (psa_crypto_init() != PSA_SUCCESS) {
-		return -EIO;
-	}
 #endif
 
 	return 0;
