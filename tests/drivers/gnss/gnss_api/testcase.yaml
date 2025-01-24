@@ -5,3 +5,5 @@ tests:
   drivers.gnss.gnss_api:
     filter: dt_alias_exists("gnss")
     timeout: 300
+    tags:
+      - gnss
