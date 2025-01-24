@@ -37,5 +37,7 @@ tests:
       - ek_ra4m2
       - ek_ra4m3
       - ek_ra4w1
+      - xg24_dk2601b
+      - xg27_dk2602a
     integration_platforms:
       - frdm_kl25z

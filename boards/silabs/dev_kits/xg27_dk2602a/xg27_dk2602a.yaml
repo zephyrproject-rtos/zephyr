@@ -15,4 +15,5 @@ supported:
   - dma
   - clock_control
   - comparator
+  - adc
 vendor: silabs
