@@ -993,7 +993,7 @@ static void isr_done(void *param)
 
 #if defined(CONFIG_BT_CTLR_PHY)
 			preamble_to_addr_us =
-				addr_us_get(lll->phy_rx);
+				addr_us_get(lll->periph.phy_rx_event);
 #else /* !CONFIG_BT_CTLR_PHY */
 			preamble_to_addr_us =
 				addr_us_get(0);
