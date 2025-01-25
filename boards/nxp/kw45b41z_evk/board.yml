@@ -1,0 +1,8 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: kw45b41z_evk
+  vendor: nxp
+  socs:
+    - name: kw45b41z83
