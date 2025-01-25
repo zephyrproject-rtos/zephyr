@@ -197,11 +197,10 @@
 			compatible = "ti,mspm0-flash-controller";
 			reg = <0x400cd000 0x2000>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 
-			nvm-flash@0 {
+			nvm: nvm-flash@0 {
 				compatible = "soc-nv-flash";
-				reg = <0>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
 			};

@@ -2,3 +2,7 @@
 
 #include <ti/mspm0g1x0x_g3x0x/mspm0g1x0x_g3x0x.dtsi>
 #include <ti/mspm0g1x0x_g3x0x/mspm0gxxx7.dtsi>
+
+&nvm {
+	reg = <0x00000000 DT_SIZE_K(128)>;
+};
