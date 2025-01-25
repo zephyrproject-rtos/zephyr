@@ -63,6 +63,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_watchdog/watchdog.c
     ${rp2_common_dir}/hardware_sync_spin_lock/sync_spin_lock.c
     ${rp2_common_dir}/hardware_ticks/ticks.c
+    ${rp2_common_dir}/hardware_xip_cache/xip_cache.c
     ${rp2_common_dir}/pico_bootrom/bootrom.c
     ${rp2xxx_dir}/pico_platform/platform.c
   )
@@ -82,6 +83,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_boot_lock/include
     ${rp2_common_dir}/hardware_ticks/include
     ${rp2_common_dir}/hardware_sync_spin_lock/include
+    ${rp2_common_dir}/hardware_xip_cache/include
     ${rp2_common_dir}/pico_bootrom/include
     ${rp2_common_dir}/pico_flash/include
     ${rp2_common_dir}/pico_platform_compiler/include
