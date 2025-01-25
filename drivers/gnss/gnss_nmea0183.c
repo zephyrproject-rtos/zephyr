@@ -545,6 +545,16 @@ int gnss_nmea0183_parse_gga(const char **argv, uint16_t argc, struct gnss_data *
 	}
 
 	data->nav_data.altitude = (int32_t)tmp64;
+
+	/* Parse geoid separation */
+	if ((gnss_parse_dec_to_milli(argv[11], &tmp64) < 0) ||
+	    (tmp64 > INT32_MAX) ||
+	    (tmp64 < INT32_MIN)) {
+		return -EINVAL;
+	}
+
+	data->info.geoid_separation = (int32_t)tmp64;
+
 	return 0;
 }
 
