@@ -39,6 +39,8 @@
 #define NUM_OUTPUT_BLOCK_CONTEXT CONFIG_LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
 #endif
 
+/* Check the LwM2M header does not exceed configured limits */
+int lwm2m_check_header_boundary(uint16_t offset);
 int coap_options_to_path(struct coap_option *opt, int options_count,
 				struct lwm2m_obj_path *path);
 /* LwM2M message functions */
