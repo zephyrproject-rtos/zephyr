@@ -781,6 +781,11 @@ static int sm_send_bootstrap_registration(void)
 				  query_buffer, strlen(query_buffer));
 	}
 
+	ret = lwm2m_check_header_boundary(msg->cpkt.offset);
+	if (ret < 0) {
+		goto cleanup;
+	}
+
 	/* log the bootstrap attempt */
 	LOG_DBG("Register ID with bootstrap server as '%s'",
 		query_buffer);
@@ -978,6 +983,11 @@ static int sm_send_registration(bool send_obj_support_data,
 
 	if (send_obj_support_data) {
 		ret = coap_packet_append_payload_marker(&msg->cpkt);
+		if (ret < 0) {
+			goto cleanup;
+		}
+
+		ret = lwm2m_check_header_boundary(msg->cpkt.offset);
 		if (ret < 0) {
 			goto cleanup;
 		}
