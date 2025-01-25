@@ -47,6 +47,7 @@
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
 
+#include <cyhal_hw_resources.h>
 #include <cyhal_sdhc.h>
 #include <cyhal_sdio.h>
 #include <cyhal_gpio.h>
@@ -283,8 +284,9 @@ static int ifx_cat1_sdio_init(const struct device *dev)
 	}
 
 	/* Dedicate SDIO HW resource */
-	data->hw_resource.type = CYHAL_RSC_SDIODEV;
+	data->hw_resource.type = CYHAL_RSC_SDHC;
 	data->hw_resource.block_num = _get_hw_block_num(config->reg_addr);
+	data->hw_resource.channel_num = 0;
 
 	/* Initialize the SDIO peripheral */
 	data->cyhal_sdio_config.resource = &data->hw_resource;
