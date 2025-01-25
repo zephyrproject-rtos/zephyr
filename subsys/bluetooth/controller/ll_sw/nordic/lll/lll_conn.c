@@ -67,6 +67,7 @@ static struct pdu_data *get_last_tx_pdu(struct lll_conn *lll);
 static uint8_t crc_expire;
 static uint8_t crc_valid;
 static uint8_t is_aborted;
+static uint16_t tx_cnt;
 static uint16_t trx_cnt;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -147,6 +148,7 @@ void lll_conn_flush(uint16_t handle, struct lll_conn *lll)
 
 void lll_conn_prepare_reset(void)
 {
+	tx_cnt = 0U;
 	trx_cnt = 0U;
 	crc_valid = 0U;
 	crc_expire = 0U;
@@ -193,7 +195,7 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 	/* Do not be aborted by same event if a single peripheral trx has not
 	 * been exchanged.
 	 */
-	if ((next == curr) && (trx_cnt <= 1U)) {
+	if ((next == curr) && (tx_cnt < 1U)) {
 		return -EBUSY;
 	}
 
@@ -216,7 +218,7 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		 * back to central, otherwise let the supervision timeout
 		 * countdown be started.
 		 */
-		if ((lll->role == BT_HCI_ROLE_PERIPHERAL) && (trx_cnt <= 1U)) {
+		if ((lll->role == BT_HCI_ROLE_PERIPHERAL) && (tx_cnt < 1U)) {
 			is_aborted = 1U;
 		}
 
@@ -608,6 +610,8 @@ void lll_conn_isr_tx(void *param)
 
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
+
+	tx_cnt++;
 
 	lll = param;
 
