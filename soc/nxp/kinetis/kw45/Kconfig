@@ -1,0 +1,23 @@
+# KW45 Series
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KINETIS_KW45
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_DWT
+	select HAS_MCUX
+	select CLOCK_CONTROL
+	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK
+
+config SOC_KW45B41Z83
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select ARMV8_M_DSP
+
+	rsource "../../common/Kconfig.nbu"
