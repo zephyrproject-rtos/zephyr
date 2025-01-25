@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright (c) 2021, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,7 +57,6 @@ static void gpc_set_transition_flow(void)
 	gpc_tran_step_config_t step_cfg;
 
 	step_cfg.enableStep = true;
-	step_cfg.cntMode = kGPC_StepCounterDisableMode;
 
 	/* Cortex M7 */
 	GPC_CM_ConfigCpuModeTransitionStep(GPC_CPU_MODE_CTRL,
