@@ -34,8 +34,8 @@ config USE_USB_AUDIO_INPUT
 	# By default, use the USB Audio path is disabled.
 	default n
 	depends on ENABLE_LC3
-	select USB_DEVICE_STACK
-	select USB_DEVICE_AUDIO
+	select USB_DEVICE_STACK_NEXT
+	select USBD_AUDIO2_CLASS
 	select RING_BUFFER
 
 config BROADCAST_CODE
@@ -58,5 +58,10 @@ config BROADCAST_ID
 	depends on STATIC_BROADCAST_ID
 	help
 	   This is the 3-octet broadcast ID advertised if static broadcast IDs are enabled.
+
+# Source common USB sample options used to initialize new experimental USB device stack.
+# The scope of these options is limited to USB samples in project tree,
+# you cannot use them in your own application.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
 
 source "Kconfig.zephyr"
