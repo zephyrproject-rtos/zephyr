@@ -6,6 +6,14 @@
 DT_MSPM0_CLKMUX_PATH := $(dt_nodelabel_path,clkmux)
 DT_MSPM0_CLKMUX_CPU_FREQ := $(dt_node_int_prop_int,$(DT_MSPM0_CLKMUX_PATH),clock-frequency)
 
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
 if SOC_SERIES_MSPM0G1X0X_G3X0X
 
 config NUM_IRQS
