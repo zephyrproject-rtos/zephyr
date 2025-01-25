@@ -58,6 +58,7 @@ if(CONFIG_HAS_RPI_PICO)
   # initializing the SoC, and therefore are always required.
 
   zephyr_library_sources(
+    ${common_dir}/hardware_claim/claim.c
     ${rp2_common_dir}/hardware_clocks/clocks.c
     ${rp2_common_dir}/hardware_pll/pll.c
     ${rp2_common_dir}/hardware_xosc/xosc.c
@@ -70,6 +71,7 @@ if(CONFIG_HAS_RPI_PICO)
 
   zephyr_include_directories(
     ${common_dir}/pico_base_headers/include
+    ${common_dir}/hardware_claim/include
     ${rp2_common_dir}/boot_bootrom_headers/include
     ${rp2_common_dir}/hardware_base/include
     ${rp2_common_dir}/hardware_clocks/include
@@ -83,11 +85,21 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_boot_lock/include
     ${rp2_common_dir}/hardware_ticks/include
     ${rp2_common_dir}/hardware_sync_spin_lock/include
+    ${rp2_common_dir}/hardware_xip_cache/include
+    ${rp2_common_dir}/hardware_pwm/include
+    ${rp2_common_dir}/hardware_adc/include
+    ${rp2_common_dir}/hardware_dma/include
+    ${rp2_common_dir}/hardware_gpio/include
+    ${rp2_common_dir}/hardware_flash/include
+    ${rp2_common_dir}/hardware_rtc/include
+    ${rp2_common_dir}/hardware_pio/include
     ${rp2_common_dir}/pico_bootrom/include
     ${rp2_common_dir}/pico_flash/include
     ${rp2_common_dir}/pico_platform_compiler/include
     ${rp2_common_dir}/pico_platform_sections/include
     ${rp2_common_dir}/pico_platform_panic/include
+    ${rp2_common_dir}/pico_runtime/include
+    ${rp2_common_dir}/pico_runtime_init/include
     ${common_dir}/boot_picoboot_headers/include
     ${common_dir}/boot_picobin_headers/include
     ${rp2xxx_dir}/hardware_regs/include
@@ -98,46 +110,22 @@ if(CONFIG_HAS_RPI_PICO)
 
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_GPIO
           ${rp2_common_dir}/hardware_gpio/gpio.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_GPIO
-          ${rp2_common_dir}/hardware_gpio/include)
-
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_UART
-          ${rp2_common_dir}/hardware_uart/include)
 
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_FLASH
           ${rp2_common_dir}/hardware_flash/flash.c
           ${rp2_common_dir}/hardware_xip_cache/xip_cache.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_FLASH
-          ${rp2_common_dir}/hardware_flash/include
-          ${rp2_common_dir}/hardware_xip_cache/include)
-
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_PWM
-          ${rp2_common_dir}/hardware_pwm/include)
-
-  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_ADC
-          ${rp2_common_dir}/hardware_adc/adc.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_ADC
-          ${rp2_common_dir}/hardware_adc/include)
-
-  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_DMA
-          ${rp2_common_dir}/hardware_dma/dma.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_DMA
-          ${rp2_common_dir}/hardware_dma/include)
 
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_TIMER
           ${rp2_common_dir}/hardware_timer/timer.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_TIMER
-          ${rp2_common_dir}/hardware_timer/include)
 
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_RTC
           ${rp2_common_dir}/hardware_rtc/rtc.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_RTC
-          ${rp2_common_dir}/hardware_rtc/include)
 
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_PIO
           ${rp2_common_dir}/hardware_pio/pio.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_PIO
-          ${rp2_common_dir}/hardware_pio/include)
+
+  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_RP2350
+          ${rp2_common_dir}/pico_runtime_init/runtime_init.c)
 
   # Some flash driver functions must be executed from the RAM.
   # Originally pico-sdk places them in the RW data section, so this
@@ -150,16 +138,5 @@ if(CONFIG_HAS_RPI_PICO)
     PROPERTIES
     COMPILE_FLAGS $<TARGET_PROPERTY:compiler,warning_no_pointer_arithmetic>
   )
-
-  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_CLAIM
-          ${common_dir}/hardware_claim/claim.c)
-  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_CLAIM
-          ${common_dir}/hardware_claim/include)
-
-  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_RP2350
-          ${rp2_common_dir}/pico_runtime_init/runtime_init.c)
-  zephyr_include_directories_ifdef(CONFIG_SOC_SERIES_RP2350
-          ${rp2_common_dir}/pico_runtime/include
-          ${rp2_common_dir}/pico_runtime_init/include)
 
 endif()
