@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_DWC3
+	bool "Synopsys USB device controller driver"
+	default y
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select UDC_BUF_FORCE_NOCACHE
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	depends on DT_HAS_SNPS_DWC3_ENABLED
+	help
+	  Synopsys DWC3 USB device controller driver.
+
+if UDC_DWC3
+
+config UDC_DWC3_EVENTS_NUM
+	int "Number of events in the event ring buffer"
+	default 16
+	help
+	  It is typically not needed to increase the number of events, but
+	  if it were to happen due to some rare condition, increasing this
+	  number could be useful.
+
+config UDC_DWC3_TRB_NUM
+	int "Number of buffers for each non-control endpoint"
+	default 4
+	range 3 32
+	help
+	  This is a general knob for the number of buffers present for each
+	  endpoint. This does not affect control endpoints. The default is
+	  enough for most conditions, but for performance and debug purposes,
+	  increasing could reveal useful.
+
+endif # UDC_DWC3
