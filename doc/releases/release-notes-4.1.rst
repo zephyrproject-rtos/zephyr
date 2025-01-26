@@ -170,6 +170,8 @@ Drivers and Sensors
   * Added ``frame_incomplete`` handling to SDL display driver (:dtcompatible:`zephyr,sdl-dc`)
     (:github:`81250`)
   * Added transparency support to SDL display driver (:dtcompatible:`zephyr,sdl-dc`) (:github:`81184`)
+  * Added function ``display_clear`` to the display subsystem to clear the target devices
+    screen display, resetting it to white. (:github:`12937`)
 
 * Ethernet
 
