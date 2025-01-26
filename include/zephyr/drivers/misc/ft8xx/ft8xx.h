@@ -48,8 +48,9 @@ struct ft8xx_touch_transform {
  * This callback is called from IRQ context.
  *
  * @param dev Pointer to the device structure for the driver instance
+ * @param user_data Pointer to user data provided during callback registration
  */
-typedef void (*ft8xx_int_callback)(const struct device *dev);
+typedef void (*ft8xx_int_callback)(const struct device *dev, void *user_data);
 
 /**
  * @brief Calibrate touchscreen
@@ -102,9 +103,11 @@ int ft8xx_get_touch_tag(const struct device *dev);
  *
  * @param dev       Pointer to the device structure for the driver instance
  * @param callback  Pointer to function called when FT8xx triggers interrupt
+ * @param user_data Pointer to user data to be passed to the @p callback
  */
 void ft8xx_register_int(const struct device *dev,
-			ft8xx_int_callback callback);
+			ft8xx_int_callback callback,
+			void *user_data);
 
 /**
  * @}
