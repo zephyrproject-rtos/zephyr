@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Freedom Veiculos Eletricos
+# Copyright (c) 2025 O.S. Systems Software LTDA.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Morse Code bitbang TX driver
+
+compatible: "zephyr,morse-gpio-tx"
+
+include:
+  - name: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: The GPIO configuration which will be used as tx interface.

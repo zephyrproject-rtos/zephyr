@@ -1,0 +1,16 @@
+# Copyright (c) 2025-2026 Freedom Veiculos Eletricos
+# Copyright (c) 2025-2026 O.S. Systems Software LTDA.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Morse Code PWM TX driver
+
+compatible: "zephyr,morse-pwm-tx"
+
+include:
+  - name: base.yaml
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+    description: The PWM which will be used as tx interface.
