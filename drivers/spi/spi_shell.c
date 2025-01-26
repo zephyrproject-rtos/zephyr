@@ -28,9 +28,14 @@ static struct device *spi_device;
 static struct spi_config config = {.frequency = 1000000,
 				   .operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8)};
 
+static bool device_is_spi(const struct device *dev)
+{
+	return DEVICE_API_IS(spi, dev);
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, "spi");
+	const struct device *dev = shell_device_filter(idx, device_is_spi);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
