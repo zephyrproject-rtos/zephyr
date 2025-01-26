@@ -206,6 +206,7 @@ void test_lwm2m_engine_stop_service(void)
 
 /* subsys/net/lib/lwm2m/lwm2m_message_handling.h */
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_init_message, struct lwm2m_message *);
+DEFINE_FAKE_VALUE_FUNC(int, lwm2m_check_header_boundary, uint16_t);
 DEFINE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 int lwm2m_init_message_fake_default(struct lwm2m_message *msg)
 {

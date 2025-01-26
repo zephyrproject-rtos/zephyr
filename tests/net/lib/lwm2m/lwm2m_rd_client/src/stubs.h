@@ -82,6 +82,7 @@ void stub_lwm2m_server_disable(bool disable);
 
 /* subsys/net/lib/lwm2m/lwm2m_message_handling.h  */
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_init_message, struct lwm2m_message *);
+DECLARE_FAKE_VALUE_FUNC(int, lwm2m_check_header_boundary, uint16_t);
 DECLARE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 int lwm2m_init_message_fake_default(struct lwm2m_message *msg);
 void test_prepare_pending_message_cb(void *cb);
@@ -121,6 +122,7 @@ DECLARE_FAKE_VALUE_FUNC(int, do_register_op_link_format, struct lwm2m_message *)
 		FUNC(lwm2m_server_short_id_to_inst)                                                \
 		FUNC(lwm2m_security_index_to_inst_id)                                              \
 		FUNC(lwm2m_init_message)                                                           \
+		FUNC(lwm2m_check_header_boundary)                                                  \
 		FUNC(lwm2m_reset_message)                                                          \
 		FUNC(lwm2m_send_message_async)                                                     \
 		FUNC(lwm2m_engine_get_binding)                                                     \
