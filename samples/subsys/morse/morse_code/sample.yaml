@@ -1,0 +1,13 @@
+sample:
+  name: Morse Code Sample
+tests:
+  sample.subsys.morse.morse_code:
+    tags:
+      - morse
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nucleo_f767zi
+      - nucleo_g474re
+      - nucleo_h753zi
+      - sam_v71_xult/samv71q21
+      - sam4e_xpro
