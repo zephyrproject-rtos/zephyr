@@ -159,11 +159,11 @@ void ft8xx_drv_irq_triggered(const struct device *gpio_port, struct gpio_callbac
 	const struct device *ft8xx_dev = ft8xx_data->ft8xx_dev;
 
 	if (ft8xx_data->irq_callback != NULL) {
-		ft8xx_data->irq_callback(ft8xx_dev);
+		ft8xx_data->irq_callback(ft8xx_dev, ft8xx_data->irq_callback_ud);
 	}
 }
 
-void ft8xx_register_int(const struct device *dev, ft8xx_int_callback callback)
+void ft8xx_register_int(const struct device *dev, ft8xx_int_callback callback, void *user_data)
 {
 	struct ft8xx_data *ft8xx_data = dev->data;
 
@@ -172,6 +172,7 @@ void ft8xx_register_int(const struct device *dev, ft8xx_int_callback callback)
 	}
 
 	ft8xx_data->irq_callback = callback;
+	ft8xx_data->irq_callback_ud = user_data;
 	ft8xx_wr8(dev, FT800_REG_INT_MASK, 0x04);
 	ft8xx_wr8(dev, FT800_REG_INT_EN, 0x01);
 }
@@ -225,6 +226,7 @@ const static struct ft8xx_config ft8xx_##idx##_config = {                       
 static struct ft8xx_data ft8xx_##idx##_data = {                                                    \
 	.ft8xx_dev = NULL,                                                                         \
 	.irq_callback = NULL,                                                                      \
+	.irq_callback_ud = NULL,                                                                   \
 												   \
 	.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER, 0),                 \
 	.irq_gpio = GPIO_DT_SPEC_INST_GET(idx, irq_gpios),                                         \
