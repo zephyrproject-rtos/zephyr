@@ -1,0 +1,49 @@
+# Copyright (c) 2024-2025 Freedom Veiculos Eletricos
+# Copyright (c) 2024-2025 O.S. Systems Software LTDA.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Morse Code
+
+compatible: "zephyr,morse"
+
+include:
+  - name: base.yaml
+
+properties:
+  speed:
+    type: int
+    default: 20
+    description: Define the number of Words Per Minute (wps) should be send
+      per minute. This is defined using the standard word "PARIS". In the
+      default case means that "20 wpm" send the word "PARIS" (or precisely
+      "PARIS ") is sent 20 times in a minute.
+
+      In morse the "PARIS " is 50 units long and represented by
+      ".--. .- .-. .. .../" were
+
+        10 dits (.)              10 units
+        4 dahs (-)               12 units
+        9 intra-character spaces  9 units
+        4 inter-character spaces 12 units
+        1 word space (/)          7 units
+
+      In this case, the driver defines the time unit as 60/(50 * Speed). With a
+      default speed of 20 wps the time unit is equal to 0.06s.
+
+  rx-tmr:
+    type: phandle
+    description: The Counter Timer compatible that will be used to deserialize
+      the data into morse code at RX units.
+
+  tx-tmr:
+    type: phandle
+    description: The Counter Timer compatible that will be used to serialize
+      the data into morse code at TX units.
+
+  rx-drv:
+    type: phandle
+    description: The RX time unit driver
+
+  tx-drv:
+    type: phandle
+    description: The TX time unit driver
