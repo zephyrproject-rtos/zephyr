@@ -181,4 +181,13 @@ config NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS
 	  acknowledgment messages sent to the clients, allowing them to use the
 	  specified DNS server for name resolution.
 
+config NET_DHCPV4_SERVER_OPTION_ROUTER
+	bool "Set the router option in the DHCP server response"
+	default y
+	help
+	  If enabled, set the DHCP router option pointing to the interface own
+	  gateway address in responses from the DHCP server. This can be
+	  disabled so that the client does not try to forward traffic to our
+	  device.
+
 endif # NET_DHCPV4_SERVER
