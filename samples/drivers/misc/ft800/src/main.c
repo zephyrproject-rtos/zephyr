@@ -24,9 +24,10 @@
 
 static volatile bool process_touch;
 
-static void touch_irq(const struct device *dev)
+static void touch_irq(const struct device *dev, void *user_data)
 {
 	(void)dev;
+	(void)user_data;
 
 	process_touch = true;
 }
@@ -47,7 +48,7 @@ int main(void)
 	ft8xx_calibrate(ft8xx, &tt);
 
 	/* Get interrupts on touch event */
-	ft8xx_register_int(ft8xx, touch_irq);
+	ft8xx_register_int(ft8xx, touch_irq, NULL);
 
 	/* Starting counting */
 	val = 0;
