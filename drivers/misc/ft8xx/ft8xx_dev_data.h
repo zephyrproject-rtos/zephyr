@@ -25,6 +25,7 @@ extern "C" {
 struct ft8xx_data {
 	const struct device *ft8xx_dev; /* Required for GPIO IRQ handling */
 	ft8xx_int_callback irq_callback;
+	void *irq_callback_ud;
 
 	const struct spi_dt_spec spi;
 	const struct gpio_dt_spec irq_gpio;

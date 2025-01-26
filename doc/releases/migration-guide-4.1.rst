@@ -192,6 +192,11 @@ Misc
   API to a single-instance model, compatible with the API defined in the FT8xx programming guide.
   These functions have not been modified.
 
+* The :c:func:`ft8xx_register_int` function now takes an additional ``void *user_data`` parameter
+  to allow user-defined data to be passed to the interrupt handler.
+  Additionally, the signature of the ft8xx interrupt handler has changed to include the
+  ``void *user_data`` parameter.
+
 MMU/MPU
 =======
 
