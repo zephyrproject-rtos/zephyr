@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Pierrick Curt
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/sensor/lis2dw12.h>
+
+&lis2dw12_19_x_nucleo_iks01a3 {
+	status = "okay";
+	compatible = "st,lis2dw12";
+	reg = <0x19>;
+	odr = <400>;
+	tap-mode = <LIS2DW12_DT_SINGLE_DOUBLE_TAP>;
+	tap-threshold = <12>, <12>, <12>;
+	power-mode = <LIS2DW12_DT_HP_MODE>;
+	tap-shock = <0x03>;
+	tap-quiet = <0x03>;
+	tap-latency = <0x03>;
+	irq-gpios =  <&arduino_header 3 GPIO_ACTIVE_HIGH>; /* A3 */
+};
