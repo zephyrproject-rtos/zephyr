@@ -67,7 +67,7 @@ struct char_framebuffer {
 
 static struct char_framebuffer char_fb;
 
-static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
+static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, uint8_t c)
 {
 	return (uint8_t *)fptr->data +
 	       (c - fptr->first_char) *
@@ -92,7 +92,7 @@ static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *
  * a byte is interpreted as 8 pixels ordered vertically among each other.
  */
 static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
-				char c, uint16_t x, uint16_t y,
+				uint8_t c, uint16_t x, uint16_t y,
 				bool draw_bg)
 {
 	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
