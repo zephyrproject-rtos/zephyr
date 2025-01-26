@@ -1,0 +1,33 @@
+# Copyright (c) 2024-2025 Freedom Veiculos Eletricos
+# Copyright (c) 2024-2025 O.S. Systems Software LTDA.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MORSE
+	bool "Morse Code support [EXPERIMENTAL]"
+	select COUNTER
+	depends on DT_HAS_ZEPHYR_MORSE_ENABLED
+	select EXPERIMENTAL
+	help
+	  This option enables Morse Code support.
+
+if MORSE
+
+module = MORSE
+module-str = Morse Code
+source "subsys/logging/Kconfig.template.log_config"
+
+config MORSE_SHELL
+	bool "Morse Code shell"
+	depends on SHELL
+	help
+	  Enable Morse Code related shell commands.
+
+config MORSE_SHELL_RX_BUF_SIZE
+	int "Morse Code shell receive buffer size"
+	depends on MORSE_SHELL
+	default 64
+	help
+	  Define the maximum number of characters to be accomulate till the end
+	  of the transmission.
+
+endif # MORSE
