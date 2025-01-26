@@ -11,6 +11,19 @@
 
 K_SEM_DEFINE(sem, 0, 1); /* starts off "not available" */
 
+#ifdef CONFIG_SAMPLE_TAP_DETECTION
+static void tap_trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
+{
+	ARG_UNUSED(trigger);
+	printf("TAP detected\n");
+
+	if (sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ) < 0) {
+		printf("ERROR: SENSOR_CHAN_ACCEL_XYZ fetch failed\n");
+	}
+
+	k_sem_give(&sem);
+}
+#else
 static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(trigger);
@@ -25,6 +38,7 @@ static void trigger_handler(const struct device *dev, const struct sensor_trigge
 
 	k_sem_give(&sem);
 }
+#endif
 
 int main(void)
 {
@@ -41,10 +55,19 @@ int main(void)
 		return 0;
 	}
 
+#ifdef CONFIG_SAMPLE_TAP_DETECTION
+	trig.type = SENSOR_TRIG_DOUBLE_TAP;
+	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
+	if (sensor_trigger_set(dev, &trig, tap_trigger_handler) < 0) {
+		printf("Could not set tap trigger\n");
+		return 0;
+	}
+#else
 	if (sensor_trigger_set(dev, &trig, trigger_handler)) {
 		printf("Could not set trigger\n");
 		return 0;
 	}
+#endif
 
 	while (1) {
 		k_sem_take(&sem, K_FOREVER);
