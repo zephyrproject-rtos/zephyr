@@ -1,0 +1,38 @@
+# Copyright (c) 2025-2026 Freedom Veiculos Eletricos
+# Copyright (c) 2025-2026 O.S. Systems Software LTDA.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Morse Code bit-banged transmitter backend driven by a GPIO output.
+
+  The referenced GPIO is configured as an output and left in the
+  inactive (space) state at initialization. As the Morse engine clocks
+  the encoded symbol stream, this backend toggles the pin between the
+  logical ON (mark) and OFF (space) states one dot time unit at a time.
+
+  Typical targets are an LED, a relay, an opto-coupler, a radio PTT/
+  keyer line, or any digital input that accepts simple on/off keying.
+
+compatible: "zephyr,morse-gpio-tx"
+
+include: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin driven for Morse output. The keyed (mark) polarity is
+      selected through the GPIO flags (GPIO_ACTIVE_HIGH or GPIO_ACTIVE_LOW)
+      so the wire idles in the inactive state.
+
+examples:
+  - |
+    / {
+      /* LED at PA5 */
+      morse_tx: transmitter {
+        compatible = "zephyr,morse-gpio-tx";
+
+        gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+      };
+    };
