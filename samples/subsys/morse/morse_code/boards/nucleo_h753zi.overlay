@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2024-2026 Freedom Veiculos Eletricos
+ * Copyright (c) 2024-2026 O.S. Systems Software LTDA.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* zio.d33 */
+	morse_tx: transmitter {
+		compatible = "zephyr,morse-pwm-tx";
+
+		pwms = <&pwm12 1 PWM_MSEC(80) PWM_POLARITY_NORMAL>;
+	};
+
+	morse: morse {
+		compatible = "zephyr,morse";
+		status = "okay";
+
+		speed = <2>;
+		tmr = <&morse_counter>;
+
+		tx-tmr-chan = <0>;
+
+		tx-drv = <&morse_tx>;
+	};
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	morse_counter: counter {
+		status = "okay";
+	};
+};
