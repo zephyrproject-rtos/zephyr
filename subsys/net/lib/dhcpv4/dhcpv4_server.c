@@ -516,6 +516,10 @@ static uint8_t *dhcpv4_encode_requested_params(
 			break;
 
 		case DHCPV4_OPTIONS_ROUTER:
+			if (!IS_ENABLED(CONFIG_NET_DHCPV4_SERVER_OPTION_ROUTER)) {
+				break;
+			}
+
 			buf = dhcpv4_encode_router_option(
 				buf, buflen, &ctx->iface->config.ip.ipv4->gw);
 			if (buf == NULL) {
