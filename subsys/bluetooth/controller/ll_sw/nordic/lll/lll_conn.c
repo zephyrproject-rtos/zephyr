@@ -698,10 +698,26 @@ void lll_conn_isr_tx(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
+#if !defined(CONFIG_BOARD_NRF52_BSIM) && \
+	!defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET) && \
+	!defined(CONFIG_BOARD_NRF54L15BSIM_NRF54L15_CPUAPP)
+
 	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
 	hcto = radio_tmr_tifs_base_get() + lll->tifs_hcto_us +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
+
+#else /* FIXME: Why different for BabbleSIM? */
+	/* HACK: Have exact 150 us */
+	hcto = radio_tmr_tifs_base_get() + lll->tifs_hcto_us;
+
+	/* HACK: Could wrong MODE register value (next in tIFS switching) being
+	 *       use for Rx Chain Delay in BabbleSIM? or is there a bug in
+	 *       target implementation?
+	 */
+	hcto += radio_rx_chain_delay_get(lll->phy_tx, PHY_FLAGS_S8);
+#endif /* FIXME: Why different for BabbleSIM? */
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	hcto += cte_len;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
