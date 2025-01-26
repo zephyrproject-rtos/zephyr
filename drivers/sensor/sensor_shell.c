@@ -853,7 +853,7 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 static void device_name_get_for_attr(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	current_cmd_ctx = CTX_ATTR_GET_SET;
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
@@ -908,7 +908,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_onoff, trigger_on_off_get);
 
 static void device_name_get_for_trigger(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -920,7 +920,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_trigger, device_name_get_for_trigger);
 
 static void device_name_get_for_stream(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	current_cmd_ctx = CTX_STREAM_ON_OFF;
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
