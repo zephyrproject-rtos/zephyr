@@ -1,0 +1,43 @@
+# Copyright (c) 2025-2026 Freedom Veiculos Eletricos
+# Copyright (c) 2025-2026 O.S. Systems Software LTDA.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Morse Code bit-banged receiver backend driven by a GPIO input.
+
+  The referenced GPIO is configured as an input with both-edge
+  interrupts. Every transition on the line is forwarded to the Morse
+  engine, which timestamps it against the shared Counter and classifies
+  the elapsed pulse/blank duration as a dot, a dash, an intra-letter
+  space, a letter space, a word space, or an end-of-transmission blank
+  according to ITU-R M.1677-1 timing rules.
+
+  Any digital source that produces clean edges can drive this backend:
+  the output of a TX driver looped back for test, an opto-coupled
+  keying line, a hardware tone detector (for example an LM567), or the
+  output of an external comparator fed by an audio demodulator.
+
+compatible: "zephyr,morse-gpio-rx"
+
+include: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin sampled for Morse input. The keyed (mark) polarity is
+      selected via the GPIO flags (GPIO_ACTIVE_HIGH or GPIO_ACTIVE_LOW)
+      so the logical ON state corresponds to the asserted condition of
+      the medium.
+
+examples:
+  - |
+    / {
+      /* EXTI at PA6 */
+      morse_rx: receiver {
+        compatible = "zephyr,morse-gpio-rx";
+
+        gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+      };
+    };
