@@ -3904,6 +3904,22 @@ Modem:
     - modem
     - sample.net.cellular_modem
 
+Morse Code:
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - doc/services/connectivity/morse/
+    - dts/bindings/morse/
+    - include/zephyr/morse/
+    - samples/subsys/morse/
+    - subsys/morse/
+    - tests/subsys/morse/
+  labels:
+    - "area: Morse"
+  tests:
+    - sample.subsys.morse
+
 NEORV32 platform:
   status: maintained
   maintainers:
