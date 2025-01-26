@@ -21,10 +21,11 @@
 extern "C" {
 #endif
 
-int ft8xx_drv_init(void);
-int ft8xx_drv_read(uint32_t address, uint8_t *data, unsigned int length);
-int ft8xx_drv_write(uint32_t address, const uint8_t *data, unsigned int length);
-int ft8xx_drv_command(uint8_t command);
+int ft8xx_drv_init(const struct device *dev);
+int ft8xx_drv_read(const struct device *dev, uint32_t address, uint8_t *data, unsigned int length);
+int ft8xx_drv_write(const struct device *dev, uint32_t address, const uint8_t *data,
+		    unsigned int length);
+int ft8xx_drv_command(const struct device *dev, uint8_t command);
 
 extern void ft8xx_drv_irq_triggered(const struct device *dev,
 		struct gpio_callback *cb, uint32_t pins);
