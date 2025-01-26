@@ -160,10 +160,15 @@ static int cmd_feed(const struct shell *sh, size_t argc, char *argv[])
 	return wdt_feed(dev, channel_id);
 }
 
+static bool device_is_wdt(const struct device *dev)
+{
+	return DEVICE_API_IS(wdt, dev);
+}
+
 /* Device name autocompletion support */
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_wdt);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
