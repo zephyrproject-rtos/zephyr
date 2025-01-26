@@ -22,6 +22,9 @@ config LV_CONF_SKIP
 	bool
 	default n
 
+config LV_USE_PRIVATE_API
+	bool
+
 config LV_USE_LOG
 	bool
 
@@ -158,6 +161,7 @@ config LV_DRAW_DMA2D_HAL_INCLUDE
 config LV_Z_USE_OSAL
 	bool "Use OSAL enabling parallel rendering"
 	depends on DYNAMIC_THREAD
+	select LV_USE_PRIVATE_API
 	help
 	  Use the Zephyr LVGL OSAL to enable parallel rendering
 	  pipelines.
