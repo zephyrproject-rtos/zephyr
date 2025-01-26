@@ -33,7 +33,7 @@ struct dma_xmc4xxx_channel {
 	dma_callback_t cb;
 	void *user_data;
 	uint32_t dest_address;
-	uint16_t block_ts;
+	uint32_t transfer_size;
 	uint8_t source_data_size;
 	uint8_t dlr_line;
 	uint8_t channel_direction;
@@ -294,7 +294,7 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 
 	dev_data->channels[channel].cb = config->dma_callback;
 	dev_data->channels[channel].user_data = config->user_data;
-	dev_data->channels[channel].block_ts = block->block_size / config->source_data_size;
+	dev_data->channels[channel].transfer_size = block->block_size;
 	dev_data->channels[channel].source_data_size = config->source_data_size;
 	dev_data->channels[channel].dlr_line = dlr_line;
 	dev_data->channels[channel].channel_direction = config->channel_direction;
@@ -384,7 +384,7 @@ static int dma_xmc4xxx_reload(const struct device *dev, uint32_t channel, uint32
 		LOG_ERR("Block transactions must be <= 4095");
 		return -EINVAL;
 	}
-	dma_channel->block_ts = block_ts;
+	dma_channel->transfer_size = size;
 	dma_channel->dest_address = dst;
 
 	/* do we need to clear any errors */
@@ -416,14 +416,15 @@ static int dma_xmc4xxx_get_status(const struct device *dev, uint32_t channel,
 	/* appear to guarantee that the last value is fully transferred to dest. */
 	if (dma_channel->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
 		transferred_bytes = dma->CH[channel].DAR - dma_channel->dest_address;
-		stat->pending_length = dma_channel->block_ts - transferred_bytes;
+		stat->pending_length = dma_channel->transfer_size - transferred_bytes;
 	} else if (dma_channel->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT) {
 		transferred_bytes =  dma_channel->dest_address - dma->CH[channel].DAR;
-		stat->pending_length = dma_channel->block_ts - transferred_bytes;
+		stat->pending_length = dma_channel->transfer_size - transferred_bytes;
 	} else {
-		transferred_bytes = XMC_DMA_CH_GetTransferredData(dma, channel);
-		stat->pending_length = dma_channel->block_ts - transferred_bytes;
-		stat->pending_length *= dma_channel->source_data_size;
+		uint32_t num_source_transfers = XMC_DMA_CH_GetTransferredData(dma, channel);
+
+		stat->pending_length = dma_channel->transfer_size -
+				       num_source_transfers * dma_channel->source_data_size;
 	}
 
 	/* stat->dir and other remaining fields are not set. They are not */
