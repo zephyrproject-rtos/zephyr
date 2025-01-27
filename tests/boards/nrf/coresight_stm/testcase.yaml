@@ -2,7 +2,7 @@ sample:
   name: Logging using Coresight STM on nrf54h20
 
 common:
-  tags: stm
+  tags: coresight_stm
   sysbuild: true
   platform_allow:
     - nrf54h20dk/nrf54h20/cpuapp
