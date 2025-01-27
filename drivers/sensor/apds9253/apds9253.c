@@ -152,12 +152,55 @@ static int apds9253_attr_set_gain(const struct device *dev, uint8_t gain)
 	return 0;
 }
 
+static int apds9253_attr_set_sampl_freq(const struct device *dev,
+					const struct sensor_value *sampl_freq)
+{
+	const struct apds9253_config *config = dev->config;
+	struct apds9253_data *drv_data = dev->data;
+	uint8_t period_val;
+	float freq_hz;
+
+	freq_hz = sampl_freq->val1 + (sampl_freq->val2 / 1000000);
+
+	if (freq_hz == 0.5f) {
+		period_val = APDS9253_LS_MEAS_RATE_MES_2000MS;
+	} else if (freq_hz == 1) {
+		period_val = APDS9253_LS_MEAS_RATE_MES_1000MS;
+	} else if (freq_hz == 2) {
+		period_val = APDS9253_LS_MEAS_RATE_MES_500MS;
+	} else if (freq_hz == 5) {
+		period_val = APDS9253_LS_MEAS_RATE_MES_200MS;
+	} else if (freq_hz == 10) {
+		period_val = APDS9253_LS_MEAS_RATE_MES_100MS;
+	} else if (freq_hz == 20) {
+		period_val = APDS9253_LS_MEAS_RATE_MES_50MS;
+	} else if (freq_hz == 40) {
+		period_val = APDS9253_LS_MEAS_RATE_MES_25MS;
+	} else {
+		LOG_ERR("Unsupported frequency.");
+		return -EINVAL;
+	}
+
+	if (i2c_reg_update_byte_dt(&config->i2c, APDS9253_LS_MEAS_RATE_REG,
+				   APDS9253_LS_MEAS_RATE_MES_MASK,
+				   (period_val & APDS9253_LS_MEAS_RATE_MES_MASK))) {
+		LOG_ERR("Not able to set light sensor measurement rate is not set");
+		return -EIO;
+	}
+
+	drv_data->meas_rate_mes = period_val;
+
+	return 0;
+}
+
 static int apds9253_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_GAIN:
 		return apds9253_attr_set_gain(dev, val->val1);
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return apds9253_attr_set_sampl_freq(dev, val);
 	default:
 		LOG_DBG("Sensor attribute not supported.");
 		return -ENOTSUP;
@@ -209,6 +252,7 @@ static int apds9253_sensor_setup(const struct device *dev)
 	}
 
 	drv_data->gain = config->ls_gain;
+	drv_data->meas_rate_mes = config->ls_rate;
 
 	return 0;
 }
