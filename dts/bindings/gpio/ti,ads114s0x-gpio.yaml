@@ -6,7 +6,7 @@
 
 description: TI ADS114S0x GPIO controller binding
 
-compatible: "ti,ads114s0x-gpio"
+compatible: "ti,ads1x4s0x-gpio"
 
 include: [gpio-controller.yaml, base.yaml]
 
