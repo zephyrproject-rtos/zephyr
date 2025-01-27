@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F427_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F427_CLOCK_H_
 
+#include "stm32f4_clock.h"
+
 /** @brief RCC_DCKCFGR register offset */
 #define DCKCFGR_REG		0x8C
 
