@@ -46,7 +46,11 @@ static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe, k_spinlock_key_t *key
 
 	pipe->waiting++;
 	*need_resched = false;
-	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, read, pipe, timeout);
+	if (waitq == &pipe->space) {
+		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, write, pipe, timeout);
+	} else {
+		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, read, pipe, timeout);
+	}
 	rc = z_pend_curr(&pipe->lock, *key, waitq, timeout);
 	*key = k_spin_lock(&pipe->lock);
 	pipe->waiting--;
