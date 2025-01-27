@@ -18,12 +18,15 @@ LOG_MODULE_REGISTER(net_tc, CONFIG_NET_TC_LOG_LEVEL);
 #include "net_stats.h"
 #include "net_tc_mapping.h"
 
-#if NET_TC_RX_COUNT > 1
-#define NET_TC_RX_SLOTS (CONFIG_NET_PKT_RX_COUNT / NET_TC_RX_COUNT)
+#define TC_RX_PSEUDO_QUEUE (COND_CODE_1(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO, (1), (0)))
+#define NET_TC_RX_EFFECTIVE_COUNT (NET_TC_RX_COUNT + TC_RX_PSEUDO_QUEUE)
+
+#if NET_TC_RX_EFFECTIVE_COUNT > 1
+#define NET_TC_RX_SLOTS (CONFIG_NET_PKT_RX_COUNT / NET_TC_RX_EFFECTIVE_COUNT)
 BUILD_ASSERT(NET_TC_RX_SLOTS > 0,
 		"Misconfiguration: There are more traffic classes then packets, "
 		"either increase CONFIG_NET_PKT_RX_COUNT or decrease "
-		"CONFIG_NET_TC_RX_COUNT");
+		"CONFIG_NET_TC_RX_COUNT or disable CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO");
 #endif
 
 #define TC_TX_PSEUDO_QUEUE (COND_CODE_1(CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO, (1), (0)))
@@ -84,7 +87,7 @@ enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt)
 #if NET_TC_RX_COUNT > 0
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
-#if NET_TC_RX_COUNT > 1
+#if NET_TC_RX_EFFECTIVE_COUNT > 1
 	if (k_sem_take(&rx_classes[tc].fifo_slot, K_NO_WAIT) != 0) {
 		return NET_DROP;
 	}
@@ -272,7 +275,7 @@ static void tc_rx_handler(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	struct k_fifo *fifo = p1;
-#if NET_TC_RX_COUNT > 1
+#if NET_TC_RX_EFFECTIVE_COUNT > 1
 	struct k_sem *fifo_slot = p2;
 #else
 	ARG_UNUSED(p2);
@@ -285,7 +288,7 @@ static void tc_rx_handler(void *p1, void *p2, void *p3)
 			continue;
 		}
 
-#if NET_TC_RX_COUNT > 1
+#if NET_TC_RX_EFFECTIVE_COUNT > 1
 		k_sem_give(fifo_slot);
 #endif
 
@@ -429,7 +432,7 @@ void net_tc_rx_init(void)
 
 		k_fifo_init(&rx_classes[i].fifo);
 
-#if NET_TC_RX_COUNT > 1
+#if NET_TC_RX_EFFECTIVE_COUNT > 1
 		k_sem_init(&rx_classes[i].fifo_slot, NET_TC_RX_SLOTS, NET_TC_RX_SLOTS);
 #endif
 
@@ -437,7 +440,7 @@ void net_tc_rx_init(void)
 				      K_KERNEL_STACK_SIZEOF(rx_stack[i]),
 				      tc_rx_handler,
 				      &rx_classes[i].fifo,
-#if NET_TC_RX_COUNT > 1
+#if NET_TC_RX_EFFECTIVE_COUNT > 1
 				      &rx_classes[i].fifo_slot,
 #else
 				      NULL,
