@@ -39,6 +39,8 @@ static struct net_mgmt_event_callback l4_cb;
 static struct k_thread event_mon;
 static K_THREAD_STACK_DEFINE(event_mon_stack, CONFIG_NET_MGMT_EVENT_MONITOR_STACK_SIZE);
 
+static const char unknown_event_str[] = "<unknown event>";
+
 struct event_msg {
 	struct net_if *iface;
 	size_t len;
@@ -75,7 +77,7 @@ static char *get_l2_desc(struct event_msg *msg,
 			 const char **desc, const char **desc2,
 			 char *extra_info, size_t extra_info_len)
 {
-	static const char *desc_unknown = "<unknown event>";
+	static const char *desc_unknown = unknown_event_str;
 	char *info = NULL;
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
@@ -137,7 +139,7 @@ static char *get_l3_desc(struct event_msg *msg,
 			 const char **desc, const char **desc2,
 			 char *extra_info, size_t extra_info_len)
 {
-	static const char *desc_unknown = "<unknown event>";
+	static const char *desc_unknown = unknown_event_str;
 	char *info = NULL;
 
 #if defined(CONFIG_NET_PMTU)
@@ -359,7 +361,7 @@ static char *get_l3_desc(struct event_msg *msg,
 
 static const char *get_l4_desc(uint32_t event)
 {
-	static const char *desc = "<unknown event>";
+	static const char *desc = unknown_event_str;
 
 	switch (event) {
 	case NET_EVENT_L4_CONNECTED:
@@ -471,10 +473,17 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 			desc = get_l4_desc(msg.event);
 		}
 
-		PR_INFO("EVENT: %s [%d] %s%s%s%s%s\n", layer_str,
-			net_if_get_by_iface(msg.iface), desc,
-			desc2 ? " " : "", desc2 ? desc2 : "",
-			info ? " " : "", info ? info : "");
+		if (desc == unknown_event_str) {
+			PR_INFO("EVENT: %s [%d] %s%s%s%s%s (0x%08x)\n", layer_str,
+				net_if_get_by_iface(msg.iface), desc,
+				desc2 ? " " : "", desc2 ? desc2 : "",
+				info ? " " : "", info ? info : "", msg.event);
+		} else {
+			PR_INFO("EVENT: %s [%d] %s%s%s%s%s\n", layer_str,
+				net_if_get_by_iface(msg.iface), desc,
+				desc2 ? " " : "", desc2 ? desc2 : "",
+				info ? " " : "", info ? info : "");
+		}
 	}
 
 	net_mgmt_del_event_callback(&l2_cb);
