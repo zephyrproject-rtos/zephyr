@@ -75,8 +75,9 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	if (bt_le_scan_stop()) {
-		printk("Scanning successfully stopped\n");
+	err = bt_le_scan_stop();
+	if (err != 0) {
+		printk("Failed to stop scanning (err %d)\n", err);
 		return;
 	}
 
