@@ -213,6 +213,7 @@ static void generate_dh_key(struct k_work *work)
 	if (psa_destroy_key(key_id) != PSA_SUCCESS) {
 		LOG_ERR("Failed to destroy the key");
 		err = -EIO;
+		goto exit;
 	}
 
 	err = 0;
