@@ -36,6 +36,7 @@
 	chosen {
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
 		/* UART used by the BT controller UART HCI driver by default: */
 		zephyr,bt-c2h-uart = &uart1;
 	};
