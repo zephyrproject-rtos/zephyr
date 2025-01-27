@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: nordicjm
+      url-base: https://github.com/nordicjm
 
   group-filter: [-babblesim, -optional]
 
@@ -287,8 +289,9 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: ea2410697dd0262edec041a0ccb07fdbde7c1aff
+      revision: 58538ddfe21843edb39d7e7502812e61696e55c4
       path: bootloader/mcuboot
+      remote: nordicjm
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
