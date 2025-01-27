@@ -19,7 +19,7 @@
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
 
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	/* Unlock Reference Clock Status Registers to allow writes */
 	CLOCK_UnlockFircControlStatusReg();
