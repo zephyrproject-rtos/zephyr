@@ -41,6 +41,13 @@ LOG_MODULE_REGISTER(usb_dc_kinetis);
 #define KINETIS_ADDR2IDX(addr)	((addr) & (KINETIS_EP_NUMOF_MASK))
 
 /*
+ * In some SoC USB0 base register is defined as USBFS0
+ */
+#if !defined(USB0) && defined(USBFS0)
+#define USB0				USBFS0
+#endif
+
+/*
  * Buffer Descriptor (BD) entry provides endpoint buffer control
  * information for USBFS controller. Every endpoint direction requires
  * two BD entries.
