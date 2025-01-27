@@ -21,6 +21,7 @@ struct udc_renesas_ra_config {
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
 	void (*make_thread)(const struct device *dev);
+	int (*irq_config_func)(const struct device *dev);
 	int speed_idx;
 };
 
@@ -497,43 +498,6 @@ static int udc_renesas_ra_init(const struct device *dev)
 {
 	struct udc_renesas_ra_data *data = udc_get_private(dev);
 
-#if !USBHS_PHY_CLOCK_SOURCE_IS_XTAL
-	if (data->udc_cfg.usb_speed == USBD_SPEED_HS) {
-		LOG_ERR("High-speed operation is not supported in case PHY clock source is not "
-			"XTAL");
-		return -ENOTSUP;
-	}
-
-	uint32_t uclk_src = RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(DT_NODELABEL(uclk)));
-	uint32_t uclk_div = DT_PROP_OR(DT_NODELABEL(uclk), div, 1);
-	uint32_t u60clk_src = RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(DT_NODELABEL(u60clk)));
-	uint32_t u60clk_div = DT_PROP_OR(DT_NODELABEL(u60clk), div, 1);
-
-	if (uclk_src == BSP_CLOCKS_CLOCK_DISABLED || u60clk_src == BSP_CLOCKS_CLOCK_DISABLED) {
-		LOG_ERR("PHY clock is not working");
-		return -EINVAL;
-	}
-
-	uint32_t uclk_clock_rate = R_BSP_SourceClockHzGet(uclk_src) / uclk_div;
-	uint32_t u60clk_clock_rate = R_BSP_SourceClockHzGet(u60clk_src) / u60clk_div;
-
-	if (uclk_clock_rate != 48000000) {
-		LOG_ERR("Setting for uclk should be 48Mhz");
-		return -ENOTSUP;
-	}
-
-	if (u60clk_clock_rate != 60000000) {
-		LOG_ERR("Setting for u60clk should be 60Mhz");
-		return -ENOTSUP;
-	}
-#endif
-
-	if (!(data->udc_cfg.usb_speed == USBD_SPEED_HS ||
-	      data->udc_cfg.usb_speed == USBD_SPEED_FS)) {
-		LOG_ERR("USB device mode support full-speed and high-speed only");
-		return -ENOTSUP;
-	}
-
 	if (FSP_SUCCESS != R_USBD_Open(&data->udc, &data->udc_cfg)) {
 		return -EIO;
 	}
@@ -547,8 +511,6 @@ static int udc_renesas_ra_init(const struct device *dev)
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
-
-	irq_enable(data->udc_cfg.hs_irq);
 
 	return 0;
 }
@@ -635,6 +597,7 @@ static int udc_renesas_ra_driver_preinit(const struct device *dev)
 		}
 	}
 
+	config->irq_config_func(dev);
 	config->make_thread(dev);
 	LOG_INF("Device %p (max. speed %d)", dev, config->speed_idx);
 
@@ -669,86 +632,217 @@ static const struct udc_api udc_renesas_ra_api = {
 	.ep_dequeue = udc_renesas_ra_ep_dequeue,
 };
 
-#define DT_DRV_COMPAT renesas_ra_udc
+#define USB_MODULE_NUMBER(id) ((DT_REG_ADDR(id)) == R_USB_FS0_BASE ? 0 : 1)
 
-#define USB_MODULE_NUMBER(n) ((DT_REG_ADDR(DT_INST_PARENT(n))) == R_USB_HS0_BASE ? 1 : 0)
-
-#define RENESAS_RA_USB_IRQ_CONFIG_FUNC(n)                                                          \
-	static int udc_renesas_ra_irq_config_func_##n(const struct device *dev)                    \
+#define RENESAS_RA_USBHS_DEVICE_DEFINE(id)                                                         \
+	PINCTRL_DT_DEFINE(id);                                                                     \
+	K_THREAD_STACK_DEFINE(udc_renesas_ra_stack_##id, CONFIG_UDC_RENESAS_RA_STACK_SIZE);        \
+                                                                                                   \
+	static int renesas_ra_usb_irq_config##id(const struct device *dev)                         \
 	{                                                                                          \
 		struct udc_renesas_ra_data *data = udc_get_private(dev);                           \
                                                                                                    \
-		data->udc_cfg.hs_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(n), usbhs_ir, irq);           \
-		data->udc_cfg.hsirq_d0 = DT_IRQ_BY_NAME(DT_INST_PARENT(n), usbhs_d0, irq);         \
-		data->udc_cfg.hsirq_d1 = DT_IRQ_BY_NAME(DT_INST_PARENT(n), usbhs_d1, irq);         \
-		data->udc_cfg.hsipl = DT_IRQ_BY_NAME(DT_INST_PARENT(n), usbhs_ir, priority);       \
-		data->udc_cfg.hsipl_d0 = DT_IRQ_BY_NAME(DT_INST_PARENT(n), usbhs_d0, priority);    \
-		data->udc_cfg.hsipl_d1 = DT_IRQ_BY_NAME(DT_INST_PARENT(n), usbhs_d1, priority);    \
+		data->udc_cfg.hs_irq = DT_IRQ_BY_NAME(id, usbhs_ir, irq);                          \
+		data->udc_cfg.hsipl = DT_IRQ_BY_NAME(id, usbhs_ir, priority);                      \
                                                                                                    \
-		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_NODELABEL(usbhs), usbhs_ir, irq)] =                 \
-			ELC_EVENT_USBHS_USB_INT_RESUME;                                            \
-		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(usbhs), usbhs_ir, irq),                    \
-			    DT_IRQ_BY_NAME(DT_NODELABEL(usbhs), usbhs_ir, priority),               \
-			    udc_renesas_ra_interrupt_handler, DEVICE_DT_INST_GET(n), 0);           \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(id, usbhs_ir, irq)] = ELC_EVENT_USBHS_USB_INT_RESUME;  \
+		IRQ_CONNECT(                                                                       \
+			DT_IRQ_BY_NAME(id, usbhs_ir, irq), DT_IRQ_BY_NAME(id, usbhs_ir, priority), \
+			udc_renesas_ra_interrupt_handler, DEVICE_DT_GET(DT_CHILD(id, udc)), 0);    \
+                                                                                                   \
 		return 0;                                                                          \
-	}
-
-#define UDC_RENESAS_RA_DEVICE_DEFINE(n)                                                            \
-	PINCTRL_DT_DEFINE(DT_INST_PARENT(n));                                                      \
-	K_THREAD_STACK_DEFINE(udc_renesas_ra_stack_##n, CONFIG_UDC_RENESAS_RA_STACK_SIZE);         \
-	RENESAS_RA_USB_IRQ_CONFIG_FUNC(n);                                                         \
+	}                                                                                          \
                                                                                                    \
-	static void udc_renesas_ra_thread_##n(void *dev, void *arg1, void *arg2)                   \
+	static void udc_renesas_ra_thread_##id(void *dev, void *arg1, void *arg2)                  \
 	{                                                                                          \
 		renesas_ra_thread_handler(dev);                                                    \
 	}                                                                                          \
                                                                                                    \
-	static void udc_renesas_ra_make_thread_##n(const struct device *dev)                       \
+	static void udc_renesas_ra_make_thread_##id(const struct device *dev)                      \
 	{                                                                                          \
 		struct udc_renesas_ra_data *priv = udc_get_private(dev);                           \
                                                                                                    \
-		k_thread_create(&priv->thread_data, udc_renesas_ra_stack_##n,                      \
-				K_THREAD_STACK_SIZEOF(udc_renesas_ra_stack_##n),                   \
-				udc_renesas_ra_thread_##n, (void *)dev, NULL, NULL,                \
+		k_thread_create(&priv->thread_data, udc_renesas_ra_stack_##id,                     \
+				K_THREAD_STACK_SIZEOF(udc_renesas_ra_stack_##id),                  \
+				udc_renesas_ra_thread_##id, (void *)dev, NULL, NULL,               \
 				K_PRIO_COOP(CONFIG_UDC_RENESAS_RA_THREAD_PRIORITY), K_ESSENTIAL,   \
 				K_NO_WAIT);                                                        \
 		k_thread_name_set(&priv->thread_data, dev->name);                                  \
 	}                                                                                          \
                                                                                                    \
-	static struct udc_ep_config ep_cfg_in##n[DT_PROP(DT_INST_PARENT(n), num_bidir_endpoints)]; \
-	static struct udc_ep_config                                                                \
-		ep_cfg_out##n[DT_PROP(DT_INST_PARENT(n), num_bidir_endpoints)];                    \
+	static struct udc_ep_config ep_cfg_in##id[DT_PROP(id, num_bidir_endpoints)];               \
+	static struct udc_ep_config ep_cfg_out##id[DT_PROP(id, num_bidir_endpoints)];              \
                                                                                                    \
-	static const struct udc_renesas_ra_config udc_renesas_ra_config_##n = {                    \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(n)),                              \
-		.num_of_eps = DT_PROP(DT_INST_PARENT(n), num_bidir_endpoints),                     \
-		.ep_cfg_in = ep_cfg_in##n,                                                         \
-		.ep_cfg_out = ep_cfg_out##n,                                                       \
-		.make_thread = udc_renesas_ra_make_thread_##n,                                     \
-		.speed_idx = DT_ENUM_IDX_OR(DT_INST_PARENT(n), maximum_speed, UDC_BUS_SPEED_HS),   \
-	};                                                                                         \
+	static const struct udc_renesas_ra_config udc_renesas_ra_config_##id = {                   \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(id),                                             \
+		.num_of_eps = DT_PROP(id, num_bidir_endpoints),                                    \
+		.ep_cfg_in = ep_cfg_in##id,                                                        \
+		.ep_cfg_out = ep_cfg_out##id,                                                      \
+		.make_thread = udc_renesas_ra_make_thread_##id,                                    \
+		.speed_idx = DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_HS),                  \
+		.irq_config_func = renesas_ra_usb_irq_config##id};                                 \
                                                                                                    \
-	static struct udc_renesas_ra_data udc_priv_##n = {                                         \
-		.udc_cfg = {                                                                       \
-			.module_number = USB_MODULE_NUMBER(n),                                     \
-			.usb_speed = DT_ENUM_IDX_OR(DT_INST_PARENT(n), maximum_speed,              \
-						    UDC_BUS_SPEED_HS),                             \
-			.p_context = DEVICE_DT_INST_GET(n),                                        \
-			.p_callback = udc_renesas_ra_event_handler,                                \
-		}};                                                                                \
+	static struct udc_renesas_ra_data udc_priv_##id = {                                        \
+		.udc_cfg = {.module_number = USB_MODULE_NUMBER(id),                                \
+			    .usb_speed = DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_HS),      \
+			    .p_context = DEVICE_DT_GET(DT_CHILD(id, udc)),                         \
+			    .p_callback = udc_renesas_ra_event_handler}};                          \
                                                                                                    \
-	static struct udc_data udc_data_##n = {                                                    \
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                  \
-		.priv = &udc_priv_##n,                                                             \
-	};                                                                                         \
-	int udc_renesas_ra_driver_preinit##n(const struct device *dev)                             \
+	static struct udc_data udc_data_##id = {.mutex = Z_MUTEX_INITIALIZER(udc_data_##id.mutex), \
+						.priv = &udc_priv_##id};                           \
+                                                                                                   \
+	static int udc_renesas_ra_driver_preinit_##id(const struct device *dev)                    \
 	{                                                                                          \
-		udc_renesas_ra_irq_config_func_##n(dev);                                           \
+		struct udc_renesas_ra_data *data = udc_get_private(dev);                           \
+                                                                                                   \
+		if (!(data->udc_cfg.usb_speed == USBD_SPEED_HS ||                                  \
+		      data->udc_cfg.usb_speed == USBD_SPEED_FS)) {                                 \
+			LOG_ERR("USBHS module support full-speed and high-speed only");            \
+			return -ENOTSUP;                                                           \
+		}                                                                                  \
+                                                                                                   \
+		if (USBHS_PHY_CLOCK_SOURCE_IS_XTAL == 0) {                                         \
+			if (data->udc_cfg.usb_speed == USBD_SPEED_HS) {                            \
+				LOG_ERR("High-speed operation is not supported in case PHY clock " \
+					"source is not XTAL");                                     \
+				return -ENOTSUP;                                                   \
+			}                                                                          \
+                                                                                                   \
+			uint32_t uclk_src = RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(DT_NODELABEL(uclk)));    \
+			uint32_t uclk_div = DT_PROP_OR(DT_NODELABEL(uclk), div, 1);                \
+			uint32_t u60clk_src =                                                      \
+				RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(DT_NODELABEL(u60clk)));              \
+			uint32_t u60clk_div = DT_PROP_OR(DT_NODELABEL(u60clk), div, 1);            \
+                                                                                                   \
+			if (uclk_src == BSP_CLOCKS_CLOCK_DISABLED ||                               \
+			    u60clk_src == BSP_CLOCKS_CLOCK_DISABLED) {                             \
+				LOG_ERR("PHY clock is not working");                               \
+				return -EINVAL;                                                    \
+			}                                                                          \
+                                                                                                   \
+			uint32_t uclk_clock_rate = R_BSP_SourceClockHzGet(uclk_src) / uclk_div;    \
+			uint32_t u60clk_clock_rate =                                               \
+				R_BSP_SourceClockHzGet(u60clk_src) / u60clk_div;                   \
+                                                                                                   \
+			if (uclk_clock_rate != 48000000) {                                         \
+				LOG_ERR("Setting for uclk should be 48Mhz");                       \
+				return -ENOTSUP;                                                   \
+			}                                                                          \
+                                                                                                   \
+			if (u60clk_clock_rate != 60000000) {                                       \
+				LOG_ERR("Setting for u60clk should be 60Mhz");                     \
+				return -ENOTSUP;                                                   \
+			}                                                                          \
+		}                                                                                  \
+                                                                                                   \
 		return udc_renesas_ra_driver_preinit(dev);                                         \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, udc_renesas_ra_driver_preinit##n, NULL, &udc_data_##n,            \
-			      &udc_renesas_ra_config_##n, POST_KERNEL,                             \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_renesas_ra_api);
+	DEVICE_DT_DEFINE(DT_CHILD(id, udc), udc_renesas_ra_driver_preinit_##id, NULL,              \
+			 &udc_data_##id, &udc_renesas_ra_config_##id, POST_KERNEL,                 \
+			 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_renesas_ra_api);
 
-DT_INST_FOREACH_STATUS_OKAY(UDC_RENESAS_RA_DEVICE_DEFINE)
+#define RENESAS_RA_USBFS_DEVICE_DEFINE(id)                                                         \
+	PINCTRL_DT_DEFINE(id);                                                                     \
+	K_THREAD_STACK_DEFINE(udc_renesas_ra_stack_##id, CONFIG_UDC_RENESAS_RA_STACK_SIZE);        \
+                                                                                                   \
+	static int renesas_ra_usb_irq_config##id(const struct device *dev)                         \
+	{                                                                                          \
+		struct udc_renesas_ra_data *data = udc_get_private(dev);                           \
+                                                                                                   \
+		data->udc_cfg.irq = DT_IRQ_BY_NAME(id, usbfs_i, irq);                              \
+		data->udc_cfg.irq_r = DT_IRQ_BY_NAME(id, usbfs_r, irq);                            \
+		data->udc_cfg.ipl = DT_IRQ_BY_NAME(id, usbfs_i, priority);                         \
+		data->udc_cfg.ipl_r = DT_IRQ_BY_NAME(id, usbfs_r, priority);                       \
+                                                                                                   \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(id, usbfs_i, irq)] = ELC_EVENT_USBFS_INT;              \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(id, usbfs_r, irq)] = ELC_EVENT_USBFS_RESUME;           \
+		IRQ_CONNECT(                                                                       \
+			DT_IRQ_BY_NAME(id, usbfs_i, irq), DT_IRQ_BY_NAME(id, usbfs_i, priority),   \
+			udc_renesas_ra_interrupt_handler, DEVICE_DT_GET(DT_CHILD(id, udc)), 0);    \
+		IRQ_CONNECT(                                                                       \
+			DT_IRQ_BY_NAME(id, usbfs_r, irq), DT_IRQ_BY_NAME(id, usbfs_r, priority),   \
+			udc_renesas_ra_interrupt_handler, DEVICE_DT_GET(DT_CHILD(id, udc)), 0);    \
+                                                                                                   \
+		return 0;                                                                          \
+	}                                                                                          \
+                                                                                                   \
+	static void udc_renesas_ra_thread_##id(void *dev, void *arg1, void *arg2)                  \
+	{                                                                                          \
+		renesas_ra_thread_handler(dev);                                                    \
+	}                                                                                          \
+                                                                                                   \
+	static void udc_renesas_ra_make_thread_##id(const struct device *dev)                      \
+	{                                                                                          \
+		struct udc_renesas_ra_data *priv = udc_get_private(dev);                           \
+                                                                                                   \
+		k_thread_create(&priv->thread_data, udc_renesas_ra_stack_##id,                     \
+				K_THREAD_STACK_SIZEOF(udc_renesas_ra_stack_##id),                  \
+				udc_renesas_ra_thread_##id, (void *)dev, NULL, NULL,               \
+				K_PRIO_COOP(CONFIG_UDC_RENESAS_RA_THREAD_PRIORITY), K_ESSENTIAL,   \
+				K_NO_WAIT);                                                        \
+		k_thread_name_set(&priv->thread_data, dev->name);                                  \
+	}                                                                                          \
+                                                                                                   \
+	static struct udc_ep_config ep_cfg_in##id[DT_PROP(id, num_bidir_endpoints)];               \
+	static struct udc_ep_config ep_cfg_out##id[DT_PROP(id, num_bidir_endpoints)];              \
+                                                                                                   \
+	static const struct udc_renesas_ra_config udc_renesas_ra_config_##id = {                   \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(id),                                             \
+		.num_of_eps = DT_PROP(id, num_bidir_endpoints),                                    \
+		.ep_cfg_in = ep_cfg_in##id,                                                        \
+		.ep_cfg_out = ep_cfg_out##id,                                                      \
+		.make_thread = udc_renesas_ra_make_thread_##id,                                    \
+		.speed_idx = DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_FS),                  \
+		.irq_config_func = renesas_ra_usb_irq_config##id};                                 \
+                                                                                                   \
+	static struct udc_renesas_ra_data udc_priv_##id = {                                        \
+		.udc_cfg = {.module_number = USB_MODULE_NUMBER(id),                                \
+			    .usb_speed = DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_FS),      \
+			    .p_context = DEVICE_DT_GET(DT_CHILD(id, udc)),                         \
+			    .p_callback = udc_renesas_ra_event_handler}};                          \
+                                                                                                   \
+	static struct udc_data udc_data_##id = {.mutex = Z_MUTEX_INITIALIZER(udc_data_##id.mutex), \
+						.priv = &udc_priv_##id};                           \
+                                                                                                   \
+	static int udc_renesas_ra_driver_preinit_##id(const struct device *dev)                    \
+	{                                                                                          \
+		struct udc_renesas_ra_data *data = udc_get_private(dev);                           \
+                                                                                                   \
+		if (data->udc_cfg.usb_speed != USBD_SPEED_FS) {                                    \
+			LOG_ERR("USBFS module support full-speed only");                           \
+			return -ENOTSUP;                                                           \
+		}                                                                                  \
+                                                                                                   \
+		uint32_t uclk_src = RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(DT_NODELABEL(uclk)));            \
+		uint32_t uclk_div = DT_PROP_OR(DT_NODELABEL(uclk), div, 1);                        \
+                                                                                                   \
+		if (uclk_src == BSP_CLOCKS_CLOCK_DISABLED) {                                       \
+			LOG_ERR("PHY clock is not working");                                       \
+			return -EINVAL;                                                            \
+		}                                                                                  \
+                                                                                                   \
+		uint32_t uclk_clock_rate = R_BSP_SourceClockHzGet(uclk_src) / uclk_div;            \
+                                                                                                   \
+		if (uclk_clock_rate != 48000000) {                                                 \
+			LOG_ERR("Setting for uclk should be 48Mhz");                               \
+			return -ENOTSUP;                                                           \
+		}                                                                                  \
+                                                                                                   \
+		return udc_renesas_ra_driver_preinit(dev);                                         \
+	}                                                                                          \
+                                                                                                   \
+	DEVICE_DT_DEFINE(DT_CHILD(id, udc), udc_renesas_ra_driver_preinit_##id, NULL,              \
+			 &udc_data_##id, &udc_renesas_ra_config_##id, POST_KERNEL,                 \
+			 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_renesas_ra_api);
+
+#define RENESAS_USBHS_DEVICE_INIT_IF_OKAY(id)                                                      \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_CHILD(id, udc)),					   \
+		    (RENESAS_RA_USBHS_DEVICE_DEFINE(id)), ())
+
+#define RENESAS_USBFS_DEVICE_INIT_IF_OKAY(id)                                                      \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_CHILD(id, udc)),					   \
+		    (RENESAS_RA_USBFS_DEVICE_DEFINE(id)), ())
+
+DT_FOREACH_STATUS_OKAY(renesas_ra_usbhs, RENESAS_USBHS_DEVICE_INIT_IF_OKAY)
+DT_FOREACH_STATUS_OKAY(renesas_ra_usbfs, RENESAS_USBFS_DEVICE_INIT_IF_OKAY)

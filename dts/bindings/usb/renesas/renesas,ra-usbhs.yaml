@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA USB controller
+description: Renesas RA USB high-speed controller
 
-compatible: "renesas,ra-usb"
+compatible: "renesas,ra-usbhs"
 
 include: [pinctrl-device.yaml, usb-ep.yaml]
 
