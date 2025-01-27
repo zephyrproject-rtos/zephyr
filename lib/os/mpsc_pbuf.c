@@ -205,6 +205,8 @@ static bool drop_item_locked(struct mpsc_pbuf_buffer *buffer,
 	if (!is_valid(item)) {
 		return false;
 	} else if (item->hdr.busy) {
+		bool ret = true;
+
 		MPSC_PBUF_DBG(buffer, "no space: Found busy packet %p (len:%d)", item, rd_wlen);
 		/* Add skip packet before claimed packet. */
 		if (free_wlen) {
@@ -215,15 +217,18 @@ static bool drop_item_locked(struct mpsc_pbuf_buffer *buffer,
 		buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, rd_wlen);
 
 		/* If allocation wrapped around the buffer and found busy packet
-		 * that was already omitted, skip it again.
+		 * that was already omitted, skip it again and indicate that no
+		 * packet was dropped.
 		 */
 		if (buffer->rd_idx == buffer->tmp_rd_idx) {
 			buffer->tmp_rd_idx = idx_inc(buffer, buffer->tmp_rd_idx, rd_wlen);
+			ret = false;
 		}
 
 		buffer->tmp_wr_idx = buffer->tmp_rd_idx;
 		buffer->rd_idx = buffer->tmp_rd_idx;
 		buffer->flags |= MPSC_PBUF_FULL;
+		return ret;
 	} else {
 		/* Prepare packet dropping. */
 		rd_idx_inc(buffer, rd_wlen);
