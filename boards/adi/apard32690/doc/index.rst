@@ -190,7 +190,8 @@ SWD port. SWD debug can be accessed through the Cortex 10-pin connector, P9.
 Logic levels are either 1.8V or 3.3V (based on P51 selection).
 
 Once the debug probe is connected to your host computer, then you can simply run the
-``west flash`` command to write a firmware image into flash.
+``west flash`` command to write a firmware image into flash. To perform a full erase,
+pass the ``--erase`` option when executing ``west flash``.
 
 .. note::
 
