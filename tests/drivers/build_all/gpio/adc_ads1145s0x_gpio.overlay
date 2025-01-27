@@ -40,7 +40,7 @@
 				start-sync-gpios = <&test_gpio 0 0>;
 
 				test_spi_ads114s08_gpio: ads114s0x_gpio {
-					compatible = "ti,ads114s0x-gpio";
+					compatible = "ti,ads1x4s0x-gpio";
 					gpio-controller;
 					ngpios = <4>;
 					#gpio-cells = <2>;
