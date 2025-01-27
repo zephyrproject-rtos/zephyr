@@ -10,22 +10,18 @@ common:
     - nrf52840dk/nrf52840
   timeout: 600
   slow: true
+  tags:
+    - pytest
+    - mcuboot
+    - mcumgr
 tests:
   boot.with_mcumgr.test_upgrade:
-    tags:
-      - pytest
-      - mcuboot
-      - mcumgr
     harness: pytest
     harness_config:
       pytest_root:
         - "pytest/test_upgrade.py"
 
   boot.with_mcumgr.test_downgrade_prevention:
-    tags:
-      - pytest
-      - mcuboot
-      - mcumgr
     harness: pytest
     harness_config:
       pytest_root:
@@ -34,3 +30,11 @@ tests:
       - mcuboot_CONFIG_MCUBOOT_DOWNGRADE_PREVENTION=y
     extra_configs:
       - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="1.1.1+1"
+
+  boot.with_mcumgr.test_upgrade.swap_using_offset:
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_upgrade.py"
+    extra_args:
+      - SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET=y
