@@ -61,7 +61,8 @@ static uint8_t esp_intr_irq_alloc[ESP32C6_INTC_AVAILABLE_IRQS][ESP32C6_INTC_SRCS
 	[2] = {IRQ_FREE, IRQ_FREE},
 	[3] = {IRQ_NA, IRQ_NA},
 	[4] = {IRQ_NA, IRQ_NA},
-	[5 ... 6] = {IRQ_FREE, IRQ_FREE},
+	[5] = {IRQ_FREE, IRQ_FREE},
+	[6] = {IRQ_NA, IRQ_NA},
 	[7] = {IRQ_NA, IRQ_NA},
 	[8 ... 30] = {IRQ_FREE, IRQ_FREE}
 };
