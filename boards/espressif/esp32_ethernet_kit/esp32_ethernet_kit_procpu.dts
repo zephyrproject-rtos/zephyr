@@ -7,7 +7,7 @@
 
 #include <espressif/esp32/esp32_wrover_e_n4r8.dtsi>
 #include "esp32_ethernet_kit-pinctrl.dtsi"
-#include <espressif/partitions_0x1000_default.dtsi>
+#include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
 	model = "Espressif ESP32-Ethernet-Kit PROCPU";
