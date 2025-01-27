@@ -1277,6 +1277,19 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	}
 }
 
+void HAL_PCD_ISOINIncompleteCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+{
+	uint8_t ep_idx = USB_EP_GET_IDX(epnum);
+	uint8_t ep = ep_idx | USB_EP_DIR_IN;
+	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
+
+	LOG_DBG("epnum 0x%02x", epnum);
+
+	__ASSERT(ep_state, "No corresponding ep_state for ep");
+
+	k_sem_give(&ep_state->write_sem);
+}
+
 #if (defined(USB) || defined(USB_DRD_FS)) && DT_INST_NODE_HAS_PROP(0, disconnect_gpios)
 void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
