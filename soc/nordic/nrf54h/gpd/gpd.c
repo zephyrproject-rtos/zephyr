@@ -139,6 +139,8 @@ static int nrf_gpd_sync(struct gpd_onoff_manager *gpd_mgr)
 		if (atomic_test_bit(&gpd_service_status, GPD_SERVICE_REQ_OK)) {
 			return 0;
 		}
+
+		k_yield();
 	}
 
 	LOG_ERR("nRFs GDPWR request timed out");
