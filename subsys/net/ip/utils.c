@@ -335,24 +335,63 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 {
 	if (family == AF_INET) {
 		struct in_addr *addr = (struct in_addr *)dst;
-		size_t i, len;
-
-		len = strlen(src);
-		for (i = 0; i < len; i++) {
-			if (!(src[i] >= '0' && src[i] <= '9') &&
-			    src[i] != '.') {
-				return -EINVAL;
-			}
-		}
+		uint8_t index = 0, digits = 0;
+		uint16_t value = 0, count = 0;
 
 		(void)memset(addr, 0, sizeof(struct in_addr));
 
-		for (i = 0; i < sizeof(struct in_addr); i++) {
-			char *endptr;
+		/* A valid IPv4 address that can be used with inet_pton
+		 * must be in the standard dotted-decimal notation:
+		 *
+		 *    - Four octets, each ranging from 0 to 255
+		 *    - Separated by dots (.)
+		 *    - No leading zeros in each octet
+		 */
 
-			addr->s4_addr[i] = strtol(src, &endptr, 10);
+		while (index < sizeof(struct in_addr)) {
+			if (*src == '\0' || *src == '.') {
+				if (*src == '.') {
+					count++;
+				}
 
-			src = ++endptr;
+				if ((digits > 1 && value < 10) ||
+				    (digits > 2 && value < 100)) {
+					/* Preceding zeroes */
+					return -EINVAL;
+				}
+
+				if (digits == 0 || value > UINT8_MAX) {
+					return -EINVAL;
+				}
+
+				addr->s4_addr[index] = value;
+
+				if (*src == '\0') {
+					break;
+				}
+
+				index++;
+				digits = 0;
+				value = 0;
+			} else if ('0' <= *src && *src <= '9') {
+				if (++digits > 3) {
+					/* Number too large */
+					return -EINVAL;
+				}
+
+				value *= 10;
+				value += *src - '0';
+			} else {
+				/* Invalid character */
+				return -EINVAL;
+			}
+
+			src++;
+		}
+
+		if (count != 3) {
+			/* Three dots needed */
+			return -EINVAL;
 		}
 
 	} else if (family == AF_INET6) {
