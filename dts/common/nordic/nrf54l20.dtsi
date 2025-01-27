@@ -29,7 +29,8 @@
 			itm: itm@e0000000 {
 				compatible = "arm,armv8m-itm";
 				reg = <0xe0000000 0x1000>;
-				swo-ref-frequency = <DT_FREQ_M(128)>;
+				/* NRFX-6881: Restore to 128MHz when PDK becomes available. */
+				swo-ref-frequency = <DT_FREQ_M(64)>;
 			};
 		};
 	};
@@ -50,7 +51,8 @@
 		hfpll: hfpll {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_M(128)>;
+			/* NRFX-6881: Restore to 128MHz when PDK becomes available. */
+			clock-frequency = <DT_FREQ_M(64)>;
 		};
 	};
 
