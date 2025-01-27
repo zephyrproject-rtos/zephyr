@@ -407,6 +407,19 @@ config NET_TC_SKIP_FOR_HIGH_PRIO
 	  be pushed directly to network driver and will skip the traffic class
 	  queues. This is currently not enabled by default.
 
+config NET_TC_RX_SKIP_FOR_HIGH_PRIO
+	bool "Push high priority packets directly to the application"
+	help
+	  If this is set, then high priority (>= NET_PRIORITY_CA) net_pkt will
+	  be pushed directly to the application and will skip the traffic class
+	  queues. If you select this option, then it means that high priority
+	  network traffic is pushed from the driver to the application thread
+	  without any intermediate RX queue. If the network device driver is
+	  running in IRQ context, it will handle the packet all the way to the
+	  application. This might cause other incoming packets to be lost if
+	  the RX processing takes long time.
+	  This is currently not enabled by default.
+
 choice NET_TC_THREAD_TYPE
 	prompt "How the network RX/TX threads should work"
 	help
