@@ -728,7 +728,7 @@ static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
 			} else if (*obj->lex.pos == JSON_TOK_STRING) {
 				string_state = true;
 			} else if (*obj->lex.pos == JSON_TOK_ARRAY_START) {
-				/* arrary in array update structure count */
+				/* array in array update structure count */
 				array_in_array++;
 			}
 		}

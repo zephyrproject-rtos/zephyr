@@ -201,7 +201,7 @@ static bool drop_item_locked(struct mpsc_pbuf_buffer *buffer,
 
 	uint32_t rd_wlen = buffer->get_wlen(item);
 
-	/* If packet is busy need to be ommited. */
+	/* If packet is busy need to be omitted. */
 	if (!is_valid(item)) {
 		return false;
 	} else if (item->hdr.busy) {
@@ -215,7 +215,7 @@ static bool drop_item_locked(struct mpsc_pbuf_buffer *buffer,
 		buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, rd_wlen);
 
 		/* If allocation wrapped around the buffer and found busy packet
-		 * that was already ommited, skip it again.
+		 * that was already omitted, skip it again.
 		 */
 		if (buffer->rd_idx == buffer->tmp_rd_idx) {
 			buffer->tmp_rd_idx = idx_inc(buffer, buffer->tmp_rd_idx, rd_wlen);
