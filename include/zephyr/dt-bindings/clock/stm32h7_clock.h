@@ -58,34 +58,6 @@
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB3
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB4
 
-#define STM32_CLOCK_REG_MASK    0xFFU
-#define STM32_CLOCK_REG_SHIFT   0U
-#define STM32_CLOCK_SHIFT_MASK  0x1FU
-#define STM32_CLOCK_SHIFT_SHIFT 8U
-#define STM32_CLOCK_MASK_MASK   0x7U
-#define STM32_CLOCK_MASK_SHIFT  13U
-#define STM32_CLOCK_VAL_MASK    0x7U
-#define STM32_CLOCK_VAL_SHIFT   16U
-
-/**
- * @brief STM32H7 clock configuration bit field.
- *
- * - reg   (0/1)           [ 0 : 7 ]
- * - shift (0..31)         [ 8 : 12 ]
- * - mask  (0x1, 0x3, 0x7) [ 13 : 15 ]
- * - val   (0..3)          [ 16 : 18 ]
- *
- * @param reg RCC_DxCCIP register offset
- * @param shift Position within RCC_DxCCIP.
- * @param mask Mask for the RCC_DxCCIP field.
- * @param val Clock value (0, 1, 2 or 3).
- */
-#define STM32_DOMAIN_CLOCK(val, mask, shift, reg)					\
-	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |	\
-	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
-	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |	\
-	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
-
 /** @brief RCC_DxCCIP register offset (RM0399.pdf) */
 #define D1CCIPR_REG		0x4C
 #define D2CCIP1R_REG		0x50
