@@ -12,3 +12,14 @@ config SPI_SILABS_EUSART
 	select PINCTRL if SOC_FAMILY_SILABS_S2
 	help
 	  Enable the EUSART SPI driver
+
+config SPI_SILABS_EUSART_DMA
+	bool "Silabs EUSART SPI controller driver DMA enabled transfer"
+	depends on SPI_SILABS_EUSART
+	select DMA
+	default y if SPI_ASYNC
+
+config SPI_SILABS_EUSART_DMA_MAX_BLOCKS
+	int "Silabs EUSART SPI controller driver maximum DMA tranfer block per channel for a transaction"
+	depends on SPI_SILABS_EUSART_DMA
+	default 8
