@@ -189,6 +189,28 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 		     size_t len);
 
 /**
+ * @brief Copy flash memory from one flash area to another.
+ *
+ * Copy data to flash area. Area boundaries are asserted before copy
+ * request.
+ *
+ * For more information, see flash_copy().
+ *
+ * @param[in]  src_fa  Source Flash area
+ * @param[in]  src_off Offset relative from beginning of source flash area.
+ * @param[in]  dst_fa  Destination Flash area
+ * @param[in]  dst_off Offset relative from beginning of destination flash area.
+ * @param[in]  len Number of bytes to copy, in bytes.
+ * @param[out] buf Pointer to a buffer of size @a buf_size.
+ * @param[in]  buf_size Size of the buffer pointed to by @a buf.
+ *
+ * @return  0 on success, negative errno code on fail.
+ */
+int flash_area_copy(const struct flash_area *src_fa, off_t src_off,
+		    const struct flash_area *dst_fa, off_t dst_off,
+		    off_t len, uint8_t *buf, size_t buf_size);
+
+/**
  * @brief Erase flash area
  *
  * Erase given flash area range. Area boundaries are asserted before erase
