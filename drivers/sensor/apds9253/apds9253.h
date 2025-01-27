@@ -101,6 +101,7 @@ struct apds9253_data {
 	uint32_t sample_crgb[4];
 	uint8_t pdata;
 	uint8_t gain;
+	uint8_t meas_rate_mes;
 	struct k_sem data_sem;
 };
 
