@@ -66,5 +66,5 @@ properties:
     description: Clock mux source for SAI root clock
 
 pinmux-cells:
-  - pin
-  - function
+  - offset
+  - mask
