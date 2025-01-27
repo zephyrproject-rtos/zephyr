@@ -45,7 +45,6 @@ static void hfclk_on_callback(struct onoff_manager *mgr,
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 void nrf_802154_clock_hfclk_start(void)
 {
-	int ret;
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 
@@ -53,20 +52,21 @@ void nrf_802154_clock_hfclk_start(void)
 
 	sys_notify_init_callback(&hfclk_cli.notify, hfclk_on_callback);
 
-	ret = onoff_request(mgr, &hfclk_cli);
+	int ret = onoff_request(mgr, &hfclk_cli);
 	__ASSERT_NO_MSG(ret >= 0);
+	(void)ret;
 }
 
 void nrf_802154_clock_hfclk_stop(void)
 {
-	int ret;
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	__ASSERT_NO_MSG(mgr != NULL);
 
-	ret = onoff_cancel_or_release(mgr, &hfclk_cli);
+	int ret = onoff_cancel_or_release(mgr, &hfclk_cli);
 	__ASSERT_NO_MSG(ret >= 0);
+	(void)ret;
 	hfclk_is_running = false;
 }
 
@@ -78,6 +78,7 @@ void nrf_802154_clock_hfclk_start(void)
 	int ret = nrf_clock_control_request(DEVICE_DT_GET(DT_NODELABEL(hfxo)), NULL, &hfclk_cli);
 
 	__ASSERT_NO_MSG(ret >= 0);
+	(void)ret;
 }
 
 void nrf_802154_clock_hfclk_stop(void)
@@ -86,6 +87,7 @@ void nrf_802154_clock_hfclk_stop(void)
 						      NULL, &hfclk_cli);
 
 	__ASSERT_NO_MSG(ret >= 0);
+	(void)ret;
 }
 
 #endif
