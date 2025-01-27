@@ -1502,6 +1502,7 @@ Release Notes:
   files:
     - doc/hardware/peripherals/gnss.rst
     - drivers/gnss/
+    - include/zephyr/data/navigation.h
     - include/zephyr/drivers/gnss.h
     - include/zephyr/drivers/gnss/
     - dts/bindings/gnss/
@@ -2442,7 +2443,8 @@ JSON Web Token:
     - sir-branch
   files:
     - subsys/jwt/
-    - include/zephyr/data/
+    - include/zephyr/data/json.h
+    - include/zephyr/data/jwt.h
     - lib/utils/json.c
     - tests/subsys/jwt/
     - tests/lib/json/
