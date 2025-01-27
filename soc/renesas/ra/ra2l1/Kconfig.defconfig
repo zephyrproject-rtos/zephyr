@@ -1,0 +1,9 @@
+# Copyright (c) 2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RA2L1
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_SERIES_RA2L1

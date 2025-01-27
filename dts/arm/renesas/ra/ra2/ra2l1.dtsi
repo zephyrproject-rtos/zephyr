@@ -1,0 +1,95 @@
+/**
+ * Copyright (c) 2021-2024 MUNIC SA
+ *
+ * Renesas RA2AL1 MCU series device tree
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+
+/ {
+	sysc: sysc@4001e000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <0x4001e000 0x700>;
+		reg-names = "sysc";
+
+		status = "okay";
+
+		arch-type-a;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m23";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cpu-power-states = <&sleep &standby>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <10>;
+				exit-latency-us = <6>;
+			};
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 0x8000>;
+		};
+
+		flcn: flash-controller@407ec000 {
+			reg = <0x407ec000 0x10000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: code@0 {
+				compatible = "soc-nv-flash";
+				/* "reg" property should be defined in the
+				 * chip specific .dtsi file
+				 */
+			};
+
+			flash1: data@40100000 {
+				compatible = "soc-nv-flash";
+				reg = <0x40100000 DT_SIZE_K(8)>;
+			};
+		};
+
+		id_code: id_code@1010018 {
+			compatible = "zephyr,memory-region";
+			reg = <0x01010018 0x20>;
+			zephyr,memory-region = "ID_CODE";
+			status = "okay";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};
