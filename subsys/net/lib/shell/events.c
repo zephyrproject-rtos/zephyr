@@ -96,6 +96,14 @@ static char *get_l2_desc(struct event_msg *msg,
 		*desc = "interface";
 		*desc2 = "up";
 		break;
+	case NET_EVENT_IF_ADMIN_UP:
+		*desc = "interface";
+		*desc2 = "admin up";
+		break;
+	case NET_EVENT_IF_ADMIN_DOWN:
+		*desc = "interface";
+		*desc2 = "admin down";
+		break;
 	case NET_EVENT_ETHERNET_CARRIER_ON:
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 		*desc = "Ethernet";
