@@ -70,6 +70,7 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_IP		0x0800
 #define NET_ETH_PTYPE_IPV6		0x86dd
 #define NET_ETH_PTYPE_LLDP		0x88cc
+#define NET_ETH_PTYPE_PNIO		0x8892
 #define NET_ETH_PTYPE_PTP		0x88f7
 #define NET_ETH_PTYPE_TSN		0x22f0 /* TSN (IEEE 1722) packet */
 #define NET_ETH_PTYPE_VLAN		0x8100
