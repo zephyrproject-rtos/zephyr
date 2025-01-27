@@ -46,7 +46,7 @@
  */
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
-static ALWAYS_INLINE void clock_init(void)
+void __weak clock_init(void)
 {
 
 #ifdef CONFIG_SOC_LPC54114_M4

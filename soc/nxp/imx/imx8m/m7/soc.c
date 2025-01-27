@@ -80,7 +80,7 @@ const ccm_analog_integer_pll_config_t g_sysPll3Config = {
 	.postDiv = 2U, /*!< SYSTEM PLL3 frequency  = 600MHZ */
 };
 
-static void SOC_ClockInit(void)
+void __weak SOC_ClockInit(void)
 {
 	/*
 	 * The following steps just show how to configure the PLL clock sources using the clock
