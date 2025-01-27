@@ -60,7 +60,7 @@ static void nsem_cleanup(struct nsem_obj *nsem)
 	}
 }
 
-/* Remove a named semaphore if it isn't unsed */
+/* Remove a named semaphore if it isn't used */
 static void nsem_unref(struct nsem_obj *nsem)
 {
 	nsem->ref_count -= 1;
@@ -265,7 +265,7 @@ sem_t *sem_open(const char *name, int oflags, ...)
 		goto unlock;
 	}
 
-	/* Named sempahore doesn't exist, try to create new one */
+	/* Named semaphore doesn't exist, try to create new one */
 
 	if ((oflags & O_CREAT) == 0) {
 		errno = ENOENT;
