@@ -40,5 +40,10 @@
 			label = "coredump-partition";
 			reg = <0x3F0000 DT_SIZE_K(4)>;
 		};
+
+		lpcore_partition: partition@3F1000 {
+			label = "lpcore-partition";
+			reg = <0x3F1000 DT_SIZE_K(8)>;
+		};
 	};
 };

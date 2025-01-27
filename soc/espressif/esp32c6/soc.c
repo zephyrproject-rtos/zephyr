@@ -29,6 +29,9 @@
 #include <zephyr/toolchain/gcc.h>
 #include <soc.h>
 
+#ifndef CONFIG_MCUBOOT
+extern uint32_t _rtc_bss_start, _rtc_bss_end;
+#endif
 /*
  * This is written in C rather than assembly since, during the port bring up,
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack

@@ -105,7 +105,8 @@ static void esp32_clock_perip_init(void)
 	soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
 
 	if ((rst_reason != RESET_REASON_CPU0_MWDT0) && (rst_reason != RESET_REASON_CPU0_MWDT1) &&
-	    (rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU0_RTC_WDT)) {
+	    (rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU0_RTC_WDT) &&
+	    (rst_reason != RESET_REASON_CPU0_JTAG)) {
 
 		periph_ll_disable_clk_set_rst(PERIPH_UART1_MODULE);
 		periph_ll_disable_clk_set_rst(PERIPH_I2C0_MODULE);

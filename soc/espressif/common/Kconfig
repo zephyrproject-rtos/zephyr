@@ -26,7 +26,7 @@ config ESP_SIMPLE_BOOT
 
 config ESP_HEAP_RUNTIME
 	bool
-	default y
+	default y if !SOC_ESP32C6_LPCORE
 	help
 	  Enabling this will allocate SRAM area starting from the last linked data at the symbolic `_end`,
 	  ending at the last memory location that can be safely accessed (depending on a boot mode).

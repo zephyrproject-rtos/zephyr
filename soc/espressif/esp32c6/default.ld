@@ -66,9 +66,13 @@ MEMORY
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
 
+#if CONFIG_ULP_COPROC_ENABLED
+  lp_ram_seg(RW):    org = LPSRAM_IRAM_START + ULP_COPROC_RESERVE_MEM,
+                     len = LPSRAM_SIZE - ULP_COPROC_RESERVE_MEM - CONFIG_RESERVE_RTC_MEM
+#else
   lp_ram_seg(RW):    org = LPSRAM_IRAM_START,
                      len = 0x4000 - CONFIG_RESERVE_RTC_MEM
-
+#endif
   /* We reduced the size of lp_ram_seg by CONFIG_RESERVE_RTC_MEM value.
      It reserves the amount of LP memory that we use for this memory segment.
      This segment is intended for keeping:
@@ -184,7 +188,6 @@ SECTIONS
 #endif
 
   /* --- START OF RTC --- */
-
   .rtc.text :
   {
     . = ALIGN(4);
@@ -402,6 +405,7 @@ SECTIONS
     *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_sleep.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sleep_modes.*(.literal .literal.* .text .text.*)
     *libzephyr.a:systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
