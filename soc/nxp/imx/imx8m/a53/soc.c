@@ -58,7 +58,7 @@ static void soc_rdc_init(void)
 
 #endif
 
-static void soc_clock_init(void)
+__weak void soc_clock_init(void)
 {
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c3))
 	/* Set I2C source to SysPLL1 Div5 160MHZ */
