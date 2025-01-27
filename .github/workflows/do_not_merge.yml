@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: Check for label
         if: ${{ contains(github.event.*.labels.*.name, 'DNM') ||
+                contains(github.event.*.labels.*.name, 'DNM (manifest)') ||
                 contains(github.event.*.labels.*.name, 'TSC') ||
                 contains(github.event.*.labels.*.name, 'Architecture Review') ||
                 contains(github.event.*.labels.*.name, 'dev-review') }}
