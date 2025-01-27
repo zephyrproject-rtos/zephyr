@@ -84,7 +84,7 @@ static const sim_clock_config_t simConfig = {
  * clock.
  *
  */
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 

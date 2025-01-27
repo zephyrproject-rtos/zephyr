@@ -181,7 +181,7 @@ static void usb_device_clock_init(void)
 /**
  * @brief Initialize the system clock
  */
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 #ifdef CONFIG_SOC_MIMXRT685S_CM33
 	/* Configure LPOSC clock*/
