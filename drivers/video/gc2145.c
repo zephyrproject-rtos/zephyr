@@ -736,8 +736,7 @@ static int gc2145_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, ui
 		}
 		/* If writing failed wait 5ms before next attempt */
 		k_msleep(5);
-
-	} while (tries--);
+	} while (tries-- > 0);
 
 	LOG_ERR("failed to write 0x%x to 0x%x,", value, reg_addr);
 	return ret;
@@ -761,8 +760,7 @@ static int gc2145_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uin
 		}
 		/* If writing failed wait 5ms before next attempt */
 		k_msleep(5);
-
-	} while (tries--);
+	} while (tries-- > 0);
 
 	LOG_ERR("failed to read 0x%x register", reg_addr);
 	return ret;
