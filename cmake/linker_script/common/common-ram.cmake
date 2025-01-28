@@ -97,14 +97,6 @@ endif()
 #endif()
 #
 
-if(CONFIG_ZTEST)
-  zephyr_iterable_section(NAME ztest_suite_node GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
-  zephyr_iterable_section(NAME ztest_suite_stats GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
-  zephyr_iterable_section(NAME ztest_unit_test GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
-  zephyr_iterable_section(NAME ztest_test_rule GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
-  zephyr_iterable_section(NAME ztest_expected_result_entry GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
-endif()
-
 if(CONFIG_ZBUS)
   zephyr_iterable_section(NAME zbus_channel_observation_mask GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 1)
 endif()
