@@ -175,7 +175,6 @@ ZTEST(net_content_senml_cbor, test_put_s8)
 {
 	int ret;
 	int i;
-	uint16_t offset = 0;
 	int8_t value[] = { 0, INT8_MAX, INT8_MIN };
 
 	struct test_payload_buffer expected_payload[] = {
@@ -228,9 +227,11 @@ ZTEST(net_content_senml_cbor, test_put_s8)
 		},
 	};
 
-	test_msg.path.res_id = TEST_RES_S8;
-
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
+		context_reset();
+		test_msg.path.res_id = TEST_RES_S8;
+		uint16_t offset = 0;
+
 		test_s8 = value[i];
 
 		ret = do_read_op_senml_cbor(&test_msg);
@@ -263,7 +264,6 @@ ZTEST(net_content_senml_cbor, test_put_s16)
 {
 	int ret;
 	int i;
-	uint16_t offset = 0;
 	int16_t value[] = { 0, INT16_MAX, INT16_MIN };
 
 	struct test_payload_buffer expected_payload[] = {
@@ -316,9 +316,11 @@ ZTEST(net_content_senml_cbor, test_put_s16)
 		},
 	};
 
-	test_msg.path.res_id = TEST_RES_S16;
-
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
+		context_reset();
+		test_msg.path.res_id = TEST_RES_S16;
+		uint16_t offset = 0;
+
 		test_s16 = value[i];
 
 		ret = do_read_op_senml_cbor(&test_msg);
@@ -351,7 +353,6 @@ ZTEST(net_content_senml_cbor, test_put_s32)
 {
 	int ret;
 	int i;
-	uint16_t offset = 0;
 	int32_t value[] = { 0, INT32_MAX, INT32_MIN };
 
 	struct test_payload_buffer expected_payload[] = {
@@ -404,9 +405,10 @@ ZTEST(net_content_senml_cbor, test_put_s32)
 		},
 	};
 
-	test_msg.path.res_id = TEST_RES_S32;
-
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
+		context_reset();
+		test_msg.path.res_id = TEST_RES_S32;
+		uint16_t offset = 0;
 		test_s32 = value[i];
 
 		ret = do_read_op_senml_cbor(&test_msg);
@@ -439,7 +441,6 @@ ZTEST(net_content_senml_cbor, test_put_s64)
 {
 	int ret;
 	int i;
-	uint16_t offset = 0;
 	int64_t value[] = { 1, INT64_MIN, INT64_MAX };
 
 	struct test_payload_buffer expected_payload[] = {
@@ -492,9 +493,10 @@ ZTEST(net_content_senml_cbor, test_put_s64)
 		},
 	};
 
-	test_msg.path.res_id = TEST_RES_S64;
-
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
+		context_reset();
+		test_msg.path.res_id = TEST_RES_S64;
+		uint16_t offset = 0;
 		test_s64 = value[i];
 
 		ret = do_read_op_senml_cbor(&test_msg);
@@ -544,6 +546,8 @@ ZTEST(net_content_senml_cbor, test_put_string)
 	};
 
 	strcpy(test_string, "test_string");
+
+	context_reset();
 	test_msg.path.res_id = TEST_RES_STRING;
 
 	ret = do_read_op_senml_cbor(&test_msg);
@@ -571,7 +575,6 @@ ZTEST(net_content_senml_cbor, test_put_float)
 {
 	int ret;
 	int i;
-	uint16_t offset = 0;
 	double value[] = { 0.123, -0.987, 3., -10., 2.333, -123.125 };
 	struct test_payload_buffer expected_payload[] = {
 		{
@@ -672,9 +675,11 @@ ZTEST(net_content_senml_cbor, test_put_float)
 		}
 	};
 
-	test_msg.path.res_id = TEST_RES_FLOAT;
-
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
+		context_reset();
+		test_msg.path.res_id = TEST_RES_FLOAT;
+		uint16_t offset = 0;
+
 		test_float = value[i];
 
 		ret = do_read_op_senml_cbor(&test_msg);
@@ -706,7 +711,6 @@ ZTEST(net_content_senml_cbor, test_put_bool)
 {
 	int ret;
 	int i;
-	uint16_t offset = 0;
 	bool value[] = { true, false };
 	struct test_payload_buffer expected_payload[] = {
 		{
@@ -741,9 +745,11 @@ ZTEST(net_content_senml_cbor, test_put_bool)
 		}
 	};
 
-	test_msg.path.res_id = TEST_RES_BOOL;
-
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
+		context_reset();
+		test_msg.path.res_id = TEST_RES_BOOL;
+		uint16_t offset = 0;
+
 		test_bool = value[i];
 
 		ret = do_read_op_senml_cbor(&test_msg);
@@ -776,7 +782,6 @@ ZTEST(net_content_senml_cbor, test_put_objlnk)
 {
 	int ret;
 	int i;
-	uint16_t offset = 0;
 	struct lwm2m_objlnk value[] = {
 		{ 0, 0 }, { 1, 2 }, { LWM2M_OBJLNK_MAX_ID, LWM2M_OBJLNK_MAX_ID }
 	};
@@ -834,9 +839,11 @@ ZTEST(net_content_senml_cbor, test_put_objlnk)
 		},
 	};
 
-	test_msg.path.res_id = TEST_RES_OBJLNK;
-
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
+		context_reset();
+		test_msg.path.res_id = TEST_RES_OBJLNK;
+		uint16_t offset = 0;
+
 		test_objlnk = value[i];
 
 		ret = do_read_op_senml_cbor(&test_msg);
@@ -886,6 +893,8 @@ static void test_put_opaque(void)
 	};
 
 	memcpy(test_opaque, "test_opaque", 11 * sizeof(uint8_t));
+
+	context_reset();
 	test_msg.path.res_id = TEST_RES_OPAQUE;
 
 	ret = do_read_op_senml_cbor(&test_msg);
@@ -930,7 +939,9 @@ ZTEST(net_content_senml_cbor, test_put_time)
 		.len = 22
 	};
 
+	context_reset();
 	test_msg.path.res_id = TEST_RES_TIME;
+
 	test_time = value;
 
 	ret = do_read_op_senml_cbor(&test_msg);

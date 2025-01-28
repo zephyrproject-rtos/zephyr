@@ -379,6 +379,11 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 		return ret;
 	}
 
+	ret = lwm2m_check_header_boundary(msg->cpkt.offset);
+	if (ret < 0) {
+		return ret;
+	}
+
 	payload_size = MIN(complete_payload_len - block_num * block_size_bytes, block_size_bytes);
 	ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt),
 			 complete_payload + (block_num * block_size_bytes), payload_size);
@@ -487,6 +492,17 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 	k_mutex_init(&client_ctx->lock);
 }
 /* utility functions */
+
+int lwm2m_check_header_boundary(const uint16_t offset)
+{
+	if (offset >= CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE) {
+		LOG_ERR("CoAP header size exceeded, increase the value of %s to at least %" PRIu16
+			"",
+			"CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE", offset);
+		return -ENOMEM;
+	}
+	return 0;
+}
 
 int coap_options_to_path(struct coap_option *opt, int options_count,
 				struct lwm2m_obj_path *path)
@@ -1817,6 +1833,11 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 		return ret;
 	}
 
+	ret = lwm2m_check_header_boundary(msg->out.out_cpkt->offset);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* store original path values so we can change them during processing */
 	memcpy(&temp_path, &msg->path, sizeof(temp_path));
 
@@ -1913,6 +1934,11 @@ int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 	}
 
 	ret = coap_packet_append_payload_marker(msg->out.out_cpkt);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lwm2m_check_header_boundary(msg->cpkt.offset);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2912,7 +2938,12 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		}
 
 		client_ctx->processed_req = NULL;
-		lwm2m_send_message_async(msg);
+		r = lwm2m_send_message_async(msg);
+		if (r < 0) {
+			LOG_ERR("Failed to send response (err: %d)", r);
+			lwm2m_reset_message(msg, true);
+			return;
+		}
 	} else {
 		LOG_DBG("No handler for response");
 	}
@@ -3242,6 +3273,11 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 	ret = coap_packet_append_payload_marker(msg->out.out_cpkt);
 	if (ret < 0) {
 		LOG_ERR("Error appending payload marker: %d", ret);
+		return ret;
+	}
+
+	ret = lwm2m_check_header_boundary(msg->cpkt.offset);
+	if (ret < 0) {
 		return ret;
 	}
 
