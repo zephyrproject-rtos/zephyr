@@ -683,7 +683,7 @@ static void reset_scan_data(void)
 static void handle_scan_result(void *pvMsg)
 {
 	tstrM2mWifiscanResult *pstrScanResult = (tstrM2mWifiscanResult *)pvMsg;
-	struct wifi_scan_result result;
+	struct wifi_scan_result result = { 0 };
 
 	if (!w1500_data.scan_cb) {
 		return;
