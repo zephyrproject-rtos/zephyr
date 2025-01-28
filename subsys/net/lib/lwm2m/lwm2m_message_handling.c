@@ -389,7 +389,7 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 	return 0;
 }
 
-STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
+STATIC int prepare_msg_for_block_send(struct lwm2m_message *msg)
 {
 	int ret;
 	uint16_t len;
@@ -404,7 +404,7 @@ STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 	msg->cpkt.max_len = MAX_PACKET_SIZE;
 
 	payload = coap_packet_get_payload(&msg->body_encode_buffer, &len);
-	if (len <= CONFIG_LWM2M_COAP_MAX_MSG_SIZE) {
+	if (len <= CONFIG_LWM2M_COAP_BLOCK_SIZE) {
 
 		/* copy the packet */
 		ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt), msg->body_encode_buffer.data,
@@ -715,7 +715,7 @@ int lwm2m_send_message_async(struct lwm2m_message *msg)
 
 	/* check if body encode buffer is in use => packet is not yet prepared for send */
 	if (msg->body_encode_buffer.data == msg->cpkt.data) {
-		int ret = prepare_msg_for_send(msg);
+		int ret = prepare_msg_for_block_send(msg);
 
 		if (ret) {
 			lwm2m_reset_message(msg, true);

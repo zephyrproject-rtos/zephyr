@@ -276,8 +276,8 @@ config LWM2M_COAP_BLOCK_SIZE
 	default 256
 	range 64 1024
 	help
-	  CoAP block size used by LwM2M when performing block-wise
-	  transfers. Possible values: 64, 128, 256, 512 and 1024.
+	  CoAP block size used by LwM2M when performing block-wise transfers for block1 and block2.
+	  Possible values: 64, 128, 256, 512 and 1024.
 
 config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
 	int "Room for CoAP header data"
@@ -286,12 +286,14 @@ config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
 	help
 	  Extra room allocated to handle CoAP header data
 
+if !LWM2M_COAP_BLOCK_TRANSFER
 config LWM2M_COAP_MAX_MSG_SIZE
 	int "LWM2M CoAP maximum message size"
 	default LWM2M_COAP_BLOCK_SIZE
 	help
-	  CoAP message size used by LWM2M. Minimum is the block size used
-	  in blockwise transfers.
+	  CoAP message size used by LWM2M block1 transfer is disabled. Minimum is the block size used
+	  in block-wise transfers.
+endif # !LWM2M_COAP_BLOCK_TRANSFER
 
 config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
 	int "Size of the validation buffer for the incoming data"

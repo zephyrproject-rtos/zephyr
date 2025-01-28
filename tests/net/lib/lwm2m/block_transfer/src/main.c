@@ -10,7 +10,7 @@
 #include <zephyr/ztest.h>
 
 /* Declaration of 'private' function */
-int prepare_msg_for_send(struct lwm2m_message *msg);
+int prepare_msg_for_block_send(struct lwm2m_message *msg);
 int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_num,
 			     enum coap_block_size block_size);
 int request_output_block_ctx(struct coap_block_context **ctx);
@@ -127,7 +127,7 @@ ZTEST_F(net_block_transfer, test_one_block_with_big_buffer)
 		      "Block was not filled as expected");
 
 	/*  Act */
-	ret = prepare_msg_for_send(msg);
+	ret = prepare_msg_for_block_send(msg);
 	zassert_equal(0, ret, "Preparing message for sending failed");
 
 	/*  Assert */
@@ -197,7 +197,7 @@ ZTEST_F(net_block_transfer, test_build_first_block_for_send)
 	zassert_not_equal(msg->msg_data, msg->cpkt.data, "Buffer for block data is not yet in use");
 
 	/*  Act */
-	ret = prepare_msg_for_send(msg);
+	ret = prepare_msg_for_block_send(msg);
 	zassert_equal(ret, 0, "Could not create first block");
 
 	/*  Assert */
@@ -254,7 +254,7 @@ ZTEST_F(net_block_transfer, test_build_blocks_for_send_exactly_2_blocks)
 	zassert_not_equal(msg->msg_data, msg->cpkt.data, "Buffer for block data is not yet in use");
 
 	/*  block 0 */
-	ret = prepare_msg_for_send(msg);
+	ret = prepare_msg_for_block_send(msg);
 	zassert_equal(ret, 0, "Could not create first block");
 
 	zassert_equal(msg->msg_data, msg->cpkt.data, "Buffer for block data is not in use");
@@ -330,7 +330,7 @@ ZTEST_F(net_block_transfer, test_build_blocks_for_send_more_than_2_blocks)
 	zassert_not_equal(msg->msg_data, msg->cpkt.data, "Buffer for block data is not yet in use");
 
 	/*  block 0 */
-	ret = prepare_msg_for_send(msg);
+	ret = prepare_msg_for_block_send(msg);
 	zassert_equal(ret, 0, "Could not create first block");
 
 	zassert_equal(msg->msg_data, msg->cpkt.data, "Buffer for block data is not in use");
