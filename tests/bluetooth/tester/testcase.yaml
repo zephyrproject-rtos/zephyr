@@ -16,6 +16,20 @@ tests:
       - frdm_rw612
     extra_configs:
       - CONFIG_NXP_MONOLITHIC_NBU=n
+  bluetooth.general.tester_hci_ipc:
+    build_only: true
+    harness: bluetooth
+    platform_allow:
+      - qemu_x86
+      - native_sim
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    extra_args:
+      # Build config used by AutoPTS for nRF53
+      - EXTRA_CONF_FILE="hci_ipc.conf"
+    tags: bluetooth
+    sysbuild: true
   bluetooth.general.tester_le_audio:
     build_only: true
     platform_allow:
