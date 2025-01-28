@@ -262,10 +262,7 @@ static inline char z_log_minimal_level_to_char(int level)
 			     GET_ARG_N(1, __VA_ARGS__))
 
 #define LOG_POINTERS_VALIDATE(string_ok, ...) \
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
-	string_ok = Z_CBPRINTF_POINTERS_VALIDATE(__VA_ARGS__); \
-	_Pragma("GCC diagnostic pop")
+	string_ok = Z_CBPRINTF_POINTERS_VALIDATE(__VA_ARGS__);
 #else
 #define LOG_POINTERS_VALIDATE(string_ok, ...) string_ok = true
 #define LOG_STRING_WARNING(_mode, _src, ...)

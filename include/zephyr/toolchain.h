@@ -124,25 +124,299 @@
 #endif
 
 /**
- * @def TOOLCHAIN_IGNORE_WSHADOW_BEGIN
- * @brief Begin of block to ignore -Wshadow.
- *
- * To be used inside another macro.
- * Only for toolchain supporting _Pragma("GCC diagnostic ...").
+ * @def TOOLCHAIN_PRAGMA
+ * @brief Helper for using pragma in macros.
  */
-#ifndef TOOLCHAIN_IGNORE_WSHADOW_BEGIN
-#define TOOLCHAIN_IGNORE_WSHADOW_BEGIN
+#ifdef TOOLCHAIN_HAS_PRAGMA_DIAG
+#define TOOLCHAIN_PRAGMA(x) _Pragma(#x)
+#else
+#define TOOLCHAIN_PRAGMA(x)
 #endif
 
 /**
- * @def TOOLCHAIN_IGNORE_WSHADOW_END
- * @brief End of block to ignore -Wshadow.
+ * @def TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER
+ * @brief Toolchain-specific warning for taking the address of a packed member.
  *
- * To be used inside another macro.
- * Only for toolchain supporting _Pragma("GCC diagnostic ...").
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
  */
-#ifndef TOOLCHAIN_IGNORE_WSHADOW_END
-#define TOOLCHAIN_IGNORE_WSHADOW_END
+#ifndef TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER
+#define TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_ALLOC_SIZE_LARGER_THAN
+ * @brief Toolchain-specific warning for allocations larger than a given size.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_ALLOC_SIZE_LARGER_THAN
+#define TOOLCHAIN_WARNING_ALLOC_SIZE_LARGER_THAN
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_ARRAY_BOUNDS
+ * @brief Toolchain-specific warning for array bounds violations.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_ARRAY_BOUNDS
+#define TOOLCHAIN_WARNING_ARRAY_BOUNDS
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_ATTRIBUTES
+ * @brief Toolchain-specific warning for unknown attributes.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_ATTRIBUTES
+#define TOOLCHAIN_WARNING_ATTRIBUTES
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_DANGLING_POINTER
+ * @brief Toolchain-specific warning for dangling pointers.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_DANGLING_POINTER
+#define TOOLCHAIN_WARNING_DANGLING_POINTER
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR
+ * @brief Toolchain-specific warning for deleting a pointer to an object
+ * with a non-virtual destructor.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR
+#define TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_EXTRA
+ * @brief Toolchain-specific warning for extra warnings.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_EXTRA
+#define TOOLCHAIN_WARNING_EXTRA
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_FORMAT_TRUNCATION
+ * @brief Toolchain-specific warning for format truncation.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_FORMAT_TRUNCATION
+#define TOOLCHAIN_WARNING_FORMAT_TRUNCATION
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_INFINITE_RECURSION
+ * @brief Toolchain-specific warning for infinite recursion.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_INFINITE_RECURSION
+#define TOOLCHAIN_WARNING_INFINITE_RECURSION
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_INTEGER_OVERFLOW
+ * @brief Toolchain-specific warning for integer overflow.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_INTEGER_OVERFLOW
+#define TOOLCHAIN_WARNING_INTEGER_OVERFLOW
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_NONNULL
+ * @brief Toolchain-specific warning for null pointer arguments to functions marked with "nonnull".
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_NONNULL
+#define TOOLCHAIN_WARNING_NONNULL
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_OVERFLOW
+ * @brief Toolchain-specific warning for integer overflow.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_OVERFLOW
+#define TOOLCHAIN_WARNING_OVERFLOW
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_POINTER_ARITH
+ * @brief Toolchain-specific warning for pointer arithmetic.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_POINTER_ARITH
+#define TOOLCHAIN_WARNING_POINTER_ARITH
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_PRAGMAS
+ * @brief Toolchain-specific warning for unknown pragmas.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_PRAGMAS
+#define TOOLCHAIN_WARNING_PRAGMAS
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_SHADOW
+ * @brief Toolchain-specific warning for shadow variables.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_SHADOW
+#define TOOLCHAIN_WARNING_SHADOW
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_SIZEOF_ARRAY_DECAY
+ * @brief Toolchain-specific warning for sizeof array decay.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_SIZEOF_ARRAY_DECAY
+#define TOOLCHAIN_WARNING_SIZEOF_ARRAY_DECAY
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_STRINGOP_OVERFLOW
+ * @brief Toolchain-specific warning for stringop overflow.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_STRINGOP_OVERFLOW
+#define TOOLCHAIN_WARNING_STRINGOP_OVERFLOW
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_STRINGOP_TRUNCATION
+ * @brief Toolchain-specific warning for stringop truncation.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_STRINGOP_TRUNCATION
+#define TOOLCHAIN_WARNING_STRINGOP_TRUNCATION
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_UNUSED_FUNCTION
+ * @brief Toolchain-specific warning for unused function.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_UNUSED_FUNCTION
+#define TOOLCHAIN_WARNING_UNUSED_FUNCTION
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_UNUSED_LABEL
+ * @brief Toolchain-specific warning for unused labels.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_UNUSED_LABEL
+#define TOOLCHAIN_WARNING_UNUSED_LABEL
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_UNUSED_VARIABLE
+ * @brief Toolchain-specific warning for unused variables.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_UNUSED_VARIABLE
+#define TOOLCHAIN_WARNING_UNUSED_VARIABLE
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_WARNING
+ * @brief Disable the specified compiler warning for all compilers.
+ */
+#ifndef TOOLCHAIN_DISABLE_WARNING
+#define TOOLCHAIN_DISABLE_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_WARNING
+ * @brief Re-enable the specified compiler warning for all compilers.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_WARNING
+#define TOOLCHAIN_ENABLE_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_CLANG_WARNING
+ * @brief Disable the specified compiler warning for clang.
+ */
+#ifndef TOOLCHAIN_DISABLE_CLANG_WARNING
+#define TOOLCHAIN_DISABLE_CLANG_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_CLANG_WARNING
+ * @brief Re-enable the specified compiler warning for clang.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_CLANG_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_CLANG_WARNING
+#define TOOLCHAIN_ENABLE_CLANG_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_GCC_WARNING
+ * @brief Disable the specified compiler warning for gcc.
+ */
+#ifndef TOOLCHAIN_DISABLE_GCC_WARNING
+#define TOOLCHAIN_DISABLE_GCC_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_GCC_WARNING
+ * @brief Re-enable the specified compiler warning for gcc.
+ *
+ * Can only be used after a call to @ref TOOLCHAIN_DISABLE_GCC_WARNING.
+ */
+#ifndef TOOLCHAIN_ENABLE_GCC_WARNING
+#define TOOLCHAIN_ENABLE_GCC_WARNING(warning)
 #endif
 
 /*
