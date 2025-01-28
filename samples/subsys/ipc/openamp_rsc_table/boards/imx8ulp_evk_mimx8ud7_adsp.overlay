@@ -1,0 +1,35 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/*
+		 * shared memory reserved for the inter-processor communication
+		 */
+		zephyr,ipc_shm = &dspsram3;
+		zephyr,ipc = &mailbox0;
+	};
+
+	dspsram3: memory@1bef0000 {
+		compatible = "mmio-sram";
+		/*
+		 * second value for physical address register is not used,
+		 * is just required by devicetree 'reg' property
+		 */
+		reg = <0x1bef0000 0x110000>, <0x8fef0000 0x110000>;
+	};
+
+	mailbox0: mailbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu3 0>, <&mu3 1>;
+		mbox-names = "tx", "rx";
+		status = "okay";
+	};
+};
+
+&mu3 {
+	status = "okay";
+};
