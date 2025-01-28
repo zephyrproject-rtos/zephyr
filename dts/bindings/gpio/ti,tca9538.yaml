@@ -2,7 +2,7 @@
 # Copyright (c) 2021, Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-description: TCA9538 GPIO node
+description: TCA9538 GPIO node. Supports variants such as TCA9536 which have 8 or less outputs
 
 compatible: "ti,tca9538"
 
@@ -14,7 +14,6 @@ properties:
 
   ngpios:
     required: true
-    const: 8
     description: |
       Number of GPIOs available on port expander.
 
