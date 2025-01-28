@@ -103,7 +103,7 @@
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() ALIAS_OF(real_func)
 
-#if TOOLCHAIN_GCC_VERSION < 400500
+#if TOOLCHAIN_GCC_VERSION < 40500
 #define __builtin_unreachable() __builtin_trap()
 #endif
 
