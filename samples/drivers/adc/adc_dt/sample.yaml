@@ -35,6 +35,7 @@ tests:
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_mcxc242
       - ucans32k1sic
+      - xg24_rb4187c
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840

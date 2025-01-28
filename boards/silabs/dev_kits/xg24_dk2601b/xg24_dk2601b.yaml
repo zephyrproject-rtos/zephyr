@@ -15,6 +15,7 @@ supported:
   - dma
   - watchdog
   - clock_control
+  - adc
 testing:
   ignore_tags:
     - pm
