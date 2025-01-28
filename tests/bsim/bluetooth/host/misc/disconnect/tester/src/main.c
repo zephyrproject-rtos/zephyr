@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 
@@ -188,8 +189,7 @@ static void handle_att_write(struct net_buf *buf)
 
 	static uint8_t ccc_write[2] = {0x03, 0x00};
 
-	ASSERT(buf->len == 2, "unexpected write length: %d\n", buf->len);
-	ASSERT(memcmp(buf->data, ccc_write, sizeof(ccc_write)) == 0, "bad data\n");
+	ASSERT(z_util_eq(buf->data, buf->len, ccc_write, sizeof(ccc_write)), "bad data\n");
 
 	send_write_rsp();
 }
