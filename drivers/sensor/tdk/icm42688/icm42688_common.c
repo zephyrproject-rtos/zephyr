@@ -255,8 +255,11 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		 * temp/accel/gyro en fields in cfg
 		 */
 		uint8_t fifo_cfg1 =
-			FIELD_PREP(BIT_FIFO_TEMP_EN, 1) | FIELD_PREP(BIT_FIFO_GYRO_EN, 1) |
-			FIELD_PREP(BIT_FIFO_ACCEL_EN, 1) | FIELD_PREP(BIT_FIFO_TMST_FSYNC_EN, 1);
+			FIELD_PREP(BIT_FIFO_TEMP_EN, 1) |
+			FIELD_PREP(BIT_FIFO_GYRO_EN, 1) |
+			FIELD_PREP(BIT_FIFO_ACCEL_EN, 1) |
+			FIELD_PREP(BIT_FIFO_TMST_FSYNC_EN, 1) |
+			FIELD_PREP(BIT_FIFO_HIRES_EN, 1);
 
 		LOG_DBG("FIFO_CONFIG1 (0x%x) 0x%x", REG_FIFO_CONFIG1, fifo_cfg1);
 		res = icm42688_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG1, fifo_cfg1);
