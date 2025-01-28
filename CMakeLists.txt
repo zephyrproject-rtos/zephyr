@@ -1085,10 +1085,19 @@ if(CONFIG_CODE_DATA_RELOCATION)
 endif()
 
 if(CONFIG_USERSPACE)
-  zephyr_get_compile_options_for_lang_as_string(C compiler_flags_priv)
+  # Go for raw properties here since zephyr_get_compile_options_for_lang()
+  # processes the list of options, and wraps it in a $<JOIN thing. When
+  # generating the build systems this leads to some interesting command lines,
+  # with SHELL: not being present and other "random" list-join related issues
+  # (e.g. for IAR toolchains the lists were joined with "gnu" postfixed on a
+  # bunch of entries).
+  get_property(compiler_flags_priv TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
   string(REPLACE "$<TARGET_PROPERTY:compiler,coverage>" ""
-         NO_COVERAGE_FLAGS "${compiler_flags_priv}"
-  )
+    KOBJECT_HASHING_COMPILE_OPTIONS "${compiler_flags_priv}")
+
+  list(APPEND KOBJECT_HASHING_COMPILE_OPTIONS
+                  $<TARGET_PROPERTY:compiler,no_function_sections>
+                  $<TARGET_PROPERTY:compiler,no_data_sections>)
 
   set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
@@ -1288,11 +1297,9 @@ if(CONFIG_USERSPACE)
   add_library(
     kobj_prebuilt_hash_output_lib
     OBJECT ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
-    )
+  )
 
-  set_source_files_properties(${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
-    PROPERTIES COMPILE_FLAGS
-    "${NO_COVERAGE_FLAGS} -fno-function-sections -fno-data-sections")
+  target_compile_options(kobj_prebuilt_hash_output_lib PRIVATE "${KOBJECT_HASHING_COMPILE_OPTIONS}")
 
   target_compile_definitions(kobj_prebuilt_hash_output_lib
     PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
@@ -1500,9 +1507,7 @@ if(CONFIG_USERSPACE)
     OBJECT ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_SRC}
     )
 
-  set_source_files_properties(${KOBJECT_HASH_OUTPUT_SRC}
-    PROPERTIES COMPILE_FLAGS
-    "${NO_COVERAGE_FLAGS} -fno-function-sections -fno-data-sections")
+  target_compile_options(kobj_hash_output_lib PRIVATE "${KOBJECT_HASHING_COMPILE_OPTIONS}")
 
   target_compile_definitions(kobj_hash_output_lib
     PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
