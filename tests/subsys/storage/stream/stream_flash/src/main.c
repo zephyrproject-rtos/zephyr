@@ -424,80 +424,6 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_whole_page)
 	/* Second page should not be erased */
 	VERIFY_WRITTEN(page_size, page_size);
 }
-
-/* Erase that never completes successfully */
-static int bad_erase(const struct device *dev, off_t offset, size_t size)
-{
-	return -EINVAL;
-}
-
-ZTEST(lib_stream_flash, test_stream_flash_erase_page)
-{
-	int rc;
-
-	init_target();
-
-	/* Write something to make page dirty */
-	rc = flash_write(ctx.fdev, FLASH_BASE, write_buf, BUF_LEN);
-	zassert_equal(rc, 0, "expected success");
-
-	rc = stream_flash_erase_page(&ctx, FLASH_BASE);
-	zassert_equal(rc, 0, "expected success");
-
-	VERIFY_ERASED(0, page_size);
-
-	/*
-	 * Test failure in erase does not change context.
-	 * The test is done by replacing erase function of device API with fake
-	 * one that returns with an error, invoking the erase procedure
-	 * and than comparing state of context prior to call to the one after.
-	 */
-	struct device fake_dev = *ctx.fdev;
-	struct flash_driver_api fake_api = *(struct flash_driver_api *)ctx.fdev->api;
-	struct stream_flash_ctx bad_ctx = ctx;
-	struct stream_flash_ctx cmp_ctx;
-
-	fake_api.erase = bad_erase;
-	fake_dev.api = &fake_api;
-	bad_ctx.fdev = &fake_dev;
-	/* Triger erase attempt */
-	bad_ctx.last_erased_page_start_offset = FLASH_BASE - 16;
-	cmp_ctx = bad_ctx;
-
-	rc = stream_flash_erase_page(&bad_ctx, FLASH_BASE);
-	zassert_equal(memcmp(&bad_ctx, &cmp_ctx, sizeof(bad_ctx)), 0,
-		      "Ctx should not get altered");
-	zassert_equal(rc, -EINVAL, "Expected failure");
-
-	/* False dev with erase set to NULL to avoid actual erase */
-	fake_api.erase = NULL;
-	struct stream_flash_ctx range_test_ctx = {
-		.offset = 1024,
-		.available = 2048,
-		.fdev = &fake_dev,
-		.last_erased_page_start_offset = -1,
-	};
-
-	rc = stream_flash_erase_page(&range_test_ctx, 1024);
-	zassert_equal(rc, -ENOSYS, "%d No device attached - expected failure", rc);
-
-	rc = stream_flash_erase_page(&range_test_ctx, 1023);
-	zassert_equal(rc, -ERANGE, "Expected failure - offset before designated area");
-
-	rc = stream_flash_erase_page(&range_test_ctx,
-				     range_test_ctx.offset + range_test_ctx.available + 1);
-	zassert_equal(rc, -ERANGE, "Expected failure - offset after designated area");
-}
-#else
-ZTEST(lib_stream_flash, test_stream_flash_erase_page)
-{
-	ztest_test_skip();
-}
-
-ZTEST(lib_stream_flash, test_stream_flash_buffered_write_whole_page)
-{
-	ztest_test_skip();
-}
 #endif
 
 static size_t write_and_save_progress(size_t bytes, const char *save_key)
@@ -580,8 +506,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 	size_t bytes_written_old;
 	size_t bytes_written;
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	off_t erase_offset_old;
-	off_t erase_offset;
+	size_t erased_up_to_old;
 #endif
 
 	clear_all_progress();
@@ -589,7 +514,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 
 	bytes_written_old = stream_flash_bytes_written(&ctx);
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	erase_offset_old = ctx.last_erased_page_start_offset;
+	erased_up_to_old = ctx.erased_up_to;
 #endif
 
 	/* Test load with zero bytes_written */
@@ -603,8 +528,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 	zassert_equal(bytes_written, bytes_written_old,
 		      "expected bytes_written to be unchanged");
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	erase_offset = ctx.last_erased_page_start_offset;
-	zassert_equal(erase_offset, erase_offset_old,
+	zassert_equal(ctx.erased_up_to, erased_up_to_old,
 		      "expected erase offset to be unchanged");
 #endif
 
@@ -615,8 +539,8 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 	bytes_written_old = write_and_save_progress(page_size * 2,
 						    progress_key);
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	erase_offset_old = ctx.last_erased_page_start_offset;
-	zassert_true(erase_offset_old != 0, "expected pages to be erased");
+	zassert_false(ctx.erased_up_to == 0, "expected pages to be erased");
+	erased_up_to_old = ctx.erased_up_to;
 #endif
 
 	init_target();
@@ -626,7 +550,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 	zassert_equal(bytes_written, bytes_written_old,
 		      "expected bytes_written to be loaded");
 #if defined(CONFIG_STREAM_FLASH_ERASE)
-	zassert_equal(erase_offset_old, ctx.last_erased_page_start_offset,
+	zassert_equal(erased_up_to_old, ctx.erased_up_to,
 		      "expected last erased page offset to be loaded");
 #endif
 
@@ -647,7 +571,6 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_clear)
 	size_t bytes_written;
 #ifdef CONFIG_STREAM_FLASH_ERASE
 	off_t erase_offset_old;
-	off_t erase_offset;
 #endif
 
 	clear_all_progress();
@@ -663,7 +586,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_clear)
 
 	bytes_written_old = stream_flash_bytes_written(&ctx);
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	erase_offset_old = ctx.last_erased_page_start_offset;
+	erase_offset_old = ctx.erased_up_to;
 #endif
 
 	rc = stream_flash_progress_load(&ctx, progress_key);
@@ -674,8 +597,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_clear)
 		      "expected bytes_written to be unchanged");
 
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	erase_offset = ctx.last_erased_page_start_offset;
-	zassert_equal(erase_offset, erase_offset_old,
+	zassert_equal(ctx.erased_up_to, erase_offset_old,
 		      "expected erase offset to be unchanged");
 #endif
 }

@@ -35,6 +35,20 @@ config STREAM_FLASH_ERASE
 	help
 	  If disabled an external actor must erase the flash area being written
 	  to.
+	  Option available only if there is at least one device in, a configuration,
+	  that requires erase prior to write.
+
+config STREAM_FLASH_ERASE_ONLY_WHEN_SUPPORTED
+	bool "Check if device supports erase prior to attempting one"
+	depends on STREAM_FLASH_ERASE
+	depends on FLASH_HAS_NO_EXPLICIT_ERASE
+	help
+	  This is used in stream flash code to exclude invocation of erase on devices that do not
+	  have such requirement prior to write nor support rase as a way to increase write speed.
+	  Option is available only if there is a mix of devices, in a configuration, where some
+	  support erase and some do not. If user is sure to not use Stream Flash with devices that
+	  have no support for erase, this option may be disabled to discard small amount of code
+	  from final application.
 
 config STREAM_FLASH_PROGRESS
 	bool "Persistent stream write progress"
