@@ -53,6 +53,8 @@ In these other cases, however, manual wiring is necessary:
      - connect PWM1 (PA8) to an LED
    * - :zephyr:board:`nucleo_wb55rg`
      - connect PWM1 (PA8) to an LED
+   * - :zephyr:board:`nucleo_wba55cg`
+     - connect PWM2 (PA9) to an LED
    * - :zephyr:board:`esp32_devkitc_wroom`
      - connect GPIO2 to an LED
    * - :zephyr:board:`esp32s2_saola`
