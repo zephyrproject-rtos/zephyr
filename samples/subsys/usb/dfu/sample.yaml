@@ -12,8 +12,21 @@ common:
     - mimxrt1060_evk@B/mimxrt1062/qspi
     - mimxrt1060_evk@C/mimxrt1062/qspi
     - sam4l_ek
+    - samd21_xpro
     - same54_xpro
+    - saml21_xpro
     - samr21_xpro
+    - samr34_xpro
+    - adafruit_feather_m4_express
+    - adafruit_grand_central_m4_express
+    - adafruit_itsybitsy_m4_express
+    - adafruit_trinket_m0
+    - arduino_nano_33_iot
+    - arduino_mkrzero
+    - arduino_zero
+    - seeeduino_xiao
+    - serpente
+    - wio_terminal
     - mimxrt1050_evk/mimxrt1052/hyperflash
     - mimxrt1050_evk/mimxrt1052/qspi
     - mimxrt1060_evk/mimxrt1062/hyperflash
