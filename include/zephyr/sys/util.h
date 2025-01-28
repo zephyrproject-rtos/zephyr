@@ -783,6 +783,34 @@ static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const ui
 	mem_xor_n(dst, src1, src2, 16);
 }
 
+/**
+ * @brief Returns the number of bits set in a value
+ *
+ * @param value The value to count number of bits set of
+ * @param len The number of octets in @p value
+ */
+static inline size_t count_bits(const void *value, size_t len)
+{
+	const uint8_t *value_u8 = (const uint8_t *)value;
+	size_t cnt = 0U;
+
+	for (size_t i = 0U; i < len; i++) {
+		if (value_u8[i] != 0U) {
+#ifdef POPCOUNT
+			cnt += POPCOUNT(value_u8[i]);
+#else
+			/* Implements Brian Kernighan’s Algorithm to count bits */
+			while (value_u8[i]) {
+				cnt += value_u8[i] & 1;
+				value_u8[i] >>= 1;
+			}
+#endif
+		}
+	}
+
+	return cnt;
+}
+
 #ifdef __cplusplus
 }
 #endif
