@@ -33,6 +33,8 @@ you're reading.
 Content Structure
 *****************
 
+.. _example_for_shorthand_codeblock:
+
 Tabs, spaces, and indenting
 ===========================
 
@@ -571,7 +573,7 @@ There's a shorthand for writing code blocks too: end the introductory paragraph 
 (``::``) and indent the code block content that follows it by three spaces.  On output, only one
 colon will be shown.  The code block will have no highlighting (i.e. ``none``). You may however use
 the :rst:dir:`highlight` directive to customize the default language used in your document (see for
-example how this is done at the beginning of this very document).
+example how this is done at the beginning of this very document in :ref:`example_for_shorthand_codeblock`).
 
 
 Links and Cross-References
