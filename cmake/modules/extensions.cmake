@@ -5361,6 +5361,36 @@ function(zephyr_linker_symbol)
   )
 endfunction()
 
+# Usage:
+#   zephyr_linker_generate_linker_settings_file([FILE <name>] [STRING <string>])
+#
+# Add the content generated so far by the zephyr_linker_* functions to a file
+# or string variable.
+#
+# FILE <name>  : File to be created
+# STRING <string>: String variable to be set
+
+function(zephyr_linker_generate_linker_settings_file)
+  set(single_args "FILE;STRING")
+  cmake_parse_arguments(GEN "" "${single_args}" "" ${ARGN})
+  set(CONTENT
+         "set(FORMAT \"$<TARGET_PROPERTY:linker,FORMAT>\" CACHE INTERNAL \"\")\n
+          set(ENTRY \"$<TARGET_PROPERTY:linker,ENTRY>\" CACHE INTERNAL \"\")\n
+          set(MEMORY_REGIONS \"$<TARGET_PROPERTY:linker,MEMORY_REGIONS>\" CACHE INTERNAL \"\")\n
+          set(GROUPS \"$<TARGET_PROPERTY:linker,GROUPS>\" CACHE INTERNAL \"\")\n
+          set(SECTIONS \"$<TARGET_PROPERTY:linker,SECTIONS>\" CACHE INTERNAL \"\")\n
+          set(SECTION_SETTINGS \"$<TARGET_PROPERTY:linker,SECTION_SETTINGS>\" CACHE INTERNAL \"\")\n
+          set(SYMBOLS \"$<TARGET_PROPERTY:linker,SYMBOLS>\" CACHE INTERNAL \"\")\n
+          set(INCLUDES \"$<TARGET_PROPERTY:linker,INCLUDES>\" CACHE INTERNAL \"\")\n
+         ")
+  if(DEFINED GEN_FILE)
+    file(GENERATE OUTPUT ${GEN_FILE} CONTENT "${CONTENT}")
+  endif()
+  if(DEFINED GEN_STRING)
+    set(${GEN_STRING} "${CONTENT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
 # Internal helper macro for zephyr_linker*() functions.
 # The macro will create a list of argument-value pairs for defined arguments
 # that can be passed on to linker script generators and processed as a CMake

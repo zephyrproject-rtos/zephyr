@@ -27,6 +27,11 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
 
   if(CONFIG_CMAKE_LINKER_GENERATOR)
+    # This should probably do something like:
+    # set(cmake_linker_script_settings ${PROJECT_BINARY_DIR}/include/generated/ld_script_settings_${linker_pass_define}.cmake)
+    # zephyr_linker_generate_linker_settings_file(FILE ${cmake_linker_script_settings})
+    # And pass the file to the generator
+
     add_custom_command(
       OUTPUT ${linker_script_gen}
       COMMAND ${CMAKE_COMMAND}
