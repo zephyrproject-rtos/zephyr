@@ -441,6 +441,8 @@ Libraries / Subsystems
 
 * ZBus
 
+ * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` no longer requires the system heap to exist.
+
 HALs
 ****
 
