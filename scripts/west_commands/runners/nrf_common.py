@@ -40,6 +40,9 @@ UICR_RANGES = {
         'Application': (0x0FFF8000, 0x0FFF8800),
         'Network': (0x0FFFA000, 0x0FFFA800),
     },
+    'nrf54l': {
+        'Application': (0x00FFD000, 0x00FFDA00),
+    },
     'nrf91': {
         'Application': (0x00FF8000, 0x00FF8800),
     },
