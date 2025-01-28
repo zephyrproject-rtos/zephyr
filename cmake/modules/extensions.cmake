@@ -5660,8 +5660,11 @@ function(add_llext_target target_name)
       SUFFIX ${CMAKE_C_OUTPUT_EXTENSION})
     set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
 
+    set(cpu_flag "$<FILTER:${zephyr_flags},INCLUDE,^-mcpu.*$>")
+
     # Add the llext flags to the linking step as well
     target_link_options(${llext_lib_target} PRIVATE
+      ${cpu_flag} # Force compiler and linker match
       ${LLEXT_APPEND_FLAGS}
     )
 
