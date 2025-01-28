@@ -1,0 +1,42 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config POSIX_SYSTEM_DATABASE_R
+	bool "POSIX System Database"
+	help
+	  Select 'y' here, and the system will support getgrgid_r(), getgrnam_r(), getpwnam_r(), and
+	  getpwuid_r().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+config POSIX_GETGR_R_SIZE_MAX
+	int "Initial size of getgrgid_r() and getgrnam_r() data buffers"
+	default 96
+	help
+	  This option sets the maximum size of the buffer for getgrgid_r() and getgrnam_r().
+
+	  The default size is derived from the formula below. Note, that the home directory and
+	  shell fields are not based on PATH_MAX, which can be excessively large.
+
+	  _POSIX_LOGIN_NAME_MAX + 1 +
+	  sizeof(void *) +
+	  sizeof("4294967295") + 1 +
+	  2 * (_POSIX_NAME_MAX + 1 + sizeof(void *))
+	  + sizeof(void *)
+
+config POSIX_GETPW_R_SIZE_MAX
+	int "Initial size of getpwnam_r() and getpwuid_r() data buffers"
+	default 64
+	help
+	  This option sets the maximum size of the buffer for getpwnam_r() and getpwuid_r().
+
+	  The default size is derived from the formula below. Note, that the home directory and
+	  shell fields are not based on PATH_MAX, which can be excessively large.
+
+	  _POSIX_LOGIN_NAME_MAX + 1 +
+	  sizeof("4294967295") + 1 +
+	  sizeof("4294967295") + 1 +
+	  _POSIX_NAME_MAX + 1 +
+	  _POSIX_NAME_MAX + 1
