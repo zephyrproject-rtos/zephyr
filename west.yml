@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: nandojve
+      url-base: https://github.com/nandojve
 
   group-filter: [-babblesim, -optional]
 
@@ -159,6 +161,12 @@ manifest:
     - name: hal_atmel
       revision: dde7a36d00bd5dafd1ffcd8d243dfbceeb20e856
       path: modules/hal/atmel
+      groups:
+        - hal
+    - name: hal_bouffalolab
+      remote: nandojve
+      path: modules/hal/bouffalolab
+      revision: sdk-v1.4.5
       groups:
         - hal
     - name: hal_espressif
