@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "ek_ra2a1-pinctrl.dtsi"
+#include "ek_ra2a1_interrupt_map.dtsi"
 
 / {
 	model = "Renesas EK-RA2A1";
@@ -83,15 +84,12 @@
 };
 
 &port_irq6 {
-	interrupts = <29 3>;
 	status = "okay";
 };
 
 &pwm0 {
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
-	interrupts = <28 1>, <31 1>;
-	interrupt-names = "gtioca", "overflow";
 	status = "okay";
 };
 
@@ -105,7 +103,5 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <DT_FREQ_M(1)>;
-	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
-	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 };

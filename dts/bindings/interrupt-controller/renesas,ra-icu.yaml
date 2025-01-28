@@ -1,0 +1,75 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA series Interrupt Controller Unit
+
+  The Renesas RA Interrupt including ICU interrupt event domain and NVIC interrupt domain.
+  This node use the DTS interrupt map feature to map ICU event to NVIC interrupt line.
+  This is an example for sci0 node.
+
+  &sci0 {
+    interrupt-parent = <&{/interrupt-controller-unit/sci0}>;
+    interrupts =  <RA_ICU_EVENT_SCI0_RXI>,
+                  <RA_ICU_EVENT_SCI0_TXI>,
+                  <RA_ICU_EVENT_SCI0_TEI>,
+                  <RA_ICU_EVENT_SCI0_ERI>;
+    interrupt-names = "rxi", "txi", "tei", "eri";
+  };
+
+  The ICU event can be got from here zephyr/include/zephyr/dt-bindings/interrupt-controller/renesas-ra-icu-event.h
+  To map RA_ICU_EVENT_SCI0_RXI event to NVIC, define it's interrupt map at &{/interrupt-controller-unit/sci0}
+  Refer to '2.4 Interrupts and Interrupt Mapping - Devicetree Specification' for parameters:
+  - https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#interrupts-and-interrupt-mapping
+
+  &interrupt-controller-unit {
+    sci0 {
+      #interrupt-cells = <1>;
+      interrupt-map-mask = <0 0xfff>;
+      interrupt-map = <
+        /* Map the RA_ICU_EVENT_SCI0_RXI event to NVIC: IRQn = 0, priority = 1 */
+        0 RA_ICU_EVENT_SCI0_RXI &nvic 0 0 1
+        /* Map the RA_ICU_EVENT_SCI0_TXI event to NVIC: IRQn = 1, priority = 1 */
+        0 RA_ICU_EVENT_SCI0_TXI &nvic 0 1 1
+        /* Map the RA_ICU_EVENT_SCI0_TEI event to NVIC: IRQn = 2, priority = 1 */
+        0 RA_ICU_EVENT_SCI0_TEI &nvic 0 2 1
+        /* Map the RA_ICU_EVENT_SCI0_ERI event to NVIC: IRQn = 3, priority = 1 */
+        0 RA_ICU_EVENT_SCI0_ERI &nvic 0 3 1
+      >;
+    };
+  };
+
+  The property that needs attention is interrupt-map:
+  Example: interrupt-map = <0 RA_ICU_EVENT_SCI0_RXI &nvic 0 0 1>;
+    - "0" - child unit address: The unit address of the child node being mapped.
+    - "RA_ICU_EVENT_SCI0_RXI" - child interrupt specifier: The interrupt specifier of the child node being mapped.
+    - "&nvic" - interrupt-parent: A single <phandle> value that points to the interrupt parent to which the child domain is being mapped.
+    - "0" - parent unit address: The unit address in the domain of the interrupt parent.
+    - "0 1" - parent interrupt specifier: The interrupt specifier in the parent domain.
+
+  By default, an interrupt-controller-unit node will be define with cpus and soc node in a .dtsi (example zephyr/dts/arm/renesas/ra/ra2/ra2xx.dtsi).
+  You can modify this node content to re-map the ICU event to NVIC event by an overlay file (modify the existed child node interrupt-map properties).
+  In that case, if you don't change any interrupt-parent property of any interrupt child node, the child unit address and parent unit address will
+  be 0 as default. Othercase, you should refer here to determine which number needed to add for parent/child unit address.
+    - https://devicetree-specification.readthedocs.io/en/latest/chapter2-devicetree-basics.html#interrupt-nexus-properties
+
+include: [base.yaml]
+
+compatible: "renesas,ra-icu"
+
+child-binding:
+  properties:
+    interrupt-map-mask:
+      type: compound
+      required: true
+
+    interrupt-map:
+      type: compound
+      required: true
+
+    "#interrupt-cells":
+      type: int
+      const: 1
+
+interrupt-cells:
+  - event

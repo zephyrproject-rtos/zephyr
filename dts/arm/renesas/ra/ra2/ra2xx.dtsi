@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/interrupt-controller/renesas-ra-icu-event.h>
 
 / {
 	cpus {
@@ -20,6 +21,202 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m23";
 			reg = <0>;
+		};
+	};
+
+	icu: interrupt-controller-unit {
+		compatible = "renesas,ra-icu";
+
+		sci0 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_SCI0_RXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI0_TXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI0_TEI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI0_ERI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		sci1 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_SCI1_RXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI1_TXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI1_TEI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI1_ERI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		sci2 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_SCI2_RXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI2_TXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI2_TEI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI2_ERI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		sci3 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_SCI3_RXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI3_TXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI3_TEI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI3_ERI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		sci9 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_SCI9_RXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI9_TXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI9_TEI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SCI9_ERI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		spi0 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_SPI0_RXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SPI0_TXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SPI0_TEI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SPI0_ERI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		spi1 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_SPI1_RXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SPI1_TXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SPI1_TEI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_SPI1_ERI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		iic0 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_IIC0_RXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_IIC0_TXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_IIC0_TEI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_IIC0_ERI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		iic1 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_IIC1_RXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_IIC1_TXI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_IIC1_TEI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_IIC1_ERI &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		agt0 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_AGT0_INT &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_AGT0_COMPARE_A &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		agt1 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_AGT1_INT &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_AGT1_COMPARE_A &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		port_irq0 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_ICU_IRQ0 &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		port_irq1 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_ICU_IRQ1 &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		port_irq2 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_ICU_IRQ2 &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		port_irq3 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_ICU_IRQ3 &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		port_irq4 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_ICU_IRQ4 &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		port_irq5 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_ICU_IRQ5 &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		port_irq6 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_ICU_IRQ6 &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		port_irq7 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_ICU_IRQ7 &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
+		};
+
+		pwm0 {
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0xfff>;
+			interrupt-map = <
+				0 RA_ICU_EVENT_GPT0_CAPTURE_COMPARE_A
+					&nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+				0 RA_ICU_EVENT_GPT0_COUNTER_OVERFLOW
+					&nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			>;
 		};
 	};
 
@@ -138,7 +335,11 @@
 
 		sci0: sci@40070000 {
 			compatible = "renesas,ra-sci";
-			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+			interrupt-parent = <&{/interrupt-controller-unit/sci0}>;
+			interrupts = <RA_ICU_EVENT_SCI0_RXI>,
+				     <RA_ICU_EVENT_SCI0_TXI>,
+				     <RA_ICU_EVENT_SCI0_TEI>,
+				     <RA_ICU_EVENT_SCI0_ERI>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070000 0x20>;
 			clocks = <&pclkb MSTPB 31>;
@@ -152,7 +353,11 @@
 
 		sci1: sci@40070020 {
 			compatible = "renesas,ra-sci";
-			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+			interrupt-parent = <&{/interrupt-controller-unit/sci1}>;
+			interrupts = <RA_ICU_EVENT_SCI1_RXI>,
+				     <RA_ICU_EVENT_SCI1_TXI>,
+				     <RA_ICU_EVENT_SCI1_TEI>,
+				     <RA_ICU_EVENT_SCI1_ERI>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
@@ -166,7 +371,11 @@
 
 		sci2: sci@40070040 {
 			compatible = "renesas,ra-sci";
-			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
+			interrupt-parent = <&{/interrupt-controller-unit/sci2}>;
+			interrupts = <RA_ICU_EVENT_SCI2_RXI>,
+				     <RA_ICU_EVENT_SCI2_TXI>,
+				     <RA_ICU_EVENT_SCI2_TEI>,
+				     <RA_ICU_EVENT_SCI2_ERI>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070040 0x20>;
 			clocks = <&pclkb MSTPB 29>;
@@ -180,7 +389,11 @@
 
 		sci3: sci@40070060 {
 			compatible = "renesas,ra-sci";
-			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+			interrupt-parent = <&{/interrupt-controller-unit/sci3}>;
+			interrupts = <RA_ICU_EVENT_SCI3_RXI>,
+				     <RA_ICU_EVENT_SCI3_TXI>,
+				     <RA_ICU_EVENT_SCI3_TEI>,
+				     <RA_ICU_EVENT_SCI3_ERI>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070060 0x20>;
 			clocks = <&pclkb MSTPB 28>;
@@ -194,7 +407,11 @@
 
 		sci9: sci@40070120 {
 			compatible = "renesas,ra-sci";
-			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
+			interrupt-parent = <&{/interrupt-controller-unit/sci9}>;
+			interrupts = <RA_ICU_EVENT_SCI9_RXI>,
+				     <RA_ICU_EVENT_SCI9_TXI>,
+				     <RA_ICU_EVENT_SCI9_TEI>,
+				     <RA_ICU_EVENT_SCI9_ERI>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070120 0x20>;
 			clocks = <&pclkb MSTPB 22>;
@@ -208,6 +425,12 @@
 
 		spi0: spi@40072000 {
 			compatible = "renesas,ra-spi";
+			interrupt-parent = <&{/interrupt-controller-unit/spi0}>;
+			interrupts = <RA_ICU_EVENT_SPI0_RXI>,
+				     <RA_ICU_EVENT_SPI0_TXI>,
+				     <RA_ICU_EVENT_SPI0_TEI>,
+				     <RA_ICU_EVENT_SPI0_ERI>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			channel = <0>;
@@ -217,24 +440,40 @@
 
 		spi1: spi@40072100 {
 			compatible = "renesas,ra-spi";
+			interrupt-parent = <&{/interrupt-controller-unit/spi1}>;
+			interrupts = <RA_ICU_EVENT_SPI1_RXI>,
+				     <RA_ICU_EVENT_SPI1_TXI>,
+				     <RA_ICU_EVENT_SPI1_TEI>,
+				     <RA_ICU_EVENT_SPI1_ERI>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			channel = <1>;
-			interrupts = <32 1>, <33 1>, <34 1>, <35 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40072100 0x100>;
 			status = "disabled";
 		};
 
-		iic0: iic0@40053000 {
+		iic0: iic@40053000 {
 			compatible = "renesas,ra-iic";
+			interrupt-parent = <&{/interrupt-controller-unit/iic0}>;
+			interrupts = <RA_ICU_EVENT_IIC0_RXI>,
+				     <RA_ICU_EVENT_IIC0_TXI>,
+				     <RA_ICU_EVENT_IIC0_TEI>,
+				     <RA_ICU_EVENT_IIC0_ERI>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			channel = <0>;
 			reg = <0x40053000 0x100>;
 			status = "disabled";
 		};
 
-		iic1: iic1@40053100 {
+		iic1: iic@40053100 {
 			compatible = "renesas,ra-iic";
+			interrupt-parent = <&{/interrupt-controller-unit/iic1}>;
+			interrupts = <RA_ICU_EVENT_IIC1_RXI>,
+				     <RA_ICU_EVENT_IIC1_TXI>,
+				     <RA_ICU_EVENT_IIC1_TEI>,
+				     <RA_ICU_EVENT_IIC1_ERI>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			channel = <1>;
 			reg = <0x40053100 0x100>;
 			status = "disabled";
@@ -248,6 +487,10 @@
 
 		agt0: agt@40084000  {
 			compatible = "renesas,ra-agt";
+			interrupt-parent = <&{/interrupt-controller-unit/agt0}>;
+			interrupts = <RA_ICU_EVENT_AGT0_INT>,
+				     <RA_ICU_EVENT_AGT0_COMPARE_A>;
+			interrupt-names = "agti", "agtcmai";
 			channel = <0>;
 			reg = <0x40084000 0x100>;
 			renesas,count-source = "AGT_CLOCK_LOCO";
@@ -263,6 +506,10 @@
 
 		agt1: agt@40084100 {
 			compatible = "renesas,ra-agt";
+			interrupt-parent = <&{/interrupt-controller-unit/agt1}>;
+			interrupts = <RA_ICU_EVENT_AGT1_INT>,
+				     <RA_ICU_EVENT_AGT1_COMPARE_A>;
+			interrupt-names = "agti", "agtcmai";
 			channel = <1>;
 			reg = <0x40084100 0x100>;
 			renesas,count-source = "AGT_CLOCK_LOCO";
@@ -285,6 +532,8 @@
 
 		port_irq0: external-interrupt@40006000 {
 			compatible = "renesas,ra-external-interrupt";
+			interrupt-parent = <&{/interrupt-controller-unit/port_irq0}>;
+			interrupts = <RA_ICU_EVENT_ICU_IRQ0>;
 			reg = <0x40006000 0x1>;
 			channel = <0>;
 			renesas,sample-clock-div = <64>;
@@ -294,6 +543,8 @@
 
 		port_irq1: external-interrupt@40006001 {
 			compatible = "renesas,ra-external-interrupt";
+			interrupt-parent = <&{/interrupt-controller-unit/port_irq1}>;
+			interrupts = <RA_ICU_EVENT_ICU_IRQ1>;
 			reg = <0x40006001 0x1>;
 			channel = <1>;
 			renesas,sample-clock-div = <64>;
@@ -303,6 +554,8 @@
 
 		port_irq2: external-interrupt@40006002 {
 			compatible = "renesas,ra-external-interrupt";
+			interrupt-parent = <&{/interrupt-controller-unit/port_irq2}>;
+			interrupts = <RA_ICU_EVENT_ICU_IRQ2>;
 			reg = <0x40006002 0x1>;
 			channel = <2>;
 			renesas,sample-clock-div = <64>;
@@ -312,6 +565,8 @@
 
 		port_irq3: external-interrupt@40006003 {
 			compatible = "renesas,ra-external-interrupt";
+			interrupt-parent = <&{/interrupt-controller-unit/port_irq3}>;
+			interrupts = <RA_ICU_EVENT_ICU_IRQ3>;
 			reg = <0x40006003 0x1>;
 			channel = <3>;
 			renesas,sample-clock-div = <64>;
@@ -321,6 +576,8 @@
 
 		port_irq4: external-interrupt@40006004 {
 			compatible = "renesas,ra-external-interrupt";
+			interrupt-parent = <&{/interrupt-controller-unit/port_irq4}>;
+			interrupts = <RA_ICU_EVENT_ICU_IRQ4>;
 			reg = <0x40006004 0x1>;
 			channel = <4>;
 			renesas,sample-clock-div = <64>;
@@ -330,6 +587,8 @@
 
 		port_irq5: external-interrupt@40006005 {
 			compatible = "renesas,ra-external-interrupt";
+			interrupt-parent = <&{/interrupt-controller-unit/port_irq5}>;
+			interrupts = <RA_ICU_EVENT_ICU_IRQ5>;
 			reg = <0x40006005 0x1>;
 			channel = <5>;
 			renesas,sample-clock-div = <64>;
@@ -339,6 +598,8 @@
 
 		port_irq6: external-interrupt@40006006 {
 			compatible = "renesas,ra-external-interrupt";
+			interrupt-parent = <&{/interrupt-controller-unit/port_irq6}>;
+			interrupts = <RA_ICU_EVENT_ICU_IRQ6>;
 			reg = <0x40006006 0x1>;
 			channel = <6>;
 			renesas,sample-clock-div = <64>;
@@ -348,6 +609,8 @@
 
 		port_irq7: external-interrupt@40006007 {
 			compatible = "renesas,ra-external-interrupt";
+			interrupt-parent = <&{/interrupt-controller-unit/port_irq7}>;
+			interrupts = <RA_ICU_EVENT_ICU_IRQ7>;
 			reg = <0x40006007 0x1>;
 			channel = <7>;
 			renesas,sample-clock-div = <64>;
@@ -355,8 +618,12 @@
 			status = "disabled";
 		};
 
-		pwm0: pwm0@40078000 {
+		pwm0: pwm@40078000 {
 			compatible = "renesas,ra-pwm";
+			interrupt-parent = <&{/interrupt-controller-unit/pwm0}>;
+			interrupts = <RA_ICU_EVENT_GPT0_CAPTURE_COMPARE_A>,
+				     <RA_ICU_EVENT_GPT0_COUNTER_OVERFLOW>;
+			interrupt-names = "gtioca", "overflow";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_0>;
 			clocks = <&pclkd MSTPD 5>;
