@@ -414,7 +414,7 @@ __weak void clock_init(void)
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	/* Set ENET_REF_CLK as an input driven by PHY */
 	IOMUXC_GPR->GPR4 &= ~IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U);
 	IOMUXC_GPR->GPR4 |= IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U);
@@ -442,7 +442,7 @@ __weak void clock_init(void)
 	 */
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet2, &rootCfg);
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	/* Set ENET1G_REF_CLK as an input driven by PHY */
 	IOMUXC_GPR->GPR5 &= ~IOMUXC_GPR_GPR5_ENET1G_REF_CLK_DIR(0x01U);
 	IOMUXC_GPR->GPR5 |= IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL(0x1U);

@@ -227,7 +227,7 @@ __weak void clock_init(void)
 
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && CONFIG_NET_L2_ETHERNET
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	/* Enable clock input for ENET1 */
 	IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, false);
 #else
