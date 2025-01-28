@@ -30,6 +30,12 @@
 
 #include <zephyr/toolchain/gcc.h>
 
+#define TOOLCHAIN_WARNING_SIZEOF_ARRAY_DECAY "-Wsizeof-array-decay"
+#define TOOLCHAIN_WARNING_GNU_FOLDING_CONSTANT "-Wgnu-folding-constant"
+
+#define TOOLCHAIN_DISABLE_CLANG_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(clang, warning)
+#define TOOLCHAIN_ENABLE_CLANG_WARNING(warning)  _TOOLCHAIN_ENABLE_WARNING(clang, warning)
+
 /*
  * Provide these definitions only when minimal libc is used.
  * Avoid collision with defines from include/zephyr/toolchain/zephyr_stdint.h
