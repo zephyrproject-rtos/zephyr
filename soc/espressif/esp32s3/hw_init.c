@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,9 +57,11 @@ int hardware_init(void)
 
 	bootloader_clock_configure();
 
+#if defined(CONFIG_ESP_CONSOLE_UART) || defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
 	/* initialize console, from now on, we can log */
 	esp_console_init();
 	print_banner();
+#endif /* defined(CONFIG_ESP_CONSOLE_UART) || defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG) */
 
 	spi_flash_init_chip_state();
 	err = esp_flash_init_default_chip();
