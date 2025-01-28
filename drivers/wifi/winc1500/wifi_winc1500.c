@@ -1071,7 +1071,8 @@ static int winc1500_mgmt_ap_enable(const struct device *dev,
 	tstrM2MAPConfig strM2MAPConfig;
 
 	memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
-	strcpy((char *)&strM2MAPConfig.au8SSID, params->ssid);
+	strncpy((char *)&strM2MAPConfig.au8SSID, params->ssid,
+		params->ssid_length);
 	strM2MAPConfig.u8ListenChannel = params->channel;
 	/** security is hardcoded as open for now */
 	strM2MAPConfig.u8SecType = M2M_WIFI_SEC_OPEN;
