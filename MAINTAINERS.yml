@@ -3568,6 +3568,7 @@ Raspberry Pi Pico Platforms:
     - soburi
   collaborators:
     - yonsch
+    - threeeights
   files:
     - boards/raspberrypi/
     - boards/adafruit/kb2040/
@@ -4939,6 +4940,7 @@ West:
     - soburi
   collaborators:
     - yonsch
+    - threeeights
   files:
     - modules/hal_rpi_pico/
   labels:
