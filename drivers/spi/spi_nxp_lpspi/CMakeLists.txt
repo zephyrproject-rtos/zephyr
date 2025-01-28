@@ -3,4 +3,3 @@
 zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_LPSPI spi_nxp_lpspi_common.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_LPSPI_NORMAL spi_nxp_lpspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_LPSPI_DMA spi_nxp_lpspi_dma.c)
-zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_LPSPI_RTIO spi_mcux_lpspi_rtio.c)
