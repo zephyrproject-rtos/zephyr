@@ -711,17 +711,17 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		 * has been reached, and offset calculated.
 		 */
 		if (cis->lll.handle != 0xFFFF && cis->lll.active) {
-			cis->lll.event_count += (lazy + 1U);
+			cis->lll.event_count_prepare += (lazy + 1U);
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-			cis->lll.event_count -= cis->lll.lazy_active;
+			cis->lll.event_count_prepare -= cis->lll.lazy_active;
 			cis->lll.lazy_active = 0U;
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 			leading_event_count = MAX(leading_event_count,
-						cis->lll.event_count);
+						cis->lll.event_count_prepare);
 
-			ull_iso_lll_event_prepare(cis->lll.handle, cis->lll.event_count);
+			ull_iso_lll_event_prepare(cis->lll.handle, cis->lll.event_count_prepare);
 		}
 
 		/* Latch datapath validity entering event */
@@ -975,7 +975,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 				cis_offset = cis->offset + iso_interval_us - acl_latency_us;
 			}
 
-			cis->lll.event_count += lost_cig_events;
+			cis->lll.event_count_prepare += lost_cig_events;
 
 			lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1)) * cis->lll.rx.bn;
 			cis->lll.rx.payload_count += lost_payloads;
@@ -1520,7 +1520,7 @@ void ull_conn_iso_transmit_test_cig_interval(uint16_t handle, uint32_t ticks_at_
 		 * on 64-bit sdu_counter:
 		 *   (39 bits x 22 bits (4x10^6 us) = 61 bits / 8 bits (255 us) = 53 bits)
 		 */
-		sdu_counter = DIV_ROUND_UP((cis->lll.event_count + 1U) * iso_interval,
+		sdu_counter = DIV_ROUND_UP((cis->lll.event_count_prepare + 1U) * iso_interval,
 					       sdu_interval);
 
 		if (cis->hdr.test_mode.tx.sdu_counter == 0U) {
