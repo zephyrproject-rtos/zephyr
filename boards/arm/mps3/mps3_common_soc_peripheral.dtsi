@@ -122,7 +122,7 @@ i2c_ddr4_eeprom: i2c@9208000 {
 };
 
 gpio_led0: mps3_fpgaio@9302000 {
-	compatible = "arm,mps3-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x9302000 0x4>;
 	gpio-controller;
@@ -131,16 +131,17 @@ gpio_led0: mps3_fpgaio@9302000 {
 };
 
 gpio_button: mps3_fpgaio@9302008 {
-	compatible = "arm,mps3-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x9302008 0x4>;
 	gpio-controller;
 	#gpio-cells = <1>;
 	ngpios = <2>;
+	direction-input;
 };
 
 gpio_misc: mps3_fpgaio@930204c {
-	compatible = "arm,mps3-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x930204c 0x4>;
 	gpio-controller;
