@@ -18,7 +18,7 @@
 #define SLOT1_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(SLOT1_PARTITION)
 
 extern int flash_map_entries;
-struct flash_sector fs_sectors[1024];
+struct flash_sector fs_sectors[2048];
 
 ZTEST(flash_map, test_flash_area_disabled_device)
 {
