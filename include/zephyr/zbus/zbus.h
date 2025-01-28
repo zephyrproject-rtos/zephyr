@@ -862,23 +862,31 @@ static inline void zbus_chan_pub_stats_update(const struct zbus_channel *chan)
 #if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS) || defined(__DOXYGEN__)
 
 /**
+ * @brief Structure for linking observers to chanels
+ */
+struct zbus_observer_node {
+	sys_snode_t node;
+	const struct zbus_observer *obs;
+};
+
+/**
  * @brief Add an observer to a channel.
  *
  * This routine adds an observer to the channel.
  *
  * @param chan The channel's reference.
  * @param obs The observer's reference to be added.
+ * @param node Persistent structure to link the channel to the observer
  * @param timeout Waiting period to add an observer,
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Observer added to the channel.
  * @retval -EALREADY The observer is already present in the channel's runtime observers list.
- * @retval -ENOMEM Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EINVAL Some parameter is invalid.
  */
 int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observer *obs,
-		      k_timeout_t timeout);
+		      struct zbus_observer_node *node, k_timeout_t timeout);
 
 /**
  * @brief Remove an observer from a channel.
@@ -899,15 +907,6 @@ int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observe
  */
 int zbus_chan_rm_obs(const struct zbus_channel *chan, const struct zbus_observer *obs,
 		     k_timeout_t timeout);
-
-/** @cond INTERNAL_HIDDEN */
-
-struct zbus_observer_node {
-	sys_snode_t node;
-	const struct zbus_observer *obs;
-};
-
-/** @endcond */
 
 #endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
 
