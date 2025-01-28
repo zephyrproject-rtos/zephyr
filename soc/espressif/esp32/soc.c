@@ -22,8 +22,6 @@
 #include <string.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
 
 #include <esp_private/system_internal.h>
 #include <esp32/rom/cache.h>
@@ -56,26 +54,6 @@ extern int esp_appcpu_init(void);
  */
 void IRAM_ATTR __esp_platform_start(void)
 {
-	extern uint32_t _init_start;
-
-	/* Move the exception vector table to IRAM. */
-	__asm__ __volatile__ ("wsr %0, vecbase" : : "r"(&_init_start));
-
-	z_bss_zero();
-
-	__asm__ __volatile__ ("" : : "g"(&__bss_start) : "memory");
-
-	/* Disable normal interrupts. */
-	__asm__ __volatile__ ("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
-
-	/* Initialize the architecture CPU pointer.  Some of the
-	 * initialization code wants a valid _current before
-	 * z_prep_c() is invoked.
-	 */
-	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
-
-	esp_reset_reason_init();
-
 #ifndef CONFIG_MCUBOOT
 	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check
 	 * on startup sequence related issues in application. Hence disable that
@@ -86,6 +64,8 @@ void IRAM_ATTR __esp_platform_start(void)
 	wdt_hal_write_protect_disable(&rtc_wdt_ctx);
 	wdt_hal_disable(&rtc_wdt_ctx);
 	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
+	esp_reset_reason_init();
 
 	esp_timer_early_init();
 

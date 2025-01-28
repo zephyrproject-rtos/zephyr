@@ -50,25 +50,6 @@ extern void z_prep_c(void);
  */
 void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
-	extern uint32_t _init_start;
-
-	/* Move the exception vector table to IRAM. */
-	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
-
-	/* Zero out BSS */
-	z_bss_zero();
-
-	/* Disable normal interrupts. */
-	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
-
-	/* Initialize the architecture CPU pointer.  Some of the
-	 * initialization code wants a valid _current before
-	 * arch_kernel_init() is invoked.
-	 */
-	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
-
-	esp_reset_reason_init();
-
 #ifndef CONFIG_MCUBOOT
 	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
@@ -95,6 +76,8 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	 */
 	esp_config_data_cache_mode();
 	esp_rom_Cache_Enable_DCache(0);
+
+	esp_reset_reason_init();
 
 	esp_timer_early_init();
 
