@@ -85,8 +85,7 @@ int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 static inline bool handle_poll_events(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL
-	z_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
-	return true;
+	return z_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
 #else
 	ARG_UNUSED(sem);
 	return false;
@@ -97,7 +96,7 @@ void z_impl_k_sem_give(struct k_sem *sem)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_thread *thread;
-	bool resched = true;
+	bool resched;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
 
@@ -106,6 +105,7 @@ void z_impl_k_sem_give(struct k_sem *sem)
 	if (unlikely(thread != NULL)) {
 		arch_thread_return_value_set(thread, 0);
 		z_ready_thread(thread);
+		resched = true;
 	} else {
 		sem->count += (sem->count != sem->limit) ? 1U : 0U;
 		resched = handle_poll_events(sem);
@@ -167,12 +167,14 @@ void z_impl_k_sem_reset(struct k_sem *sem)
 {
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
+	bool resched = false;
 
 	while (true) {
 		thread = z_unpend_first_thread(&sem->wait_q);
 		if (thread == NULL) {
 			break;
 		}
+		resched = true;
 		arch_thread_return_value_set(thread, -EAGAIN);
 		z_ready_thread(thread);
 	}
@@ -180,9 +182,13 @@ void z_impl_k_sem_reset(struct k_sem *sem)
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_sem, reset, sem);
 
-	handle_poll_events(sem);
+	resched = handle_poll_events(sem) || resched;
 
-	z_reschedule(&lock, key);
+	if (resched) {
+		z_reschedule(&lock, key);
+	} else {
+		k_spin_unlock(&lock, key);
+	}
 }
 
 #ifdef CONFIG_USERSPACE
