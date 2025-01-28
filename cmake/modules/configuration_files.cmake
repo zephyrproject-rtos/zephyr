@@ -47,10 +47,6 @@ else()
   if(${CONF_FILE_LENGTH} EQUAL 1)
     get_filename_component(CONF_FILE_NAME ${CONF_FILE} NAME)
     if(${CONF_FILE_NAME} MATCHES "prj_(.*).conf")
-      set(CONF_FILE_BUILD_TYPE ${CMAKE_MATCH_1})
-      zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE
-                  BUILD ${CONF_FILE_BUILD_TYPE}
-      )
       set(CONF_FILE_FORCE_CACHE FORCE)
     endif()
   endif()
