@@ -397,6 +397,18 @@ Libraries / Subsystems
 
 * Management
 
+  * hawkBit
+
+    * The hawkBit subsystem now uses the State Machine Framework internally.
+
+    * Added support for hawkBit instances, that run as a multi tenant system
+      and require the tenant to be configurable and don't use the default tenant ``default``.
+
+    * Added support for registering callbacks on specific events
+
+    * Added support for storing partially downloaded update packages to non-volatile storage and
+      resuming from the last save point.
+
 * Logging
 
 * Modem modules
