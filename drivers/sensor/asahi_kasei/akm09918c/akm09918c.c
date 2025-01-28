@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(AKM09918C, CONFIG_SENSOR_LOG_LEVEL);
  * @param chan Channel ID for starting the measurement
  * @return int 0 if successful or error code
  */
-int akm09918c_start_measurement(const struct device *dev, enum sensor_channel chan)
+int akm09918c_start_measurement_blocking(const struct device *dev, enum sensor_channel chan)
 {
 	struct akm09918c_data *data = dev->data;
 	const struct akm09918c_config *cfg = dev->config;
@@ -59,7 +59,8 @@ int akm09918c_start_measurement(const struct device *dev, enum sensor_channel ch
  * @param z Location to write Z channel sample.
  * @return int 0 if successful or error code
  */
-int akm09918c_fetch_measurement(const struct device *dev, int16_t *x, int16_t *y, int16_t *z)
+int akm09918c_fetch_measurement_blocking(const struct device *dev, int16_t *x, int16_t *y,
+					 int16_t *z)
 {
 	const struct akm09918c_config *cfg = dev->config;
 	uint8_t buf[9] = {0};
@@ -86,7 +87,7 @@ static int akm09918c_sample_fetch(const struct device *dev, enum sensor_channel 
 {
 	struct akm09918c_data *data = dev->data;
 
-	int ret = akm09918c_start_measurement(dev, chan);
+	int ret = akm09918c_start_measurement_blocking(dev, chan);
 
 	if (ret) {
 		return ret;
@@ -95,7 +96,8 @@ static int akm09918c_sample_fetch(const struct device *dev, enum sensor_channel 
 	LOG_DBG("Waiting for sample...");
 	k_usleep(AKM09918C_MEASURE_TIME_US);
 
-	return akm09918c_fetch_measurement(dev, &data->x_sample, &data->y_sample, &data->z_sample);
+	return akm09918c_fetch_measurement_blocking(dev, &data->x_sample, &data->y_sample,
+						    &data->z_sample);
 }
 
 static void akm09918c_convert(struct sensor_value *val, int16_t sample)
@@ -249,8 +251,13 @@ static DEVICE_API(sensor, akm09918c_driver_api) = {
 };
 
 #define AKM09918C_DEFINE(inst)                                                                     \
-	static struct akm09918c_data akm09918c_data_##inst;                                        \
-                                                                                                   \
+	IF_ENABLED(CONFIG_I2C_RTIO, \
+		(I2C_DT_IODEV_DEFINE(akm09918c_iodev_##inst, DT_DRV_INST(inst));)) \
+	IF_ENABLED(CONFIG_I2C_RTIO, (RTIO_DEFINE( \
+		akm09918c_rtio_ctx_##inst, CONFIG_I2C_RTIO_SQ_SIZE, CONFIG_I2C_RTIO_CQ_SIZE);)) \
+	static struct akm09918c_data akm09918c_data_##inst = {                                     \
+		IF_ENABLED(CONFIG_I2C_RTIO, (.rtio_ctx = \
+			&akm09918c_rtio_ctx_##inst, .iodev = &akm09918c_iodev_##inst)) }; \
 	static const struct akm09918c_config akm09918c_config_##inst = {                           \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 	};                                                                                         \
