@@ -31,13 +31,20 @@
 #define DM8806_MODE_100_BASET_FULL_DUPLEX 0x2100u
 /* Duplex mode ability offset. */
 #define DM8806_DUPLEX_MODE                (1 << 8)
+/* Restart auto negotitation mode offset. */
+#define DM8806_RESTART_AUTO_NEGOTIATION                      (1 << 9)
 /* Power down mode offset. */
-#define DM8806_POWER_DOWN                 (1 << 11)
+#define DM8806_POWER_DOWN                                    (1 << 11)
 /* Auto negotiation mode offset. */
-#define DM8806_AUTO_NEGOTIATION           (1 << 12)
+#define DM8806_AUTO_NEGOTIATION                              (1 << 12)
 /* Link speed selection offset. */
-#define DM8806_LINK_SPEED                 (1 << 13)
-
+#define DM8806_LINK_SPEED                                    (1 << 13)
+/* Port 0~4 Auto-Negotiation Advertisement Register. */
+#define DM8806_PORTX_AUTO_NEGOTIATION_ADVERTISEMENT_REGISTER 0x04u
+#define DM8806_DM8806_100B_TX_FULL                           (1u << 8)
+#define DM8806_DM8806_100B_TX_HALF                           (1u << 7)
+#define DM8806_DM8806_10B_TX_FULL                            (1u << 6)
+#define DM8806_DM8806_10B_TX_HALF                            (1u << 5)
 /* Port 0~4 Status Data Register. */
 #define DM8806_PORTX_SWITCH_STATUS       0x10u
 /* 10 Mbit/s transfer speed with half duplex. */
