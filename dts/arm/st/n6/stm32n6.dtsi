@@ -568,6 +568,66 @@
 			status = "disabled";
 		};
 
+		spi1: spi@52003000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x52003000 0x400>;
+			interrupts = <153 0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			status = "disabled";
+		};
+
+		spi2: spi@50003800 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50003800 0x400>;
+			interrupts = <154 0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			status = "disabled";
+		};
+
+		spi3: spi@50003c00 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50003C00 0x400>;
+			interrupts = <155 0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
+			status = "disabled";
+		};
+
+		spi4: spi@52003400 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x52003400 0x400>;
+			interrupts = <156 0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
+			status = "disabled";
+		};
+
+		spi5: spi@52005000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x52005000 0x400>;
+			interrupts = <157 0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
+			status = "disabled";
+		};
+
+		spi6: spi@56001400 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x56001400 0x400>;
+			interrupts = <158 0>;
+			clocks = <&rcc STM32_CLOCK(APB4, 5)>;
+			status = "disabled";
+		};
+
 		gpdma1: dma@50021000 {
 			compatible = "st,stm32u5-dma";
 			#dma-cells = <3>;
