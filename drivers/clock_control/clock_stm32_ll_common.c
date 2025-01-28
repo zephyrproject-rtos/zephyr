@@ -432,7 +432,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLL_R_DIVISOR);
 		break;
 #endif
-#if defined(STM32_SRC_PLLI2S_Q) & STM32_PLLI2S_ENABLED
+#if defined(STM32_SRC_PLLI2S_Q) & STM32_PLLI2S_Q_ENABLED & STM32_PLLI2S_ENABLED
 	case STM32_SRC_PLLI2S_Q:
 		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
 					      STM32_PLLI2S_M_DIVISOR,
