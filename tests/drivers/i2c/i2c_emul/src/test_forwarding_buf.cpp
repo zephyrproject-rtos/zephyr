@@ -17,8 +17,6 @@ namespace
 
 /* Get the devicetree constants */
 constexpr const struct device *controller = DEVICE_DT_GET(CONTROLLER_LABEL);
-constexpr const struct device *targets[FORWARD_COUNT] = {
-	DT_FOREACH_PROP_ELEM(CONTROLLER_LABEL, forwards, GET_TARGET_DEVICE)};
 
 ZTEST(i2c_emul_forwarding, test_write_is_forwarded)
 {
