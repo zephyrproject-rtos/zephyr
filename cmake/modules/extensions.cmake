@@ -1602,8 +1602,6 @@ endfunction()
 # - Build string with cpuset removed in addition
 # - Build string with soc removed in addition
 #
-# If BUILD is supplied, then build type will be appended to each entry in the
-# list above.
 # If REVISION is supplied or obtained as system wide setting a build string
 # with the sanitized revision string will be added in addition to the
 # non-revisioned entry for each entry.
@@ -1614,12 +1612,10 @@ endfunction()
 #                       [SHORT <out-variable>]
 #                       [BOARD_QUALIFIERS <qualifiers>]
 #                       [BOARD_REVISION <revision>]
-#                       [BUILD <type>]
 #                       [MERGE [REVERSE]]
 #   )
 #   zephyr_build_string(<out-variable>
 #                       BOARD_QUALIFIERS <qualifiers>
-#                       [BUILD <type>]
 #                       [MERGE [REVERSE]]
 #   )
 #
@@ -1627,18 +1623,17 @@ endfunction()
 # SHORT <out-variable>:      Output variable where the shortened build string will be returned.
 # BOARD <board>:             Board name to use when creating the build string.
 # BOARD_REVISION <revision>: Board revision to use when creating the build string.
-# BUILD <type>:              Build type to use when creating the build string.
 # MERGE:                     Return a list of build strings instead of a single build string.
 # REVERSE:                   Reverse the list before returning it.
 #
 # Examples
 # calling
-#   zephyr_build_string(build_string BOARD alpha BUILD debug)
-# will return the string `alpha_debug` in `build_string` parameter.
+#   zephyr_build_string(build_string BOARD alpha)
+# will return the string `alpha` in `build_string` parameter.
 #
 # calling
-#   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0 BUILD debug)
-# will return the string `alpha_1_0_0_debug` in `build_string` parameter.
+#   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0)
+# will return the string `alpha_1_0_0` in `build_string` parameter.
 #
 # calling
 #   zephyr_build_string(build_string BOARD alpha BOARD_QUALIFIERS /soc/bar)
@@ -1661,7 +1656,7 @@ endfunction()
 #
 function(zephyr_build_string outvar)
   set(options MERGE REVERSE)
-  set(single_args BOARD BOARD_QUALIFIERS BOARD_REVISION BUILD SHORT)
+  set(single_args BOARD BOARD_QUALIFIERS BOARD_REVISION SHORT)
 
   cmake_parse_arguments(BUILD_STR "${options}" "${single_args}" "" ${ARGN})
   if(BUILD_STR_UNPARSED_ARGUMENTS)
@@ -1695,10 +1690,10 @@ function(zephyr_build_string outvar)
   string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD_QUALIFIERS}")
   string(REPLACE "." "_" revision_string "${BUILD_STR_BOARD_REVISION}")
 
-  string(JOIN "_" ${outvar} ${BUILD_STR_BOARD} ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
+  string(JOIN "_" ${outvar} ${BUILD_STR_BOARD} ${str_segment_list} ${revision_string})
 
   if(BUILD_STR_MERGE)
-    string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_segment_list} ${BUILD_STR_BUILD})
+    string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_segment_list})
 
     if(NOT "${variant_string}" IN_LIST ${outvar})
       list(APPEND ${outvar} "${variant_string}")
@@ -1714,10 +1709,10 @@ function(zephyr_build_string outvar)
     string(REGEX REPLACE "^/[^/]*(.*)" "\\1" shortened_qualifiers "${BOARD_QUALIFIERS}")
     string(REPLACE "/" ";" str_short_segment_list "${shortened_qualifiers}")
     string(JOIN "_" ${BUILD_STR_SHORT}
-           ${BUILD_STR_BOARD} ${str_short_segment_list} ${revision_string} ${BUILD_STR_BUILD}
+           ${BUILD_STR_BOARD} ${str_short_segment_list} ${revision_string}
     )
     if(BUILD_STR_MERGE)
-      string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_short_segment_list} ${BUILD_STR_BUILD})
+      string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_short_segment_list})
 
       if(NOT "${variant_string}" IN_LIST ${BUILD_STR_SHORT})
         list(APPEND ${BUILD_STR_SHORT} "${variant_string}")
@@ -2663,7 +2658,7 @@ endfunction()
 # Usage:
 #   zephyr_file(CONF_FILES <paths> [DTS <list>] [KCONF <list>]
 #               [BOARD <board> [BOARD_REVISION <revision>] | NAMES <name> ...]
-#               [BUILD <type>] [SUFFIX <suffix>] [REQUIRED]
+#               [SUFFIX <suffix>] [REQUIRED]
 #   )
 #
 # CONF_FILES <paths>: Find all configuration files in the list of paths and
@@ -2690,10 +2685,6 @@ endfunction()
 #                     DTS <list>:    List to append DTS overlay files in <path> to
 #                     KCONF <list>:  List to append Kconfig fragment files in <path> to
 #                     DEFCONF <list>: List to append _defconfig files in <path> to
-#                     BUILD <type>:  Build type to include for search.
-#                                    For example:
-#                                    BUILD debug, will look for <board>_debug.conf
-#                                    and <board>_debug.overlay, instead of <board>.conf
 #                     SUFFIX <name>: Suffix name to check for instead of the default name
 #                                    but with a fallback to the default name if not found.
 #                                    For example:
@@ -2713,7 +2704,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
     set(single_args APPLICATION_ROOT BASE_DIR)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options QUALIFIERS REQUIRED)
-    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
+    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG SUFFIX)
     set(multi_args CONF_FILES NAMES)
   endif()
 
@@ -2792,13 +2783,11 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
                             BOARD ${ZFILE_BOARD}
                             BOARD_REVISION ${ZFILE_BOARD_REVISION}
                             BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
-                            BUILD ${ZFILE_BUILD}
                             MERGE REVERSE
         )
       else()
         zephyr_build_string(filename_list
                             BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
-                            BUILD ${ZFILE_BUILD}
                             MERGE REVERSE
         )
       endif()
@@ -2833,10 +2822,6 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
           if(test_file_0 OR test_file_1)
             list(APPEND found_dts_files ${test_file_0})
             list(APPEND found_dts_files ${test_file_1})
-
-            if(DEFINED ZFILE_BUILD)
-              set(deprecated_file_found y)
-            endif()
 
             if(ZFILE_NAMES)
               break()
@@ -2885,10 +2870,6 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
             list(APPEND found_conf_files ${test_file_0})
             list(APPEND found_conf_files ${test_file_1})
 
-            if(DEFINED ZFILE_BUILD)
-              set(deprecated_file_found y)
-            endif()
-
             if(ZFILE_NAMES)
               break()
             endif()
@@ -2924,11 +2905,6 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
               "No ${not_found} file(s) was found in the ${ZFILE_CONF_FILES} folder(s), "
               "please read the Zephyr documentation on application development."
       )
-    endif()
-
-    if(deprecated_file_found)
-      message(DEPRECATION "prj_<build>.conf was deprecated after Zephyr 3.5,"
-                          " you should switch to using -DFILE_SUFFIX instead")
     endif()
 
     if(ZFILE_DEFCONFIG)
