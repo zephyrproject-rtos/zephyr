@@ -383,6 +383,8 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_WPS
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
   ${HOSTAP_SRC_BASE}/eap_common/eap_common.c
+  ${HOSTAP_SRC_BASE}/eap_peer/eap_tls_common.c
+
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
@@ -392,7 +394,6 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_EN
 
 zephyr_library_sources_ifdef(CONFIG_EAP_TLS
   ${HOSTAP_SRC_BASE}/eap_peer/eap_tls.c
-  ${HOSTAP_SRC_BASE}/eap_peer/eap_tls_common.c
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_EAP_TLS
