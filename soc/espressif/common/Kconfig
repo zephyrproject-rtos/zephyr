@@ -32,6 +32,17 @@ config ESP_HEAP_RUNTIME
 	  ending at the last memory location that can be safely accessed (depending on a boot mode).
 	  This is a memory pool used in runtime to create a new heap memory.
 
+config ESP_HEAP_MIN_SIZE
+	int
+	default 65535 if WIFI_ESP32 && BT_ESP32
+	default 51200 if WIFI_ESP32
+	default 40960 if BT_ESP32
+	default 32768
+	help
+	  Main purpose of ESP heap is to serve as memory pool for various RF network stacks such as
+	  WiFi and/or BLE. Value selected here is considered as the bare minimum for those systems
+	  to run properly.
+
 config ESP32_TIMER_TASK_STACK_SIZE
 	int "Stack size of the high resolution ESP Timer"
 	default 4096

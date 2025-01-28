@@ -98,8 +98,16 @@ _rom_store_table = 0;
 
 _iram_dram_offset = IRAM_DRAM_OFFSET;
 
-/* Stack sentry */
-_heap_sentry = DRAM_RESERVED_START;
+/* Heap size calculations */
+_esp_heap_sentry = DRAM_RESERVED_START;
+_heap_sentry = DRAM_RESERVED_START - CONFIG_ESP_HEAP_MIN_SIZE;
+
+_sys_heap_size = _heap_sentry - _end;
+_esp_heap_size = _esp_heap_sentry - _heap_sentry;
+
+#ifdef CONFIG_ESP_HEAP_RUNTIME
+ASSERT((_end <= _heap_sentry), "Not enough space to fulfill ESP heap runtime needs!")
+#endif
 
 SECTIONS
 {

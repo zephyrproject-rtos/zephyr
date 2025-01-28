@@ -9,36 +9,35 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <esp_err.h>
 #include <esp_heap_runtime.h>
 #include "esp_log.h"
 
-#define TAG "heap_runtime"
+#define TAG "esp_heap"
 
 /* ESP dynamic pool heap */
-extern unsigned int z_mapped_end;
 extern unsigned int _heap_sentry;
-static void *esp_heap_runtime_init_mem = &z_mapped_end;
+extern unsigned int _esp_heap_sentry;
 
-#define ESP_HEAP_RUNTIME_MAX_SIZE ((uintptr_t)&_heap_sentry - (uintptr_t)&z_mapped_end)
+#ifndef HEAP_ALIGN
+#define HEAP_ALIGN sizeof(double)
+#endif
+
+#define ESP_HEAP_RUNTIME_SIZE                                                                  \
+	 ROUND_DOWN((uintptr_t)&_esp_heap_sentry - (uintptr_t)&_heap_sentry, HEAP_ALIGN)
+
+static void *esp_heap_runtime_init_mem = &_heap_sentry;
 
 static struct k_heap esp_heap_runtime;
 
 static int esp_heap_runtime_init(void)
 {
 	ESP_EARLY_LOGI(TAG, "ESP heap runtime init at 0x%x size %d kB.\n",
-		       esp_heap_runtime_init_mem, ESP_HEAP_RUNTIME_MAX_SIZE / 1024);
+		       esp_heap_runtime_init_mem, ESP_HEAP_RUNTIME_SIZE / 1024);
 
-	k_heap_init(&esp_heap_runtime, esp_heap_runtime_init_mem, ESP_HEAP_RUNTIME_MAX_SIZE);
-
-#if defined(CONFIG_WIFI_ESP32) && defined(CONFIG_BT_ESP32)
-	assert(ESP_HEAP_RUNTIME_MAX_SIZE > 65535);
-#elif defined(CONFIG_WIFI_ESP32)
-	assert(ESP_HEAP_RUNTIME_MAX_SIZE > 51200);
-#elif defined(CONFIG_BT_ESP32)
-	assert(ESP_HEAP_RUNTIME_MAX_SIZE > 40960);
-#endif
+	k_heap_init(&esp_heap_runtime, esp_heap_runtime_init_mem, ESP_HEAP_RUNTIME_SIZE);
 
 	return 0;
 }

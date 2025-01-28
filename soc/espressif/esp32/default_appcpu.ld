@@ -72,7 +72,16 @@ _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
-_heap_sentry = BOOTLOADER_DRAM_SEG_START + APPCPU_DRAM_SIZE;
+/* Heap size calculations for APPCPU */
+_heap_sentry = BOOTLOADER_DRAM_SEG_START + APPCPU_DRAM_SIZE - CONFIG_ESP_HEAP_MIN_SIZE;
+_esp_heap_sentry = BOOTLOADER_DRAM_SEG_START + APPCPU_DRAM_SIZE;
+
+_sys_heap_size = _heap_sentry - _end;
+_esp_heap_size = _esp_heap_sentry - _heap_sentry;
+
+#ifdef CONFIG_ESP_HEAP_RUNTIME
+ASSERT((_end <= _heap_sentry), "Not enough space to fulfill ESP heap runtime needs!")
+#endif
 
 SECTIONS
 {
