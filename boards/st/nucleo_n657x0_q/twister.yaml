@@ -4,6 +4,7 @@ arch: arm
 ram: 1024
 flash: 1024
 supported:
+  - arduino_serial
   - dma
   - gpio
   - uart
