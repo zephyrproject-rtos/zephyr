@@ -7,11 +7,11 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/drivers/i2c.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <zephyr/sys/util.h>
@@ -27,6 +27,7 @@ struct si7006_data {
 
 struct si7006_config {
 	struct i2c_dt_spec i2c;
+	const struct device *vin_supply;
 	/** Use "read temp" vs "read old temp" command, the latter only with SiLabs sensors. */
 	uint8_t read_temp_cmd;
 };
@@ -192,6 +193,13 @@ static int si7006_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (IS_ENABLED(CONFIG_REGULATOR) && config->vin_supply) {
+		regulator_enable(config->vin_supply);
+
+		/* As stated by the Si7006 spec - Maximum powerup time is 80ms */
+		k_msleep(80);
+	}
+
 	LOG_DBG("si7006 init ok");
 
 	return 0;
@@ -202,6 +210,7 @@ static int si7006_init(const struct device *dev)
 											\
 	static const struct si7006_config si7006_config_##name##_##inst = {		\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+		.vin_supply = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, vin_supply)),	\
 		.read_temp_cmd = temp_cmd,						\
 	};										\
 											\
