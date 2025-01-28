@@ -37,7 +37,6 @@ struct gpio_mmio32_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	volatile uint32_t *reg;
-	uint32_t mask;
 	bool is_input;
 };
 
@@ -54,7 +53,7 @@ static int gpio_mmio32_config(const struct device *dev, gpio_pin_t pin, gpio_fla
 	struct gpio_mmio32_context *context = dev->data;
 	const struct gpio_mmio32_config *config = context->config;
 
-	if ((config->mask & (1 << pin)) == 0) {
+	if ((config->common.port_pin_mask & (1 << pin)) == 0) {
 		return -EINVAL; /* Pin not in our validity mask */
 	}
 
@@ -79,7 +78,7 @@ static int gpio_mmio32_config(const struct device *dev, gpio_pin_t pin, gpio_fla
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			*reg = (*reg | (1 << pin));
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-			*reg = (*reg & (config->mask & ~(1 << pin)));
+			*reg = (*reg & (config->common.port_pin_mask & ~(1 << pin)));
 		}
 		irq_unlock(key);
 	}
@@ -92,7 +91,7 @@ static int gpio_mmio32_port_get_raw(const struct device *dev, uint32_t *value)
 	struct gpio_mmio32_context *context = dev->data;
 	const struct gpio_mmio32_config *config = context->config;
 
-	*value = *config->reg & config->mask;
+	*value = *config->reg & config->common.port_pin_mask;
 
 	return 0;
 }
@@ -104,7 +103,7 @@ static int gpio_mmio32_port_set_masked_raw(const struct device *dev, uint32_t ma
 	volatile uint32_t *reg = config->reg;
 	unsigned int key;
 
-	mask &= config->mask;
+	mask &= config->common.port_pin_mask;
 	value &= mask;
 
 	/* Update pin state atomically */
@@ -122,7 +121,7 @@ static int gpio_mmio32_port_set_bits_raw(const struct device *dev, uint32_t mask
 	volatile uint32_t *reg = config->reg;
 	unsigned int key;
 
-	mask &= config->mask;
+	mask &= config->common.port_pin_mask;
 
 	/* Update pin state atomically */
 	key = irq_lock();
@@ -139,7 +138,7 @@ static int gpio_mmio32_port_clear_bits_raw(const struct device *dev, uint32_t ma
 	volatile uint32_t *reg = config->reg;
 	unsigned int key;
 
-	mask &= config->mask;
+	mask &= config->common.port_pin_mask;
 
 	/* Update pin state atomically */
 	key = irq_lock();
@@ -156,7 +155,7 @@ static int gpio_mmio32_port_toggle_bits(const struct device *dev, uint32_t mask)
 	volatile uint32_t *reg = config->reg;
 	unsigned int key;
 
-	mask &= config->mask;
+	mask &= config->common.port_pin_mask;
 
 	/* Update pin state atomically */
 	key = irq_lock();
@@ -201,7 +200,6 @@ int gpio_mmio32_init(const struct device *dev)
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
 			},                                                                         \
 		.reg = (volatile uint32_t *)DT_INST_REG_ADDR(n),                                   \
-		.mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),                                        \
 		.is_input = DT_INST_PROP(n, direction_input),                                      \
 	};                                                                                         \
                                                                                                    \
