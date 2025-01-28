@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Nordic Semiconductor (ASA)
 # SPDX-License-Identifier: Apache-2.0
 
-config IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+config IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC_V1
 	bool "Synchronize access to shared memory"
 	depends on MULTITHREADING
 	default y
@@ -12,16 +12,24 @@ config IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
 	  This option can be safely disabled if an application ensures data
 	  are sent from single context.
 
-config IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS
+config IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS_V1
 	int "Mutex lock timeout in milliseconds"
-	depends on IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	depends on IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC_V1
 	range 1 5
 	default 1
 	help
 	  Maximum time to wait, in milliseconds, for access to send data with
 	  backends basing on icmsg library. This time should be relatively low.
 
-config IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
+config IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS_V1
+	int "Bond notification timeout in miliseconds"
+	range 1 100
+	default 1
+	help
+	  Time to wait for remote bonding notification before the
+	  notification is repeated.
+
+config IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE_V1
 	bool "Use dedicated workqueue"
 	depends on MULTITHREADING
 	default y
@@ -39,9 +47,9 @@ config IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
 	  imposed by the system workqueue, such as never performing blocking
 	  operations from within the callback.
 
-if IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
+if IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE_V1
 
-config IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE
+config IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE_V1
 	int "Size of RX work queue stack"
 	default 1280
 	help
@@ -49,7 +57,7 @@ config IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE
 	  created to prevent notifying service users about received data
 	  from the system work queue. The queue is shared among instances.
 
-config IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY
+config IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY_V1
 	int "Priority of RX work queue thread"
 	default -1
 	range -256 -1
@@ -60,49 +68,22 @@ config IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY
 
 endif
 
-config IPC_SERVICE_ICMSG_UNBOUND_ENABLED_ALLOWED
-	bool "Instance is allowed to set unbound to enabled"
-	default y
-	help
-	  Controls whether the "enabled" value of the "unbound"
-	  property is allowed to be set in any of the ICMsg instances. You
-	  can set this option to "n", if you want to reduce code size and
-	  no instance of ICMsg is using unbound functionality.
-
-config IPC_SERVICE_ICMSG_UNBOUND_DISABLED_ALLOWED
-	bool "Instance is allowed to set unbound to disabled"
-	default y
-	help
-	  Controls whether the "disabled" value of the "unbound"
-	  property is allowed to be set in any of the ICMsg instances. You
-	  can set this option to "n", if you want to reduce code size and
-	  all instances of ICMsg are using unbound functionality.
-
-config IPC_SERVICE_ICMSG_UNBOUND_DETECT_ALLOWED
-	bool "Instance is allowed to set unbound to detect"
-	default y
-	help
-	  Controls whether the "detect" value of the "unbound"
-	  property is allowed to be set in any of the ICMsg instances. You
-	  can set this option to "n", if you want to reduce code size and
-	  all instances of ICMsg are using unbound detection functionality.
-
 # The Icmsg library in its simplicity requires the system workqueue to execute
 # at a cooperative priority.
 config SYSTEM_WORKQUEUE_PRIORITY
-	range -256 -1 if !IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
+	range -256 -1 if !IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE_V1
 
-config PBUF
-	bool "Packed buffer support library"
+config PBUF_V1
+	bool "Packed buffer support library (old implementation)"
 	help
 	  The packet buffer implements lightweight unidirectional packet buffer
 	  with read/write semantics on top of a memory region shared by the
 	  reader and writer. It optionally embeds cache and memory barrier
 	  management to ensure correct data access.
 
-if PBUF
+if PBUF_V1
 
-config PBUF_RX_READ_BUF_SIZE
+config PBUF_RX_READ_BUF_SIZE_V1
 	int "Size of PBUF read buffer in bytes"
 	default 128
 
