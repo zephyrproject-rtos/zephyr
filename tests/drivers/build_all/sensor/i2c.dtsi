@@ -629,11 +629,10 @@ test_i2c_max31875: max31875@5b {
 	reg = <0x5b>;
 };
 
-test_i2c_icp10125: icp10125@5c {
-	compatible = "invensense,icp10125";
+test_i2c_icp101xx: icp101xx@5c {
+	compatible = "invensense,icp101xx";
 	reg = <0x5c>;
-	temperature-measurement-mode = "normal";
-	pressure-measurement-mode = "normal";
+	mode = "normal";
 };
 
 test_i2c_as5600: as5600@5d {
