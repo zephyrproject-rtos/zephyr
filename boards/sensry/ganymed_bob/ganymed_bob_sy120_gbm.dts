@@ -3,6 +3,8 @@
 
 /dts-v1/;
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 #include <sensry/ganymed-sy1xx.dtsi>
 #include "ganymed_bob_sy120-pinctrl.dtsi"
 
@@ -15,4 +17,27 @@
 		zephyr,console = &uart0;
 	};
 
+	mdio0: mdio@1a120020 {
+		compatible = "sensry,sy1xx-mdio";
+		reg = <0x1a120020 0x20>;
+		status = "okay";
+
+		pinctrl-0 = <&mdio_clk &mdio_io>;
+		pinctrl-names = "default";
+
+		clock-frequency = <450000>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		pyh0: phy@0 {
+			compatible = "microchip,vsc8541";
+			reg = <0x0>;
+			status = "okay";
+
+			reset-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+
+			microchip,interface-type = "rgmii";
+		};
+	};
 };
