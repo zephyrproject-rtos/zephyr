@@ -29,7 +29,7 @@ static int board_init(void)
 		return res;
 	}
 
-	return gpio_pin_configure_dt(&user_led, GPIO_OUTPUT_INACTIVE);
+	return gpio_pin_configure_dt(&user_led, GPIO_OUTPUT_HIGH);
 }
 
 SYS_INIT(board_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
