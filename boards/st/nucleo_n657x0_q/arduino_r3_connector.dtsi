@@ -33,3 +33,5 @@
 			   <21 0 &gpioh 9 0>;	/* D15 */
 	};
 };
+
+arduino_serial: &usart3 {};
