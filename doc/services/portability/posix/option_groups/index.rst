@@ -866,7 +866,11 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS`.
     pthread_rwlockattr_init(),yes
     pthread_rwlockattr_setpshared(),yes
 
+..
+   this link is "deprecated" - mainly left here so that older links still work
 .. _posix_shared_memory_objects:
+
+.. _posix_option_shared_memory_objects:
 
 _POSIX_SHARED_MEMORY_OBJECTS
 ++++++++++++++++++++++++++++
