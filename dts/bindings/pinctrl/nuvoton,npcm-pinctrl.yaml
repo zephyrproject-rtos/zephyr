@@ -1,0 +1,193 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Nuvoton pin controller is a singleton node responsible for controlling
+  pin function selection and pin properties. For example, you can use these
+  nodes to select peripheral pin functions.
+
+  Here is a list of supported standard pin properties:
+    - bias-pull-down: Enable pull-down resistor.
+    - bias-pull-up: Enable pull-up resistor.
+
+  An example for the NPCM4 family, include the chip-level pinctrl DTSI file in the
+  board-level DTS:
+
+    #include <nuvoton/npcm/npcm4/npcm4-pincfg-default.dtsi>
+
+  We want to use the I2C0_0 port of the NPCM400F controller and enable the
+  internal 3.3V pull-up if its I2C frequency won't exceed 400kHz.
+
+  To change a pin's pinctrl default properties, add a reference to the pin in
+  the board's DTS file and set the properties in the child node of pinctrl as below:
+
+    i2c1a_scl_sda_gpio60_61: periph-i2c1a {
+      scl {
+        pinmux = <GPIO60__RSTOUT2__SCL1A 2>;  /* Set the pinmux to SCL1A */
+        nuvoton,voltage-level-mv = <3300>;    /* Set the voltage level to 3.3V */
+        bias-pull-up;                         /* Enable internal pull-up for i2c0_0 */
+      };
+      sda {
+        pinmux = <GPIO61__RSTOUT1__SDA1A 2>;  /* Set the pinmux to SDA1A */
+        nuvoton,voltage-level-mv = <3300>;    /* Set the voltage level to 3.3V */
+      };
+    };
+
+    &i2c0_0 {
+      pinctrl-0 = <&i2c1a_scl_sda_gpio60_61>;
+      pinctrl-names = "default";
+    };
+
+    The pin definition is defined in the pin definition node in the chip-level pinctrl DTSI
+    file:
+
+      #include <nuvoton/npcm/npcm4/npcm4-pincfg-default.dtsi>
+
+    The pin definition node is responsible for setting up pin alternate functions with
+    configurations of registers. This includes defining the alternate pin registers and their
+    bits, as well as the configurations of the pull-up/down and the voltage output level. The
+    example below shows the pin definition for the GPIO60 / RSTOUT2 / SCL1A pin:
+
+      gpio60__rstout2__scl1a: pin_gpio60__rstout2__scl1a {
+        nuvoton,pin-hw-def;
+        nuvoton,pin-reg = <NPCM_PINCTRL_ALT5D_2_ACPI_GPIO60_SEL
+            NPCM_PINCTRL_ALTA_0_SMB1A_SL
+            NPCM_PIN_REG_NULL
+            NPCM_PIN_REG_NULL
+            NPCM_PIN_REG_NULL>;
+        nuvoton,alt = <0x10 0 0x18 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+        nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL1_0_SCL1A_LV>;
+        nuvoton,low-voltage-def-mv = <1800>;
+        nuvoton,low-voltage-sup = <0x5>;
+        nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_0_SMB1A_PUE>;
+        bias-pull-up;
+        nuvoton,pull-up-down-sup = <0x4>;
+        nuvoton,id = <GPIO60__RSTOUT2__SCL1A>;
+      };
+
+      Here, the standard pin properties bias-pull-up / bias-pull-down in the pin
+      definition node are represented as the default peripheral pull-up in hardware of
+      supported alt functions.
+
+compatible: "nuvoton,npcm-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    The NPCM pin controller's pin definition node is responsible for setting up pin alternate
+    functions with configurations of registers. This includes defining the alternate pin registers
+    and their bits, as well as the alternate pin selection configurations. The voltage output level
+    is also included.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-pull-down
+        - bias-pull-up
+
+  properties:
+    nuvoton,pin-hw-def:
+      type: boolean
+      description: Indicates that this node is a pin's hardware definition that includes pinmux
+        group, low-voltage level, and peripheral pull-up/down properties.
+    nuvoton,pin-reg:
+      type: array
+      description: |
+        The pinmux group definition property.
+        The alternate pin registers and their bits. There are a total of 5 registers.
+        The register order is from 4 to 0 for convenience in setting the alternate function config
+        value, and the maximum bits to configure are 5 (the alternate function config value is 0x1F
+        when all register bits are set).
+        Set NPCM_PIN_REG_NULL for an empty register.
+    nuvoton,alt:
+      type: array
+      description: |
+        The pinmux group definition property.
+        The alternate pin selection configurations consist of a total of 6 groups.
+        The group order is from 0 to 5, and the bit N value in each group is for
+        register N's bit value.
+        Set NPCM_PIN_CFG_NULL for an empty configuration.
+    nuvoton,id:
+      type: array
+      description: |
+        The pinmux group definition property.
+        The pin's index. The name of this property follows the group's order.
+    nuvoton,low-voltage-reg:
+      type: array
+      description: |
+        The low-voltage level definition property.
+        The low-voltage level register and its bit. This register controls the voltage level
+        of the supported alt functions to be normal 3.3V or low-voltage 1.8V.
+    nuvoton,low-voltage-def-mv:
+      type: array
+      description: |
+        The low-voltage level definition property.
+        The default voltage level in hardware of supported alt functions. Set with either
+        normal 3.3V or low-voltage 1.8V.
+    nuvoton,low-voltage-sup:
+      type: array
+      description: |
+        The low-voltage level definition property.
+        The flag of low-voltage level support. The bit N value represents that group N supports
+        low-voltage level.
+    nuvoton,pull-up-down-config-extend:
+      type: boolean
+      description: |
+        The peripheral pull-up/down definition property.
+        Indicates that there are two groups of peripheral pull-up/down configurations. The default
+        group number is 1.
+    nuvoton,pull-up-down-reg:
+      type: array
+      description: |
+        The peripheral pull-up/down definition property.
+        The peripheral pull-up/down register and its bit. There are a total of 2 registers if
+        property pull-up-down-config-extend is set.
+    nuvoton,pull-up-down-sup:
+      type: array
+      description: |
+        The peripheral pull-up/down definition property.
+        The flag of peripheral pull-up/down support. The bit N value represents that group N
+        supports peripheral pull-up/down level. The maximum number of supported groups is 2.
+
+  child-binding:
+    description: |
+      The NPCM pin controller's pin configuration node is responsible for setting pin configurations
+      including bias-pull-up, bias-pull-down, pinmux alternate function selection, voltage level,
+      and device control with definition in the pinmux definition node.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+
+    properties:
+      pinmux:
+        type: array
+        required: true
+        description: |
+          The pin configuration property.
+          The name of the pin and selection of the pin's alternate function. The name string is
+          referenced from the alternate function order defined in the pin definition node. It is
+          represented in the format of <GPIOx__FUNC_1__FUNC_2__FUNC_n select>, where '__' separates
+          the alternate function names in the name string and is followed by the index number
+          selection. The index 0 in the name string is reserved for the GPIO name, and the rest are
+          the alternate function names.
+      nuvoton,device-control:
+        type: array
+        description: |
+          The pin configuration property.
+          Configurations of the per IO specific device control such as chip select, write protect,
+          tri-state, reset signal, etc.
+      nuvoton,voltage-level-mv:
+        type: int
+        description: |
+          The pin configuration property.
+          Configurations of the low-voltage controller. Supports normal 3.3V or low-voltage 1.8V.
+          Be aware that not every IO supports output at low-voltage level, only set this property to
+          low-voltage supported pins.
