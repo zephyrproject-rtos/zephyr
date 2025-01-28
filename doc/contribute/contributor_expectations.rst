@@ -149,11 +149,16 @@ PR Requirements
 
   5. Renaming and Code Rewrites
 
-     If files or code are renamed or rewritten in later commits during development, squash or rewrite
-     earlier commits to reflect the final structure. This ensures that:
+     If new files are renamed or new code rewritten in later commits during development, squash or
+     rewrite earlier commits to reflect the final structure. This ensures that:
 
      * The history remains clean and easy to follow.
      * Bisectability is preserved by eliminating redundant renaming or partial rewrites.
+
+     Note renaming and changing code *older* than the Pull Request is a different situation. To
+     help git rename detection heuristics, it's better to minimize changes to code that is being
+     moved and use distinct commits if possible. In every situation, preserve bisectability and
+     prioritize readability of the git log.
 
   6. Attribution of Authorship
 
