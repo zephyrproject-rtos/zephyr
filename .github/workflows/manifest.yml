@@ -36,4 +36,4 @@ jobs:
           label-prefix: 'manifest-'
           verbosity-level: '1'
           labels: 'manifest'
-          dnm-labels: 'DNM'
+          dnm-labels: 'DNM (manifest)'
