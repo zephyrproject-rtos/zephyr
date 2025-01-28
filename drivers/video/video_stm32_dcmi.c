@@ -278,14 +278,14 @@ static int video_stm32_dcmi_stream_stop(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Release the video buffer allocated in stream_start */
-	k_fifo_put(&data->fifo_in, data->vbuf);
-
 	err = HAL_DCMI_Stop(&data->hdcmi);
 	if (err != HAL_OK) {
 		LOG_ERR("Failed to stop DCMI");
 		return -EIO;
 	}
+
+	/* Release the video buffer allocated in stream_start */
+	k_fifo_put(&data->fifo_in, data->vbuf);
 
 	return 0;
 }
