@@ -9,6 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_silabs_ldma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/mem_blocks.h>
@@ -104,7 +105,9 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 
 	memset(desc, 0, sizeof(*desc));
 
-	desc->xfer.structReq = 1;
+	if (config->channel_direction == MEMORY_TO_MEMORY) {
+		desc->xfer.structReq = 1;
+	}
 
 	if (config->source_data_size != config->dest_data_size) {
 		LOG_ERR("Source data size(%u) and destination data size(%u) must be equal",
@@ -146,7 +149,11 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 	 * in the list (block for zephyr)
 	 */
 	desc->xfer.doneIfs = config->complete_callback_en;
-	desc->xfer.reqMode = ldmaCtrlReqModeAll;
+	if (config->complete_callback_en) {
+		desc->xfer.reqMode = ldmaCtrlReqModeBlock;
+	} else {
+		desc->xfer.reqMode = ldmaCtrlReqModeAll;
+	}
 	desc->xfer.ignoreSrec = block->flow_control_mode;
 
 	/* In silabs LDMA, increment sign is managed with the transfer configuration
@@ -260,7 +267,6 @@ err:
 	(void)dma_silabs_release_descriptor(data, chan_conf->desc);
 
 	return ret;
-
 }
 
 static void dma_silabs_irq_handler(const struct device *dev, uint32_t id)
@@ -350,7 +356,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 		break;
 	case PERIPHERAL_TO_MEMORY:
 	case MEMORY_TO_PERIPHERAL:
-		xfer_config->ldmaReqSel = config->dma_slot;
+		xfer_config->ldmaReqSel = SILABS_LDMA_SLOT_TO_REQSEL(config->dma_slot);
 		break;
 	case PERIPHERAL_TO_PERIPHERAL:
 	case HOST_TO_MEMORY:
@@ -407,7 +413,6 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 
 static int dma_silabs_start(const struct device *dev, uint32_t channel)
 {
-
 	const struct dma_silabs_data *data = dev->data;
 	struct dma_silabs_channel *chan = &data->dma_chan_table[channel];
 
@@ -453,6 +458,7 @@ static int dma_silabs_get_status(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	status->pending_length = LDMA_TransferRemainingCount(channel);
 	status->busy = data->dma_chan_table[channel].busy;
 	status->dir = data->dma_chan_table[channel].dir;
 
@@ -469,7 +475,6 @@ static int dma_silabs_init(const struct device *dev)
 	};
 
 	/* Clock is managed by em_ldma */
-
 	LDMA_Init(&dmaInit);
 
 	/* LDMA_Init configure IRQ but we want IRQ to match with configured one in the dts*/
@@ -484,6 +489,54 @@ static DEVICE_API(dma, dma_funcs) = {
 	.stop = dma_silabs_stop,
 	.get_status = dma_silabs_get_status
 };
+
+int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct dma_config *config)
+{
+	const struct dma_silabs_data *data = dev->data;
+	struct dma_silabs_channel *chan_conf = &data->dma_chan_table[channel];
+	struct dma_block_config *block_config = config->head_block;
+	LDMA_Descriptor_t *desc = data->dma_chan_table[channel].desc;
+	int ret;
+
+	if (channel > data->dma_ctx.dma_channels) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(data->dma_ctx.atomic, channel)) {
+		return -EINVAL;
+	}
+
+	/* DMA Channel already have loaded a descriptor with a linkaddr
+	 * so we can't append a new block justa fter the current transfer
+	 * This check is here to not use the function in a wrong way
+	 */
+	if (desc->xfer.linkAddr) {
+		return -EINVAL;
+	}
+
+	ret = dma_silabs_block_to_descriptor(config, chan_conf, block_config, desc);
+	if (ret) {
+		return ret;
+	}
+
+	if (!LDMA_TransferDone(channel)) {
+		/*
+		 * It is voluntary to split this 2 lines in order to separate the write of the link
+		 * addr and the write of the link bit. In this way, there is always a linkAddr when
+		 * the link bit is set.
+		 */
+		LDMA->CH[channel].LINK = (uintptr_t)desc & _LDMA_CH_LINK_LINKADDR_MASK;
+		LDMA->CH[channel].LINK |= LDMA_CH_LINK_LINK;
+
+		if (LDMA_TransferDone(channel)) {
+			LDMA_StartTransfer(channel, &chan_conf->xfer_config, desc);
+		}
+	} else {
+		LDMA_StartTransfer(channel, &chan_conf->xfer_config, desc);
+	}
+
+	return 0;
+}
 
 #define SILABS_DMA_IRQ_CONNECT(n, inst)                                                            \
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority),       \
