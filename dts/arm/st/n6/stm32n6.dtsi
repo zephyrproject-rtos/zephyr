@@ -667,6 +667,24 @@
 			};
 		};
 
+		sdmmc1: sdmmc@58027000 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x58027000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 8)>;
+			resets = <&rctl STM32_RESET(AHB5, 8)>;
+			interrupts = <174 0>;
+			status = "disabled";
+		};
+
+		sdmmc2: sdmmc@58026800 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x58026800 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 7)>;
+			resets = <&rctl STM32_RESET(AHB5, 7)>;
+			interrupts = <175 0>;
+			status = "disabled";
+		};
+
 		xspi1: xspi@58025000 {
 			compatible = "st,stm32-xspi";
 			reg = <0x58025000 0x1000>;
