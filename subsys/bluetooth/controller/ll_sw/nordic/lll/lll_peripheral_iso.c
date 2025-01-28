@@ -164,6 +164,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 
+	/* Pick the event_count calculated in the ULL prepare */
+	cis_lll->event_count = cis_lll->event_count_prepare;
+
 	/* Event counter value,  0-15 bit of cisEventCounter */
 	event_counter = cis_lll->event_count;
 
@@ -204,7 +207,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	se_curr = 1U;
 
 	/* Adjust sn and nesn for skipped CIG events */
-	payload_count_lazy(cis_lll, cig_lll->lazy_prepare);
+	payload_count_lazy(cis_lll, cig_lll->latency_event);
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
@@ -374,8 +377,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 			break;
 		}
 
+		/* Pick the event_count calculated in the ULL prepare */
+		cis_lll->event_count = cis_lll->event_count_prepare;
+
 		/* Adjust sn and nesn for skipped CIG events */
-		payload_count_lazy(cis_lll, cig_lll->lazy_prepare);
+		payload_count_lazy(cis_lll, cig_lll->latency_event);
 
 		/* Adjust sn and nesn for canceled events */
 		if (err) {
