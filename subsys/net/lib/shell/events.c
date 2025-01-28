@@ -391,59 +391,99 @@ static char *get_l3_desc(struct event_msg *msg,
 	return info;
 }
 
-static const char *get_l4_desc(uint32_t event)
+static char *sockaddr_ntop(const struct sockaddr *addr, char *dst, size_t size)
 {
-	static const char *desc = unknown_event_str;
+	if (addr->sa_family == AF_INET) {
+		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr, dst, size);
+	} else if (addr->sa_family == AF_INET6) {
+		return net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr, dst, size);
+	}
 
-	switch (event) {
+	return NULL;
+}
+
+static char *get_l4_desc(struct event_msg *msg,
+			 const char **desc, const char **desc2,
+			 char *extra_info, size_t extra_info_len)
+{
+	static const char *desc_unknown = unknown_event_str;
+	char *info = NULL;
+
+	*desc = desc_unknown;
+
+	switch (msg->event) {
 	case NET_EVENT_L4_CONNECTED:
-		desc = "connected";
+		*desc = "connected";
 		break;
 	case NET_EVENT_L4_DISCONNECTED:
-		desc = "disconnected";
+		*desc = "disconnected";
 		break;
 	case NET_EVENT_L4_IPV4_CONNECTED:
-		desc = "IPv4 connectivity available";
+		*desc = "IPv4 connectivity";
+		*desc2 = "available";
 		break;
 	case NET_EVENT_L4_IPV4_DISCONNECTED:
-		desc = "IPv4 connectivity lost";
+		*desc = "IPv4 connectivity";
+		*desc2 = "lost";
 		break;
 	case NET_EVENT_L4_IPV6_CONNECTED:
-		desc = "IPv6 connectivity available";
+		*desc = "IPv6 connectivity";
+		*desc2 = "available";
 		break;
 	case NET_EVENT_L4_IPV6_DISCONNECTED:
-		desc = "IPv6 connectivity lost";
+		*desc = "IPv6 connectivity";
+		*desc2 = "lost";
 		break;
-	case NET_EVENT_DNS_SERVER_ADD:
-		desc = "DNS server add";
+	case NET_EVENT_DNS_SERVER_ADD: {
+		struct sockaddr *addr = (struct sockaddr *)msg->data;
+
+		*desc = "DNS server";
+		*desc2 = "add";
+
+		info = sockaddr_ntop(addr, extra_info, extra_info_len);
+
 		break;
-	case NET_EVENT_DNS_SERVER_DEL:
-		desc = "DNS server del";
+	}
+	case NET_EVENT_DNS_SERVER_DEL: {
+		struct sockaddr *addr = (struct sockaddr *)msg->data;
+
+		*desc = "DNS server";
+		*desc2 = "del";
+
+		info = sockaddr_ntop(addr, extra_info, extra_info_len);
+
 		break;
+	}
 	case NET_EVENT_HOSTNAME_CHANGED:
-		desc = "Hostname changed";
+		*desc = "Hostname changed";
 		break;
 	case NET_EVENT_COAP_SERVICE_STARTED:
-		desc = "CoAP service started";
+		*desc = "CoAP service";
+		*desc2 = "started";
 		break;
 	case NET_EVENT_COAP_SERVICE_STOPPED:
-		desc = "CoAP service stopped";
+		*desc = "CoAP service";
+		*desc2 = "stopped";
 		break;
 	case NET_EVENT_COAP_OBSERVER_ADDED:
-		desc = "CoAP observer added";
+		*desc = "CoAP observer";
+		*desc2 = "added";
 		break;
 	case NET_EVENT_COAP_OBSERVER_REMOVED:
-		desc = "CoAP observer removed";
+		*desc = "CoAP observer";
+		*desc2 = "removed";
 		break;
 	case NET_EVENT_CAPTURE_STARTED:
-		desc = "Capture started";
+		*desc = "Capture";
+		*desc2 = "started";
 		break;
 	case NET_EVENT_CAPTURE_STOPPED:
-		desc = "Capture stopped";
+		*desc = "Capture";
+		*desc2 = "stopped";
 		break;
 	}
 
-	return desc;
+	return info;
 }
 
 /* We use a separate thread in order not to do any shell printing from
@@ -502,7 +542,8 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 					   extra_info, NET_IPV6_ADDR_LEN);
 		} else if (layer == NET_MGMT_LAYER_L4) {
 			layer_str = "L4";
-			desc = get_l4_desc(msg.event);
+			info = get_l4_desc(&msg, &desc, &desc2,
+					   extra_info, NET_IPV6_ADDR_LEN);
 		}
 
 		if (desc == unknown_event_str) {
