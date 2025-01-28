@@ -5,6 +5,7 @@ ram: 1024
 flash: 1024
 vendor: st
 supported:
+  - arduino_serial
   - dma
   - gpio
   - uart
