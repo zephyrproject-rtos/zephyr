@@ -10,4 +10,8 @@ config NET_L2_ETHERNET
 
 endif # NETWORKING
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if ULPT_RENESAS_RA
+	default 480000000
+
 endif # BOARD_EK_RA8M1
