@@ -30,6 +30,8 @@ static struct k_thread tthread[THREADS_NUM];
 static char th_buffer[THREADS_NUM][DIGITS_NUM + 1];
 static atomic_t th_counter = THREADS_NUM;
 
+struct k_thread *main_tid;
+
 void test_thread(void *arg1, void *arg2, void *arg3)
 {
 	atomic_t *counter = (atomic_t *)arg1;
@@ -74,7 +76,9 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 		buffer += 4;
 	}
 
-	atomic_dec(counter);
+	if (atomic_dec(counter) == 1) {
+		k_wakeup(main_tid);
+	}
 }
 
 int main(void)
@@ -84,6 +88,8 @@ int main(void)
 
 	printk("Calculate first %d digits of Pi independently by %d threads.\n",
 	       DIGITS_NUM, THREADS_NUM);
+
+	main_tid = k_current_get();
 
 	/* Capture initial time stamp */
 	start_time = k_cycle_get_32();
@@ -96,9 +102,7 @@ int main(void)
 	}
 
 	/* Wait for all workers to finish their calculations */
-	while (th_counter) {
-		k_sleep(K_MSEC(1));
-	}
+	k_sleep(K_FOREVER);
 
 	/* Capture final time stamp */
 	stop_time = k_cycle_get_32();
