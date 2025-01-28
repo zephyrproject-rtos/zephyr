@@ -5565,6 +5565,15 @@ Random:
   labels:
     - "area: Random"
 
+Peregrine Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - boards/peregrine/
+  labels:
+    - "platform: Peregrine"
+
 # This area is to be converted to a subarea
 Testing with Renode:
   status: odd fixes
