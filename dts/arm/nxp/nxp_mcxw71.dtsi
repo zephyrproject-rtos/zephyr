@@ -200,6 +200,8 @@
 		clocks = <&scg SCG_K4_FIRC_CLK 0xd8>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		status = "disabled";
 	};
 
@@ -210,6 +212,8 @@
 		clocks = <&scg SCG_K4_FIRC_CLK 0xdc>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		status = "disabled";
 	};
 

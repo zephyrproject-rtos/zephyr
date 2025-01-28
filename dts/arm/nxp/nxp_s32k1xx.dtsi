@@ -77,6 +77,8 @@
 			clocks = <&clock NXP_S32_LPSPI0_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -86,6 +88,8 @@
 			interrupts = <27 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -95,6 +99,8 @@
 			interrupts = <28 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 			status = "disabled";
 		};
 

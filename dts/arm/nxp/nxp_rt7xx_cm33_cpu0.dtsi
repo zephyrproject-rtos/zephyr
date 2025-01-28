@@ -330,6 +330,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM0_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm0_lpi2c0: lpi2c@110800 {
@@ -365,6 +367,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM1_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm1_lpi2c1: lpi2c@111800 {
@@ -400,6 +404,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM2_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm2_lpi2c2: lpi2c@112800 {
@@ -435,6 +441,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM3_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm3_lpi2c3: lpi2c@113800 {
@@ -470,6 +478,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM4_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm4_lpi2c4: lpi2c@171800 {
@@ -505,6 +515,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM5_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm5_lpi2c5: lpi2c@172800 {
@@ -540,6 +552,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM6_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm6_lpi2c6: lpi2c@173800 {
@@ -575,6 +589,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM7_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm7_lpi2c7: lpi2c@174800 {
@@ -610,6 +626,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM8_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm8_lpi2c8: lpi2c@199800 {
@@ -645,6 +663,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM9_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm9_lpi2c9: lpi2c@19a800 {
@@ -680,6 +700,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM10_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm10_lpi2c10: lpi2c@19b800 {
@@ -715,6 +737,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM11_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm11_lpi2c11: lpi2c@19c800 {
@@ -750,6 +774,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM12_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm12_lpi2c12: lpi2c@19d800 {
@@ -785,6 +811,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM13_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm13_lpi2c13: lpi2c@19e800 {
@@ -805,6 +833,8 @@
 		clocks = <&clkctl4 MCUX_LPSPI14_CLK>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		status = "disabled";
 	};
 
@@ -828,6 +858,8 @@
 		clocks = <&clkctl4 MCUX_LPSPI16_CLK>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		status = "disabled";
 	};
 };

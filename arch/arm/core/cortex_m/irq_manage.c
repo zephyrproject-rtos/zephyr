@@ -49,6 +49,21 @@ int arch_irq_is_enabled(unsigned int irq)
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
 }
 
+int arch_irq_is_pending(unsigned int irq)
+{
+	return NVIC_GetPendingIRQ(irq);
+}
+
+void arch_irq_set_pending(unsigned int irq)
+{
+	NVIC_SetPendingIRQ(irq);
+}
+
+void arch_irq_clear_pending(unsigned int irq)
+{
+	NVIC_ClearPendingIRQ(irq);
+}
+
 /**
  * @internal
  *

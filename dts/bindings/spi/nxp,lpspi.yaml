@@ -50,3 +50,15 @@ properties:
       Configures whether or not the output data is tristated between accesses
       (when PCS is negated). If set, the output will be tristated when PCS is negated,
       otherwise the output line retains the last value when PCS is negated.
+
+  rx-fifo-size:
+    type: int
+    required: true
+    description: |
+      Max number of words in the RX fifo on this instance of the LPSPI.
+
+  tx-fifo-size:
+    type: int
+    required: true
+    description: |
+      Max number of words in the TX/Command fifo on this instance of the LPSPI.

@@ -39,6 +39,9 @@ GTEXT(z_soc_irq_eoi)
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
+extern int arch_irq_is_pending(unsigned int irq);
+extern void arch_irq_set_pending(unsigned int irq);
+extern void arch_irq_clear_pending(unsigned int irq);
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
