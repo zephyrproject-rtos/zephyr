@@ -88,6 +88,12 @@ config ETH_NXP_ENET_RX_THREAD_PRIORITY
 	  ENET MAC Driver handles RX in cooperative workqueue thread.
 	  This options sets the priority of that thread.
 
+config ETH_NXP_ENET_RMII_EXT_CLK
+	bool "RMII clock from external sources"
+	help
+	  Setting this option will configure ENET clock block to feed RMII
+	  reference clock from external source (ENET_1588_CLKIN)
+
 endif # ETH_NXP_ENET
 
 if ETH_MCUX
