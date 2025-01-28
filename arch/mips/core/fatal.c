@@ -84,7 +84,7 @@ static char *cause_str(unsigned long cause)
 	}
 }
 
-void _Fault(struct arch_esf *esf)
+void z_mips_fault(struct arch_esf *esf)
 {
 	unsigned long cause;
 
