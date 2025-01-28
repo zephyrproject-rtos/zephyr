@@ -546,10 +546,34 @@ config LTO
 	help
 	  This option enables Link Time Optimization.
 
+menu "Warning options"
+
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
 	  Turn on "warning as error" toolchain flags
+
+config COMPILER_WARNINGS_GROUP1
+	bool "Warnings group 1"
+	help
+	  Enable compiler warnings group 1, similar to passing -W=1 to CMake.
+	  For warnings that may be relevant and does not occur too often.
+
+config COMPILER_WARNINGS_GROUP2
+	bool "Warnings group 2"
+	imply COMPILER_WARNINGS_GROUP1
+	help
+	  Enable compiler warnings group 2, similar to passing -W=2 to CMake.
+	  For warnings that occur quite often but may still be relevant.
+
+config COMPILER_WARNINGS_GROUP3
+	bool "Warnings group 3"
+	imply COMPILER_WARNINGS_GROUP2
+	help
+	  Enable compiler warnings group 3, similar to passing -W=3 to CMake.
+	  For the more obscure warnings, can most likely be ignored.
+
+endmenu
 
 config COMPILER_SAVE_TEMPS
 	bool "Save temporary object files"
