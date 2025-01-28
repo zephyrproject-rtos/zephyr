@@ -389,6 +389,9 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_nxp_dma_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_mcux_release,
 };
 
