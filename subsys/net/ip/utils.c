@@ -349,8 +349,49 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 
 		for (i = 0; i < sizeof(struct in_addr); i++) {
 			char *endptr;
+			long int val;
+			bool fail = false;
 
-			addr->s4_addr[i] = strtol(src, &endptr, 10);
+			errno = 0;
+
+			val = strtol(src, &endptr, 10);
+
+			/* Checks from
+			 * https://stackoverflow.com/questions/26080829/detecting-strtol-failure
+			 */
+			if (src == endptr) {
+				/* number invalid (no digits found, 0 returned) */
+				fail = true;
+			} else if (errno == ERANGE && val == LONG_MIN) {
+				/* number invalid (underflow occurred) */
+				fail = true;
+			} else if (errno == ERANGE && val == LONG_MAX) {
+				/* number invalid (overflow occurred) */
+				fail = true;
+			} else if (errno == EINVAL) {
+				/* not in all c99 implementations - gcc OK */
+				/* number invalid (base contains unsupported value) */
+				fail = true;
+			} else if (errno != 0 && val == 0) {
+				/* number invalid (unspecified error occurred) */
+				fail = true;
+			} else if (errno == 0 && src && !*endptr) {
+				/* number valid (and represents all characters read) */
+				fail = false;
+			} else if (errno == 0 && src && *endptr != 0) {
+				/* number valid (but additional characters remain) */
+				fail = false;
+			}
+
+			if (fail || (val < 0 || val > UINT8_MAX)) {
+				return -EINVAL;
+			}
+
+			addr->s4_addr[i] = (uint8_t)val;
+
+			if (*endptr == '\0') {
+				break;
+			}
 
 			src = ++endptr;
 		}
