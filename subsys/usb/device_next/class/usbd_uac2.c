@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -212,6 +213,7 @@ void usbd_uac2_set_ops(const struct device *dev,
 	struct uac2_ctx *ctx = dev->data;
 
 	__ASSERT(ops->sof_cb, "SOF callback is mandatory");
+	__ASSERT(ops->terminal_update_cb, "Terminal update is mandatory");
 
 	ctx->ops = ops;
 	ctx->user_data = user_data;
@@ -262,6 +264,7 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		LOG_ERR("No endpoint for terminal %d", terminal);
 		return -ENOENT;
 	}
+	__ASSERT_NO_MSG(ctx->ops != NULL && ctx->ops->buf_release_cb != NULL);
 
 	if (!atomic_test_bit(&ctx->as_active, as_idx)) {
 		/* Host is not interested in the data */
@@ -328,6 +331,7 @@ static void schedule_iso_out_read(struct usbd_class_data *const c_data,
 	}
 
 	/* Prepare transfer to read audio OUT data from host */
+	__ASSERT_NO_MSG(ctx->ops != NULL && ctx->ops->get_recv_buf != NULL);
 	data_buf = ctx->ops->get_recv_buf(dev, terminal, mps, ctx->user_data);
 	if (!data_buf) {
 		LOG_ERR("No data buffer for terminal %d", terminal);
@@ -379,6 +383,7 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 	bi = udc_get_buf_info(buf);
 	bi->ep = ep;
 
+	__ASSERT_NO_MSG(ctx->ops != NULL && ctx->ops->feedback_cb != NULL);
 	fb_value = ctx->ops->feedback_cb(dev, terminal, ctx->user_data);
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_FS) {
@@ -436,6 +441,7 @@ void uac2_update(struct usbd_class_data *const c_data,
 	as_idx = iface - iad->bFirstInterface - 1;
 
 	/* Notify application about terminal state change */
+	__ASSERT_NO_MSG(ctx->ops != NULL && ctx->ops->terminal_update_cb != NULL);
 	ctx->ops->terminal_update_cb(dev, cfg->as_terminals[as_idx], alternate,
 				     microframes, ctx->user_data);
 
@@ -770,9 +776,11 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
+		__ASSERT_NO_MSG(ctx->ops != NULL && ctx->ops->data_recv_cb != NULL);
 		ctx->ops->data_recv_cb(dev, terminal, buf->__buf, buf->len,
 				       ctx->user_data);
 	} else if (!is_feedback) {
+		__ASSERT_NO_MSG(ctx->ops != NULL && ctx->ops->buf_release_cb != NULL);
 		ctx->ops->buf_release_cb(dev, terminal, buf->__buf, ctx->user_data);
 	}
 
@@ -800,6 +808,7 @@ static void uac2_sof(struct usbd_class_data *const c_data)
 	struct uac2_ctx *ctx = dev->data;
 	int as_idx;
 
+	__ASSERT_NO_MSG(ctx->ops != NULL && ctx->ops->sof_cb != NULL);
 	ctx->ops->sof_cb(dev, ctx->user_data);
 
 	for (as_idx = 0; as_idx < cfg->num_ifaces; as_idx++) {
