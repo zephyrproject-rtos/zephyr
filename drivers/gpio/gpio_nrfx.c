@@ -549,6 +549,10 @@ static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
 #define PAD_PD(inst)
 #endif
 
+static const struct device_ops gpio_nrfx_ops = {
+	.init = gpio_nrfx_init,
+};
+
 #define GPIO_NRF_DEVICE(id)						\
 	GPIOTE_CHECK(id);						\
 	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {	\
@@ -565,7 +569,7 @@ static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
 									\
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
 									\
-	DEVICE_DT_INST_DEFINE(id, gpio_nrfx_init,			\
+	DEVICE_DT_INST_DEFINE(id, &gpio_nrfx_ops,			\
 			 NULL,						\
 			 &gpio_nrfx_p##id##_data,			\
 			 &gpio_nrfx_p##id##_cfg,			\

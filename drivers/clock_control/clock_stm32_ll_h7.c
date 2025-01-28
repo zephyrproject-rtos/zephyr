@@ -1188,6 +1188,10 @@ int stm32_clock_control_init(const struct device *dev)
 	return r;
 }
 
+static const struct device_ops stm32_clock_control_ops = {
+	.init = stm32_clock_control_init,
+};
+
 #if defined(STM32_HSE_CSS)
 void __weak stm32_hse_css_callback(void) {}
 
@@ -1203,7 +1207,7 @@ void HAL_RCC_CSSCallback(void)
  * that the device init runs just after SOC init
  */
 DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
-		    stm32_clock_control_init,
+		    &stm32_clock_control_ops,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,
