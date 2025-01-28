@@ -521,8 +521,8 @@ static int i2c_xilinx_axi_write(const struct i2c_xilinx_axi_config *config,
 			bytes_to_send--;
 			bytes_left--;
 		}
-		i2c_xilinx_axi_clear_interrupt(config, data, ISR_TX_FIFO_EMPTY | ISR_BUS_NOT_BUSY);
 		k_spin_unlock(&data->lock, key);
+		i2c_xilinx_axi_clear_interrupt(config, data, ISR_TX_FIFO_EMPTY | ISR_BUS_NOT_BUSY);
 
 		ret = i2c_xilinx_axi_wait_tx_done(config, data);
 		if (ret) {
