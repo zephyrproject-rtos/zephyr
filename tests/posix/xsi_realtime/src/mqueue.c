@@ -13,7 +13,7 @@
 #include <zephyr/ztest.h>
 
 #define N_THR            2
-#define MESSAGE_SIZE 16
+#define MESSAGE_SIZE     16
 #define MESG_COUNT_PERMQ 4
 
 static char queue[16] = "server";
@@ -40,12 +40,10 @@ static void *sender_thread(void *p1)
 	zassert_false(mq_timedsend(mqd, send_data, MESSAGE_SIZE, 0, &curtime),
 		      "Not able to send message in timer");
 	usleep(USEC_PER_MSEC);
-	zassert_false(mq_close(mqd),
-		      "unable to close message queue descriptor.");
+	zassert_false(mq_close(mqd), "unable to close message queue descriptor.");
 	pthread_exit(p1);
 	return NULL;
 }
-
 
 static void *receiver_thread(void *p1)
 {
@@ -59,13 +57,12 @@ static void *receiver_thread(void *p1)
 	zassert_false(strcmp(rec_data, send_data), "Error in data reception. exp: %s act: %s",
 		      send_data, rec_data);
 	usleep(USEC_PER_MSEC);
-	zassert_false(mq_close(mqd),
-		      "unable to close message queue descriptor.");
+	zassert_false(mq_close(mqd), "unable to close message queue descriptor.");
 	pthread_exit(p1);
 	return NULL;
 }
 
-ZTEST(mqueue, test_mqueue)
+ZTEST(xsi_realtime, test_mqueue)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;
@@ -91,8 +88,7 @@ ZTEST(mqueue, test_mqueue)
 		pthread_join(newthread[i], &retval);
 	}
 
-	zassert_false(mq_close(mqd),
-		      "unable to close message queue descriptor.");
+	zassert_false(mq_close(mqd), "unable to close message queue descriptor.");
 	zassert_false(mq_unlink(queue), "Not able to unlink Queue");
 }
 
@@ -106,15 +102,15 @@ void notify_function_basic(union sigval val)
 	mqd = mq_open(queue, O_RDONLY);
 
 	mq_receive(mqd, rec_data, MESSAGE_SIZE, 0);
-	zassert_ok(strcmp(rec_data, send_data),
-		   "Error in data reception. exp: %s act: %s", send_data, rec_data);
+	zassert_ok(strcmp(rec_data, send_data), "Error in data reception. exp: %s act: %s",
+		   send_data, rec_data);
 
 	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
 
 	*executed = true;
 }
 
-ZTEST(mqueue, test_mqueue_notify_basic)
+ZTEST(xsi_realtime, test_mqueue_notify_basic)
 {
 	mqd_t mqd;
 	struct mq_attr attrs = {
@@ -155,15 +151,15 @@ void notify_function_thread(union sigval val)
 	mqd = mq_open(queue, O_RDONLY);
 
 	mq_receive(mqd, rec_data, MESSAGE_SIZE, 0);
-	zassert_ok(strcmp(rec_data, send_data),
-		   "Error in data reception. exp: %s act: %s", send_data, rec_data);
+	zassert_ok(strcmp(rec_data, send_data), "Error in data reception. exp: %s act: %s",
+		   send_data, rec_data);
 
 	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
 
 	notification_executed = true;
 }
 
-ZTEST(mqueue, test_mqueue_notify_thread)
+ZTEST(xsi_realtime, test_mqueue_notify_thread)
 {
 	mqd_t mqd;
 	struct mq_attr attrs = {
@@ -195,7 +191,7 @@ ZTEST(mqueue, test_mqueue_notify_thread)
 	zassert_ok(mq_unlink(queue), "Unable to unlink queue");
 }
 
-ZTEST(mqueue, test_mqueue_notify_non_empty_queue)
+ZTEST(xsi_realtime, test_mqueue_notify_non_empty_queue)
 {
 	mqd_t mqd;
 	struct mq_attr attrs = {
@@ -222,8 +218,8 @@ ZTEST(mqueue, test_mqueue_notify_non_empty_queue)
 	zassert_false(notification_executed, "Notification shouldn't be processed.");
 
 	mq_receive(mqd, rec_data, MESSAGE_SIZE, 0);
-	zassert_false(strcmp(rec_data, send_data),
-		      "Error in data reception. exp: %s act: %s", send_data, rec_data);
+	zassert_false(strcmp(rec_data, send_data), "Error in data reception. exp: %s act: %s",
+		      send_data, rec_data);
 
 	memset(rec_data, 0, MESSAGE_SIZE);
 
@@ -235,7 +231,7 @@ ZTEST(mqueue, test_mqueue_notify_non_empty_queue)
 	zassert_ok(mq_unlink(queue), "Unable to unlink queue");
 }
 
-ZTEST(mqueue, test_mqueue_notify_errors)
+ZTEST(xsi_realtime, test_mqueue_notify_errors)
 {
 	mqd_t mqd;
 	struct mq_attr attrs = {
@@ -275,15 +271,3 @@ ZTEST(mqueue, test_mqueue_notify_errors)
 	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
 	zassert_ok(mq_unlink(queue), "Unable to unlink queue");
 }
-
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(mqueue, NULL, NULL, before, NULL, NULL);
