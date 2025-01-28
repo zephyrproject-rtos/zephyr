@@ -16,16 +16,16 @@ tests:
   drivers.spi.loopback.lpspi.dma:
     filter: DT_HAS_NXP_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
-      - CONFIG_SPI_MCUX_LPSPI_DMA=y
+      - CONFIG_SPI_NXP_LPSPI_DMA=y
   drivers.spi.loopback.lpspi.async.unset:
     filter: DT_HAS_NXP_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
-      - CONFIG_SPI_MCUX_LPSPI_DMA=n
+      - CONFIG_SPI_NXP_LPSPI_DMA=n
       - CONFIG_SPI_ASYNC=n
   drivers.spi.loopback.lpspi.dma.async.unset:
     filter: DT_HAS_NXP_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
-      - CONFIG_SPI_MCUX_LPSPI_DMA=y
+      - CONFIG_SPI_NXP_LPSPI_DMA=y
       - CONFIG_SPI_ASYNC=n
   drivers.spi.loopback.rtio:
     extra_configs:

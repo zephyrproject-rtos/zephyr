@@ -462,7 +462,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer1, &rootCfg);
 #endif
 
-#ifdef CONFIG_SPI_MCUX_LPSPI
+#ifdef CONFIG_SPI_NXP_LPSPI
 	/* Configure lpspi using Osc48MDiv2 */
 	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;

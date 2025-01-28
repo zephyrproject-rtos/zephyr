@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nxp_lpspi
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(spi_nxp_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
 
@@ -18,24 +18,16 @@ struct lpspi_driver_data {
 	uint8_t word_size_bytes;
 };
 
-static inline void lpspi_wait_tx_fifo_empty(const struct device *dev)
-{
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-
-	while (LPSPI_GetTxFifoCount(base) != 0) {
-	}
-}
-
 /* Reads a word from the RX fifo and handles writing it into the RX spi buf */
 static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t offset)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	uint8_t num_bytes = MIN(lpspi_data->word_size_bytes, ctx->rx_len);
 	uint8_t *buf = ctx->rx_buf + offset;
-	uint32_t word = LPSPI_ReadData(base);
+	uint32_t word = base->RDR;
 
 	if (!spi_context_rx_buf_on(ctx) && spi_context_rx_on(ctx)) {
 		/* receive no actual data if rx buf is NULL */
@@ -50,7 +42,7 @@ static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t of
 /* Reads a maximum number of words from RX fifo and writes them to the remainder of the RX buf */
 static inline size_t lpspi_rx_buf_write_words(const struct device *dev, uint8_t max_read)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	size_t buf_len = ctx->rx_len / lpspi_data->word_size_bytes;
@@ -68,13 +60,13 @@ static inline size_t lpspi_rx_buf_write_words(const struct device *dev, uint8_t 
 
 static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
 {
-	return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
+	return FIELD_GET(LPSPI_FSR_RXCOUNT_MASK, base->FSR);
 }
 
 static inline void lpspi_handle_rx_irq(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	uint8_t total_words_written = 0;
@@ -82,7 +74,7 @@ static inline void lpspi_handle_rx_irq(const struct device *dev)
 	uint8_t words_read;
 	uint8_t rx_fsr;
 
-	LPSPI_ClearStatusFlags(base, kLPSPI_RxDataReadyFlag);
+	base->SR = LPSPI_SR_RDF_MASK;
 
 	LOG_DBG("RX FIFO: %d, RX BUF: %p", rx_fsr, ctx->rx_buf);
 
@@ -96,14 +88,14 @@ static inline void lpspi_handle_rx_irq(const struct device *dev)
 	LOG_DBG("RX done %d words to spi buf", total_words_written);
 
 	if (!spi_context_rx_on(ctx)) {
-		LPSPI_DisableInterrupts(base, (uint32_t)kLPSPI_RxInterruptEnable);
-		LPSPI_FlushFifo(base, false, true);
+		base->IER &= ~LPSPI_IER_RDIE_MASK;
+		base->CR |= LPSPI_CR_RRF_MASK; /* flush rx fifo */
 	}
 }
 
 static inline uint32_t lpspi_next_tx_word(const struct device *dev, int offset)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	const uint8_t *byte = ctx->tx_buf + offset;
@@ -120,13 +112,13 @@ static inline uint32_t lpspi_next_tx_word(const struct device *dev, int offset)
 static inline void lpspi_fill_tx_fifo(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	size_t bytes_in_xfer = lpspi_data->fill_len * lpspi_data->word_size_bytes;
 	size_t offset;
 
 	for (offset = 0; offset < bytes_in_xfer; offset += lpspi_data->word_size_bytes) {
-		LPSPI_WriteData(base, lpspi_next_tx_word(dev, offset));
+		base->TDR = lpspi_next_tx_word(dev, offset);
 	}
 
 	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", lpspi_data->fill_len, offset);
@@ -135,11 +127,11 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev)
 static inline void lpspi_fill_tx_fifo_nop(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 
 	for (int i = 0; i < lpspi_data->fill_len; i++) {
-		LPSPI_WriteData(base, 0);
+		base->TDR = 0;
 	}
 
 	LOG_DBG("Filled TX fifo with %d NOPs", lpspi_data->fill_len);
@@ -147,8 +139,8 @@ static inline void lpspi_fill_tx_fifo_nop(const struct device *dev)
 
 static void lpspi_next_tx_fill(const struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
+	const struct spi_nxp_config *config = dev->config;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	size_t max_chunk;
@@ -168,13 +160,13 @@ static void lpspi_next_tx_fill(const struct device *dev)
 static inline void lpspi_handle_tx_irq(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 
 	spi_context_update_tx(ctx, lpspi_data->word_size_bytes, lpspi_data->fill_len);
 
-	LPSPI_ClearStatusFlags(base, kLPSPI_TxDataRequestFlag);
+	base->SR = LPSPI_SR_TDF_MASK;
 
 	/* Having no buffer length left indicates transfer is done, if there
 	 * was RX to do left, the TX buf would be null but
@@ -185,7 +177,7 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 		base->TCR = 0;
 		lpspi_wait_tx_fifo_empty(dev);
 		spi_context_cs_control(ctx, false);
-		LPSPI_DisableInterrupts(base, (uint32_t)kLPSPI_TxInterruptEnable);
+		base->IER &= ~LPSPI_IER_TDIE_MASK;
 		return;
 	}
 
@@ -194,7 +186,7 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 
 static inline bool lpspi_is_rx_done(const struct device *dev)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	size_t tx_total = lpspi_data->tx_total_len;
@@ -222,16 +214,16 @@ static inline void lpspi_clear_remaining_rx(struct spi_context *ctx)
 static void lpspi_isr(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	const struct spi_mcux_config *config = dev->config;
-	uint32_t status_flags = LPSPI_GetStatusFlags(base);
-	struct spi_mcux_data *data = dev->data;
+	const struct spi_nxp_config *config = dev->config;
+	uint32_t status_flags = base->SR;
+	struct spi_nxp_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
-	if (status_flags & kLPSPI_RxDataReadyFlag) {
+	if (status_flags & LPSPI_SR_RDF_MASK) {
 		lpspi_handle_rx_irq(dev);
 	}
 
-	if (status_flags & kLPSPI_TxDataRequestFlag) {
+	if (status_flags & LPSPI_SR_TDF_MASK) {
 		lpspi_handle_tx_irq(dev);
 	}
 
@@ -247,7 +239,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	int ret;
 
@@ -265,20 +257,13 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	lpspi_data->tx_total_len = spi_context_total_tx_len(&data->ctx);
 	lpspi_data->rx_total_len = spi_context_total_rx_len(&data->ctx);
 
-	ret = spi_mcux_configure(dev, spi_cfg);
+	ret = spi_nxp_configure(dev, spi_cfg);
 	if (ret) {
 		goto out;
 	}
 
-	LPSPI_FlushFifo(base, true, true);
-	LPSPI_ClearStatusFlags(base, (uint32_t)kLPSPI_AllStatusFlag);
-	LPSPI_DisableInterrupts(base, (uint32_t)kLPSPI_AllInterruptEnable);
-
 	LOG_DBG("Starting LPSPI transfer");
 	spi_context_cs_control(&data->ctx, true);
-
-	LPSPI_SetFifoWatermarks(base, 0, 0);
-	LPSPI_Enable(base, true);
 
 	/* keep the chip select asserted until the end of the zephyr xfer */
 	base->TCR |= LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
@@ -288,8 +273,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	/* start the transfer sequence which are handled by irqs */
 	lpspi_next_tx_fill(dev);
 
-	LPSPI_EnableInterrupts(base, (uint32_t)kLPSPI_TxInterruptEnable |
-				     (uint32_t)kLPSPI_RxInterruptEnable);
+	base->IER |= LPSPI_IER_TDIE_MASK | LPSPI_IER_RDIE_MASK;
 
 	ret = spi_context_wait_for_completion(&data->ctx);
 out:
@@ -298,7 +282,7 @@ out:
 	return ret;
 }
 
-static int spi_mcux_transceive_sync(const struct device *dev, const struct spi_config *spi_cfg,
+static int spi_nxp_transceive_sync(const struct device *dev, const struct spi_config *spi_cfg,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
 {
@@ -306,7 +290,7 @@ static int spi_mcux_transceive_sync(const struct device *dev, const struct spi_c
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_mcux_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
+static int spi_nxp_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
@@ -315,20 +299,20 @@ static int spi_mcux_transceive_async(const struct device *dev, const struct spi_
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static DEVICE_API(spi, spi_mcux_driver_api) = {
-	.transceive = spi_mcux_transceive_sync,
+static DEVICE_API(spi, spi_nxp_driver_api) = {
+	.transceive = spi_nxp_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
-	.transceive_async = spi_mcux_transceive_async,
+	.transceive_async = spi_nxp_transceive_async,
 #endif
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_mcux_release,
+	.release = spi_nxp_release,
 };
 
-static int spi_mcux_init(const struct device *dev)
+static int spi_nxp_init(const struct device *dev)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	int err = 0;
 
 	err = spi_nxp_init_common(dev);
@@ -343,23 +327,23 @@ static int spi_mcux_init(const struct device *dev)
 
 #define LPSPI_INIT(n)                                                                              \
 	SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
-	SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
+	SPI_NXP_LPSPI_CONFIG_INIT(n)                                                               \
                                                                                                    \
 	static struct lpspi_driver_data lpspi_##n##_driver_data;                                   \
                                                                                                    \
-	static struct spi_mcux_data spi_mcux_data_##n = {                                          \
+	static struct spi_nxp_data spi_nxp_data_##n = {                                            \
 		SPI_NXP_LPSPI_COMMON_DATA_INIT(n)                                                  \
 		.driver_data = &lpspi_##n##_driver_data,                                           \
 	};                                                                                         \
                                                                                                    \
-	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_data_##n,                      \
-				  &spi_mcux_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
-				  &spi_mcux_driver_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_nxp_init, NULL, &spi_nxp_data_##n,                        \
+				  &spi_nxp_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,      \
+				  &spi_nxp_driver_api);
 
-#define SPI_MCUX_LPSPI_INIT_IF_DMA(n) IF_DISABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_INIT(n)))
+#define SPI_NXP_LPSPI_INIT_IF_DMA(n) IF_DISABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_INIT(n)))
 
-#define SPI_MCUX_LPSPI_INIT(n)                                                                     \
-	COND_CODE_1(CONFIG_SPI_MCUX_LPSPI_DMA,				   \
-						(SPI_MCUX_LPSPI_INIT_IF_DMA(n)), (LPSPI_INIT(n)))
+#define SPI_NXP_LPSPI_INIT(n)                                                                     \
+	COND_CODE_1(CONFIG_SPI_NXP_LPSPI_DMA,                                                     \
+						(SPI_NXP_LPSPI_INIT_IF_DMA(n)), (LPSPI_INIT(n)))
 
-DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_LPSPI_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_NXP_LPSPI_INIT)
