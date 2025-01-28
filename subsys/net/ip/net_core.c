@@ -458,8 +458,6 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 
 void net_process_rx_packet(struct net_pkt *pkt)
 {
-	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
-
 	net_capture_pkt(net_pkt_iface(pkt), pkt);
 
 	net_rx(net_pkt_iface(pkt), pkt);
@@ -467,24 +465,33 @@ void net_process_rx_packet(struct net_pkt *pkt)
 
 static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 {
+	size_t len = net_pkt_get_len(pkt);
 	uint8_t prio = net_pkt_priority(pkt);
 	uint8_t tc = net_rx_priority2tc(prio);
 
-#if defined(CONFIG_NET_STATISTICS)
-	net_stats_update_tc_recv_pkt(iface, tc);
-	net_stats_update_tc_recv_bytes(iface, tc, net_pkt_get_len(pkt));
-	net_stats_update_tc_recv_priority(iface, tc, prio);
+#if NET_TC_RX_COUNT > 1
+	NET_DBG("TC %d with len %zu prio %d pkt %p", tc, len, prio, pkt);
 #endif
 
-#if NET_TC_RX_COUNT > 1
-	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
-#endif
+	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
 	if (NET_TC_RX_COUNT == 0) {
 		net_process_rx_packet(pkt);
 	} else {
-		net_tc_submit_to_rx_queue(tc, pkt);
+		if (net_tc_submit_to_rx_queue(tc, pkt) != NET_OK) {
+			goto drop;
+		}
 	}
+
+	net_stats_update_tc_recv_pkt(iface, tc);
+	net_stats_update_tc_recv_bytes(iface, tc, len);
+	net_stats_update_tc_recv_priority(iface, tc, prio);
+	return;
+
+drop:
+	net_pkt_unref(pkt);
+	net_stats_update_tc_recv_dropped(iface, tc);
+	return;
 }
 
 /* Called by driver when a packet has been received */
