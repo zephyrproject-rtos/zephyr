@@ -118,6 +118,20 @@
 #endif /* defined(CONFIG_FS_FATFS_EXTRA_NATIVE_API) */
 
 /*
+ * When custom mount points are activated we need to
+ * undef FF_VOLUME_STRS in order to be able to provide
+ * our own VolumeStr array.
+ */
+#if defined(CONFIG_FS_FATFS_CUSTOM_MOUNT_POINTS)
+#if !defined(CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT)
+#error Mount point count needs to be defined
+#endif /* !defined(CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT) */
+#undef FF_VOLUMES
+#define FF_VOLUMES CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT
+#undef FF_VOLUME_STRS
+#endif /* defined(CONFIG_FS_FATFS_CUSTOM_MOUNT_POINTS) */
+
+/*
  * Options provided below have been added to ELM FAT source code to
  * support Zephyr specific features, and are not part of ffconf.h.
  */
