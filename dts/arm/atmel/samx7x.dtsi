@@ -472,6 +472,15 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 46>;
 			status = "disabled";
 		};
+
+		smc: smc@40080000 {
+			compatible = "atmel,sam-smc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40080000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
+			status = "disabled";
+		};
 	};
 };
 
