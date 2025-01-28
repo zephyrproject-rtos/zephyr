@@ -442,7 +442,7 @@ zephyr_library_compile_definitions_ifdef(CONFIG_EAP_MSCHAPV2
   EAP_MSCHAPv2
 )
 
-if(CONFIG_EAP_TTLS OR CONFIG_EAP_MSCHAPV2)
+if(CONFIG_EAP_TTLS OR CONFIG_EAP_MSCHAPV2 OR CONFIG_EAP_MD5)
   zephyr_library_sources(${HOSTAP_SRC_BASE}/eap_common/chap.c)
 endif()
 
