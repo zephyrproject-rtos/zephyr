@@ -206,6 +206,10 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if ((fmt->pitch * fmt->height) > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
+		return -EINVAL;
+	}
+
 	data->pixel_format = fmt->pixelformat;
 	data->pitch = fmt->pitch;
 	data->height = fmt->height;
