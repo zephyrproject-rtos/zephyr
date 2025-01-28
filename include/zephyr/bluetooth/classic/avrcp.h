@@ -16,6 +16,90 @@
 extern "C" {
 #endif
 
+/** @brief AV/C ctypes or response codes */
+typedef enum __packed {
+	BT_AVRCP_CTYPE_CONTROL = 0x0,
+	BT_AVRCP_CTYPE_STATUS = 0x1,
+	BT_AVRCP_CTYPE_SPECIFIC_INQUIRY = 0x2,
+	BT_AVRCP_CTYPE_NOTIFY = 0x3,
+	BT_AVRCP_CTYPE_GENERAL_INQUIRY = 0x4,
+
+	BT_AVRCP_RSP_NOT_IMPLEMENTED = 0x8,
+	BT_AVRCP_RSP_ACCEPTED = 0x9,
+	BT_AVRCP_RSP_REJECTED = 0xA,
+	BT_AVRCP_RSP_IN_TRANSITION = 0xB,
+	BT_AVRCP_RSP_IMPLEMENTED = 0xC, /**< For SPECIFIC_INQUIRY and GENERAL_INQUIRY commands */
+	BT_AVRCP_RSP_STABLE = 0xC,      /**< For STATUS commands */
+	BT_AVRCP_RSP_CHANGED = 0xD,
+	BT_AVRCP_RSP_INTERIM = 0xF,
+} bt_avrcp_ctype_t;
+
+/** @brief AV/C operation ids used in AVRCP passthrough commands */
+typedef enum __packed {
+	BT_AVRCP_PANEL_SELECT = 0x00,
+	BT_AVRCP_PANEL_UP = 0x01,
+	BT_AVRCP_PANEL_DOWN = 0x02,
+	BT_AVRCP_PANEL_LEFT = 0x03,
+	BT_AVRCP_PANEL_RIGHT = 0x04,
+	BT_AVRCP_PANEL_RIGHT_UP = 0x05,
+	BT_AVRCP_PANEL_RIGHT_DOWN = 0x06,
+	BT_AVRCP_PANEL_LEFT_UP = 0x07,
+	BT_AVRCP_PANEL_LEFT_DOWN = 0x08,
+	BT_AVRCP_PANEL_ROOT_MENU = 0x09,
+	BT_AVRCP_PANEL_SETUP_MENU = 0x0A,
+	BT_AVRCP_PANEL_CONTENTS_MENU = 0x0B,
+	BT_AVRCP_PANEL_FAVORITE_MENU = 0x0C,
+	BT_AVRCP_PANEL_EXIT = 0x0D,
+
+	BT_AVRCP_PANEL_0 = 0x20,
+	BT_AVRCP_PANEL_1 = 0x21,
+	BT_AVRCP_PANEL_2 = 0x22,
+	BT_AVRCP_PANEL_3 = 0x23,
+	BT_AVRCP_PANEL_4 = 0x24,
+	BT_AVRCP_PANEL_5 = 0x25,
+	BT_AVRCP_PANEL_6 = 0x26,
+	BT_AVRCP_PANEL_7 = 0x27,
+	BT_AVRCP_PANEL_8 = 0x28,
+	BT_AVRCP_PANEL_9 = 0x29,
+	BT_AVRCP_PANEL_DOT = 0x2A,
+	BT_AVRCP_PANEL_ENTER = 0x2B,
+	BT_AVRCP_PANEL_CLEAR = 0x2C,
+
+	BT_AVRCP_PANEL_CHANNEL_UP = 0x30,
+	BT_AVRCP_PANEL_CHANNEL_DOWN = 0x31,
+	BT_AVRCP_PANEL_PREVIOUS_CHANNEL = 0x32,
+	BT_AVRCP_PANEL_SOUND_SELECT = 0x33,
+	BT_AVRCP_PANEL_INPUT_SELECT = 0x34,
+	BT_AVRCP_PANEL_DISPLAY_INFORMATION = 0x35,
+	BT_AVRCP_PANEL_HELP = 0x36,
+	BT_AVRCP_PANEL_PAGE_UP = 0x37,
+	BT_AVRCP_PANEL_PAGE_DOWN = 0x38,
+
+	BT_AVRCP_PANEL_POWER = 0x40,
+	BT_AVRCP_PANEL_VOLUME_UP = 0x41,
+	BT_AVRCP_PANEL_VOLUME_DOWN = 0x42,
+	BT_AVRCP_PANEL_MUTE = 0x43,
+	BT_AVRCP_PANEL_PLAY = 0x44,
+	BT_AVRCP_PANEL_STOP = 0x45,
+	BT_AVRCP_PANEL_PAUSE = 0x46,
+	BT_AVRCP_PANEL_RECORD = 0x47,
+	BT_AVRCP_PANEL_REWIND = 0x48,
+	BT_AVRCP_PANEL_FAST_FORWARD = 0x49,
+	BT_AVRCP_PANEL_EJECT = 0x4A,
+	BT_AVRCP_PANEL_FORWARD = 0x4B,
+	BT_AVRCP_PANEL_BACKWARD = 0x4C,
+
+	BT_AVRCP_PANEL_ANGLE = 0x50,
+	BT_AVRCP_PANEL_SUBPICTURE = 0x51,
+
+	BT_AVRCP_PANEL_F1 = 0x71,
+	BT_AVRCP_PANEL_F2 = 0x72,
+	BT_AVRCP_PANEL_F3 = 0x73,
+	BT_AVRCP_PANEL_F4 = 0x74,
+	BT_AVRCP_PANEL_F5 = 0x75,
+	BT_AVRCP_PANEL_VENDOR_UNIQUE = 0x7E,
+} bt_avrcp_operation_id_t;
+
 /** @brief AVRCP structure */
 struct bt_avrcp;
 
@@ -28,7 +112,14 @@ struct bt_avrcp_subunit_info_rsp {
 	uint8_t subunit_type;
 	uint8_t max_subunit_id;
 	const uint8_t *extended_subunit_type; /**< contains max_subunit_id items */
-	const uint8_t *extended_subunit_id; /**< contains max_subunit_id items */
+	const uint8_t *extended_subunit_id;   /**< contains max_subunit_id items */
+};
+
+struct bt_avrcp_passthrough_rsp {
+	uint8_t response;     /**< bt_avrcp_ctype_t */
+	uint8_t operation_id; /**< bt_avrcp_operation_id_t */
+	uint8_t len;
+	const uint8_t *payload;
 };
 
 struct bt_avrcp_cb {
@@ -40,6 +131,7 @@ struct bt_avrcp_cb {
 	 *  @param avrcp AVRCP connection object.
 	 */
 	void (*connected)(struct bt_avrcp *avrcp);
+
 	/** @brief An AVRCP connection has been disconnected.
 	 *
 	 *  This callback notifies the application that an avrcp connection
@@ -48,6 +140,7 @@ struct bt_avrcp_cb {
 	 *  @param avrcp AVRCP connection object.
 	 */
 	void (*disconnected)(struct bt_avrcp *avrcp);
+
 	/** @brief Callback function for bt_avrcp_get_unit_info().
 	 *
 	 *  Called when the get unit info process is completed.
@@ -56,6 +149,7 @@ struct bt_avrcp_cb {
 	 *  @param rsp The response for UNIT INFO command.
 	 */
 	void (*unit_info_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp);
+
 	/** @brief Callback function for bt_avrcp_get_subunit_info().
 	 *
 	 *  Called when the get subunit info process is completed.
@@ -64,6 +158,15 @@ struct bt_avrcp_cb {
 	 *  @param rsp The response for SUBUNIT INFO command.
 	 */
 	void (*subunit_info_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_subunit_info_rsp *rsp);
+
+	/** @brief Callback function for bt_avrcp_passthrough().
+	 *
+	 *  Called when a passthrough response is received.
+	 *
+	 *  @param avrcp AVRCP connection object.
+	 *  @param rsp The response for PASS THROUGH command.
+	 */
+	void (*passthrough_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_passthrough_rsp *rsp);
 };
 
 /** @brief Connect AVRCP.
@@ -119,6 +222,21 @@ int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp);
  *  @return 0 in case of success or error code in case of error.
  */
 int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp);
+
+/** @brief Send AVRCP Pass Through command.
+ *
+ *  This function send a pass through command to the remote device. Passsthhrough command is used
+ *  to transfer user operation information from a CT to Panel subunit of TG.
+ *
+ *  @param avrcp The AVRCP instance.
+ *  @param operation_id The user operation id.
+ *  @param payload The payload of the pass through command. Should not be NULL if len is not zero.
+ *  @param len The length of the payload.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_passthrough(struct bt_avrcp *avrcp, bt_avrcp_operation_id_t operation_id,
+			 const uint8_t *payload, uint8_t len);
 
 #ifdef __cplusplus
 }
