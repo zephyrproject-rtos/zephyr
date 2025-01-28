@@ -1,0 +1,56 @@
+extend = "../../../.ruff.toml"
+
+[lint.per-file-ignores]
+"src/**.py" = [
+	# Organize imports
+	"I001",
+	# Use 'list' instead of 'List' for type annotation
+	"UP006",
+	# Use 'X | Y' for type annotation
+	"UP007",
+	# Unnecessary open mode parameters
+	"UP015",
+	# 'typing{Dict,List,Tuple}' is deprecated, use '{dict,list,tuple}' instead
+	# Import from 'collections.abc' instead: 'Sequence', 'Mapping', 'Iterator'
+	"UP035",
+	# Use a single if statement instead of nested if statements
+	"SIM102",
+	# Use a context manager for opening files
+	"SIM115",
+]
+"src/dtsh/rich/html.py" = [
+	# Line too long
+	"E501",
+]
+"src/dtsh/rich/svg.py" = [
+	# Line too long
+	"E501",
+	# B007 Loop control variable not used within loop body
+	"B007",
+]
+
+"tests/*.py" = [
+	# Line too long
+	"E501",
+	# Organize imports
+	"I001",
+	# Use 'list' instead of 'List' for type annotation
+	"UP006",
+	# Use 'X | Y' for type annotation
+	"UP007",
+	# 'typing{Dict,List,Tuple}' is deprecated, use '{dict,list,tuple}' instead
+	# Import from 'collections.abc' instead: 'Sequence', 'Mapping', 'Iterator'
+	"UP035",
+	# Pointless comparison. Did you mean to assign a value?
+	"B015",
+	# Use a single with statement with multiple contexts instead of nested with statements
+	"SIM117",
+	# Yoda condition detected
+	"SIM300",
+]
+
+[format]
+exclude = [
+	"src/**.py",
+	"tests/*.py",
+]
