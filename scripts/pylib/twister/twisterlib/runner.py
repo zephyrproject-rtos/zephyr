@@ -880,7 +880,7 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, **kwargs):
+    def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, coverage_tool, **kwargs):
         super().__init__(
             instance.testsuite,
             instance.platform,
@@ -895,6 +895,7 @@ class ProjectBuilder(FilterBuilder):
         self.options = env.options
         self.env = env
         self.duts = None
+        self.coverage_tool = coverage_tool
 
     @property
     def trace(self) -> bool:
@@ -1131,9 +1132,39 @@ class ProjectBuilder(FilterBuilder):
                 self.instance.handler.duts = None
 
                 next_op = 'report'
+                if self.coverage_tool is not None:
+                    next_op = 'coverage'
                 additionals = {
                     "status": self.instance.status,
                     "reason": self.instance.reason
+                }
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+                additionals = {}
+            finally:
+                self._add_to_pipeline(pipeline, next_op, additionals)
+
+        # Run the generated binary using one of the supported handlers
+        elif op == "coverage":
+            try:
+                logger.debug(f"collect coverage: {self.instance.name}")
+                coverage_ok = self.coverage_tool.generate_testsuite(
+                    self.instance.name, self.instance.build_dir)
+
+                if not coverage_ok:
+                    self.instance.status = TwisterStatus.ERROR
+
+                # to make it work with pickle
+                self.instance.handler.thread = None
+                self.instance.handler.duts = None
+
+                next_op = 'report'
+                additionals = {
                 }
             except StatusAttributeError as sae:
                 logger.error(str(sae))
@@ -1803,6 +1834,10 @@ class TwisterRunner:
         self.jobs = 1
         self.results = None
         self.jobserver = None
+        self.coverage_tool = None
+
+    def set_coverage_tool(self, coverage_tool):
+        self.coverage_tool = coverage_tool
 
     def run(self):
 
@@ -1966,7 +2001,8 @@ class TwisterRunner:
                             break
                         else:
                             instance = task['test']
-                            pb = ProjectBuilder(instance, self.env, self.jobserver)
+                            pb = ProjectBuilder(instance, self.env,
+                                self.jobserver, self.coverage_tool)
                             pb.duts = self.duts
                             pb.process(pipeline, done_queue, task, lock, results)
                             if self.env.options.quit_on_failure and \
@@ -1984,7 +2020,7 @@ class TwisterRunner:
                         break
                     else:
                         instance = task['test']
-                        pb = ProjectBuilder(instance, self.env, self.jobserver)
+                        pb = ProjectBuilder(instance, self.env, self.jobserver, self.coverage_tool)
                         pb.duts = self.duts
                         pb.process(pipeline, done_queue, task, lock, results)
                         if self.env.options.quit_on_failure and \

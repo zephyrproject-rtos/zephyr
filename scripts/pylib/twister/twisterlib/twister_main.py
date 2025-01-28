@@ -12,7 +12,7 @@ import time
 
 import colorama
 from colorama import Fore
-from twisterlib.coverage import run_coverage
+from twisterlib.coverage import make_coverage_tool, run_coverage
 from twisterlib.environment import TwisterEnv
 from twisterlib.hardwaremap import HardwareMap
 from twisterlib.package import Artifacts
@@ -180,6 +180,10 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
         tplan.create_build_dir_links()
 
     runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
+    if options.coverage and not options.build_only and options.coverage_by_testsuite:
+        coverage_tool = make_coverage_tool(tplan, options)
+        runner.set_coverage_tool(coverage_tool)
+
     # FIXME: This is a workaround for the fact that the hardware map can be usng
     # the short name of the platform, while the testplan is using the full name.
     #
@@ -217,7 +221,10 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
     coverage_completed = True
     if options.coverage:
         if not options.build_only:
-            coverage_completed = run_coverage(tplan, options)
+            if options.coverage_by_testsuite:
+                coverage_completed = coverage_tool.merge_coverage(options.outdir)
+            else:
+                coverage_completed = run_coverage(tplan, options)
         else:
             logger.info("Skipping coverage report generation due to --build-only.")
 

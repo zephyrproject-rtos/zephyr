@@ -69,7 +69,7 @@ def mocked_jobserver():
 
 @pytest.fixture
 def project_builder(mocked_instance, mocked_env, mocked_jobserver) -> ProjectBuilder:
-    project_builder = ProjectBuilder(mocked_instance, mocked_env, mocked_jobserver)
+    project_builder = ProjectBuilder(mocked_instance, mocked_env, mocked_jobserver, None)
     return project_builder
 
 
@@ -800,7 +800,7 @@ def test_projectbuilder_log_info(
     env_mock = mock.Mock()
     instance_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     with mock.patch('builtins.open', mock_open), \
          mock.patch('os.path.realpath', mock_realpath), \
          mock.patch('os.path.abspath', mock_abspath):
@@ -860,7 +860,7 @@ def test_projectbuilder_log_info_file(
     instance_mock.reason = instance_reason
     instance_mock.build_dir = 'build_dir'
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
 
     log_info_mock = mock.Mock()
 
@@ -1523,7 +1523,7 @@ def test_projectbuilder_process(
     instance_mock.testsuite.harness = 'test'
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     pb.options = mock.Mock()
     pb.options.coverage = options_coverage
     pb.options.prep_artifacts_for_testing = options_prep_artifacts
@@ -1665,7 +1665,7 @@ def test_projectbuilder_determine_testcases(
     instance_mock.testsuite.detailed_test_id = detailed_id
     instance_mock.compose_case_name = mock.Mock(side_effect=iter(added_tcs))
 
-    pb = ProjectBuilder(instance_mock, mocked_env, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, mocked_env, mocked_jobserver, None)
 
     with mock.patch('twisterlib.runner.ELFFile', elf_mock), \
          mock.patch('builtins.open', mock.mock_open()):
@@ -1735,7 +1735,7 @@ def test_projectbuilder_cleanup_artifacts(
     instance_mock.build_dir = tmpdir
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     pb.options = mock.Mock(runtime_artifact_cleanup=runtime_artifact_cleanup)
 
     pb.cleanup_artifacts(additional_keep)
@@ -1757,7 +1757,7 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
     instance_mock.build_dir = build_dir
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     pb._get_binaries = mock.Mock(return_value=bins)
     pb.cleanup_artifacts = mock.Mock()
     pb._sanitize_files = mock.Mock()
@@ -1812,7 +1812,7 @@ def test_projectbuilder_get_binaries(
     instance_mock.platform.binaries = platform_binaries
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     pb._get_binaries_from_runners = mock.Mock(return_value=runner_binaries)
 
     bins = pb._get_binaries()
@@ -1864,7 +1864,7 @@ def test_projectbuilder_get_binaries_from_runners(
     instance_mock.build_dir = os.path.join('build', 'dir')
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
 
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open', mock.mock_open()), \
@@ -1882,7 +1882,7 @@ def test_projectbuilder_sanitize_files(mocked_jobserver):
     instance_mock = mock.Mock()
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     pb._sanitize_runners_file = mock.Mock()
     pb._sanitize_zephyr_base_from_files = mock.Mock()
 
@@ -1927,7 +1927,7 @@ def test_projectbuilder_sanitize_runners_file(
     instance_mock.build_dir = '/absolute/path/build_dir'
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
 
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open',
@@ -1989,7 +1989,7 @@ def test_projectbuilder_sanitize_zephyr_base_from_files(
     instance_mock.build_dir = build_dir_path
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
 
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open', mock_open), \
@@ -2091,7 +2091,7 @@ def test_projectbuilder_report_out(
                               [skip_mock_tc]
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     pb.options.verbose = verbose
     pb.options.cmake_only = cmake_only
     pb.options.seed = 123
@@ -2204,7 +2204,7 @@ def test_projectbuilder_cmake():
     instance_mock.build_dir = os.path.join('build', 'dir')
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     pb.build_dir = 'build_dir'
     pb.testsuite.extra_args = ['some', 'args']
     pb.testsuite.extra_conf_files = ['some', 'files1']
@@ -2235,7 +2235,7 @@ def test_projectbuilder_build(mocked_jobserver):
     instance_mock.testsuite.harness = 'test'
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
 
     pb.build_dir = 'build_dir'
     pb.run_build = mock.Mock(return_value={'dummy': 'dummy'})
@@ -2337,7 +2337,7 @@ def test_projectbuilder_run(
     instance_mock.testsuite.harness = harness
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     pb.options.extra_test_args = ['dummy_arg1', 'dummy_arg2']
     pb.duts = ['another dut']
     pb.options.seed = seed
@@ -2391,7 +2391,7 @@ def test_projectbuilder_gather_metrics(
     instance_mock.metrics = {}
     env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver, None)
     pb.options.enable_size_report = enable_size_report
     pb.options.create_rom_ram_report = False
     pb.options.cmake_only = cmake_only
