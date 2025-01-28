@@ -204,7 +204,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	se_curr = 1U;
 
 	/* Adjust sn and nesn for skipped CIG events */
-	payload_count_lazy(cis_lll, cig_lll->lazy_prepare);
+	payload_count_lazy(cis_lll, cig_lll->latency_event);
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
@@ -375,7 +375,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		}
 
 		/* Adjust sn and nesn for skipped CIG events */
-		payload_count_lazy(cis_lll, cig_lll->lazy_prepare);
+		payload_count_lazy(cis_lll, cig_lll->latency_event);
 
 		/* Adjust sn and nesn for canceled events */
 		if (err) {
