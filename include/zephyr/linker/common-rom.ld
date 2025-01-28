@@ -6,8 +6,6 @@
 
 #include <zephyr/linker/common-rom/common-rom-init.ld>
 
-#include <zephyr/linker/common-rom/common-rom-net.ld>
-
 #include <zephyr/linker/common-rom/common-rom-bt.ld>
 
 #include <zephyr/linker/common-rom/common-rom-logging.ld>
