@@ -96,10 +96,11 @@ hardware features:
      - :kconfig:option:`CONFIG_SPI`
      - :dtcompatible:`raspberrypi,pico-spi-pio`
 
-.. _rpi_pico_pin_mapping:
 
 Pin Mapping
 ===========
+
+.. _rpi_pico_pin_mapping:
 
 The peripherals of the RP2040 SoC can be routed to various pins on the board.
 The configuration of these routes can be modified through DTS. Please refer to

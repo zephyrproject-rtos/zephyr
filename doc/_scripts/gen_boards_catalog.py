@@ -9,6 +9,7 @@ import list_boards
 import list_hardware
 import yaml
 import zephyr_module
+from devicetree import edtlib
 from gen_devicetree_rest import VndLookup
 
 ZEPHYR_BASE = Path(__file__).parents[2]
@@ -38,6 +39,7 @@ def guess_image(board_or_shield):
 
     return (img_file.relative_to(ZEPHYR_BASE)).as_posix() if img_file else None
 
+
 def guess_doc_page(board_or_shield):
     patterns = [
         "doc/index.{ext}",
@@ -49,6 +51,31 @@ def guess_doc_page(board_or_shield):
         board_or_shield.dir, patterns, board_or_shield.name, ["rst"]
     )
     return doc_file
+
+
+def get_first_sentence(text):
+    # Split the text into lines
+    lines = text.splitlines()
+
+    # Trim leading and trailing whitespace from each line and ignore completely blank lines
+    lines = [line.strip() for line in lines]
+
+    if not lines:
+        return ""
+
+    # Case 1: Single line followed by blank line(s) or end of text
+    if len(lines) == 1 or (len(lines) > 1 and lines[1] == ""):
+        first_line = lines[0]
+        # Check for the first period
+        period_index = first_line.find(".")
+        # If there's a period, return up to the period; otherwise, return the full line
+        return first_line[: period_index + 1] if period_index != -1 else first_line
+
+    # Case 2: Multiple contiguous lines, treat as a block
+    block = " ".join(lines)
+    period_index = block.find(".")
+    # If there's a period, return up to the period; otherwise, return the full block
+    return block[: period_index + 1] if period_index != -1 else block
 
 
 def get_catalog():
@@ -78,6 +105,7 @@ def get_catalog():
     boards = list_boards.find_v2_boards(args_find_boards)
     systems = list_hardware.find_v2_systems(args_find_boards)
     board_catalog = {}
+    compat_description_cache = {}
 
     for board in boards.values():
         # We could use board.vendor but it is often incorrect. Instead, deduce vendor from
@@ -107,6 +135,33 @@ def get_catalog():
         full_name = board.full_name or board.name
         doc_page = guess_doc_page(board)
 
+        TWISTER_OUT = ZEPHYR_BASE / "twister-out"
+        supported_features = {}
+        if TWISTER_OUT.exists():
+            dts_files = list(TWISTER_OUT.glob(f"{board.name}/**/zephyr.dts")) + \
+                        list(TWISTER_OUT.glob(f"{board.name}_*/**/zephyr.dts"))
+
+            if dts_files:
+                for dts_file in dts_files:
+                    edt = edtlib.EDT(dts_file, bindings_dirs=[ZEPHYR_BASE / "dts/bindings"])
+                    okay_nodes = [
+                        node
+                        for node in edt.nodes
+                        if node.status == "okay" and node.matching_compat is not None
+                    ]
+
+                    for node in okay_nodes:
+                        binding_path = Path(node.binding_path)
+                        binding_type = binding_path.relative_to(ZEPHYR_BASE / "dts/bindings").parts[
+                            0
+                        ]
+                        description = compat_description_cache.setdefault(
+                            node.matching_compat, get_first_sentence(node.description)
+                        )
+                        supported_features.setdefault(binding_type, {}).setdefault(
+                            node.matching_compat, description
+                        )
+
         board_catalog[board.name] = {
             "name": board.name,
             "full_name": full_name,
@@ -114,6 +169,7 @@ def get_catalog():
             "vendor": vendor,
             "archs": list(archs),
             "socs": list(socs),
+            "supported_features": supported_features,
             "image": guess_image(board),
         }
 
@@ -122,6 +178,17 @@ def get_catalog():
         family = soc.family or "<no family>"
         series = soc.series or "<no series>"
         socs_hierarchy.setdefault(family, {}).setdefault(series, []).append(soc.name)
+
+    # if there is a board_catalog.yaml file, load it (yes, it's already late but it's a hack for
+    # showing off the hw capability selection feature so shh)
+    BOARD_CATALOG_FILE = ZEPHYR_BASE / "doc" / "board_catalog.yaml"
+    if Path(BOARD_CATALOG_FILE).exists():
+        with open(BOARD_CATALOG_FILE) as f:
+            board_catalog = yaml.safe_load(f)
+    else:
+        # save the board catalog as a pickle file
+        with open(BOARD_CATALOG_FILE, "w") as f:
+            yaml.dump(board_catalog, f)
 
     return {
         "boards": board_catalog,

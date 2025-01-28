@@ -1175,3 +1175,8 @@ li>a.code-sample-link.reference.internal.current {
 .sidebar.board-overview dl.field-list>dd code {
     font-size: 0.9em;
 }
+
+/* TEMPORARY */
+#supported-features>div>table>tbody>tr>td>p {
+    white-space: normal;
+}
