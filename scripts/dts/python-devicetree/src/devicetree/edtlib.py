@@ -234,7 +234,7 @@ class Binding:
 
         # Initialize look up tables.
         self.prop2specs: dict[str, 'PropertySpec'] = {}
-        for prop_name in self.raw.get("properties", {}).keys():
+        for prop_name in self.raw.get("properties", {}):
             self.prop2specs[prop_name] = PropertySpec(prop_name, self)
         self.specifier2cells: dict[str, list[str]] = {}
         for key, val in self.raw.items():
@@ -1245,10 +1245,10 @@ class Node:
         if "gpio-hog" not in self.props:
             return []
 
-        if not self.parent or not "gpio-controller" in self.parent.props:
+        if not self.parent or "gpio-controller" not in self.parent.props:
             _err(f"GPIO hog {self!r} lacks parent GPIO controller node")
 
-        if not "#gpio-cells" in self.parent._node.props:
+        if "#gpio-cells" not in self.parent._node.props:
             _err(f"GPIO hog {self!r} parent node lacks #gpio-cells")
 
         n_cells = self.parent._node.props["#gpio-cells"].to_num()
@@ -1864,7 +1864,7 @@ class Node:
                  f"{controller._node!r} - {len(cell_names)} "
                  f"instead of {len(data_list)}")
 
-        return dict(zip(cell_names, data_list))
+        return dict(zip(cell_names, data_list, strict=True))
 
 
 class EDT:
@@ -2701,7 +2701,7 @@ def _check_prop_by_type(prop_name: str,
              f"has type '{prop_type}', expected 'phandle-array'")
 
     if prop_type == "phandle-array":
-        if not prop_name.endswith("s") and not "specifier-space" in options:
+        if not prop_name.endswith("s") and "specifier-space" not in options:
             _err(f"'{prop_name}' in 'properties:' in {binding_path} "
                  f"has type 'phandle-array' and its name does not end in 's', "
                  f"but no 'specifier-space' was provided.")
@@ -2826,7 +2826,7 @@ def _add_names(node: dtlib_Node, names_ident: str, objs: Any) -> None:
                  f"in {node.dt.filename} has {len(names)} strings, "
                  f"expected {len(objs)} strings")
 
-        for obj, name in zip(objs, names):
+        for obj, name in zip(objs, names, strict=True):
             if obj is None:
                 continue
             obj.name = name
@@ -3101,8 +3101,8 @@ def _and(b1: bytes, b2: bytes) -> bytes:
 
     # Pad on the left, to equal length
     maxlen = max(len(b1), len(b2))
-    return bytes(x & y for x, y in zip(b1.rjust(maxlen, b'\xff'),
-                                       b2.rjust(maxlen, b'\xff')))
+    return bytes(x & y for x, y in zip(b1.rjust(maxlen, b'\xff', strict=True),
+                                       b2.rjust(maxlen, b'\xff', strict=True), strict=True))
 
 
 def _or(b1: bytes, b2: bytes) -> bytes:
@@ -3111,8 +3111,8 @@ def _or(b1: bytes, b2: bytes) -> bytes:
 
     # Pad on the left, to equal length
     maxlen = max(len(b1), len(b2))
-    return bytes(x | y for x, y in zip(b1.rjust(maxlen, b'\x00'),
-                                       b2.rjust(maxlen, b'\x00')))
+    return bytes(x | y for x, y in zip(b1.rjust(maxlen, b'\x00', strict=True),
+                                       b2.rjust(maxlen, b'\x00', strict=True), strict=True))
 
 
 def _not(b: bytes) -> bytes:
