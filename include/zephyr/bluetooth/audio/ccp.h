@@ -31,8 +31,12 @@
  * The profile is not limited to carrier phone calls and can be used with common applications like
  * Discord and Teams.
  */
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,8 +92,124 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
  */
 int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_server_bearer *bearer);
 
+/**
+ * @brief Set a new bearer provider name.
+ *
+ * @param bearer  The bearer to set the name for.
+ * @param name    The new bearer provider name.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or @p name is NULL, or @p name is the empty string or @p name is larger
+ *                 than @kconfig{CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH}
+ * @retval -EFAULT @p bearer is not registered
+ */
+int bt_ccp_call_control_server_set_bearer_provider_name(
+	struct bt_ccp_call_control_server_bearer *bearer, const char *name);
+
+/**
+ * @brief Get the bearer provider name.
+ *
+ * @param[in]  bearer  The bearer to get the name for.
+ * @param[out] name    Pointer that will be updated to be the bearer provider name.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or @p name is NULL
+ * @retval -EFAULT @p bearer is not registered
+ */
+int bt_ccp_call_control_server_get_bearer_provider_name(
+	struct bt_ccp_call_control_server_bearer *bearer, const char **name);
+
+/**
+ * @brief Get the bearer provider name.
+ *
+ * @param[in]  bearer  The bearer to get the name for.
+ * @param[out] uci     Pointer that will be updated to be the bearer uci.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or @p name is NULL
+ * @retval -EFAULT @p bearer is not registered
+ */
+int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
+					      const char **uci);
+
 /** @} */ /* End of group bt_ccp_call_control_server */
 
+/**
+ * @defgroup bt_ccp_call_control_client CCP Call Control Client APIs
+ * @ingroup bt_ccp
+ * @{
+ */
+/** Abstract Call Control Client structure. */
+struct bt_ccp_call_control_client;
+
+/** Abstract Call Control Client bearer structure. */
+struct bt_ccp_call_control_client_bearer;
+
+/** Struct with information about bearers of a client */
+struct bt_ccp_call_control_client_bearers {
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+	/** The GTBS bearer. */
+	struct bt_ccp_call_control_client_bearer *gtbs_bearer;
+#endif /* CONFIG_BT_TBS_CLIENT_GTBS */
+
+#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+	/** Number of TBS bearers in @p tbs_bearers */
+	size_t tbs_count;
+
+	/** Array of pointers of TBS bearers */
+	struct bt_ccp_call_control_client_bearer
+		*tbs_bearers[CONFIG_BT_CCP_CALL_CONTROL_CLIENT_BEARER_COUNT];
+#endif /* CONFIG_BT_TBS_CLIENT_TBS */
+};
+
+/**
+ * @brief Struct to hold the Telephone Bearer Service client callbacks
+ *
+ * These can be registered for usage with bt_tbs_client_register_cb().
+ */
+struct bt_ccp_call_control_client_cb {
+	/**
+	 * @brief Callback function for bt_ccp_call_control_client_discover().
+	 *
+	 * This callback is called once the discovery procedure is completed.
+	 *
+	 * @param client       Call Control Client pointer.
+	 * @param err          Error value. 0 on success, GATT error on positive
+	 *                     value or errno on negative value.
+	 * @param bearers      The bearers found.
+	 */
+	void (*discover)(struct bt_ccp_call_control_client *client, int err,
+			 struct bt_ccp_call_control_client_bearers *bearers);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+int bt_ccp_call_control_client_discover(struct bt_conn *conn,
+					struct bt_ccp_call_control_client **out_client);
+
+/**
+ * @brief Register callbacks for the Call Control Client
+ *
+ * @param cb The callback struct
+ *
+ * @retval 0 Succsss
+ * @retval -EINVAL @p cb is NULL
+ * @retval -EEXISTS @p cb is already registered
+ */
+int bt_ccp_call_control_client_register_cb(struct bt_ccp_call_control_client_cb *cb);
+
+/**
+ * @brief Unregister callbacks for the Call Control Client
+ *
+ * @param cb The callback struct
+ *
+ * @retval 0 Succsss
+ * @retval -EINVAL @p cb is NULL
+ * @retval -EALREADY @p cb is not registered
+ */
+int bt_ccp_call_control_client_unregister_cb(struct bt_ccp_call_control_client_cb *cb);
+/** @} */ /* End of group bt_ccp_call_control_client */
 #ifdef __cplusplus
 }
 #endif
