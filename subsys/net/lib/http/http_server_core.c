@@ -719,6 +719,17 @@ static int compare_strings(const char *path, const char *resource)
 	return 1; /* Strings are not equal */
 }
 
+static int path_len_without_query(const char *path)
+{
+	int len = 0;
+
+	while ((path[len] != '\0') && (path[len] != '?')) {
+		len++;
+	}
+
+	return len;
+}
+
 static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
 {
 	struct http_resource_detail *detail;
@@ -762,6 +773,11 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 			*path_len = strlen(resource->resource);
 			return resource->detail;
 		}
+	}
+
+	if (service->res_fallback != NULL) {
+		*path_len = path_len_without_query(path);
+		return service->res_fallback;
 	}
 
 	NET_DBG("No match for %s", path);
