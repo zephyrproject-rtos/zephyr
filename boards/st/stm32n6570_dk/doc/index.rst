@@ -103,6 +103,8 @@ Default Zephyr Peripheral Mapping:
 - LD2 : PG10
 - USART_1_TX : PE5
 - USART_1_RX : PE6
+- USART_2_TX : PD5
+- USART_2_RX : PF6
 
 System Clock
 ------------
