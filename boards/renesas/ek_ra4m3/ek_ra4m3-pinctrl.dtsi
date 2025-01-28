@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -26,6 +26,14 @@
 		group1 {
 			/* input */
 			psels = <RA_PSEL(RA_PSEL_ADC, 0, 0)>;
+			renesas,analog-enable;
+		};
+	};
+
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_DAC, 0, 14)>;
 			renesas,analog-enable;
 		};
 	};
