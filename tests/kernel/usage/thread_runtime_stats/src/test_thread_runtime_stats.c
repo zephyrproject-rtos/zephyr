@@ -211,7 +211,9 @@ ZTEST(usage_api, test_thread_stats_enable_disable)
 
 	k_thread_runtime_stats_get(_current, &stats1);
 	k_thread_runtime_stats_get(tid, &helper_stats1);
+	zassert_true(k_thread_runtime_stats_is_enabled(tid));
 	k_thread_runtime_stats_disable(tid);
+	zassert_false(k_thread_runtime_stats_is_enabled(tid));
 
 	/*
 	 * Busy wait for the remaining tick before re-enabling the thread
