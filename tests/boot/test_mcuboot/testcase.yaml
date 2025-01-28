@@ -1,5 +1,6 @@
 common:
   sysbuild: true
+  tags: mcuboot
   harness: console
   harness_config:
     type: multi_line
@@ -11,7 +12,6 @@ common:
       - "Swapped application booted on (.*)"
 tests:
   bootloader.mcuboot:
-    tags: mcuboot
     platform_allow:
       - frdm_k22f
       - frdm_k64f
@@ -48,8 +48,17 @@ tests:
       - frdm_k64f
       - nrf52840dk/nrf52840
   bootloader.mcuboot.assert:
-    tags: mcuboot
     platform_allow:
       - b_u585i_iot02a
     extra_configs:
       - CONFIG_ASSERT=y
+  bootloader.mcuboot.swap_using_offset:
+    platform_allow:
+      - frdm_k64f
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - frdm_k64f
+      - nrf5340dk/nrf5340/cpuapp
+    extra_args:
+      - SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET=y
+      - swapped_app_CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET=y
