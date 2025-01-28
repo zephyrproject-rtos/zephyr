@@ -14,11 +14,27 @@
 #include <zephyr/arch/arm64/tpidrro_el0.h>
 #include <zephyr/sys/__assert.h>
 
+#if defined(CONFIG_HAS_ARM_VHE) && defined(CONFIG_ZVM)
+static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
+{
+	return (_cpu_t *)(read_tpidr_el2() & TPIDRROEL0_CURR_CPU);
+}
+
+static ALWAYS_INLINE void arch_set_cpu_id_elx(void)
+{
+	write_tpidr_el2(read_tpidrro_el0());
+}
+#else
 /* Note: keep in sync with `get_cpu` in arch/arm64/core/macro_priv.inc */
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 	return (_cpu_t *)(read_tpidrro_el0() & TPIDRROEL0_CURR_CPU);
 }
+static ALWAYS_INLINE void arch_set_cpu_id_elx(void)
+{
+	/* Do nothing */
+}
+#endif
 
 static ALWAYS_INLINE int arch_exception_depth(void)
 {
