@@ -129,6 +129,8 @@ struct display_buffer_descriptor {
 	uint16_t pitch;
 	/** Indicates that this is not the last write buffer of the frame */
 	bool frame_incomplete;
+	/** Indicates that this the first write buffer of the frame */
+	bool first_write;
 };
 
 /**
