@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(NRFS_BACKEND, CONFIG_NRFS_BACKEND_LOG_LEVEL);
 #define MAX_PACKET_DATA_SIZE (CONFIG_NRFS_MAX_BACKEND_PACKET_SIZE)
 
 K_MSGQ_DEFINE(ipc_transmit_msgq, sizeof(struct ipc_data_packet),
-							CONFIG_NRFS_BACKEND_TX_MSG_QUEUE_SIZE, 4);
+	      CONFIG_NRFS_BACKEND_TX_MSG_QUEUE_SIZE, 4);
 
 static struct k_work backend_send_work;
 
@@ -41,18 +41,17 @@ struct ipc_channel_config {
 
 static struct ipc_ept_cfg ipc_sysctrl_ept_cfg = {
 	.name = "ipc_to_sysctrl",
-	.cb = {
-		.bound    = ipc_sysctrl_ept_bound,
-		.received = ipc_sysctrl_ept_recv,
-	},
+	.cb =	{
+			.bound = ipc_sysctrl_ept_bound,
+			.received = ipc_sysctrl_ept_recv,
+		},
 };
 
 static struct ipc_channel_config ipc_cpusys_channel_config = {
-	.ipc_instance	 = DEVICE_DT_GET(DT_ALIAS(ipc_to_cpusys)),
+	.ipc_instance = DEVICE_DT_GET(DT_ALIAS(ipc_to_cpusys)),
 	.endpoint_config = &ipc_sysctrl_ept_cfg,
-	.status		 = ATOMIC_INIT(NOT_CONNECTED),
-	.enabled	 = true
-};
+	.status = ATOMIC_INIT(NOT_CONNECTED),
+	.enabled = true};
 
 /**
  * @brief nrfs backend error handler
@@ -78,6 +77,14 @@ __weak void nrfs_backend_error_handler(enum nrfs_backend_error error_id, int err
 
 	case NRFS_ERROR_IPC_REGISTER_ENDPOINT:
 		LOG_ERR("IPC register endpoint failure with error: %d", error);
+		break;
+
+	case NRFS_ERROR_SEND_DATA_FROM_QUEUE:
+		if (error >= 0) {
+			LOG_ERR("IPC not all data sent from queue, bytes sent: %d", error);
+		} else {
+			LOG_ERR("IPC backend sent with error %d", error);
+		}
 		break;
 
 	default:
@@ -108,7 +115,7 @@ static void ipc_sysctrl_ept_recv(const void *data, size_t size, void *priv)
 	__ASSERT(size <= MAX_PACKET_DATA_SIZE, "Received data is too long. Config error.");
 	if (size <= MAX_PACKET_DATA_SIZE) {
 		rx_data.channel_id = IPC_CPUSYS_CHANNEL_ID;
-		rx_data.size	   = size;
+		rx_data.size = size;
 		if (data) {
 			memcpy(rx_data.data, (uint8_t *)data, size);
 			nrfs_dispatcher_notify(&rx_data.data, rx_data.size);
@@ -120,14 +127,44 @@ static void ipc_sysctrl_ept_recv(const void *data, size_t size, void *priv)
 	}
 }
 
+/**
+ * @brief This function will try to send data directly using ipc service
+ *        In case of errors it will retry if configured.
+ *
+ * @param message Pointer to the buffer to send.
+ * @param size Number of bytes to send.
+ * @return see function @ref ipc_service_send
+ */
+static int nrfs_backend_try_send_directly_over_ipc_service(void *message, size_t size)
+{
+	size_t retry_count = CONFIG_NRFS_SEND_RETRY_MAX_COUNT;
+	int ret = ipc_service_send(&ipc_cpusys_channel_config.ipc_ept, message, size);
+
+	while (retry_count--) {
+		if (ret < (int)size) {
+			k_usleep(CONFIG_NRFS_SEND_RETRY_DELAY);
+			ret = ipc_service_send(&ipc_cpusys_channel_config.ipc_ept, message, size);
+		} else {
+			return ret;
+		}
+	}
+
+	return ret;
+}
+
 static void nrfs_backend_send_work(struct k_work *item)
 {
 	struct ipc_data_packet data_to_send;
 
 	LOG_DBG("Sending data from workqueue");
 	while (k_msgq_get(&ipc_transmit_msgq, &data_to_send, K_NO_WAIT) == 0) {
-		ipc_service_send(&ipc_cpusys_channel_config.ipc_ept, &data_to_send.data,
-				 data_to_send.size);
+
+		int ret = nrfs_backend_try_send_directly_over_ipc_service(&data_to_send.data,
+									  data_to_send.size);
+
+		if (ret < (int)data_to_send.size) {
+			nrfs_backend_error_handler(NRFS_ERROR_SEND_DATA_FROM_QUEUE, ret, true);
+		}
 	}
 }
 
@@ -156,8 +193,7 @@ static int ipc_channel_init(void)
 
 	LOG_DBG("ipc_service_open_instance() done.");
 
-	ret = ipc_service_register_endpoint(ch_cfg->ipc_instance,
-					    &ch_cfg->ipc_ept,
+	ret = ipc_service_register_endpoint(ch_cfg->ipc_instance, &ch_cfg->ipc_ept,
 					    ch_cfg->endpoint_config);
 	if (ret < 0) {
 		nrfs_backend_error_handler(NRFS_ERROR_IPC_REGISTER_ENDPOINT, ret, false);
@@ -177,14 +213,16 @@ nrfs_err_t nrfs_backend_send(void *message, size_t size)
 nrfs_err_t nrfs_backend_send_ex(void *message, size_t size, k_timeout_t timeout, bool high_prio)
 {
 	if (!k_is_in_isr() && nrfs_backend_connected()) {
-		return ipc_service_send(&ipc_cpusys_channel_config.ipc_ept, message, size) ?
-			NRFS_SUCCESS : NRFS_ERR_IPC;
+		int ret = nrfs_backend_try_send_directly_over_ipc_service(message, size);
+
+		return ret < (int)size ? NRFS_ERR_IPC : NRFS_SUCCESS;
+
 	} else if (size <= MAX_PACKET_DATA_SIZE) {
 		int err;
 		struct ipc_data_packet tx_data;
 
 		tx_data.channel_id = IPC_CPUSYS_CHANNEL_ID;
-		tx_data.size	   = size;
+		tx_data.size = size;
 		memcpy(tx_data.data, (uint8_t *)message, size);
 
 		err = k_msgq_put(&ipc_transmit_msgq, &tx_data, timeout);
