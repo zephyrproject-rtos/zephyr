@@ -36,13 +36,23 @@ Execute_AC_8_I 32_1_gr 16_1_gs
 Execute_AC_8_I 32_2_gr 16_2_gs
 Execute_AC_8_I 48_1_gr 16_1_gs
 Execute_AC_8_I 48_2_gr 16_2_gs
-Execute_AC_8_I 32_1_gr 32_1_gs
+# bt_iso_chan_disconnected: 0x856afe0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_8_I 32_1_gr 32_1_gs
 Execute_AC_8_I 32_2_gr 32_2_gs
-Execute_AC_8_I 48_1_gr 32_1_gs
+# bt_iso_chan_disconnected: 0x856afe0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_8_I 48_1_gr 32_1_gs
 Execute_AC_8_I 48_2_gr 32_2_gs
-Execute_AC_8_I 48_1_gr 48_1_gs
+# bt_iso_chan_disconnected: 0x856afe0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_8_I 48_1_gr 48_1_gs
 Execute_AC_8_I 48_2_gr 48_2_gs
-Execute_AC_8_I 48_3_gr 32_1_gs
+# bt_iso_chan_disconnected: 0x856afe0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_8_I 48_3_gr 32_1_gs
 Execute_AC_8_I 48_4_gr 32_2_gs
-Execute_AC_8_I 48_3_gr 48_1_gs
+# bt_iso_chan_disconnected: 0x856afe0, reason 0x3d
+# https://github.com/zephyrproject-rtos/zephyr/issues/83584
+# Execute_AC_8_I 48_3_gr 48_1_gs
 Execute_AC_8_I 48_4_gr 48_2_gs

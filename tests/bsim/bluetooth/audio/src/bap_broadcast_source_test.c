@@ -334,30 +334,14 @@ static void test_broadcast_source_get_base(struct bt_bap_broadcast_source *sourc
 static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_le_ext_adv **adv)
 {
 	/* Broadcast Audio Streaming Endpoint advertising data */
-	NET_BUF_SIMPLE_DEFINE(ad_buf,
-			      BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
-	struct bt_le_adv_param adv_param = BT_LE_ADV_PARAM_INIT(
-		BT_LE_ADV_OPT_EXT_ADV, 0x80, 0x80, NULL);
+	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
 	struct bt_data ext_ad;
 	struct bt_data per_ad;
 	uint32_t broadcast_id;
 	int err;
 
-	/* Create a non-connectable advertising set */
-	err = bt_le_ext_adv_create(&adv_param, NULL, adv);
-	if (err != 0) {
-		printk("Unable to create extended advertising set: %d\n", err);
-		return err;
-	}
-
-	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_DEFAULT);
-	if (err) {
-		printk("Failed to set periodic advertising parameters: %d\n",
-		       err);
-		return err;
-	}
+	setup_broadcast_adv(adv);
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err) {
