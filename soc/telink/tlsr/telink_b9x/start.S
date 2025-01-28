@@ -40,14 +40,6 @@ entry:
 	.word (0x3b0097a9)              #/ 4 - wire SPI interface set in soc_b9x_check_flash
 #endif
 
-#elif CONFIG_SOC_RISCV_TELINK_B95
-	.org 0x24
-#if defined(CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE
-	.word (0x030020A8)              #/ 2 - wire SPI interface
-#else
-	.word (0x030020A8)              #/ 4 - wire SPI interface set in soc_b9x_check_flash
-#endif
-
 #endif
 
 	.align 2
@@ -65,11 +57,7 @@ start:
 	/* Disable vector mode */
 	csrci  0x7d0, 2
 	/* Disable vector feture enable address */
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	lui t0 ,0xe4000
-#elif CONFIG_SOC_RISCV_TELINK_B95
-	lui t0 ,0xc4000
-#endif
 	li  t1 ,0x00
 	sw  t1 ,0x0(t0)
 
@@ -245,7 +233,7 @@ _MULTI_ADDRESS_BEGIN:
 	la     t1, g_pm_multi_addr
 	lw     t2, 0(t1)
 	sw     t2, 0x104(t0)            #/ g_pm_multi_addr->0x80140104
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 	/* we are not in ISR so use ISR stack to restore registers */
 	la     sp, z_interrupt_stacks
 	li     t0, CONFIG_ISR_STACK_SIZE

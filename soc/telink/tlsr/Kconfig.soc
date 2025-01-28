@@ -22,12 +22,6 @@ config SOC_RISCV_TELINK_B92
 	help
 	  Telink B92
 
-config SOC_RISCV_TELINK_B95
-	bool "Telink B95 SoC implementation"
-	select SOC_RISCV_TELINK_B9X
-	help
-	  Telink B95
-
 config SOC_RISCV_TELINK_W91
 	bool "Telink W91 SoC implementation"
 	select SOC_RISCV_TELINK_W9X

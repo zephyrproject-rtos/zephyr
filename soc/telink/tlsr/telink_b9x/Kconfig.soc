@@ -13,4 +13,3 @@ config SOC_SERIES
 config SOC
 	default "telink_b91" if SOC_RISCV_TELINK_B91
 	default "telink_b92" if SOC_RISCV_TELINK_B92
-	default "telink_b95" if SOC_RISCV_TELINK_B95

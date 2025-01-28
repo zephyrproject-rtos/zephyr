@@ -204,8 +204,6 @@ static int hci_b9x_open(const struct device *dev, bt_hci_recv_t recv)
 	LOG_DBG("B91 BT started");
 #elif CONFIG_SOC_RISCV_TELINK_B92
 	LOG_DBG("B92 BT started");
-#elif CONFIG_SOC_RISCV_TELINK_B95
-	LOG_DBG("B95 BT started");
 #endif
 
 	return 0;

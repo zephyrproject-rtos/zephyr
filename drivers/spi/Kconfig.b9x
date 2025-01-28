@@ -4,6 +4,6 @@
 config SPI_TELINK_B9X
 	bool "Telink Semiconductor B9x SPI driver"
 	default y
-	depends on DT_HAS_TELINK_B91_SPI_ENABLED || DT_HAS_TELINK_B92_SPI_ENABLED || DT_HAS_TELINK_B95_SPI_ENABLED
+	depends on DT_HAS_TELINK_B91_SPI_ENABLED || DT_HAS_TELINK_B92_SPI_ENABLED
 	help
 	  Enables Telink B9x SPI driver.

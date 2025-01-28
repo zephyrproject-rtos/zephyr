@@ -83,7 +83,6 @@ tests:
     platform_allow:
       - tlsr9518adk80d
       - tlsr9528a
-      - tlsr9258a
   sample.net.sockets.echo_client.b9x_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
@@ -93,7 +92,6 @@ tests:
     platform_allow:
       - tlsr9518adk80d
       - tlsr9528a
-      - tlsr9258a
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   sample.net.sockets.echo_client.kw41z_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"

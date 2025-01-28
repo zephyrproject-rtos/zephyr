@@ -51,9 +51,6 @@ class BDTBinaryRunner(ZephyrBinaryRunner):
         build_conf = BuildConfiguration(self.cfg.build_dir)
         # get chip
         soc_type = None
-        if build_conf['CONFIG_SOC_RISCV_TELINK_B95']:
-            soc_type = 'B95'
-            print('Telink B95')
         if build_conf['CONFIG_SOC_RISCV_TELINK_B92']:
             soc_type = 'B92'
             print('Telink B92')

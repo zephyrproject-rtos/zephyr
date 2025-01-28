@@ -21,18 +21,6 @@ LOG_MODULE_REGISTER(adc_b9x, CONFIG_ADC_LOG_LEVEL);
 #include <adc.h>
 #include <zephyr/drivers/pinctrl.h>
 
-#if CONFIG_SOC_RISCV_TELINK_B95
-#define adc_input_pin_def_e     adc_input_pin_e
-
-/* Set ADC resolution value */
-static inline void adc_set_resolution(adc_res_e res)
-{
-	analog_write_reg8(areg_adc_res_m, (analog_read_reg8
-		(areg_adc_res_m)&(~FLD_ADC_RES_M)) | res);
-}
-#endif
-
-
 /* ADC b9x defines */
 #define SIGN_BIT_POSITION          (13)
 #define AREG_ADC_DATA_STATUS       (0xf6)
@@ -103,7 +91,7 @@ static adc_input_pin_def_e adc_b9x_get_pin(uint8_t dt_pin)
 	adc_input_pin_def_e adc_pin;
 
 	switch (dt_pin) {
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
+#if CONFIG_SOC_RISCV_TELINK_B91
 	case DT_ADC_GPIO_PB0:
 		adc_pin = ADC_GPIO_PB0;
 		break;
@@ -201,12 +189,10 @@ static int adc_b9x_adc_start_read(const struct device *dev, const struct adc_seq
 
 	/* Set resolution */
 	switch (sequence->resolution) {
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case 14:
 		adc_set_resolution(ADC_RES14);
 		data->resolution_divider = 1;
 		break;
-#endif
 	case 12:
 		adc_set_resolution(ADC_RES12);
 		data->resolution_divider = 4;
@@ -249,7 +235,6 @@ static void adc_b9x_acquisition_thread(const struct device *dev)
 		}
 
 		/* Perform read */
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 		adc_code = (adc_b9x_get_code() / data->resolution_divider);
 		if (!data->differential) {
 			/* Sign bit is not used in case of single-ended configuration */
@@ -260,18 +245,6 @@ static void adc_b9x_acquisition_thread(const struct device *dev)
 				adc_code = 0;
 			}
 		}
-#elif CONFIG_SOC_RISCV_TELINK_B95
-		adc_code = adc_b9x_get_code();
-		if (!data->differential) {
-			/* Sign bit is not used in case of single-ended configuration */
-			adc_code = adc_code * 8;
-
-			/* Do not return negative value for single-ended configuration */
-			if (adc_code < 0) {
-				adc_code = 0;
-			}
-		}
-#endif
 
 		*data->buffer++ = adc_code;
 
@@ -365,11 +338,9 @@ static int adc_b9x_channel_setup(const struct device *dev,
 	case ADC_GAIN_1:
 		pre_scale = ADC_PRESCALE_1;
 		break;
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case ADC_GAIN_1_4:
 		pre_scale = ADC_PRESCALE_1F4;
 		break;
-#endif
 
 	default:
 		LOG_ERR("Selected ADC gain is not supported.");
@@ -421,44 +392,18 @@ static int adc_b9x_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-#if CONFIG_SOC_RISCV_TELINK_B95
-	/* Init NDMA ADC */
-	adc_init(NDMA_M_CHN);
-#endif
-
 	data->differential = channel_cfg->differential;
 
 	if (channel_cfg->differential) {
 		/* Differential pins configuration */
-
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 		adc_set_diff_pin(input_positive, input_negative);
-#elif CONFIG_SOC_RISCV_TELINK_B95
-		adc_set_diff_pin(ADC_M_CHANNEL, input_positive, input_negative);
-#endif
 	} else if (input_positive == (uint8_t)ADC_VBAT) {
 		/* VBAT pin configuration */
-
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 		adc_battery_voltage_sample_init();
-#elif CONFIG_SOC_RISCV_TELINK_B95
-		adc_vbat_sample_init(ADC_M_CHANNEL);
-#endif
 	} else {
 		/* Single-ended GPIO pin configuration */
-
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 		adc_gpio_sample_init(input_positive,
 				vref_internal_mv, pre_scale, sample_freq);
-#elif CONFIG_SOC_RISCV_TELINK_B95
-		adc_gpio_cfg_t adc_gpio_cfg_m = {
-				.v_ref			=	vref_internal_mv,
-				.pre_scale		=	pre_scale,
-				.sample_freq		=	sample_freq,
-				.pin			=	input_positive,
-		};
-		adc_gpio_sample_init(ADC_M_CHANNEL, adc_gpio_cfg_m);
-#endif
 	}
 
 	return 0;

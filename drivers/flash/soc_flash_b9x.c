@@ -43,8 +43,6 @@ static void flash_b9x_unlock(unsigned int offset)
 
 #if CONFIG_SOC_RISCV_TELINK_B92
 	flash_protection_unlock_operation(offset);
-#elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
-
 #endif
 
 }
@@ -54,8 +52,6 @@ static void flash_b9x_lock(unsigned int offset)
 
 #if CONFIG_SOC_RISCV_TELINK_B92
 	flash_protection_lock_operation(offset);
-#elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
-
 #endif
 
 }
@@ -65,8 +61,6 @@ static void flash_b9x_lock_init(void)
 {
 #if CONFIG_SOC_RISCV_TELINK_B92
 	flash_protection_lock_init();
-#elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
-
 #endif
 }
 

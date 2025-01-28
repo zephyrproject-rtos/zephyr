@@ -22,7 +22,6 @@ config 2ND_LVL_ISR_TBL_OFFSET
 	default 12
 
 config NUM_IRQS
-	default 64 if SOC_RISCV_TELINK_B95
 	default 59
 
 config PINCTRL

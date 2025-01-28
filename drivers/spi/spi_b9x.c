@@ -8,8 +8,6 @@
 #define DT_DRV_COMPAT telink_b91_spi
 #elif CONFIG_SOC_RISCV_TELINK_B92
 #define DT_DRV_COMPAT telink_b92_spi
-#elif CONFIG_SOC_RISCV_TELINK_B95
-#define DT_DRV_COMPAT telink_b95_spi
 #endif
 
 /*  Redefine 'spi_read' and 'spi_write' functions names from HAL */
@@ -67,7 +65,7 @@ static void spi_b9x_hw_cs_disable(const struct spi_b9x_cfg *config)
 			} else {
 				hspi_cs_pin_dis(pin);
 			}
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 			if (config->peripheral_id == LSPI_MODULE) {
 				/* Note: lspi_cs_pin_dis has not added to SPI driver for B92 */
 			} else {
@@ -119,7 +117,7 @@ static bool spi_b9x_config_cs(const struct device *dev,
 			} else {
 				hspi_cs_pin_dis(cs_pin);
 			}
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 			if (b9x_config->peripheral_id == LSPI_MODULE) {
 				/* Note: lspi_cs_pin_dis has not added to SPI driver for B92 */
 			} else {
@@ -136,7 +134,7 @@ static bool spi_b9x_config_cs(const struct device *dev,
 			} else {
 				hspi_cs_pin_en(cs_pin);
 			}
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 			if (b9x_config->peripheral_id == LSPI_MODULE) {
 				/* Note: lspi_cs_pin_en has not added to SPI driver for B92,
 				 * lspi_cs_pin_en must call lspi_set_pin_mux
@@ -257,7 +255,7 @@ static void spi_b9x_txrx(const struct device *dev, uint32_t len)
 #if CONFIG_SOC_RISCV_TELINK_B91
 		BM_SET(reg_spi_fifo_state(cfg->peripheral_id), FLD_SPI_TXF_CLR);
 		BM_SET(reg_spi_fifo_state(cfg->peripheral_id), FLD_SPI_RXF_CLR);
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 		BM_SET(reg_spi_status(cfg->peripheral_id), FLD_SPI_TXF_CLR_LEVEL);
 		BM_SET(reg_spi_status(cfg->peripheral_id), FLD_SPI_RXF_CLR_LEVEL);
 #endif
@@ -339,7 +337,7 @@ static int spi_b9x_config(const struct device *dev,
 	const pinctrl_soc_pin_t *pins = b9x_config->pcfg->states->pins;
 #if CONFIG_SOC_RISCV_TELINK_B91
 	uint8_t clk_src = b9x_config->peripheral_id == PSPI_MODULE ? sys_clk.pclk : sys_clk.hclk;
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 	uint8_t clk_src = sys_clk.pll_clk;
 #endif
 
@@ -372,7 +370,7 @@ static int spi_b9x_config(const struct device *dev,
 #if CONFIG_SOC_RISCV_TELINK_B91
 	spi_master_init(b9x_config->peripheral_id,
 			clk_src * 1000000 / (2 * config->frequency) - 1, mode);
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 	spi_master_init(b9x_config->peripheral_id,
 			clk_src * 1000000/config->frequency, mode);
 #endif
@@ -389,7 +387,7 @@ static int spi_b9x_config(const struct device *dev,
 		} else if (lines == SPI_LINES_QUAD) {
 #if CONFIG_SOC_RISCV_TELINK_B91
 			spi_set_io_mode(b9x_config->peripheral_id, HSPI_QUAD_MODE);
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 			spi_set_io_mode(b9x_config->peripheral_id, SPI_QUAD_MODE);
 #endif
 		}

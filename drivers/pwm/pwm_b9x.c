@@ -74,7 +74,7 @@ static int pwm_b9x_set_cycles(const struct device *dev, uint32_t channel,
 	/* start pwm */
 #if CONFIG_SOC_RISCV_TELINK_B91
 	pwm_start(channel);
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 	pwm_start((channel == 0)?FLD_PWM0_EN:BIT(channel));
 #endif
 

@@ -30,13 +30,6 @@ config TELINK_B92_PMP
 	help
 		This option enables Telink B92 PMP(memory protection) module.
 
-config TELINK_B95_PMP
-	bool "Support Hardware Memory Protection"
-	depends on SOC_RISCV_TELINK_B95
-	select RISCV_PMP
-	help
-		This option enables Telink B95 PMP(memory protection) module.
-
 config TELINK_B9X_HWDSP
 	bool "Support Hardware DSP"
 	select RISCV_SOC_CONTEXT_SAVE

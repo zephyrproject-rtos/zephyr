@@ -21,6 +21,5 @@ tests:
     platform_allow:
       - tlsr9518adk80d
       - tlsr9528a
-      - tlsr9258a
   drivers.ieee802154.build.upipe:
     platform_allow: qemu_x86
