@@ -90,7 +90,7 @@
 };
 
 &port_irq4 {
-	interrupts = <31 12>;
+	interrupts = <27 12>;
 	status = "okay";
 };
 

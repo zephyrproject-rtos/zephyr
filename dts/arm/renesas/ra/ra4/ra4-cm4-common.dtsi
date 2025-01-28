@@ -149,8 +149,6 @@
 
 		sci9: sci9@40070120  {
 			compatible = "renesas,ra-sci";
-			interrupts = <36 1>, <37 1>, <38 1>, <39 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070120 0x20>;
 			clocks = <&pclka MSTPB 22>;
 			status = "disabled";
