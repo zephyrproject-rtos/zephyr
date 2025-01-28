@@ -273,6 +273,39 @@
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
 		};
+
+		mhu1: mhu@50400020 {
+			compatible = "renesas,rz-mhu";
+			channel = <1>;
+			reg = <0x50400020 0x20>;
+			interrupts = <58 2>;
+			interrupt-names = "mhuns";
+			status = "disabled";
+		};
+		mhu3: mhu@50400060 {
+			compatible = "renesas,rz-mhu";
+			channel = <3>;
+			reg = <0x50400060 0x20>;
+			interrupts = <59 2>;
+			interrupt-names = "mhuns";
+			status = "disabled";
+		};
+		mhu4: mhu@50400080 {
+			compatible = "renesas,rz-mhu";
+			channel = <4>;
+			reg = <0x50400080 0x20>;
+			interrupts = <60 2>;
+			interrupt-names = "mhuns";
+			status = "disabled";
+		};
+		mhu5: mhu@504000a0 {
+			compatible = "renesas,rz-mhu";
+			channel = <5>;
+			reg = <0x504000a0 0x20>;
+			interrupts = <61 2>;
+			interrupt-names = "mhuns";
+			status = "disabled";
+		};
 	};
 };
 
