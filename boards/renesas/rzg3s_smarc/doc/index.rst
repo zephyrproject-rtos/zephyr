@@ -67,6 +67,8 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| INTC      | on-chip    | external interrupt controller       |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
