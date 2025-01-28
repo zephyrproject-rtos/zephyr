@@ -159,7 +159,7 @@ static off_t shm_lseek(struct shm_obj *shm, off_t offset, int whence, size_t cur
 		return -1;
 	}
 
-	if ((INTPTR_MAX - addend) < offset) {
+	if ((addend > INTPTR_MAX) || ((INTPTR_MAX - addend) < offset)) {
 		errno = EOVERFLOW;
 		return -1;
 	}
