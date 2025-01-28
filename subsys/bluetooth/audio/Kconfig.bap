@@ -12,7 +12,6 @@ config BT_BAP_UNICAST
 config BT_BAP_UNICAST_SERVER
 	bool "Bluetooth Unicast Audio Server Support"
 	depends on BT_GATT_DYNAMIC_DB
-	depends on BT_GATT_CACHING
 	depends on BT_PERIPHERAL
 	depends on BT_ISO_PERIPHERAL
 	depends on BT_ASCS
