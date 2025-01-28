@@ -23,6 +23,9 @@ the :ref:`release notes<zephyr_4.1>`.
 Build System
 ************
 
+* Support for the build type feature which was deprecated in Zephyr 3.6 has been removed,
+  :ref:`application-file-suffixes`/:ref:`sysbuild_file_suffixes` has replaced this.
+
 BOSSA Runner
 ============
 
