@@ -1849,8 +1849,8 @@ class TwisterRunner:
                 self.results.done = self.results.total - self.results.failed
                 self.results.failed = 0
                 if self.options.retry_build_errors:
-                    self.results.error = 0
                     self.results.done -= self.results.error
+                    self.results.error = 0
             else:
                 self.results.done = self.results.filtered_static
 
