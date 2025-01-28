@@ -149,6 +149,11 @@ config USE_RA_FSP_SDHI
 	help
 	  Enable RA FSP SDHI driver
 
+config USE_RA_FSP_OSPI_B_NOR_FLASH
+	bool
+	help
+	  Enable RA FSP Octal-SPI driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
