@@ -71,10 +71,15 @@ if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM AND NOT CONFIG_RISCV)
   # Manually fix the pre_located extension's text address at a multiple of 4
   get_target_property(pre_located_target pre_located_ext lib_target)
   get_target_property(pre_located_file pre_located_ext pkg_input)
+
+  get_target_property(zephyr_flags zephyr_interface INTERFACE_COMPILE_OPTIONS)
+  string(REGEX MATCH "-mcpu=[^$>-\;]+" cpu_flag "${zephyr_flags}")
+
   add_llext_command(
     TARGET pre_located_ext
     POST_BUILD
     COMMAND ${CMAKE_C_COMPILER}
+    ${cpu_flag}  # Force compiler and linker match
     -Wl,-r -Wl,-Ttext=0xbada110c -nostdlib -nodefaultlibs -nostartfiles
     $<TARGET_OBJECTS:${pre_located_target}> -o ${pre_located_file}
   )
