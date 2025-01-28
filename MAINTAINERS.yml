@@ -2237,16 +2237,6 @@ Release Notes:
   labels:
     - "area: Wi-Fi"
 
-"Drivers: Wi-Fi NXP":
-  status: maintained
-  maintainers:
-    - dleach02
-    - MaochenWang1
-  files:
-    - drivers/wifi/nxp/
-  labels:
-    - "platform: NXP Drivers"
-
 "Drivers: Memory Management":
   status: maintained
   maintainers:
@@ -3742,17 +3732,33 @@ NXP Drivers:
     - include/zephyr/dt-bindings/inputmux/
     - include/zephyr/dt-bindings/rdc/
     - include/zephyr/drivers/*/*nxp*
+    - include/zephyr/drivers/*/*nxp*/
     - include/zephyr/drivers/*/*mcux*
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
   files-exclude:
-    - drivers/wifi/nxp/
-    - drivers/usb/*/*mcux*
+    - drivers/wifi/
+    - drivers/bluetooth/
+    - drivers/usb/
   files-regex-exclude:
     - .*s32.*
   labels:
     - "platform: NXP Drivers"
   description: NXP Drivers
+
+NXP Wireless:
+  status: maintained
+  maintainers:
+    - dleach02
+  collaborators:
+    - MaochenWang1
+    - axelnxp
+  files:
+    - drivers/wifi/nxp/
+    - drivers/bluetooth/hci/*nxp*
+    - drivers/ieee802154/ieee802154_kw41z.c
+  labels:
+    - "platform: NXP Drivers"
 
 NXP MCUX USB:
   status: maintained
@@ -3761,6 +3767,7 @@ NXP MCUX USB:
     - MarkWangChinese
   files:
     - drivers/usb/*/*mcux*
+    - boards/nxp/usb_kw24d512/
   labels:
     - "platform: NXP Drivers"
   description: NXP MCUX USB shim drivers
@@ -3772,7 +3779,6 @@ NXP Platforms (MCU):
     - mmahadevan108
   collaborators:
     - DerekSnell
-    - yvanderv
     - EmilioCBen
     - decsny
     - butok
@@ -3781,8 +3787,11 @@ NXP Platforms (MCU):
     - boards/nxp/frdm*/
     - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
-    - boards/nxp/vmu*/
     - boards/nxp/*rw*/
+    - boards/nxp/hexiwear/
+    - boards/nxp/common/
+    - boards/nxp/*
+    - soc/nxp/common/
     - soc/nxp/imxrt/
     - soc/nxp/kinetis/
     - soc/nxp/lpc/
@@ -3803,13 +3812,9 @@ NXP Platforms (S32):
   maintainers:
     - manuargue
   collaborators:
-    - PetervdPerk-NXP
-    - bperseghetti
     - Dat-NguyenDuy
   files:
-    - boards/nxp/s32*/
-    - boards/nxp/mr_canhubk3/
-    - boards/nxp/ucans32k1sic/
+    - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
     - soc/nxp/s32/
     - drivers/*/*nxp_s32*
@@ -3832,12 +3837,12 @@ NXP Platforms (MPU):
     - dleach02
     - dbaluta
     - iuliana-prodan
-    - yvanderv
   files:
     - dts/arm64/nxp/
     - dts/arm/nxp/nxp_imx*
     - soc/nxp/imx/
     - soc/nxp/layerscape/
+    - boards/nxp/ls1046ardb/
   files-regex:
     - boards/nxp/m?imx[^(rt)].*/
   labels:
@@ -3856,6 +3861,19 @@ NXP Platforms (Xtensa):
   labels:
     - "platform: NXP Xtensa"
   description: NXP Xtensa platforms
+
+NXP Platforms (Robotics Products):
+  status: maintained
+  maintainers:
+    - bperseghetti
+    - PetervdPerk-NXP
+  files:
+    - boards/nxp/vmu*/
+    - boards/nxp/rddrone_fmuk66/
+    - boards/nxp/mr_canhubk3/
+  labels:
+    - "platform: NXP"
+  description: NXP Robotics Module Platform Products
 
 Microchip MEC Platforms:
   status: maintained
