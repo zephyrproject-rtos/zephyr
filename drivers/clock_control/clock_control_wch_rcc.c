@@ -40,6 +40,10 @@
 #define WCH_RCC_SRC_IS_HSE 1
 #endif
 
+#if defined(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)
+#define CH32V20X_30X_PLL_MUL DT_PROP(DT_NODELABEL(pll), mul)
+#endif
+
 struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
 };
@@ -113,6 +117,7 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		}
 	}
 
+#if defined(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED)
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED)) {
 		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
 			RCC->CFGR0 |= RCC_PLLSRC;
@@ -123,6 +128,19 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
 		}
 	}
+#elif defined(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)
+	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)) {
+		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
+			RCC->CFGR0 |= RCC_PLLSRC;
+		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
+			RCC->CFGR0 &= ~RCC_PLLSRC;
+		}
+		RCC->CFGR0 |= CONCAT(RCC_PLLMul_, CH32V20X_30X_PLL_MUL);
+		RCC->CTLR |= RCC_PLLON;
+		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
+		}
+	}
+#endif
 
 	if (IS_ENABLED(WCH_RCC_SRC_IS_HSI)) {
 		RCC->CFGR0 = (RCC->CFGR0 & ~RCC_SW) | RCC_SW_HSI;
@@ -137,8 +155,10 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	RCC->INTR = RCC_CSSC | RCC_PLLRDYC | RCC_HSERDYC | RCC_LSIRDYC;
 	/* HCLK = SYSCLK = APB1 */
 	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | RCC_HPRE_DIV1;
+#if defined(CONFIG_SOC_CH32V003)
 	/* Set the Flash to 0 wait state */
 	FLASH->ACTLR = (FLASH->ACTLR & ~FLASH_ACTLR_LATENCY) | FLASH_ACTLR_LATENCY_1;
+#endif
 
 	return 0;
 }
