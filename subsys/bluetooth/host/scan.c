@@ -824,6 +824,12 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			return;
 		}
 
+		if (data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RESERVED) {
+			LOG_ERR("Prohibit data status field in advertising report.");
+			reset_reassembling_advertiser();
+			goto cont;
+		}
+
 		if (evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) {
 			/* Legacy advertising reports are complete.
 			 * Create event immediately.
@@ -874,7 +880,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			 * this is the first report from the new advertiser.
 			 * Initialize the new advertiser.
 			 */
-			__ASSERT_NO_MSG(reassembling_advertiser.state == FRAG_ADV_INACTIVE);
+			__ASSERT_NO_MSG(reassembling_advertiser.state != FRAG_ADV_REASSEMBLING);
 			init_reassembling_advertiser(&evt->addr, evt->sid);
 		}
 
