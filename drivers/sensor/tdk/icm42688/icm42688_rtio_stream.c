@@ -130,7 +130,7 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	read_len = pkts * packet_size;
 	((struct icm42688_fifo_data *)buf)->fifo_count = read_len;
 
-	__ASSERT_NO_MSG(read_len % pkt_size == 0);
+	__ASSERT_NO_MSG(read_len % packet_size == 0);
 
 	uint8_t *read_buf = buf + sizeof(hdr);
 
@@ -302,7 +302,7 @@ void icm42688_fifo_event(const struct device *dev)
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
 		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(drv_data->streaming_sqe, err);
+		rtio_iodev_sqe_err(drv_data->streaming_sqe, rc);
 		return;
 	}
 
