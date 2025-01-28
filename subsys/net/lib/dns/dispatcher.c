@@ -63,11 +63,11 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 	if (is_query) {
 		if (dispatcher->type == DNS_SOCKET_RESPONDER) {
 			/* Call the responder callback */
-			ret = dispatcher->cb(dispatcher->ctx, sock,
+			ret = dispatcher->cb(dispatcher, sock,
 					     addr, addrlen,
 					     dns_data, data_len);
 		} else if (dispatcher->pair) {
-			ret = dispatcher->pair->cb(dispatcher->pair->ctx, sock,
+			ret = dispatcher->pair->cb(dispatcher, sock,
 						   addr, addrlen,
 						   dns_data, data_len);
 		} else {
@@ -81,11 +81,11 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 		 */
 		if (dispatcher->type == DNS_SOCKET_RESOLVER) {
 			/* Call the resolver callback */
-			ret = dispatcher->cb(dispatcher->ctx, sock,
+			ret = dispatcher->cb(dispatcher, sock,
 					     addr, addrlen,
 					     dns_data, data_len);
 		} else if (dispatcher->pair) {
-			ret = dispatcher->pair->cb(dispatcher->pair->ctx, sock,
+			ret = dispatcher->pair->cb(dispatcher, sock,
 						   addr, addrlen,
 						   dns_data, data_len);
 		} else {

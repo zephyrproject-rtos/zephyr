@@ -13,6 +13,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/coap_mgmt.h>
+#include <zephyr/net/ethernet_mgmt.h>
 
 #include "net_shell_private.h"
 
@@ -24,6 +25,11 @@ LOG_MODULE_DECLARE(net_shell);
 #define MONITOR_L3_IPV6_MASK (_NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
 #define MONITOR_L4_MASK (_NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
 
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#define MONITOR_L2_ETHERNET_MASK (_NET_ETHERNET_BASE)
+static struct net_mgmt_event_callback l2_ethernet_cb;
+#endif
+
 static bool net_event_monitoring;
 static bool net_event_shutting_down;
 static struct net_mgmt_event_callback l2_cb;
@@ -32,6 +38,8 @@ static struct net_mgmt_event_callback l3_ipv6_cb;
 static struct net_mgmt_event_callback l4_cb;
 static struct k_thread event_mon;
 static K_THREAD_STACK_DEFINE(event_mon_stack, CONFIG_NET_MGMT_EVENT_MONITOR_STACK_SIZE);
+
+static const char unknown_event_str[] = "<unknown event>";
 
 struct event_msg {
 	struct net_if *iface;
@@ -65,27 +73,77 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-static const char *get_l2_desc(uint32_t event)
+static char *get_l2_desc(struct event_msg *msg,
+			 const char **desc, const char **desc2,
+			 char *extra_info, size_t extra_info_len)
 {
-	static const char *desc = "<unknown event>";
+	static const char *desc_unknown = unknown_event_str;
+	char *info = NULL;
 
-	switch (event) {
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#define MAX_VLAN_TAG_INFO_STR_LEN sizeof("tag xxxx disabled")
+	static char vlan_buf[MAX_VLAN_TAG_INFO_STR_LEN + 1];
+#endif
+
+	*desc = desc_unknown;
+
+	switch (msg->event) {
 	case NET_EVENT_IF_DOWN:
-		desc = "down";
+		*desc = "interface";
+		*desc2 = "down";
 		break;
 	case NET_EVENT_IF_UP:
-		desc = "up";
+		*desc = "interface";
+		*desc2 = "up";
+		break;
+	case NET_EVENT_IF_ADMIN_UP:
+		*desc = "interface";
+		*desc2 = "admin up";
+		break;
+	case NET_EVENT_ETHERNET_CARRIER_ON:
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+		*desc = "Ethernet";
+		*desc2 = "carrier on";
+#endif
+		break;
+	case NET_EVENT_ETHERNET_CARRIER_OFF:
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+		*desc = "Ethernet";
+		*desc2 = "carrier off";
+#endif
+		break;
+	case NET_EVENT_ETHERNET_VLAN_TAG_ENABLED: {
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+		uint16_t tag = *((uint16_t *)msg->data);
+
+		*desc = "VLAN";
+		snprintk(vlan_buf, MAX_VLAN_TAG_INFO_STR_LEN,
+			 "tag %u enabled", (uint16_t)tag);
+		*desc2 = vlan_buf;
+#endif
 		break;
 	}
+	case NET_EVENT_ETHERNET_VLAN_TAG_DISABLED: {
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+		uint16_t tag = *((uint16_t *)msg->data);
 
-	return desc;
+		*desc = "VLAN";
+		snprintk(vlan_buf, MAX_VLAN_TAG_INFO_STR_LEN,
+			 "tag %u enabled", (uint16_t)tag);
+		*desc2 = vlan_buf;
+#endif
+		break;
+	}
+	}
+
+	return info;
 }
 
 static char *get_l3_desc(struct event_msg *msg,
 			 const char **desc, const char **desc2,
 			 char *extra_info, size_t extra_info_len)
 {
-	static const char *desc_unknown = "<unknown event>";
+	static const char *desc_unknown = unknown_event_str;
 	char *info = NULL;
 
 #if defined(CONFIG_NET_PMTU)
@@ -230,6 +288,18 @@ static char *get_l3_desc(struct event_msg *msg,
 		info = net_addr_ntop(AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
+	case NET_EVENT_IPV4_MADDR_ADD:
+		*desc = "IPv4 mcast address";
+		*desc2 = "add";
+		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV4_MADDR_DEL:
+		*desc = "IPv4 mcast address";
+		*desc2 = "del";
+		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
 	case NET_EVENT_IPV4_ROUTER_ADD:
 		*desc = "IPv4 router";
 		*desc2 = "add";
@@ -307,7 +377,7 @@ static char *get_l3_desc(struct event_msg *msg,
 
 static const char *get_l4_desc(uint32_t event)
 {
-	static const char *desc = "<unknown event>";
+	static const char *desc = unknown_event_str;
 
 	switch (event) {
 	case NET_EVENT_L4_CONNECTED:
@@ -386,6 +456,12 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 				     MONITOR_L4_MASK);
 	net_mgmt_add_event_callback(&l4_cb);
 
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	net_mgmt_init_event_callback(&l2_ethernet_cb, event_handler,
+				     MONITOR_L2_ETHERNET_MASK);
+	net_mgmt_add_event_callback(&l2_ethernet_cb);
+#endif
+
 	while (net_event_shutting_down == false) {
 		const char *layer_str = "<unknown layer>";
 		const char *desc = "", *desc2 = "";
@@ -402,7 +478,8 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 		layer = NET_MGMT_GET_LAYER(msg.event);
 		if (layer == NET_MGMT_LAYER_L2) {
 			layer_str = "L2";
-			desc = get_l2_desc(msg.event);
+			info = get_l2_desc(&msg, &desc, &desc2,
+					   extra_info, NET_IPV6_ADDR_LEN);
 		} else if (layer == NET_MGMT_LAYER_L3) {
 			layer_str = "L3";
 			info = get_l3_desc(&msg, &desc, &desc2,
@@ -412,16 +489,27 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 			desc = get_l4_desc(msg.event);
 		}
 
-		PR_INFO("EVENT: %s [%d] %s%s%s%s%s\n", layer_str,
-			net_if_get_by_iface(msg.iface), desc,
-			desc2 ? " " : "", desc2 ? desc2 : "",
-			info ? " " : "", info ? info : "");
+		if (desc == unknown_event_str) {
+			PR_INFO("EVENT: %s [%d] %s%s%s%s%s (0x%08x)\n", layer_str,
+				net_if_get_by_iface(msg.iface), desc,
+				desc2 ? " " : "", desc2 ? desc2 : "",
+				info ? " " : "", info ? info : "", msg.event);
+		} else {
+			PR_INFO("EVENT: %s [%d] %s%s%s%s%s\n", layer_str,
+				net_if_get_by_iface(msg.iface), desc,
+				desc2 ? " " : "", desc2 ? desc2 : "",
+				info ? " " : "", info ? info : "");
+		}
 	}
 
 	net_mgmt_del_event_callback(&l2_cb);
 	net_mgmt_del_event_callback(&l3_ipv4_cb);
 	net_mgmt_del_event_callback(&l3_ipv6_cb);
 	net_mgmt_del_event_callback(&l4_cb);
+
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	net_mgmt_del_event_callback(&l2_ethernet_cb);
+#endif
 
 	k_msgq_purge(&event_mon_msgq);
 
