@@ -5,8 +5,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 static struct bt_vcp_vol_ctlr_cb *vcp_cb;
 

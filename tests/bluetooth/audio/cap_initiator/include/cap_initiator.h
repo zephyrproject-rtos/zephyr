@@ -6,6 +6,7 @@
 
 #ifndef MOCKS_CAP_INITIATOR_H_
 #define MOCKS_CAP_INITIATOR_H_
+#include <stdint.h>
 
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/csip.h>

@@ -28,6 +28,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -47,6 +48,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 
+#include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
 #include "audio.h"
 

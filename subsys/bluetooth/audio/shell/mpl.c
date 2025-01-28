@@ -21,8 +21,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 
-#include "host/shell/bt.h"
-
 #include "../mpl_internal.h"
 
 LOG_MODULE_REGISTER(bt_mpl_shell, CONFIG_BT_MPL_LOG_LEVEL);

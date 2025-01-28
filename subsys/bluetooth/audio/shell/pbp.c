@@ -23,7 +23,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
 
 #define PBS_DEMO                'P', 'B', 'P'

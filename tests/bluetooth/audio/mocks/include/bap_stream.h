@@ -6,9 +6,12 @@
 
 #ifndef MOCKS_BAP_STREAM_H_
 #define MOCKS_BAP_STREAM_H_
+#include <stdint.h>
 
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/net_buf.h>
 
 extern struct bt_bap_stream_ops mock_bap_stream_ops;
 

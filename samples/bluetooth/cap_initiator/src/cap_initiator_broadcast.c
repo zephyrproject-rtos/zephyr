@@ -12,6 +12,7 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -138,7 +139,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 #else
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err) {
-		printk("Unable to generate broadcast ID: %d\n", err);
+		LOG_ERR("Unable to generate broadcast ID: %d\n", err);
 		return err;
 	}
 #endif /* CONFIG_STATIC_BROADCAST_ID */

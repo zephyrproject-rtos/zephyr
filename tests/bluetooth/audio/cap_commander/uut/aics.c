@@ -5,8 +5,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
+#include <stddef.h>
 
 #include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/util.h>
 
 static struct bt_aics {
 	bool active;

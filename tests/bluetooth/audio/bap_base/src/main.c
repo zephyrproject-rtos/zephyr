@@ -6,9 +6,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
 #include <zephyr/fff.h>
 
 DEFINE_FFF_GLOBALS;

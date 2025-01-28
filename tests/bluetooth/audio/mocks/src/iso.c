@@ -6,9 +6,15 @@
  */
 
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/fff.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/ztest_assert.h>
 
 #include "conn.h"
 #include "iso.h"

@@ -11,10 +11,10 @@
 
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/fff.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
 
 #include "bap_broadcast_source.h"
-#include "ztest_assert.h"
-#include "ztest_test.h"
 
 #define FFF_GLOBALS
 
