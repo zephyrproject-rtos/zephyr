@@ -59,3 +59,7 @@ jobs:
           aws s3 sync --quiet api-coverage/coverage-report/ s3://docs.zephyrproject.org/api-coverage/${VERSION} --delete
         fi
         aws s3 cp --quiet pdf-output/zephyr.pdf s3://docs.zephyrproject.org/${VERSION}/zephyr.pdf
+
+        # invalidate cloudfront cache
+        DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Aliases.Items[?@ == 'docs.zephyrproject.org']].Id" --output text)
+        AWS_PAGER="" aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/${VERSION}/*" "/apidoc/${VERSION}/*" "/api-coverage/${VERSION}/*"
