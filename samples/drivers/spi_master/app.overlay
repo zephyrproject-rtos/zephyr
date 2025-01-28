@@ -1,0 +1,9 @@
+/*
+* Copyright (c) 2025 Toney Abraham
+*SPDX-License-Identifier: Apache-2.0 
+*/
+/ {
+	aliases {
+		spi-0 = &sercom4;  // Works with the same54_xpro Board
+	};
+};
