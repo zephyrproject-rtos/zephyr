@@ -212,7 +212,7 @@ class CheckPatch(ComplianceTest):
         if not os.path.exists(checkpatch):
             self.skip(f'{checkpatch} not found')
 
-        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
+        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', '--', ':!*.diff', ':!*.patch', COMMIT_RANGE),
                                 stdout=subprocess.PIPE,
                                 cwd=GIT_TOP)
         try:
@@ -251,7 +251,7 @@ class BoardYmlCheck(ComplianceTest):
     """
     name = "BoardYml"
     doc = "Check the board.yml file format"
-    path_hint = "<zephyr-base>"
+    path_hint = "<git-top>"
 
     def check_board_file(self, file, vendor_prefixes):
         """Validate a single board file."""
@@ -332,7 +332,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
     """
     name = "DevicetreeBindings"
     doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
-    path_hint = "<zephyr-base>"
+    path_hint = "<git-top>"
 
     def run(self, full=True):
         dts_bindings = self.parse_dt_bindings()
@@ -369,7 +369,7 @@ class KconfigCheck(ComplianceTest):
     """
     name = "Kconfig"
     doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
-    path_hint = "<zephyr-base>"
+    path_hint = "<git-top>"
 
     # Top-level Kconfig file. The path can be relative to srctree (ZEPHYR_BASE).
     FILENAME = "Kconfig"
@@ -978,6 +978,7 @@ flagged.
         "MCUBOOT_CLEANUP_ARM_CORE", # Used in (sysbuild-based) test
         "MCUBOOT_DOWNGRADE_PREVENTION", # but symbols are defined in MCUboot
                                         # itself.
+        "MCUBOOT_LOG_LEVEL_DBG",
         "MCUBOOT_LOG_LEVEL_INF",
         "MCUBOOT_LOG_LEVEL_WRN",        # Used in example adjusting MCUboot
                                         # config,
@@ -1035,6 +1036,7 @@ class KconfigBasicCheck(KconfigCheck):
     references inside the Kconfig tree.
     """
     name = "KconfigBasic"
+    path_hint = "<git-top>"
 
     def check_no_undef_outside_kconfig(self, kconf):
         pass
@@ -1224,7 +1226,7 @@ class GitDiffCheck(ComplianceTest):
         for shaidx in get_shas(COMMIT_RANGE):
             # Ignore non-zero return status code
             # Reason: `git diff --check` sets the return code to the number of offending lines
-            diff = git("diff", f"{shaidx}^!", "--check", ignore_non_zero=True)
+            diff = git("diff", f"{shaidx}^!", "--check", "--", ":!*.diff", ":!*.patch", ignore_non_zero=True)
 
             lines = p.findall(diff)
             lines = map(lambda x: f"{shaidx}: {x}", lines)
