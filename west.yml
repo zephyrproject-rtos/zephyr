@@ -117,7 +117,8 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 4b96cbb174678dcd3ca86e11e1f24bc5f8726da0
+      repo-path: CMSIS_6
+      revision: pull/1/head
       path: modules/hal/cmsis
       groups:
         - hal
@@ -127,10 +128,6 @@ manifest:
     - name: cmsis-nn
       revision: ea987c1ca661be723de83bd159aed815d6cbd430
       path: modules/lib/cmsis-nn
-    - name: cmsis_6
-      repo-path: CMSIS_6
-      revision: 783317a3072554acbac86cca2ff24928cbf98d30
-      path: modules/lib/cmsis_6
     - name: edtt
       revision: b9ca3c7030518f07b7937dacf970d37a47865a76
       path: tools/edtt
