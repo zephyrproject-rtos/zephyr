@@ -284,7 +284,6 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		 */
 		LOG_ERR("No netbuf for send");
 		atomic_clear_bit(queued_bits, as_idx);
-		ctx->ops->buf_release_cb(dev, terminal, data, ctx->user_data);
 		return -ENOMEM;
 	}
 
@@ -293,7 +292,6 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 		atomic_clear_bit(queued_bits, as_idx);
-		ctx->ops->buf_release_cb(dev, terminal, data, ctx->user_data);
 	}
 
 	return ret;
