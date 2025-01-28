@@ -75,6 +75,8 @@ the hardware features below.
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
+| MRT       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
