@@ -35,6 +35,9 @@ jobs:
         if [ -f api-coverage/api-coverage.tar.xz ]; then
           tar xf api-coverage/api-coverage.tar.xz -C api-coverage
         fi
+        if [ -f rustdocs/rustdocs-output.tar.xz ]; then
+          tar xf rustdocs/rustdocs-output.tar.xz -C rustdocs
+        fi
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -57,5 +60,8 @@ jobs:
         aws s3 sync --quiet html-output/html/doxygen/html s3://docs.zephyrproject.org/apidoc/${VERSION} --delete
         if [ -d api-coverage/coverage-report ]; then
           aws s3 sync --quiet api-coverage/coverage-report/ s3://docs.zephyrproject.org/api-coverage/${VERSION} --delete
+        fi
+        if [ -d rustdocs/rustdocs ]; then
+          aws s3 sync --quiet rustdocs/rustdocs/ s3://docs.zephyrproject.org/rustdocs/${VERSION} --delete
         fi
         aws s3 cp --quiet pdf-output/zephyr.pdf s3://docs.zephyrproject.org/${VERSION}/zephyr.pdf
