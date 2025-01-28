@@ -167,35 +167,43 @@ tests:
     integration_platforms:
       - gd32f403z_eval
   drivers.spi.pl022_spi_interrupt.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=n
     platform_allow: rpi_pico
   drivers.spi.pl022_spi_dma.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
   drivers.spi.pl022_spi_dma_and_interrupt.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
   drivers.spi.pl022_spi_dma_no_dma_props.loopback:
-    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
   drivers.spi.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
-    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
+    platform_allow: rpi_pico
+  drivers.spi.pio_spi.loopback:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"
+      - EXTRA_CONF_FILE="overlay-rpi-pico-pio.conf"
     platform_allow: rpi_pico
   drivers.spi.mcux_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="overlay-mcux-flexio-spi.overlay"
