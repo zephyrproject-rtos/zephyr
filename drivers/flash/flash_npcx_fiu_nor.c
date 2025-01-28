@@ -18,7 +18,7 @@
 #endif
 
 #include "flash_npcx_fiu_qspi.h"
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_npcx_fiu_nor, CONFIG_FLASH_LOG_LEVEL);

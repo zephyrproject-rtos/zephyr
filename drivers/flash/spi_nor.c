@@ -21,7 +21,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 #include "jesd216.h"
 #include "flash_priv.h"
 

@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 
 #include "flash_andes_qspi.h"
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 #include "jesd216.h"
 #include "flash_priv.h"
 

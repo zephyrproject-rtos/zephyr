@@ -10,7 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 #include "memc_mcux_flexspi.h"
 
 #ifdef CONFIG_HAS_MCUX_CACHE

@@ -23,7 +23,7 @@
 #include <hal/nrf_clock.h>
 #include <hal/nrf_gpio.h>
 
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 
 /* The QSPI bus node which the NRF70 is on */
 #define QSPI_IF_BUS_NODE DT_NODELABEL(qspi)

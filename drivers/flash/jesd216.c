@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <zephyr/kernel.h>
 #include "jesd216.h"
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 
 static bool extract_instr(uint16_t packed,
 			  struct jesd216_instr *res)

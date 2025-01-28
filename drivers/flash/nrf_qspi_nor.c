@@ -19,7 +19,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 #include "jesd216.h"
 #include "flash_priv.h"
 #include <nrf_erratas.h>

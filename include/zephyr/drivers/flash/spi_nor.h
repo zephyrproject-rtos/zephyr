@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SPI_NOR_H__
-#define __SPI_NOR_H__
+#ifndef __ZEPHYR_INCLUDE_DRIVERS_FLASH_SPI_NOR_H__
+#define __ZEPHYR_INCLUDE_DRIVERS_FLASH_SPI_NOR_H__
 
 #include <zephyr/sys/util.h>
 
@@ -116,4 +116,4 @@
 
 #define CMD_RDCR 0x15 /* Read the configuration register. */
 
-#endif /*__SPI_NOR_H__*/
+#endif /*__ZEPHYR_INCLUDE_DRIVERS_FLASH_SPI_NOR_H__*/
