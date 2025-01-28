@@ -10,7 +10,7 @@
 
 / {
 	model = "Mercury XU";
-	compatible = "xlnx,zynqmp";
+	compatible = "enclustra,mercury_xu";
 
 	chosen {
 		zephyr,console = &uart0;
