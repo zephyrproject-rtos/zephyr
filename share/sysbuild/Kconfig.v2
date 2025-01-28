@@ -28,5 +28,5 @@ config BOARD_DEPRECATED_RELEASE
 	  When set, any build for that board will generate a clearly visible
 	  deprecation warning.
 
-source "boards/Kconfig.$(HWM_SCHEME)"
-source "soc/Kconfig.$(HWM_SCHEME)"
+source "boards/Kconfig.v2"
+source "soc/Kconfig.v2"
