@@ -582,7 +582,11 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 	rpu_ctx_zep->drv_priv_zep = drv_priv_zep;
 
-	rpu_ctx = nrf_wifi_fmac_dev_add(drv_priv_zep->fmac_priv, rpu_ctx_zep);
+#ifdef CONFIG_NRF70_RADIO_TEST
+	rpu_ctx = nrf_wifi_rt_fmac_dev_add(drv_priv_zep->fmac_priv, rpu_ctx_zep);
+#else
+	rpu_ctx = nrf_wifi_sys_fmac_dev_add(drv_priv_zep->fmac_priv, rpu_ctx_zep);
+#endif /* CONFIG_NRF70_RADIO_TEST */
 
 	if (!rpu_ctx) {
 		LOG_ERR("%s: nrf_wifi_fmac_dev_add failed", __func__);
@@ -760,9 +764,9 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	 */
 	nrf_wifi_osal_init(&nrf_wifi_os_zep_ops);
 
-	rpu_drv_priv_zep.fmac_priv = nrf_wifi_fmac_init(&data_config,
-							rx_buf_pools,
-							&callbk_fns);
+	rpu_drv_priv_zep.fmac_priv = nrf_wifi_sys_fmac_init(&data_config,
+							    rx_buf_pools,
+							    &callbk_fns);
 #else /* !CONFIG_NRF70_RADIO_TEST */
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 

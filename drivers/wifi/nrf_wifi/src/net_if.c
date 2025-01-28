@@ -1173,7 +1173,7 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 #ifdef CONFIG_NRF70_RAW_DATA_TX
 	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
-	struct rpu_op_stats stats;
+	struct rpu_sys_op_stats stats;
 	int ret = -1;
 
 	if (!dev) {
@@ -1204,8 +1204,8 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 		goto unlock;
 	}
 
-	memset(&stats, 0, sizeof(struct rpu_op_stats));
-	status = nrf_wifi_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
+	memset(&stats, 0, sizeof(struct rpu_sys_op_stats));
+	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_fmac_stats_get failed", __func__);
 		goto unlock;
