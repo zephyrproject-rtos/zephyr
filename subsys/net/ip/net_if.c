@@ -5778,6 +5778,11 @@ bool net_if_is_wifi(struct net_if *iface)
 			net_eth_type_is_wifi(iface);
 	}
 
+	/* if ip/socket offloading or Ethernet L2 is not active */
+	if (net_if_l2(iface) != NULL) {
+		return true;
+	}
+
 	return false;
 }
 
