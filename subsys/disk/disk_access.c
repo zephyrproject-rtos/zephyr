@@ -118,6 +118,18 @@ int disk_access_write(const char *pdrv, const uint8_t *data_buf,
 	return rc;
 }
 
+int disk_access_erase(const char *pdrv, uint32_t start_sector, uint32_t num_sector)
+{
+	struct disk_info *disk = disk_access_get_di(pdrv);
+	int rc = -EINVAL;
+
+	if ((disk != NULL) && (disk->ops != NULL) && (disk->ops->erase != NULL)) {
+		rc = disk->ops->erase(disk, start_sector, num_sector);
+	}
+
+	return rc;
+}
+
 int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buf)
 {
 	struct disk_info *disk = disk_access_get_di(pdrv);
