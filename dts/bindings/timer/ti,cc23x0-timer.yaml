@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Baylibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI SimpleLink CC23x0 Timer Node
+
+compatible: "ti,cc23x0-systim-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
