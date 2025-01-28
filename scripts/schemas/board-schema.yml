@@ -89,6 +89,17 @@ schema;board-schema:
               type: str
             variants:
               include: variant-schema
+    sips:
+      required: false
+      type: seq
+      sequence:
+        - type: map
+          mapping:
+            name:
+              required: true
+              type: str
+            variants:
+              include: variant-schema
     variants:
       include: extend-variant-schema
 
