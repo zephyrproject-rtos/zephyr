@@ -170,8 +170,8 @@ BT_GATT_SERVICE_DEFINE(cts_svc, BT_GATT_PRIMARY_SERVICE(BT_UUID_CTS),
 
 int bt_cts_init(const struct bt_cts_cb *cb)
 {
-	__ASSERT(cb == NULL, "Current Time service need valid `struct bt_cts_cb` callback");
-	__ASSERT(cb->fill_current_cts_time == NULL,
+	__ASSERT(cb != NULL, "Current Time service need valid `struct bt_cts_cb` callback");
+	__ASSERT(cb->fill_current_cts_time != NULL,
 		 "`fill_current_cts_time` callback api is required for functioning of CTS");
 	if (!cb || !cb->fill_current_cts_time) {
 		return -EINVAL;
