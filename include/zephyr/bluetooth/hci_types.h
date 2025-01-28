@@ -355,6 +355,7 @@ struct bt_hci_cmd_hdr {
 
 /* OpCode Group Fields */
 #define BT_OGF_LINK_CTRL                        0x01
+#define BT_OGF_LINK_POLICY                      0x02
 #define BT_OGF_BASEBAND                         0x03
 #define BT_OGF_INFO                             0x04
 #define BT_OGF_STATUS                           0x05
@@ -548,6 +549,20 @@ struct bt_hci_cp_user_passkey_neg_reply {
 struct bt_hci_cp_io_capability_neg_reply {
 	bt_addr_t bdaddr;
 	uint8_t   reason;
+} __packed;
+
+#define BT_HCI_OP_SNIFF_MODE                    BT_OP(BT_OGF_LINK_POLICY, 0x0003) /* 0x0803 */
+struct bt_hci_cp_sniff_mode {
+	uint16_t handle;
+	uint16_t max_interval;
+	uint16_t min_interval;
+	uint16_t attempt;
+	uint16_t timeout;
+} __packed;
+
+#define BT_HCI_OP_EXIT_SNIFF_MODE               BT_OP(BT_OGF_LINK_POLICY, 0x0004) /* 0x0804 */
+struct bt_hci_cp_exit_sniff_mode {
+	uint16_t handle;
 } __packed;
 
 #define BT_HCI_OP_SET_EVENT_MASK                BT_OP(BT_OGF_BASEBAND, 0x0001) /* 0x0c01 */
@@ -2812,6 +2827,19 @@ struct bt_hci_evt_role_change {
 struct bt_hci_evt_num_completed_packets {
 	uint8_t  num_handles;
 	struct bt_hci_handle_count h[0];
+} __packed;
+
+/* Current mode */
+#define BT_ACTIVE_MODE	0x00
+#define BT_HOLD_MODE	0x01
+#define BT_SNIFF_MODE	0x02
+
+#define BT_HCI_EVT_MODE_CHANGE                  0x14
+struct bt_hci_evt_mode_change {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  mode;
+	uint16_t interval;
 } __packed;
 
 #define BT_HCI_EVT_PIN_CODE_REQ                 0x16
