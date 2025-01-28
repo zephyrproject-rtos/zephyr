@@ -7,7 +7,6 @@
 #include <arm/armv7-m.dtsi>
 
 #include "mec5.dtsi"
-#include "mec5/mec5_mec175xsz-espi-host-dev.dtsi"
 
 / {
 	flash0: flash@b0000 {
