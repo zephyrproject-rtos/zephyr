@@ -102,3 +102,12 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&usart2 {
+	clocks = <&rcc STM32_CLOCK(APB1, 17)>,
+		 <&rcc STM32_SRC_CKPER USART2_SEL(1)>;
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pf6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
