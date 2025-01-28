@@ -62,59 +62,58 @@ def parse_args():
         "-n", "--check-always-n",
         action="append_const", dest="checks", const=check_always_n,
         help="""\
-List symbols that can never be anything but n/empty. These
-are detected as symbols with no prompt or defaults that
-aren't selected or implied.
-""")
+             List symbols that can never be anything but n/empty. These
+             are detected as symbols with no prompt or defaults that
+             aren't selected or implied.""")
 
     parser.add_argument(
         "-u", "--check-unused",
         action="append_const", dest="checks", const=check_unused,
         help="""\
-List symbols that might be unused.
+             List symbols that might be unused.
 
-Heuristic:
+             Heuristic:
 
- - Isn't referenced in Kconfig
- - Isn't referenced as CONFIG_<NAME> outside Kconfig
-   (besides possibly as CONFIG_<NAME>=<VALUE>)
- - Isn't selecting/implying other symbols
- - Isn't a choice symbol
+             - Isn't referenced in Kconfig
+             - Isn't referenced as CONFIG_<NAME> outside Kconfig
+               (besides possibly as CONFIG_<NAME>=<VALUE>)
+             - Isn't selecting/implying other symbols
+             - Isn't a choice symbol
 
-C preprocessor magic can trip up this check.""")
+             C preprocessor magic can trip up this check.""")
 
     parser.add_argument(
         "-m", "--check-pointless-menuconfigs",
         action="append_const", dest="checks", const=check_pointless_menuconfigs,
         help="""\
-List symbols defined with 'menuconfig' where the menu is
-empty due to the symbol not being followed by stuff that
-depends on it""")
+             List symbols defined with 'menuconfig' where the menu is
+             empty due to the symbol not being followed by stuff that
+             depends on it""")
 
     parser.add_argument(
         "-d", "--check-defconfig-only-definition",
         action="append_const", dest="checks", const=check_defconfig_only_definition,
         help="""\
-List symbols that are only defined in Kconfig.defconfig
-files. A common base definition should probably be added
-somewhere for such symbols, and the type declaration ('int',
-'hex', etc.) removed from Kconfig.defconfig.""")
+             List symbols that are only defined in Kconfig.defconfig
+             files. A common base definition should probably be added
+             somewhere for such symbols, and the type declaration ('int',
+             'hex', etc.) removed from Kconfig.defconfig.""")
 
     parser.add_argument(
         "-p", "--check-missing-config-prefix",
         action="append_const", dest="checks", const=check_missing_config_prefix,
         help="""\
-Look for references like
+             Look for references like
 
-    #if MACRO
-    #if(n)def MACRO
-    defined(MACRO)
-    IS_ENABLED(MACRO)
+                 #if MACRO
+                 #if(n)def MACRO
+                 defined(MACRO)
+                 IS_ENABLED(MACRO)
 
-where MACRO is the name of a defined Kconfig symbol but
-doesn't have a CONFIG_ prefix. Could be a typo.
+             where MACRO is the name of a defined Kconfig symbol but
+             doesn't have a CONFIG_ prefix. Could be a typo.
 
-Macros that are #define'd somewhere are not flagged.""")
+             Macros that are #define'd somewhere are not flagged.""")
 
     return parser.parse_args()
 
@@ -141,7 +140,8 @@ def check_pointless_menuconfigs():
     for node in kconf.node_iter():
         if node.is_menuconfig and not node.list and \
            isinstance(node.item, kconfiglib.Symbol):
-            print("{0.item.name:40} {0.filename}:{0.linenr}".format(node))
+            print(f"{node.item.name:40} {node.filename}:{node.linenr}")
+
 
 
 def check_defconfig_only_definition():
@@ -179,8 +179,8 @@ def check_missing_config_prefix():
     for batch in split_list(syms, 200):
         # grep for '#if((n)def) <symbol>', 'defined(<symbol>', and
         # 'IS_ENABLED(<symbol>', with a missing CONFIG_ prefix
-        regex = r"(?:#\s*if(?:n?def)\s+|\bdefined\s*\(\s*|IS_ENABLED\(\s*)(?:" + \
-                "|".join(sym.name for sym in batch) + r")\b"
+        regex = (rf"(?:#\s*if(?:n?def)\s+|\bdefined\s*\(\s*|IS_ENABLED\(\s*)"
+                 rf"(?:{'|'.join(sym.name for sym in batch)})\b")
         cmd = ("git", "grep", "--line-number", "-I", "--perl-regexp", regex)
 
         for modpath in modpaths:
@@ -196,7 +196,7 @@ def split_list(lst, batch_size):
 
 
 def print_header(s):
-    print(s + "\n" + len(s)*"=")
+    print(f"{s}\n{len(s)*'='}")
 
 
 def init_kconfig():
@@ -285,9 +285,9 @@ def is_selecting_or_implying(sym):
 def name_and_locs(sym):
     # Returns a string with the name and definition location(s) for 'sym'
 
-    return "{:40} {}".format(
-        sym.name,
-        ", ".join("{0.filename}:{0.linenr}".format(node) for node in sym.nodes))
+    return (f"{sym.name:40} "
+            f"{', '.join(f'{node.filename}:{node.linenr}' for node in sym.nodes)}")
+
 
 
 def run(cmd, cwd=TOP_DIR, check=True):
@@ -302,7 +302,7 @@ def run(cmd, cwd=TOP_DIR, check=True):
         process = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
     except OSError as e:
-        err("Failed to run '{}': {}".format(cmd_s, e))
+        err(f"Failed to run '{cmd_s}': {e}")
 
     stdout, stderr = process.communicate()
     # errors="ignore" temporarily works around
@@ -310,31 +310,31 @@ def run(cmd, cwd=TOP_DIR, check=True):
     stdout = stdout.decode("utf-8", errors="ignore")
     stderr = stderr.decode("utf-8")
     if check and process.returncode:
-        err("""\
-'{}' exited with status {}.
+        err(f"""\
+             '{cmd_s}' exited with status {process.returncode}.
 
-===stdout===
-{}
-===stderr===
-{}""".format(cmd_s, process.returncode, stdout, stderr))
+             ===stdout===
+             {stdout}
+             ===stderr===
+             {stderr}""")
 
     if stderr:
-        warn("'{}' wrote to stderr:\n{}".format(cmd_s, stderr))
+        warn(f"'{cmd_s}' wrote to stderr:\n{stderr}")
 
     return stdout
 
 
 def err(msg):
-    sys.exit(executable() + "error: " + msg)
+    sys.exit(f"{executable()}error: {msg}")
 
 
 def warn(msg):
-    print(executable() + "warning: " + msg, file=sys.stderr)
+    print(f"{executable()}warning: {msg}", file=sys.stderr)
 
 
 def executable():
     cmd = sys.argv[0]  # Empty string if missing
-    return cmd + ": " if cmd else ""
+    return f"{cmd}: " if cmd else ""
 
 
 if __name__ == "__main__":

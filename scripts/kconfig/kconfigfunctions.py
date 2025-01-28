@@ -35,7 +35,7 @@ if not doc_mode:
 
 
 def _warn(kconf, msg):
-    print("{}:{}: WARNING: {}".format(kconf.filename, kconf.linenr, msg))
+    print(f"{kconf.filename}:{kconf.linenr}: WARNING: {msg}")
 
 
 def _dt_units_to_scale(unit):
