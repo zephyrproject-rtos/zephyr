@@ -1,0 +1,7 @@
+tests:
+  settings.zms:
+    depends_on: zms
+    min_ram: 32
+    tags:
+      - settings
+      - zms
