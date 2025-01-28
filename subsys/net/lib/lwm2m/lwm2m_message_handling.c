@@ -2775,12 +2775,23 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 			goto client_unlock;
 		}
 
+		bool is_empty = coap_header_get_code(&response) == COAP_CODE_EMPTY;
+		bool was_request = coap_packet_is_request(&msg->cpkt);
+
 		/* If the original message was a request and an empty
 		 * ACK was received, expect separate response later.
 		 */
-		if ((msg->code >= COAP_METHOD_GET) && (msg->code <= COAP_METHOD_DELETE) &&
-		    (coap_header_get_code(&response) == COAP_CODE_EMPTY)) {
+		if (was_request && is_empty) {
 			LOG_DBG("Empty ACK, expect separate response.");
+			goto client_unlock;
+		}
+
+		/* If the original message was a response (like a Notify) and
+		 * empty Ack is received, handle that as a response.
+		 */
+		if (!was_request && is_empty) {
+			msg->reply->reply(&response, msg->reply, from_addr);
+			lwm2m_reset_message(msg, true);
 			goto client_unlock;
 		}
 	}
