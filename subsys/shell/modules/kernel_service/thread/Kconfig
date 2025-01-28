@@ -52,3 +52,24 @@ config KERNEL_THREAD_SHELL_UNWIND
 	select KERNEL_THREAD_SHELL
 	help
 	  Internal helper macro to compile the `unwind` subcommand
+
+config KERNEL_THREAD_SHELL_SUSPEND
+	bool
+	default y
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the 'suspend' subcommand
+
+config KERNEL_THREAD_SHELL_RESUME
+	bool
+	default y
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the 'resume' subcommand
+
+config KERNEL_THREAD_SHELL_KILL
+	bool
+	default y
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the 'kill' subcommad
