@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Base properties for EVTC (EVenT Controller)
+
+properties:
+  evtc-request-latency-ns:
+    type: int
+    description: |
+      Maximum latency from latency request to latency is in
+      effect, in nanoseconds.
+
+  evtc-latencies-ns:
+    type: array
+    required: true
+    description: |
+      Supported event latencies in descending order, in
+      nanoseconds.

@@ -129,4 +129,17 @@ config PM_DEVICE_SYSTEM_MANAGED
 
 endif # PM_DEVICE
 
+config PM_EVTC
+	bool "Event controller PM support"
+	help
+	  Enable event controller power management.
+
+if PM_EVTC
+
+module = PM_EVTC
+module-str = Event controller power management
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # PM_EVTC
+
 endmenu
