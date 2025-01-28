@@ -1,0 +1,31 @@
+// nucleo_wba55cg_single_wire_uart.overlay
+&usart2 {
+	status = "okay";
+	pinctrl-0 = <&usart2_tx_pa12>;
+	current-speed = <115200>;
+	single-wire;  // Enable single-wire mode
+};
+
+&lpuart1 {
+	status = "okay";
+	pinctrl-0 = <&lpuart1_tx_pa2>;
+	current-speed = <115200>;
+	single-wire;  // Enable single-wire mode
+};
+
+&usart2_tx_pa12 {
+	bias-pull-up;
+	drive-open-drain;
+};
+
+&lpuart1_tx_pa2 {
+	bias-pull-up;
+	drive-open-drain;
+};
+
+/ {
+	aliases {
+	singlelineuart1 = &usart2;
+	singlelineuart2 = &lpuart1;
+	};
+};
