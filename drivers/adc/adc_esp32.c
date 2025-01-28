@@ -535,6 +535,11 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 			conf->unit, cfg->channel_id, data->attenuation[cfg->channel_id],
 			data->resolution[cfg->channel_id]);
 
+		if (data->cal_handle[cfg->channel_id] != NULL) {
+			/* delete pre-existing calib scheme */
+			adc_cali_delete_scheme_curve_fitting(data->cal_handle[cfg->channel_id]);
+		}
+
 		adc_cali_create_scheme_curve_fitting(&cal_config,
 						     &data->cal_handle[cfg->channel_id]);
 #endif /* ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED */
@@ -552,6 +557,11 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 		LOG_DBG("Line fitting calib [unit_id: %u, chan: %u, atten: %u, bitwidth: %u]",
 			conf->unit, cfg->channel_id, data->attenuation[cfg->channel_id],
 			data->resolution[cfg->channel_id]);
+
+		if (data->cal_handle[cfg->channel_id] != NULL) {
+			/* delete pre-existing calib scheme */
+			adc_cali_delete_scheme_curve_fitting(data->cal_handle[cfg->channel_id]);
+		}
 
 		adc_cali_create_scheme_line_fitting(&cal_config,
 						    &data->cal_handle[cfg->channel_id]);
