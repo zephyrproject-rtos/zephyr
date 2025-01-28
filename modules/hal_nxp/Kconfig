@@ -1,8 +1,20 @@
 #
 # Copyright (c) 2021 Linaro, Limited
+# Copyright 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
-#
 
-config MCUX_ACMP
-	bool "Include ACMP driver from MCUX SDK"
+
+config ZEPHYR_HAL_NXP_MODULE
+	bool
+
+config HAS_MCUX
+	bool
+	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_NXP_IMX || SOC_FAMILY_LPC || \
+		SOC_FAMILY_NXP_S32 || SOC_FAMILY_NXP_IMXRT || SOC_FAMILY_NXP_RW || \
+		SOC_FAMILY_NXP_MCX
+
+rsource "imx/Kconfig.imx"
+rsource "s32/Kconfig.nxp_s32"
+rsource "mcux/Kconfig.mcux"
+rsource "mcux/Kconfig"
