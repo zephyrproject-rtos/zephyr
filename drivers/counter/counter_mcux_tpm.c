@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -295,11 +295,15 @@ static DEVICE_API(counter, mcux_tpm_driver_api) = {
 										\
 	static int mcux_tpm_## n ##_init(const struct device *dev)		\
 	{									\
+		int ret;							\
+		ret = mcux_tpm_init(dev);					\
+		if (ret)							\
+			return ret;						\
 		IRQ_CONNECT(DT_INST_IRQN(n),					\
 			DT_INST_IRQ(n, priority),				\
 			mcux_tpm_isr, DEVICE_DT_INST_GET(n), 0);		\
 		irq_enable(DT_INST_IRQN(n));					\
-		return mcux_tpm_init(dev);					\
+		return 0;							\
 	}									\
 
 DT_INST_FOREACH_STATUS_OKAY(TPM_DEVICE_INIT_MCUX)
