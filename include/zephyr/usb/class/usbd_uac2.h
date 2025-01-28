@@ -176,6 +176,9 @@ void usbd_uac2_set_ops(const struct device *dev,
  * Data buffer must be sufficiently aligned and otherwise suitable for use by
  * UDC driver.
  *
+ * @note Buffer ownership is transferred to the stack in case of success, in
+ * case of an error the caller retains the ownership of the buffer.
+ *
  * @param dev USB Audio 2 device
  * @param terminal Output Terminal ID linked to AudioStreaming interface
  * @param data Buffer containing outgoing data
