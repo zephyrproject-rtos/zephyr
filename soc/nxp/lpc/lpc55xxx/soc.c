@@ -78,7 +78,7 @@ const pll_setup_t pll1Setup = {
  *
  */
 
-static ALWAYS_INLINE void clock_init(void)
+void __weak clock_init(void)
 {
 	ExternalClockFrequency = 0;
 

@@ -63,7 +63,7 @@ static const sim_clock_config_t sim_config = {
 		   SIM_CLKDIV1_OUTDIV4(CLOCK_DIVIDER(flash_clk)),
 };
 
-static ALWAYS_INLINE void clk_init(void)
+__weak void clk_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 

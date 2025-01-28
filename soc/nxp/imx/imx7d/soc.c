@@ -11,7 +11,7 @@
 #include "wdog_imx.h"
 
 /* Initialize clock. */
-void SOC_ClockInit(void)
+void __weak SOC_ClockInit(void)
 {
 	/* OSC/PLL is already initialized by Cortex-A7 (u-boot) */
 
