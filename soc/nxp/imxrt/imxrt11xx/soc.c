@@ -408,7 +408,7 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c6, &rootCfg);
 #endif
 
-#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
+#if CONFIG_ETH_NXP_ENET
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	/* 50 MHz ENET clock */
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
@@ -455,7 +455,7 @@ __weak void clock_init(void)
 #endif
 #endif
 
-#if defined(CONFIG_PTP_CLOCK_MCUX) || defined(CONFIG_PTP_CLOCK_NXP_ENET)
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	/* 24MHz PTP clock */
 	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;

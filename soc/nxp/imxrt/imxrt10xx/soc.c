@@ -66,7 +66,7 @@ const clock_enet_pll_config_t ethPllConfig = {
 	defined(CONFIG_SOC_MIMXRT1024)
 	.enableClkOutput500M = true,
 #endif
-#if defined(CONFIG_ETH_NXP_ENET) || defined(CONFIG_ETH_MCUX)
+#if defined(CONFIG_ETH_NXP_ENET)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	.enableClkOutput = true,
 #endif
@@ -74,7 +74,7 @@ const clock_enet_pll_config_t ethPllConfig = {
 	.enableClkOutput1 = true,
 #endif
 #endif
-#if defined(CONFIG_PTP_CLOCK_MCUX) || defined(CONFIG_PTP_CLOCK_NXP_ENET)
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	.enableClkOutput25M = true,
 #else
 	.enableClkOutput25M = false,
