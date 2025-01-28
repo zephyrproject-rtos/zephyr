@@ -5394,6 +5394,26 @@ function(zephyr_linker_symbol)
   )
 endfunction()
 
+# Usage:
+#   zephyr_linker_generate_linker_settings_file(file_name)
+#
+# Add the content generated so far by the zephyr_linker_* functions to a file
+#
+# file_name  : File to be created
+
+function(zephyr_linker_generate_linker_settings_file FILE)
+  file(GENERATE OUTPUT ${FILE} CONTENT
+         "set(FORMAT \"$<TARGET_PROPERTY:linker,FORMAT>\" CACHE INTERNAL \"\")\n
+          set(ENTRY \"$<TARGET_PROPERTY:linker,ENTRY>\" CACHE INTERNAL \"\")\n
+          set(MEMORY_REGIONS \"$<TARGET_PROPERTY:linker,MEMORY_REGIONS>\" CACHE INTERNAL \"\")\n
+          set(GROUPS \"$<TARGET_PROPERTY:linker,GROUPS>\" CACHE INTERNAL \"\")\n
+          set(SECTIONS \"$<TARGET_PROPERTY:linker,SECTIONS>\" CACHE INTERNAL \"\")\n
+          set(SECTION_SETTINGS \"$<TARGET_PROPERTY:linker,SECTION_SETTINGS>\" CACHE INTERNAL \"\")\n
+          set(SYMBOLS \"$<TARGET_PROPERTY:linker,SYMBOLS>\" CACHE INTERNAL \"\")\n
+          set(INCLUDES \"$<TARGET_PROPERTY:linker,INCLUDES>\" CACHE INTERNAL \"\")\n
+         ")
+endfunction()
+
 # Internal helper macro for zephyr_linker*() functions.
 # The macro will create a list of argument-value pairs for defined arguments
 # that can be passed on to linker script generators and processed as a CMake
