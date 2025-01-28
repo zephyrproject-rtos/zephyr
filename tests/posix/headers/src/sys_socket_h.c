@@ -12,8 +12,7 @@
 #include <zephyr/posix/sys/socket.h>
 #endif
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-value"
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_UNUSED_VARIABLE)
 /**
  * @brief existence test for `<sys/socket.h>`
  *
@@ -120,4 +119,4 @@ ZTEST(posix_headers, test_sys_socket_h)
 		zassert_not_null(socketpair);
 	}
 }
-#pragma GCC diagnostic pop
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_UNUSED_VARIABLE)

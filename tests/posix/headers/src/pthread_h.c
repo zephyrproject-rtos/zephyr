@@ -12,8 +12,7 @@
 #include <zephyr/posix/pthread.h>
 #endif
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_UNUSED_VARIABLE)
 /**
  * @brief existence test for `<pthread.h>`
  *
@@ -161,4 +160,4 @@ ZTEST(posix_headers, test_pthread_h)
 	zassert_not_null(pthread_testcancel);
 #endif
 }
-#pragma GCC diagnostic pop
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_UNUSED_VARIABLE)
