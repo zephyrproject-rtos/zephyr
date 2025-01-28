@@ -33,7 +33,7 @@ static inline void nsem_list_lock(void)
 
 static inline void nsem_list_unlock(void)
 {
-	k_mutex_unlock(&nsem_mutex);
+	(void)k_mutex_unlock(&nsem_mutex);
 }
 
 static struct nsem_obj *nsem_find(const char *name)
