@@ -1031,7 +1031,7 @@ static void cmd_can_mode(size_t idx, struct shell_static_entry *entry)
 
 static void cmd_can_device_name_mode(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, can_device_check);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
