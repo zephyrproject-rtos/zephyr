@@ -75,6 +75,7 @@ if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM AND NOT CONFIG_RISCV)
     TARGET pre_located_ext
     POST_BUILD
     COMMAND ${CMAKE_C_COMPILER}
+    ${LLEXT_APPEND_FLAGS}
     -Wl,-r -Wl,-Ttext=0xbada110c -nostdlib -nodefaultlibs -nostartfiles
     $<TARGET_OBJECTS:${pre_located_target}> -o ${pre_located_file}
   )
