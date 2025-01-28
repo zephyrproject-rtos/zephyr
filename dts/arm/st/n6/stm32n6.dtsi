@@ -6,6 +6,7 @@
 
 #include <arm/armv8.1-m.dtsi>
 #include <zephyr/dt-bindings/clock/stm32n6_clock.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/reset/stm32n6_reset.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -448,6 +449,19 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 7)>;
 			resets = <&rctl STM32_RESET(APB2, 7)>;
 			interrupts = <168 0>;
+			status = "disabled";
+		};
+
+		gpdma1: dma@50021000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x50021000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 4)>;
+			interrupts = <84 0 85 0 86 0 87 0 88 0 89 0 90 0 91 0
+				      92 0 93 0 94 0 95 0 96 0 97 0 98 0 99 0>;
+			dma-channels = <16>;
+			dma-requests = <144>;
+			dma-offset = <0>;
 			status = "disabled";
 		};
 	};
