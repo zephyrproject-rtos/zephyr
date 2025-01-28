@@ -21,6 +21,8 @@ Hardware
 - Transmit power: up to +20 dBm
 - Operation frequency: 868-915 MHz
 - Crystals for LFXO (32.768 kHz) and HFXO (39 MHz).
+- Low-power 128x128 pixel Memory LCD
+- Macronix ultra low power 8-Mbit SPI flash (MX25R8035F)
 
 For more information about the EFR32ZG23 SoC and BRD4210A board, refer to these
 documents:
@@ -75,20 +77,33 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 +-------+-------------+-------------------------------------+
 | Name  | Function    | Usage                               |
 +=======+=============+=====================================+
-| PB2   | GPIO        | LED0                                |
+| PA8   | EUSART0_TX  | UART Console TX                     |
 +-------+-------------+-------------------------------------+
-| PD3   | GPIO        | LED1                                |
+| PA9   | EUSART0_RX  | UART Console RX                     |
++-------+-------------+-------------------------------------+
+| PB0   | GPIO        | Board Controller Enable             |
 +-------+-------------+-------------------------------------+
 | PB1   | GPIO        | Push Button 0                       |
 +-------+-------------+-------------------------------------+
+| PB2   | GPIO        | LED0                                |
++-------+-------------+-------------------------------------+
 | PB3   | GPIO        | Push Button 1                       |
 +-------+-------------+-------------------------------------+
-| PB0   | GPIO        | Board Controller Enable             |
-|       |             | VCOM_ENABLE                         |
+| PC1   | USART0_TX   | Display/Flash SPI MOSI              |
 +-------+-------------+-------------------------------------+
-| PA8   | USART0_TX   | UART Console VCOM_TX US0_TX         |
+| PC2   | USART0_RX   | Flash SPI MISO                      |
 +-------+-------------+-------------------------------------+
-| PA9   | USART0_RX   | UART Console VCOM_RX US0_RX         |
+| PC3   | USART0_CLK  | Display/Flash SPI Clock             |
++-------+-------------+-------------------------------------+
+| PC4   | GPIO        | Flash SPI Chip Select               |
++-------+-------------+-------------------------------------+
+| PC6   | GPIO        | Display COM Inversion               |
++-------+-------------+-------------------------------------+
+| PC8   | GPIO        | Display SPI Chip Select             |
++-------+-------------+-------------------------------------+
+| PC9   | GPIO        | Display Enable                      |
++-------+-------------+-------------------------------------+
+| PD3   | GPIO        | LED1                                |
 +-------+-------------+-------------------------------------+
 
 The default configuration can be found in

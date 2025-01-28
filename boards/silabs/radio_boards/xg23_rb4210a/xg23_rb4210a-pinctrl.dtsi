@@ -19,4 +19,17 @@
 			silabs,input-filter;
 		};
 	};
+
+	usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PC1>, <USART0_CLK_PC3>;
+			drive-push-pull;
+			output-high;
+		};
+		group1 {
+			pins = <USART0_RX_PC2>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
 };
