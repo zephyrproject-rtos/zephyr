@@ -3,8 +3,8 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/tdk/icm42605/Kconfig"
-source "drivers/sensor/tdk/icm42670/Kconfig"
 source "drivers/sensor/tdk/icm42688/Kconfig"
+source "drivers/sensor/tdk/icm42x70/Kconfig"
 source "drivers/sensor/tdk/icp10125/Kconfig"
 source "drivers/sensor/tdk/mpu6050/Kconfig"
 source "drivers/sensor/tdk/mpu9250/Kconfig"

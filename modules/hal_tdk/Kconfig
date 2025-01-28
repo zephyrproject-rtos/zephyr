@@ -17,4 +17,11 @@ config USE_EMD_ICM42670
 	depends on DT_HAS_INVENSENSE_ICM42670P_ENABLED \
 		|| DT_HAS_INVENSENSE_ICM42670S_ENABLED
 
+config USE_EMD_ICM42370
+	bool "ICM42370P High Performance 3-Axis MotionTracking Accelerometer"
+	default y
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on DT_HAS_INVENSENSE_ICM42370P_ENABLED
+
 endmenu
