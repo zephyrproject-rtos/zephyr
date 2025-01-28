@@ -41,7 +41,7 @@
 #define HTTP_PATH "/"
 
 #define SSTRLEN(s) (sizeof(s) - 1)
-#define CHECK(r) { if (r < 0) { printf("Error: %d\n", r); exit(1); } }
+#define CHECK(r) { if (r < 0) { printf("Error: %d\n", (int)r); exit(1); } }
 
 #define REQUEST "GET " HTTP_PATH " HTTP/1.1\r\nHost: " HTTP_HOST "\r\n\r\n"
 
