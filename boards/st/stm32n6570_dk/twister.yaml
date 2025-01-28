@@ -7,11 +7,13 @@ vendor: st
 supported:
   - arduino_i2c
   - arduino_serial
+  - arduino_spi
   - adc
   - can
   - dma
   - i2c
   - gpio
+  - spi
   - uart
 variants:
   stm32n6570_dk/stm32n657xx:

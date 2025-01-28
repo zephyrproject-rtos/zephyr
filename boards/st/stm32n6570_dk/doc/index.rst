@@ -83,6 +83,8 @@ The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -115,6 +117,10 @@ Default Zephyr Peripheral Mapping:
 - I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SPI5_SCK : PE15
+- SPI5_MOSI : PG2
+- SPI5_MISO : PH8
+- SPI5_NSS : PA3
 - USART_1_TX : PE5
 - USART_1_RX : PE6
 - USART_2_TX : PD5

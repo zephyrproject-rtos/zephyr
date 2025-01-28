@@ -79,6 +79,8 @@ The Zephyr ``nucleo_n657x0_q`` board supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -111,6 +113,10 @@ Default Zephyr Peripheral Mapping:
 - I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SPI5_SCK : PE15
+- SPI5_MOSI : PG2
+- SPI5_MISO : PG1
+- SPI5_NSS : PA3
 - USART_1_TX : PE5
 - USART_1_RX : PE6
 - USART_3_TX : PD8
