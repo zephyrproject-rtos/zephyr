@@ -1,5 +1,10 @@
 :orphan:
 
+..
+  See
+  https://docs.zephyrproject.org/latest/releases/index.html#migration-guides
+  for details of what is supposed to go into this document.
+
 .. _migration_4.1:
 
 Migration guide to Zephyr v4.1.0 (Working Draft)

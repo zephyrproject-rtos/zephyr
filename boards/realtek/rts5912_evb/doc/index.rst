@@ -1,17 +1,9 @@
-.. _rts5912_evb:
-
-Realtek RTS5912 Evaluation Board
-################################
+.. zephyr:board:: rts5912_evb
 
 Overview
 ********
 
 The RTS5912 EVB is a development platform to evaluate the Realtek RTS5912 embedded controller.
-
-.. figure:: rts5912evb.webp
-   :width: 800px
-   :align: center
-   :alt: RTS5912-GR EVB
 
 Hardware
 ********
