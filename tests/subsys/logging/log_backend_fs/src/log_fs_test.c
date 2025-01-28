@@ -103,6 +103,7 @@ ZTEST(test_log_backend_fs, test_log_fs_file_content)
 	fs_file_t_init(&file);
 
 	rc = write_log_to_file(to_log, sizeof(to_log), NULL);
+	backend->api->notify(backend, LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
 
 	sprintf(fname, "%s/%s0000", CONFIG_LOG_BACKEND_FS_DIR, log_prefix);
 
@@ -118,7 +119,9 @@ ZTEST(test_log_backend_fs, test_log_fs_file_content)
 	zassert_equal(fs_close(&file), 0, "Can not close log file.");
 
 	to_log[sizeof(to_log)-2] = '2';
+
 	rc = write_log_to_file(to_log, sizeof(to_log), NULL);
+	backend->api->notify(backend, LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
 
 	zassert_equal(fs_open(&file, fname, FS_O_READ), 0,
 		      "Can not open log file.");
@@ -159,6 +162,8 @@ ZTEST(test_log_backend_fs, test_log_fs_file_size)
 		/* Written length not tracked here. */
 		ARG_UNUSED(rc);
 	}
+
+	backend->api->notify(backend, LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
 
 	zassert_equal(fs_stat(fname, &entry), 0, "Can not get file info.");
 	size_t exp_size = CONFIG_LOG_BACKEND_FS_FILE_SIZE -
@@ -213,6 +218,8 @@ ZTEST(test_log_backend_fs, test_log_fs_files_max)
 		/* Written length not tracked here. */
 		ARG_UNUSED(rc);
 	}
+
+	backend->api->notify(backend, LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
 
 	rc = fs_opendir(&dir, CONFIG_LOG_BACKEND_FS_DIR);
 	zassert_equal(rc, 0, "Can not open directory.");

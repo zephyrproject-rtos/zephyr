@@ -208,12 +208,6 @@ int write_log_to_file(uint8_t *data, size_t length, void *ctx)
 			}
 			length = 0;
 		}
-
-		rc = fs_sync(f);
-		if (rc < 0) {
-			/* Something is wrong */
-			goto on_error;
-		}
 	}
 
 	return length;
@@ -490,12 +484,27 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 	return 0;
 }
 
+static void notify(const struct log_backend *const backend, enum log_backend_evt event,
+		   union log_backend_evt_arg *arg)
+{
+	if (event == LOG_BACKEND_EVT_PROCESS_THREAD_DONE) {
+		if (backend_state == BACKEND_FS_OK) {
+			int rc = fs_sync(&fs_file);
+
+			if (rc != 0) {
+				backend_state = BACKEND_FS_CORRUPTED;
+			}
+		}
+	}
+}
+
 static const struct log_backend_api log_backend_fs_api = {
 	.process = process,
 	.panic = panic,
 	.init = log_backend_fs_init,
 	.dropped = dropped,
 	.format_set = format_set,
+	.notify = notify,
 };
 
 LOG_BACKEND_DEFINE(log_backend_fs, log_backend_fs_api,
