@@ -50,11 +50,6 @@ if(CONFIG_ETH_NXP_S32_NETC)
   zephyr_library_sources_ifdef(CONFIG_DT_HAS_NXP_S32_NETC_VSI_ENABLED	eth_nxp_s32_netc_vsi.c)
 endif()
 
-if(CONFIG_ETH_NXP_IMX_NETC)
-  zephyr_library_sources(eth_nxp_imx_netc.c)
-  zephyr_library_sources(eth_nxp_imx_netc_psi.c)
-endif()
-
 zephyr_library_sources_ifdef(CONFIG_ETH_NXP_S32_GMAC	eth_nxp_s32_gmac.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_NUMAKER		eth_numaker.c)
 
@@ -75,4 +70,5 @@ endif()
 add_subdirectory(phy)
 add_subdirectory(eth_nxp_enet_qos)
 add_subdirectory(nxp_enet)
+add_subdirectory(nxp_imx_netc)
 add_subdirectory(dwc_xgmac)

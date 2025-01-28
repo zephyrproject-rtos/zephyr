@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,20 +19,21 @@ LOG_MODULE_REGISTER(nxp_imx_eth_psi);
 #include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 
-#include "eth.h"
+#include "../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 
 static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link_state *state,
 				      void *user_data)
 {
 	const struct device *dev = (struct device *)user_data;
+	const struct netc_eth_config *cfg = dev->config;
 	struct netc_eth_data *data = dev->data;
 	status_t result;
 
 	ARG_UNUSED(pdev);
 
 	if (state->is_up) {
-		LOG_DBG("Link up");
+		LOG_INF("ENETC%d Link up", getSiInstance(cfg->si_idx));
 		result = EP_Up(&data->handle, PHY_TO_NETC_SPEED(state->speed),
 			       PHY_TO_NETC_DUPLEX_MODE(state->speed));
 		if (result != kStatus_Success) {
@@ -40,7 +41,7 @@ static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link
 		}
 		net_eth_carrier_on(data->iface);
 	} else {
-		LOG_DBG("Link down");
+		LOG_INF("ENETC%d Link down", getSiInstance(cfg->si_idx));
 		result = EP_Down(&data->handle);
 		if (result != kStatus_Success) {
 			LOG_ERR("Failed to set MAC down");
@@ -73,11 +74,15 @@ static void netc_eth_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, data->mac_addr, sizeof(data->mac_addr), NET_LINK_ETHERNET);
 
-	LOG_INF("SI%d MAC: %02x:%02x:%02x:%02x:%02x:%02x", cfg->si_idx, data->mac_addr[0],
-		data->mac_addr[1], data->mac_addr[2], data->mac_addr[3], data->mac_addr[4],
-		data->mac_addr[5]);
+	LOG_INF("ENETC%d MAC: %02x:%02x:%02x:%02x:%02x:%02x", getSiInstance(cfg->si_idx),
+		data->mac_addr[0], data->mac_addr[1], data->mac_addr[2], data->mac_addr[3],
+		data->mac_addr[4], data->mac_addr[5]);
 
 	ethernet_init(iface);
+
+	if (cfg->pseudo_mac) {
+		return;
+	}
 
 	/*
 	 * PSI controls the PHY. If PHY is configured either as fixed
@@ -99,11 +104,16 @@ static int netc_eth_init(const struct device *dev)
 	const struct netc_eth_config *cfg = dev->config;
 	int err;
 
+	if (cfg->pseudo_mac) {
+		goto init_common;
+	}
+
 	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
 	}
 
+init_common:
 	return netc_eth_init_common(dev);
 }
 
@@ -181,7 +191,10 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 	static const struct netc_eth_config netc_eth##n##_config = {                               \
 		.generate_mac = netc_eth##n##_generate_mac,                                        \
 		.bdr_init = netc_eth##n##_bdr_init,                                                \
-		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
+		.phy_dev = (COND_CODE_1(DT_INST_NODE_HAS_PROP(n, phy_handle),                      \
+					(DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle))), NULL)),   \
+		.phy_mode = NETC_PHY_MODE(DT_DRV_INST(n)),                                         \
+		.pseudo_mac = DT_ENUM_HAS_VALUE(DT_DRV_INST(n), phy_connection_type, internal),    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.si_idx = (DT_INST_PROP(n, mac_index) << 8) | DT_INST_PROP(n, si_index),           \
 		.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                               \
