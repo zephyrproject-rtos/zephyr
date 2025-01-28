@@ -216,6 +216,7 @@ Entropy
 Ethernet
 ========
 
+* Deprecated eth_mcux driver was removed.
 * Silabs gecko ethernet changes:
 
   * Renamed the devicetree property ``location-phy_mdc`` to ``location-phy-mdc``.

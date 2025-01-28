@@ -105,7 +105,7 @@ __weak void clock_init(void)
 	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
 #endif
 
-#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
+#if CONFIG_ETH_NXP_ENET
 	CLOCK_SetEnetTime0Clock(TIMESRC_OSCERCLK);
 #endif
 #if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
