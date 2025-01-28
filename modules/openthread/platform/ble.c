@@ -476,7 +476,7 @@ otError otPlatBleEnable(otInstance *aInstance)
 		LOG_WRN("BLE enable failed with error code %d", err);
 		return OT_ERROR_FAILED;
 	} else if (err == -EALREADY) {
-		err = k_sem_take(&ot_plat_ble_init_semaphore, K_MSEC(500));
+		bt_conn_cb_register(&conn_callbacks);
 		return OT_ERROR_NONE;
 	}
 
