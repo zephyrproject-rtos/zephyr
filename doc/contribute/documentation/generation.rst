@@ -188,9 +188,9 @@ folder, here are the commands to generate the html content locally:
 .. code-block:: console
 
    # On Linux/macOS
-   cd ~/zephyr/doc
+   cd ~/zephyrproject/zephyr/doc
    # On Windows
-   cd %userprofile%\zephyr\doc
+   cd %userprofile%\zephyrproject\zephyr\doc
 
    # Use cmake to configure a Ninja-based build system:
    cmake -GNinja -B_build .
@@ -234,7 +234,7 @@ build the documentation directly from there:
 
 .. code-block:: console
 
-   cd ~/zephyr/doc
+   cd ~/zephyrproject/zephyr/doc
 
    # To generate HTML output
    make html
@@ -255,7 +255,7 @@ To enable this mode, set the following option when invoking cmake::
 
 or invoke make with the following target::
 
-   cd ~/zephyr/doc
+   cd ~/zephyrproject/zephyr/doc
 
    # To generate HTML output without detailed Kconfig
    make html-fast
