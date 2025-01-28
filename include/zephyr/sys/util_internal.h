@@ -124,6 +124,7 @@
 #define _CONCAT_5(arg, ...) UTIL_CAT(arg, _CONCAT_4(__VA_ARGS__))
 #define _CONCAT_6(arg, ...) UTIL_CAT(arg, _CONCAT_5(__VA_ARGS__))
 #define _CONCAT_7(arg, ...) UTIL_CAT(arg, _CONCAT_6(__VA_ARGS__))
+#define _CONCAT_8(arg, ...) UTIL_CAT(arg, _CONCAT_7(__VA_ARGS__))
 
 /* Implementation details for NUM_VA_ARGS_LESS_1 */
 #define NUM_VA_ARGS_LESS_1_IMPL(				\
@@ -161,6 +162,9 @@
 /* Used by Z_IS_EQ */
 #include "util_internal_is_eq.h"
 
+/* Used by Z_EXPR_... */
+#include "util_internal_expr.h"
+
 /*
  * Generic sparse list of odd numbers (check the implementation of
  * GPIO_DT_RESERVED_RANGES_NGPIOS as a usage example)
@@ -194,6 +198,12 @@
 
 /* Used by UTIL_DEC */
 #include "util_internal_util_dec.h"
+
+/* Used by UTIL_ADD */
+#include "util_internal_util_add.h"
+
+/* Used by UTIL_SUB */
+#include "util_internal_util_sub.h"
 
 /* Used by UTIL_X2 */
 #include "util_internal_util_x2.h"
