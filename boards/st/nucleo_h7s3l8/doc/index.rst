@@ -1,7 +1,4 @@
-.. _nucleo_h7s3l8_board:
-
-ST Nucleo H7S3L8
-################
+.. zephyr:board:: nucleo_h7s3l8
 
 Overview
 ********
@@ -37,11 +34,6 @@ Key Features
 - External or internal SMPS to generate Vcore logic supply
 - On-board ST-LINK/V3 debugger/programmer with USB re-enumeration
 - capability: mass storage, virtual COM port and debug port
-
-
-.. image:: img/nucleo_h7s3l8.webp
-   :align: center
-   :alt: Nucleo H7S3L8
 
 More information about the board can be found at the `Nucleo H7S3L8 website`_.
 

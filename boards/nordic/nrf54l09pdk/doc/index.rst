@@ -1,4 +1,4 @@
-.. _nrf54l09pdk_nrf54l09:
+.. zephyr:board:: nrf54l09pdk
 
 nRF54L09 PDK
 ############

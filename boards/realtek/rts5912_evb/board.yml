@@ -1,5 +1,6 @@
 board:
   name: rts5912_evb
+  full_name: RTS5912 Evaluation Board
   vendor: realtek
   socs:
   - name: rts5912
