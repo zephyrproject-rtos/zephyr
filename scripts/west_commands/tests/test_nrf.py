@@ -7,9 +7,7 @@ import argparse
 import functools
 import io
 import os
-from pathlib import Path
 import shlex
-import shutil
 import typing
 from unittest.mock import patch, call
 
@@ -29,14 +27,6 @@ TEST_OVR_SNR = 'test-override-serial-number'
 
 TEST_TOOL_OPT = '--ip 192.168.1.10'
 TEST_TOOL_OPT_L = shlex.split(TEST_TOOL_OPT)
-
-# nRF53 flashing is special in that we have different results
-# depending on the input hex file. For that reason, we test it with
-# real hex files.
-TEST_DIR = Path(__file__).parent / 'nrf'
-NRF5340_APP_ONLY_HEX = os.fspath(TEST_DIR / 'nrf5340_app_only.hex')
-NRF5340_NET_ONLY_HEX = os.fspath(TEST_DIR / 'nrf5340_net_only.hex')
-NRF5340_APP_AND_NET_HEX = os.fspath(TEST_DIR / 'nrf5340_app_and_net.hex')
 
 CLASS_MAP = {'nrfjprog': NrfJprogBinaryRunner, 'nrfutil': NrfUtilBinaryRunner}
 
@@ -182,29 +172,29 @@ EXPECTED_RESULTS = {
      (TEST_OVR_SNR, None)),
 
     # -------------------------------------------------------------------------
-    # NRF53 APP only
+    # NRF53 APP
     #
     #  family          CP     recov  soft   snr    erase  tool_opt
     TC('nrf53', 'APP', False, False, False, False, False):
-    ((['nrfjprog', '--program', NRF5340_APP_ONLY_HEX, '--sectorerase',
+    ((['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_APPLICATION', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
      (TEST_DEF_SNR, None)),
 
     TC('nrf53', 'APP', False, False, False, True, False):
-    ((['nrfjprog', '--program', NRF5340_APP_ONLY_HEX, '--chiperase',
+    ((['nrfjprog', '--program', RC_KERNEL_HEX, '--chiperase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_APPLICATION', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
      (TEST_DEF_SNR, None)),
 
     TC('nrf53', 'APP', False, False, True, False, False):
-    ((['nrfjprog', '--program', NRF5340_APP_ONLY_HEX, '--sectorerase',
+    ((['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_APPLICATION', '--snr', TEST_OVR_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
      (TEST_OVR_SNR, None)),
 
     TC('nrf53', 'APP', False, True, False, False, False):
-    ((['nrfjprog', '--program', NRF5340_APP_ONLY_HEX, '--sectorerase',
+    ((['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_APPLICATION', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
      (TEST_DEF_SNR, None)),
@@ -213,7 +203,7 @@ EXPECTED_RESULTS = {
     ((['nrfjprog', '--recover', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK',
       '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--recover', '-f', 'NRF53', '--snr', TEST_DEF_SNR],
-     ['nrfjprog', '--program', NRF5340_APP_ONLY_HEX, '--sectorerase',
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_APPLICATION', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
      (TEST_DEF_SNR, None)),
@@ -222,35 +212,35 @@ EXPECTED_RESULTS = {
     ((['nrfjprog', '--recover', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK',
       '--snr', TEST_OVR_SNR],
      ['nrfjprog', '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR],
-     ['nrfjprog', '--program', NRF5340_APP_ONLY_HEX, '--chiperase',
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '--chiperase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_APPLICATION', '--snr', TEST_OVR_SNR],
      ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
      (TEST_OVR_SNR, None)),
 
     # -------------------------------------------------------------------------
-    # NRF53 NET only
+    # NRF53 NET
     #
     #  family          CP     recov  soft   snr    erase  tool_opt
     TC('nrf53', 'NET', False, False, False, False, False):
-    ((['nrfjprog', '--program', NRF5340_NET_ONLY_HEX, '--sectorerase',
+    ((['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
      (TEST_DEF_SNR, None)),
 
     TC('nrf53', 'NET', False, False, False, True, False):
-    ((['nrfjprog', '--program', NRF5340_NET_ONLY_HEX, '--chiperase',
+    ((['nrfjprog', '--program', RC_KERNEL_HEX, '--chiperase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
      (TEST_DEF_SNR, None)),
 
     TC('nrf53', 'NET', False, False, True, False, False):
-    ((['nrfjprog', '--program', NRF5340_NET_ONLY_HEX, '--sectorerase',
+    ((['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK', '--snr', TEST_OVR_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
      (TEST_OVR_SNR, None)),
 
     TC('nrf53', 'NET', False, True, False, False, False):
-    ((['nrfjprog', '--program', NRF5340_NET_ONLY_HEX, '--sectorerase',
+    ((['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
      (TEST_DEF_SNR, None)),
@@ -259,7 +249,7 @@ EXPECTED_RESULTS = {
     ((['nrfjprog', '--recover', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK',
       '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--recover', '-f', 'NRF53', '--snr', TEST_DEF_SNR],
-     ['nrfjprog', '--program', NRF5340_NET_ONLY_HEX, '--sectorerase',
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '--sectorerase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
      (TEST_DEF_SNR, None)),
@@ -268,129 +258,10 @@ EXPECTED_RESULTS = {
     ((['nrfjprog', '--recover', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK',
       '--snr', TEST_OVR_SNR],
      ['nrfjprog', '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR],
-     ['nrfjprog', '--program', NRF5340_NET_ONLY_HEX, '--chiperase',
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '--chiperase',
       '--verify', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK', '--snr', TEST_OVR_SNR],
      ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
      (TEST_OVR_SNR, None)),
-
-    # -------------------------------------------------------------------------
-    # NRF53 APP+NET
-    #
-    #  family          CP         recov  soft   snr    erase  tool_opt
-    TC('nrf53', 'APP+NET', False, False, False, False, False):
-    ((lambda tmpdir, infile: \
-        (['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_NETWORK_' + Path(infile).name),
-          '--sectorerase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_NETWORK', '--snr', TEST_DEF_SNR],
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_APPLICATION_' + Path(infile).name),
-          '--sectorerase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_APPLICATION', '--snr', TEST_DEF_SNR],
-         ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR])),
-     (TEST_DEF_SNR, None)),
-
-    TC('nrf53', 'APP+NET', False, False, False, True, False):
-    ((lambda tmpdir, infile: \
-        (['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_NETWORK_' + Path(infile).name),
-          '--chiperase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_NETWORK', '--snr', TEST_DEF_SNR],
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_APPLICATION_' + Path(infile).name),
-          '--chiperase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_APPLICATION', '--snr', TEST_DEF_SNR],
-         ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR])),
-     (TEST_DEF_SNR, None)),
-
-    TC('nrf53', 'APP+NET', False, False, True, False, False):
-    ((lambda tmpdir, infile: \
-        (['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_NETWORK_' + Path(infile).name),
-          '--sectorerase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_NETWORK', '--snr', TEST_OVR_SNR],
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_APPLICATION_' + Path(infile).name),
-          '--sectorerase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_APPLICATION', '--snr', TEST_OVR_SNR],
-         ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_OVR_SNR])),
-     (TEST_OVR_SNR, None)),
-
-    TC('nrf53', 'APP+NET', False, True, False, False, False):
-    ((lambda tmpdir, infile: \
-        (['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_NETWORK_' + Path(infile).name),
-          '--sectorerase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_NETWORK', '--snr', TEST_DEF_SNR],
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_APPLICATION_' + Path(infile).name),
-          '--sectorerase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_APPLICATION', '--snr', TEST_DEF_SNR],
-         ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_DEF_SNR])),
-     (TEST_DEF_SNR, None)),
-
-    TC('nrf53', 'APP+NET', True, False, False, False, False):
-    ((lambda tmpdir, infile: \
-        (['nrfjprog', '--recover', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK',
-          '--snr', TEST_DEF_SNR],
-         ['nrfjprog', '--recover', '-f', 'NRF53', '--snr', TEST_DEF_SNR],
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_NETWORK_' + Path(infile).name),
-          '--sectorerase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_NETWORK', '--snr', TEST_DEF_SNR],
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_APPLICATION_' + Path(infile).name),
-          '--sectorerase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_APPLICATION', '--snr', TEST_DEF_SNR],
-         ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR])),
-     (TEST_DEF_SNR, None)),
-
-    TC('nrf53', 'APP+NET', True, True, True, True, False):
-    ((lambda tmpdir, infile: \
-        (['nrfjprog', '--recover', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK',
-          '--snr', TEST_OVR_SNR],
-         ['nrfjprog', '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR],
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_NETWORK_' + Path(infile).name),
-          '--chiperase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_NETWORK', '--snr', TEST_OVR_SNR],
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_APPLICATION_' + Path(infile).name),
-          '--chiperase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_APPLICATION', '--snr', TEST_OVR_SNR],
-         ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR])),
-     (TEST_OVR_SNR, None)),
-
-    TC('nrf53', 'APP+NET', True, True, True, True, True):
-    ((lambda tmpdir, infile: \
-        (['nrfjprog', '--recover', '-f', 'NRF53', '--coprocessor', 'CP_NETWORK',
-          '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
-         ['nrfjprog', '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_NETWORK_' + Path(infile).name),
-          '--chiperase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_NETWORK', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
-         ['nrfjprog',
-          '--program',
-          os.fspath(tmpdir / 'GENERATED_CP_APPLICATION_' + Path(infile).name),
-          '--chiperase', '--verify', '-f', 'NRF53',
-          '--coprocessor', 'CP_APPLICATION', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L,
-         ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR] + TEST_TOOL_OPT_L)),
-     (TEST_OVR_SNR, None)),
-
 
     # -------------------------------------------------------------------------
     # NRF91
@@ -493,23 +364,12 @@ def fix_up_runner_config(test_case, runner_config, tmpdir):
         f.write(f'''
 CONFIG_SOC_SERIES_{test_case.family.upper()}X=y
 ''')
+        if test_case.family == 'nrf53':
+            f.write(f'''
+CONFIG_SOC_NRF5340_CPU{test_case.coprocessor}=y
+''')
+
     to_replace['build_dir'] = tmpdir
-
-    if test_case.family != 'nrf53':
-        return runner_config._replace(**to_replace)
-
-    if test_case.coprocessor == 'APP':
-        to_replace['hex_file'] = NRF5340_APP_ONLY_HEX
-    elif test_case.coprocessor == 'NET':
-        to_replace['hex_file'] = NRF5340_NET_ONLY_HEX
-    elif test_case.coprocessor == 'APP+NET':
-        # Since the runner is going to generate files next to its input
-        # file, we need to stash a copy in a tmpdir it can use.
-        outfile = tmpdir / Path(NRF5340_APP_AND_NET_HEX).name
-        shutil.copyfile(NRF5340_APP_AND_NET_HEX, outfile)
-        to_replace['hex_file'] = os.fspath(outfile)
-    else:
-        assert False, f'bad test case {test_case}'
 
     return runner_config._replace(**to_replace)
 
