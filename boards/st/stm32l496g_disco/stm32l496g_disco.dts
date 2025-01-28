@@ -199,6 +199,8 @@ zephyr_udc0: &usbotg_fs {
 
 	flash-id = <1>;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	mx25r6435: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";

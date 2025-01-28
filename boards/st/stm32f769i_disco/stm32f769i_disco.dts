@@ -183,6 +183,8 @@ arduino_serial: &usart6 {};
 		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	pinctrl-names = "default";
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	mx25l51245g: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";

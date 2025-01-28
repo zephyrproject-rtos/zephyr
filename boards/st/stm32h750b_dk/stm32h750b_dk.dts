@@ -178,6 +178,8 @@
 		     &quadspi_bk2_io2_pg9 &quadspi_bk2_io3_pg14>;
 	dual-flash;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	/* Sector erase 64KB uniform granularity */
 	/* Subsector erase 4KB, 32KB granularity */

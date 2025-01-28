@@ -81,6 +81,8 @@
 		     &octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
 	pinctrl-names = "default";
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	/* Winbond external flash */
 	w25q64jvssiq_qspi: qspi-nor-flash@0 {

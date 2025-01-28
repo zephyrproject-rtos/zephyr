@@ -249,6 +249,8 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	dual-flash;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	mt25ql512ab1: qspi-nor-flash-1@90000000 {
 		compatible = "st,stm32-qspi-nor";

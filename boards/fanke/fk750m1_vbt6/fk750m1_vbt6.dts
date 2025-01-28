@@ -116,6 +116,8 @@
 		     &quadspi_clk_pb2 &quadspi_bk1_ncs_pb6>;
 	pinctrl-names = "default";
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	/* Winbond external flash */
 	w25q64_qspi: qspi-nor-flash@90000000 {

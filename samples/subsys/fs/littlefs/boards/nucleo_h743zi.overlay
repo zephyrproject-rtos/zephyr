@@ -39,6 +39,8 @@
 
 	flash-id = <2>;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	mx25l25645g: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";
