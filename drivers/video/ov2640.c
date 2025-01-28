@@ -490,7 +490,7 @@ static int ov2640_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
 	 * just to be sure that the connection error is not caused by driver
 	 * itself.
 	 */
-	while (tries--) {
+	while (tries-- > 0) {
 		if (!i2c_reg_write_byte_dt(spec, reg_addr, value)) {
 			return 0;
 		}
@@ -513,7 +513,7 @@ static int ov2640_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr)
 	 * just to be sure that the connection error is not caused by driver
 	 * itself.
 	 */
-	while (tries--) {
+	while (tries-- > 0) {
 		if (!i2c_reg_read_byte_dt(spec, reg_addr, &value)) {
 			return value;
 		}
