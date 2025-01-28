@@ -110,6 +110,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	SOC_ISR_STACKING_ESR_INIT;
 #endif
 
+#ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
+	/* Clear the previous interrupt level. */
+	stack_init->mcause = 0;
+#endif
+
 	thread->callee_saved.sp = (unsigned long)stack_init;
 
 	/* where to go when returning from z_riscv_switch() */
