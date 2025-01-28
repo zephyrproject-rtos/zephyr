@@ -18,11 +18,6 @@ static inline bool http_hpack_key_is_static(uint32_t key)
 	return key > HTTP_SERVER_HPACK_INVALID && key <= HTTP_SERVER_HPACK_WWW_AUTHENTICATE;
 }
 
-static inline bool http_hpack_key_is_dynamic(uint32_t key)
-{
-	return key > HTTP_SERVER_HPACK_WWW_AUTHENTICATE;
-}
-
 struct hpack_table_entry {
 	const char *name;
 	const char *value;
