@@ -1451,7 +1451,8 @@ tests:
     env = mock.Mock(
         test_roots=[tmp_test_root_dir],
         options=mock.Mock(detailed_test_id=detailed_id),
-        alt_config_root=[tmp_alt_test_root_dir] if use_alt_root else []
+        alt_config_root=[tmp_alt_test_root_dir] if use_alt_root else [],
+        test_exclude_paths=[]
     )
 
     testplan = TestPlan(env=env)
