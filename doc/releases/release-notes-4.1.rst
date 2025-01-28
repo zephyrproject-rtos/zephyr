@@ -53,6 +53,26 @@ Deprecated in this release
   * Reducing the number of cryptographic libraries in Zephyr to reduce maintenance overhead.
   * The PSA Crypto API is the recommended cryptographic library for Zephyr.
 
+* The pipe API has been reworked.
+  The new API is enabled by default when ``CONFIG_MULTITHREADING`` is set.
+
+  * Deprecates the ``CONFIG_PIPES`` Kconfig option.
+  * Introduces the ``k_pipe_close(..)`` function.
+  * ``k_pipe_put(..)`` translates to ``k_pipe_write(..)``.
+  * ``k_pipe_get(..)`` translates to ``k_pipe_read(..)``.
+  * ``k_pipe_flush(..)`` & ``k_pipe_buffer_flush()`` can be translated to ``k_pipe_reset(..)``.
+
+  * Dynamic allocation of pipes is no longer supported.
+
+    - ``k_pipe_alloc_init(..)`` API has been removed.
+    - ``k_pipe_cleanup(..)`` API has been removed.
+
+  * Querying the number of bytes in the pipe is no longer supported.
+
+    - ``k_pipe_read_avail(..)`` API has been removed.
+    - ``k_pipe_write_avail(..)`` API has been removed.
+
+
 Architectures
 *************
 
