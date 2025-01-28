@@ -39,6 +39,19 @@ static int gpio_rpi_configure(const struct device *dev,
 {
 	struct gpio_rpi_data *data = dev->data;
 
+#ifdef CONFIG_SOC_SERIES_RP2350
+	/*
+	 * Due to an errata in RP2350-E9, pull-down does not work correctly during input mode.
+	 */
+	if ((flags & GPIO_PULL_DOWN) && (flags & GPIO_INPUT)) {
+		return -ENOTSUP;
+	}
+#endif
+
+	if ((flags & GPIO_DIR_MASK) == GPIO_DISCONNECTED) {
+		return -ENOTSUP;
+	}
+
 	gpio_set_pulls(pin,
 		(flags & GPIO_PULL_UP) != 0U,
 		(flags & GPIO_PULL_DOWN) != 0U);
