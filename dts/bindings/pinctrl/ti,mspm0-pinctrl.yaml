@@ -1,0 +1,119 @@
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI MSPM0 pinctrl node.
+
+    Device pin configuration should be placed in the child nodes of this node.
+    Populate the 'pinmux' field with a pair consisting of a pin number and its IO
+    functions.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as in the i2c0 example shown at the end.
+
+    Here is a list of
+    supported standard pin properties:
+
+    - bias-disable: Disable pull-up/down.
+    - bias-pull-down: Enable pull-down resistor.
+    - bias-pull-up: Enable pull-up resistor.
+    - drive-open-drain: Output driver is open-drain. (and is thus high-impedance)
+    - drive-strength: Maximum current that can be sourced from the pin.
+    - input-enable: enable input.
+    - ti,invert: enable logical inversion of a digital input or output
+    - ti,hysteresis: enable hysteresis control on open-drain pins
+
+    An example for MSPM0 family, include the chip level pinctrl
+    DTSI file in the board level DTS:
+
+      #include <dt-bindings/pinctrl/mspm0-pinctrl.h>
+
+    We want to configure the I2C pins to open drain, with pullup enabled
+    and input enabled.
+
+    To change a pin's pinctrl default properties add a reference to the
+    pin in the board's DTS file or in the project overlay and set the
+    properties.
+
+      &i2c1 {
+        pinctrl-0 = <&i2c1_scl_pb2_pull_up &i2c1_sda_pb3_pull_up>;
+        pinctrl-names = "default";
+      }
+
+    The i2c1_scl_pb2_pull_up corresponds to the following pin configuration in
+    the board dts file:
+
+      &pinctrl {
+        i2c1_scl_pb2_pull_up: i2c1_scl_pb2_pull_up {
+          pinmux = <MSP_PINMUX(15,MSPM0_PIN_FUNCTION_4)>;
+          input-enable;
+          bias-pull-up;
+          drive-open-drain;
+        };
+      };
+
+    Pin pb2 refers to the device pin name that one would see printed on the
+    launchpad, and the number 15 in the pinmux define refers to the PINCMx.
+
+    These are obtained from the device-specific datasheet.
+
+compatible: "ti,mspm0-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    This binding gives a base representation of the MSPM0
+    pins configuration.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-open-drain
+        - drive-open-source
+        - drive-strength
+        - input-enable
+
+  properties:
+    pinmux:
+      required: true
+      type: int
+      description: |
+        MSPM0 pin's configuration (IO pin, IO function).
+
+    drive-strength:
+      enum:
+        - 6
+        - 20
+      default: 6
+      description: |
+        The drive strength controls the maximum output drive strength sunk or
+        sourced by an I/O pin.
+          low is max 6 mA (SoC default)
+          high is max 20 mA on high-drive capable IOs only (HDIO).
+
+    ti,invert:
+      type: boolean
+      description: |
+        Enables inversion of the input or output using the internal
+        inversion capability of the GPIO
+
+    ti,hysteresis:
+      type: boolean
+      description: |
+        Enables the hysteresis control for access to CMOS logic
+        (on open-drain capable pins)

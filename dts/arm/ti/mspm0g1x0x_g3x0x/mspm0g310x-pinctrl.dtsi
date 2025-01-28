@@ -1,0 +1,2 @@
+#include <ti/mspm0g1x0x_g3x0x/mspm0g1x0x_g3x0x-pinctrl.dtsi>
+#include <ti/mspm0g1x0x_g3x0x/mspm0g3xxx-pinctrl.dtsi>
