@@ -68,6 +68,7 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+	fifo-enable;
 };
 
 &itm {
