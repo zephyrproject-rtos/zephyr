@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+uint8_t cap_extern_ext_ad_setup(void);
+
 /* CAP commands */
 #define BTP_CAP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_cap_read_supported_commands_rp {
