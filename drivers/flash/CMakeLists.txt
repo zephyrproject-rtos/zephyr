@@ -155,6 +155,7 @@ if(CONFIG_FLASH_NXP_S32_QSPI_NOR OR CONFIG_FLASH_NXP_S32_QSPI_HYPERFLASH)
   zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/memc)
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_FLASH_QSPI_RENESAS_RA flash_qspi_renesas_ra.c)
 if(CONFIG_RA_FLASH_HP)
   zephyr_library_sources(flash_hp_ra.c)
   zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_hp_ra_ex_op.c)
