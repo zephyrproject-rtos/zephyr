@@ -95,6 +95,12 @@ The current minimum required version for the main dependencies are:
               python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
               make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
 
+         .. note::
+
+            On AArch64 (ARM64) systems, ``gcc-multilib``/``g++-multilib`` packages are
+            mostly unavailable. Without these packages the 32-bit ``unit_testing`` and
+            :ref:`native_sim <native_sim>` boards will not build.
+
       #. Verify the versions of the main dependencies installed on your system by entering:
 
          .. code-block:: bash
