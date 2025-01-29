@@ -27,7 +27,7 @@ jobs:
 
       - name: Download Artifacts
         id: download-artifacts
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v8
         with:
           path: artifacts
           workflow: twister.yml
