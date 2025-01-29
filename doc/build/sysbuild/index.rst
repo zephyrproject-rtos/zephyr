@@ -423,8 +423,8 @@ Dedicated image build targets
 Not all build targets for images are given equivalent prefixed build targets
 when sysbuild is used, for example build targets like ``ram_report``,
 ``rom_report``, ``footprint``, ``puncover`` and ``pahole`` are not exposed.
-When using :ref:`Trusted Firmware <tfm_build_system>`, this includes build
-targets prefix with ``tfm_`` and ``bl2_``, for example: ``tfm_rom_report``
+When using :ref:`Trusted Firmware <tfm_build_system>`, the build targets prefixed
+with ``tfm_`` and ``bl2_`` are also not exposed, for example: ``tfm_rom_report``
 and ``bl2_ram_report``. To run these build targets, the build directory of the
 image can be provided to west/ninja/make along with the name of the build
 target to execute and it will run.
@@ -442,6 +442,13 @@ target to execute and it will run.
 
          west build -d build/mcuboot -t rom_report
 
+      For TF-M projects using TF-M targets, the application build directory is
+      used like so:
+
+      .. code-block:: shell
+
+         west build -d build/<app_name> -t tfm_rom_report
+
    .. group-tab:: ``ninja``
 
       Assuming that a project has been configured using ``cmake`` and built
@@ -452,6 +459,13 @@ target to execute and it will run.
 
          ninja -C mcuboot rom_report
 
+      For TF-M projects using TF-M targets, the application build directory is
+      used like so:
+
+      .. code-block:: shell
+
+         ninja -C <app_name> -t tfm_rom_report
+
    .. group-tab:: ``make``
 
       Assuming that a project has been configured using ``cmake`` and built
@@ -461,6 +475,13 @@ target to execute and it will run.
       .. code-block:: shell
 
          make -C mcuboot rom_report
+
+      For TF-M projects using TF-M targets, the application build directory is
+      used like so:
+
+      .. code-block:: shell
+
+         make -C <app_name> -t tfm_rom_report
 
 .. _sysbuild_zephyr_application:
 
