@@ -113,6 +113,15 @@
 			status = "disabled";
 		};
 
+		micfil: micfil@30ca0000 {
+			compatible = "nxp,dai-micfil";
+			reg = <0x30ca0000 DT_SIZE_K(64)>;
+			dai-index = <2>;
+			dmas = <&sdma3 24 6>;
+			fifo-depth = <32>;
+			status = "disabled";
+		};
+
 		iomuxc: iomuxc@30330000 {
 			compatible = "nxp,imx-iomuxc";
 			reg = <0x30330000 DT_SIZE_K(64)>;
