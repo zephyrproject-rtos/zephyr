@@ -14,6 +14,16 @@
 #include <fsl_rtc.h>
 #include <zephyr/logging/log.h>
 
+/*
+ * FSL_FEATURE_* is defined with paranethesis
+ * which is not acceptable when using the IS_ENABLED() macro
+ */
+#if (defined(FSL_FEATURE_RTC_HAS_LPO_ADJUST) && FSL_FEATURE_RTC_HAS_LPO_ADJUST)
+#define NXP_RTC_HAS_LPO_ADJUST 1
+#else
+#define NXP_RTC_HAS_LPO_ADJUST 0
+#endif
+
 LOG_MODULE_REGISTER(mcux_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
 struct mcux_rtc_data {
@@ -241,9 +251,10 @@ static int mcux_rtc_init(const struct device *dev)
 	 * "LPO": 1
 	 */
 	BUILD_ASSERT((((DT_INST_ENUM_IDX(0, clock_source) == 1) &&
-		FSL_FEATURE_RTC_HAS_LPO_ADJUST) ||
+		NXP_RTC_HAS_LPO_ADJUST) ||
 		DT_INST_ENUM_IDX(0, clock_source) == 0),
 		"Cannot choose the LPO clock for that instance of the RTC");
+
 #if (defined(FSL_FEATURE_RTC_HAS_LPO_ADJUST) && FSL_FEATURE_RTC_HAS_LPO_ADJUST)
 	/* The RTC prescaler increments using the LPO 1 kHz clock
 	 * instead of the RTC clock
