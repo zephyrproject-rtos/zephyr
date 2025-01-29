@@ -79,6 +79,14 @@ static const clock_ip_name_t sai_clocks[] = {
 	kCLOCK_AUDIO_Sai3,
 };
 #endif
+
+#if defined(CONFIG_SOC_MIMX8ML8_ADSP)
+static const clock_ip_name_t sai_clocks[] = {
+	kCLOCK_Sai1,
+	kCLOCK_Sai2,
+	kCLOCK_Sai3,
+};
+#endif /* CONFIG_SOC_MIMX8ML8_ADSP */
 #endif /* CONFIG_DAI_NXP_SAI */
 
 #if defined(CONFIG_I2C_NXP_II2C)
@@ -93,6 +101,14 @@ static const clock_ip_name_t i2c_clk_root[] = {
 #endif
 };
 #endif
+
+#if defined(CONFIG_DMA_NXP_SDMA)
+static const clock_ip_name_t sdma_clocks[] = {
+	kCLOCK_Sdma1,
+	kCLOCK_Sdma2,
+	kCLOCK_Sdma3,
+};
+#endif /* CONFIG_DMA_NXP_SDMA */
 
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
@@ -109,6 +125,14 @@ static int mcux_ccm_on(const struct device *dev,
 		CLOCK_EnableClock(uart_clocks[instance]);
 		return 0;
 #endif
+
+#ifdef CONFIG_DMA_NXP_SDMA
+	case IMX_CCM_SDMA1_CLK:
+	case IMX_CCM_SDMA2_CLK:
+	case IMX_CCM_SDMA3_CLK:
+		CLOCK_EnableClock(sdma_clocks[instance]);
+		return 0;
+#endif /* CONFIG_DMA_NXP_SDMA */
 
 #if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX8QM6_ADSP)
 	case IMX_CCM_LPUART1_CLK:
@@ -137,6 +161,13 @@ static int mcux_ccm_on(const struct device *dev,
 		CLOCK_EnableClock(sai_clocks[instance]);
 		return 0;
 #endif
+#if defined(CONFIG_SOC_MIMX8ML8_ADSP)
+	case IMX_CCM_SAI1_CLK:
+	case IMX_CCM_SAI2_CLK:
+	case IMX_CCM_SAI3_CLK:
+		CLOCK_EnableClock(sai_clocks[instance]);
+		return 0;
+#endif /* CONFIG_SOC_MIMX8ML8_ADSP */
 #endif /* CONFIG_DAI_NXP_SAI */
 
 #if defined(CONFIG_ETH_NXP_ENET)
@@ -171,6 +202,14 @@ static int mcux_ccm_off(const struct device *dev,
 		return 0;
 #endif
 
+#ifdef CONFIG_DMA_NXP_SDMA
+	case IMX_CCM_SDMA1_CLK:
+	case IMX_CCM_SDMA2_CLK:
+	case IMX_CCM_SDMA3_CLK:
+		CLOCK_DisableClock(sdma_clocks[instance]);
+		return 0;
+#endif /* CONFIG_DMA_NXP_SDMA */
+
 #ifdef CONFIG_DAI_NXP_SAI
 #if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
 	case IMX_CCM_SAI1_CLK:
@@ -179,6 +218,13 @@ static int mcux_ccm_off(const struct device *dev,
 		CLOCK_DisableClock(sai_clocks[instance]);
 		return 0;
 #endif
+#if defined(CONFIG_SOC_MIMX8ML8_ADSP)
+	case IMX_CCM_SAI1_CLK:
+	case IMX_CCM_SAI2_CLK:
+	case IMX_CCM_SAI3_CLK:
+		CLOCK_DisableClock(sai_clocks[instance]);
+		return 0;
+#endif /* CONFIG_SOC_MIMX8ML8_ADSP */
 #endif /* CONFIG_DAI_NXP_SAI */
 	default:
 		(void)instance;
