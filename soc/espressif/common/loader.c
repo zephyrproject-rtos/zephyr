@@ -74,6 +74,7 @@ static HDR_ATTR void (*_entry_point)(void) = &__start;
 esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
 extern uint32_t _image_irom_start, _image_irom_size, _image_irom_vaddr;
 extern uint32_t _image_drom_start, _image_drom_size, _image_drom_vaddr;
+extern uint32_t _libc_heap_size;
 
 #ifndef CONFIG_MCUBOOT
 static uint32_t _app_irom_start =
@@ -84,6 +85,7 @@ static uint32_t _app_drom_start =
 	(FIXED_PARTITION_OFFSET(slot0_partition) + (uint32_t)&_image_drom_start);
 static uint32_t _app_drom_size = (uint32_t)&_image_drom_size;
 
+static uint32_t libc_heap_size = (uint32_t)&_libc_heap_size;
 #endif
 
 static uint32_t _app_irom_vaddr = ((uint32_t)&_image_irom_vaddr);
@@ -260,7 +262,7 @@ void __start(void)
 			     ".option norelax\n"
 			     "la gp, __global_pointer$\n"
 			     ".option pop");
-#endif /* CONFIG_RISCV_GP */
+#endif
 
 #ifndef CONFIG_BOOTLOADER_MCUBOOT
 	/* Init fundamental components */
@@ -278,12 +280,14 @@ void __start(void)
 #ifndef CONFIG_SOC_SERIES_ESP32C2
 	/* Disable RNG entropy source as it was already used */
 	soc_random_disable();
-#endif /* CONFIG_SOC_SERIES_ESP32C2 */
+#endif
 #if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C3)
 	/* Disable glitch detection as it can be falsely triggered by EMI interference */
 	ESP_EARLY_LOGI(TAG, "Disabling glitch detection");
 	ana_clock_glitch_reset_config(false);
-#endif /* CONFIG_SOC_SERIES_ESP32S2 */
-	ESP_EARLY_LOGI(TAG, "Jumping to the main image...");
+#endif
+#if !defined(CONFIG_MCUBOOT)
+	ESP_EARLY_LOGI(TAG, "libc heap size %d kB.", libc_heap_size / 1024);
+#endif
 	__esp_platform_start();
 }

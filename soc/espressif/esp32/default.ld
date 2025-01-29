@@ -100,7 +100,9 @@ _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
+/* Heap size calculations for PROCPU is also valid for AMP scenario */
 _heap_sentry = SRAM2_DRAM_END;
+_libc_heap_size = _heap_sentry - _end;
 
 SECTIONS
 {

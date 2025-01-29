@@ -72,7 +72,9 @@ _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
+/* Heap size calculations for APPCPU */
 _heap_sentry = BOOTLOADER_DRAM_SEG_START + APPCPU_DRAM_SIZE;
+_libc_heap_size = _heap_sentry - _end;
 
 SECTIONS
 {
