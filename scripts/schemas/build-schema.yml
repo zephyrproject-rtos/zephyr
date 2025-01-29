@@ -56,17 +56,6 @@ mapping:
             type: seq
             sequence:
               - type: str
-      images:
-        type: seq
-        sequence:
-          - type: map
-            mapping:
-              name:
-                type: str
-              source-dir:
-                type: str
-              type:
-                type: str
       kconfig:
         type: map
         mapping:
