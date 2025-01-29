@@ -24,14 +24,6 @@ config ESP_SIMPLE_BOOT
 	  Please note that this method brings the system up with all memories set-up, but
 	  all other features, such as secure boot OTA or slots management are not available.
 
-config ESP_HEAP_RUNTIME
-	bool
-	default y
-	help
-	  Enabling this will allocate SRAM area starting from the last linked data at the symbolic `_end`,
-	  ending at the last memory location that can be safely accessed (depending on a boot mode).
-	  This is a memory pool used in runtime to create a new heap memory.
-
 config ESP32_TIMER_TASK_STACK_SIZE
 	int "Stack size of the high resolution ESP Timer"
 	default 4096
