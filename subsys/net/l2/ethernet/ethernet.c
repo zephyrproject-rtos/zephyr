@@ -149,16 +149,16 @@ static inline void ethernet_update_length(struct net_if *iface,
 	}
 }
 
-static void ethernet_update_rx_stats(struct net_if *iface,
-				     struct net_eth_hdr *hdr, size_t length)
+
+static void ethernet_update_rx_stats(struct net_if *iface, size_t length,
+				     bool dst_broadcast, bool dst_eth_multicast)
 {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	eth_stats_update_bytes_rx(iface, length);
 	eth_stats_update_pkts_rx(iface);
-
-	if (net_eth_is_addr_broadcast(&hdr->dst)) {
+	if (dst_broadcast) {
 		eth_stats_update_broadcast_rx(iface);
-	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
+	} else if (dst_eth_multicast) {
 		eth_stats_update_multicast_rx(iface);
 	}
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
@@ -237,12 +237,14 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint8_t hdr_len = sizeof(struct net_eth_hdr);
+	size_t body_len;
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	enum net_verdict verdict = NET_CONTINUE;
 	bool is_vlan_pkt = false;
 	bool handled = false;
 	struct net_linkaddr *lladdr;
 	uint16_t type;
+	bool dst_broadcast, dst_eth_multicast, dst_iface_addr;
 
 	/* This expects that the Ethernet header is in the first net_buf
 	 * fragment. This is a safe expectation here as it would not make
@@ -325,6 +327,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	lladdr->type = NET_LINK_ETHERNET;
 
 	net_pkt_set_ll_proto_type(pkt, type);
+	dst_broadcast = net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr);
+	dst_eth_multicast = net_eth_is_addr_group((struct net_eth_addr *)lladdr->addr);
+	dst_iface_addr = net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr);
 
 	if (is_vlan_pkt) {
 		print_vlan_ll_addrs(pkt, type, net_pkt_vlan_tci(pkt),
@@ -338,10 +343,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			       net_pkt_lladdr_dst(pkt));
 	}
 
-	if (!net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr) &&
-	    !net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr) &&
-	    !net_eth_is_addr_group((struct net_eth_addr *)lladdr->addr) &&
-	    !net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
+	if (!(dst_broadcast || dst_eth_multicast || dst_iface_addr)) {
 		/* The ethernet frame is not for me as the link addresses
 		 * are different.
 		 */
@@ -354,6 +356,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	/* Get rid of the Ethernet header. */
 	net_buf_pull(pkt->frags, hdr_len);
 
+	body_len = net_pkt_get_len(pkt);
+
 	STRUCT_SECTION_FOREACH(net_l3_register, l3) {
 		if (l3->ptype != type || l3->l2 != &NET_L2_GET_NAME(ETHERNET) ||
 		    l3->handler == NULL) {
@@ -364,11 +368,17 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			l3->name, type, net_if_get_by_iface(iface), iface);
 
 		verdict = l3->handler(iface, type, pkt);
-		if (verdict == NET_DROP) {
+		if (verdict == NET_OK) {
+			/* the packet was consumed by the l3-handler */
+			goto out;
+		} else if (verdict == NET_DROP) {
 			NET_DBG("Dropping frame, packet rejected by %s", l3->name);
 			goto drop;
 		}
 
+		/* The packet will be processed further by IP-stack
+		 * when NET_CONTINUE is returned
+		 */
 		handled = true;
 		break;
 	}
@@ -384,20 +394,12 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		}
 	}
 
-	/* FIXME: ARP eats the packet and the pkt is no longer a valid one,
-	 * so we cannot update the stats here. Fix the code to be more generic
-	 * so that we do not need this check.
-	 */
-	if (type == NET_ETH_PTYPE_ARP) {
-		return verdict;
-	}
-
-	ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt) + hdr_len);
-
 	if (type != NET_ETH_PTYPE_EAPOL) {
 		ethernet_update_length(iface, pkt);
 	}
 
+out:
+	ethernet_update_rx_stats(iface, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
 	return verdict;
 drop:
 	eth_stats_update_errors_rx(iface);
