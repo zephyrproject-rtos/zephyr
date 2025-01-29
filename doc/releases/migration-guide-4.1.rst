@@ -485,6 +485,16 @@ Bluetooth Mesh
   set as deprecated. Default option for platforms that do not support TF-M
   is :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`.
 
+* Mesh key representations are not backward compatible if images are built with TinyCrypt and
+  crypto libraries based on the PSA API. Mesh no longer stores the key values for those crypto
+  libraries. The crypto library stores the keys in the internal trusted storage.
+  If a provisioned device is going to update its image that was built with
+  the :kconfig:option:`CONFIG_BT_MESH_USES_TINYCRYPT` Kconfig option set on an image
+  that was built with :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA` or
+  :kconfig:option:`CONFIG_BT_MESH_USES_TFM_PSA` without erasing the persistent area,
+  it should be unprovisioned first and reprovisioned after update again.
+  If the image is changed over Mesh DFU, use :c:enumerator:`BT_MESH_DFU_EFFECT_UNPROV`.
+
 * Mesh explicitly depends on the Secure Storage subsystem if storing into
   non-volatile memory (:kconfig:option:`CONFIG_BT_SETTINGS`) is enabled and
   Mbed TLS library (:kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`) is used.
