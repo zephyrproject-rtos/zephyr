@@ -5,6 +5,7 @@
 
 config UART_RTS5912
 	bool "UART driver for Realtek RTS5912 EC"
+	depends on SOC_SERIES_RTS5912
 	default y if DT_HAS_REALTEK_RTS5912_UART_ENABLED
 	select PINCTRL
 	select CLOCK_CONTROL
