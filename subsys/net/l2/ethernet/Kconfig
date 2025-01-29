@@ -41,10 +41,14 @@ config NET_VLAN
 config NET_VLAN_COUNT
 	int "Max VLAN tags supported in the system"
 	default 1
-	range 1 $(UINT8_MAX)
+	range 0 $(UINT8_MAX)
 	depends on NET_VLAN
 	help
-	  How many VLAN tags can be configured.
+	  How many VLAN tags can be configured. If set to 0, then only
+	  priority tagged VLAN frames with tag value 0 can be handled.
+	  This is useful if you do not want to receive any other VLAN
+	  tagged frames than tag 0. This will save some memory as the
+	  VLAN virtual interface is not created in this case.
 
 config NET_VLAN_TXRX_DEBUG
 	bool "Debug received and sent packets in VLAN"
