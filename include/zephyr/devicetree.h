@@ -2929,6 +2929,36 @@
  * @defgroup devicetree-generic-foreach "For-each" macros
  * @ingroup devicetree
  * @{
+ *
+ * IMPORTANT: you can't use the DT for-each macros in their own expansions.
+ *
+ * For example, something like this won't work the way you might expect:
+ *
+ * @code{.c}
+ * #define FOO(node_id) [...] DT_FOREACH_NODE(...) [...]
+ * DT_FOREACH_NODE(FOO)
+ * @endcode
+ *
+ * In this example, the C preprocessor won't expand the
+ * DT_FOREACH_NODE() macro inside of FOO() while it's already
+ * expanding DT_FOREACH_NODE() at the top level of the file.
+ *
+ * This is true of any macro, not just DT_FOREACH_NODE(). The C
+ * language works this way to avoid infinite recursions inside of
+ * macro expansions.
+ *
+ * If you need to "nest" calls to one of these macros, you can work
+ * around this preprocessor limitation by using a different, related
+ * macro instead, like this:
+ *
+ * @code{.c}
+ * #define BAR(node_id) [...] DT_FOREACH_NODE_VARGS(...) [...]
+ * DT_FOREACH_NODE(BAR)
+ * @endcode
+ *
+ * Here, we use DT_FOREACH_NODE_VARGS() "inside" BAR() "inside"
+ * DT_FOREACH_NODE(). Because of this, the preprocessor will expand
+ * both DT_FOREACH_NODE_VARGS() and DT_FOREACH_NODE() as expected.
  */
 
 /**
