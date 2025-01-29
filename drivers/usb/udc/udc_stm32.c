@@ -1116,7 +1116,7 @@ static int priv_clock_enable(void)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_USB_DC_STM32_CLOCK_CHECK)) {
+	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK)) {
 		uint32_t usb_clock_rate;
 
 		if (clock_control_get_rate(clk,
