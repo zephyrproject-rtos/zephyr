@@ -539,7 +539,16 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 	for (i = 0, sym = ext->mem[LLEXT_MEM_EXPORT];
 	     i < exp_tab->sym_cnt;
 	     i++, sym++) {
-		exp_tab->syms[i].name = sym->name;
+		/*
+		 * Offsets in ET_REL ELF objects, built for pre-defined addresses
+		 * have to be translated to memory locations for symbol name
+		 * access during dependency resolution.
+		 */
+		ssize_t name_offset = llext_file_offset(ldr, (uintptr_t)sym->name);
+		const char *name = ldr->hdr.e_type == ET_REL && name_offset >= 0 ?
+			llext_peek(ldr, name_offset) : sym->name;
+
+		exp_tab->syms[i].name = name;
 		exp_tab->syms[i].addr = sym->addr;
 		LOG_DBG("sym %p name %s in %p", sym->addr, sym->name, exp_tab->syms + i);
 	}
@@ -722,6 +731,11 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 			LOG_ERR("Failed to link, ret %d", ret);
 			goto out;
 		}
+	} else {
+		ret = llext_dependency_restore(ldr, ext);
+		if (ret != 0) {
+			goto out;
+		}
 	}
 
 	ret = llext_export_symbols(ldr, ext);
@@ -729,6 +743,8 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		LOG_ERR("Failed to export, ret %d", ret);
 		goto out;
 	}
+
+	ext->pre_located = ldr_parm->pre_located;
 
 	llext_adjust_mmu_permissions(ext);
 
