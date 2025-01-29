@@ -114,8 +114,8 @@ using:
 	#include <zephyr/device.h>
 	#include <zephyr/retention/retention.h>
 
+	const struct device *retention0 = DEVICE_DT_GET(DT_NODELABEL(retention0));
 	const struct device *retention1 = DEVICE_DT_GET(DT_NODELABEL(retention1));
-	const struct device *retention2 = DEVICE_DT_GET(DT_NODELABEL(retention2));
 
 When the write function is called, the magic header and checksum (if enabled)
 will be set on the area, and it will be marked as valid from that point
