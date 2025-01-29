@@ -336,6 +336,12 @@ function(process_flags lang input output)
 
   foreach(flag ${${input}})
     set(is_compile_lang_generator_expression 0)
+    # SHELL is used to avoid de-duplication, but when process flags
+    # then this tag must be removed to return real compile/linker flags.
+    if(flag MATCHES "^SHELL:[ ]*(.*)")
+      separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
+    endif()
+
     foreach(l ${languages})
       if(flag MATCHES "<COMPILE_LANGUAGE:${l}>:([^>]+)>")
         set(updated_flag ${CMAKE_MATCH_1})
@@ -356,11 +362,6 @@ function(process_flags lang input output)
     endforeach()
 
     if(NOT is_compile_lang_generator_expression)
-      # SHELL is used to avoid de-duplication, but when process flags
-      # then this tag must be removed to return real compile/linker flags.
-      if(flag MATCHES "SHELL:[ ]*(.*)")
-        separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
-      endif()
       # Flags may be placed inside generator expression, therefore any flag
       # which is not already a generator expression must have commas converted.
       if(NOT flag MATCHES "\\\$<.*>")
