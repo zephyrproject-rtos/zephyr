@@ -38,7 +38,9 @@ tests:
     # compatible with C++98.
     # Exclude CONFIG_HAS_RENESAS_RA_FSP and CONFIG_HAS_RENESAS_RZ_FSP as Renesas HALs are not
     # compatible with C++98.
+    # Exclude CONFIG_HAS_SILABS_WISECONNECT as Wiseconnect is not compatible with C++98.
     filter: not CONFIG_HAS_RENESAS_RA_FSP and not CONFIG_HAS_RENESAS_RZ_FSP and
+            not CONFIG_HAS_SILABS_WISECONNECT and
             not (CONFIG_CPU_CORTEX_M and (CONFIG_NRF_PLATFORM_HALTIUM or CONFIG_SOC_SERIES_NRF54LX))
     build_only: true
     extra_configs:
