@@ -3,6 +3,7 @@ sample:
   name: prometheus_client_sample
 common:
   harness: net
+  depends_on: netif
   min_ram: 192
   tags:
     - http
