@@ -57,6 +57,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
         cmd = ['nrfutil', '--json', 'device'] + args
         self._log_cmd(cmd)
+        print(f'executing {cmd}')
 
         if _DRY_RUN:
             return {}
@@ -64,6 +65,9 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         with subprocess.Popen(cmd, stdout=subprocess.PIPE) as p:
             for line in iter(p.stdout.readline, b''):
                 # https://github.com/ndjson/ndjson-spec
+                print(f'line: {line} hex: {line.hex()}')
+                if line == b'\n':
+                    continue
                 jout = json.loads(line.decode(sys.getdefaultencoding()))
                 jout_all.append(jout)
 
