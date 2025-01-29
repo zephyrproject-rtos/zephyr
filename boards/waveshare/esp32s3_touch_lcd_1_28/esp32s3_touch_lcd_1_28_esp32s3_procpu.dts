@@ -74,7 +74,7 @@
 			compatible = "galaxycore,gc9x01x";
 			reg = <0>;
 			mipi-max-frequency = <100000000>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			display-inversion;
 			width = <240>;
 			height = <240>;
