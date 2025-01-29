@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2017 Google LLC.
+ * Copyright (c) 2025 Toney Abraham <toneyabraham37@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+ 
+/ {
+	aliases {
+		spi0 = &sercom4;  // Works with the same54_xpro Board
+	};
+};
