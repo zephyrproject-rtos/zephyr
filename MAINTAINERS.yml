@@ -898,7 +898,9 @@ DFU:
     - dfu
 
 Devicetree:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - mbolivar
   collaborators:
     - decsny
     - galak
