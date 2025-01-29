@@ -1,0 +1,11 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - spi
+tests:
+  drivers.spi.build:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    tags: spi_cdns
+    extra_args: "CONFIG_SPI=y"
