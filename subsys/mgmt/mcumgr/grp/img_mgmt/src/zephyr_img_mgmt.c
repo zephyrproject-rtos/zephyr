@@ -583,12 +583,14 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 		if (req->img_data.len < sizeof(struct image_header)) {
 			/*  Image header is the first thing in the image */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
+			LOG_ERR("Image data too short");
 			return IMG_MGMT_ERR_INVALID_IMAGE_HEADER;
 		}
 
 		if (req->size == SIZE_MAX) {
 			/* Request did not include a `len` field. */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
+			LOG_ERR("Request did not include a `len` field");
 			return IMG_MGMT_ERR_INVALID_LENGTH;
 		}
 
@@ -597,10 +599,12 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 		hdr = (struct image_header *)req->img_data.value;
 		if (hdr->ih_magic != IMAGE_MAGIC) {
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_magic_mismatch);
+			LOG_ERR("Magic mismatch: %08X != %08X", hdr->ih_magic, IMAGE_MAGIC);
 			return IMG_MGMT_ERR_INVALID_IMAGE_HEADER_MAGIC;
 		}
 
 		if (req->data_sha.len > IMG_MGMT_DATA_SHA_LEN) {
+			LOG_ERR("Invalid hash length: %d", (int)req->data_sha.len);
 			return IMG_MGMT_ERR_INVALID_HASH;
 		}
 
@@ -620,8 +624,9 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 
 		action->area_id = img_mgmt_get_unused_slot_area_id(req->image);
 		if (action->area_id < 0) {
-			/* No slot where to upload! */
+			/* No slot available to upload to */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_no_slot);
+			LOG_ERR("No slot available to upload to");
 			return IMG_MGMT_ERR_NO_FREE_SLOT;
 		}
 
@@ -638,7 +643,8 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 				img_mgmt_err_str_image_too_large);
 			flash_area_close(fa);
-			LOG_ERR("Upload too large for slot: %u > %u", req->size, fa->fa_size);
+			LOG_ERR("Upload too large for slot: %d > %d", (int)req->size,
+				(int)fa->fa_size);
 			return IMG_MGMT_ERR_INVALID_IMAGE_TOO_LARGE;
 		}
 
@@ -715,6 +721,8 @@ skip_size_check:
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_image_bad_flash_addr);
 				flash_area_close(fa);
+				LOG_ERR("Invalid flash address: %08X, expected: %08X",
+					hdr->ih_load_addr, (int)fa->fa_off);
 				return IMG_MGMT_ERR_INVALID_FLASH_ADDRESS;
 			}
 		}
@@ -728,12 +736,18 @@ skip_size_check:
 			 */
 			rc = img_mgmt_my_version(&cur_ver);
 			if (rc != 0) {
+				LOG_ERR("Version get failed: %d", rc);
 				return IMG_MGMT_ERR_VERSION_GET_FAILED;
 			}
 
 			if (img_mgmt_vercmp(&cur_ver, &hdr->ih_ver) >= 0) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_downgrade);
+				LOG_ERR("Downgrade: %d.%d.%d.%d, expected: %d.%d.%d.%d",
+					cur_ver.iv_major, cur_ver.iv_minor, cur_ver.iv_revision,
+					cur_ver.iv_build_num, hdr->ih_ver.iv_major,
+					hdr->ih_ver.iv_minor, hdr->ih_ver.iv_revision,
+					hdr->ih_ver.iv_build_num);
 				return IMG_MGMT_ERR_CURRENT_VERSION_IS_NEWER;
 			}
 		}
@@ -741,6 +755,7 @@ skip_size_check:
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
 		rc = img_mgmt_flash_check_empty(action->area_id);
 		if (rc < 0) {
+			LOG_ERR("Flash check empty failed: %d", rc);
 			return rc;
 		}
 
@@ -756,6 +771,8 @@ skip_size_check:
 			 * Invalid offset. Drop the data, and respond with the offset we're
 			 * expecting data for.
 			 */
+			LOG_ERR("Invalid offset: %08X, expected: %08X", (int)req->off,
+				g_img_mgmt_state.off);
 			return IMG_MGMT_ERR_OK;
 		}
 
@@ -764,6 +781,8 @@ skip_size_check:
 			 * of the image that the client originally sent
 			 */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_data_overrun);
+			LOG_ERR("Data overrun: %d + %d > %d", (int)req->off, (int)req->img_data.len,
+				(int)action->size);
 			return IMG_MGMT_ERR_INVALID_IMAGE_DATA_OVERRUN;
 		}
 	}
@@ -782,6 +801,7 @@ int img_mgmt_erased_val(int slot, uint8_t *erased_val)
 	int area_id = img_mgmt_flash_area_id(slot);
 
 	if (area_id < 0) {
+		LOG_ERR("Invalid slot: %d", area_id);
 		return IMG_MGMT_ERR_INVALID_SLOT;
 	}
 
