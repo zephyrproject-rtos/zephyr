@@ -669,7 +669,9 @@ static int mpu_configure_static_mpu_regions(const struct z_arm_mpu_partition
 	mpu_reg_index = mpu_configure_regions_and_partition(static_regions,
 		regions_num, mpu_reg_index, true);
 
-	static_regions_num = mpu_reg_index;
+	if (mpu_reg_index != -EINVAL) {
+		static_regions_num = mpu_reg_index;
+	}
 
 	return mpu_reg_index;
 }
