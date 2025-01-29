@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: morse-morse_code
    :name: Morse Code
-   :relevant-api: morse
+   :relevant-api: morse_code
 
    Send a text using Morse Code on a GPIO pin.
 
@@ -72,14 +72,185 @@ In the below output it is possible to see the steps previously described.
 
 .. code-block:: console
 
-   [00:00:00.000,000] <inf> counter_sam_tc: Device tc@40010000 initialized
-   *** Booting Zephyr OS build zephyr-v3.5.0 ***
-   [00:00:02.532,000] <inf> app: Status: 0
-   uart:~$ morse_code
-   config  send
-   uart:~$ morse_code config morse 200
-   uart:~$ morse_code send morse "Zephyr is the best!!"
-   [00:00:40.235,000] <inf> morse_code_shell: Status: 0
+   *** Booting Zephyr OS build v4.4.0  ***
+   [00:00:00.059,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:00.060,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:00.060,000] <dbg> morse: morse_device_bit_state_handler: Now: 647, Ticks: 0
+   [00:00:00.060,000] <dbg> morse: morse_rx_cb_handler: FSM: 0, bit: 1, ticks: 0, c: 0, t: 644
+   [00:00:00.119,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:00.119,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:00.119,000] <dbg> morse: morse_device_bit_state_handler: Now: 1294, Ticks: 647
+   [00:00:00.119,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:00.119,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000001
+   [00:00:00.179,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:00.179,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:00.179,000] <dbg> morse: morse_device_bit_state_handler: Now: 1941, Ticks: 647
+   [00:00:00.179,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 1, c: 647, t: 644
+   [00:00:00.179,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000002
+   [00:00:00.239,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:00.298,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:00.358,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:00.358,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:00.358,000] <dbg> morse: morse_device_bit_state_handler: Now: 3882, Ticks: 1941
+   [00:00:00.358,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 3, c: 1941, t: 644
+   [00:00:00.358,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000017
+   [00:00:00.418,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:00.418,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:00.418,000] <dbg> morse: morse_device_bit_state_handler: Now: 4529, Ticks: 647
+   [00:00:00.418,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 1, c: 647, t: 644
+   [00:00:00.418,000] <dbg> morse: morse_rx_cb_handler: data: 0x0000002e
+   [00:00:00.477,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:00.537,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:00.597,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:00.597,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:00.597,000] <dbg> morse: morse_device_bit_state_handler: Now: 6470, Ticks: 1941
+   [00:00:00.597,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 3, c: 1941, t: 644
+   [00:00:00.597,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000177
+   [00:00:00.657,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:00.657,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:00.657,000] <dbg> morse: morse_device_bit_state_handler: Now: 7117, Ticks: 647
+   [00:00:00.657,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 1, c: 647, t: 644
+   [00:00:00.657,000] <dbg> morse: morse_rx_cb_handler: data: 0x000002ee
+   [00:00:00.716,000] <dbg> morse: morse_load: TX: 0x40, bits: 0x03000000
+   [00:00:00.716,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:00.716,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:00.716,000] <dbg> morse: morse_device_bit_state_handler: Now: 7764, Ticks: 647
+   [00:00:00.716,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:00.716,000] <dbg> morse: morse_rx_cb_handler: data: 0x000005dd
+   [00:00:00.776,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:00.836,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:00.895,000] <dbg> morse: morse_load: Loading a idx: 1/4
+   [00:00:00.895,000] <dbg> morse: morse_load: TX: 0x21, bits: 0x05000017
+   [00:00:00.896,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:00.896,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:00.896,000] <dbg> morse: morse_device_bit_state_handler: Now: 9705, Ticks: 1941
+   [00:00:00.896,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 3, c: 1941, t: 644
+   [00:00:00.896,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, data: 0x0b0005dd
+   [00:00:00.896,000] <dbg> app: morse_rx_cb_handler: RX status: 0, 0x50, 'P'
+   [00:00:00.955,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:00.955,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:00.955,000] <dbg> morse: morse_device_bit_state_handler: Now: 10352, Ticks: 647
+   [00:00:00.955,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:00.955,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000001
+   [00:00:01.014,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:01.014,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:01.015,000] <dbg> morse: morse_device_bit_state_handler: Now: 10999, Ticks: 647
+   [00:00:01.015,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 1, c: 647, t: 644
+   [00:00:01.015,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000002
+   [00:00:01.074,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:01.133,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:01.193,000] <dbg> morse: morse_load: TX: 0x40, bits: 0x03000000
+   [00:00:01.193,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:01.193,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:01.193,000] <dbg> morse: morse_device_bit_state_handler: Now: 12940, Ticks: 1941
+   [00:00:01.193,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 3, c: 1941, t: 644
+   [00:00:01.193,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000017
+   [00:00:01.253,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:01.313,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:01.372,000] <dbg> morse: morse_load: Loading r idx: 2/4
+   [00:00:01.373,000] <dbg> morse: morse_load: TX: 0x32, bits: 0x0700005d
+   [00:00:01.373,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:01.373,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:01.373,000] <dbg> morse: morse_device_bit_state_handler: Now: 14881, Ticks: 1941
+   [00:00:01.373,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 3, c: 1941, t: 644
+   [00:00:01.373,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, data: 0x05000017
+   [00:00:01.373,000] <dbg> app: morse_rx_cb_handler: RX status: 0, 0x41, 'A'
+   [00:00:01.432,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:01.432,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:01.432,000] <dbg> morse: morse_device_bit_state_handler: Now: 15528, Ticks: 647
+   [00:00:01.432,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:01.432,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000001
+   [00:00:01.492,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:01.492,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:01.492,000] <dbg> morse: morse_device_bit_state_handler: Now: 16175, Ticks: 647
+   [00:00:01.492,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 1, c: 647, t: 644
+   [00:00:01.492,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000002
+   [00:00:01.551,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:01.611,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:01.671,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:01.671,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:01.671,000] <dbg> morse: morse_device_bit_state_handler: Now: 18116, Ticks: 1941
+   [00:00:01.671,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 3, c: 1941, t: 644
+   [00:00:01.671,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000017
+   [00:00:01.730,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:01.730,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:01.730,000] <dbg> morse: morse_device_bit_state_handler: Now: 18763, Ticks: 647
+   [00:00:01.730,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 1, c: 647, t: 644
+   [00:00:01.730,000] <dbg> morse: morse_rx_cb_handler: data: 0x0000002e
+   [00:00:01.790,000] <dbg> morse: morse_load: TX: 0x40, bits: 0x03000000
+   [00:00:01.790,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:01.790,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:01.790,000] <dbg> morse: morse_device_bit_state_handler: Now: 19410, Ticks: 647
+   [00:00:01.790,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:01.790,000] <dbg> morse: morse_rx_cb_handler: data: 0x0000005d
+   [00:00:01.849,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:01.909,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:01.969,000] <dbg> morse: morse_load: Loading i idx: 3/4
+   [00:00:01.969,000] <dbg> morse: morse_load: TX: 0x29, bits: 0x03000005
+   [00:00:01.969,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:01.969,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:01.969,000] <dbg> morse: morse_device_bit_state_handler: Now: 21351, Ticks: 1941
+   [00:00:01.969,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 3, c: 1941, t: 644
+   [00:00:01.969,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, data: 0x0700005d
+   [00:00:01.969,000] <dbg> app: morse_rx_cb_handler: RX status: 0, 0x52, 'R'
+   [00:00:02.028,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:02.028,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:02.028,000] <dbg> morse: morse_device_bit_state_handler: Now: 21998, Ticks: 647
+   [00:00:02.028,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:02.028,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000001
+   [00:00:02.088,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:02.088,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:02.088,000] <dbg> morse: morse_device_bit_state_handler: Now: 22645, Ticks: 647
+   [00:00:02.088,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 1, c: 647, t: 644
+   [00:00:02.088,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000002
+   [00:00:02.147,000] <dbg> morse: morse_load: TX: 0x40, bits: 0x03000000
+   [00:00:02.147,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:02.147,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:02.147,000] <dbg> morse: morse_device_bit_state_handler: Now: 23292, Ticks: 647
+   [00:00:02.147,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:02.147,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000005
+   [00:00:02.207,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:02.267,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:02.327,000] <dbg> morse: morse_load: Loading s idx: 4/4
+   [00:00:02.327,000] <dbg> morse: morse_load: TX: 0x33, bits: 0x05000015
+   [00:00:02.327,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:02.327,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:02.327,000] <dbg> morse: morse_device_bit_state_handler: Now: 25233, Ticks: 1941
+   [00:00:02.327,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 3, c: 1941, t: 644
+   [00:00:02.327,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, data: 0x03000005
+   [00:00:02.327,000] <dbg> app: morse_rx_cb_handler: RX status: 0, 0x49, 'I'
+   [00:00:02.386,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:02.386,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:02.386,000] <dbg> morse: morse_device_bit_state_handler: Now: 25880, Ticks: 647
+   [00:00:02.386,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:02.386,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000001
+   [00:00:02.446,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:02.446,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:02.446,000] <dbg> morse: morse_device_bit_state_handler: Now: 26527, Ticks: 647
+   [00:00:02.446,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 1, c: 647, t: 644
+   [00:00:02.446,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000002
+   [00:00:02.505,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:02.505,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:02.505,000] <dbg> morse: morse_device_bit_state_handler: Now: 27174, Ticks: 647
+   [00:00:02.505,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:02.505,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000005
+   [00:00:02.565,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 1
+   [00:00:02.565,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 1
+   [00:00:02.565,000] <dbg> morse: morse_device_bit_state_handler: Now: 27821, Ticks: 647
+   [00:00:02.565,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 1, ticks: 1, c: 647, t: 644
+   [00:00:02.565,000] <dbg> morse: morse_rx_cb_handler: data: 0x0000000a
+   [00:00:02.624,000] <dbg> morse: morse_dot_tick_handler: Finish transmission
+   [00:00:02.624,000] <dbg> morse_gpio_tx: morse_gpio_tx_bit_state: state: 0
+   [00:00:02.624,000] <dbg> morse_gpio_rx: morse_gpio_rx_isr_handler: state: 0
+   [00:00:02.624,000] <dbg> morse: morse_device_bit_state_handler: Now: 28468, Ticks: 647
+   [00:00:02.624,000] <inf> app: TX status: 0
+   [00:00:02.624,000] <dbg> morse: morse_rx_cb_handler: FSM: 1, bit: 0, ticks: 1, c: 647, t: 644
+   [00:00:02.624,000] <dbg> morse: morse_rx_cb_handler: data: 0x00000015
+   [00:00:03.165,000] <dbg> morse: morse_word_blank_handler: RX Blank ticks: 5850
+   [00:00:03.165,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, bit: 0, ticks: 9, c: 5850, t: 644
+   [00:00:03.165,000] <dbg> morse: morse_rx_cb_handler: FSM: 2, data: 0x05000015
+   [00:00:03.165,000] <dbg> app: morse_rx_cb_handler: RX status: 2, 0x53, 'S'
+   [00:00:03.166,000] <inf> app: RX Data: PARIS
    uart:~$
 
 .. _M.1677-International Morse Code:

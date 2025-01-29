@@ -12,3 +12,4 @@ Connectivity
    lora_lorawan/index.rst
    usb/index.rst
    modbus/index.rst
+   morse/index.rst
