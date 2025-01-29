@@ -839,9 +839,9 @@ static int sai_clks_enable_disable(const struct device *dev, bool enable)
 		clk_id = UINT_TO_POINTER(cfg->clk_data.clocks[i]);
 
 		if (enable) {
-			ret = clock_control_on(cfg->clk_data.dev, clk_id);
+			ret = clock_control_on(cfg->clk_data.devs[i], clk_id);
 		} else {
-			ret = clock_control_off(cfg->clk_data.dev, clk_id);
+			ret = clock_control_off(cfg->clk_data.devs[i], clk_id);
 		}
 
 		if (ret < 0) {
