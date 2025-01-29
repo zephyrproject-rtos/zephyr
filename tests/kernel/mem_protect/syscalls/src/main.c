@@ -36,8 +36,8 @@
 #define MAX_NR_THREADS	(CONFIG_MP_MAX_NUM_CPUS * 4)
 #define STACK_SZ	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-struct k_thread torture_threads[MAX_NR_THREADS];
-K_THREAD_STACK_ARRAY_DEFINE(torture_stacks, MAX_NR_THREADS, STACK_SZ);
+struct k_thread stress_threads[MAX_NR_THREADS];
+K_THREAD_STACK_ARRAY_DEFINE(stress_stacks, MAX_NR_THREADS, STACK_SZ);
 
 char kernel_string[BUF_SIZE];
 char kernel_buf[MAX_NR_THREADS][BUF_SIZE];
@@ -345,7 +345,7 @@ ZTEST_USER(syscalls, test_more_args)
 		      "syscall didn't match impl");
 }
 
-void syscall_torture(void *arg1, void *arg2, void *arg3)
+void syscall_switch_stress(void *arg1, void *arg2, void *arg3)
 {
 	int count = 0;
 	uintptr_t id = (uintptr_t)arg1;
@@ -382,21 +382,21 @@ void syscall_torture(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-ZTEST(syscalls, test_syscall_torture)
+ZTEST(syscalls_extended, test_syscall_switch_stress)
 {
 	uintptr_t i;
 
-	printk("Running syscall torture test with %d threads on %d cpu(s)\n",
+	printk("Running syscall switch stress test with %d threads on %d cpu(s)\n",
 	       NR_THREADS, arch_num_cpus());
 
 	for (i = 0; i < NR_THREADS; i++) {
-		k_thread_create(&torture_threads[i], torture_stacks[i],
-				STACK_SZ, syscall_torture,
+		k_thread_create(&stress_threads[i], stress_stacks[i],
+				STACK_SZ, syscall_switch_stress,
 				(void *)i, NULL, NULL,
 				2, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 	}
 
-	/* Let the torture threads hog the system for several seconds before
+	/* Let the stress threads hog the system for several seconds before
 	 * we abort them.
 	 * They will all be hammering the cpu(s) with system calls,
 	 * hopefully smoking out any issues and causing a crash.
@@ -404,7 +404,7 @@ ZTEST(syscalls, test_syscall_torture)
 	k_sleep(K_MSEC(SLEEP_MS_LONG));
 
 	for (i = 0; i < NR_THREADS; i++) {
-		k_thread_abort(&torture_threads[i]);
+		k_thread_abort(&stress_threads[i]);
 	}
 
 	printk("\n");
@@ -460,3 +460,4 @@ void *syscalls_setup(void)
 }
 
 ZTEST_SUITE(syscalls, NULL, syscalls_setup, NULL, NULL, NULL);
+ZTEST_SUITE(syscalls_extended, NULL, syscalls_setup, NULL, NULL, NULL);
