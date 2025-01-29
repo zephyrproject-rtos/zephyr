@@ -881,9 +881,12 @@ def write_chosen(edt: edtlib.EDT):
 
     out_comment("Chosen nodes\n")
     chosen = {}
-    for name, node in edt.chosen_nodes.items():
-        chosen[f"DT_CHOSEN_{str2ident(name)}"] = f"DT_{node.z_path_id}"
-        chosen[f"DT_CHOSEN_{str2ident(name)}_EXISTS"] = 1
+    for name, prop_nodes_list in edt.chosen_props_nodes.items():
+        chosen[f"DT_CHOSEN_{str2ident(name)}_NODES_NBR"] = len(prop_nodes_list)
+        for node_index, node in enumerate(prop_nodes_list):
+            chosen[f"DT_CHOSEN_{str2ident(name)}_{node_index}"] = f"DT_{node.z_path_id}"
+            chosen[f"DT_CHOSEN_{str2ident(name)}_{node_index}_EXISTS"] = 1
+
     max_len = max(map(len, chosen), default=0)
     for macro, value in chosen.items():
         out_define(macro, value, width=max_len)

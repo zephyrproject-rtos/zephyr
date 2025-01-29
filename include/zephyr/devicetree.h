@@ -2909,9 +2909,9 @@
  * This is only valid to call if `DT_HAS_CHOSEN(prop)` is 1.
  * @param prop lowercase-and-underscores property name for
  *             the /chosen node
- * @return a node identifier for the chosen node property
+ * @return a node identifier for the 1st node of the chosen property
  */
-#define DT_CHOSEN(prop) DT_CAT(DT_CHOSEN_, prop)
+#define DT_CHOSEN(prop) DT_CAT3(DT_CHOSEN_, prop, _0)
 
 /**
  * @brief Test if the devicetree has a `/chosen` node
@@ -2919,8 +2919,63 @@
  * @return 1 if the chosen property exists and refers to a node,
  *         0 otherwise
  */
-#define DT_HAS_CHOSEN(prop) IS_ENABLED(DT_CAT3(DT_CHOSEN_, prop, _EXISTS))
+#define DT_HAS_CHOSEN(prop) IS_ENABLED(DT_CAT4(DT_CHOSEN_, prop, _0, _EXISTS))
 
+/**
+ * @brief Get a node identifier for a `/chosen` node property at an index.
+ *
+ * When a `/chosen` node's value at a logical index contains a phandle, this
+ * macro returns a node identifier for the node with that phandle.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     chosen {
+ *             zephyr,foo = <&n2 &n3>;
+ *     };
+ *
+ *     n2: node-2 { ... };
+ *     n3: node-3 { ... };
+ * @endcode
+ *
+ * Above, `zephyr,foo` chosen property has two elements:
+ *
+ * - index 0 has phandle `&n2`, which is `node-2`'s phandle
+ * - index 1 has phandle `&n3`, which is `node-3`'s phandle
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *
+ *     DT_CHOSEN_NODE_BY_IDX(zephyr_foo, 0) // node identifier for node-2
+ *     DT_CHOSEN_NODE_BY_IDX(zephyr_foo, 1) // node identifier for node-3
+ * @endcode
+ *
+ * This is only valid to call if `DT_CHOSEN_HAS_NODE_IDX(prop, idx)` is 1.
+ * @param prop lowercase-and-underscores `/chosen` node property name
+ * @param idx index into @p prop
+ * @return node identifier for the node with the phandle at that index
+ */
+#define DT_CHOSEN_NODE_BY_IDX(prop, idx) DT_CAT3(DT_CHOSEN_, prop, _##idx)
+
+/**
+ * @brief Test if @p prop of devicetree `/chosen` node has phandle of index @p idx
+ * @param prop lowercase-and-underscores devicetree property
+ * @param idx index into @p prop
+ * @return 1 if phandle of index idx of chosen property exists and refers to a node,
+ *         0 otherwise
+ */
+#define DT_CHOSEN_HAS_NODE_IDX(prop, idx) IS_ENABLED(DT_CAT4(DT_CHOSEN_, prop, _##idx, _EXISTS))
+
+/**
+ * @brief Get number of phandles assigned to @p prop of devicetree `/chosen` node
+ * @param prop lowercase-and-underscores devicetree property
+ * @return number of phandles of `/chosen` node property
+ */
+#define DT_CHOSEN_NODES_NBR(prop)                                                                  \
+	COND_CODE_1(DT_HAS_CHOSEN(prop),                                                           \
+		    (DT_CAT3(DT_CHOSEN_, prop, _NODES_NBR)),                                       \
+		    (0))
 /**
  * @}
  */

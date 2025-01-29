@@ -4362,7 +4362,7 @@ function(dt_has_chosen var)
     endif()
   endforeach()
 
-  get_target_property(exists devicetree_target "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
+  get_target_property(exists devicetree_target "DT_CHOSEN|${DT_CHOSEN_PROPERTY}-0")
 
   if(${exists} STREQUAL exists-NOTFOUND)
     set(${var} FALSE PARENT_SCOPE)
@@ -4374,7 +4374,7 @@ endfunction()
 # Usage:
 #   dt_chosen(<var> PROPERTY <prop>)
 #
-# Get a node path for a /chosen node property.
+# Get path of the 1st node in a /chosen node property.
 #
 # The node's path will be returned in the <var> parameter. The
 # variable will be left undefined if the chosen node does not exist.
@@ -4397,7 +4397,7 @@ function(dt_chosen var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
+  get_target_property(${var} devicetree_target "DT_CHOSEN|${DT_CHOSEN_PROPERTY}-0")
 
   if(${${var}} STREQUAL ${var}-NOTFOUND)
     set(${var} PARENT_SCOPE)

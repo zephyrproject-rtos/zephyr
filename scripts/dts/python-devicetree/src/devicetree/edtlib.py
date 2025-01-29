@@ -1902,11 +1902,11 @@ class EDT:
     dep_ord2node:
       A dict that maps an ordinal to the node with that dependency ordinal.
 
-    chosen_nodes:
+    chosen_props_nodes:
       A dict that maps the properties defined on the devicetree's /chosen
-      node to their values. 'chosen' is indexed by property name (a string),
-      and values are converted to Node objects. Note that properties of the
-      /chosen node which can't be converted to a Node are not included in
+      node to a list of nodes. 'chosen' is indexed by property name (a string),
+      and values are converted to a list of Node objects. Note that properties
+      of the /chosen node which can't be converted to nodes are not included in
       the value.
 
     dts_path:
@@ -2048,31 +2048,40 @@ class EDT:
             _err(e)
 
     @property
-    def chosen_nodes(self) -> dict[str, Node]:
-        ret: dict[str, Node] = {}
+    def chosen_props_nodes(self) -> dict[str, list[Node]]:
+        ret: dict[str, list[Node]] = {}
 
         try:
             chosen = self._dt.get_node("/chosen")
         except DTError:
             return ret
 
-        for name, prop in chosen.props.items():
+        for prop_name, prop in chosen.props.items():
             try:
-                node = prop.to_path()
+                if prop.type == Type.PHANDLES:
+                    ret[prop_name] = [self._node2enode[node] for node in prop.to_nodes()]
+                else:
+                    ret[prop_name] = [self._node2enode[prop.to_path()]]
             except DTError:
-                # DTS value is not phandle or string, or path doesn't exist
+                # DTS value is not phandle, phandles, or string, or path doesn't exist
                 continue
 
-            ret[name] = self._node2enode[node]
-
         return ret
+
+    def chosen_prop_nodes(self, name: str) -> Optional[list[Node]]:
+        """
+        Returns a list of Nodes pointed at by the property named 'name' in /chosen, or
+        None if the property is missing
+        """
+        return self.chosen_props_nodes.get(name)
 
     def chosen_node(self, name: str) -> Optional[Node]:
         """
         Returns the Node pointed at by the property named 'name' in /chosen, or
         None if the property is missing
         """
-        return self.chosen_nodes.get(name)
+        nodes = self.chosen_props_nodes.get(name)
+        return nodes[0] if nodes else None
 
     @property
     def dts_source(self) -> str:

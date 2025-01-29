@@ -100,10 +100,10 @@ def main():
     # macros.bnf for C macros.
 
     cmake_props = []
-    chosen_nodes = edt.chosen_nodes
-    for node in chosen_nodes:
-        path = chosen_nodes[node].path
-        cmake_props.append(f'"DT_CHOSEN|{node}" "{path}"')
+    chosen_nodes = edt.chosen_props_nodes
+    for prop_name in chosen_nodes:
+        for index, node in enumerate(chosen_nodes[prop_name]):
+            cmake_props.append(f'"DT_CHOSEN|{prop_name}-{index}" "{node.path}"')
 
     # The separate loop over edt.nodes here is meant to keep
     # all of the alias-related properties in one place.
