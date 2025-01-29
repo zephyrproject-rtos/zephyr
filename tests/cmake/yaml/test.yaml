@@ -11,8 +11,3 @@ cmake:
       - "list"
       - "of"
       - "strings"
-    map-list:
-      - map-entry-name: "MapEntry1"
-        map-entry-int: 5
-      - map-entry-name: "MapEntry2"
-        map-entry-int: 4
