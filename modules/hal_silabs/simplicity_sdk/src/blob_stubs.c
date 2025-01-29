@@ -109,6 +109,10 @@ void sl_btctrl_hci_parser_init_phy(void)
 {
 }
 
+void sl_bthci_init_vs(void)
+{
+}
+
 void AGC_IRQHandler(void)
 {
 }
