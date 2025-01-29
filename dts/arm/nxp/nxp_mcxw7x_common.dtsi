@@ -324,6 +324,15 @@
 		nxp,current-compensation-en;
 		status = "disabled";
 	};
+
+	rtc: rtc@4002c000 {
+		compatible = "nxp,rtc";
+		status = "disabled";
+		interrupts = <32 0>, <33 0>;
+		interrupt-names = "alarm", "seconds";
+		clock-frequency = <32768>;
+		prescaler = <32768>;
+	};
 };
 
 &fast_peripheral0 {
