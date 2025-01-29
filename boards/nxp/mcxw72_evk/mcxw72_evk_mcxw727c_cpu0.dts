@@ -134,3 +134,7 @@
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 };
+
+&rtc {
+	status = "okay";
+};
