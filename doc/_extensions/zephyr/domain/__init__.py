@@ -268,6 +268,21 @@ class ConvertBoardNode(SphinxTransform):
                 field += field_body
                 field_list += field
 
+            gh_link = gh_link_get_url(self.app, self.env.docname)
+            gh_link_button = nodes.raw(
+                "",
+                f"""
+                <div id="board-github-link">
+                    <a href="{gh_link}/../.." class="btn btn-info fa fa-github"
+                        target="_blank">
+                        Browse board sources
+                    </a>
+                </div>
+                """,
+                format="html",
+            )
+            sidebar += gh_link_button
+
             # Move the sibling nodes under the new section
             new_section.extend(siblings_to_move)
 
