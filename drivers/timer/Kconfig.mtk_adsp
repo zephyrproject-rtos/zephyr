@@ -3,6 +3,7 @@
 
 config MTK_ADSP_TIMER
 	bool "MediaTek Audio DSP timer"
+	depends on SOC_FAMILY_MTK
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	select SYSTEM_CLOCK_LOCK_FREE_COUNT
