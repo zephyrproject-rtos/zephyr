@@ -20,11 +20,21 @@ menuconfig WIFI_ESP32
 
 if WIFI_ESP32
 
-config HEAP_MEM_POOL_ADD_SIZE_WIFI
+config HEAP_MEM_POOL_ADD_SIZE_ESP_WIFI
 	int
-	default 4096
+	default 40960 if ESP_WIFI_HEAP_SYSTEM
+	default 0
 	help
 	  Make sure there is a minimal heap available for Wi-Fi driver.
+
+choice ESP_WIFI_HEAP
+	prompt "Wi-Fi adapter heap memory"
+	default ESP_WIFI_HEAP_SYSTEM
+
+	config ESP_WIFI_HEAP_SYSTEM
+		bool "Wi-Fi adapter use kernel mempool heap (k_malloc)"
+
+endchoice # ESP_WIFI_HEAP
 
 config NET_TCP_WORKQ_STACK_SIZE
 	default 2048
@@ -332,23 +342,6 @@ config ESP32_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
 	  that AP will send broadcast packet, it will wait for ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
 	  before entering the sleep process. If a broadcast packet is received with more data bits, the time
 	  will refreshed. unit: milliseconds.
-
-choice ESP_WIFI_HEAP
-	prompt "Wifi adapter heap in use"
-	default ESP_WIFI_HEAP_RUNTIME
-
-	config ESP_WIFI_HEAP_RUNTIME
-		bool "Wifi adapter use ESP runtime heap"
-		depends on ESP_HEAP_RUNTIME
-
-	config ESP_WIFI_HEAP_SPIRAM
-		bool "Wifi adapter use SPIRAM heap"
-		depends on ESP_SPIRAM
-
-	config ESP_WIFI_HEAP_SYSTEM
-		bool "Wifi adapter use system heap"
-
-endchoice # ESP_WIFI_HEAP
 
 config ESP32_WIFI_FTM_ENABLE
 	bool "WiFi FTM"
