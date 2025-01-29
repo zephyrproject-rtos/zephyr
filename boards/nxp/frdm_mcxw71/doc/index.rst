@@ -60,6 +60,8 @@ The ``frdm_mcxw71`` board target in Zephyr currently supports the following feat
 +-----------+------------+-------------------------------------+
 | LPTMR     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 | BLE       | on-chip    | Bluetooth                           |
 +-----------+------------+-------------------------------------+
 | FLEXCAN   | on-chip    | can                                 |
