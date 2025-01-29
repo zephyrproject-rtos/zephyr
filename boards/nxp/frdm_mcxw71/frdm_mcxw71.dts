@@ -142,3 +142,7 @@
 	status = "okay";
 	wakeup-source;
 };
+
+&rtc {
+	status = "okay";
+};
