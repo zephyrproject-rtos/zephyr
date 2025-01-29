@@ -24,6 +24,7 @@ OS Services
    net_buf/index.rst
    modbus/index.rst
    modem/index.rst
+   morse/index.rst
    notify.rst
    pm/index.rst
    portability/index.rst
