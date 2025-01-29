@@ -22,7 +22,7 @@ jobs:
     steps:
     - name: Download artifacts
       id: download-artifacts
-      uses: dawidd6/action-download-artifact@v6
+      uses: dawidd6/action-download-artifact@v8
       with:
         workflow: doc-build.yml
         run_id: ${{ github.event.workflow_run.id }}
