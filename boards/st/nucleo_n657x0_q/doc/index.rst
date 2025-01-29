@@ -51,6 +51,12 @@ Hardware
   - On-board ST-LINK (STLINK/V2-1, STLINK-V3E, or STLINK-V3EC) debugger/programmer with
     USB re-enumeration capability: mass storage, Virtual COM port, and debug port
 
+For more details, please refer to:
+
+* `NUCLEO_N657X0_Q website`_
+* `STM32N657X0 on www.st.com`_
+* `STM32N657 reference manual`_
+
 Supported Features
 ==================
 
@@ -108,43 +114,88 @@ USART1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-NUCLEO_N657X0_Q board includes an ST-LINK/V3 embedded debug tool interface.
-This probe allows to flash the board using various tools.
+STM32N6570_DK board includes an ST-LINK/V3 embedded debug tool interface.
+This probe allows to flash and debug the board using various tools.
 
-Flashing
-========
 
-The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
-so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Flashing or loading
+===================
+
+The board is configured to be programmed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is needed.
 Version 2.18.0 or later of `STM32CubeProgrammer`_ is required.
 
-Flashing an application to NUCLEO_N657X0_Q
-------------------------------------------
+To program the board, there are two options:
 
-Connect the NUCLEO_N657X0_Q to your host computer using the USB port.
-Then build and flash an application.
+- Program the firmware in external flash. At boot, it will then be loaded on RAM
+  and executed from there.
+- Optionally, it can also be taken advantage from the serial boot interface provided
+  by the boot ROM. In that case, firmware is directly loaded in RAM and executed from
+  there. It is not retained.
+
+Programming an application to NUCLEO_N657X0_Q
+---------------------------------------------
+
+Here is an example to build and run :zephyr:code-sample:`hello_world` application.
+
+First, connect the NUCLEO_N657X0_Q to your host computer using the ST-Link USB port.
+
+   .. tabs::
+
+      .. group-tab:: ST-Link
+
+         Build and flash an application using ``nucleo_n657x0_q`` target.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: nucleo_n657x0_q
+            :goals: build flash
 
 .. note::
-   For flashing, BOOT0 pin should be set to 0 and BOOT1 to 1 before powering on
-   the board.
+            For flashing, before powering the board, set the boot pins in the following configuration:
 
-   To run the application after flashing, BOOT1 should be set to 0 and the board
-   should be powered off and on again.
+            * BOOT0: 0
+            * BOOT1: 1
 
-Here is an example for the :zephyr:code-sample:`hello_world` application.
+            After flashing, to run the application, set the boot pins in the following configuration:
 
-Run a serial host program to connect with your Nucleo board:
+            * BOOT1: 0
+
+	    Power off and on the board again.
+
+         Run a serial host program to connect with your Nucleo board:
 
 .. code-block:: console
 
    $ minicom -D /dev/ttyACM0
 
-Then build and flash the application.
+      .. group-tab:: Serial Boot Loader (USB)
+
+         Additionally, connect the NUCLEO_N657X0_Q to your host computer using the USB port.
+         In this configuration, ST-Link is used to power the board and for serial communication
+         over the Virtual COM Port.
+
+         .. note::
+            Before powering the board, set the boot pins in the following configuration:
+
+            * BOOT0: 1
+            * BOOT1: 0
+
+         Build and load an application using ``nucleo_n657x0_q/stm32n657xx/sb`` target (you
+         can also use the shortenned form: ``nucleo_n657x0_q//sb``)
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: nucleo_n657x0_q
    :goals: build flash
+
+
+Run a serial host program to connect with your Disco board:
+
+.. code-block:: console
+
+   $ minicom -D /dev/ttyACM0
 
 You should see the following message on the console:
 
@@ -152,26 +203,45 @@ You should see the following message on the console:
 
    Hello World! nucleo_n657x0_q/stm32n657xx
 
+
 Debugging
 =========
 
 For now debugging is only available through STM32CubeIDE:
-* Go to File > Import and select C/C++ > STM32 Cortex-M Executable
-* In Executable field, browse to your <ZEPHYR_PATH>/build/zephyr/zephyr.elf
+
+* Go to File > Import and select C/C++ > STM32 Cortex-M Executable.
+* In Executable field, browse to your <ZEPHYR_PATH>/build/zephyr/zephyr.elf.
 * In MCU field, select STM32N657X0HxQ.
-* Click on Finish
-* Then click on Debug to start the debugging session
+* Click on Finish.
+* Finally, click on Debug to start the debugging session.
 
 .. note::
-   For debugging, BOOT0 pin should be set to 0 and BOOT1 to 1 before powering on the
-   board.
+   For debugging, before powering on the board, set the boot pins in the following configuration:
+
+   * BOOT0: 0
+   * BOOT1: 1
+
+
+Running tests with twister
+==========================
+
+Due to the BOOT switches manipulation required when flashing the board using ``nucleo_n657x0_q``
+board target, it is only possible to run twister tests campaign on ``nucleo_n657x0_q/stm32n657xx/sb``
+board target which doesn't require BOOT pins changes to load and execute binaries.
+To do so, it is advised to use Twister's hardware map feature with the following settings:
+
+.. code-block:: yaml
+
+   - platform: nucleo_n657x0_q/stm32n657xx/sb
+     product: BOOT-SERIAL
+     pre_script: <path_to_zephyr>/boards/st/common/scripts/board_power_reset.sh
+     runner: stm32cubeprogrammer
 
 .. _NUCLEO_N657X0_Q website:
    https://www.st.com/en/evaluation-tools/nucleo-n657x0-q.html
 
 .. _NUCLEO_N657X0_Q User Manual:
    https://www.st.com/resource/en/user_manual/um3417-stm32n6-nucleo144-board-mb1940-stmicroelectronics.pdf
-
 .. _STM32N657X0 on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32n657x0.html
 
