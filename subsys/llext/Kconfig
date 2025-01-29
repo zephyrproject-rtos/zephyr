@@ -113,8 +113,6 @@ module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"
 
-endif
-
 menu "Linkable loadable Extension Development Kit (EDK)"
 
 config LLEXT_EDK_NAME
@@ -135,3 +133,5 @@ config LLEXT_EDK_USERSPACE_ONLY
 	  not contain the routing code, and only generate the userspace one.
 
 endmenu
+
+endif # LLEXT
