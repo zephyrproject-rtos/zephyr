@@ -21,6 +21,20 @@
 		};
 	};
 
+	pdm_default: pdm_default {
+		group0 {
+			pinmux = <&iomuxc_sai5_rxc_pdm_clk_pdm_clk>,
+				 <&iomuxc_sai5_rxd0_pdm_bit_stream_pdm_bit_stream0>,
+				 <&iomuxc_sai5_rxd1_pdm_bit_stream_pdm_bit_stream1>,
+				 <&iomuxc_sai5_rxd2_pdm_bit_stream_pdm_bit_stream2>,
+				 <&iomuxc_sai5_rxd3_pdm_bit_stream_pdm_bit_stream3>;
+			bias-pull-up;
+			slew-rate = "fast";
+			drive-strength = "x6";
+			input-schmitt-enable;
+		};
+	};
+
 	uart2_default: uart2_default {
 		group0 {
 			pinmux = <&iomuxc_uart2_rxd_uart_rx_uart2_rx>,
