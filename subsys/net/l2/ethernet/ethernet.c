@@ -283,19 +283,26 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		    !eth_is_vlan_tag_stripped(iface)) {
 			struct net_eth_vlan_hdr *hdr_vlan =
 				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+			struct net_if *vlan_iface;
 
 			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
 			type = ntohs(hdr_vlan->type);
 			hdr_len = sizeof(struct net_eth_vlan_hdr);
 			is_vlan_pkt = true;
 
-			net_pkt_set_iface(pkt,
-					  net_eth_get_vlan_iface(iface,
-						       net_pkt_vlan_tag(pkt)));
-
 			/* If we receive a packet with a VLAN tag, for that we don't
 			 * have a VLAN interface, drop the packet.
 			 */
+			vlan_iface = net_eth_get_vlan_iface(iface,
+							    net_pkt_vlan_tag(pkt));
+			if (vlan_iface == NULL) {
+				NET_DBG("Dropping frame, no VLAN interface for tag %d",
+					net_pkt_vlan_tag(pkt));
+				goto drop;
+			}
+
+			net_pkt_set_iface(pkt, vlan_iface);
+
 			if (net_if_l2(net_pkt_iface(pkt)) == NULL) {
 				goto drop;
 			}
