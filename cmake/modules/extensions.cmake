@@ -5640,7 +5640,7 @@ function(add_llext_target target_name)
   if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
 
     # Create an object library to compile the source file
-    add_library(${llext_lib_target} OBJECT ${source_files})
+    add_library(${llext_lib_target} EXCLUDE_FROM_ALL OBJECT ${source_files})
     set(llext_lib_output $<TARGET_OBJECTS:${llext_lib_target}>)
 
   elseif(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE)
@@ -5668,7 +5668,7 @@ function(add_llext_target target_name)
   elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
 
     # Create a shared library
-    add_library(${llext_lib_target} SHARED ${source_files})
+    add_library(${llext_lib_target} EXCLUDE_FROM_ALL SHARED ${source_files})
     set_target_properties(${llext_lib_target} PROPERTIES
       LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
     )
