@@ -9,23 +9,6 @@
 
 &flexram {
 	flexram,num-ram-banks = <16>;
-	/* default fuse */
-	flexram,bank-spec = <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_ITCM>,
-			     <FLEXRAM_ITCM>,
-			     <FLEXRAM_ITCM>,
-			     <FLEXRAM_ITCM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>;
 };
 
 &flexspi2 {
