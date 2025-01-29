@@ -29,6 +29,7 @@ tests:
       # and platform enabling SPI NOR automatically brings in a device with
       # explicit erase requirement.
       - CONFIG_SPI_NOR=n
+    tags: stream_flash
   storage.stream_flash.dword_wbs:
     extra_args: DTC_OVERLAY_FILE=unaligned_flush.overlay
     tags: stream_flash
