@@ -256,8 +256,9 @@ static void bt_ipc_rx(const struct device *dev, const uint8_t *data, size_t len)
 static int bt_ipc_send(const struct device *dev, struct net_buf *buf)
 {
 	struct ipc_data *data = dev->data;
-	int err;
 	uint8_t pkt_indicator;
+	uint8_t retries = 0;
+	int ret;
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
@@ -277,11 +278,29 @@ static int bt_ipc_send(const struct device *dev, struct net_buf *buf)
 	}
 	net_buf_push_u8(buf, pkt_indicator);
 
-	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
-	err = ipc_service_send(&data->hci_ept, buf->data, buf->len);
-	if (err < 0) {
-		LOG_ERR("Failed to send (err %d)", err);
-	}
+	LOG_HEXDUMP_INF(buf->data, buf->len, "Final HCI buffer:");
+
+	do {
+		ret = ipc_service_send(&data->hci_ept, buf->data, buf->len);
+		if (ret < 0) {
+			retries++;
+			if (retries > 10) {
+				/* Default backend (rpmsg_virtio) has a timeout of 150ms. */
+				LOG_WRN("IPC send has been blocked for 1.5 seconds.");
+				retries = 0;
+			}
+
+			/* In the POSIX ARCH, code takes zero simulated time to execute,
+			 * so busy wait loops become infinite loops, unless we
+			 * force the loop to take a bit of time.
+			 *
+			 * This delay allows the IPC consumer to execute, thus making
+			 * it possible to send more data over IPC afterwards.
+			 */
+			Z_SPIN_DELAY(500);
+			k_yield();
+		}
+	} while (ret < 0);
 
 done:
 	net_buf_unref(buf);
