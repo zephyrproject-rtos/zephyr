@@ -115,7 +115,14 @@ static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 
 /* Keep track of all ethernet interfaces */
 static struct net_if *eth_interfaces[NET_ETH_MAX_COUNT];
-static struct net_if *vlan_interfaces[NET_VLAN_MAX_COUNT];
+
+#if NET_VLAN_MAX_COUNT > 0
+#define MAX_IFACE_VLAN_COUNT NET_VLAN_MAX_COUNT
+#else
+#define MAX_IFACE_VLAN_COUNT 1
+#endif
+
+static struct net_if *vlan_interfaces[MAX_IFACE_VLAN_COUNT];
 static struct net_if *dummy_interfaces[2];
 static struct net_if *embed_ll_interface;
 static struct net_if *test_iface;
@@ -433,7 +440,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
 		vlan_interfaces[ud->vlan_if_count++] = iface;
 
-		zassert_true(ud->vlan_if_count <= NET_VLAN_MAX_COUNT,
+		zassert_true(ud->vlan_if_count <= MAX_IFACE_VLAN_COUNT,
 			     "Too many VLAN interfaces");
 	}
 
@@ -458,16 +465,20 @@ static void test_vlan_setup(void)
 	/* Make sure we have enough virtual interfaces */
 	net_if_foreach(iface_cb, &ud);
 
-	/* One extra eth interface without vlan support */
-	zassert_equal(ud.vlan_if_count, NET_VLAN_MAX_COUNT,
-		      "Invalid number of VLANs %d vs %d",
-		      ud.vlan_if_count, NET_VLAN_MAX_COUNT);
+	if (NET_VLAN_MAX_COUNT == 0) {
+		return;
+	}
 
-	remaining = ud.total_if_count - NET_VLAN_MAX_COUNT -
+	/* One extra eth interface without vlan support */
+	zassert_equal(ud.vlan_if_count, MAX_IFACE_VLAN_COUNT,
+		      "Invalid number of VLANs %d vs %d",
+		      ud.vlan_if_count, MAX_IFACE_VLAN_COUNT);
+
+	remaining = ud.total_if_count - MAX_IFACE_VLAN_COUNT -
 		ud.eth_if_count - ud.dummy_if_count;
 	zassert_equal(remaining, 0,
 		      "Invalid number of interfaces expecting %d got %d+%d+%d",
-		      ud.total_if_count, NET_VLAN_MAX_COUNT,
+		      ud.total_if_count, MAX_IFACE_VLAN_COUNT,
 		      ud.eth_if_count, ud.dummy_if_count);
 }
 
@@ -478,11 +489,14 @@ static void test_address_setup(void)
 
 	iface1 = eth_interfaces[1]; /* This has VLAN enabled */
 	iface2 = eth_interfaces[0]; /* and this one not */
-	iface3 = vlan_interfaces[0]; /* and this is the virtual VLAN interface */
 
 	zassert_not_null(iface1, "Interface 1");
 	zassert_not_null(iface2, "Interface 2");
-	zassert_not_null(iface3, "Interface 3");
+
+	if (NET_VLAN_MAX_COUNT > 0) {
+		iface3 = vlan_interfaces[0]; /* and this is the virtual VLAN interface */
+		zassert_not_null(iface3, "Interface 3");
+	}
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
@@ -515,15 +529,17 @@ static void test_address_setup(void)
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
-	ifaddr = net_if_ipv6_addr_add(iface3, &my_addr3,
-				      NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		DBG("Cannot add IPv6 address %s\n",
-		       net_sprint_ipv6_addr(&my_addr3));
-		zassert_not_null(ifaddr, "addr3");
-	}
+	if (NET_VLAN_MAX_COUNT > 0) {
+		ifaddr = net_if_ipv6_addr_add(iface3, &my_addr3,
+					      NET_ADDR_MANUAL, 0);
+		if (!ifaddr) {
+			DBG("Cannot add IPv6 address %s\n",
+			    net_sprint_ipv6_addr(&my_addr3));
+			zassert_not_null(ifaddr, "addr3");
+		}
 
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
+		ifaddr->addr_state = NET_ADDR_PREFERRED;
+	}
 
 	net_if_up(iface1);
 	net_if_up(iface2);
@@ -639,6 +655,10 @@ static void test_vlan_enable(void)
 	struct net_if *iface;
 	int ret;
 
+	if (NET_VLAN_MAX_COUNT == 0) {
+		return;
+	}
+
 	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_1);
 	zassert_equal(ret, 0, "Cannot enable %d (%d)", VLAN_TAG_1, ret);
 	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_2);
@@ -714,6 +734,10 @@ static void test_vlan_disable(void)
 	struct net_if *iface;
 	int ret;
 
+	if (NET_VLAN_MAX_COUNT == 0) {
+		return;
+	}
+
 	ret = net_eth_vlan_disable(eth_interfaces[1], VLAN_TAG_1);
 	zassert_not_equal(ret, 0, "Could disable %d (%d)", VLAN_TAG_1, ret);
 
@@ -759,6 +783,10 @@ static void test_vlan_enable_all(void)
 	struct net_if *iface;
 	int ret;
 
+	if (NET_VLAN_MAX_COUNT == 0) {
+		return;
+	}
+
 	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_1);
 	zassert_true(ret == 0 || ret == -EALREADY, "Cannot enable %d", VLAN_TAG_1);
 	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_2);
@@ -797,6 +825,10 @@ static void test_vlan_disable_all(void)
 	struct ethernet_context *eth_ctx;
 	struct net_if *iface;
 	int ret;
+
+	if (NET_VLAN_MAX_COUNT == 0) {
+		return;
+	}
 
 	ret = net_eth_vlan_disable(eth_interfaces[0], VLAN_TAG_1);
 	zassert_equal(ret, 0, "Cannot disable %d", VLAN_TAG_1);
@@ -903,6 +935,10 @@ ZTEST(net_vlan, test_vlan_ipv6_sendto_recvfrom)
 	struct sockaddr_in6 server_addr;
 	struct eth_context *ctx;
 
+	if (NET_VLAN_MAX_COUNT == 0) {
+		return;
+	}
+
 	/* Setup the interfaces */
 	test_vlan_enable();
 	test_vlan_disable_all();
@@ -965,6 +1001,10 @@ ZTEST(net_vlan, test_zz_vlan_embed_ll_hdr)
 
 	static struct in6_addr peer_vlan_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0x90, 0, 0, 0,
 						    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+
+	if (NET_VLAN_MAX_COUNT == 0) {
+		return;
+	}
 
 	ret = net_eth_vlan_enable(embed_ll_interface, VLAN_TAG_6);
 	zassert_equal(ret, 0, "Could not enable %d (%d)", VLAN_TAG_6, ret);
@@ -1068,7 +1108,11 @@ ZTEST(net_vlan, test_vlan_tag_0)
 	struct net_pkt *pkt;
 	int ret;
 
-	iface = vlan_interfaces[0];
+	if (NET_VLAN_MAX_COUNT > 0) {
+		iface = vlan_interfaces[0];
+	} else {
+		iface = eth_interfaces[0];
+	}
 
 	dev = net_if_get_device(eth_interfaces[0]);
 	context = dev->data;
@@ -1077,14 +1121,20 @@ ZTEST(net_vlan, test_vlan_tag_0)
 	memcpy(&icmpv6_echo_request[0], context->mac_addr, 6);
 
 	net_if_down(eth_interfaces[0]);
-	net_if_down(vlan_interfaces[0]);
 
-	/* Setup the interfaces */
-	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_7);
-	zassert_equal(ret, 0, "Cannot enable %d (%d)", VLAN_TAG_7, ret);
+	if (NET_VLAN_MAX_COUNT > 0) {
+		net_if_down(vlan_interfaces[0]);
+
+		/* Setup the interfaces */
+		ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_7);
+		zassert_equal(ret, 0, "Cannot enable %d (%d)", VLAN_TAG_7, ret);
+	}
 
 	net_if_up(eth_interfaces[0]);
-	net_if_up(vlan_interfaces[0]);
+
+	if (NET_VLAN_MAX_COUNT > 0) {
+		net_if_up(vlan_interfaces[0]);
+	}
 
 	ret = add_peer_neighbor(iface, &peer_addr, &icmpv6_echo_request[0]);
 	zassert_true(ret, "Cannot add neighbor");
