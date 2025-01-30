@@ -22,7 +22,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
 BASE_URL = f'https://wiki.telink-semi.cn/wiki/protocols/Zephyr/binaries/public/w91_n22/'
-N22_URL_FORMAT = BASE_URL + f'w91_n22_%s.bin'
+N22_URL_FORMAT = BASE_URL + f'w91_n22_zephyr_3.7_%s.bin'
 MATTER_MCUBOOT_URL_FORMAT = BASE_URL + f'w91_mcuboot_%s.bin'
 # Retry strategy for fetching URLs
 URL_GET_TIMEOUT = 30
