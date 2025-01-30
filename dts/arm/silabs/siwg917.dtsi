@@ -1,0 +1,115 @@
+/*
+ * Copyright (c) 2024-2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/silabs/siwx91x-clock.h>
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(191)>;
+	};
+
+	flash0: flash@8202000 {
+		compatible = "soc-nv-flash";
+		reg = <0x8202000 DT_SIZE_K(2040)>;
+		write-block-size = <1>;
+		erase-block-size = <4096>;
+	};
+
+	soc {
+		clock0: clock@46000000 {
+			compatible = "silabs,siwx91x-clock";
+			reg = <0x46000000 0x100>,
+			      <0x46000800 0x100>,
+			      <0x24041400 0x100>,
+			      <0x24048000 0x200>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		ulpuart: uart@24041800 {
+			compatible = "ns16550";
+			reg = <0x24041800 0x1000>;
+			interrupts = <12 0>;
+			reg-shift = <2>;
+			clocks = <&clock0 SIWX91X_CLK_ULP_UART>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart1: uart@44000000 {
+			compatible = "ns16550";
+			reg = <0x44000000 0x1000>;
+			interrupts = <38 0>;
+			reg-shift = <2>;
+			clocks = <&clock0 SIWX91X_CLK_UART1>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart2: uart@45020000 {
+			compatible = "ns16550";
+			reg = <0x45020000 0x1000>;
+			interrupts = <39 0>;
+			reg-shift = <2>;
+			clocks = <&clock0 SIWX91X_CLK_UART2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		ulpi2c: i2c@24040000 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24040000 0x100>;
+			interrupts = <13 0>;
+			interrupt-names = "i2c2";
+			clocks = <&clock0 SIWX91X_CLK_ULP_I2C>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@44010000 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44010000 0x100>;
+			interrupts = <42 0>;
+			interrupt-names = "i2c0";
+			clocks = <&clock0 SIWX91X_CLK_I2C0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@47040000 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x47040000 0x100>;
+			interrupts = <61 0>;
+			interrupt-names = "i2c1";
+			clocks = <&clock0 SIWX91X_CLK_I2C1>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <6>;
+};
