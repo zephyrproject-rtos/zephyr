@@ -1,0 +1,12 @@
+/ {
+	leds {
+		compatible = "gpio-leds";
+		lp_led0: lp_led0 {
+			gpios = <&lp_gpio 0 0>;
+		};
+	};
+
+	aliases {
+		led0 = &lp_led0;
+	};
+};
