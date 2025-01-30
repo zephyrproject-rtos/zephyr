@@ -389,61 +389,6 @@ BOS descriptor and handled by the stack.
 
 See :zephyr:code-sample:`legacy-webusb` sample for reference.
 
-Implementing a non-standard USB class
-*************************************
-
-The configuration of USB device is done in the stack layer.
-
-The following structures and callbacks need to be defined:
-
-* Part of USB Descriptor table
-* USB Endpoint configuration table
-* USB Device configuration structure
-* Endpoint callbacks
-* Optionally class, vendor and custom handlers
-
-For example, for the USB loopback application:
-
-.. literalinclude:: ../../../../subsys/usb/device/class/loopback.c
-   :language: c
-   :start-after: usb.rst config structure start
-   :end-before: usb.rst config structure end
-   :linenos:
-
-Endpoint configuration:
-
-.. literalinclude:: ../../../../subsys/usb/device/class/loopback.c
-   :language: c
-   :start-after: usb.rst endpoint configuration start
-   :end-before: usb.rst endpoint configuration end
-   :linenos:
-
-USB Device configuration structure:
-
-.. literalinclude:: ../../../../subsys/usb/device/class/loopback.c
-   :language: c
-   :start-after: usb.rst device config data start
-   :end-before: usb.rst device config data end
-   :linenos:
-
-
-The vendor device requests are forwarded by the USB stack core driver to the
-class driver through the registered vendor handler.
-
-For the loopback class driver, :c:func:`loopback_vendor_handler` processes
-the vendor requests:
-
-.. literalinclude:: ../../../../subsys/usb/device/class/loopback.c
-   :language: c
-   :start-after: usb.rst vendor handler start
-   :end-before:  usb.rst vendor handler end
-   :linenos:
-
-The class driver waits for the :makevar:`USB_DC_CONFIGURED` device status code
-before transmitting any data.
-
-.. _testing_USB_native_sim:
-
 Interface number and endpoint address assignment
 ************************************************
 
@@ -507,6 +452,8 @@ It is not possible to disable endpoint reassignment in Zephyr RTOS, which may
 prevent you from implementing a hardware-clone firmware. Instead, if possible,
 the host driver implementation should be fixed to use values from the interface
 and endpoint descriptor.
+
+.. _testing_USB_native_sim:
 
 Testing over USBIP in native_sim
 ********************************
