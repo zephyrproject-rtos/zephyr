@@ -2221,7 +2221,16 @@ endif()
 
 # Extension Development Kit (EDK) generation.
 if(CONFIG_LLEXT_EDK)
-  set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
+  if(CONFIG_LLEXT_EDK_FORMAT_TAR_XZ)
+    set(llext_edk_extension "tar.xz")
+  elseif(CONFIG_LLEXT_EDK_FORMAT_TAR_ZSTD)
+    set(llext_edk_extension "tar.Z")
+  elseif(CONFIG_LLEXT_EDK_FORMAT_ZIP)
+    set(llext_edk_extension "zip")
+  else()
+    message(FATAL_ERROR "Unsupported LLEXT_EDK_FORMAT choice")
+  endif()
+  set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.${llext_edk_extension})
 
   # TODO maybe generate flags for C CXX ASM
   zephyr_get_compile_definitions_for_lang(C zephyr_defs)
