@@ -62,8 +62,8 @@ static int gpio_npm2100_port_set_masked_raw(const struct device *dev, gpio_port_
 
 	for (size_t idx = 0; idx < NPM2100_GPIO_PINS; idx++) {
 		if ((mask & BIT(idx)) != 0U) {
-			i2c_reg_write_byte_dt(&config->i2c, NPM2100_GPIO_OUTPUT + idx,
-					      !!(value & BIT(idx)));
+			ret = i2c_reg_write_byte_dt(&config->i2c, NPM2100_GPIO_OUTPUT + idx,
+						    !!(value & BIT(idx)));
 			if (ret != 0U) {
 				return ret;
 			}
