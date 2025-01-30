@@ -76,7 +76,12 @@ ZTEST(secure_storage_psa_crypto, test_its_caller_isolation)
 
 	ret = psa_get_key_attributes(ID, &retrieved_key_attributes);
 	zassert_equal(ret, PSA_SUCCESS);
-	zassert_mem_equal(&retrieved_key_attributes, &key_attributes, sizeof(key_attributes));
+	zassert_equal(key_attributes.private_bits, retrieved_key_attributes.private_bits);
+	zassert_equal(key_attributes.private_id, retrieved_key_attributes.private_id);
+	zassert_equal(key_attributes.private_lifetime, retrieved_key_attributes.private_lifetime);
+	zassert_mem_equal(&key_attributes.private_policy, &retrieved_key_attributes.private_policy,
+			  sizeof(key_attributes.private_policy));
+
 	ret = psa_destroy_key(ID);
 	zassert_equal(ret, PSA_SUCCESS);
 	ret = psa_get_key_attributes(ID, &retrieved_key_attributes);

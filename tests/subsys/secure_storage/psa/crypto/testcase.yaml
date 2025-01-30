@@ -9,6 +9,8 @@ tests:
       - native_sim
       - nrf54l15dk/nrf54l15/cpuapp
   secure_storage.psa.crypto.tfm:
-    filter: CONFIG_BUILD_WITH_TFM and not CONFIG_TFM_PROFILE_TYPE_SMALL
+    filter: CONFIG_BUILD_WITH_TFM
+    extra_args:
+      - CONFIG_TFM_PROFILE_TYPE_NOT_SET=y
     integration_platforms:
       - nrf9151dk/nrf9151/ns
