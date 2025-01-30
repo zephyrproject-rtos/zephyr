@@ -141,13 +141,38 @@ config LLEXT_EDK_NAME
 	string "Name for llext EDK (Extension Development Kit)"
 	default "llext-edk"
 	help
-	  Name will be used when generating the EDK file, as <name>.tar.xz.
+	  <name> will be used when generating the EDK file; the appropriate
+	  extension will be appended depending on the chosen output format.
 	  It will also be used, normalized, as the prefix for the variable
 	  stating EDK location, used on generated Makefile.cflags. For
 	  instance, the default name, "llext-edk", becomes LLEXT_EDK_INSTALL_DIR.
 
+choice LLEXT_EDK_FORMAT
+prompt "EDK compression and output format"
+default LLEXT_EDK_FORMAT_TAR_XZ
+
+config LLEXT_EDK_FORMAT_TAR_XZ
+	bool ".tar.xz"
+	help
+	  Use GNU tar with XZ compression for the EDK file. Highest compression
+	  ratio, slower choice.
+
+config LLEXT_EDK_FORMAT_TAR_ZSTD
+	bool ".tar.Z"
+	help
+	  Use GNU tar with Zstd compression for the EDK file. Way faster than
+	  XZ, but still with a high compression ratio.
+
+config LLEXT_EDK_FORMAT_ZIP
+	bool ".zip"
+	help
+	  Use Zip format and compression for the EDK file. This is the most
+	  portable option, but it may not compress as well as XZ or Zstd.
+
+endchoice
+
 config LLEXT_EDK_USERSPACE_ONLY
-	bool "Only generate the Userpace codepath on syscall stubs for the EDK"
+	bool "Only generate the Userspace codepath on syscall stubs for the EDK"
 	help
 	  Syscall stubs can contain code that verifies if running code is at user
 	  or kernel space and route the call accordingly. If the EDK is expected
