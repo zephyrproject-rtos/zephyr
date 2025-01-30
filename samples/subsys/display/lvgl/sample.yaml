@@ -22,6 +22,10 @@ tests:
     integration_platforms:
       - native_sim/native/64
   sample.display.lvgl.rk055hdmipi4m:
+    depends_on: mipi_dsi
+    filter: (CONFIG_MIPI_DSI_MCUX or CONFIG_MIPI_DSI_MCUX_2L)
+            and dt_chosen_enabled("zephyr,display")
+            and dt_compat_enabled("goodix,gt911")
     tags: shield
     # This sample is intended to test the RT1170 and RT595, which require
     # a display shield to work with LVGL
@@ -29,17 +33,44 @@ tests:
     # The minimum RAM needed for this display is actually around 8MB,
     # but the RT595 uses external PSRAM for the display buffer
     min_ram: 32
-    harness: none
-    extra_args: SHIELD="rk055hdmipi4m"
-    platform_allow:
-      - mimxrt1170_evk/mimxrt1176/cm7
-      - mimxrt595_evk/mimxrt595s/cm33
+    harness: console
+    extra_args:
+      - SHIELD="rk055hdmipi4m"
+      - EXTRA_CONF_FILE="nxp_mipi.conf"
     integration_platforms:
       - mimxrt1170_evk/mimxrt1176/cm7
     harness_config:
       fixture: fixture_display_rk055hdmipi4m
-  sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166:
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
+
+  sample.display.lvgl.rk055hdmipi4ma0:
+    depends_on: mipi_dsi
+    filter: (CONFIG_MIPI_DSI_MCUX or CONFIG_MIPI_DSI_MCUX_2L)
+            and dt_chosen_enabled("zephyr,display")
+            and dt_compat_enabled("goodix,gt911")
     tags: shield
+    # This sample is intended to test the RT1170 and RT595, which require
+    # a display shield to work with LVGL
+    min_flash: 250
+    # The minimum RAM needed for this display is actually around 8MB,
+    # but the RT595 uses external PSRAM for the display buffer
+    min_ram: 32
+    harness: console
+    extra_args:
+      - SHIELD="rk055hdmipi4ma0"
+      - EXTRA_CONF_FILE="nxp_mipi.conf"
+    integration_platforms:
+      - mimxrt1170_evk/mimxrt1176/cm7
+    harness_config:
+      fixture: fixture_display_rk055hdmipi4ma0
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
+  sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166:
     filter: dt_compat_enabled("orisetech,otm8009a")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
@@ -59,7 +90,6 @@ tests:
       - lvgl
       - gui
   sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166_a09:
-    tags: shield
     filter: dt_compat_enabled("frida,nt35510")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166_a09
@@ -79,16 +109,16 @@ tests:
       - lvgl
       - gui
   samples.subsys.display.lvgl.rk043fn66hs_ctg:
-    platform_allow:
-      - mimxrt1064_evk
-      - mimxrt1060_evk/mimxrt1062/qspi
-      - mimxrt1060_evk@C/mimxrt1062/qspi
-      - mimxrt1050_evk/mimxrt1052/hyperflash
-      - mimxrt1040_evk
+    depends_on: lcd_if
+    filter: CONFIG_DISPLAY_MCUX_ELCDIF
+            and dt_chosen_enabled("zephyr,display")
+            and dt_compat_enabled("goodix,gt911")
     integration_platforms:
       - mimxrt1040_evk
     tags: display
-    extra_args: SHIELD=rk043fn66hs_ctg
+    extra_args:
+      - SHIELD=rk043fn66hs_ctg
+      - EXTRA_CONF_FILE="nxp_elcdif_pxp.conf"
     harness: console
     harness_config:
       fixture: fixture_display_rk043fn66hs_ctg
@@ -97,15 +127,16 @@ tests:
         - "lvgl sample"
         - "run"
   samples.subsys.display.lvgl.rk043fn02h_ct:
-    platform_allow:
-      - mimxrt1064_evk
-      - mimxrt1060_evk@C/mimxrt1062/qspi
-      - mimxrt1050_evk/mimxrt1052/hyperflash
-      - mimxrt1040_evk
+    depends_on: lcd_if
+    filter: CONFIG_DISPLAY_MCUX_ELCDIF
+            and dt_chosen_enabled("zephyr,display")
+            and dt_compat_enabled("goodix,gt911")
     integration_platforms:
       - mimxrt1040_evk
     harness: console
-    extra_args: SHIELD=rk043fn02h_ct
+    extra_args:
+      - SHIELD=rk043fn02h_ct
+      - EXTRA_CONF_FILE="nxp_elcdif_pxp.conf"
     harness_config:
       fixture: fixture_display_rk043fn02h_ct
       type: multi_line
