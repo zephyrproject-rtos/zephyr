@@ -8,28 +8,6 @@ menuconfig WIFI_NXP
 	select NET_L2_ETHERNET_MGMT if NETWORKING && NET_L2_ETHERNET
 	select SDHC if !SOC_SERIES_RW6XX
 	select SDIO_STACK if !SOC_SERIES_RW6XX
-	select WIFI_NM if WIFI_NM_WPA_SUPPLICANT
-	select THREAD_NAME
-        select THREAD_CUSTOM_DATA
-        select THREAD_LOCAL_STORAGE
-        select NET_SOCKETS
-        select GPIO
-	select WIFI_NM
-	select NET_L2_WIFI_MGMT
-        select NET_SOCKETPAIR
-        select WIFI_USE_NATIVE_NETWORKING
-        select NET_IPV4
-        select NET_IPV6
-        select NET_DHCPV4
-        select NET_MGMT_EVENT
-        select NET_L2_ETHERNET
-        select NET_L2_ETHERNET_MGMT
-        select EVENTS
-        select REQUIRES_FULL_LIBC
-	imply NET_IPV6_DAD
-        imply NET_IPV6_FRAGMENT
-        imply NET_IPV4_FRAGMENT
-        imply MBEDTLS
 	depends on DT_HAS_NXP_WIFI_ENABLED
 	help
 	  Enable NXP SoC Wi-Fi support.
