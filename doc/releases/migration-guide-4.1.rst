@@ -50,6 +50,10 @@ Boards
   the required configuration by using ``mikroe_weather_click_i2c`` or ``mikroe_weather_click_spi``
   instead of ``mikroe_weather_click``.
 
+* All nRF52-based boards will now default to soft (system) reset
+  instead of pin reset when flashing with ``west flash``. If you want to keep
+  using pin reset on the nRF52 family of ICs you can use ``west flash --pinreset``.
+
 Devicetree
 **********
 

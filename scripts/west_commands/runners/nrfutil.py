@@ -16,11 +16,11 @@ from runners.nrf_common import NrfBinaryRunner
 class NrfUtilBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfutil.'''
 
-    def __init__(self, cfg, family, softreset, dev_id, erase=False,
+    def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
                  reset=True, tool_opt=None, force=False, recover=False,
                  suit_starter=False):
 
-        super().__init__(cfg, family, softreset, dev_id, erase, reset,
+        super().__init__(cfg, family, softreset, pinreset, dev_id, erase, reset,
                          tool_opt, force, recover)
 
         self.suit_starter = suit_starter
@@ -39,7 +39,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     @classmethod
     def do_create(cls, cfg, args):
         return NrfUtilBinaryRunner(cfg, args.nrf_family, args.softreset,
-                                   args.dev_id, erase=args.erase,
+                                   args.pinreset, args.dev_id, erase=args.erase,
                                    reset=args.reset,
                                    tool_opt=args.tool_opt, force=args.force,
                                    recover=args.recover,
