@@ -362,6 +362,39 @@
 			};
 		};
 
+		fdcan1: can@5000a000 {
+			compatible = "st,stm32h7-fdcan";
+			reg = <0x5000A000 0x400>, <0x5000C000 0xd54>;
+			reg-names = "m_can", "message_ram";
+			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
+			interrupts = <180 0>, <181 0>, <186 0>;
+			interrupt-names = "int0", "int1", "calib";
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		fdcan2: can@5000a400 {
+			compatible = "st,stm32h7-fdcan";
+			reg = <0x5000A400 0x400>, <0x5000C000 0x1aa8>;
+			reg-names = "m_can", "message_ram";
+			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
+			interrupts = <182 0>, <183 0>;
+			interrupt-names = "int0", "int1";
+			bosch,mram-cfg = <0xd54 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		fdcan3: can@5000e800 {
+			compatible = "st,stm32h7-fdcan";
+			reg = <0x5000E800 0x400>, <0x5000C000 0x2800>;
+			reg-names = "m_can", "message_ram";
+			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
+			interrupts = <184 0>, <185 0>;
+			interrupt-names = "int0", "int1";
+			bosch,mram-cfg = <0x1aa8 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
 		usart1: serial@52001000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x52001000 0x400>;
