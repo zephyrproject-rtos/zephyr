@@ -17,11 +17,11 @@ VerifyError = 55
 class NrfJprogBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
-    def __init__(self, cfg, family, softreset, dev_id, erase=False,
+    def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
                  reset=True, tool_opt=None, force=False, recover=False,
                  qspi_ini=None):
 
-        super().__init__(cfg, family, softreset, dev_id, erase, reset,
+        super().__init__(cfg, family, softreset, pinreset, dev_id, erase, reset,
                          tool_opt, force, recover)
 
         self.qspi_ini = qspi_ini
@@ -37,7 +37,7 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
     @classmethod
     def do_create(cls, cfg, args):
         return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
-                                    args.dev_id, erase=args.erase,
+                                    args.pinreset, args.dev_id, erase=args.erase,
                                     reset=args.reset,
                                     tool_opt=args.tool_opt, force=args.force,
                                     recover=args.recover, qspi_ini=args.qspi_ini)
