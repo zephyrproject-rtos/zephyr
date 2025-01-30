@@ -83,6 +83,11 @@
 		ranges = <0x0 0x443C0000 DT_SIZE_K(140)>;
 	};
 
+	power_mode3_domain: power_mode3_domain {
+		compatible = "power-domain-state-change-deviceonoff";
+		onoff-power-states = <&standby>;
+		#power-domain-cells = <0>;
+	};
 };
 
 &sram {
@@ -211,6 +216,7 @@
 			#gpio-cells = <2>;
 			reg = <0>;
 			int-source = "pint";
+			power-domains = <&power_mode3_domain>;
 		};
 
 		hsgpio1: gpio@1 {
@@ -219,6 +225,7 @@
 			#gpio-cells = <2>;
 			reg = <1>;
 			int-source = "pint";
+			power-domains = <&power_mode3_domain>;
 		};
 	};
 
@@ -239,6 +246,7 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 8)>;
 		dmas = <&dma0 0>, <&dma0 1>;
 		dma-names = "rx", "tx";
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
@@ -251,6 +259,7 @@
 		dmas = <&dma0 2>, <&dma0 3>;
 		dma-names = "rx", "tx";
 		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
@@ -263,6 +272,7 @@
 		dmas = <&dma0 4>, <&dma0 5>;
 		dma-names = "rx", "tx";
 		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
@@ -275,6 +285,7 @@
 		dmas = <&dma0 6>, <&dma0 7>;
 		dma-names = "rx", "tx";
 		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
@@ -287,6 +298,7 @@
 		dmas = <&dma0 26>, <&dma0 27>;
 		dma-names = "rx", "tx";
 		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
