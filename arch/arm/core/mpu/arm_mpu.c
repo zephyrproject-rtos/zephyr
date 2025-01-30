@@ -42,7 +42,8 @@ BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
 	 (DT_REG_SIZE(node_id) >= CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE)) ||
 
 #define DT_NULL_PAGE_DETECT_NODE_EXIST                                                             \
-	(DT_FOREACH_STATUS_OKAY_NODE_VARGS(NULL_PAGE_DETECT_NODE_FINDER, zephyr_memory_attr) false)
+	(DT_FOREACH_STATUS_OKAY_VARGS(zephyr_memory_region, NULL_PAGE_DETECT_NODE_FINDER,          \
+				      zephyr_memory_attr) false)
 
 /*
  * Global status variable holding the number of HW MPU region indices, which
