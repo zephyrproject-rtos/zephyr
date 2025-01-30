@@ -347,6 +347,22 @@ typedef int16_t device_handle_t;
 		    (DEVICE_DT_GET(node_id)), (NULL))
 
 /**
+ * @brief Get a @ref device reference from a devicetree phandles by idx.
+ *
+ * Returns a pointer to a device object referenced by a phandles property, by idx.
+ *
+ * @param node_id A devicetree node identifier
+ * @param prop lowercase-and-underscores property with type `phandle`,
+ *            `phandles`, or `phandle-array`
+ * @param idx logical index into @p phs, which must be zero if @p phs
+ *            has type `phandle`
+ *
+ * @return A pointer to the device object created for that node
+ */
+#define DEVICE_DT_GET_BY_IDX(node_id, prop, idx) \
+	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))
+
+/**
  * @brief Obtain a pointer to a device object by name
  *
  * @details Return the address of a device object created by
