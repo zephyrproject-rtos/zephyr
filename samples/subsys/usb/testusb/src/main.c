@@ -1,24 +1,37 @@
 /*
- * Copyright (c) 2018 Phytec Messtechnik GmbH
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <sample_usbd.h>
+#include <zephyr/usb/usbd.h>
+
 #include <zephyr/logging/log.h>
-#include <zephyr/usb/usb_device.h>
-LOG_MODULE_REGISTER(main);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 int main(void)
 {
+	struct usbd_context *sample_usbd;
 	int ret;
 
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
-		return 0;
+	sample_usbd = sample_usbd_setup_device(NULL);
+	if (sample_usbd == NULL) {
+		LOG_ERR("Failed to setup USB device");
+		return -ENODEV;
 	}
 
-	LOG_INF("entered main.");
+	ret = usbd_init(sample_usbd);
+	if (ret) {
+		LOG_ERR("Failed to initialize device support");
+		return ret;
+	}
+
+	ret = usbd_enable(sample_usbd);
+	if (ret) {
+		LOG_ERR("Failed to enable device support");
+		return ret;
+	}
+
 	return 0;
 }
