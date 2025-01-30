@@ -126,7 +126,16 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif
 
-menu "Linkable loadable Extension Development Kit (EDK)"
+menuconfig LLEXT_EDK
+	bool "Linkable loadable Extension Development Kit (EDK)"
+	default y if LLEXT
+	help
+	  Enable the generation of an Extension Development Kit (EDK) for the
+	  Linkable Loadable Extension subsystem. The EDK is an archive that
+	  contains the necessary files and build settings to build extensions
+	  for Zephyr without the need to have the full Zephyr source tree.
+
+if LLEXT_EDK
 
 config LLEXT_EDK_NAME
 	string "Name for llext EDK (Extension Development Kit)"
@@ -145,4 +154,4 @@ config LLEXT_EDK_USERSPACE_ONLY
 	  to be used by userspace only extensions, this option will make EDK stubs
 	  not contain the routing code, and only generate the userspace one.
 
-endmenu
+endif
