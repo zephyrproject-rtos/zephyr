@@ -67,6 +67,12 @@ Deprecated APIs and options
   renamed and deprecated. Use :kconfig:option:`CONFIG_SCHED_SIMPLE` and
   :kconfig:option:`CONFIG_WAITQ_SIMPLE` instead.
 
+* The :kconfig:option:`CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE` Kconfig option has been removed.
+  The required header size should be included in the message size, configured using
+  :kconfig:option:`CONFIG_LWM2M_COAP_MAX_MSG_SIZE`. Special care should be taken to ensure that
+  used CoAP block size :kconfig:option:`CONFIG_LWM2M_COAP_BLOCK_SIZE` can fit given message size
+  with headers. Previous headroom was 48 bytes.
+
 * TLS credential type ``TLS_CREDENTIAL_SERVER_CERTIFICATE`` was renamed and
   deprecated, use :c:enumerator:`TLS_CREDENTIAL_PUBLIC_CERTIFICATE` instead.
 
