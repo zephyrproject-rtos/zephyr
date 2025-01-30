@@ -143,6 +143,7 @@ static int pbp_broadcast_source_adv_setup(void)
 
 	int err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	struct bt_data ext_ad[3];
+	struct bt_le_ext_adv *ext_adv = NULL;
 
 	if (err) {
 		LOG_ERR("Unable to generate broadcast ID: %d\n", err);
@@ -166,7 +167,7 @@ static int pbp_broadcast_source_adv_setup(void)
 	ext_ad[2].data = pba_buf.data;
 
 	err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, ext_ad,
-					     ARRAY_SIZE(ext_ad), NULL, 0, &gap_settings);
+					     ARRAY_SIZE(ext_ad), NULL, 0, &gap_settings, &ext_adv);
 	if (err) {
 		LOG_ERR("Could not set up extended advertisement: %d", err);
 		return -EINVAL;
