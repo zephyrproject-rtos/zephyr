@@ -31,6 +31,11 @@ struct ll_scan_set {
 		 * cancelling sync create, hence the volatile keyword.
 		 */
 		struct ll_sync_set *volatile sync;
+
+		/* Non-NULL when Periodic Advertising Synchronisation address
+		 * matched.
+		 */
+		void *param;
 	} periodic;
 #endif
 };
