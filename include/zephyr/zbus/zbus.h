@@ -118,6 +118,7 @@ enum __packed zbus_observer_type {
 	ZBUS_OBSERVER_LISTENER_TYPE,
 	ZBUS_OBSERVER_SUBSCRIBER_TYPE,
 	ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE,
+	ZBUS_OBSERVER_WAITER_TYPE,
 };
 
 struct zbus_observer_data {
@@ -162,6 +163,9 @@ struct zbus_observer {
 
 		/** Observer callback function. It turns the observer into a listener. */
 		void (*callback)(const struct zbus_channel *chan);
+
+		/** Observer semaphore. It turns the observer into a waiter. */
+		struct k_sem *sem;
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER) || defined(__DOXYGEN__)
 		/** Observer message FIFO. It turns the observer into a message subscriber. It only
@@ -509,6 +513,43 @@ struct zbus_channel_observation {
  * @param[in] _cb The callback function.
  */
 #define ZBUS_LISTENER_DEFINE(_name, _cb) ZBUS_LISTENER_DEFINE_WITH_ENABLE(_name, _cb, true)
+
+/* clang-format off */
+
+/**
+ * @brief Define and initialize a waiter.
+ *
+ * This macro defines an observer of waiter type.
+ *
+ * @param[in] _name The waiter's name.
+ * @param[in] _sem The semaphore given on channel publish.
+ * @param[in] _enable The waiter initial enable state.
+ */
+#define ZBUS_WAITER_DEFINE_WITH_ENABLE(_name, _sem, _enable)                                       \
+	static struct zbus_observer_data _CONCAT(_zbus_obs_data_, _name) = {                       \
+		.enabled = _enable,                                                                \
+		IF_ENABLED(CONFIG_ZBUS_PRIORITY_BOOST, (                                           \
+			.priority = ZBUS_MIN_THREAD_PRIORITY,                                      \
+		))                                                                                 \
+	};                                                                                         \
+	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {                                    \
+		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */                                    \
+		.type = ZBUS_OBSERVER_WAITER_TYPE,                                                 \
+		.data = &_CONCAT(_zbus_obs_data_, _name),                                          \
+		.sem = (_sem)                                                                      \
+	}
+/* clang-format on */
+
+/**
+ * @brief Define and initialize a waiter.
+ *
+ * This macro defines an observer of waiter type. The waiter is defined in the enabled state
+ * with this macro.
+ *
+ * @param[in] _name The waiter's name.
+ * @param[in] _sem The semaphore given on channel publish.
+ */
+#define ZBUS_WAITER_DEFINE(_name, _sem) ZBUS_WAITER_DEFINE_WITH_ENABLE(_name, _sem, true)
 
 /* clang-format off */
 

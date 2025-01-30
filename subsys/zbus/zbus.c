@@ -134,6 +134,10 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 	case ZBUS_OBSERVER_SUBSCRIBER_TYPE: {
 		return k_msgq_put(obs->queue, &chan, sys_timepoint_timeout(end_time));
 	}
+	case ZBUS_OBSERVER_WAITER_TYPE: {
+		k_sem_give(obs->sem);
+		break;
+	}
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
 	case ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE: {
 		struct net_buf *cloned_buf = net_buf_clone(buf, sys_timepoint_timeout(end_time));
