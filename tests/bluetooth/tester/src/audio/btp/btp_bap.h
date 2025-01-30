@@ -176,6 +176,27 @@ struct btp_bap_send_past_cmd {
 	uint8_t src_id;
 } __packed;
 
+#define BTP_BAP_BROADCAST_SOURCE_SETUP_V2	0x19
+struct btp_bap_broadcast_source_setup_v2_cmd {
+	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
+	uint8_t streams_per_subgroup;
+	uint8_t subgroups;
+	uint8_t sdu_interval[3];
+	uint8_t framing;
+	uint16_t max_sdu;
+	uint8_t retransmission_num;
+	uint16_t max_transport_latency;
+	uint8_t presentation_delay[3];
+	uint8_t coding_format;
+	uint16_t vid;
+	uint16_t cid;
+	uint8_t cc_ltvs_len;
+	uint8_t cc_ltvs[];
+} __packed;
+struct btp_bap_broadcast_source_setup_v2_rp {
+	uint32_t gap_settings;
+} __packed;
+
 /* BAP events */
 #define BTP_BAP_EV_DISCOVERY_COMPLETED		0x80
 struct btp_bap_discovery_completed_ev {
