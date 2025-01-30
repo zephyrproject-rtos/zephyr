@@ -84,8 +84,4 @@ config IDLE_STACK_SIZE
 
 endif # PM
 
-if WIFI
-orsource "Kconfig.defconfig.wifi"
-endif # WIFI
-
 endif # SOC_SERIES_RW6XX
