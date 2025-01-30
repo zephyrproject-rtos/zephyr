@@ -517,6 +517,10 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	h->max_allocated_bytes = 0;
 #endif
 
+#if CONFIG_SYS_HEAP_ARRAY_SIZE
+	sys_heap_array_save(heap);
+#endif
+
 	int nb_buckets = bucket_idx(h, heap_sz) + 1;
 	chunksz_t chunk0_size = chunksz(sizeof(struct z_heap) +
 				     nb_buckets * sizeof(struct z_heap_bucket));

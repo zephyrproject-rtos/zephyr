@@ -214,10 +214,10 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
     report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
-    coverage_completed = True
-    if options.coverage:
+    report.coverage_status = True
+    if options.coverage and not options.disable_coverage_aggregation:
         if not options.build_only:
-            coverage_completed = run_coverage(tplan, options)
+            report.coverage_status, report.coverage = run_coverage(options, tplan)
         else:
             logger.info("Skipping coverage report generation due to --build-only.")
 
@@ -242,7 +242,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
         runner.results.failed
         or runner.results.error
         or (tplan.warnings and options.warnings_as_errors)
-        or (options.coverage and not coverage_completed)
+        or (options.coverage and not report.coverage_status)
     ):
         if env.options.quit_on_failure:
             logger.info("twister aborted because of a failure/error")

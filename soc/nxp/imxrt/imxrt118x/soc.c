@@ -17,6 +17,9 @@
 #include <fsl_dcdc.h>
 #include <fsl_ele_base_api.h>
 #include <fsl_trdc.h>
+#if defined(CONFIG_WDT_MCUX_RTWDOG)
+#include <fsl_soc_src.h>
+#endif
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <cmsis_core.h>
 
@@ -51,6 +54,14 @@ static const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
 	#error "Unknown SOC, no pll configuration defined"
 #endif
 };
+#endif
+
+#if defined(CONFIG_WDT_MCUX_RTWDOG)
+#define RTWDOG_IF_SET_SRC(n, i)                                                                    \
+	if (IS_ENABLED(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rtwdog##n), nxp_rtwdog, okay))) {    \
+		SRC_SetGlobalSystemResetMode(SRC_GENERAL_REG, kSRC_Wdog##i##Reset,                 \
+					     kSRC_ResetSystem);                                    \
+	}
 #endif
 
 const clock_sys_pll1_config_t sysPll1Config_BOARD_BootClockRUN = {
@@ -483,6 +494,13 @@ static ALWAYS_INLINE void clock_init(void)
 
 #endif /* CONFIG_DT_HAS_NXP_MCUX_I3C_ENABLED */
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_UDC_NXP_EHCI
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
+	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
+#endif
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
@@ -625,6 +643,19 @@ void soc_early_init_hook(void)
 	clock_init();
 	/* Get trdc and enable all access modes for MBC and MRC of TRDCA and TRDCW */
 	trdc_enable_all_access();
+#if defined(CONFIG_WDT_MCUX_RTWDOG)
+	/* Unmask the watchdog reset channel */
+	RTWDOG_IF_SET_SRC(0, 1)
+	RTWDOG_IF_SET_SRC(1, 2)
+	RTWDOG_IF_SET_SRC(2, 3)
+	RTWDOG_IF_SET_SRC(3, 4)
+	RTWDOG_IF_SET_SRC(4, 5)
+
+	/* Clear the reset status otherwise TCM memory will reload in next reset */
+	uint32_t mask = SRC_GetResetStatusFlags(SRC_GENERAL_REG);
+
+	SRC_ClearGlobalSystemResetStatus(SRC_GENERAL_REG, mask);
+#endif
 
 	/* Enable data cache */
 	sys_cache_data_enable();

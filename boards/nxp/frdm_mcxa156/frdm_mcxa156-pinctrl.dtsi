@@ -138,4 +138,15 @@
 			drive-open-drain;
 		};
 	};
+	pinmux_lpspi0: pinmux_lpspi0 {
+		group0 {
+			pinmux = <LPSPI0_SDO_P1_0>,
+				 <LPSPI0_SCK_P1_1>,
+				 <LPSPI0_SDI_P1_2>,
+				 <LPSPI0_PCS0_P1_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
 };

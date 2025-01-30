@@ -18,7 +18,7 @@ target_sources(app PRIVATE
 	       src/mesh/transition.c
 	       )
 
-zephyr_include_directories(
+target_include_directories(app PRIVATE
 	src/
 	src/mesh
 )

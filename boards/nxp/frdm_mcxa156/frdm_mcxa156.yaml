@@ -23,6 +23,7 @@ supported:
   - dma
   - i2c
   - pwm
+  - spi
   - usb_device
   - usbd
   - watchdog

@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/usb/audio.h>
+
+/ {
+	uac2_broadcaster: usb_audio2 {
+		compatible = "zephyr,uac2";
+		status = "okay";
+		full-speed;
+		audio-function = <AUDIO_FUNCTION_OTHER>;
+
+		/* Clock supporting 48KHz
+		 *
+		 * For simplicity we claim support for 48KHz only and then downsample if needed
+		 */
+		uac_aclk: aclk {
+			compatible = "zephyr,uac2-clock-source";
+			clock-type = "internal-programmable";
+			frequency-control = "read-only";
+			sampling-frequencies = <48000>;
+			/* Falsely claim synchronous audio because we
+			 * currently don't calculate feedback value
+			 */
+			sof-synchronized;
+		};
+
+		/* USB Audio terminal from USB host to USB device */
+		out_terminal: out_terminal {
+			compatible = "zephyr,uac2-input-terminal";
+			clock-source = <&uac_aclk>;
+			terminal-type = <USB_TERMINAL_STREAMING>;
+			front-left;
+			front-right;
+		};
+
+		/* The broadcaster_output terminal defines what we are sending over Bluetooth */
+		broadcaster_output: headphones {
+			compatible = "zephyr,uac2-output-terminal";
+			data-source = <&out_terminal>;
+			clock-source = <&uac_aclk>;
+			terminal-type = <OUTPUT_TERMINAL_UNDEFINED>;
+		};
+
+		as_iso_out: out_interface {
+			compatible = "zephyr,uac2-audio-streaming";
+			linked-terminal = <&out_terminal>;
+			subslot-size = <2>;
+			bit-resolution = <16>;
+		};
+	};
+};

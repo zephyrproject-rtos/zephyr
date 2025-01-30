@@ -211,7 +211,7 @@ fail:
 	return ret;
 }
 
-static const struct dac_driver_api max22017_driver_api = {
+static DEVICE_API(dac, max22017_driver_api) = {
 	.channel_setup = max22017_channel_setup,
 	.write_value = max22017_write_value,
 };

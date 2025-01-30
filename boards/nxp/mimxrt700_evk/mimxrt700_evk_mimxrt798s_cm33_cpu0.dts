@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt7xx_cm33_cpu0.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "mimxrt700_evk-pinctrl.dtsi"
 
@@ -56,6 +57,10 @@
 	};
 };
 
+&edma0 {
+	status = "okay";
+};
+
 &systick {
 	status = "okay";
 };
@@ -69,6 +74,25 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_lpuart>;
 	pinctrl-names = "default";
+};
+
+&lpspi14 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI14 RX and TX */
+	dmas = <&edma0 0 73>, <&edma0 1 74>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi14>;
+	pinctrl-names = "default";
+};
+
+&flexcomm8{
+	status = "okay";
+};
+
+&flexcomm8_lpi2c8 {
+	pinctrl-0 = <&pinmux_flexcomm8_i2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
 &gpio0 {
@@ -87,6 +111,10 @@
 	status = "okay";
 };
 
+&mrt0_channel0 {
+	status = "okay";
+};
+
 &xspi0 {
 	status = "okay";
 
@@ -102,3 +130,5 @@
 		write-block-size = <2>;
 	};
 };
+
+p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};

@@ -34,7 +34,7 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 
 	/*
 	 * In riscv (arch/riscv/core/isr.S) ra, ip($mepc) and fp($s0) are saved
-	 * at the beginning of _isr_wrapper in order, specified by z_arch_esf_t.
+	 * at the beginning of _isr_wrapper in order, specified by struct arch_esf.
 	 * Then, before calling interruption handler, core switch $sp to
 	 * _current_cpu->irq_stack and save $sp with offset -16 on irq stack
 	 *

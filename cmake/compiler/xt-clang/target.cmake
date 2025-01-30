@@ -7,7 +7,6 @@ include(${ZEPHYR_BASE}/cmake/compiler/xcc/target.cmake)
 set(LLEXT_REMOVE_FLAGS
   -ffunction-sections
   -fdata-sections
-  -g.*
   -Os
   -mcpu=.*
 )

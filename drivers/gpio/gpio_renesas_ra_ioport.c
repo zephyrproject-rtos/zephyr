@@ -268,10 +268,16 @@ static DEVICE_API(gpio, gpio_ra_drv_api_funcs) = {
 		.num = ARRAY_SIZE(CONCAT(n, ___pins##i)),                                          \
 	},
 
+#define DECL_PINS_PARAMETER(node)                                                                  \
+	COND_CODE_1(DT_NODE_HAS_PROP(node, port_irq_names),                                        \
+	(DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RA_DECL_PINS)), ())
+#define IRQ_INFO_PARAMETER(node)                                                                   \
+	COND_CODE_1(DT_NODE_HAS_PROP(node, port_irq_names),                                        \
+	(DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RA_IRQ_INFO)), ())
+
 #define GPIO_DEVICE_INIT(node, port_number, suffix, addr)                                          \
-	DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RA_DECL_PINS);                             \
-	struct gpio_ra_irq_info gpio_ra_irq_info_##suffix[] = {                                    \
-		DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RA_IRQ_INFO)};                     \
+	DECL_PINS_PARAMETER(node);                                                                 \
+	struct gpio_ra_irq_info gpio_ra_irq_info_##suffix[] = {IRQ_INFO_PARAMETER(node)};          \
 	static const struct gpio_ra_config gpio_ra_config_##suffix = {                             \
 		.common =                                                                          \
 			{                                                                          \

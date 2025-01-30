@@ -756,10 +756,12 @@ ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
 	msg.msg_name = &addr;
 	msg.msg_namelen = addrlen;
 
-	test_recvmsg(new_sock, &msg, ZSOCK_MSG_PEEK, strlen(TEST_STR_SMALL),
-		     __LINE__);
-	zassert_mem_equal(buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
-			  "wrong data (%s)", buf);
+	len = strlen(TEST_STR_SMALL);
+	test_recvmsg(new_sock, &msg, ZSOCK_MSG_PEEK, len, __LINE__);
+	zassert_equal(msg.msg_iovlen, 1, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg.msg_iov[0].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
+	zassert_mem_equal(buf, TEST_STR_SMALL, len, "wrong data (%s)", buf);
 
 	/* Then in two chunks */
 	io_vector[0].iov_base = buf2;
@@ -773,12 +775,18 @@ ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
 	msg.msg_name = &addr;
 	msg.msg_namelen = addrlen;
 
-	test_recvmsg(new_sock, &msg, 0, strlen(TEST_STR_SMALL), __LINE__);
+	len = strlen(TEST_STR_SMALL);
+	test_recvmsg(new_sock, &msg, 0, len, __LINE__);
+	zassert_equal(msg.msg_iovlen, 2, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg.msg_iov[0].iov_len, sizeof(buf2),
+		      "recvmsg should not modify buffer length");
+	zassert_equal(msg.msg_iov[1].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
 	zassert_mem_equal(msg.msg_iov[0].iov_base, TEST_STR_SMALL, msg.msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[0]");
+	len -= msg.msg_iov[0].iov_len;
 	zassert_mem_equal(msg.msg_iov[1].iov_base, &TEST_STR_SMALL[msg.msg_iov[0].iov_len],
-			  msg.msg_iov[1].iov_len,
-			  "wrong data in %s", "iov[1]");
+			  len, "wrong data in %s", "iov[1]");
 
 	/* Send larger test buffer */
 	test_sendto(c_sock, TEST_STR_LONG, strlen(TEST_STR_LONG), 0,
@@ -803,6 +811,13 @@ ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
 	}
 
 	test_recvmsg(new_sock, &msg, 0, len, __LINE__);
+	zassert_equal(msg.msg_iovlen, 3, "recvmsg should not modify msg_iovlen");
+	zassert_equal(msg.msg_iov[0].iov_len, sizeof(buf),
+		      "recvmsg should not modify buffer length");
+	zassert_equal(msg.msg_iov[1].iov_len, sizeof(buf2),
+		      "recvmsg should not modify buffer length");
+	zassert_equal(msg.msg_iov[2].iov_len, sizeof(buf3),
+		      "recvmsg should not modify buffer length");
 	zassert_mem_equal(msg.msg_iov[0].iov_base, TEST_STR_LONG, msg.msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[0]");
 	zassert_mem_equal(msg.msg_iov[1].iov_base, &TEST_STR_LONG[msg.msg_iov[0].iov_len],

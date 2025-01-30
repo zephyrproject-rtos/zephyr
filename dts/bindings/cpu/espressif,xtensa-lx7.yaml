@@ -31,4 +31,3 @@ properties:
     description: Value of the external XTAL connected to ESP32.
     enum:
       - 40000000
-      - 32000000

@@ -1,7 +1,4 @@
-.. _decawave_dwm3001cdk:
-
-Decawave DWM3001CDK
-###################
+.. zephyr:board:: decawave_dwm3001cdk
 
 Overview
 ********

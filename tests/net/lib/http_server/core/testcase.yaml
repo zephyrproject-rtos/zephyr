@@ -1,6 +1,7 @@
 common:
   depends_on: netif
   min_ram: 80
+  min_flash: 200
   tags:
     - http
     - net

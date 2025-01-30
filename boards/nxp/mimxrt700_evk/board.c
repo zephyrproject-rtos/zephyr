@@ -1,5 +1,5 @@
 /*
- * Copyright 2024  NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -13,6 +13,18 @@
 #define SYSOSC_SETTLING_US 220U
 /*!< xtal frequency in Hz */
 #define XTAL_SYS_CLK_HZ    24000000U
+
+#if CONFIG_SOC_MIMXRT798S_CM33_CPU0
+#define SYSCON_BASE DT_REG_ADDR(DT_NODELABEL(syscon0))
+#define EN_NUM 4
+#elif CONFIG_SOC_MIMXRT798S_CM33_CPU1
+#define SYSCON_BASE DT_REG_ADDR(DT_NODELABEL(syscon1))
+#define EN_NUM 2
+#endif
+
+#define EDMA_EN_OFFSET 0x420
+#define EDMA_EN_REG(instance, idx) ((uint32_t *)((uint32_t)(SYSCON_BASE) + \
+	(EDMA_EN_OFFSET) +  0x10U * (instance) + 4U * (idx)))
 
 #define SET_UP_FLEXCOMM_CLOCK(x)                                                                   \
 	do {                                                                                       \
@@ -36,6 +48,9 @@ const clock_audio_pll_config_t g_audioPllConfig_clock_init = {
 	.enableVcoOut = true};
 
 static void BOARD_InitAHBSC(void);
+#if CONFIG_DT_HAS_NXP_MCUX_EDMA_ENABLED
+static void edma_enable_all_request(uint8_t instance);
+#endif
 
 void board_early_init_hook(void)
 {
@@ -151,6 +166,18 @@ void board_early_init_hook(void)
 
 	BOARD_InitAHBSC();
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(edma0), okay)
+	CLOCK_EnableClock(kCLOCK_Dma0);
+	RESET_ClearPeripheralReset(kDMA0_RST_SHIFT_RSTn);
+	edma_enable_all_request(0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(edma1), okay)
+	CLOCK_EnableClock(kCLOCK_Dma1);
+	RESET_ClearPeripheralReset(kDMA1_RST_SHIFT_RSTn);
+	edma_enable_all_request(1);
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(iocon), okay)
 	RESET_ClearPeripheralReset(kIOPCTL0_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_Iopctl0);
@@ -228,6 +255,8 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi14), okay)
+	CLOCK_AttachClk(kFRO1_DIV1_to_LPSPI14);
+	CLOCK_SetClkDiv(kCLOCK_DivLpspi14Clk, 3U);
 	CLOCK_EnableClock(kCLOCK_LPSpi14);
 	RESET_ClearPeripheralReset(kLPSPI14_RST_SHIFT_RSTn);
 #endif
@@ -387,3 +416,15 @@ static void BOARD_InitAHBSC(void)
 	GlikeyClearConfig(GLIKEY1);
 	GlikeyClearConfig(GLIKEY2);
 }
+
+#if CONFIG_DT_HAS_NXP_MCUX_EDMA_ENABLED
+static void edma_enable_all_request(uint8_t instance)
+{
+	uint32_t *reg;
+
+	for (uint8_t idx = 0; idx < EN_NUM; idx++) {
+		reg = EDMA_EN_REG(instance, idx);
+		*reg |= 0xFFFFFFFF;
+	}
+}
+#endif

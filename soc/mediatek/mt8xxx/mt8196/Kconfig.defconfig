@@ -3,9 +3,6 @@
 
 if SOC_MT8196
 
-config LEGACY_MULTI_LEVEL_TABLE_GENERATION
-	default n
-
 config NUM_2ND_LEVEL_AGGREGATORS
 	default 2
 

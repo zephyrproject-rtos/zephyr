@@ -19,7 +19,6 @@
 
 #include <zephyr/bluetooth/hci.h>
 
-#include "hci_ecc.h"
 #include "monitor.h"
 #include "hci_raw_internal.h"
 
@@ -311,10 +310,6 @@ int bt_send(struct net_buf *buf)
 		if (status) {
 			return status;
 		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SEND_ECC_EMULATION)) {
-		return bt_hci_ecc_send(buf);
 	}
 
 	return bt_hci_send(bt_dev.hci, buf);

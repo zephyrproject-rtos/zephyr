@@ -1,7 +1,4 @@
-.. _promicro_nrf52840_nrf52840:
-
-Pro Micro nRF52840
-##################
+.. zephyr:board:: promicro_nrf52840
 
 More of a board type than a unique board, It is based on Nice!Nano.
 Also referred to as Pro Micro, Promicro, SuperMini nRF52840 boards.
@@ -26,12 +23,6 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/others_promicro_nrf52840.webp
-     :align: center
-     :alt: Tenstar Pro Micro nRF52840
-
-     Tenstar Pro Micro nRF5284
 
 More information about the original board can be found at the
 `Nice!Nano website`_.

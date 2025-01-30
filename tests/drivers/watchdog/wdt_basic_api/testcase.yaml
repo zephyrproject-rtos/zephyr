@@ -6,7 +6,8 @@ common:
 tests:
   drivers.watchdog:
     filter: >
-      not (CONFIG_WDT_SAM or dt_compat_enabled("st,stm32-window-watchdog")
+      not (CONFIG_WDT_SAM or CONFIG_WDT_SAM4L
+       or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
        CONFIG_SOC_SERIES_IMXRT6XX or CONFIG_SOC_SERIES_IMXRT5XX or
        CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103)

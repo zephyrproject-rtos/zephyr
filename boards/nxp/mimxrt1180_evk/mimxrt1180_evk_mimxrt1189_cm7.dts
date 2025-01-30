@@ -63,3 +63,15 @@
 &edma4 {
 	status = "okay";
 };
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+	phy-handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <7>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
+};

@@ -10,4 +10,4 @@ config SOC
 
 config SOC_TOOLCHAIN_NAME
 	string
-	default "amd_acp_6_0_adsp"
+	default "amd_acp_6_0_adsp" if SOC_ACP_6_0

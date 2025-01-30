@@ -62,12 +62,14 @@ static int lan865x_mdio_c45_write(const struct device *dev, uint8_t prtad, uint8
 	return eth_lan865x_mdio_c45_write(cfg->dev, prtad, devad, regad, data);
 }
 
-static const struct mdio_driver_api mdio_lan865x_api = {.read = lan865x_mdio_c22_read,
-							.write = lan865x_mdio_c22_write,
-							.read_c45 = lan865x_mdio_c45_read,
-							.write_c45 = lan865x_mdio_c45_write,
-							.bus_enable = lan865x_mdio_bus_enable,
-							.bus_disable = lan865x_mdio_bus_disable};
+static DEVICE_API(mdio, mdio_lan865x_api) = {
+	.read = lan865x_mdio_c22_read,
+	.write = lan865x_mdio_c22_write,
+	.read_c45 = lan865x_mdio_c45_read,
+	.write_c45 = lan865x_mdio_c45_write,
+	.bus_enable = lan865x_mdio_bus_enable,
+	.bus_disable = lan865x_mdio_bus_disable,
+};
 
 #define MICROCHIP_LAN865X_MDIO_INIT(n)                                                             \
 	static const struct mdio_lan865x_config mdio_lan865x_config_##n = {                        \

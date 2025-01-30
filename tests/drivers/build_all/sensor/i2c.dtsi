@@ -480,6 +480,7 @@ test_i2c_tmp116: tmp116@47 {
 	compatible = "ti,tmp116";
 	reg = <0x47>;
 	odr = <TMP116_DT_ODR_125_MS>;
+	oversampling = <TMP116_DT_OVERSAMPLING_32>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {
@@ -648,6 +649,13 @@ test_i2c_bh1750: bh1750@5e {
 test_i2c_akm09918c: akm09918c@5f {
 	compatible = "asahi-kasei,akm09918c";
 	reg = <0x5f>;
+};
+
+test_i2c_wsen_tids_2521020222501: wsen_tids_2521020222501@60 {
+	compatible = "we,wsen-tids-2521020222501";
+	reg = <0x60>;
+	interrupt-gpios = <&test_gpio 0 0>;
+	odr = <25>;
 };
 
 test_i2c_vl53l1x: vl53l1x@61 {

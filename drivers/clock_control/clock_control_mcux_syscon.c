@@ -533,6 +533,15 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetXspiClkFreq(2);
 		break;
 #endif /* defined(CONFIG_DT_HAS_NXP_XSPI_ENABLED) */
+
+#if (defined(CONFIG_SPI_MCUX_LPSPI) && CONFIG_SOC_SERIES_MCXA)
+	case MCUX_LPSPI0_CLK:
+		*rate = CLOCK_GetLpspiClkFreq(0);
+		break;
+	case MCUX_LPSPI1_CLK:
+		*rate = CLOCK_GetLpspiClkFreq(1);
+		break;
+#endif /* defined(CONFIG_SPI_MCUX_LPSPI) */
 	}
 
 	return 0;

@@ -56,40 +56,55 @@ static void io_close(const struct bt_mesh_blob_io *io,
 	flash_area_close(flash->area);
 }
 
+static inline int erase_device_block(const struct flash_area *fa, off_t start, size_t size)
+{
+	/* If there are no devices requiring erase, then there is nothing to do */
+	if (IS_ENABLED(CONFIG_BT_MESH_BLOB_IO_FLASH_WITH_ERASE)) {
+		const struct device *fdev = flash_area_get_device(fa);
+
+		if (!fdev) {
+			return -ENODEV;
+		}
+
+		/* We have a mix of devices in system */
+		if (IS_ENABLED(CONFIG_BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE)) {
+			const struct flash_parameters *fparam = flash_get_parameters(fdev);
+
+			/* If device has no erase requirement then do nothing */
+			if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {
+				return 0;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)) {
+			struct flash_pages_info page;
+			int err;
+
+			err = flash_get_page_info_by_offs(fdev, start, &page);
+			if (err) {
+				return err;
+			}
+
+			size = page.size * DIV_ROUND_UP(size, page.size);
+			start = page.start_offset;
+		}
+		return flash_area_erase(fa, start, size);
+	}
+
+	return 0;
+}
+
 static int block_start(const struct bt_mesh_blob_io *io,
 		       const struct bt_mesh_blob_xfer *xfer,
 		       const struct bt_mesh_blob_block *block)
 {
 	struct bt_mesh_blob_io_flash *flash = FLASH_IO(io);
-	size_t erase_size;
 
 	if (flash->mode == BT_MESH_BLOB_READ) {
 		return 0;
 	}
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	struct flash_pages_info page;
-	const struct device *flash_dev;
-	int err;
-
-	flash_dev = flash_area_get_device(flash->area);
-	if (!flash_dev) {
-		return -ENODEV;
-	}
-
-	err = flash_get_page_info_by_offs(flash_dev,
-					  flash->offset + block->offset, &page);
-	if (err) {
-		return err;
-	}
-
-	erase_size = page.size * DIV_ROUND_UP(block->size, page.size);
-#else
-	erase_size = block->size;
-#endif
-
-	return flash_area_flatten(flash->area, flash->offset + block->offset,
-				  erase_size);
+	return erase_device_block(flash->area, flash->offset + block->offset, block->size);
 }
 
 static int rd_chunk(const struct bt_mesh_blob_io *io,

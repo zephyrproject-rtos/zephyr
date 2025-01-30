@@ -220,7 +220,7 @@
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			/* also enabling clock for can1 (master instance) */
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
 			master-can-reg = <0x40006400>;
 			status = "disabled";
 		};

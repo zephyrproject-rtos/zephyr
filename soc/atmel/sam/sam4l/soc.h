@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -65,6 +65,9 @@
 
 /** Master Clock (MCK) Frequency */
 #define SOC_ATMEL_SAM_MCK_FREQ_HZ       SOC_ATMEL_SAM_HCLK_FREQ_HZ
+
+#define SOC_ATMEL_SAM_RCSYS_NOMINAL_HZ	115000
+#define SOC_ATMEL_SAM_RC32K_NOMINAL_HZ	32768
 
 /** Oscillator identifiers
  *    External Oscillator 0

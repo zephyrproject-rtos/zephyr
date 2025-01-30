@@ -34,7 +34,4 @@ config GDBSTUB_BUF_SZ
 
 endif # GDBSTUB config
 
-config BT_CTLR
-	default y if BT
-
 endif # SOC_SERIES_ESP32 config

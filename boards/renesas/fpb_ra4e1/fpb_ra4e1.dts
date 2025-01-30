@@ -1,0 +1,150 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra4/r7fa4e10d2cfm.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include "fpb_ra4e1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas FPB-RA4E1";
+	compatible = "renesas,ra4e1", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash1;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &trng;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport4 8 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioport4 7 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: s1 {
+			gpios = <&ioport2 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &button0;
+	};
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&hoco>;
+	div = <2>;
+	mul = <20 0>;
+	status = "okay";
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iic0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&port_irq1 {
+	interrupts = <41 12>;
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <63 1>, <64 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(8)>;
+		};
+	};
+};

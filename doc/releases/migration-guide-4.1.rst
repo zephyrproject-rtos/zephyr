@@ -1,5 +1,10 @@
 :orphan:
 
+..
+  See
+  https://docs.zephyrproject.org/latest/releases/index.html#migration-guides
+  for details of what is supposed to go into this document.
+
 .. _migration_4.1:
 
 Migration guide to Zephyr v4.1.0 (Working Draft)
@@ -17,6 +22,9 @@ the :ref:`release notes<zephyr_4.1>`.
 
 Build System
 ************
+
+* Support for the build type feature which was deprecated in Zephyr 3.6 has been removed,
+  :ref:`application-file-suffixes`/:ref:`sysbuild_file_suffixes` has replaced this.
 
 BOSSA Runner
 ============
@@ -175,6 +183,25 @@ Entropy
   processor needs to get random data before BT is fully enabled.
   (:github:`79931`)
 
+Ethernet
+========
+
+* Silabs gecko ethernet changes:
+
+  * Renamed the devicetree property ``location-phy_mdc`` to ``location-phy-mdc``.
+  * Renamed the devicetree property ``location-phy_mdio`` to ``location-phy-mdio``.
+  * Renamed the devicetree property ``location-rmii_refclk`` to ``location-phy-refclk``.
+  * Renamed the devicetree property ``location-rmii_crs_dv`` to ``location-phy-crs-dv``.
+  * Renamed the devicetree property ``location-rmii_txd0`` to ``location-phy-txd0``.
+  * Renamed the devicetree property ``location-rmii_txd1`` to ``location-phy-txd1``.
+  * Renamed the devicetree property ``location-rmii_tx_en`` to ``location-phy-tx-en``.
+  * Renamed the devicetree property ``location-rmii_rxd0`` to ``location-phy-rxd0``.
+  * Renamed the devicetree property ``location-rmii_rxd1`` to ``location-phy-rxd1``.
+  * Renamed the devicetree property ``location-rmii_rx_er`` to ``location-phy-rx-er``.
+  * Renamed the devicetree property ``location-phy_pwr_enable`` to ``location-phy-pwr-enable``.
+  * Renamed the devicetree property ``location-phy_reset`` to ``location-phy-reset``.
+  * Renamed the devicetree property ``location-phy_interrupt`` to ``location-phy-interrupt``.
+
 GNSS
 ====
 
@@ -187,6 +214,11 @@ GPIO
 * Renamed the device tree property ``bit_per_gpio`` to ``bit-per-gpio``.
 * Renamed the device tree property ``off_val`` to ``off-val``.
 * Renamed the device tree property ``on_val`` to ``on-val``.
+
+HWSPINLOCK
+==========
+
+* Renamed the DeviceTree property ``num_locks`` to ``num-locks``.
 
 I2C
 ===
@@ -216,6 +248,22 @@ Interrupt Controller
 
 LED Strip
 =========
+
+Misc
+====
+
+* All the functions in the ft8xx driver take an additional ``const struct *device`` parameter
+  to allow for multiple instances of the driver.
+
+  The exception to this is the functions and macros defined in the
+  :zephyr_file:`include/zephyr/drivers/misc/ft8xx/ft8xx_reference_api.h` file, which translate the
+  API to a single-instance model, compatible with the API defined in the FT8xx programming guide.
+  These functions have not been modified.
+
+* The :c:func:`ft8xx_register_int` function now takes an additional ``void *user_data`` parameter
+  to allow user-defined data to be passed to the interrupt handler.
+  Additionally, the signature of the ft8xx interrupt handler has changed to include the
+  ``void *user_data`` parameter.
 
 MMU/MPU
 =======
@@ -279,6 +327,21 @@ Sensors
           compatible = "we,wsen-pdus-25131308XXXXX";
           reg = < 0x78 >;
           sensor-type = < 4 >;
+        };
+      };
+
+  * The :dtcompatible:`we,wsen-tids` driver has been renamed to
+    :dtcompatible:`we,wsen-tids-2521020222501`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        tids:tids-2521020222501@3F {
+          compatible = "we,wsen-tids-2521020222501";
+          reg = < 0x3F >;
+          odr = < 25 >;
+          interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
         };
       };
 
@@ -353,6 +416,11 @@ Video
   ``VIDEO_CID_GAIN``.
   The new ``video-controls.h`` source now contains description of each control ID to help
   disambiguating.
+
+* The ``video_pix_fmt_bpp()`` function was returning a byte count, this got replaced by
+  ``video_bits_per_pixel()`` which return a bit count. For instance, invocations such as
+  ``pitch = width * video_pix_fmt_bpp(pixfmt)`` needs to be replaced by an equivalent
+  ``pitch = width * video_bits_per_pixel(pixfmt) / BITS_PER_BYTE``.
 
 Watchdog
 ========
@@ -437,6 +505,9 @@ Bluetooth Host
   makes a device vulnerable for downgrade attacks. If an application still needs to use LE legacy
   pairing, it should disable :kconfig:option:`CONFIG_BT_SMP_SC_PAIR_ONLY` manually.
 
+* The prompt for :kconfig:option:`CONFIG_BT_ECC` has been removed, since it only offers an internal
+  API, meaning internal users should explicitly select it in their respective Kconfig options.
+
 Bluetooth Crypto
 ================
 
@@ -464,6 +535,11 @@ Networking
   changed, a :c:struct:`http_request_ctx` parameter has been added. The application may use this to
   access the request headers of the HTTP upgrade request, which may be useful in deciding whether
   to accept or reject a websocket connection.
+
+* An additional ``_res_fallback`` parameter has been added to the :c:macro:`HTTP_SERVICE_DEFINE`
+  and :c:macro:`HTTPS_SERVICE_DEFINE` macros, allowing a fallback resource to be served if no other
+  resources match the requested path. To retain the existing behaviour, ``NULL`` can be passed as the
+  additional parameter.
 
 * The :kconfig:option:`CONFIG_NET_L2_OPENTHREAD` symbol no longer implies the
   :kconfig:option:`CONFIG_NVS` Kconfig option. Platforms using OpenThread must explicitly enable

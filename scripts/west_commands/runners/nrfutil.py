@@ -5,7 +5,6 @@
 '''Runner for flashing with nrfutil.'''
 
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -102,17 +101,37 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         self._op_id += 1
         self._ops.append(op)
 
+    def _append_batch(self, op, json_file):
+        _op = op['operation']
+        op_type = _op['type']
+
+        cmd = [f'{op_type}']
+
+        if op_type == 'program':
+            cmd += ['--firmware', _op['firmware']['file']]
+            opts = _op['options']
+            # populate the options
+            cmd.append('--options')
+            cli_opts = f"chip_erase_mode={opts['chip_erase_mode']}"
+            if opts.get('ext_mem_erase_mode'):
+                cli_opts += f",ext_mem_erase_mode={opts['ext_mem_erase_mode']}"
+            if opts.get('verify'):
+                cli_opts += f",verify={opts['verify']}"
+            cmd.append(cli_opts)
+        elif op_type == 'reset':
+            cmd += ['--reset-kind', _op['kind']]
+
+        cmd += ['--core', op['core']] if op.get('core') else []
+        cmd += ['--x-family', f'{self.family}']
+        cmd += ['--x-append-batch', f'{json_file}']
+        self._exec(cmd)
+
     def _exec_batch(self):
-        # prepare the dictionary and convert to JSON
-        batch = json.dumps({'family': f'{self.family}',
-                            'operations': [op for op in self._ops]},
-                            indent=4) + '\n'
-
-        hex_dir = Path(self.hex_).parent
-        json_file = os.fspath(hex_dir / 'generated_nrfutil_batch.json')
-
-        with open(json_file, "w") as f:
-            f.write(batch)
+        # Use x-append-batch to get the JSON from nrfutil itself
+        json_file = Path(self.hex_).parent / 'generated_nrfutil_batch.json'
+        json_file.unlink(missing_ok=True)
+        for op in self._ops:
+            self._append_batch(op, json_file)
 
         # reset first in case an exception is thrown
         self._ops = []

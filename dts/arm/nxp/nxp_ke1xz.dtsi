@@ -429,6 +429,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 		};
 
 		lpspi1: spi@4002d000 {
@@ -439,6 +441,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 		};
 
 		edma: dma-controller@40008000 {

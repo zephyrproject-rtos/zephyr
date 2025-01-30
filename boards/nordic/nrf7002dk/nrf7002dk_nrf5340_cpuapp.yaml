@@ -16,4 +16,5 @@ supported:
   - usbd
   - usb_device
   - netif:openthread
+  - netif:wifi
 vendor: nordic

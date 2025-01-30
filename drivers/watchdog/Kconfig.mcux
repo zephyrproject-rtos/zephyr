@@ -37,3 +37,10 @@ config WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG
 	  the number of watchdog counter ticks before timeout.
 
 endif # WDT_MCUX_WWDT
+
+config WDT_MCUX_RTWDOG
+	bool "MCUX RTWDOG driver"
+	default y
+	depends on DT_HAS_NXP_RTWDOG_ENABLED
+	help
+	  Enable the mcux rtwdog driver.

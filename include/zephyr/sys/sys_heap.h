@@ -267,6 +267,24 @@ void sys_heap_stress(void *(*alloc_fn)(void *arg, size_t bytes),
  */
 void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks);
 
+/** @brief Save the heap pointer
+ *
+ * The heap pointer is saved into an internal array, if there is space.
+ *
+ * @param heap Heap to save
+ * @return -EINVAL if null pointer or array is full, otherwise 0
+ */
+int sys_heap_array_save(struct sys_heap *heap);
+
+/** @brief Get the array of saved heap pointers
+ *
+ * Returns the pointer to the array of heap pointers.
+ *
+ * @param heap Heap array
+ * @return -EINVAL if null pointer, otherwise number of saved pointers
+ */
+int sys_heap_array_get(struct sys_heap ***heap);
+
 /**
  * @}
  */

@@ -77,6 +77,13 @@
 				int-gpios = <&test_gpio 0 0>;
 				clkout-frequency = <1024>;
 			};
+
+			test_bq32002: bq32002@7 {
+				compatible = "ti,bq32002";
+				status = "okay";
+				reg = <0x7>;
+				irq-frequency = <512>;
+			};
 		};
 	};
 };

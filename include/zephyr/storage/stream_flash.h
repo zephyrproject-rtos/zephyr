@@ -65,7 +65,9 @@ struct stream_flash_ctx {
 	stream_flash_callback_t callback; /* Callback invoked after write op */
 #endif
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	off_t last_erased_page_start_offset; /* Last erased offset */
+	size_t erased_up_to;		/* Offset of last erased byte, relative to
+					 * offset in this context.
+					 */
 #endif
 	size_t write_block_size;	/* Offset/size device write alignment */
 	uint8_t erase_value;
@@ -128,6 +130,9 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
 /**
  * @brief Erase the flash page to which a given offset belongs.
  *
+ * @deprecated Use @a flash_area_erase() or flash_erase(). Note that there
+ * is no Stream Flash API equivalent for that.
+ *
  * This function erases a flash page to which an offset belongs if this page
  * is not the page previously erased by the provided ctx
  * (ctx->last_erased_page_start_offset).
@@ -137,7 +142,7 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off);
+__deprecated int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off);
 
 /**
  * @brief Load persistent stream write progress stored with key

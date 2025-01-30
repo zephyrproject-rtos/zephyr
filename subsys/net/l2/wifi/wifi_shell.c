@@ -71,21 +71,24 @@ static const char server_key_test[] = {
 
 #define WIFI_SHELL_MODULE "wifi"
 
-#define WIFI_SHELL_MGMT_EVENTS_COMMON (NET_EVENT_WIFI_SCAN_DONE   |\
+#define WIFI_SHELL_MGMT_EVENTS (            \
 				NET_EVENT_WIFI_CONNECT_RESULT     |\
 				NET_EVENT_WIFI_DISCONNECT_RESULT  |\
 				NET_EVENT_WIFI_TWT                |\
-				NET_EVENT_WIFI_RAW_SCAN_RESULT    |\
 				NET_EVENT_WIFI_AP_ENABLE_RESULT   |\
 				NET_EVENT_WIFI_AP_DISABLE_RESULT  |\
 				NET_EVENT_WIFI_AP_STA_CONNECTED   |\
 				NET_EVENT_WIFI_AP_STA_DISCONNECTED)
 
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
-#define WIFI_SHELL_MGMT_EVENTS (WIFI_SHELL_MGMT_EVENTS_COMMON)
+#define WIFI_SHELL_SCAN_EVENTS (                   \
+				NET_EVENT_WIFI_SCAN_DONE          |\
+				NET_EVENT_WIFI_RAW_SCAN_RESULT)
 #else
-#define WIFI_SHELL_MGMT_EVENTS (WIFI_SHELL_MGMT_EVENTS_COMMON |\
-				NET_EVENT_WIFI_SCAN_RESULT)
+#define WIFI_SHELL_SCAN_EVENTS (                   \
+				NET_EVENT_WIFI_SCAN_RESULT        |\
+				NET_EVENT_WIFI_SCAN_DONE          |\
+				NET_EVENT_WIFI_RAW_SCAN_RESULT)
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY */
 
 #define MAX_BANDS_STR_LEN 64
@@ -105,6 +108,7 @@ static struct {
 } context;
 
 static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
+static struct net_mgmt_event_callback wifi_shell_scan_cb;
 static struct wifi_reg_chan_info chan_info[MAX_REG_CHAN_NUM];
 
 static K_MUTEX_DEFINE(wifi_ap_sta_list_lock);
@@ -297,6 +301,8 @@ static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
 	} else {
 		PR("Scan request done\n");
 	}
+
+	net_mgmt_del_event_callback(&wifi_shell_scan_cb);
 
 	context.scan_result = 0U;
 }
@@ -517,12 +523,6 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
 {
 	switch (mgmt_event) {
-	case NET_EVENT_WIFI_SCAN_RESULT:
-		handle_wifi_scan_result(cb);
-		break;
-	case NET_EVENT_WIFI_SCAN_DONE:
-		handle_wifi_scan_done(cb);
-		break;
 	case NET_EVENT_WIFI_CONNECT_RESULT:
 		handle_wifi_connect_result(cb);
 		break;
@@ -532,11 +532,6 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 	case NET_EVENT_WIFI_TWT:
 		handle_wifi_twt_event(cb);
 		break;
-#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
-	case NET_EVENT_WIFI_RAW_SCAN_RESULT:
-		handle_wifi_raw_scan_result(cb);
-		break;
-#endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 	case NET_EVENT_WIFI_AP_ENABLE_RESULT:
 		handle_wifi_ap_enable_result(cb);
 		break;
@@ -557,6 +552,26 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 		handle_wifi_neighbor_rep_complete(cb);
 		break;
 #endif
+	default:
+		break;
+	}
+}
+
+static void wifi_mgmt_scan_event_handler(struct net_mgmt_event_callback *cb,
+				    uint32_t mgmt_event, struct net_if *iface)
+{
+	switch (mgmt_event) {
+	case NET_EVENT_WIFI_SCAN_RESULT:
+		handle_wifi_scan_result(cb);
+		break;
+	case NET_EVENT_WIFI_SCAN_DONE:
+		handle_wifi_scan_done(cb);
+		break;
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
+	case NET_EVENT_WIFI_RAW_SCAN_RESULT:
+		handle_wifi_raw_scan_result(cb);
+		break;
+#endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 	default:
 		break;
 	}
@@ -1112,6 +1127,8 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (do_scan) {
+		net_mgmt_add_event_callback(&wifi_shell_scan_cb);
+
 		if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, &params, sizeof(params))) {
 			PR_WARNING("Scan request failed\n");
 			return -ENOEXEC;
@@ -3850,6 +3867,11 @@ static int wifi_shell_init(void)
 				     WIFI_SHELL_MGMT_EVENTS);
 
 	net_mgmt_add_event_callback(&wifi_shell_mgmt_cb);
+
+
+	net_mgmt_init_event_callback(&wifi_shell_scan_cb,
+				     wifi_mgmt_scan_event_handler,
+				     WIFI_SHELL_SCAN_EVENTS);
 
 	return 0;
 }

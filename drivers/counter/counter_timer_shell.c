@@ -197,10 +197,15 @@ static int cmd_timer_periodic(const struct shell *shctx, size_t argc, char **arg
 	return 0;
 }
 
+static bool device_is_counter(const struct device *dev)
+{
+	return DEVICE_API_IS(counter, dev);
+}
+
 /* Device name autocompletion support */
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, "timer");
+	const struct device *dev = shell_device_filter(idx, device_is_counter);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

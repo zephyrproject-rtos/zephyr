@@ -4,5 +4,6 @@ type: unit
 arch: unit
 toolchain:
   - host
+  - llvm
 testing:
   default: true

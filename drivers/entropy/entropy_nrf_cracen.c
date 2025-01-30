@@ -18,7 +18,7 @@ static int nrf_cracen_get_entropy_isr(const struct device *dev, uint8_t *buf, ui
 
 	unsigned int key = irq_lock();
 
-	/* This will be done in less than 1 microsecond */
+	/* This will take approximately 2 + (ceil(len/16) + 3)*3 us. i.e. 14us for 16 bytes */
 	int ret = nrfx_cracen_ctr_drbg_random_get(buf, len);
 
 	irq_unlock(key);

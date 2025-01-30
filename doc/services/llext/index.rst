@@ -16,6 +16,7 @@ and introspected to some degree, as well as unloaded when no longer needed.
    config
    build
    load
+   debug
    api
 
 .. note::

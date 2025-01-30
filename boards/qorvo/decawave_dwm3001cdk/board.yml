@@ -1,5 +1,6 @@
 board:
   name: decawave_dwm3001cdk
+  full_name: Decawave DWM3001CDK
   vendor: qorvo
   socs:
   - name: nrf52833

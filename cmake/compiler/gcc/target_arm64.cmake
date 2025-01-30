@@ -22,13 +22,13 @@ set(LLEXT_REMOVE_FLAGS
   -fno-pie
   -ffunction-sections
   -fdata-sections
-  -g.*
   -Os
 )
 
 list(APPEND LLEXT_EDK_REMOVE_FLAGS
   --sysroot=.*
   -fmacro-prefix-map=.*
+  -g.*
 )
 
 list(APPEND LLEXT_EDK_APPEND_FLAGS

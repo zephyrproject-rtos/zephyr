@@ -3,6 +3,8 @@ sample:
 
 common:
   harness: console
+  tags:
+    - w1
 
 tests:
   sample.drivers.w1.scanner.ds2482-800:

@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <zephyr/sys/__assert.h>
 #include <zephyr/version.h>
 
+#include <openthread/child_supervision.h>
 #include <openthread/cli.h>
 #include <openthread/ip6.h>
 #include <openthread/link.h>
@@ -443,6 +444,13 @@ int openthread_start(struct openthread_context *ot_context)
 		otThreadSetLinkMode(ot_context->instance, ot_mode);
 		otLinkSetPollPeriod(ot_context->instance, OT_POLL_PERIOD);
 	}
+
+	/* Configure Child Supervision and MLE Child timeouts. */
+	otChildSupervisionSetInterval(ot_context->instance,
+				      CONFIG_OPENTHREAD_CHILD_SUPERVISION_INTERVAL);
+	otChildSupervisionSetCheckTimeout(ot_context->instance,
+					  CONFIG_OPENTHREAD_CHILD_SUPERVISION_CHECK_TIMEOUT);
+	otThreadSetChildTimeout(ot_context->instance, CONFIG_OPENTHREAD_MLE_CHILD_TIMEOUT);
 
 	if (otDatasetIsCommissioned(ot_instance)) {
 		/* OpenThread already has dataset stored - skip the

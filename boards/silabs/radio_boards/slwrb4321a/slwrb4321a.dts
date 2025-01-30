@@ -125,19 +125,19 @@
 
 	/* PHY management pins */
 	location-mdio        = <GECKO_LOCATION(3)>;
-	location-phy_mdc     = <GECKO_LOCATION(3) GECKO_PORT_A GECKO_PIN(6)>;
-	location-phy_mdio    = <GECKO_LOCATION(3) GECKO_PORT_A GECKO_PIN(15)>;
+	location-phy-mdc     = <GECKO_LOCATION(3) GECKO_PORT_A GECKO_PIN(6)>;
+	location-phy-mdio    = <GECKO_LOCATION(3) GECKO_PORT_A GECKO_PIN(15)>;
 
 	/* RMII interface pins */
 	location-rmii        = <GECKO_LOCATION(0)>;
-	location-rmii_refclk = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(3)>;
-	location-rmii_crs_dv = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(4)>;
-	location-rmii_txd0   = <GECKO_LOCATION(0) GECKO_PORT_E GECKO_PIN(15)>;
-	location-rmii_txd1   = <GECKO_LOCATION(0) GECKO_PORT_E GECKO_PIN(14)>;
-	location-rmii_tx_en  = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
-	location-rmii_rxd0   = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(2)>;
-	location-rmii_rxd1   = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
-	location-rmii_rx_er  = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(5)>;
+	location-rmii-refclk = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(3)>;
+	location-rmii-crs-dv = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(4)>;
+	location-rmii-txd0   = <GECKO_LOCATION(0) GECKO_PORT_E GECKO_PIN(15)>;
+	location-rmii-txd1   = <GECKO_LOCATION(0) GECKO_PORT_E GECKO_PIN(14)>;
+	location-rmii-tx-en  = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
+	location-rmii-rxd0   = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(2)>;
+	location-rmii-rxd1   = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
+	location-rmii-rx-er  = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(5)>;
 
 	status = "okay";
 };

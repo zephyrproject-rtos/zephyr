@@ -10,7 +10,7 @@
  * Internal heap APIs
  */
 
-/* Theese validation checks are non-trivially expensive, so enable
+/* These validation checks are non-trivially expensive, so enable
  * only when debugging the heap code.  They shouldn't be routine
  * assertions.
  */

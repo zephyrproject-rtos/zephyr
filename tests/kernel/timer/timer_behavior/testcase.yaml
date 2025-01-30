@@ -14,6 +14,9 @@ tests:
           - "RECORD:(?P<metrics>.*)"
         as_json: ['metrics']
   kernel.timer.timer_behavior_external:
+    tags:
+      - kernel
+      - timer
     filter: dt_compat_enabled("test-kernel-timer-behavior-external")
     harness: pytest
     harness_config:

@@ -29,6 +29,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
+      - nrf5340dk/nrf5340/cpuapp
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp

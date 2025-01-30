@@ -1,5 +1,5 @@
 /*
- * Copyright 2017,2024 NXP
+ * Copyright 2017, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,6 +81,18 @@ static const clock_ip_name_t sai_clocks[] = {
 #endif
 #endif /* CONFIG_DAI_NXP_SAI */
 
+#if defined(CONFIG_I2C_NXP_II2C)
+static const clock_ip_name_t i2c_clk_root[] = {
+	kCLOCK_RootI2c1,
+	kCLOCK_RootI2c2,
+	kCLOCK_RootI2c3,
+	kCLOCK_RootI2c4,
+#ifdef CONFIG_SOC_MIMX8ML8
+	kCLOCK_RootI2c5,
+	kCLOCK_RootI2c6,
+#endif
+};
+#endif
 
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
@@ -447,6 +459,31 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 			(CLOCK_GetRootPostDivider(kCLOCK_RootEcspi3));
 		break;
 #endif /* CONFIG_SPI_MCUX_ECSPI */
+
+#if defined(CONFIG_I2C_NXP_II2C)
+	case IMX_CCM_I2C1_CLK:
+	case IMX_CCM_I2C2_CLK:
+	case IMX_CCM_I2C3_CLK:
+	case IMX_CCM_I2C4_CLK:
+#ifdef CONFIG_SOC_MIMX8ML8
+	case IMX_CCM_I2C5_CLK:
+	case IMX_CCM_I2C6_CLK:
+#endif
+	{
+		uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+		uint32_t i2c_mux = CLOCK_GetRootMux(i2c_clk_root[instance]);
+
+		if (i2c_mux == 0) {
+			*rate = MHZ(24);
+		} else if (i2c_mux == 1) {
+			*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+				(CLOCK_GetRootPreDivider(i2c_clk_root[instance])) /
+				(CLOCK_GetRootPostDivider(i2c_clk_root[instance])) /
+				5; /* SYSTEM PLL1 DIV5 */
+		}
+
+	} break;
+#endif
 	}
 
 	return 0;

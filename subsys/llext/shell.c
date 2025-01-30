@@ -52,9 +52,9 @@ static int cmd_llext_list_symbols(const struct shell *sh, size_t argc, char *arg
 
 	shell_print(sh, "Extension: %s symbols", m->name);
 	shell_print(sh, "| Symbol           | Address    |");
-	for (elf_word i = 0; i < m->sym_tab.sym_cnt; i++) {
-		shell_print(sh, "| %16s | %p |", m->sym_tab.syms[i].name,
-			    m->sym_tab.syms[i].addr);
+	for (elf_word i = 0; i < m->exp_tab.sym_cnt; i++) {
+		shell_print(sh, "| %16s | %p |", m->exp_tab.syms[i].name,
+			    m->exp_tab.syms[i].addr);
 	}
 
 	return 0;
@@ -124,7 +124,7 @@ static int cmd_llext_list(const struct shell *sh, size_t argc, char *argv[])
 	return llext_iterate(llext_shell_list_cb, &sl);
 }
 
-static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE];
+static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE] __aligned(Z_KERNEL_STACK_OBJ_ALIGN);
 
 static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 {

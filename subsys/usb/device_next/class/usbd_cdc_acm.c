@@ -80,13 +80,19 @@ struct usbd_cdc_acm_desc {
 	struct usb_desc_header nil_desc;
 };
 
-struct cdc_acm_uart_data {
+struct cdc_acm_uart_config {
 	/* Pointer to the associated USBD class node */
 	struct usbd_class_data *c_data;
+	/* Pointer to the interface description node or NULL */
+	struct usbd_desc_node *const if_desc_data;
 	/* Pointer to the class interface descriptors */
 	struct usbd_cdc_acm_desc *const desc;
 	const struct usb_desc_header **const fs_desc;
 	const struct usb_desc_header **const hs_desc;
+};
+
+struct cdc_acm_uart_data {
+	const struct device *dev;
 	/* Line Coding Structure */
 	struct cdc_acm_line_coding line_coding;
 	/* SetControlLineState bitmap */
@@ -99,6 +105,15 @@ struct cdc_acm_uart_data {
 	bool line_state_rts;
 	/* UART actual DTR state */
 	bool line_state_dtr;
+	/* When flow_ctrl is set, poll out is blocked when the buffer is full,
+	 * roughly emulating flow control.
+	 */
+	bool flow_ctrl;
+	/* Used to enqueue a ZLP transfer when the previous IN transfer length
+	 * was a multiple of the endpoint MPS and no more data is added to
+	 * the TX FIFO during the user callback execution.
+	 */
+	bool zlp_needed;
 	/* UART API IRQ callback */
 	uart_irq_callback_user_data_t cb;
 	/* UART API user callback data */
@@ -107,10 +122,6 @@ struct cdc_acm_uart_data {
 	struct k_work irq_cb_work;
 	struct cdc_acm_uart_fifo rx_fifo;
 	struct cdc_acm_uart_fifo tx_fifo;
-	/* When flow_ctrl is set, poll out is blocked when the buffer is full,
-	 * roughly emulating flow control.
-	 */
-	bool flow_ctrl;
 	/* USBD CDC ACM TX fifo work */
 	struct k_work_delayable tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
@@ -157,8 +168,8 @@ static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_acm_uart_data *data = dev->data;
-	struct usbd_cdc_acm_desc *desc = data->desc;
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct usbd_cdc_acm_desc *desc = cfg->desc;
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_int_ep.bEndpointAddress;
@@ -171,8 +182,8 @@ static uint8_t cdc_acm_get_bulk_in(struct usbd_class_data *const c_data)
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_acm_uart_data *data = dev->data;
-	struct usbd_cdc_acm_desc *desc = data->desc;
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct usbd_cdc_acm_desc *desc = cfg->desc;
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if1_hs_in_ep.bEndpointAddress;
@@ -185,8 +196,8 @@ static uint8_t cdc_acm_get_bulk_out(struct usbd_class_data *const c_data)
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_acm_uart_data *data = dev->data;
-	struct usbd_cdc_acm_desc *desc = data->desc;
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct usbd_cdc_acm_desc *desc = cfg->desc;
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if1_hs_out_ep.bEndpointAddress;
@@ -333,13 +344,13 @@ static void *usbd_cdc_acm_get_desc(struct usbd_class_data *const c_data,
 				   const enum usbd_speed speed)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_acm_uart_data *data = dev->data;
+	const struct cdc_acm_uart_config *cfg = dev->config;
 
 	if (speed == USBD_SPEED_HS) {
-		return data->hs_desc;
+		return cfg->hs_desc;
 	}
 
-	return data->fs_desc;
+	return cfg->fs_desc;
 }
 
 static void cdc_acm_update_uart_cfg(struct cdc_acm_uart_data *const data)
@@ -483,12 +494,21 @@ static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 
 static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 {
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_acm_uart_data *data = dev->data;
-	struct usbd_cdc_acm_desc *desc = data->desc;
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct usbd_cdc_acm_desc *desc = cfg->desc;
 
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
+
+	if (cfg->if_desc_data != NULL) {
+		if (usbd_add_descriptor(uds_ctx, cfg->if_desc_data)) {
+			LOG_ERR("Failed to add interface string descriptor");
+		} else {
+			desc->if0.iInterface = usbd_str_desc_get_idx(cfg->if_desc_data);
+		}
+	}
 
 	return 0;
 }
@@ -505,7 +525,8 @@ static int cdc_acm_send_notification(const struct device *dev,
 		.data = sys_cpu_to_le16(serial_state),
 	};
 	struct cdc_acm_uart_data *data = dev->data;
-	struct usbd_class_data *c_data = data->c_data;
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct usbd_class_data *c_data = cfg->c_data;
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
@@ -541,13 +562,15 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct cdc_acm_uart_data *data;
+	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
 	struct net_buf *buf;
 	size_t len;
 	int ret;
 
 	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
-	c_data = data->c_data;
+	cfg = data->dev->config;
+	c_data = cfg->c_data;
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
 		LOG_DBG("USB configuration is not enabled");
@@ -574,6 +597,8 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
 	net_buf_add(buf, len);
 
+	data->zlp_needed = len != 0 && len % cdc_acm_get_bulk_mps(c_data) == 0;
+
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue");
@@ -593,13 +618,15 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 static void cdc_acm_rx_fifo_handler(struct k_work *work)
 {
 	struct cdc_acm_uart_data *data;
+	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, rx_fifo_work);
-	c_data = data->c_data;
+	cfg = data->dev->config;
+	c_data = cfg->c_data;
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED) ||
 	    atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
@@ -819,10 +846,12 @@ static int cdc_acm_irq_update(const struct device *dev)
 static void cdc_acm_irq_cb_handler(struct k_work *work)
 {
 	struct cdc_acm_uart_data *data;
+	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, irq_cb_work);
-	c_data = data->c_data;
+	cfg = data->dev->config;
+	c_data = cfg->c_data;
 
 	if (data->cb == NULL) {
 		LOG_ERR("IRQ callback is not set");
@@ -844,9 +873,12 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 		cdc_acm_work_submit(&data->rx_fifo_work);
 	}
 
-	if (data->tx_fifo.altered) {
-		LOG_DBG("tx fifo altered, submit work");
-		if (!atomic_test_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
+	if (!atomic_test_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
+		if (data->tx_fifo.altered) {
+			LOG_DBG("tx fifo altered, submit work");
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+		} else if (data->zlp_needed) {
+			LOG_DBG("zlp needed, submit work");
 			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
 	}
@@ -1249,23 +1281,36 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 			  &usbd_cdc_acm_api,					\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
 										\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (				\
+	USBD_DESC_STRING_DEFINE(cdc_acm_if_desc_data_##n,			\
+				DT_INST_PROP(n, label),				\
+				USBD_DUT_STRING_INTERFACE);			\
+	))									\
+										\
 	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
 	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
 										\
-	static struct cdc_acm_uart_data uart_data_##n = {			\
-		.line_coding = CDC_ACM_DEFAULT_LINECODING,			\
+	static const struct cdc_acm_uart_config uart_config_##n = {		\
 		.c_data = &cdc_acm_##n,						\
-		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
-		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
-		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
-		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (			\
+		.if_desc_data = &cdc_acm_if_desc_data_##n,			\
+		))								\
 		.desc = &cdc_acm_desc_##n,					\
 		.fs_desc = cdc_acm_fs_desc_##n,					\
 		.hs_desc = cdc_acm_hs_desc_##n,					\
 	};									\
 										\
+	static struct cdc_acm_uart_data uart_data_##n = {			\
+		.dev = DEVICE_DT_GET(DT_DRV_INST(n)),				\
+		.line_coding = CDC_ACM_DEFAULT_LINECODING,			\
+		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
+		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
+		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
+		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
+	};									\
+										\
 	DEVICE_DT_INST_DEFINE(n, usbd_cdc_acm_preinit, NULL,			\
-		&uart_data_##n, NULL,						\
+		&uart_data_##n, &uart_config_##n,				\
 		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,			\
 		&cdc_acm_uart_api);
 

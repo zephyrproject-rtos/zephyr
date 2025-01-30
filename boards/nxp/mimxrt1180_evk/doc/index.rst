@@ -124,6 +124,12 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| RTWDOG    | on-chip    | rtwdog                              |
++-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1180_evk/mimxrt1180_evk_mimxrt1189_cm33_defconfig`

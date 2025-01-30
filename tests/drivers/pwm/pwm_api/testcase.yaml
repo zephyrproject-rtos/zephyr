@@ -22,6 +22,10 @@ tests:
       CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
   drivers.pwm.pwm_fast:
+    tags:
+      - drivers
+      - pwm
+      - userspace
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp

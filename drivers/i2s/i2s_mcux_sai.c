@@ -308,11 +308,23 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 		/* TX queue has drained */
 		strm->state = I2S_STATE_READY;
 		LOG_DBG("TX stream has stopped");
-	} else {
-		strm->state = I2S_STATE_ERROR;
-		LOG_ERR("TX Failed to reload DMA");
+		goto disabled_exit_no_drop;
 	}
-	goto disabled_exit_no_drop;
+
+	LOG_WRN("TX input queue empty!");
+	if (strm->free_tx_dma_blocks >= MAX_TX_DMA_BLOCKS) {
+		/* In running state, no TX blocks for transferring, so stop
+		 * TX (This will disable bit clock to avoid dummy bits
+		 * received in RX side.
+		 */
+		const struct i2s_mcux_config *dev_cfg = dev->config;
+		I2S_Type *base = (I2S_Type *)dev_cfg->base;
+
+		SAI_TxEnable(base, false);
+		LOG_WRN("TX is paused.");
+	}
+	goto enabled_exit;
+
 
 disabled_exit_no_drop:
 	i2s_tx_stream_disable(dev, false);
@@ -597,6 +609,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("tx slab block_size = %d", (uint32_t)i2s_cfg->mem_slab->info.block_size);
 		LOG_DBG("tx slab buffer = 0x%x", (uint32_t)i2s_cfg->mem_slab->buffer);
 
+		config.fifo.fifoWatermark = (uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base) - 1;
 		/* set bit clock divider */
 		SAI_TxSetConfig(base, &config);
 		dev_data->tx.start_channel = config.startChannel;
@@ -976,6 +989,23 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 		return ret;
 	}
 
+	if (strm->state == I2S_STATE_RUNNING && strm->free_tx_dma_blocks >= MAX_TX_DMA_BLOCKS) {
+		uint8_t blocks_queued = 0;
+		const struct i2s_mcux_config *dev_cfg = dev->config;
+		I2S_Type *base = (I2S_Type *)dev_cfg->base;
+		/* As DMA has been stopped because reloading failure in TX callback,
+		 * here is a good place to reload it and resume TX.
+		 */
+		ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
+		if (ret == 0 && blocks_queued > 0) {
+			SAI_TxEnable(base, true);
+			LOG_WRN("TX is resumed");
+		} else {
+			LOG_ERR("TX block reload err, TX is not resumed");
+			return ret;
+		}
+	}
+
 	return ret;
 }
 
@@ -1153,8 +1183,8 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.pll_num = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, num, value, 0),      \
 		.pll_den = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, den, value, 0),      \
 		.mclk_control_base = DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(i2s_id), pinmuxes)),       \
-		.mclk_pin_mask = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, function),        \
-		.mclk_pin_offset = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, pin),           \
+		.mclk_pin_mask = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, mask),            \
+		.mclk_pin_offset = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, offset),        \
 		.clk_sub_sys =                                                                     \
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),       \
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),                             \

@@ -273,7 +273,7 @@ static void update_metairq_preempt(struct k_thread *thread)
 	    !thread_is_preemptible(_current)) {
 		/* Record new preemption */
 		_current_cpu->metairq_preempted = _current;
-	} else if (!thread_is_metairq(thread) && !z_is_idle_thread_object(thread)) {
+	} else if (!thread_is_metairq(thread)) {
 		/* Returning from existing preemption */
 		_current_cpu->metairq_preempted = NULL;
 	}
@@ -1048,9 +1048,6 @@ void z_impl_k_yield(void)
 
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
-#ifdef CONFIG_SMP
-	z_mark_thread_as_queued(_current);
-#endif
 	runq_yield();
 
 	update_cache(1);
@@ -1165,9 +1162,9 @@ void z_impl_k_wakeup(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, wakeup, thread);
 
-	z_abort_thread_timeout(thread);
-
 	k_spinlock_key_t  key = k_spin_lock(&_sched_spinlock);
+
+	z_abort_thread_timeout(thread);
 
 	if (!z_is_thread_sleeping(thread)) {
 		k_spin_unlock(&_sched_spinlock, key);

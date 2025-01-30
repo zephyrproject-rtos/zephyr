@@ -16,6 +16,26 @@ static bool device_is_uart(const struct device *dev)
 	return DEVICE_API_IS(uart, dev);
 }
 
+static int cmd_uart_write(const struct shell *sh, size_t argc, char **argv)
+{
+	char *s_dev_name = argv[1];
+	const struct device *dev = shell_device_get_binding(s_dev_name);
+
+	if (!dev || !device_is_uart(dev)) {
+		shell_error(sh, "UART: Device driver %s not found.", s_dev_name);
+		return -ENODEV;
+	}
+
+	char *buf = argv[2];
+	int msg_len = strlen(buf);
+
+	for (int i = 0; i < msg_len; i++) {
+		uart_poll_out(dev, buf[i]);
+	}
+
+	return 0;
+}
+
 static int cmd_uart_baudrate(const struct shell *sh, size_t argc, char **argv)
 {
 	char *s_dev_name = argv[1];
@@ -102,14 +122,18 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_uart_cmds,
+	SHELL_CMD_ARG(write, &dsub_device_name,
+		      "Write data to the UART device\n"
+		      "Usage: write <device> <data>",
+		      cmd_uart_write, 3, 0),
 	SHELL_CMD_ARG(baudrate, &dsub_device_name,
-			  "Configure UART device baudrate\n"
-			  "Usage: baudrate <device> <baudrate>",
-			  cmd_uart_baudrate, 3, 0),
+		      "Configure UART device baudrate\n"
+		      "Usage: baudrate <device> <baudrate>",
+		      cmd_uart_baudrate, 3, 0),
 	SHELL_CMD_ARG(fc, &dsub_device_name,
-			  "Configure UART device flow control\n"
-			  "Usage: fc <device> <none|rtscts|dtrdsr|rs485>",
-			  cmd_uart_flow_control, 3, 0),
+		      "Configure UART device flow control\n"
+		      "Usage: fc <device> <none|rtscts|dtrdsr|rs485>",
+		      cmd_uart_flow_control, 3, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 

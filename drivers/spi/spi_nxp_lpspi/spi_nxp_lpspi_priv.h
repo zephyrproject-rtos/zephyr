@@ -41,35 +41,18 @@ struct spi_mcux_config {
 	uint32_t transfer_delay;
 	const struct pinctrl_dev_config *pincfg;
 	lpspi_pin_config_t data_pin_config;
+	bool output_config;
+	uint8_t tx_fifo_size;
+	uint8_t rx_fifo_size;
+	uint8_t irqn;
 };
-
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-#include <zephyr/drivers/dma.h>
-
-struct spi_dma_stream {
-	const struct device *dma_dev;
-	uint32_t channel; /* stores the channel for dma */
-	struct dma_config dma_cfg;
-	struct dma_block_config dma_blk_cfg;
-};
-#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
 struct spi_mcux_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 	const struct device *dev;
-	lpspi_master_handle_t handle;
 	struct spi_context ctx;
+	void *driver_data;
 	size_t transfer_len;
-#ifdef CONFIG_SPI_RTIO
-	struct spi_rtio *rtio_ctx;
-#endif
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-	volatile uint32_t status_flags;
-	struct spi_dma_stream dma_rx;
-	struct spi_dma_stream dma_tx;
-	/* dummy value used for transferring NOP when tx buf is null */
-	uint32_t dummy_buffer;
-#endif
 };
 
 /* common configure function that verifies spi_cfg validity and set up configuration parameters */
@@ -104,6 +87,9 @@ int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 						(SPI_MCUX_LPSPI_IRQ_FUNC_LP_FLEXCOMM(n)),	   \
 						(SPI_MCUX_LPSPI_IRQ_FUNC_DISTINCT(n)))
 
+#define LPSPI_IRQN(n) COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_lp_flexcomm),	   \
+					(DT_IRQN(DT_INST_PARENT(n))), (DT_INST_IRQN(n)))
+
 #define SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
 	static const struct spi_mcux_config spi_mcux_config_##n = {                                \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
@@ -118,6 +104,10 @@ int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 					   DT_INST_PROP(n, transfer_delay)),                       \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.data_pin_config = DT_INST_ENUM_IDX(n, data_pin_config),                           \
+		.output_config = DT_INST_PROP(n, tristate_output),                                 \
+		.rx_fifo_size = (uint8_t)DT_INST_PROP(n, rx_fifo_size),                            \
+		.tx_fifo_size = (uint8_t)DT_INST_PROP(n, tx_fifo_size),                            \
+		.irqn = (uint8_t)LPSPI_IRQN(n),                                                    \
 	};
 
 #define SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \

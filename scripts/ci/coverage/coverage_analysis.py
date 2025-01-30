@@ -334,7 +334,7 @@ class Json_report:
             {
                 "bold": True,
                 "fg_color":  "#538DD5",
-                "color":"white"
+                "font_color":"white"
             }
         )
         cell_format = workbook.add_format(
@@ -404,7 +404,7 @@ class Json_report:
             {
                 "bold": True,
                 "fg_color":  "#538DD5",
-                "color":"white"
+                "font_color":"white"
             }
         )
 
@@ -415,7 +415,7 @@ class Json_report:
                 "align": "center",
                 "valign": "vcenter",
                 "fg_color":  "#538DD5",
-                "color":"white"
+                "font_color":"white"
             }
         )
         cell_format = self.report_book.add_format(

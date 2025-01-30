@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #include "soc.h"
 #include "flexspi_clock_setup.h"
 #include "fsl_ocotp.h"
+
+extern void nxp_nbu_init(void);
 #ifdef CONFIG_NXP_RW6XX_BOOT_HEADER
 extern char z_main_stack[];
 extern char _flash_used[];
@@ -36,7 +38,6 @@ extern void z_arm_debug_monitor(void);
 extern void z_arm_pendsv(void);
 extern void sys_clock_isr(void);
 extern void z_arm_exc_spurious(void);
-extern void nxp_nbu_init(void);
 
 __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */

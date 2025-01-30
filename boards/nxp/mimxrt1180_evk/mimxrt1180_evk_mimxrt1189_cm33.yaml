@@ -26,4 +26,6 @@ supported:
   - i3c
   - dma
   - spi
+  - watchdog
+  - usb_device
 vendor: nxp

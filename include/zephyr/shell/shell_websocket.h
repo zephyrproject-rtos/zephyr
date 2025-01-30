@@ -121,6 +121,7 @@ int shell_websocket_enable(const struct shell *sh);
 			     SHELL_WEBSOCKET_SERVICE_COUNT,		  \
 			     SHELL_WEBSOCKET_SERVICE_COUNT,		  \
 			     NULL,					  \
+			     NULL,                                        \
 			     _sec_tag_list,				  \
 			     _sec_tag_list_size);			  \
 	DEFINE_WEBSOCKET_SERVICE(_service);				  \
@@ -136,7 +137,7 @@ int shell_websocket_enable(const struct shell *sh);
 			    &SHELL_WS_PORT_NAME(_service),		\
 			    SHELL_WEBSOCKET_SERVICE_COUNT,		\
 			    SHELL_WEBSOCKET_SERVICE_COUNT,		\
-			    NULL);					\
+			    NULL, NULL);				\
 	DEFINE_WEBSOCKET_SERVICE(_service)
 
 #endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */

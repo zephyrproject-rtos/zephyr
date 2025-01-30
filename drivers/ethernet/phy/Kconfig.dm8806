@@ -29,6 +29,13 @@ config PHY_DM8806_TRIGGER_GLOBAL_THREAD
 
 endchoice
 
+config PHY_DM8806_ENERGY_EFFICIENT_MODE
+	bool "Energy efficient mode"
+	help
+	  By default in DM8806, the energy efficient mode is enabled.
+	  It had been observed that the network randomly fails when
+	  this mode is on. Thus, this symbol is by default disabled.
+
 config PHY_DM8806_TRIGGER
 	bool
 

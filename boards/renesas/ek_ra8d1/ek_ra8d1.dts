@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -154,12 +154,6 @@
 	status = "okay";
 };
 
-&sci0 {
-	/* sci0 and spi0 cannot be enabled together */
-	pinctrl-0 = <&sci9_default>;
-	pinctrl-names = "default";
-};
-
 &sci9 {
 	pinctrl-0 = <&sci9_default>;
 	pinctrl-names = "default";
@@ -174,8 +168,8 @@
 	status = "okay";
 };
 
-&spi0 {
-	pinctrl-0 = <&spi0_default>;
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };

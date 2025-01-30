@@ -304,6 +304,7 @@ zephyr_udc0: &usb1 {
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
 	dma-names = "rx", "tx";
+	tristate-output;
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
 };

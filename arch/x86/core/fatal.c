@@ -458,6 +458,7 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 		 * the page is present in the kernel's page tables and the
 		 * instruction will just be re-tried, producing another fault.
 		 */
+		was_valid_access = true;
 		if (was_user &&
 		    !z_x86_kpti_is_access_ok(virt, get_ptables(esf))) {
 			was_valid_access = false;

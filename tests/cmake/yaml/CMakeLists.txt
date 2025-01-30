@@ -2,24 +2,34 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(zephyr_yaml_test)
-target_sources(app PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+if(NOT CMAKE_SCRIPT_MODE_FILE)
+  # Project mode initialization (main CMake invocation)
+  find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+  project(zephyr_yaml_test)
+  target_sources(app PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+  message(STATUS "Run 1 -------------\n  CMake PROJECT mode\n----------------------")
+else()
+  # Script mode initialization (re-run)
+  set(ZEPHYR_BASE ${CMAKE_CURRENT_LIST_DIR}/../../../)
+  list(APPEND CMAKE_MODULE_PATH "${ZEPHYR_BASE}/cmake/modules")
+  include(yaml)
+  message(STATUS "Run 2 ------------\n  CMake SCRIPT mode\n---------------------")
+endif()
 
 set_property(GLOBAL PROPERTY EXPECTED_ERROR 0)
 
 macro(message)
   if(DEFINED expect_failure)
-  if(${ARGV0} STREQUAL FATAL_ERROR)
-    if("${ARGV1}" STREQUAL "${expect_failure}")
-      # This is an expected error.
-      get_property(error_count GLOBAL PROPERTY EXPECTED_ERROR)
-      math(EXPR error_count "${error_count} + 1")
-      set_property(GLOBAL PROPERTY EXPECTED_ERROR ${error_count})
-      return()
-    else()
-      _message("Unexpected error occurred")
-    endif()
+    if(${ARGV0} STREQUAL FATAL_ERROR)
+      if("${ARGV1}" STREQUAL "${expect_failure}")
+        # This is an expected error.
+        get_property(error_count GLOBAL PROPERTY EXPECTED_ERROR)
+        math(EXPR error_count "${error_count} + 1")
+        set_property(GLOBAL PROPERTY EXPECTED_ERROR ${error_count})
+        return()
+      else()
+        _message("Unexpected error occurred")
+      endif()
     endif()
   endif()
   _message(${ARGN})
@@ -154,7 +164,7 @@ function(test_setting_string)
   )
 
   set(new_value "A new string")
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-string VALUE ${new_value}
   )
 
@@ -178,9 +188,60 @@ function(test_setting_list_strings)
   )
 
   set(new_value "A" "new" "list" "of" "strings")
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-list-string LIST ${new_value}
   )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml and verify the value.
+  yaml_load(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  test_assert(TEST 5 EQUAL ${readback}
+              COMMENT "readback yaml list length does not match original."
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  foreach(a e IN ZIP_LISTS readback new_value)
+    test_assert(TEST "${e}" STREQUAL "${a}"
+                COMMENT "list values mismatch."
+    )
+  endforeach()
+endfunction()
+
+function(test_append_list_strings)
+  yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  # start with entries that will be overwritten
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string
+           LIST dropped entries
+  )
+
+  set(new_value "A" "new" "list" "of" "strings")
+  list(GET new_value 0 first)
+  list(SUBLIST new_value 1 -1 others)
+
+  # re-initialize the list with the first correct value
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string
+           LIST ${first}
+  )
+
+  # append the rest of the values
+  foreach(entry IN LISTS others)
+    yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+             KEY cmake test set key-list-string
+             APPEND LIST ${entry}
+    )
+  endforeach()
 
   yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
 
@@ -210,7 +271,7 @@ function(test_setting_int)
   )
 
   set(new_value 42)
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-int VALUE ${new_value}
   )
 
@@ -234,7 +295,7 @@ function(test_setting_list_int)
   )
 
   set(new_value 42 41 40 2 10)
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-list-int LIST ${new_value}
   )
 
@@ -266,7 +327,7 @@ function(test_setting_empty_value)
   )
 
   set(new_value)
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-int VALUE ${new_value}
   )
 
@@ -320,6 +381,119 @@ function(test_setting_empty_list)
   endforeach()
 endfunction()
 
+function(test_setting_genexes)
+  set(file ${CMAKE_BINARY_DIR}/test_setting_genexes.yaml)
+  yaml_create(FILE ${file}
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set(new_value "string before changes")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-string
+           VALUE ${new_value}
+  )
+
+  set_property(TARGET app PROPERTY expanding_str "expanded genex")
+  set(new_value "$<TARGET_PROPERTY:app,expanding_str>")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-string-genex
+           GENEX VALUE ${new_value}
+  )
+
+  # create the list by appending in several steps to test conversion
+  # from JSON list to genex stringified list
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           LIST "A"
+  )
+  set_property(TARGET app PROPERTY expanding_list "temporary" "list")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           APPEND GENEX LIST "$<TARGET_PROPERTY:app,expanding_list>" "of"
+  )
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           APPEND LIST "strings"
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml immediately and verify the genex values are NOT present
+  # (genexes are expanded at generation time)
+  yaml_load(FILE ${file}
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-string)
+  set(expected "string before changes")
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+              COMMENT "yaml key value does not match expectation."
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+  set(expected cmake-test-set-key-list-string-genex-NOTFOUND)
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+              COMMENT "Expected -NOTFOUND, but something was found."
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-string-genex)
+  set(expected cmake-test-set-key-string-genex-NOTFOUND)
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+              COMMENT "Expected -NOTFOUND, but something was found."
+  )
+
+  # modify the expanding_list property and the string, then save the file once
+  # more to check the final values are used in the output yaml file
+  set_property(TARGET app PROPERTY expanding_list "new" "list")
+  set(new_value "string after changes")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-string
+           VALUE ${new_value}
+  )
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+endfunction()
+
+function(test_verify_genexes)
+  set(file ${CMAKE_BINARY_DIR}/test_setting_genexes.yaml)
+  yaml_load(FILE ${file}
+      NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-string)
+  set(expected "string after changes")
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+              COMMENT "yaml key value does not match expectation."
+  )
+
+  set(expected "expanded genex")
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-string-genex)
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+        COMMENT "new yaml value does not match readback value."
+  )
+
+  set(expected "A" "new" "list" "of" "strings")
+  list(LENGTH expected exp_len)
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+  yaml_length(act_len NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+
+  test_assert(TEST ${exp_len} EQUAL ${act_len}
+              COMMENT "yaml list length does not match expectation."
+  )
+
+  foreach(a e IN ZIP_LISTS readback expected)
+    test_assert(TEST "${e}" STREQUAL "${a}"
+                COMMENT "list values mismatch."
+    )
+  endforeach()
+endfunction()
+
 function(test_set_remove_int)
   yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
               NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
@@ -365,7 +539,7 @@ function(test_fail_missing_filename)
   yaml_create(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
 
   set(new_value 42)
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-int VALUE ${new_value}
   )
 
@@ -398,8 +572,26 @@ test_setting_list_int()
 test_setting_empty_value()
 test_setting_empty_list()
 
+test_append_list_strings()
+
 test_set_remove_int()
 
 test_fail_missing_filename()
 
-target_sources(app PRIVATE src/main.c)
+# Generator expressions cannot be tested immediately, since they are expanded
+# at project generation time. The script mode re-run is delayed until after
+# the associated target has been built, and the verification is performed at
+# that time.
+if(NOT CMAKE_SCRIPT_MODE_FILE)
+  # create a file containing genexes
+  test_setting_genexes()
+
+  # Spawn a new CMake instance to re-run the whole test suite in script mode
+  # and verify the genex values once the associated target is built.
+  add_custom_command(TARGET app POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_FILE}
+  )
+else()
+  # verify the contents of the created genex file
+  test_verify_genexes()
+endif()

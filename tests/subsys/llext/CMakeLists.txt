@@ -45,10 +45,10 @@ if (NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
     list(APPEND ext_names init_fini)
 endif()
 
-# generate extension targets foreach extension given by 'ext_names'
+# generate extension targets for each extension in 'ext_names'
 foreach(ext_name ${ext_names})
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)
-  set(ext_bin ${ZEPHYR_BINARY_DIR}/${ext_name}.llext)
+  set(ext_bin ${PROJECT_BINARY_DIR}/llext/${ext_name}.llext)
   set(ext_inc ${ZEPHYR_BINARY_DIR}/include/generated/${ext_name}.inc)
   add_llext_target(${ext_name}_ext
     OUTPUT  ${ext_bin}
@@ -59,10 +59,10 @@ endforeach()
 
 if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT)
   add_llext_target(multi_file_ext
-    OUTPUT  ${ZEPHYR_BINARY_DIR}/multi_file.llext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/multi_file.llext
     SOURCES ${PROJECT_SOURCE_DIR}/src/multi_file_ext1.c ${PROJECT_SOURCE_DIR}/src/multi_file_ext2.c
   )
-  generate_inc_file_for_target(app ${ZEPHYR_BINARY_DIR}/multi_file.llext
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/multi_file.llext
     ${ZEPHYR_BINARY_DIR}/include/generated/multi_file.inc
   )
 endif()
@@ -82,10 +82,10 @@ endif()
 
 if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
   add_llext_target(riscv_edge_case_cb_type_ext
-    OUTPUT  ${ZEPHYR_BINARY_DIR}/riscv_edge_case_cb_type_ext.llext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_cb_type_ext.llext
     SOURCES ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_cb_type.c ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_cb_type_trigger.S
   )
-  generate_inc_file_for_target(app ${ZEPHYR_BINARY_DIR}/riscv_edge_case_cb_type_ext.llext
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_cb_type_ext.llext
     ${ZEPHYR_BINARY_DIR}/include/generated/riscv_edge_case_cb_type.inc
   )
 endif()

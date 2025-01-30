@@ -102,7 +102,7 @@ static char *cause_str(uint32_t cause_code)
 }
 #endif
 
-FUNC_NORETURN void _Fault(const struct arch_esf *esf)
+FUNC_NORETURN void z_nios2_fault(const struct arch_esf *esf)
 {
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 	/* Unfortunately, completely unavailable on Nios II/e cores */

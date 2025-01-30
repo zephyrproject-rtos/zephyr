@@ -648,7 +648,7 @@ int ads131m02_set_power_mode(const struct device *dev,
 	return ads131m02_reg_write(dev, ADS131M02_CLOCK_REG, temp);
 }
 
-static const struct adc_driver_api ads131m02_api = {
+static DEVICE_API(adc, ads131m02_api) = {
 	.channel_setup = ads131m02_channel_setup,
 	.read = ads131m02_read,
 	.ref_internal = ADS131M02_REF_INTERNAL,

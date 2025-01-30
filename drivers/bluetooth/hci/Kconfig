@@ -155,6 +155,7 @@ config BT_ESP32
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
+	select HAS_BT_CTLR
 	help
 	  Espressif HCI bluetooth interface
 
@@ -294,7 +295,7 @@ config BT_DRV_RX_STACK_SIZE
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default HCI_NXP_RX_STACK_SIZE if HCI_NXP_RX_THREAD
-	default 256
+	default 512
 	help
 	  Stack size for the HCI driver's RX thread.
 
