@@ -69,6 +69,8 @@ static __unused int commit_optb(const struct device *dev)
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int64_t timeout_time = k_uptime_get() + STM32H7_FLASH_OPT_TIMEOUT_MS;
 
+	/* Make sure previous write is completed before committing option bytes. */
+	barrier_dsync_fence_full();
 	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
 	barrier_dsync_fence_full();
 	while (regs->OPTSR_CUR & FLASH_OPTSR_OPT_BUSY) {
@@ -109,8 +111,6 @@ static __unused int write_opt(const struct device *dev, uint32_t mask, uint32_t 
 	sys_write32((sys_read32(cur) & ~mask) | value, prg);
 
 	if (commit) {
-		/* Make sure previous write is completed before committing option bytes. */
-		barrier_dsync_fence_full();
 		rc = commit_optb(dev);
 		if (rc < 0) {
 			return rc;
