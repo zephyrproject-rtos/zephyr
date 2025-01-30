@@ -67,6 +67,8 @@ The Zephyr ``nucleo_n657x0_q`` board supports the following hardware features:
 +===========+============+=====================================+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
+| CAN/CANFD | on-chip    | canbus                              |
++-----------+------------+-------------------------------------+
 | DMA       | on-chip    | Direct Memory Access Controller     |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
@@ -95,6 +97,8 @@ For more details please refer to `NUCLEO-N657X0-Q User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- FDCAN1_TX : PH2
+- FDCAN1_RX : PD0
 - LD1 : PO1
 - LD2 : PG10
 - USART_1_TX : PE5
