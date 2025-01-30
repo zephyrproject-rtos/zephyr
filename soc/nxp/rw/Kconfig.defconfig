@@ -92,4 +92,11 @@ config IDLE_STACK_SIZE
 
 endif # PM
 
+if PM_DEVICE
+
+config POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
 endif # SOC_SERIES_RW6XX
