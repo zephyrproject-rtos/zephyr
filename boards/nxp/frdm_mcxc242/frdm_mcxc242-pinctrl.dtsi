@@ -16,6 +16,14 @@
 			slew-rate = "slow";
 		};
 	};
+	pinmux_lpuart1: pinmux_lpuart1 {
+		group0 {
+			pinmux = <LPUART1_RX_PTE1>,
+				<LPUART1_TX_PTE0>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 	pinmux_uart2: pinmux_uart2 {
 		group0 {
 			pinmux = <UART2_RX_PTD2>,
