@@ -11,6 +11,7 @@ family:
       cpuclusters:
       - name: cpu0
       - name: cpu1
+      - name: smp
   - name: mps3
     socs:
     - name: corstone300

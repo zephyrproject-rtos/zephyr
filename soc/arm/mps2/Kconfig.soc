@@ -48,6 +48,12 @@ config SOC_MPS2_AN521_CPU1
 	help
 	  ARM Cortex-M33 SMM-SSE-200 on V2M-MPS2+ (AN521) CPU1
 
+config SOC_MPS2_AN521_SMP
+	bool
+	select SOC_MPS2_AN521
+	help
+	  ARM Cortex-M33 SMM-SSE-200 on V2M-MPS2+ (AN521) SMP.
+
 config SOC_SERIES
 	default "mps2" if SOC_SERIES_MPS2
 
