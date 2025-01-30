@@ -163,38 +163,29 @@ static int create_socket(enum proto_type proto, int *sock)
 {
 	int tmp_sock;
 	int err;
-	struct sockaddr *addr;
+	struct sockaddr_storage addr_storage;
+	struct sockaddr *addr = (struct sockaddr *)&addr_storage;
 	socklen_t addr_len = 0;
 
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	struct sockaddr_in addr4;
-#endif
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_IPV4) &&
+	    proto == PROTOCOL_IPV4) {
+		struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
 
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	struct sockaddr_in6 addr6;
-#endif
+		addr_len = sizeof(*addr4);
+		memset(addr4, 0, sizeof(*addr4));
+		addr4->sin_family = AF_INET;
+		addr4->sin_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
+		addr4->sin_addr.s_addr = htonl(INADDR_ANY);
+	} else if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_IPV6) &&
+		   proto == PROTOCOL_IPV6) {
+		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
 
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	if (proto == PROTOCOL_IPV4) {
-		addr_len = sizeof(struct sockaddr_in);
-		memset(&addr4, 0, sizeof(addr4));
-		addr4.sin_family = AF_INET;
-		addr4.sin_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
-		addr4.sin_addr.s_addr = htonl(INADDR_ANY);
-		addr = (struct sockaddr *)&addr4;
+		addr_len = sizeof(*addr6);
+		memset(addr6, 0, sizeof(*addr6));
+		addr6->sin6_family = AF_INET6;
+		addr6->sin6_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
+		addr6->sin6_addr = in6addr_any;
 	}
-#endif
-
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	if (proto == PROTOCOL_IPV6) {
-		addr_len = sizeof(struct sockaddr_in6);
-		memset(&addr6, 0, sizeof(addr6));
-		addr6.sin6_family = AF_INET6;
-		addr6.sin6_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
-		addr6.sin6_addr = in6addr_any;
-		addr = (struct sockaddr *)&addr6;
-	}
-#endif
 
 	tmp_sock = zsock_socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	err = errno;
