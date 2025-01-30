@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: dfu-next
+.. zephyr:code-sample:: usb-dfu
    :name: USB DFU
    :relevant-api: usbd_api usbd_dfu
 
@@ -23,7 +23,7 @@ This sample can be built for multiple boards, in this example we will build it
 for the reel board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/usb/dfu-next
+   :zephyr-app: samples/subsys/usb/dfu
    :board: reel_board
    :goals: build flash
    :compact:
@@ -67,7 +67,7 @@ flash backend and MCUboot support enabled using the :ref:`sysbuild`:
 
 .. zephyr-app-commands::
    :tool: west
-   :zephyr-app: samples/subsys/usb/dfu-next
+   :zephyr-app: samples/subsys/usb/dfu
    :board: reel_board
    :goals: build flash
    :west-args: --sysbuild
