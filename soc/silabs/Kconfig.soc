@@ -5,6 +5,7 @@ config SOC_FAMILY
 	default "silabs_s0" if SOC_FAMILY_SILABS_S0
 	default "silabs_s1" if SOC_FAMILY_SILABS_S1
 	default "silabs_s2" if SOC_FAMILY_SILABS_S2
+	default "silabs_siwx91x" if SOC_FAMILY_SILABS_SIWX91X
 	default "silabs_sim3" if SOC_FAMILY_SILABS_SIM3
 
 rsource "*/Kconfig.soc"
