@@ -67,9 +67,11 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *usb_pcfg =
 					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
+#endif
 
 #define USB_OTG_HS_EMB_PHYC (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
 			     DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
@@ -339,6 +341,14 @@ static int usb_dc_stm32_phy_specific_clock_enable(const struct device *const clk
 	 * with LL_PWR_EnableVDDUSB function (higher case)
 	 */
 	LL_PWR_EnableVDDUSB();
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+	/* Enable Vdd USB voltage monitoring */
+	LL_PWR_EnableVddUSBMonitoring();
+	while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY)) {
+		/* Wait for VDD33USB ready */
+	}
+	/* Enable VDDUSB */
+	LL_PWR_EnableVddUSB();
 #endif
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
@@ -417,12 +427,14 @@ static int usb_dc_stm32_clock_enable(void)
 	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
 	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
 						LL_AHB2_GRP1_PERIPH_USBPHY);
-#else
+#elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
 
 #if USB_OTG_HS_EMB_PHYC
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#endif
 #endif
 #endif /* USB_OTG_HS_ULPI_PHY */
 
@@ -511,12 +523,14 @@ static int usb_dc_stm32_init(void)
 	}
 #endif
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LOG_DBG("Pinctrl signals configuration");
 	ret = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("USB pinctrl setup failed (%d)", ret);
 		return ret;
 	}
+#endif
 
 	LOG_DBG("HAL_PCD_Init");
 	status = HAL_PCD_Init(&usb_dc_stm32_state.pcd);
