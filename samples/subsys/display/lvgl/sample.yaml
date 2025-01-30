@@ -46,6 +46,18 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
   sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166_a09:
     tags: shield
     filter: dt_compat_enabled("frida,nt35510")
@@ -54,21 +66,37 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
-  sample.subsys.display.lvgl.rk043fn66hs_ctg:
-    tags: shield
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
+  samples.subsys.display.lvgl.rk043fn66hs_ctg:
     platform_allow:
       - mimxrt1064_evk
       - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
       - mimxrt1050_evk/mimxrt1052/hyperflash
       - mimxrt1040_evk
     integration_platforms:
       - mimxrt1040_evk
-    harness: console
+    tags: display
     extra_args: SHIELD=rk043fn66hs_ctg
+    harness: console
     harness_config:
       fixture: fixture_display_rk043fn66hs_ctg
-  sample.subsys.display.lvgl.rk043fn02h_ct:
-    tags: shield
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
+  samples.subsys.display.lvgl.rk043fn02h_ct:
     platform_allow:
       - mimxrt1064_evk
       - mimxrt1060_evk@C/mimxrt1062/qspi
@@ -80,14 +108,21 @@ tests:
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
       fixture: fixture_display_rk043fn02h_ct
-  sample.subsys.display.lvgl.rtkmipilcdb00000be:
-    tags: shield
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
+  samples.subsys.display.lvgl.rtkmipilcdb00000be:
     platform_allow:
       - ek_ra8d1
     harness: console
     extra_args: SHIELD=rtkmipilcdb00000be
     harness_config:
       fixture: fixture_display
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
   sample.subsys.display.lvgl.seeed_xiao_round_display:
     tags: shield
     min_flash: 320
@@ -104,3 +139,7 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_seeed_xiao_round_display
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
