@@ -11,7 +11,6 @@
 
 LOG_MODULE_REGISTER(spi_master, LOG_LEVEL_INF);
 
-
 #define SPI_NODE DT_ALIAS(spi0)
 
 #define LED0_NODE DT_ALIAS(led0)
@@ -26,63 +25,48 @@ static const struct device *spi_dev;
 
 int main(void)
 {
-    static const struct spi_config spis_config = {
-        .operation = SPI_MODE | SPI_TRANSFER_MSB | SPI_WORD_SET(8),
-        .frequency = 100000,
-        .slave = 0,
-    };
+	static const struct spi_config spis_config = {
+		.operation = SPI_MODE | SPI_TRANSFER_MSB | SPI_WORD_SET(8),
+		.frequency = 100000,
+		.slave = 0,
+	};
 
-    struct spi_buf tx_buf = {
-        .buf = (void *)tx_data,
-        .len = sizeof(tx_data)};
+	struct spi_buf tx_buf = {.buf = (void *)tx_data, .len = sizeof(tx_data)};
 
-    struct spi_buf_set tx_bufs = {
-        .buffers = &tx_buf,
-        .count = 1};
+	struct spi_buf_set tx_bufs = {.buffers = &tx_buf, .count = 1};
 
-    uint8_t rx_data[sizeof(tx_data)];
-    struct spi_buf rx_buf = {
-        .buf = rx_data,
-        .len = sizeof(rx_data)};
+	uint8_t rx_data[sizeof(tx_data)];
+	struct spi_buf rx_buf = {.buf = rx_data, .len = sizeof(rx_data)};
 
-    struct spi_buf_set rx_bufs = {
-        .buffers = &rx_buf,
-        .count = 1};
+	struct spi_buf_set rx_bufs = {.buffers = &rx_buf, .count = 1};
 
-    spi_dev = DEVICE_DT_GET(SPI_NODE);
+	spi_dev = DEVICE_DT_GET(SPI_NODE);
 
-    if (!gpio_is_ready_dt(&led))
-    {
-        return 0;
-    }
+	if (!gpio_is_ready_dt(&led)) {
+		return 0;
+	}
 
-    int ledret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
-    if (ledret < 0)
-    {
-        return 0;
-    }
+	int ledret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
+	if (ledret < 0) {
+		return 0;
+	}
 
-    if (!device_is_ready(spi_dev))
-    {
-        printk("Error: SPI device not ready");
-        return 0;
-    }
+	if (!device_is_ready(spi_dev)) {
+		printk("Error: SPI device not ready");
+		return 0;
+	}
 
-    while (1)
-    {
-        int ret = spi_transceive(spi_dev, &spis_config, &tx_bufs, &rx_bufs);
-        if (ret == 0)
-        {
-            printk("Sent: %s\n", tx_data);
-            printk("Received: %s\n", rx_data);
+	while (1) {
+		int ret = spi_transceive(spi_dev, &spis_config, &tx_bufs, &rx_bufs);
+		if (ret == 0) {
+			printk("Sent: %s\n", tx_data);
+			printk("Received: %s\n", rx_data);
 
-            ret = gpio_pin_toggle_dt(&led);
-        }
-        else
-        {
-            printk("SPI transceive error: %d", ret);
-        }
+			ret = gpio_pin_toggle_dt(&led);
+		} else {
+			printk("SPI transceive error: %d", ret);
+		}
 
-        k_msleep(1000);
-    }
+		k_msleep(1000);
+	}
 }

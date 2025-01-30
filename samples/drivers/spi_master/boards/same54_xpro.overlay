@@ -4,9 +4,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- 
-/ {
-	aliases {
-		spi0 = &sercom4;  // Works with the same54_xpro Board
+
+/
+{
+	aliases
+	{
+		spi0 = &sercom4; // Works with the same54_xpro Board
 	};
 };
