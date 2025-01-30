@@ -107,6 +107,7 @@ struct btp_gap_set_bondable_rp {
 
 #define BTP_GAP_START_ADVERTISING		0x0a
 struct btp_gap_start_advertising_cmd {
+	uint8_t ext_adv_id;
 	uint8_t adv_data_len;
 	uint8_t scan_rsp_len;
 	uint8_t adv_sr_data[];
@@ -257,6 +258,7 @@ struct btp_gap_set_extended_advertising_rp {
 /* bitmap of flags*/
 #define BTP_GAP_PADV_INCLUDE_TX_POWER		BIT(0)
 struct btp_gap_padv_configure_cmd {
+	uint8_t ext_adv_id;
 	uint8_t flags;
 	uint16_t interval_min;
 	uint16_t interval_max;
@@ -282,6 +284,7 @@ struct btp_gap_padv_stop_rp {
 
 #define BTP_GAP_PADV_SET_DATA			0x25
 struct btp_gap_padv_set_data_cmd {
+	uint8_t ext_adv_id;
 	uint16_t data_len;
 	uint8_t data[];
 } __packed;
@@ -448,17 +451,17 @@ struct bt_le_per_adv_param;
 struct bt_le_per_adv_sync_param;
 struct bt_le_adv_param;
 struct bt_data;
-struct bt_le_ext_adv *tester_gap_ext_adv_get(void);
+struct bt_le_ext_adv *tester_gap_ext_adv_get(uint8_t ext_adv_id);
 struct bt_le_per_adv_sync *tester_gap_padv_get(void);
-int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_addr_type,
-				   const struct bt_data *ad, size_t ad_len,
+int tester_gap_create_adv_instance(uint8_t ext_adv_id, struct bt_le_adv_param *param,
+				   uint8_t own_addr_type, const struct bt_data *ad, size_t ad_len,
 				   const struct bt_data *sd, size_t sd_len, uint32_t *settings);
-int tester_gap_stop_ext_adv(void);
-int tester_gap_start_ext_adv(void);
-int tester_gap_padv_configure(const struct bt_le_per_adv_param *param);
-int tester_gap_padv_set_data(struct bt_data *per_ad, uint8_t ad_len);
-int tester_gap_padv_start(void);
-int tester_gap_padv_stop(void);
+int tester_gap_stop_ext_adv(uint8_t ext_adv_id);
+int tester_gap_start_ext_adv(uint8_t ext_adv_id);
+int tester_gap_padv_configure(uint8_t ext_adv_id, const struct bt_le_per_adv_param *param);
+int tester_gap_padv_set_data(uint8_t ext_adv_id, struct bt_data *per_ad, uint8_t ad_len);
+int tester_gap_padv_start(uint8_t ext_adv_id);
+int tester_gap_padv_stop(uint8_t ext_adv_id);
 int tester_gap_padv_create_sync(struct bt_le_per_adv_sync_param *create_params);
 int tester_gap_padv_stop_sync(void);
 #endif /* defined(CONFIG_BT_EXT_ADV) */

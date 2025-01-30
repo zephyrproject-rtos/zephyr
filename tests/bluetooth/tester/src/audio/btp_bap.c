@@ -369,7 +369,7 @@ static const struct btp_handler bap_handlers[] = {
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = btp_bap_audio_stream_send,
 	},
-#if defined(CONFIG_BT_BAP_BROADCAST_SINK) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	{
 		.opcode = BTP_BAP_BROADCAST_SOURCE_SETUP,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
@@ -475,7 +475,7 @@ static const struct btp_handler bap_handlers[] = {
 		.expect_len = sizeof(struct btp_bap_send_past_cmd),
 		.func = btp_bap_broadcast_assistant_send_past,
 	},
-#endif /* CONFIG_BT_BAP_BROADCAST_SINK || CONFIG_BT_BAP_BROADCAST_SINK */
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_BROADCAST_SINK */
 };
 
 uint8_t tester_init_pacs(void)
