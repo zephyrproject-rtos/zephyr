@@ -238,12 +238,21 @@ foreach(target ${edk_targets})
     edk_write_var(${target} "LLEXT_GENERATED_IMACROS_CFLAGS" "${imacros_gen}")
 endforeach()
 
+if(CONFIG_LLEXT_EDK_FORMAT_TAR_XZ)
+  set(llext_edk_format FORMAT gnutar COMPRESSION XZ)
+elseif(CONFIG_LLEXT_EDK_FORMAT_TAR_ZSTD)
+  set(llext_edk_format FORMAT gnutar COMPRESSION Zstd)
+elseif(CONFIG_LLEXT_EDK_FORMAT_ZIP)
+  set(llext_edk_format FORMAT zip)
+else()
+  message(FATAL_ERROR "Unsupported LLEXT_EDK_FORMAT choice")
+endif()
+
 # Generate the tarball
 file(ARCHIVE_CREATE
     OUTPUT ${llext_edk_file}
     PATHS ${llext_edk}
-    FORMAT gnutar
-    COMPRESSION XZ
+    ${llext_edk_format}
 )
 
 file(REMOVE_RECURSE ${llext_edk})
