@@ -2220,46 +2220,48 @@ if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
 endif()
 
 # Extension Development Kit (EDK) generation.
-set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
+if(CONFIG_LLEXT_EDK)
+  set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
 
-# TODO maybe generate flags for C CXX ASM
-zephyr_get_compile_definitions_for_lang(C zephyr_defs)
-zephyr_get_compile_options_for_lang(C zephyr_flags)
+  # TODO maybe generate flags for C CXX ASM
+  zephyr_get_compile_definitions_for_lang(C zephyr_defs)
+  zephyr_get_compile_options_for_lang(C zephyr_flags)
 
-# Filter out non LLEXT and LLEXT_EDK flags - and add required ones
-llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
-llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
+  # Filter out non LLEXT and LLEXT_EDK flags - and add required ones
+  llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
+  llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
 
-set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
-list(APPEND llext_edk_cflags ${llext_filt_flags})
-list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
-list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
+  set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
+  list(APPEND llext_edk_cflags ${llext_filt_flags})
+  list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
+  list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
 
-build_info(llext-edk file PATH ${llext_edk_file})
-build_info(llext-edk cflags VALUE ${llext_edk_cflags})
-build_info(llext-edk include-dirs VALUE "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>")
+  build_info(llext-edk file PATH ${llext_edk_file})
+  build_info(llext-edk cflags VALUE ${llext_edk_cflags})
+  build_info(llext-edk include-dirs VALUE "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>")
 
-add_custom_command(
+  add_custom_command(
     OUTPUT ${llext_edk_file}
     # Regenerate syscalls in case CONFIG_LLEXT_EDK_USERSPACE_ONLY
     COMMAND ${CMAKE_COMMAND}
-        -E make_directory edk/include/generated/zephyr
+      -E make_directory edk/include/generated/zephyr
     COMMAND
-        ${PYTHON_EXECUTABLE}
-        ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
-        --json-file        ${syscalls_json}                     # Read this file
-        --base-output      edk/include/generated/zephyr/syscalls           # Write to this dir
-        --syscall-dispatch edk/include/generated/zephyr/syscall_dispatch.c # Write this file
-        --syscall-list     ${edk_syscall_list_h}
-        $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
-        ${SYSCALL_LONG_REGISTERS_ARG}
-        ${SYSCALL_SPLIT_TIMEOUT_ARG}
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
+      --json-file        ${syscalls_json}                     # Read this file
+      --base-output      edk/include/generated/zephyr/syscalls           # Write to this dir
+      --syscall-dispatch edk/include/generated/zephyr/syscall_dispatch.c # Write this file
+      --syscall-list     ${edk_syscall_list_h}
+      $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
+      ${SYSCALL_LONG_REGISTERS_ARG}
+      ${SYSCALL_SPLIT_TIMEOUT_ARG}
     COMMAND ${CMAKE_COMMAND}
         -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
     DEPENDS ${logical_target_for_zephyr_elf} build_info_yaml_saved
     COMMAND_EXPAND_LISTS
-)
-add_custom_target(llext-edk DEPENDS ${llext_edk_file})
+  )
+  add_custom_target(llext-edk DEPENDS ${llext_edk_file})
+endif()
 
 # @Intent: Set compiler specific flags for standard C/C++ includes
 # Done at the very end, so any other system includes which may
