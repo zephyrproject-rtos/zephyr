@@ -390,8 +390,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                         )
 
             if not self.erase and generated_uicr:
-                self.exec_op('erase', core=core, option={'chip_erase_mode': 'ERASE_UICR',
-                                                         'ext_mem_erase_mode': 'ERASE_NONE'})
+                self.exec_op('erase', core=core, kind='uicr')
         else:
             if self.erase:
                 erase_arg = 'ERASE_ALL'
