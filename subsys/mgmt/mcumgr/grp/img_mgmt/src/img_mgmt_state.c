@@ -387,11 +387,6 @@ img_mgmt_state_confirm(void)
 {
 	int rc;
 
-#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-	int32_t err_rc;
-	uint16_t err_group;
-#endif
-
 	/* Confirm disallowed if a test is pending. */
 	if (img_mgmt_state_any_pending()) {
 		rc = IMG_MGMT_ERR_IMAGE_ALREADY_PENDING;
@@ -401,8 +396,13 @@ img_mgmt_state_confirm(void)
 	rc = img_mgmt_write_confirmed();
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-	(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &err_rc,
-				   &err_group);
+	if (!rc) {
+		int32_t err_rc;
+		uint16_t err_group;
+
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &err_rc,
+					   &err_group);
+	}
 #endif
 
 err:
