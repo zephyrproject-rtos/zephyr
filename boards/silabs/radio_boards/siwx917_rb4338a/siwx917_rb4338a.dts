@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023 Antmicro
+ * Copyright (c) 2024 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/siwg917m111mgtba.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <common/freq.h>
+
+/ {
+	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
+	compatible = "silabs,x917_rb4338a", "silabs,siwg917";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &ulpuart;
+		zephyr,shell-uart = &ulpuart;
+	};
+};
+
+&ulpuart {
+	status = "okay";
+};
