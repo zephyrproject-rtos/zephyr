@@ -105,5 +105,15 @@
 			status = "okay";
 		};
 
+		mdio0: mdio@1a120020 {
+			compatible = "sensry,sy1xx-mdio";
+			reg = <0x1a120020 0x20>;
+			status = "disabled";
+
+			clock-frequency = <450000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
