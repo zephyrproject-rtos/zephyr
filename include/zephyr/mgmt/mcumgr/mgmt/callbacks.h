@@ -179,7 +179,7 @@ enum img_mgmt_group_events {
 	/** Callback when a DFU operation has finished being transferred. */
 	MGMT_EVT_OP_IMG_MGMT_DFU_PENDING		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 3),
 
-	/** Callback when an image has been confirmed. */
+	/** Callback when an image has been confirmed. data is img_mgmt_image_confirmed(). */
 	MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 4),
 
 	/** Callback when an image write command has finished writing to flash. */
