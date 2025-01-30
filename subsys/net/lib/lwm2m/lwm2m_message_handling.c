@@ -383,6 +383,7 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 	ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt),
 			 complete_payload + (block_num * block_size_bytes), payload_size);
 	if (ret < 0) {
+		LOG_ERR("CoAP message size overflow");
 		return ret;
 	}
 
@@ -392,19 +393,16 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 {
 	int ret;
-	uint16_t len;
-	const uint8_t *payload;
-
 	/* save the big buffer for later use (splitting blocks) */
 	msg->body_encode_buffer = msg->cpkt;
 
 	/* set the default (small) buffer for sending blocks */
 	msg->cpkt.data = msg->msg_data;
 	msg->cpkt.offset = 0;
-	msg->cpkt.max_len = MAX_PACKET_SIZE;
+	msg->cpkt.max_len = sizeof(msg->msg_data);
 
-	payload = coap_packet_get_payload(&msg->body_encode_buffer, &len);
-	if (len <= CONFIG_LWM2M_COAP_MAX_MSG_SIZE) {
+	/* Can we fit a whole message into one frame */
+	if (msg->body_encode_buffer.offset <= msg->cpkt.max_len) {
 
 		/* copy the packet */
 		ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt), msg->body_encode_buffer.data,
@@ -422,6 +420,9 @@ STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 
 		NET_ASSERT(msg->out.block_ctx == NULL, "Expecting to have no context to release");
 	} else {
+		uint16_t len;
+		const uint8_t *payload = coap_packet_get_payload(&msg->body_encode_buffer, &len);
+
 		/* Before splitting the content, append Etag option to protect the integrity of
 		 * the payload.
 		 */
