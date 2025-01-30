@@ -57,11 +57,11 @@ zephyr_linker_sources_ifdef(CONFIG_GEN_IRQ_VECTOR_TABLE
 
 if(CONFIG_GEN_ISR_TABLES)
   zephyr_linker_section(NAME .intList VMA IDT_LIST LMA IDT_LIST NOINPUT PASS NOT LINKER_ZEPHYR_FINAL)
-  zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".irq_info" FIRST)
-  zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".intList")
+  zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".irq_info" FIRST PASS NOT LINKER_ZEPHYR_FINAL)
+  zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".intList" PASS NOT LINKER_ZEPHYR_FINAL)
 
-  zephyr_linker_section_configure(SECTION /DISCARD/ KEEP INPUT ".irq_info" PASS LINKER_ZEPHYR_FINAL)
-  zephyr_linker_section_configure(SECTION /DISCARD/ KEEP INPUT ".intList"  PASS LINKER_ZEPHYR_FINAL)
+  zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".irq_info" PASS LINKER_ZEPHYR_FINAL)
+  zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".intList"  PASS LINKER_ZEPHYR_FINAL)
 endif()
 
 zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
