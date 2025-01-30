@@ -1,7 +1,7 @@
 sample:
-  name: USB loopback sample
+  name: USB device loopback sample
 tests:
-  sample.usb.loopback:
-    depends_on: usb_device
+  sample.usbd.loopback:
+    depends_on: usbd
+    build_only: true
     tags: usb
-    harness: button
