@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SIWX917_RB4338A
+	select SOC_PART_NUMBER_SIWG917M111MGTBA
