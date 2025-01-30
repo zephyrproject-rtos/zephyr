@@ -8,6 +8,7 @@ menuconfig WIFI_NXP
 	select NET_L2_ETHERNET_MGMT if NETWORKING && NET_L2_ETHERNET
 	select SDHC if !SOC_SERIES_RW6XX
 	select SDIO_STACK if !SOC_SERIES_RW6XX
+	select WIFI_NM
 	depends on DT_HAS_NXP_WIFI_ENABLED
 	help
 	  Enable NXP SoC Wi-Fi support.
