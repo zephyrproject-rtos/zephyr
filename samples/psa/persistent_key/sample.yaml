@@ -13,6 +13,8 @@ common:
 tests:
   sample.psa.persistent_key.tfm:
     filter: CONFIG_BUILD_WITH_TFM
+    extra_args:
+      - CONFIG_TFM_PROFILE_TYPE_NOT_SET=y
     tags:
       - trusted-firmware-m
   sample.psa.persistent_key.secure_storage.entropy_driver:
