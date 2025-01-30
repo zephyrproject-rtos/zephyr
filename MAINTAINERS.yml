@@ -3715,6 +3715,7 @@ NXP Drivers:
     - decsny
     - manuargue
     - dbaluta
+    - Raymond0225
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
