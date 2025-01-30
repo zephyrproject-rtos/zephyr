@@ -99,6 +99,11 @@ int init_vlan(void)
 	struct ud ud;
 	int ret;
 
+	if (CONFIG_NET_VLAN_COUNT == 0) {
+		LOG_DBG("No VLAN interfaces defined.");
+		return 0;
+	}
+
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
 	if (!iface) {
 		LOG_ERR("No ethernet interfaces found.");
