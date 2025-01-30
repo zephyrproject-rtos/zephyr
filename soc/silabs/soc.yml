@@ -69,6 +69,11 @@ family:
         socs:
           - name: efr32mg29b140f1024im40
           - name: efr32mg29b230f1024cm40
+  - name: silabs_siwx91x
+    series:
+      - name: siwg917
+        socs:
+          - name: siwg917m111mgtba
   - name: silabs_sim3
     series:
       - name: sim3u
