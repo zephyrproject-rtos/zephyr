@@ -49,6 +49,10 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
     modules:
       - lvgl
     tags:
@@ -64,6 +68,10 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
     modules:
       - lvgl
     tags:
@@ -76,15 +84,20 @@ tests:
     platform_allow:
       - mimxrt1064_evk
       - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
       - mimxrt1050_evk/mimxrt1052/hyperflash
       - mimxrt1040_evk
     integration_platforms:
       - mimxrt1040_evk
     tags: display
-    harness: console
     extra_args: SHIELD=rk043fn66hs_ctg
+    harness: console
     harness_config:
       fixture: fixture_display_rk043fn66hs_ctg
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
   samples.subsys.display.lvgl.rk043fn02h_ct:
     platform_allow:
       - mimxrt1064_evk
@@ -98,6 +111,10 @@ tests:
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
       fixture: fixture_display_rk043fn02h_ct
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
   samples.subsys.display.lvgl.rtkmipilcdb00000be:
     platform_allow:
       - ek_ra8d1
@@ -108,3 +125,7 @@ tests:
     extra_args: SHIELD=rtkmipilcdb00000be
     harness_config:
       fixture: fixture_display
+      type: multi_line
+      regex:
+        - "lvgl sample"
+        - "run"
