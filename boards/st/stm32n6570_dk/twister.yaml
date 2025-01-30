@@ -6,6 +6,7 @@ flash: 1024
 vendor: st
 supported:
   - arduino_serial
+  - can
   - dma
   - gpio
   - uart
