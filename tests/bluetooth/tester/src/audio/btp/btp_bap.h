@@ -36,6 +36,7 @@ struct btp_bap_send_rp {
 
 #define BTP_BAP_BROADCAST_SOURCE_SETUP		0x04
 struct btp_bap_broadcast_source_setup_cmd {
+	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
 	uint8_t streams_per_subgroup;
 	uint8_t subgroups;
 	uint8_t sdu_interval[3];

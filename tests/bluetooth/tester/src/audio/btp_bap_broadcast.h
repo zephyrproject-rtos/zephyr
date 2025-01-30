@@ -26,6 +26,7 @@ struct btp_bap_broadcast_stream {
  */
 struct btp_bap_broadcast_remote_source {
 	bt_addr_le_t address;
+	uint8_t source_id;
 	uint32_t broadcast_id;
 	struct btp_bap_broadcast_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	struct bt_bap_stream *sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
@@ -41,6 +42,8 @@ struct btp_bap_broadcast_remote_source {
 };
 
 struct btp_bap_broadcast_local_source {
+	bool allocated;
+	uint8_t source_id;
 	uint32_t broadcast_id;
 	struct bt_bap_qos_cfg qos;
 	struct btp_bap_broadcast_stream streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
@@ -53,7 +56,7 @@ struct btp_bap_broadcast_local_source {
 };
 
 int btp_bap_broadcast_init(void);
-struct btp_bap_broadcast_local_source *btp_bap_broadcast_local_source_get(uint8_t source_id);
+struct btp_bap_broadcast_local_source *btp_bap_broadcast_local_source_get(uint32_t broadcast_id);
 struct btp_bap_broadcast_stream *btp_bap_broadcast_stream_alloc(
 	struct btp_bap_broadcast_local_source *source);
 
