@@ -120,6 +120,9 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
             cmd.append(cli_opts)
         elif op_type == 'reset':
             cmd += ['--reset-kind', _op['kind']]
+        elif op_type == 'erase':
+            cmd += ['--reset-kind', _op['kind']]
+
 
         cmd += ['--core', op['core']] if op.get('core') else []
         cmd += ['--x-family', f'{self.family}']
