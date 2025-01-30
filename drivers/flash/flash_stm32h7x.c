@@ -81,6 +81,7 @@ static __unused int commit_optb(const struct device *dev)
 	return 0;
 }
 
+/* Returns negative value on error, 0 if a change was not need, 1 if a change has been made. */
 static __unused int write_opt(const struct device *dev, uint32_t mask, uint32_t value,
 			      uintptr_t cur, bool commit)
 {
@@ -101,6 +102,7 @@ static __unused int write_opt(const struct device *dev, uint32_t mask, uint32_t 
 	}
 
 	if ((sys_read32(cur) & mask) == value) {
+		/* A change not needed, return 0. */
 		return 0;
 	}
 
@@ -110,9 +112,13 @@ static __unused int write_opt(const struct device *dev, uint32_t mask, uint32_t 
 		/* Make sure previous write is completed before committing option bytes. */
 		barrier_dsync_fence_full();
 		rc = commit_optb(dev);
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
-	return rc;
+	/* A change has been made, return 1. */
+	return 1;
 }
 
 static __unused int write_optsr(const struct device *dev, uint32_t mask, uint32_t value)
