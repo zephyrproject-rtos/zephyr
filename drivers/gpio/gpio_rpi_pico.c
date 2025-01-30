@@ -207,6 +207,32 @@ static uint32_t gpio_rpi_get_pending_int(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_rpi_port_get_direction(const struct device *port, gpio_port_pins_t map,
+				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	/* The Zephyr API considers a disconnected pin to be neither an input nor output.
+	 * Since we disable both OE and IE for disconnected pins clear the mask bits.
+	 */
+	for (int pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
+		if (pads_bank0_hw->io[pin] & PADS_BANK0_GPIO0_OD_BITS) {
+			map &= ~BIT(pin);
+		}
+		if (inputs && (pads_bank0_hw->io[pin] & PADS_BANK0_GPIO0_IE_BITS)) {
+			*inputs |= BIT(pin);
+		}
+	}
+	if (inputs) {
+		*inputs &= map;
+	}
+	if (outputs) {
+		*outputs = sio_hw->gpio_oe & map;
+	}
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 	.pin_configure = gpio_rpi_configure,
 	.port_get_raw = gpio_rpi_port_get_raw,
@@ -217,6 +243,9 @@ static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 	.pin_interrupt_configure = gpio_rpi_pin_interrupt_configure,
 	.manage_callback = gpio_rpi_manage_callback,
 	.get_pending_int = gpio_rpi_get_pending_int,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_rpi_port_get_direction,
+#endif
 };
 
 static void gpio_rpi_isr(const struct device *dev)
