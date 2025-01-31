@@ -9,7 +9,10 @@
 import logging
 import os
 import shutil
+from argparse import Namespace
+from itertools import groupby
 
+import list_boards
 import scl
 from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.environment import ZEPHYR_BASE
@@ -83,27 +86,17 @@ class Platform:
         self.filter_data = dict()
         self.uart = ""
         self.resc = ""
-        self.qualifier = None
 
-    def load(self, board, target, aliases, data):
+    def load(self, board, target, aliases, data, variant_data):
         """Load the platform data from the board data and target data
         board: the board object as per the zephyr build system
         target: the target name of the board as per the zephyr build system
         aliases: list of aliases for the target
-        data: the data from the twister.yaml file for the target
+        data: the default data from the twister.yaml file for the board
+        variant_data: the target-specific data to replace the default data
         """
         self.name = target
         self.aliases = aliases
-
-        # Get data for various targets and use the main board data as a
-        # defauly. Individual variant information will replace the default data
-        # provded in the main twister configuration for this board.
-        variants = data.get("variants", {})
-        variant_data = {}
-        for alias in aliases:
-            variant_data = variants.get(alias, {})
-            if variant_data:
-                break
 
         self.normalized_name = self.name.replace("/", "_")
         self.sysbuild = variant_data.get("sysbuild", data.get("sysbuild", self.sysbuild))
@@ -184,3 +177,116 @@ class Platform:
 
     def __repr__(self):
         return f"<{self.name} on {self.arch}>"
+
+
+def generate_platforms(board_roots, soc_roots, arch_roots):
+    """Initialize and yield all Platform instances.
+
+    Using the provided board/soc/arch roots, determine the available
+    platform names and load the test platform description files.
+
+    An exception is raised if not all platform files are valid YAML,
+    or if not all platform names are unique.
+    """
+    alias2target = {}
+    target2board = {}
+    target2data = {}
+    dir2data = {}
+    legacy_files = []
+
+    lb_args = Namespace(board_roots=board_roots, soc_roots=soc_roots, arch_roots=arch_roots,
+                        board=None, board_dir=None)
+
+    for board in list_boards.find_v2_boards(lb_args).values():
+        for board_dir in board.directories:
+            if board_dir in dir2data:
+                # don't load the same board data twice
+                continue
+            file = board_dir / "twister.yaml"
+            if file.is_file():
+                data = scl.yaml_load_verify(file, Platform.platform_schema)
+            else:
+                data = None
+            dir2data[board_dir] = data
+
+            legacy_files.extend(
+                file for file in board_dir.glob("*.yaml") if file.name != "twister.yaml"
+            )
+
+        for qual in list_boards.board_v2_qualifiers(board):
+            if board.revisions:
+                for rev in board.revisions:
+                    if rev.name:
+                        target = f"{board.name}@{rev.name}/{qual}"
+                        alias2target[target] = target
+                        if rev.name == board.revision_default:
+                            alias2target[f"{board.name}/{qual}"] = target
+                        if '/' not in qual and len(board.socs) == 1:
+                            if rev.name == board.revision_default:
+                                alias2target[f"{board.name}"] = target
+                            alias2target[f"{board.name}@{rev.name}"] = target
+                    else:
+                        target = f"{board.name}/{qual}"
+                        alias2target[target] = target
+                        if '/' not in qual and len(board.socs) == 1 \
+                                and rev.name == board.revision_default:
+                            alias2target[f"{board.name}"] = target
+
+                    target2board[target] = board
+            else:
+                target = f"{board.name}/{qual}"
+                alias2target[target] = target
+                if '/' not in qual and len(board.socs) == 1:
+                    alias2target[board.name] = target
+                target2board[target] = board
+
+    for board_dir, data in dir2data.items():
+        if data is None:
+            continue
+        # Separate the default and variant information in the loaded board data.
+        # The default (top-level) data can be shared by multiple board targets;
+        # it will be overlaid by the variant data (if present) for each target.
+        variant_data = data.pop("variants", {})
+        for variant in variant_data:
+            target = alias2target.get(variant)
+            if target is None:
+                continue
+            if target in target2data:
+                logger.error(f"Duplicate platform {target} in {board_dir}")
+                raise Exception(f"Duplicate platform identifier {target} found")
+            target2data[target] = variant_data[variant]
+
+    # note: this inverse mapping will only be used for loading legacy files
+    target2aliases = {}
+
+    for target, aliases in groupby(alias2target, alias2target.get):
+        aliases = list(aliases)
+        board = target2board[target]
+
+        # Default board data always comes from the primary 'board.dir'.
+        # Other 'board.directories' can only supply variant data.
+        data = dir2data[board.dir]
+        if data is not None:
+            variant_data = target2data.get(target, {})
+
+            platform = Platform()
+            platform.load(board, target, aliases, data, variant_data)
+            yield platform
+
+        target2aliases[target] = aliases
+
+    for file in legacy_files:
+        data = scl.yaml_load_verify(file, Platform.platform_schema)
+        target = alias2target.get(data.get("identifier"))
+        if target is None:
+            continue
+
+        board = target2board[target]
+        if dir2data[board.dir] is not None:
+            # all targets are already loaded for this board
+            logger.error(f"Duplicate platform {target} in {file.parent}")
+            raise Exception(f"Duplicate platform identifier {target} found")
+
+        platform = Platform()
+        platform.load(board, target, target2aliases[target], data, variant_data={})
+        yield platform
