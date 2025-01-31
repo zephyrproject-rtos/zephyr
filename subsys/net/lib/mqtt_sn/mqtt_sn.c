@@ -21,6 +21,10 @@ LOG_MODULE_REGISTER(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 NET_BUF_POOL_FIXED_DEFINE(mqtt_sn_messages, MQTT_SN_NET_BUFS, CONFIG_MQTT_SN_LIB_MAX_PAYLOAD_SIZE,
 			  0, NULL);
 
+/**
+ * A struct to track attempts for actions that require acknowledgment,
+ * i.e. topic registering, subscribing, or unsubscribing.
+ */
 struct mqtt_sn_confirmable {
 	int64_t last_attempt;
 	uint16_t msg_id;
@@ -403,6 +407,13 @@ static void mqtt_sn_sleep_internal(struct mqtt_sn_client *client)
 	}
 }
 
+/**
+ * @brief Internal function to send a SUBSCRIBE message for a topic.
+ *
+ * @param client
+ * @param topic
+ * @param dup DUP flag - see MQTT-SN spec
+ */
 static void mqtt_sn_do_subscribe(struct mqtt_sn_client *client, struct mqtt_sn_topic *topic,
 				 bool dup)
 {
@@ -438,6 +449,12 @@ static void mqtt_sn_do_subscribe(struct mqtt_sn_client *client, struct mqtt_sn_t
 	encode_and_send(client, &p, 0);
 }
 
+/**
+ * @brief Internal function to send an UNSUBSCRIBE message for a topic.
+ *
+ * @param client
+ * @param topic
+ */
 static void mqtt_sn_do_unsubscribe(struct mqtt_sn_client *client, struct mqtt_sn_topic *topic)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_UNSUBSCRIBE};
@@ -470,6 +487,12 @@ static void mqtt_sn_do_unsubscribe(struct mqtt_sn_client *client, struct mqtt_sn
 	encode_and_send(client, &p, 0);
 }
 
+/**
+ * @brief Internal function to a register a topic with the MQTT-SN gateway.
+ *
+ * @param client
+ * @param topic
+ */
 static void mqtt_sn_do_register(struct mqtt_sn_client *client, struct mqtt_sn_topic *topic)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_REGISTER};
@@ -498,6 +521,15 @@ static void mqtt_sn_do_register(struct mqtt_sn_client *client, struct mqtt_sn_to
 	encode_and_send(client, &p, 0);
 }
 
+/**
+ * @brief Internal function to send a PUBLISH message.
+ *
+ * Note that this function does not do sanity checks regarding the pub's topic.
+ *
+ * @param client
+ * @param pub
+ * @param dup DUP flag - see MQTT-SN spec.
+ */
 static void mqtt_sn_do_publish(struct mqtt_sn_client *client, struct mqtt_sn_publish *pub, bool dup)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_PUBLISH};
@@ -525,6 +557,11 @@ static void mqtt_sn_do_publish(struct mqtt_sn_client *client, struct mqtt_sn_pub
 	encode_and_send(client, &p, 0);
 }
 
+/**
+ * @brief Internal function to send a SEARCHGW message.
+ *
+ * @param client
+ */
 static void mqtt_sn_do_searchgw(struct mqtt_sn_client *client)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_SEARCHGW};
@@ -534,6 +571,11 @@ static void mqtt_sn_do_searchgw(struct mqtt_sn_client *client)
 	encode_and_send(client, &p, CONFIG_MQTT_SN_LIB_BROADCAST_RADIUS);
 }
 
+/**
+ * @brief Internal function to send a GWINFO message.
+ *
+ * @param client
+ */
 static void mqtt_sn_do_gwinfo(struct mqtt_sn_client *client)
 {
 	struct mqtt_sn_param response = {.type = MQTT_SN_MSG_TYPE_GWINFO};
@@ -555,6 +597,11 @@ static void mqtt_sn_do_gwinfo(struct mqtt_sn_client *client)
 	encode_and_send(client, &response, client->radius_gwinfo);
 }
 
+/**
+ * @brief Internal function to send a PINGREQ message.
+ *
+ * @param client
+ */
 static void mqtt_sn_do_ping(struct mqtt_sn_client *client)
 {
 	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_PINGREQ};
@@ -579,12 +626,21 @@ static void mqtt_sn_do_ping(struct mqtt_sn_client *client)
 	}
 }
 
+/**
+ * @brief Process all publish tasks in the queue.
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ *
+ * @retval 0 on success
+ * @retval -ETIMEDOUT when a publish task ran out of retries
+ */
 static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	struct mqtt_sn_publish *pub, *pubs;
 	const int64_t now = k_uptime_get();
 	int64_t next_attempt;
-	bool dup;
+	bool dup; /* dup flag if message is resent */
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&client->publish, pub, pubs, next) {
 		LOG_HEXDUMP_DBG(pub->topic->name, pub->topic->namelen,
@@ -599,6 +655,7 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 			dup = true;
 		}
 
+		/* Check if action is due */
 		if (next_attempt <= now) {
 			switch (pub->topic->state) {
 			case MQTT_SN_TOPIC_STATE_REGISTERING:
@@ -627,6 +684,7 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 			}
 		}
 
+		/* Remember time when next action is due */
 		if (next_attempt > now && (*next_cycle == 0 || next_attempt < *next_cycle)) {
 			*next_cycle = next_attempt;
 		}
@@ -637,12 +695,21 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Process all topic tasks in the queue.
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ *
+ * @retval 0 on success
+ * @retval -ETIMEDOUT when a publish task ran out of retries
+ */
 static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	struct mqtt_sn_topic *topic;
 	const int64_t now = k_uptime_get();
 	int64_t next_attempt;
-	bool dup;
+	bool dup; /* dup flag if message is resent */
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
 		LOG_HEXDUMP_DBG(topic->name, topic->namelen, "Processing topic");
@@ -655,6 +722,7 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 			dup = true;
 		}
 
+		/* Check if action is due */
 		if (next_attempt <= now) {
 			switch (topic->state) {
 			case MQTT_SN_TOPIC_STATE_SUBSCRIBING:
@@ -695,6 +763,7 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 			}
 		}
 
+		/* Remember time when next action is due */
 		if (next_attempt > now && (*next_cycle == 0 || next_attempt < *next_cycle)) {
 			*next_cycle = next_attempt;
 		}
@@ -705,6 +774,14 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Housekeeping task for the client ping
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ * @retval 0 on success
+ * @retval -ETIMEDOUT if client ran out of ping retries
+ */
 static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
@@ -743,6 +820,13 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Housekeeping task for the gateway search
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ * @retval 0 on success
+ */
 static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
@@ -774,6 +858,13 @@ static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Housekeeping task for gateway advertisements
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ * @return int
+ */
 static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
@@ -798,6 +889,11 @@ static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
 	return 0;
 }
 
+/**
+ * @brief Housekeeping task that is called by workqueue item
+ *
+ * @param wrk The work item
+ */
 static void process_work(struct k_work *wrk)
 {
 	struct mqtt_sn_client *client;
