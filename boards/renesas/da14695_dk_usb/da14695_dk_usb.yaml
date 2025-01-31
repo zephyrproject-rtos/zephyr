@@ -6,7 +6,6 @@ ram: 512
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - gpio
   - hwinfo

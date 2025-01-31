@@ -730,7 +730,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 	callbk_fns.rx_bcn_prb_resp_callbk_fn = nrf_wifi_rx_bcn_prb_resp_frm;
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
-#if defined(CONFIG_NRF70_SYSTEM_MODE) || defined(CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
+#ifdef CONFIG_NRF70_SYSTEM_MODE
 	callbk_fns.set_if_callbk_fn = nrf_wifi_set_iface_event_handler;
 #endif /* CONFIG_NRF70_SYSTEM_MODE */
 #ifdef CONFIG_NRF70_STA_MODE
@@ -934,7 +934,7 @@ DEVICE_DT_INST_DEFINE(0,
 	      POST_KERNEL,
 	      CONFIG_WIFI_INIT_PRIORITY, /* prio */
 	      NULL); /* api */
-#endif /* CONFIG_NRF70_STA_MODE */
+#endif /* CONFIG_NET_L2_ETHERNET */
 
 #ifdef CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT
 CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));

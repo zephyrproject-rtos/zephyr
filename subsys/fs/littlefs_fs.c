@@ -657,7 +657,7 @@ static int littlefs_flash_init(struct fs_littlefs *fs, void *dev_id)
 	/* Open flash area */
 	ret = flash_area_open(area_id, fap);
 	if ((ret < 0) || (*fap == NULL)) {
-		LOG_ERR("can't open flash area %d", area_id);
+		LOG_ERR("can't open flash area %d, err %d", area_id, ret);
 		return -ENODEV;
 	}
 
@@ -844,9 +844,6 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 	lcp->context = fs->backend;
 	/* Set the validated/defaulted values. */
 	if (littlefs_on_blkdev(flags)) {
-		lfs_size_t new_cache_size = block_size;
-		lfs_size_t new_lookahead_size = block_size * 4;
-
 		lcp->read = lfs_api_read_blk;
 		lcp->prog = lfs_api_prog_blk;
 		lcp->erase = lfs_api_erase_blk;
@@ -854,19 +851,13 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 		lcp->read_size = block_size;
 		lcp->prog_size = block_size;
 
-		if (cache_size < new_cache_size) {
+		if (cache_size < block_size) {
 			LOG_ERR("Configured cache size is too small: %d < %d", cache_size,
-				new_cache_size);
-			return -ENOMEM;
+				block_size);
 		}
-		lcp->cache_size = new_cache_size;
+		lcp->cache_size = ROUND_DOWN(cache_size, block_size);
 
-		if (lookahead_size < new_lookahead_size) {
-			LOG_ERR("Configured lookahead size is too small: %d < %d",
-				lookahead_size, new_lookahead_size);
-			return -ENOMEM;
-		}
-		lcp->lookahead_size = new_lookahead_size;
+		lcp->lookahead_size = lookahead_size;
 
 		lcp->sync = lfs_api_sync_blk;
 

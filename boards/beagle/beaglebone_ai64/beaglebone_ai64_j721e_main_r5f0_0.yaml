@@ -11,7 +11,7 @@ ram: 32
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - uart
+  - i2c
 vendor: beagle

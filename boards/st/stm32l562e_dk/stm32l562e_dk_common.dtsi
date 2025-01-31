@@ -42,6 +42,12 @@
 	chosen {
 		zephyr,bt-hci = &hci_spi;
 	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+		invert-y;
+	};
 };
 
 &fmc {
@@ -176,6 +182,13 @@ stm32_lp_tick_source: &lptim1 {
 		compatible = "st,lsm6dso";
 		reg = <0x6a>;
 		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+	};
+
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpiof 1 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpiof 15 GPIO_ACTIVE_LOW>;
 	};
 };
 

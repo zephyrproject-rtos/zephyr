@@ -8,6 +8,7 @@
 import collections
 import copy
 import glob
+import itertools
 import json
 import logging
 import os
@@ -698,11 +699,14 @@ class TestPlan:
                 for ts in jtp.get("testsuites", []):
                     logger.debug(f"loading {ts['name']}...")
                     testsuite = ts["name"]
+                    toolchain = ts["toolchain"]
 
                     platform = self.get_platform(ts["platform"])
                     if filter_platform and platform.name not in filter_platform:
                         continue
-                    instance = TestInstance(self.testsuites[testsuite], platform, self.env.outdir)
+                    instance = TestInstance(
+                        self.testsuites[testsuite], platform, toolchain, self.env.outdir
+                    )
                     if ts.get("run_id"):
                         instance.run_id = ts.get("run_id")
 
@@ -777,7 +781,6 @@ class TestPlan:
 
     def apply_filters(self, **kwargs):
 
-        toolchain = self.env.toolchain
         platform_filter = self.options.platform
         vendor_filter = self.options.vendor
         exclude_platform = self.options.exclude_platform
@@ -890,8 +893,21 @@ class TestPlan:
                     )
             # list of instances per testsuite, aka configurations.
             instance_list = []
-            for plat in platform_scope:
-                instance = TestInstance(ts, plat, self.env.outdir)
+            for itoolchain, plat in itertools.product(
+                ts.integration_toolchains or [None], platform_scope
+            ):
+                if itoolchain:
+                    toolchain = itoolchain
+                elif plat.arch in ['posix', 'unit']:
+                    # workaround until toolchain variant in zephyr is overhauled and improved.
+                    if self.env.toolchain in ['llvm']:
+                        toolchain = 'llvm'
+                    else:
+                        toolchain = 'host'
+                else:
+                    toolchain = "zephyr" if not self.env.toolchain else self.env.toolchain
+
+                instance = TestInstance(ts, plat, toolchain, self.env.outdir)
                 instance.run = instance.check_runnable(
                     self.options,
                     self.hwm
@@ -999,9 +1015,7 @@ class TestPlan:
                     )
 
                 if not force_toolchain \
-                        and toolchain and (toolchain not in plat.supported_toolchains) \
-                        and "host" not in plat.supported_toolchains \
-                        and ts.type != 'unit':
+                        and toolchain and (toolchain not in plat.supported_toolchains):
                     instance.add_filter(
                         f"Not supported by the toolchain: {toolchain}",
                         Filters.PLATFORM
@@ -1021,7 +1035,10 @@ class TestPlan:
                 if ts.depends_on:
                     dep_intersection = ts.depends_on.intersection(set(plat.supported))
                     if dep_intersection != set(ts.depends_on):
-                        instance.add_filter("No hardware support", Filters.PLATFORM)
+                        instance.add_filter(
+                            f"No hardware support for {set(ts.depends_on)-dep_intersection}",
+                            Filters.PLATFORM
+                        )
 
                 if plat.flash < ts.min_flash:
                     instance.add_filter("Not enough FLASH", Filters.PLATFORM)

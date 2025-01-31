@@ -30,8 +30,13 @@ if SECOND_CORE_MCUX
 
 # RT Boot header is only needed on primary core
 config NXP_IMXRT_BOOT_HEADER
-	depends on !CPU_CORTEX_M7
+	default y
+	depends on !(CPU_CORTEX_M7 || BOOTLOADER_MCUBOOT)
 
 endif # SECOND_CORE_MCUX
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE if SOC_MIMXRT1189_CM33
+endchoice
 
 endif # SOC_SERIES_IMXRT118X

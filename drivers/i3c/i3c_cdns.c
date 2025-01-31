@@ -537,6 +537,7 @@ struct cdns_i3c_cmd {
 	uint32_t *num_xfer;
 	void *buf;
 	uint32_t error;
+	enum i3c_sdr_controller_error_types *sdr_err;
 	enum i3c_data_rate hdr;
 };
 
@@ -1020,6 +1021,19 @@ static void cdns_i3c_program_controller_retaining_reg(const struct device *dev)
 }
 
 #ifdef CONFIG_I3C_USE_IBI
+static int cdns_i3c_ibi_hj_response(const struct device *dev, bool ack)
+{
+	const struct cdns_i3c_config *config = dev->config;
+
+	if (ack) {
+		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);
+	} else {
+		sys_write32(~CTRL_HJ_ACK & sys_read32(config->base + CTRL), config->base + CTRL);
+	}
+
+	return 0;
+}
+
 static int cdns_i3c_controller_ibi_enable(const struct device *dev, struct i3c_device_desc *target)
 {
 	uint32_t sir_map;
@@ -1438,10 +1452,11 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 			}
 			cmd->hdr = I3C_DATA_RATE_SDR;
 			/*
-			 * write the address of num_xfer which is to be updated upon message
-			 * completion
+			 * write the address of num_xfer and err which is to be updated upon
+			 * message completion
 			 */
 			cmd->num_xfer = &(payload->targets.payloads[i].num_xfer);
+			cmd->sdr_err = &(payload->targets.payloads[i].err);
 		}
 	} else {
 		cmd = &data->xfer.cmds[0];
@@ -1464,6 +1479,7 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 			cmd->len = 0;
 			cmd->num_xfer = NULL;
 		}
+		cmd->sdr_err = &(payload->ccc.err);
 	}
 
 	data->xfer.ret = -ETIMEDOUT;
@@ -1740,6 +1756,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 	for (int i = 0; i < data->xfer.num_cmds; i++) {
 		switch (data->xfer.cmds[i].error) {
 		case CMDR_NO_ERROR:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_NONE;
+			}
 			break;
 
 		case CMDR_MST_ABORT:
@@ -1762,6 +1781,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 					"no EoD from target",
 					dev->name);
 			}
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_NONE;
+			}
 			break;
 
 		case CMDR_M0_ERROR: {
@@ -1782,9 +1804,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 				 * time which will be returned.
 				 */
 				if ((*data->xfer.cmds[i].num_xfer !=
-				     sizeof(((union i3c_ccc_getmxds *)0)->fmt1)) &&
+				     SIZEOF_FIELD(union i3c_ccc_getmxds, fmt1)) &&
 				    (*data->xfer.cmds[i].num_xfer !=
-				     sizeof(((union i3c_ccc_getmxds *)0)->fmt2))) {
+				     SIZEOF_FIELD(union i3c_ccc_getmxds, fmt2))) {
 					ret = -EIO;
 				}
 			} else if (ccc == I3C_CCC_GETCAPS) {
@@ -1793,27 +1815,50 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 					ret = -EIO;
 				}
 			} else {
+				if (data->xfer.cmds[i].sdr_err) {
+					*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE0;
+				}
 				ret = -EIO;
 			}
 			break;
 		}
 
+		case CMDR_M1_ERROR:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE1;
+			}
+			ret = -EIO;
+			break;
+		case CMDR_M2_ERROR:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE2;
+			}
+			ret = -EIO;
+			break;
+
 		case CMDR_DDR_PREAMBLE_ERROR:
 		case CMDR_DDR_PARITY_ERROR:
-		case CMDR_M1_ERROR:
-		case CMDR_M2_ERROR:
 		case CMDR_NACK_RESP:
 		case CMDR_DDR_DROPPED:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_UNKNOWN;
+			}
 			ret = -EIO;
 			break;
 
 		case CMDR_DDR_RX_FIFO_OVF:
 		case CMDR_DDR_TX_FIFO_UNF:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_UNKNOWN;
+			}
 			ret = -ENOSPC;
 			break;
 
 		case CMDR_INVALID_DA:
 		default:
+			if (data->xfer.cmds[i].sdr_err) {
+				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_UNKNOWN;
+			}
 			ret = -EINVAL;
 			break;
 		}
@@ -1910,8 +1955,9 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 			cmd->cmd0 |= CMD0_FIFO_RNW;
 		}
 
-		/* i2c transfers are a don't care for num_xfer */
+		/* i2c transfers are a don't care for num_xfer and sdr error */
 		cmd->num_xfer = NULL;
+		cmd->sdr_err = NULL;
 	}
 
 	data->xfer.ret = -ETIMEDOUT;
@@ -1955,7 +2001,7 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 		rr_idx = i - 1;
 		if (activedevs & BIT(rr_idx)) {
 			rr = sys_read32(config->base + DEV_ID_RR0(rr_idx));
-			if ((rr & DEV_ID_RR0_IS_I3C) && DEV_ID_RR0_GET_DEV_ADDR(rr) == dyn_addr) {
+			if ((rr & DEV_ID_RR0_IS_I3C) && (DEV_ID_RR0_GET_DEV_ADDR(rr) == dyn_addr)) {
 				return rr_idx;
 			}
 		}
@@ -1979,8 +2025,7 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 		const struct cdns_i3c_config *config = dev->config;
 		struct cdns_i3c_data *data = dev->data;
 
-		int slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr ? desc->dynamic_addr
-									       : desc->static_addr);
+		int slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr);
 
 		if (slot < 0) {
 			LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
@@ -2237,6 +2282,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 			 * completion
 			 */
 			cmd->num_xfer = &(msgs[i].num_xfer);
+			cmd->sdr_err = &(msgs[i].err);
 			cmd->hdr = I3C_DATA_RATE_SDR;
 		} else if ((data->common.ctrl_config.supported_hdr & I3C_MSG_HDR_DDR) &&
 			   (msgs[i].hdr_mode == I3C_MSG_HDR_DDR) && (msgs[i].flags & I3C_MSG_HDR)) {
@@ -2290,6 +2336,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 			 * completion
 			 */
 			cmd->num_xfer = &(msgs[i].num_xfer);
+			cmd->sdr_err = &(msgs[i].err);
 			cmd->hdr = I3C_DATA_RATE_HDR_DDR;
 		} else {
 			LOG_ERR("%s: Unsupported HDR Mode %d", dev->name, msgs[i].hdr_mode);
@@ -3309,6 +3356,7 @@ static DEVICE_API(i3c, api) = {
 	.target_unregister = cdns_i3c_target_unregister,
 
 #ifdef CONFIG_I3C_USE_IBI
+	.ibi_hj_response = cdns_i3c_ibi_hj_response,
 	.ibi_enable = cdns_i3c_controller_ibi_enable,
 	.ibi_disable = cdns_i3c_controller_ibi_disable,
 	.ibi_raise = cdns_i3c_target_ibi_raise,

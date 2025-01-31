@@ -28,6 +28,18 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
+static void start_adv(void)
+{
+	int err;
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+	} else {
+		printk("Advertising successfully started\n");
+	}
+}
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -86,6 +98,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = start_adv,
 	.identity_resolved = identity_resolved,
 	.security_changed = security_changed,
 };
@@ -145,12 +158,7 @@ int main(void)
 	bt_conn_auth_cb_register(&auth_cb_display);
 	bt_conn_auth_info_cb_register(&auth_cb_info);
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
-	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
-		return 0;
-	}
+	start_adv();
 
-	printk("Advertising successfully started\n");
 	return 0;
 }

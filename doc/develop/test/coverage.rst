@@ -60,34 +60,42 @@ These steps will produce an HTML coverage report for a single application.
 
    .. code-block:: console
 
-      ninja -Cbuild run | tee log.log
+     $ ninja -Cbuild run | tee log.log
 
    or
 
    .. code-block:: console
 
-      ninja -Cbuild run | tee log.log
+     $ ninja -Cbuild run | tee log.log
 
 #. Generate the gcov ``.gcda`` and ``.gcno`` files from the log file that was
-   saved::
+   saved:
+
+   .. code-block:: console
 
      $ python3 scripts/gen_gcov_files.py -i log.log
 
 #. Find the gcov binary placed in the SDK. You will need to pass the path to
    the gcov binary for the appropriate architecture when you later invoke
-   ``gcovr``::
+   ``gcovr``:
+
+   .. code-block:: console
 
      $ find $ZEPHYR_SDK_INSTALL_DIR -iregex ".*gcov"
 
-#. Create an output directory for the reports::
+#. Create an output directory for the reports:
+
+   .. code-block:: console
 
      $ mkdir -p gcov_report
 
-#. Run ``gcovr`` to get the reports::
+#. Run ``gcovr`` to get the reports:
+
+   .. code-block:: console
 
      $ gcovr -r $ZEPHYR_BASE . --html -o gcov_report/coverage.html --html-details --gcov-executable <gcov_path_in_SDK>
 
-.. _coverage_posix:
+   .. _coverage_posix:
 
 Coverage reports using the POSIX architecture
 *********************************************
@@ -117,8 +125,8 @@ You may postprocess these with your preferred tools. For example:
 
    $ ./build/zephyr/zephyr.exe
    # Press Ctrl+C to exit
-   lcov --capture --directory ./ --output-file lcov.info -q --rc lcov_branch_coverage=1
-   genhtml lcov.info --output-directory lcov_html -q --ignore-errors source --branch-coverage --highlight --legend
+   $ lcov --capture --directory ./ --output-file lcov.info -q --rc lcov_branch_coverage=1
+   $ genhtml lcov.info --output-directory lcov_html -q --ignore-errors source --branch-coverage --highlight --legend
 
 .. note::
 
@@ -134,11 +142,15 @@ Zephyr's :ref:`twister script <twister_script>` can automatically
 generate a coverage report from the tests which were executed.
 You just need to invoke it with the ``--coverage`` command line option.
 
-For example, you may invoke::
+For example, you may invoke:
+
+.. code-block:: console
 
     $ twister --coverage -p qemu_x86 -T tests/kernel
 
-or::
+or:
+
+.. code-block:: console
 
     $ twister --coverage -p native_sim -T tests/bluetooth
 
@@ -148,12 +160,35 @@ the coverage data collected by ``gcovr`` tool in ``twister-out/coverage.json``.
 Other reports might be chosen with ``--coverage-tool`` and ``--coverage-formats``
 command line options.
 
-The process differs for unit tests, which are built with the host
-toolchain and require a different board::
+To generate code coverage report including Zephyr sources as well as your application
+code outside of Zephyr repository (see :ref:`Application Types <zephyr-app-types>`)
+call Twister from your project directory with ``--coverage-basedir $ZEPHYR_BASE``
+command line option, for example:
 
-    $ twister --coverage -p unit_testing -T tests/unit
+.. code-block:: console
+
+   $ $ZEPHYR_BASE/scripts/twister --coverage -p native_sim --coverage_basedir $ZEPHYR_BASE -T your_project_dir
+
+.. note::
+
+   By default, Twister calls ``gcovr`` tool which filters source files assuming real paths
+   are everywhere with `all symlinks resolved <gcovr_symlinks_>`_, so when your development
+   environment has directories with symlinks then, to avoid incomplete ``gcovr`` reports,
+   either your :ref:`ZEPHYR_BASE <important-build-vars>` should contain a real path,
+   or ``lcov`` tool used instead of ``gcovr`` with additional Twister command line
+   option ``--coverage-tool lcov``.
+
+The process differs for unit tests, which are built with the host
+toolchain and require a different board:
+
+.. code-block:: console
+
+   $ twister --coverage -p unit_testing -T tests/unit
 
 which produces a report in the same location as non-unit testing.
+
+.. _gcovr_symlinks:
+   https://github.com/gcovr/gcovr/blob/main/doc/source/guide/filters.rst#filters-for-symlinks
 
 .. _gcov:
    https://gcc.gnu.org/onlinedocs/gcc/Gcov.html

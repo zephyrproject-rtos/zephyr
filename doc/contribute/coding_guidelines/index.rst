@@ -3,42 +3,6 @@
 Coding Guidelines
 #################
 
-The project TSC and the Safety Committee of the project agreed to implement
-a staged and incremental approach for complying with a set of coding rules (AKA
-Coding Guidelines) to improve quality and consistency of the code base. Below
-are the agreed upon stages:
-
-Stage I (COMPLETED)
-  Coding guideline rules are available to be followed and referenced,
-  but not enforced. Rules are not yet enforced in CI and pull-requests cannot be
-  blocked by reviewers/approvers due to violations.
-
-Stage II
-  Begin enforcement on a limited scope of the code base. Initially, this would be
-  the safety certification scope. For rules easily applied across codebase, we
-  should not limit compliance to initial scope. This step requires tooling,
-  CI setup and an enforcement strategy.
-
-Stage III
-  Revisit the coding guideline rules and based on experience from previous
-  stages, refine/iterate on selected rules.
-
-Stage IV
-   Expand enforcement to the wider codebase. Exceptions may be granted on some
-   areas of the codebase with a proper justification. Exception would require
-   TSC approval.
-
-.. note::
-
-    Coding guideline rules may be removed/changed at any time by filing a
-    GH issue/RFC.
-
-.. important::
-
-    **Current stage:**
-    The prerequisites for entering **Stage II** are currently being looked at:
-    The tooling is in evaluation, CI setup and `enforcement strategy
-    <https://github.com/zephyrproject-rtos/zephyr/issues/58903>`__ is being worked on.
 
 Main rules
 **********
@@ -1111,385 +1075,344 @@ Additional rules
 
 Rule A.1: Conditional Compilation
 =================================
-
 Severity
---------
-
-Required
+  Required
 
 Description
------------
-
-Do not conditionally compile function declarations in header files.  Do not
-conditionally compile structure declarations in header files.  You may
-conditionally exclude fields within structure definitions to avoid wasting
-memory when the feature they support is not enabled.
+  Do not conditionally compile function declarations in header files. Do not
+  conditionally compile structure declarations in header files. You may
+  conditionally exclude fields within structure definitions to avoid wasting
+  memory when the feature they support is not enabled.
 
 Rationale
----------
-
-Excluding declarations from the header based on compile-time options may prevent
-their documentation from being generated. Their absence also prevents use of
-``if (IS_ENABLED(CONFIG_FOO)) {}`` as an alternative to preprocessor
-conditionals when the code path should change based on the selected options.
+  Excluding declarations from the header based on compile-time options may prevent
+  their documentation from being generated. Their absence also prevents use of
+  ``if (IS_ENABLED(CONFIG_FOO)) {}`` as an alternative to preprocessor
+  conditionals when the code path should change based on the selected options.
 
 .. _coding_guideline_inclusive_language:
 
 Rule A.2: Inclusive Language
 ============================
-
 Severity
---------
-
-Required
+  Required
 
 Description
------------
+  Do not introduce new usage of offensive terms listed below. This rule applies
+  but is not limited to source code, comments, documentation, and branch names.
+  Replacement terms may vary by area or subsystem, but should aim to follow
+  updated industry standards when possible.
 
-Do not introduce new usage of offensive terms listed below. This rule applies
-but is not limited to source code, comments, documentation, and branch names.
-Replacement terms may vary by area or subsystem, but should aim to follow
-updated industry standards when possible.
+  Exceptions are allowed for maintaining existing implementations or adding new
+  implementations of industry standard specifications governed externally to the
+  Zephyr Project.
 
-Exceptions are allowed for maintaining existing implementations or adding new
-implementations of industry standard specifications governed externally to the
-Zephyr Project.
+  Existing usage is recommended to change as soon as updated industry standard
+  specifications become available or new terms are publicly announced by the
+  governing body, or immediately if no specifications apply.
 
-Existing usage is recommended to change as soon as updated industry standard
-specifications become available or new terms are publicly announced by the
-governing body, or immediately if no specifications apply.
+  .. list-table::
+     :header-rows: 1
 
-.. list-table::
-   :header-rows: 1
+     * - Offensive Terms
+       - Recommended Replacements
 
-   * - Offensive Terms
-     - Recommended Replacements
+     * - ``{master,leader} / slave``
+       - - ``{primary,main} / {secondary,replica}``
+         - ``{initiator,requester} / {target,responder}``
+         - ``{controller,host} / {device,worker,proxy,target}``
+         - ``director / performer``
+         - ``central / peripheral``
 
-   * - ``{master,leader} / slave``
-     - - ``{primary,main} / {secondary,replica}``
-       - ``{initiator,requester} / {target,responder}``
-       - ``{controller,host} / {device,worker,proxy,target}``
-       - ``director / performer``
-       - ``central / peripheral``
+     * - ``blacklist / whitelist``
+       - * ``denylist / allowlist``
+         * ``blocklist / allowlist``
+         * ``rejectlist / acceptlist``
 
-   * - ``blacklist / whitelist``
-     - * ``denylist / allowlist``
-       * ``blocklist / allowlist``
-       * ``rejectlist / acceptlist``
+     * - ``grandfather policy``
+       - * ``legacy``
 
-   * - ``grandfather policy``
-     - * ``legacy``
-
-   * - ``sanity``
-     - * ``coherence``
-       * ``confidence``
-
+     * - ``sanity``
+       - * ``coherence``
+         * ``confidence``
 
 Rationale
----------
+  Offensive terms do not create an inclusive community environment and therefore
+  violate the Zephyr Project `Code of Conduct`_. This coding rule was inspired by
+  a similar rule in `Linux`_.
 
-Offensive terms do not create an inclusive community environment and therefore
-violate the Zephyr Project `Code of Conduct`_. This coding rule was inspired by
-a similar rule in `Linux`_.
-
-.. _Code of Conduct: https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md
-.. _Linux: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=49decddd39e5f6132ccd7d9fdc3d7c470b0061bb
+  .. _Code of Conduct: https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md
+  .. _Linux: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=49decddd39e5f6132ccd7d9fdc3d7c470b0061bb
 
 Status
-------
+  Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language Label`_.
 
-Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language Label`_.
+  .. list-table::
+     :header-rows: 1
 
-.. list-table::
-   :header-rows: 1
+     * - Area
+       - Selected Replacements
+       - Status
 
-   * - Area
-     - Selected Replacements
-     - Status
+     * - :ref:`Bluetooth <bluetooth_api>`
+       - See `Bluetooth Appropriate Language Mapping Tables`_
+       -
 
-   * - :ref:`Bluetooth <bluetooth_api>`
-     - See `Bluetooth Appropriate Language Mapping Tables`_
-     -
+     * - CAN
+       - This `CAN in Automation Inclusive Language news post`_ has a list of general
+         recommendations. See `CAN in Automation Inclusive Language`_ for terms to
+         be used in specification document updates.
+       -
 
-   * - CAN
-     - This `CAN in Automation Inclusive Language news post`_ has a list of general
-       recommendations. See `CAN in Automation Inclusive Language`_ for terms to
-       be used in specification document updates.
-     -
+     * - eSPI
+       - * ``master / slave`` => ``controller / target``
+       - Refer to `eSPI Specification`_ for new terminology
 
-   * - eSPI
-     - * ``master / slave`` => ``controller / target``
-     - Refer to `eSPI Specification`_ for new terminology
+     * - gPTP
+       - * ``master / slave`` => TBD
+       -
 
-   * - gPTP
-     - * ``master / slave`` => TBD
-     -
+     * - :ref:`i2c_api`
+       - * ``master / slave`` => TBD
+       - NXP publishes the `I2C Specification`_ and has selected ``controller /
+         target`` as replacement terms, but the timing to publish an announcement
+         or new specification is TBD. Zephyr will update I2C when replacement
+         terminology is confirmed by a public announcement or updated
+         specification.
 
-   * - :ref:`i2c_api`
-     - * ``master / slave`` => TBD
-     - NXP publishes the `I2C Specification`_ and has selected ``controller /
-       target`` as replacement terms, but the timing to publish an announcement
-       or new specification is TBD. Zephyr will update I2C when replacement
-       terminology is confirmed by a public announcement or updated
-       specification.
+         See :github:`Zephyr issue 27033 <27033>`.
 
-       See :github:`Zephyr issue 27033 <27033>`.
+     * - :ref:`i2s_api`
+       - * ``master / slave`` => TBD
+       -
 
-   * - :ref:`i2s_api`
-     - * ``master / slave`` => TBD
-     -
+     * - SMP/AMP
+       - * ``master / slave`` => TBD
+       -
 
-   * - SMP/AMP
-     - * ``master / slave`` => TBD
-     -
+     * - :ref:`spi_api`
+       - * ``master / slave`` => ``controller / peripheral``
+         * ``MOSI / MISO / SS`` => ``SDO / SDI / CS``
+       - The Open Source Hardware Association has selected these replacement
+         terms. See `OSHWA Resolution to Redefine SPI Signal Names`_
 
-   * - :ref:`spi_api`
-     - * ``master / slave`` => ``controller / peripheral``
-       * ``MOSI / MISO / SS`` => ``SDO / SDI / CS``
-     - The Open Source Hardware Association has selected these replacement
-       terms. See `OSHWA Resolution to Redefine SPI Signal Names`_
+     * - :ref:`twister_script`
+       - * ``platform_whitelist`` => ``platform_allow``
+         * ``sanitycheck`` => ``twister``
+       -
 
-   * - :ref:`twister_script`
-     - * ``platform_whitelist`` => ``platform_allow``
-       * ``sanitycheck`` => ``twister``
-     -
+  .. _Inclusive Language Label: https://github.com/zephyrproject-rtos/zephyr/issues?q=label%3A%22Inclusive+Language%22
+  .. _I2C Specification: https://www.nxp.com/docs/en/user-guide/UM10204.pdf
+  .. _Bluetooth Appropriate Language Mapping Tables: https://specificationrefs.bluetooth.com/language-mapping/Appropriate_Language_Mapping_Table.pdf
+  .. _OSHWA Resolution to Redefine SPI Signal Names: https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
+  .. _CAN in Automation Inclusive Language news post: https://www.can-cia.org/news/archive/view/?tx_news_pi1%5Bnews%5D=699&tx_news_pi1%5Bday%5D=6&tx_news_pi1%5Bmonth%5D=12&tx_news_pi1%5Byear%5D=2020&cHash=784e79eb438141179386cf7c29ed9438
+  .. _CAN in Automation Inclusive Language: https://can-newsletter.org/canopen/categories/
+  .. _eSPI Specification: https://downloadmirror.intel.com/27055/327432%20espi_base_specification%20R1-5.pdf
 
-.. _Inclusive Language Label: https://github.com/zephyrproject-rtos/zephyr/issues?q=label%3A%22Inclusive+Language%22
-.. _I2C Specification: https://www.nxp.com/docs/en/user-guide/UM10204.pdf
-.. _Bluetooth Appropriate Language Mapping Tables: https://specificationrefs.bluetooth.com/language-mapping/Appropriate_Language_Mapping_Table.pdf
-.. _OSHWA Resolution to Redefine SPI Signal Names: https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
-.. _CAN in Automation Inclusive Language news post: https://www.can-cia.org/news/archive/view/?tx_news_pi1%5Bnews%5D=699&tx_news_pi1%5Bday%5D=6&tx_news_pi1%5Bmonth%5D=12&tx_news_pi1%5Byear%5D=2020&cHash=784e79eb438141179386cf7c29ed9438
-.. _CAN in Automation Inclusive Language: https://can-newsletter.org/canopen/categories/
-.. _eSPI Specification: https://downloadmirror.intel.com/27055/327432%20espi_base_specification%20R1-5.pdf
-
-
-Rule A.3: Macro name collisions
-===============================
-
-Severity
---------
-
-Required
-
-Description
------------
-
-Macros with commonly used names such as  ``MIN``, ``MAX``, ``ARRAY_SIZE``, must
-not be modified or protected to avoid name collisions with other
-implementations. In particular, they must not be prefixed to place them in a
-Zephyr-specific namespace, re-defined using ``#undef``, or conditionally
-excluded from compilation using ``#ifndef``.  Instead, if a conflict arises with
-an existing definition originating from a :ref:`module <modules>`, the module's
-code itself needs to be modified (ideally upstream, alternatively via a change
-in Zephyr's own fork).
-This rule applies to Zephyr as a project in general, regardless of the time of
-introduction of the macro or its current name in the tree. If a macro name is
-commonly used in several other well-known open source projects then the
-implementation in Zephyr should use that name. While there is a subjective and
-non-measurable component to what "commonly used" means, the ultimate goal is
-to offer users familiar macros.
-Finally, this rule applies to inter-module name collisions as well: in that case
-both modules, prior to their inclusion, should be modified to use
-module-specific versions of the macro name that collides.
-
-Rationale
----------
-
-Zephyr is an RTOS that comes with additional functionality and dependencies in
-the form of modules. Those modules are typically independent projects that may
-use macro names that can conflict with other modules or with Zephyr itself.
-Since, in the context of this documentation, Zephyr is considered the central or
-main project, it should implement the non-namespaced versions of the
-macros. Given that Zephyr uses a fork of the corresponding upstream for each
-module, it is always possible to patch the macro implementation in each module
-to avoid collisions.
 
 .. _coding_guideline_libc_usage_restrictions_in_zephyr_kernel:
 
-Rule A.4: C Standard Library Usage Restrictions in Zephyr Kernel
-================================================================
-
+Rule A.3: Macro name collisions
+===============================
 Severity
---------
-
-Required
+  Required
 
 Description
------------
+  Macros with commonly used names such as ``MIN``, ``MAX``, ``ARRAY_SIZE``, must not be modified or
+  protected to avoid name collisions with other implementations. In particular, they must not be
+  prefixed to place them in a Zephyr-specific namespace, re-defined using ``#undef``, or
+  conditionally excluded from compilation using ``#ifndef``. Instead, if a conflict arises with an
+  existing definition originating from a :ref:`module <modules>`, the module's code itself needs to
+  be modified (ideally upstream, alternatively via a change in Zephyr's own fork).
 
-The use of the C standard library functions and macros in the Zephyr kernel
-shall be limited to the following functions and macros from the ISO/IEC
-9899:2011 standard, also known as C11, and their extensions:
+  This rule applies to Zephyr as a project in general, regardless of the time of introduction of the
+  macro or its current name in the tree. If a macro name is commonly used in several other well-known
+  open source projects then the implementation in Zephyr should use that name. While there is a
+  subjective and non-measurable component to what "commonly used" means, the ultimate goal is to offer
+  users familiar macros.
 
-.. csv-table:: List of allowed libc functions and macros in the Zephyr kernel
-   :header: Function,Source
-   :widths: auto
-
-   abort(),ISO/IEC 9899:2011
-   abs(),ISO/IEC 9899:2011
-   aligned_alloc(),ISO/IEC 9899:2011
-   assert(),ISO/IEC 9899:2011
-   atoi(),ISO/IEC 9899:2011
-   bsearch(),ISO/IEC 9899:2011
-   calloc(),ISO/IEC 9899:2011
-   exit(),ISO/IEC 9899:2011
-   fprintf(),ISO/IEC 9899:2011
-   fputc(),ISO/IEC 9899:2011
-   fputs(),ISO/IEC 9899:2011
-   free(),ISO/IEC 9899:2011
-   fwrite(),ISO/IEC 9899:2011
-   gmtime(),ISO/IEC 9899:2011
-   isalnum(),ISO/IEC 9899:2011
-   isalpha(),ISO/IEC 9899:2011
-   iscntrl(),ISO/IEC 9899:2011
-   isdigit(),ISO/IEC 9899:2011
-   isgraph(),ISO/IEC 9899:2011
-   isprint(),ISO/IEC 9899:2011
-   isspace(),ISO/IEC 9899:2011
-   isupper(),ISO/IEC 9899:2011
-   isxdigit(),ISO/IEC 9899:2011
-   labs(),ISO/IEC 9899:2011
-   llabs(),ISO/IEC 9899:2011
-   malloc(),ISO/IEC 9899:2011
-   memchr(),ISO/IEC 9899:2011
-   memcmp(),ISO/IEC 9899:2011
-   memcpy(),ISO/IEC 9899:2011
-   memmove(),ISO/IEC 9899:2011
-   memset(),ISO/IEC 9899:2011
-   perror(),ISO/IEC 9899:2011
-   printf(),ISO/IEC 9899:2011
-   putc(),ISO/IEC 9899:2011
-   putchar(),ISO/IEC 9899:2011
-   puts(),ISO/IEC 9899:2011
-   qsort(),ISO/IEC 9899:2011
-   rand(),ISO/IEC 9899:2011
-   realloc(),ISO/IEC 9899:2011
-   snprintf(),ISO/IEC 9899:2011
-   sprintf(),ISO/IEC 9899:2011
-   sqrt(),ISO/IEC 9899:2011
-   sqrtf(),ISO/IEC 9899:2011
-   srand(),ISO/IEC 9899:2011
-   strcat(),ISO/IEC 9899:2011
-   strchr(),ISO/IEC 9899:2011
-   strcmp(),ISO/IEC 9899:2011
-   strcpy(),ISO/IEC 9899:2011
-   strcspn(),ISO/IEC 9899:2011
-   strerror(),ISO/IEC 9899:2011
-   strlen(),ISO/IEC 9899:2011
-   strncat(),ISO/IEC 9899:2011
-   strncmp(),ISO/IEC 9899:2011
-   strncpy(),ISO/IEC 9899:2011
-   `strnlen()`_,POSIX.1-2008
-   strrchr(),ISO/IEC 9899:2011
-   strspn(),ISO/IEC 9899:2011
-   strstr(),ISO/IEC 9899:2011
-   strtol(),ISO/IEC 9899:2011
-   strtoll(),ISO/IEC 9899:2011
-   strtoul(),ISO/IEC 9899:2011
-   strtoull(),ISO/IEC 9899:2011
-   time(),ISO/IEC 9899:2011
-   tolower(),ISO/IEC 9899:2011
-   toupper(),ISO/IEC 9899:2011
-   vfprintf(),ISO/IEC 9899:2011
-   vprintf(),ISO/IEC 9899:2011
-   vsnprintf(),ISO/IEC 9899:2011
-   vsprintf(),ISO/IEC 9899:2011
-
-All of the functions listed above must be implemented by the
-:ref:`minimal libc <c_library_minimal>` to ensure that the Zephyr kernel can
-build with the minimal libc.
-
-In addition, any functions from the above list that are not part of the
-ISO/IEC 9899:2011 standard must be implemented by the
-:ref:`common libc <c_library_common>` to ensure their availability across
-multiple C standard libraries.
-
-Introducing new C standard library functions to the Zephyr kernel is allowed
-with justification given that the above requirements are satisfied.
-
-Note that the use of the functions listed above are subject to secure and safe
-coding practices and it should not be assumed that their use in the Zephyr
-kernel is unconditionally permitted by being listed in this rule.
-
-The "Zephyr kernel" in this context consists of the following components:
-
-* Kernel (:file:`kernel`)
-* OS Library (:file:`lib/os`)
-* Architecture Port (:file:`arch`)
-* Logging Subsystem (:file:`subsys/logging`)
+  Finally, this rule applies to inter-module name collisions as well: in that case both modules, prior
+  to their inclusion, should be modified to use module-specific versions of the macro name that
+  collides.
 
 Rationale
----------
+  Zephyr is an RTOS that comes with additional functionality and dependencies in the form of modules.
+  Those modules are typically independent projects that may use macro names that can conflict with
+  other modules or with Zephyr itself. Since, in the context of this documentation, Zephyr is
+  considered the central or main project, it should implement the non-namespaced versions of the
+  macros. Given that Zephyr uses a fork of the corresponding upstream for each module, it is always
+  possible to patch the macro implementation in each module to avoid collisions.
 
-Zephyr kernel must be able to build with the
-:ref:`minimal libc <c_library_minimal>`, a limited C standard library
-implementation that is part of the Zephyr RTOS and maintained by the Zephyr
-Project, to allow self-contained testing and verification of the kernel and
-core OS services.
+Rule A.4: C Standard Library Usage Restrictions in Zephyr Kernel
+================================================================
+Severity
+  Required
 
-In order to ensure that the Zephyr kernel can build with the minimal libc, it
-is necessary to restrict the use of the C standard library functions and macros
-in the Zephyr kernel to the functions and macros that are available as part of
-the minimal libc.
+Description
+  The use of the C standard library functions and macros in the Zephyr kernel
+  shall be limited to the following functions and macros from the ISO/IEC
+  9899:2011 standard, also known as C11, and their extensions:
+
+  .. csv-table:: List of allowed libc functions and macros in the Zephyr kernel
+     :header: Function,Source
+     :widths: auto
+
+     abort(),ISO/IEC 9899:2011
+     abs(),ISO/IEC 9899:2011
+     aligned_alloc(),ISO/IEC 9899:2011
+     assert(),ISO/IEC 9899:2011
+     atoi(),ISO/IEC 9899:2011
+     bsearch(),ISO/IEC 9899:2011
+     calloc(),ISO/IEC 9899:2011
+     exit(),ISO/IEC 9899:2011
+     fprintf(),ISO/IEC 9899:2011
+     fputc(),ISO/IEC 9899:2011
+     fputs(),ISO/IEC 9899:2011
+     free(),ISO/IEC 9899:2011
+     fwrite(),ISO/IEC 9899:2011
+     gmtime(),ISO/IEC 9899:2011
+     isalnum(),ISO/IEC 9899:2011
+     isalpha(),ISO/IEC 9899:2011
+     iscntrl(),ISO/IEC 9899:2011
+     isdigit(),ISO/IEC 9899:2011
+     isgraph(),ISO/IEC 9899:2011
+     isprint(),ISO/IEC 9899:2011
+     isspace(),ISO/IEC 9899:2011
+     isupper(),ISO/IEC 9899:2011
+     isxdigit(),ISO/IEC 9899:2011
+     labs(),ISO/IEC 9899:2011
+     llabs(),ISO/IEC 9899:2011
+     malloc(),ISO/IEC 9899:2011
+     memchr(),ISO/IEC 9899:2011
+     memcmp(),ISO/IEC 9899:2011
+     memcpy(),ISO/IEC 9899:2011
+     memmove(),ISO/IEC 9899:2011
+     memset(),ISO/IEC 9899:2011
+     perror(),ISO/IEC 9899:2011
+     printf(),ISO/IEC 9899:2011
+     putc(),ISO/IEC 9899:2011
+     putchar(),ISO/IEC 9899:2011
+     puts(),ISO/IEC 9899:2011
+     qsort(),ISO/IEC 9899:2011
+     rand(),ISO/IEC 9899:2011
+     realloc(),ISO/IEC 9899:2011
+     snprintf(),ISO/IEC 9899:2011
+     sprintf(),ISO/IEC 9899:2011
+     sqrt(),ISO/IEC 9899:2011
+     sqrtf(),ISO/IEC 9899:2011
+     srand(),ISO/IEC 9899:2011
+     strcat(),ISO/IEC 9899:2011
+     strchr(),ISO/IEC 9899:2011
+     strcmp(),ISO/IEC 9899:2011
+     strcpy(),ISO/IEC 9899:2011
+     strcspn(),ISO/IEC 9899:2011
+     strerror(),ISO/IEC 9899:2011
+     strlen(),ISO/IEC 9899:2011
+     strncat(),ISO/IEC 9899:2011
+     strncmp(),ISO/IEC 9899:2011
+     strncpy(),ISO/IEC 9899:2011
+     `strnlen()`_,POSIX.1-2008
+     strrchr(),ISO/IEC 9899:2011
+     strspn(),ISO/IEC 9899:2011
+     strstr(),ISO/IEC 9899:2011
+     strtol(),ISO/IEC 9899:2011
+     strtoll(),ISO/IEC 9899:2011
+     strtoul(),ISO/IEC 9899:2011
+     strtoull(),ISO/IEC 9899:2011
+     time(),ISO/IEC 9899:2011
+     tolower(),ISO/IEC 9899:2011
+     toupper(),ISO/IEC 9899:2011
+     vfprintf(),ISO/IEC 9899:2011
+     vprintf(),ISO/IEC 9899:2011
+     vsnprintf(),ISO/IEC 9899:2011
+     vsprintf(),ISO/IEC 9899:2011
+
+  All of the functions listed above must be implemented by the
+  :ref:`minimal libc <c_library_minimal>` to ensure that the Zephyr kernel can
+  build with the minimal libc.
+
+  In addition, any functions from the above list that are not part of the
+  ISO/IEC 9899:2011 standard must be implemented by the
+  :ref:`common libc <c_library_common>` to ensure their availability across
+  multiple C standard libraries.
+
+  Introducing new C standard library functions to the Zephyr kernel is allowed
+  with justification given that the above requirements are satisfied.
+
+  Note that the use of the functions listed above are subject to secure and safe
+  coding practices and it should not be assumed that their use in the Zephyr
+  kernel is unconditionally permitted by being listed in this rule.
+
+  The "Zephyr kernel" in this context consists of the following components:
+
+  * Kernel (:file:`kernel`)
+  * OS Library (:file:`lib/os`)
+  * Architecture Port (:file:`arch`)
+  * Logging Subsystem (:file:`subsys/logging`)
+
+Rationale
+  Zephyr kernel must be able to build with the
+  :ref:`minimal libc <c_library_minimal>`, a limited C standard library
+  implementation that is part of the Zephyr RTOS and maintained by the Zephyr
+  Project, to allow self-contained testing and verification of the kernel and
+  core OS services.
+
+  In order to ensure that the Zephyr kernel can build with the minimal libc, it
+  is necessary to restrict the use of the C standard library functions and macros
+  in the Zephyr kernel to the functions and macros that are available as part of
+  the minimal libc.
 
 Rule A.5: C Standard Library Usage Restrictions in Zephyr Codebase
 ==================================================================
-
 Severity
---------
-
-Required
+  Required
 
 Description
------------
+  The use of the C standard library functions and macros in the Zephyr codebase
+  shall be limited to the functions, excluding the Annex K "Bounds-checking
+  interfaces", from the ISO/IEC 9899:2011 standard, also known as C11, unless
+  exempted by this rule.
 
-The use of the C standard library functions and macros in the Zephyr codebase
-shall be limited to the functions, excluding the Annex K "Bounds-checking
-interfaces", from the ISO/IEC 9899:2011 standard, also known as C11, unless
-exempted by this rule.
+  The "Zephyr codebase" in this context refers to all embedded source code files committed
+  to the `main Zephyr repository`_, except the Zephyr kernel as defined by the
+  :ref:`coding_guideline_libc_usage_restrictions_in_zephyr_kernel`.
+  With embedded source code we refer to code which is meant to be executed in embedded
+  targets, and therefore excludes host tooling, and code specific for the
+  :ref:`native <boards_posix>` test targets.
 
-The "Zephyr codebase" in this context refers to all embedded source code files committed
-to the `main Zephyr repository`_, except the Zephyr kernel as defined by the
-:ref:`coding_guideline_libc_usage_restrictions_in_zephyr_kernel`.
-With embedded source code we refer to code which is meant to be executed in embedded
-targets, and therefore excludes host tooling, and code specific for the
-:ref:`native <boards_posix>` test targets.
+  The following non-ISO 9899:2011, hereinafter referred to as non-standard,
+  functions and macros are exempt from this rule and allowed to be used in the
+  Zephyr codebase:
 
-The following non-ISO 9899:2011, hereinafter referred to as non-standard,
-functions and macros are exempt from this rule and allowed to be used in the
-Zephyr codebase:
+  .. csv-table:: List of allowed non-standard libc functions
+     :header: Function,Source
+     :widths: auto
 
-.. csv-table:: List of allowed non-standard libc functions
-   :header: Function,Source
-   :widths: auto
+     `gmtime_r()`_,POSIX.1-2001
+     `strnlen()`_,POSIX.1-2008
+     `strtok_r()`_,POSIX.1-2001
 
-   `gmtime_r()`_,POSIX.1-2001
-   `strnlen()`_,POSIX.1-2008
-   `strtok_r()`_,POSIX.1-2001
+  All non-standard functions and macros listed above must be implemented by the
+  :ref:`common libc <c_library_common>` in order to make sure that these
+  functions can be made available when using a C standard library that does not
+  implement these functions.
 
-All non-standard functions and macros listed above must be implemented by the
-:ref:`common libc <c_library_common>` in order to make sure that these
-functions can be made available when using a C standard library that does not
-implement these functions.
-
-Adding a new non-standard function from common C standard libraries to the
-above list is allowed with justification, given that the above requirement is
-satisfied. However, when there exists a standard function that is functionally
-equivalent, the standard function shall be used.
+  Adding a new non-standard function from common C standard libraries to the
+  above list is allowed with justification, given that the above requirement is
+  satisfied. However, when there exists a standard function that is functionally
+  equivalent, the standard function shall be used.
 
 Rationale
----------
+  Some C standard libraries, such as Newlib and Picolibc, include additional
+  functions and macros that are defined by the standards and de-facto standards
+  that extend the ISO C standard (e.g. POSIX, Linux).
 
-Some C standard libraries, such as Newlib and Picolibc, include additional
-functions and macros that are defined by the standards and de-facto standards
-that extend the ISO C standard (e.g. POSIX, Linux).
+  The ISO/IEC 9899:2011 standard does not require C compiler toolchains to
+  include the support for these non-standard functions, and therefore using
+  these functions can lead to compatibility issues with the third-party
+  toolchains that come with their own C standard libraries.
 
-The ISO/IEC 9899:2011 standard does not require C compiler toolchains to
-include the support for these non-standard functions, and therefore using
-these functions can lead to compatibility issues with the third-party
-toolchains that come with their own C standard libraries.
-
-.. _main Zephyr repository: https://github.com/zephyrproject-rtos/zephyr
-.. _gmtime_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/gmtime_r.html
-.. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
-.. _strtok_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtok.html
+  .. _main Zephyr repository: https://github.com/zephyrproject-rtos/zephyr
+  .. _gmtime_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/gmtime_r.html
+  .. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
+  .. _strtok_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtok.html

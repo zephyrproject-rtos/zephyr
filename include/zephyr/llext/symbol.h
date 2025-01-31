@@ -90,17 +90,29 @@ struct llext_symtable {
 /** @cond ignore */
 #ifdef LL_EXTENSION_BUILD
 /* Extension build: add exported symbols to llext table */
-#define Z_LL_EXTENSION_SYMBOL(x)						\
+#define Z_LL_EXTENSION_SYMBOL_NAMED(sym_ident, sym_name)			\
 	static const struct llext_const_symbol					\
-			Z_GENERIC_SECTION(".exported_sym") __used		\
-			__llext_sym_ ## x = {					\
-		.name = STRINGIFY(x), .addr = (const void *)&x,			\
+			Z_GENERIC_SECTION(.exported_sym) __used			\
+			__llext_sym_ ## sym_name = {				\
+		.name = STRINGIFY(sym_name), .addr = (const void *)&sym_ident,	\
 	}
 #else
 /* No-op when not building an extension */
-#define Z_LL_EXTENSION_SYMBOL(x)
+#define Z_LL_EXTENSION_SYMBOL_NAMED(sym_ident, sym_name)
 #endif
 /** @endcond */
+
+/**
+ * @brief Exports a symbol from an extension to the base image with a custom name
+ *
+ * Version of @ref LL_EXTENSION_SYMBOL that allows the user to specify a custom
+ * name for the exported symbol.
+ *
+ * @param sym_ident Extension symbol to export to the base image
+ * @param sym_name Name associated with the symbol
+ */
+#define LL_EXTENSION_SYMBOL_NAMED(sym_ident, sym_name)				\
+	Z_LL_EXTENSION_SYMBOL_NAMED(sym_ident, sym_name)
 
 /**
  * @brief Exports a symbol from an extension to the base image
@@ -113,33 +125,49 @@ struct llext_symtable {
  *
  * @param x Extension symbol to export to the base image
  */
-#define LL_EXTENSION_SYMBOL(x) Z_LL_EXTENSION_SYMBOL(x)
+#define LL_EXTENSION_SYMBOL(x) Z_LL_EXTENSION_SYMBOL_NAMED(x, x)
 
 /** @cond ignore */
 #if defined(LL_EXTENSION_BUILD)
 /* Extension build: EXPORT_SYMBOL maps to LL_EXTENSION_SYMBOL */
-#define Z_EXPORT_SYMBOL(x) Z_LL_EXTENSION_SYMBOL(x)
+#define Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)				\
+	Z_LL_EXTENSION_SYMBOL_NAMED(sym_ident, sym_name)
 #elif defined(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
 /* SLID-enabled LLEXT application: export symbols, names in separate section */
-#define Z_EXPORT_SYMBOL(x)							\
-	static const char Z_GENERIC_SECTION("llext_exports_strtab") __used	\
-		__llext_sym_name_ ## x[] = STRINGIFY(x);				\
-	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,                \
-					     __llext_sym_ ## x) = {	        \
-		.name = __llext_sym_name_ ## x, .addr = (const void *)&x,		\
+#define Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)				\
+	static const char Z_GENERIC_SECTION(llext_exports_strtab) __used	\
+		__llext_sym_name_ ## sym_name[] = STRINGIFY(sym_name);		\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,		\
+					     __llext_sym_ ## sym_name) = {	\
+		.name = __llext_sym_name_ ## sym_name,				\
+		.addr = (const void *)&sym_ident,				\
 	}
 #elif defined(CONFIG_LLEXT)
 /* LLEXT application: export symbols */
-#define Z_EXPORT_SYMBOL(x)							\
-	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,                \
-					     __llext_sym_ ## x) = {	        \
-		.name = STRINGIFY(x), .addr = (const void *)&x,			\
+#define Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)				\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,		\
+					     __llext_sym_ ## sym_name) = {	\
+		.name = STRINGIFY(sym_name), .addr = (const void *)&sym_ident,	\
 	}
 #else
 /* No extension support in this build */
-#define Z_EXPORT_SYMBOL(x)
+#define Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)
 #endif
 /** @endcond */
+
+/**
+ * @brief Export a constant symbol from the current build with a custom name
+ *
+ * Version of @ref EXPORT_SYMBOL that allows the user to specify a custom name
+ * for the exported symbol.
+ *
+ * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * @param sym_ident Symbol to export
+ * @param sym_name Name associated with the symbol
+ */
+#define EXPORT_SYMBOL_NAMED(sym_ident, sym_name)				\
+	Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)
 
 /**
  * @brief Export a constant symbol from the current build
@@ -152,7 +180,7 @@ struct llext_symtable {
  *
  * @param x Symbol to export
  */
-#define EXPORT_SYMBOL(x) Z_EXPORT_SYMBOL(x)
+#define EXPORT_SYMBOL(x) EXPORT_SYMBOL_NAMED(x, x)
 
 /**
  * @}

@@ -696,7 +696,7 @@
 			};
 		};
 
-		octospi1: octospi@420d1400 {
+		octospi1: spi@420d1400 {
 			compatible = "st,stm32-ospi";
 			reg = <0x420d1400 0x400>;
 			interrupts = <76 0>;
@@ -709,7 +709,7 @@
 			status = "disabled";
 		};
 
-		octospi2: octospi@420d2400 {
+		octospi2: spi@420d2400 {
 			compatible = "st,stm32-ospi";
 			reg = <0x420d2400 0x400>;
 			interrupts = <120 0>;
@@ -959,6 +959,7 @@
 		compatible = "st,stm32-vref";
 		vrefint-cal-addr = <0x0BFA07A5>;
 		vrefint-cal-mv = <3000>;
+		vrefint-cal-resolution = <14>;
 		io-channels = <&adc1 0>;
 		status = "disabled";
 	};
@@ -967,6 +968,7 @@
 		compatible = "st,stm32-vref";
 		vrefint-cal-addr = <0x0BFA07A5>;
 		vrefint-cal-mv = <3000>;
+		vrefint-cal-resolution = <14>;
 		io-channels = <&adc4 0>;
 		status = "disabled";
 	};

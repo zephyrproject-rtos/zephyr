@@ -184,8 +184,8 @@ static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt,
 static inline void net_tc_tx_init(void) { }
 static inline void net_tc_rx_init(void) { }
 #endif
-extern bool net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt);
-extern void net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt);
+extern enum net_verdict net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt);
+extern enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt);
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 
 char *net_sprint_addr(sa_family_t af, const void *addr);
@@ -239,18 +239,8 @@ void net_if_ipv6_start_dad(struct net_if *iface,
  * @brief Initialize Precision Time Protocol Layer.
  */
 void net_gptp_init(void);
-
-/**
- * @brief Process a ptp message.
- *
- * @param buf Buffer with a valid PTP Ethernet type.
- *
- * @return Return the policy for network buffer.
- */
-enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
 #else
 #define net_gptp_init()
-#define net_gptp_recv(iface, pkt) NET_DROP
 #endif /* CONFIG_NET_GPTP */
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)

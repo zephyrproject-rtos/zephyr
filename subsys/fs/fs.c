@@ -686,7 +686,7 @@ int fs_mount(struct fs_mount_t *mp)
 
 	len = strlen(mp->mnt_point);
 
-	if ((len <= 1) || (mp->mnt_point[0] != '/')) {
+	if ((len == 0) || (mp->mnt_point[0] != '/')) {
 		LOG_ERR("invalid mount point!!");
 		return -EINVAL;
 	}

@@ -162,6 +162,13 @@ if(VALGRIND_PROGRAM)
     )
 endif()
 
+add_custom_target(run
+  COMMAND
+  $<TARGET_FILE:testbinary>
+  DEPENDS testbinary
+  WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+  )
+
 add_custom_target(run-test
   COMMAND
   ${VALGRIND} ${VALGRIND_FLAGS}

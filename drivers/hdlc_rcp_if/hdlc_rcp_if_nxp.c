@@ -34,10 +34,10 @@
 #define LOG_LEVEL       CONFIG_HDLC_RCP_IF_DRIVER_LOG_LEVEL
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-struct ot_hdlc_rcp_context {
+static struct ot_hdlc_rcp_context {
 	struct net_if *iface;
 	struct openthread_context *ot_context;
-};
+} ot_hdlc_rcp_ctx;
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
@@ -111,7 +111,7 @@ static const struct hdlc_api nxp_hdlc_api = {
 
 NET_DEVICE_DT_INST_DEFINE(0, NULL,                             /* Initialization Function */
 			  NULL,                                /* No PM API support */
-			  NULL,                                /* No context data */
+			  &ot_hdlc_rcp_ctx,                    /* HDLC RCP context data */
 			  NULL,                                /* Configuration info */
 			  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, /* Initial priority */
 			  &nxp_hdlc_api,                       /* API interface functions */

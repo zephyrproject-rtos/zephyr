@@ -17,6 +17,7 @@
 #include <zephyr/data/json.h>
 #include <zephyr/random/random.h>
 #include <zephyr/logging/log.h>
+#include "net_sample_common.h"
 
 
 #if defined(CONFIG_MBEDTLS_MEMORY_DEBUG)
@@ -452,6 +453,8 @@ static int resolve_broker_addr(struct sockaddr_in *broker)
 int main(void)
 {
 	setup_credentials();
+
+	wait_for_network();
 
 	for (;;) {
 		resolve_broker_addr(&aws_broker);

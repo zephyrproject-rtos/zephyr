@@ -27,6 +27,10 @@ SECTION_FUNC(vectors, __start)
 
 	.option norvc;
 
+#if defined(CONFIG_SOC_RESET_HOOK)
+	call soc_reset_hook
+#endif
+
 #if defined(CONFIG_RISCV_VECTORED_MODE)
 #if defined(CONFIG_RISCV_HAS_CLIC)
 

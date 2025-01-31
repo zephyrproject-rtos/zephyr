@@ -23,10 +23,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
-#endif
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
@@ -110,16 +107,21 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_ANY_LOW_POWER 1
 #endif
 
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+
 /* Macro must resolve to literal 0 or 1 */
-#define INSTANCE_IS_FAST(unused, prefix, idx, _)					\
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(idx)),				\
-		(COND_CODE_1(UTIL_AND(IS_ENABLED(CONFIG_SOC_NRF54H20_GPD),		\
-			     DT_NODE_HAS_PROP(UARTE(idx), power_domains)),		\
-			    (COND_CODE_0(DT_PHA(UARTE(idx), power_domains, id), (1), (0))),\
-			    (0))), (0))
+#define INSTANCE_IS_FAST(unused, prefix, idx, _)						\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(idx)),					\
+		    (COND_CODE_1(DT_NODE_HAS_PROP(UARTE(idx), power_domains),			\
+			(IS_EQ(DT_PHA(UARTE(idx), power_domains, id), NRF_GPD_FAST_ACTIVE1)),	\
+			(0))), (0))
 
 #if UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_FAST, (||), (0))
+/* Fast instance requires special PM treatment so device runtime PM must be enabled. */
+BUILD_ASSERT(IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME));
 #define UARTE_ANY_FAST 1
+#endif
 #endif
 
 #ifdef UARTE_ANY_CACHE
@@ -307,6 +309,10 @@ struct uarte_nrfx_config {
 #ifdef CONFIG_HAS_NORDIC_DMM
 	void *mem_reg;
 #endif
+#ifdef UARTE_ANY_FAST
+	const struct device *clk_dev;
+	struct nrf_clock_spec clk_spec;
+#endif
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	/* None-zero in case of high speed instances. Baudrate is adjusted by that ratio. */
 	uint32_t clock_freq;
@@ -326,6 +332,13 @@ struct uarte_nrfx_config {
 	uint8_t *poll_out_byte;
 	uint8_t *poll_in_byte;
 };
+
+/* Using Macro instead of static inline function to handle NO_OPTIMIZATIONS case
+ * where static inline fails on linking.
+ */
+#define HW_RX_COUNTING_ENABLED(config)    \
+	(IS_ENABLED(UARTE_ANY_HW_ASYNC) ? \
+	 (config->flags & UARTE_CFG_FLAG_HW_BYTE_COUNTING) : false)
 
 static inline NRF_UARTE_Type *get_uarte_instance(const struct device *dev)
 {
@@ -347,6 +360,44 @@ static void endtx_isr(const struct device *dev)
 
 	irq_unlock(key);
 
+}
+
+/** @brief Disable UARTE peripheral is not used by RX or TX.
+ *
+ * It must be called with interrupts locked so that deciding if no direction is
+ * using the UARTE is atomically performed with UARTE peripheral disabling. Otherwise
+ * it would be possible that after clearing flags we get preempted and UARTE is
+ * enabled from the higher priority context and when we come back UARTE is disabled
+ * here.
+ * @param dev Device.
+ * @param dis_mask Mask of direction (RX or TX) which now longer uses the UARTE instance.
+ */
+static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
+{
+	struct uarte_nrfx_data *data = dev->data;
+
+	data->flags &= ~dis_mask;
+	if (data->flags & UARTE_FLAG_LOW_POWER) {
+		return;
+	}
+
+#if defined(UARTE_ANY_ASYNC) && !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
+	const struct uarte_nrfx_config *config = dev->config;
+
+	if (data->async && HW_RX_COUNTING_ENABLED(config)) {
+		nrfx_timer_disable(&config->timer);
+		/* Timer/counter value is reset when disabled. */
+		data->async->rx.total_byte_cnt = 0;
+		data->async->rx.total_user_byte_cnt = 0;
+	}
+#endif
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	const struct uarte_nrfx_config *cfg = dev->config;
+
+	nrf_gpd_retain_pins_set(cfg->pcfg, true);
+#endif
+	nrf_uarte_disable(get_uarte_instance(dev));
 }
 
 #ifdef UARTE_ANY_NONE_ASYNC
@@ -384,7 +435,7 @@ static void uarte_nrfx_isr_int(const void *arg)
 				pm_device_runtime_put_async(dev, K_NO_WAIT);
 			}
 		} else {
-			nrf_uarte_disable(uarte);
+			uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
 		}
 #ifdef UARTE_INTERRUPT_DRIVEN
 		if (!data->int_driven)
@@ -604,13 +655,6 @@ static int wait_tx_ready(const struct device *dev)
 	return key;
 }
 
-/* Using Macro instead of static inline function to handle NO_OPTIMIZATIONS case
- * where static inline fails on linking.
- */
-#define HW_RX_COUNTING_ENABLED(config)    \
-	(IS_ENABLED(UARTE_ANY_HW_ASYNC) ? \
-	 (config->flags & UARTE_CFG_FLAG_HW_BYTE_COUNTING) : false)
-
 static void uarte_periph_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
@@ -618,6 +662,16 @@ static void uarte_periph_enable(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 
 	(void)data;
+#ifdef UARTE_ANY_FAST
+	if (config->clk_dev) {
+		int err;
+
+		err = nrf_clock_control_request_sync(config->clk_dev, &config->clk_spec, K_FOREVER);
+		(void)err;
+		__ASSERT_NO_MSG(err >= 0);
+	}
+#endif
+
 	nrf_uarte_enable(uarte);
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(config->pcfg, false);
@@ -699,49 +753,10 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 	if (LOW_POWER_ENABLED(config)) {
 		uarte_enable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
 	}
-
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
 }
 
 #if defined(UARTE_ANY_ASYNC)
-/** @brief Disable UARTE peripheral is not used by RX or TX.
- *
- * It must be called with interrupts locked so that deciding if no direction is
- * using the UARTE is atomically performed with UARTE peripheral disabling. Otherwise
- * it would be possible that after clearing flags we get preempted and UARTE is
- * enabled from the higher priority context and when we come back UARTE is disabled
- * here.
- * @param dev Device.
- * @param dis_mask Mask of direction (RX or TX) which now longer uses the UARTE instance.
- */
-static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
-{
-	struct uarte_nrfx_data *data = dev->data;
-
-	data->flags &= ~dis_mask;
-	if (data->flags & UARTE_FLAG_LOW_POWER) {
-		return;
-	}
-
-#if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
-	const struct uarte_nrfx_config *config = dev->config;
-
-	if (data->async && HW_RX_COUNTING_ENABLED(config)) {
-		nrfx_timer_disable(&config->timer);
-		/* Timer/counter value is reset when disabled. */
-		data->async->rx.total_byte_cnt = 0;
-		data->async->rx.total_user_byte_cnt = 0;
-	}
-#endif
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	const struct uarte_nrfx_config *cfg = dev->config;
-
-	nrf_gpd_retain_pins_set(cfg->pcfg, true);
-#endif
-	nrf_uarte_disable(get_uarte_instance(dev));
-}
-
 static void rx_timeout(struct k_timer *timer);
 static void tx_timeout(struct k_timer *timer);
 
@@ -2203,6 +2218,16 @@ static void uarte_pm_suspend(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 
 	(void)data;
+#ifdef UARTE_ANY_FAST
+	if (cfg->clk_dev) {
+		int err;
+
+		err = nrf_clock_control_release(cfg->clk_dev, &cfg->clk_spec);
+		(void)err;
+		__ASSERT_NO_MSG(err >= 0);
+	}
+#endif
+
 #ifdef UARTE_ANY_ASYNC
 	if (data->async) {
 		/* Entering inactive state requires device to be no
@@ -2386,11 +2411,11 @@ static int uarte_instance_init(const struct device *dev,
 #define UARTE_DISABLE_RX_INIT(node_id) \
 	.disable_rx = DT_PROP(node_id, disable_rx)
 
-#define UARTE_GET_FREQ(idx) DT_PROP(DT_CLOCKS_CTLR(UARTE(idx)), clock_frequency)
-
-#define UARTE_GET_BAUDRATE_DIV(idx)						\
-	COND_CODE_1(DT_CLOCKS_HAS_IDX(UARTE(idx), 0),				\
-		   ((UARTE_GET_FREQ(idx) / NRF_UARTE_BASE_FREQUENCY_16MHZ)), (1))
+/* Get frequency of the clock that driver the UARTE peripheral. Clock node can
+ * have fixed or variable frequency. For fast UARTE use highest supported frequency.
+ */
+#define UARTE_GET_BAUDRATE_DIV(idx) \
+	(NRF_PERIPH_GET_FREQUENCY(UARTE(idx)) / NRF_UARTE_BASE_FREQUENCY_16MHZ)
 
 /* When calculating baudrate we need to take into account that high speed instances
  * must have baudrate adjust to the ratio between UARTE clocking frequency and 16 MHz.
@@ -2398,6 +2423,19 @@ static int uarte_instance_init(const struct device *dev,
 #define UARTE_GET_BAUDRATE(idx) \
 	(NRF_BAUDRATE(UARTE_PROP(idx, current_speed)) / UARTE_GET_BAUDRATE_DIV(idx))
 
+/* Get initialization level of an instance. Instances that requires clock control
+ * which is using nrfs (IPC) are initialized later.
+ */
+#define UARTE_INIT_LEVEL(idx) \
+	COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _), (POST_KERNEL), (PRE_KERNEL_1))
+
+/* Get initialization priority of an instance. Instances that requires clock control
+ * which is using nrfs (IPC) are initialized later.
+ */
+#define UARTE_INIT_PRIO(idx)								\
+	COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _),				\
+		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY)),	\
+		    (CONFIG_SERIAL_INIT_PRIORITY))
 
 /* Macro for setting nRF specific configuration structures. */
 #define UARTE_NRF_CONFIG(idx) {							\
@@ -2453,7 +2491,7 @@ static int uarte_instance_init(const struct device *dev,
 	static const struct uarte_nrfx_config uarte_##idx##z_config = {	       \
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,		       \
 		    (IF_ENABLED(DT_CLOCKS_HAS_IDX(UARTE(idx), 0),	       \
-			   (.clock_freq = UARTE_GET_FREQ(idx),))),	       \
+			   (.clock_freq = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),))), \
 		    (IF_ENABLED(UARTE_HAS_FRAME_TIMEOUT,		       \
 			(.baudrate = UARTE_PROP(idx, current_speed),))	       \
 		     .nrf_baudrate = UARTE_GET_BAUDRATE(idx),		       \
@@ -2480,6 +2518,13 @@ static int uarte_instance_init(const struct device *dev,
 		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
 			(.timer = NRFX_TIMER_INSTANCE(			       \
 				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
+		IF_ENABLED(INSTANCE_IS_FAST(_, /*empty*/, idx, _),	       \
+			(.clk_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(UARTE(idx))), \
+			 .clk_spec = {					       \
+				.frequency = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),\
+				.accuracy = 0,				       \
+				.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,\
+				},))					       \
 	};								       \
 	static int uarte_##idx##_init(const struct device *dev)		       \
 	{								       \
@@ -2500,8 +2545,8 @@ static int uarte_instance_init(const struct device *dev,
 		      PM_DEVICE_DT_GET(UARTE(idx)),			       \
 		      &uarte_##idx##_data,				       \
 		      &uarte_##idx##z_config,				       \
-		      PRE_KERNEL_1,					       \
-		      CONFIG_SERIAL_INIT_PRIORITY,			       \
+		      UARTE_INIT_LEVEL(idx),				       \
+		      UARTE_INIT_PRIO(idx),				       \
 		      &uart_nrfx_uarte_driver_api)
 
 #define UARTE_INT_DRIVEN(idx)						       \

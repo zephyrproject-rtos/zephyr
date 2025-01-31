@@ -235,6 +235,8 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		* CONFIG_TIMER_TEST_SAMPLES;
 	double time_diff_us = actual_time_us - expected_time_us
 		- expected_time_drift_us;
+	double time_diff_us_abs = time_diff_us >= 0.0 ? time_diff_us : -time_diff_us;
+
 	/* If max stddev is lower than a single clock cycle then round it up. */
 	uint32_t max_stddev = MAX(k_cyc_to_us_ceil32(1), CONFIG_TIMER_TEST_MAX_STDDEV);
 
@@ -333,7 +335,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		     "Standard deviation (in microseconds) outside expected bound");
 
 	/* Validate the timer drift (accuracy over time) is within a configurable bound */
-	zassert_true(fabs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
+	zassert_true(time_diff_us_abs < CONFIG_TIMER_TEST_MAX_DRIFT,
 		     "Drift (in microseconds) outside expected bound");
 }
 

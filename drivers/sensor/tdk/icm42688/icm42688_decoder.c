@@ -10,6 +10,8 @@
 #include <errno.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor_clock.h>
+
 LOG_MODULE_REGISTER(ICM42688_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT invensense_icm42688
@@ -183,6 +185,8 @@ int icm42688_encode(const struct device *dev, const struct sensor_chan_spec *con
 {
 	struct icm42688_dev_data *data = dev->data;
 	struct icm42688_encoded_data *edata = (struct icm42688_encoded_data *)buf;
+	uint64_t cycles;
+	int rc;
 
 	edata->channels = 0;
 
@@ -190,10 +194,15 @@ int icm42688_encode(const struct device *dev, const struct sensor_chan_spec *con
 		edata->channels |= icm42688_encode_channel(channels[i].chan_type);
 	}
 
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		return rc;
+	}
+
 	edata->header.is_fifo = false;
 	edata->header.accel_fs = data->cfg.accel_fs;
 	edata->header.gyro_fs = data->cfg.gyro_fs;
-	edata->header.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
 }
@@ -234,81 +243,33 @@ static inline q31_t icm42688_read_temperature_from_packet(const uint8_t *pkt)
 static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int fs,
 					 uint8_t axis_offset, q31_t *out)
 {
-	int32_t value;
-	int64_t scale = 0;
-	int32_t max = BIT(15);
+	uint32_t unsigned_value;
+	int32_t signed_value;
+	bool is_hires = FIELD_GET(FIFO_HEADER_ACCEL, pkt[0]) == 1;
 	int offset = 1 + (axis_offset * 2);
 
-	if (is_accel) {
-		switch (fs) {
-		case ICM42688_DT_ACCEL_FS_2:
-			scale = INT64_C(2) * BIT(31 - 5) * 9.80665;
-			break;
-		case ICM42688_DT_ACCEL_FS_4:
-			scale = INT64_C(4) * BIT(31 - 6) * 9.80665;
-			break;
-		case ICM42688_DT_ACCEL_FS_8:
-			scale = INT64_C(8) * BIT(31 - 7) * 9.80665;
-			break;
-		case ICM42688_DT_ACCEL_FS_16:
-			scale = INT64_C(16) * BIT(31 - 8) * 9.80665;
-			break;
-		}
-	} else {
-		switch (fs) {
-		case ICM42688_DT_GYRO_FS_2000:
-			scale = 164;
-			break;
-		case ICM42688_DT_GYRO_FS_1000:
-			scale = 328;
-			break;
-		case ICM42688_DT_GYRO_FS_500:
-			scale = 655;
-			break;
-		case ICM42688_DT_GYRO_FS_250:
-			scale = 1310;
-			break;
-		case ICM42688_DT_GYRO_FS_125:
-			scale = 2620;
-			break;
-		case ICM42688_DT_GYRO_FS_62_5:
-			scale = 5243;
-			break;
-		case ICM42688_DT_GYRO_FS_31_25:
-			scale = 10486;
-			break;
-		case ICM42688_DT_GYRO_FS_15_625:
-			scale = 20972;
-			break;
-		}
-	}
+	const uint32_t scale[2][2] = {
+		/* low-res,	hi-res */
+		{35744,		8936}, /* gyro */
+		{40168,		2511}, /* accel */
+	};
 
 	if (!is_accel && FIELD_GET(FIFO_HEADER_ACCEL, pkt[0]) == 1) {
-		offset += 7;
+		offset += 6;
 	}
 
-	value = (int16_t)sys_le16_to_cpu((pkt[offset] << 8) | pkt[offset + 1]);
+	unsigned_value = (pkt[offset] << 8) | pkt[offset + 1];
 
-	if (FIELD_GET(FIFO_HEADER_20, pkt[0]) == 1) {
+	if (is_hires) {
 		uint32_t mask = is_accel ? GENMASK(7, 4) : GENMASK(3, 0);
-
-		offset = 0x11 + axis_offset;
-		value = (value << 4) | FIELD_GET(mask, pkt[offset]);
-		/* In 20 bit mode, FS can only be +/-16g and +/-2000dps */
-		scale = is_accel ? (INT64_C(16) * BIT(8) * 9.80665) : 131;
-		max = is_accel ? BIT(18) : BIT(19);
-		if (value == -524288) {
-			/* Invalid 20 bit value */
-			return -ENODATA;
-		}
+		offset = 17 + axis_offset;
+		unsigned_value = (unsigned_value << 4) | FIELD_GET(mask, pkt[offset]);
+		signed_value = unsigned_value | (0 - (unsigned_value & BIT(19)));
 	} else {
-		if (value <= -32767) {
-			/* Invalid 16 bit value */
-			return -ENODATA;
-		}
+		signed_value = unsigned_value | (0 - (unsigned_value & BIT(16)));
 	}
 
-	*out = (q31_t)(value * scale / max);
+	*out = (q31_t)(signed_value * scale[is_accel][is_hires]);
 	return 0;
 }
 
@@ -425,7 +386,7 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			/* Decode gyro */
 			struct sensor_three_axis_data *data =
 				(struct sensor_three_axis_data *)data_out;
-			uint64_t period_ns = accel_period_ns[edata->gyro_odr];
+			uint64_t period_ns = gyro_period_ns[edata->gyro_odr];
 
 			icm42688_get_shift(SENSOR_CHAN_GYRO_XYZ, edata->header.accel_fs,
 					   edata->header.gyro_fs, &data->shift);

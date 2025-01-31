@@ -129,7 +129,7 @@ config SOC_GECKO_TRNG
 config SOC_SILABS_SLEEPTIMER
 	bool
 	select SOC_GECKO_PRS
-	select SOC_GECKO_RTCC if SOC_SERIES_EFR32BG22 || SOC_SERIES_EFR32BG27 || SOC_SERIES_EFR32MG21
+	select SOC_GECKO_RTCC if SOC_FAMILY_SILABS_S2 && $(dt_nodelabel_enabled,rtcc0)
 	help
 	  Set if the Sleeptimer HAL module is used.
 
@@ -208,7 +208,7 @@ config SOC_GECKO_CMU
 	help
 	  Set if the clock management unit (CMU) is present in the SoC.
 
-if SOC_GECKO_CMU
+if SOC_GECKO_CMU && (SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1)
 
 config CMU_NEED_LFXO
 	bool

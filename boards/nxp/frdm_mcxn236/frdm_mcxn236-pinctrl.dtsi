@@ -120,6 +120,23 @@
 		};
 	};
 
+	pinmux_i3c1: pinmux_i3c1 {
+		group0 {
+			pinmux = <I3C1_SDA_PIO1_16>,
+				<I3C1_SCL_PIO1_17>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+		group1 {
+			pinmux = <I3C1_PUR_PIO1_15>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_flexio_lcd: pinmux_flexio_lcd {
 		group0 {
 			pinmux = <FLEXIO0_D4_PIO0_20>,

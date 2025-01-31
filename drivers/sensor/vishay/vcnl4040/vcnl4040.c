@@ -136,21 +136,21 @@ static int vcnl4040_reg_setup(const struct device *dev)
 
 	/*
 	 * scale the lux depending on the value of the integration time
-	 * see page 8 of the VCNL4040 application note:
-	 * https://www.vishay.com/docs/84307/designingvcnl4040.pdf
+	 * see page 12 of the VCNL4040 application note:
+	 * https://www.vishay.com/docs/84274/vcnl4040.pdf
 	 */
 	switch (config->als_it) {
 	case VCNL4040_AMBIENT_INTEGRATION_TIME_80MS:
-		data->sensitivity = 0.12;
+		data->sensitivity = 0.1;
 		break;
 	case VCNL4040_AMBIENT_INTEGRATION_TIME_160MS:
-		data->sensitivity = 0.06;
+		data->sensitivity = 0.05;
 		break;
 	case VCNL4040_AMBIENT_INTEGRATION_TIME_320MS:
-		data->sensitivity = 0.03;
+		data->sensitivity = 0.025;
 		break;
 	case VCNL4040_AMBIENT_INTEGRATION_TIME_640MS:
-		data->sensitivity = 0.015;
+		data->sensitivity = 0.0125;
 		break;
 	default:
 		data->sensitivity = 1.0;

@@ -198,6 +198,8 @@
 			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm0_lpi2c0: lpi2c@92800 {
@@ -238,6 +240,8 @@
 			/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 			dmas = <&edma0 0 71>, <&edma0 1 72>;
 			dma-names = "rx", "tx";
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm1_lpi2c1: lpi2c@93800 {
@@ -278,6 +282,8 @@
 			/* DMA channels 4 and 5, muxed to LPSPI2 RX and TX */
 			dmas = <&edma0 4 73>, <&edma0 5 74>;
 			dma-names = "rx", "tx";
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm2_lpi2c2: lpi2c@94800 {
@@ -312,6 +318,8 @@
 			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm3_lpi2c3: lpi2c@95800 {
@@ -352,6 +360,8 @@
 			/* DMA channels 2 and 3, muxed to LPSPI4 RX and TX */
 			dmas = <&edma0 2 77>, <&edma0 3 78>;
 			dma-names = "rx", "tx";
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm4_lpi2c4: lpi2c@b4800 {
@@ -386,6 +396,8 @@
 			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm5_lpi2c5: lpi2c@b5800 {
@@ -420,6 +432,8 @@
 			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm6_lpi2c6: lpi2c@b6800 {
@@ -454,6 +468,8 @@
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm7_lpi2c7: lpi2c@b7800 {
@@ -488,6 +504,8 @@
 			clocks = <&syscon MCUX_FLEXCOMM8_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm8_lpi2c8: lpi2c@b8800 {
@@ -522,6 +540,8 @@
 			clocks = <&syscon MCUX_FLEXCOMM9_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 		flexcomm9_lpi2c9: lpi2c@b9800 {
@@ -532,6 +552,15 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+	};
+
+	mbox: mbox@b2000 {
+		compatible = "nxp,mbox-mailbox";
+		reg = <0xb2000 0xec>;
+		interrupts = <54 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
 	};
 
 	edma0: dma-controller@80000 {
@@ -871,6 +900,16 @@
 		clocks = <&syscon MCUX_LPADC2_CLK>;
 	};
 
+	usb0: usbd@dd000 {
+		compatible = "nxp,kinetis-usbd";
+		reg = <0xdd000 0x1000>;
+		interrupts = <50 1>;
+		interrupt-names = "usbfs0";
+		num-bidir-endpoints = <16>;
+		no-voltage-regulator;
+		status = "disabled";
+	};
+
 	usb1: usbd@10b000 {
 		compatible = "nxp,ehci";
 		reg = <0x10b000 0x1000>;
@@ -1030,6 +1069,39 @@
 		clock-frequency = <16384>;
 		clock-src = <0>;
 		alarms-count = <1>;
+	};
+
+	sai0: sai@106000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x106000 0x1000>;
+		clocks = <&syscon MCUX_SAI0_CLK>;
+		pinmuxes = <&sai0 0x100 0x40000000>;
+		interrupts = <59 0>;
+		dmas = <&edma0 0 99>, <&edma0 0 100>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <0>;
+		nxp,rx-dma-channel = <1>;
+		status = "disabled";
+	};
+	sai1: sai@107000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x107000 0x1000>;
+		clocks = <&syscon MCUX_SAI1_CLK>;
+		pinmuxes = <&sai1 0x100 0x40000000>;
+		interrupts = <60 0>;
+		dmas = <&edma0 0 101>, <&edma0 0 102>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
+		status = "disabled";
 	};
 };
 

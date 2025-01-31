@@ -23,6 +23,17 @@ config ETH_NXP_ENET_QOS_MAC
 
 if ETH_NXP_ENET_QOS_MAC
 
+DT_PROP_NXP_ENET_QOS_MAC_UNIQUE_MAC := nxp,unique-mac
+
+config ETH_NXP_ENET_QOS_MAC_UNIQUE_MAC_ADDRESS
+	bool "Unique MAC address support"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_QOS_MAC),$(DT_PROP_NXP_ENET_QOS_MAC_UNIQUE_MAC),True)
+	select HWINFO
+	select CRC
+	help
+	  Enable Unique MAC address support based on device UUID.
+
+
 config ETH_NXP_ENET_QOS_TX_BUFFER_DESCRIPTORS
 	int "Number of tx buffer descriptors"
 	default 4

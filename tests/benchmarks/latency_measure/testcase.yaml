@@ -19,7 +19,8 @@ tests:
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex:
+          - "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
 
@@ -35,7 +36,8 @@ tests:
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex:
+          - "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
 
@@ -53,7 +55,8 @@ tests:
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex:
+          - "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
 
@@ -75,6 +78,7 @@ tests:
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex:
+          - "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"

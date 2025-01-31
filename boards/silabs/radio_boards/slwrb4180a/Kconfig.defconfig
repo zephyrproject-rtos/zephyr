@@ -4,12 +4,6 @@
 
 if BOARD_SLWRB4180A
 
-config CMU_HFXO_FREQ
-	default 38400000
-
-config CMU_LFXO_FREQ
-	default 32768
-
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
 	depends on LOG_BACKEND_SWO

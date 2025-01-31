@@ -44,6 +44,7 @@ config RTC_SHELL
 source "drivers/rtc/Kconfig.am1805"
 source "drivers/rtc/Kconfig.ambiq"
 source "drivers/rtc/Kconfig.ds1307"
+source "drivers/rtc/Kconfig.ds3231"
 source "drivers/rtc/Kconfig.emul"
 source "drivers/rtc/Kconfig.fake"
 source "drivers/rtc/Kconfig.ifx_cat1"
@@ -59,5 +60,7 @@ source "drivers/rtc/Kconfig.numaker"
 source "drivers/rtc/Kconfig.rv8263"
 source "drivers/rtc/Kconfig.xmc4xxx"
 source "drivers/rtc/Kconfig.nxp_irtc"
+source "drivers/rtc/Kconfig.rv8803"
+source "drivers/rtc/Kconfig.bq32002"
 
 endif # RTC

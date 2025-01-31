@@ -1050,6 +1050,25 @@ requirement files in the ``scripts`` directory of the module.
           - scripts/requirements-build.txt
           - scripts/requirements-doc.txt
 
+
+.. _modules-runners:
+
+External Runners
+================
+
+If a module has out of tree boards that require custom :ref:`runners <west-runner>`,
+then it can add a list to its ``zephyr/module.yml`` file, for example:
+
+
+.. code-block:: yaml
+
+    runners:
+      - file: scripts/my-runner.py
+
+
+Each file entry is imported when executing ``west flash`` or ``west debug`` and
+subclasses of the ``ZephyrBinaryRunner`` are registered for use.
+
 Module Inclusion
 ================
 

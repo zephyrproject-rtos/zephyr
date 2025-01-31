@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_arp, CONFIG_NET_ARP_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 
 #include "arp.h"
+#include "ipv4.h"
 #include "net_private.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
@@ -77,6 +78,9 @@ static struct arp_entry *arp_entry_find(sys_slist_t *list,
 
 		if (entry->iface == iface &&
 		    net_ipv4_addr_cmp(&entry->ip, dst)) {
+			NET_DBG("found dst %s",
+				net_sprint_ipv4_addr(dst));
+
 			return entry;
 		}
 
@@ -270,6 +274,9 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 			return NULL;
 		}
 
+		net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
+		net_pkt_set_family(pkt, AF_INET);
+
 		/* Avoid recursive loop with network packet capturing */
 		if (IS_ENABLED(CONFIG_NET_CAPTURE) && pending) {
 			net_pkt_set_captured(pkt, net_pkt_is_captured(pending));
@@ -459,7 +466,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	NET_DBG("ARP using ll %s for IP %s",
 		net_sprint_ll_addr(net_pkt_lladdr_dst(pkt)->addr,
 				   sizeof(struct net_eth_addr)),
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
+		net_sprint_ipv4_addr(NET_IPV4_HDR(pkt)->dst));
 
 	return pkt;
 }
@@ -498,6 +505,7 @@ static void arp_gratuitous_send(struct net_if *iface,
 
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 	net_pkt_set_vlan_tag(pkt, net_eth_get_vlan_tag(iface));
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
 
 	hdr = NET_ARP_HDR(pkt);
 
@@ -686,10 +694,10 @@ void net_arp_update(struct net_if *iface,
 		net_pkt_lladdr_dst(pkt)->addr =
 			(uint8_t *) &NET_ETH_HDR(pkt)->dst.addr;
 
-		NET_DBG("iface %d (%p) dst %s pending %p frag %p",
+		NET_DBG("iface %d (%p) dst %s pending %p frag %p ptype 0x%04x",
 			net_if_get_by_iface(iface), iface,
 			net_sprint_ipv4_addr(&entry->ip),
-			pkt, pkt->frags);
+			pkt, pkt->frags, net_pkt_ll_proto_type(pkt));
 
 		/* We directly send the packet without first queueing it.
 		 * The pkt has already been queued for sending, once by
@@ -750,6 +758,9 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 
 	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)&hdr->dst_hwaddr.addr;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
+	net_pkt_set_family(pkt, AF_INET);
 
 	return pkt;
 }
@@ -1006,3 +1017,28 @@ void net_arp_init(void)
 			  K_SECONDS(CONFIG_NET_ARP_GRATUITOUS_INTERVAL));
 #endif /* defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION) */
 }
+
+static enum net_verdict arp_recv(struct net_if *iface,
+				 uint16_t ptype,
+				 struct net_pkt *pkt)
+{
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ptype);
+
+	net_pkt_set_family(pkt, AF_INET);
+
+	NET_DBG("ARP packet from %s received",
+		net_sprint_ll_addr((uint8_t *)hdr->src.addr,
+				   sizeof(struct net_eth_addr)));
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
+	    net_ipv4_acd_input(iface, pkt) == NET_DROP) {
+		return NET_DROP;
+	}
+
+	return net_arp_input(pkt, hdr);
+}
+
+ETH_NET_L3_REGISTER(ARP, NET_ETH_PTYPE_ARP, arp_recv);

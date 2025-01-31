@@ -49,7 +49,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 {
 	uintptr_t start, end;
 
-	if (arch_current_thread() == NULL || arch_is_in_isr()) {
+	if (_current == NULL || arch_is_in_isr()) {
 		/* We were servicing an interrupt or in early boot environment
 		 * and are supposed to be on the interrupt stack */
 		int cpu_id;
@@ -64,7 +64,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 		end = start + CONFIG_ISR_STACK_SIZE;
 #ifdef CONFIG_USERSPACE
 	} else if ((cs & 0x3U) == 0U &&
-		   (arch_current_thread()->base.user_options & K_USER) != 0) {
+		   (_current->base.user_options & K_USER) != 0) {
 		/* The low two bits of the CS register is the privilege
 		 * level. It will be 0 in supervisor mode and 3 in user mode
 		 * corresponding to ring 0 / ring 3.
@@ -72,14 +72,14 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 		 * If we get here, we must have been doing a syscall, check
 		 * privilege elevation stack bounds
 		 */
-		start = arch_current_thread()->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
-		end = arch_current_thread()->stack_info.start;
+		start = _current->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
+		end = _current->stack_info.start;
 #endif /* CONFIG_USERSPACE */
 	} else {
 		/* Normal thread operation, check its stack buffer */
-		start = arch_current_thread()->stack_info.start;
-		end = Z_STACK_PTR_ALIGN(arch_current_thread()->stack_info.start +
-					arch_current_thread()->stack_info.size);
+		start = _current->stack_info.start;
+		end = Z_STACK_PTR_ALIGN(_current->stack_info.start +
+					_current->stack_info.size);
 	}
 
 	return (addr <= start) || (addr + size > end);
@@ -97,7 +97,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 __pinned_func
 bool z_x86_check_guard_page(uintptr_t addr)
 {
-	struct k_thread *thread = arch_current_thread();
+	struct k_thread *thread = _current;
 	uintptr_t start, end;
 
 	/* Front guard size - before thread stack area */
@@ -233,7 +233,7 @@ static inline uintptr_t get_cr3(const struct arch_esf *esf)
 	 * switch when we took the exception via z_x86_trampoline_to_kernel
 	 */
 	if ((esf->cs & 0x3) != 0) {
-		return arch_current_thread()->arch.ptables;
+		return _current->arch.ptables;
 	}
 #else
 	ARG_UNUSED(esf);
@@ -458,6 +458,7 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 		 * the page is present in the kernel's page tables and the
 		 * instruction will just be re-tried, producing another fault.
 		 */
+		was_valid_access = true;
 		if (was_user &&
 		    !z_x86_kpti_is_access_ok(virt, get_ptables(esf))) {
 			was_valid_access = false;

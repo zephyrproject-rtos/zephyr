@@ -15,9 +15,13 @@ General Guidelines
    :hidden:
 
    guidelines.rst
-   coding_guidelines/index.rst
-   proposals_and_rfcs.rst
    contributor_expectations.rst
+   reviewer_expectations.rst
+   coding_guidelines/index.rst
+   style_guidelines.rst
+   proposals_and_rfcs.rst
+   modifying_contributions.rst
+
 
 :ref:`contribute_guidelines`
    Learn about the overall process and guidelines for contributing to the Zephyr project.
@@ -30,16 +34,25 @@ General Guidelines
    This document is another mandatory read that describes the expected behavior of *all*
    contributors to the project.
 
+:ref:`reviewer-expectations`
+   This document is another mandatory read that describes the expected behavior when revieweing
+   contributions to the project.
+
 :ref:`coding_guidelines`
    Code contributions are expected to follow a set of coding guidelines to ensure consistency and
    readability across the code base.
 
-   This page describes these guidelines and introduces important considerations regarding the use of
-   :ref:`inclusive language <coding_guideline_inclusive_language>`.
+:ref:`coding_style`
+   Code contributions are expected to follow a set of style guidelines to ensure consistency and
+   readability across the code base.
 
 :ref:`rfcs`
    Learn when and how to submit RFCs (Request for Comments) for new features and changes to the
    project.
+
+:ref:`modifying_contributions`
+   Guidelines for modifying contributions made by other developers and how to deal with stale pull
+   requests.
 
 Documentation
 =============
@@ -88,16 +101,6 @@ Dealing with external components
    in binary form, this page describes the process and guidelines for :ref:`contributing binary
    blobs <blobs-process>` to the project.
 
-Zephyr Contributor Badge
-========================
-
-When your first contribution to the Zephyr project gets merged, you'll become eligible to claim your
-Zephyr Contributor Badge. This digital badge can be displayed on your website, blog, social media
-profile, etc. It will allow you to showcase your involvement in the Zephyr project and help raise
-its awareness.
-
-You may apply for your Contributor Badge by filling out the `Zephyr Contributor Badge form`_.
-
 Need help along the way?
 ========================
 
@@ -107,4 +110,3 @@ You may join our Discord_ channel or use the `Developer Mailing List`_.
 
 .. _Discord: https://chat.zephyrproject.org
 .. _Developer Mailing List: https://lists.zephyrproject.org/g/devel
-.. _Zephyr Contributor Badge form: https://forms.gle/oCw9iAPLhUsHTapc8

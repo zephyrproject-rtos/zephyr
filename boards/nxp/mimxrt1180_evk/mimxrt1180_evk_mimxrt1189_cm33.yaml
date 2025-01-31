@@ -11,7 +11,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 128
 flash: 16384
 supported:
@@ -25,4 +24,8 @@ supported:
   - pwm
   - uart
   - i3c
+  - dma
+  - spi
+  - watchdog
+  - usb_device
 vendor: nxp

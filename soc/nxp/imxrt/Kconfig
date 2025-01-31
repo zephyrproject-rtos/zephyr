@@ -10,7 +10,13 @@ if SOC_FAMILY_NXP_IMXRT
 # can override the defaults given here
 rsource "*/Kconfig"
 
+if DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 rsource "../common/Kconfig.flexspi_xip"
+endif
+
+if DT_HAS_NXP_XSPI_ENABLED
+rsource "../common/Kconfig.xspi_xip"
+endif
 
 # Note- When SECOND_CORE_MCUX is set, the dependencies for this Kconfig
 # should be set elsewhere, since the determination of which SOC core
@@ -29,7 +35,12 @@ rsource "../common/Kconfig.rom_loader"
 
 choice BOOT_DEVICE
 	prompt "Boot device"
+	default BOOT_XSPI_NOR if DT_HAS_NXP_XSPI_ENABLED
 	default BOOT_FLEXSPI_NOR
+
+config BOOT_XSPI_NOR
+	bool "XPI serial NOR"
+	depends on DT_HAS_NXP_XSPI_ENABLED
 
 config BOOT_FLEXSPI_NOR
 	bool "FlexSPI serial NOR"
@@ -49,6 +60,8 @@ config BOOT_SEMC_NAND
 
 endchoice # BOOT_DEVICE
 
+if BOOT_FLEXSPI_NOR
+
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	hex "FlexSPI config block offset"
 	default 0x0 if BOOT_FLEXSPI_NOR
@@ -58,6 +71,21 @@ config FLEXSPI_CONFIG_BLOCK_OFFSET
 	  flash devices including read command sequence, quad mode enablement
 	  sequence (optional), etc. The boot ROM expects FlexSPI configuration
 	  parameter to be presented in serial nor flash.
+
+endif # BOOT_FLEXSPI_NOR
+
+if BOOT_XSPI_NOR
+
+config XSPI_CONFIG_BLOCK_OFFSET
+	hex "XSPI config block offset"
+	default 0x0
+	help
+	  XSPI configuration block consists of parameters regarding specific
+	  flash devices including read command sequence, quad mode enablement
+	  sequence (optional), etc. The boot ROM expects XSPI configuration
+	  parameter to be presented in serial nor flash.
+
+endif # BOOT_XSPI_NOR
 
 config IMAGE_VECTOR_TABLE_OFFSET
 	hex "Image vector table offset"
@@ -123,6 +151,13 @@ config SECOND_CORE_MCUX
 	  The M4 image will be loaded from flash into RAM based off a
 	  generated header specifying the VMA and LMA of each memory section
 	  to load
+
+config SECOND_CORE_MCUX_REMOTE_DIR
+	string "Directory to with output image header from second core"
+	depends on SECOND_CORE_MCUX
+	help
+	  Sets the remote directory to include the output image header data
+	  from when launching a second core image
 
 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 

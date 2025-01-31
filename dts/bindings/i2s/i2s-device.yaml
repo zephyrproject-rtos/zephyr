@@ -3,7 +3,7 @@
 
 # Common fields for I2S devices
 
-include: base.yaml
+include: [base.yaml, power.yaml]
 
 on-bus: i2s
 

@@ -24,20 +24,10 @@ properties:
   interrupts:
     required: true
 
-  max-frequency:
-    type: int
-    default: 16000000
-    description: |
-        Maximum timer frequency in Hz.
-
-        The default value is 16MHz which was the maximum frequency for all nRF TIMER peripherals
-        up to the nRF54 series, and still remains the most typical maximum frequency for nRF54
-        TIMERs.
-
   prescaler:
     type: int
     required: true
-    description: Prescaler value determines frequency (max-frequency/2^prescaler)
+    description: Prescaler value determines frequency (base_frequency/2^prescaler)
 
   zli:
     type: boolean

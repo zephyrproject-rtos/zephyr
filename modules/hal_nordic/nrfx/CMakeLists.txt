@@ -48,6 +48,8 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05            NRF54L05_XXAA
                                                                 DEVELOP_IN_NRF54L15)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05_CPUAPP     NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05_CPUFLPR    NRF_FLPR)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L09_ENGA       NRF54L09_ENGA_XXAA)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L09_ENGA_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L10            NRF54L10_XXAA
                                                                 DEVELOP_IN_NRF54L15)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L10_CPUAPP     NRF_APPLICATION)
@@ -120,6 +122,7 @@ zephyr_library_sources_ifdef(CONFIG_NRFX_PRS     ${SRC_DIR}/prs/nrfx_prs.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_ADC     ${SRC_DIR}/nrfx_adc.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_CLOCK   ${SRC_DIR}/nrfx_clock.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_COMP    ${SRC_DIR}/nrfx_comp.c)
+zephyr_library_sources_ifdef(CONFIG_NRFX_CRACEN  ${SRC_DIR}/nrfx_cracen.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_DPPI    ${SRC_DIR}/nrfx_dppi.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_EGU     ${SRC_DIR}/nrfx_egu.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_GPIOTE  ${SRC_DIR}/nrfx_gpiote.c)
@@ -181,7 +184,10 @@ if(DEFINED uicr_path)
 endif()
 
 if(CONFIG_SOC_NRF54L_CPUAPP_COMMON)
-	dt_prop(clock_frequency PATH "/cpus/cpu@0" PROPERTY "clock-frequency")
+	# Ideally, hfpll should taken as a phandle from clocks property from cpu but it
+	# seems that there is no such option in DT cmake functions. Assuming that nrf54l
+	# is using hfpll as CPU clock source (true for all existing devices).
+	dt_prop(clock_frequency PATH "/clocks/hfpll" PROPERTY "clock-frequency")
 	math(EXPR clock_frequency_mhz "${clock_frequency} / 1000000")
 	zephyr_compile_definitions("NRF_CONFIG_CPU_FREQ_MHZ=${clock_frequency_mhz}")
 endif()
@@ -190,13 +196,13 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG NRF_SKIP_C
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF NRF_DISABLE_FICR_TRIMCNF)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE NRF_SKIP_GLITCHDETECTOR_DISABLE)
 
-# Inject code to skip TAMPC setup for nRF54L20. It is not supported for now.
+# Inject code to skip TAMPC setup for nRF54L20 and nRF54L09. It is not supported for now.
 # It needs to be removed when support is provided.
-if(CONFIG_SOC_NRF54L20_ENGA_CPUAPP)
-  zephyr_compile_definitions(NRF_SKIP_TAMPC_SETUP)
+if(CONFIG_SOC_NRF54L20_ENGA_CPUAPP OR CONFIG_SOC_NRF54L09_ENGA_CPUAPP)
+	  zephyr_compile_definitions(NRF_SKIP_TAMPC_SETUP)
 endif()
 
-if(CONFIG_SOC_SERIES_NRF54LX AND CONFIG_NRFX_GPPI)
+if(CONFIG_SOC_COMPATIBLE_NRF54LX AND CONFIG_NRFX_GPPI)
   zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib_lumos.c)
   zephyr_library_sources(${NRFX_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
 endif()
@@ -230,6 +236,7 @@ mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUFLPR     nrf54h20_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPURAD      nrf54h20_radiocore.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L05_CPUAPP      nrf54l05_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L05_CPUFLPR     nrf54l05_flpr.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54L09_ENGA_CPUAPP nrf54l09_enga_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L10_CPUAPP      nrf54l10_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L10_CPUFLPR     nrf54l10_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L15_CPUAPP      nrf54l15_application.svd)

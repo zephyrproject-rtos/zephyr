@@ -149,10 +149,11 @@ zephyr_library_include_directories_ifdef(
 )
 
 zephyr_library_sources_ifdef(CONFIG_FLASH_NXP_S32_QSPI_NOR flash_nxp_s32_qspi_nor.c)
-zephyr_library_include_directories_ifdef(
-  CONFIG_FLASH_NXP_S32_QSPI_NOR
-  ${ZEPHYR_BASE}/drivers/memc
-)
+zephyr_library_sources_ifdef(CONFIG_FLASH_NXP_S32_QSPI_HYPERFLASH flash_nxp_s32_qspi_hyperflash.c)
+if(CONFIG_FLASH_NXP_S32_QSPI_NOR OR CONFIG_FLASH_NXP_S32_QSPI_HYPERFLASH)
+  zephyr_library_sources(flash_nxp_s32_qspi.c)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/memc)
+endif()
 
 if(CONFIG_RA_FLASH_HP)
   zephyr_library_sources(flash_hp_ra.c)

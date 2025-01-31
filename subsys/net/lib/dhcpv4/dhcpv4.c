@@ -1053,7 +1053,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 			break;
 		}
-#if defined(CONFIG_DNS_RESOLVER)
+#if defined(CONFIG_NET_DHCPV4_OPTION_DNS_ADDRESS)
 #define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
 		case DHCPV4_OPTIONS_DNS_SERVER: {
 			struct dns_resolve_context *ctx;

@@ -182,7 +182,7 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
 		return -EAGAIN;
 	}
 
-	*data = (stack_data_t)arch_current_thread()->base.swap_data;
+	*data = (stack_data_t)_current->base.swap_data;
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, 0);
 

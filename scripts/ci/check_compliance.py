@@ -371,10 +371,14 @@ class KconfigCheck(ComplianceTest):
     doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
     path_hint = "<zephyr-base>"
 
-    def run(self, full=True, no_modules=False, filename="Kconfig", hwm=None):
-        self.no_modules = no_modules
+    # Top-level Kconfig file. The path can be relative to srctree (ZEPHYR_BASE).
+    FILENAME = "Kconfig"
 
-        kconf = self.parse_kconfig(filename=filename, hwm=hwm)
+    # Kconfig symbol prefix/namespace.
+    CONFIG_ = "CONFIG_"
+
+    def run(self):
+        kconf = self.parse_kconfig()
 
         self.check_top_menu_not_too_long(kconf)
         self.check_no_pointless_menuconfigs(kconf)
@@ -382,10 +386,9 @@ class KconfigCheck(ComplianceTest):
         self.check_no_redefined_in_defconfig(kconf)
         self.check_no_enable_in_boolean_prompt(kconf)
         self.check_soc_name_sync(kconf)
-        if full:
-            self.check_no_undef_outside_kconfig(kconf)
+        self.check_no_undef_outside_kconfig(kconf)
 
-    def get_modules(self, modules_file, settings_file):
+    def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
         """
         Get a list of modules and put them in a file that is parsed by
         Kconfig
@@ -393,17 +396,14 @@ class KconfigCheck(ComplianceTest):
         This is needed to complete Kconfig sanity tests.
 
         """
-        if self.no_modules:
-            with open(modules_file, 'w') as fp_module_file:
-                fp_module_file.write("# Empty\n")
-            return
-
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
         zephyr_module_path = os.path.join(ZEPHYR_BASE, "scripts",
                                           "zephyr_module.py")
         cmd = [sys.executable, zephyr_module_path,
-               '--kconfig-out', modules_file, '--settings-out', settings_file]
+               '--kconfig-out', modules_file,
+               '--sysbuild-kconfig-out', sysbuild_modules_file,
+               '--settings-out', settings_file]
         try:
             subprocess.run(cmd, check=True, stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT)
@@ -474,32 +474,6 @@ class KconfigCheck(ComplianceTest):
         except subprocess.CalledProcessError as ex:
             self.error(ex.output.decode("utf-8"))
 
-    def get_v1_model_syms(self, kconfig_v1_file, kconfig_v1_syms_file):
-        """
-        Generate a symbol define Kconfig file.
-        This function creates a file with all Kconfig symbol definitions from
-        old boards model so that those symbols will not appear as undefined
-        symbols in hardware model v2.
-
-        This is needed to complete Kconfig compliance tests.
-        """
-        os.environ['HWM_SCHEME'] = 'v1'
-        # 'kconfiglib' is global
-        # pylint: disable=undefined-variable
-
-        try:
-            kconf_v1 = kconfiglib.Kconfig(filename=kconfig_v1_file, warn=False)
-        except kconfiglib.KconfigError as e:
-            self.failure(str(e))
-            raise EndTest
-
-        with open(kconfig_v1_syms_file, 'w') as fp_kconfig_v1_syms_file:
-            for s in kconf_v1.defined_syms:
-                if s.type != kconfiglib.UNKNOWN:
-                    fp_kconfig_v1_syms_file.write('config ' + s.name)
-                    fp_kconfig_v1_syms_file.write('\n\t' + kconfiglib.TYPE_TO_STR[s.type])
-                    fp_kconfig_v1_syms_file.write('\n\n')
-
     def get_v2_model(self, kconfig_dir, settings_file):
         """
         Get lists of v2 boards and SoCs and put them in a file that is parsed by
@@ -508,8 +482,15 @@ class KconfigCheck(ComplianceTest):
         This is needed to complete Kconfig sanity tests.
         """
         os.environ['HWM_SCHEME'] = 'v2'
+        os.environ["KCONFIG_BOARD_DIR"] = os.path.join(kconfig_dir, 'boards')
+
+        os.makedirs(os.path.join(kconfig_dir, 'boards'), exist_ok=True)
+        os.makedirs(os.path.join(kconfig_dir, 'soc'), exist_ok=True)
+        os.makedirs(os.path.join(kconfig_dir, 'arch'), exist_ok=True)
+
         kconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig')
         kconfig_boards_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.boards')
+        kconfig_sysbuild_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.sysbuild')
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.defconfig')
 
         board_roots = self.get_module_setting_root('board', settings_file)
@@ -525,6 +506,11 @@ class KconfigCheck(ComplianceTest):
             for board in v2_boards:
                 for board_dir in board.directories:
                     fp.write('osource "' + (board_dir / 'Kconfig.defconfig').as_posix() + '"\n')
+
+        with open(kconfig_sysbuild_file, 'w') as fp:
+            for board in v2_boards:
+                for board_dir in board.directories:
+                    fp.write('osource "' + (board_dir / 'Kconfig.sysbuild').as_posix() + '"\n')
 
         with open(kconfig_boards_file, 'w') as fp:
             for board in v2_boards:
@@ -542,14 +528,12 @@ class KconfigCheck(ComplianceTest):
                     )
 
         with open(kconfig_file, 'w') as fp:
-            fp.write(
-                'osource "' + (Path(kconfig_dir) / 'boards' / 'Kconfig.syms.v1').as_posix() + '"\n'
-            )
             for board in v2_boards:
                 for board_dir in board.directories:
                     fp.write('osource "' + (board_dir / 'Kconfig').as_posix() + '"\n')
 
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.defconfig')
+        kconfig_sysbuild_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.sysbuild')
         kconfig_soc_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.soc')
         kconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig')
 
@@ -560,6 +544,10 @@ class KconfigCheck(ComplianceTest):
         with open(kconfig_defconfig_file, 'w') as fp:
             for folder in soc_folders:
                 fp.write('osource "' + (Path(folder) / 'Kconfig.defconfig').as_posix() + '"\n')
+
+        with open(kconfig_sysbuild_file, 'w') as fp:
+            for folder in soc_folders:
+                fp.write('osource "' + (Path(folder) / 'Kconfig.sysbuild').as_posix() + '"\n')
 
         with open(kconfig_soc_file, 'w') as fp:
             for folder in soc_folders:
@@ -578,7 +566,7 @@ class KconfigCheck(ComplianceTest):
             for arch in v2_archs['archs']:
                 fp.write('source "' + (Path(arch['path']) / 'Kconfig').as_posix() + '"\n')
 
-    def parse_kconfig(self, filename="Kconfig", hwm=None):
+    def parse_kconfig(self):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
         this object for all tests to avoid having to reparse for each test.
@@ -615,18 +603,12 @@ class KconfigCheck(ComplianceTest):
 
         # For multi repo support
         self.get_modules(os.path.join(kconfiglib_dir, "Kconfig.modules"),
+                         os.path.join(kconfiglib_dir, "Kconfig.sysbuild.modules"),
                          os.path.join(kconfiglib_dir, "settings_file.txt"))
         # For Kconfig.dts support
         self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig.dts"),
                              os.path.join(kconfiglib_dir, "settings_file.txt"))
-
-        # To make compliance work with old hw model and HWMv2 simultaneously.
-        kconfiglib_boards_dir = os.path.join(kconfiglib_dir, 'boards')
-        os.makedirs(kconfiglib_boards_dir, exist_ok=True)
-        os.makedirs(os.path.join(kconfiglib_dir, 'soc'), exist_ok=True)
-        os.makedirs(os.path.join(kconfiglib_dir, 'arch'), exist_ok=True)
-
-        os.environ["KCONFIG_BOARD_DIR"] = kconfiglib_boards_dir
+        # For hardware model support (board, soc, arch)
         self.get_v2_model(kconfiglib_dir, os.path.join(kconfiglib_dir, "settings_file.txt"))
 
         # Tells Kconfiglib to generate warnings for all references to undefined
@@ -638,7 +620,7 @@ class KconfigCheck(ComplianceTest):
             # them: so some warnings might get printed
             # twice. "warn_to_stderr=False" could unfortunately cause
             # some (other) warnings to never be printed.
-            return kconfiglib.Kconfig(filename=filename)
+            return kconfiglib.Kconfig(filename=self.FILENAME)
         except kconfiglib.KconfigError as e:
             self.failure(str(e))
             raise EndTest
@@ -868,7 +850,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         undef_to_locs = collections.defaultdict(list)
 
         # Warning: Needs to work with both --perl-regexp and the 're' module
-        regex = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
+        regex = r"\b" + self.CONFIG_ + r"[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
 
         # Skip doc/releases and doc/security/vulnerabilities.rst, which often
         # reference removed symbols
@@ -884,7 +866,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             # Extract symbol references (might be more than one) within the
             # line
             for sym_name in re.findall(regex, line):
-                sym_name = sym_name[7:]  # Strip CONFIG_
+                sym_name = sym_name[len(self.CONFIG_):]  # Strip CONFIG_
                 if sym_name not in defined_syms and \
                    sym_name not in self.UNDEF_KCONFIG_ALLOWLIST and \
                    not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms):
@@ -900,7 +882,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         #
         #   CONFIG_ALSO_MISSING    arch/xtensa/core/fatal.c:273
         #   CONFIG_MISSING         arch/xtensa/core/fatal.c:264, subsys/fb/cfb.c:20
-        undef_desc = "\n".join(f"CONFIG_{sym_name:35} {', '.join(locs)}"
+        undef_desc = "\n".join(f"{self.CONFIG_}{sym_name:35} {', '.join(locs)}"
             for sym_name, locs in sorted(undef_to_locs.items()))
 
         self.failure(f"""
@@ -1053,26 +1035,28 @@ class KconfigBasicCheck(KconfigCheck):
     references inside the Kconfig tree.
     """
     name = "KconfigBasic"
-    doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
-    path_hint = "<zephyr-base>"
 
-    def run(self):
-        super().run(full=False)
+    def check_no_undef_outside_kconfig(self, kconf):
+        pass
 
-class KconfigBasicNoModulesCheck(KconfigCheck):
+
+class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     """
     Checks if we are introducing any new warnings/errors with Kconfig when no
     modules are available. Catches symbols used in the main repository but
     defined only in a module.
     """
     name = "KconfigBasicNoModules"
-    doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
-    path_hint = "<zephyr-base>"
-    def run(self):
-        super().run(full=False, no_modules=True)
+
+    def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
+        with open(modules_file, 'w') as fp_module_file:
+            fp_module_file.write("# Empty\n")
+
+        with open(sysbuild_modules_file, 'w') as fp_module_file:
+            fp_module_file.write("# Empty\n")
 
 
-class KconfigHWMv2Check(KconfigCheck, ComplianceTest):
+class KconfigHWMv2Check(KconfigBasicCheck):
     """
     This runs the Kconfig test for board and SoC v2 scheme.
     This check ensures that all symbols inside the v2 scheme is also defined
@@ -1080,13 +1064,52 @@ class KconfigHWMv2Check(KconfigCheck, ComplianceTest):
     This ensures the board and SoC trees are fully self-contained and reusable.
     """
     name = "KconfigHWMv2"
-    doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
 
-    def run(self):
-        # Use dedicated Kconfig board / soc v2 scheme file.
-        # This file sources only v2 scheme tree.
-        kconfig_file = os.path.join(os.path.dirname(__file__), "Kconfig.board.v2")
-        super().run(full=False, hwm="v2", filename=kconfig_file)
+    # Use dedicated Kconfig board / soc v2 scheme file.
+    # This file sources only v2 scheme tree.
+    FILENAME = os.path.join(os.path.dirname(__file__), "Kconfig.board.v2")
+
+
+class SysbuildKconfigCheck(KconfigCheck):
+    """
+    Checks if we are introducing any new warnings/errors with sysbuild Kconfig,
+    for example using undefined Kconfig variables.
+    """
+    name = "SysbuildKconfig"
+
+    FILENAME = "share/sysbuild/Kconfig"
+    CONFIG_ = "SB_CONFIG_"
+
+    # A different allowlist is used for symbols prefixed with SB_CONFIG_ (omitted here).
+    UNDEF_KCONFIG_ALLOWLIST = {
+        # zephyr-keep-sorted-start re(^\s+")
+        "FOO",
+        "SECOND_SAMPLE", # Used in sysbuild documentation
+        "SUIT_ENVELOPE", # Used by nRF runners to program provisioning data
+        "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data
+        "SUIT_MPI_GENERATE", # Used by nRF runners to program provisioning data
+        "SUIT_MPI_RAD_AREA_PATH", # Used by nRF runners to program provisioning data
+        # zephyr-keep-sorted-stop
+    }
+
+
+class SysbuildKconfigBasicCheck(SysbuildKconfigCheck, KconfigBasicCheck):
+    """
+    Checks if we are introducing any new warnings/errors with sysbuild Kconfig,
+    for example using undefined Kconfig variables.
+    This runs the basic Kconfig test, which is checking only for undefined
+    references inside the sysbuild Kconfig tree.
+    """
+    name = "SysbuildKconfigBasic"
+
+
+class SysbuildKconfigBasicNoModulesCheck(SysbuildKconfigCheck, KconfigBasicNoModulesCheck):
+    """
+    Checks if we are introducing any new warnings/errors with sysbuild Kconfig
+    when no modules are available. Catches symbols used in the main repository
+    but defined only in a module.
+    """
+    name = "SysbuildKconfigBasicNoModules"
 
 
 class Nits(ComplianceTest):
@@ -1322,7 +1345,7 @@ class Identity(ComplianceTest):
 
     def run(self):
         for shaidx in get_shas(COMMIT_RANGE):
-            commit = git("log", "--decorate=short", "-n 1", shaidx)
+            commit = git("log", "--decorate=short", "--no-use-mailmap", "-n 1", shaidx)
             signed = []
             author = ""
             sha = ""

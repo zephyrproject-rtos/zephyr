@@ -359,7 +359,7 @@ i2s1: &flexcomm3 {
 
 zephyr_udc0: &usbhs {
 	status = "okay";
-	phy_handle = <&usbphy>;
+	phy-handle = <&usbphy>;
 };
 
 &usbphy {

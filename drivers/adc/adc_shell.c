@@ -75,6 +75,7 @@ static struct adc_hdl {
 	uint8_t resolution;
 } adc_list[] = {
 	/* zephyr-keep-sorted-start */
+	DT_FOREACH_STATUS_OKAY(adi_ad4114_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(adi_ad559x_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(atmel_sam0_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(atmel_sam_adc, ADC_HDL_LIST_ENTRY)
@@ -104,6 +105,7 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(nuvoton_numaker_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(nxp_adc12, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_gau_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(nxp_kinetis_adc16, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(nxp_lpc_lpadc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(nxp_mcux_12b1msps_sar, ADC_HDL_LIST_ENTRY)

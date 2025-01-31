@@ -7,7 +7,6 @@ flash: 1536
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - bluetooth
   - gpio
@@ -17,5 +16,4 @@ supported:
 testing:
   ignore_tags:
     - pm
-    - hwinfo
 vendor: silabs

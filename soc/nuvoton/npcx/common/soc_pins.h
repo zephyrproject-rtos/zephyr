@@ -94,6 +94,20 @@ void npcx_host_interface_sel(enum npcx_hif_type hif_type);
  */
 void npcx_i3c_target_sel(uint8_t module, bool enable);
 
+/**
+ * @brief Enable smb controller wake up event detection in target mode
+ *
+ * @param controller i2c controller device
+ * @param enable True to enable wake up event detection, false to disable.
+ */
+void npcx_i2c_target_start_wk_enable(int controller, bool enable);
+
+/**
+ * @brief Clear  wake up event detection status in target mode
+ *
+ */
+void npcx_i2c_target_clear_detection_event(void);
+
 #ifdef __cplusplus
 }
 #endif

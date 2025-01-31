@@ -21,14 +21,13 @@ static void initialize_gui(void)
 	lv_obj_t *label;
 
 	/* Configure screen and background for transparency */
-	lv_obj_set_style_bg_opa(lv_scr_act(), LV_OPA_TRANSP, LV_PART_MAIN);
-	lv_disp_set_bg_opa(NULL, LV_OPA_TRANSP);
-	lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x000000), LV_PART_MAIN);
+	lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_TRANSP, LV_PART_MAIN);
+	lv_obj_set_style_bg_opa(lv_layer_bottom(), LV_OPA_TRANSP, LV_PART_MAIN);
 
 	/* Create a label, set its text and align it to the center */
-	label = lv_label_create(lv_scr_act());
+	label = lv_label_create(lv_screen_active());
 	lv_label_set_text(label, "Hello, world!");
-	lv_obj_set_style_text_color(lv_scr_act(), lv_color_hex(0xff00ff), LV_PART_MAIN);
+	lv_obj_set_style_text_color(lv_screen_active(), lv_color_hex(0xff00ff), LV_PART_MAIN);
 	lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 }
 
@@ -45,7 +44,7 @@ int main(void)
 	}
 
 	display_get_capabilities(display_dev, &display_caps);
-	if (!(display_caps.supported_pixel_formats | PIXEL_FORMAT_ARGB_8888)) {
+	if (!(display_caps.supported_pixel_formats & PIXEL_FORMAT_ARGB_8888)) {
 		LOG_ERR("Display does not support ARGB8888 mode");
 		return -ENOTSUP;
 	}
@@ -60,11 +59,11 @@ int main(void)
 
 	initialize_gui();
 
-	lv_task_handler();
+	lv_timer_handler();
 	display_blanking_off(display_dev);
 
 	while (1) {
-		uint32_t sleep_ms = lv_task_handler();
+		uint32_t sleep_ms = lv_timer_handler();
 
 		k_msleep(MIN(sleep_ms, INT32_MAX));
 	}

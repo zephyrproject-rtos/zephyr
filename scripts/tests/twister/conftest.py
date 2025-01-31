@@ -90,7 +90,7 @@ def instances_fixture(class_testplan, platforms_list, all_testsuites_dict, tmpdi
     platform = class_testplan.get_platform("demo_board_2")
     instance_list = []
     for _, testcase in all_testsuites_dict.items():
-        instance = TestInstance(testcase, platform, class_testplan.outdir)
+        instance = TestInstance(testcase, platform, 'zephyr', class_testplan.outdir)
         instance_list.append(instance)
     class_testplan.add_instances(instance_list)
     return class_testplan.instances

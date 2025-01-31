@@ -560,6 +560,7 @@ int modbus_serial_init(struct modbus_context *ctx,
 	struct modbus_serial_config *cfg = ctx->cfg;
 	const uint32_t if_delay_max = 3500000;
 	const uint32_t numof_bits = 11;
+	int err;
 
 	switch (param.mode) {
 	case MODBUS_MODE_RTU:
@@ -595,7 +596,11 @@ int modbus_serial_init(struct modbus_context *ctx,
 	cfg->uart_buf_ctr = 0;
 	cfg->uart_buf_ptr = &cfg->uart_buf[0];
 
-	uart_irq_callback_user_data_set(cfg->dev, uart_cb_handler, ctx);
+	err = uart_irq_callback_user_data_set(cfg->dev, uart_cb_handler, ctx);
+	if (err != 0) {
+		return err;
+	};
+
 	k_timer_init(&cfg->rtu_timer, rtu_tmr_handler, NULL);
 	k_timer_user_data_set(&cfg->rtu_timer, ctx);
 

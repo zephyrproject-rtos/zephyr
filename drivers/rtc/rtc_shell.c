@@ -217,9 +217,14 @@ static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static bool device_is_rtc(const struct device *dev)
+{
+	return DEVICE_API_IS(rtc, dev);
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_rtc);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

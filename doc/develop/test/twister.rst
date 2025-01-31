@@ -116,7 +116,6 @@ required for best test coverage for this specific board:
   toolchain:
     - zephyr
     - gnuarmemb
-    - xtools
   supported:
     - arduino_gpio
     - arduino_i2c
@@ -490,6 +489,40 @@ integration_platforms: <YML list of platforms/boards>
     platform_allow if the goal is to limit scope due to timing or
     resource constraints.
 
+integration_toolchains: <YML list of toolchain variants>
+    This option expands the scope to all the listed toolchains variants and
+    adds another vector of testing where desired. By default, test
+    configurations are generated based on the toolchain configured in the environment:
+
+    test scenario -> platforms1 -> toolchain1
+    test scenario -> platforms2 -> toolchain1
+
+
+    When a platform supports multiple toolchains that are available during the
+    twister run, it is possible to expand the test configurations to include
+    additional tests for each toolchain. For example, if a platform supports
+    toolchains ``toolchain1`` and ``toolchain2``, and the test scenario
+    includes:
+
+    .. code-block:: yaml
+
+      integration_toolchains:
+        - toolchain1
+        - toolchain2
+
+    the following configurations are generated:
+
+    test scenario -> platforms1 -> toolchain1
+    test scenario -> platforms1 -> toolchain2
+    test scenario -> platforms2 -> toolchain1
+    test scenario -> platforms2 -> toolchain2
+
+
+    .. note::
+
+      This functionality is evaluated always and is not limited to the
+      ``--integration`` option.
+
 platform_exclude: <list of platforms>
     Set of platforms that this test scenario should not run on.
 
@@ -526,6 +559,7 @@ harness: <string>
     - pytest
     - gtest
     - robot
+    - ctest
 
     Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
     output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
@@ -591,12 +625,20 @@ harness_config: <harness configuration options>
         Check the regular expression strings in orderly or randomly fashion
 
     record: <recording options> (optional)
-      regex: <regular expression> (required)
-        The regular expression with named subgroups to match data fields
-        at the test's output lines where the test provides some custom data
+      regex: <list of regular expressions> (required)
+        Regular expressions with named subgroups to match data fields found
+        in the test instance's output lines where it provides some custom data
         for further analysis. These records will be written into the build
         directory ``recording.csv`` file as well as ``recording`` property
         of the test suite object in ``twister.json``.
+
+        With several regular expressions given, each of them will be applied
+        to each output line producing either several different records from
+        the same output line, or different records from different lines,
+        or similar records from different lines.
+
+        The .CSV file will have as many columns as there are fields detected
+        in all records; missing values are filled by empty strings.
 
         For example, to extract three data fields ``metric``, ``cycles``,
         ``nanoseconds``:
@@ -604,13 +646,22 @@ harness_config: <harness configuration options>
         .. code-block:: yaml
 
           record:
-            regex: "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
+            regex:
+              - "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
+
+      merge: <True|False> (default False)
+        Allows to keep only one record in a test instance with all the data
+        fields extracted by the regular expressions. Fields with the same name
+        will be put into lists ordered as their appearance in recordings.
+        It is possible for such multi value fields to have different number
+        of values depending on the regex rules and the test's output.
 
       as_json: <list of regex subgroup names> (optional)
-        Data fields, extracted by the regular expression into named subgroups,
+        Data fields, extracted by the regular expressions into named subgroups,
         which will be additionally parsed as JSON encoded strings and written
         into ``twister.json`` as nested ``recording`` object properties.
-        The corresponding ``recording.csv`` columns will contain strings as-is.
+        The corresponding ``recording.csv`` columns will contain JSON strings
+        as-is.
 
         Using this option, a test log can convey layered data structures
         passed from the test image for further analysis with summary results,
@@ -690,6 +741,12 @@ harness_config: <harness configuration options>
         The scope for which ``dut`` and ``shell`` pytest fixtures are shared.
         If the scope is set to ``function``, DUT is launched for every test case
         in python script. For ``session`` scope, DUT is launched only once.
+
+    ctest_args: <list of arguments> (default empty)
+        Specify a list of additional arguments to pass to ``ctest`` e.g.:
+        ``ctest_args: [‘--repeat until-pass:5’]``. Note that
+        ``--ctest-args`` can be passed multiple times to pass several arguments
+        to the ctest.
 
     robot_testsuite: <robot file path> (default empty)
         Specify one or more paths to a file containing a Robot Framework test suite to be run.

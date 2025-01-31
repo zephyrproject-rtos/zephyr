@@ -1602,8 +1602,6 @@ endfunction()
 # - Build string with cpuset removed in addition
 # - Build string with soc removed in addition
 #
-# If BUILD is supplied, then build type will be appended to each entry in the
-# list above.
 # If REVISION is supplied or obtained as system wide setting a build string
 # with the sanitized revision string will be added in addition to the
 # non-revisioned entry for each entry.
@@ -1614,12 +1612,10 @@ endfunction()
 #                       [SHORT <out-variable>]
 #                       [BOARD_QUALIFIERS <qualifiers>]
 #                       [BOARD_REVISION <revision>]
-#                       [BUILD <type>]
 #                       [MERGE [REVERSE]]
 #   )
 #   zephyr_build_string(<out-variable>
 #                       BOARD_QUALIFIERS <qualifiers>
-#                       [BUILD <type>]
 #                       [MERGE [REVERSE]]
 #   )
 #
@@ -1627,18 +1623,17 @@ endfunction()
 # SHORT <out-variable>:      Output variable where the shortened build string will be returned.
 # BOARD <board>:             Board name to use when creating the build string.
 # BOARD_REVISION <revision>: Board revision to use when creating the build string.
-# BUILD <type>:              Build type to use when creating the build string.
 # MERGE:                     Return a list of build strings instead of a single build string.
 # REVERSE:                   Reverse the list before returning it.
 #
 # Examples
 # calling
-#   zephyr_build_string(build_string BOARD alpha BUILD debug)
-# will return the string `alpha_debug` in `build_string` parameter.
+#   zephyr_build_string(build_string BOARD alpha)
+# will return the string `alpha` in `build_string` parameter.
 #
 # calling
-#   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0 BUILD debug)
-# will return the string `alpha_1_0_0_debug` in `build_string` parameter.
+#   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0)
+# will return the string `alpha_1_0_0` in `build_string` parameter.
 #
 # calling
 #   zephyr_build_string(build_string BOARD alpha BOARD_QUALIFIERS /soc/bar)
@@ -1661,7 +1656,7 @@ endfunction()
 #
 function(zephyr_build_string outvar)
   set(options MERGE REVERSE)
-  set(single_args BOARD BOARD_QUALIFIERS BOARD_REVISION BUILD SHORT)
+  set(single_args BOARD BOARD_QUALIFIERS BOARD_REVISION SHORT)
 
   cmake_parse_arguments(BUILD_STR "${options}" "${single_args}" "" ${ARGN})
   if(BUILD_STR_UNPARSED_ARGUMENTS)
@@ -1695,10 +1690,10 @@ function(zephyr_build_string outvar)
   string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD_QUALIFIERS}")
   string(REPLACE "." "_" revision_string "${BUILD_STR_BOARD_REVISION}")
 
-  string(JOIN "_" ${outvar} ${BUILD_STR_BOARD} ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
+  string(JOIN "_" ${outvar} ${BUILD_STR_BOARD} ${str_segment_list} ${revision_string})
 
   if(BUILD_STR_MERGE)
-    string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_segment_list} ${BUILD_STR_BUILD})
+    string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_segment_list})
 
     if(NOT "${variant_string}" IN_LIST ${outvar})
       list(APPEND ${outvar} "${variant_string}")
@@ -1714,10 +1709,10 @@ function(zephyr_build_string outvar)
     string(REGEX REPLACE "^/[^/]*(.*)" "\\1" shortened_qualifiers "${BOARD_QUALIFIERS}")
     string(REPLACE "/" ";" str_short_segment_list "${shortened_qualifiers}")
     string(JOIN "_" ${BUILD_STR_SHORT}
-           ${BUILD_STR_BOARD} ${str_short_segment_list} ${revision_string} ${BUILD_STR_BUILD}
+           ${BUILD_STR_BOARD} ${str_short_segment_list} ${revision_string}
     )
     if(BUILD_STR_MERGE)
-      string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_short_segment_list} ${BUILD_STR_BUILD})
+      string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_short_segment_list})
 
       if(NOT "${variant_string}" IN_LIST ${BUILD_STR_SHORT})
         list(APPEND ${BUILD_STR_SHORT} "${variant_string}")
@@ -2663,7 +2658,7 @@ endfunction()
 # Usage:
 #   zephyr_file(CONF_FILES <paths> [DTS <list>] [KCONF <list>]
 #               [BOARD <board> [BOARD_REVISION <revision>] | NAMES <name> ...]
-#               [BUILD <type>] [SUFFIX <suffix>] [REQUIRED]
+#               [SUFFIX <suffix>] [REQUIRED]
 #   )
 #
 # CONF_FILES <paths>: Find all configuration files in the list of paths and
@@ -2690,10 +2685,6 @@ endfunction()
 #                     DTS <list>:    List to append DTS overlay files in <path> to
 #                     KCONF <list>:  List to append Kconfig fragment files in <path> to
 #                     DEFCONF <list>: List to append _defconfig files in <path> to
-#                     BUILD <type>:  Build type to include for search.
-#                                    For example:
-#                                    BUILD debug, will look for <board>_debug.conf
-#                                    and <board>_debug.overlay, instead of <board>.conf
 #                     SUFFIX <name>: Suffix name to check for instead of the default name
 #                                    but with a fallback to the default name if not found.
 #                                    For example:
@@ -2713,7 +2704,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
     set(single_args APPLICATION_ROOT BASE_DIR)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options QUALIFIERS REQUIRED)
-    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
+    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG SUFFIX)
     set(multi_args CONF_FILES NAMES)
   endif()
 
@@ -2792,13 +2783,11 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
                             BOARD ${ZFILE_BOARD}
                             BOARD_REVISION ${ZFILE_BOARD_REVISION}
                             BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
-                            BUILD ${ZFILE_BUILD}
                             MERGE REVERSE
         )
       else()
         zephyr_build_string(filename_list
                             BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
-                            BUILD ${ZFILE_BUILD}
                             MERGE REVERSE
         )
       endif()
@@ -2833,10 +2822,6 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
           if(test_file_0 OR test_file_1)
             list(APPEND found_dts_files ${test_file_0})
             list(APPEND found_dts_files ${test_file_1})
-
-            if(DEFINED ZFILE_BUILD)
-              set(deprecated_file_found y)
-            endif()
 
             if(ZFILE_NAMES)
               break()
@@ -2885,10 +2870,6 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
             list(APPEND found_conf_files ${test_file_0})
             list(APPEND found_conf_files ${test_file_1})
 
-            if(DEFINED ZFILE_BUILD)
-              set(deprecated_file_found y)
-            endif()
-
             if(ZFILE_NAMES)
               break()
             endif()
@@ -2924,11 +2905,6 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
               "No ${not_found} file(s) was found in the ${ZFILE_CONF_FILES} folder(s), "
               "please read the Zephyr documentation on application development."
       )
-    endif()
-
-    if(deprecated_file_found)
-      message(DEPRECATION "prj_<build>.conf was deprecated after Zephyr 3.5,"
-                          " you should switch to using -DFILE_SUFFIX instead")
     endif()
 
     if(ZFILE_DEFCONFIG)
@@ -5202,7 +5178,11 @@ function(zephyr_iterable_section)
   endif()
 
   if(SECTION_NUMERIC)
-    set(INPUT "._${SECTION_NAME}.static.*_?_*;._${SECTION_NAME}.static.*_??_*")
+    set(INPUT "._${SECTION_NAME}.static.*_?_*;"
+              "._${SECTION_NAME}.static.*_??_*;"
+              "._${SECTION_NAME}.static.*_???_*;"
+              "._${SECTION_NAME}.static.*_????_*;"
+              "._${SECTION_NAME}.static.*_?????_*")
   else()
     set(INPUT "._${SECTION_NAME}.static.*")
   endif()
@@ -5636,7 +5616,7 @@ function(add_llext_target target_name)
   if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
 
     # Create an object library to compile the source file
-    add_library(${llext_lib_target} OBJECT ${source_files})
+    add_library(${llext_lib_target} EXCLUDE_FROM_ALL OBJECT ${source_files})
     set(llext_lib_output $<TARGET_OBJECTS:${llext_lib_target}>)
 
   elseif(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE)
@@ -5652,6 +5632,7 @@ function(add_llext_target target_name)
     target_link_options(${llext_lib_target} PRIVATE
       $<TARGET_PROPERTY:linker,partial_linking>)
     set_target_properties(${llext_lib_target} PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
       SUFFIX ${CMAKE_C_OUTPUT_EXTENSION})
     set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
 
@@ -5663,7 +5644,10 @@ function(add_llext_target target_name)
   elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
 
     # Create a shared library
-    add_library(${llext_lib_target} SHARED ${source_files})
+    add_library(${llext_lib_target} EXCLUDE_FROM_ALL SHARED ${source_files})
+    set_target_properties(${llext_lib_target} PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
+    )
     set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
 
     # Add the llext flags to the linking step as well
@@ -5692,11 +5676,14 @@ function(add_llext_target target_name)
     zephyr_generated_headers
   )
 
+  # Make sure the intermediate output directory exists.
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/llext)
+
   # Set up an intermediate processing step between compilation and packaging
   # to be used to support POST_BUILD commands on targets that do not use a
   # dynamic library.
   set(llext_proc_target ${target_name}_llext_proc)
-  set(llext_pkg_input ${PROJECT_BINARY_DIR}/${target_name}.llext.pkg_input)
+  set(llext_pkg_input ${PROJECT_BINARY_DIR}/llext/${target_name}_debug.elf)
   add_custom_target(${llext_proc_target} DEPENDS ${llext_pkg_input})
   set_property(TARGET ${llext_proc_target} PROPERTY has_post_build_cmds 0)
 
@@ -5729,49 +5716,19 @@ function(add_llext_target target_name)
     set(slid_inject_cmd ${CMAKE_COMMAND} -E true)
   endif()
 
-  # Type-specific packaging of the built binary file into an .llext file
-  if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
-
-    # No packaging required, simply copy the object file
-    add_custom_command(
-      OUTPUT ${llext_pkg_output}
-      COMMAND ${CMAKE_COMMAND} -E copy ${llext_pkg_input} ${llext_pkg_output}
-      COMMAND ${slid_inject_cmd}
-      DEPENDS ${llext_proc_target} ${llext_pkg_input}
-    )
-
-  elseif(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE)
-
-    # Need to remove just some sections from the relocatable object
-    # (using strip in this case would remove _all_ symbols)
-    add_custom_command(
-      OUTPUT ${llext_pkg_output}
-      COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
-              $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-      COMMAND ${slid_inject_cmd}
-      DEPENDS ${llext_proc_target} ${llext_pkg_input}
-    )
-
-  elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
-
-    # Need to strip the shared library of some sections
-    add_custom_command(
-      OUTPUT ${llext_pkg_output}
-      COMMAND $<TARGET_PROPERTY:bintools,strip_command>
-              $<TARGET_PROPERTY:bintools,strip_flag>
-              $<TARGET_PROPERTY:bintools,strip_flag_remove_section>.xt.*
-              $<TARGET_PROPERTY:bintools,strip_flag_infile>${llext_pkg_input}
-              $<TARGET_PROPERTY:bintools,strip_flag_outfile>${llext_pkg_output}
-              $<TARGET_PROPERTY:bintools,strip_flag_final>
-      COMMAND ${slid_inject_cmd}
-      DEPENDS ${llext_proc_target} ${llext_pkg_input}
-    )
-
-  endif()
+  # Remove sections that are unused by the llext loader
+  add_custom_command(
+    OUTPUT ${llext_pkg_output}
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_strip_unneeded>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    COMMAND ${slid_inject_cmd}
+    DEPENDS ${llext_proc_target} ${llext_pkg_input}
+  )
 
   # Add user-visible target and dependency, and fill in properties
   get_filename_component(output_name ${llext_pkg_output} NAME)
@@ -5829,7 +5786,7 @@ function(add_llext_command)
   # ARM uses an object file representation so there is no link step.
   if(CONFIG_ARM AND LLEXT_PRE_BUILD)
     message(FATAL_ERROR
-	    "add_llext_command: PRE_BUILD not supported on this arch")
+            "add_llext_command: PRE_BUILD not supported on this arch")
   endif()
 
   # Determine the build step and the target to attach the command to

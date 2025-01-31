@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <zephyr/sys/mem_stats.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +22,8 @@ void *lvgl_realloc(void *ptr, size_t size);
 void lvgl_free(void *ptr);
 
 void lvgl_print_heap_info(bool dump_chunks);
+
+void lvgl_heap_stats(struct sys_memory_stats *stats);
 
 void lvgl_heap_init(void);
 

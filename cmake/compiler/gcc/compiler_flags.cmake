@@ -121,7 +121,7 @@ if (NOT CONFIG_NEWLIB_LIBC AND
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
 
-set_compiler_property(PROPERTY no_printf_return_value -fno-printf-return-value)
+check_set_compiler_property(PROPERTY no_printf_return_value -fno-printf-return-value)
 
 set_property(TARGET compiler-cpp PROPERTY nostdincxx "-nostdinc++")
 
@@ -232,9 +232,7 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe
 set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")
 
 # gcc flag for colourful diagnostic messages
-if (NOT COMPILER STREQUAL "xcc")
-set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
-endif()
+check_set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
 
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic "-Wno-pointer-arith")

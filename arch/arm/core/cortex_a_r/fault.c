@@ -178,7 +178,7 @@ bool z_arm_fault_undef_instruction_fp(void)
 		 * context because it is about to be overwritten.
 		 */
 		if (((_current_cpu->nested == 2)
-				&& (arch_current_thread()->base.user_options & K_FP_REGS))
+				&& (_current->base.user_options & K_FP_REGS))
 			|| ((_current_cpu->nested > 2)
 				&& (spill_esf->undefined & FPEXC_EN))) {
 			/*
@@ -196,7 +196,7 @@ bool z_arm_fault_undef_instruction_fp(void)
 		 * means that a thread that uses the VFP does not have to,
 		 * but should, set K_FP_REGS on thread creation.
 		 */
-		arch_current_thread()->base.user_options |= K_FP_REGS;
+		_current->base.user_options |= K_FP_REGS;
 	}
 
 	return false;

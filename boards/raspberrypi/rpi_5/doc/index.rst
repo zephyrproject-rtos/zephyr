@@ -49,6 +49,9 @@ The Raspberry Pi 5 board configuration supports the following hardware features:
    * - UART
      - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`arm,pl011`
+   * - PCIE
+     - :kconfig:option:`CONFIG_PCIE`
+     - :dtcompatible:`brcm,brcmstb-pcie`
 
 Not all hardware features are supported yet. See `Raspberry Pi hardware`_ for the complete list of hardware features.
 

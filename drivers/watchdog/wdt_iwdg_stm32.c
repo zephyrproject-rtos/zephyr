@@ -84,8 +84,8 @@ static void iwdg_stm32_convert_timeout(uint32_t timeout,
 
 static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 {
-	struct iwdg_stm32_data *data = IWDG_STM32_DATA(dev);
-	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
+	const struct iwdg_stm32_config *cfg = dev->config;
+	struct iwdg_stm32_data *data = dev->data;
 	uint32_t tickstart;
 
 	/* Deactivate running when debugger is attached. */
@@ -111,23 +111,23 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 	}
 
 	/* Enable the IWDG now and write IWDG registers at the same time */
-	LL_IWDG_Enable(iwdg);
-	LL_IWDG_EnableWriteAccess(iwdg);
+	LL_IWDG_Enable(cfg->instance);
+	LL_IWDG_EnableWriteAccess(cfg->instance);
 	/* Write the prescaler and reload counter to the IWDG registers*/
-	LL_IWDG_SetPrescaler(iwdg, data->prescaler);
-	LL_IWDG_SetReloadCounter(iwdg, data->reload);
+	LL_IWDG_SetPrescaler(cfg->instance, data->prescaler);
+	LL_IWDG_SetReloadCounter(cfg->instance, data->reload);
 
 	tickstart = k_uptime_get_32();
 
 	/* Wait for the update operation completed */
-	while (LL_IWDG_IsReady(iwdg) == 0) {
+	while (LL_IWDG_IsReady(cfg->instance) == 0) {
 		if ((k_uptime_get_32() - tickstart) > IWDG_SR_UPDATE_TIMEOUT) {
 			return -ENODEV;
 		}
 	}
 
 	/* Reload counter just before leaving */
-	LL_IWDG_ReloadCounter(iwdg);
+	LL_IWDG_ReloadCounter(cfg->instance);
 
 	return 0;
 }
@@ -143,13 +143,17 @@ static int iwdg_stm32_disable(const struct device *dev)
 static int iwdg_stm32_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *config)
 {
-	struct iwdg_stm32_data *data = IWDG_STM32_DATA(dev);
+	struct iwdg_stm32_data *data = dev->data;
 	uint32_t timeout = config->window.max * USEC_PER_MSEC;
 	uint32_t prescaler = 0U;
 	uint32_t reload = 0U;
 
 	if (config->callback != NULL) {
 		return -ENOTSUP;
+	}
+	if (data->reload) {
+		/* Timeout has already been configured */
+		return -ENOMEM;
 	}
 
 	/* Calculating parameters to be applied later, on setup */
@@ -171,10 +175,10 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 
 static int iwdg_stm32_feed(const struct device *dev, int channel_id)
 {
-	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
+	const struct iwdg_stm32_config *cfg = dev->config;
 
 	ARG_UNUSED(channel_id);
-	LL_IWDG_ReloadCounter(iwdg);
+	LL_IWDG_ReloadCounter(cfg->instance);
 
 	return 0;
 }
@@ -210,11 +214,12 @@ static int iwdg_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static struct iwdg_stm32_data iwdg_stm32_dev_data = {
-	.Instance = (IWDG_TypeDef *)DT_INST_REG_ADDR(0)
+static const struct iwdg_stm32_config iwdg_stm32_dev_cfg = {
+	.instance = (IWDG_TypeDef *)DT_INST_REG_ADDR(0),
 };
+static struct iwdg_stm32_data iwdg_stm32_dev_data;
 
 DEVICE_DT_INST_DEFINE(0, iwdg_stm32_init, NULL,
-		    &iwdg_stm32_dev_data, NULL,
+		    &iwdg_stm32_dev_data, &iwdg_stm32_dev_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &iwdg_stm32_api);

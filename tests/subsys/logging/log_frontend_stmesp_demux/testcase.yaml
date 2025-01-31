@@ -1,5 +1,7 @@
 common:
   filter: not CONFIG_BIG_ENDIAN
+  tags:
+    - coresight_stm
 tests:
   debug.coresight.stp_demux:
     integration_platforms:

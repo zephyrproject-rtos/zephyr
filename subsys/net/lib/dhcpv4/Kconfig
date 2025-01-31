@@ -86,6 +86,14 @@ config NET_DHCPV4_OPTION_NTP_SERVER
 	  If this option is set, then the NTP server can be set from the
 	  DHCPv4 option.
 
+config NET_DHCPV4_OPTION_DNS_ADDRESS
+	bool "Use DNS server from DHCPv4 option and save it in the DNS resolver default context"
+	default y
+	depends on DNS_RESOLVER
+	help
+	  If this option is set, then the DNS server can be set from the
+	  DHCPv4 option.
+
 endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER
@@ -172,5 +180,14 @@ config NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS
 	  DHCPv4 server adds this DNS server address in the DHCP offer and
 	  acknowledgment messages sent to the clients, allowing them to use the
 	  specified DNS server for name resolution.
+
+config NET_DHCPV4_SERVER_OPTION_ROUTER
+	bool "Set the router option in the DHCP server response"
+	default y
+	help
+	  If enabled, set the DHCP router option pointing to the interface own
+	  gateway address in responses from the DHCP server. This can be
+	  disabled so that the client does not try to forward traffic to our
+	  device.
 
 endif # NET_DHCPV4_SERVER

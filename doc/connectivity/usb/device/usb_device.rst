@@ -170,7 +170,7 @@ CDC ACM UART as backend for a subsystem or application:
 * ``zephyr,bt-c2h-uart`` used in Bluetooth,
   for example see :zephyr:code-sample:`bluetooth_hci_uart`
 * ``zephyr,ot-uart`` used in OpenThread,
-  for example see :zephyr:code-sample:`coprocessor`
+  for example see :zephyr:code-sample:`openthread-coprocessor`
 * ``zephyr,shell-uart`` used by shell for serial backend,
   for example see :zephyr_file:`samples/subsys/shell/shell_module`
 * ``zephyr,uart-mcumgr`` used by :zephyr:code-sample:`smp-svr` sample

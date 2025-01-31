@@ -116,7 +116,7 @@ void thread3_entry(void *p1, void *p2, void *p3)
 
 	/* 9.1 - T3 should be executing on the same CPU that T1 was. */
 
-	cpu_t3 = arch_current_thread()->base.cpu;
+	cpu_t3 = _current->base.cpu;
 
 	zassert_true(cpu_t3 == cpu_t1, "T3 not executing on T1's original CPU");
 
@@ -136,7 +136,7 @@ void thread4_entry(void *p1, void *p2, void *p3)
 	 * It is expected to execute on the same CPU that T2 did.
 	 */
 
-	cpu_t4 = arch_current_thread()->base.cpu;
+	cpu_t4 = _current->base.cpu;
 
 	zassert_true(cpu_t4 == cpu_t2, "T4 on unexpected CPU");
 
@@ -165,7 +165,7 @@ void thread2_entry(void *p1, void *p2, void *p3)
 		arch_irq_unlock(key);
 	}
 
-	cpu_t2 = arch_current_thread()->base.cpu;
+	cpu_t2 = _current->base.cpu;
 
 	zassert_false(cpu_t2 == cpu_t1, "T2 and T1 unexpectedly on the same CPU");
 
@@ -205,7 +205,7 @@ ZTEST(ipi_cascade, test_ipi_cascade)
 
 	/* 3. T3 and T4 are blocked. Pin T3 to this CPU */
 
-	cpu_t1 = arch_current_thread()->base.cpu;
+	cpu_t1 = _current->base.cpu;
 	status = k_thread_cpu_pin(&thread3, cpu_t1);
 
 	zassert_true(status == 0, "Failed to pin T3 to %d : %d\n", cpu_t1, status);
@@ -249,7 +249,7 @@ ZTEST(ipi_cascade, test_ipi_cascade)
 
 	zassert_false(timer_expired, "Test terminated by timer");
 
-	zassert_true(cpu_t1 != arch_current_thread()->base.cpu,
+	zassert_true(cpu_t1 != _current->base.cpu,
 		     "Main thread (T1) did not change CPUs\n");
 
 	show_executing_threads("Final");

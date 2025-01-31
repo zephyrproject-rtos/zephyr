@@ -1065,7 +1065,7 @@
 			status = "disabled";
 		};
 
-		quadspi: quadspi@52005000 {
+		quadspi: spi@52005000 {
 			compatible = "st,stm32-qspi";
 			#address-cells = <0x1>;
 			#size-cells = <0x0>;
@@ -1107,6 +1107,7 @@
 		compatible = "st,stm32-vref";
 		vrefint-cal-addr = <0x1FF1E860>;
 		vrefint-cal-mv = <3300>;
+		vrefint-cal-resolution = <16>;
 		status = "disabled";
 	};
 

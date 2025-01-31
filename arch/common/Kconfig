@@ -16,24 +16,53 @@ config SEMIHOST
 	  This option is compatible with hardware and with QEMU, through the
 	  (automatic) use of the -semihosting-config switch when invoking it.
 
-config LEGACY_MULTI_LEVEL_TABLE_GENERATION
-	bool "Auto generates the multi-level interrupt LUT (deprecated)"
-	default y
-	select DEPRECATED
-	depends on MULTI_LEVEL_INTERRUPTS
-	depends on !PLIC
-	depends on !NXP_IRQSTEER
-	depends on !RV32M1_INTMUX
-	depends on !CAVS_ICTL
-	depends on !DW_ICTL_ACE
-	depends on !DW_ICTL
-	help
-	  A make-shift Kconfig to continue generating the multi-level interrupt LUT
-	  with the legacy way using DT macros.
-
 config ISR_TABLE_SHELL
 	bool "Shell command to dump the ISR tables"
 	depends on GEN_SW_ISR_TABLE
 	depends on SHELL
 	help
 	  This option enables a shell command to dump the ISR tables.
+
+
+config ARM_MPU
+	bool "ARM MPU Support"
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select THREAD_STACK_INFO
+	select ARCH_HAS_EXECUTABLE_PAGE_BIT if (CPU_AARCH32_CORTEX_R || CPU_CORTEX_M)
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if !(CPU_HAS_NXP_SYSMPU || ARMV8_M_BASELINE || ARMV8_M_MAINLINE || AARCH32_ARMV8_R)
+	select MPU_REQUIRES_NON_OVERLAPPING_REGIONS if CPU_HAS_ARM_MPU && (ARMV8_M_BASELINE || ARMV8_M_MAINLINE || AARCH32_ARMV8_R)
+	select MPU_GAP_FILLING if AARCH32_ARMV8_R
+	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS if (CPU_AARCH32_CORTEX_R || CPU_CORTEX_M)
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE && CPU_AARCH64_CORTEX_R
+	default y if CPU_AARCH64_CORTEX_R
+	depends on CPU_HAS_MPU
+	help
+	  MCU implements Memory Protection Unit.
+
+	  Notes:
+	  The ARMv6-M, ARMv7-M, and ARMv8-R MPU MPU architecture requires a power-of-two
+	  alignment of MPU region base address and size.
+
+	  The NXP MPU as well as the ARMv8-M MPU do not require MPU regions
+	  to have power-of-two alignment for base address and region size.
+
+	  The ARMv8-M and ARMv8-R MPU requires the active MPU regions be non-overlapping.
+	  As a result of this, both respective MPUs needs to fully partition the
+	  memory map when programming dynamic memory regions (e.g. PRIV stack
+	  guard, user thread stack, and application memory domains), if the
+	  system requires PRIV access policy different from the access policy
+	  of the ARMv8-M or ARMv8-R background memory map. The application developer may
+	  enforce full PRIV (kernel) memory partition by enabling the
+	  MPU_GAP_FILLING option.
+	  By not enforcing full partition, MPU may leave part of kernel
+	  SRAM area covered only by the default ARMv8-M or ARMv8-R memory map. This
+	  is fine for User Mode, since the background ARM map does not
+	  allow nPRIV access at all. However, since the background map
+	  policy allows instruction fetches by privileged code, forcing
+	  this Kconfig option off prevents the system from directly
+	  triggering MemManage exceptions upon accidental attempts to
+	  execute code from SRAM in XIP builds.
+	  Since this does not compromise User Mode, we make the skipping
+	  of full partitioning the default behavior for the ARMv8-M and ARMv8-R MPU
+	  driver.

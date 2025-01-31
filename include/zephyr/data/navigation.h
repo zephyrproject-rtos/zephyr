@@ -31,7 +31,7 @@ struct navigation_data {
 	uint32_t bearing;
 	/** Speed in millimeters per second */
 	uint32_t speed;
-	/** Altitude in millimeters */
+	/** Altitude above MSL in millimeters */
 	int32_t altitude;
 };
 

@@ -157,7 +157,7 @@ ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 	/* Non-Secure images cannot normally access memory outside the image
 	 * flash and ram.
 	 */
-	ret = k_thread_name_set(NULL, (const char *)0xFFFFFFF0);
+	ret = k_thread_name_set(NULL, (const char *)CONFIG_THREAD_API_UNMAPPED_ADDRESS);
 	zassert_equal(ret, -EFAULT, "accepted nonsense string (%d)", ret);
 #endif
 	ret = k_thread_name_set(NULL, unreadable_string);
@@ -232,7 +232,7 @@ static void umode_entry(void *thread_id, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	if (!z_is_thread_essential(arch_current_thread()) &&
+	if (!z_is_thread_essential(_current) &&
 	    (k_current_get() == (k_tid_t)thread_id)) {
 		ztest_test_pass();
 	} else {
@@ -249,9 +249,9 @@ static void umode_entry(void *thread_id, void *p2, void *p3)
  */
 static void enter_user_mode_entry(void *p1, void *p2, void *p3)
 {
-	z_thread_essential_set(arch_current_thread());
+	z_thread_essential_set(_current);
 
-	zassert_true(z_is_thread_essential(arch_current_thread()), "Thread isn't set"
+	zassert_true(z_is_thread_essential(_current), "Thread isn't set"
 		     " as essential\n");
 
 	k_thread_user_mode_enter(umode_entry,

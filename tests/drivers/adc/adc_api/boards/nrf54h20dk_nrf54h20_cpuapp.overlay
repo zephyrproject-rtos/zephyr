@@ -1,43 +1,7 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2024 Nordic Semiconductor
  *
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	zephyr,user {
-		io-channels = <&adc 0>, <&adc 1>, <&adc 2>;
-	};
-};
-
-&adc {
-	#address-cells = <1>;
-	#size-cells = <0>;
-
-	channel@0 {
-		reg = <0>;
-		zephyr,gain = "ADC_GAIN_1_2";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
-		zephyr,input-positive = <NRF_SAADC_AIN1>;
-		zephyr,resolution = <10>;
-	};
-
-	channel@1 {
-		reg = <1>;
-		zephyr,gain = "ADC_GAIN_2";
-		zephyr,reference = "ADC_REF_EXTERNAL0";
-		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
-		zephyr,input-positive = <NRF_SAADC_AIN3>;
-		zephyr,resolution = <10>;
-	};
-
-	channel@2 {
-		reg = <2>;
-		zephyr,gain = "ADC_GAIN_2_3";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
-		zephyr,input-positive = <NRF_SAADC_AIN2>;
-		zephyr,resolution = <10>;
-	};
-};
+#include "nrf54h20dk_nrf54h20_common.dtsi"

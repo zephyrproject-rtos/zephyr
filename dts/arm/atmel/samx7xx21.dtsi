@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	sram0: memory@20400000 {
+		reg = <0x20400000 DT_SIZE_K(384)>;
+	};
+
+	soc {
+		flash-controller@400e0c00 {
+			flash0: flash@400000 {
+				reg = <0x00400000 DT_SIZE_K(2048)>;
+				erase-blocks = <&eefc 8 2048>, <&eefc 252 8192>;
+			};
+		};
+	};
+};

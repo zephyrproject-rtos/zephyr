@@ -185,7 +185,7 @@ arduino_i2c: &lpi2c1 {
 
 zephyr_udc0: &usb1 {
 	status = "okay";
-	phy_handle = <&usbphy1>;
+	phy-handle = <&usbphy1>;
 };
 
 &usbphy1 {

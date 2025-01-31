@@ -44,6 +44,7 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define SHA256_HASH_SIZE 32
 #define RESPONSE_BUFFER_SIZE 1100
 #define DDI_SECURITY_TOKEN_SIZE 32
+#define RANGE_HEADER_SIZE 50
 #define HAWKBIT_RECV_TIMEOUT (300 * MSEC_PER_SEC)
 #define HAWKBIT_SET_SERVER_TIMEOUT K_MSEC(300)
 
@@ -115,8 +116,6 @@ static struct hawkbit_config {
 #endif /* CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG */
 
 struct hawkbit_download {
-	int download_status;
-	int download_progress;
 	size_t downloaded_size;
 	size_t http_content_size;
 	uint8_t file_hash[SHA256_HASH_SIZE];
@@ -343,6 +342,13 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 		return 0;
 	}
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
+	/* This is to omit the error message, as that is fetched in stream_flash_progress_load()
+	 * and we don't need to get it here.
+	 */
+	if (IS_ENABLED(CONFIG_HAWKBIT_SAVE_PROGRESS) &&
+	    settings_name_steq(name, "flash_progress", NULL)) {
+		return 0;
+	}
 
 	return -ENOENT;
 }
@@ -853,7 +859,7 @@ int hawkbit_init(void)
 		}
 
 		LOG_DBG("Marked current image as OK");
-		ret = boot_erase_img_bank(FIXED_PARTITION_ID(SLOT1_LABEL));
+		ret = boot_erase_img_bank(flash_img_get_upload_slot());
 		if (ret < 0) {
 			LOG_ERR("Failed to erase second slot: %d", ret);
 			return ret;
@@ -864,14 +870,135 @@ int hawkbit_init(void)
 	return ret;
 }
 
+static void response_json_cb(struct http_response *rsp, enum http_final_call final_data,
+			     struct hawkbit_context *hb_context)
+{
+	size_t body_len;
+	int ret;
+	uint8_t *body_data = NULL, *rsp_tmp = NULL;
+
+	if (hb_context->dl.http_content_size == 0) {
+		hb_context->dl.http_content_size = rsp->content_length;
+	}
+
+	if (rsp->body_found) {
+		body_data = rsp->body_frag_start;
+		body_len = rsp->body_frag_len;
+
+		if ((hb_context->dl.downloaded_size + body_len) >
+			hb_context->response_data_size) {
+			hb_context->response_data_size =
+				hb_context->dl.downloaded_size + body_len;
+			rsp_tmp = k_realloc(hb_context->response_data,
+						hb_context->response_data_size);
+			if (rsp_tmp == NULL) {
+				LOG_ERR("Failed to realloc memory");
+				hb_context->code_status = HAWKBIT_ALLOC_ERROR;
+				return;
+			}
+
+			hb_context->response_data = rsp_tmp;
+		}
+		strncpy(hb_context->response_data + hb_context->dl.downloaded_size,
+			body_data, body_len);
+		hb_context->dl.downloaded_size += body_len;
+	}
+
+	if (final_data == HTTP_DATA_FINAL) {
+		if (hb_context->dl.http_content_size != hb_context->dl.downloaded_size) {
+			LOG_ERR("HTTP response len mismatch, expected %d, got %d",
+				hb_context->dl.http_content_size,
+				hb_context->dl.downloaded_size);
+			hb_context->code_status = HAWKBIT_METADATA_ERROR;
+			return;
+		}
+
+		hb_context->response_data[hb_context->dl.downloaded_size] = '\0';
+		memset(&hb_context->results, 0, sizeof(hb_context->results));
+		if (hb_context->type == HAWKBIT_PROBE) {
+			ret = json_obj_parse(
+				hb_context->response_data, hb_context->dl.downloaded_size,
+				json_ctl_res_descr, ARRAY_SIZE(json_ctl_res_descr),
+				&hb_context->results.base);
+			if (ret < 0) {
+				LOG_ERR("JSON parse error (%s): %d", "HAWKBIT_PROBE", ret);
+				hb_context->code_status = HAWKBIT_METADATA_ERROR;
+			}
+		} else {
+			ret = json_obj_parse(
+				hb_context->response_data, hb_context->dl.downloaded_size,
+				json_dep_res_descr, ARRAY_SIZE(json_dep_res_descr),
+				&hb_context->results.dep);
+			if (ret < 0) {
+				LOG_ERR("JSON parse error (%s): %d", "deploymentBase", ret);
+				hb_context->code_status = HAWKBIT_METADATA_ERROR;
+			}
+		}
+	}
+}
+
+static void response_download_cb(struct http_response *rsp, enum http_final_call final_data,
+				 struct hawkbit_context *hb_context)
+{
+	size_t body_len;
+	int ret, downloaded;
+	uint8_t *body_data = NULL;
+	static uint8_t download_progress;
+
+	if (hb_context->dl.http_content_size == 0) {
+		hb_context->dl.http_content_size = rsp->content_length;
+		download_progress = 0;
+		if (IS_ENABLED(CONFIG_HAWKBIT_SAVE_PROGRESS) && rsp->http_status_code != 206) {
+			hb_context->flash_ctx.stream.bytes_written = 0;
+		}
+	}
+
+	if (!rsp->body_found) {
+		return;
+	}
+
+	body_data = rsp->body_frag_start;
+	body_len = rsp->body_frag_len;
+
+	ret = flash_img_buffered_write(&hb_context->flash_ctx, body_data, body_len,
+				       final_data == HTTP_DATA_FINAL);
+	if (ret < 0) {
+		LOG_ERR("Failed to write flash: %d", ret);
+		hb_context->code_status = HAWKBIT_DOWNLOAD_ERROR;
+		return;
+	}
+
+#if defined CONFIG_HAWKBIT_SAVE_PROGRESS && IS_EQ(CONFIG_HAWKBIT_SAVE_PROGRESS_INTERVAL, 0)
+	stream_flash_progress_save(&hb_context->flash_ctx.stream, "hawkbit/flash_progress");
+#endif
+
+	hb_context->dl.downloaded_size = flash_img_bytes_written(&hb_context->flash_ctx);
+
+	downloaded = hb_context->dl.downloaded_size * 100 / hb_context->dl.file_size;
+
+	if (downloaded != download_progress) {
+#if defined CONFIG_HAWKBIT_SAVE_PROGRESS && !IS_EQ(CONFIG_HAWKBIT_SAVE_PROGRESS_INTERVAL, 0)
+		if ((downloaded / CONFIG_HAWKBIT_SAVE_PROGRESS_INTERVAL) >
+		    (download_progress / CONFIG_HAWKBIT_SAVE_PROGRESS_INTERVAL)) {
+			stream_flash_progress_save(&hb_context->flash_ctx.stream,
+						   "hawkbit/flash_progress");
+		}
+#endif
+		download_progress = downloaded;
+		LOG_DBG("Downloaded: %u%% (%u / %u)", download_progress,
+			hb_context->dl.downloaded_size, hb_context->dl.file_size);
+	}
+
+	if (final_data == HTTP_DATA_FINAL) {
+		hb_context->final_data_received = true;
+	}
+}
+
 static void response_cb(struct http_response *rsp, enum http_final_call final_data, void *userdata)
 {
 	struct hawkbit_context *hb_context = userdata;
-	size_t body_len;
-	int ret, downloaded;
-	uint8_t *body_data = NULL, *rsp_tmp = NULL;
 
-	if (rsp->http_status_code != 200) {
+	if (!IN_RANGE(rsp->http_status_code, 200, 299)) {
 		LOG_ERR("HTTP request denied: %d", rsp->http_status_code);
 		if (rsp->http_status_code == 401 || rsp->http_status_code == 403) {
 			hb_context->code_status = HAWKBIT_PERMISSION_ERROR;
@@ -884,103 +1011,14 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 	switch (hb_context->type) {
 	case HAWKBIT_PROBE:
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
-		if (hb_context->dl.http_content_size == 0) {
-			hb_context->dl.http_content_size = rsp->content_length;
-		}
-
-		if (rsp->body_found) {
-			body_data = rsp->body_frag_start;
-			body_len = rsp->body_frag_len;
-
-			if ((hb_context->dl.downloaded_size + body_len) >
-			    hb_context->response_data_size) {
-				hb_context->response_data_size =
-					hb_context->dl.downloaded_size + body_len;
-				rsp_tmp = k_realloc(hb_context->response_data,
-						    hb_context->response_data_size);
-				if (rsp_tmp == NULL) {
-					LOG_ERR("Failed to realloc memory");
-					hb_context->code_status = HAWKBIT_ALLOC_ERROR;
-					break;
-				}
-
-				hb_context->response_data = rsp_tmp;
-			}
-			strncpy(hb_context->response_data + hb_context->dl.downloaded_size,
-				body_data, body_len);
-			hb_context->dl.downloaded_size += body_len;
-		}
-
-		if (final_data == HTTP_DATA_FINAL) {
-			if (hb_context->dl.http_content_size != hb_context->dl.downloaded_size) {
-				LOG_ERR("HTTP response len mismatch, expected %d, got %d",
-					hb_context->dl.http_content_size,
-					hb_context->dl.downloaded_size);
-				hb_context->code_status = HAWKBIT_METADATA_ERROR;
-				break;
-			}
-
-			hb_context->response_data[hb_context->dl.downloaded_size] = '\0';
-			memset(&hb_context->results, 0, sizeof(hb_context->results));
-			if (hb_context->type == HAWKBIT_PROBE) {
-				ret = json_obj_parse(
-					hb_context->response_data, hb_context->dl.downloaded_size,
-					json_ctl_res_descr, ARRAY_SIZE(json_ctl_res_descr),
-					&hb_context->results.base);
-				if (ret < 0) {
-					LOG_ERR("JSON parse error (%s): %d", "HAWKBIT_PROBE", ret);
-					hb_context->code_status = HAWKBIT_METADATA_ERROR;
-				}
-			} else {
-				ret = json_obj_parse(
-					hb_context->response_data, hb_context->dl.downloaded_size,
-					json_dep_res_descr, ARRAY_SIZE(json_dep_res_descr),
-					&hb_context->results.dep);
-				if (ret < 0) {
-					LOG_ERR("JSON parse error (%s): %d", "deploymentBase", ret);
-					hb_context->code_status = HAWKBIT_METADATA_ERROR;
-				}
-			}
-		}
-
+		response_json_cb(rsp, final_data, hb_context);
 		break;
 
 	case HAWKBIT_DOWNLOAD:
-		if (hb_context->dl.http_content_size == 0) {
-			hb_context->dl.http_content_size = rsp->content_length;
-		}
-
-		if (rsp->body_found) {
-			body_data = rsp->body_frag_start;
-			body_len = rsp->body_frag_len;
-
-			ret = flash_img_buffered_write(&hb_context->flash_ctx, body_data, body_len,
-						       final_data == HTTP_DATA_FINAL);
-			if (ret < 0) {
-				LOG_ERR("Failed to write flash: %d", ret);
-				hb_context->code_status = HAWKBIT_DOWNLOAD_ERROR;
-				break;
-			}
-		}
-
-		hb_context->dl.downloaded_size = flash_img_bytes_written(&hb_context->flash_ctx);
-
-		downloaded =
-			hb_context->dl.downloaded_size * 100 / hb_context->dl.http_content_size;
-
-		if (downloaded > hb_context->dl.download_progress) {
-			hb_context->dl.download_progress = downloaded;
-			LOG_DBG("Downloaded: %d%% ", hb_context->dl.download_progress);
-		}
-
-		if (final_data == HTTP_DATA_FINAL) {
-			hb_context->final_data_received = true;
-		}
-
+		response_download_cb(rsp, final_data, hb_context);
 		break;
 
 	default:
-
 		break;
 	}
 }
@@ -1055,6 +1093,13 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 		 * Resource for software module (Deployment Base)
 		 * GET: /{tenant}/controller/v1/{controllerId}/deploymentBase/{actionId}
 		 */
+
+		http_req.method = HTTP_GET;
+		hb_context->dl.http_content_size = 0;
+		hb_context->dl.downloaded_size = 0;
+
+		break;
+
 	case HAWKBIT_DOWNLOAD:
 		/*
 		 * Resource for software module (Deployment Base)
@@ -1063,7 +1108,23 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 		 */
 		http_req.method = HTTP_GET;
 		hb_context->dl.http_content_size = 0;
+
+#ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
+		hb_context->dl.downloaded_size = flash_img_bytes_written(&hb_context->flash_ctx);
+		if (IN_RANGE(hb_context->dl.downloaded_size, 1, hb_context->dl.file_size)) {
+			char header_range[RANGE_HEADER_SIZE] = {0};
+
+			snprintf(header_range, sizeof(header_range), "Range: bytes=%u-" HTTP_CRLF,
+				 hb_context->dl.downloaded_size);
+			const char *const headers_range[] = {header_range, NULL};
+
+			http_req.optional_headers = (const char **)headers_range;
+			LOG_DBG("optional header: %s", header_range);
+			LOG_INF("Resuming download from %d bytes", hb_context->dl.downloaded_size);
+		}
+#else
 		hb_context->dl.downloaded_size = 0;
+#endif
 
 		break;
 
@@ -1459,6 +1520,10 @@ static void s_download(void *o)
 	 */
 	flash_area_ptr = s->hb_context.flash_ctx.flash_area;
 
+#ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
+	stream_flash_progress_load(&s->hb_context.flash_ctx.stream, "hawkbit/flash_progress");
+#endif
+
 	if (!send_request(&s->hb_context, HAWKBIT_DOWNLOAD, url_buffer, NULL)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_DOWNLOAD");
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
@@ -1472,6 +1537,10 @@ static void s_download(void *o)
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 		return;
 	}
+
+#ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
+	stream_flash_progress_clear(&s->hb_context.flash_ctx.stream, "hawkbit/flash_progress");
+#endif
 
 	/* Verify the hash of the stored firmware */
 	fic.match = s->hb_context.dl.file_hash;

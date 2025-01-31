@@ -17,8 +17,8 @@ config SOC_SERIES_IMXRT118X
 	select ARM_MPU if SOC_MIMXRT1189_CM33
 	select INIT_ARM_PLL
 	select ARM_TRUSTZONE_M if SOC_MIMXRT1189_CM33
-	select CPU_HAS_ICACHE if SOC_MIMXRT1189_CM7
-	select CPU_HAS_DCACHE if SOC_MIMXRT1189_CM7
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
 	select CPU_HAS_FPU
 	select CPU_HAS_FPU_DOUBLE_PRECISION if SOC_MIMXRT1189_CM7
 	select HAS_MCUX_IOMUXC
@@ -28,6 +28,8 @@ config SOC_SERIES_IMXRT118X
 
 config SOC_MIMXRT1189_CM33
 	select CPU_CORTEX_M33
+	select HAS_MCUX_XCACHE
+	select CACHE_MANAGEMENT
 
 config SOC_MIMXRT1189_CM7
 	select CPU_CORTEX_M7
@@ -65,13 +67,5 @@ config TRDC_MCUX_TRDC
 config S3MU_MCUX_S3MU
 	default y
 	bool "Use S3MU MCUX Driver"
-
-config IMXRT118X_CM33_XCACHE_PS
-	bool "Use CM33 XCACHE_PS"
-	default y if SOC_MIMXRT1189_CM33
-	help
-	  Use CM33 XCACHE_PS at boot. Please note XCACHE_PC have been
-	  enabled in SystemInit function. If this Kconfig is cleared,
-	  the XCACHE controller won't be enabled during SOC init
 
 endif # SOC_SERIES_IMXRT118X

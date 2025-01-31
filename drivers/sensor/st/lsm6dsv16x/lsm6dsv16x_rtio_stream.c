@@ -13,6 +13,7 @@
 #include "lsm6dsv16x.h"
 #include "lsm6dsv16x_decoder.h"
 #include <zephyr/rtio/work.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(LSM6DSV16X_RTIO);
@@ -31,6 +32,8 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 	lsm6dsv16x_fifo_gy_batch_t gy_batch = LSM6DSV16X_DT_GY_NOT_BATCHED;
 	lsm6dsv16x_fifo_temp_batch_t temp_batch = LSM6DSV16X_DT_TEMP_NOT_BATCHED;
 	lsm6dsv16x_fifo_mode_t fifo_mode = LSM6DSV16X_BYPASS_MODE;
+	lsm6dsv16x_sflp_data_rate_t sflp_odr = LSM6DSV16X_SFLP_120Hz;
+	lsm6dsv16x_fifo_sflp_raw_t sflp_fifo = { 0 };
 
 	/* disable FIFO as first thing */
 	lsm6dsv16x_fifo_mode_set(ctx, LSM6DSV16X_BYPASS_MODE);
@@ -48,6 +51,20 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 
 		fifo_mode = LSM6DSV16X_STREAM_MODE;
 		fifo_wtm = config->fifo_wtm;
+
+		if (config->sflp_fifo_en & LSM6DSV16X_DT_SFLP_FIFO_GAME_ROTATION) {
+			sflp_fifo.game_rotation = 1;
+		}
+
+		if (config->sflp_fifo_en & LSM6DSV16X_DT_SFLP_FIFO_GRAVITY) {
+			sflp_fifo.gravity = 1;
+		}
+
+		if (config->sflp_fifo_en & LSM6DSV16X_DT_SFLP_FIFO_GBIAS) {
+			sflp_fifo.gbias = 1;
+		}
+
+		sflp_odr = config->sflp_odr;
 	}
 
 	/*
@@ -68,6 +85,11 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, uint8_t fifo_irq)
 	lsm6dsv16x_fifo_temp_batch_set(ctx, temp_batch);
 	lsm6dsv16x->temp_batch_odr = temp_batch;
 #endif
+
+	lsm6dsv16x_sflp_data_rate_set(ctx, sflp_odr);
+	lsm6dsv16x->sflp_batch_odr = sflp_odr;
+	lsm6dsv16x_fifo_sflp_batch_set(ctx, sflp_fifo);
+	lsm6dsv16x_sflp_game_rotation_set(ctx, PROPERTY_ENABLE);
 
 	/* Set pin interrupt (fifo_th could be on or off) */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
@@ -306,6 +328,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 		.temp_batch_odr = lsm6dsv16x->temp_batch_odr,
 #endif
+		.sflp_batch_odr = lsm6dsv16x->sflp_batch_odr,
 	};
 
 	memcpy(buf, &hdr, sizeof(hdr));
@@ -355,13 +378,22 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
 #endif
+	uint64_t cycles;
+	int rc;
 
 	if (lsm6dsv16x->streaming_sqe == NULL) {
 		return;
 	}
 
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, rc);
+		return;
+	}
+
 	/* get timestamp as soon as the irq is served */
-	lsm6dsv16x->fifo_timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	lsm6dsv16x->fifo_timestamp = sensor_clock_cycles_to_ns(cycles);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (ON_I3C_BUS(config) && (!I3C_INT_PIN(config))) {

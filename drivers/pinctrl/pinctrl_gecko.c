@@ -142,7 +142,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 #endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
 #endif /* CONFIG_UART_GECKO */
 
-#ifdef CONFIG_SPI_GECKO_USART
+#ifdef CONFIG_SPI_SILABS_USART
 #ifdef CONFIG_SOC_FAMILY_SILABS_S1
 		case GECKO_FUN_SPIM_SCK:
 			pin_config.mode = gpioModePushPull;
@@ -224,7 +224,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			base->ROUTELOC0 |= (loc << _USART_ROUTELOC0_CSLOC_SHIFT);
 			break;
 #endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
-#endif /* CONFIG_SPI_GECKO_USART */
+#endif /* CONFIG_SPI_SILABS_USART */
 
 #ifdef CONFIG_I2C_GECKO
 		case GECKO_FUN_I2C_SDA:

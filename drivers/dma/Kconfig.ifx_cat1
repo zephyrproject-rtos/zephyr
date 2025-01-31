@@ -1,0 +1,14 @@
+# Infineon CAT1 DMA configuration options
+
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_INFINEON_CAT1
+	bool "Infineon CAT1 DMA driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_DMA_ENABLED
+	select USE_INFINEON_DMA
+	help
+	  This option enables the DMA driver for Infineon CAT1 family.

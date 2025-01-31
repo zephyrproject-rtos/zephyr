@@ -259,6 +259,14 @@ struct i3c_ccc_target_payload {
 	 * write to this after the transfer.
 	 */
 	size_t num_xfer;
+
+	/**
+	 * SDR Error Type
+	 *
+	 * Error from I3C Specification v1.1.1 section 5.1.10.2. It is expected
+	 * for the driver to write to this.
+	 */
+	enum i3c_sdr_controller_error_types err;
 };
 
 /**
@@ -289,6 +297,14 @@ struct i3c_ccc_payload {
 		 * It is expected for the driver to write to this after the transfer.
 		 */
 		size_t num_xfer;
+
+		/**
+		 * SDR Error Type
+		 *
+		 * Error from I3C Specification v1.1.1 section 5.1.10.2. It is expected
+		 * for the driver to write to this.
+		 */
+		enum i3c_sdr_controller_error_types err;
 	} ccc;
 
 	struct {

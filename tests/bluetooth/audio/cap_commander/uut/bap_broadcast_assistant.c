@@ -7,7 +7,24 @@
 #include "zephyr/bluetooth/audio/bap.h"
 #include "test_common.h"
 
+#include "bap_broadcast_assistant.h"
+
 static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
+
+/* when > 0 immediately return from the add_src callback the specified number of times
+ * This allows us to test the CAP cancel command by not successfully sending all the
+ * requests, so that we can cancel before the CAP commander implementation is done
+ * with the procedure.
+ * This is based on the fact that we are not actually sending any requests on air, and
+ * that we are using this function as a synchronous function, rather than an asynchronous
+ * function.
+ */
+static unsigned int add_src_skip;
+
+void set_skip_add_src(unsigned int setting)
+{
+	add_src_skip = setting;
+}
 
 struct bap_broadcast_assistant_recv_state_info {
 	uint8_t src_id;
@@ -82,6 +99,12 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	struct bap_broadcast_assistant_instance *inst;
 	struct bt_bap_scan_delegator_recv_state state;
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
+
+	if (add_src_skip != 0) {
+		add_src_skip--;
+
+		return 0;
+	}
 
 	/* Note that proper parameter checking is done in the caller */
 	zassert_not_null(conn, "conn is NULL");

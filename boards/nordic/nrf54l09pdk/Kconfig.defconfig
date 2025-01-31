@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF54L09PDK_NRF54L09_CPUAPP
+
+config BT_CTLR
+	default BT
+
+config ROM_START_OFFSET
+	default 0x800 if BOOTLOADER_MCUBOOT
+
+config SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE
+	default y
+
+endif # BOARD_NRF54L09PDK_NRF54L09_CPUAPP

@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "babblekit/testcase.h"
 #include "common.h"
 
 extern const struct test_sample_data *sample_data;
@@ -19,9 +20,8 @@ static bool data_parse_cb(struct bt_data *data, void *user_data)
 		if (decrypted_data_size != sample_data->size_ad_data) {
 			LOG_ERR("Size of decrypted data: %d", decrypted_data_size);
 			LOG_ERR("Size of sample data: %d", sample_data->size_ad_data);
-			FAIL("Computed size of data does not match the size of the data from the "
-			     "sample. (data set %d)\n",
-			     data_set);
+			TEST_FAIL("Computed size of data does not match the size of the data from "
+				  "the sample. (data set %d)", data_set);
 		}
 
 		if (memcmp(sample_data->randomizer_little_endian, data->data,
@@ -31,7 +31,7 @@ static bool data_parse_cb(struct bt_data *data, void *user_data)
 			LOG_ERR("Expected Randomizer from sample: %s",
 				bt_hex(sample_data->randomizer_little_endian,
 				       BT_EAD_RANDOMIZER_SIZE));
-			FAIL("Received Randomizer does not match the expected one.\n");
+			TEST_FAIL("Received Randomizer does not match the expected one.");
 		}
 
 		net_buf_simple_init_with_data(&decrypted_buf, decrypted_payload,
@@ -40,22 +40,21 @@ static bool data_parse_cb(struct bt_data *data, void *user_data)
 		err = bt_ead_decrypt(sample_data->session_key, sample_data->iv, data->data,
 				     data->data_len, decrypted_buf.data);
 		if (err != 0) {
-			FAIL("Error during decryption.\n");
+			TEST_FAIL("Error during decryption.");
 		} else if (memcmp(decrypted_buf.data, sample_data->ad_data, decrypted_data_size)) {
 			LOG_HEXDUMP_ERR(decrypted_buf.data, decrypted_data_size,
 					"Decrypted data from bt_ead_decrypt:");
 			LOG_HEXDUMP_ERR(sample_data->ad_data, sample_data->size_ad_data,
 					"Expected data from sample:");
-			FAIL("Decrypted AD data does not match expected sample data. (data set "
-			     "%d)\n",
-			     data_set);
+			TEST_FAIL("Decrypted AD data does not match expected sample data. (data set"
+				  " %d)", data_set);
 		}
 
 		LOG_HEXDUMP_DBG(decrypted_buf.data, decrypted_data_size, "Raw decrypted data: ");
 
 		bt_data_parse(&decrypted_buf, &data_parse_cb, NULL);
 
-		PASS("Central test passed. (data set %d)\n", data_set);
+		TEST_PASS("Central test passed. (data set %d)", data_set);
 
 		return false;
 	}
@@ -86,7 +85,7 @@ static void start_scan(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err) {
-		FAIL("Scanning failed to start (err %d)\n", err);
+		TEST_FAIL("Scanning failed to start (err %d)", err);
 	}
 
 	LOG_DBG("Scanning successfully started");
@@ -100,7 +99,7 @@ void test_central(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth init failed (err %d)", err);
 	}
 
 	LOG_DBG("Bluetooth initialized");

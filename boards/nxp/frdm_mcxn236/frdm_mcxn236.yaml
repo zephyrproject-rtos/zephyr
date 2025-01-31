@@ -13,7 +13,6 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - can
@@ -22,6 +21,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - i3c
   - pwm
   - regulator
   - spi

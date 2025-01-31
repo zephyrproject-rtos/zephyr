@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&dma1 {
+	status = "okay";
+};
+
+tst_dma0: &dmamux1 {
+	status = "okay";
+};

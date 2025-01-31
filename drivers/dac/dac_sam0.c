@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Google LLC.
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dac_sam0, CONFIG_DAC_LOG_LEVEL);
 
+/* clang-format off */
+
 /*
  * Maps between the DTS reference property names and register values.  Note that
  * the ASF uses the 09/2015 names which differ from the 03/2020 datasheet.
@@ -27,8 +30,10 @@ LOG_MODULE_REGISTER(dac_sam0, CONFIG_DAC_LOG_LEVEL);
 struct dac_sam0_cfg {
 	Dac *regs;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t pm_apbc_bit;
-	uint8_t gclk_clkctrl_id;
+	volatile uint32_t *mclk;
+	uint32_t mclk_mask;
+	uint32_t gclk_gen;
+	uint16_t gclk_id;
 	uint8_t refsel;
 };
 
@@ -77,17 +82,21 @@ static int dac_sam0_init(const struct device *dev)
 	Dac *regs = cfg->regs;
 	int retval;
 
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	*cfg->mclk |= cfg->mclk_mask;
+
+#ifdef MCLK
+	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_CHEN
+					| GCLK_PCHCTRL_GEN(cfg->gclk_gen);
+#else
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN
+			  | GCLK_CLKCTRL_GEN(cfg->gclk_gen)
+			  | GCLK_CLKCTRL_ID(cfg->gclk_id);
+#endif
 
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {
 		return retval;
 	}
-
-	/* Enable the clock in PM */
-	PM->APBCMASK.reg |= 1 << cfg->pm_apbc_bit;
 
 	/* Reset then configure the DAC */
 	regs->CTRLA.bit.SWRST = 1;
@@ -110,24 +119,30 @@ static DEVICE_API(dac, api_sam0_driver_api) = {
 	.write_value = dac_sam0_write_value
 };
 
-#define SAM0_DAC_REFSEL(n)						       \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, reference),		       \
+#define ASSIGNED_CLOCKS_CELL_BY_NAME						\
+	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
+
+#define SAM0_DAC_REFSEL(n)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, reference),			\
 		    (DT_INST_ENUM_IDX(n, reference)), (0))
 
-#define SAM0_DAC_INIT(n)						       \
-	PINCTRL_DT_INST_DEFINE(n);					       \
-	static const struct dac_sam0_cfg dac_sam0_cfg_##n = {		       \
-		.regs = (Dac *)DT_INST_REG_ADDR(n),			       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		       \
-		.pm_apbc_bit = DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit),	       \
-		.gclk_clkctrl_id =					       \
-			DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),      \
-		.refsel = UTIL_CAT(SAM0_DAC_REFSEL_, SAM0_DAC_REFSEL(n)),      \
-	};								       \
-									       \
-	DEVICE_DT_INST_DEFINE(n, &dac_sam0_init, NULL, NULL,		       \
-			    &dac_sam0_cfg_##n, POST_KERNEL,		       \
-			    CONFIG_DAC_INIT_PRIORITY,			       \
+#define SAM0_DAC_INIT(n)							\
+	PINCTRL_DT_INST_DEFINE(n);						\
+	static const struct dac_sam0_cfg dac_sam0_cfg_##n = {			\
+		.regs = (Dac *)DT_INST_REG_ADDR(n),				\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),		\
+		.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),		\
+		.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),		\
+		.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit),	\
+		.refsel = UTIL_CAT(SAM0_DAC_REFSEL_, SAM0_DAC_REFSEL(n)),	\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(n, &dac_sam0_init, NULL, NULL,			\
+			    &dac_sam0_cfg_##n, POST_KERNEL,			\
+			    CONFIG_DAC_INIT_PRIORITY,				\
 			    &api_sam0_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(SAM0_DAC_INIT);
+
+/* clang-format on */

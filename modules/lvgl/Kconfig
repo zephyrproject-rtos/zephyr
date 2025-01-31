@@ -77,6 +77,8 @@ choice LV_COLOR_DEPTH
 
 	config LV_COLOR_DEPTH_32
 		bool "32: ARGB8888"
+	config LV_COLOR_DEPTH_24
+		bool "24: RGB888"
 	config LV_COLOR_DEPTH_16
 		bool "16: RGB565"
 	config LV_COLOR_DEPTH_8
@@ -86,7 +88,7 @@ choice LV_COLOR_DEPTH
 endchoice
 
 config LV_COLOR_16_SWAP
-	bool
+	bool "Swap the 2 bytes of RGB565 color."
 	depends on LV_COLOR_DEPTH_16
 
 config LV_Z_FLUSH_THREAD
@@ -128,14 +130,51 @@ config LV_Z_AREA_Y_ALIGNMENT_WIDTH
 	  the current frame dimensions to meet display and/or LCD host
 	  controller requirements. The value must be power of 2.
 
-config LV_USE_GPU_STM32_DMA2D
+config LV_Z_AUTO_INIT
+	bool "Initialize LVGL before application startup"
+	default y
+	help
+	  Configure LVGL callbacks and display initialization before the application starts.
+	  This can be useful to disable if you need to change a display's pixel format
+	  prior to initialization. If using static allocation, ensure that LV_Z_BITS_PER_PIXEL
+	  is set correctly.
+
+config LV_Z_INIT_PRIORITY
+	int "Default init priority for LVGL"
+	default 90
+	depends on LV_Z_AUTO_INIT
+	help
+	  Priority used for the automatic initialization of LVGL.
+
+config LV_USE_DRAW_DMA2D
 	bool
 
-config LV_GPU_DMA2D_CMSIS_INCLUDE
+config LV_DRAW_DMA2D_HAL_INCLUDE
 	string
 	help
 	  Must be defined to include path of CMSIS header of target processor
 	  e.g. "stm32f769xx.h" or "stm32f429xx.h"
+
+config LV_Z_USE_OSAL
+	bool "Use OSAL enabling parallel rendering"
+	depends on DYNAMIC_THREAD
+	help
+	  Use the Zephyr LVGL OSAL to enable parallel rendering
+	  pipelines.
+
+config LV_USE_PXP
+	bool
+
+config LV_USE_GPU_NXP_PXP
+	bool
+	default y if LV_USE_PXP
+
+config LV_Z_PXP_INTERRUPT_PRIORITY
+	int "PXP interrupt priority"
+	depends on LV_USE_PXP
+	default 3
+	help
+	  Sets the interrupt priority for PXP
 
 rsource "Kconfig.memory"
 rsource "Kconfig.input"

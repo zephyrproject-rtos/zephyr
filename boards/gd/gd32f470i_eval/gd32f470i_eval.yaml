@@ -10,7 +10,6 @@ flash: 3072
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - counter
   - dac

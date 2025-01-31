@@ -111,6 +111,13 @@ int flash_img_check(struct flash_img_context *ctx,
 		    const struct flash_img_check *fic,
 		    uint8_t area_id);
 
+/**
+ * @brief Get the flash area id for the image upload slot.
+ *
+ * @return flash area id for the image upload slot
+ */
+uint8_t flash_img_get_upload_slot(void);
+
 #ifdef __cplusplus
 }
 #endif

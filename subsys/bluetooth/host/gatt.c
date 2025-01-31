@@ -7,6 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <errno.h>
@@ -101,21 +104,23 @@ static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 #if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
 
-static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, uint16_t len, uint16_t offset,
-			 uint8_t flags)
+static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
+			  uint16_t len, uint16_t offset, uint8_t flags)
 {
-	char value[CONFIG_BT_DEVICE_NAME_MAX] = {};
+	/* adding one to fit the terminating null character */
+	char value[CONFIG_BT_DEVICE_NAME_MAX + 1] = {};
 
-	if (offset >= sizeof(value)) {
+	if (offset >= CONFIG_BT_DEVICE_NAME_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (offset + len >= sizeof(value)) {
+	if (offset + len > CONFIG_BT_DEVICE_NAME_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	memcpy(value, buf, len);
+
+	value[len] = '\0';
 
 	bt_set_name(value);
 
@@ -2852,12 +2857,20 @@ struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr,
 					  const struct bt_uuid *uuid)
 {
 	struct bt_gatt_attr *found = NULL;
-	uint16_t start_handle = bt_gatt_attr_value_handle(attr);
-	uint16_t end_handle = start_handle && attr_count ?
-			      start_handle + attr_count : 0xffff;
+	uint16_t start_handle = bt_gatt_attr_get_handle(attr);
+	uint16_t end_handle = start_handle && attr_count
+				      ? MIN(start_handle + attr_count, BT_ATT_LAST_ATTRIBUTE_HANDLE)
+				      : BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	bt_gatt_foreach_attr_type(start_handle, end_handle, uuid, NULL, 1,
-				  find_next, &found);
+	if (attr != NULL && start_handle == 0U) {
+		/* If start_handle is 0 then `attr` is not in our database, and should not be used
+		 * as a starting point for the search
+		 */
+		LOG_DBG("Could not find handle of attr %p", attr);
+		return NULL;
+	}
+
+	bt_gatt_foreach_attr_type(start_handle, end_handle, uuid, NULL, 1, find_next, &found);
 
 	return found;
 }

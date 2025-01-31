@@ -126,6 +126,20 @@ ACPI:
   tests:
     - acpi
 
+Antmicro platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  collaborators:
+    - kgugala
+  files:
+    - boards/antmicro/
+    - soc/antmicro/
+    - dts/arm/antmicro/
+  labels:
+    - "platform: Antmicro"
+
 ARC arch:
   status: maintained
   maintainers:
@@ -151,7 +165,7 @@ ARC arch:
 ARM arch:
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - microbuilder
     - carlocaione
@@ -159,7 +173,6 @@ ARM arch:
     - MaureenHelm
     - stephanosio
     - bbolen
-    - wearyzen
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -195,8 +208,6 @@ ARM64 arch:
 ARM Platforms:
   status: maintained
   maintainers:
-    - ithinuel
-  collaborators:
     - wearyzen
   files:
     - boards/arm/mps*/
@@ -337,7 +348,6 @@ Bluetooth Controller:
   collaborators:
     - carlescufi
     - thoh-ot
-    - kruithofa
     - ppryga
     - mtpr-ot
     - wopu-ot
@@ -402,13 +412,13 @@ Bluetooth Host:
     - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
+    - samples/bluetooth/ccp*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/hci_*/
     - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -467,7 +477,6 @@ Bluetooth Audio:
     - sjanc
     - asbjornsabo
     - fredrikdanebjer
-    - kruithofa
     - larsgk
     - pin-zephyr
     - niym-ot
@@ -486,6 +495,7 @@ Bluetooth Audio:
     - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
+    - samples/bluetooth/ccp*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
@@ -518,14 +528,12 @@ Bluetooth ISO:
     - Thalley
   collaborators:
     - jhedberg
-    - kruithofa
     - rugeGerritsen
     - cvinayak
   files:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/shell/host/iso.rst
     - samples/bluetooth/iso_*/
-    - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -890,7 +898,9 @@ DFU:
     - dfu
 
 Devicetree:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - mbolivar
   collaborators:
     - decsny
     - galak
@@ -1494,6 +1504,7 @@ Release Notes:
   files:
     - doc/hardware/peripherals/gnss.rst
     - drivers/gnss/
+    - include/zephyr/data/navigation.h
     - include/zephyr/drivers/gnss.h
     - include/zephyr/drivers/gnss/
     - dts/bindings/gnss/
@@ -2228,16 +2239,6 @@ Release Notes:
   labels:
     - "area: Wi-Fi"
 
-"Drivers: Wi-Fi NXP":
-  status: maintained
-  maintainers:
-    - dleach02
-    - MaochenWang1
-  files:
-    - drivers/wifi/nxp/
-  labels:
-    - "platform: NXP Drivers"
-
 "Drivers: Memory Management":
   status: maintained
   maintainers:
@@ -2434,7 +2435,8 @@ JSON Web Token:
     - sir-branch
   files:
     - subsys/jwt/
-    - include/zephyr/data/
+    - include/zephyr/data/json.h
+    - include/zephyr/data/jwt.h
     - lib/utils/json.c
     - tests/subsys/jwt/
     - tests/lib/json/
@@ -3050,7 +3052,7 @@ Networking:
   collaborators:
     - pdgendt
     - canisLupus1313
-    - mariuszpos
+    - kkasperczyk-no
     - edmont
     - maciejbaczmanski
   files:
@@ -3143,6 +3145,9 @@ Open AMP:
   status: maintained
   maintainers:
     - carlocaione
+  collaborators:
+    - uLipe
+    - iuliana-prodan
   files:
     - lib/open-amp/
     - samples/subsys/ipc/openamp/
@@ -3729,17 +3734,33 @@ NXP Drivers:
     - include/zephyr/dt-bindings/inputmux/
     - include/zephyr/dt-bindings/rdc/
     - include/zephyr/drivers/*/*nxp*
+    - include/zephyr/drivers/*/*nxp*/
     - include/zephyr/drivers/*/*mcux*
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
   files-exclude:
-    - drivers/wifi/nxp/
-    - drivers/usb/*/*mcux*
+    - drivers/wifi/
+    - drivers/bluetooth/
+    - drivers/usb/
   files-regex-exclude:
     - .*s32.*
   labels:
     - "platform: NXP Drivers"
   description: NXP Drivers
+
+NXP Wireless:
+  status: maintained
+  maintainers:
+    - dleach02
+  collaborators:
+    - MaochenWang1
+    - axelnxp
+  files:
+    - drivers/wifi/nxp/
+    - drivers/bluetooth/hci/*nxp*
+    - drivers/ieee802154/ieee802154_kw41z.c
+  labels:
+    - "platform: NXP Drivers"
 
 NXP MCUX USB:
   status: maintained
@@ -3748,6 +3769,7 @@ NXP MCUX USB:
     - MarkWangChinese
   files:
     - drivers/usb/*/*mcux*
+    - boards/nxp/usb_kw24d512/
   labels:
     - "platform: NXP Drivers"
   description: NXP MCUX USB shim drivers
@@ -3759,7 +3781,6 @@ NXP Platforms (MCU):
     - mmahadevan108
   collaborators:
     - DerekSnell
-    - yvanderv
     - EmilioCBen
     - decsny
     - butok
@@ -3768,8 +3789,11 @@ NXP Platforms (MCU):
     - boards/nxp/frdm*/
     - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
-    - boards/nxp/vmu*/
     - boards/nxp/*rw*/
+    - boards/nxp/hexiwear/
+    - boards/nxp/common/
+    - boards/nxp/*
+    - soc/nxp/common/
     - soc/nxp/imxrt/
     - soc/nxp/kinetis/
     - soc/nxp/lpc/
@@ -3790,13 +3814,9 @@ NXP Platforms (S32):
   maintainers:
     - manuargue
   collaborators:
-    - PetervdPerk-NXP
-    - bperseghetti
     - Dat-NguyenDuy
   files:
-    - boards/nxp/s32*/
-    - boards/nxp/mr_canhubk3/
-    - boards/nxp/ucans32k1sic/
+    - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
     - soc/nxp/s32/
     - drivers/*/*nxp_s32*
@@ -3819,12 +3839,12 @@ NXP Platforms (MPU):
     - dleach02
     - dbaluta
     - iuliana-prodan
-    - yvanderv
   files:
     - dts/arm64/nxp/
     - dts/arm/nxp/nxp_imx*
     - soc/nxp/imx/
     - soc/nxp/layerscape/
+    - boards/nxp/ls1046ardb/
   files-regex:
     - boards/nxp/m?imx[^(rt)].*/
   labels:
@@ -3843,6 +3863,19 @@ NXP Platforms (Xtensa):
   labels:
     - "platform: NXP Xtensa"
   description: NXP Xtensa platforms
+
+NXP Platforms (Robotics Products):
+  status: maintained
+  maintainers:
+    - bperseghetti
+    - PetervdPerk-NXP
+  files:
+    - boards/nxp/vmu*/
+    - boards/nxp/rddrone_fmuk66/
+    - boards/nxp/mr_canhubk3/
+  labels:
+    - "platform: NXP"
+  description: NXP Robotics Module Platform Products
 
 Microchip MEC Platforms:
   status: maintained
@@ -3932,6 +3965,19 @@ OpenTitan Platforms:
     - "platform: OpenTitan"
   description: >-
     OpenTitan boards, SOCs, dts files and related drivers.
+
+Realtek EC Platforms:
+  status: maintained
+  maintainers:
+    - JasonLin-RealTek
+  files:
+    - boards/realtek/
+    - drivers/*/*rts5912*
+    - dts/bindings/*/*rts5912*
+    - dts/arm/realtek/ec/
+    - soc/realtek/ec/
+  labels:
+    - "platform: Realtek EC"
 
 Renesas SmartBond Platforms:
   status: maintained
@@ -4144,6 +4190,8 @@ TI K3 Platforms:
     - dnltz
   files:
     - boards/ti/*am62*/
+    - drivers/*/*davinci*
+    - drivers/*/*omap*
     - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
     - soc/ti/k3/
@@ -4690,10 +4738,9 @@ West:
 "West project: cmsis_6":
   status: maintained
   maintainers:
-    - ithinuel
+    - wearyzen
   collaborators:
     - tomi-font
-    - wearyzen
   files: []
   labels:
     - "area: CMSIS_6"
@@ -4788,6 +4835,7 @@ West:
   status: maintained
   maintainers:
     - kristofer-jonsson-arm
+    - wearyzen
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
@@ -5032,6 +5080,18 @@ West:
   labels:
     - "area: Rust"
 
+"West project: libmctp":
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - nashif
+    - inteljiangwe1
+  files:
+    - samples/modules/mctp/
+  labels:
+    - "area: MCTP"
+
 "West project: libmetal":
   status: odd fixes
   collaborators:
@@ -5102,7 +5162,6 @@ West:
     - d3zd3z
     - ceolin
   collaborators:
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
@@ -5189,6 +5248,8 @@ West:
   status: odd fixes
   collaborators:
     - carlocaione
+    - uLipe
+    - iuliana-prodan
   files:
     - modules/Kconfig.open-amp
   labels:
@@ -5291,7 +5352,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
     - valeriosetti
     - tomi-font
@@ -5311,7 +5371,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
   files: []
   labels:
@@ -5324,7 +5383,6 @@ West:
     - sgrrzhf
   collaborators:
     - carlocaione
-    - ithinuel
     - wearyzen
   files:
     - modules/trusted-firmware-a/
@@ -5337,7 +5395,6 @@ West:
     - d3zd3z
   collaborators:
     - Vge0rge
-    - ithinuel
     - wearyzen
   files: []
   labels:
@@ -5542,6 +5599,7 @@ zbus:
     - cmake/llext-edk.cmake
     - samples/subsys/llext/
     - include/zephyr/llext/
+    - tests/misc/llext-edk/
     - tests/subsys/llext/
     - subsys/llext/
     - doc/services/llext/

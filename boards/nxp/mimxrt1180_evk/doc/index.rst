@@ -120,6 +120,16 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | I3C       | on-chip    | i3c                                 |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| RTWDOG    | on-chip    | rtwdog                              |
++-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1180_evk/mimxrt1180_evk_mimxrt1189_cm33_defconfig`
@@ -143,6 +153,14 @@ The MIMXRT1180 SoC has six pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AON_09   | LPUART1_RX      | UART Console              |
 +---------------+-----------------+---------------------------+
+| GPIO_SD_B1_00 | SPI1_CS0        | spi                       |
++---------------+---------------------------------------------+
+| GPIO_SD_B1_01 | SPI1_CLK        | spi                       |
++---------------+---------------------------------------------+
+| GPIO_SD_B1_02 | SPI1_SDO        | spi                       |
++---------------+---------------------------------------------+
+| GPIO_SD_B1_03 | SPI1_SDI        | spi                       |
++---------------+---------------------------------------------+
 
 System Clock
 ============
@@ -171,18 +189,19 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 Configuring a Debug Probe
 =========================
 
+LinkServer is the default runner for this board.
 A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`mcu-link-cmsis-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
+configured by default to use the :ref:`mcu-link-cmsis-onboard-debug-probe`.
+The :ref:`pyocd-debug-host-tools` do not yet support programming the
+external flashes on this board. Use one of the other supported debug probes
+below.
 
 .. _Using J-Link RT1180:
 
 Using J-Link
 ------------
 
-Please ensure used JLINK above V7.94g and jumper JP5 installed if using
+Please ensure to use a version of JLINK above V7.94g and jumper JP5 is installed if using
 external jlink plus on J37 as debugger.
 
 When debugging cm33 core, need to ensure the SW5 on "0100" mode.
@@ -200,7 +219,7 @@ EVK.
 Using Linkserver
 ----------------
 
-Please ensure used linkserver above V1.5.30 and jumper JP5 uninstalled.
+Please ensure to use a version of Linkserver above V1.5.30 and jumper JP5 is uninstalled (default setting).
 
 When debugging cm33 core, need to ensure the SW5 on "0100" mode.
 When debugging cm7 core, need to ensure the SW5 on "0001" mode.

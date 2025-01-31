@@ -45,6 +45,12 @@
 	};
 };
 
+&i2c6 {
+	status = "okay";
+	pinctrl-0 = <&i2c6_scl_default &i2c6_sda_default>;
+	pinctrl-names = "default";
+};
+
 &uart2 {
 	status = "okay";
 	pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;

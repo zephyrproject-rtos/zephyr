@@ -27,7 +27,8 @@ config POSIX_SHARED_MEMORY_OBJECTS
 
 config POSIX_MAPPED_FILES
 	bool "POSIX memory-mapped files"
-	imply MMU
+	# disable Xtensa for now until linker issues are resolved
+	imply MMU if (CPU_HAS_MMU && !XTENSA)
 	help
 	  Select 'y' here and Zephyr will provide support for mmap(), msync(), and munmap().
 
@@ -48,7 +49,7 @@ config POSIX_MEMLOCK
 
 config POSIX_MEMLOCK_RANGE
 	bool "POSIX range memory locking"
-	imply MMU
+	imply MMU if (CPU_HAS_MMU && ARCH_HAS_DEMAND_PAGING)
 	imply DEMAND_PAGING
 	help
 	  Select 'y' here and Zephyr will provide support for mlock() and munlock().

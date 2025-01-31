@@ -32,6 +32,14 @@ config UART_NRFX_UARTE_LEGACY_SHIM
 	bool "Legacy UARTE shim"
 	depends on UART_NRFX_UARTE
 	default y
+	help
+	  Disabling this option is deprecated.
+
+config DEPRECATED_UART_NRFX_UARTE_LEGACY_SHIM
+	bool
+	default y if !UART_NRFX_UARTE_LEGACY_SHIM
+	depends on UART_NRFX_UARTE
+	select DEPRECATED
 
 config UART_NRFX_UARTE_ENHANCED_RX
 	bool "Enhanced RX handling"
@@ -101,6 +109,11 @@ rsource "Kconfig.nrfx_uart_instance"
 endif
 
 if HAS_HW_NRF_UARTE120
+
+config UART_NRFX_UARTE_USE_CLOCK_CONTROL
+	def_bool y
+	select CLOCK_CONTROL
+
 nrfx_uart_num = 120
 rsource "Kconfig.nrfx_uart_instance"
 endif

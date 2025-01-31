@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Google LLC.
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +41,8 @@
 			interrupts = <21 0>;
 			clocks = <&gclk 0x1d>, <&pm 0x20 14>;
 			clock-names = "GCLK", "PM";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -49,6 +52,8 @@
 			interrupts = <15 0>;
 			clocks = <&gclk 26>, <&pm 0x20 8>;
 			clock-names = "GCLK", "PM";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <4>;
@@ -61,6 +66,8 @@
 			interrupts = <16 0>;
 			clocks = <&gclk 26>, <&pm 0x20 9>;
 			clock-names = "GCLK", "PM";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <2>;
@@ -73,6 +80,8 @@
 			interrupts = <17 0>;
 			clocks = <&gclk 27>, <&pm 0x20 10>;
 			clock-names = "GCLK", "PM";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			channels = <2>;
@@ -85,53 +94,83 @@
 	interrupts = <25 0>;
 	clocks = <&gclk 33>, <&pm 0x20 18>;
 	clock-names = "GCLK", "PM";
+	atmel,assigned-clocks = <&gclk 0>;
+	atmel,assigned-clock-names = "GCLK";
+};
+
+&rtc {
+	clocks = <&gclk 4>, <&pm 0x18 5>;
+	clock-names = "GCLK", "PM";
+	atmel,assigned-clocks = <&gclk 4>;
+	atmel,assigned-clock-names = "GCLK";
 };
 
 &sercom0 {
 	interrupts = <9 0>;
 	clocks = <&gclk 0x14>, <&pm 0x20 2>;
 	clock-names = "GCLK", "PM";
+	atmel,assigned-clocks = <&gclk 0>;
+	atmel,assigned-clock-names = "GCLK";
 };
 
 &sercom1 {
 	interrupts = <10 0>;
 	clocks = <&gclk 0x15>, <&pm 0x20 3>;
 	clock-names = "GCLK", "PM";
+	atmel,assigned-clocks = <&gclk 0>;
+	atmel,assigned-clock-names = "GCLK";
 };
 
 &sercom2 {
 	interrupts = <11 0>;
 	clocks = <&gclk 0x16>, <&pm 0x20 4>;
 	clock-names = "GCLK", "PM";
+	atmel,assigned-clocks = <&gclk 0>;
+	atmel,assigned-clock-names = "GCLK";
 };
 
 &sercom3 {
 	interrupts = <12 0>;
 	clocks = <&gclk 0x17>, <&pm 0x20 5>;
 	clock-names = "GCLK", "PM";
+	atmel,assigned-clocks = <&gclk 0>;
+	atmel,assigned-clock-names = "GCLK";
 };
 
 &sercom4 {
 	interrupts = <13 0>;
 	clocks = <&gclk 0x18>, <&pm 0x20 6>;
 	clock-names = "GCLK", "PM";
+	atmel,assigned-clocks = <&gclk 0>;
+	atmel,assigned-clock-names = "GCLK";
 };
 
 &sercom5 {
 	interrupts = <14 0>;
 	clocks = <&gclk 0x19>, <&pm 0x20 7>;
 	clock-names = "GCLK", "PM";
+	atmel,assigned-clocks = <&gclk 0>;
+	atmel,assigned-clock-names = "GCLK";
 };
 
 &tc4 {
 	interrupts = <19 0>;
 	clocks = <&gclk 0x1c>, <&pm 0x20 12>;
 	clock-names = "GCLK", "PM";
+	atmel,assigned-clocks = <&gclk 0>;
+	atmel,assigned-clock-names = "GCLK";
 };
 
 &adc {
-	clocks = <&gclk 0x1e>, <&pm 0x20 16>;
-	clock-names = "GCLK", "PM";
 	interrupts = <23 0>;
 	interrupt-names = "resrdy";
+	clocks = <&gclk 0x1e>, <&pm 0x20 16>;
+	clock-names = "GCLK", "PM";
+	/*
+	 * 2.1 MHz is ADC max clock
+	 * 8 MHz GCLK / 4 = 2 MHz
+	 * Generator 3: DFLL48M / 8MHz
+	 */
+	atmel,assigned-clocks = <&gclk 3>;
+	atmel,assigned-clock-names = "GCLK";
 };

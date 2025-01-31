@@ -27,6 +27,7 @@
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 		zephyr,canbus = &flexcan0;
+		zephyr,code-cpu1-partition = &cpu1_partition;
 	};
 
 	aliases{
@@ -49,6 +50,10 @@
 &sram0 {
 	compatible = "mmio-sram";
 	reg = <0x20000000 DT_SIZE_K(320)>;
+};
+
+&mbox {
+	status = "okay";
 };
 
 &gpio4 {
@@ -129,6 +134,15 @@
 
 &w25q64jvssiq {
 	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_M(8)>;
+		};
+	};
 };
 
 &dac0 {
@@ -182,7 +196,7 @@
 
 zephyr_udc0: &usb1 {
 	status = "okay";
-	phy_handle = <&usbphy1>;
+	phy-handle = <&usbphy1>;
 };
 
 &usbphy1 {
@@ -217,5 +231,12 @@ zephyr_udc0: &usb1 {
 };
 
 &sc_timer {
+	status = "okay";
+};
+
+&sai1 {
+	status = "okay";
+};
+&sai0 {
 	status = "okay";
 };

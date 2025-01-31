@@ -97,7 +97,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
-			vbatts_pins = <2 3 4>;
+			vbatts-pins = <2 3 4>;
 			status = "disabled";
 		};
 
@@ -277,6 +277,10 @@
 			#size-cells = <1>;
 			interrupts = <49 1>, <50 1>;
 			interrupt-names = "frdyi", "fiferr";
+			reserved-area-num = <33>;
+			block-32kb-linear-end = <68>;
+			block-32kb-dual-low-end = <36>;
+			block-32kb-dual-high-end = <106>;
 		};
 
 		adc0: adc@40332000 {

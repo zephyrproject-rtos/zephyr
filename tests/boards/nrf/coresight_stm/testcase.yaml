@@ -2,7 +2,7 @@ sample:
   name: Logging using Coresight STM on nrf54h20
 
 common:
-  tags: stm
+  tags: coresight_stm
   sysbuild: true
   platform_allow:
     - nrf54h20dk/nrf54h20/cpuapp
@@ -16,7 +16,7 @@ tests:
     harness_config:
       pytest_dut_scope: session
       pytest_root:
-        - "pytest/test_stm.py::test_STM_dictionary_mode"
+        - "$ZEPHYR_BASE/samples/boards/nordic/coresight_stm/pytest/test_stm.py::test_STM_dictionary_mode"
     required_snippets:
       - nordic-log-stm-dict
     extra_args:
@@ -29,7 +29,7 @@ tests:
     harness_config:
       pytest_dut_scope: session
       pytest_root:
-        - "pytest/test_stm.py::test_STM_decoded"
+        - "$ZEPHYR_BASE/samples/boards/nordic/coresight_stm/pytest/test_stm.py::test_STM_decoded"
     required_snippets:
       - nordic-log-stm
     extra_args:

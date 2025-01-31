@@ -29,7 +29,7 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 
 void *_Preserve_flags _mwget_tls(void)
 {
-	return (void *)(arch_current_thread()->tls);
+	return (void *)(_current->tls);
 }
 
 #else

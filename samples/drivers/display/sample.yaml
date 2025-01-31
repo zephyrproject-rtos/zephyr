@@ -61,7 +61,9 @@ tests:
   sample.display.rk043fn02h_ct:
     platform_allow:
       - mimxrt1064_evk
-      - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1060_evk@A/mimxrt1062/qspi
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
       - mimxrt1050_evk/mimxrt1052/hyperflash
       - mimxrt1040_evk
     integration_platforms:
@@ -106,4 +108,5 @@ tests:
       - platform:mimxrt1040_evk/mimxrt1042:SHIELD=rk043fn66hs_ctg
       - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxn236/mcxn236:SHIELD=lcd_par_s035_8080
+      - platform:frdm_mcxa156/mcxa156:SHIELD=lcd_par_s035_8080
       - platform:ek_ra8d1:SHIELD=rtkmipilcdb00000be

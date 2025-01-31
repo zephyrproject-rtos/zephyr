@@ -485,6 +485,11 @@ static inline void net_stats_update_tc_sent_pkt(struct net_if *iface, uint8_t tc
 	UPDATE_STAT(iface, stats.tc.sent[tc].pkts++);
 }
 
+static inline void net_stats_update_tc_sent_dropped(struct net_if *iface, uint8_t tc)
+{
+	UPDATE_STAT(iface, stats.tc.sent[tc].dropped++);
+}
+
 static inline void net_stats_update_tc_sent_bytes(struct net_if *iface,
 						  uint8_t tc, size_t bytes)
 {
@@ -586,6 +591,11 @@ static inline void net_stats_update_tc_recv_pkt(struct net_if *iface, uint8_t tc
 	UPDATE_STAT(iface, stats.tc.recv[tc].pkts++);
 }
 
+static inline void net_stats_update_tc_recv_dropped(struct net_if *iface, uint8_t tc)
+{
+	UPDATE_STAT(iface, stats.tc.recv[tc].dropped++);
+}
+
 static inline void net_stats_update_tc_recv_bytes(struct net_if *iface,
 						  uint8_t tc, size_t bytes)
 {
@@ -598,12 +608,61 @@ static inline void net_stats_update_tc_recv_priority(struct net_if *iface,
 	UPDATE_STAT(iface, stats.tc.recv[tc].priority = priority);
 }
 #else
-#define net_stats_update_tc_sent_pkt(iface, tc)
-#define net_stats_update_tc_sent_bytes(iface, tc, bytes)
-#define net_stats_update_tc_sent_priority(iface, tc, priority)
-#define net_stats_update_tc_recv_pkt(iface, tc)
-#define net_stats_update_tc_recv_bytes(iface, tc, bytes)
-#define net_stats_update_tc_recv_priority(iface, tc, priority)
+static inline void net_stats_update_tc_sent_pkt(struct net_if *iface, uint8_t tc)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tc);
+}
+
+static inline void net_stats_update_tc_sent_dropped(struct net_if *iface, uint8_t tc)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tc);
+}
+
+static inline void net_stats_update_tc_sent_bytes(struct net_if *iface,
+						  uint8_t tc, size_t bytes)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tc);
+	ARG_UNUSED(bytes);
+}
+
+static inline void net_stats_update_tc_sent_priority(struct net_if *iface,
+						     uint8_t tc, uint8_t priority)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tc);
+	ARG_UNUSED(priority);
+}
+
+static inline void net_stats_update_tc_recv_pkt(struct net_if *iface, uint8_t tc)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tc);
+}
+
+static inline void net_stats_update_tc_recv_dropped(struct net_if *iface, uint8_t tc)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tc);
+}
+
+static inline void net_stats_update_tc_recv_bytes(struct net_if *iface,
+						  uint8_t tc, size_t bytes)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tc);
+	ARG_UNUSED(bytes);
+}
+
+static inline void net_stats_update_tc_recv_priority(struct net_if *iface,
+						     uint8_t tc, uint8_t priority)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tc);
+	ARG_UNUSED(priority);
+}
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS) && \
 	defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_NATIVE)

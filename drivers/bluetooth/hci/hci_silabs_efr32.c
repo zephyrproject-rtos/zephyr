@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/bluetooth.h>
+#include <zephyr/kernel.h>
 
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
@@ -21,23 +22,32 @@ struct hci_data {
 	bt_hci_recv_t recv;
 };
 
-#define SL_BT_CONFIG_ACCEPT_LIST_SIZE				1
-#define SL_BT_CONFIG_MAX_CONNECTIONS				1
-#define SL_BT_CONFIG_USER_ADVERTISERS				1
-#define SL_BT_CONTROLLER_BUFFER_MEMORY				CONFIG_BT_SILABS_EFR32_BUFFER_MEMORY
-#define SL_BT_CONTROLLER_LE_BUFFER_SIZE_MAX			CONFIG_BT_BUF_ACL_TX_COUNT
-#define SL_BT_CONTROLLER_COMPLETED_PACKETS_THRESHOLD		1
-#define SL_BT_CONTROLLER_COMPLETED_PACKETS_EVENTS_TIMEOUT	3
-#define SL_BT_SILABS_LL_STACK_SIZE				1024
+#if defined(CONFIG_BT_MAX_CONN)
+#define MAX_CONN CONFIG_BT_MAX_CONN
+#else
+#define MAX_CONN 0
+#endif
 
-static K_KERNEL_STACK_DEFINE(slz_ll_stack, SL_BT_SILABS_LL_STACK_SIZE);
+#if defined(CONFIG_BT_CTLR_RL_SIZE)
+#define CTLR_RL_SIZE CONFIG_BT_CTLR_RL_SIZE
+#else
+#define CTLR_RL_SIZE 0
+#endif
+
+static K_KERNEL_STACK_DEFINE(slz_ll_stack, CONFIG_BT_SILABS_EFR32_ACCEPT_LINK_LAYER_STACK_SIZE);
 static struct k_thread slz_ll_thread;
+
+static K_KERNEL_STACK_DEFINE(slz_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
+static struct k_thread slz_rx_thread;
 
 /* Semaphore for Link Layer */
 K_SEM_DEFINE(slz_ll_sem, 0, 1);
 
 /* Events mask for Link Layer */
 static atomic_t sli_btctrl_events;
+
+/* FIFO for received HCI packets */
+static struct k_fifo slz_rx_fifo;
 
 /* FIXME: these functions should come from the SiSDK headers! */
 void BTLE_LL_EventRaise(uint32_t events);
@@ -61,6 +71,82 @@ void rail_isr_installer(void)
 	IRQ_CONNECT(AGC_IRQn, 0, AGC_IRQHandler, NULL, 0);
 }
 
+static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8_t *params,
+				   int16_t params_len)
+{
+	switch (hdr->evt) {
+	case BT_HCI_EVT_LE_META_EVENT: {
+		struct bt_hci_evt_le_meta_event *meta_evt = (void *)params;
+
+		if (params_len < sizeof(*meta_evt)) {
+			return false;
+		}
+		params += sizeof(*meta_evt);
+		params_len -= sizeof(*meta_evt);
+
+		switch (meta_evt->subevent) {
+		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+			return true;
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT: {
+			struct bt_hci_evt_le_ext_advertising_report *evt = (void *)params;
+
+			if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+				return false;
+			}
+
+			if (params_len < sizeof(*evt) + sizeof(*evt->adv_info)) {
+				return false;
+			}
+
+			/* Never discard if the event could be part of a multi-part report event,
+			 * because the missing part could confuse the BT host.
+			 */
+			return (evt->num_reports == 1) &&
+			       ((evt->adv_info[0].evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0);
+		}
+		default:
+			return false;
+		}
+	}
+	default:
+		return false;
+	}
+}
+
+static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const int16_t len)
+{
+	struct net_buf *buf;
+	bool discardable;
+	const struct bt_hci_evt_hdr *hdr = (void *)data;
+	const uint8_t *params = &data[sizeof(*hdr)];
+	const int16_t params_len = len - sizeof(*hdr);
+
+	if (len < sizeof(*hdr)) {
+		LOG_ERR("Event header is missing");
+		return NULL;
+	}
+
+	discardable = slz_is_evt_discardable(hdr, params, params_len);
+	buf = bt_buf_get_evt(hdr->evt, discardable, discardable ? K_NO_WAIT : K_FOREVER);
+	if (!buf) {
+		LOG_DBG("Discardable buffer pool full, ignoring event");
+		return buf;
+	}
+
+	net_buf_add_mem(buf, data, len);
+
+	return buf;
+}
+
+static struct net_buf *slz_bt_recv_acl(const uint8_t *data, const int16_t len)
+{
+	struct net_buf *buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+
+	net_buf_add_mem(buf, data, len);
+
+	return buf;
+}
+
 /**
  * @brief Transmit HCI message using the currently used transport layer.
  * The HCI calls this function to transmit a full HCI message.
@@ -70,33 +156,36 @@ void rail_isr_installer(void)
  */
 uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct hci_data *hci = dev->data;
 	struct net_buf *buf;
-	uint8_t packet_type = data[0];
-	uint8_t event_code;
+	uint8_t packet_type;
 
 	LOG_HEXDUMP_DBG(data, len, "host packet data:");
 
+	if (len < 1) {
+		LOG_ERR("HCI packet type is missing");
+		return -EINVAL;
+	}
+
+	packet_type = data[0];
 	/* drop packet type from the frame buffer - it is no longer needed */
-	data = &data[1];
+	data += 1;
 	len -= 1;
 
 	switch (packet_type) {
 	case BT_HCI_H4_EVT:
-		event_code = data[0];
-		buf = bt_buf_get_evt(event_code, false, K_FOREVER);
+		buf = slz_bt_recv_evt(data, len);
 		break;
 	case BT_HCI_H4_ACL:
-		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+		buf = slz_bt_recv_acl(data, len);
 		break;
 	default:
 		LOG_ERR("Unknown HCI type: %d", packet_type);
 		return -EINVAL;
 	}
 
-	net_buf_add_mem(buf, data, len);
-	hci->recv(dev, buf);
+	if (buf) {
+		k_fifo_put(&slz_rx_fifo, buf);
+	}
 
 	sl_btctrl_hci_transmit_complete(0);
 
@@ -137,7 +226,7 @@ done:
  * or an HCI event to pass upstairs. The BTLE_LL_Process function call will
  * take care of all of them, and add HCI events to the HCI queue when applicable.
  */
-static void slz_thread_func(void *p1, void *p2, void *p3)
+static void slz_ll_thread_func(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
@@ -152,17 +241,40 @@ static void slz_thread_func(void *p1, void *p2, void *p3)
 	}
 }
 
+static void slz_rx_thread_func(void *p1, void *p2, void *p3)
+{
+	const struct device *dev = p1;
+	struct hci_data *hci = dev->data;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+		struct net_buf *buf = k_fifo_get(&slz_rx_fifo, K_FOREVER);
+
+		hci->recv(dev, buf);
+	}
+}
+
 static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 {
 	struct hci_data *hci = dev->data;
 	int ret;
 
-	/* Start RX thread */
-	k_thread_create(&slz_ll_thread, slz_ll_stack,
-			K_KERNEL_STACK_SIZEOF(slz_ll_stack),
-			slz_thread_func, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0,
-			K_NO_WAIT);
+	BUILD_ASSERT(CONFIG_NUM_METAIRQ_PRIORITIES > 0,
+		     "Config NUM_METAIRQ_PRIORITIES must be greater than 0");
+	BUILD_ASSERT(CONFIG_BT_SILABS_EFR32_LL_THREAD_PRIO < CONFIG_NUM_METAIRQ_PRIORITIES,
+		     "Config BT_SILABS_EFR32_LL_THREAD_PRIO must be a meta-IRQ priority");
+
+	k_fifo_init(&slz_rx_fifo);
+
+	k_thread_create(&slz_ll_thread, slz_ll_stack, K_KERNEL_STACK_SIZEOF(slz_ll_stack),
+			slz_ll_thread_func, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_SILABS_EFR32_LL_THREAD_PRIO), 0, K_NO_WAIT);
+
+	k_thread_create(&slz_rx_thread, slz_rx_stack, K_KERNEL_STACK_SIZEOF(slz_rx_stack),
+			slz_rx_thread_func, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
 	rail_isr_installer();
 	sl_rail_util_pa_init();
@@ -172,13 +284,18 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	sl_btctrl_disable_coded_phy();
 
 	/* sl_btctrl_init_mem returns the number of memory buffers allocated */
-	ret = sl_btctrl_init_mem(SL_BT_CONTROLLER_BUFFER_MEMORY);
+	ret = sl_btctrl_init_mem(CONFIG_BT_SILABS_EFR32_BUFFER_MEMORY);
 	if (!ret) {
 		LOG_ERR("Failed to allocate memory %d", ret);
 		return -ENOMEM;
 	}
 
-	sl_btctrl_configure_le_buffer_size(SL_BT_CONTROLLER_LE_BUFFER_SIZE_MAX);
+	sl_btctrl_configure_le_buffer_size(CONFIG_BT_BUF_ACL_TX_COUNT);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+		sl_btctrl_allocate_resolving_list_memory(CTLR_RL_SIZE);
+		sl_btctrl_init_privacy();
+	}
 
 	ret = sl_btctrl_init_ll();
 	if (ret) {
@@ -186,50 +303,34 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 		goto deinit;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		sl_btctrl_init_adv();
-	}
-	if (IS_ENABLED(CONFIG_BT_CENTRAL) || IS_ENABLED(CONFIG_BT_OBSERVER)) {
-		sl_btctrl_init_scan();
-	}
-	if (IS_ENABLED(CONFIG_BT_CONN)) {
-		sl_btctrl_init_conn();
-	}
+	sl_btctrl_init_adv();
+	sl_btctrl_init_scan();
+	sl_btctrl_init_conn();
 	sl_btctrl_init_phy();
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
-		if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-			sl_btctrl_init_adv_ext();
-		}
-		if (IS_ENABLED(CONFIG_BT_CENTRAL) || IS_ENABLED(CONFIG_BT_OBSERVER)) {
-			sl_btctrl_init_scan_ext();
-		}
+		sl_btctrl_init_adv_ext();
+		sl_btctrl_init_scan_ext();
 	}
 
-	ret = sl_btctrl_init_basic(SL_BT_CONFIG_MAX_CONNECTIONS,
-			SL_BT_CONFIG_USER_ADVERTISERS,
-			SL_BT_CONFIG_ACCEPT_LIST_SIZE);
+	ret = sl_btctrl_init_basic(MAX_CONN, CONFIG_BT_SILABS_EFR32_USER_ADVERTISERS + MAX_CONN,
+				   CONFIG_BT_SILABS_EFR32_ACCEPT_LIST_SIZE);
 	if (ret) {
 		LOG_ERR("Failed to initialize the controller %d", ret);
 		goto deinit;
 	}
 
 	sl_btctrl_configure_completed_packets_reporting(
-		SL_BT_CONTROLLER_COMPLETED_PACKETS_THRESHOLD,
-		SL_BT_CONTROLLER_COMPLETED_PACKETS_EVENTS_TIMEOUT);
+		CONFIG_BT_SILABS_EFR32_COMPLETED_PACKETS_THRESHOLD,
+		CONFIG_BT_SILABS_EFR32_COMPLETED_PACKETS_TIMEOUT);
 
 	sl_bthci_init_upper();
 	sl_btctrl_hci_parser_init_default();
-	if (IS_ENABLED(CONFIG_BT_CONN)) {
-		sl_btctrl_hci_parser_init_conn();
-	}
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) || IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		sl_btctrl_hci_parser_init_adv();
-	}
+	sl_btctrl_hci_parser_init_conn();
+	sl_btctrl_hci_parser_init_adv();
 	sl_btctrl_hci_parser_init_phy();
 
-#ifdef CONFIG_PM
-	{
+	if (IS_ENABLED(CONFIG_PM)) {
 		RAIL_ConfigSleep(BTLE_LL_GetRadioHandle(), RAIL_SLEEP_CONFIG_TIMERSYNC_ENABLED);
 		RAIL_Status_t status = RAIL_InitPowerManager();
 
@@ -240,7 +341,10 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 			goto deinit;
 		}
 	}
-#endif
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+		sl_btctrl_hci_parser_init_privacy();
+	}
 
 	hci->recv = recv;
 

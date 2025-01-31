@@ -46,7 +46,7 @@ extern "C" {
  */
 static inline void wr8(uint32_t address, uint8_t data)
 {
-	ft8xx_wr8(address, data);
+	ft8xx_wr8(DEVICE_DT_GET_ONE(ftdi_ft800), address, data);
 }
 
 /**
@@ -57,7 +57,7 @@ static inline void wr8(uint32_t address, uint8_t data)
  */
 static inline void wr16(uint32_t address, uint16_t data)
 {
-	ft8xx_wr16(address, data);
+	ft8xx_wr16(DEVICE_DT_GET_ONE(ftdi_ft800), address, data);
 }
 
 /**
@@ -68,7 +68,7 @@ static inline void wr16(uint32_t address, uint16_t data)
  */
 static inline void wr32(uint32_t address, uint32_t data)
 {
-	ft8xx_wr32(address, data);
+	ft8xx_wr32(DEVICE_DT_GET_ONE(ftdi_ft800), address, data);
 }
 
 /**
@@ -80,7 +80,7 @@ static inline void wr32(uint32_t address, uint32_t data)
  */
 static inline uint8_t rd8(uint32_t address)
 {
-	return ft8xx_rd8(address);
+	return ft8xx_rd8(DEVICE_DT_GET_ONE(ftdi_ft800), address);
 }
 
 /**
@@ -92,7 +92,7 @@ static inline uint8_t rd8(uint32_t address)
  */
 static inline uint16_t rd16(uint32_t address)
 {
-	return ft8xx_rd16(address);
+	return ft8xx_rd16(DEVICE_DT_GET_ONE(ftdi_ft800), address);
 }
 
 /**
@@ -104,7 +104,7 @@ static inline uint16_t rd16(uint32_t address)
  */
 static inline uint32_t rd32(uint32_t address)
 {
-	return ft8xx_rd32(address);
+	return ft8xx_rd32(DEVICE_DT_GET_ONE(ftdi_ft800), address);
 }
 
 
@@ -152,7 +152,7 @@ static inline uint32_t rd32(uint32_t address)
  */
 static inline void cmd(uint32_t command)
 {
-	ft8xx_copro_cmd(command);
+	ft8xx_copro_cmd(DEVICE_DT_GET_ONE(ftdi_ft800), command);
 }
 
 /**
@@ -160,7 +160,7 @@ static inline void cmd(uint32_t command)
  */
 static inline void cmd_dlstart(void)
 {
-	ft8xx_copro_cmd_dlstart();
+	ft8xx_copro_cmd_dlstart(DEVICE_DT_GET_ONE(ftdi_ft800));
 }
 
 /**
@@ -168,7 +168,7 @@ static inline void cmd_dlstart(void)
  */
 static inline void cmd_swap(void)
 {
-	ft8xx_copro_cmd_swap();
+	ft8xx_copro_cmd_swap(DEVICE_DT_GET_ONE(ftdi_ft800));
 }
 
 /**
@@ -191,7 +191,7 @@ static inline void cmd_text(int16_t x,
 			   uint16_t options,
 			   const char *s)
 {
-	ft8xx_copro_cmd_text(x, y, font, options, s);
+	ft8xx_copro_cmd_text(DEVICE_DT_GET_ONE(ftdi_ft800), x, y, font, options, s);
 }
 
 /**
@@ -218,7 +218,7 @@ static inline void cmd_number(int16_t x,
 			     uint16_t options,
 			     int32_t n)
 {
-	ft8xx_copro_cmd_number(x, y, font, options, n);
+	ft8xx_copro_cmd_number(DEVICE_DT_GET_ONE(ftdi_ft800), x, y, font, options, n);
 }
 
 /**
@@ -234,7 +234,7 @@ static inline void cmd_number(int16_t x,
  */
 static inline void cmd_calibrate(uint32_t *result)
 {
-	ft8xx_copro_cmd_calibrate(result);
+	ft8xx_copro_cmd_calibrate(DEVICE_DT_GET_ONE(ftdi_ft800), result);
 }
 
 

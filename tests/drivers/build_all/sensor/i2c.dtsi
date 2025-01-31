@@ -480,6 +480,7 @@ test_i2c_tmp116: tmp116@47 {
 	compatible = "ti,tmp116";
 	reg = <0x47>;
 	odr = <TMP116_DT_ODR_125_MS>;
+	oversampling = <TMP116_DT_OVERSAMPLING_32>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {
@@ -650,6 +651,13 @@ test_i2c_akm09918c: akm09918c@5f {
 	reg = <0x5f>;
 };
 
+test_i2c_wsen_tids_2521020222501: wsen_tids_2521020222501@60 {
+	compatible = "we,wsen-tids-2521020222501";
+	reg = <0x60>;
+	interrupt-gpios = <&test_gpio 0 0>;
+	odr = <25>;
+};
+
 test_i2c_vl53l1x: vl53l1x@61 {
 	compatible = "st,vl53l1x";
 	reg = <0x61>;
@@ -675,6 +683,12 @@ test_i2c_s11059: s11059@64 {
 	compatible = "hamamatsu,s11059";
 	reg = <0x64>;
 	integration-time = <546000>;
+};
+
+test_i2c_wsen_pdus_25131308XXXXX: wsen_pdus_25131308XXXXX@65 {
+	compatible = "we,wsen-pdus-25131308XXXXX";
+	reg = <0x65>;
+	sensor-type = < 4 >;
 };
 
 test_i2c_veml7700: veml7700@66 {
@@ -1149,6 +1163,12 @@ test_i2c_npm2100: npm2100@9f {
 	};
 };
 
+test_i2c_mlx90394: mlx90394@a0 {
+	compatible = "melexis,mlx90394";
+	status = "okay";
+	reg = <0xa0>;
+};
+
 test_i2c_scd40: scd40@a1 {
 	compatible = "sensirion,scd40";
 	reg = <0xa1>;
@@ -1200,4 +1220,21 @@ test_i2c_lis2duxs12: lis2duxs12@a7 {
 	odr = <LIS2DUX12_DT_ODR_100Hz>;
 	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
 	status = "okay";
+};
+
+test_i2c_tmag3001: tmag3001@a8 {
+	compatible = "ti,tmag3001";
+	status = "okay";
+	reg = <0xa8>;
+	int-gpios = <&test_gpio 15 1>;
+	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
+	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
+};
+
+test_i2c_tmp435: tmp435@a9 {
+	compatible = "ti,tmp435";
+	reg = <0xa9>;
+	external-channel;
+	resistance-correction;
+	beta-compensation = <0x0f>;
 };

@@ -15,7 +15,7 @@ CPU and the following devices:
 - Cortex-M System Design Kit GPIO
 - Cortex-M System Design Kit UART
 
-.. image:: img/mps2_an521.jpg
+.. image:: img/mps2.jpg
      :align: center
      :alt: ARM MPS2+ AN521
 

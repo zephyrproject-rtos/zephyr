@@ -8,7 +8,6 @@ ram: 128
 flash: 128
 toolchain:
   - zephyr
-  - xtools
 testing:
   default: true
   ignore_tags:

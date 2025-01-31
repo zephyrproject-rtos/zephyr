@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Google LLC.
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,7 +78,7 @@
 		};
 
 		pm: pm@40000400 {
-			compatible = "atmel,samd2x-pm";
+			compatible = "atmel,sam0-mclk";
 			reg = <0x40000400 0x400>;
 			interrupts = <0 0>;
 
@@ -85,10 +86,11 @@
 		};
 
 		gclk: gclk@40000c00 {
-			compatible = "atmel,samd2x-gclk";
+			compatible = "atmel,sam0-gclk";
 			reg = <0x40000c00 0x400>;
 
 			#clock-cells = <1>;
+			#atmel,assigned-clock-cells = <1>;
 		};
 
 		eic: eic@40001800 {
@@ -188,8 +190,6 @@
 			reg = <0x40001400 0x1C>;
 			interrupts = <3 0>;
 			status = "disabled";
-
-			clock-generator = <0>;
 		};
 
 		adc: adc@42004000 {
@@ -199,11 +199,6 @@
 
 			#io-channel-cells = <1>;
 
-			/*
-			 * 2.1 MHz max, so clock it with the
-			 * 8 MHz GCLK / 4 = 2 MHz
-			 */
-			gclk = <3>;
 			prescaler = <4>;
 		};
 

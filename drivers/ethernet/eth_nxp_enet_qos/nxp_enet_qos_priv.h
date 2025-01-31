@@ -85,13 +85,20 @@ struct nxp_enet_qos_hw_info {
 	uint16_t max_frame_len;
 };
 
+enum mac_address_source {
+	NXP_ENET_QOS_MAC_ADDR_SOURCE_LOCAL,
+	NXP_ENET_QOS_MAC_ADDR_SOURCE_RANDOM,
+	NXP_ENET_QOS_MAC_ADDR_SOURCE_UNIQUE,
+	NXP_ENET_QOS_MAC_ADDR_SOURCE_INVALID,
+};
+
 struct nxp_enet_qos_mac_config {
 	const struct device *enet_dev;
 	const struct device *phy_dev;
 	enet_qos_t *base;
 	struct nxp_enet_qos_hw_info hw_info;
 	void (*irq_config_func)(void);
-	bool random_mac;
+	enum mac_address_source mac_addr_source;
 };
 
 struct nxp_enet_qos_tx_data {

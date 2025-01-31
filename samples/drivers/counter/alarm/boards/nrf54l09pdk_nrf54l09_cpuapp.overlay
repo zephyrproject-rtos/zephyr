@@ -1,0 +1,9 @@
+/ {
+	chosen {
+		counter = &timer24;
+	};
+};
+
+&timer24 {
+	status = "okay";
+};

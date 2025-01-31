@@ -116,7 +116,7 @@ config BT_STM32WB0
 	  ST STM32WB0 HCI Bluetooth interface
 
 config BT_SILABS_EFR32
-	bool
+	bool "Silabs EFR32 HCI driver"
 	default y
 	depends on DT_HAS_SILABS_BT_HCI_EFR32_ENABLED
 	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
@@ -136,6 +136,7 @@ config BT_SILABS_EFR32
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
+source "drivers/bluetooth/hci/Kconfig.silabs"
 
 config BT_USERCHAN
 	bool
@@ -154,6 +155,7 @@ config BT_ESP32
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
+	select HAS_BT_CTLR
 	help
 	  Espressif HCI bluetooth interface
 
@@ -293,17 +295,9 @@ config BT_DRV_RX_STACK_SIZE
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default HCI_NXP_RX_STACK_SIZE if HCI_NXP_RX_THREAD
-	default 256
+	default 512
 	help
 	  Stack size for the HCI driver's RX thread.
-
-config BT_SILABS_EFR32_BUFFER_MEMORY
-	int "Silicon Labs Bluetooth Library memory buffer size"
-	depends on BT_SILABS_EFR32
-	default 6144
-	help
-	  Select the size of allocated memory buffer for the Silicon Labs
-	  Bluetooth Library.
 
 config BT_H4_NXP_CTLR
 	bool "NXP Bluetooth Controller"

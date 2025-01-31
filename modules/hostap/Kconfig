@@ -24,11 +24,8 @@ config WIFI_NM_WPA_SUPPLICANT
 if WIFI_NM_WPA_SUPPLICANT
 
 config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
-	def_int 85000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && !MBEDTLS_ENABLE_HEAP
-	def_int 85000 if WIFI_NM_HOSTAPD_AP
-	def_int 40000 if WIFI_NM_WPA_SUPPLICANT_AP
-	# 8192 for MbedTLS heap
-	def_int 21808 if MBEDTLS_ENABLE_HEAP
+	def_int 66560 if WIFI_NM_HOSTAPD_AP
+	def_int 41808 if WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	# 30K is mandatory, but might need more for long duration use cases
 	def_int 30000
 
@@ -75,6 +72,15 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 	  available levels and functions for emitting the messages. Note that
 	  runtime filtering can also be configured in addition to the compile-time
 	  filtering.
+
+if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
+# hostap debug is very verbose and despite large log buffer sizes
+# log messages can be lost. So, we set the log mode to immediate
+# to avoid losing any debug messages.
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
+endif # WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
 
 # Memory optimizations
 config WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
@@ -272,7 +278,6 @@ config WIFI_NM_WPA_SUPPLICANT_EAPOL
 
 config WIFI_NM_WPA_SUPPLICANT_CLI
 	bool "CLI support for wpa_supplicant"
-	default n
 
 config WIFI_NM_WPA_SUPPLICANT_INF_MON
 	bool "Monitor the net mgmt event to add/del interface"
@@ -510,17 +515,13 @@ config WPA_CRYPTO
 config WPA_SUPP_CRYPTO
 	bool
 
-config ROBUST_AV
+config NO_ROBUST_AV
 	bool
-	default y
-	depends on WIFI_NM_WPA_SUPPLICANT_ROBUST_AV
 
-config RRM
+config NO_RRM
 	bool
-	default y
-	depends on WIFI_NM_WPA_SUPPLICANT_RRM
 
-config WMM_AC
+config NO_WMM_AC
 	bool
 
 config DPP

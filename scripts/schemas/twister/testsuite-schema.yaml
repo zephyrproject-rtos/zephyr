@@ -89,6 +89,11 @@ schema;scenario-schema:
       required: false
       sequence:
         - type: str
+    "integration_toolchains":
+      type: seq
+      required: false
+      sequence:
+        - type: str
     "ignore_faults":
       type: bool
       required: false
@@ -125,6 +130,11 @@ schema;scenario-schema:
           type: str
           enum: ["function", "class", "module", "package", "session"]
           required: false
+        "ctest_args":
+          type: seq
+          required: false
+          sequence:
+            - type: str
         "regex":
           type: seq
           required: false
@@ -141,8 +151,13 @@ schema;scenario-schema:
           required: false
           mapping:
             "regex":
-              type: str
+              type: seq
               required: true
+              sequence:
+                - type: str
+            "merge":
+              type: bool
+              required: false
             "as_json":
               type: seq
               required: false

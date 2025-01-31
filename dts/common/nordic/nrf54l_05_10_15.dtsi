@@ -27,7 +27,7 @@
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			device_type = "cpu";
-			clock-frequency = <DT_FREQ_M(128)>;
+			clocks = <&hfpll>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			itm: itm@e0000000 {
@@ -41,7 +41,7 @@
 			compatible = "nordic,vpr";
 			reg = <1>;
 			device_type = "cpu";
-			clock-frequency = <DT_FREQ_M(128)>;
+			clocks = <&hfpll>;
 			riscv,isa = "rv32emc";
 			nordic,bus-width = <32>;
 		};
@@ -185,7 +185,7 @@
 				cc-num = <6>;
 				max-bit-width = <32>;
 				interrupts = <85 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(128)>;
+				clocks = <&hfpll>;
 				prescaler = <0>;
 			};
 
@@ -214,7 +214,7 @@
 				cc-num = <8>;
 				max-bit-width = <32>;
 				interrupts = <133 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(32)>;
+				clocks = <&hfxo>;
 				prescaler = <0>;
 			};
 

@@ -50,6 +50,7 @@ jobs:
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
+      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
     steps:
       - name: Print cloud service information
         run: |
@@ -159,7 +160,7 @@ jobs:
           fi
 
       - if: github.event_name == 'schedule'
-        name: Run Tests with Twister (Daily)
+        name: Run Tests with Twister (Weekly)
         id: run_twister_sched
         run: |
           export ZEPHYR_BASE=${PWD}

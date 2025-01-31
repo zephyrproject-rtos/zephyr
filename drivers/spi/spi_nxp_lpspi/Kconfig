@@ -1,0 +1,51 @@
+# Copyright 2018, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCUX_LPSPI
+	bool "NXP LPSPI peripheral"
+	default y
+	depends on DT_HAS_NXP_LPSPI_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable support for NXP LPSPI.
+
+if SPI_MCUX_LPSPI
+
+if !SPI_RTIO
+config SPI_MCUX_LPSPI_DMA
+	bool "MCUX LPSPI SPI DMA Support"
+	select DMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas)
+	help
+	  Enable the SPI DMA mode for SPI instances
+	  that enable dma channels in their device tree node.
+
+config SPI_MCUX_LPSPI_NORMAL
+	bool "NXP MCUX LPSPI driver"
+	default y
+	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas) || !SPI_MCUX_LPSPI_DMA
+	help
+	  Use the traditional (non-RTIO) SPI driver for NXP LPSPI.
+endif # !SPI_RTIO
+
+if SPI_RTIO
+config SPI_MCUX_LPSPI_RTIO
+	bool "NXP MCUX LPSPI RTIO based driver"
+	default y
+	help
+	  Use the RTIO-based SPI driver for the NXP LPSPI.
+
+config SPI_MCUX_RTIO_SQ_SIZE
+	int "number of available submission queue entries"
+	default 8 # sensible default that covers most common spi transactions
+	help
+	  when rtio is use with spi each driver holds a context with which blocking
+	  api calls use to perform spi transactions. this queue needs to be as deep
+	  as the longest set of spi_buf_sets used, where normal spi operations are
+	  used (equal length buffers). it may need to be slightly deeper where the
+	  spi buffer sets for transmit/receive are not always matched equally in
+	  length as these are transformed into normal transceives.
+endif # SPI_RTIO
+
+endif # SPI_MCUX_LPSPI

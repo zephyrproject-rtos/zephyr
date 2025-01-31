@@ -11,7 +11,7 @@ import string
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from enum import Enum
-from pathlib import Path, PosixPath
+from pathlib import Path
 
 from colorama import Fore
 from twisterlib.statuses import TwisterStatus
@@ -27,6 +27,13 @@ class ReportStatus(str, Enum):
     ERROR = 'error'
     FAIL = 'failure'
     SKIP = 'skipped'
+
+
+class ReportingJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Path):
+            return str(obj)
+        return super().default(obj)
 
 
 class Reporting:
@@ -51,6 +58,7 @@ class Reporting:
         self.outdir = os.path.abspath(env.options.outdir)
         self.instance_fail_count = plan.instance_fail_count
         self.footprint = None
+        self.coverage_status = None
 
 
     @staticmethod
@@ -294,10 +302,6 @@ class Reporting:
         else:
             report_options = self.env.non_default_options()
 
-        # Resolve known JSON serialization problems.
-        for k,v in report_options.items():
-            report_options[k] = str(v) if type(v) in [PosixPath] else v
-
         report = {}
         report["environment"] = {"os": os.name,
                                  "zephyr_version": version,
@@ -357,6 +361,8 @@ class Reporting:
                 suite["used_rom"] = used_rom
 
             suite['retries'] = instance.retries
+            if instance.toolchain:
+                suite['toolchain'] = instance.toolchain
 
             if instance.dut:
                 suite["dut"] = instance.dut
@@ -481,7 +487,7 @@ class Reporting:
 
         report["testsuites"] = suites
         with open(filename, 'w') as json_file:
-            json.dump(report, json_file, indent=4, separators=(',',':'))
+            json.dump(report, json_file, indent=4, separators=(',',':'), cls=ReportingJSONEncoder)
 
 
     def compare_metrics(self, filename):

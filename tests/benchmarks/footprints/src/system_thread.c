@@ -28,12 +28,12 @@ void test_thread_entry(void *p, void *p1, void *p2)
 
 void thread_swap(void *p1, void *p2, void *p3)
 {
-	k_thread_abort(arch_current_thread());
+	k_thread_abort(_current);
 }
 
 void thread_suspend(void *p1, void *p2, void *p3)
 {
-	k_thread_suspend(arch_current_thread());
+	k_thread_suspend(_current);
 }
 
 void thread_yield0(void *p1, void *p2, void *p3)

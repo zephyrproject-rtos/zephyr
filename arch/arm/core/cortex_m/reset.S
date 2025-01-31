@@ -68,13 +68,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_reset)
  */
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
-#if defined(CONFIG_DEBUG_THREAD_INFO)
-    /* Clear z_sys_post_kernel flag for RTOS aware debuggers */
-    movs.n r0, #0
-    ldr r1, =z_sys_post_kernel
-    strb r0, [r1]
-#endif /* CONFIG_DEBUG_THREAD_INFO */
-
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
     /* Reset CONTROL register */
     movs.n r0, #0
@@ -92,6 +85,18 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 #if defined(CONFIG_PM_S2RAM)
     bl arch_pm_s2ram_resume
 #endif /* CONFIG_PM_S2RAM */
+
+    /* Note: Make sure that variables like z_sys_post_kernel
+     *       are set after the call to arch_pm_s2ram_resume
+     *       to avoid any issues with suspend/resume path.
+     *       Refer issue #83660 for more details.
+     */
+#if defined(CONFIG_DEBUG_THREAD_INFO)
+    /* Clear z_sys_post_kernel flag for RTOS aware debuggers */
+    movs.n r0, #0
+    ldr r1, =z_sys_post_kernel
+    strb r0, [r1]
+#endif /* CONFIG_DEBUG_THREAD_INFO */
 
 #if defined(CONFIG_SOC_RESET_HOOK)
     bl soc_reset_hook

@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Amends base properties specifications:
+# - extends property specifications by adding definitions,
+#   e.g. setting a "default:" value
+# - overwrites existing definitions of a property,
+#   e.g. change its "description:"
+# - specify new properties
+#
+# The same kind of amendments are applied to the same properties
+# at each level (binding, child-binding, grandchild-binding).
+#
+# | Definition     | Extended for | Overwritten for |
+# |----------------|--------------|-----------------|
+# | description:   | prop-2       | prop-1          |
+# | required:      |              | prop-enum       |
+# | enum:          | prop-2       |                 |
+# | const:         | prop-1       |                 |
+# | default:       | prop-2       |                 |
+#
+# Non authorized amendments, e.g. changing a "const:" value
+# or downgrading a "required: true" definition are tested separately.
+
+description: Amended description.
+
+include: base.yaml
+
+properties:
+  prop-1:
+    # The including binding is permitted to overwrite a property description.
+    description: Overwritten description.
+    # The including binding is permitted to set a "const:" value.
+    const: 0xf0
+
+  prop-2:
+    # The including binding is permitted to add a property description.
+    description: New description.
+    # The including binding is permitted to limit property values
+    # to an enumeration.
+    enum:
+      - EXT_FOO
+      - EXT_BAR
+    # The including binding is permitted to set a default value.
+    default: EXT_FOO
+
+  # The including binding is permitted to promote a property
+  # to requirement.
+  prop-enum:
+    required: true
+
+  # The including binding is permitted to define a new property.
+  prop-new:
+    type: int
+
+# Same amendments at the child-binding level.
+child-binding:
+  properties:
+    child-prop-1:
+      description: Overwritten description (child).
+      const: 0xf1
+
+    child-prop-2:
+      description: New description (child).
+      enum:
+        - CHILD_EXT_FOO
+        - CHILD_EXT_BAR
+      default: CHILD_EXT_FOO
+
+    child-prop-enum:
+      required: true
+
+    child-prop-new:
+      type: int
+
+  # Same amendments at the grandchild-binding level.
+  child-binding:
+    # Plus amended grandchild-binding description.
+    description: Amended grandchild-binding description.
+
+    properties:
+      grandchild-prop-1:
+        description: Overwritten description (grandchild).
+        const: 0xf2
+
+      grandchild-prop-2:
+        description: New description (grandchild).
+        enum:
+          - GRANDCHILD_EXT_FOO
+          - GRANDCHILD_EXT_BAR
+        default: GRANDCHILD_EXT_FOO
+
+      grandchild-prop-enum:
+        required: true
+
+      grandchild-prop-new:
+        type: int

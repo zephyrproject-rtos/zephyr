@@ -7,7 +7,6 @@ arch: riscv
 ram: 16
 toolchain:
   - zephyr
-  - xtools
 testing:
   default: true
   only_tags:

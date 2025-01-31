@@ -20,7 +20,7 @@ description: |
             #address-cells = <1>;
             #size-cells = <0>;
 
-            poscmp_enable; test_mode; lock_gconf; /* ADI TMC Global configuration flags */
+            poscmp-enable; test-mode; lock-gconf; /* ADI TMC Global configuration flags */
             clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
 
             motor: motor@0 {
@@ -62,11 +62,11 @@ include:
   - name: spi-device.yaml
   - name: adi,trinamic-gconf.yaml
     property-allowlist:
-      - poscmp_enable
+      - poscmp-enable
       - shaft1
       - shaft2
-      - test_mode
-      - lock_gconf
+      - test-mode
+      - lock-gconf
 
 properties:
   "#address-cells":

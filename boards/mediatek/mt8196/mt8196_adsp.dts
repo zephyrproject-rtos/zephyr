@@ -21,10 +21,10 @@
 		reg = <0x90000000 DT_SIZE_M(6)>;
 	};
 
-	dram1: memory@90700000 {
+	dram1: memory@90800000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x90700000 DT_SIZE_M(1)>;
+		reg = <0x90800000 DT_SIZE_M(1)>;
 	};
 
 	soc {
@@ -88,19 +88,23 @@
 			interrupts = <8 0 0>;
 		};
 
-		mbox0: mbox@1a360100 {
+		mbox0: mbox@1a350100 {
 			compatible = "mediatek,mbox";
-			reg = <0x1a360100 16>;
+			reg = <0x1a350100 16>;
 			interrupt-parent = <&intc_g2>;
 			interrupts = <6 0 0>;
 		};
 
-		mbox1: mbox@1a370100 {
+		mbox1: mbox@1a360100 {
 			compatible = "mediatek,mbox";
-			reg = <0x1a370100 16>;
+			reg = <0x1a360100 16>;
 			interrupt-parent = <&intc_g2>;
 			interrupts = <7 0 0>;
 		};
+
+/* Generated code for AFE devices */
+#include "afe-mt8196.dts"
+
 	}; /* soc */
 
 	chosen { };

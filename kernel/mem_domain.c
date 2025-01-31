@@ -299,7 +299,7 @@ void z_mem_domain_init_thread(struct k_thread *thread)
 	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
 
 	/* New threads inherit memory domain configuration from parent */
-	ret = add_thread_locked(arch_current_thread()->mem_domain_info.mem_domain, thread);
+	ret = add_thread_locked(_current->mem_domain_info.mem_domain, thread);
 	__ASSERT_NO_MSG(ret == 0);
 	ARG_UNUSED(ret);
 

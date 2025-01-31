@@ -41,7 +41,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_L2_WIFI_MGMT
   src/wifi_mgmt_scan.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_NRF70_SYSTEM_MODE_COMMON
+zephyr_library_sources_ifdef(CONFIG_NRF70_SYSTEM_MODE
   src/wifi_mgmt.c
 )
 
@@ -73,19 +73,21 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_ON_QSPI
   -DNRF53_ERRATA_159_ENABLE_WORKAROUND=0
 )
 
-target_link_libraries(nrf_wifi PRIVATE nrf70-buslib)
+zephyr_library_link_libraries(nrf70-buslib nrf-wifi-shim)
 
 if (CONFIG_NRF_WIFI_PATCHES_BUILTIN)
   zephyr_blobs_verify(MODULE nrf_wifi REQUIRED)
   # RPU FW patch binaries based on the selected configuration
   if(CONFIG_NRF70_SYSTEM_MODE)
-    set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
+    if (CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
+      set(NRF70_PATCH ${FW_BINS_BASE}/system_with_raw/nrf70.bin)
+    else()
+      set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
+    endif()
   elseif(CONFIG_NRF70_RADIO_TEST)
     set(NRF70_PATCH ${FW_BINS_BASE}/radio_test/nrf70.bin)
   elseif(CONFIG_NRF70_SCAN_ONLY)
     set(NRF70_PATCH ${FW_BINS_BASE}/scan_only/nrf70.bin)
-  elseif (CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
-    set(NRF70_PATCH ${FW_BINS_BASE}/system_with_raw/nrf70.bin)
   elseif(CONFIG_NRF70_OFFLOADED_RAW_TX)
     set(NRF70_PATCH ${FW_BINS_BASE}/offloaded_raw_tx/nrf70.bin)
   else()

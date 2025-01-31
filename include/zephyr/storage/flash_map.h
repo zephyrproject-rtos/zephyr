@@ -242,9 +242,9 @@ uint32_t flash_area_align(const struct flash_area *fa);
  * Retrieve info about sectors within the area.
  *
  * @param[in]  fa_id    Given flash area ID
- * @param[out] sectors  buffer for sectors data
  * @param[in,out] count On input Capacity of @p sectors, on output number of
  * sectors Retrieved.
+ * @param[out] sectors  buffer for sectors data
  *
  * @return  0 on success, negative errno code on fail. Especially returns
  * -ENOMEM if There are too many flash pages on the flash_area to fit in the
@@ -257,9 +257,9 @@ int flash_area_get_sectors(int fa_id, uint32_t *count,
  * Retrieve info about sectors within the area.
  *
  * @param[in]  fa       pointer to flash area object.
- * @param[out] sectors  buffer for sectors data
  * @param[in,out] count On input Capacity of @p sectors, on output number of
  * sectors retrieved.
+ * @param[out] sectors  buffer for sectors data
  *
  * @return  0 on success, negative errno code on fail. Especially returns
  * -ENOMEM if There are too many flash pages on the flash_area to fit in the

@@ -4,4 +4,6 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/wsen/wsen_hids_2525020210002/Kconfig"
+source "drivers/sensor/wsen/wsen_pdus_25131308XXXXX/Kconfig"
+source "drivers/sensor/wsen/wsen_tids_2521020222501/Kconfig"
 # zephyr-keep-sorted-stop

@@ -359,10 +359,10 @@ config HAS_MCUX_ADC_ETC
 	  Set if the ADC External Trigger Control module is present
 	  on the SoC.
 
-config HAS_MCUX_XBARA
+config HAS_MCUX_XCACHE
 	bool
 	help
-	  Set if the XBARA module is present on the SoC.
+	  Set if the XCACHE module is present on the SoC.
 
 config HAS_NXP_MONOLITHIC_NBU
 	bool

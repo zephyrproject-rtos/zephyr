@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,7 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
-#include "adltc2990.h"
+#include "adltc2990_internal.h"
 #include "adltc2990_reg.h"
 #include "adltc2990_emul.h"
 

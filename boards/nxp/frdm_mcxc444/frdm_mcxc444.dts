@@ -119,6 +119,12 @@
 	status = "okay";
 };
 
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_adc0>;
+	pinctrl-names = "default";
+};
+
 i2c0: &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_i2c0>;

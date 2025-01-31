@@ -1,0 +1,5 @@
+tests:
+  kernel.deprecated.pipe.api:
+    tags:
+      - kernel
+      - userspace

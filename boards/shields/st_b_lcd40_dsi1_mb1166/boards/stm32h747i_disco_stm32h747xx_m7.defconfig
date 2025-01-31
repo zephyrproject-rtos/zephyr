@@ -11,7 +11,7 @@ config STM32_LTDC_FB_NUM
 config LV_Z_DOUBLE_VDB
 	default y
 
-config LV_Z_VBD_CUSTOM_SECTION
+config LV_Z_VDB_CUSTOM_SECTION
 	default y
 
 config LV_Z_FULL_REFRESH

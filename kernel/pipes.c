@@ -36,7 +36,7 @@ static struct k_obj_type obj_type_pipe;
 #endif /* CONFIG_OBJ_CORE_PIPE */
 
 
-void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
+void z_impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
 	pipe->buffer = buffer;
 	pipe->size = size;
@@ -46,7 +46,7 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	pipe->lock = (struct k_spinlock){};
 	z_waitq_init(&pipe->wait_q.writers);
 	z_waitq_init(&pipe->wait_q.readers);
-	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe);
+	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe, buffer, size);
 
 	pipe->flags = 0;
 
@@ -87,6 +87,15 @@ int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 }
 
 #ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
+{
+	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(buffer, size));
+
+	z_impl_k_pipe_init(pipe, buffer, size);
+}
+#include <zephyr/syscalls/k_pipe_init_mrsh.c>
+
 static inline int z_vrfy_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 {
 	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
@@ -443,11 +452,11 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, const void *data,
 	 * invoked from within an ISR as that is not safe to do.
 	 */
 
-	src_desc = k_is_in_isr() ? &isr_desc : &arch_current_thread()->pipe_desc;
+	src_desc = k_is_in_isr() ? &isr_desc : &_current->pipe_desc;
 
 	src_desc->buffer        = (unsigned char *)data;
 	src_desc->bytes_to_xfer = bytes_to_write;
-	src_desc->thread        = arch_current_thread();
+	src_desc->thread        = _current;
 	sys_dlist_append(&src_list, &src_desc->node);
 
 	*bytes_written = pipe_write(pipe, &src_list,
@@ -488,7 +497,7 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, const void *data,
 
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, put, pipe, timeout);
 
-	arch_current_thread()->base.swap_data = src_desc;
+	_current->base.swap_data = src_desc;
 
 	z_sched_wait(&pipe->lock, key, &pipe->wait_q.writers, timeout, NULL);
 
@@ -581,11 +590,11 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 	 * invoked from within an ISR as that is not safe to do.
 	 */
 
-	dest_desc = k_is_in_isr() ? &isr_desc : &arch_current_thread()->pipe_desc;
+	dest_desc = k_is_in_isr() ? &isr_desc : &_current->pipe_desc;
 
 	dest_desc->buffer = data;
 	dest_desc->bytes_to_xfer = bytes_to_read;
-	dest_desc->thread = arch_current_thread();
+	dest_desc->thread = _current;
 
 	src_desc = (struct _pipe_desc *)sys_dlist_get(&src_list);
 	while (src_desc != NULL) {
@@ -674,7 +683,7 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, get, pipe, timeout);
 
-	arch_current_thread()->base.swap_data = dest_desc;
+	_current->base.swap_data = dest_desc;
 
 	z_sched_wait(&pipe->lock, key, &pipe->wait_q.readers, timeout, NULL);
 

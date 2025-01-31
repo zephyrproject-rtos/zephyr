@@ -127,7 +127,7 @@ session. Here is an example for the :zephyr:code-sample:`hello_world` applicatio
 References
 **********
 
-- `MAX32690 product page`_
+- `MAX32690 solution center`_
 
-.. _MAX32690 product page:
-   https://www.analog.com/en/products/max32690.html
+.. _MAX32690 solution center:
+   https://developer.analog.com/solutions/max32690

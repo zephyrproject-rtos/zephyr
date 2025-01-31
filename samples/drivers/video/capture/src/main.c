@@ -144,9 +144,7 @@ int main(void)
 #endif
 
 	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
-		fmt.pixelformat =
-			video_fourcc(CONFIG_VIDEO_PIXEL_FORMAT[0], CONFIG_VIDEO_PIXEL_FORMAT[1],
-				     CONFIG_VIDEO_PIXEL_FORMAT[2], CONFIG_VIDEO_PIXEL_FORMAT[3]);
+		fmt.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_PIXEL_FORMAT);
 	}
 
 	LOG_INF("- Video format: %c%c%c%c %ux%u", (char)fmt.pixelformat,

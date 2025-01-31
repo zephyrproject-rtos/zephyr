@@ -743,7 +743,8 @@ static int dai_ssp_poll_for_register_delay(uint32_t reg, uint32_t mask,
 					   uint32_t val, uint64_t us)
 {
 	if (!WAIT_FOR((sys_read32(reg) & mask) == val, us, k_busy_wait(1))) {
-		LOG_ERR("poll timeout reg %u mask %u val %u us %u", reg, mask, val, (uint32_t)us);
+		LOG_ERR("poll timeout reg[%#x]=%#x, waited for: mask %#x, val %#x, us %u", reg,
+			sys_read32(reg), mask, val, (uint32_t)us);
 		return -EIO;
 	}
 
@@ -864,7 +865,7 @@ static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 	 /* Set upper slot number from configuration */
 	pcmsycm = pcmsycm | (dp->ssp_plat_data->params.tdm_slots - 1) << 4;
 
-	if (DAI_INTEL_SSP_IS_BIT_SET(cfg->link_config, 15)) {
+	if (IS_BIT_SET(cfg->link_config, 15)) {
 		uint32_t reg_add = dai_ip_base(dp) + 0x1000 * ssp_index + PCMS0CM_OFFSET;
 		/* Program HDA output stream parameters */
 		sys_write16((pcmsycm & 0xffff), reg_add);
@@ -880,7 +881,7 @@ static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 	uint16_t pcmsycm = cfg->link_config;
 	uint8_t slot_count = 0;
 
-	if (DAI_INTEL_SSP_IS_BIT_SET(cfg->link_config, 15)) {
+	if (IS_BIT_SET(cfg->link_config, 15)) {
 		if (blob30->version == SSP_BLOB_VER_3_0) {
 			time_slot_map =
 				blob30->i2s_ssp_config.ssmidytsa[cfg->tdm_slot_group];
@@ -2327,29 +2328,29 @@ static void dai_ssp_start(struct dai_intel_ssp *dp, int direction)
 
 
 	/* enable DMA */
-#if SSP_IP_VER > SSP_IP_VER_2_0
 	if (direction == DAI_DIR_PLAYBACK) {
+		LOG_INF("SSP%d TX", dp->dai_index);
+#if SSP_IP_VER > SSP_IP_VER_2_0
 		dai_ssp_update_bits(dp, SSMODyCS(dp->tdm_slot_group),
 				    SSMODyCS_TSRE, SSMODyCS_TSRE);
 		dai_ssp_update_bits(dp, SSMODyCS(dp->tdm_slot_group),
 				    SSMODyCS_TXEN, SSMODyCS_TXEN);
+#else
+		dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE, SSCR1_TSRE);
+		dai_ssp_update_bits(dp, SSTSA, SSTSA_TXEN, SSTSA_TXEN);
+#endif
 	} else {
+		LOG_INF("SSP%d RX", dp->dai_index);
+#if SSP_IP_VER > SSP_IP_VER_2_0
 		dai_ssp_update_bits(dp, SSMIDyCS(dp->tdm_slot_group),
 				    SSMIDyCS_RSRE, SSMIDyCS_RSRE);
 		dai_ssp_update_bits(dp, SSMIDyCS(dp->tdm_slot_group),
 				    SSMIDyCS_RXEN, SSMIDyCS_RXEN);
-	}
 #else
-	if (direction == DAI_DIR_PLAYBACK) {
-		LOG_INF("SSP%d TX", dp->dai_index);
-		dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE, SSCR1_TSRE);
-		dai_ssp_update_bits(dp, SSTSA, SSTSA_TXEN, SSTSA_TXEN);
-	} else {
-		LOG_INF("SSP%d RX", dp->dai_index);
 		dai_ssp_update_bits(dp, SSCR1, SSCR1_RSRE, SSCR1_RSRE);
 		dai_ssp_update_bits(dp, SSRSA, SSRSA_RXEN, SSRSA_RXEN);
-	}
 #endif
+	}
 
 	dp->state[direction] = DAI_STATE_RUNNING;
 

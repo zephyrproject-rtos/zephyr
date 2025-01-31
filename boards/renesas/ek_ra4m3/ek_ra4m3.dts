@@ -17,9 +17,11 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash1;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -133,5 +135,22 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	interrupts = <87 1>, <88 1>, <89 1>, <90 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&trng {
 	status = "okay";
 };

@@ -44,6 +44,8 @@ extern struct bst_test_list *test_csip_notify_client_install(struct bst_test_lis
 extern struct bst_test_list *test_csip_notify_server_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_gmap_ugg_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_gmap_ugt_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_ccp_call_control_client_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_ccp_call_control_server_install(struct bst_test_list *tests);
 
 bst_test_install_t test_installers[] = {
 	test_vcp_install,
@@ -82,6 +84,8 @@ bst_test_install_t test_installers[] = {
 	test_csip_notify_server_install,
 	test_gmap_ugg_install,
 	test_gmap_ugt_install,
+	test_ccp_call_control_client_install,
+	test_ccp_call_control_server_install,
 	NULL,
 };
 

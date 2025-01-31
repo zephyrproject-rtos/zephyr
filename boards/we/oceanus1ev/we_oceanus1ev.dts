@@ -1,0 +1,145 @@
+/*
+ * Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <we/oceanus1.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Oceanus-I EV";
+	compatible = "we,oceanus1ev";
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		yellow_led: led_1 {
+			gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+			label = "LED_1";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+			label = "LED_2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		wake_up_button: button_0 {
+			label = "/WAKE_UP";
+			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &yellow_led;
+		led1 = &blue_led;
+		sw0 = &wake_up_button;
+		lora0 = &lora;
+		watchdog0 = &iwdg;
+	};
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+			<&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <6>;
+	div-r = <2>;
+	div-q = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	cpu1-prescaler = <1>;
+	ahb3-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <9600>;
+	status = "okay";
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(2)>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(32)>;
+			read-only;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 DT_SIZE_K(108)>;
+		};
+		slot1_partition: partition@23000 {
+			label = "image-1";
+			reg = <0x00023000 DT_SIZE_K(108)>;
+		};
+		storage_partition: partition@3e000 {
+			label = "storage";
+			reg = <0x0003e000 DT_SIZE_K(8)>;
+		};
+	};
+};

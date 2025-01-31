@@ -1,0 +1,10 @@
+# Copyright (c) 2023-2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "${ZEPHYR_BASE}/samples/bluetooth/ccp_call_control_server/Kconfig.sysbuild"
+
+config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
+	int
+	# Let's pass the test arguments to the application MCU test
+	# otherwise by default they would have gone to the net core.
+	default 0 if $(BOARD_TARGET_STRING) = "NRF5340BSIM_NRF5340_CPUAPP"

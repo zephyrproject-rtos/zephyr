@@ -6,7 +6,7 @@
 config TMAG5273
 	bool "TMAG5273/TMAG3001 3D Hall-Effect Sensor"
 	default y
-	depends on DT_HAS_TI_TMAG5273_ENABLED
+	depends on DT_HAS_TI_TMAG5273_ENABLED || DT_HAS_TI_TMAG3001_ENABLED
 	select I2C
 	select GPIO
 	imply CRC

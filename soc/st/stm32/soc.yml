@@ -133,6 +133,10 @@ family:
       cpuclusters:
       - name: m7
       - name: m4
+    - name: stm32h757xx
+      cpuclusters:
+      - name: m7
+      - name: m4
   - name: stm32l0x
     socs:
     - name: stm32l010x4
@@ -182,6 +186,9 @@ family:
   - name: stm32mp1x
     socs:
     - name: stm32mp157cxx
+  - name: stm32n6x
+    socs:
+    - name: stm32n657xx
   - name: stm32u0x
     socs:
     - name: stm32u031xx

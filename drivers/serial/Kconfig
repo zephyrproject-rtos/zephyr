@@ -148,6 +148,12 @@ config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
 	help
 	  Receiver inactivity timeout. It is used to calculate timeout in microseconds.
 
+config UART_SHELL
+	bool "UART Shell commands"
+	depends on SHELL
+	help
+	  UART Shell commands
+
 comment "Serial Drivers"
 
 # zephyr-keep-sorted-start
@@ -181,6 +187,7 @@ rsource "Kconfig.mcux_flexcomm"
 rsource "Kconfig.mcux_iuart"
 rsource "Kconfig.mcux_lpsci"
 rsource "Kconfig.mcux_lpuart"
+rsource "Kconfig.mec5"
 rsource "Kconfig.miv"
 rsource "Kconfig.msp432p4xx"
 rsource "Kconfig.native_posix"
@@ -207,6 +214,8 @@ rsource "Kconfig.rzt2m"
 rsource "Kconfig.sam0"
 rsource "Kconfig.sedi"
 rsource "Kconfig.sifive"
+rsource "Kconfig.silabs_eusart"
+rsource "Kconfig.silabs_usart"
 rsource "Kconfig.smartbond"
 rsource "Kconfig.stellaris"
 rsource "Kconfig.stm32"
@@ -223,5 +232,7 @@ rsource "Kconfig.xmc4xxx"
 source "drivers/serial/Kconfig.si32"
 
 source "drivers/serial/Kconfig.wch_usart"
+
+source "drivers/serial/Kconfig.realtek_rts5912"
 
 endif # SERIAL

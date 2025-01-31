@@ -32,8 +32,8 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 	const struct device *dev = user_data;
 	const struct lvgl_pointer_input_config *cfg = dev->config;
 	struct lvgl_pointer_input_data *data = dev->data;
-	lv_disp_t *disp = lv_disp_get_default();
-	struct lvgl_disp_data *disp_data = disp->driver->user_data;
+	lv_display_t *disp = lv_display_get_default();
+	struct lvgl_disp_data *disp_data = (struct lvgl_disp_data *)lv_display_get_user_data(disp);
 	struct display_capabilities *cap = &disp_data->cap;
 	lv_point_t *point = &data->common_data.pending_event.point;
 
@@ -54,7 +54,7 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 		break;
 	case INPUT_BTN_TOUCH:
 		data->common_data.pending_event.state =
-			evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+			evt->value ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 		break;
 	}
 

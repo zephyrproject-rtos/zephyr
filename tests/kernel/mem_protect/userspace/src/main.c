@@ -312,7 +312,7 @@ ZTEST_USER(userspace, test_read_kernram)
 
 	set_fault(K_ERR_CPU_EXCEPTION);
 
-	p = arch_current_thread()->init_data;
+	p = _current->init_data;
 	printk("%p\n", p);
 	zassert_unreachable("Read from kernel RAM did not fault");
 }
@@ -327,7 +327,7 @@ ZTEST_USER(userspace, test_write_kernram)
 	/* Try to write to kernel RAM. */
 	set_fault(K_ERR_CPU_EXCEPTION);
 
-	arch_current_thread()->init_data = NULL;
+	_current->init_data = NULL;
 	zassert_unreachable("Write to kernel RAM did not fault");
 }
 
@@ -664,8 +664,6 @@ ZTEST(userspace, test_user_mode_enter)
 
 /* Define and initialize pipe. */
 K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
-K_APP_BMEM(default_part) static size_t bytes_written_read;
-
 /**
  * @brief Test to write to kobject using pipe
  *
@@ -679,8 +677,7 @@ ZTEST_USER(userspace, test_write_kobject_user_pipe)
 	 */
 	set_fault(K_ERR_KERNEL_OOPS);
 
-	k_pipe_get(&kpipe, &test_revoke_sem, BYTES_TO_READ_WRITE,
-		   &bytes_written_read, 1, K_NO_WAIT);
+	k_pipe_read(&kpipe, (uint8_t *)&test_revoke_sem, BYTES_TO_READ_WRITE, K_NO_WAIT);
 
 	zassert_unreachable("System call memory write validation "
 			    "did not fault");
@@ -699,8 +696,7 @@ ZTEST_USER(userspace, test_read_kobject_user_pipe)
 	 */
 	set_fault(K_ERR_KERNEL_OOPS);
 
-	k_pipe_put(&kpipe, &test_revoke_sem, BYTES_TO_READ_WRITE,
-		   &bytes_written_read, 1, K_NO_WAIT);
+	k_pipe_write(&kpipe, (uint8_t *)&test_revoke_sem, BYTES_TO_READ_WRITE, K_NO_WAIT);
 
 	zassert_unreachable("System call memory read validation "
 			    "did not fault");
@@ -1038,11 +1034,11 @@ ZTEST(userspace, test_tls_leakage)
 	 * supervisor mode to be leaked
 	 */
 
-	memset(arch_current_thread()->userspace_local_data, 0xff,
+	memset(_current->userspace_local_data, 0xff,
 	       sizeof(struct _thread_userspace_local_data));
 
 	k_thread_user_mode_enter(tls_leakage_user_part,
-				 arch_current_thread()->userspace_local_data, NULL, NULL);
+				 _current->userspace_local_data, NULL, NULL);
 #else
 	ztest_test_skip();
 #endif

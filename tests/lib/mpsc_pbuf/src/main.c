@@ -1294,5 +1294,28 @@ ZTEST(log_buffer, test_utilization)
 	zassert_true(packet == NULL);
 }
 
+/* Make sure that `mpsc_pbuf_alloc()` works in spinlock-held context when buf is not available */
+ZTEST(log_buffer, test_alloc_in_spinlock)
+{
+	struct mpsc_pbuf_buffer buffer;
+	struct test_data_var *packet;
+	struct k_spinlock l = {0};
+
+	init(&buffer, 32, false);
+
+	/* Allocate all available buffer */
+	packet = (struct test_data_var *)mpsc_pbuf_alloc(
+		&buffer, 32, K_MSEC(10));
+	zassert_not_null(packet);
+
+	K_SPINLOCK(&l) {
+		/* Try to allocate another buf */
+		packet = (struct test_data_var *)mpsc_pbuf_alloc(
+			&buffer, 32, K_MSEC(10));
+		/* No buf is available this time */
+		zassert_is_null(packet);
+	}
+}
+
 /*test case main entry*/
 ZTEST_SUITE(log_buffer, NULL, NULL, NULL, NULL, NULL);

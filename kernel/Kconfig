@@ -12,6 +12,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config MULTITHREADING
 	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y
+	select RING_BUFFER
 	help
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
@@ -211,7 +212,7 @@ config THREAD_ABORT_NEED_CLEANUP
 	bool
 	help
 	  This option enables the bits to clean up the current thread if
-	  k_thread_abort(arch_current_thread()) is called, as the cleanup cannot be
+	  k_thread_abort(_current) is called, as the cleanup cannot be
 	  running in the current thread stack.
 
 config THREAD_CUSTOM_DATA
@@ -713,6 +714,7 @@ config EVENTS
 
 config PIPES
 	bool "Pipe objects"
+	select DEPRECATED
 	help
 	  This option enables kernel pipes. A pipe is a kernel object that
 	  allows a thread to send a byte stream to another thread. Pipes can
@@ -720,6 +722,9 @@ config PIPES
 
 	  Note that setting this option slightly increases the size of the
 	  thread structure.
+	  This Kconfig is deprecated and will be removed, by disabling this
+	  kconfig another implementation of k_pipe will be available when
+	  CONFIG_MULTITHREADING is enabled.
 
 config KERNEL_MEM_POOL
 	bool "Use Kernel Memory Pool"

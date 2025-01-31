@@ -72,7 +72,7 @@ GDATA(_sw_isr_table)
 GTEXT(__soc_is_irq)
 #endif
 GTEXT(__soc_handle_irq)
-GTEXT(_Fault)
+GTEXT(z_riscv_fault)
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
@@ -299,7 +299,7 @@ is_fp:	/* Process the FP trap and quickly return from exception */
 	mv a0, sp
 	tail z_riscv_fpu_trap
 2:
-no_fp:	/* increment arch_current_thread()->arch.exception_depth */
+no_fp:	/* increment _current->arch.exception_depth */
 	lr t0, ___cpu_t_current_OFFSET(s0)
 	lb t1, _thread_offset_to_exception_depth(t0)
 	add t1, t1, 1
@@ -336,7 +336,7 @@ no_fp:	/* increment arch_current_thread()->arch.exception_depth */
 
 	/*
 	 * If the exception is the result of an ECALL, check whether to
-	 * perform a context-switch or an IRQ offload. Otherwise call _Fault
+	 * perform a context-switch or an IRQ offload. Otherwise call z_riscv_fault
 	 * to report the exception.
 	 */
 	csrr t0, mcause
@@ -375,15 +375,15 @@ no_fp:	/* increment arch_current_thread()->arch.exception_depth */
 #endif /* CONFIG_USERSPACE */
 
 	/*
-	 * Call _Fault to handle exception.
+	 * Call z_riscv_fault to handle exception.
 	 * Stack pointer is pointing to a struct_arch_esf structure, pass it
-	 * to _Fault (via register a0).
-	 * If _Fault shall return, set return address to
+	 * to z_riscv_fault (via register a0).
+	 * If z_riscv_fault shall return, set return address to
 	 * no_reschedule to restore stack.
 	 */
 	mv a0, sp
 	la ra, no_reschedule
-	tail _Fault
+	tail z_riscv_fault
 
 is_kernel_syscall:
 	/*
@@ -726,7 +726,7 @@ no_reschedule:
 	mv a0, sp
 	call z_riscv_fpu_exit_exc
 
-	/* decrement arch_current_thread()->arch.exception_depth */
+	/* decrement _current->arch.exception_depth */
 	lr t0, ___cpu_t_current_OFFSET(s0)
 	lb t1, _thread_offset_to_exception_depth(t0)
 	add t1, t1, -1

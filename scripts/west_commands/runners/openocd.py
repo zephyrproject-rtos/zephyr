@@ -44,8 +44,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for openocd.'''
 
     def __init__(self, cfg, pre_init=None, reset_halt_cmd=DEFAULT_OPENOCD_RESET_HALT_CMD,
-                 pre_load=None, load_cmd=None, verify_cmd=None, post_verify=None,
-                 do_verify=False, do_verify_only=False,
+                 pre_load=None, erase_cmd=None, load_cmd=None, verify_cmd=None,
+                 post_verify=None, do_verify=False, do_verify_only=False, do_erase=False,
                  tui=None, config=None, serial=None, use_elf=None,
                  no_halt=False, no_init=False, no_targets=False,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
@@ -93,11 +93,13 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.pre_init = pre_init or []
         self.reset_halt_cmd = reset_halt_cmd
         self.pre_load = pre_load or []
+        self.erase_cmd = erase_cmd
         self.load_cmd = load_cmd
         self.verify_cmd = verify_cmd
         self.post_verify = post_verify or []
         self.do_verify = do_verify or False
         self.do_verify_only = do_verify_only or False
+        self.do_erase = do_erase or False
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
@@ -120,7 +122,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'}, rtt=True)
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
+                          rtt=True, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -142,6 +145,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--cmd-pre-load', action='append',
                             help='''Command to run before flashing;
                             may be given multiple times''')
+        parser.add_argument('--cmd-erase', action='append',
+                            help='''Command to erase device; may be given multiple times''')
         parser.add_argument('--cmd-load',
                             help='''Command to load/flash binary
                             (required when flashing)''')
@@ -191,9 +196,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         return OpenOcdBinaryRunner(
             cfg,
             pre_init=args.cmd_pre_init, reset_halt_cmd=args.cmd_reset_halt,
-            pre_load=args.cmd_pre_load, load_cmd=args.cmd_load,
+            pre_load=args.cmd_pre_load, erase_cmd=args.cmd_erase, load_cmd=args.cmd_load,
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
-            do_verify=args.verify, do_verify_only=args.verify_only,
+            do_verify=args.verify, do_verify_only=args.verify_only, do_erase=args.erase,
             tui=args.tui, config=args.config, serial=args.serial,
             use_elf=args.use_elf, no_halt=args.no_halt, no_init=args.no_init,
             no_targets=args.no_targets, tcl_port=args.tcl_port,
@@ -222,7 +227,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         out = self.check_output([self.openocd_cmd[0], '--version'],
                                 stderr=subprocess.STDOUT).decode()
 
-        version_match = re.search(r"Open On-Chip Debugger (\d+.\d+.\d+)", out)
+        version_match = re.search(r"Open On-Chip Debugger v?(\d+.\d+.\d+)", out)
         version = version_match.group(1).split('.')
 
         return [to_num(i) for i in version]
@@ -285,8 +290,20 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
         load_image = []
         if not self.do_verify_only:
-            load_image = ['-c', self.reset_halt_cmd,
-                          '-c', self.load_cmd + ' ' + hex_name]
+            # Halt target
+            load_image = ['-c', self.reset_halt_cmd]
+            # Perform any erase operations
+            if self.do_erase:
+                if self.erase_cmd is None:
+                    self.logger.error('--erase not supported for target without --cmd-erase')
+                    return
+                for erase_cmd in self.erase_cmd:
+                    load_image += ["-c", erase_cmd]
+                # Trim the "erase" from "flash write_image erase" since a mass erase is already done
+                if self.load_cmd.endswith(' erase'):
+                    self.load_cmd = self.load_cmd[:-6]
+            # Load image
+            load_image +=['-c', self.load_cmd + ' ' + hex_name]
 
         verify_image = []
         if self.do_verify or self.do_verify_only:

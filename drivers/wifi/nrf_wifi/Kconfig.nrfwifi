@@ -40,8 +40,6 @@ config NRF70_QSPI_LOW_POWER
 
 choice NRF70_OPER_MODES
 	bool "nRF70 operating modes"
-	default NRF70_SYSTEM_WITH_RAW_MODES if !WIFI_NRF7000 && \
-		(NRF70_RAW_DATA_TX || NRF70_RAW_DATA_RX || NRF70_PROMISC_DATA_RX)
 	default NRF70_SYSTEM_MODE if !WIFI_NRF7000
 	default NRF70_SCAN_ONLY if WIFI_NRF7000
 	help
@@ -65,17 +63,14 @@ config NRF70_RADIO_TEST
 config NRF70_OFFLOADED_RAW_TX
 	bool "Offloaded raw TX mode of the nRF70 driver"
 
-config NRF70_SYSTEM_WITH_RAW_MODES
-	bool "nRF70 system mode with raw modes"
-	depends on WIFI_NRF7002 || WIFI_NRF7001
-	select WIFI_NM_WPA_SUPPLICANT
-	help
-	  Select this option to enable system mode of the nRF70 driver with raw modes.
 endchoice
 
-config NRF70_SYSTEM_MODE_COMMON
-	bool
-	default y if NRF70_SYSTEM_MODE || NRF70_SYSTEM_WITH_RAW_MODES
+config NRF70_SYSTEM_WITH_RAW_MODES
+	bool "nRF70 system mode with raw modes"
+	depends on NRF70_SYSTEM_MODE
+	default y if (NRF70_RAW_DATA_TX || NRF70_RAW_DATA_RX || NRF70_PROMISC_DATA_RX)
+	help
+	  Select this option to enable system mode of the nRF70 driver with raw modes.
 
 config NET_L2_ETHERNET
 	default y if (!NRF70_RADIO_TEST && !NRF70_OFFLOADED_RAW_TX)
@@ -86,7 +81,7 @@ config HEAP_MEM_POOL_ADD_SIZE_NRF70
 	def_int 25000 if NRF70_SCAN_ONLY
 	def_int 150000
 
-if NRF70_SYSTEM_MODE || NRF70_SYSTEM_WITH_RAW_MODES
+if NRF70_SYSTEM_MODE
 config NRF70_STA_MODE
 	bool "nRF70 STA mode"
 	default y
@@ -100,7 +95,7 @@ config NRF70_AP_MODE
 
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
-endif # NRF70_SYSTEM_MODE || NRF70_SYSTEM_WITH_RAW_MODES
+endif # NRF70_SYSTEM_MODE
 
 config NRF70_RAW_DATA_TX
 	bool "RAW TX data path in the driver"
@@ -118,7 +113,7 @@ config NRF70_PROMISC_DATA_RX
 
 config NRF70_DATA_TX
 	bool "TX data path in the driver"
-	default y if NRF70_SYSTEM_MODE || NRF70_SYSTEM_WITH_RAW_MODES
+	default y if NRF70_SYSTEM_MODE
 
 config NRF_WIFI_IF_AUTO_START
 	bool "Wi-Fi interface auto start on boot"
@@ -174,18 +169,6 @@ source "subsys/logging/Kconfig.template.log_config"
 config WIFI_NRF70_LOG_LEVEL
 	# Enable error by default
 	default 1
-
-config NRF70_ON_QSPI
-	def_bool DT_HAS_NORDIC_NRF7002_QSPI_ENABLED || \
-			 DT_HAS_NORDIC_NRF7001_QSPI_ENABLED || \
-			 DT_HAS_NORDIC_NRF7000_QSPI_ENABLED
-	select NRFX_QSPI
-
-config NRF70_ON_SPI
-	def_bool DT_HAS_NORDIC_NRF7002_SPI_ENABLED || \
-			 DT_HAS_NORDIC_NRF7001_SPI_ENABLED || \
-			 DT_HAS_NORDIC_NRF7000_SPI_ENABLED
-	select SPI
 
 config NRF70_2_4G_ONLY
 	def_bool y if WIFI_NRF7001
@@ -561,6 +544,12 @@ config NET_TC_TX_COUNT
 
 endif # NETWORKING
 
+# nRF70 now uses variable buffers as default to optimize RAM usage. Default pool sizes are used, samples/apps can override
+# for higher performance.
+choice NET_PKT_DATA_ALLOC_TYPE
+	default NET_BUF_VARIABLE_DATA_SIZE
+endchoice
+
 config MAIN_STACK_SIZE
 	default 4096
 
@@ -802,6 +791,7 @@ config NRF70_PASSIVE_SCAN_ONLY
 	help
 	  Enable this configuration to force passive scan on all channels.
 	  This will override application-specified scan type.
+
 config NRF_WIFI_DISPLAY_SCAN_BSS_LIMIT
 	# Display scan BSS entries limit
 	# By default, the limit is 250 in scan-only mode and 150 in regular mode.
@@ -812,4 +802,10 @@ config NRF_WIFI_DISPLAY_SCAN_BSS_LIMIT
 	def_int 150
 	help
 	  Number of BSS entries in scan result.
+
+config NRF_WIFI_COEX_DISABLE_PRIORITY_WINDOW_FOR_SCAN
+	bool "Force disable priority window for scan in the case of coexistence with Short Range radio"
+	help
+	  Enable this configuration to disable priority window for scan
+	  in the case of coexistence with Short Range radio.
 endif # WIFI_NRF70

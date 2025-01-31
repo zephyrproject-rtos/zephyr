@@ -13,8 +13,8 @@ flash: 256
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
+  - adc
   - counter
   - flash
   - gpio

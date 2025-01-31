@@ -9,7 +9,6 @@ ram: 4096
 flash: 2048
 toolchain:
   - zephyr
-  - xtools
 supported:
   - netif
 testing:

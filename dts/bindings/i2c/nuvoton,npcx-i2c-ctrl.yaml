@@ -12,3 +12,11 @@ properties:
     required: true
   clocks:
     required: true
+  smb-wui:
+    type: phandle
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and SMB module.
+
+        For example the WUI mapping on SMB 4 module would be
+           smb-wui = <&wui_smb4>;

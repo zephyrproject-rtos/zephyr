@@ -1,3 +1,6 @@
+# Copyright (c) 2020-2025, Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
 identifier: sam4l_ek
 name: SAM4L-EK
 type: mcu
@@ -5,7 +8,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 flash: 256
 ram: 32
 supported:
@@ -17,4 +19,5 @@ supported:
   - spi
   - uart
   - usb_device
+  - watchdog
 vendor: atmel

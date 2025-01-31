@@ -614,6 +614,11 @@ struct net_traffic_class {
 	/** Fifo for handling this Tx or Rx packet */
 	struct k_fifo fifo;
 
+#if NET_TC_COUNT > 1 || defined(CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO)
+	/** Semaphore for tracking the available slots in the fifo */
+	struct k_sem fifo_slot;
+#endif
+
 	/** Traffic class handler thread */
 	struct k_thread handler;
 
@@ -3269,7 +3274,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
 		       NET_IF_GET_NAME(dev_id, sfx)[_num_configs]	\
-		       __used __in_section(_net_if, static,		\
+		       __used __noasan __in_section(_net_if, static,	\
 					   dev_id) = {			\
 		[0 ... (_num_configs - 1)] = {				\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\

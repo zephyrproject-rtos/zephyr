@@ -7,7 +7,6 @@ type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
-  - xtools
   - zephyr
 sysbuild: true
 ram: 512
@@ -15,4 +14,5 @@ flash: 449
 supported:
   - counter
   - gpio
+  - i2c
   - watchdog

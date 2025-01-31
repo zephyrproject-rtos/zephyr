@@ -68,6 +68,14 @@ config SOC_STM32H755XX_M7
 	bool
 	select SOC_SERIES_STM32H7X
 
+config SOC_STM32H757XX_M4
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H757XX_M7
+	bool
+	select SOC_SERIES_STM32H7X
+
 config SOC_STM32H7A3XX
 	bool
 	select SOC_SERIES_STM32H7X
@@ -110,3 +118,4 @@ config SOC
 	default "stm32h750xx" if SOC_STM32H750XX
 	default "stm32h753xx" if SOC_STM32H753XX
 	default "stm32h755xx" if SOC_STM32H755XX_M7 || SOC_STM32H755XX_M4
+	default "stm32h757xx" if SOC_STM32H757XX_M7 || SOC_STM32H757XX_M4

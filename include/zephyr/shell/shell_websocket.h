@@ -62,8 +62,8 @@ struct shell_websocket {
 };
 
 extern const struct shell_transport_api shell_websocket_transport_api;
-extern int shell_websocket_setup(int ws_socket, void *user_data);
-extern int shell_websocket_enable(const struct shell *sh);
+int shell_websocket_setup(int ws_socket, struct http_request_ctx *request_ctx, void *user_data);
+int shell_websocket_enable(const struct shell *sh);
 
 #define GET_WS_NAME(_service) ws_ctx_##_service
 #define GET_WS_SHELL_NAME(_name) shell_websocket_##_name
@@ -121,6 +121,7 @@ extern int shell_websocket_enable(const struct shell *sh);
 			     SHELL_WEBSOCKET_SERVICE_COUNT,		  \
 			     SHELL_WEBSOCKET_SERVICE_COUNT,		  \
 			     NULL,					  \
+			     NULL,                                        \
 			     _sec_tag_list,				  \
 			     _sec_tag_list_size);			  \
 	DEFINE_WEBSOCKET_SERVICE(_service);				  \
@@ -136,7 +137,7 @@ extern int shell_websocket_enable(const struct shell *sh);
 			    &SHELL_WS_PORT_NAME(_service),		\
 			    SHELL_WEBSOCKET_SERVICE_COUNT,		\
 			    SHELL_WEBSOCKET_SERVICE_COUNT,		\
-			    NULL);					\
+			    NULL, NULL);				\
 	DEFINE_WEBSOCKET_SERVICE(_service)
 
 #endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */

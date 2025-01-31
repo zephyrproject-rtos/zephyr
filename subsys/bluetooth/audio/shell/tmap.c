@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,22 +13,26 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tmap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 {
-	const enum bt_tmap_role role = (BT_TMAP_CG_SUPPORTED ? BT_TMAP_ROLE_CG : 0U) |
-				       (BT_TMAP_CT_SUPPORTED ? BT_TMAP_ROLE_CT : 0U) |
-				       (BT_TMAP_UMS_SUPPORTED ? BT_TMAP_ROLE_UMS : 0U) |
-				       (BT_TMAP_UMR_SUPPORTED ? BT_TMAP_ROLE_UMR : 0U) |
-				       (BT_TMAP_BMS_SUPPORTED ? BT_TMAP_ROLE_BMS : 0U) |
-				       (BT_TMAP_BMR_SUPPORTED ? BT_TMAP_ROLE_BMR : 0U);
+	const enum bt_tmap_role role =
+		(IS_ENABLED(CONFIG_BT_TMAP_CG_SUPPORTED) ? BT_TMAP_ROLE_CG : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_CT_SUPPORTED) ? BT_TMAP_ROLE_CT : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_UMS_SUPPORTED) ? BT_TMAP_ROLE_UMS : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_UMR_SUPPORTED) ? BT_TMAP_ROLE_UMR : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_BMS_SUPPORTED) ? BT_TMAP_ROLE_BMS : 0U) |
+		(IS_ENABLED(CONFIG_BT_TMAP_BMR_SUPPORTED) ? BT_TMAP_ROLE_BMR : 0U);
 	int err;
 
 	shell_info(sh, "Registering TMAS with role: 0x%04X", role);
@@ -46,11 +50,11 @@ static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 static void tmap_discover_cb(enum bt_tmap_role role, struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "tmap discovery (err %d)", err);
+		bt_shell_error("tmap discovery (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "tmap discovered for conn %p: role 0x%04x", conn, role);
+	bt_shell_print("tmap discovered for conn %p: role 0x%04x", conn, role);
 }
 
 static const struct bt_tmap_cb tmap_cb = {
@@ -65,10 +69,6 @@ static int cmd_tmap_discover(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "Not connected");
 
 		return -ENOEXEC;
-	}
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
 	}
 
 	err = bt_tmap_discover(default_conn, &tmap_cb);

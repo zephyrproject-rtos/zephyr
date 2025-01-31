@@ -166,6 +166,7 @@ zephyr_lcdif: &lcdif {
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	tristate-output;
 };
 
 &lpspi3 {

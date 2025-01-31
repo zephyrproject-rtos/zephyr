@@ -34,6 +34,7 @@ config BT_AUDIO_NOTIFY_RETRY_DELAY
 	  available.
 
 rsource "Kconfig.bap"
+rsource "Kconfig.ccp"
 rsource "Kconfig.vocs"
 rsource "Kconfig.aics"
 rsource "Kconfig.vcp"

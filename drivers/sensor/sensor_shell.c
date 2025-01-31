@@ -88,6 +88,7 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_POS_DZ] = "pos_dz",
 	[SENSOR_CHAN_POS_DXYZ] = "pos_dxyz",
 	[SENSOR_CHAN_RPM] = "rpm",
+	[SENSOR_CHAN_FREQUENCY] = "frequency",
 	[SENSOR_CHAN_GAUGE_VOLTAGE] = "gauge_voltage",
 	[SENSOR_CHAN_GAUGE_AVG_CURRENT] = "gauge_avg_current",
 	[SENSOR_CHAN_GAUGE_STDBY_CURRENT] = "gauge_stdby_current",
@@ -106,6 +107,9 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE] = "gauge_design_voltage",
 	[SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE] = "gauge_desired_voltage",
 	[SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT] = "gauge_desired_charging_current",
+	[SENSOR_CHAN_GAME_ROTATION_VECTOR] = "game_rotation_vector",
+	[SENSOR_CHAN_GRAVITY_VECTOR] = "gravity_vector",
+	[SENSOR_CHAN_GBIAS_XYZ] = "gbias_xyz",
 	[SENSOR_CHAN_ALL] = "all",
 };
 
@@ -126,6 +130,8 @@ static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_ALERT] = "alert",
 	[SENSOR_ATTR_FF_DUR] = "ff_dur",
 	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
+	[SENSOR_ATTR_GAIN] = "gain",
+	[SENSOR_ATTR_RESOLUTION] = "resolution",
 };
 
 enum sample_stats_state {
@@ -358,23 +364,6 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 		size_t base_size;
 		size_t frame_size;
 		uint16_t frame_count;
-
-		/* Channels with multi-axis equivalents are skipped */
-		switch (ch.chan_type) {
-		case SENSOR_CHAN_ACCEL_X:
-		case SENSOR_CHAN_ACCEL_Y:
-		case SENSOR_CHAN_ACCEL_Z:
-		case SENSOR_CHAN_GYRO_X:
-		case SENSOR_CHAN_GYRO_Y:
-		case SENSOR_CHAN_GYRO_Z:
-		case SENSOR_CHAN_MAGN_X:
-		case SENSOR_CHAN_MAGN_Y:
-		case SENSOR_CHAN_MAGN_Z:
-		case SENSOR_CHAN_POS_DX:
-		case SENSOR_CHAN_POS_DY:
-		case SENSOR_CHAN_POS_DZ:
-			continue;
-		}
 
 		rc = decoder->get_size_info(ch, &base_size, &frame_size);
 		if (rc != 0) {
@@ -864,7 +853,7 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 static void device_name_get_for_attr(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	current_cmd_ctx = CTX_ATTR_GET_SET;
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
@@ -919,7 +908,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_onoff, trigger_on_off_get);
 
 static void device_name_get_for_trigger(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -931,7 +920,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_trigger, device_name_get_for_trigger);
 
 static void device_name_get_for_stream(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	current_cmd_ctx = CTX_STREAM_ON_OFF;
 	entry->syntax = (dev != NULL) ? dev->name : NULL;

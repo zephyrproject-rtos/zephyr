@@ -87,10 +87,10 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 				= CONTAINER_OF(r, struct k_p4wq_work, rbnode);
 
 			rb_remove(&queue->queue, r);
-			w->thread = arch_current_thread();
+			w->thread = _current;
 			sys_dlist_append(&queue->active, &w->dlnode);
-			set_prio(arch_current_thread(), w);
-			thread_clear_requeued(arch_current_thread());
+			set_prio(_current, w);
+			thread_clear_requeued(_current);
 
 			k_spin_unlock(&queue->lock, k);
 
@@ -101,7 +101,7 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 			/* Remove from the active list only if it
 			 * wasn't resubmitted already
 			 */
-			if (!thread_was_requeued(arch_current_thread())) {
+			if (!thread_was_requeued(_current)) {
 				sys_dlist_remove(&w->dlnode);
 				w->thread = NULL;
 				k_sem_give(&w->done_sem);
@@ -223,9 +223,9 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	item->deadline += k_cycle_get_32();
 
 	/* Resubmission from within handler?  Remove from active list */
-	if (item->thread == arch_current_thread()) {
+	if (item->thread == _current) {
 		sys_dlist_remove(&item->dlnode);
-		thread_set_requeued(arch_current_thread());
+		thread_set_requeued(_current);
 		item->thread = NULL;
 	} else {
 		k_sem_init(&item->done_sem, 0, 1);

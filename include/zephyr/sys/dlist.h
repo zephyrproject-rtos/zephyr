@@ -495,6 +495,29 @@ static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
 /**
  * @brief remove a specific node from a list
  *
+ * Like :c:func:`sys_dlist_remove()`, this routine removes a specific node
+ * from a list. However, unlike :c:func:`sys_dlist_remove()`, this routine
+ * does not re-initialize the removed node. One significant implication of
+ * this difference is that the function :c:func`sys_dnode_is_linked()` will
+ * not work on a dequeued node.
+ *
+ * The list is implicit from the node. The node must be part of a list.
+ * This and other sys_dlist_*() functions are not thread safe.
+ *
+ * @param node the node to dequeue
+ */
+static inline void sys_dlist_dequeue(sys_dnode_t *node)
+{
+	sys_dnode_t *const prev = node->prev;
+	sys_dnode_t *const next = node->next;
+
+	prev->next = next;
+	next->prev = prev;
+}
+
+/**
+ * @brief remove a specific node from a list
+ *
  * The list is implicit from the node. The node must be part of a list.
  * This and other sys_dlist_*() functions are not thread safe.
  *

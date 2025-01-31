@@ -76,8 +76,6 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2,
 	/** EAP PEAP security - Enterprise. */
 	WIFI_SECURITY_TYPE_EAP_PEAP_TLS,
-	/** EAP TLS SHA256 security - Enterprise. */
-	WIFI_SECURITY_TYPE_EAP_TLS_SHA256,
 	/** FT-PSK security */
 	WIFI_SECURITY_TYPE_FT_PSK,
 	/** FT-SAE security */
@@ -110,12 +108,26 @@ enum wifi_eap_type {
 	WIFI_EAP_TYPE_MSCHAPV2 = 26,
 };
 
-/** @brief Enterprise security WPA3 suiteb types. */
-enum wifi_suiteb_type {
-	/** suiteb. */
-	WIFI_SUITEB = 1,
-	/** suiteb-192. */
-	WIFI_SUITEB_192,
+/** @brief WPA3 Enterprise security types.
+ *
+ * See Section#3 in WFA WPA3 specification v3.4:
+ * https://www.wi-fi.org/file/wpa3-specification for details.
+ */
+enum wifi_wpa3_enterprise_type {
+	/** No WPA3 enterprise, either WPA2 Enterprise or personal mode */
+	WIFI_WPA3_ENTERPRISE_NA = 0,
+	/** WPA3 enterprise Suite-B (PMFR + WPA3-Suite-B). */
+	WIFI_WPA3_ENTERPRISE_SUITEB = 1,
+	/** WPA3 enterprise Suite-B-192 (PMFR + WPA3-Suite-B-192). */
+	WIFI_WPA3_ENTERPRISE_SUITEB_192,
+	/** WPA3 enterprise only (PMFR + WPA2-ENT disabled). */
+	WIFI_WPA3_ENTERPRISE_ONLY,
+
+	/** @cond INTERNAL_HIDDEN */
+	__WIFI_WPA3_ENTERPRISE_AFTER_LAST,
+	WIFI_WPA3_ENTERPRISE_MAX = __WIFI_WPA3_ENTERPRISE_AFTER_LAST - 1,
+	WIFI_WPA3_ENTERPRISE_UNKNOWN
+	/** @endcond */
 };
 
 enum wifi_eap_tls_cipher_type {
@@ -177,12 +189,12 @@ struct wifi_eap_cipher_config {
 
 struct wifi_eap_config {
 	/**  Security type. */
-	unsigned int type;
-	/** EPA method type of phase1. */
+	enum wifi_security_type type;
+	/** EAP method type of phase1. */
 	enum wifi_eap_type eap_type_phase1;
-	/** EPA method type of phase2. */
+	/** EAP method type of phase2. */
 	enum wifi_eap_type eap_type_phase2;
-	/** EPA method string. */
+	/** EAP method string. */
 	char *method;
 	/** Phase2 setting string. */
 	char *phase2;
@@ -190,6 +202,9 @@ struct wifi_eap_config {
 
 /** Helper function to get user-friendly security type name. */
 const char *wifi_security_txt(enum wifi_security_type security);
+
+/** Helper function to get user-friendly wpa3 enterprise security type name. */
+const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent);
 
 /** @brief IEEE 802.11w - Management frame protection. */
 enum wifi_mfp_options {

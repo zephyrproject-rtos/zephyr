@@ -119,7 +119,7 @@ static ALWAYS_INLINE void soc_pmc_mck_set_prescaler(uint32_t prescaler)
 	}
 }
 
-#if defined(CONFIG_SOC_SERIES_SAME70) || defined(CONFIG_SOC_SERIES_SAMV71)
+#ifdef CONFIG_SOC_SERIES_SAMX7X
 
 /**
  * @brief Set the divider of the Master clock.
@@ -155,7 +155,7 @@ static ALWAYS_INLINE void soc_pmc_mck_set_divider(uint32_t divider)
 	}
 }
 
-#endif /* CONFIG_SOC_SERIES_SAME70 || CONFIG_SOC_SERIES_SAMV71 */
+#endif /* CONFIG_SOC_SERIES_SAMX7X */
 
 /**
  * @brief Set the source of the Master clock.

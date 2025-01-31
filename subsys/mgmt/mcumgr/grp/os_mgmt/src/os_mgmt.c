@@ -450,7 +450,7 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	struct zcbor_string query = { 0 };
 	size_t decoded;
-	bool ok;
+	bool ok = true;
 	bool has_output = false;
 
 #if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK)
@@ -1053,6 +1053,7 @@ static int os_mgmt_translate_error_code(uint16_t err)
 
 	case OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER:
 	case OS_MGMT_ERR_RTC_NOT_SET:
+	case OS_MGMT_ERR_QUERY_RESPONSE_VALUE_NOT_VALID:
 		rc = MGMT_ERR_ENOENT;
 		break;
 

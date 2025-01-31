@@ -75,6 +75,38 @@ struct sensor_three_axis_data {
 		PRIq_arg((data_).readings[(readings_offset_)].z, 6, (data_).shift)
 
 /**
+ * Data for a sensor channel which reports game rotation vector data. This is used by:
+ * - :c:enum:`SENSOR_CHAN_GAME_ROTATION_VECTOR`
+ */
+struct sensor_game_rotation_vector_data {
+	struct sensor_data_header header;
+	int8_t shift;
+	struct sensor_game_rotation_vector_sample_data {
+		uint32_t timestamp_delta;
+		union {
+			q31_t values[4];
+			q31_t v[4];
+			struct {
+				q31_t x;
+				q31_t y;
+				q31_t z;
+				q31_t w;
+			};
+		};
+	} readings[1];
+};
+
+#define PRIsensor_game_rotation_vector_data PRIu64                                                 \
+	"ns, (%" PRIq(6) ", %" PRIq(6) ", %" PRIq(6)  ", %" PRIq(6) ")"
+
+#define PRIsensor_game_rotation_vector_data_arg(data_, readings_offset_)                           \
+	(data_).header.base_timestamp_ns + (data_).readings[(readings_offset_)].timestamp_delta,   \
+		PRIq_arg((data_).readings[(readings_offset_)].x, 6, (data_).shift),                \
+		PRIq_arg((data_).readings[(readings_offset_)].y, 6, (data_).shift),                \
+		PRIq_arg((data_).readings[(readings_offset_)].z, 6, (data_).shift),                \
+		PRIq_arg((data_).readings[(readings_offset_)].w, 6, (data_).shift)
+
+/**
  * Data from a sensor where we only care about an event occurring. This is used to report triggers.
  */
 struct sensor_occurrence_data {

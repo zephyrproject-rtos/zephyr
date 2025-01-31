@@ -3,7 +3,10 @@ board:
   full_name: V2M MPS2
   vendor: arm
   socs:
+  - name: an383
   - name: an385
+  - name: an386
+  - name: an500
   - name: an521
     variants:
     - name: ns

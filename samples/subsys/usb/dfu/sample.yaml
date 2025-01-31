@@ -8,11 +8,16 @@ common:
     - mimxrt1010_evk
     - mimxrt1020_evk
     - mimxrt1015_evk
-    - mimxrt1060_evk/mimxrt1062/qspi
+    - mimxrt1060_evk@A/mimxrt1062/qspi
+    - mimxrt1060_evk@B/mimxrt1062/qspi
+    - mimxrt1060_evk@C/mimxrt1062/qspi
     - sam4l_ek
+    - same54_xpro
+    - samr21_xpro
     - mimxrt1050_evk/mimxrt1052/hyperflash
     - mimxrt1050_evk/mimxrt1052/qspi
     - mimxrt1060_evk/mimxrt1062/hyperflash
+    - mimxrt1180_evk/mimxrt1189/cm7
     - nucleo_f207zg
     - teensy40
     - teensy41
