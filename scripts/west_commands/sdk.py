@@ -4,6 +4,7 @@
 
 import argparse
 import hashlib
+import io
 import os
 import patoolib
 import platform
@@ -14,6 +15,7 @@ import shutil
 import subprocess
 import tempfile
 import textwrap
+import tqdm
 import zcmake
 from pathlib import Path
 
@@ -313,10 +315,41 @@ class Sdk(WestCommand):
                 total_length = int(resp.headers["Content-Length"])
                 count = 0
 
+                class WestLogAdapter(io.StringIO):
+                    buf = []
+                    ctx = None
+
+                    def __init__(self, ctx):
+                        super(__class__, self).__init__()
+                        self.ctx = ctx
+
+                    def write(self, buf):
+                        try:
+                            self.ctx.inf(buf, colorize=False, end='')
+                        except TypeError:
+                            # West v1.1.0 and earlier versions do not support the end parameter.
+                            self.ctx.inf(buf, colorize=False)
+
+                    def flush(self):
+                        pass
+
+                tbar = tqdm.tqdm(
+                    total=total_length,
+                    file=WestLogAdapter(self),
+                    desc=Path(file.name).name,
+                    unit_scale=True,
+                    ncols=shutil.get_terminal_size().columns,
+                    unit="",
+                    bar_format="{desc}: {percentage:3.0f}%|{bar}|   {n_fmt} {rate_fmt}   [{elapsed}]        ",
+                )
+
                 for chunk in resp.iter_content(chunk_size=8192):
+                    tbar.update(len(chunk))
                     file.write(chunk)
                     count = count + len(chunk)
-                    self.inf(f"\r {count}/{total_length}", end="")
+
+                tbar.close()
+
                 self.inf()
                 self.inf(f"Downloaded: {file.name}")
                 file.close()
