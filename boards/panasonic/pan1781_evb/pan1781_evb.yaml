@@ -13,7 +13,6 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - arduino_gpio
   - arduino_i2c
   - arduino_spi
   - ble
