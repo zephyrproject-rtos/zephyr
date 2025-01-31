@@ -442,12 +442,25 @@
 			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
 		};
-	};
 
+		radio: radio@b0000000 {
+			compatible = "silabs,series2-radio";
+			reg = <0xb0000000 0x1000000>;
+			interrupts = <30 0>, <31 0>, <32 0>, <33 0>, <34 0>, <35 0>,
+				     <36 0>, <37 0>, <38 0>, <39 0>, <70 0>, <71 0>;
+			interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
+					  "rac_rsm", "rac_seq", "hostmailbox", "synth",
+					  "rfeca0", "rfeca1";
+			pa-initial-power-dbm = <10>;
+			pa-ramp-time-us = <10>;
+			pa-voltage-mv = <3300>;
+			pa-2p4ghz = "highest";
 
-	bt_hci_silabs: bt_hci_silabs {
-		compatible = "silabs,bt-hci-efr32";
-		status = "disabled";
+			bt_hci_silabs: bt_hci_silabs {
+				compatible = "silabs,bt-hci-efr32";
+				status = "disabled";
+			};
+		};
 	};
 };
 
