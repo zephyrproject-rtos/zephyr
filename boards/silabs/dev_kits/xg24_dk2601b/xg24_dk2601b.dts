@@ -253,6 +253,10 @@
 	status = "okay";
 };
 
+&radio {
+	pa-voltage-mv = <1800>;
+};
+
 &bt_hci_silabs {
 	status = "okay";
 };
