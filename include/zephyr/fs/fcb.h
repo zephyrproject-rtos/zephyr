@@ -49,7 +49,7 @@ extern "C" {
  * within that area.
  */
 struct fcb_entry {
-	struct flash_sector *fe_sector;
+	const struct flash_sector *fe_sector;
 	/**< Pointer to info about sector where data are placed */
 
 	uint32_t fe_elem_off;
@@ -109,14 +109,14 @@ struct fcb {
 	 * to have scratch space for garbage collecting when FCB fills up.
 	 */
 
-	struct flash_sector *f_sectors;
+	const struct flash_sector *f_sectors;
 	/**< Array of sectors, must be contiguous */
 
 	/* Flash circular buffer internal state */
 	struct k_mutex f_mtx;
 	/**< Locking for accessing the FCB data, internal state */
 
-	struct flash_sector *f_oldest;
+	const struct flash_sector *f_oldest;
 	/**< Pointer to flash sector containing the oldest data,
 	 * internal state
 	 */
@@ -223,7 +223,7 @@ typedef int (*fcb_walk_cb)(struct fcb_entry_ctx *loc_ctx, void *arg);
  * @return 0 on success, negative on failure (or transferred form callback
  *         return-value), positive transferred form callback return-value
  */
-int fcb_walk(struct fcb *fcbp, struct flash_sector *sector, fcb_walk_cb cb, void *cb_arg);
+int fcb_walk(struct fcb *fcbp, const struct flash_sector *sector, fcb_walk_cb cb, void *cb_arg);
 
 /**
  * Get next fcb entry location.

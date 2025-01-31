@@ -91,12 +91,13 @@ int fcb_erase_sector(const struct fcb *fcbp, const struct flash_sector *sector)
 
 int fcb_init(int f_area_id, struct fcb *fcbp)
 {
-	struct flash_sector *sector;
+	const struct flash_sector *sector;
 	int rc;
 	int i;
 	uint8_t align;
 	int oldest = -1, newest = -1;
-	struct flash_sector *oldest_sector = NULL, *newest_sector = NULL;
+	const struct flash_sector *oldest_sector = NULL;
+	const struct flash_sector *newest_sector = NULL;
 	struct fcb_disk_area fda;
 	const struct flash_parameters *fparam;
 
@@ -174,7 +175,7 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 int fcb_free_sector_cnt(struct fcb *fcbp)
 {
 	int i;
-	struct flash_sector *fa;
+	const struct flash_sector *fa;
 
 	fa = fcbp->f_active.fe_sector;
 	for (i = 0; i < fcbp->f_sector_cnt; i++) {
@@ -252,7 +253,7 @@ int fcb_get_len(const struct fcb *fcbp, uint8_t *buf, uint16_t *len)
 /**
  * Initialize erased sector for use.
  */
-int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t id)
+int fcb_sector_hdr_init(struct fcb *fcbp, const struct flash_sector *sector, uint16_t id)
 {
 	struct fcb_disk_area fda;
 	int rc;
@@ -275,7 +276,8 @@ int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t 
  * Returns 0 if sector is unused;
  * Returns 1 if sector has data.
  */
-int fcb_sector_hdr_read(struct fcb *fcbp, struct flash_sector *sector, struct fcb_disk_area *fdap)
+int fcb_sector_hdr_read(struct fcb *fcbp, const struct flash_sector *sector,
+			struct fcb_disk_area *fdap)
 {
 	struct fcb_disk_area fda;
 	int rc;
