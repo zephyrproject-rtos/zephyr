@@ -23,7 +23,7 @@
 };
 
 &pinctrl {
-	ledc0_default: ledc0_default {
+	ledc0_default: ledc0-default {
 		group1 {
 			pinmux = <LEDC_CH0_GPIO2>;
 			output-enable;
