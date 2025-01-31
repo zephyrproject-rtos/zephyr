@@ -354,12 +354,25 @@
 			status = "disabled";
 		};
 
-		acmp0: acmp@0x5a008000 {
+		acmp0: acmp@5a008000 {
 			compatible = "silabs,acmp";
 			reg = <0x5a008000 0x4000>;
 			interrupts = <41 0>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
+		};
+
+		radio: radio@b0000000 {
+			compatible = "silabs,series2-radio";
+			reg = <0xb0000000 0x1000000>;
+			interrupts = <31 0>, <32 0>, <33 0>, <34 0>, <35 0>, <36 0>,
+				     <37 0>, <38 0>, <39 0>, <40 0>;
+			interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
+					  "rac_rsm", "rac_seq", "prortc", "synth";
+			pa-initial-power-dbm = <10>;
+			pa-ramp-time-us = <10>;
+			pa-voltage-mv = <3300>;
+			pa-2p4ghz = "highest";
 		};
 	};
 };
