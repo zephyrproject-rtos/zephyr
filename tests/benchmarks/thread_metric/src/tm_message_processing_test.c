@@ -44,8 +44,8 @@
 /* Define the counters used in the demo application...  */
 
 unsigned long tm_message_processing_counter;
-unsigned long tm_message_sent[4];
-unsigned long tm_message_received[4];
+unsigned int tm_message_sent[4];
+unsigned int tm_message_received[4];
 
 /* Define the test thread prototypes.  */
 
@@ -102,10 +102,10 @@ void tm_message_processing_thread_0_entry(void *p1, void *p2, void *p3)
 
 	while (1) {
 		/* Send a message to the queue.  */
-		tm_queue_send(0, tm_message_sent);
+		tm_queue_send(0, (unsigned long *)tm_message_sent);
 
 		/* Receive a message from the queue.  */
-		tm_queue_receive(0, tm_message_received);
+		tm_queue_receive(0, (unsigned long *)tm_message_received);
 
 		/* Check for invalid message.  */
 		if (tm_message_received[3] != tm_message_sent[3]) {
