@@ -197,8 +197,8 @@ static struct mqtt_sn_publish *mqtt_sn_publish_create(struct mqtt_sn_data *data)
 	return pub;
 }
 
-static struct mqtt_sn_publish *mqtt_sn_publish_find_msg_id(struct mqtt_sn_client *client,
-							   uint16_t msg_id)
+static struct mqtt_sn_publish *mqtt_sn_publish_find_by_msg_id(struct mqtt_sn_client *client,
+							      uint16_t msg_id)
 {
 	struct mqtt_sn_publish *pub;
 
@@ -211,8 +211,8 @@ static struct mqtt_sn_publish *mqtt_sn_publish_find_msg_id(struct mqtt_sn_client
 	return NULL;
 }
 
-static struct mqtt_sn_publish *mqtt_sn_publish_find_topic(struct mqtt_sn_client *client,
-							  struct mqtt_sn_topic *topic)
+static struct mqtt_sn_publish *mqtt_sn_publish_find_by_topic(struct mqtt_sn_client *client,
+							     struct mqtt_sn_topic *topic)
 {
 	struct mqtt_sn_publish *pub;
 
@@ -254,8 +254,8 @@ static struct mqtt_sn_topic *mqtt_sn_topic_create(struct mqtt_sn_data *name)
 	return topic;
 }
 
-static struct mqtt_sn_topic *mqtt_sn_topic_find_name(struct mqtt_sn_client *client,
-						     struct mqtt_sn_data *topic_name)
+static struct mqtt_sn_topic *mqtt_sn_topic_find_by_name(struct mqtt_sn_client *client,
+							struct mqtt_sn_data *topic_name)
 {
 	struct mqtt_sn_topic *topic;
 
@@ -269,8 +269,8 @@ static struct mqtt_sn_topic *mqtt_sn_topic_find_name(struct mqtt_sn_client *clie
 	return NULL;
 }
 
-static struct mqtt_sn_topic *mqtt_sn_topic_find_msg_id(struct mqtt_sn_client *client,
-						       uint16_t msg_id)
+static struct mqtt_sn_topic *mqtt_sn_topic_find_by_msg_id(struct mqtt_sn_client *client,
+							  uint16_t msg_id)
 {
 	struct mqtt_sn_topic *topic;
 
@@ -288,7 +288,7 @@ static void mqtt_sn_topic_destroy(struct mqtt_sn_client *client, struct mqtt_sn_
 	struct mqtt_sn_publish *pub;
 
 	/* Destroy all pubs referencing this topic */
-	while ((pub = mqtt_sn_publish_find_topic(client, topic)) != NULL) {
+	while ((pub = mqtt_sn_publish_find_by_topic(client, topic)) != NULL) {
 		LOG_WRN("Destroying publish msg_id %d", pub->con.msg_id);
 		mqtt_sn_publish_destroy(client, pub);
 	}
@@ -305,7 +305,7 @@ static void mqtt_sn_topic_destroy_all(struct mqtt_sn_client *client)
 	while ((next = sys_slist_get(&client->topic)) != NULL) {
 		topic = SYS_SLIST_CONTAINER(next, topic, next);
 		/* Destroy all pubs referencing this topic */
-		while ((pub = mqtt_sn_publish_find_topic(client, topic)) != NULL) {
+		while ((pub = mqtt_sn_publish_find_by_topic(client, topic)) != NULL) {
 			LOG_WRN("Destroying publish msg_id %d", pub->con.msg_id);
 			mqtt_sn_publish_destroy(client, pub);
 		}
@@ -361,7 +361,7 @@ static struct mqtt_sn_gateway *mqtt_sn_gw_create(uint8_t gw_id, short duration,
 	return gw;
 }
 
-static struct mqtt_sn_gateway *mqtt_sn_gw_find_id(struct mqtt_sn_client *client, uint16_t gw_id)
+static struct mqtt_sn_gateway *mqtt_sn_gw_find_by_id(struct mqtt_sn_client *client, uint16_t gw_id)
 {
 	struct mqtt_sn_gateway *gw;
 
@@ -897,7 +897,7 @@ int mqtt_sn_add_gw(struct mqtt_sn_client *client, uint8_t gw_id, struct mqtt_sn_
 {
 	struct mqtt_sn_gateway *gw;
 
-	gw = mqtt_sn_gw_find_id(client, gw_id);
+	gw = mqtt_sn_gw_find_by_id(client, gw_id);
 
 	if (gw != NULL) {
 		mqtt_sn_gw_destroy(client, gw);
@@ -1004,7 +1004,7 @@ int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		return -ENOTCONN;
 	}
 
-	topic = mqtt_sn_topic_find_name(client, topic_name);
+	topic = mqtt_sn_topic_find_by_name(client, topic_name);
 	if (!topic) {
 		topic = mqtt_sn_topic_create(topic_name);
 		if (!topic) {
@@ -1039,7 +1039,7 @@ int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		return -ENOTCONN;
 	}
 
-	topic = mqtt_sn_topic_find_name(client, topic_name);
+	topic = mqtt_sn_topic_find_by_name(client, topic_name);
 	if (!topic) {
 		LOG_HEXDUMP_ERR(topic_name->data, topic_name->size, "Topic not found");
 		return -ENOENT;
@@ -1077,7 +1077,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		return -ENOTCONN;
 	}
 
-	topic = mqtt_sn_topic_find_name(client, topic_name);
+	topic = mqtt_sn_topic_find_by_name(client, topic_name);
 	if (!topic) {
 		topic = mqtt_sn_topic_create(topic_name);
 		if (!topic) {
@@ -1115,7 +1115,7 @@ static void handle_advertise(struct mqtt_sn_client *client, struct mqtt_sn_param
 	struct mqtt_sn_evt evt = {.type = MQTT_SN_EVT_ADVERTISE};
 	struct mqtt_sn_gateway *gw;
 
-	gw = mqtt_sn_gw_find_id(client, p->gw_id);
+	gw = mqtt_sn_gw_find_by_id(client, p->gw_id);
 
 	if (gw == NULL) {
 		LOG_DBG("Creating GW 0x%02x with duration %d", p->gw_id, p->duration);
@@ -1262,7 +1262,7 @@ static void handle_register(struct mqtt_sn_client *client, struct mqtt_sn_param_
 
 static void handle_regack(struct mqtt_sn_client *client, struct mqtt_sn_param_regack *p)
 {
-	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_by_msg_id(client, p->msg_id);
 
 	if (!topic) {
 		LOG_ERR("Can't REGACK, no topic found");
@@ -1307,7 +1307,7 @@ static void handle_publish(struct mqtt_sn_client *client, struct mqtt_sn_param_p
 
 static void handle_puback(struct mqtt_sn_client *client, struct mqtt_sn_param_puback *p)
 {
-	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_by_msg_id(client, p->msg_id);
 
 	if (!pub) {
 		LOG_ERR("No matching PUBLISH found for msg id %u", p->msg_id);
@@ -1320,7 +1320,7 @@ static void handle_puback(struct mqtt_sn_client *client, struct mqtt_sn_param_pu
 static void handle_pubrec(struct mqtt_sn_client *client, struct mqtt_sn_param_pubrec *p)
 {
 	struct mqtt_sn_param response = {.type = MQTT_SN_MSG_TYPE_PUBREL};
-	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_by_msg_id(client, p->msg_id);
 
 	if (!pub) {
 		LOG_ERR("No matching PUBLISH found for msg id %u", p->msg_id);
@@ -1346,7 +1346,7 @@ static void handle_pubrel(struct mqtt_sn_client *client, struct mqtt_sn_param_pu
 
 static void handle_pubcomp(struct mqtt_sn_client *client, struct mqtt_sn_param_pubcomp *p)
 {
-	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_by_msg_id(client, p->msg_id);
 
 	if (!pub) {
 		LOG_ERR("No matching PUBLISH found for msg id %u", p->msg_id);
@@ -1358,7 +1358,7 @@ static void handle_pubcomp(struct mqtt_sn_client *client, struct mqtt_sn_param_p
 
 static void handle_suback(struct mqtt_sn_client *client, struct mqtt_sn_param_suback *p)
 {
-	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_by_msg_id(client, p->msg_id);
 
 	if (!topic) {
 		LOG_ERR("No matching SUBSCRIBE found for msg id %u", p->msg_id);
@@ -1376,7 +1376,7 @@ static void handle_suback(struct mqtt_sn_client *client, struct mqtt_sn_param_su
 
 static void handle_unsuback(struct mqtt_sn_client *client, struct mqtt_sn_param_unsuback *p)
 {
-	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_msg_id(client, p->msg_id);
+	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_by_msg_id(client, p->msg_id);
 
 	if (!topic || topic->state != MQTT_SN_TOPIC_STATE_UNSUBSCRIBING) {
 		LOG_ERR("No matching UNSUBSCRIBE found for msg id %u", p->msg_id);
