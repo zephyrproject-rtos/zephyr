@@ -126,6 +126,50 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	zassert_equal(0, zbus_chan_rm_obs(&chan2, &sub2, K_MSEC(200)), NULL);
 }
 
+static void chan1_publisher(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct sensor_data_msg sd = {.a = 10, .b = 100};
+
+	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(5)));
+
+	k_work_reschedule(dwork, K_MSEC(100));
+}
+
+ZTEST(basic, test_specification_based__zbus_obs_stack_waiter)
+{
+	static struct zbus_observer_node node;
+	struct k_work_delayable publisher;
+	struct k_work_sync sync;
+	struct k_sem pub_sem;
+
+	ZBUS_RUNTIME_WAITER_DEFINE(waiter, &pub_sem);
+
+	/* Start the channel publisher */
+	k_work_init_delayable(&publisher, chan1_publisher);
+	k_work_schedule(&publisher, K_NO_WAIT);
+	k_sleep(K_MSEC(2));
+
+	/* Setup semaphore and add waiter to channel */
+	zassert_equal(0, k_sem_init(&pub_sem, 0, 1));
+	zassert_equal(0, zbus_chan_add_obs(&chan1, &waiter, &node, K_MSEC(10)), NULL);
+
+	/* Wait for channel to be published multiple times */
+	for (int i = 0; i < 5; i++) {
+		zassert_equal(-EAGAIN, k_sem_take(&pub_sem, K_MSEC(80)));
+		zassert_equal(0, k_sem_take(&pub_sem, K_MSEC(30)));
+	}
+
+	/* Cleanup the waiter */
+	zassert_equal(0, zbus_chan_rm_obs(&chan1, &waiter, K_MSEC(10)));
+
+	/* No more semaphore handling */
+	zassert_equal(-EAGAIN, k_sem_take(&pub_sem, K_MSEC(120)));
+
+	/* Cancel the channel publisher */
+	zassert_true(k_work_cancel_delayable_sync(&publisher, &sync));
+}
+
 struct aux2_wq_data {
 	struct k_work work;
 };
