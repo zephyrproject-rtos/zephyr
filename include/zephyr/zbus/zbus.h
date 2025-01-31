@@ -538,6 +538,30 @@ struct zbus_channel_observation {
 		.data = &_CONCAT(_zbus_obs_data_, _name),                                          \
 		.sem = (_sem)                                                                      \
 	}
+
+/**
+ * @brief Define and initialize a waiter on the stack.
+ *
+ * This macro defines an observer of waiter type that can exist on the stack and attached to
+ * a channel with @ref zbus_chan_add_obs.
+ *
+ * @param[in] _name The waiter's name.
+ * @param[in] _sem The semaphore given on channel publish.
+ */
+#define ZBUS_RUNTIME_WAITER_DEFINE(_name, _sem) \
+	struct zbus_observer_data _CONCAT(_zbus_obs_data_, _name) = {                              \
+		.enabled = true,                                                                   \
+		IF_ENABLED(CONFIG_ZBUS_PRIORITY_BOOST, (                                           \
+			.priority = ZBUS_MIN_THREAD_PRIORITY,                                      \
+		))                                                                                 \
+	};                                                                                         \
+	const struct zbus_observer _name = {                                                       \
+		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */                                    \
+		.type = ZBUS_OBSERVER_WAITER_TYPE,                                                 \
+		.data = &_CONCAT(_zbus_obs_data_, _name),                                          \
+		.sem = (_sem)                                                                      \
+	}
+
 /* clang-format on */
 
 /**
