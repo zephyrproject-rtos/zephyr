@@ -179,12 +179,19 @@ static unsigned int siwx91x_on_scan(sl_wifi_event_t event, sl_wifi_scan_result_t
 				    uint32_t result_size, void *arg)
 {
 	struct siwx91x_dev *sidev = arg;
-	int i;
+	int i, scan_count;
 
 	if (!sidev->scan_res_cb) {
 		return -EFAULT;
 	}
-	for (i = 0; i < result->scan_count; i++) {
+
+	if (sidev->scan_max_bss_cnt) {
+		scan_count = MIN(result->scan_count, sidev->scan_max_bss_cnt);
+	} else {
+		scan_count = result->scan_count;
+	}
+
+	for (i = 0; i < scan_count; i++) {
 		siwx91x_report_scan_res(sidev, result, i);
 	}
 	sidev->scan_res_cb(sidev->iface, 0, NULL);
@@ -218,6 +225,7 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 		}
 	}
 
+	sidev->scan_max_bss_cnt = z_scan_config->max_bss_cnt;
 	sidev->scan_res_cb = cb;
 	ret = sl_wifi_start_scan(SL_WIFI_CLIENT_2_4GHZ_INTERFACE, (ssid.length > 0) ? &ssid : NULL,
 				 &sl_scan_config);
