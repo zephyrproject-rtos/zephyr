@@ -221,12 +221,17 @@ static const struct jesd216_erase_type minimal_erase_types_4b[JESD216_NUM_ERASE_
 };
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
+
 /* Register writes should be ready extremely quickly */
 #define WAIT_READY_REGISTER K_NO_WAIT
 /* Page writes range from sub-ms to 10ms */
 #define WAIT_READY_WRITE K_TICKS(1)
-/* Erases can range from 45ms to 240sec */
-#define WAIT_READY_ERASE K_MSEC(50)
+
+#ifdef CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
+#define WAIT_READY_ERASE K_MSEC(CONFIG_SPI_NOR_SLEEP_ERASE_MS)
+#else
+#define WAIT_READY_ERASE K_NO_WAIT
+#endif
 
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect);
