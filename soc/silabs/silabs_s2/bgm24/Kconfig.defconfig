@@ -1,0 +1,33 @@
+# Silicon Labs BGM24 (Mighty Gecko) BLE module configuration options
+
+# Copyright (c) 2021 Sateesh Kotapati
+# Copyright (c) 2024 Jonny Gellhaar
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_BGM24
+
+config CMU_NEED_LFXO
+	default n
+
+# Required for librail memory management
+config BT
+	depends on KERNEL_MEM_POOL
+
+config HEAP_MEM_POOL_SIZE
+	default 16384 if BT
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 75
+
+config PM
+	default n
+	select COUNTER
+	select UART_INTERRUPT_DRIVEN if SERIAL_SUPPORT_INTERRUPT
+
+choice PM_POLICY
+	default PM_POLICY_DEFAULT
+	depends on PM
+endchoice
+
+endif # SOC_SERIES_BGM24
