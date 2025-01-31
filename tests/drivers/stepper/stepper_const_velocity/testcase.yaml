@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+# SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
-  drivers.stepper.stepper_api:
+  drivers.stepper.stepper_const_velocity:
     tags:
       - drivers
       - stepper
@@ -16,5 +16,4 @@ tests:
     integration_platforms:
       - nucleo_f767zi
       - mimxrt1060_evk@B/mimxrt1062/qspi
-      - native_sim
       - nucleo_g071rb

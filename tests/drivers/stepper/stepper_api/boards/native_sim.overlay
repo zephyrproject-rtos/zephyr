@@ -6,6 +6,10 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
+	chosen {
+		zephyr,stepper = &drv8424;
+	};
+
 	drv8424: drv8424 {
 		status = "okay";
 		compatible = "ti,drv8424";
