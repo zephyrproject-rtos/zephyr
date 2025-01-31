@@ -27,6 +27,7 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE=zms.overlay
       - EXTRA_CONF_FILE=\
         overlay-secure_storage.conf;overlay-store_zms.conf;overlay-transform_default.conf
+      - SB_CONFIG_PARTITION_MANAGER=n
 
   secure_storage.psa.its.secure_storage.store.zms.64-bit_uids:
     platform_allow: *zms_platform_allow
