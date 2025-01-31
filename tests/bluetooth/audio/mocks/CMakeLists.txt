@@ -14,6 +14,7 @@ add_library(mocks STATIC
   src/crypto.c
   src/fatal.c
   src/gatt.c
+  src/hci_core.c
   src/iso.c
   src/kernel.c
   src/mem_slab.c
