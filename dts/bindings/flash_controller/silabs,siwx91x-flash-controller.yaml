@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silicon Labs SiWx91x flash controller
+
+compatible: "silabs,siwx91x-flash-controller"
+
+include: flash-controller.yaml
