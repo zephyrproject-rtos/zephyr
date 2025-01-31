@@ -60,5 +60,6 @@ config BT_HAS_CLIENT
 	depends on BT_GATT_CLIENT
 	depends on BT_GATT_AUTO_DISCOVER_CCC
 	depends on BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_SMP
 	help
 	  This option enables support for Hearing Access Service Client.
