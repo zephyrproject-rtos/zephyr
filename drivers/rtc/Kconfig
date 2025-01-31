@@ -62,5 +62,6 @@ source "drivers/rtc/Kconfig.xmc4xxx"
 source "drivers/rtc/Kconfig.nxp_irtc"
 source "drivers/rtc/Kconfig.rv8803"
 source "drivers/rtc/Kconfig.bq32002"
+source "drivers/rtc/Kconfig.rx8130ce"
 
 endif # RTC
