@@ -155,6 +155,7 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 		{ SL_WIFI_WPA_ENTERPRISE,  WIFI_SECURITY_TYPE_EAP     },
 		{ SL_WIFI_WPA2_ENTERPRISE, WIFI_SECURITY_TYPE_EAP     },
 	};
+
 	struct wifi_scan_result tmp = {
 		.channel = result->scan_info[item].rf_channel,
 		.rssi = result->scan_info[item].rssi_val,
@@ -162,16 +163,27 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 		.mac_length = sizeof(result->scan_info[item].bssid),
 		.security = WIFI_SECURITY_TYPE_UNKNOWN,
 		.mfp = WIFI_MFP_UNKNOWN,
-		/* FIXME: fill .mfp, .band and .channel */
+		.band = WIFI_FREQ_BAND_2_4_GHZ,
 	};
+
+	if (result->scan_count == 0) {
+		return;
+	}
+
+	if (result->scan_info[item].rf_channel <= 0 || result->scan_info[item].rf_channel > 14) {
+		LOG_WRN("Unexpected scan result");
+		tmp.band = WIFI_FREQ_BAND_UNKNOWN;
+	}
 
 	memcpy(tmp.ssid, result->scan_info[item].ssid, tmp.ssid_length);
 	memcpy(tmp.mac, result->scan_info[item].bssid, tmp.mac_length);
+
 	ARRAY_FOR_EACH(security_convert, i) {
 		if (security_convert[i].sl_val == result->scan_info[item].security_mode) {
 			tmp.security = security_convert[i].z_val;
 		}
 	}
+
 	sidev->scan_res_cb(sidev->iface, 0, &tmp);
 }
 
@@ -185,6 +197,10 @@ static unsigned int siwx91x_on_scan(sl_wifi_event_t event, sl_wifi_scan_result_t
 		return -EFAULT;
 	}
 
+	if (event & SL_WIFI_EVENT_FAIL_INDICATION) {
+		memset(result, 0, sizeof(*result));
+	}
+
 	if (sidev->scan_max_bss_cnt) {
 		scan_count = MIN(result->scan_count, sidev->scan_max_bss_cnt);
 	} else {
@@ -194,8 +210,10 @@ static unsigned int siwx91x_on_scan(sl_wifi_event_t event, sl_wifi_scan_result_t
 	for (i = 0; i < scan_count; i++) {
 		siwx91x_report_scan_res(sidev, result, i);
 	}
+
 	sidev->scan_res_cb(sidev->iface, 0, NULL);
 	sidev->state = WIFI_STATE_INACTIVE;
+
 	return 0;
 }
 
@@ -216,7 +234,10 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 	/* The enum values are same, no conversion needed */
 	sl_scan_config.type = z_scan_config->scan_type;
 
-	sl_scan_config.channel_bitmap_2g4 = 0xFFFF;
+	for (int i = 0; i < WIFI_MGMT_SCAN_CHAN_MAX_MANUAL; i++) {
+		sl_scan_config.channel_bitmap_2g4 |= BIT(z_scan_config->band_chan[i].channel - 1);
+	}
+
 	memset(sl_scan_config.channel_bitmap_5g, 0xFF, sizeof(sl_scan_config.channel_bitmap_5g));
 	if (IS_ENABLED(CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX)) {
 		if (z_scan_config->ssids[0]) {
