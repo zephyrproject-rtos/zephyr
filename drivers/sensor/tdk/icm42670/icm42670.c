@@ -438,6 +438,7 @@ static int icm42670_gyro_config(struct icm42670_data *drv_data, enum sensor_attr
 static int icm42670_sensor_init(const struct device *dev)
 {
 	struct icm42670_data *data = dev->data;
+	const struct icm42670_config *config = dev->config;
 	int err = 0;
 
 	/* Initialize serial interface and device */
@@ -446,12 +447,7 @@ static int icm42670_sensor_init(const struct device *dev)
 	data->serif.write_reg = inv_io_hal_write_reg;
 	data->serif.max_read = ICM42670_SERIAL_INTERFACE_MAX_READ;
 	data->serif.max_write = ICM42670_SERIAL_INTERFACE_MAX_WRITE;
-#if CONFIG_SPI
-	data->serif.serif_type = UI_SPI4;
-#endif
-#if CONFIG_I2C
-	data->serif.serif_type = UI_I2C;
-#endif
+	data->serif.serif_type = config->serif_type;
 	err = inv_imu_init(&data->driver, &data->serif, NULL);
 	if (err < 0) {
 		LOG_ERR("Init failed: %d", err);
@@ -1053,12 +1049,14 @@ static DEVICE_API(sensor, icm42670_driver_api) = {
 #define ICM42670_CONFIG_SPI(inst)                                                                  \
 	{.bus.spi = SPI_DT_SPEC_INST_GET(inst, ICM42670_SPI_CFG, 0),                               \
 	 .bus_io = &icm42670_bus_io_spi,                                                           \
+	 .serif_type = UI_SPI4,                                                                    \
 	 ICM42670_CONFIG_COMMON(inst)}
 
 /* Initializes the bus members for an instance on an I2C bus. */
 #define ICM42670_CONFIG_I2C(inst)                                                                  \
 	{.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                                    \
 	 .bus_io = &icm42670_bus_io_i2c,                                                           \
+	 .serif_type = UI_I2C,                                                                     \
 	 ICM42670_CONFIG_COMMON(inst)}
 
 /*
