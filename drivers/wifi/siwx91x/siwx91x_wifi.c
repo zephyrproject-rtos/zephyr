@@ -197,6 +197,7 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 {
 	sl_wifi_scan_configuration_t sl_scan_config = { };
 	struct siwx91x_dev *sidev = dev->data;
+	sl_wifi_ssid_t ssid = {};
 	int ret;
 
 	__ASSERT(z_scan_config, "z_scan_config cannot be NULL");
@@ -210,9 +211,16 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 
 	sl_scan_config.channel_bitmap_2g4 = 0xFFFF;
 	memset(sl_scan_config.channel_bitmap_5g, 0xFF, sizeof(sl_scan_config.channel_bitmap_5g));
+	if (IS_ENABLED(CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX)) {
+		if (z_scan_config->ssids[0]) {
+			strncpy(ssid.value, z_scan_config->ssids[0], WIFI_SSID_MAX_LEN);
+			ssid.length = strlen(z_scan_config->ssids[0]);
+		}
+	}
 
 	sidev->scan_res_cb = cb;
-	ret = sl_wifi_start_scan(SL_WIFI_CLIENT_INTERFACE, NULL, &sl_scan_config);
+	ret = sl_wifi_start_scan(SL_WIFI_CLIENT_2_4GHZ_INTERFACE, (ssid.length > 0) ? &ssid : NULL,
+				 &sl_scan_config);
 	if (ret != SL_STATUS_IN_PROGRESS) {
 		return -EIO;
 	}
