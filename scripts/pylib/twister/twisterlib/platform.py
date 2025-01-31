@@ -83,7 +83,6 @@ class Platform:
         self.filter_data = dict()
         self.uart = ""
         self.resc = ""
-        self.qualifier = None
 
     def load(self, board, target, aliases, data):
         """Load the platform data from the board data and target data
@@ -95,26 +94,16 @@ class Platform:
         self.name = target
         self.aliases = aliases
 
-        # Get data for various targets and use the main board data as a
-        # defauly. Individual variant information will replace the default data
-        # provded in the main twister configuration for this board.
-        variants = data.get("variants", {})
-        variant_data = {}
-        for alias in aliases:
-            variant_data = variants.get(alias, {})
-            if variant_data:
-                break
-
         self.normalized_name = self.name.replace("/", "_")
-        self.sysbuild = variant_data.get("sysbuild", data.get("sysbuild", self.sysbuild))
-        self.twister = variant_data.get("twister", data.get("twister", self.twister))
+        self.sysbuild = data.get("sysbuild", self.sysbuild)
+        self.twister = data.get("twister", self.twister)
 
         # if no RAM size is specified by the board, take a default of 128K
-        self.ram = variant_data.get("ram", data.get("ram", self.ram))
+        self.ram = data.get("ram", self.ram)
         # if no flash size is specified by the board, take a default of 512K
-        self.flash = variant_data.get("flash", data.get("flash", self.flash))
+        self.flash = data.get("flash", self.flash)
 
-        testing = variant_data.get("testing", data.get("testing", {}))
+        testing = data.get("testing", {})
         self.timeout_multiplier = testing.get("timeout_multiplier", self.timeout_multiplier)
         self.ignore_tags = testing.get("ignore_tags", self.ignore_tags)
         self.only_tags = testing.get("only_tags", self.only_tags)
@@ -124,26 +113,23 @@ class Platform:
         self.uart = renode.get("uart", "")
         self.resc = renode.get("resc", "")
         self.supported = set()
-        for supp_feature in variant_data.get("supported", data.get("supported", [])):
+        for supp_feature in data.get("supported", []):
             for item in supp_feature.split(":"):
                 self.supported.add(item)
 
-        self.arch = variant_data.get('arch', data.get('arch', self.arch))
+        self.arch = data.get('arch', self.arch)
         self.vendor = board.vendor
-        self.tier = variant_data.get("tier", data.get("tier", self.tier))
-        self.type = variant_data.get('type', data.get('type', self.type))
+        self.tier = data.get("tier", self.tier)
+        self.type = data.get('type', self.type)
 
         self.simulators = [
-            Simulator(data) for data in variant_data.get(
-                'simulation',
-                data.get('simulation', self.simulators)
-            )
+            Simulator(data) for data in data.get('simulation', self.simulators)
         ]
         default_sim = self.simulator_by_name(None)
         if default_sim:
             self.simulation = default_sim.name
 
-        self.supported_toolchains = variant_data.get("toolchain", data.get("toolchain", []))
+        self.supported_toolchains = data.get("toolchain", [])
         if self.supported_toolchains is None:
             self.supported_toolchains = []
 
@@ -170,7 +156,7 @@ class Platform:
                 if toolchain not in self.supported_toolchains:
                     self.supported_toolchains.append(toolchain)
 
-        self.env = variant_data.get("env", data.get("env", []))
+        self.env = data.get("env", [])
         self.env_satisfied = True
         for env in self.env:
             if not os.environ.get(env, None):
