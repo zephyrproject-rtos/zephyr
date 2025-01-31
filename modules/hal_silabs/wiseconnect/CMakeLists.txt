@@ -50,5 +50,9 @@ zephyr_library_sources(
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/rsi_system_config_917.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_rng.c
+)
+
 zephyr_linker_sources(ROM_SECTIONS linker/code_classification_text.ld)
 zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_ramfunc.ld)
