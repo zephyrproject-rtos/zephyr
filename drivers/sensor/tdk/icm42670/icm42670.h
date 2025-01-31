@@ -95,6 +95,7 @@ struct icm42670_data {
 struct icm42670_config {
 	union icm42670_bus bus;
 	const struct icm42670_bus_io *bus_io;
+	uint32_t serif_type;
 	struct gpio_dt_spec gpio_int;
 	uint8_t accel_fs;
 	uint16_t accel_hz;
