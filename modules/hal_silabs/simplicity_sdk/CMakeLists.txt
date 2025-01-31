@@ -39,8 +39,11 @@ endfunction()
 
 if(CONFIG_SOC_GECKO_HAS_RADIO)
   zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
-    ${RADIO_DIR}/rail_lib/plugin/pa-conversions/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}/config
     ${RADIO_DIR}/rail_lib/chip/efr32/efr32xg2x
+  )
+
+  zephyr_compile_definitions(
+    SL_RAIL_UTIL_PA_CONFIG_HEADER="sl_rail_util_pa_config.h"
   )
 
   zephyr_include_directories(

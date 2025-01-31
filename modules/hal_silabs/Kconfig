@@ -22,3 +22,5 @@ config HAS_SILABS_SISDK
 config HAS_SILABS_SI32
 	bool
 	select HAS_CMSIS_CORE
+
+rsource "*/Kconfig"
