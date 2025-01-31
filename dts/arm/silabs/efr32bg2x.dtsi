@@ -370,11 +370,20 @@
 			reg = <0x50094000 0x4000>;
 			status = "disabled";
 		};
-	};
 
-	bt_hci_silabs: bt_hci_silabs {
-		compatible = "silabs,bt-hci-efr32";
-		status = "disabled";
+		radio: radio@b0000000 {
+			compatible = "silabs,series2-radio";
+			reg = <0xb0000000 0x1000000>;
+			pa-initial-power-dbm = <10>;
+			pa-ramp-time-us = <2>;
+			pa-voltage-mv = <3300>;
+			pa-2p4ghz = "highest";
+
+			bt_hci_silabs: bt_hci_silabs {
+				compatible = "silabs,bt-hci-efr32";
+				status = "disabled";
+			};
+		};
 	};
 };
 
