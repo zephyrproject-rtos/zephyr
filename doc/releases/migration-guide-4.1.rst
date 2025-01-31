@@ -483,6 +483,10 @@ Bluetooth Audio
   be called. All Kconfig options still remain. Runtime configuration cannot override a disabled
   Kconfig option. (:github:`83730`)
 
+* Several services and service client (AICS, ASCS, CSIP, HAS, MCS, PACS, TBS, VCP and VOCS) now
+  depend on :kconfig:option:`CONFIG_BT_SMP` and may need to be explicitly enabled.
+  (:github:`84994``)
+
 Bluetooth Classic
 =================
 

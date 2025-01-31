@@ -10,6 +10,8 @@
 
 config BT_CSIP_SET_MEMBER
 	bool "Coordinated Set Identification Profile Set Member support"
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_SMP
 	imply BT_EXT_ADV if BT_PRIVACY
 	help
 	  This option enables support for Coordinated Set Identification
@@ -59,6 +61,7 @@ config BT_CSIP_SET_COORDINATOR
 	bool "Coordinated Set Identification Profile Set Coordinator Support"
 	depends on BT_GATT_CLIENT
 	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_SMP
 	help
 	  This option enables support for Coordinated Set Identification
 	  Profile Set Coordinator.
