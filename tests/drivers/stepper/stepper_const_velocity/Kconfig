@@ -6,4 +6,7 @@ config ENTROPY_GENERATOR
 	bool "Shuffle the order of tests and suites"
 	default y
 
+config SPEED_STEPS
+	int "Test speed in microsteps/s, also used as number of steps to make for certain tests"
+
 source "Kconfig.zephyr"

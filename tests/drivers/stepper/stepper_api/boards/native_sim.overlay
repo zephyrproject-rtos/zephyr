@@ -6,7 +6,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	drv8424: drv8424 {
+	stepper_motor: stepper_motor {
 		status = "okay";
 		compatible = "ti,drv8424";
 

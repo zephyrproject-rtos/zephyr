@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_GENERATOR
+	depends on ZTEST_SHUFFLE
+	bool "Shuffle the order of tests and suites"
+	default y
+
+config BASE_MS_RESOLUTION
+	int "Microstep-resolution for regular movement tests"
+	default 1
+
+config TEST_MS_RESOLUTION
+	int "Microstep-resolution for testing of correct ms setting"
+	default 4
+
+config INCORRECT_MS_RESOLUTION
+	int "Microstep-resolution for testing error check in case of incorrect ms resolution"
+	default 3
+
+config SPEED_STEPS
+	int "Test speed in microsteps/s, also used as number of steps to make for certain tests"
+
+source "Kconfig.zephyr"
