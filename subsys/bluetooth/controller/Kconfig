@@ -550,7 +550,7 @@ config BT_CTLR_LE_ENC
 config BT_CTLR_ECDH
 	bool "Elliptic Curve Diffie-Hellman (ECDH)"
 	depends on BT_CTLR_ECDH_SUPPORT
-	default y
+	default y if BT_HCI_RAW
 	help
 	  Enable support for Bluetooth v4.2 Elliptic Curve Diffie-Hellman
 	  feature in the controller.
