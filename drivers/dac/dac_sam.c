@@ -25,7 +25,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dac_sam, CONFIG_DAC_LOG_LEVEL);
 
-BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_SAMX7X)
+BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_SAMX7X),
 	     "Only SAMx7x series devices are currently supported.");
 
 #define DAC_CHANNEL_NO  2
