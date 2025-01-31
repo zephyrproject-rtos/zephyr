@@ -21,6 +21,11 @@
 	};
 };
 
+&sai3 {
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+};
+
 &uart4 {
 	status = "okay";
 	current-speed = <115200>;
