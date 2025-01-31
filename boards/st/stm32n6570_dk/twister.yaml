@@ -14,4 +14,3 @@ variants:
     toolchain:
       - zephyr
       - gnuarmemb
-      - xtools
