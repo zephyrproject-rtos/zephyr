@@ -113,7 +113,10 @@ void bt_pacs_cap_foreach(enum bt_audio_dir dir,
  *
  * @param param PACS register parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 Success
+ * @retval -EINVAL @p param is NULL or bad combination of values in @p param
+ * @retval -EALREADY Already registered
+ * @retval -ENOEXEC Request was rejected by GATT
  */
 int bt_pacs_register(const struct bt_bap_pacs_register_param *param);
 

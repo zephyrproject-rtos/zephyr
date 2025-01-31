@@ -782,9 +782,49 @@ static void configure_pacs_char(const struct bt_bap_pacs_register_param *param)
 	pacs_svc.attr_count -= attrs_to_rem;
 }
 
+static bool valid_pacs_register_param(const struct bt_bap_pacs_register_param *param)
+{
+	bool any_pac_registered = false;
+
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+#if defined(CONFIG_BT_PAC_SNK)
+	any_pac_registered |= param->snk_pac;
+#endif /* CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+	if (param->snk_loc && !param->snk_pac) {
+		LOG_DBG("Cannot register snk_loc without snk_pac");
+		return false;
+	}
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC)
+	any_pac_registered |= param->src_pac;
+#endif /* CONFIG_BT_PAC_SRC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+	if (param->src_loc && !param->src_pac) {
+		LOG_DBG("Cannot register src_loc without src_pac");
+		return false;
+	}
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+
+	if (!any_pac_registered) {
+		LOG_DBG("Neither snk_pac or src_pac registered");
+		return false;
+	}
+
+	return true;
+}
+
 int bt_pacs_register(const struct bt_bap_pacs_register_param *param)
 {
 	int err = 0;
+
+	if (!valid_pacs_register_param(param)) {
+		return -EINVAL;
+	}
 
 	if (atomic_test_and_set_bit(pacs.flags, PACS_FLAG_REGISTERED)) {
 		LOG_DBG("PACS already registered");
@@ -811,10 +851,10 @@ int bt_pacs_register(const struct bt_bap_pacs_register_param *param)
 
 	err = bt_gatt_service_register(&pacs_svc);
 	if (err != 0) {
-		LOG_DBG("Failed to register ASCS in gatt DB");
+		LOG_DBG("Failed to register ASCS in gatt DB: %d", err);
 		atomic_clear_bit(pacs.flags, PACS_FLAG_REGISTERED);
 
-		return err;
+		return -ENOEXEC;
 	}
 
 	return 0;
