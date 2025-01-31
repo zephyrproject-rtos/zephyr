@@ -26,8 +26,15 @@
 
 LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
+/* Apply TF-M configuration */
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && CONFIG_TFM_MCUBOOT_IMAGE_NUMBER == 2
+#define SLOT0_PARTITION		slot0_ns_partition
+#define SLOT1_PARTITION		slot1_ns_partition
+#else
 #define SLOT0_PARTITION		slot0_partition
 #define SLOT1_PARTITION		slot1_partition
+#endif
+
 #define SLOT2_PARTITION		slot2_partition
 #define SLOT3_PARTITION		slot3_partition
 #define SLOT4_PARTITION		slot4_partition
