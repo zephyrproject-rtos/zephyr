@@ -10,6 +10,7 @@
 
 config BT_AICS_MAX_INSTANCE_COUNT
 	int "Audio Input Control Service max instance count"
+	depends on BT_SMP
 	default 0
 	range 0 15
 	help
@@ -38,6 +39,7 @@ endif # BT_AICS
 
 config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
 	int "Audio Input Control Service client max instance count"
+	depends on BT_SMP
 	default 0
 	range 0 15
 	help

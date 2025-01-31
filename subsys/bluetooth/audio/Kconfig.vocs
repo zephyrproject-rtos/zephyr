@@ -9,6 +9,7 @@
 
 config BT_VOCS_MAX_INSTANCE_COUNT
 	int "Volume Offset Control Service max instance count"
+	depends on BT_SMP
 	default 0
 	range 0 15
 	help
@@ -36,6 +37,7 @@ endif # BT_VOCS
 
 config BT_VOCS_CLIENT_MAX_INSTANCE_COUNT
 	int "Volume Offset Control Service client max instance count"
+	depends on BT_SMP
 	default 0
 	range 0 15
 	help
