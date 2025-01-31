@@ -31,7 +31,7 @@ ZTEST_SUITE(pacs_test_suite, NULL, NULL, NULL, pacs_test_suite_after, NULL);
 
 /* Helper macro to define parameters ignoring unsupported features */
 #define PACS_REGISTER_PARAM(_snk_pac, _snk_loc, _src_pac, _src_loc)                                \
-	(struct bt_bap_pacs_register_param)                                                        \
+	(struct bt_pacs_register_param)                                                            \
 	{                                                                                          \
 		IF_ENABLED(CONFIG_BT_PAC_SNK, (.snk_pac = (_snk_pac),))                            \
 		IF_ENABLED(CONFIG_BT_PAC_SNK_LOC, (.snk_loc = (_snk_loc),))                        \
@@ -41,7 +41,7 @@ ZTEST_SUITE(pacs_test_suite, NULL, NULL, NULL, pacs_test_suite_after, NULL);
 
 static ZTEST(pacs_test_suite, test_pacs_register)
 {
-	const struct bt_bap_pacs_register_param pacs_params[] = {
+	const struct bt_pacs_register_param pacs_params[] = {
 		/* valid snk_pac combinations */
 		PACS_REGISTER_PARAM(true, true, true, true),
 		PACS_REGISTER_PARAM(true, true, true, false),
@@ -80,7 +80,7 @@ static ZTEST(pacs_test_suite, test_pacs_register_inval_null_param)
 
 static ZTEST(pacs_test_suite, test_pacs_register_inval_double_register)
 {
-	const struct bt_bap_pacs_register_param pacs_param =
+	const struct bt_pacs_register_param pacs_param =
 		PACS_REGISTER_PARAM(true, true, true, true);
 	int err;
 
@@ -93,7 +93,7 @@ static ZTEST(pacs_test_suite, test_pacs_register_inval_double_register)
 
 static ZTEST(pacs_test_suite, test_pacs_register_inval_snk_loc_without_snk_pac)
 {
-	const struct bt_bap_pacs_register_param pacs_param =
+	const struct bt_pacs_register_param pacs_param =
 		PACS_REGISTER_PARAM(false, true, true, true);
 	int err;
 
@@ -107,7 +107,7 @@ static ZTEST(pacs_test_suite, test_pacs_register_inval_snk_loc_without_snk_pac)
 
 static ZTEST(pacs_test_suite, test_pacs_register_inval_src_loc_without_src_pac)
 {
-	const struct bt_bap_pacs_register_param pacs_param =
+	const struct bt_pacs_register_param pacs_param =
 		PACS_REGISTER_PARAM(true, true, false, true);
 	int err;
 
@@ -121,7 +121,7 @@ static ZTEST(pacs_test_suite, test_pacs_register_inval_src_loc_without_src_pac)
 
 static ZTEST(pacs_test_suite, test_pacs_register_inval_no_pac)
 {
-	const struct bt_bap_pacs_register_param pacs_param =
+	const struct bt_pacs_register_param pacs_param =
 		PACS_REGISTER_PARAM(false, false, false, false);
 	int err;
 
