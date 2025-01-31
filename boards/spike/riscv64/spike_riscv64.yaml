@@ -1,0 +1,15 @@
+identifier: spike_riscv64
+name: Spike Emulation for RISC-V 64-bit
+type: spike
+simulation:
+  - name: spike
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - netif
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
