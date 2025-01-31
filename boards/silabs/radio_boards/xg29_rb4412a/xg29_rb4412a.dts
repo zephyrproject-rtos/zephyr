@@ -208,6 +208,10 @@
 	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
 };
 
+&radio {
+	pa-voltage-mv = <1800>;
+};
+
 &bt_hci_silabs {
 	status = "okay";
 };
