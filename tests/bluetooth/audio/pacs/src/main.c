@@ -10,9 +10,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/fff.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -60,13 +63,51 @@ static ZTEST(pacs_test_suite, test_pacs_register)
 	};
 
 	for (size_t i = 0U; i < ARRAY_SIZE(pacs_params); i++) {
+		struct bt_gatt_attr *attr;
 		int err;
 
 		err = bt_pacs_register(&pacs_params[i]);
 		zassert_equal(err, 0, "[%zu]: Unexpected return value %d", i, err);
 
+#if defined(CONFIG_BT_PAC_SNK)
+		if (pacs_params[i].snk_pac) {
+			attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SNK);
+			zassert_not_null(attr, "[%zu]: Could not find sink PAC", i);
+		}
+#endif /*CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+		if (pacs_params[i].snk_loc) {
+			attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SNK_LOC);
+			zassert_not_null(attr, "[%zu]: Could not find sink loc", i);
+		}
+#endif /*CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC)
+		if (pacs_params[i].src_pac) {
+			attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SRC);
+			zassert_not_null(attr, "[%zu]: Could not find source PAC", i);
+		}
+#endif /*CONFIG_BT_PAC_SRC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+		if (pacs_params[i].src_loc) {
+			attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SRC_LOC);
+			zassert_not_null(attr, "[%zu]: Could not find source loc", i);
+		}
+#endif /*CONFIG_BT_PAC_SRC_LOC */
+
 		err = bt_pacs_unregister();
 		zassert_equal(err, 0, "[%zu]: Unexpected return value %d", i, err);
+
+		attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SNK);
+		zassert_is_null(attr, "[%zu]: Unexpected find of sink PAC", i);
+
+		attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SNK_LOC);
+		zassert_is_null(attr, "[%zu]: Unexpected find of sink loc", i);
+
+		attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SRC);
+		zassert_is_null(attr, "[%zu]: Unexpected find of source PAC", i);
+
+		attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SRC_LOC);
+		zassert_is_null(attr, "[%zu]: Unexpected find of source loc", i);
 	}
 }
 

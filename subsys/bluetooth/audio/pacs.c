@@ -707,77 +707,85 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 	BT_PAC_SUPPORTED_CONTEXT(supported_context_read) \
 }
 
+static const struct bt_gatt_attr _pacs_attrs[] = BT_PACS_SERVICE_DEFINITION();
 static struct bt_gatt_attr pacs_attrs[] = BT_PACS_SERVICE_DEFINITION();
 static struct bt_gatt_service pacs_svc = (struct bt_gatt_service)BT_GATT_SERVICE(pacs_attrs);
 
-
-
-
-#if defined(BT_PAC_SNK_NOTIFIABLE)
-#define PACS_SINK_PAC_CHAR_ATTR_COUNT 3  /* declaration + value + cccd */
+#if defined(CONFIG_BT_PAC_SNK)
+/* declaration + value [+ cccd] */
+#define PACS_SNK_PAC_CHAR_ATTR_COUNT COND_CODE_1(IS_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE), (3), (2))
+/* declaration + value [+ cccd] */
+#define PACS_SNK_PAC_LOC_CHAR_ATTR_COUNT                                                           \
+	COND_CODE_1(IS_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE), (3), (2))
 #else
-#define PACS_SINK_PAC_CHAR_ATTR_COUNT 2  /* declaration + value */
-#endif /* BT_PAC_SNK_NOTIFIABLE */
+#define PACS_SNK_PAC_CHAR_ATTR_COUNT     0
+#define PACS_SNK_PAC_LOC_CHAR_ATTR_COUNT 0
+#endif /* CONFIG_BT_PAC_SNK */
 
-#if defined(BT_PAC_SNK_LOC_NOTIFIABLE)
-#define PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT 3  /* declaration + value + cccd */
+#if defined(CONFIG_BT_PAC_SRC)
+/* declaration + value [+ cccd] */
+#define PACS_SRC_PAC_CHAR_ATTR_COUNT COND_CODE_1(IS_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE), (3), (2))
+/* declaration + value [+ cccd] */
+#define PACS_SRC_PAC_LOC_CHAR_ATTR_COUNT                                                           \
+	COND_CODE_1(IS_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE), (3), (2))
 #else
-#define PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT 2  /* declaration + value*/
-#endif /* BT_PAC_SNK_LOC_NOTIFIABLE */
-
-#if defined(BT_PAC_SRC_NOTIFIABLE)
-#define PACS_SOURCE_PAC_CHAR_ATTR_COUNT 3  /* declaration + value + cccd */
-#else
-#define PACS_SOURCE_PAC_CHAR_ATTR_COUNT 2  /* declaration + value */
-#endif /* BT_PAC_SRC_NOTIFIABLE */
-
-#if defined(BT_PAC_SRC_LOC_NOTIFIABLE)
-#define PACS_SOURCE_PAC_LOC_CHAR_ATTR_COUNT 3  /* declaration + value + cccd */
-#else
-#define PACS_SOURCE_PAC_LOC_CHAR_ATTR_COUNT 2  /* declaration + value*/
-#endif /* BT_PAC_SRC_LOC_NOTIFIABLE */
+#define PACS_SRC_PAC_CHAR_ATTR_COUNT     0
+#define PACS_SRC_PAC_LOC_CHAR_ATTR_COUNT 0
+#endif /* CONFIG_BT_PAC_SNK */
 
 static void configure_pacs_char(const struct bt_pacs_register_param *param)
 {
-	size_t attrs_to_rem;
-	uint8_t first_to_rem;
+	struct bt_gatt_attr *svc_attrs = &pacs_svc.attrs[1]; /* first attribute is the service */
+	uint8_t attrs_to_rem = 0U;
+	uint8_t first_to_rem = 0U;
+	uint8_t src_pac_offset;
 
 	/* Remove the Sink PAC and Location */
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+	if (!param->snk_loc) {
+		first_to_rem = PACS_SNK_PAC_CHAR_ATTR_COUNT;
+		attrs_to_rem = PACS_SNK_PAC_LOC_CHAR_ATTR_COUNT;
+	}
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SNK)
 	if (!param->snk_pac) {
-		first_to_rem = 0;
-		attrs_to_rem = PACS_SINK_PAC_CHAR_ATTR_COUNT + PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT;
-	} else if (!param->snk_loc) {
-		first_to_rem = PACS_SINK_PAC_CHAR_ATTR_COUNT;
-		attrs_to_rem = PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT;
-	} else {
-		first_to_rem = pacs_svc.attr_count;
-		attrs_to_rem = 0;
+		first_to_rem = 0U;
+		attrs_to_rem = PACS_SNK_PAC_CHAR_ATTR_COUNT + PACS_SNK_PAC_LOC_CHAR_ATTR_COUNT;
 	}
+#endif /* CONFIG_BT_PAC_SNK */
 
-	for (size_t i = first_to_rem + attrs_to_rem; i < pacs_svc.attr_count; i++) {
-		pacs_svc.attrs[i - attrs_to_rem] = pacs_svc.attrs[i];
+	if (attrs_to_rem > 0U) {
+		for (uint8_t i = first_to_rem + attrs_to_rem; i < pacs_svc.attr_count; i++) {
+			svc_attrs[i - attrs_to_rem] = svc_attrs[i];
+		}
+		pacs_svc.attr_count -= attrs_to_rem;
 	}
-	pacs_svc.attr_count -= attrs_to_rem;
 
 	/* Set first_to_rem to the start of Source PAC Char, for cleaner offset calc */
-	first_to_rem = PACS_SINK_PAC_CHAR_ATTR_COUNT + PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT;
+	src_pac_offset = 1 + (PACS_SNK_PAC_CHAR_ATTR_COUNT + PACS_SNK_PAC_LOC_CHAR_ATTR_COUNT) -
+			 attrs_to_rem;
+	attrs_to_rem = 0U;
 
 	/* Remove the Source PAC and Location */
-	if (!param->snk_pac) {
-		first_to_rem -= attrs_to_rem;
-		attrs_to_rem = PACS_SOURCE_PAC_CHAR_ATTR_COUNT +
-			       PACS_SOURCE_PAC_LOC_CHAR_ATTR_COUNT;
-	} else if (!param->snk_loc) {
-		first_to_rem = first_to_rem + PACS_SOURCE_PAC_CHAR_ATTR_COUNT - attrs_to_rem;
-		attrs_to_rem = PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT;
-	} else {
-		return;
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+	if (!param->src_loc) {
+		first_to_rem = src_pac_offset + PACS_SRC_PAC_CHAR_ATTR_COUNT;
+		attrs_to_rem = PACS_SNK_PAC_LOC_CHAR_ATTR_COUNT;
 	}
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+#if defined(CONFIG_BT_PAC_SRC)
+	if (!param->src_pac) {
+		first_to_rem = src_pac_offset;
+		attrs_to_rem = PACS_SRC_PAC_CHAR_ATTR_COUNT + PACS_SRC_PAC_LOC_CHAR_ATTR_COUNT;
+	}
+#endif /* CONFIG_BT_PAC_SRC */
 
-	for (size_t i = first_to_rem; i < pacs_svc.attr_count; i++) {
-		pacs_svc.attrs[i - attrs_to_rem] = pacs_svc.attrs[i];
+	if (attrs_to_rem > 0U) {
+		for (uint8_t i = first_to_rem + attrs_to_rem; i < pacs_svc.attr_count; i++) {
+			svc_attrs[i - attrs_to_rem] = svc_attrs[i];
+		}
+		pacs_svc.attr_count -= attrs_to_rem;
 	}
-	pacs_svc.attr_count -= attrs_to_rem;
 }
 
 static bool valid_pacs_register_param(const struct bt_pacs_register_param *param)
@@ -861,7 +869,6 @@ int bt_pacs_register(const struct bt_pacs_register_param *param)
 int bt_pacs_unregister(void)
 {
 	int err;
-	struct bt_gatt_attr _pacs_attrs[] = BT_PACS_SERVICE_DEFINITION();
 
 	if (!atomic_test_bit(pacs.flags, PACS_FLAG_REGISTERED)) {
 		LOG_DBG("No pacs instance registered");
@@ -888,7 +895,8 @@ int bt_pacs_unregister(void)
 		return err;
 	}
 
-	memcpy(pacs_svc.attrs, &_pacs_attrs, sizeof(struct bt_gatt_attr));
+	/* Restore to original definition */
+	memcpy(pacs_svc.attrs, &_pacs_attrs, sizeof(_pacs_attrs));
 	pacs_svc.attr_count = ARRAY_SIZE(pacs_attrs);
 
 	atomic_clear_bit(pacs.flags, PACS_FLAG_REGISTERED);
