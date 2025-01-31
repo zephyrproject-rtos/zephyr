@@ -207,8 +207,10 @@ Get Zephyr and install Python dependencies
 ******************************************
 
 Next, clone Zephyr and its :ref:`modules <modules>` into a new :ref:`west
-<west>` workspace named :file:`zephyrproject`. You'll also install Zephyr's
-additional Python dependencies in a `Python virtual environment`_.
+<west>` workspace. In the following instructions the name :file:`zephyrproject`
+is used for the workspace, however in practice its name and location can be freely
+chosen. You'll also install Zephyr's additional Python dependencies in a
+`Python virtual environment`_.
 
 .. _Python virtual environment: https://docs.python.org/3/library/venv.html
 
