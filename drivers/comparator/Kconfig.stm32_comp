@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_STM32_COMP
+	bool "ST STM32 comparator driver"
+	default y
+	depends on DT_HAS_ST_STM32_COMP_ENABLED
+	select PINCTRL
+	select EXTI_STM32
+	select USE_STM32_LL_COMP
+
+if COMPARATOR_STM32_COMP
+
+config COMPARATOR_STM32_COMP_MILLER_EFFECT_HANDLING
+	bool
+	default n
+	default y if SOC_SERIES_STM32G4X
+
+endif # COMPARATOR_STM32_COMP

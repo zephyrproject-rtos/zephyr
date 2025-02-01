@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32H7 Comparator
+
+  The following example displays the minimum node layout:
+
+    comp1: comparator@deadbeef {
+        compatible = "st,stm32h7-comp";
+        reg = <0xdeadbeef 0x4>;
+        interrupts = <0 0>;
+        status = "disabled";
+    };
+
+  Enabling the comparator node requires setting the minimum default
+  configuration of the comparator. This includes selecting the
+  positive and negative inputs, and routing them using pinctrl:
+
+    &pinctrl {
+        comp1_default: comp1_default {
+            ...
+        };
+    };
+
+    &comp1 {
+        status = "okay";
+        pinctrl-0 = <&comp1_default>;
+        pinctrl-names = "default";
+
+        positive-input = "IO0";
+        negative-input = "IO1";
+    };
+
+compatible: "st,stm32h7-comp"
+
+include:
+  - st,stm32-comp.yaml
