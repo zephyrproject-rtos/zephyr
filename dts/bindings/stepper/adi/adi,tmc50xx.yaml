@@ -2,18 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Analog Devices TMC5041 Stepper Motor Controller
+  Analog Devices TMC50XX Stepper Motor Controller
 
   Example:
-
-    #include <zephyr/dt-bindings/stepper/adi/tmc5041_reg.h>
 
     &spi0 {
         /* SPI bus options here, not shown */
 
         /* Dual controller/driver for up to two 2-phase bipolar stepper motors */
-        tmc5041: tmc5041@0 {
-            compatible = "adi,tmc5041";
+        tmc50xx: tmc50xx@0 {
+            compatible = "adi,tmc50xx";
             reg = <0>;
             spi-max-frequency = <DT_FREQ_M(24)>; /* Maximum SPI bus frequency */
 
@@ -31,7 +29,7 @@ description: |
                 invert-direction;
                 micro-step-res = <256>;
 
-                /* ADI TMC stallguard settings specific to TMC5041 */
+                /* ADI TMC stallguard settings specific to TMC50XX */
                 activate-stallguard2;
                 stallguard-velocity-check-interval-ms=<100>;
                 stallguard2-threshold=<9>;
@@ -56,7 +54,7 @@ description: |
     };
 
 
-compatible: "adi,tmc5041"
+compatible: "adi,tmc50xx"
 
 include:
   - name: spi-device.yaml
@@ -81,11 +79,11 @@ properties:
     type: int
     required: true
     description: |
-      The frequency of the clock signal provided to the TMC5041.
+      The frequency of the clock signal provided to the TMC50XX.
       This is used for real world conversion.
 
-      Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[5041] * ( fCLK[Hz]/2 / 2^23 )
-            where v[5041] is the value written to the TMC5041.
+      Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[50xx] * ( fCLK[Hz]/2 / 2^23 )
+            where v[50xx] is the value written to the TMC50XX.
 
 child-binding:
   include:

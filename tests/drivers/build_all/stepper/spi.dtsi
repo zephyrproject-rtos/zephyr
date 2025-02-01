@@ -6,20 +6,20 @@
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
  ***************************************/
 
-test_spi_tmc5041: tmc5041@0 {
-	compatible = "adi,tmc5041";
+test_spi_tmc50xx: tmc50xx@0 {
+	compatible = "adi,tmc50xx";
 	reg = <0x0>;
 	spi-max-frequency = <0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <1>;
 
-	tmc5041_0: tmc5041_0@0 {
+	tmc50xx_0: tmc50xx_0@0 {
 		status = "okay";
 		reg = <0>;
 	};
 
-	tmc5041_1: tmc5041_1@1 {
+	tmc50xx_1: tmc50xx_1@1 {
 		status = "okay";
 		reg = <1>;
 	};
