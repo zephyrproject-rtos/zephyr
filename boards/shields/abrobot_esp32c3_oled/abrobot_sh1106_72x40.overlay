@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 Rick Cai <wwhheerree@hotmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &abrobot_72x40;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	abrobot_72x40: ssd1306@3c {
+		compatible = "sinowealth,sh1106";
+		reg = <0x3c>;
+		width = <72>;
+		height = <40>;
+		segment-offset = <30>;
+		page-offset = <0>;
+		display-offset = <0xC>;
+		multiplex-ratio = <0x27>;
+		prechargep = <0x22>;
+		ready-time-ms = <10>;
+		segment-remap;
+		com-invdir;
+		use-internal-iref;
+	};
+};
