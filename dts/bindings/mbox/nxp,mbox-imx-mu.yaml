@@ -3,7 +3,7 @@ description: |
 
 compatible: "nxp,mbox-imx-mu"
 
-include: [base.yaml, mailbox-controller.yaml]
+include: [base.yaml, mailbox-controller.yaml, "nxp,rdc-policy.yaml"]
 
 properties:
   interrupts:

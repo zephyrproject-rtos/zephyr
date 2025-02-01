@@ -25,7 +25,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,cpu1-region = &ocram;
-		zephyr,ipc = &mailbox_a;
+		zephyr,ipc = &mbox;
 	};
 
 	sdram0: memory@80000000 {
@@ -124,7 +124,7 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
-&mailbox_a {
+&mbox {
 	status = "okay";
 };
 

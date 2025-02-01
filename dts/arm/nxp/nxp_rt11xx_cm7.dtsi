@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 NXP
+ * Copyright 2021-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,21 +36,21 @@
 			flexram,has-magic-addr;
 			/* same as default fuse value */
 			flexram,bank-spec = <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_DTCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>,
-					     <FLEXRAM_ITCM>;
+						 <FLEXRAM_DTCM>,
+						 <FLEXRAM_DTCM>,
+						 <FLEXRAM_DTCM>,
+						 <FLEXRAM_ITCM>,
+						 <FLEXRAM_ITCM>,
+						 <FLEXRAM_ITCM>,
+						 <FLEXRAM_ITCM>,
+						 <FLEXRAM_DTCM>,
+						 <FLEXRAM_DTCM>,
+						 <FLEXRAM_DTCM>,
+						 <FLEXRAM_DTCM>,
+						 <FLEXRAM_ITCM>,
+						 <FLEXRAM_ITCM>,
+						 <FLEXRAM_ITCM>,
+						 <FLEXRAM_ITCM>;
 
 			itcm: itcm@0 {
 				compatible = "zephyr,memory-region", "nxp,imx-itcm";
@@ -102,10 +102,12 @@
 			#gpio-cells = <2>;
 		};
 
-		mailbox_a: mailbox@40c48000 {
-			compatible = "nxp,imx-mu";
+		mbox:mbox@40c48000 {
+			compatible = "nxp,mbox-imx-mu";
 			reg = <0x40c48000 0x4000>;
 			interrupts = <118 0>;
+			rx-channels = <4>;
+			#mbox-cells = <1>;
 			rdc = <0>;
 		};
 	};

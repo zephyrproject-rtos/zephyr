@@ -141,7 +141,7 @@
 	pinctrl-names = "default";
 };
 
-&mailbox0 {
+&mbox {
 	status = "okay";
 };
 

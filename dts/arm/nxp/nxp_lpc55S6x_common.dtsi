@@ -220,10 +220,12 @@
 		#dma-cells = <1>;
 	};
 
-	mailbox0:mailbox@8b000 {
-		compatible = "nxp,lpc-mailbox";
+	mbox:mailbox0@8b000 {
+		compatible = "nxp,mbox-mailbox";
 		reg = <0x8b000 0xEC>;
 		interrupts = <31 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
 		resets = <&reset NXP_SYSCON_RESET(0, 26)>;
 		status = "disabled";
 	};
