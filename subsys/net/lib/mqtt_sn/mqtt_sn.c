@@ -42,11 +42,14 @@ struct mqtt_sn_publish {
 };
 
 enum mqtt_sn_topic_state {
-	MQTT_SN_TOPIC_STATE_REGISTERING,
-	MQTT_SN_TOPIC_STATE_REGISTERED,
-	MQTT_SN_TOPIC_STATE_SUBSCRIBING,
-	MQTT_SN_TOPIC_STATE_SUBSCRIBED,
-	MQTT_SN_TOPIC_STATE_UNSUBSCRIBING,
+	MQTT_SN_TOPIC_STATE_REGISTER,      /*!< Topic requested to be registered */
+	MQTT_SN_TOPIC_STATE_REGISTERING,   /*!< Topic in progress of registering */
+	MQTT_SN_TOPIC_STATE_REGISTERED,    /*!< Topic registered */
+	MQTT_SN_TOPIC_STATE_SUBSCRIBE,     /*!< Topic requested to subscribe */
+	MQTT_SN_TOPIC_STATE_SUBSCRIBING,   /*!< Topic in progress of subscribing */
+	MQTT_SN_TOPIC_STATE_SUBSCRIBED,    /*!< Topic subscribed */
+	MQTT_SN_TOPIC_STATE_UNSUBSCRIBE,   /*!< Topic requested to unsubscribe */
+	MQTT_SN_TOPIC_STATE_UNSUBSCRIBING, /*!< Topic in progress of unsubscribing */
 };
 
 struct mqtt_sn_topic {
@@ -658,11 +661,6 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 		/* Check if action is due */
 		if (next_attempt <= now) {
 			switch (pub->topic->state) {
-			case MQTT_SN_TOPIC_STATE_REGISTERING:
-			case MQTT_SN_TOPIC_STATE_SUBSCRIBING:
-			case MQTT_SN_TOPIC_STATE_UNSUBSCRIBING:
-				LOG_INF("Can't publish; topic is not ready");
-				break;
 			case MQTT_SN_TOPIC_STATE_REGISTERED:
 			case MQTT_SN_TOPIC_STATE_SUBSCRIBED:
 				if (!pub->con.retries--) {
@@ -680,6 +678,9 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 					pub->con.last_attempt = now;
 					next_attempt = now + T_RETRY_MSEC;
 				}
+				break;
+			default:
+				LOG_INF("Can't publish; topic is not ready");
 				break;
 			}
 		}
@@ -709,8 +710,28 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 	struct mqtt_sn_topic *topic;
 	const int64_t now = k_uptime_get();
 	int64_t next_attempt;
+
+	bool subscribing = false;
+	bool registering = false;
+
 	bool dup; /* dup flag if message is resent */
 
+	/* First pass to check for REGISTERING, SUBSCRIBING, UNSUBSCRIBING */
+	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
+		switch (topic->state) {
+		case MQTT_SN_TOPIC_STATE_UNSUBSCRIBING:
+		case MQTT_SN_TOPIC_STATE_SUBSCRIBING:
+			subscribing = true;
+			break;
+		case MQTT_SN_TOPIC_STATE_REGISTERING:
+			registering = true;
+			break;
+		default:
+			break;
+		}
+	}
+
+	/* Second pass */
 	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
 		LOG_HEXDUMP_DBG(topic->name, topic->namelen, "Processing topic");
 
@@ -725,7 +746,19 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 		/* Check if action is due */
 		if (next_attempt <= now) {
 			switch (topic->state) {
+			case MQTT_SN_TOPIC_STATE_SUBSCRIBE:
+				if (subscribing) {
+					/*
+					 * Only one topic can be subscribing or unsubscribing
+					 * at the same time
+					 */
+					break;
+				}
+				topic->state = MQTT_SN_TOPIC_STATE_SUBSCRIBING;
+				LOG_INF("Topic subscription now in progress");
+				__fallthrough;
 			case MQTT_SN_TOPIC_STATE_SUBSCRIBING:
+				subscribing = true;
 				if (!topic->con.retries--) {
 					LOG_WRN("Topic ran out of retries, disconnecting");
 					mqtt_sn_disconnect_internal(client);
@@ -736,7 +769,16 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 				topic->con.last_attempt = now;
 				next_attempt = now + T_RETRY_MSEC;
 				break;
+			case MQTT_SN_TOPIC_STATE_REGISTER:
+				if (registering) {
+					/* Only one topic can be registering at the same time */
+					break;
+				}
+				topic->state = MQTT_SN_TOPIC_STATE_REGISTERING;
+				LOG_INF("Topic registration now in progress");
+				__fallthrough;
 			case MQTT_SN_TOPIC_STATE_REGISTERING:
+				registering = true;
 				if (!topic->con.retries--) {
 					LOG_WRN("Topic ran out of retries, disconnecting");
 					mqtt_sn_disconnect_internal(client);
@@ -747,7 +789,19 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 				topic->con.last_attempt = now;
 				next_attempt = now + T_RETRY_MSEC;
 				break;
+			case MQTT_SN_TOPIC_STATE_UNSUBSCRIBE:
+				if (subscribing) {
+					/*
+					 * Only one topic can be subscribing or unsubscribing
+					 * at the same time
+					 */
+					break;
+				}
+				topic->state = MQTT_SN_TOPIC_STATE_UNSUBSCRIBING;
+				LOG_INF("Topic unsubscription now in progress");
+				__fallthrough;
 			case MQTT_SN_TOPIC_STATE_UNSUBSCRIBING:
+				subscribing = true;
 				if (!topic->con.retries--) {
 					LOG_WRN("Topic ran out of retries, disconnecting");
 					mqtt_sn_disconnect_internal(client);
@@ -1108,7 +1162,7 @@ int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		}
 
 		topic->qos = qos;
-		topic->state = MQTT_SN_TOPIC_STATE_SUBSCRIBING;
+		topic->state = MQTT_SN_TOPIC_STATE_SUBSCRIBE;
 		sys_slist_append(&client->topic, &topic->next);
 	}
 
@@ -1141,7 +1195,12 @@ int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		return -ENOENT;
 	}
 
-	topic->state = MQTT_SN_TOPIC_STATE_UNSUBSCRIBING;
+	if (topic->state != MQTT_SN_TOPIC_STATE_SUBSCRIBED) {
+		LOG_ERR("Cannot unsubscribe: not subscribed");
+		return -EAGAIN;
+	}
+
+	topic->state = MQTT_SN_TOPIC_STATE_UNSUBSCRIBE;
 	mqtt_sn_con_init(&topic->con);
 
 	err = k_work_reschedule(&client->process_work, K_NO_WAIT);
@@ -1181,7 +1240,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		}
 
 		topic->qos = qos;
-		topic->state = MQTT_SN_TOPIC_STATE_REGISTERING;
+		topic->state = MQTT_SN_TOPIC_STATE_REGISTER;
 		sys_slist_append(&client->topic, &topic->next);
 	}
 
