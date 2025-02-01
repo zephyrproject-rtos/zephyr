@@ -413,8 +413,7 @@ static int uart_silabs_init(const struct device *dev)
 	usartInit.parity = uart_silabs_cfg2ll_parity(uart_cfg->parity);
 	usartInit.stopbits = uart_silabs_cfg2ll_stopbits(uart_cfg->stop_bits);
 	usartInit.databits = uart_silabs_cfg2ll_databits(uart_cfg->data_bits, uart_cfg->parity);
-	usartInit.hwFlowControl =
-		uart_cfg->flow_ctrl ? usartHwFlowControlCtsAndRts : usartHwFlowControlNone;
+	usartInit.hwFlowControl = uart_silabs_ll2cfg_hwctrl(uart_cfg->flow_ctrl);
 
 	USART_InitAsync(config->base, &usartInit);
 
