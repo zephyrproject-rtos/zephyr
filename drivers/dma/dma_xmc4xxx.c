@@ -233,9 +233,11 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 		return -EINVAL;
 	}
 
-	if (block->source_gather_en || block->dest_scatter_en || config->block_count != 1) {
+	if (block->source_gather_en || block->dest_scatter_en || config->block_count != 1 ||
+	    config->cyclic) {
 		if ((uint32_t)dma != (uint32_t)XMC_DMA0 || channel >= 2) {
-			LOG_ERR("Multi-block and gather/scatter only supported on DMA0 on ch0 and ch1");
+			LOG_ERR("Multi-block, cyclic and gather/scatter only supported on DMA0 on "
+				"ch0 and ch1");
 			return -EINVAL;
 		}
 	}
@@ -277,7 +279,7 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 	XMC_DMA_CH_ClearEventStatus(dma, channel, ALL_EVENTS);
 
 	/* check dma slot number */
-	if (config->block_count == 1) {
+	if (config->block_count == 1 && config->cyclic == 0) {
 		uint32_t ctll;
 
 		dma->CH[channel].SAR = block->source_address;
@@ -313,10 +315,15 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 
 			if (i < config->block_count - 1) {
 				desc->llp = (uint32_t)&descriptor_list[channel][i + 1];
-				ctll |= BIT(GPDMA0_CH_CTLL_LLP_DST_EN_Pos) |
-					BIT(GPDMA0_CH_CTLL_LLP_SRC_EN_Pos);
+			} else if (config->cyclic) {
+				desc->llp = (uint32_t)&descriptor_list[channel][0];
 			} else {
 				desc->llp = 0;
+			}
+
+			if (i < config->block_count - 1 || config->cyclic) {
+				ctll |= BIT(GPDMA0_CH_CTLL_LLP_DST_EN_Pos) |
+					BIT(GPDMA0_CH_CTLL_LLP_SRC_EN_Pos);
 			}
 
 			desc->ctll = ctll;
