@@ -106,7 +106,14 @@ void pe_snk_startup_run(void *obj)
  */
 void pe_snk_discovery_entry(void *obj)
 {
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+	struct usbc_port_data *data = dev->data;
+	const struct device *vbus = data->vbus;
+
 	LOG_INF("PE_SNK_Discovery");
+
+	usbc_vbus_enable(vbus, true);
 }
 
 /**
