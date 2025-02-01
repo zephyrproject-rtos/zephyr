@@ -98,12 +98,15 @@ void tc_unattached_snk_run(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
+	struct usbc_port_data *data = dev->data;
+	const struct device *vbus = data->vbus;
 
 	/*
 	 * Transition to AttachWait.SNK when the SNK.Rp state is present
 	 * on at least one of its CC pins.
 	 */
 	if (tcpc_is_cc_rp(tc->cc1) || tcpc_is_cc_rp(tc->cc2)) {
+		usbc_vbus_enable(vbus, true);
 		tc_set_state(dev, TC_ATTACH_WAIT_SNK_STATE);
 	}
 }
@@ -240,6 +243,7 @@ void tc_attached_snk_run(void *obj)
 
 	/* Detach detection */
 	if (usbc_vbus_check_level(vbus, TC_VBUS_PRESENT) == false) {
+		usbc_vbus_enable(vbus, false);
 		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
 		return;
 	}
