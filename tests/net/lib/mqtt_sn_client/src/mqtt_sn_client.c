@@ -139,6 +139,13 @@ static void setup(void *f)
 	k_sem_init(&mqtt_sn_cb_sem, 0, 1);
 }
 
+static void cleanup(void *f)
+{
+	ARG_UNUSED(f);
+
+	mqtt_sn_client_deinit(mqtt_client);
+}
+
 static int input(struct mqtt_sn_client *client, void *buf, size_t sz,
 		 const struct mqtt_sn_data *src_addr)
 {
@@ -222,8 +229,6 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_handle_advertise)
 	zassert_equal(evt_cb_data.called, 4, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_DISCONNECTED, "Wrong event");
 	zassert_equal(mqtt_client->state, 0, "Wrong state");
-
-	mqtt_sn_client_deinit(mqtt_client);
 }
 
 static ZTEST(mqtt_sn_client, test_mqtt_sn_add_gw)
@@ -238,8 +243,6 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_add_gw)
 	zassert_equal(err, 0, "unexpected error %d");
 	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
 	zassert_equal(evt_cb_data.called, 0, "Unexpected event");
-
-	mqtt_sn_client_deinit(mqtt_client);
 }
 
 /* Test send SEARCHGW and GW response */
@@ -271,8 +274,6 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_search_gw)
 	zassert_equal(err, 0, "unexpected error %d");
 	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_GWINFO, "Wrong event");
-
-	mqtt_sn_client_deinit(mqtt_client);
 }
 
 /* Test send SEARCHGW and peer response */
@@ -306,8 +307,6 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_search_peer)
 	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
 	zassert_equal(evt_cb_data.called, 1, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_GWINFO, "Wrong event");
-
-	mqtt_sn_client_deinit(mqtt_client);
 }
 
 static ZTEST(mqtt_sn_client, test_mqtt_sn_respond_searchgw)
@@ -334,14 +333,11 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_respond_searchgw)
 	zassert_equal(evt_cb_data.called, 1, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_SEARCHGW, "Wrong event");
 	assert_msg_send(1, 3 + gw_addr.size, NULL);
-
-	mqtt_sn_client_deinit(mqtt_client);
 }
 
 static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_no_will)
 {
 	mqtt_sn_connect_no_will(mqtt_client);
-	mqtt_sn_client_deinit(mqtt_client);
 }
 
 static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_will)
@@ -385,8 +381,6 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_will)
 	zassert_equal(mqtt_client->state, 1, "Wrong state");
 	zassert_equal(evt_cb_data.called, 1, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_CONNECTED, "Wrong event");
-
-	mqtt_sn_client_deinit(mqtt_client);
 }
 
 static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_qos0)
@@ -419,7 +413,6 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_qos0)
 	zassert_true(sys_slist_is_empty(&mqtt_client->publish), "Publish not empty");
 	zassert_false(sys_slist_is_empty(&mqtt_client->topic), "Topic empty");
 
-	mqtt_sn_client_deinit(mqtt_client);
 }
 
-ZTEST_SUITE(mqtt_sn_client, NULL, NULL, setup, NULL, NULL);
+ZTEST_SUITE(mqtt_sn_client, NULL, NULL, setup, cleanup, NULL);
