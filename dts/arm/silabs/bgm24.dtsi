@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 TriaGnoSys GmbH
+ * Copyright (c) 2025 Jonny Gellhaar
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,6 +122,15 @@
 			status = "disabled";
 			interrupts = <64 3>, <65 3>, <66 3>;
 			interrupt-names = "SETAMPERHOST", "SEMBRX", "SEMBTX";
+		};
+
+		dma0: dma@40040000{
+			compatible = "silabs,ldma";
+			reg = <0x40040000 0x4000>;
+			interrupts = <21 0>;
+			#dma-cells = <3>;
+			dma_channels = <8>;
+			status = "disabled";
 		};
 
 		i2c0: i2c@5b000000 {

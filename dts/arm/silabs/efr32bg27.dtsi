@@ -51,3 +51,7 @@
 &adc0 {
 	interrupts = <54 0>;
 };
+
+&dma0 {
+	interrupts = <26 0>;
+};
