@@ -358,7 +358,7 @@ struct rtc_ds3231_alarm_details {
 };
 static struct rtc_ds3231_alarm_details alarms[] = {{DS3231_REG_ALARM_1_SECONDS, 4},
 						   {DS3231_REG_ALARM_2_MINUTES, 3}};
-static int rtc_ds3231_alarm_get_supported_fields(const struct device *dev, u int16_t id,
+static int rtc_ds3231_alarm_get_supported_fields(const struct device *dev, uint16_t id,
 						 uint16_t *mask)
 {
 	*mask = RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_WEEKDAY |
