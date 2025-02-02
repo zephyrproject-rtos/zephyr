@@ -196,6 +196,18 @@
 #define STM32_PLLI2S_R_DIVISOR		DT_PROP_OR(DT_NODELABEL(plli2s), div_r, 1)
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai1), st_stm32l4_pllsai1_clock, okay)
+#define STM32_PLLSAI1_ENABLED	1
+#define STM32_PLLSAI1_M_DIVISOR		DT_PROP(DT_NODELABEL(pllsai1), div_m)
+#define STM32_PLLSAI1_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pllsai1), mul_n)
+#define STM32_PLLSAI1_P_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(pllsai1), div_p)
+#define STM32_PLLSAI1_P_DIVISOR		DT_PROP_OR(DT_NODELABEL(pllsai1), div_p, 1)
+#define STM32_PLLSAI1_Q_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(pllsai1), div_q)
+#define STM32_PLLSAI1_Q_DIVISOR		DT_PROP_OR(DT_NODELABEL(pllsai1), div_q, 1)
+#define STM32_PLLSAI1_R_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(pllsai1), div_r)
+#define STM32_PLLSAI1_R_DIVISOR		DT_PROP_OR(DT_NODELABEL(pllsai1), div_r, 1)
+#endif
+
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32u5_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32h7_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32h7rs_pll_clock, okay)
