@@ -228,6 +228,27 @@ int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_PLLI2S_R */
+#if defined(STM32_SRC_PLLSAI1_P)
+	case STM32_SRC_PLLSAI1_P:
+		if (!IS_ENABLED(STM32_PLLSAI1_P_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI1_P */
+#if defined(STM32_SRC_PLLSAI1_Q)
+	case STM32_SRC_PLLSAI1_Q:
+		if (!IS_ENABLED(STM32_PLLSAI1_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI1_Q */
+#if defined(STM32_SRC_PLLSAI1_R)
+	case STM32_SRC_PLLSAI1_R:
+		if (!IS_ENABLED(STM32_PLLSAI1_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI1_R */
 #if defined(STM32_SRC_PLL2CLK)
 	case STM32_SRC_PLL2CLK:
 		if (!IS_ENABLED(STM32_PLL2_ENABLED)) {
@@ -441,8 +462,31 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLLI2S_R_DIVISOR);
 		break;
 #endif /* STM32_SRC_PLLI2S_R */
+#if defined(STM32_SRC_PLLSAI1_P) & STM32_PLLSAI1_P_ENABLED
+	case STM32_SRC_PLLSAI1_P:
+		*rate = get_pll_div_frequency(get_pllsai1src_frequency(),
+					      STM32_PLLSAI1_M_DIVISOR,
+					      STM32_PLLSAI1_N_MULTIPLIER,
+					      STM32_PLLSAI1_P_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI1_P */
+#if defined(STM32_SRC_PLLSAI1_Q) & STM32_PLLSAI1_Q_ENABLED
+	case STM32_SRC_PLLSAI1_Q:
+		*rate = get_pll_div_frequency(get_pllsai1src_frequency(),
+					      STM32_PLLSAI1_M_DIVISOR,
+					      STM32_PLLSAI1_N_MULTIPLIER,
+					      STM32_PLLSAI1_Q_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI1_Q */
+#if defined(STM32_SRC_PLLSAI1_R) & STM32_PLLSAI1_R_ENABLED
+	case STM32_SRC_PLLSAI1_R:
+		*rate = get_pll_div_frequency(get_pllsai1src_frequency(),
+					      STM32_PLLSAI1_M_DIVISOR,
+					      STM32_PLLSAI1_N_MULTIPLIER,
+					      STM32_PLLSAI1_R_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI1_R */
 
-/* PLLSAI1x not supported yet */
 /* PLLSAI2x not supported yet */
 #if defined(STM32_SRC_LSE)
 	case STM32_SRC_LSE:
@@ -624,6 +668,16 @@ static void set_up_plls(void)
 		/* Wait for PLL ready */
 	}
 #endif /* STM32_PLLI2S_ENABLED */
+
+#if defined(STM32_PLLSAI1_ENABLED)
+	config_pllsai1();
+
+	/* Enable PLL */
+	LL_RCC_PLLSAI1_Enable();
+	while (LL_RCC_PLLSAI1_IsReady() != 1U) {
+		/* Wait for PLL ready */
+	}
+#endif /* STM32_PLLSAI1_ENABLED */
 }
 
 static void set_up_fixed_clock_sources(void)
