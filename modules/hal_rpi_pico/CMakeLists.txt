@@ -82,6 +82,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_boot_lock/include
     ${rp2_common_dir}/hardware_ticks/include
     ${rp2_common_dir}/hardware_sync_spin_lock/include
+    ${rp2_common_dir}/hardware_sha256/include
     ${rp2_common_dir}/pico_bootrom/include
     ${rp2_common_dir}/pico_flash/include
     ${rp2_common_dir}/pico_platform_compiler/include
