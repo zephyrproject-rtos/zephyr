@@ -39,6 +39,8 @@ static const char *const codec_channel_name[] = {
 	[AUDIO_CHANNEL_REAR_CENTER] = "rear_center",
 	[AUDIO_CHANNEL_SIDE_LEFT] = "side_left",
 	[AUDIO_CHANNEL_SIDE_RIGHT] = "side_right",
+	[AUDIO_CHANNEL_HEADPHONE_LEFT] = "headphone_left",
+	[AUDIO_CHANNEL_HEADPHONE_RIGHT] = "headphone_right",
 	[AUDIO_CHANNEL_ALL] = "all",
 };
 
