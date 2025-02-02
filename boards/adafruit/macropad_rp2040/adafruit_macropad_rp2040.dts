@@ -1,0 +1,239 @@
+/dts-v1/;
+
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
+#include "adafruit_macropad_rp2040-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+
+/ {
+	model = "Adafruit MacroPad RP2040";
+	compatible = "adafruit,macropad-rp2040";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,code-partition = &code_partition;
+		zephyr,display = &oled;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led-strip = &ws2812;
+		led0 = &led0;
+	};
+
+	speaker_reg: speaker-reg {
+		compatible = "regulator-fixed";
+		regulator-name = "Speaker";
+		enable-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key0: key_0 {
+			gpios = <&gpio0 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F1>;
+		};
+
+		key1: key_1 {
+			gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F2>;
+		};
+
+		key2: key_2 {
+			gpios = <&gpio0 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F3>;
+		};
+
+		key3: key_3 {
+			gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F4>;
+		};
+
+		key4: key_4 {
+			gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F5>;
+		};
+
+		key5: key_5 {
+			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F6>;
+		};
+
+		key6: key_6 {
+			gpios = <&gpio0 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F7>;
+		};
+
+		key7: key_7 {
+			gpios = <&gpio0 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F8>;
+		};
+
+		key8: key_8 {
+			gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F9>;
+		};
+
+		key9: key_9 {
+			gpios = <&gpio0 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F10>;
+		};
+
+		key10: key_10 {
+			gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F11>;
+		};
+
+		key11: key_11 {
+			gpios = <&gpio0 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_F12>;
+		};
+
+		encoder_button: encoder_button {
+			gpios = <&gpio0 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+	};
+
+	encoder {
+		compatible = "gpio-qdec";
+		gpios = <&gpio0 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+			<&gpio0 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		zephyr,axis = <INPUT_REL_WHEEL>;
+		steps-per-period = <4>;
+		sample-time-us = <2000>;
+		idle-timeout-ms = <200>;
+	};
+
+	stemma_connector: stemma_connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 21 0>,
+			   <1 0 &gpio0 20 0>;
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(8)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserved memory for the second stage bootloader */
+		second_stage_bootloader: partition@0 {
+			label = "second_stage_bootloader";
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		/*
+		 * Usable flash. Starts at 0x100, after the bootloader. The partition
+		 * size is 8MB minus the 0x100 bytes taken by the bootloader.
+		 */
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x100 (DT_SIZE_M(8) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+/* You need to disable uart1 to use i2c0 */
+&i2c0 {
+	clock-frequency = <400000>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+
+	oled: ssd1306@0 {
+		compatible = "sinowealth,sh1106";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <2>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		prechargep = <0x1F>;
+		segment-remap;
+		com-invdir;
+		inversion-on;
+		reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		data-cmd-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+		ready-time-ms = <100>;  /* SH1106G needs 100ms delay after init */
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_ch0a_default>;
+	pinctrl-names = "default";
+	divider-int-0 = <255>;
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&pio1 {
+	status = "okay";
+
+	pio-ws2812 {
+		compatible = "worldsemi,ws2812-rpi_pico-pio";
+		status = "okay";
+		pinctrl-0 = <&ws2812_pio1_default>;
+		pinctrl-names = "default";
+		bit-waveform = <3>, <3>, <4>;
+
+		ws2812: ws2812 {
+			status = "okay";
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+			chain-length = <12>;
+			color-mapping = <LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
+			reset-delay = <280>;
+			frequency = <800000>;
+		};
+	};
+};
