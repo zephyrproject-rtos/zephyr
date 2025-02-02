@@ -16,6 +16,7 @@ zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCHP_XEC_SYMCR       crypto_mchp_xec_
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCUX_DCP             crypto_mcux_dcp.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_NPCX_SHA             crypto_npcx_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_NRF_ECB              crypto_nrf_ecb.c)
+zephyr_library_sources_ifdef(CONFIG_CRYPTO_RPI_PICO_SHA256      crypto_rpi_pico_sha256.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_RTS5912_SHA          crypto_rts5912_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SI32                 crypto_si32.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SMARTBOND            crypto_smartbond.c)
