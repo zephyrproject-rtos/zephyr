@@ -87,6 +87,44 @@ void config_pll_sysclock(void)
 
 #endif /* defined(STM32_PLL_ENABLED) */
 
+#ifdef STM32_PLLSAI1_ENABLED
+
+/**
+ * @brief Set up PLLSAI1 configuration
+ */
+__unused
+void config_pllsai1(void)
+{
+#if STM32_PLLSAI1_P_ENABLED
+	LL_RCC_PLLSAI1_ConfigDomain_SAI(get_pll_source(),
+					pllsai1m(STM32_PLLSAI1_M_DIVISOR),
+					STM32_PLLSAI1_N_MULTIPLIER,
+					pllsai1p(STM32_PLLSAI1_P_DIVISOR));
+
+	LL_RCC_PLLSAI1_EnableDomain_SAI();
+#endif /* STM32_PLLSAI1_P_ENABLED */
+
+#if STM32_PLLSAI1_Q_ENABLED
+	LL_RCC_PLLSAI1_ConfigDomain_48M(get_pll_source(),
+					pllsai1m(STM32_PLLSAI1_M_DIVISOR),
+					STM32_PLLSAI1_N_MULTIPLIER,
+					pllsai1q(STM32_PLLSAI1_Q_DIVISOR));
+
+	LL_RCC_PLLSAI1_EnableDomain_48M();
+#endif /* STM32_PLLSAI1_Q_ENABLED */
+
+#if STM32_PLLSAI1_R_ENABLED
+	LL_RCC_PLLSAI1_ConfigDomain_ADC(get_pll_source(),
+					pllsai1m(STM32_PLLSAI1_M_DIVISOR),
+					STM32_PLLSAI1_N_MULTIPLIER,
+					pllsai1r(STM32_PLLSAI1_R_DIVISOR));
+
+	LL_RCC_PLLSAI1_EnableDomain_ADC();
+#endif /* STM32_PLLSAI1_R_ENABLED */
+}
+
+#endif /* STM32_PLLSAI1_ENABLED */
+
 /**
  * @brief Activate default clocks
  */
