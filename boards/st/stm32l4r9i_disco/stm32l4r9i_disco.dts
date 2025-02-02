@@ -307,3 +307,6 @@ zephyr_udc0: &usbotg_fs {
 		};
 	};
 };
+
+/* alias used by display shields */
+zephyr_mipi_dsi: &mipi_dsi {};
