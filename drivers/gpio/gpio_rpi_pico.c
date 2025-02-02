@@ -57,6 +57,12 @@ static int gpio_rpi_configure(const struct device *dev,
 	/* Avoid gpio_init, since that also clears previously set direction/high/low */
 	gpio_set_function(pin, GPIO_FUNC_SIO);
 
+	if (flags & GPIO_INPUT) {
+		gpio_set_dir(pin, GPIO_IN);
+	} else {
+		gpio_set_input_enabled(pin, false);
+	}
+
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_SINGLE_ENDED) {
 			data->single_ended_mask |= BIT(pin);
@@ -84,8 +90,6 @@ static int gpio_rpi_configure(const struct device *dev,
 			}
 			gpio_set_dir(pin, GPIO_OUT);
 		}
-	} else if (flags & GPIO_INPUT) {
-		gpio_set_dir(pin, GPIO_IN);
 	}
 
 	return 0;
