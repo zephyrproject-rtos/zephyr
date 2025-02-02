@@ -107,6 +107,9 @@ schema;scenario-schema:
       type: map
       required: false
       mapping:
+        "shell_params_file":
+          type: str
+          required: false
         "type":
           type: str
           required: false

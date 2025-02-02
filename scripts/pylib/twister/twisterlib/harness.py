@@ -403,6 +403,7 @@ class Pytest(Harness):
             f'--junit-xml={self.report_file}',
             f'--platform={self.instance.platform.name}'
         ]
+
         command.extend([os.path.normpath(os.path.join(
             self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
 
@@ -627,6 +628,19 @@ class Pytest(Harness):
             self.status = TwisterStatus.SKIP
             self.instance.reason = 'No tests collected'
 
+class Shell(Pytest):
+    def generate_command(self):
+        config = self.instance.testsuite.harness_config
+        pytest_root = [os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'shell-twister-harness')]
+        config['pytest_root'] = pytest_root
+
+        command = super().generate_command()
+        if config.get('shell_params_file'):
+            p_file = os.path.join(self.source_dir, config.get('shell_params_file'))
+            command.append(f'--testdata={p_file}')
+        else:
+            command.append(f'--testdata={os.path.join(self.source_dir, "test_shell.yml")}')
+        return command
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
