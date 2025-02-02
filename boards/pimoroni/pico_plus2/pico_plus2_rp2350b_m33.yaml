@@ -17,4 +17,5 @@ supported:
   - i2c
   - pwm
   - spi
+  - usbd
   - uart
