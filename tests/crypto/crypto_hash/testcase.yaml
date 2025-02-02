@@ -2,6 +2,7 @@ tests:
   crypto.hash:
     platform_allow:
       - native_sim
+      - rpi_pico2/rp2350a/m33
     integration_platforms:
       - native_sim
     extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
