@@ -186,7 +186,8 @@ static DEVICE_API(pwm, pwm_sam0_driver_api) = {
 	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
 #define PWM_SAM0_INIT(inst)							\
-	PINCTRL_DT_INST_DEFINE(inst)						\
+	PINCTRL_DT_INST_DEFINE(inst);						\
+										\
 	static const struct pwm_sam0_config pwm_sam0_config_##inst = {		\
 		.regs = (Tc *)DT_INST_REG_ADDR(inst),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
