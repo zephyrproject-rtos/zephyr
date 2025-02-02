@@ -192,12 +192,15 @@ static int rtc_ds3231_modify_ctrl_sts(const struct device *dev,
 
 	return rtc_ds3231_modify_register(dev, reg, &buf, bitmask);
 }
+
+#ifdef CONFIG_RTC_ALARM
 static int rtc_ds3231_get_ctrl_sts(const struct device *dev, uint8_t *buf)
 {
 	const struct rtc_ds3231_conf *config = dev->config;
 
 	return mfd_ds3231_i2c_get_registers(config->mfd, DS3231_REG_CTRL_STS, buf, 1);
 }
+#endif /* CONFIG_RTC_ALARM */
 
 struct rtc_ds3231_settings {
 	bool osc;                      /* bit 0 */
@@ -641,7 +644,7 @@ static int rtc_ds3231_init_alarms(struct rtc_ds3231_data *data)
 	data->alarms[1] = (struct rtc_ds3231_alarm){NULL, NULL};
 	return 0;
 }
-#endif
+#endif /* CONFIG_RTC_ALARM */
 
 #ifdef CONFIG_RTC_UPDATE
 static int rtc_ds3231_init_update(struct rtc_ds3231_data *data)
@@ -805,7 +808,7 @@ static int rtc_ds3231_init(const struct device *dev)
 	int err = 0;
 
 	const struct rtc_ds3231_conf *config = dev->config;
-	struct rtc_ds3231_data *data = dev->data;
+	struct rtc_ds3231_data __maybe_unused *data = dev->data;
 
 	if (!device_is_ready(config->mfd)) {
 		return -ENODEV;
