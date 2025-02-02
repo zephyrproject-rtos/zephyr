@@ -82,6 +82,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_boot_lock/include
     ${rp2_common_dir}/hardware_ticks/include
     ${rp2_common_dir}/hardware_sync_spin_lock/include
+    ${rp2_common_dir}/hardware_rcp/include
     ${rp2_common_dir}/pico_bootrom/include
     ${rp2_common_dir}/pico_flash/include
     ${rp2_common_dir}/pico_platform_common/include
@@ -155,6 +156,12 @@ if(CONFIG_HAS_RPI_PICO)
           ${common_dir}/hardware_claim/claim.c)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_CLAIM
           ${common_dir}/hardware_claim/include)
+
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_SHA256
+          ${rp2_common_dir}/pico_sha256/sha256.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_SHA256
+          ${rp2_common_dir}/hardware_sha256/include
+          ${rp2_common_dir}/pico_sha256/include)
 
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_RP2350
           ${rp2_common_dir}/pico_runtime_init/runtime_init.c)
