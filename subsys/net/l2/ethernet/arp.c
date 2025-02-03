@@ -274,9 +274,6 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 			return NULL;
 		}
 
-		net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
-		net_pkt_set_family(pkt, AF_INET);
-
 		/* Avoid recursive loop with network packet capturing */
 		if (IS_ENABLED(CONFIG_NET_CAPTURE) && pending) {
 			net_pkt_set_captured(pkt, net_pkt_is_captured(pending));
@@ -286,6 +283,9 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 			net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(pending));
 		}
 	}
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
+	net_pkt_set_family(pkt, AF_INET);
 
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
