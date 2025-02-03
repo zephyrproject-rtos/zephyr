@@ -551,6 +551,9 @@ Networking
   :kconfig:option:`CONFIG_NVS` Kconfig option. Platforms using OpenThread must explicitly enable
   either the :kconfig:option:`CONFIG_NVS` or :kconfig:option:`CONFIG_ZMS` Kconfig option.
 
+* ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO`` was deprecated in favour of
+  :kconfig:option:`CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO` to avoid naming ambiguity.
+
 Other Subsystems
 ****************
 
