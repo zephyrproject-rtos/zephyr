@@ -12,9 +12,7 @@ config BT_LONG_WQ
 
 if BT_LONG_WQ
 config BT_LONG_WQ_STACK_SIZE
-	# Hidden: Long workqueue stack size. Should be derived from system
-	# requirements.
-	int
+	int "Long workqueue stack size"
 	default 1400 if BT_ECC
 	default 1300 if BT_GATT_CACHING
 	default 1024
