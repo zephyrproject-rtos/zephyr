@@ -754,6 +754,7 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 
 	if (max_ntf_size < buf->len) {
 		LOG_WRN("Sending truncated control point PDU %u < %u", max_ntf_size, buf->len);
+		buf->len = max_ntf_size;
 	}
 
 #if defined(CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE)
@@ -763,7 +764,7 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 		client->params.ntf.attr = preset_control_point_attr;
 		client->params.ntf.func = control_point_ntf_complete;
 		client->params.ntf.data = buf->data;
-		client->params.ntf.len = max_ntf_size;
+		client->params.ntf.len = buf->len;
 
 		return bt_gatt_notify_cb(client->conn, &client->params.ntf);
 	}
@@ -776,7 +777,7 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 		client->params.ind.destroy = NULL;
 		client->params.ind.data = buf->data;
 		/* indications have same size as notifications */
-		client->params.ind.len = max_ntf_size;
+		client->params.ind.len = buf->len;
 
 		return bt_gatt_indicate(client->conn, &client->params.ind);
 	}
