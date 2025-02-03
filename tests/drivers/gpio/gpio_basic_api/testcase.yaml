@@ -107,3 +107,7 @@ tests:
             dt_nodelabel_enabled("arduino_i2c")
     extra_dtc_overlay_files:
       - boards/aw9523b_on_arduino_header.overlay
+  drivers.gpio.2pin_siwx91x_uulp:
+    platform_allow:
+      - siwx917_rb4338a
+    extra_args: "DTC_OVERLAY_FILE=boards/siwx917_rb4338a-uulp.overlay"
