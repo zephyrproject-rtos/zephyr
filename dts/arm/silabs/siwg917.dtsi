@@ -80,6 +80,104 @@
 			status = "disabled";
 		};
 
+		egpio0: egpio@46130000 {
+			compatible = "silabs,siwx91x-gpio";
+			reg = <0x46130000 0x1260>;
+			interrupts = <52 0>, <53 0>, <54 0>, <55 0>,
+				     <56 0>, <57 0>, <58 0>, <59 0>;
+			interrupt-names = "PIN0", "PIN1", "PIN2", "PIN3",
+					  "PIN4", "PIN5", "PIN6", "PIN7";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpioa: gpio@0 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				gpio-reserved-ranges = <0 6>;
+				silabs,pads = [
+					ff ff ff ff  ff ff 01 02  03 04 05 06  07 ff ff 08
+				];
+				status = "okay";
+			};
+
+			gpiob: gpio@1 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <1>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				silabs,pads = [
+					ff ff ff ff  ff ff ff ff  ff 00 00 00  00 00 00 09
+				];
+				status = "okay";
+			};
+
+			gpioc: gpio@2 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <2>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				silabs,pads = [
+					09 09 09 ff  ff ff ff ff  ff ff ff ff  ff ff 0a 0b
+				];
+				status = "okay";
+			};
+
+			gpiod: gpio@3 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <10>;
+				silabs,pads = [
+					0c 0d 0e 0f  10 11 12 13  14 15 ff ff  ff ff ff ff
+				];
+				status = "okay";
+			};
+		};
+
+		egpio1: egpio@2404c000 {
+			compatible = "silabs,siwx91x-gpio";
+			reg = <0x2404C000 0x1260>;
+			interrupts = <18 0>;
+			interrupt-names = "ULP";
+			silabs,ulp;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ulpgpio: ulpgpio@0 {
+				compatible = "silabs,siwx91x-gpio-port";
+				reg = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <12>;
+				gpio-reserved-ranges = <3 1>;
+				silabs,pads = [
+					16 17 18 19  1a 1b 1c 1d  1e 1f 20 21  ff ff ff ff
+				];
+				status = "okay";
+			};
+		};
+
+		uulpgpio: uulpgpio@24048600 {
+			compatible = "silabs,siwx91x-gpio-uulp";
+			reg = <0x24048600 0x30>, <0x12080000 0x18>;
+			reg-names = "ret", "int";
+			interrupts = <21 0>;
+			interrupt-names = "UULP";
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <5>;
+			status = "okay";
+		};
+
 		ulpi2c: i2c@24040000 {
 			compatible = "snps,designware-i2c";
 			#address-cells = <1>;
