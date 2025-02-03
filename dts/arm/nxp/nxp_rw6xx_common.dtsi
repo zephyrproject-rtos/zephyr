@@ -225,6 +225,7 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 8)>;
 		dmas = <&dma0 0>, <&dma0 1>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend>;
 		status = "disabled";
 	};
 
@@ -236,6 +237,7 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 9)>;
 		dmas = <&dma0 2>, <&dma0 3>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend>;
 		status = "disabled";
 	};
 
@@ -247,6 +249,7 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 10)>;
 		dmas = <&dma0 4>, <&dma0 5>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend>;
 		status = "disabled";
 	};
 
@@ -258,6 +261,7 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 11)>;
 		dmas = <&dma0 6>, <&dma0 7>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend>;
 		status = "disabled";
 	};
 
@@ -269,6 +273,7 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 22)>;
 		dmas = <&dma0 26>, <&dma0 27>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend>;
 		status = "disabled";
 	};
 
