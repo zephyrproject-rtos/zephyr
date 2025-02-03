@@ -286,6 +286,7 @@
 			interrupt-names = "usbhs-ir";
 			num-bidir-endpoints = <10>;
 			phys = <&usbhs_phy>;
+			phys-clock = <&uclk>, <&u60clk>;
 			status = "disabled";
 			udc {
 				compatible = "renesas,ra-udc";
