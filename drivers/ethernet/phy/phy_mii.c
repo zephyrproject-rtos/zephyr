@@ -471,11 +471,12 @@ static int phy_mii_initialize(const struct device *dev)
 
 		/* Advertise all speeds */
 		phy_mii_cfg_link(dev, LINK_HALF_10BASE_T |
-				      LINK_FULL_10BASE_T |
+				      LINK_FULL_10BASE_T /* |
 				      LINK_HALF_100BASE_T |
 				      LINK_FULL_100BASE_T |
 				      LINK_HALF_1000BASE_T |
-				      LINK_FULL_1000BASE_T);
+				      LINK_FULL_1000BASE_T */
+				      );
 
 		k_work_init_delayable(&data->monitor_work,
 					monitor_work_handler);
