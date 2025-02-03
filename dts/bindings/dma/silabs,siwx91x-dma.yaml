@@ -1,0 +1,26 @@
+description: Silabs SiWx91x DMA node
+
+compatible: "silabs,siwx91x-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  silabs,sram-desc-addr:
+    type: int
+    required: true
+    description: |
+        SRAM Address for UDMA Descriptor Storage. This address must correspond to the location
+        of the udma_addr0 section in the linker script for the dma0 node, and the udma_addr1
+        section for the ulpdma node. Ensure that the value specified for the SRAM address matches
+        the respective section defined in the linker file for each UDMA node, as this alignment
+        is critical for proper descriptor management and data transfer.
+
+  "#dma-cells":
+    const: 1
+
+# Parameter syntax
+dma-cells:
+  - channel
