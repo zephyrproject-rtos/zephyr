@@ -41,6 +41,8 @@ class Harness:
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     run_id_pattern = r"RunID: (?P<run_id>.*)"
 
+    cacheable = False
+
     def __init__(self):
         self._status = TwisterStatus.NONE
         self.reason = None
@@ -967,37 +969,62 @@ class Bsim(Harness):
     DEFAULT_VERBOSITY = 2
     DEFAULT_SIM_LENGTH = 60e6
 
+    BSIM_READY_TIMEOUT_S = 20
+
+    cacheable = True
+
     def __init__(self):
         super().__init__()
         self._bsim_out_path = os.getenv('BSIM_OUT_PATH', '')
-        self._exe_path = None
+        self._exe_paths = []
         self._tc_output = []
+        self._start_time = 0
 
-    @property
-    def exe_path(self):
-        if self._exe_path:
-            return self._exe_path
+    def _set_start_time(self):
+        self._start_time = time.time()
+
+    def _get_exe_path(self, index):
+        return self._exe_paths[index if index < len(self._exe_paths) else 0]
+
+    def configure(self, instance):
+        super().configure(instance)
 
         if not self._bsim_out_path:
-            logger.warning('Cannot copy bsim exe - BSIM_OUT_PATH not provided.')
-            return self._exe_path
+            raise Exception('Cannot copy bsim exe - BSIM_OUT_PATH not provided.')
 
-        new_exe_name: str = self.instance.testsuite.harness_config.get('bsim_exe_name', '')
-        if new_exe_name:
-            new_exe_name = f'bs_{self.instance.platform.name}_{new_exe_name}'
-        else:
-            new_exe_name = f'bs_{self.instance.name}'
+        exe_names = []
+        for exe_name in self.instance.testsuite.harness_config.get('bsim_exe_name', []):
+            new_exe_name = f'bs_{self.instance.platform.name}_{exe_name}'
+            exe_names.append(
+                new_exe_name.replace(os.path.sep, '_').replace('.', '_').replace('@', '_'))
 
-        new_exe_name = new_exe_name.replace(os.path.sep, '_').replace('.', '_').replace('@', '_')
-        self._exe_path = os.path.join(self._bsim_out_path, 'bin', new_exe_name)
-        return self._exe_path
+        if not exe_names:
+            exe_names = [f'bs_{self.instance.name}']
+
+        self._exe_paths = \
+            [os.path.join(self._bsim_out_path, 'bin', exe_name) for exe_name in exe_names]
+
+    def clean_exes(self):
+        for exe_path in [self._get_exe_path(i) for i in range(len(self._exe_paths))]:
+            if os.path.exists(exe_path):
+                os.remove(exe_path)
+
+        self._set_start_time()
+
+    def wait_bsim_ready(self):
+        start_time = time.time()
+        while time.time() - start_time < Bsim.BSIM_READY_TIMEOUT_S:
+            if all([os.path.exists(self._get_exe_path(i)) for i in range(len(self._exe_paths))]):
+                return True
+            time.sleep(0.1)
+
+        return False
 
     def build(self):
         """
         Copying the application executable to BabbleSim's bin directory enables
         running multidevice bsim tests after twister has built them.
         """
-
         if self.instance is None:
             return
 
@@ -1006,8 +1033,16 @@ class Bsim(Harness):
             logger.warning('Cannot copy bsim exe - cannot find original executable.')
             return
 
-        logger.debug(f'Copying executable from {original_exe_path} to {self.exe_path}')
-        shutil.copy(original_exe_path, self.exe_path)
+        try:
+            new_exe_path = self._get_exe_path(0)
+            logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')
+            shutil.copy(original_exe_path, new_exe_path)
+            self.status = TwisterStatus.PASS
+        except Exception as e:
+            logger.error(f'Failed to copy bsim exe: {e}')
+            self.status = TwisterStatus.ERROR
+        finally:
+            self.instance.execution_time = time.time() - self._start_time
 
     def _run_cmd(self, cmd, timeout):
         with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -1020,18 +1055,14 @@ class Bsim(Harness):
                     terminate_process(proc)
                     logger.warning('Timeout has occurred. Can be extended in testspec file. '
                                    f'Currently set to {timeout} seconds.')
-                    self.status = TwisterStatus.FAIL
+                    self.status = TwisterStatus.ERROR
                 proc.wait(timeout)
             except subprocess.TimeoutExpired:
-                self.status = TwisterStatus.FAIL
+                self.status = TwisterStatus.ERROR
                 proc.kill()
 
         if self.status == TwisterStatus.NONE:
             self.status = TwisterStatus.FAIL if proc.returncode != 0 else TwisterStatus.PASS
-        else:
-            self.status = TwisterStatus.FAIL \
-                if proc.returncode != 0 or self.status in [TwisterStatus.ERROR, TwisterStatus.FAIL] \
-                else TwisterStatus.PASS
 
     def _output_reader(self, proc):
         while proc.stdout.readable() and proc.poll() is None:
@@ -1054,9 +1085,9 @@ class Bsim(Harness):
         if not test_ids:
             logger.error('No test ids specified for bsim test')
             self.status = TwisterStatus.ERROR
-            return
+            return []
 
-        cmds = [[self.exe_path, verbosity, suite_id, f'-d={i}', f'-testid={t_id}'] + extra_args
+        cmds = [[self._get_exe_path(i), verbosity, suite_id, f'-d={i}', f'-testid={t_id}'] + extra_args
                 for i, t_id in enumerate(test_ids)]
         cmds.append([bsim_phy_path, verbosity, suite_id, f'-D={len(test_ids)}', sim_length])
 
@@ -1064,8 +1095,9 @@ class Bsim(Harness):
 
     def bsim_run(self, timeout):
         try:
+            self._set_start_time()
+
             threads = []
-            start_time = time.time()
             for cmd in self._generate_commands():
                 t = threading.Thread(target=lambda c=cmd: self._run_cmd(c, timeout))
                 threads.append(t)
@@ -1073,21 +1105,22 @@ class Bsim(Harness):
 
             for t in threads:
                 t.join(timeout=timeout)
-
-            self.instance.execution_time = time.time() - start_time
+        except Exception as e:
+            logger.error(f'BSIM test failed: {e}')
+            self.status = TwisterStatus.ERROR
         finally:
             self._update_test_status()
 
     def _update_test_status(self):
+        self.instance.execution_time += time.time() - self._start_time
         if not self.instance.testcases:
             self.instance.init_cases()
 
-        # currently there is alays one testcase per bsim suite
+        # currently there is always one testcase per bsim suite
         self.instance.testcases[0].status = self.status if self.status != TwisterStatus.NONE else \
                                             TwisterStatus.FAIL
         self.instance.status = self.instance.testcases[0].status
         if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
-            logger.warning(f'BSIM test failed: {self.instance.reason}')
             self.instance.reason = self.instance.reason or 'Bsim test failed'
             self.instance.testcases[0].output = '\n'.join(self._tc_output)
 
@@ -1231,15 +1264,41 @@ class Ctest(Harness):
 
 class HarnessImporter:
 
+    cache = {}
+    cache_lock = threading.Lock()
+
     @staticmethod
-    def get_harness(harness_name):
+    def get_harness(instance: TestInstance):
+        harness_class =  HarnessImporter._get_harness_class(instance.testsuite.harness)
+        if not harness_class:
+            return None
+
+        harness = None
+        with HarnessImporter.cache_lock:
+            if harness_class.cacheable and instance.name in HarnessImporter.cache:
+                harness = HarnessImporter.cache[instance.name]
+            else:
+                harness = harness_class()
+                if harness_class.cacheable:
+                    harness.configure(instance)
+                    HarnessImporter.cache[instance.name] = harness
+
+        return harness
+
+    @staticmethod
+    def _get_harness_class(harness_name: str):
         thismodule = sys.modules[__name__]
         try:
             if harness_name:
-                harness_class = getattr(thismodule, harness_name)
+                harness_class = getattr(thismodule, harness_name.capitalize())
             else:
                 harness_class = thismodule.Test
-            return harness_class()
+            return harness_class
         except AttributeError as e:
             logger.debug(f"harness {harness_name} not implemented: {e}")
             return None
+
+    @staticmethod
+    def get_harness_by_name(harness_name: str):
+        harness_class = HarnessImporter._get_harness_class(harness_name)
+        return harness_class() if harness_class else None

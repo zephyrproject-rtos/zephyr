@@ -38,6 +38,9 @@ schema;scenario-schema:
     "build_only":
       type: bool
       required: false
+    "no_build":
+      type: bool
+      required: false
     "build_on_all":
       type: bool
       required: false
@@ -178,8 +181,10 @@ schema;scenario-schema:
               sequence:
                 - type: str
         "bsim_exe_name":
-          type: str
+          type: seq
           required: false
+          sequence:
+            - type: str
         "bsim_test_ids":
           type: seq
           required: false
