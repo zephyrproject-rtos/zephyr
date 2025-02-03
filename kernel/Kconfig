@@ -782,9 +782,9 @@ endmenu
 config SWAP_NONATOMIC
 	bool
 	help
-	  On some architectures, the _Swap() primitive cannot be made
+	  On some architectures, the z_swap() primitive cannot be made
 	  atomic with respect to the irq_lock being released.  That
-	  is, interrupts may be received between the entry to _Swap
+	  is, interrupts may be received between the entry to z_swap
 	  and the completion of the context switch.  There are a
 	  handful of workaround cases in the kernel that need to be
 	  enabled when this is true.  Currently, this only happens on
