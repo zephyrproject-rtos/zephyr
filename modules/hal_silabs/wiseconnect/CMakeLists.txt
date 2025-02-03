@@ -62,6 +62,36 @@ zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
 )
 
+if(CONFIG_WIFI_SILABS_SIWX91X)
+  zephyr_library_sources(
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_si91x_net_credentials.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_si91x_net_internal_stack.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x_integration_handler.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_rsi_utility.c
+    ${WISECONNECT_DIR}/components/protocol/wifi/src/sl_wifi_basic_credentials.c
+    ${WISECONNECT_DIR}/components/service/network_manager/si91x/sl_net_si91x.c
+    ${WISECONNECT_DIR}/components/service/network_manager/src/sl_net_basic_profiles.c
+    ${WISECONNECT_DIR}/components/service/network_manager/src/sl_net_credentials.c
+  )
+  zephyr_compile_definitions_ifdef(CONFIG_NET_IPV6
+    SLI_SI91X_ENABLE_IPV6
+  )
+  zephyr_compile_definitions_ifdef(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
+    SLI_SI91X_OFFLOAD_NETWORK_STACK
+    SLI_SI91X_SOCKETS
+  )
+  zephyr_include_directories_ifdef(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
+    # Needed for <sys/socket.h>
+    ${ZEPHYR_BASE}/include/zephyr/posix
+  )
+  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/socket/src/sl_si91x_socket_utility.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/asynchronous_socket/src/sl_si91x_socket.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x_callback_framework.c
+    ${WISECONNECT_DIR}/components/service/network_manager/src/sl_net.c
+  )
+endif() # CONFIG_WIFI_SILABS_SIWX91X
+
 if(CONFIG_BT_SILABS_SIWX91X)
   zephyr_compile_definitions(
     SLI_SI91X_ENABLE_BLE
