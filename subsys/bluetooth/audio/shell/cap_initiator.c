@@ -1428,7 +1428,7 @@ SHELL_CMD_ARG_REGISTER(cap_initiator, &cap_initiator_cmds,
 		       "Bluetooth CAP initiator shell commands",
 		       cmd_cap_initiator, 1, 1);
 
-static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_t data_array_size)
+static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_t data_array_size)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	if (default_source.cap_source != NULL && default_source.is_cap) {
@@ -1440,9 +1440,9 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array, const size
 
 		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 		if (err) {
-			printk("Unable to generate broadcast ID: %d\n", err);
+			bt_shell_error("Unable to generate broadcast ID: %d\n", err);
 
-			return -1;
+			return 0;
 		}
 
 		sys_put_le24(broadcast_id, &ad_cap_broadcast_announcement[2]);
@@ -1457,8 +1457,8 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array, const size
 	return 0;
 }
 
-ssize_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-				  const bool discoverable, const bool connectable)
+size_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+				 const bool discoverable, const bool connectable)
 {
 	if (!discoverable) {
 		return 0;
@@ -1471,7 +1471,7 @@ ssize_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_
 	return 0;
 }
 
-ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size)
+size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	if (default_source.cap_source != NULL && default_source.is_cap) {
@@ -1485,9 +1485,9 @@ ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_
 
 		err = bt_cap_initiator_broadcast_get_base(default_source.cap_source, &base_buf);
 		if (err != 0) {
-			printk("Unable to get BASE: %d\n", err);
+			bt_shell_error("Unable to get BASE: %d\n", err);
 
-			return -1;
+			return 0;
 		}
 
 		data_array[0].type = BT_DATA_SVC_DATA16;

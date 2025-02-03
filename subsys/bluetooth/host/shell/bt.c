@@ -1941,15 +1941,9 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO) && IS_ENABLED(CONFIG_BT_EXT_ADV) && adv_ext) {
 		const bool connectable = atomic_test_bit(adv_options, SHELL_ADV_OPT_CONNECTABLE);
-		ssize_t audio_ad_len;
 
-		audio_ad_len = audio_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
-						 discoverable, connectable);
-		if (audio_ad_len < 0) {
-			return audio_ad_len;
-		}
-
-		ad_len += audio_ad_len;
+		ad_len += audio_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
+					    discoverable, connectable);
 	}
 
 	return ad_len;
