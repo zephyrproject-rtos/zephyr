@@ -21,60 +21,69 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
-static lv_display_t *display;
-struct lvgl_disp_data disp_data = {
-	.blanking_on = false,
-};
+#define IS_MONOCHROME_DISPLAY UTIL_OR(IS_EQ(CONFIG_LV_Z_BITS_PER_PIXEL, 1),	\
+	IS_EQ(CONFIG_LV_COLOR_DEPTH_1, 1))
+#define ALLOC_MONOCHROME_CONV_BUFFER			\
+	UTIL_AND(IS_EQ(IS_MONOCHROME_DISPLAY, 1),	\
+	IS_EQ(CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER, 1))
 
-#define DISPLAY_NODE          DT_CHOSEN(zephyr_display)
-#define IS_MONOCHROME_DISPLAY ((CONFIG_LV_Z_BITS_PER_PIXEL == 1) || (CONFIG_LV_COLOR_DEPTH_1 == 1))
-#define ALLOC_MONOCHROME_CONV_BUFFER                                                               \
-	((IS_MONOCHROME_DISPLAY == 1) && (CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER == 1))
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_displays)
+#define LV_ZEPHYR_DISPLAY_NODE(n) DT_ZEPHYR_DISPLAY(n)
+#elif DT_HAS_CHOSEN(zephyr_display)
+#define LV_ZEPHYR_DISPLAY_NODE(n) DT_CHOSEN(zephyr_display)
+#else
+#error Could not find "zephyr,display" chosen property, or "zephyr,displays" compatible node in DT
+#define LV_ZEPHYR_DISPLAY_NODE(n) DT_INVALID_NODE
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(zephyr_displays) */
+
+#define DISPLAY_WIDTH(n)  DT_PROP(LV_ZEPHYR_DISPLAY_NODE(n), width)
+#define DISPLAY_HEIGHT(n) DT_PROP(LV_ZEPHYR_DISPLAY_NODE(n), height)
 
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
-
-#define DISPLAY_WIDTH  DT_PROP(DISPLAY_NODE, width)
-#define DISPLAY_HEIGHT DT_PROP(DISPLAY_NODE, height)
-
 #if IS_MONOCHROME_DISPLAY
-/* monochrome buffers are expected to have 8 preceding bytes for the color palette */
-#define BUFFER_SIZE                                                                                \
-	(((CONFIG_LV_Z_VDB_SIZE * ROUND_UP(DISPLAY_WIDTH, 8) * ROUND_UP(DISPLAY_HEIGHT, 8)) /      \
-	  100) / 8 +                                                                               \
-	 8)
+/* monochrome buffers are expected to have 8 preceding bytes for the color palette */\
+#define BUFFER_SIZE(n)                                                                                \
+	(((CONFIG_LV_Z_VDB_SIZE * ROUND_UP(DISPLAY_WIDTH(n), 8) * ROUND_UP(DISPLAY_HEIGHT(n), 8)) /      \
+	100) / 8 +                                                                               \
+	8)
 #else
-#define BUFFER_SIZE                                                                                \
-	(CONFIG_LV_Z_BITS_PER_PIXEL *                                                              \
-	 ((CONFIG_LV_Z_VDB_SIZE * DISPLAY_WIDTH * DISPLAY_HEIGHT) / 100) / 8)
+#define BUFFER_SIZE(n)                                                                          \
+	(CONFIG_LV_Z_BITS_PER_PIXEL *                                                           \
+	((CONFIG_LV_Z_VDB_SIZE * DISPLAY_WIDTH(n) * DISPLAY_HEIGHT(n)) / 100) / 8)
 #endif /* IS_MONOCHROME_DISPLAY */
-
-/* NOTE: depending on chosen color depth buffer may be accessed using uint8_t *,
- * uint16_t * or uint32_t *, therefore buffer needs to be aligned accordingly to
- * prevent unaligned memory accesses.
- */
-static uint8_t buf0[BUFFER_SIZE]
-#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
-	Z_GENERIC_SECTION(.lvgl_buf)
-#endif
-		__aligned(CONFIG_LV_Z_VDB_ALIGN);
-
-#ifdef CONFIG_LV_Z_DOUBLE_VDB
-static uint8_t buf1[BUFFER_SIZE]
-#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
-	Z_GENERIC_SECTION(.lvgl_buf)
-#endif
-		__aligned(CONFIG_LV_Z_VDB_ALIGN);
-#endif /* CONFIG_LV_Z_DOUBLE_VDB */
-
-#if ALLOC_MONOCHROME_CONV_BUFFER
-static uint8_t mono_vtile_buf[BUFFER_SIZE]
-#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
-	Z_GENERIC_SECTION(.lvgl_buf)
-#endif
-		__aligned(CONFIG_LV_Z_VDB_ALIGN);
-#endif /* ALLOC_MONOCHROME_CONV_BUFFER */
-
 #endif /* CONFIG_LV_Z_BUFFER_ALLOC_STATIC */
+
+	/* NOTE: depending on chosen color depth buffer may be accessed using uint8_t *,*/
+	/* uint16_t * or uint32_t *, therefore buffer needs to be aligned accordingly to */
+	/* prevent unaligned memory accesses. */
+
+#define LV_DISPLAY_MACRO(n)				\
+	lv_display_t *lvgl_display_##n;			\
+							\
+	struct lvgl_disp_data disp_data_##n = {		\
+		.blanking_on = false,			\
+	};						\
+							\
+	IF_ENABLED(CONFIG_LV_Z_BUFFER_ALLOC_STATIC,(	\
+							\
+	static uint8_t buf0_##n[BUFFER_SIZE(n)]						\
+	IF_ENABLED(CONFIG_LV_Z_VDB_CUSTOM_SECTION, (Z_GENERIC_SECTION(.lvgl_buf)))	\
+			__aligned(CONFIG_LV_Z_VDB_ALIGN);				\
+											\
+	IF_ENABLED(CONFIG_LV_Z_DOUBLE_VDB, (						\
+	static uint8_t buf1_##n[BUFFER_SIZE(n)]						\
+	IF_ENABLED(CONFIG_LV_Z_VDB_CUSTOM_SECTION, (Z_GENERIC_SECTION(.lvgl_buf)))	\
+			__aligned(CONFIG_LV_Z_VDB_ALIGN);				\
+	))										\
+											\
+	IF_ENABLED(ALLOC_MONOCHROME_CONV_BUFFER, (					\
+	static uint8_t mono_vtile_buf_##n[BUFFER_SIZE(n)]				\
+	IF_ENABLED(CONFIG_LV_Z_VDB_CUSTOM_SECTION, (Z_GENERIC_SECTION(.lvgl_buf)))	\
+			__aligned(CONFIG_LV_Z_VDB_ALIGN);				\
+	))										\
+	))
+
+FOR_EACH(LV_DISPLAY_MACRO, (), LV_DISPLAYS_TO_INITIALIZE);
 
 #if CONFIG_LV_Z_LOG_LEVEL != 0
 static void lvgl_log(lv_log_level_t level, const char *buf)
@@ -101,23 +110,19 @@ static void lvgl_log(lv_log_level_t level, const char *buf)
 
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
 
-static int lvgl_allocate_rendering_buffers(lv_display_t *display)
-{
-	int err = 0;
-
-#ifdef CONFIG_LV_Z_DOUBLE_VDB
-	lv_display_set_buffers(display, &buf0, &buf1, BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
-#else
-	lv_display_set_buffers(display, &buf0, NULL, BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
-#endif /* CONFIG_LV_Z_DOUBLE_VDB  */
-
-#if ALLOC_MONOCHROME_CONV_BUFFER
-	lvgl_set_mono_conversion_buffer(mono_vtile_buf, BUFFER_SIZE);
-#endif /* ALLOC_MONOCHROME_CONV_BUFFER */
-
-	return err;
-}
-
+#define LVGL_ALLOCATE_RENDERING_BUFFERS(display, n)					\
+	IF_ENABLED(CONFIG_LV_Z_DOUBLE_VDB,						\
+		(lv_display_set_buffers(display, &buf0_##n, &buf1_##n, BUFFER_SIZE(n),	\
+		LV_DISPLAY_RENDER_MODE_PARTIAL);					\
+	))										\
+	IF_DISABLED(CONFIG_LV_Z_DOUBLE_VDB,						\
+		(lv_display_set_buffers(display, &buf0_##n, NULL, BUFFER_SIZE(n),	\
+		LV_DISPLAY_RENDER_MODE_PARTIAL);					\
+	))										\
+											\
+	IF_ENABLED(ALLOC_MONOCHROME_CONV_BUFFER,					\
+		(lvgl_set_mono_conversion_buffer(mono_vtile_buf_##n, BUFFER_SIZE(n));	\
+	))
 #else
 
 static int lvgl_allocate_rendering_buffers(lv_display_t *display)
@@ -168,7 +173,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 		LOG_ERR("Failed to allocate memory for rendering buffer");
 		return -ENOMEM;
 	}
-#endif
+#endif /* CONFIG_LV_Z_DOUBLE_VDB */
 
 #if ALLOC_MONOCHROME_CONV_BUFFER
 	void *vtile_buf = lv_malloc(buf_size);
@@ -221,50 +226,50 @@ lv_result_t lv_mem_test_core(void)
 	return LV_RESULT_OK;
 }
 
+#define LV_DISPLAY_INIT(n)									\
+	const struct device *display_dev_##n = DEVICE_DT_GET(LV_ZEPHYR_DISPLAY_NODE(n));	\
+	if (!device_is_ready(display_dev_##n)) {				\
+		printk("Display device not ready.\n");				\
+		return -ENODEV;							\
+	}									\
+	disp_data_##n.display_dev = display_dev_##n;				\
+	display_get_capabilities(display_dev_##n, &disp_data_##n.cap);		\
+	lvgl_display_##n = lv_display_create(disp_data_##n.cap.x_resolution,	\
+					disp_data_##n.cap.y_resolution);	\
+	if (!lvgl_display_##n) {					\
+		printk("Failed to create LV display object.\n");		\
+		return -ENOMEM;						\
+	}								\
+	lv_display_set_user_data(lvgl_display_##n, &disp_data_##n);	\
+	if (set_lvgl_rendering_cb(lvgl_display_##n) != 0) {		\
+		printk("Display is not supported.\n");			\
+		return -ENOTSUP;					\
+	}								\
+									\
+	IF_ENABLED(CONFIG_LV_Z_BUFFER_ALLOC_STATIC,			\
+			(LVGL_ALLOCATE_RENDERING_BUFFERS(lvgl_display_##n, n)))	\
+	IF_DISABLED(CONFIG_LV_Z_BUFFER_ALLOC_STATIC,				\
+			(lvgl_allocate_rendering_buffers(lvgl_display_##n);))	\
+	IF_ENABLED(CONFIG_LV_Z_FULL_REFRESH,					\
+		(lv_display_set_render_mode(lvgl_display_##n, LV_DISPLAY_RENDER_MODE_FULL);))
+
 int lvgl_init(void)
 {
-	const struct device *display_dev = DEVICE_DT_GET(DISPLAY_NODE);
-
 	int err = 0;
-
-	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Display device not ready.");
-		return -ENODEV;
-	}
 
 #if CONFIG_LV_Z_LOG_LEVEL != 0
 	lv_log_register_print_cb(lvgl_log);
 #endif
 
+	LOG_DBG("LVGL initialize");
 	lv_init();
 	lv_tick_set_cb(k_uptime_get_32);
 
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
 	lvgl_fs_init();
-#endif
+#endif /* CONFIG_LV_Z_USE_FILESYSTEM */
 
-	disp_data.display_dev = display_dev;
-	display_get_capabilities(display_dev, &disp_data.cap);
-
-	display = lv_display_create(disp_data.cap.x_resolution, disp_data.cap.y_resolution);
-	if (!display) {
-		return -ENOMEM;
-	}
-	lv_display_set_user_data(display, &disp_data);
-
-	if (set_lvgl_rendering_cb(display) != 0) {
-		LOG_ERR("Display not supported.");
-		return -ENOTSUP;
-	}
-
-	err = lvgl_allocate_rendering_buffers(display);
-	if (err != 0) {
-		return err;
-	}
-
-#ifdef CONFIG_LV_Z_FULL_REFRESH
-	lv_display_set_render_mode(display, LV_DISPLAY_RENDER_MODE_FULL);
-#endif
+	FOR_EACH(LV_DISPLAY_INIT, (), LV_DISPLAYS_TO_INITIALIZE);
 
 	err = lvgl_init_input_devices();
 	if (err < 0) {
