@@ -148,6 +148,19 @@
 #define STM32_SYSCLK_SRC_IC2	1
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32n6_rcc, okay)
+#if (DT_SAME_NODE(DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(cpusw), 0), DT_NODELABEL(rcc)))
+#if (DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(cpusw), 0, bus) == STM32_SRC_HSI)
+#define STM32_CPUCLK_SRC_HSI	1
+#elif (DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(cpusw), 0, bus) == STM32_SRC_MSI)
+#define STM32_CPUCLK_SRC_MSI	1
+#elif (DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(cpusw), 0, bus) == STM32_SRC_HSE)
+#define STM32_CPUCLK_SRC_HSE	1
+#elif (DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(cpusw), 0, bus) == STM32_SRC_IC1)
+#define STM32_CPUCLK_SRC_IC1	1
+#endif
+#endif /* cpusw clk source is rcc */
+#endif /* rcc node compatible st_stm32n6_rcc and okay */
 
 /** PLL node related symbols */
 
