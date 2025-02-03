@@ -20,16 +20,14 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-/* at this time stm32h5 mcus have 128KB (stm32h50x) or 2MB (stm32h56x/57x) */
-#define STM32_SERIES_MAX_FLASH	2048
-#elif defined(CONFIG_SOC_SERIES_STM32L5X)
-#define STM32_SERIES_MAX_FLASH	512
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-/* It is used to handle the 2 banks discontinuity case, the discontinuity is not happen on STM32U5,
- *  so define it to flash size to avoid the unexptected check.
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+/*
+ * It is used to handle the 2 banks discontinuity case,
+ * so define it to flash size to avoid the unexpected check.
  */
 #define STM32_SERIES_MAX_FLASH	(CONFIG_FLASH_SIZE)
+#elif defined(CONFIG_SOC_SERIES_STM32L5X)
+#define STM32_SERIES_MAX_FLASH	512
 #endif
 
 #define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
