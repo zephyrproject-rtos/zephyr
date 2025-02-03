@@ -9,6 +9,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &rng0;
 		zephyr,flash = &flash0;
 	};
 
@@ -78,6 +79,11 @@
 			clocks = <&clock0 SIWX91X_CLK_UART2>;
 			current-speed = <115200>;
 			status = "disabled";
+		};
+
+		rng0: rng@45090000 {
+			compatible = "silabs,siwx91x-rng";
+			reg = <0x45090000 0x8>;
 		};
 
 		egpio0: egpio@46130000 {
