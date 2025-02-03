@@ -30,6 +30,7 @@ source "drivers/usb_c/tcpc/Kconfig.tcpc_numaker"
 source "drivers/usb_c/tcpc/Kconfig.tcpc_tcpci"
 source "drivers/usb_c/tcpc/Kconfig.tcpc_ps8xxx"
 source "drivers/usb_c/tcpc/Kconfig.tcpc_rt1715"
+source "drivers/usb_c/tcpc/Kconfig.tcpc_fusb307"
 
 module = USBC
 module-str = usbc
