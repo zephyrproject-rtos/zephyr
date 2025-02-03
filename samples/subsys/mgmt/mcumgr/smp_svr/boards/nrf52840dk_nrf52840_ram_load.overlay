@@ -1,6 +1,40 @@
 /delete-node/ &sram0;
 
-#include "../sysbuild/nrf52840dk_nrf52840_mcuboot_ram_load.overlay"
+/*
+ * Layout must match the nrf52840dk_nrf52840_ram_load overlay file within mcuboot
+ * application configuration directory
+ */
+
+&gpregret1 {
+	/delete-node/ boot_mode@0;
+};
+
+/ {
+	sram@2003FC00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2003FC00 DT_SIZE_K(1)>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+
+		retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_info0: boot_info@0 {
+				compatible = "zephyr,retention";
+				status = "okay";
+				reg = <0x0 0x100>;
+			};
+		};
+	};
+
+	chosen {
+		/delete-property/ zephyr,boot-mode;
+		zephyr,bootloader-info = &boot_info0;
+	};
+};
 
 / {
 	chosen {
