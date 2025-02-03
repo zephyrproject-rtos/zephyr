@@ -3,7 +3,7 @@
 # Copyright (c) 2024 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-DT_STM32_XSPI_HAS_DMA := $(dt_compat_any_has_prop,DT_COMPAT_ST_STM32_XSPI,dmas)
+DT_STM32_XSPI_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_XSPI),dmas)
 
 config FLASH_STM32_XSPI
 	bool "STM32 XSPI Flash driver"
