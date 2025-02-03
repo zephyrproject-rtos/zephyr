@@ -162,7 +162,11 @@ static void write_ep_ctrl_reg(const struct device *dev, const uint8_t ep,
 
 static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 {
-	bool abort_handshake_supported = rp2040_chip_version() >= 2;
+#ifdef CONFIG_SOC_SERIES_RP2040
+	const bool abort_handshake_supported = rp2040_chip_version() >= 2;
+#else
+	const bool abort_handshake_supported = true;
+#endif
 	const struct rpi_pico_config *config = dev->config;
 	usb_hw_t *base = config->base;
 	mm_reg_t abort_done_reg = (mm_reg_t)&base->abort_done;
@@ -177,8 +181,10 @@ static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 	}
 
 	if (abort_handshake_supported) {
+		rpi_pico_bit_clr(abort_done_reg, ep_mask);
 		rpi_pico_bit_set(abort_reg, ep_mask);
 		while ((sys_read32(abort_done_reg) & ep_mask) != ep_mask) {
+			rpi_pico_bit_set(abort_reg, ep_mask);
 		}
 	}
 
@@ -187,6 +193,7 @@ static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 
 	if (abort_handshake_supported) {
 		rpi_pico_bit_clr(abort_reg, ep_mask);
+		rpi_pico_bit_clr(abort_done_reg, ep_mask);
 	}
 
 	LOG_INF("Canceled ep 0x%02x transaction", ep);
