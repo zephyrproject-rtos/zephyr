@@ -231,8 +231,27 @@ static int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_sca
 		return -EBUSY;
 	}
 
-	/* The enum values are same, no conversion needed */
-	sl_scan_config.type = z_scan_config->scan_type;
+	if (z_scan_config->scan_type == WIFI_SCAN_TYPE_ACTIVE) {
+		sl_scan_config.type = SL_WIFI_SCAN_TYPE_ACTIVE;
+		if (!z_scan_config->dwell_time_active) {
+			ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
+							 SL_WIFI_DEFAULT_ACTIVE_CHANNEL_SCAN_TIME);
+		} else {
+			ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
+							 z_scan_config->dwell_time_active);
+		}
+
+		if (ret) {
+			return -EINVAL;
+		}
+	} else {
+		sl_scan_config.type = SL_WIFI_SCAN_TYPE_PASSIVE;
+		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_PASSIVE_SCAN_TIMEOUT,
+						 z_scan_config->dwell_time_passive);
+		if (ret) {
+			return -EINVAL;
+		}
+	}
 
 	for (int i = 0; i < WIFI_MGMT_SCAN_CHAN_MAX_MANUAL; i++) {
 		sl_scan_config.channel_bitmap_2g4 |= BIT(z_scan_config->band_chan[i].channel - 1);
