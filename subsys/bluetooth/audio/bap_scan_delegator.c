@@ -160,7 +160,7 @@ static void bass_notify_receive_state(struct bt_conn *conn,
 	int err;
 
 	if (conn != NULL) {
-		max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
+		max_ntf_size = bt_audio_get_max_ntf_size(conn);
 	} else {
 		max_ntf_size = MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU) - att_ntf_header_size;
 	}
