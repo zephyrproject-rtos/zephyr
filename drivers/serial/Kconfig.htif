@@ -1,0 +1,5 @@
+config UART_HTIF
+    bool "Enable HTIF UART driver"
+    depends on RISCV
+    help
+      Enable the HTIF (Host-Target Interface) UART driver for RISC-V Spike simulation.

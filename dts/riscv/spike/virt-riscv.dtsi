@@ -33,6 +33,12 @@
 		reg-shift = < 0 >;
 	};
 
+	htif: uart {
+		compatible = "ucb,htif-uart";
+		label = "HTIF_UART";
+	};
+
+
 	// uart0: uart@10020000 {
 	// 	interrupts = < 0x0a 1 >;
 	// 	interrupt-parent = < &plic >;

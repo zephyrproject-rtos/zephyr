@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+description: HTIF UART for Spike/FESVR
+compatible: "ucb,htif-uart"
+
+include: base.yaml
+
+properties:
+  label:
+    type: string
+    required: true
+    description: Human-readable string describing the device
