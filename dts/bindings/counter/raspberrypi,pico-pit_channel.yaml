@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+title: Raspberry Pi Pico PIT Channel
+
+description: |
+  All channels need to be child nodes of a raspberrypi,pico-pit compatible node
+
+compatible: "raspberrypi,pico-pit-channel"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+     PWM Slice used by the counter (value 0-7) and thus the channel id. Using other pwm devices
+     connected to this slice leads to undefined behavior. Slice 0 is connected to channels 0 and 1,
+     slice 1 to 2 and 3 and so on. While the physical pins can be used for other tasks, PWM usage
+     would lead to undefined behaviour. The PWM pincontrol macros are also a source of information,
+     as the number directly after PWM_ is the slice used by this channel.
