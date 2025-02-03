@@ -177,6 +177,7 @@ tests:
       - EXTRA_CONF_FILE="overlay-serial.conf"
     platform_allow:
       - nrf52840dk/nrf52840
+      - mimxrt1050_evk/mimxrt1052/hyperflash
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.ram_load.serial.fs.shell:
