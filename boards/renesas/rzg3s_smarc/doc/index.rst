@@ -67,6 +67,8 @@ and the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock control                       |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
