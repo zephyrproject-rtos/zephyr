@@ -30,14 +30,45 @@ static int siwg917_nwp_init(void)
 			.ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID,
 			.config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID,
-			/* Even if neither WiFi or BLE is used we have to specify a Coex mode */
-			.coex_mode = SL_SI91X_BLE_MODE,
 			.ext_custom_feature_bit_map =
 				MEMORY_CONFIG |
 				SL_SI91X_EXT_FEAT_XTAL_CLK |
 				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0,
 		}
 	};
+	sl_si91x_boot_configuration_t *cfg = &network_config.boot_config;
+
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X) && IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		cfg->coex_mode = SL_SI91X_WLAN_BLE_MODE;
+	} else if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		cfg->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
+	} else if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		cfg->coex_mode = SL_SI91X_BLE_MODE;
+	} else {
+		/*
+		 * Even if neither WiFi or BLE is used we have to specify a Coex mode
+		 */
+		cfg->coex_mode = SL_SI91X_BLE_MODE;
+	}
+
+#ifdef CONFIG_WIFI_SILABS_SIWX91X
+	cfg->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE,
+	cfg->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
+		cfg->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
+		cfg->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
+		cfg->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
+		if (IS_ENABLED(CONFIG_NET_IPV6)) {
+			cfg->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV6_CLIENT;
+			cfg->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_IPV6;
+		}
+		if (IS_ENABLED(CONFIG_NET_IPV4)) {
+			cfg->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV4_CLIENT;
+		}
+	} else {
+		cfg->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_BYPASS;
+	}
+#endif
 
 #ifdef CONFIG_BT_SILABS_SIWX91X
 	cfg->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_BT_CUSTOM_FEAT_ENABLE;
