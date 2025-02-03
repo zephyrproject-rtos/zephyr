@@ -294,12 +294,14 @@ static uint16_t supported_context_get(enum bt_audio_dir dir)
 		if (atomic_test_bit(pacs.flags, PACS_FLAG_SNK_PAC)) {
 			return snk_supported_contexts | BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 		}
+		break;
 #endif /* CONFIG_BT_PAC_SNK */
 #if defined(CONFIG_BT_PAC_SRC)
 	case BT_AUDIO_DIR_SOURCE:
 		if (atomic_test_bit(pacs.flags, PACS_FLAG_SRC_PAC)) {
 			return src_supported_contexts | BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 		}
+		break;
 #endif /* CONFIG_BT_PAC_SRC */
 	default:
 		break;
