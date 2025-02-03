@@ -159,9 +159,13 @@ out_fp_endif:
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
     /* Grab the TLS pointer */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     ldr r4, =_thread_offset_to_tls
     adds r4, r2, r4
     ldr r0, [r4]
+#else
+    ldr r0, [r2, #_thread_offset_to_tls]
+#endif
 
     /* For Cortex-M, store TLS pointer in a global variable,
      * as it lacks the process ID or thread ID register
