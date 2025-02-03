@@ -20,6 +20,7 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &ulpuart;
 		zephyr,shell-uart = &ulpuart;
+		zephyr,bt-hci = &bt_hci0;
 	};
 
 	aliases {
@@ -84,4 +85,8 @@
 			reg = <0x0000000 DT_SIZE_K(2048-8)>;
 		};
 	};
+};
+
+&bt_hci0 {
+	status = "okay";
 };
