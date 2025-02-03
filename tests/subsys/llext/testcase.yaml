@@ -19,6 +19,8 @@ common:
     - arch:arm64:CONFIG_LLEXT_HEAP_SIZE=128
   extra_conf_files:
     - prj.conf
+  min_ram: 172                # Size on arm: max: 145, min: 79
+  min_flash: 172              # Size on arm: max: 140, min: 105
 
 tests:
   # While there is in practice no value in compiling subsys/llext/*.c
@@ -42,7 +44,6 @@ tests:
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.readonly_mpu:
-    min_ram: 128
     arch_allow: arm # Xtensa needs writable storage, currently not supported on RISC-V
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
