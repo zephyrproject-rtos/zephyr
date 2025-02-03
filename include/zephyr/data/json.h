@@ -237,12 +237,10 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @param elem_descr_len_ Number of elements in elem_descr_
  */
 #define Z_JSON_DESCR_OBJ(elem_descr_, elem_descr_len_) \
-	{ \
 		.object = { \
 			.sub_descr = elem_descr_, \
 			.sub_descr_len = elem_descr_len_, \
 		}, \
-	}
 
 /**
  * @brief Helper macro to declare a descriptor for an array of primitives
