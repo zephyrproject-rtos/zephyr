@@ -59,6 +59,31 @@
 			interrupts = <3 0>;
 		};
 
+		pinctrl: pinctrl@41000000 {
+			compatible = "atmel,sam0-pinctrl";
+			ranges = <0x41000000 0x41000000 0x180>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			porta: gpio@41000000 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41000000 0x80>;
+				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				status = "disabled";
+			};
+
+			portb: gpio@41000080 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41000080 0x80>;
+				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				status = "disabled";
+			};
+		};
+
 		nvmctrl: nvmctrl@41004000  {
 			compatible = "atmel,sam0-nvmctrl";
 			reg = <0x41004000 0x30>;

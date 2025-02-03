@@ -45,6 +45,41 @@ typedef volatile struct {
 	_reg32_t CONFIG[2];
 } __packed eic_t;
 
+typedef union {
+	struct {
+		uint8_t PMUXEN: 1;
+		uint8_t INEN: 1;
+		uint8_t PULLEN: 1;
+		uint8_t: 3;
+		uint8_t DRVSTR: 1;
+		uint8_t: 1;
+	} bit;
+	uint8_t reg;
+} PORT_PINCFG_Type;
+
+typedef union {
+	struct {
+		uint8_t PMUXE: 4;
+		uint8_t PMUXO: 4;
+	} bit;
+	uint8_t reg;
+} PORT_PMUX_Type;
+
+typedef volatile struct {
+	_reg32_t DIR;
+	_reg32_t DIRCLR;
+	_reg32_t DIRSET;
+	uint32_t res0;
+	_reg32_t OUT;
+	_reg32_t OUTCLR;
+	_reg32_t OUTSET;
+	_reg32_t OUTTGL;
+	const _reg32_t IN;
+	uint32_t res1[3];
+	PORT_PMUX_Type PMUX[16];
+	PORT_PINCFG_Type PINCFG[32];
+} __packed PortGroup;
+
 typedef enum IRQn {
 	PendSV_IRQn = -2,
 	SysTick_IRQn = -1,
@@ -108,7 +143,7 @@ typedef enum IRQn {
 #define OSCCTRL_OSC48MSYNCBUSY_OSC48MDIV_BIT 2
 #define OSCCTRL_STATUS_OSC48MRDY_BIT         4
 
-#define PORT_GROUPS 2
+#define PORT_GROUPS DT_NUM_INST_STATUS_OKAY(atmel_sam0_gpio)
 
 #define SOC_ATMEL_SAM0_GCLK0_FREQ_HZ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 
