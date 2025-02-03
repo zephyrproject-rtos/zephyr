@@ -204,6 +204,28 @@ config NXP_IW416_MURATA_1XK_M2
 
 endchoice
 
+choice NXP_IW416_REGION
+	prompt "Select NXP Wi-Fi Regulatory Domain"
+	depends on NXP_IW416 && !NXP_WIFI_CUSTOM
+	default NXP_IW416_REGION_WW
+
+config NXP_IW416_REGION_WW
+	bool "Regulatory domain WW"
+
+config NXP_IW416_REGION_CA
+	bool "Regulatory domain CA"
+
+config NXP_IW416_REGION_JP
+	bool "Regulatory domain JP"
+
+config NXP_IW416_REGION_EU
+	bool "Regulatory domain EU"
+
+config NXP_IW416_REGION_US
+	bool "Regulatory domain US"
+
+endchoice
+
 choice NXP_IW61X_MODULE
 	prompt "Select NXP IW61X module"
 	depends on NXP_IW61X && !NXP_WIFI_CUSTOM
@@ -253,6 +275,28 @@ config NXP_IW611_MURATA_2DL_M2
 
 	  Detailed information about Type 2DL module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2dl
+
+endchoice
+
+choice NXP_IW61X_REGION
+	prompt "Select NXP Wi-Fi Regulatory Domain"
+	depends on NXP_IW61X && !NXP_WIFI_CUSTOM
+	default NXP_IW61X_REGION_WW
+
+config NXP_IW61X_REGION_WW
+	bool "Regulatory domain WW"
+
+config NXP_IW61X_REGION_CA
+	bool "Regulatory domain CA"
+
+config NXP_IW61X_REGION_JP
+	bool "Regulatory domain JP"
+
+config NXP_IW61X_REGION_EU
+	bool "Regulatory domain EU"
+
+config NXP_IW61X_REGION_US
+	bool "Regulatory domain US"
 
 endchoice
 
@@ -912,12 +956,14 @@ config NXP_WIFI_CLOCKSYNC
 config NXP_WIFI_COMPRESS_TX_PWTBL
 	bool "Compress TX Power Table Support"
 	default y
+	depends on (NXP_RW610 || NXP_IW61X_REGION_WW)
 	help
 	  This option enables the use of Compress TX Power Table support.
 
 config NXP_WIFI_COMPRESS_RU_TX_PWTBL
 	bool "Compress RU TX Power Table Support"
 	default y
+	depends on (NXP_RW610 || NXP_IW61X_REGION_WW)
 	help
 	  This option enables the use of Compress RU TX Power Table support.
 
