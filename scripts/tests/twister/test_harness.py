@@ -670,7 +670,7 @@ def test_get_harness(name):
     harness_name = name
 
     # Act
-    harness_class = harnessimporter.get_harness(harness_name)
+    harness_class = harnessimporter.get_harness_by_name(harness_name)
 
     # Assert
     assert isinstance(harness_class, Test)
