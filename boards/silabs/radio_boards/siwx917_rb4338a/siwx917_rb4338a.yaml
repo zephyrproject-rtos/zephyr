@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - bluetooth
   - dma
   - entropy
   - flash
