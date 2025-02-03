@@ -1134,9 +1134,9 @@ config ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	bool
 	help
-	  It's possible that an architecture port cannot use _Swap() to swap to
-	  the _main() thread, but instead must do something custom. It must
-	  enable this option in that case.
+	  It's possible that an architecture port cannot use z_swap_unlocked()
+	  to swap to the main thread (bg_thread_main), but instead must do
+	  something custom. It must enable this option in that case.
 
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	bool
