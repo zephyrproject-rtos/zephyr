@@ -14,6 +14,7 @@ tests:
       - esp32s3_devkitm/esp32s3/procpu
       - esp32c3_devkitm
       - esp32c6_devkitc
+      - stm32h750b_dk
     integration_platforms:
       - nrf52840dk/nrf52840
       - esp32_devkitc_wrover/esp32/procpu
