@@ -119,7 +119,8 @@
 	defined(CONFIG_SOC_SAMD20E16) || defined(CONFIG_SOC_SAMD20E17) ||                          \
 	defined(CONFIG_SOC_SAMD20E18) || defined(CONFIG_SOC_SAMD21E15A) ||                         \
 	defined(CONFIG_SOC_SAMD21E16A) || defined(CONFIG_SOC_SAMD21E17A) ||                        \
-	defined(CONFIG_SOC_SAMD21E18A)
+	defined(CONFIG_SOC_SAMD21E18A) || defined(CONFIG_SOC_PIC32CM6408MC00032) ||                \
+	defined(CONFIG_SOC_PIC32CM1216MC00032)
 
 #define EIC_PORTA_EXTINT_BITS 0xDBCFCEFF
 #define EIC_PORTB_EXTINT_BITS 0x00000000
@@ -136,7 +137,8 @@
 	defined(CONFIG_SOC_SAMD20G16) || defined(CONFIG_SOC_SAMD20G17) ||                          \
 	defined(CONFIG_SOC_SAMD20G18) || defined(CONFIG_SOC_SAMD21G15A) ||                         \
 	defined(CONFIG_SOC_SAMD21G16A) || defined(CONFIG_SOC_SAMD21G17A) ||                        \
-	defined(CONFIG_SOC_SAMD21G18A)
+	defined(CONFIG_SOC_SAMD21G18A) || defined(CONFIG_SOC_PIC32CM6408MC00048) ||                \
+	defined(CONFIG_SOC_PIC32CM1216MC00048)
 
 #define EIC_PORTA_EXTINT_BITS 0xDBFFFEFF
 #define EIC_PORTB_EXTINT_BITS 0x00C00F0C

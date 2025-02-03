@@ -1,0 +1,9 @@
+family:
+- name: microchip_pic32cmmc
+  series:
+  - name: pic32cmmc00
+    socs:
+    - name: pic32cm6408mc00032
+    - name: pic32cm6408mc00048
+    - name: pic32cm1216mc00032
+    - name: pic32cm1216mc00048
