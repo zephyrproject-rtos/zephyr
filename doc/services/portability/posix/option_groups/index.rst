@@ -845,12 +845,14 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_RAW_SOCKETS`.
 
 .. _posix_option_reader_writer_locks:
 
-_POSIX_READER_WRITER_LOCKS
+_POSIX_RW_LOCKS
 ++++++++++++++++++++++++++
 
-Enable this option with :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS`.
+Enable this option with :kconfig:option:`CONFIG_POSIX_RW_LOCKS`.
 
-.. csv-table:: _POSIX_READER_WRITER_LOCKS
+.. note:: POSIX_READER_WRITER_LOCKS and PTHREAD_RWLOCK are deprecated.
+
+.. csv-table:: _POSIX_RW_LOCKS
    :header: API, Supported
    :widths: 50,10
 
