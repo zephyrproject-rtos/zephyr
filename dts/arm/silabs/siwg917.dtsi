@@ -34,6 +34,11 @@
 		status = "disabled";
 	};
 
+	wifi0: wifi {
+		compatible = "silabs,siwx91x-wifi";
+		status = "disabled";
+	};
+
 	soc {
 		clock0: clock@46000000 {
 			compatible = "silabs,siwx91x-clock";
