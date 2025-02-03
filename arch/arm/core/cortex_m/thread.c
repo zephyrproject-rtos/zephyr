@@ -611,7 +611,7 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_
 		"msr  PSPLIM, %[_psplim]\n" /* __set_PSPLIM(_psplim) */
 #endif
 		"msr  PSP, %[_psp]\n" /* __set_PSP(psp) */
-		"mov r0, #0\n"
+		"movs r0, #0\n"
 		"ldr r1, =arch_irq_unlock_outlined\n"
 		"blx r1\n"
 
