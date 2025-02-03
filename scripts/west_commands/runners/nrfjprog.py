@@ -91,8 +91,11 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
                 raise RuntimeError(f'Invalid erase mode: {erase}')
 
             if opts.get('ext_mem_erase_mode'):
-                # In the future there might be multiple QSPI erase modes
-                cmd.append('--qspisectorerase')
+                if opts['ext_mem_erase_mode'] == 'ERASE_RANGES_TOUCHED_BY_FIRMWARE':
+                    cmd.append('--qspisectorerase')
+                elif opts['ext_mem_erase_mode'] == 'ERASE_ALL':
+                    cmd.append('--qspichiperase')
+
             if opts.get('verify'):
                 # In the future there might be multiple verify modes
                 cmd.append('--verify')

@@ -411,7 +411,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family in xip_ranges:
             xip_start, xip_end = xip_ranges[self.family]
             if self.hex_refers_region(xip_start, xip_end):
-                ext_mem_erase_opt = 'ERASE_ALL'
+                ext_mem_erase_opt = erase_arg
 
         self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
         self.flush(force=False)
