@@ -83,7 +83,7 @@ Some examples of architecture-specific steps that have to be taken:
   in an unknown or broken state.
 * Initialize a board-specific watchdog on Cortex-M3/4.
 * Switch stacks from MSP to PSP on Cortex-M.
-* Use a different approach than calling into _Swap() on Cortex-M to prevent
+* Use a different approach than calling into z_swap() on Cortex-M to prevent
   race conditions.
 * Setup FIRQ and regular IRQ handling on ARCv2.
 
@@ -203,6 +203,9 @@ A context switch can happen in several circumstances:
   threads. For example, referencing invalid memory,
 
 Therefore, the context switching must thus be able to handle all these cases.
+Zephyr provides two mutually exclusive methods for context switching. The first
+is the traditional method that uses :code:`arch_swap()`. The second (and
+recommended) approach uses :code:`arch_switch()`.
 
 The kernel keeps the next thread to run in a "cache", and thus the context
 switching code only has to fetch from that cache to select which thread to run.
@@ -228,21 +231,21 @@ There are two types of context switches: :dfn:`cooperative` and :dfn:`preemptive
   running thread.
 
 A cooperative context switch is always done by having a thread call the
-:code:`_Swap()` kernel internal symbol. When :code:`_Swap` is called, the
-kernel logic knows that a context switch has to happen: :code:`_Swap` does not
-check to see if a context switch must happen. Rather, :code:`_Swap` decides
-what thread to context switch in. :code:`_Swap` is called by the kernel logic
-when an object being operated on is unavailable, and some thread
-yielding/sleeping primitives.
+:code:`z_swap()` kernel internal symbol (or one of its variants). When
+:code:`z_swap` is called, the kernel logic knows that a context switch has to
+happen: :code:`z_swap` does not check to see if a context switch must happen.
+Rather, :code:`z_swap` decides what thread to context switch in.
+:code:`z_swap` is called by the kernel logic when an object being operated on
+is unavailable, and some thread yielding/sleeping primitives.
 
 .. note::
 
-  On x86 and Nios2, :code:`_Swap` is generic enough and the architecture
-  flexible enough that :code:`_Swap` can be called when exiting an interrupt
+  On x86 and Nios2, :code:`z_swap` is generic enough and the architecture
+  flexible enough that :code:`z_swap` can be called when exiting an interrupt
   to provoke the context switch. This should not be taken as a rule, since
   neither the ARM Cortex-M or ARCv2 port do this.
 
-Since :code:`_Swap` is cooperative, the caller-saved registers from the ABI are
+Since :code:`z_swap` is cooperative, the caller-saved registers from the ABI are
 already on the stack. There is no need to save them in the k_thread structure.
 
 A context switch can also be performed preemptively. This happens upon exiting
