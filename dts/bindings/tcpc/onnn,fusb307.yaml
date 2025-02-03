@@ -1,0 +1,64 @@
+# Copyright (c) 2025 Jianxiong Gu <jianxiong.gu@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Onsemi FUSB307 USB Type-C port controller
+
+    Example:
+
+    ports {
+      #address-cells = <1>;
+      #size-cells = <0>;
+      port0: usbc-port@0 {
+        compatible = "usb-c-connector";
+        reg = <0>;
+        tcpc = <&fusb307_tcpc0>;
+        vbus = <&fusb307_vbus0>;
+        power-role = "sink";
+        sink-pdos = <PDO_FIXED(5000, 100, 0)>;
+      };
+    };
+
+    i2c1 {
+      status = "okay";
+      clock-frequency = <I2C_BITRATE_FAST_PLUS>;
+      fusb307_tcpc0: fusb307_tcpc0@50 {
+        compatible = "onnn,fusb307-tcpc";
+        reg = <0x50>;
+        irq-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+        status = "okay";
+
+        fusb307_vbus0: fusb307_vbus0 {
+          compatible = "zephyr,usb-c-vbus-tcpci";
+          status = "okay";
+        };
+      };
+    };
+
+compatible: "onnn,fusb307-tcpc"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt GPIO pin connected from the chip.
+
+  transmit-retries:
+    type: int
+    default: 2
+    description: |
+      Maximum number of packet retransmissions done by TCPC. Valid values are <0, 3>.
+      This value is used to fill the Retry Counter part of the TCPCI Transmit register.
+
+  vconn-disc-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin for VCONN discharge control. FUSB307 does not have VCONN discharge capability.
+      If VCONN discharge is not needed, this pin does not need to be defined in the device
+      tree. Otherwise, this pin and a discharge path are required.
