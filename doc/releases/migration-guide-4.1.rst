@@ -54,6 +54,13 @@ Boards
   instead of pin reset when flashing with ``west flash``. If you want to keep
   using pin reset on the nRF52 family of ICs you can use ``west flash --pinreset``.
 
+* Erasing the external memory when programming a new firmware image with ``west
+  flash`` on the nRF52 and nRF53 series now always correctly honors the
+  ``--erase`` flag (and its absence) both when using the ``nrfjprog`` and
+  ``nrfutil`` backends.  Prior to this release, the ``nrjfprog`` backend would
+  always erase only the sectors of the external flash used by the new firmware,
+  and the ``nrfutil`` one would always erase the whole external flash.
+
 Devicetree
 **********
 
