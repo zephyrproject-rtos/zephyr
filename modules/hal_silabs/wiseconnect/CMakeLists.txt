@@ -54,5 +54,13 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_rng.c
 )
 
+zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X
+  UDMA_ROMDRIVER_PRESENT
+)
+
+zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
+)
+
 zephyr_linker_sources(ROM_SECTIONS linker/code_classification_text.ld)
 zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_ramfunc.ld)
