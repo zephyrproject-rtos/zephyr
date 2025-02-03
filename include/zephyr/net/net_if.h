@@ -614,7 +614,7 @@ struct net_traffic_class {
 	/** Fifo for handling this Tx or Rx packet */
 	struct k_fifo fifo;
 
-#if NET_TC_COUNT > 1 || defined(CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO) \
+#if NET_TC_COUNT > 1 || defined(CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO) \
 	|| defined(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO)
 	/** Semaphore for tracking the available slots in the fifo */
 	struct k_sem fifo_slot;
