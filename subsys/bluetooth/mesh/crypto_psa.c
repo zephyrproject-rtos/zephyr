@@ -28,10 +28,9 @@ LOG_MODULE_REGISTER(bt_mesh_crypto_psa);
 #endif
 #define BT_MESH_KEY_ID_RANGE_SIZE (2 * CONFIG_BT_MESH_SUBNET_COUNT + \
 		2 * CONFIG_BT_MESH_APP_KEY_COUNT + 2 + BT_MESH_CDB_KEY_ID_RANGE_SIZE)
-#define BT_MESH_PSA_KEY_ID_USER_MIN (PSA_KEY_ID_USER_MIN + \
-		CONFIG_BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET)
+#define BT_MESH_PSA_KEY_ID_MIN (0x1FFF4000ul)
 
-BUILD_ASSERT(BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE <= PSA_KEY_ID_USER_MAX,
+BUILD_ASSERT(BT_MESH_KEY_ID_RANGE_SIZE < 0xC000,
 	"BLE Mesh PSA key id range overlaps maximum allowed boundary.");
 
 BUILD_ASSERT(PSA_MAC_LENGTH(PSA_KEY_TYPE_AES, 128, PSA_ALG_CMAC) == 16,
@@ -357,7 +356,7 @@ __weak psa_key_id_t bt_mesh_user_keyid_alloc(void)
 	for (int i = 0; i < BT_MESH_KEY_ID_RANGE_SIZE; i++) {
 		if (!atomic_test_bit(pst_keys, i)) {
 			atomic_set_bit(pst_keys, i);
-			return BT_MESH_PSA_KEY_ID_USER_MIN + i;
+			return BT_MESH_PSA_KEY_ID_MIN + i;
 		}
 	}
 
@@ -366,9 +365,9 @@ __weak psa_key_id_t bt_mesh_user_keyid_alloc(void)
 
 __weak int bt_mesh_user_keyid_free(psa_key_id_t key_id)
 {
-	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_USER_MIN,
-			BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE - 1)) {
-		atomic_clear_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_USER_MIN);
+	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_MIN,
+			BT_MESH_PSA_KEY_ID_MIN + BT_MESH_KEY_ID_RANGE_SIZE - 1)) {
+		atomic_clear_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_MIN);
 		return 0;
 	}
 
@@ -377,9 +376,9 @@ __weak int bt_mesh_user_keyid_free(psa_key_id_t key_id)
 
 __weak void bt_mesh_user_keyid_assign(psa_key_id_t key_id)
 {
-	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_USER_MIN,
-				BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE - 1)) {
-		atomic_set_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_USER_MIN);
+	if (IN_RANGE(key_id, BT_MESH_PSA_KEY_ID_MIN,
+				BT_MESH_PSA_KEY_ID_MIN + BT_MESH_KEY_ID_RANGE_SIZE - 1)) {
+		atomic_set_bit(pst_keys, key_id - BT_MESH_PSA_KEY_ID_MIN);
 	}
 }
 
