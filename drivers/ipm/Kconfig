@@ -69,7 +69,7 @@ source "drivers/ipm/Kconfig.stm32"
 source "drivers/ipm/Kconfig.intel_adsp"
 source "drivers/ipm/Kconfig.ivshmem"
 source "drivers/ipm/Kconfig.sedi"
-
+source "drivers/ipm/Kconfig.renesas_rz"
 
 module = IPM
 module-str = ipm
