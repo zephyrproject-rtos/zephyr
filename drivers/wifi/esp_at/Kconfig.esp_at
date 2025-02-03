@@ -163,6 +163,7 @@ config WIFI_ESP_AT_DNS_USE
 
 config WIFI_ESP_AT_CIPDINFO_USE
 	bool "Use CIPDINFO to get peer ip and port"
+	default y if DNS_RESOLVER
 	help
 	  Enable AT+CIPDINFO to get peer ip-address and port.
 
