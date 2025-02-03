@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2025 GP Orcullo
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv6-m.dtsi>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &nvmctrl;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			device_type = "cpu";
+		};
+	};
+
+	soc {
+		nvic: interrupt-controller@e000e100  {
+			arm,num-irq-priority-bits = <2>;
+		};
+
+		mclk: mclk@40000800 {
+			compatible = "atmel,sam0-mclk";
+			reg = <0x40000800 0x20>;
+			#clock-cells = <2>;
+		};
+
+		oscctrl: oscctrl@40001000 {
+			compatible = "syscon";
+			reg = <0x40001000 0x3c>;
+		};
+
+		osc32kctrl: osc32kctrl@40001400 {
+			compatible = "atmel,sam0-osc32kctrl";
+			reg = <0x40001400 0x20>;
+			#clock-cells = <0>;
+			#atmel,assigned-clock-cells = <1>;
+		};
+
+		gclk: gclk@40001c00 {
+			compatible = "atmel,sam0-gclk";
+			reg = <0x40001c00 0x154>;
+			#clock-cells = <1>;
+			#atmel,assigned-clock-cells = <1>;
+		};
+
+		eic: eic@40002800 {
+			compatible = "atmel,sam0-eic";
+			reg = <0x40002800 0x24>;
+			interrupts = <3 0>;
+		};
+
+		nvmctrl: nvmctrl@41004000  {
+			compatible = "atmel,sam0-nvmctrl";
+			reg = <0x41004000 0x30>;
+			interrupts = <6 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			lock-regions = <16>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				write-block-size = <4>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+};
