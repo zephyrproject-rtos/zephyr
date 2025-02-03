@@ -90,3 +90,7 @@
 &bt_hci0 {
 	status = "okay";
 };
+
+&wifi0 {
+	status = "okay";
+};
