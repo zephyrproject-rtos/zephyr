@@ -618,8 +618,11 @@ ZTEST(rtio_api, test_rtio_transaction)
 
 ZTEST(rtio_api, test_rtio_cqe_count_overflow)
 {
-	/* atomic_t is signed, but RTIO uses cq_count as `uintptr_t` */
-	const atomic_t max_val = (1ULL << (ATOMIC_BITS)) - 1;
+	/* atomic_t max value as `uintptr_t` */
+	const atomic_t max_uval = UINTPTR_MAX;
+
+	/* atomic_t max value as if it were a signed word `intptr_t` */
+	const atomic_t max_sval = UINTPTR_MAX >> 1;
 
 	TC_PRINT("initializing iodev test devices\n");
 
@@ -628,7 +631,19 @@ ZTEST(rtio_api, test_rtio_cqe_count_overflow)
 	}
 
 	TC_PRINT("rtio transaction CQE overflow\n");
-	atomic_set(&r_transaction.cq_count, max_val - 3);
+	atomic_set(&r_transaction.cq_count, max_uval - 3);
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_transaction_(&r_transaction);
+	}
+
+	TC_PRINT("initializing iodev test devices\n");
+
+	for (int i = 0; i < 2; i++) {
+		rtio_iodev_test_init(iodev_test_transaction[i]);
+	}
+
+	TC_PRINT("rtio transaction CQE overflow\n");
+	atomic_set(&r_transaction.cq_count, max_sval - 3);
 	for (int i = 0; i < TEST_REPEATS; i++) {
 		test_rtio_transaction_(&r_transaction);
 	}
