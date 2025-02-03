@@ -12,8 +12,6 @@
 #include <zephyr/posix/pthread.h>
 #endif
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
 /**
  * @brief existence test for `<pthread.h>`
  *
@@ -45,7 +43,7 @@ ZTEST(posix_headers, test_pthread_h)
 	/* zassert_not_equal(-1, PTHREAD_MUTEX_ROBUST); */  /* not implemented */
 	/* zassert_not_equal(-1, PTHREAD_MUTEX_STALLED); */ /* not implemented */
 
-	pthread_once_t once = PTHREAD_ONCE_INIT;
+	__unused pthread_once_t once = PTHREAD_ONCE_INIT;
 
 	/* zassert_not_equal(-1, PTHREAD_PRIO_INHERIT); */ /* not implemented */
 	zassert_not_equal(-1, PTHREAD_PRIO_NONE);
@@ -57,8 +55,8 @@ ZTEST(posix_headers, test_pthread_h)
 	zassert_not_equal(-1, PTHREAD_SCOPE_PROCESS);
 	zassert_not_equal(-1, PTHREAD_SCOPE_SYSTEM);
 
-	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-	pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
+	__unused pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+	__unused pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
 	/* pthread_rwlock_t lock = POSIX_READER_WRITER_LOCKS_INITIALIZER; */ /* not implemented */
 
 	zassert_not_null(pthread_atfork);
@@ -161,4 +159,3 @@ ZTEST(posix_headers, test_pthread_h)
 	zassert_not_null(pthread_testcancel);
 #endif
 }
-#pragma GCC diagnostic pop
