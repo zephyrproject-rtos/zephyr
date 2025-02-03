@@ -347,6 +347,9 @@ SECTIONS
 #include <snippets-data-sections.ld>
 
     __data_region_end = .;
+    .htif ALIGN(0x100) : {
+        KEEP(*(.htif))
+    }
 
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
