@@ -1804,7 +1804,20 @@ This has been fixed in main for v4.0.0
 :cve:`2024-10395`
 -----------------
 
-Under embargo until 2025-01-23
+net: lib: http_server: Buffer Under-read
+
+No proper validation of the length of user input in
+http_server_get_content_type_from_extension could cause a
+segmentation fault or crash by causing memory to be read
+outside of the bounds of the buffer.
+
+- `Zephyr project bug tracker GHSA-hfww-j92m-x8fv
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hfww-j92m-x8fv>`_
+
+This has been fixed in main for v4.0.0
+
+- `PR 80396 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/80396>`_
 
 :cve:`2024-11263`
 -----------------
