@@ -265,8 +265,7 @@ static int rt1715_tcpc_rx_fifo_enqueue(const struct device *dev)
 {
 	const struct rt1715_cfg *const cfg = dev->config;
 	struct rt1715_data *data = dev->data;
-	struct i2c_msg buf[5];
-	uint8_t reg = TCPC_REG_RX_BUFFER;
+	uint8_t buf[4];
 	uint8_t rxbcnt;
 	uint8_t rxftype;
 	uint16_t rxhead;
@@ -274,26 +273,14 @@ static int rt1715_tcpc_rx_fifo_enqueue(const struct device *dev)
 	struct pd_msg *msg = &data->rx_msg;
 	int ret = 0;
 
-	buf[0].buf = &reg;
-	buf[0].len = 1;
-	buf[0].flags = I2C_MSG_WRITE;
-
-	buf[1].buf = &rxbcnt;
-	buf[1].len = 1;
-	buf[1].flags = I2C_MSG_RESTART | I2C_MSG_READ;
-
-	buf[2].buf = &rxftype;
-	buf[2].len = 1;
-	buf[2].flags = I2C_MSG_RESTART | I2C_MSG_READ;
-
-	buf[3].buf = (uint8_t *)&rxhead;
-	buf[3].len = 2;
-	buf[3].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
-
-	ret = i2c_transfer(cfg->bus.bus, buf, 5, cfg->bus.addr);
+	ret = i2c_burst_read_dt(&cfg->bus, TCPC_REG_RX_BUFFER, buf, sizeof(buf));
 	if (ret != 0) {
 		return ret;
 	}
+
+	rxbcnt = buf[0];
+	rxftype = buf[1];
+	rxhead = (buf[3] << 8) | buf[2];
 
 	/* rxbcnt = 1 (frame type) + 2 (Message Header) + Rx data byte count */
 	if (rxbcnt < 3) {
