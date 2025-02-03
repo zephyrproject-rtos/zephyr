@@ -14,6 +14,9 @@
 
 #include "sl_wifi.h"
 #include "sl_wifi_callback_framework.h"
+#ifdef CONFIG_BT_SILABS_SIWX91X
+#include "rsi_ble_common_config.h"
+#endif
 
 static int siwg917_nwp_init(void)
 {
@@ -35,6 +38,23 @@ static int siwg917_nwp_init(void)
 				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0,
 		}
 	};
+
+#ifdef CONFIG_BT_SILABS_SIWX91X
+	cfg->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_BT_CUSTOM_FEAT_ENABLE;
+	cfg->bt_feature_bit_map |= SL_SI91X_BT_RF_TYPE | SL_SI91X_ENABLE_BLE_PROTOCOL;
+	cfg->ble_feature_bit_map |= SL_SI91X_BLE_MAX_NBR_PERIPHERALS(RSI_BLE_MAX_NBR_PERIPHERALS) |
+				    SL_SI91X_BLE_MAX_NBR_CENTRALS(RSI_BLE_MAX_NBR_CENTRALS) |
+				    SL_SI91X_BLE_MAX_NBR_ATT_SERV(RSI_BLE_MAX_NBR_ATT_SERV) |
+				    SL_SI91X_BLE_MAX_NBR_ATT_REC(RSI_BLE_MAX_NBR_ATT_REC) |
+				    SL_SI91X_BLE_PWR_INX(RSI_BLE_PWR_INX) |
+				    SL_SI91X_BLE_PWR_SAVE_OPTIONS(RSI_BLE_PWR_SAVE_OPTIONS) |
+				    SL_SI91X_916_BLE_COMPATIBLE_FEAT_ENABLE |
+				    SL_SI91X_FEAT_BLE_CUSTOM_FEAT_EXTENSION_VALID;
+	cfg->ble_ext_feature_bit_map |= SL_SI91X_BLE_NUM_CONN_EVENTS(RSI_BLE_NUM_CONN_EVENTS) |
+					SL_SI91X_BLE_NUM_REC_BYTES(RSI_BLE_NUM_REC_BYTES) |
+					SL_SI91X_BLE_ENABLE_ADV_EXTN |
+					SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS);
+#endif
 
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
 	 * sl_net_set_profile() here. Currently these are unused.

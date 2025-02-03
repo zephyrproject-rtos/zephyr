@@ -62,6 +62,20 @@ zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
 )
 
+if(CONFIG_BT_SILABS_SIWX91X)
+  zephyr_compile_definitions(
+    SLI_SI91X_ENABLE_BLE
+  )
+  zephyr_include_directories(
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/inc
+  )
+  zephyr_library_sources(
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/rsi_bt_ble.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/rsi_common_apis.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/rsi_utils.c
+  )
+endif() # CONFIG_BT_SILABS_SIWX91X
+
 if(CONFIG_WISECONNECT_NETWORK_STACK)
   zephyr_compile_definitions(
     SLI_SI91X_ENABLE_OS
