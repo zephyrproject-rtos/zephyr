@@ -29,6 +29,11 @@
 		reg = <0x00000000 DT_SIZE_K(191)>;
 	};
 
+	bt_hci0: bt_hci {
+		compatible = "silabs,siwx91x-bt-hci";
+		status = "disabled";
+	};
+
 	soc {
 		clock0: clock@46000000 {
 			compatible = "silabs,siwx91x-clock";
