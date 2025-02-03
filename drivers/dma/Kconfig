@@ -76,6 +76,8 @@ source "drivers/dma/Kconfig.si32"
 
 source "drivers/dma/Kconfig.silabs"
 
+source "drivers/dma/Kconfig.siwx91x"
+
 source "drivers/dma/Kconfig.smartbond"
 
 source "drivers/dma/Kconfig.nxp_sof_host_dma"
