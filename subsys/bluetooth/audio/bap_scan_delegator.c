@@ -151,33 +151,40 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 	}
 }
 
-static void bass_notify_receive_state(struct bt_conn *conn,
-				      const struct bass_recv_state_internal *internal_state)
+static void receive_state_notify_cb(struct bt_conn *conn, void *data)
 {
-	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
+	const struct bass_recv_state_internal *internal_state = data;
+	struct bt_conn_info conn_info;
 	uint16_t max_ntf_size;
 	uint16_t ntf_size;
 	int err;
 
-	if (conn != NULL) {
-		max_ntf_size = bt_audio_get_max_ntf_size(conn);
-	} else {
-		max_ntf_size = MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU) - att_ntf_header_size;
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
+
+	if (conn_info.state != BT_CONN_STATE_CONNECTED ||
+	    !bt_gatt_is_subscribed(conn, internal_state->attr, BT_GATT_CCC_NOTIFY)) {
+		return;
 	}
+
+	max_ntf_size = bt_audio_get_max_ntf_size(conn);
 
 	ntf_size = MIN(max_ntf_size, read_buf.len);
 	if (ntf_size < read_buf.len) {
 		LOG_DBG("Sending truncated notification (%u/%u)", ntf_size, read_buf.len);
 	}
 
-	LOG_DBG("Sending bytes %d", ntf_size);
-	err = bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE,
-				  internal_state->attr, read_buf.data,
-				  ntf_size);
-
-	if (err != 0 && err != -ENOTCONN) {
+	LOG_DBG("Sending bytes %u for %p", ntf_size, (void *)conn);
+	err = bt_gatt_notify_uuid(conn, BT_UUID_BASS_RECV_STATE, internal_state->attr,
+				  read_buf.data, ntf_size);
+	if (err != 0) {
 		LOG_DBG("Could not notify receive state: %d", err);
 	}
+}
+
+static void bass_notify_receive_state(const struct bass_recv_state_internal *internal_state)
+{
+	bt_conn_foreach(BT_CONN_TYPE_LE, receive_state_notify_cb, (void *)internal_state);
 }
 
 static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_state)
@@ -237,7 +244,7 @@ static void receive_state_updated(struct bt_conn *conn,
 
 	bt_debug_dump_recv_state(internal_state);
 	net_buf_put_recv_state(internal_state);
-	bass_notify_receive_state(conn, internal_state);
+	bass_notify_receive_state(internal_state);
 	if (scan_delegator_cbs != NULL &&
 	    scan_delegator_cbs->recv_state_updated != NULL) {
 		scan_delegator_cbs->recv_state_updated(conn,
@@ -285,7 +292,7 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 		}
 
 		net_buf_put_recv_state(internal_state);
-		bass_notify_receive_state(conn, internal_state);
+		receive_state_notify_cb(conn, (void *)internal_state);
 
 		k_sem_give(&read_buf_sem);
 	}
