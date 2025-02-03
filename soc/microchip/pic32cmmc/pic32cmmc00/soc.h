@@ -8,6 +8,15 @@
 #define _SOC_MICROCHIP_PIC32CMMC00_SOC_H_
 
 #include <zephyr/arch/arm/cortex_m/nvic.h>
+#include <atmel_sam0_dt.h>
+
+typedef union {
+	uint8_t reg;
+} _reg8_t;
+
+typedef union {
+	uint16_t reg;
+} _reg16_t;
 
 typedef union {
 	uint32_t reg;
@@ -80,6 +89,66 @@ typedef volatile struct {
 	PORT_PINCFG_Type PINCFG[32];
 } __packed PortGroup;
 
+typedef union {
+	struct {
+		uint32_t: 1;
+		uint32_t ENABLE: 1;
+		uint32_t: 22;
+		uint32_t FORM: 4;
+		uint32_t: 4;
+	} bit;
+	uint32_t reg;
+} SERCOM_USART_CTRLA_Type;
+
+typedef union {
+	struct {
+		uint32_t CHSIZE: 3;
+		uint32_t: 3;
+		uint32_t SBMODE: 1;
+		uint32_t: 6;
+		uint32_t PMODE: 1;
+		uint32_t: 18;
+	} bit;
+	uint32_t reg;
+} SERCOM_USART_CTRLB_Type;
+
+typedef union {
+	struct {
+		uint8_t DRE: 1;
+		uint8_t: 1;
+		uint8_t RXC: 1;
+		uint8_t: 5;
+	} bit;
+	uint8_t reg;
+} _sercom_usart_intflag_t;
+
+typedef union {
+	struct {
+		uint8_t DRE: 1;
+		uint8_t TXC: 1;
+		uint8_t: 6;
+	} bit;
+	uint8_t reg;
+} _sercom_usart_intenset_t;
+
+typedef volatile struct {
+	SERCOM_USART_CTRLA_Type CTRLA;
+	SERCOM_USART_CTRLB_Type CTRLB;
+	uint32_t res0;
+	_reg16_t BAUD;
+	uint8_t res1[6];
+	_reg8_t INTENCLR;
+	uint8_t res2;
+	_sercom_usart_intenset_t INTENSET;
+	uint8_t res3;
+	_sercom_usart_intflag_t INTFLAG;
+	uint8_t res4;
+	_reg16_t STATUS;
+	const _reg32_t SYNCBUSY;
+	uint32_t res5[2];
+	_reg16_t DATA;
+} __packed SercomUsart;
+
 typedef enum IRQn {
 	PendSV_IRQn = -2,
 	SysTick_IRQn = -1,
@@ -118,6 +187,7 @@ typedef enum IRQn {
 #define GCLK_PCHCTRL_CHEN           BIT(6)
 #define GCLK_PCHCTRL_GEN_GCLK0      0
 #define GCLK_SYNCBUSY_GENCTRL0_BIT  2
+#define GCLK_PCHCTRL_GEN(n)         FIELD_PREP(GENMASK(3, 0), n)
 
 #define MCLK        ((mclk_t *)DT_REG_ADDR(DT_INST(0, atmel_sam0_mclk)))
 #define MCLK_CPUDIV ((uintptr_t)MCLK + 0x04)
@@ -142,6 +212,28 @@ typedef enum IRQn {
 #define OSCCTRL_CAL48M_MASK                  GENMASK(21, 0)
 #define OSCCTRL_OSC48MSYNCBUSY_OSC48MDIV_BIT 2
 #define OSCCTRL_STATUS_OSC48MRDY_BIT         4
+
+#define SERCOM_USART_CTRLA_CPOL      BIT(29)
+#define SERCOM_USART_CTRLA_DORD      BIT(30)
+#define SERCOM_USART_CTRLA_FORM(n)   FIELD_PREP(GENMASK(27, 24), n)
+#define SERCOM_USART_CTRLA_MODE(n)   FIELD_PREP(GENMASK(4, 2), n)
+#define SERCOM_USART_CTRLA_RXPO_Pos  20
+#define SERCOM_USART_CTRLA_TXPO_Pos  16
+#define SERCOM_USART_CTRLB_CHSIZE(n) FIELD_PREP(GENMASK(2, 0), n)
+#define SERCOM_USART_CTRLB_RXEN      BIT(17)
+#define SERCOM_USART_CTRLB_TXEN      BIT(16)
+#define SERCOM_USART_INTENCLR_DRE    BIT(0)
+#define SERCOM_USART_INTENCLR_MASK   0xBF
+#define SERCOM_USART_INTENCLR_RXC    BIT(2)
+#define SERCOM_USART_INTENCLR_RXS    BIT(3)
+#define SERCOM_USART_INTENCLR_TXC    BIT(1)
+#define SERCOM_USART_INTENSET_DRE    BIT(0)
+#define SERCOM_USART_INTENSET_RXC    BIT(2)
+#define SERCOM_USART_INTENSET_TXC    BIT(1)
+#define SERCOM_USART_STATUS_BUFOVF   BIT(2)
+#define SERCOM_USART_STATUS_FERR     BIT(1)
+#define SERCOM_USART_STATUS_PERR     BIT(0)
+#define SERCOM_USART_SYNCBUSY_MASK   GENMASK(2, 0)
 
 #define PORT_GROUPS DT_NUM_INST_STATUS_OKAY(atmel_sam0_gpio)
 

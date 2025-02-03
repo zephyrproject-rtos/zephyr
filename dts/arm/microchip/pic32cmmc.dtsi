@@ -97,6 +97,50 @@
 				write-block-size = <4>;
 			};
 		};
+
+		sercom0: sercom@42000400 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000400 0x31>;
+			interrupts = <9 0>;
+			clocks = <&gclk 19>, <&mclk 0x1c 1>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
+
+		sercom1: sercom@42000800 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000800 0x31>;
+			interrupts = <10 0>;
+			clocks = <&gclk 20>, <&mclk 0x1c 2>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
+
+		sercom2: sercom@42000c00 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000c00 0x31>;
+			interrupts = <11 0>;
+			clocks = <&gclk 21>, <&mclk 0x1c 3>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
+
+		sercom3: sercom@42001000 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42001000 0x31>;
+			interrupts = <12 0>;
+			clocks = <&gclk 22>, <&mclk 0x1c 4>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
 	};
 
 	sram0: memory@20000000 {
