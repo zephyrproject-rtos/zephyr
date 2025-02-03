@@ -6,6 +6,7 @@ common:
 tests:
   drivers.eeprom.build:
     min_ram: 32
+    min_flash: 128
     platform_exclude: serpente
     depends_on:
       - gpio
@@ -13,7 +14,8 @@ tests:
       - spi
 
   drivers.eeprom.emul.build:
-    min_ram: 32
+    min_ram: 64
+    min_flash: 128
     platform_exclude: serpente
     depends_on:
       - gpio
