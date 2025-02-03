@@ -47,15 +47,6 @@
 #define RTC1_PRETICK_SELECTED_CC_MASK   BIT_MASK(CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT + 1U)
 #define RTC0_PRETICK_SELECTED_CC_MASK	BIT_MASK(NRF_RTC_CC_COUNT_MAX)
 
-#if defined(CONFIG_SOC_NRF_GPIO_FORWARDER_FOR_NRF5340)
-#define GPIOS_PSEL_BY_IDX(node_id, prop, idx) \
-	NRF_DT_GPIOS_TO_PSEL_BY_IDX(node_id, prop, idx),
-#define ALL_GPIOS_IN_NODE(node_id) \
-	DT_FOREACH_PROP_ELEM(node_id, gpios, GPIOS_PSEL_BY_IDX)
-#define ALL_GPIOS_IN_FORWARDER(node_id) \
-	DT_FOREACH_CHILD(node_id, ALL_GPIOS_IN_NODE)
-#endif
-
 #ifdef CONFIG_SOC_NRF5340_CPUAPP
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
@@ -560,17 +551,6 @@ static int nordicsemi_nrf53_init(void)
 #endif
 #if defined(CONFIG_SOC_DCDC_NRF53X_HV) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vregh))
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_HIGH, true);
-#endif
-
-#if defined(CONFIG_SOC_NRF_GPIO_FORWARDER_FOR_NRF5340)
-	static const uint8_t forwarded_psels[] = {
-		DT_FOREACH_STATUS_OKAY(nordic_nrf_gpio_forwarder, ALL_GPIOS_IN_FORWARDER)
-	};
-
-	for (int i = 0; i < ARRAY_SIZE(forwarded_psels); i++) {
-		soc_secure_gpio_pin_mcu_select(forwarded_psels[i], NRF_GPIO_PIN_SEL_NETWORK);
-	}
-
 #endif
 
 	return 0;
