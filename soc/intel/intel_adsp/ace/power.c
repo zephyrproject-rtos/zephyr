@@ -340,7 +340,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 			/* do power down - this function won't return */
-			power_down(true, CONFIG_ADSP_POWER_DOWN_HPSRAM, true);
+			power_down(true, IS_ENABLED(CONFIG_ADSP_POWER_DOWN_HPSRAM), true);
 		} else {
 			power_gate_entry(cpu);
 		}
