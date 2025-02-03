@@ -9,10 +9,13 @@
 #define H_IMG_MGMT_
 
 #include <inttypes.h>
-#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <bootutil/image.h>
 #include <zcbor_common.h>
+
+#ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
+#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/smp/smp.h>
+#endif
 
 /**
  * @brief MCUmgr img_mgmt API
