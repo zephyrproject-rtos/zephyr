@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+name: gpio_loopback_stm32_comp
+
+boards:
+  nucleo_g474re/stm32g474xx:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nucleo_g474re.overlay
+  nucleo_h743zi/stm32h743xx:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nucleo_h743zi.overlay
+  nucleo_h745zi_q/stm32h745xx/m7:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nucleo_h745zi_q.overlay
