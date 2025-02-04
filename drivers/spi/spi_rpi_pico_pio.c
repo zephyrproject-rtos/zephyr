@@ -387,7 +387,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 			wrap = RPI_PICO_PIO_GET_WRAP(spi_mode_0_1);
 			cycles = SPI_MODE_0_1_CYCLES;
 		} else {
-			LOG_ERR("Not supported:  cpol=%d, cpha=%d\n", cpol, cpha);
+			LOG_ERR("Not supported:  cpol=%d, cpha=%d", cpol, cpha);
 			return -ENOTSUP;
 		}
 
