@@ -94,6 +94,9 @@ void arch_cpu_idle(void)
 
 	SLEEP_IF_ALLOWED(__WFI);
 
+#if defined(CONFIG_TRACING)
+	sys_trace_idle_exit();
+#endif
 	__enable_irq();
 	__ISB();
 }
@@ -132,6 +135,10 @@ void arch_cpu_atomic_idle(unsigned int key)
 #endif
 
 	SLEEP_IF_ALLOWED(__WFE);
+
+#if defined(CONFIG_TRACING)
+	sys_trace_idle_exit();
+#endif
 
 	arch_irq_unlock(key);
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
