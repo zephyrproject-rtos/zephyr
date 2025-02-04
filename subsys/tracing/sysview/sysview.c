@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/init.h>
+#include <zephyr/debug/cpu_load.h>
 #include <ksched.h>
 
 #include <SEGGER_SYSVIEW.h>
@@ -64,6 +65,17 @@ void sys_trace_isr_exit_to_scheduler(void)
 void sys_trace_idle(void)
 {
 	SEGGER_SYSVIEW_OnIdle();
+
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_enter_idle();
+	}
+}
+
+void sys_trace_idle_exit(void)
+{
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_exit_idle();
+	}
 }
 
 void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1)

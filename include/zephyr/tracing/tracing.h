@@ -2718,6 +2718,12 @@
 
 #if defined(CONFIG_PERCEPIO_TRACERECORDER)
 #include "tracing_tracerecorder.h"
+
+/**
+ * @brief Called when the cpu exits the idle state
+ */
+void sys_trace_idle_exit(void);
+
 #else
 /**
  * @brief Called when entering an ISR
@@ -2738,6 +2744,12 @@ void sys_trace_isr_exit_to_scheduler(void);
  * @brief Called when the cpu enters the idle state
  */
 void sys_trace_idle(void);
+
+/**
+ * @brief Called when the cpu exits the idle state
+ */
+void sys_trace_idle_exit(void);
+
 #endif /* CONFIG_PERCEPIO_TRACERECORDER */
 
 /**

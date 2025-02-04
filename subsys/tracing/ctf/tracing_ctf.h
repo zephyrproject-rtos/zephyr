@@ -368,6 +368,7 @@ extern "C" {
 #define sys_trace_sys_init_exit(...)
 
 void sys_trace_idle(void);
+void sys_trace_idle_exit(void);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
 
