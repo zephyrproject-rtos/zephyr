@@ -1,0 +1,17 @@
+# TI MSPM0G1X0X_G3X0X
+
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MSPM0G1X0X_G3X0X
+
+DT_MSPM0_CLKMUX_PATH := $(dt_nodelabel_path,clkmux)
+DT_MSPM0_CLKMUX_CPU_FREQ := $(dt_node_int_prop_int,$(DT_MSPM0_CLKMUX_PATH),clock-frequency)
+
+config NUM_IRQS
+	default 32
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default "$(DT_MSPM0_CLKMUX_CPU_FREQ)" if "$(dt_nodelabel_enabled,clkmux)"
+
+endif # SOC_SERIES_MSPM0G1X0X_G3X0X
