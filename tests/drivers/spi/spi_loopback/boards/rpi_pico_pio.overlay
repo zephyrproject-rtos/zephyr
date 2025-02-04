@@ -20,7 +20,10 @@
 &pio0 {
 	status = "okay";
 
-	pio0_spi0: pio0_spi0 {
+	pio0_spi0: pio0_spi0@0 {
+		reg = <0>;
+		reg-names = "sm";
+
 		pinctrl-0 = <&pio0_spi0_default>;
 		pinctrl-names = "default";
 

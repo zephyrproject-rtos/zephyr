@@ -6,3 +6,11 @@ description: Raspberry Pi Pico PIO
 compatible: "raspberrypi,pico-pio"
 
 include: [base.yaml, reset-device.yaml]
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 0
