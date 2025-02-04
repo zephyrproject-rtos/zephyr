@@ -75,6 +75,7 @@
 			interrupt-names = "rxf", "glerr";
 			clocks = <&pclkb 0 0>, <&pclka 0 0>;
 			clock-names = "opclk", "ramclk";
+			dll-max-freq = <DT_FREQ_M(40)>;
 			reg = <0x400b0000 0x2000>;
 			status = "disabled";
 
