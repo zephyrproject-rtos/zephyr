@@ -27,6 +27,8 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
+#include <zephyr/arch/arm/arm-m-switch.h>
+
 extern void z_arm_fault_init(void);
 extern void z_arm_cpu_idle_init(void);
 #ifdef CONFIG_ARM_MPU
@@ -61,10 +63,12 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
+#ifndef CONFIG_USE_SWITCH
 static ALWAYS_INLINE void arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
 }
+#endif
 
 #if !defined(CONFIG_MULTITHREADING)
 extern FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_func,
