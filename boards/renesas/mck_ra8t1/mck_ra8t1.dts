@@ -85,8 +85,8 @@
 };
 
 &canfdclk {
-	clocks = <&pll>;
-	div = <5>;
+	clocks = <&pllp>;
+	div = <6>;
 	status = "okay";
 };
 
