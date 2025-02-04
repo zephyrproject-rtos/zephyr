@@ -1081,6 +1081,31 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 	}
 
 	z_arm_fatal_error(reason, &esf_copy);
+
+#if defined(CONFIG_USE_SWITCH)
+	/* The arch_switch implementation can expand the size of the
+	 * frame when it saves the outgoing context (to the faulting
+	 * thread), so make sure it has room.  The resulting stack
+	 * will obviously be corrupt, but it won't overflow the
+	 * guarded region.
+	 */
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+	uint32_t psplim, psp2;
+
+	__asm__ volatile("mrs %0, psplim" : "=r"(psplim));
+	psp2 = MAX(psplim + arm_m_switch_stack_buffer, psp);
+	__asm__ volatile("msr psp, %0" ::"r"(psp2));
+#endif
+
+	/* Prepare interrupt exit for context switch, but only if this
+	 * is the lowest level interrupt (if we're nested, that was a
+	 * fault that happened in the ISR and shouldn't affect thread
+	 * state).
+	 */
+	if ((exc_return & 0xf000000f) == 0xf000000d) {
+		arm_m_exc_tail();
+	}
+#endif
 }
 
 /**

@@ -106,6 +106,9 @@ config CPU_CORTEX_M7
 
 if CPU_CORTEX_M
 
+config USE_SWITCH
+	default y if USE_SWITCH_SUPPORTED && !ARM_NONSECURE_FIRMWARE
+
 config CPU_CORTEX_M_HAS_SYSTICK
 	bool
 	help
@@ -226,6 +229,7 @@ config ARMV7_M_ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_VTOR
 	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	select CPU_CORTEX_M_HAS_SYSTICK
+	select USE_SWITCH_SUPPORTED
 	help
 	  This option signifies the use of an ARMv7-M processor
 	  implementation, or the use of a backwards-compatible
