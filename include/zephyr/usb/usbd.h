@@ -254,6 +254,8 @@ struct usbd_status {
 	unsigned int suspended : 1;
 	/** USB remote wake-up feature is enabled */
 	unsigned int rwup : 1;
+	/** USB device is self-powered */
+	unsigned int self_powered : 1;
 	/** USB device speed */
 	enum usbd_speed speed : 2;
 };
@@ -1049,6 +1051,17 @@ bool usbd_is_suspended(struct usbd_context *uds_ctx);
  * @return 0 on success, other values on fail.
  */
 int usbd_wakeup_request(struct usbd_context *uds_ctx);
+
+/**
+ * @brief Set the self-powered status of the USB device
+ *
+ * The status is used in the Self Powered field of the Get Status request
+ * response to indicate whether the device is currently self-powered.
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ * @param[in] status Sets self-powered status if true, clears it otherwise
+ */
+void usbd_self_powered(struct usbd_context *uds_ctx, const bool status);
 
 /**
  * @brief Get actual device speed

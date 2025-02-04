@@ -151,6 +151,7 @@ struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 	/* doc functions register end */
 
 	sample_fix_code_triple(&sample_usbd, USBD_SPEED_FS);
+	usbd_self_powered(&sample_usbd, attributes & USB_SCD_SELF_POWERED);
 
 	if (msg_cb != NULL) {
 		/* doc device init-and-msg start */
