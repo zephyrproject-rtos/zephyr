@@ -182,6 +182,7 @@ ARM arch:
     - MaureenHelm
     - stephanosio
     - bbolen
+    - ithinuel
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -202,6 +203,8 @@ ARM64 arch:
     - npitre
     - povergoing
     - sgrrzhf
+    - wearyzen
+    - ithinuel
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
@@ -218,6 +221,8 @@ ARM Platforms:
   status: maintained
   maintainers:
     - wearyzen
+  collaborators:
+    - ithinuel
   files:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
@@ -1642,6 +1647,9 @@ Release Notes:
   status: maintained
   maintainers:
     - carlocaione
+  collaborators:
+    - wearyzen
+    - ithinuel
   files:
     - include/zephyr/drivers/mbox.h
     - drivers/mbox/
@@ -4772,6 +4780,7 @@ West:
     - wearyzen
   collaborators:
     - tomi-font
+    - ithinuel
   files: []
   labels:
     - "area: CMSIS_6"
@@ -4868,6 +4877,8 @@ West:
   maintainers:
     - kristofer-jonsson-arm
     - wearyzen
+  collaborators:
+    - ithinuel
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
@@ -5200,6 +5211,7 @@ West:
     - wearyzen
     - valeriosetti
     - tomi-font
+    - ithinuel
   files:
     - modules/mbedtls/
     - tests/crypto/mbedtls/
@@ -5390,6 +5402,7 @@ West:
     - wearyzen
     - valeriosetti
     - tomi-font
+    - ithinuel
   files:
     - modules/trusted-firmware-m/
     - samples/tfm_integration/
@@ -5407,6 +5420,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"
@@ -5419,6 +5433,7 @@ West:
   collaborators:
     - carlocaione
     - wearyzen
+    - ithinuel
   files:
     - modules/trusted-firmware-a/
   labels:
@@ -5431,6 +5446,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"
