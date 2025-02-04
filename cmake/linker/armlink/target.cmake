@@ -36,7 +36,6 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
            ${STEERING_FILE}
            ${STEERING_C}
     COMMAND ${CMAKE_COMMAND}
-      -C ${DEVICE_API_LINKER_SECTIONS_CMAKE}
       -C ${cmake_linker_script_settings}
       -DPASS="${linker_pass_define}"
       ${STEERING_FILE_ARG}
