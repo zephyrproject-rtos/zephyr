@@ -9,21 +9,14 @@
 #include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
-
 #define EXECUTION_TRACE_LENGTH 6
 
-#define IRQ_A_PRIO  1   /* lower priority */
-#define IRQ_B_PRIO  0   /* higher priority */
+#define IRQ_A_PRIO 1 /* lower priority */
+#define IRQ_B_PRIO 0 /* higher priority */
 
-
-#define CHECK_STEP(pos, val) zassert_equal(	\
-	execution_trace[pos],			\
-	val,					\
-	"Expected %s for step %d but got %s",	\
-	execution_step_str(val),		\
-	pos,					\
-	execution_step_str(execution_trace[pos]))
-
+#define CHECK_STEP(pos, val)                                                                       \
+	zassert_equal(execution_trace[pos], val, "Expected %s for step %d but got %s",             \
+		      execution_step_str(val), pos, execution_step_str(execution_trace[pos]))
 
 enum execution_step {
 	STEP_MAIN_BEGIN,
@@ -69,16 +62,12 @@ static const char *execution_step_str(enum execution_step s)
 	return res;
 }
 
-
 static void execution_trace_add(enum execution_step s)
 {
-	__ASSERT(execution_trace_pos < EXECUTION_TRACE_LENGTH,
-		 "Execution trace overflow");
+	__ASSERT(execution_trace_pos < EXECUTION_TRACE_LENGTH, "Execution trace overflow");
 	execution_trace[execution_trace_pos] = s;
 	execution_trace_pos++;
 }
-
-
 
 void isr_a_handler(const void *args)
 {
@@ -93,14 +82,12 @@ void isr_a_handler(const void *args)
 	execution_trace_add(STEP_ISR_A_END);
 }
 
-
 void isr_b_handler(const void *args)
 {
 	ARG_UNUSED(args);
 	execution_trace_add(STEP_ISR_B_BEGIN);
 	execution_trace_add(STEP_ISR_B_END);
 }
-
 
 static int find_unused_irq(int start)
 {
@@ -141,8 +128,7 @@ static int find_unused_irq(int start)
 		}
 	}
 
-	zassert_true(i >= 0,
-		     "No available IRQ line to configure as zero-latency\n");
+	zassert_true(i >= 0, "No available IRQ line to configure as zero-latency\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 	return i;
@@ -165,14 +151,12 @@ ZTEST(arm_irq_zero_latency_levels, test_arm_zero_latency_levels)
 	irq_b = find_unused_irq(irq_a);
 
 	/* Configure IRQ A as zero-latency interrupt with prio 1 */
-	arch_irq_connect_dynamic(irq_a, IRQ_A_PRIO, isr_a_handler,
-				 NULL, IRQ_ZERO_LATENCY);
+	arch_irq_connect_dynamic(irq_a, IRQ_A_PRIO, isr_a_handler, NULL, IRQ_ZERO_LATENCY);
 	NVIC_ClearPendingIRQ(irq_a);
 	NVIC_EnableIRQ(irq_a);
 
 	/* Configure irq_b as zero-latency interrupt with prio 0 */
-	arch_irq_connect_dynamic(irq_b, IRQ_B_PRIO, isr_b_handler,
-				 NULL, IRQ_ZERO_LATENCY);
+	arch_irq_connect_dynamic(irq_b, IRQ_B_PRIO, isr_b_handler, NULL, IRQ_ZERO_LATENCY);
 	NVIC_ClearPendingIRQ(irq_b);
 	NVIC_EnableIRQ(irq_b);
 
