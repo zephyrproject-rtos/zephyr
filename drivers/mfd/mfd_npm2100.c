@@ -49,9 +49,13 @@
 
 #define TIMER_STATUS_IDLE 0U
 
-#define TIMER_PRESCALER_MUL 64ULL
-#define TIMER_PRESCALER_DIV 1000ULL
+#define TIMER_PRESCALER_MUL 64
+#define TIMER_PRESCALER_DIV 1000
 #define TIMER_MAX           0xFFFFFFU
+
+/* Formula for timer value: Value = ROUND[time_ms / 15.625] - 1 */
+#define TIMER_MS_TO_TICKS(t)                                                                       \
+	(((int64_t)(t) * TIMER_PRESCALER_MUL + TIMER_PRESCALER_DIV / 2) / TIMER_PRESCALER_DIV - 1)
 
 #define EVENTS_SIZE 5U
 
@@ -296,12 +300,12 @@ int mfd_npm2100_set_timer(const struct device *dev, uint32_t time_ms,
 {
 	const struct mfd_npm2100_config *config = dev->config;
 	uint8_t buff[4] = {TIMER_TARGET};
-	uint32_t ticks = (uint32_t)DIV_ROUND_CLOSEST(((uint64_t)time_ms * TIMER_PRESCALER_MUL),
-						     TIMER_PRESCALER_DIV);
+	int64_t ticks = TIMER_MS_TO_TICKS(time_ms);
+
 	uint8_t timer_status;
 	int ret;
 
-	if (ticks > TIMER_MAX) {
+	if (ticks > TIMER_MAX || ticks < 0) {
 		return -EINVAL;
 	}
 
@@ -314,7 +318,7 @@ int mfd_npm2100_set_timer(const struct device *dev, uint32_t time_ms,
 		return -EBUSY;
 	}
 
-	sys_put_be24(ticks, &buff[1]);
+	sys_put_be24((uint32_t)ticks, &buff[1]);
 
 	ret = i2c_write_dt(&config->i2c, buff, sizeof(buff));
 	if (ret < 0) {
