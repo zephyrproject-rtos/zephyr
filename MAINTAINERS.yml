@@ -3361,7 +3361,7 @@ Settings:
     - subsys/settings/
     - tests/subsys/settings/
     - samples/subsys/settings/
-    - doc/services/settings/
+    - doc/services/storage/settings/
   labels:
     - "area: Settings"
   tests:
@@ -4343,7 +4343,7 @@ Secure storage:
     - subsys/secure_storage/
     - include/zephyr/psa/
     - samples/psa/
-    - doc/services/secure_storage.rst
+    - doc/services/storage/secure_storage/index.rst
     - tests/subsys/secure_storage/
   labels:
     - "area: Secure storage"
