@@ -21,7 +21,7 @@ config UDC_BUF_COUNT
 config UDC_BUF_POOL_SIZE
 	int "Memory available for requests"
 	range 64 32768
-	default 1024
+	default 1200
 	help
 	  Total amount of memory available for UDC requests.
 
