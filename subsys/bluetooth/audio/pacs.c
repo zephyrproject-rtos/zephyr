@@ -618,13 +618,16 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 #define BT_PACS_SNK_PROP \
 	BT_GATT_CHRC_READ \
 	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
-#define BT_PAC_SNK(_read) \
+#define BT_PAC_SNK_CHRC(_read) \
 	BT_AUDIO_CHRC(BT_UUID_PACS_SNK, \
 		      BT_PACS_SNK_PROP, \
 		      BT_GATT_PERM_READ_ENCRYPT, \
 		      _read, NULL, NULL), \
 	IF_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE, (BT_AUDIO_CCC(snk_cfg_changed),))
 
+#define BT_PAC_SNK BT_PAC_SNK_CHRC(snk_read)
+
+#if defined(CONFIG_BT_PAC_SNK_LOC)
 #define BT_PACS_SNK_LOC_PROP \
 	BT_GATT_CHRC_READ \
 	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_WRITEABLE, (|BT_GATT_CHRC_WRITE)) \
@@ -634,7 +637,7 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 	BT_GATT_PERM_READ_ENCRYPT \
 	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_WRITEABLE, (|BT_GATT_PERM_WRITE_ENCRYPT))
 
-#define BT_PACS_SNK_LOC(_read) \
+#define BT_PACS_SNK_LOC_CHRC(_read) \
 	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC, \
 		      BT_PACS_SNK_LOC_PROP, \
 		      BT_PACS_SNK_LOC_PERM, \
@@ -642,22 +645,30 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 		      COND_CODE_1(CONFIG_BT_PAC_SNK_LOC_WRITEABLE, (snk_loc_write), (NULL)), \
 		      NULL), \
 	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE, (BT_AUDIO_CCC(snk_loc_cfg_changed),))
+
+#define BT_PACS_SNK_LOC BT_PACS_SNK_LOC_CHRC(snk_loc_read)
 #else
-#define BT_PAC_SNK(_read)
-#define BT_PACS_SNK_LOC(_read)
-#endif
+#define BT_PACS_SNK_LOC
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#else
+#define BT_PAC_SNK
+#define BT_PACS_SNK_LOC
+#endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
 #define BT_PACS_SRC_PROP \
 	BT_GATT_CHRC_READ \
 	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
-#define BT_PAC_SRC(_read) \
+#define BT_PAC_SRC_CHRC(_read) \
 	BT_AUDIO_CHRC(BT_UUID_PACS_SRC, \
 		      BT_PACS_SRC_PROP, \
 		      BT_GATT_PERM_READ_ENCRYPT, \
 		      _read, NULL, NULL), \
 	IF_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE, (BT_AUDIO_CCC(src_cfg_changed),))
 
+#define BT_PAC_SRC BT_PAC_SRC_CHRC(src_read)
+
+#if defined(CONFIG_BT_PAC_SRC_LOC)
 #define BT_PACS_SRC_LOC_PROP \
 	BT_GATT_CHRC_READ \
 	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_WRITEABLE, (|BT_GATT_CHRC_WRITE)) \
@@ -667,7 +678,7 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 	BT_GATT_PERM_READ_ENCRYPT \
 	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_WRITEABLE, (|BT_GATT_PERM_WRITE_ENCRYPT))
 
-#define BT_PACS_SRC_LOC(_read) \
+#define BT_PACS_SRC_LOC_CHRC(_read) \
 	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC, \
 		      BT_PACS_SRC_LOC_PROP, \
 		      BT_PACS_SRC_LOC_PERM, \
@@ -675,10 +686,15 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 		      COND_CODE_1(CONFIG_BT_PAC_SRC_LOC_WRITEABLE, (src_loc_write), (NULL)), \
 		      NULL), \
 	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE, (BT_AUDIO_CCC(src_loc_cfg_changed),))
+
+#define BT_PACS_SRC_LOC BT_PACS_SRC_LOC_CHRC(src_loc_read)
 #else
-#define BT_PAC_SRC(_read)
-#define BT_PACS_SRC_LOC(_read)
-#endif
+#define BT_PACS_SRC_LOC
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+#else
+#define BT_PAC_SRC
+#define BT_PACS_SRC_LOC
+#endif /* CONFIG_BT_PAC_SRC */
 
 #define BT_PAC_AVAILABLE_CONTEXT(_read) \
 	BT_AUDIO_CHRC(BT_UUID_PACS_AVAILABLE_CONTEXT, \
@@ -701,43 +717,44 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 
 #define BT_PACS_SERVICE_DEFINITION() { \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_PACS), \
-	BT_PAC_SNK(snk_read) \
-	BT_PACS_SNK_LOC(snk_loc_read) \
-	BT_PAC_SRC(src_read) \
-	BT_PACS_SRC_LOC(src_loc_read) \
+	BT_PAC_SNK \
+	BT_PACS_SNK_LOC \
+	BT_PAC_SRC \
+	BT_PACS_SRC_LOC \
 	BT_PAC_AVAILABLE_CONTEXT(available_contexts_read) \
 	BT_PAC_SUPPORTED_CONTEXT(supported_context_read) \
 }
-
 static struct bt_gatt_attr pacs_attrs[] = BT_PACS_SERVICE_DEFINITION();
 static struct bt_gatt_service pacs_svc = (struct bt_gatt_service)BT_GATT_SERVICE(pacs_attrs);
 
 
 
 
-#if defined(BT_PAC_SNK_NOTIFIABLE)
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
 #define PACS_SINK_PAC_CHAR_ATTR_COUNT 3  /* declaration + value + cccd */
 #else
 #define PACS_SINK_PAC_CHAR_ATTR_COUNT 2  /* declaration + value */
 #endif /* BT_PAC_SNK_NOTIFIABLE */
 
-#if defined(BT_PAC_SNK_LOC_NOTIFIABLE)
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
 #define PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT 3  /* declaration + value + cccd */
 #else
 #define PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT 2  /* declaration + value*/
 #endif /* BT_PAC_SNK_LOC_NOTIFIABLE */
 
-#if defined(BT_PAC_SRC_NOTIFIABLE)
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
 #define PACS_SOURCE_PAC_CHAR_ATTR_COUNT 3  /* declaration + value + cccd */
 #else
 #define PACS_SOURCE_PAC_CHAR_ATTR_COUNT 2  /* declaration + value */
 #endif /* BT_PAC_SRC_NOTIFIABLE */
 
-#if defined(BT_PAC_SRC_LOC_NOTIFIABLE)
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
 #define PACS_SOURCE_PAC_LOC_CHAR_ATTR_COUNT 3  /* declaration + value + cccd */
 #else
 #define PACS_SOURCE_PAC_LOC_CHAR_ATTR_COUNT 2  /* declaration + value*/
 #endif /* BT_PAC_SRC_LOC_NOTIFIABLE */
+
+#define PASC_SERVICE_DECLARATION_CHAR_COUNT 1
 
 static void configure_pacs_char(const struct bt_bap_pacs_register_param *param)
 {
@@ -745,39 +762,52 @@ static void configure_pacs_char(const struct bt_bap_pacs_register_param *param)
 	uint8_t first_to_rem;
 
 	/* Remove the Sink PAC and Location */
+#if defined(CONFIG_BT_PAC_SNK)
 	if (!param->snk_pac) {
-		first_to_rem = 0;
+		first_to_rem = PASC_SERVICE_DECLARATION_CHAR_COUNT;
 		attrs_to_rem = PACS_SINK_PAC_CHAR_ATTR_COUNT + PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT;
-	} else if (!param->snk_loc) {
+	}
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+	else if (!param->snk_loc) {
 		first_to_rem = PACS_SINK_PAC_CHAR_ATTR_COUNT;
 		attrs_to_rem = PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT;
-	} else {
+	}
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+	else {
 		first_to_rem = pacs_svc.attr_count;
 		attrs_to_rem = 0;
 	}
+#endif /* CONFIG_BT_PAC_SNK */
 
 	for (size_t i = first_to_rem + attrs_to_rem; i < pacs_svc.attr_count; i++) {
-		pacs_svc.attrs[i - attrs_to_rem] = pacs_svc.attrs[i];
+		pacs_svc.attrs[i] = pacs_svc.attrs[i + attrs_to_rem];
 	}
 	pacs_svc.attr_count -= attrs_to_rem;
 
 	/* Set first_to_rem to the start of Source PAC Char, for cleaner offset calc */
-	first_to_rem = PACS_SINK_PAC_CHAR_ATTR_COUNT + PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT;
+	first_to_rem = PASC_SERVICE_DECLARATION_CHAR_COUNT + PACS_SINK_PAC_CHAR_ATTR_COUNT +
+		       PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT;
 
 	/* Remove the Source PAC and Location */
-	if (!param->snk_pac) {
+#if defined(CONFIG_BT_PAC_SRC)
+	if (!param->src_pac) {
 		first_to_rem -= attrs_to_rem;
-		attrs_to_rem = PACS_SOURCE_PAC_CHAR_ATTR_COUNT +
-			       PACS_SOURCE_PAC_LOC_CHAR_ATTR_COUNT;
-	} else if (!param->snk_loc) {
+		attrs_to_rem += PACS_SOURCE_PAC_CHAR_ATTR_COUNT +
+				PACS_SOURCE_PAC_LOC_CHAR_ATTR_COUNT;
+	}
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+	else if (!param->src_loc) {
 		first_to_rem = first_to_rem + PACS_SOURCE_PAC_CHAR_ATTR_COUNT - attrs_to_rem;
-		attrs_to_rem = PACS_SINK_PAC_LOC_CHAR_ATTR_COUNT;
-	} else {
+		attrs_to_rem = PACS_SOURCE_PAC_LOC_CHAR_ATTR_COUNT;
+	}
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+	else {
 		return;
 	}
+#endif /* CONFIG_BT_PAC_SRC && CONFIG_BT_PAC_SRC_LOC */
 
 	for (size_t i = first_to_rem; i < pacs_svc.attr_count; i++) {
-		pacs_svc.attrs[i - attrs_to_rem] = pacs_svc.attrs[i];
+		pacs_svc.attrs[i] = pacs_svc.attrs[i + attrs_to_rem];
 	}
 	pacs_svc.attr_count -= attrs_to_rem;
 }
