@@ -31,9 +31,7 @@ static int file_ctr, newest, oldest;
 static int allocate_new_file(struct fs_file_t *file);
 static int del_oldest_log(void);
 static int get_log_file_id(struct fs_dirent *ent);
-#ifndef CONFIG_LOG_BACKEND_FS_TESTSUITE
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_FS_OUTPUT_DEFAULT;
-#endif
 
 static int check_log_volume_available(void)
 {
@@ -450,8 +448,6 @@ static int del_oldest_log(void)
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
 	     "Immediate logging is not supported by LOG FS backend.");
 
-#ifndef CONFIG_LOG_BACKEND_FS_TESTSUITE
-
 static uint8_t __aligned(4) buf[MAX_FLASH_WRITE_SIZE];
 LOG_OUTPUT_DEFINE(log_output, write_log_to_file, buf, MAX_FLASH_WRITE_SIZE);
 
@@ -504,4 +500,3 @@ static const struct log_backend_api log_backend_fs_api = {
 
 LOG_BACKEND_DEFINE(log_backend_fs, log_backend_fs_api,
 		   IS_ENABLED(CONFIG_LOG_BACKEND_FS_AUTOSTART));
-#endif
