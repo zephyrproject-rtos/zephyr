@@ -10,4 +10,7 @@ if SOC_FAMILY_SILABS_S2
 
 rsource "*/Kconfig"
 
+config ARM_SECURE_FIRMWARE
+	default y
+
 endif # SOC_FAMILY_SILABS_S2
