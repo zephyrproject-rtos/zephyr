@@ -733,7 +733,10 @@ function(do_var_replace_in res_ptr src)
       # can't warn here because we can't check for what is relevant in this pass
       # message(WARNING "Missing definition for ${match}")
     endif()
-    message("Replacing ${match} with ${value}")
+
+    if(CMAKE_VERBOSE_MAKEFILE)
+      message("Using variable ${match} with value ${value}")
+    endif()
     string(REPLACE "${match}" "${value}" src "${src}")
   endforeach()
   set(${res_ptr} "${src}" PARENT_SCOPE)

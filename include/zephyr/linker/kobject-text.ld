@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
+/* Plase keep in sync with cmake/linker_script/common/kobject-text.cmake */
 
 #ifdef CONFIG_USERSPACE
 	/* We need to reserve room for the gperf generated hash functions.
