@@ -1,7 +1,8 @@
+find_package(Zephyr REQUIRED COMPONENTS extensions HINTS ${CMAKE_CURRENT_LIST_DIR}/../../)
+
 #
 # Create functions - start
 #
-
 function(create_system)
   cmake_parse_arguments(OBJECT "" "ENTRY;FORMAT;NAME;OBJECT" "" ${ARGN})
 
@@ -47,6 +48,7 @@ function(get_parent)
     return()
   endif()
 
+  # Follow parent pointers until a GET_PARENT_TYPE is reached
   get_property(parent GLOBAL PROPERTY ${GET_PARENT_OBJECT}_PARENT)
   get_property(type   GLOBAL PROPERTY ${parent}_OBJ_TYPE)
   while(NOT ${type} STREQUAL ${GET_PARENT_TYPE})
@@ -261,6 +263,7 @@ function(add_region)
   set_property(GLOBAL APPEND PROPERTY ${ADD_REGION_OBJECT}_REGIONS ${ADD_REGION_REGION})
 endfunction()
 
+# add_group OBJECT o GROUP g adds group g to object o
 function(add_group)
   cmake_parse_arguments(ADD_GROUP "" "OBJECT;GROUP" "" ${ARGN})
 
@@ -373,9 +376,12 @@ function(find_object)
   endif()
 endfunction()
 
+# get_object(LIST l OBJECT o TYPE t)
+# sets l to a list of objects of type t that are children of o
 function(get_objects)
   cmake_parse_arguments(GET "" "LIST;OBJECT;TYPE" "" ${ARGN})
 
+  # Get what type of object we are starting from
   get_property(type GLOBAL PROPERTY ${GET_OBJECT}_OBJ_TYPE)
 
   if(${type} STREQUAL SECTION)
@@ -392,11 +398,14 @@ function(get_objects)
 
   set(out)
 
+  # Find (other) regions in our system
   get_parent(OBJECT ${GET_OBJECT} PARENT parent TYPE SYSTEM)
   get_property(regions GLOBAL PROPERTY ${parent}_REGIONS)
   list(REMOVE_ITEM regions ${GET_OBJECT})
 
   if(${GET_TYPE} STREQUAL SECTION)
+    # If we are retrieving sections, then we need to get _SECTIONS_FIXED,
+    # sections from sub-groups, and immediate setion children
     get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_SECTIONS_FIXED)
     list(APPEND out ${sections})
 
@@ -409,6 +418,7 @@ function(get_objects)
     get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_SECTIONS)
     list(APPEND out ${sections})
 
+    # Now pick up sections from each region via the _vma_ properties.
     foreach(region ${regions})
       get_property(vma GLOBAL PROPERTY ${region}_NAME)
 
@@ -427,6 +437,8 @@ function(get_objects)
   endif()
 
   if(${GET_TYPE} STREQUAL GROUP)
+    # For groups we add immediate sub-groups, and all their descendant groups,
+    # and all the _vma_ groups and descendants
     get_property(groups GLOBAL PROPERTY ${GET_OBJECT}_GROUPS)
     list(APPEND out ${groups})
 
@@ -541,6 +553,7 @@ function(process_region_common)
     endif()
   endif()
 
+  # Loop over other regions with the same parent
   get_parent(OBJECT ${REGION_COMMON_OBJECT} PARENT parent TYPE SYSTEM)
   get_property(regions GLOBAL PROPERTY ${parent}_REGIONS)
   list(REMOVE_ITEM regions ${REGION_COMMON_OBJECT})
@@ -638,6 +651,99 @@ endfunction()
 # String functions - end
 #
 
+## Preprocess and gather input
+foreach(VAR ${VARIABLES})
+  if("${VAR}" MATCHES "^{(.*)}$")
+    cmake_parse_arguments(VAR "" "VAR;VALUE" "PASS" ${CMAKE_MATCH_1})
+
+    if(DEFINED VAR_PASS)
+      is_active_in_pass(active ${PASS} "${VAR_PASS}")
+      if(NOT active)
+        continue()
+      endif()
+    endif()
+
+    set(${VAR_VAR} "${VAR_VALUE}" CACHE INTERNAL "")
+  endif()
+endforeach()
+
+# By the input we have INCLUDES defined that contains the files that we need
+# to include depending on linker pass.
+foreach(file ${INCLUDES})
+  if("${file}" MATCHES "^{(.*)}$")
+    cmake_parse_arguments(INC "" "KCONFIG;HEADER;CMAKE" "PASS" ${CMAKE_MATCH_1})
+
+    if(DEFINED INC_PASS)
+      is_active_in_pass(active ${PASS} "${INC_PASS}")
+      if(NOT active)
+        continue()
+      endif()
+    endif()
+
+    if(CMAKE_VERBOSE_MAKEFILE)
+      message("Reading file ${INC_KCONFIG}${INC_HEADER}${INC_CMAKE}")
+    endif()
+
+    if(INC_KCONFIG)
+      import_kconfig(CONFIG ${INC_KCONFIG})
+    elseif(INC_CMAKE)
+      include(${INC_CMAKE})
+    elseif(INC_HEADER)
+      list(APPEND PREPROCESSOR_FILES ${INC_HEADER})
+    endif()
+  endif()
+endforeach()
+
+# For now, lets start with @FOO@ and store each #define FOO value as a global
+# property AT_VAR_FOO (prefix to avoid name clashes).
+# We will do all the replacements in the input lists before giving them to the
+# generator functions.
+set(VAR_DEF_REGEX "#define ([A-Za-z0-9_]+)[ \t\r\n]+(.+)")
+foreach(file IN LISTS PREPROCESSOR_FILES )
+  if(EXISTS ${file})
+    file(STRINGS ${file} defs REGEX ${VAR_DEF_REGEX})
+    foreach(def ${defs})
+      if(${def} MATCHES ${VAR_DEF_REGEX})
+        set("AT_VAR_${CMAKE_MATCH_1}" "${CMAKE_MATCH_2}")
+      endif()
+    endforeach()
+  else()
+    message("Missing file ${file}")
+  endif()
+endforeach()
+
+# To pickup information gathered by the scripts from the previous pass, we use
+# the syntax @FOO@ where FOO is a cmake variable name
+function(do_var_replace_in res_ptr src)
+  string(REGEX MATCHALL "@([^@]*)@" match_res "${src}")
+  foreach(match IN LISTS match_res)
+    string(REPLACE "@" "" expr ${match})
+    # the variable expression is as follows:
+    # @NAME[,undef:VALUE]@ Where the VALUE gets picked if we dont find NAME
+    string(REPLACE "," ";" expr ${expr})
+    list(GET expr 0 var)
+    if(DEFINED "AT_VAR_${var}")
+      set(value "${AT_VAR_${var}}")
+    elseif(DEFINED ${var}) # set by zephyr_linker_include_generated files
+      set(value "${${var}}")
+    elseif("${expr}" MATCHES ";undef:([^,]*)")
+      set(value "${CMAKE_MATCH_1}")
+    else()
+      set(value "${match}")
+      # can't warn here because we can't check for what is relevant in this pass
+      # message(WARNING "Missing definition for ${match}")
+    endif()
+    message("Replacing ${match} with ${value}")
+    string(REPLACE "${match}" "${value}" src "${src}")
+  endforeach()
+  set(${res_ptr} "${src}" PARENT_SCOPE)
+endfunction()
+
+foreach(input IN ITEMS "MEMORY_REGIONS" "GROUPS" "SECTIONS" "SECTION_SETTINGS")
+  do_var_replace_in(${input} "${${input}}")
+endforeach()
+
+
 create_system(OBJECT new_system NAME ZEPHYR_LINKER_v1 FORMAT ${FORMAT} ENTRY ${ENTRY})
 
 # Sorting the memory sections in ascending order.
@@ -662,7 +768,6 @@ endforeach()
 foreach(region ${MEMORY_REGIONS_SORTED})
   if("${region}" MATCHES "^{(.*)}$")
     create_region(OBJECT new_region ${CMAKE_MATCH_1})
-
     add_region(OBJECT ${new_system} REGION ${new_region})
   endif()
 endforeach()
