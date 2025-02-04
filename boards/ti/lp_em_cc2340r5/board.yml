@@ -1,5 +1,6 @@
 board:
   name: lp_em_cc2340r5
+  full_name: CC2340R5 LaunchPad
   vendor: ti
   socs:
     - name: cc2340r5
