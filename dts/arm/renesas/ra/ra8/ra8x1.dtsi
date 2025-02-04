@@ -559,6 +559,8 @@
 			interrupt-names = "rxf", "glerr";
 			clocks = <&pclka 0 0>, <&pclke 0 0>;
 			clock-names = "opclk", "ramclk";
+			dll-min-freq = <DT_FREQ_M(8)>;
+			dll-max-freq = <DT_FREQ_M(80)>;
 			reg = <0x40380000 0x4000>;
 			status = "disabled";
 
