@@ -1,0 +1,16 @@
+# Copyright (c) 2025 GP Orcullo
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: curiosity_nano_mc
+name: PIC32CM MC00 Curiosity Nano Evaluation Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+flash: 128
+ram: 16
+supported:
+  - flash
+  - gpio
+  - uart
+vendor: microchip

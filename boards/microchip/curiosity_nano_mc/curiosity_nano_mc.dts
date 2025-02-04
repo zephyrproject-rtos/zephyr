@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2025 GP Orcullo
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <microchip/pic32cm1216mcxx.dtsi>
+#include <microchip/pic32cmxxmc00032.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/atmel_sam_pinctrl.h>
+
+#define PA0D_SERCOM1_PAD0 SAM_PINMUX(a, 0, d, periph)
+#define PA1D_SERCOM1_PAD1 SAM_PINMUX(a, 1, d, periph)
+
+/ {
+	model = "PIC32CM MC00 Curiosity Nano";
+	compatible = "microchip,curiosity_nano_mc";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &sercom1;
+		zephyr,shell-uart = &sercom1;
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&porta 23 GPIO_ACTIVE_LOW>;
+			label = "Yellow LED";
+		};
+	};
+
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&pinctrl {
+	sercom1_uart: sercom1_uart {
+		group1 {
+			pinmux = <PA0D_SERCOM1_PAD0>,
+				 <PA1D_SERCOM1_PAD1>;
+		};
+	};
+
+};
+
+&sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom1_uart>;
+	pinctrl-names = "default";
+};
