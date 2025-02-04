@@ -8,6 +8,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/llext/symbol.h>
 #include <zephyr/pm/pm.h>
 #include <stdbool.h>
 #include <zephyr/logging/log.h>
@@ -100,3 +101,4 @@ void __weak arch_spin_relax(void)
 
 	arch_nop();
 }
+EXPORT_SYMBOL(arch_spin_relax);
