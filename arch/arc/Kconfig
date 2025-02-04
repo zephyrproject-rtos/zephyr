@@ -370,6 +370,28 @@ endmenu
 config DCACHE_LINE_SIZE
 	default 32
 
+config ARC_DCACHE_REGION_OPERATIONS
+	bool "DCACHE region operations"
+	depends on CACHE_MANAGEMENT && DCACHE
+	default n
+	help
+	  Perform L1 data cache management operations by regions rather than line by line in a loop,
+	  improves performance of cache management operations.
+
+config ARC_SLC
+	bool "System level cache"
+	depends on CACHE_MANAGEMENT && DCACHE && (CPU_HS4X || CPU_HS3X)
+	default n
+	help
+	  This option enables System Level Cache, and adds SLC support to the data cache management operations.
+
+config ARC_SLC_LINE_SIZE
+	int "SLC line size"
+	depends on ARC_SLC
+	default 128
+	help
+	  Size in bytes of a CPU system level cache line.
+
 config ARC_EXCEPTION_STACK_SIZE
 	int "ARC exception handling stack size"
 	default 768 if !64BIT
