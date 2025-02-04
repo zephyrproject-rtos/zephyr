@@ -71,6 +71,18 @@ tests:
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
+  llext.writable_dynamic:
+    arch_allow:
+      - xtensa
+    toolchain_exclude:
+      - xt-clang
+    integration_platforms:
+      - qemu_xtensa/dc233c      # Xtensa ISA
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_TYPE_ELF_SHAREDLIB=y
   llext.writable_relocatable:
     arch_allow:
       - arm
