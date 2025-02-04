@@ -7,6 +7,7 @@
 #include <arm/armv8.1-m.dtsi>
 #include <zephyr/dt-bindings/clock/stm32n6_clock.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/reset/stm32n6_reset.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -482,6 +483,54 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 7)>;
 			resets = <&rctl STM32_RESET(APB2, 7)>;
 			interrupts = <168 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@50005400 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50005400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
+			interrupts = <100 0>, <101 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c2: i2c@50005800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50005800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
+			interrupts = <102 0>, <103 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c3: i2c@50005c00 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50005C00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
+			interrupts = <104 0>, <105 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c4: i2c@56001c00 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x56001C00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB4, 7)>;
+			interrupts = <106 0>, <107 0>;
+			interrupt-names = "event", "error";
 			status = "disabled";
 		};
 
