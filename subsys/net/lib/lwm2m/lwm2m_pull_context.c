@@ -311,7 +311,7 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		}
 
 		if (context.write_cb) {
-			size_t offset = context.block_ctx.current;
+			size_t offset = received_block_ctx.current;
 
 			/* flush incoming data to write_cb */
 			while (payload_len > 0) {

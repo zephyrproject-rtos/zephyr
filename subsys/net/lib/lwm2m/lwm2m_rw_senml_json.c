@@ -1233,7 +1233,7 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 	/* Decode from url safe to normal */
 	base64_url_safe_decode(data_ptr, val_opaque->length);
 
-	if (opaque->remaining == 0) {
+	if (opaque->offset == 0) {
 		size_t original_size = val_opaque->length;
 		size_t base64_length;
 
@@ -1260,10 +1260,9 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 			val_opaque->length += buffer_base64_length;
 		}
 		opaque->len = val_opaque->length;
-		opaque->remaining = val_opaque->length;
 	}
 
-	in_len = opaque->remaining;
+	in_len = opaque->len - opaque->offset;
 
 	if (in_len > buflen) {
 		in_len = buflen;
@@ -1273,8 +1272,7 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 		in_len = val_opaque->length;
 	}
 
-	opaque->remaining -= in_len;
-	if (opaque->remaining == 0U) {
+	if (opaque->offset + in_len >= opaque->len) {
 		*last_block = true;
 	}
 	/* Copy data to buffer */
