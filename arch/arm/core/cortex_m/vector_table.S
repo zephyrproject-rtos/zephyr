@@ -74,7 +74,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
     .word 0
-#if defined(CONFIG_MULTITHREADING)
+#if defined(CONFIG_MULTITHREADING) && !defined(USE_SWITCH)
     .word z_arm_pendsv
 #else
     .word z_arm_exc_spurious

@@ -80,6 +80,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_exc_spurious)
 	mrs r0, MSP
 	mrs r1, PSP
 	push {r0, lr}
+
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	/* Build _callee_saved_t. To match the struct
 	 * definition we push the psp & then r11-r4
@@ -109,5 +110,4 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_exc_spurious)
 	add sp, #40
 #endif
 	pop {r0, pc}
-
 	.end
