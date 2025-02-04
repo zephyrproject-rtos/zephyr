@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "${ZEPHYR_BASE}/share/sysbuild/Kconfig"
+
+config REMOTE_BOARD
+	string
+	default "$(BOARD)/nrf54h20/cpurad" if SOC_NRF54H20_CPUAPP
+	default "$(BOARD)/nrf54h20/cpuapp" if SOC_NRF54H20_CPURAD
