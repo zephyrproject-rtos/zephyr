@@ -1,5 +1,10 @@
-config UART_HTIF
+menuconfig UART_HTIF
     bool "Enable HTIF UART driver"
+	  select SERIAL_HAS_DRIVER
     depends on RISCV
     help
       Enable the HTIF (Host-Target Interface) UART driver for RISC-V Spike simulation.
+
+if UART_HTIF
+
+endif # UART_HTIF

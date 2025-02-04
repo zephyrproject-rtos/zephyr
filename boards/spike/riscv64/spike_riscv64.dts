@@ -7,21 +7,19 @@
 
 / {
 	chosen {
-		zephyr,console = &htif;
+		zephyr,console= &htif;
 		zephyr,shell-uart = &htif;
 		zephyr,sram = &ram0;
 	};
 };
 
+// Disable default ns16550 UART
 &uart0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &htif {
 	status = "okay";
 };
 
-// &uart1 {
-// 	status = "okay";
-// };
 
