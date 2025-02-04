@@ -562,6 +562,16 @@ config MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
 	select PSA_CRYPTO_CLIENT
 
+config MBEDTLS_PSA_CRYPTO_CONFIG
+	bool "Use proper configuration file for PSA capabilities."
+	default y
+	depends on MBEDTLS_PSA_CRYPTO_CLIENT
+	help
+	  If enabled config-psa.h will be passed to the Mbed TLS build to specify
+	  which PSA features must be supported. If disabled then PSA features
+	  will be automatically guessed by the Mbed TLS build system based on
+	  legacy symbols.
+
 config MBEDTLS_LMS
 	bool "Support LMS signature schemes"
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
