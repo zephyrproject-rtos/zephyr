@@ -446,12 +446,12 @@ int lorawan_clock_sync_get(uint32_t *gps_time);
  * whenever a FragSessionSetupReq is received and Descriptor field should be
  * handled.
  *
- * @param transport_handle_descriptor Callback for notification.
+ * @param transport_descriptor_cb Callback for notification.
  *
  * @return 0 if successful, negative errno code if failure
  */
-void lorawan_frag_transport_register_handle_descriptor_callback(
-	int (*transport_handle_descriptor)(uint32_t descriptor));
+void lorawan_frag_transport_register_descriptor_callback(
+	int (*transport_descriptor_cb)(uint32_t descriptor));
 
 /**
  * @brief Run Fragmented Data Block Transport service

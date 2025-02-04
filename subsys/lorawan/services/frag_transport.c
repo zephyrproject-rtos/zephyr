@@ -207,8 +207,8 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			}
 #endif
 
-			if (handle_descriptor != NULL) {
-				int rc = handle_descriptor(ctx.descriptor);
+			if (descriptor_cb != NULL) {
+				int rc = descriptor_cb(ctx.descriptor);
 
 				if (rc < 0) {
 					/* Wrong Descriptor */
@@ -321,10 +321,10 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 	}
 }
 
-void lorawan_frag_transport_register_handle_descriptor_callback(
-	int (*transport_handle_descriptor)(uint32_t descriptor))
+void lorawan_frag_transport_register_descriptor_callback(
+	int (*transport_descriptor_cb)(uint32_t descriptor))
 {
-	handle_descriptor = transport_handle_descriptor;
+	descriptor_cb = transport_descriptor_cb;
 }
 
 static struct lorawan_downlink_cb downlink_cb = {
