@@ -428,9 +428,19 @@ _stack_frame_endif:
     pop {r0, lr}
 #endif
 
-    /* exception return is done in z_arm_int_exit() */
+#ifdef CONFIG_USE_SWITCH
+    /* FIXME: this uses the pre-hook LR, but we want to refetch the
+     * one in the stack frame, otherwise irq_offload() won't context
+     * switch correctly (which... isn't tested?)
+     */
+    push {r0, lr}
+    bl arm_m_legacy_exit
+    pop {r0, lr}
+    bx lr
+#else
     ldr r0, =z_arm_int_exit
     bx r0
+#endif
 
 #endif
 
@@ -460,6 +470,11 @@ _oops:
     add sp, #40
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
+#ifdef CONFIG_USE_SWITCH
+    bl arm_m_legacy_exit
+#endif
+
     pop {r0, pc}
 
 #if defined(CONFIG_USERSPACE)
