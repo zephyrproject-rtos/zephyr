@@ -19,6 +19,6 @@ tests:
       - CONFIG_ZTEST_STACK_SIZE=1280
       - CONFIG_KOBJECT_TEXT_AREA=32768
   arch.arm.interrupt.extra_exception_info:
-    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    filter: ARCH_HAS_EXTRA_EXCEPTION_INFO and not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
       - CONFIG_EXTRA_EXCEPTION_INFO=y
