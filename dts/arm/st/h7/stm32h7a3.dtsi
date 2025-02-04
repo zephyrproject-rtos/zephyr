@@ -52,7 +52,7 @@
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK(APB3, 3U)>;
-			resets = <&rctl STM32_RESET(APB3, 4U)>;
+			resets = <&rctl STM32_RESET(APB3, 3U)>;
 			status = "disabled";
 		};
 
