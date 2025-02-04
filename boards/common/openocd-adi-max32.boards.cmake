@@ -6,7 +6,9 @@
 # Default cmsis-dap, it will be overwritten below if requires
 set(MAX32_INTERFACE_CFG "cmsis-dap.cfg")
 
-if(CONFIG_SOC_MAX32655_M4)
+if(CONFIG_SOC_MAX32650)
+  set(MAX32_TARGET_CFG "max32650.cfg")
+elseif(CONFIG_SOC_MAX32655_M4)
   set(MAX32_TARGET_CFG "max32655.cfg")
 elseif(CONFIG_SOC_MAX32662)
   set(MAX32_TARGET_CFG "max32662.cfg")
