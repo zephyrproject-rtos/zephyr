@@ -2540,7 +2540,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 		net_buf_add(buf, bcnt);
 	}
 
-	if (!is_iso && (bcnt % udc_mps_ep_size(ep_cfg)) == 0 &&
+	if (!is_iso && bcnt && (bcnt % udc_mps_ep_size(ep_cfg)) == 0 &&
 	    net_buf_tailroom(buf)) {
 		dwc2_prep_rx(dev, buf, ep_cfg);
 	} else {
