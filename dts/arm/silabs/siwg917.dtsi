@@ -11,6 +11,7 @@
 	chosen {
 		zephyr,entropy = &rng0;
 		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flashctrl0;
 	};
 
 	cpus {
@@ -28,13 +29,6 @@
 		reg = <0x00000000 DT_SIZE_K(191)>;
 	};
 
-	flash0: flash@8202000 {
-		compatible = "soc-nv-flash";
-		reg = <0x8202000 DT_SIZE_K(2040)>;
-		write-block-size = <1>;
-		erase-block-size = <4096>;
-	};
-
 	soc {
 		clock0: clock@46000000 {
 			compatible = "silabs,siwx91x-clock";
@@ -49,6 +43,19 @@
 		pinctrl0: pinctrl@46130000 {
 			compatible = "silabs,siwx91x-pinctrl";
 			reg = <0x46130000 0x1000>;
+		};
+
+		flashctrl0: flash-controller@12000000 {
+			compatible = "silabs,siwx91x-flash-controller";
+			reg = <0x12000000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8202000 {
+				compatible = "soc-nv-flash";
+				write-block-size = <1>;
+				erase-block-size = <4096>;
+			};
 		};
 
 		ulpuart: uart@24041800 {
