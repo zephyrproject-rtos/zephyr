@@ -8,6 +8,7 @@
 #include <silabs/siwg917m111mgtba.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input-event-codes.h>
+#include <dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
 #include <common/freq.h>
 
 / {
@@ -21,6 +22,19 @@
 	};
 };
 
+&pinctrl0 {
+	ulpuart_default: ulpuart_default {
+		out {
+			pinmux = <ULPUART_TX_ULP11>;
+		};
+		in {
+			pinmux = <ULPUART_RX_ULP9>;
+		};
+	};
+};
+
 &ulpuart {
 	status = "okay";
+	pinctrl-0 = <&ulpuart_default>;
+	pinctrl-names = "default";
 };
