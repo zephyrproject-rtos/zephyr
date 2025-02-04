@@ -1,5 +1,6 @@
 if(CONFIG_USE_SEGGER_RTT)
   zephyr_library()
+  zephyr_library_compile_definitions(SEGGER_RTT_ALIGNMENT=CONFIG_SEGGER_RTT_CB_ALIGNMENT)
   set(SEGGER_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
   zephyr_include_directories_ifdef(CONFIG_USE_SEGGER_RTT
     ${SEGGER_DIR}/SEGGER
