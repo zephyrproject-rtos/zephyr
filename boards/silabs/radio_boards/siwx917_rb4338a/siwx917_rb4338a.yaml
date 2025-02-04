@@ -11,6 +11,7 @@ toolchain:
 supported:
   - dma
   - entropy
+  - flash
   - gpio
   - i2c
 vendor: silabs

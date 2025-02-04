@@ -17,6 +17,7 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,code-partition = &code_partition;
 		zephyr,console = &ulpuart;
 		zephyr,shell-uart = &ulpuart;
 	};
@@ -70,4 +71,17 @@
 	status = "okay";
 	pinctrl-0 = <&ulpuart_default>;
 	pinctrl-names = "default";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			label = "code_partition";
+			reg = <0x0000000 DT_SIZE_K(2048-8)>;
+		};
+	};
 };
