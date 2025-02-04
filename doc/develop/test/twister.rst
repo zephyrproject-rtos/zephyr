@@ -985,6 +985,29 @@ bsim_exe_name: <string>
     directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
     default based on the test path and scenario name.
 
+Shell
+=====
+
+The shell harness is used to execute shell commands and parse the output and utilizes the pytest
+framework and the pytest harness of twister.
+
+The following options apply to the shell harness:
+
+shell_params_file: <string> (default empty)
+    Specify a file containing test parameters to be used in the test.
+    The file should contain a list of commands and their expected output. For example:
+
+    .. code-block:: none
+
+      test_shell_harness:
+      - command: "mpu mtest 1"
+        expected: "The value is: 0x.*"
+      - command: "mpu mtest 2"
+        expected: "The value is: 0x.*"
+
+
+    If no file is specified, the shell harness will use the default file
+      ``test_shell.yml`` in the test directory.
 
 Selecting platform scope
 ************************
