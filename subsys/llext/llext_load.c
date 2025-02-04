@@ -209,6 +209,15 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
+/* First (bottom) and last (top) entries of a region, inclusive, for a specific field. */
+#define REGION_BOT(reg, field) (size_t)(reg->field)
+#define REGION_TOP(reg, field) (size_t)(reg->field + reg->sh_size - 1)
+
+/* Check if two regions x and y have any overlap on a given field. Any shared value counts. */
+#define REGIONS_OVERLAP_ON(x, y, f) \
+	((REGION_BOT(x, f) <= REGION_BOT(y, f) && REGION_TOP(x, f) >= REGION_BOT(y, f)) || \
+	 (REGION_BOT(y, f) <= REGION_BOT(x, f) && REGION_TOP(y, f) >= REGION_BOT(x, f)))
+
 /*
  * Maps the ELF sections into regions according to their usage flags,
  * calculating ldr->sects and ldr->sect_map.
@@ -406,14 +415,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				/*
 				 * Test regions that have VMA ranges for overlaps
 				 */
-				if ((x->sh_addr <= y->sh_addr &&
-				     x->sh_addr + x->sh_size > y->sh_addr) ||
-				    (y->sh_addr <= x->sh_addr &&
-				     y->sh_addr + y->sh_size > x->sh_addr)) {
-					LOG_ERR("Region %d VMA range (%#zx +%zd) "
-						"overlaps with %d (%#zx +%zd)",
-						i, (size_t)x->sh_addr, (size_t)x->sh_size,
-						j, (size_t)y->sh_addr, (size_t)y->sh_size);
+				if (REGIONS_OVERLAP_ON(x, y, sh_addr)) {
+					LOG_ERR("Region %d VMA range (%#zx-%#zx) "
+						"overlaps with %d (%#zx-%#zx)",
+						i, REGION_BOT(x, sh_addr), REGION_TOP(x, sh_addr),
+						j, REGION_BOT(y, sh_addr), REGION_TOP(y, sh_addr));
 					return -ENOEXEC;
 				}
 			}
@@ -427,14 +433,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
-			if ((x->sh_offset <= y->sh_offset &&
-			     x->sh_offset + x->sh_size > y->sh_offset) ||
-			    (y->sh_offset <= x->sh_offset &&
-			     y->sh_offset + y->sh_size > x->sh_offset)) {
-				LOG_ERR("Region %d ELF file range (%#zx +%zd) "
-					"overlaps with %d (%#zx +%zd)",
-					i, (size_t)x->sh_offset, (size_t)x->sh_size,
-					j, (size_t)y->sh_offset, (size_t)y->sh_size);
+			if (REGIONS_OVERLAP_ON(x, y, sh_offset)) {
+				LOG_ERR("Region %d ELF file range (%#zx-%#zx) "
+					"overlaps with %d (%#zx-%#zx)",
+					i, REGION_BOT(x, sh_offset), REGION_TOP(x, sh_offset),
+					j, REGION_BOT(y, sh_offset), REGION_TOP(y, sh_offset));
 				return -ENOEXEC;
 			}
 		}
