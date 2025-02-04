@@ -1,6 +1,6 @@
 .. _secure_storage:
 
-Secure storage
+Secure Storage
 ##############
 
 | The secure storage subsystem provides an implementation of the functions defined in the
