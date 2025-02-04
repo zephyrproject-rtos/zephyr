@@ -453,7 +453,7 @@ void z_impl_k_thread_suspend(k_tid_t thread)
 	/* Special case "suspend the current thread" as it doesn't
 	 * need the async complexity below.
 	 */
-	if (thread == _current && !arch_is_in_isr() && !IS_ENABLED(CONFIG_SMP)) {
+	if (!IS_ENABLED(CONFIG_SMP) && (thread == _current) && !arch_is_in_isr()) {
 		k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
 		z_mark_thread_as_suspended(thread);
