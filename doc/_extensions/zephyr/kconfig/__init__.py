@@ -26,6 +26,10 @@ Options
 - kconfig_ext_paths: A list of base paths where to search for external modules
   Kconfig files when they use ``kconfig-ext: True``. The extension will look for
   ${BASE_PATH}/modules/${MODULE_NAME}/Kconfig.
+- kconfig_gh_link_base_url: The base URL for the GitHub links. This is used to
+  generate links to the Kconfig files on GitHub.
+- kconfig_zephyr_version: The Zephyr version. This is used to generate links to
+  the Kconfig files on GitHub.
 """
 
 import argparse
@@ -429,8 +433,14 @@ def kconfig_build_resources(app: Sphinx) -> None:
 
         kconfig_db_file = outdir / "kconfig.json"
 
+        kconfig_db = {
+            "gh_base_url": app.config.kconfig_gh_link_base_url,
+            "zephyr_version": app.config.kconfig_zephyr_version,
+            "symbols": db,
+        }
+
         with open(kconfig_db_file, "w") as f:
-            json.dump(db, f)
+            json.dump(kconfig_db, f)
 
     app.config.html_extra_path.append(kconfig_db_file.as_posix())
     app.config.html_static_path.append(RESOURCES_DIR.as_posix())
@@ -461,6 +471,8 @@ def kconfig_install(
 def setup(app: Sphinx):
     app.add_config_value("kconfig_generate_db", False, "env")
     app.add_config_value("kconfig_ext_paths", [], "env")
+    app.add_config_value("kconfig_gh_link_base_url", "", "")
+    app.add_config_value("kconfig_zephyr_version", "", "")
 
     app.add_node(
         KconfigSearchNode,
