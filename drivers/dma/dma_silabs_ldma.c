@@ -303,6 +303,16 @@ static void dma_silabs_irq_handler(const struct device *dev, uint32_t id)
 				atomic_clear(&chan->busy);
 			}
 
+			/*
+			 * In the case that the transfer is done but we have append a new
+			 * descriptor, we need to manually load the next descriptor
+			 */
+			if (LDMA_TransferDone(chnum) &&
+			    LDMA->CH[chnum].LINK & _LDMA_CH_LINK_LINK_MASK) {
+				sys_clear_bit((mem_addr_t)&LDMA->CHDONE, chnum);
+				LDMA->LINKLOAD = BIT(chnum);
+			}
+
 			if (chan->cb) {
 				chan->cb(dev, chan->user_data, chnum, status);
 			}
@@ -494,6 +504,64 @@ static DEVICE_API(dma, dma_funcs) = {
 	.stop = dma_silabs_stop,
 	.get_status = dma_silabs_get_status
 };
+
+int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct dma_config *config)
+{
+	const struct dma_silabs_data *data = dev->data;
+	struct dma_silabs_channel *chan_conf = &data->dma_chan_table[channel];
+	struct dma_block_config *block_config = config->head_block;
+	LDMA_Descriptor_t *desc = data->dma_chan_table[channel].desc;
+	unsigned int key;
+	int ret;
+
+	__ASSERT(!((uintptr_t)desc & ~_LDMA_CH_LINK_LINKADDR_MASK),
+		 "DMA Descriptor is not 32 bits aligned");
+
+	if (channel > data->dma_ctx.dma_channels) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(data->dma_ctx.atomic, channel)) {
+		return -EINVAL;
+	}
+
+	/* DMA Channel already have loaded a descriptor with a linkaddr
+	 * so we can't append a new block just after the current transfer.
+	 * You can't also append a descriptor list.
+	 * This check is here to not use the function in a wrong way
+	 */
+	if (desc->xfer.linkAddr || config->head_block->next_block) {
+		return -EINVAL;
+	}
+
+	/* A link is already set by a previous call to the function */
+	if (sys_test_bit((mem_addr_t)&LDMA->CH[channel].LINK, _LDMA_CH_LINK_LINK_SHIFT)) {
+		return -EINVAL;
+	}
+
+	ret = dma_silabs_block_to_descriptor(config, chan_conf, block_config, desc);
+	if (ret) {
+		return ret;
+	}
+
+	key = irq_lock();
+	if (!LDMA_TransferDone(channel)) {
+		/*
+		 * It is voluntary to split this 2 lines in order to separate the write of the link
+		 * addr and the write of the link bit. In this way, there is always a linkAddr when
+		 * the link bit is set.
+		 */
+		sys_write32((uintptr_t)desc, (mem_addr_t)&LDMA->CH[channel].LINK);
+		sys_set_bit((mem_addr_t)&LDMA->CH[channel].LINK, _LDMA_CH_LINK_LINK_SHIFT);
+		irq_unlock(key);
+
+	} else {
+		irq_unlock(key);
+		LDMA_StartTransfer(channel, &chan_conf->xfer_config, desc);
+	}
+
+	return 0;
+}
 
 #define SILABS_DMA_IRQ_CONNECT(n, inst)                                                            \
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority),       \
