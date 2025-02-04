@@ -434,7 +434,7 @@ static inline void init_res_instance(struct lwm2m_engine_res_inst *ri,
 
 struct lwm2m_opaque_context {
 	size_t len;
-	size_t remaining;
+	size_t offset;
 };
 
 struct lwm2m_block_context {
