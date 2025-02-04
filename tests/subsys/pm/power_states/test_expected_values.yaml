@@ -1,0 +1,6 @@
+test_power_harness:
+  -  name: "power states"
+     measurement_time: 6
+     num_of_transitions: 4
+     rms: [56.0, 4.0, 1.3, 0.26, 140]
+

@@ -292,7 +292,7 @@ class TestInstance:
                             device_testing)
 
         # check if test is runnable in pytest
-        if self.testsuite.harness == 'pytest':
+        if self.testsuite.harness in ['pytest', 'power']:
             target_ready = bool(
                 filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST
             )

@@ -43,7 +43,7 @@ from twisterlib.environment import ZEPHYR_BASE
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
 from twisterlib.environment import TwisterEnv
-from twisterlib.harness import HarnessImporter, Pytest
+from twisterlib.harness import HarnessImporter, Pytest, Power
 from twisterlib.log_helper import log_command
 from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance

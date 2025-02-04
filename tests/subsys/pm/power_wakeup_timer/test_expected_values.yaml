@@ -1,0 +1,5 @@
+test_power_harness:
+  -  name: "wakeup_timer"
+     measurement_time: 2
+     num_of_transitions: 1
+     rms: [0.26, 140]

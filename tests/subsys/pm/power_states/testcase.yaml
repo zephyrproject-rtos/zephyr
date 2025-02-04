@@ -7,11 +7,11 @@ tests:
       - stm32l562e_dk
     tags:
       - pm
-    harness: pytest
+    harness: power
     harness_config:
       pytest_dut_scope: session
-      pytest_args: [--powershield=<path_to>/STMicroelectronics_PowerShield__Virtual_ComPort,
-                    --expected-values=<path_to>/stm32l562e_dk.yaml]
+      pytest_args: [--probe-port=/dev/serial/by-id/usb-STMicroelectronics_PowerShield__Virtual_ComPort_in_FS_Mode__FFFFFFFEFFFF-if00,
+                    --probe=stm_powershield]
   pm.power_states.pm_device:
     platform_allow:
       - stm32l562e_dk
@@ -19,11 +19,11 @@ tests:
       - pm
     extra_args:
       - CONFIG_PM_DEVICE=y
-    harness: pytest
+    harness: power
     harness_config:
       pytest_dut_scope: session
-      pytest_args: [--powershield=<path_to>/STMicroelectronics_PowerShield__Virtual_ComPort,
-                    --expected-values=<path_to>/stm32l562e_dk.yaml]
+      pytest_args: [--probe-port=/dev/serial/by-id/usb-STMicroelectronics_PowerShield__Virtual_ComPort_in_FS_Mode__FFFFFFFEFFFF-if00,
+                    --probe=stm_powershield]
   pm.power_states.pm_device_runtime:
     platform_allow:
       - stm32l562e_dk
@@ -32,11 +32,12 @@ tests:
     extra_args:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
-    harness: pytest
+    harness: power
     harness_config:
       pytest_dut_scope: session
-      pytest_args: [--powershield=<path_to>/STMicroelectronics_PowerShield__Virtual_ComPort,
-                    --expected-values=<path_to>/stm32l562e_dk.yaml]
+      pytest_args: [--probe-port=<path_to>/STMicroelectronics_PowerShield__Virtual_ComPort,
+                    --probe=stm_powershield]
+
   pm.power_states.pm_device_system_managed:
     platform_allow:
       - stm32l562e_dk
@@ -45,8 +46,9 @@ tests:
     extra_args:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_SYSTEM_MANAGED=y
-    harness: pytest
+    harness: power
     harness_config:
       pytest_dut_scope: session
-      pytest_args: [--powershield=<path_to>/STMicroelectronics_PowerShield__Virtual_ComPort,
-                    --expected-values=<path_to>/stm32l562e_dk.yaml]
+      pytest_args: [--probe-port=<path_to>/STMicroelectronics_PowerShield__Virtual_ComPort,
+                    --probe=stm_powershield]
+                    

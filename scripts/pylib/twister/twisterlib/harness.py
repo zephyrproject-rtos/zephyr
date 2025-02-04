@@ -379,7 +379,10 @@ class Pytest(Harness):
     def generate_command(self):
         config = self.instance.testsuite.harness_config
         handler: Handler = self.instance.handler
-        pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
+        if self.instance.testsuite.harness == 'power':
+            pytest_root = [os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'power-twister-harness')]
+        else:
+            pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
         pytest_args_yaml = config.get('pytest_args', []) if config else []
         pytest_dut_scope = config.get('pytest_dut_scope', None) if config else None
         command = [
@@ -393,6 +396,10 @@ class Pytest(Harness):
             f'--log-file={self.pytest_log_file_path}',
             f'--platform={self.instance.platform.name}'
         ]
+
+        if self.instance.testsuite.harness == 'power':
+            command.append(f'--testdata={os.path.join(self.source_dir, "test_expected_values.yaml")}')
+
         command.extend([os.path.normpath(os.path.join(
             self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
 
@@ -947,6 +954,8 @@ class Bsim(Harness):
         logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')
         shutil.copy(original_exe_path, new_exe_path)
 
+class Power(Pytest):
+    pass
 
 class HarnessImporter:
 
