@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
+#include <zephyr/fff.h>
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
 #define TEST_AUTOMOUNT DT_PROP(DT_DRV_INST(0), automount)
@@ -27,6 +28,11 @@ FS_FSTAB_DECLARE_ENTRY(PARTITION_NODE);
 #define MAX_PATH_LEN (256 + 7)
 
 static const char *log_prefix = CONFIG_LOG_BACKEND_FS_FILE_PREFIX;
+static const struct log_backend *backend;
+
+DEFINE_FFF_GLOBALS;
+FAKE_VOID_FUNC(log_output_dropped_process, const struct log_output *, uint32_t);
+FAKE_VALUE_FUNC(log_format_func_t, log_format_func_t_get, uint32_t);
 
 int write_log_to_file(uint8_t *data, size_t length, void *ctx);
 
@@ -230,4 +236,26 @@ ZTEST(test_log_backend_fs, test_log_fs_files_max)
 	zassert_equal(test_mask, 0b11110, "Unexpected file numeration");
 }
 
-ZTEST_SUITE(test_log_backend_fs, NULL, NULL, NULL, NULL, NULL);
+static const struct log_backend *backend_find(char const *name)
+{
+	size_t slen = strlen(name);
+
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
+		if (strncmp(name, backend->name, slen) == 0) {
+			return backend;
+		}
+	}
+
+	return NULL;
+}
+
+
+void *suite_setup(void)
+{
+	backend = backend_find("log_backend_fs");
+	zassert_not_null(backend);
+
+	return NULL;
+}
+
+ZTEST_SUITE(test_log_backend_fs, NULL, suite_setup, NULL, NULL, NULL);
