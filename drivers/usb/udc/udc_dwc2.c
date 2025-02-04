@@ -666,8 +666,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	doeptsiz = usb_dwc2_set_doeptsizn_pktcnt(pktcnt) |
 		   usb_dwc2_set_doeptsizn_xfersize(xfersize);
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		/* Use 1 to allow 8 byte long buffers for SETUP data */
-		doeptsiz |= (1 << USB_DWC2_DOEPTSIZ0_SUPCNT_POS);
+		doeptsiz |= (3 << USB_DWC2_DOEPTSIZ0_SUPCNT_POS);
 	}
 
 	priv->rx_siz[ep_idx] = doeptsiz;
@@ -727,10 +726,17 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 
 static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	struct net_buf *buf;
+	size_t alloc_len = length;
 
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
+	if (dwc2_in_buffer_dma_mode(dev)) {
+		/* Control OUT buffers must be multiple of bMaxPacketSize0 */
+		alloc_len = ROUND_UP(length, 64);
+	}
+
+	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, alloc_len);
 	if (buf == NULL) {
 		return -ENOMEM;
 	}
