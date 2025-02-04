@@ -45,6 +45,9 @@
 #define _ARC_V2_DC_IVDL 0x04a
 #define _ARC_V2_DC_FLSH 0x04b
 #define _ARC_V2_DC_FLDL 0x04c
+#define _ARC_V2_DC_STARTR        0x04d
+#define _ARC_V2_DC_ENDR          0x04e
+#define _ARC_V2_DC_PTAG_HI       0x05f
 #define _ARC_V2_EA_BUILD 0x065
 #define _ARC_V2_VECBASE_AC_BUILD 0x068
 #define _ARC_V2_FP_BUILD 0x06b
@@ -175,6 +178,14 @@
 #define _ARC_V2_AGU_MOD21 0x5f5
 #define _ARC_V2_AGU_MOD22 0x5f6
 #define _ARC_V2_AGU_MOD23 0x5f7
+#define _ARC_V2_SLC_CTRL         0x903
+#define _ARC_V2_SLC_FLUSH        0x904
+#define _ARC_V2_SLC_INVALIDATE   0x905
+#define _ARC_V2_SLC_RGN_START    0x914
+#define _ARC_V2_SLC_RGN_START1   0x915
+#define _ARC_V2_SLC_RGN_END      0x916
+#define _ARC_V2_SLC_RGN_END1     0x917
+#define _ARC_V2_SLC_BUILD        0xCE
 #define _ARC_HW_PF_BUILD 0xf70
 #define _ARC_HW_PF_CTRL 0x4f
 
