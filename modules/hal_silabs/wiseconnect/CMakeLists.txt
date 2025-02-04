@@ -62,5 +62,44 @@ zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
 )
 
+if(CONFIG_WISECONNECT_NETWORK_STACK)
+  zephyr_compile_definitions(
+    SLI_SI91X_ENABLE_OS
+    SL_SI91X_SI917_RAM_MEM_CONFIG=1
+    SL_WIFI_COMPONENT_INCLUDED # Depite de the name, required for everything
+  )
+  zephyr_include_directories(
+    # FIXME: find why this directory is not included when CMSIS_RTOS_V2=y
+    ${ZEPHYR_BASE}/include/zephyr/portability
+    ${SISDK_DIR}/platform/emlib/inc
+    ${WISECONNECT_DIR}/resources/defaults
+    ${WISECONNECT_DIR}/components/common/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/socket/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/asynchronous_socket/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/inc
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/config
+    ${WISECONNECT_DIR}/components/protocol/wifi/inc
+    ${WISECONNECT_DIR}/components/service/network_manager/inc
+  )
+  zephyr_library_sources(
+    ${WISECONNECT_DIR}/components/common/src/sl_utility.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_rom.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sli_siwx917_soc.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_platform.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_platform_wireless.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_si91x_bus.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/host_mcu/si91x/siwx917_soc_ncp_host.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/memory/malloc_buffers.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_rsi_utility.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_si91x_driver.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/threading/sli_si91x_multithreaded.c
+    ${WISECONNECT_DIR}/components/protocol/wifi/si91x/sl_wifi.c
+    ${WISECONNECT_DIR}/components/protocol/wifi/src/sl_wifi_callback_framework.c
+  )
+endif() # CONFIG_WISECONNECT_NETWORK_STACK
+
 zephyr_linker_sources(ROM_SECTIONS linker/code_classification_text.ld)
 zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_ramfunc.ld)
