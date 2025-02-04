@@ -299,6 +299,8 @@ gh_link_exclude = [
 
 kconfig_generate_db = True
 kconfig_ext_paths = [ZEPHYR_BASE]
+kconfig_gh_link_base_url = "https://github.com/zephyrproject-rtos/zephyr"
+kconfig_zephyr_version = f"v{version}" if is_release else "main"
 
 # -- Options for zephyr.external_content ----------------------------------
 
