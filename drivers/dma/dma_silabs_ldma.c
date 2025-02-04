@@ -9,6 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_silabs_ldma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/mem_blocks.h>
@@ -104,7 +105,9 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 
 	memset(desc, 0, sizeof(*desc));
 
-	desc->xfer.structReq = 1;
+	if (config->channel_direction == MEMORY_TO_MEMORY) {
+		desc->xfer.structReq = 1;
+	}
 
 	if (config->source_data_size != config->dest_data_size) {
 		LOG_ERR("Source data size(%u) and destination data size(%u) must be equal",
@@ -146,8 +149,17 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 	 * in the list (block for zephyr)
 	 */
 	desc->xfer.doneIfs = config->complete_callback_en;
-	desc->xfer.reqMode = ldmaCtrlReqModeAll;
-	desc->xfer.ignoreSrec = block->flow_control_mode;
+
+	if (config->channel_direction == PERIPHERAL_TO_MEMORY ||
+	    config->channel_direction == MEMORY_TO_PERIPHERAL) {
+		if (block->flow_control_mode) {
+			desc->xfer.reqMode = ldmaCtrlReqModeAll;
+		} else {
+			desc->xfer.reqMode = ldmaCtrlReqModeBlock;
+		}
+	} else {
+		desc->xfer.reqMode = ldmaCtrlReqModeAll;
+	}
 
 	/* In silabs LDMA, increment sign is managed with the transfer configuration
 	 * which is common for all descs of the channel. Zephyr DMA API allows
@@ -257,10 +269,9 @@ static int dma_silabs_configure_descriptor(struct dma_config *config, struct dma
 	return 0;
 err:
 	/* Free all eventually allocated descriptor */
-	(void)dma_silabs_release_descriptor(data, chan_conf->desc);
+	dma_silabs_release_descriptor(data, chan_conf->desc);
 
 	return ret;
-
 }
 
 static void dma_silabs_irq_handler(const struct device *dev, uint32_t id)
@@ -350,7 +361,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 		break;
 	case PERIPHERAL_TO_MEMORY:
 	case MEMORY_TO_PERIPHERAL:
-		xfer_config->ldmaReqSel = config->dma_slot;
+		xfer_config->ldmaReqSel = SILABS_LDMA_SLOT_TO_REQSEL(config->dma_slot);
 		break;
 	case PERIPHERAL_TO_PERIPHERAL:
 	case HOST_TO_MEMORY:
@@ -407,7 +418,6 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 
 static int dma_silabs_start(const struct device *dev, uint32_t channel)
 {
-
 	const struct dma_silabs_data *data = dev->data;
 	struct dma_silabs_channel *chan = &data->dma_chan_table[channel];
 
@@ -453,6 +463,7 @@ static int dma_silabs_get_status(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	status->pending_length = LDMA_TransferRemainingCount(channel);
 	status->busy = data->dma_chan_table[channel].busy;
 	status->dir = data->dma_chan_table[channel].dir;
 
@@ -469,7 +480,6 @@ static int dma_silabs_init(const struct device *dev)
 	};
 
 	/* Clock is managed by em_ldma */
-
 	LDMA_Init(&dmaInit);
 
 	/* LDMA_Init configure IRQ but we want IRQ to match with configured one in the dts*/

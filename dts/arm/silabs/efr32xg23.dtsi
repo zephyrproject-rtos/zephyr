@@ -9,6 +9,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/adc/adc.h>
 #include <dt-bindings/clock/silabs/xg23-clock.h>
+#include <dt-bindings/dma/silabs/xg23-dma.h>
 #include <freq.h>
 
 / {
@@ -426,7 +427,7 @@
 			compatible = "silabs,ldma";
 			reg = <0x50040000 0x4000>;
 			interrupts = <22 0>;
-			#dma-cells = <3>;
+			#dma-cells = <1>;
 			dma_channels = <8>;
 			status = "disabled";
 		};

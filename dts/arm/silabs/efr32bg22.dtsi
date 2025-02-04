@@ -6,6 +6,7 @@
 
 #include "efr32bg2x.dtsi"
 #include <dt-bindings/clock/silabs/xg22-clock.h>
+#include <dt-bindings/dma/silabs/xg22-dma.h>
 #include <mem.h>
 
 / {
