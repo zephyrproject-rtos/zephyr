@@ -79,6 +79,7 @@ static void sample_fix_code_triple(struct usbd_context *uds_ctx,
 	if (IS_ENABLED(CONFIG_USBD_CDC_ACM_CLASS) ||
 	    IS_ENABLED(CONFIG_USBD_CDC_ECM_CLASS) ||
 	    IS_ENABLED(CONFIG_USBD_CDC_NCM_CLASS) ||
+	    IS_ENABLED(CONFIG_USBD_MIDI2_CLASS) ||
 	    IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		/*
 		 * Class with multiple interfaces have an Interface
