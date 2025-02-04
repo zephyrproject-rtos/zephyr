@@ -178,6 +178,10 @@ static inline
 enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 						struct net_eth_hdr *hdr)
 {
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR)) {
+		return NET_OK;
+	}
+
 	if (net_eth_is_addr_broadcast(&hdr->dst) &&
 	    !(net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
 	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
