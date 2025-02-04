@@ -4306,7 +4306,7 @@ Secure storage:
   files:
     - subsys/secure_storage/
     - samples/psa/
-    - doc/services/secure_storage.rst
+    - doc/services/storage/secure_storage/secure_storage.rst
     - tests/subsys/secure_storage/
   labels:
     - "area: Secure storage"
