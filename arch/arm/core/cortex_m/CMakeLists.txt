@@ -35,6 +35,8 @@ zephyr_library_sources(
   cpu_idle.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_USE_SWITCH arm-m-switch.c)
+
 zephyr_library_sources_ifndef(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER irq_init.c)
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.c)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
