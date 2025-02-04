@@ -475,7 +475,8 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 {
 	int total_received = 0;
 	size_t offset = 0;
-	int received, ret;
+	int received, ret, sock_error, family;
+	socklen_t optlen = sizeof(int);
 	struct zsock_pollfd fds[1];
 	int nfds = 1;
 
@@ -489,15 +490,24 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 
 		ret = zsock_poll(fds, nfds, req_timeout_ms);
 		if (ret == 0) {
-			LOG_DBG("Timeout");
+			LOG_ERR("Timeout");
 			ret = -ETIMEDOUT;
 			goto error;
 		} else if (ret < 0) {
 			ret = -errno;
 			goto error;
 		}
-		if (fds[0].revents & (ZSOCK_POLLERR | ZSOCK_POLLNVAL)) {
-			ret = -errno;
+		if (fds[0].revents & ZSOCK_POLLERR) {
+			(void)zsock_getsockopt(fds[0].fd, SOL_SOCKET,
+					       SO_DOMAIN, &family, &optlen);
+			(void)zsock_getsockopt(fds[0].fd, SOL_SOCKET,
+					       SO_ERROR, &sock_error, &optlen);
+			LOG_ERR("Receiver IPv%d socket error (%d)",
+				family == AF_INET ? 4 : 6, sock_error);
+			ret = -sock_error;
+			goto error;
+		} else if (fds[0].revents & ZSOCK_POLLNVAL) {
+			ret = -EBADF;
 			goto error;
 		} else if (fds[0].revents & ZSOCK_POLLHUP) {
 			/* Connection closed */
@@ -560,7 +570,7 @@ closed:
 	ret = -ECONNRESET;
 
 error:
-	LOG_DBG("Connection error (%d)", ret);
+	LOG_ERR("Connection error (%d)", ret);
 	return ret;
 }
 
