@@ -45,6 +45,11 @@
 			status = "okay";
 		};
 
+		pinctrl0: pinctrl@46130000 {
+			compatible = "silabs,siwx91x-pinctrl";
+			reg = <0x46130000 0x1000>;
+		};
+
 		ulpuart: uart@24041800 {
 			compatible = "ns16550";
 			reg = <0x24041800 0x1000>;
