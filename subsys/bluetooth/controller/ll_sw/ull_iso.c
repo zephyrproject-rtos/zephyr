@@ -4,11 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+
 #include <soc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -233,10 +236,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	ARG_UNUSED(controller_delay);
 	ARG_UNUSED(codec_config);
 
-	if (false) {
-
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
-	} else if (IS_CIS_HANDLE(handle)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) && IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_group *cig;
 		struct ll_conn *conn;
 
@@ -307,8 +307,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 				sdu_interval = cig->c_sdu_interval;
 			}
 		}
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
-
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	} else if (IS_ADV_ISO_HANDLE(handle)) {
 		struct ll_adv_iso_set *adv_iso;
@@ -450,7 +448,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		}
 
 		if (!err) {
-			if (cis) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) && cis != NULL) {
 				cis->hdr.datapath_out = dp;
 			}
 
