@@ -166,7 +166,6 @@ static uint32_t elapsed(void)
  * However using ISR_DIRECT_DECLARE() is not so suitable due to possible
  * tracing overflow, so here is a stripped down version of it.
  */
-ARCH_ISR_DIAG_OFF
 __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 {
 #ifdef CONFIG_TRACING_ISR
@@ -228,7 +227,6 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 
 	z_arm_int_exit();
 }
-ARCH_ISR_DIAG_ON
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
