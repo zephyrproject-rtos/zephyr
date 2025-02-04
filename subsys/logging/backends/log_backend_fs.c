@@ -107,42 +107,34 @@ static int create_log_dir(const char *path)
 
 }
 
+static int get_log_path(char *buf, size_t buf_len, int num)
+{
+	if (num > MAX_FILE_NUMERAL) {
+		return -EINVAL;
+	}
+	return snprintf(buf, buf_len, "%s/%s%04d", CONFIG_LOG_BACKEND_FS_DIR,
+			CONFIG_LOG_BACKEND_FS_FILE_PREFIX, num);
+}
+
 static int check_log_file_exist(int num)
 {
-	struct fs_dir_t dir;
 	struct fs_dirent ent;
+	char fname[MAX_PATH_LEN];
 	int rc;
 
-	fs_dir_t_init(&dir);
+	rc = get_log_path(fname, sizeof(fname), num);
 
-	rc = fs_opendir(&dir, CONFIG_LOG_BACKEND_FS_DIR);
-	if (rc) {
-		return -EIO;
+	if (rc < 0) {
+		return rc;
 	}
 
-	while (true) {
-		rc = fs_readdir(&dir, &ent);
-		if (rc < 0) {
-			rc = -EIO;
-			goto close_dir;
-		}
-		if (ent.name[0] == 0) {
-			break;
-		}
+	rc = fs_stat(fname, &ent);
 
-		rc = get_log_file_id(&ent);
-
-		if (rc == num) {
-			rc = 1;
-			goto close_dir;
-		}
+	if (rc == 0) {
+		return 1;
+	} else if (rc == -ENOENT) {
+		return 0;
 	}
-
-	rc = 0;
-
-close_dir:
-	(void) fs_closedir(&dir);
-
 	return rc;
 }
 
@@ -341,8 +333,7 @@ static int allocate_new_file(struct fs_file_t *file)
 		curr_file_num = newest;
 
 		/* Is there space left in the newest file? */
-		snprintf(fname, sizeof(fname), "%s/%s%04d", CONFIG_LOG_BACKEND_FS_DIR,
-			 CONFIG_LOG_BACKEND_FS_FILE_PREFIX, curr_file_num);
+		get_log_path(fname, sizeof(fname), curr_file_num);
 		rc = fs_open(file, fname, FS_O_CREATE | FS_O_WRITE | FS_O_APPEND);
 		if (rc < 0) {
 			goto out;
@@ -403,9 +394,7 @@ static int allocate_new_file(struct fs_file_t *file)
 		}
 	}
 
-	snprintf(fname, sizeof(fname), "%s/%s%04d",
-		CONFIG_LOG_BACKEND_FS_DIR,
-		CONFIG_LOG_BACKEND_FS_FILE_PREFIX, curr_file_num);
+	get_log_path(fname, sizeof(fname), curr_file_num);
 
 	rc = fs_open(file, fname, FS_O_CREATE | FS_O_WRITE);
 	if (rc < 0) {
@@ -424,9 +413,7 @@ static int del_oldest_log(void)
 	static char dellname[MAX_PATH_LEN];
 
 	while (true) {
-		snprintf(dellname, sizeof(dellname), "%s/%s%04d",
-			 CONFIG_LOG_BACKEND_FS_DIR,
-			 CONFIG_LOG_BACKEND_FS_FILE_PREFIX, oldest);
+		get_log_path(dellname, sizeof(dellname), oldest);
 		rc = fs_unlink(dellname);
 
 		if ((rc == 0) || (rc == -ENOENT)) {
