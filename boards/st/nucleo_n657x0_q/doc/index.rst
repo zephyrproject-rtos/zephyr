@@ -82,6 +82,8 @@ The Zephyr ``nucleo_n657x0_q`` board supports the following hardware features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| ETHERNET  | on-chip    | ethernet                            |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on this Zephyr port.
