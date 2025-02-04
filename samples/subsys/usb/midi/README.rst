@@ -1,8 +1,8 @@
-.. zephyr:code-sample:: midi
-   :name: USB MIDI device class
-   :relevant-api: usbd_api usb_midi input_events
+.. zephyr:code-sample:: usb-midi2-device
+   :name: USB MIDI2 device
+   :relevant-api: usbd_api usbd_midi2 input_events
 
-   Implements a simple USB-MIDI loopback and keyboard device.
+   Implements a simple USB MIDI loopback and keyboard device.
 
 Overview
 ********
