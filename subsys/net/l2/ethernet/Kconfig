@@ -32,6 +32,14 @@ config NET_L2_ETHERNET_MGMT
 	  Enable support net_mgmt Ethernet interface which can be used to
 	  configure at run-time Ethernet drivers and L2 settings.
 
+
+config NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR
+	bool "Accept mismatched L3 and L2 addresses"
+	help
+	  If enabled, then accept packets where the L3 and L2 addresses do not
+	  conform to RFC1122 section 3.3.6. This is useful in dealing with
+	  buggy devices that do not follow the RFC.
+
 config NET_VLAN
 	bool "Virtual LAN support"
 	select NET_L2_VIRTUAL
