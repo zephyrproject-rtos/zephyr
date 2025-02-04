@@ -35,7 +35,7 @@ static struct sockaddr socks5_proxy;
 #endif
 
 /* Socket Poll */
-static struct pollfd fds[1];
+static struct zsock_pollfd fds[1];
 static int nfds;
 
 static bool mqtt_connected;
@@ -51,8 +51,8 @@ static struct net_mgmt_event_callback l4_mgmt_cb;
 #endif
 
 #if defined(CONFIG_DNS_RESOLVER)
-static struct addrinfo hints;
-static struct addrinfo *haddr;
+static struct zsock_addrinfo hints;
+static struct zsock_addrinfo *haddr;
 #endif
 
 static K_SEM_DEFINE(mqtt_start, 0, 1);
@@ -92,7 +92,7 @@ static void prepare_fds(struct mqtt_client *client)
 		fds[0].fd = client->transport.tls.sock;
 	}
 
-	fds[0].events = POLLIN;
+	fds[0].events = ZSOCK_POLLIN;
 	nfds = 1;
 }
 
@@ -109,7 +109,7 @@ static int wait(int timeout)
 		return rc;
 	}
 
-	rc = poll(fds, nfds, timeout);
+	rc = zsock_poll(fds, nfds, timeout);
 	if (rc < 0) {
 		LOG_ERR("poll error: %d", errno);
 		return -errno;
@@ -129,7 +129,7 @@ static void broker_init(void)
 	net_ipaddr_copy(&broker4->sin_addr,
 			&net_sin(haddr->ai_addr)->sin_addr);
 #else
-	inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
+	zsock_inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
 #endif
 
 #if defined(CONFIG_SOCKS)
@@ -137,7 +137,7 @@ static void broker_init(void)
 
 	proxy4->sin_family = AF_INET;
 	proxy4->sin_port = htons(SOCKS5_PROXY_PORT);
-	inet_pton(AF_INET, SOCKS5_PROXY_ADDR, &proxy4->sin_addr);
+	zsock_inet_pton(AF_INET, SOCKS5_PROXY_ADDR, &proxy4->sin_addr);
 #endif
 }
 
@@ -399,7 +399,7 @@ static int get_mqtt_broker_addrinfo(void)
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_protocol = 0;
 
-		rc = getaddrinfo(CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME, "8883",
+		rc = zsock_getaddrinfo(CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME, "8883",
 				 &hints, &haddr);
 		if (rc == 0) {
 			LOG_INF("DNS resolved for %s:%d",

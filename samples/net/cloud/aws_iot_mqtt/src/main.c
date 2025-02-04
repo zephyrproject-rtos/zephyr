@@ -363,7 +363,7 @@ void aws_client_loop(void)
 {
 	int rc;
 	int timeout;
-	struct pollfd fds;
+	struct zsock_pollfd fds;
 
 	aws_client_setup();
 
@@ -373,13 +373,13 @@ void aws_client_loop(void)
 	}
 
 	fds.fd = client_ctx.transport.tcp.sock;
-	fds.events = POLLIN;
+	fds.events = ZSOCK_POLLIN;
 
 	for (;;) {
 		timeout = mqtt_keepalive_time_left(&client_ctx);
-		rc = poll(&fds, 1u, timeout);
+		rc = zsock_poll(&fds, 1u, timeout);
 		if (rc >= 0) {
-			if (fds.revents & POLLIN) {
+			if (fds.revents & ZSOCK_POLLIN) {
 				rc = mqtt_input(&client_ctx);
 				if (rc != 0) {
 					LOG_ERR("Failed to read MQTT input: %d", rc);
@@ -387,7 +387,7 @@ void aws_client_loop(void)
 				}
 			}
 
-			if (fds.revents & (POLLHUP | POLLERR)) {
+			if (fds.revents & (ZSOCK_POLLHUP | ZSOCK_POLLERR)) {
 				LOG_ERR("Socket closed/error");
 				break;
 			}
@@ -416,16 +416,16 @@ void aws_client_loop(void)
 cleanup:
 	mqtt_disconnect(&client_ctx);
 
-	close(fds.fd);
+	zsock_close(fds.fd);
 	fds.fd = -1;
 }
 
 static int resolve_broker_addr(struct sockaddr_in *broker)
 {
 	int ret;
-	struct addrinfo *ai = NULL;
+	struct zsock_addrinfo *ai = NULL;
 
-	const struct addrinfo hints = {
+	const struct zsock_addrinfo hints = {
 		.ai_family = AF_INET,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = 0,
@@ -433,19 +433,19 @@ static int resolve_broker_addr(struct sockaddr_in *broker)
 	char port_string[6] = {0};
 
 	sprintf(port_string, "%d", AWS_BROKER_PORT);
-	ret = getaddrinfo(CONFIG_AWS_ENDPOINT, port_string, &hints, &ai);
+	ret = zsock_getaddrinfo(CONFIG_AWS_ENDPOINT, port_string, &hints, &ai);
 	if (ret == 0) {
 		char addr_str[INET_ADDRSTRLEN];
 
 		memcpy(broker, ai->ai_addr, MIN(ai->ai_addrlen, sizeof(struct sockaddr_storage)));
 
-		inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
+		zsock_inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
 		LOG_INF("Resolved: %s:%u", addr_str, htons(broker->sin_port));
 	} else {
 		LOG_ERR("failed to resolve hostname err = %d (errno = %d)", ret, errno);
 	}
 
-	freeaddrinfo(ai);
+	zsock_freeaddrinfo(ai);
 
 	return ret;
 }
