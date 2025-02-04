@@ -64,7 +64,7 @@ static inline void dwt_access(bool ena)
 			}
 		}
 	}
-#else /* CONFIG_CPU_CORTEX_M7 */
+#else  /* CONFIG_CPU_CORTEX_M7 */
 	ARG_UNUSED(ena);
 #endif /* CONFIG_CPU_CORTEX_M7 */
 }
@@ -103,9 +103,8 @@ static inline int z_arm_dwt_init_cycle_counter(void)
 	/* Assert that the cycle counter is indeed implemented.
 	 * The field is called NOCYCCNT. So 1 means there is no cycle counter.
 	 */
-	__ASSERT((DWT->CTRL & DWT_CTRL_NOCYCCNT_Msk) == 0,
-		"DWT implements no cycle counter. "
-		"Cannot be used for cycle counting\n");
+	__ASSERT((DWT->CTRL & DWT_CTRL_NOCYCCNT_Msk) == 0, "DWT implements no cycle counter. "
+							   "Cannot be used for cycle counting\n");
 
 	return 0;
 }
@@ -148,7 +147,7 @@ static inline void z_arm_dwt_enable_debug_monitor(void)
 	 * assert that the CPU is in normal mode.
 	 */
 	__ASSERT((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) == 0,
-		"Cannot enable DBM when CPU is in Debug mode\n");
+		 "Cannot enable DBM when CPU is in Debug mode\n");
 
 #if defined(CONFIG_ARMV8_M_SE) && !defined(CONFIG_ARM_NONSECURE_FIRMWARE)
 	/*
@@ -158,8 +157,7 @@ static inline void z_arm_dwt_enable_debug_monitor(void)
 	 * when enabling the DebugMonitor exception, assert that
 	 * it is not targeting the Non Secure domain.
 	 */
-	__ASSERT((CoreDebug->DEMCR & DCB_DEMCR_SDME_Msk) != 0,
-		"DebugMonitor targets Non-Secure\n");
+	__ASSERT((CoreDebug->DEMCR & DCB_DEMCR_SDME_Msk) != 0, "DebugMonitor targets Non-Secure\n");
 #endif
 
 	/* The DebugMonitor handler priority is set already

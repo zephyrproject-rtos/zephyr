@@ -70,17 +70,14 @@ ZTEST(arm_irq_advanced_features, test_arm_zero_latency_irqs)
 		}
 	}
 
-	zassert_true(i >= 0,
-		"No available IRQ line to configure as zero-latency\n");
+	zassert_true(i >= 0, "No available IRQ line to configure as zero-latency\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
 	/* Configure the available IRQ line as zero-latency. */
 
-	arch_irq_connect_dynamic(i, 0 /* Unused */,
-		arm_zero_latency_isr_handler,
-		NULL,
-		IRQ_ZERO_LATENCY);
+	arch_irq_connect_dynamic(i, 0 /* Unused */, arm_zero_latency_isr_handler, NULL,
+				 IRQ_ZERO_LATENCY);
 
 	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
