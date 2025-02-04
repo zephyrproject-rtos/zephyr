@@ -1,29 +1,29 @@
 .. _sdhc_api:
 
-
-Secure Digital High Capacity (SDHC)
+Secure Digital (SD card) interface
 ###################################
 
-The SDHC api offers a generic interface for interacting with an SD host
-controller device. It is used by the SD subsystem, and is not intended to be
-directly used by the application
+Zephyr can communicate with an attached SD card either using a system's native
+SD card interface or over SPI (Serial Peripheral Interface). Some devices can
+also communicate with MMC (MultiMediaCard) devices.
 
-Basic Operation
-***************
+To use SD cards as storage devices, use Zephyr's :ref:`the disk access
+API <disk_access_api>`. Users can also use Zephyr's SD card subsystem to
+send commands to a card.
 
-SD Host Controller
-==================
+SD Host Controller API
+**********************
 
-An SD host controller is a device capable of sending SD commands to an attached
-SD card. These commands can be sent using the native SD protocol, or over SPI.
-Some SD host controllers are also capable of communicating with MMC devices.
-The SDHC api is designed to provide a generic way to send commands to and
-interact with attached SD devices.
+Zephyr's SD Host Controller (SDHC) API is a generic interface used to interact
+with an SD card, either using a device's SD host controller (hardware that is
+capable of sending SD commands to an SD card) or over SPI. This API is not
+intended to be directly used by applications, instead applications should use
+Zephyr's SD card subsystem.
 
 Requests
 ========
 
-The core of the SDHC api is the :c:func:`sdhc_request` api. Requests contain a
+The core of the SDHC API is the :c:func:`sdhc_request` API. Requests contain a
 :c:struct:`sdhc_command` command structure, and an optional
 :c:struct:`sdhc_data` data structure. The caller may check the return code,
 or the ``response`` field of the SD command structure to determine if the
@@ -35,7 +35,7 @@ command opcode provided.
 Host Controller I/O
 ===================
 
-The :c:func:`sdhc_set_io` api allows the user to change I/O settings of the SD
+The :c:func:`sdhc_set_io` API allows the user to change I/O settings of the SD
 host controller, such as clock frequency, I/O voltage, and card power. Not all
 controllers will support applying all I/O settings. For example, SPI mode
 controllers typically cannot toggle power to the SD card.
