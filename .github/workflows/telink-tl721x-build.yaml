@@ -143,7 +143,7 @@ jobs:
         cp ../build_spi_flash_tl7218/zephyr/zephyr.bin                 telink_build_artifacts/tl7218_spi_flash.bin
 
     - name: Publish artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         path: |
           telink_build_artifacts/*

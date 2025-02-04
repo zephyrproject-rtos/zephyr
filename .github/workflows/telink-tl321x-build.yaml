@@ -142,7 +142,7 @@ jobs:
         cp ../build_mcuboot_chip_id_tl3218/zephyr/zephyr.bin            telink_build_artifacts/tl3218_mcuboot_chip_id.bin
 
     - name: Publish artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         path: |
           telink_build_artifacts/*

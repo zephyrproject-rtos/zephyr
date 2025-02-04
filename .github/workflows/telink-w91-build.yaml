@@ -155,7 +155,7 @@ jobs:
         cp ../build_blinky_w91/zephyr/n22.bin                       telink_build_artifacts/n22.bin
 
     - name: Publish artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         path: |
           telink_build_artifacts/*

@@ -153,6 +153,46 @@ Serial Port
 The TLSR9518A SoC has 2 UARTs. The Zephyr console output is assigned to UART0.
 The default settings are 115200 8N1.
 
+USB COM Port (ACM) as Serial Port Configuration
+-----------------------------------------------
+
+To use the USB COM port (ACM) instead of UART, follow these steps:
+
+1. Add the following configuration to your project:
+
+.. code-block:: none
+    CONFIG_LOG=y
+    CONFIG_USB_DEVICE_STACK=y
+    CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n
+    CONFIG_USB_CDC_ACM_LOG_LEVEL_OFF=y
+2. Include the following overlay configuration:
+
+.. code-block:: dts
+    / {
+        chosen {
+            zephyr,console = &cdc_acm_uart0;
+            zephyr,shell-uart = &cdc_acm_uart0;
+        };
+    };
+    &zephyr_udc0 {
+        cdc_acm_uart0: cdc_acm_uart0 {
+            compatible = "zephyr,cdc-acm-uart";
+        };
+    };
+3. Connect the USB cable to your device. A new ACM serial device should appear in your system (e.g., ``/dev/ttyACM0`` on Linux or a COM port on Windows).
+4. Use your preferred terminal application (like ``minicom``, ``screen``, or ``PuTTY``) to connect to the newly detected ACM serial device.
+
+5. In your source code, ensure the following header is included and the USB device stack is initialized:
+
+.. code-block:: c
+
+    #ifdef CONFIG_USB_DEVICE_STACK
+    #include <zephyr/usb/usb_device.h>
+    #endif
+    #ifdef CONFIG_USB_DEVICE_STACK
+    usb_enable(NULL);
+    #endif
+
 Programming and debugging
 *************************
 
