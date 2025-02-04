@@ -8,4 +8,6 @@
 
 #include "offsets_aarch32.c"
 
+#include "offsets_cortex_m.c"
+
 GEN_ABS_SYM_END

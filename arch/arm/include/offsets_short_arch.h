@@ -23,8 +23,9 @@
 #define _thread_offset_to_preempt_float \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_preempt_float_OFFSET)
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
-#define _thread_offset_to_exception_depth \
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R) ||                \
+	(defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH))
+#define _thread_offset_to_exception_depth                                                          \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_exception_depth_OFFSET)
 
 #define _cpu_offset_to_exc_depth \

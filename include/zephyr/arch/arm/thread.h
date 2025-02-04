@@ -77,7 +77,8 @@ struct _thread_arch {
 	struct _preempt_float  preempt_float;
 #endif
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R) ||                \
+	(defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH))
 	int8_t exception_depth;
 #endif
 

@@ -234,6 +234,7 @@ config ARMV8_M_MAINLINE
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_SPLIM
 	select CPU_CORTEX_M_HAS_CMSE
+	select USE_SWITCH_SUPPORTED
 	help
 	  This option signifies the use of an ARMv8-M processor
 	  implementation, supporting the Main Extension.

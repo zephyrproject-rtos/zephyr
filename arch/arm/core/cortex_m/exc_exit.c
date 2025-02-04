@@ -54,11 +54,14 @@ FUNC_ALIAS(z_arm_exc_exit, z_arm_int_exit, void);
  */
 Z_GENERIC_SECTION(.text._HandlerModeExit) void z_arm_exc_exit(void)
 {
-#ifdef CONFIG_PREEMPT_ENABLED
-	if (_kernel.ready_q.cache != _kernel.cpus->current) {
+/* TL;DR: when Coop only & not USE_SWITCH, the idle thread yields itself.
+ * see kernel/idle.c:77 for an explanation for this #if
+ */
+#if defined(CONFIG_PREEMPT_ENABLED) || defined(CONFIG_USE_SWITCH)
+	if (_kernel.ready_q.cache != _current) {
 		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 	}
-#endif /* CONFIG_PREEMPT_ENABLED */
+#endif /* CONFIG_PREEMPT_ENABLED || CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_STACK_SENTINEL
 	z_check_stack_sentinel();

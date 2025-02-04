@@ -45,6 +45,29 @@
 K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 #endif
 
+#if defined(CONFIG_USE_SWITCH)
+/* when thread starts from process mode, it will return to this trampoline that effectively only
+ * pops the last (and first) frame on the stack.
+ */
+void __attribute__((naked)) z_arm_thread_start_trampoline(void)
+{
+	__asm__ volatile("pop { r0-r3, r12, lr}\n"
+			 "pop { r4, r5 }\n"
+			 "mov pc, r4\n"
+			 :
+			 :
+			 : "memory");
+}
+
+FUNC_NORETURN void z_arm_thread_start(k_thread_entry_t entry, void *p1, void *p2, void *p3)
+{
+	/* thread start with IRQ locked */
+	if (__get_BASEPRI() != 0) {
+		arch_irq_unlock(0);
+	}
+	z_thread_entry(entry, p1, p2, p3);
+}
+#endif
 /* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
  * end of the stack, and thus reusable by the stack when not needed anymore.
  *
@@ -92,12 +115,20 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	} else {
 		iframe->pc = (uint32_t)z_thread_entry;
 	}
+#elif defined(CONFIG_USE_SWITCH)
+	iframe->pc = (uint32_t)z_arm_thread_start;
+	thread->callee_saved.lr = (uint32_t)z_arm_thread_start_trampoline;
+	thread->arch.exception_depth = 0;
 #else
 	iframe->pc = (uint32_t)z_thread_entry;
 #endif
 
-	/* force ARM mode by clearing LSB of address */
-	iframe->pc &= 0xfffffffe;
+#ifdef CONFIG_USE_SWITCH
+	thread->switch_handle = thread;
+#endif
+
+	/* force THUMB mode by setting LSB of address */
+	iframe->pc |= 0x00000001;
 	iframe->a1 = (uint32_t)entry;
 	iframe->a2 = (uint32_t)p1;
 	iframe->a3 = (uint32_t)p2;

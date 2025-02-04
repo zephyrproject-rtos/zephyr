@@ -50,6 +50,8 @@ The BOARD options are summarized below:
 +----------------------+-------------------------------------------------------+
 | mps2/an521/cpu1      | For building firmware on CPU1                         |
 +----------------------+-------------------------------------------------------+
+| mps2/an521/smp       | For building firmware using both cores together.      |
++----------------------+-------------------------------------------------------+
 
 Memory Partitioning
 ===================
@@ -71,6 +73,8 @@ ignoring the S/NS alias difference.
 | mps2/an521/cpu0/ns      | 0   | 512KB (1MB)    | 512KB (1MB)    | NS         |
 +-------------------------+-----+----------------+----------------+------------+
 | mps2/an521/cpu1         | 1   | 468KB (3628KB) | 512KB (1.5MB)  | NS         |
++-------------------------+-----+----------------+----------------+------------+
+| mps2/an521/smp          | 0&1 | 4MB (0)        | 4MB (0)        | S          |
 +-------------------------+-----+----------------+----------------+------------+
 
 The ``mps2/an521/cpu0/ns`` board target is intended to be used with TF-M, with the
@@ -96,6 +100,9 @@ When using one of the alternative board targets (``mps2/an521/cpu0/ns`` or
 ``mps2/an521/cpu1``), care needs to be taken with the amount of code or
 SRAM memory used on the primary board target (``mps2/an521``) since there is
 some overlap in the memory maps.
+
+The ``mps2/an512/smp`` board target is setup to only use features common to both
+cores and relyon the ``USE_SWITCH`` and SMP scheduler.
 
 Hardware
 ********

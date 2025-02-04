@@ -61,10 +61,28 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
+#ifndef CONFIG_USE_SWITCH
+
 static ALWAYS_INLINE void arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
 }
+
+#else
+
+static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
+{
+	/* clang-format off */
+	extern void z_arm_context_switch(struct k_thread *new, struct k_thread *old);
+	/* clang-format on */
+
+	struct k_thread *new = switch_to;
+	struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread, switch_handle);
+
+	z_arm_context_switch(new, old);
+}
+
+#endif /* CONFIG_USE_SWITCH */
 
 #if !defined(CONFIG_MULTITHREADING)
 extern FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_func,
