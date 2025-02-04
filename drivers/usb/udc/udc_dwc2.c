@@ -201,6 +201,20 @@ static void dwc2_wait_for_bit(const struct device *dev,
 	}
 }
 
+static inline bool dwc2_in_completer_mode(const struct device *dev)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+
+	return !IS_ENABLED(CONFIG_UDC_DWC2_DMA) || !priv->bufferdma;
+}
+
+static inline bool dwc2_in_buffer_dma_mode(const struct device *dev)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+
+	return IS_ENABLED(CONFIG_UDC_DWC2_DMA) && priv->bufferdma;
+}
+
 /* Get DOEPCTLn or DIEPCTLn register address */
 static mem_addr_t dwc2_get_dxepctl_reg(const struct device *dev, const uint8_t ep)
 {
@@ -420,7 +434,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		len = buf->len;
 	}
 
-	if (!priv->bufferdma) {
+	if (dwc2_in_completer_mode(dev)) {
 		uint32_t spcavail = dwc2_ftx_avail(dev, ep_idx);
 		uint32_t spcperpkt = ROUND_UP(udc_mps_ep_size(cfg), 4);
 		uint32_t max_pkts, max_transfer;
@@ -485,7 +499,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		    usb_dwc2_set_dieptsizn_pktcnt(pktcnt) |
 		    usb_dwc2_set_dieptsizn_xfersize(len), dieptsiz_reg);
 
-	if (priv->bufferdma) {
+	if (dwc2_in_buffer_dma_mode(dev)) {
 		if (!dwc2_dma_buffer_ok_to_use(dev, buf->data, len, cfg->mps)) {
 			/* Cannot continue unless buffer is bounced. Device will
 			 * cease to function. Is fatal error appropriate here?
@@ -528,7 +542,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	/* Clear IN Endpoint NAK Effective interrupt in case it was set */
 	sys_write32(USB_DWC2_DIEPINT_INEPNAKEFF, diepint_reg);
 
-	if (!priv->bufferdma) {
+	if (dwc2_in_completer_mode(dev)) {
 		const uint8_t *src = buf->data;
 
 		while (pktcnt > 0) {
@@ -657,7 +671,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	priv->rx_siz[ep_idx] = doeptsiz;
 	sys_write32(doeptsiz, doeptsiz_reg);
 
-	if (priv->bufferdma) {
+	if (dwc2_in_buffer_dma_mode(dev)) {
 		void *data = net_buf_tail(buf);
 
 		if (!dwc2_dma_buffer_ok_to_use(dev, data, xfersize, cfg->mps)) {
@@ -1197,7 +1211,7 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 	tmp = *diepctl & ~USB_DWC2_DEPCTL_TXFNUM_MASK;
 
 	reqdep = DIV_ROUND_UP(udc_mps_ep_size(cfg), 4U);
-	if (priv->bufferdma) {
+	if (dwc2_in_buffer_dma_mode(dev)) {
 		/* In DMA mode, TxFIFO capable of holding 2 packets is enough */
 		reqdep *= MIN(2, (1 + addnl));
 	} else {
@@ -2273,7 +2287,7 @@ static void dwc2_on_bus_reset(const struct device *dev)
 	}
 
 	doepmsk = USB_DWC2_DOEPINT_SETUP | USB_DWC2_DOEPINT_XFERCOMPL;
-	if (priv->bufferdma) {
+	if (dwc2_in_buffer_dma_mode(dev)) {
 		doepmsk |= USB_DWC2_DOEPINT_STSPHSERCVD;
 	}
 
@@ -2281,7 +2295,7 @@ static void dwc2_on_bus_reset(const struct device *dev)
 	sys_set_bits((mem_addr_t)&base->diepmsk, USB_DWC2_DIEPINT_XFERCOMPL);
 
 	/* Software has to handle RxFLvl interrupt only in Completer mode */
-	if (!priv->bufferdma) {
+	if (dwc2_in_completer_mode(dev)) {
 		sys_set_bits((mem_addr_t)&base->gintmsk,
 			     USB_DWC2_GINTSTS_RXFLVL);
 	}
@@ -2487,7 +2501,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 		}
 
 		if (!valid) {
-			if (!priv->bufferdma) {
+			if (dwc2_in_completer_mode(dev)) {
 				/* RxFlvl added data to net buf, rollback */
 				net_buf_remove_mem(buf, bcnt);
 			}
@@ -2496,7 +2510,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 		}
 	}
 
-	if (priv->bufferdma && bcnt) {
+	if (dwc2_in_buffer_dma_mode(dev) && bcnt) {
 		sys_cache_data_invd_range(net_buf_tail(buf), bcnt);
 		net_buf_add(buf, bcnt);
 	}
@@ -2540,7 +2554,8 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		/* StupPktRcvd is not enabled for interrupt, but must be checked
 		 * when XferComp hits to determine if SETUP token was received.
 		 */
-		if (priv->bufferdma && (status & USB_DWC2_DOEPINT_XFERCOMPL) &&
+		if (dwc2_in_buffer_dma_mode(dev) &&
+		    (status & USB_DWC2_DOEPINT_XFERCOMPL) &&
 		    (doepint & USB_DWC2_DOEPINT_STUPPKTRCVD)) {
 			uint32_t addr;
 
