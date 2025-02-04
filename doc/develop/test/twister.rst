@@ -560,30 +560,9 @@ harness: <string>
     - gtest
     - robot
     - ctest
+    - shell
 
-    Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
-    output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
-    for pass/fail/etc. frames defined in those frameworks. Use ``gtest``
-    harness if you've already got tests written in the gTest framework and do
-    not wish to update them to zTest. The ``console`` harness tells Twister to
-    parse a test's text output for a regex defined in the test's YAML file.
-    The ``robot`` harness is used to execute Robot Framework test suites
-    in the Renode simulation framework.
-
-    Some widely used harnesses that are not supported yet:
-
-    - keyboard
-    - net
-    - bluetooth
-
-    Harness ``bsim`` is implemented in limited way - it helps only to copy the
-    final executable (``zephyr.exe``) from build directory to BabbleSim's
-    ``bin`` directory (``${BSIM_OUT_PATH}/bin``). This action is useful to allow
-    BabbleSim's tests to directly run after. By default, the executable file
-    name is (with dots and slashes replaced by underscores):
-    ``bs_<platform_name>_<test_path>_<test_scenario_name>``.
-    This name can be overridden with the ``bsim_exe_name`` option in
-    ``harness_config`` section.
+    See :ref:`twister_harnesses` for more information.
 
 platform_key: <list of platform attributes>
     Often a test needs to only be built and run once to qualify as passing.
@@ -612,88 +591,6 @@ harness_config: <harness configuration options>
     what features it supports. This option will enable the test to run on
     only those platforms that fulfill this external dependency.
 
-    The following options are currently supported:
-
-    type: <one_line|multi_line> (required)
-        Depends on the regex string to be matched
-
-    regex: <list of regular expressions> (required)
-        Strings with regular expressions to match with the test's output
-        to confirm the test runs as expected.
-
-    ordered: <True|False> (default False)
-        Check the regular expression strings in orderly or randomly fashion
-
-    record: <recording options> (optional)
-      regex: <list of regular expressions> (required)
-        Regular expressions with named subgroups to match data fields found
-        in the test instance's output lines where it provides some custom data
-        for further analysis. These records will be written into the build
-        directory ``recording.csv`` file as well as ``recording`` property
-        of the test suite object in ``twister.json``.
-
-        With several regular expressions given, each of them will be applied
-        to each output line producing either several different records from
-        the same output line, or different records from different lines,
-        or similar records from different lines.
-
-        The .CSV file will have as many columns as there are fields detected
-        in all records; missing values are filled by empty strings.
-
-        For example, to extract three data fields ``metric``, ``cycles``,
-        ``nanoseconds``:
-
-        .. code-block:: yaml
-
-          record:
-            regex:
-              - "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
-
-      merge: <True|False> (default False)
-        Allows to keep only one record in a test instance with all the data
-        fields extracted by the regular expressions. Fields with the same name
-        will be put into lists ordered as their appearance in recordings.
-        It is possible for such multi value fields to have different number
-        of values depending on the regex rules and the test's output.
-
-      as_json: <list of regex subgroup names> (optional)
-        Data fields, extracted by the regular expressions into named subgroups,
-        which will be additionally parsed as JSON encoded strings and written
-        into ``twister.json`` as nested ``recording`` object properties.
-        The corresponding ``recording.csv`` columns will contain JSON strings
-        as-is.
-
-        Using this option, a test log can convey layered data structures
-        passed from the test image for further analysis with summary results,
-        traces, statistics, etc.
-
-        For example, this configuration:
-
-        .. code-block:: yaml
-
-          record:
-            regex: "RECORD:(?P<type>.*):DATA:(?P<metrics>.*)"
-            as_json: [metrics]
-
-        when matched to a test log string:
-
-        .. code-block:: none
-
-          RECORD:jitter_drift:DATA:{"rollovers":0, "mean_us":1000.0}
-
-        will be reported in ``twister.json`` as:
-
-        .. code-block:: json
-
-          "recording":[
-              {
-                   "type":"jitter_drift",
-                   "metrics":{
-                       "rollovers":0,
-                       "mean_us":1000.0
-                   }
-              }
-          ]
 
     fixture: <expression>
         Specify a test scenario dependency on an external device(e.g., sensor),
@@ -706,100 +603,6 @@ harness_config: <harness configuration options>
         Only one fixture can be defined per test scenario and the fixture name has to
         be unique across all tests in the test suite.
 
-.. _pytest_root:
-
-    pytest_root: <list of pytest testpaths> (default pytest)
-        Specify a list of pytest directories, files or subtests that need to be
-        executed when a test scenario begins to run. The default pytest directory is
-        ``pytest``. After the pytest run is finished, Twister will check if
-        the test scenario passed or failed according to the pytest report.
-        As an example, a list of valid pytest roots is presented below:
-
-        .. code-block:: yaml
-
-            harness_config:
-              pytest_root:
-                - "pytest/test_shell_help.py"
-                - "../shell/pytest/test_shell.py"
-                - "/tmp/test_shell.py"
-                - "~/tmp/test_shell.py"
-                - "$ZEPHYR_BASE/samples/subsys/testsuite/pytest/shell/pytest/test_shell.py"
-                - "pytest/test_shell_help.py::test_shell2_sample"  # select pytest subtest
-                - "pytest/test_shell_help.py::test_shell2_sample[param_a]"  # select pytest parametrized subtest
-
-.. _pytest_args:
-
-    pytest_args: <list of arguments> (default empty)
-        Specify a list of additional arguments to pass to ``pytest`` e.g.:
-        ``pytest_args: [‘-k=test_method’, ‘--log-level=DEBUG’]``. Note that
-        ``--pytest-args`` can be passed multiple times to pass several arguments
-        to the pytest.
-
-.. _pytest_dut_scope:
-
-    pytest_dut_scope: <function|class|module|package|session> (default function)
-        The scope for which ``dut`` and ``shell`` pytest fixtures are shared.
-        If the scope is set to ``function``, DUT is launched for every test case
-        in python script. For ``session`` scope, DUT is launched only once.
-
-    ctest_args: <list of arguments> (default empty)
-        Specify a list of additional arguments to pass to ``ctest`` e.g.:
-        ``ctest_args: [‘--repeat until-pass:5’]``. Note that
-        ``--ctest-args`` can be passed multiple times to pass several arguments
-        to the ctest.
-
-    robot_testsuite: <robot file path> (default empty)
-        Specify one or more paths to a file containing a Robot Framework test suite to be run.
-
-    robot_option: <robot option> (default empty)
-        One or more options to be send to robotframework.
-
-    bsim_exe_name: <string>
-        If provided, the executable filename when copying to BabbleSim's bin
-        directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
-        default based on the test path and scenario name.
-
-    The following is an example yaml file with a few harness_config options.
-
-    .. code-block:: yaml
-
-         sample:
-           name: HTS221 Temperature and Humidity Monitor
-         common:
-           tags: sensor
-           harness: console
-           harness_config:
-             type: multi_line
-             ordered: false
-             regex:
-               - "Temperature:(.*)C"
-               - "Relative Humidity:(.*)%"
-             fixture: i2c_hts221
-         tests:
-           test:
-             tags: sensors
-             depends_on: i2c
-
-    The following is an example yaml file with pytest harness_config options,
-    default pytest_root name "pytest" will be used if pytest_root not specified.
-    please refer the examples in samples/subsys/testsuite/pytest/.
-
-    .. code-block:: yaml
-
-        common:
-          harness: pytest
-        tests:
-          pytest.example.directories:
-            harness_config:
-              pytest_root:
-                - pytest_dir1
-                - $ENV_VAR/samples/test/pytest_dir2
-          pytest.example.files_and_subtests:
-            harness_config:
-              pytest_root:
-                - pytest/test_file_1.py
-                - test_file_2.py::test_A
-                - test_file_2.py::test_B[param_a]
 
     The following is an example yaml file with robot harness_config options.
 
@@ -946,6 +749,242 @@ To load arguments from a file, add ``+`` before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+.. _twister_harnesses:
+
+Harnesses
+*********
+
+Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
+output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
+for pass/fail/etc. frames defined in those frameworks.
+
+Some widely used harnesses that are not supported yet:
+
+- keyboard
+- net
+- bluetooth
+
+The following is an example yaml file with a few harness_config options.
+
+.. code-block:: yaml
+
+      sample:
+        name: HTS221 Temperature and Humidity Monitor
+      common:
+        tags: sensor
+        harness: console
+        harness_config:
+          type: multi_line
+          ordered: false
+          regex:
+            - "Temperature:(.*)C"
+            - "Relative Humidity:(.*)%"
+          fixture: i2c_hts221
+      tests:
+        test:
+          tags: sensors
+          depends_on: i2c
+
+Ctest
+=====
+
+ctest_args: <list of arguments> (default empty)
+    Specify a list of additional arguments to pass to ``ctest`` e.g.:
+    ``ctest_args: [‘--repeat until-pass:5’]``. Note that
+    ``--ctest-args`` can be passed multiple times to pass several arguments
+    to the ctest.
+
+
+Gtest
+=====
+
+Use ``gtest`` harness if you've already got tests written in the gTest
+framework and do not wish to update them to zTest.
+
+Pytest
+======
+
+The :ref:`pytest harness <integration_with_pytest>` is used to execute pytest
+test suites in the Zephyr test. The following options apply to the pytest harness:
+
+.. _pytest_root:
+
+pytest_root: <list of pytest testpaths> (default pytest)
+    Specify a list of pytest directories, files or subtests that need to be
+    executed when a test scenario begins to run. The default pytest directory is
+    ``pytest``. After the pytest run is finished, Twister will check if
+    the test scenario passed or failed according to the pytest report.
+    As an example, a list of valid pytest roots is presented below:
+
+    .. code-block:: yaml
+
+        harness_config:
+          pytest_root:
+            - "pytest/test_shell_help.py"
+            - "../shell/pytest/test_shell.py"
+            - "/tmp/test_shell.py"
+            - "~/tmp/test_shell.py"
+            - "$ZEPHYR_BASE/samples/subsys/testsuite/pytest/shell/pytest/test_shell.py"
+            - "pytest/test_shell_help.py::test_shell2_sample"  # select pytest subtest
+            - "pytest/test_shell_help.py::test_shell2_sample[param_a]"  # select pytest parametrized subtest
+
+.. _pytest_args:
+
+pytest_args: <list of arguments> (default empty)
+    Specify a list of additional arguments to pass to ``pytest`` e.g.:
+    ``pytest_args: [‘-k=test_method’, ‘--log-level=DEBUG’]``. Note that
+    ``--pytest-args`` can be passed multiple times to pass several arguments
+    to the pytest.
+
+.. _pytest_dut_scope:
+
+pytest_dut_scope: <function|class|module|package|session> (default function)
+    The scope for which ``dut`` and ``shell`` pytest fixtures are shared.
+    If the scope is set to ``function``, DUT is launched for every test case
+    in python script. For ``session`` scope, DUT is launched only once.
+
+
+  The following is an example yaml file with pytest harness_config options,
+  default pytest_root name "pytest" will be used if pytest_root not specified.
+  please refer the examples in samples/subsys/testsuite/pytest/.
+
+  .. code-block:: yaml
+
+      common:
+        harness: pytest
+      tests:
+        pytest.example.directories:
+          harness_config:
+            pytest_root:
+              - pytest_dir1
+              - $ENV_VAR/samples/test/pytest_dir2
+        pytest.example.files_and_subtests:
+          harness_config:
+            pytest_root:
+              - pytest/test_file_1.py
+              - test_file_2.py::test_A
+              - test_file_2.py::test_B[param_a]
+
+Console
+=======
+
+The ``console`` harness tells Twister to parse a test's text output for a
+regex defined in the test's YAML file.
+
+The following options are currently supported:
+
+type: <one_line|multi_line> (required)
+    Depends on the regex string to be matched
+
+regex: <list of regular expressions> (required)
+    Strings with regular expressions to match with the test's output
+    to confirm the test runs as expected.
+
+ordered: <True|False> (default False)
+    Check the regular expression strings in orderly or randomly fashion
+
+record: <recording options> (optional)
+  regex: <list of regular expressions> (required)
+    Regular expressions with named subgroups to match data fields found
+    in the test instance's output lines where it provides some custom data
+    for further analysis. These records will be written into the build
+    directory ``recording.csv`` file as well as ``recording`` property
+    of the test suite object in ``twister.json``.
+
+    With several regular expressions given, each of them will be applied
+    to each output line producing either several different records from
+    the same output line, or different records from different lines,
+    or similar records from different lines.
+
+    The .CSV file will have as many columns as there are fields detected
+    in all records; missing values are filled by empty strings.
+
+    For example, to extract three data fields ``metric``, ``cycles``,
+    ``nanoseconds``:
+
+    .. code-block:: yaml
+
+      record:
+        regex:
+          - "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
+
+  merge: <True|False> (default False)
+    Allows to keep only one record in a test instance with all the data
+    fields extracted by the regular expressions. Fields with the same name
+    will be put into lists ordered as their appearance in recordings.
+    It is possible for such multi value fields to have different number
+    of values depending on the regex rules and the test's output.
+
+  as_json: <list of regex subgroup names> (optional)
+    Data fields, extracted by the regular expressions into named subgroups,
+    which will be additionally parsed as JSON encoded strings and written
+    into ``twister.json`` as nested ``recording`` object properties.
+    The corresponding ``recording.csv`` columns will contain JSON strings
+    as-is.
+
+    Using this option, a test log can convey layered data structures
+    passed from the test image for further analysis with summary results,
+    traces, statistics, etc.
+
+    For example, this configuration:
+
+    .. code-block:: yaml
+
+      record:
+        regex: "RECORD:(?P<type>.*):DATA:(?P<metrics>.*)"
+        as_json: [metrics]
+
+    when matched to a test log string:
+
+    .. code-block:: none
+
+      RECORD:jitter_drift:DATA:{"rollovers":0, "mean_us":1000.0}
+
+    will be reported in ``twister.json`` as:
+
+    .. code-block:: json
+
+      "recording":[
+          {
+                "type":"jitter_drift",
+                "metrics":{
+                    "rollovers":0,
+                    "mean_us":1000.0
+                }
+          }
+      ]
+
+Robot
+=====
+
+The ``robot`` harness is used to execute Robot Framework test suites
+in the Renode simulation framework.
+
+robot_testsuite: <robot file path> (default empty)
+    Specify one or more paths to a file containing a Robot Framework test suite to be run.
+
+robot_option: <robot option> (default empty)
+    One or more options to be send to robotframework.
+
+Bsim
+====
+
+Harness ``bsim`` is implemented in limited way - it helps only to copy the
+final executable (``zephyr.exe``) from build directory to BabbleSim's
+``bin`` directory (``${BSIM_OUT_PATH}/bin``).
+
+This action is useful to allow BabbleSim's tests to directly run after.
+By default, the executable file name is (with dots and slashes
+replaced by underscores): ``bs_<platform_name>_<test_path>_<test_scenario_name>``.
+This name can be overridden with the ``bsim_exe_name`` option in
+``harness_config`` section.
+
+bsim_exe_name: <string>
+    If provided, the executable filename when copying to BabbleSim's bin
+    directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
+    default based on the test path and scenario name.
+
 
 Selecting platform scope
 ************************
