@@ -156,7 +156,7 @@ New Boards
 **********
 ..
   You may update this list as you contribute a new board during the release cycle, in order to make
-  is visible to people who might be looking at the working draft of the release notes. However, note
+  it visible to people who might be looking at the working draft of the release notes. However, note
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
 
