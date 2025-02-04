@@ -589,10 +589,13 @@ void log_frontend_init(void)
 	TYPE_SECTION_START_EXTERN(struct log_source_const_data, log_const);
 	STMESP_Type *stm_esp;
 	uintptr_t log_const_start;
+	uintptr_t log_str_start;
 
 	(void)stmesp_get_port(CONFIG_LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID, &stm_esp);
 	log_const_start = (uintptr_t)TYPE_SECTION_START(log_const);
+	log_str_start = (uintptr_t)TYPE_SECTION_START(log_stmesp_ptr);
 	STM_D32(stm_esp, log_const_start, false, true);
+	STM_D32(stm_esp, log_str_start, false, true);
 #endif
 }
 
