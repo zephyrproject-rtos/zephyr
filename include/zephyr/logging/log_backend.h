@@ -83,6 +83,7 @@ struct log_backend_control_block {
 	void *ctx;
 	uint8_t id;
 	bool active;
+	bool initialized;
 
 	/* Initialization level. */
 	uint8_t level;
@@ -140,6 +141,7 @@ static inline void log_backend_init(const struct log_backend *const backend)
 	if (backend->api->init) {
 		backend->api->init(backend);
 	}
+	backend->cb->initialized = true;
 }
 
 /**
