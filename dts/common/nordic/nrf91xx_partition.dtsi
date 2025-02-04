@@ -33,34 +33,42 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x10000>;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 0x40000>;
 		};
+
 		slot0_ns_partition: partition@50000 {
 			label = "image-0-nonsecure";
 			reg = <0x00050000 0x30000>;
 		};
+
 		slot1_partition: partition@80000 {
 			label = "image-1";
 			reg = <0x00080000 0x40000>;
 		};
+
 		slot1_ns_partition: partition@c0000 {
 			label = "image-1-nonsecure";
 			reg = <0x000c0000 0x30000>;
 		};
+
 		tfm_ps_partition: partition@f0000 {
 			label = "tfm-ps";
 			reg = <0x000f0000 0x00004000>;
 		};
+
 		tfm_its_partition: partition@f4000 {
 			label = "tfm-its";
 			reg = <0x000f4000 0x00002000>;
 		};
+
 		tfm_otp_partition: partition@f6000 {
 			label = "tfm-otp";
 			reg = <0x000f6000 0x00002000>;
 		};
+
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;
