@@ -337,8 +337,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 )
 
             if self.erase:
-                self.exec_op('erase', core='Application')
-                self.exec_op('erase', core='Network')
+                self.exec_op('erase', core='Application', kind='all')
+                self.exec_op('erase', core='Network', kind='all')
 
             # Manage SUIT artifacts.
             # This logic should be executed only once per build.
