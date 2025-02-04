@@ -16,3 +16,16 @@ tests:
     harness: ztest
     harness_config:
       fixture: gpio_loopback
+  drivers.i2s.speed.gpio_loopback.aclk:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - i2s
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_aclk.overlay"
+    platform_allow: nrf5340dk/nrf5340/cpuapp

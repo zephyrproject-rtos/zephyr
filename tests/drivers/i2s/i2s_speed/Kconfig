@@ -37,3 +37,45 @@ config I2S_TEST_ALLOWED_DATA_OFFSET
 	help
 	  Maximum allowed offset between sent and received samples. Non-zero
 	  value of this option may be needed when GPIO loopback is used.
+
+config I2S_TEST_SKIP_SAMPLERATE_8000
+	bool "Skip short transfer tests at 8000 samples per socond"
+	help
+	  When set to 'y', short transfer tests at 8000 samples per second
+	  will be skipped.
+
+config I2S_TEST_SKIP_SAMPLERATE_16000
+	bool "Skip short transfer tests at 16000 samples per socond"
+	help
+	  When set to 'y', short transfer tests at 16000 samples per second
+	  will be skipped.
+
+config I2S_TEST_SKIP_SAMPLERATE_32000
+	bool "Skip short transfer tests at 32000 samples per socond"
+	help
+	  When set to 'y', short transfer tests at 32000 samples per second
+	  will be skipped.
+
+config I2S_TEST_SKIP_SAMPLERATE_44100
+	bool "Skip short transfer tests at 44100 samples per socond"
+	help
+	  When set to 'y', short transfer tests at 44100 samples per second
+	  will be skipped.
+
+config I2S_TEST_SKIP_SAMPLERATE_48000
+	bool "Skip short transfer tests at 48000 samples per socond"
+	help
+	  When set to 'y', short transfer tests at 48000 samples per second
+	  will be skipped.
+
+config I2S_TEST_SKIP_SAMPLERATE_88200
+	bool "Skip short transfer tests at 88200 samples per socond"
+	help
+	  When set to 'y', short transfer tests at 88200 samples per second
+	  will be skipped.
+
+config I2S_TEST_SKIP_SAMPLERATE_96000
+	bool "Skip short transfer tests at 96000 samples per socond"
+	help
+	  When set to 'y', short transfer tests at 96000 samples per second
+	  will be skipped.
