@@ -31,13 +31,12 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       DEPENDS
         ${extra_dependencies}
         ${cmake_linker_script_settings}
+        ${DEVICE_API_LD_TARGET}
       COMMAND ${CMAKE_COMMAND}
-        -C ${DEVICE_API_LINKER_SECTIONS_CMAKE}
         -C ${cmake_linker_script_settings}
         -DPASS="${linker_pass_define}"
         -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
         -P ${ZEPHYR_BASE}/cmake/linker/ld/ld_script.cmake
-      DEPENDS ${DEVICE_API_LD_TARGET}
     )
   else()
     set(template_script_defines ${linker_pass_define})
