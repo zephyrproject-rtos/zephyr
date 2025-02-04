@@ -5274,7 +5274,7 @@ endfunction()
 #   zephyr_linker_section_configure(SECTION <section> [ALIGN <alignment>]
 #                                   [PASS [NOT] <name>] [PRIO <no>] [SORT <sort>]
 #                                   [MIN_SIZE <minimum size>] [MAX_SIZE <maximum size>]
-#                                   [ANY] [FIRST] [KEEP] [INPUT <input>]
+#                                   [ANY] [FIRST] [KEEP] [INPUT <input>] [SYMBOLS [<start>[<end>]]]
 #   )
 #
 # Configure an output section with additional input sections.
@@ -5310,6 +5310,7 @@ endfunction()
 # ANY                 : ANY section flag in scatter file.
 #                       The FLAGS and ANY arguments only has effect for scatter files.
 # INPUT <input>       : Input section name or list of input section names.
+#
 function(zephyr_linker_section_configure)
   set(options     "ANY;FIRST;KEEP")
   set(single_args "ALIGN;OFFSET;PRIO;SECTION;SORT;MIN_SIZE;MAX_SIZE")
@@ -5380,18 +5381,83 @@ function(zephyr_linker_symbol)
 endfunction()
 
 # Usage:
-#   zephyr_linker_generate_linker_settings_file([FILE <name>] [STRING <string>])
+#   zephyr_linker_include_generated(CMAKE|KCONFIG|HEADER <name> [PASS <pass>])
 #
-# Add the content generated so far by the zephyr_linker_* functions to a file
-# or string variable.
+# Add file that is generated at build-time to be included when running the
+# linker script generator.
+#
+# CMAKE <name>     : includes the given cmake file
+# KCONFIG <name>   : import_kconfig() the given Kconfig file. gives
+#                    @variable@ access to all the CONFIG_FOO settings
+# HEADER <name>    : finds all #define FOO value in name. Plain regex, no
+#                    proper preprocessing.
+# PASS [NOT] <pass>: Rule for which PASSES to include file.
+#                    see zephyr_linker_section PASS
+function(zephyr_linker_include_generated)
+  set(single_args "KCONFIG;HEADER;CMAKE")
+  set(multi_args "PASS")
+  cmake_parse_arguments(INCLUDE "" "${single_args}" "${multi_args}" ${ARGN})
+
+  #check that we have exactly one of CMAKE KCONFIG or HEADER
+  set(files)
+  list(APPEND files ${INCLUDE_CMAKE} ${INCLUDE_KCONFIG} ${INCLUDE_HEADER})
+  list(LENGTH files files_count)
+  if(NOT ${files_count} EQUAL 1)
+    message(FATAL_ERROR "zephyr_linker_include_generated(${ARGV0} ...) must have one of CMAKE, KCONFIG or HEADER")
+  endif()
+
+  if(DEFINED INCLUDE_PASS)
+    zephyr_linker_check_pass_param("${INCLUDE_PASS}")
+  endif()
+  set(INCLUDE)
+  zephyr_linker_arg_val_list(INCLUDE "${single_args}")
+  zephyr_linker_arg_val_list(INCLUDE "${multi_args}")
+  string(REPLACE ";" "\;" INCLUDE "${INCLUDE}")
+  set_property(TARGET linker
+               APPEND PROPERTY INCLUDES "{${INCLUDE}}")
+endfunction()
+
+# Usage:
+#   zephyr_linker_include_var(VAR <name> [VALUE <value>])
+#
+# Save the value of <name> for when the generator is running at build-time.
+# If VALUE isn't set, the current value of the variable is used
+#
+# VAR <name>       : Variable to be set
+# VALUE <value>    : The value
+#
+function(zephyr_linker_include_var)
+  set(single_args "VAR;VALUE")
+  cmake_parse_arguments(VAR "" "${single_args}" "" ${ARGN})
+  if(NOT DEFINED VAR_VAR)
+    message(FATAL_ERROR "zephyr_linker_include_var(${ARGV0} ...) must have VAR <variable> ")
+  endif()
+  if(NOT DEFINED VAR_VALUE)
+    if(DEFINED ${VAR_VAR})
+      set(VAR_VALUE ${${VAR_VAR}})
+    else()
+      message(FATAL_ERROR "zephyr_linker_include_var(${ARGV0} ...) value not set ")
+    endif()
+  endif()
+  set(VAR)
+  zephyr_linker_arg_val_list(VAR "${single_args}")
+  string(REPLACE ";" "\;" VAR "${VAR}")
+  set_property(TARGET linker
+               APPEND PROPERTY VARIABLES "{${VAR}}")
+endfunction()
+
+# Usage:
+#   zephyr_linker_generate_linker_settings_file([FILE <name>])
+#
+# Generate a file for the settings to the linker file generator script.
 #
 # FILE <name>  : File to be created
-# STRING <string>: String variable to be set
 
 function(zephyr_linker_generate_linker_settings_file)
-  set(single_args "FILE;STRING")
+  set(single_args "FILE")
   cmake_parse_arguments(GEN "" "${single_args}" "" ${ARGN})
-  set(CONTENT
+
+  file(GENERATE OUTPUT ${GEN_FILE} CONTENT
          "set(FORMAT \"$<TARGET_PROPERTY:linker,FORMAT>\" CACHE INTERNAL \"\")\n
           set(ENTRY \"$<TARGET_PROPERTY:linker,ENTRY>\" CACHE INTERNAL \"\")\n
           set(MEMORY_REGIONS \"$<TARGET_PROPERTY:linker,MEMORY_REGIONS>\" CACHE INTERNAL \"\")\n
@@ -5400,13 +5466,8 @@ function(zephyr_linker_generate_linker_settings_file)
           set(SECTION_SETTINGS \"$<TARGET_PROPERTY:linker,SECTION_SETTINGS>\" CACHE INTERNAL \"\")\n
           set(SYMBOLS \"$<TARGET_PROPERTY:linker,SYMBOLS>\" CACHE INTERNAL \"\")\n
           set(INCLUDES \"$<TARGET_PROPERTY:linker,INCLUDES>\" CACHE INTERNAL \"\")\n
+          set(VARIABLES \"$<TARGET_PROPERTY:linker,VARIABLES>\" CACHE INTERNAL \"\")\n
          ")
-  if(DEFINED GEN_FILE)
-    file(GENERATE OUTPUT ${GEN_FILE} CONTENT "${CONTENT}")
-  endif()
-  if(DEFINED GEN_STRING)
-    set(${GEN_STRING} "${CONTENT}" PARENT_SCOPE)
-  endif()
 endfunction()
 
 # Internal helper macro for zephyr_linker*() functions.
