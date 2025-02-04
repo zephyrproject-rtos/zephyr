@@ -89,6 +89,12 @@ The Zephyr stm32f4_disco board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | CAN controller                      |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c controller                      |
++-----------+------------+-------------------------------------+
+| I2S       | on-chip    | i2s controller                      |
++-----------+------------+-------------------------------------+
+| AUDIO     | on-board   | audio codec on CS43L22 via I2S3     |
++-----------+------------+-------------------------------------+
 
 .. note:: CAN feature requires CAN transceiver, such as `SK Pang CAN breakout board`_.
           Zephyr default configuration uses CAN_2 exclusively, as simultaneous use
@@ -113,8 +119,6 @@ Default Zephyr Peripheral Mapping:
 
 .. rst-class:: rst-columns
 
-- UART_1_TX : PB6
-- UART_1_RX : PB7
 - UART_2_TX : PA2
 - UART_2_RX : PA3
 - USER_PB : PA0
@@ -124,10 +128,14 @@ Default Zephyr Peripheral Mapping:
 - LD6 : PD15
 - USB DM : PA11
 - USB DP : PA12
-- CAN1_RX : PB8
-- CAN1_TX : PB9
 - CAN2_RX : PB5
 - CAN2_TX : PB13
+- I2C1_SDA : PB9
+- I2C1_SCL : PB6
+- I2S3_MCK : PC7
+- I2S3_CK : PC10
+- I2S3_SD : PC12
+- I2S3_WS : PA4
 
 System Clock
 ============
