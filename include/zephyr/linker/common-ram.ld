@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
+/* Please keep in sync with cmake/linker_script/common/common-ram.cmake */
 
 #include <zephyr/linker/iterable_sections.h>
 
