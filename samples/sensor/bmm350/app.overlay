@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 Bosch Sensortec GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+//this i2c config can be used successfully
+&arduino_i2c {
+	compatible = "nordic,nrf-twim";
+	zephyr,concat-buf-size = <257>;
+	status = "okay";
+
+	bmm350@14 {
+		compatible = "bosch,bmm350";
+		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+		label = "BMM350";
+		reg = <0x14>;
+	};
+};
