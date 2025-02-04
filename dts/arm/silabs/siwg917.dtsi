@@ -216,6 +216,34 @@
 			clocks = <&clock0 SIWX91X_CLK_I2C1>;
 			status = "disabled";
 		};
+
+		dma0: dma@44030000 {
+			compatible = "silabs,siwx91x-dma";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44030000 0x82C>;
+			interrupts = <33 0>;
+			interrupt-names = "dma0";
+			clocks = <&clock0 SIWX91X_CLK_DMA0>;
+			silabs,sram-desc-addr = <0x2fc00>;
+			#dma-cells = < 1>;
+			dma-channels = <32>;
+			status = "disabled";
+		};
+
+		ulpdma: dma@24078000 {
+			compatible = "silabs,siwx91x-dma";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24078000 0x82C>;
+			interrupts = <10 0>;
+			interrupt-names = "ulpdma";
+			clocks = <&clock0 SIWX91X_CLK_ULP_DMA>;
+			silabs,sram-desc-addr = <0x24061c00>;
+			#dma-cells = < 1>;
+			dma-channels = <12>;
+			status = "disabled";
+		};
 	};
 };
 
