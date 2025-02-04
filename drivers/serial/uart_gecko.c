@@ -835,6 +835,7 @@ static DEVICE_API(uart, uart_gecko_driver_api) = {
 	VALIDATE_GECKO_UART_RTS_CTS_PIN_LOCATIONS(idx);				\
 										\
 	GECKO_UART_IRQ_HANDLER_DECL(idx);					\
+	PM_DEVICE_DT_INST_DEFINE(idx, uart_gecko_pm_action);			\
 										\
 	static struct uart_config uart_cfg_##idx = {				\
 		.baudrate  = DT_INST_PROP(idx, current_speed),			\
@@ -861,12 +862,10 @@ static DEVICE_API(uart, uart_gecko_driver_api) = {
 		.uart_cfg = &uart_cfg_##idx,					\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(idx, uart_gecko_init,				\
-			    NULL, &uart_gecko_data_##idx,			\
-			    &uart_gecko_cfg_##idx, PRE_KERNEL_1,		\
-			    CONFIG_SERIAL_INIT_PRIORITY,			\
-			    &uart_gecko_driver_api);				\
-										\
+	DEVICE_DT_INST_DEFINE(idx, uart_gecko_init, PM_DEVICE_DT_INST_GET(idx),	\
+			      &uart_gecko_data_##idx, &uart_gecko_cfg_##idx,	\
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	\
+			      &uart_gecko_driver_api);				\
 										\
 	GECKO_UART_IRQ_HANDLER(idx)
 
