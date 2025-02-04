@@ -148,7 +148,10 @@
  * @param dev Pointer to device structure for rpi_pio device instance
  * @return PIO object
  */
-PIO pio_rpi_pico_get_pio(const struct device *dev);
+inline PIO pio_rpi_pico_get_pio(const struct device *dev)
+{
+	return *(PIO *)(dev->config);
+}
 
 /**
  * Allocate a state machine.
