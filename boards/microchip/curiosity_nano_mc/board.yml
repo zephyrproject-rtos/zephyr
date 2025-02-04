@@ -1,0 +1,6 @@
+board:
+  name: curiosity_nano_mc
+  full_name: PIC32CM MC00 Curiosity Nano Evaluation Kit
+  vendor: microchip
+  socs:
+    - name: pic32cm1216mc00032
