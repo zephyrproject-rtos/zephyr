@@ -35,7 +35,7 @@ static int stts751_sample_fetch(const struct device *dev,
 	struct stts751_data *data = dev->data;
 	int16_t raw_temp;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP || chan == SENSOR_CHAN_ALL);
 
 	if (stts751_temperature_raw_get(data->ctx, &raw_temp) < 0) {
 		LOG_DBG("Failed to read sample");
