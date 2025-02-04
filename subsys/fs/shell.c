@@ -275,6 +275,80 @@ static int cmd_rm(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
+static int cmd_cp(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	int close_err;
+	char path_src[MAX_PATH_LEN];
+	char path_dst[MAX_PATH_LEN];
+	struct fs_file_t file_src;
+	struct fs_file_t file_dst;
+	uint8_t buf[BUF_CNT];
+	ssize_t buf_len;
+	ssize_t num_written;
+
+	create_abs_path(argv[1], path_src, sizeof(path_src));
+	create_abs_path(argv[2], path_dst, sizeof(path_dst));
+
+	fs_file_t_init(&file_src);
+	fs_file_t_init(&file_dst);
+
+	err = fs_open(&file_src, path_src, FS_O_READ);
+	if (err) {
+		shell_error(sh, "Failed to open %s (%d)", path_src, err);
+		err = -EIO;
+		goto exit;
+	}
+
+	err = fs_open(&file_dst, path_dst, FS_O_CREATE | FS_O_TRUNC | FS_O_WRITE);
+	if (err) {
+		shell_error(sh, "Failed to open %s (%d)", path_dst, err);
+		err = -EIO;
+		goto close_src;
+	}
+
+	while (true) {
+		buf_len = fs_read(&file_src, buf, BUF_CNT);
+		if (buf_len < 0) {
+			shell_error(sh, "Failed to read %s (%d)", path_src, (int)buf_len);
+			err = -EIO;
+			goto close;
+		}
+		if (buf_len == 0) {
+			break;
+		}
+
+		num_written = fs_write(&file_dst, buf, buf_len);
+		if (num_written < 0) {
+			shell_error(sh, "Failed to write %s (%d)", path_dst, (int)num_written);
+			err = -EIO;
+			goto close;
+		}
+		if (num_written != buf_len) {
+			shell_error(sh, "Failed to write %s", path_dst);
+			err = -EIO;
+			goto close;
+		}
+	}
+
+close:
+	close_err = fs_close(&file_dst);
+	if (close_err) {
+		shell_error(sh, "Failed to close %s", path_dst);
+		err = -EIO;
+	}
+
+close_src:
+	close_err = fs_close(&file_src);
+	if (close_err) {
+		shell_error(sh, "Failed to close %s", path_src);
+		err = -EIO;
+	}
+
+exit:
+	return err;
+}
+
 static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
@@ -850,6 +924,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 		"Concatenate files and print on the standard output",
 		cmd_cat, 2, 255),
 	SHELL_CMD_ARG(rm, NULL, "Remove file", cmd_rm, 2, 0),
+	SHELL_CMD_ARG(cp, NULL, "Copy file", cmd_cp, 3, 0),
 	SHELL_CMD_ARG(statvfs, NULL, "Show file system state", cmd_statvfs, 2, 0),
 	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
 	SHELL_CMD_ARG(write, NULL, "Write file", cmd_write, 3, 255),
