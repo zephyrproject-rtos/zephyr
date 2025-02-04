@@ -28,7 +28,5 @@ zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_S32_QSPI memc_nxp_s32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_SMARTBOND memc_smartbond_nor_psram.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_MSPI_APS6404L memc_mspi_aps6404l.c)
-zephyr_library_include_directories_ifdef(CONFIG_MEMC_MSPI_APS6404L ${ZEPHYR_BASE}/drivers/mspi)
-
-zephyr_library_sources_ifdef(CONFIG_MEMC_MSPI_APS256N memc_mspi_aps256n.c)
-zephyr_library_include_directories_ifdef(CONFIG_MEMC_MSPI_APS256N ${ZEPHYR_BASE}/drivers/mspi)
+zephyr_library_sources_ifdef(CONFIG_MEMC_MSPI_APS_Z8 memc_mspi_aps_z8.c)
+zephyr_library_include_directories_ifdef(CONFIG_MEMC_MSPI ${ZEPHYR_BASE}/drivers/mspi)

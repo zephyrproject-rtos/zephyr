@@ -15,6 +15,14 @@ config MEMC_MSPI_APS6404L
 	depends on DT_HAS_MSPI_APS6404L_ENABLED
 	select MEMC_MSPI
 	select MSPI_AMBIQ_AP3 if SOC_SERIES_APOLLO3X
+	select MSPI_AMBIQ_AP5 if SOC_SERIES_APOLLO5X
+
+config MEMC_MSPI_APS_Z8
+	bool "MSPI AP Memory gen Z8 pSRAM driver"
+	default y
+	depends on DT_HAS_MSPI_APS_Z8_ENABLED
+	select MEMC_MSPI
+	select MSPI_AMBIQ_AP5 if SOC_SERIES_APOLLO5X
 
 config MEMC_MSPI_APS256N
 	bool "MSPI AP Memory APS256N pSRAM driver"
@@ -24,3 +32,27 @@ config MEMC_MSPI_APS256N
 	select MSPI_AMBIQ_AP4 if SOC_SERIES_APOLLO4X
 
 endmenu
+
+if MEMC_MSPI_APS_Z8
+
+choice "MSPI APS Z8 Part selection"
+	prompt "Choose a part number from list"
+
+config MEMC_MSPI_APS25616N
+	bool "APS25616N Variant"
+
+config MEMC_MSPI_APS25616BA
+	bool "APS25616BA Variant"
+
+config MEMC_MSPI_APS51216BA
+	bool "APS51216BA Variant"
+
+endchoice
+
+config MEMC_MSPI_APS_Z8_PART
+	int
+	default 0 if MEMC_MSPI_APS25616N
+	default 1 if MEMC_MSPI_APS25616BA
+	default 2 if MEMC_MSPI_APS51216BA
+
+endif
