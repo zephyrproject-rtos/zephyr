@@ -142,3 +142,20 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
+
+  # Test at least one platform and arch for dynamically linked extensions
+  # which set up lookup tables to modify.
+  # NOTE: note all toolchains/architectures support this, and if you want to test it
+  # add your *specific* platforms here
+  llext.elf_sharedlib:
+    arch_allow:
+      - xtensa
+    toolchain_exclude:
+      - xt-clang
+    integration_platforms:
+      - qemu_xtensa/dc233c      # Xtensa ISA
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_TYPE_ELF_SHAREDLIB=y
