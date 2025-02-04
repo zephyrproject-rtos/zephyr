@@ -13,7 +13,7 @@ extern "C" {
 
 /**
  * @brief USB MIDI 2.0 class device API
- * @defgroup usb_midi USB MIDI 2.0 Class device API
+ * @defgroup usbd_midi2 USB MIDI 2.0 Class device API
  * @ingroup usb
  * @since 4.1
  * @version 0.1.0
