@@ -1,0 +1,40 @@
+# BMM350 Geomagnetic sensor configuration options
+
+# Copyright (c) 2024 Bosch Sensortec GmbH
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMM350
+	bool "BMM350 I2C Geomagnetic Chip"
+	default y
+	depends on DT_HAS_BOSCH_BMM350_ENABLED
+	select I2C
+	help
+	  Enable driver for BMM350 I2C-based Geomagnetic sensor.
+
+if BMM350
+
+module = BMM350
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+config BMM350_SAMPLING_RATE_RUNTIME
+	bool "Dynamic sampling rate"
+	help
+	  Enable alteration of sampling rate attribute at runtime.
+config BMM350_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on BMM350_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of the thread used by the driver to handle interrupts.
+
+config BMM350_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on BMM350_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # BMM350
