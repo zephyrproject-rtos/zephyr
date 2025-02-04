@@ -12,3 +12,5 @@ testing:
     - net
     - bluetooth
 vendor: cdns
+ram: 16384
+flash: 32768
