@@ -1,0 +1,19 @@
+identifier: arduino_portenta_c33
+name: Arduino Portenta C33
+type: mcu
+arch: arm
+ram: 512
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - net
+  - pwm
+  - spi
+  - uart
+  - wifi
+# - usb_device (requires USB_DEVICE_STACK_NEXT)
+vendor: arduino
