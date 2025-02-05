@@ -11,7 +11,7 @@
 #include <zephyr/pm/device.h>
 
 struct pm_state_device_constraint {
-	const struct device *const dev;
+	const char *const dev;
 	size_t pm_constraints_size;
 	struct pm_state_constraint *constraints;
 };
@@ -71,7 +71,7 @@ DT_FOREACH_STATUS_OKAY_NODE(DEVICE_CONSTRAINTS_DEFINE)
  */
 #define PM_STATE_DEVICE_CONSTRAINT_INIT(node_id)                                              \
 	{                                                                                     \
-		.dev = DEVICE_DT_GET(node_id),                                                \
+		.dev = DEVICE_DT_NAME(node_id),                                                \
 		.pm_constraints_size = DT_PROP_LEN(node_id, zephyr_disabling_power_states),   \
 		.constraints = PM_CONSTRAINTS_NAME(node_id),                                  \
 	},
@@ -91,7 +91,9 @@ void pm_policy_device_power_lock_get(const struct device *dev)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	for (size_t i = 0; i < ARRAY_SIZE(_devices_constraints); i++) {
-		if (_devices_constraints[i].dev == dev) {
+		const struct device *device = device_get_binding(_devices_constraints[i].dev);
+
+		if ((device != NULL) && (device == dev)) {
 			for (size_t j = 0; j < _devices_constraints[i].pm_constraints_size; j++) {
 				pm_policy_state_lock_get(
 						_devices_constraints[i].constraints[j].state,
@@ -107,7 +109,9 @@ void pm_policy_device_power_lock_put(const struct device *dev)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	for (size_t i = 0; i < ARRAY_SIZE(_devices_constraints); i++) {
-		if (_devices_constraints[i].dev == dev) {
+		const struct device *device = device_get_binding(_devices_constraints[i].dev);
+
+		if ((device != NULL) && (device == dev)) {
 			for (size_t j = 0; j < _devices_constraints[i].pm_constraints_size; j++) {
 				pm_policy_state_lock_put(
 						_devices_constraints[i].constraints[j].state,
