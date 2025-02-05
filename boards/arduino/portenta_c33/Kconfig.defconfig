@@ -1,0 +1,13 @@
+# Copyright 2024 Rahul Arasikere <arasikere.rahul@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ARDUINO_PORTENTA_C33
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_ARDUINO_PORTENTA_C33

@@ -1,0 +1,300 @@
+/*
+ * Copyright (c) 2025 Arduino SA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra6/r7fa6m5bh3cfc.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+#include "arduino_portenta_c33-pinctrl.dtsi"
+
+/ {
+	model = "Arduino Portenta C33";
+	compatible = "renesas,ra6m5", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash1;
+		zephyr,code-partition = &code_partition;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+		zephyr,entropy = &trng;
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport1 7 GPIO_ACTIVE_LOW>;
+			label = "LEDR";
+		};
+
+		led2: led2 {
+			gpios = <&ioport4 0 GPIO_ACTIVE_HIGH>;
+			label = "LEDG";
+		};
+
+		led3: led3 {
+			gpios = <&ioport8 0 GPIO_ACTIVE_HIGH>;
+			label = "LEDB";
+		};
+	};
+
+	download-esp32 {
+		compatible = "regulator-fixed";
+		regulator-name = "download_esp32";
+		enable-gpios = <&ioport8 3 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&sci8 {
+	pinctrl-0 = <&sci8_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart8: uart {
+		current-speed = <921600>;
+		status = "okay";
+		hw-flow-control;
+
+		bt_hci_uart: bt_hci_uart {
+			compatible = "zephyr,bt-hci-uart";
+			status = "okay";
+
+			esp32 {
+				compatible = "renesas,bt-hci-da1453x";
+				status = "okay";
+				reset-gpios = <&ioport8 4 GPIO_ACTIVE_LOW>;
+				reset-assert-duration-ms = <100>;
+				boot-duration-ms = <2000>;
+			};
+		};
+	};
+};
+
+&option_setting_s {
+	status = "disabled";
+};
+
+&option_setting_sas {
+	status = "disabled";
+};
+
+&option_setting_ofs {
+	status = "disabled";
+};
+
+&iic1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&ioport7 {
+	status = "okay";
+};
+
+&ioport8 {
+	status = "okay";
+};
+
+&ioport9 {
+	status = "okay";
+};
+
+&ioporta {
+	status = "okay";
+};
+
+&ioportb {
+	status = "okay";
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(24)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&xtal>;
+	div = <3>;
+	mul = <25 0>;
+	status = "okay";
+};
+
+&usbhs {
+	pinctrl-0 = <&usbhs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "high-speed";
+	status = "okay";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+&usbhs_phy {
+	phys-clock-src = "xtal";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&port_irq9 {
+	interrupts = <41 12>;
+	status = "okay";
+};
+
+&port_irq10 {
+	interrupts = <42 12>;
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <63 1>, <64 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		code_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 (DT_SIZE_M(2) - DT_SIZE_K(64))>;
+		};
+	};
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&eth {
+	local-mac-address = [74 90 50 B0 5D E9];
+	status = "okay";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&pwm6 {
+	pinctrl-0 = <&pwm6_default>;
+	pinctrl-names = "default";
+	interrupts = <63 1>, <64 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+
+	pwmclock: pwmclock {
+		status = "okay";
+		compatible = "pwm-clock";
+		clock-frequency = <25000000>;
+		#clock-cells = <1>;
+		pwms = <&pwm6 1 PWM_HZ(25000000) PWM_POLARITY_NORMAL>;
+	};
+};
