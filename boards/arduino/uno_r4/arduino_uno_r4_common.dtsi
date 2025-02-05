@@ -5,12 +5,14 @@
  */
 
 /dts-v1/;
-#include <renesas/ra/r7fa4m1ab3cfm.dtsi>
+
+#include <renesas/ra/ra4/r7fa4m1ab3cfm.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	model = "Arduino Uno R4 Board";
-	compatible = "renesas,r7fa4m1ab3cfm";
+	compatible = "renesas,ra4m1", "renesas,ra";
 
 	chosen {
 		zephyr,console = &uart2;
@@ -25,6 +27,9 @@
 	status = "okay";
 	pinctrl-0 = <&sci2_default>;
 	pinctrl-names = "default";
+	interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+
 	uart2: uart {
 		current-speed = <115200>;
 		status = "okay";
@@ -32,6 +37,16 @@
 };
 
 &ioport1 {
+	status = "okay";
+};
+
+&port_irq0 {
+	interrupts = <27 12>;
+	status = "okay";
+};
+
+&port_irq1 {
+	interrupts = <28 12>;
 	status = "okay";
 };
 
@@ -53,10 +68,6 @@
 			read-only;
 		};
 	};
-};
-
-&fcu {
-	status = "okay";
 };
 
 &hoco {
