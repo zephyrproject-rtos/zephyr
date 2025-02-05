@@ -73,6 +73,8 @@ The Zephyr ``nucleo_n657x0_q`` board supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
@@ -99,6 +101,10 @@ Default Zephyr Peripheral Mapping:
 
 - FDCAN1_TX : PH2
 - FDCAN1_RX : PD0
+- I2C1_SCL : PH9
+- I2C1_SDA : PC1
+- I2C4_SCL : PE13
+- I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
 - USART_1_TX : PE5
