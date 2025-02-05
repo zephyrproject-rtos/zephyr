@@ -232,9 +232,6 @@ static int emul_rx_flush(const struct device *dev, enum video_endpoint_id ep, bo
 	if (cancel) {
 		struct video_buffer *vbuf;
 
-		/* First, stop the hardware processing */
-		emul_rx_stream_stop(dev);
-
 		/* Cancel the jobs that were not running */
 		k_work_cancel(&data->work);
 
