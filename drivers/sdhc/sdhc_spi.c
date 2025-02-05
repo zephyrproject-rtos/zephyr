@@ -183,8 +183,13 @@ static int sdhc_spi_card_busy(const struct device *dev)
 	int ret;
 	uint8_t response;
 
+	/* Request SPI bus to be active */
+	if (pm_device_runtime_get(config->spi_dev) < 0) {
+		return -EIO;
+	}
 
 	ret = sdhc_spi_rx(config->spi_dev, data->spi_cfg, &response, 1);
+	(void)pm_device_runtime_put(config->spi_dev);
 	if (ret) {
 		return -EIO;
 	}
