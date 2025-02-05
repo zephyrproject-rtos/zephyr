@@ -279,7 +279,24 @@ class Lcov(CoverageTool):
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
 
-        cmd = ["--capture", "--directory", outdir, "--output-file", coveragefile]
+        if build_dirs:
+            files = []
+            for dir_ in build_dirs:
+                files_ = [fname for fname in
+                            [os.path.join(dir_, "coverage.info"),
+                             os.path.join(dir_, "ztest.info")]
+                          if os.path.exists(fname)]
+                if not files_:
+                    logger.debug("Coverage merge no files in: %s", dir_)
+                    continue
+                files += files_
+            logger.debug("Coverage merge %d reports in %s", len(files), outdir)
+            cmd = ["--output-file", coveragefile]
+            for filename in files:
+                cmd.append("--add-tracefile")
+                cmd.append(filename)
+        else:
+            cmd = ["--capture", "--directory", outdir, "--output-file", coveragefile]
         self.run_lcov(cmd, coveragelog)
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
