@@ -8,6 +8,9 @@
 
 #include "stm32l4_clock.h"
 
+/* PLLSAI2 clocks */
+#define STM32_SRC_PLLSAI2_DIVR (STM32_SRC_PLLSAI2_R + 1)
+
 /*
  * On STM32L4+ series, the SAI1 / SAI2 input clock selection fields
  * are located within the CCIPR2 register instead of the CCIPR register
