@@ -1059,6 +1059,9 @@ flagged.
         "FOO_SETTING_2",
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+        "IAR_BUFFERED_WRITE",
+        "IAR_LIBCPP",
+        "IAR_SEMIHOSTING",
         "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS", # Used in ICMsg tests for intercompatibility
                                                       # with older versions of the ICMsg.
         "LIBGCC_RTLIB",
