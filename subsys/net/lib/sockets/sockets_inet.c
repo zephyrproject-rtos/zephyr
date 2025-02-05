@@ -1052,13 +1052,13 @@ static int update_msg_controllen(struct msghdr *msg)
 	return 0;
 }
 
-static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
-				       struct msghdr *msg,
-				       void *buf,
-				       size_t max_len,
-				       int flags,
-				       struct sockaddr *src_addr,
-				       socklen_t *addrlen)
+static ssize_t zsock_recv_dgram(struct net_context *ctx,
+				struct msghdr *msg,
+				void *buf,
+				size_t max_len,
+				int flags,
+				struct sockaddr *src_addr,
+				socklen_t *addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
 	size_t recv_len = 0;
