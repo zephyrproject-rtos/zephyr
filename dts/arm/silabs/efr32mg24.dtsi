@@ -143,6 +143,14 @@
 			 * The minimum residency and exit latency is
 			 * managed by sl_power_manager on S2 devices.
 			 */
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <DT_FREQ_M(78)>;
+			};
 		};
 
 		power-states {

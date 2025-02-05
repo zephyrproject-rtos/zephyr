@@ -38,6 +38,11 @@ config SOC_GECKO_CRYOTIMER
 	help
 	  Set if the Ultra Low Energy Timer/Counter (CRYOTIMER) HAL module is used.
 
+config SOC_GECKO_DBG
+	bool
+	help
+	  Set if the SWO debug (DBG) HAL module is used.
+
 config SOC_GECKO_EMU
 	bool
 	help

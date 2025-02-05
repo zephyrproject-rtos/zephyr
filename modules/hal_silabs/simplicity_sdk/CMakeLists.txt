@@ -222,6 +222,7 @@ if(CONFIG_SOC_GECKO_GPIO)
     SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
   )
 endif()
+zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DBG          ${EMLIB_DIR}/src/em_dbg.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_I2C          ${EMLIB_DIR}/src/em_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LETIMER      ${EMLIB_DIR}/src/em_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LEUART       ${EMLIB_DIR}/src/em_leuart.c)
