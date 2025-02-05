@@ -31,7 +31,7 @@ config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
 
 config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	int "Stack size for wpa_supplicant thread"
-	default 5200
+	default 5600
 
 config WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE
 	int "Stack size for wpa_supplicant iface workqueue"
