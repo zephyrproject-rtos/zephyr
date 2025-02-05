@@ -222,11 +222,11 @@
 		drive-open-drain;
 		bias-pull-up;
 	};
-	kso16_gpc3_default: kso16_gpc3_default {
+	kso16_default: kso16_gpc3_default: kso16_default {
 		pinmuxs = <&pinctrlc 3 IT8XXX2_ALT_FUNC_1>;
 		bias-pull-up;
 	};
-	kso17_gpc5_default: kso17_gpc5_default {
+	kso17_default: kso17_gpc5_default: kso17_default {
 		pinmuxs = <&pinctrlc 5 IT8XXX2_ALT_FUNC_1>;
 		bias-pull-up;
 	};
@@ -304,10 +304,10 @@
 	kso15_sleep: kso15_sleep {
 		pinmuxs = <&pinctrlksoh 7 IT8XXX2_ALT_DEFAULT>;
 	};
-	kso16_gpc3_sleep: kso16_gpc3_sleep {
+	kso16_sleep: kso16_gpc3_sleep: kso16_sleep {
 		pinmuxs = <&pinctrlc 3 IT8XXX2_ALT_DEFAULT>;
 	};
-	kso17_gpc5_sleep: kso17_gpc5_sleep {
+	kso17_sleep: kso17_gpc5_sleep: kso17_sleep {
 		pinmuxs = <&pinctrlc 5 IT8XXX2_ALT_DEFAULT>;
 	};
 
