@@ -10,3 +10,4 @@ zephyr_sources(
 
 add_subdirectory(s400)
 add_subdirectory(s420)
+add_subdirectory(s420_64)
