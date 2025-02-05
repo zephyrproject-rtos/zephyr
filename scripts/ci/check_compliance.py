@@ -1016,6 +1016,7 @@ flagged.
         "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
         "BOOT_MAX_IMG_SECTORS_AUTO", # Used in sysbuild
         "BOOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
+        "BOOT_RAM_LOAD_REVERT", # Used in sysbuild for MCUboot configuration
         "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
                                      # documentation
         "BOOT_SERIAL_CDC_ACM",       # Used in (sysbuild-based) test
