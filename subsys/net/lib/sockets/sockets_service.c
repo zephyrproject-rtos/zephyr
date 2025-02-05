@@ -121,22 +121,15 @@ static struct net_socket_service_desc *find_svc_and_event(
  */
 void net_socket_service_callback(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_desc *svc = pev->svc;
 	struct net_socket_service_event ev = *pev;
 
 	ev.callback(&ev);
-
-	/* Copy back the socket fd to the global array because we marked
-	 * it as -1 when triggering the work.
-	 */
-	for (int i = 0; i < svc->pev_len; i++) {
-		ctx.events[get_idx(svc) + i] = svc->pev[i].event;
-	}
 }
 
 static int call_work(struct zsock_pollfd *pev, struct net_socket_service_event *event)
 {
 	int ret = 0;
+	int fd = pev->fd;
 
 	/* Mark the global fd non pollable so that we do not
 	 * call the callback second time.
@@ -146,8 +139,10 @@ static int call_work(struct zsock_pollfd *pev, struct net_socket_service_event *
 	/* Synchronous call */
 	net_socket_service_callback(event);
 
-	return ret;
+	/* Restore the fd so that new data can be re-triggered */
+	pev->fd = fd;
 
+	return ret;
 }
 
 static int trigger_work(struct zsock_pollfd *pev)
