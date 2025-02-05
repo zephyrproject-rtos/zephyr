@@ -43,13 +43,15 @@
 
 		npm2100_buttons: buttons {
 			compatible = "gpio-keys";
+
 			pmic_button0: pmic_button_0 {
-				gpios = < &npm2100_gpio 0 GPIO_ACTIVE_LOW>;
+				gpios = <&npm2100_gpio 0 GPIO_ACTIVE_LOW>;
 				label = "Pmic button switch 0";
 				zephyr,code = <INPUT_KEY_0>;
 			};
+
 			pmic_button1: pmic_button_1 {
-				gpios = < &npm2100_gpio 1 GPIO_ACTIVE_LOW>;
+				gpios = <&npm2100_gpio 1 GPIO_ACTIVE_LOW>;
 				label = "Pmic button switch 1";
 				zephyr,code = <INPUT_KEY_1>;
 			};
