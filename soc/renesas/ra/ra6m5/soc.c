@@ -57,9 +57,16 @@ void soc_early_init_hook(void)
 	R_PSCU->PSARD = 0;
 	R_PSCU->PSARE = 0;
 
-	R_CPSCU->ICUSARG = 0;
-	R_CPSCU->ICUSARH = 0;
-	R_CPSCU->ICUSARI = 0;
+	/* The secure Attribute managed within the ARM CPU NVIC must match the
+	 * security attribution of IELSEn registers (Reference section 13.2.9
+	 * in the RA6M4 manual R01UH0890EJ0050).
+	 */
+	uint32_t volatile *p_icusarg = &R_CPSCU->ICUSARG;
+
+	for (int i = 0; i < BSP_ICU_VECTOR_MAX_ENTRIES / NUM_BITS(uint32_t); i++) {
+		p_icusarg[i] = 0;
+		NVIC->ITNS[i] = 0;
+	}
 
 	/* Enable protection using PRCR register. */
 	R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_SAR);
