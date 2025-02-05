@@ -7,6 +7,7 @@
 #include <st/n6/stm32n657X0.dtsi>
 #include <st/n6/stm32n657x0hxq-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	chosen {
@@ -116,6 +117,24 @@
 		 <&rcc STM32_SRC_CKPER FDCAN_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_ph2>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 21)>,
+		 <&rcc STM32_SRC_CKPER I2C1_SEL(1)>;
+	pinctrl-0 = <&i2c1_scl_ph9 &i2c1_sda_pc1>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
+
+&i2c4 {
+	clocks = <&rcc STM32_CLOCK(APB4, 7)>,
+		 <&rcc STM32_SRC_CKPER I2C4_SEL(1)>;
+	pinctrl-0 = <&i2c4_scl_pe13 &i2c4_sda_pe14>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
 };
 
