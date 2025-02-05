@@ -25,6 +25,13 @@
 /* For RAM LOAD mode, the active image must be fetched from the bootloader */
 #include <bootutil/boot_status.h>
 #include <zephyr/retention/blinfo.h>
+
+#define SLOT0_PARTITION		slot0_partition
+#define SLOT1_PARTITION		slot1_partition
+#define SLOT2_PARTITION		slot2_partition
+#define SLOT3_PARTITION		slot3_partition
+#define SLOT4_PARTITION		slot4_partition
+#define SLOT5_PARTITION		slot5_partition
 #endif
 
 #include "mcuboot_priv.h"
@@ -89,7 +96,7 @@ struct mcuboot_v1_raw_header {
 uint8_t boot_fetch_active_slot(void)
 {
 	int rc;
-	uint8_t slot;
+	uint8_t slot, fa_id;
 
 	rc = blinfo_lookup(BLINFO_RUNNING_SLOT, &slot, sizeof(slot));
 
@@ -100,8 +107,48 @@ uint8_t boot_fetch_active_slot(void)
 	}
 
 	LOG_DBG("Active slot: %d", slot);
+	/* Map slot number back to flash area ID */
+	switch (slot) {
+	case 0:
+		fa_id = FIXED_PARTITION_ID(SLOT0_PARTITION);
+		break;
 
-	return slot;
+#if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
+	case 1:
+		fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
+		break;
+#endif
+
+#if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
+	case 2:
+		fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);
+		break;
+#endif
+
+#if FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
+	case 3:
+		fa_id = FIXED_PARTITION_ID(SLOT3_PARTITION);
+		break;
+#endif
+
+#if FIXED_PARTITION_EXISTS(SLOT4_PARTITION)
+	case 4:
+		fa_id = FIXED_PARTITION_ID(SLOT4_PARTITION);
+		break;
+#endif
+
+#if FIXED_PARTITION_EXISTS(SLOT5_PARTITION)
+	case 5:
+		fa_id = FIXED_PARTITION_ID(SLOT5_PARTITION);
+		break;
+#endif
+
+	default:
+		fa_id = INVALID_SLOT_ID;
+		break;
+	}
+
+	return fa_id;
 }
 #else  /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
 	* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
