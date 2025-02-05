@@ -3,3 +3,4 @@ family:
   socs:
   - name: s400
   - name: s420
+  - name: s420_64
