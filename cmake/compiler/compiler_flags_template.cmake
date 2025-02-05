@@ -125,6 +125,9 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
 # Required ASM flags when compiling
 set_property(TARGET asm PROPERTY required)
 
+# GCC compiler flags for imacros. The specific header must be appended by user.
+set_property(TARGET asm PROPERTY imacros)
+
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic)
 
@@ -149,3 +152,8 @@ set_compiler_property(PROPERTY specs)
 
 # Compiler flag for defining preinclude files.
 set_compiler_property(PROPERTY include_file)
+
+# Compiler flag for trustzone
+set_compiler_property(PROPERTY cmse)
+
+set_property(TARGET asm PROPERTY cmse)
