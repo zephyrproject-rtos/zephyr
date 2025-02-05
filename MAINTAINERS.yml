@@ -4492,6 +4492,18 @@ TDK Sensors:
   labels:
     - "area: Toolchains"
 
+"Toolchain IAR":
+  status: maintained
+  maintainers:
+    - RobinKastberg
+  files:
+    - cmake/*/iar/
+    - include/zephyr/toolchain/iar.h
+    - include/zephyr/toolchain/iar/*
+    - lib/libc/iar/*
+  labels:
+    - "area: Toolchains"
+
 "Toolchain oneApi":
   status: maintained
   maintainers:
