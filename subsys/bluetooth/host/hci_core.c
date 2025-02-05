@@ -884,6 +884,9 @@ int bt_le_create_conn_cancel(void)
 	struct bt_hci_cmd_state_set state;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN_CANCEL, 0);
+	if (!buf) {
+		return -ENOBUFS;
+	}
 
 	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags,
 				  BT_DEV_INITIATING, false);
