@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_RENESAS_RA
+	bool "Renesas RA ACMPHS"
+	default y
+	depends on DT_HAS_RENESAS_RA_ACMPHS_ENABLED
+	select USE_RA_FSP_ACMPHS
+	select PINCTRL
+	help
+	  Enable Renesas RA ACMPHS Driver.
