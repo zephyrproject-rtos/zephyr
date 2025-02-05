@@ -297,6 +297,10 @@ class Lcov(CoverageTool):
                 cmd.append(filename)
         else:
             cmd = ["--capture", "--directory", outdir, "--output-file", coveragefile]
+            if self.coverage_per_instance and len(self.instances) == 1:
+                invalid_chars = re.compile(r"[^A-Za-z0-9_]")
+                cmd.append("--test-name")
+                cmd.append(invalid_chars.sub("_", next(iter(self.instances))))
         self.run_lcov(cmd, coveragelog)
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
@@ -325,7 +329,10 @@ class Lcov(CoverageTool):
 
         cmd = ["genhtml", "--legend", "--branch-coverage",
                "--prefix", self.base_dir,
-               "-output-directory", os.path.join(outdir, "coverage")] + files
+               "-output-directory", os.path.join(outdir, "coverage")]
+        if self.coverage_per_instance:
+            cmd.append("--show-details")
+        cmd += files
         ret = self.run_command(cmd, coveragelog)
 
         # TODO: Add LCOV summary coverage report.
