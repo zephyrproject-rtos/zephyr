@@ -27,6 +27,8 @@
 
 LOG_MODULE_REGISTER(gpio_it8xxx2, LOG_LEVEL_ERR);
 
+#define ITE_GPIO_MAX_PINS 8
+
 /*
  * Structure gpio_ite_cfg is about the setting of GPIO
  * this config will be used at initial time
@@ -530,6 +532,8 @@ static int gpio_ite_init(const struct device *dev)
 }
 
 #define GPIO_ITE_DEV_CFG_DATA(inst)                                                                \
+	BUILD_ASSERT(DT_INST_PROP(inst, ngpios) <= ITE_GPIO_MAX_PINS,                              \
+		     "The maximum number of pins per port is 8.");                                 \
 	static struct gpio_ite_data gpio_ite_data_##inst;                                          \
 	static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {                                   \
 		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)},                \
