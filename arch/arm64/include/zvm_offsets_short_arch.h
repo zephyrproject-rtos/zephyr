@@ -65,9 +65,9 @@
 	___esf_t_x18_lr_OFFSET)
 
 #define _vcpu_arch_to_ctxt \
-	(__vcpu_t_arch_OFFSET + __vcpu_arch_t_ctxt_OFFSET )
+	(__vcpu_t_arch_OFFSET + __vcpu_arch_t_ctxt_OFFSET)
 
 #define _vcpu_context_t_regs_to_lr \
-	(__zvm_vcpu_context_t_regs_OFFSET + __arch_commom_regs_t_lr_OFFSET )
+	(__zvm_vcpu_context_t_regs_OFFSET + __arch_commom_regs_t_lr_OFFSET)
 
 #endif /* ZVM_ARCH_ARM64_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

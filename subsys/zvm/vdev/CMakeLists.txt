@@ -4,7 +4,7 @@
 
 zephyr_sources_ifdef(
     CONFIG_ZVM
-    virt_psci.c
+    vpsci.c
     vserial.c
     vpl011.c
 )

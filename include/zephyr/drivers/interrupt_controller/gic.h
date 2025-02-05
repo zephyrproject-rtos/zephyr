@@ -349,12 +349,12 @@ void arm_gic_eoi(unsigned int irq);
 
 #ifdef CONFIG_ZVM
 /**
- * @brief Deactive interrupt after eoi
+ * @brief deactivate interrupt after eoi
  *
  * @param intid: interrupt ID
- * @param no_deactive: no need deactive flag
+ * @param no_deactivate: no need deactivate flag
  */
-void arm_gic_eoi_deactive(unsigned int intid, bool no_deactive);
+void arm_gic_eoi_deactivate(unsigned int intid, bool no_deactivate);
 #endif /* CONFIG_ZVM */
 
 #ifdef CONFIG_SMP

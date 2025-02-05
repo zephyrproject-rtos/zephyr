@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_VTIMER_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_VTIMER_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_ARM_VTIMER_H_
+#define ZEPHYR_INCLUDE_ZVM_ARM_VTIMER_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/time_units.h>
@@ -62,4 +62,4 @@ int arch_vcpu_timer_deinit(struct z_vcpu *vcpu);
  */
 int zvm_arch_vtimer_init(void);
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_ARM_VTIMER_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_ARM_VTIMER_H_ */

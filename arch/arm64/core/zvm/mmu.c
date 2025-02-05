@@ -22,17 +22,18 @@
 
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
-static uint64_t vm_xlat_tables[CONFIG_MAX_VM_NUM][CONFIG_ZVM_MAX_VM_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]\
+static uint64_t vm_xlat_tables[CONFIG_MAX_VM_NUM]
+		[CONFIG_ZVM_MAX_VM_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]
 		__aligned(Ln_XLAT_NUM_ENTRIES * sizeof(uint64_t));
 static int vm_xlat_use_count[CONFIG_MAX_VM_NUM][CONFIG_ZVM_MAX_VM_XLAT_TABLES];
 static struct k_spinlock vm_xlat_lock;
 
-/**
+/*
  * @brief Gets a description of the virtual machine memory.
  */
 static uint64_t get_vm_region_desc(uint32_t attrs)
 {
-    unsigned int mem_type;
+	unsigned int mem_type;
 	uint64_t desc = 0U;
 
 	/*
@@ -40,10 +41,10 @@ static uint64_t get_vm_region_desc(uint32_t attrs)
 
 	 *   AP[2:1]   EL0/EL1
 	 * +--------------------+
-	 *     00       NULL
-	 *     01        RO
-	 *     10        WO
-	 *     11        RW
+	 *	 00	   NULL
+	 *	 01		RO
+	 *	 10		WO
+	 *	 11		RW
 	 */
 
 	/* AP_R bits for Data access permission */
@@ -69,21 +70,20 @@ static uint64_t get_vm_region_desc(uint32_t attrs)
 	case MT_S2_NORMAL_NC:
 	case MT_S2_NORMAL:
 		/* Make Normal RW memory as execute */
-		if ( (attrs & (MT_S2_R | MT_S2_W)) ) {
+		if ((attrs & (MT_S2_R | MT_S2_W))) {
 			desc |= S2_PTE_BLOCK_DESC_NO_XN;
 		}
 
 		if (mem_type == MT_NORMAL) {
 			desc |= S2_PTE_BLOCK_DESC_INNER_SHARE;
-		}
-		else {
+		} else {
 			desc |= S2_PTE_BLOCK_DESC_OUTER_SHARE;
 		}
-		/**
+		/*
 		 * When VM thread use atomic operation, stage-2 attributes must be
 		 * Normal memory, Outer Write-Back Cacheable & Inner Write-Back
 		 * Cacheable.
-		*/
+		 */
 		desc |= (S2_PTE_BLOCK_DESC_O_WB_CACHE | S2_PTE_BLOCK_DESC_I_WB_CACHE);
 		break;
 	}
@@ -91,7 +91,7 @@ static uint64_t get_vm_region_desc(uint32_t attrs)
 	return desc;
 }
 
-/**
+/*
  * @brief Mapping virtual memory to physical memory.
  */
 static void arch_vm_mmap_pre(uintptr_t virt_addr, uintptr_t phys_addr, size_t size, uint32_t flags)
@@ -99,12 +99,13 @@ static void arch_vm_mmap_pre(uintptr_t virt_addr, uintptr_t phys_addr, size_t si
 	uintptr_t aligned_phys, addr_offset;
 	size_t aligned_size, align_boundary;
 	k_spinlock_key_t key;
-	ARG_UNUSED(key);
 	uint8_t *dest_addr;
 
-    /* get the align address of this page */
-	addr_offset = k_mem_region_align(&aligned_phys, &aligned_size,\
-					 phys_addr, size, CONFIG_MMU_PAGE_SIZE);
+	ARG_UNUSED(key);
+
+	/* get the align address of this page */
+	addr_offset = k_mem_region_align(&aligned_phys, &aligned_size,
+						 phys_addr, size, CONFIG_MMU_PAGE_SIZE);
 	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_phys);
 	__ASSERT(aligned_phys < (aligned_phys + (aligned_size - 1)),
 		 "wraparound for physical address 0x%lx (size %zu)",
@@ -120,7 +121,6 @@ static void arch_vm_mmap_pre(uintptr_t virt_addr, uintptr_t phys_addr, size_t si
 		 "wraparound for virtual address %p (size %zu)",
 		 dest_addr, size);
 
-	return;
 }
 
 static uint64_t *vm_new_table(uint32_t vmid)
@@ -131,7 +131,7 @@ static uint64_t *vm_new_table(uint32_t vmid)
 	for (i = 0U; i < CONFIG_ZVM_MAX_VM_XLAT_TABLES; i++) {
 		if (vm_xlat_use_count[vmid][i] == 0U) {
 			vm_xlat_use_count[vmid][i] = 1U;
-			/* each table assign 512 entrys */
+			/* each table assign 512 entries */
 			return &vm_xlat_tables[vmid][i * Ln_XLAT_NUM_ENTRIES];
 		}
 	}
@@ -192,7 +192,7 @@ static void vm_set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int l
 
 static inline unsigned int vm_table_index(uint64_t *pte, uint32_t vmid)
 {
-	unsigned int i ;
+	unsigned int i;
 
 	i = (pte - &vm_xlat_tables[vmid][0]) / Ln_XLAT_NUM_ENTRIES;
 	__ASSERT(i < CONFIG_ZVM_MAX_VM_XLAT_TABLES, "table %p out of range", pte);
@@ -212,7 +212,8 @@ static void vm_free_table(uint64_t *table, uint32_t vmid)
 /* Adjusts usage count and returns current count. */
 static int vm_table_usage(uint64_t *table, int adjustment, uint32_t vmid)
 {
-	unsigned int i,table_use;
+	unsigned int i, table_use;
+
 	i = vm_table_index(table, vmid);
 
 	vm_xlat_use_count[vmid][i] += adjustment;
@@ -238,7 +239,7 @@ static uint64_t *vm_expand_to_table(uint64_t *pte, unsigned int level, uint32_t 
 {
 	uint64_t *table;
 
-	if(level >= XLAT_LAST_LEVEL) {
+	if (level >= XLAT_LAST_LEVEL) {
 		__ASSERT(level < XLAT_LAST_LEVEL, "can't expand last level");
 	}
 
@@ -281,9 +282,9 @@ static uint64_t *vm_expand_to_table(uint64_t *pte, unsigned int level, uint32_t 
 	return table;
 }
 
-static int vm_set_mapping(struct arm_mmu_ptables *ptables,\
-		       uintptr_t virt, size_t size,\
-		       uint64_t desc, bool may_overwrite, uint32_t vmid)
+static int vm_set_mapping(struct arm_mmu_ptables *ptables,
+			   uintptr_t virt, size_t size,
+			   uint64_t desc, bool may_overwrite, uint32_t vmid)
 {
 	uint64_t *pte, *ptes[XLAT_LAST_LEVEL + 1];
 	uint64_t level_size;
@@ -324,7 +325,7 @@ static int vm_set_mapping(struct arm_mmu_ptables *ptables,\
 		}
 
 		if ((size < level_size) || (virt & (level_size - 1)) ||
-		    !vm_is_desc_block_aligned(desc, level_size)) {
+			!vm_is_desc_block_aligned(desc, level_size)) {
 			/* Range doesn't fit, create subtable */
 			table = vm_expand_to_table(pte, level, vmid);
 			if (!table) {
@@ -347,7 +348,7 @@ static int vm_set_mapping(struct arm_mmu_ptables *ptables,\
 
 		/* recursively free unused tables if any */
 		while (level != BASE_XLAT_LEVEL &&
-		       vm_is_table_unused(pte, vmid)) {
+			   vm_is_table_unused(pte, vmid)) {
 			vm_free_table(pte, vmid);
 			pte = ptes[--level];
 			vm_set_pte_block_desc(pte, 0, level);
@@ -405,14 +406,15 @@ static void vm_del_mapping(uint64_t *table, uintptr_t virt, size_t size,
 	}
 }
 
-/**
+/*
  * @brief un_map the vm's page table entry.
  */
 static int vm_remove_dev_map(struct arm_mmu_ptables *ptables, const char *name,
-		     uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs, uint32_t vmid)
+			 uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs, uint32_t vmid)
 {
 	int ret = 0;
 	k_spinlock_key_t key;
+
 	ARG_UNUSED(attrs);
 
 	__ASSERT(((virt | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
@@ -425,7 +427,7 @@ static int vm_remove_dev_map(struct arm_mmu_ptables *ptables, const char *name,
 }
 
 static int vm_add_dev_map(struct arm_mmu_ptables *ptables, const char *name,
-		     uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs, uint32_t vmid)
+			 uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs, uint32_t vmid)
 {
 	int ret;
 	uint64_t desc;
@@ -475,34 +477,37 @@ static int vm_remove_map(struct arm_mmu_ptables *ptables, const char *name,
 
 	key = k_spin_lock(&vm_xlat_lock);
 	vm_del_mapping(ptables->base_xlat_table, virt, size, BASE_XLAT_LEVEL, vmid);
-	k_spin_unlock(&vm_xlat_lock,key);
+	k_spin_unlock(&vm_xlat_lock, key);
+
 	return ret;
 }
 
 int arch_mmap_vpart_to_block(uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
 {
-    int ret;
-	ARG_UNUSED(ret);
-    uintptr_t dest_virt = virt;
+	int ret;
+	uintptr_t dest_virt = virt;
 
+	ARG_UNUSED(ret);
 	arch_vm_mmap_pre(dest_virt, phys, size,  attrs);
-    return 0;
+	return 0;
 }
 
 int arch_unmap_vpart_to_block(uintptr_t virt, size_t size)
 {
-    uintptr_t dest_virt = virt;
-	ARG_UNUSED(dest_virt);
+	uintptr_t dest_virt = virt;
 
-    return 0;
+	ARG_UNUSED(dest_virt);
+	return 0;
 }
 
-int arch_vm_dev_domain_unmap(uint64_t pbase, uint64_t vbase, uint64_t size, char *name, uint16_t vmid, struct arm_mmu_ptables *ptables)
+int arch_vm_dev_domain_unmap(uint64_t pbase, uint64_t vbase, uint64_t size,
+	char *name, uint16_t vmid, struct arm_mmu_ptables *ptables)
 {
 	return vm_remove_dev_map(ptables, name, pbase, vbase, size, 0, vmid);
 }
 
-int arch_vm_dev_domain_map(uint64_t pbase, uint64_t vbase, uint64_t size, char *name, uint16_t vmid, struct arm_mmu_ptables *ptables)
+int arch_vm_dev_domain_map(uint64_t pbase, uint64_t vbase, uint64_t size,
+	char *name, uint16_t vmid, struct arm_mmu_ptables *ptables)
 {
 	uint32_t mem_attrs;
 
@@ -510,29 +515,37 @@ int arch_vm_dev_domain_map(uint64_t pbase, uint64_t vbase, uint64_t size, char *
 	return vm_add_dev_map(ptables, name, pbase, vbase, size, mem_attrs | MT_NO_OVERWRITE, vmid);
 }
 
-int arch_vm_mem_domain_partition_add(struct k_mem_domain *domain,
-				  uint32_t partition_id, uintptr_t phys_start, uint32_t vmid)
+int arch_vm_mem_domain_partition_add(
+	struct k_mem_domain *domain,
+	uint32_t partition_id, uintptr_t phys_start, uint32_t vmid)
 {
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
-	ZVM_LOG_INFO("PART_ADD: phys_start 0x%lx, virt_start 0x%lx, size 0x%lx. \n", phys_start, ptn->start, ptn->size);
+
+	ZVM_LOG_INFO("PART_ADD: phys_start 0x%lx, virt_start 0x%lx, size 0x%lx.\n",
+		phys_start, ptn->start, ptn->size);
 	return vm_add_map(domain_ptables, "vm-mmio-space", phys_start,
 				ptn->start, ptn->size, ptn->attr.attrs, vmid);
 }
 
-int arch_vm_mem_domain_partition_remove(struct k_mem_domain *domain,
-				uint32_t partition_id, uint32_t vmid)
+int arch_vm_mem_domain_partition_remove(
+	struct k_mem_domain *domain,
+	uint32_t partition_id,
+	uint32_t vmid)
 {
 	int ret;
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
-	ZVM_LOG_INFO("PART_ADD: virt_start 0x%lx, size 0x%lx. \n", ptn->start, ptn->size);
+
+	ZVM_LOG_INFO("PART_ADD: virt_start 0x%lx, size 0x%lx.\n", ptn->start, ptn->size);
 	ret =  vm_remove_map(domain_ptables, "vm-mmio-space", ptn->start, ptn->size, vmid);
 	return ret;
 }
 
-void arch_vm_mem_domain_partitions_clean(struct k_mem_domain *domain,
-				uint32_t partitions_num, uint32_t vmid)
+void arch_vm_mem_domain_partitions_clean(
+	struct k_mem_domain *domain,
+	uint32_t partitions_num,
+	uint32_t vmid)
 {
 	k_spinlock_key_t key;
 	uint32_t p_idx;
@@ -540,10 +553,10 @@ void arch_vm_mem_domain_partitions_clean(struct k_mem_domain *domain,
 	ARG_UNUSED(domain);
 
 	key = k_spin_lock(&vm_xlat_lock);
-	for(p_idx = 0; p_idx < partitions_num; p_idx++){
+	for (p_idx = 0; p_idx < partitions_num; p_idx++) {
 		vm_xlat_use_count[vmid][p_idx] = 0;
 	}
-	k_spin_unlock(&vm_xlat_lock,key);
+	k_spin_unlock(&vm_xlat_lock, key);
 
 }
 
@@ -559,4 +572,4 @@ int arch_vm_mem_domain_init(struct k_mem_domain *domain, uint32_t vmid)
 		return -ENOMEM;
 	}
 	return 0;
-}
+	}

@@ -24,10 +24,14 @@
 #define PL011_FLAG_RXFE			0x10
 
 /* Regs Write/Read 32/64 Op*/
-#define vserial_sysreg_read32(base, offset)				sys_read32((long unsigned int)(base+((offset)/4)))
-#define vserial_sysreg_write32(data, base, offset)		sys_write32(data, (long unsigned int)(base+((offset)/4)))
-#define vserial_sysreg_read64(base, offset)				sys_read64((long unsigned int)(base+((offset)/4)))
-#define vserial_sysreg_write64(data, base, offset)		sys_write64(data, (long unsigned int)(base+((offset)/4)))
+#define vserial_sysreg_read32(base, offset)	\
+	sys_read32((unsigned long)(base+offset / 4))
+#define vserial_sysreg_write32(data, base, offset)	\
+	sys_write32(data, (unsigned long)(base+(offset / 4)))
+#define vserial_sysreg_read64(base, offset)	\
+	sys_read64(((unsigned long))(base+(offset / 4)))
+#define vserial_sysreg_write64(data, base, offset)	\
+	sys_write64(data, (unsigned long)(base+(offset / 4)))
 
 
 /*
@@ -35,25 +39,25 @@
  */
 struct vpl011_regs_ctxt {
 	uint32_t dr;			/* base + 0x00 , 0*/
-	union {                 /* base + 0x04 , 1*/
+	union {					/* base + 0x04 , 1*/
 		uint32_t rsr;
 		uint32_t ecr;
 	};
-	uint32_t reserved_0[4]; /* base + 0x08 , 2 ~ 5*/
+	uint32_t reserved_0[4];	/* base + 0x08 , 2 ~ 5*/
 	uint32_t fr;			/* base + 0x18 , 6*/
-	uint32_t reserved_1;    /* base + 0x1c , 7*/
-	uint32_t ilpr;          /* base + 0x20 , 8*/
-	uint32_t ibrd;          /* base + 0x24 , 9*/
-	uint32_t fbrd;          /* base + 0x28 , 10*/
-	uint32_t lcr_h;         /* base + 0x2c , 11*/
-	uint32_t cr;            /* base + 0x30 , 12*/
-	uint32_t ifls;          /* base + 0x34 , 13*/
-	uint32_t imsc;          /* base + 0x38 , 14*/
-	uint32_t ris;           /* base + 0x3c , 15*/
-	uint32_t mis;           /* base + 0x40 , 16*/
-	uint32_t icr;           /* base + 0x44 , 17*/
-	uint32_t dmacr;         /* base + 0x48 , 18*/
-	uint8_t id[8];      	/* base + 0xfe0 */
+	uint32_t reserved_1;	/* base + 0x1c , 7*/
+	uint32_t ilpr;			/* base + 0x20 , 8*/
+	uint32_t ibrd;			/* base + 0x24 , 9*/
+	uint32_t fbrd;			/* base + 0x28 , 10*/
+	uint32_t lcr_h;			/* base + 0x2c , 11*/
+	uint32_t cr;			/* base + 0x30 , 12*/
+	uint32_t ifls;			/* base + 0x34 , 13*/
+	uint32_t imsc;			/* base + 0x38 , 14*/
+	uint32_t ris;			/* base + 0x3c , 15*/
+	uint32_t mis;			/* base + 0x40 , 16*/
+	uint32_t icr;			/* base + 0x44 , 17*/
+	uint32_t dmacr;			/* base + 0x48 , 18*/
+	uint8_t id[8];			/* base + 0xfe0 */
 };
 
 #define FIFO_SIZE 16
@@ -101,11 +105,11 @@ struct virt_pl011 {
 	 * serial address base and size which
 	 * are used to locate vdev access from
 	 * vm.
-	*/
+	 */
 	uint32_t vserial_base;
 	uint32_t vserial_size;
 
-    struct z_vm * vm;
+	struct z_vm *vm;
 	struct k_fifo rx_fifo;
 	struct k_spinlock vserial_lock;
 

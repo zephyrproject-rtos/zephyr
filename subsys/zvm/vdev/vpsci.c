@@ -15,9 +15,11 @@
 
 LOG_MODULE_DECLARE(ZVM_MODULE_NAME);
 
-static uint32_t psci_get_function_id(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt) {
-    uint64_t reg_value = *find_index_reg(0, arch_ctxt);
-    return reg_value & ~((uint32_t)0);
+static uint32_t psci_get_function_id(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
+{
+	uint64_t reg_value = *find_index_reg(0, arch_ctxt);
+
+	return reg_value & ~((uint32_t)0);
 }
 
 static void psci_system_off(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
@@ -34,71 +36,72 @@ static inline void psci_set_reg(uint32_t psci_fn, struct z_vcpu *vcpu,
 					arch_commom_regs_t *arch_ctxt,
 					uint32_t reg, unsigned long val)
 {
-    uint64_t *reg_value;
-    reg_value = find_index_reg(reg, arch_ctxt);
-    *reg_value = (uint64_t)val;
+	uint64_t *reg_value;
+
+	reg_value = find_index_reg(reg, arch_ctxt);
+	*reg_value = (uint64_t)val;
 }
 
 uint64_t psci_vcpu_suspend(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 {
-    return PSCI_RET_SUCCESS;
+	return PSCI_RET_SUCCESS;
 }
 
 uint64_t psci_vcpu_off(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 {
-    return PSCI_RET_SUCCESS;
+	return PSCI_RET_SUCCESS;
 }
 
 uint64_t psci_vcpu_affinity_info(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 {
-    return PSCI_RET_SUCCESS;
+	return PSCI_RET_SUCCESS;
 }
 
 uint64_t psci_vcpu_migration(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 {
-    ZVM_LOG_WARN("PSCI_0_2_FN_MIGRATE\n");
-    ZVM_LOG_WARN("do not support now! \n");
-    return -1;
+	ZVM_LOG_WARN("PSCI_0_2_FN_MIGRATE\n");
+	ZVM_LOG_WARN("do not support now!\n");
+	return -1;
 }
 
 uint64_t psci_vcpu_migration_info_type(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 {
-    return PSCI_0_2_TOS_MP;
+	return PSCI_0_2_TOS_MP;
 }
 
 uint64_t psci_vcpu_other(unsigned long psci_func)
 {
-    ZVM_LOG_WARN("PSCI_0_2_FN_OTHER: %lx \n", psci_func);
-    ZVM_LOG_WARN("do not support now! \n");
-    return -1;
+	ZVM_LOG_WARN("PSCI_0_2_FN_OTHER: %lx\n", psci_func);
+	ZVM_LOG_WARN("do not support now!\n");
+	return -1;
 }
 
 uint64_t psci_vcpu_on(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 {
-    uint64_t cpu_id;
+	uint64_t cpu_id;
 
 	uint64_t context_id;
 	uint64_t target_pc;
-    struct zvm_vcpu_context *ctxt;
-    struct z_vm *vm = vcpu->vm;
+	struct zvm_vcpu_context *ctxt;
+	struct z_vm *vm = vcpu->vm;
 
-    cpu_id = arch_ctxt->esf_handle_regs.x1;
-    target_pc = arch_ctxt->esf_handle_regs.x2;
-    context_id = arch_ctxt->esf_handle_regs.x3;
-    vcpu = vm->vcpus[cpu_id];
+	cpu_id = arch_ctxt->esf_handle_regs.x1;
+	target_pc = arch_ctxt->esf_handle_regs.x2;
+	context_id = arch_ctxt->esf_handle_regs.x3;
+	vcpu = vm->vcpus[cpu_id];
 
-    ctxt = &vcpu->arch->ctxt;
-    ctxt->regs.pc = target_pc;
+	ctxt = &vcpu->arch->ctxt;
+	ctxt->regs.pc = target_pc;
 
-    vm_vcpu_ready(vcpu);
-    return PSCI_RET_SUCCESS;
+	vm_vcpu_ready(vcpu);
+	return PSCI_RET_SUCCESS;
 }
 
 /*
- * x0:    function_id
+ * x0:	function_id
  * x1-x3: psci function args
  * x0-x4: ret
-*/
+ */
 static int psci_0_2_call(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 {
 	uint32_t psci_fn = psci_get_function_id(vcpu, arch_ctxt);
@@ -135,7 +138,7 @@ static int psci_0_2_call(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 	case PSCI_0_2_FN_MIGRATE_INFO_TYPE:
 		/*
 		 * Trusted OS is MP hence does not require migration
-	         * or
+		 * or
 		 * Trusted OS is not present
 		 */
 		val = psci_vcpu_migration_info_type(vcpu, arch_ctxt);
@@ -166,11 +169,11 @@ static int psci_0_2_call(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 		val = PSCI_RET_INTERNAL_FAILURE;
 		break;
 	default:
-        ZVM_LOG_INFO("UNKNOWN PSCI FUNCTION ID\n ");
+		ZVM_LOG_INFO("UNKNOWN PSCI FUNCTION ID\n ");
 		return -1;
 	}
 
-	if(val != PSCI_RET_INTERNAL_FAILURE) {
+	if (val != PSCI_RET_INTERNAL_FAILURE) {
 		psci_set_reg(psci_fn, vcpu, arch_ctxt, 0, val);
 	}
 
@@ -179,10 +182,10 @@ static int psci_0_2_call(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 
 int do_psci_call(struct z_vcpu *vcpu, arch_commom_regs_t *arch_ctxt)
 {
-    if (!vcpu || !arch_ctxt) {
+	if (!vcpu || !arch_ctxt) {
 		return -1;
 	}
 
-    /*TODO: support psci-1.0 */
+	/*TODO: support psci-1.0 */
 	return psci_0_2_call(vcpu, arch_ctxt);
 }

@@ -1,8 +1,6 @@
- # Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
- # Copyright 2024-2025 openEuler SIG-Zephyr
- # SPDX-License-Identifier: Apache-2.0
-
-if ZVM
+# Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
+# Copyright 2024-2025 openEuler SIG-Zephyr
+# SPDX-License-Identifier: Apache-2.0
 
 if ARM_MMU
 
@@ -10,16 +8,16 @@ config ZVM_MAX_VM_XLAT_TABLES
 	int "Maximum numbers of VM stage-2 translation tables"
 	default 1024
 	help
-      This option specifies the maximum number of vm translation tables.
-      Translation tables are allocated at compile time and used at runtime as needed.
-      If the runtime need exceeds the preallocated number of translation tables,
+	  This option specifies the maximum number of vm translation tables.
+	  Translation tables are allocated at compile time and used at runtime as needed.
+	  If the runtime need exceeds the preallocated number of translation tables,
 	  it will result in an assertion failure.
 
 endif # ARM_MMU
 
 config VIRT_ARM_ARCH_TIMER
-	bool "Enable VIRT ARM arch timer"
-	default n
+	bool "VIRT ARM arch timer"
+	default y
 	help
 	  This option enables the ARM arch timer for the virtual machine.
 
@@ -32,5 +30,3 @@ config VIRT_ARM_ARCH_TIMER_PRIORITY
 	  This option specifies the priority of the ARM arch timer for the virtual machine.
 
 endif # VIRT_ARM_ARCH_TIMER
-
-endif # ZVM

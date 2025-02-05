@@ -89,7 +89,7 @@ config HAS_ARM_VHE
 	bool
 	default y if CPU_CORTEX_A55 || CPU_CORTEX_A76 || CPU_CORTEX_A76_A55
 	help
-	  This option signifies the enable of Virtualization Host Extention
+	  This option signifies the enable of Virtualization Host Extension
 	  on Armv8.1+ platform.
 
 config NUM_IRQS
@@ -234,7 +234,10 @@ config ARMV8_A
 	  It supports the T32 and A32 instruction sets.
 
 rsource "xen/Kconfig"
+
+if ZVM
 rsource "zvm/Kconfig"
+endif # ZVM
 
 endif # CPU_CORTEX_A
 

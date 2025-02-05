@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_OS_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_OS_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_OS_H_
+#define ZEPHYR_INCLUDE_ZVM_OS_H_
 
 #include <zephyr/kernel.h>
 #include <stdint.h>
@@ -59,20 +59,20 @@ struct getopt_state;
  * @param vm_image_size: the size of the vm image in disk.
  */
 struct z_os_info {
-    uint16_t    os_type;
-    uint16_t    vcpu_num;
-    uint32_t    vm_mem_base;
-    uint32_t    vm_mem_size;
-    uint32_t    vm_load_base;
-    uint64_t    vm_image_base;
-    uint64_t    vm_image_size;
-    uint64_t    entry_point;
+	uint16_t    os_type;
+	uint16_t    vcpu_num;
+	uint32_t    vm_mem_base;
+	uint32_t    vm_mem_size;
+	uint32_t    vm_load_base;
+	uint64_t    vm_image_base;
+	uint64_t    vm_image_size;
+	uint64_t    entry_point;
 };
 
 struct z_os {
-    char *name;
-    bool is_rtos;
-    struct z_os_info info;
+	char *name;
+	bool is_rtos;
+	struct z_os_info info;
 };
 
 
@@ -80,6 +80,6 @@ int get_os_info_by_type(struct z_os_info *vm_info);
 
 int load_vm_image(struct vm_mem_domain *vmem_domain, struct z_os *os);
 
-int vm_os_create(struct z_os* os, struct z_os_info *vm_info);
+int vm_os_create(struct z_os *os, struct z_os_info *vm_info);
 
-#endif  /* ZEPHYR_INCLUDE_VIRTUALIZATION_OS_H_ */
+#endif  /* ZEPHYR_INCLUDE_ZVM_OS_H_ */

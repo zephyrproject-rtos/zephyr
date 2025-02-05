@@ -62,16 +62,16 @@ static int arm_arch_virt_vtimer_compare_isr(void *dev)
 	struct virt_timer_context *ctxt = vcpu->arch->vtimer_context;
 
 	cntvctl = read_cntv_ctl_el02();
-	if(!(cntvctl & CNTV_CTL_ISTAT_BIT)){
-		ZVM_LOG_WARN("No virt vtimer interrupt but signal raise! \n");
+	if (!(cntvctl & CNTV_CTL_ISTAT_BIT)) {
+		ZVM_LOG_WARN("No virt vtimer interrupt but signal raise!\n");
 		return -EINTR;
 	}
 	ctxt->cntv_ctl = cntvctl | CNTV_CTL_IMASK_BIT;
 
 	ret = set_virq_to_vcpu(vcpu, ctxt->virt_virq);
-	if(ret) {
+	if (ret) {
 		k_spin_unlock(&virt_vtimer_lock, key);
-		ZVM_LOG_WARN("Set vtimer irq to vm failed! \n");
+		ZVM_LOG_WARN("Set vtimer irq to vm failed!\n");
 		return ret;
 	}
 
@@ -92,7 +92,7 @@ static int arm_arch_virt_ptimer_compare_isr(void *dev)
 	struct virt_timer_context *ctxt = vcpu->arch->vtimer_context;
 
 	ret = set_virq_to_vcpu(vcpu, ctxt->virt_pirq);
-	if(ret){
+	if (ret) {
 		k_spin_unlock(&virt_ptimer_lock, key);
 		return ret;
 	}
@@ -112,13 +112,13 @@ static void virt_vtimer_expiry(struct _timeout *t)
 	struct z_vcpu *vcpu;
 
 	ctxt = CONTAINER_OF(t, struct virt_timer_context, vtimer_timeout);
-	if(ctxt == NULL){
-		ZVM_LOG_WARN("The virt_vtimer context is not exist! \n");
+	if (ctxt == NULL) {
+		ZVM_LOG_WARN("The virt_vtimer context is not exist!\n");
 		return;
 	}
 
 	ctxt->cntv_ctl |= CNTV_CTL_IMASK_BIT;
-	vcpu = (struct z_vcpu*)ctxt->vcpu;
+	vcpu = (struct z_vcpu *)ctxt->vcpu;
 
 	set_virq_to_vcpu(vcpu, virq_num);
 }
@@ -133,13 +133,13 @@ static void virt_ptimer_expiry(struct _timeout *t)
 	struct z_vcpu *vcpu;
 
 	ctxt = CONTAINER_OF(t, struct virt_timer_context, ptimer_timeout);
-	if(ctxt == NULL){
-		ZVM_LOG_WARN("The virt_ptimer context is not exist! \n");
+	if (ctxt == NULL) {
+		ZVM_LOG_WARN("The virt_ptimer context is not exist!\n");
 		return;
 	}
 
 	ctxt->cntp_ctl |= CNTV_CTL_IMASK_BIT;
-	vcpu = (struct z_vcpu*)ctxt->vcpu;
+	vcpu = (struct z_vcpu *)ctxt->vcpu;
 
 	set_virq_to_vcpu(vcpu, virq_num);
 }
@@ -160,6 +160,7 @@ void simulate_timer_cntp_tval(struct z_vcpu *vcpu, int read, uint64_t *value)
 		*value = read_cntp_tval_el02();
 #else
 		uint64_t ns;
+
 		ns = (ctxt->cntp_tval - cycles - ctxt->timer_offset) & 0xffffffff;
 		*value = ns;
 #endif
@@ -233,8 +234,10 @@ void simulate_timer_cntp_ctl(struct z_vcpu *vcpu, int read, uint64_t *value)
 #else
 		reg_value &= ~CNTV_CTL_ISTAT_BIT;
 
-		if (reg_value & CNTV_CTL_ENABLE_BIT)
+		if (reg_value & CNTV_CTL_ENABLE_BIT) {
 			reg_value |= ctxt->cntp_ctl & CNTV_CTL_ISTAT_BIT;
+		}
+
 		ctxt->cntp_ctl = reg_value;
 
 		if ((ctxt->cntp_ctl & CNTV_CTL_ENABLE_BIT) && (ctxt->cntp_cval != 0)) {
@@ -250,7 +253,7 @@ void simulate_timer_cntp_ctl(struct z_vcpu *vcpu, int read, uint64_t *value)
  * This needs to be done when the vcpu is created. The step is below:
  * 1. Init vtimer and ptimer register.
  * 2. Add a timer expiry function for vcpu.
- * 3. Add a callbak function.
+ * 3. Add a callback function.
  */
 int arch_vcpu_timer_init(struct z_vcpu *vcpu)
 {
@@ -259,18 +262,19 @@ int arch_vcpu_timer_init(struct z_vcpu *vcpu)
 	struct vcpu_arch *arch = vcpu->arch;
 	struct virt_irq_desc *irq_desc;
 
-	arch->vtimer_context = (struct virt_timer_context *)k_malloc(sizeof(struct virt_timer_context));
-    if(!arch->vtimer_context) {
-        ZVM_LOG_ERR("Init vcpu_arch->vtimer failed");
-        return  -ENXIO;
-    }
+	arch->vtimer_context =
+	(struct virt_timer_context  *)k_malloc(sizeof(struct virt_timer_context));
+	if (!arch->vtimer_context) {
+		ZVM_LOG_ERR("Init vcpu_arch->vtimer failed");
+		return  -ENXIO;
+	}
 
 	/* Default vcpu, get the count as offset */
 	if (vcpu->vcpu_id == 0) {
 		vcpu->vm->vtimer_offset = arm_arch_timer_count();
 	}
 
-    ctxt = vcpu->arch->vtimer_context;
+	ctxt = vcpu->arch->vtimer_context;
 	ctxt->vcpu = vcpu;
 	ctxt->timer_offset = vcpu->vm->vtimer_offset;
 	ctxt->enable_flag = false;
@@ -347,18 +351,18 @@ static void virt_arm_vtimer_init(void)
 
 static int virt_arm_arch_timer_init(void)
 {
-    /* get vtimer irq */
-    zvm_global_vtimer_info.virt_irq = ARM_ARCH_VIRT_VTIMER_IRQ;
+	/* get vtimer irq */
+	zvm_global_vtimer_info.virt_irq = ARM_ARCH_VIRT_VTIMER_IRQ;
 	zvm_global_vtimer_info.phys_irq = ARM_ARCH_VIRT_PTIMER_IRQ;
 
-    if( (zvm_global_vtimer_info.virt_irq > 32) || (zvm_global_vtimer_info.virt_irq < 0)){
-        ZVM_LOG_ERR("Can not get vtimer virt struct from hw. \n");
+	if ((zvm_global_vtimer_info.virt_irq > 32) || (zvm_global_vtimer_info.virt_irq < 0)) {
+		ZVM_LOG_ERR("Can not get vtimer virt struct from hw.\n");
 		return -EINTR;
-    }
-	if( (zvm_global_vtimer_info.phys_irq > 32) || (zvm_global_vtimer_info.phys_irq < 0)){
-        ZVM_LOG_ERR("Can not get vtimer phys struct from hw. \n");
+	}
+	if ((zvm_global_vtimer_info.phys_irq > 32) || (zvm_global_vtimer_info.phys_irq < 0)) {
+		ZVM_LOG_ERR("Can not get vtimer phys struct from hw.\n");
 		return -EINTR;
-    }
+	}
 
 	virt_arm_vtimer_init();
 	virt_arm_ptimer_init();
@@ -376,9 +380,9 @@ static struct virt_device_data virt_arm_arch_timer_data_port = {
 	.device_data = NULL,
 };
 
-/**
+/*
  * @brief vserial device operations api.
-*/
+ */
 static const struct virt_device_api virt_arm_arch_timer_api = {
 	.init_fn = NULL,
 	.deinit_fn = NULL,

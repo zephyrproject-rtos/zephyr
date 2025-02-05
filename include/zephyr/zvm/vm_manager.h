@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_VIRTUALIZATION_VM_MANAGER_H_
-#define ZEPHYR_INCLUDE_VIRTUALIZATION_VM_MANAGER_H_
+#ifndef ZEPHYR_INCLUDE_ZVM_VM_MANAGER_H_
+#define ZEPHYR_INCLUDE_ZVM_VM_MANAGER_H_
 
 #include <errno.h>
 #include <zephyr/arch/arm64/cpu.h>
@@ -37,18 +37,18 @@ typedef int (*vtimer_init_t)(struct z_vcpu *vcpu);
  * @brief VM's vcpu ops function
  */
 struct vm_ops {
-    vm_init_t       vm_init;
+	vm_init_t	   vm_init;
 
-    vcpu_init_t     vcpu_init;
-    vcpu_run_t      vcpu_run;
-    vcpu_halt_t     vcpu_halt;
+	vcpu_init_t	 vcpu_init;
+	vcpu_run_t	  vcpu_run;
+	vcpu_halt_t	 vcpu_halt;
 
-    vmm_init_t      vmm_init;
-    vm_mmap_t       vm_mmap;
+	vmm_init_t	  vmm_init;
+	vm_mmap_t	   vm_mmap;
 
-    /* @TODO maybe add load/restor func later */
-    vint_init_t     vint_init;
-    vtimer_init_t   vtimer_init;
+	/* @TODO maybe add load/restor func later */
+	vint_init_t	 vint_init;
+	vtimer_init_t   vtimer_init;
 };
 
 
@@ -70,4 +70,4 @@ void zvm_shutdown_guest(struct z_vm *vm);
 void zvm_reboot_guest(struct z_vm *vm);
 
 
-#endif /* ZEPHYR_INCLUDE_VIRTUALIZATION_VM_MANAGER_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVM_VM_MANAGER_H_ */

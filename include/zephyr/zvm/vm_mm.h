@@ -14,35 +14,35 @@
 #include <zephyr/zvm/arm/mmu.h>
 
 /* Memory size for block */
-#define BLK_MAP         0x01000000
-#define PGE_MAP         0x02000000
+#define BLK_MAP		 0x01000000
+#define PGE_MAP		 0x02000000
 
 /* Memory block size: 64K */
-#define DEFAULT_BLK_MEM_SHIFT       (12)
-#define ZEPHYR_BLK_MEM_SHIFT        (16)
-#define LINUX_BLK_MEM_SHIFT         (21)
+#define DEFAULT_BLK_MEM_SHIFT		(12)
+#define ZEPHYR_BLK_MEM_SHIFT		(16)
+#define LINUX_BLK_MEM_SHIFT			(21)
 
-#define DEFAULT_VM_BLOCK_SIZE   (1UL << DEFAULT_BLK_MEM_SHIFT)   //4K
-#define ZEPHYR_VM_BLOCK_SIZE    (1UL << ZEPHYR_BLK_MEM_SHIFT)    //64K
-#define LINUX_VM_BLOCK_SIZE     (1UL << LINUX_BLK_MEM_SHIFT)     //2M
+#define DEFAULT_VM_BLOCK_SIZE   (1UL << DEFAULT_BLK_MEM_SHIFT)	/* 4K */
+#define ZEPHYR_VM_BLOCK_SIZE	(1UL << ZEPHYR_BLK_MEM_SHIFT)	/* 64K */
+#define LINUX_VM_BLOCK_SIZE		(1UL << LINUX_BLK_MEM_SHIFT)	/* 2M */
 
-/* For clear warning for unknow reason */
+/* For clear warning for unknown reason */
 struct z_vm;
 
 /**
  * @brief vm_mem_block record the translation relation of virt addr to phy addr
  */
 struct vm_mem_block {
-    uint8_t     *phy_pointer;
+	uint8_t	 *phy_pointer;
 
-    /* block num of this vpart */
-    uint64_t    cur_blk_offset;
+	/* block num of this vpart */
+	uint64_t	cur_blk_offset;
 
-    uint64_t    phy_base;
-    uint64_t    virt_base;
+	uint64_t	phy_base;
+	uint64_t	virt_base;
 
-    /* block list of this vpart */
-    sys_dnode_t vblk_node;
+	/* block list of this vpart */
+	sys_dnode_t vblk_node;
 };
 
 /**
@@ -50,26 +50,26 @@ struct vm_mem_block {
  */
 struct vm_mem_partition {
 
-    /* Virtual memory info for this vpart. */
-    struct k_mem_partition *vm_mm_partition;
+	/* Virtual memory info for this vpart. */
+	struct k_mem_partition *vm_mm_partition;
 
-    /**
-     * Store the physical memory info for
-     * this vpart. It is not the image's base
-     * and size, but the physical memory allocate
-     * to vm.
-    */
-    uint64_t part_hpa_base;
-    uint64_t part_hpa_size;
+	/**
+	 * Store the physical memory info for
+	 * this vpart. It is not the image's base
+	 * and size, but the physical memory allocate
+	 * to vm.
+	 */
+	uint64_t part_hpa_base;
+	uint64_t part_hpa_size;
 
-    /* the vm_mem_partition node link to vm mm */
-    sys_dnode_t vpart_node;
+	/* the vm_mem_partition node link to vm mm */
+	sys_dnode_t vpart_node;
 
-    /* mem_block lists for physical memmory management */
-    sys_dlist_t blk_list;
+	/* mem_block lists for physical memmory management */
+	sys_dlist_t blk_list;
 
-    /* vwork_mm_area belong to one vmem_domain */
-    struct  vm_mem_domain   *vmem_domain;
+	/* vwork_mm_area belong to one vmem_domain */
+	struct  vm_mem_domain   *vmem_domain;
 
 };
 
@@ -77,21 +77,21 @@ struct vm_mem_partition {
  * @brief vm_mem_domain describe the full virtual address space of the vm.
  */
 struct vm_mem_domain {
-    bool is_init;
+	bool is_init;
 
-    /* A vm is bind to a domain */
-    struct k_mem_domain *vm_mm_domain;
-    uint64_t    pgd_addr;
+	/* A vm is bind to a domain */
+	struct k_mem_domain *vm_mm_domain;
+	uint64_t	pgd_addr;
 
-    /**
-     * vm_mem_partition list for mapped and idle list,
-     * some dev that used will in mapped list, otherwise in idle list.
-    */
-    sys_dlist_t idle_vpart_list;
-    sys_dlist_t mapped_vpart_list;
+	/**
+	 * vm_mem_partition list for mapped and idle list,
+	 * some dev that used will in mapped list, otherwise in idle list.
+	 */
+	sys_dlist_t idle_vpart_list;
+	sys_dlist_t mapped_vpart_list;
 
-    struct k_spinlock spin_mmlock;
-    struct z_vm *vm;
+	struct k_spinlock spin_mmlock;
+	struct z_vm *vm;
 };
 
 /**
@@ -99,14 +99,18 @@ struct vm_mem_domain {
  * this function aim to build/release the page table for
  * virt addr to phys addr.
  */
-int map_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart, uint64_t unit_msize);
+int map_vpart_to_block(
+	struct vm_mem_domain *vmem_domain,
+	struct vm_mem_partition *vpart, uint64_t unit_msize);
+
 int unmap_vpart_to_block(struct vm_mem_domain *vmem_domain, struct vm_mem_partition *vpart);
 
 /**
  * @brief Create the vdev memory partition.
  */
-int vm_vdev_mem_create(struct vm_mem_domain *vmem_domain, uint64_t hpbase,
-                    uint64_t ipbase, uint64_t size, uint32_t attrs);
+int vm_vdev_mem_create(
+	struct vm_mem_domain *vmem_domain, uint64_t hpbase,
+	uint64_t ipbase, uint64_t size, uint32_t attrs);
 
 /**
  * @brief Init vm mm struct for this vm.

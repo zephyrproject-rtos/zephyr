@@ -2,27 +2,28 @@
 # Copyright 2024-2025 openEuler SIG-Zephyr
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig ZVM_DEVICE_SUPPORT
+menuconfig ENABLE_ZVM_DEVICE_SUPPORT
 	bool "Zephyr Based Virtualization Device Menu"
-	default n
+	default y
 	help
 		Enable support for Zephyr-based virtualization devices.
+if ENABLE_ZVM_DEVICE_SUPPORT
 
-config VIRT_DEVICE_INTERRUPT_DRIVEN
+config ENABLE_VIRT_DEVICE_INTERRUPT_DRIVEN
 	bool "ZVM Virtualization Device Interrupt Support"
-	default n
+	default y
 	help
 		Enable interrupt support for ZVM virtualization devices.
 		This option must be selected to set the callback function
 		when VM devices require interrupts.
 
-config VM_VGICV3
+config ENABLE_VM_VGICV3
 	bool "VGICv3 Device Support"
 	help
 		Enable support for the VGICv3 device, which is used
 		when setting up a VM.
 
-if VM_VGICV3
+if ENABLE_VM_VGICV3
 
 config VM_VGICV3_INIT_PRIORITY
 	int "VGICv3 Initialization Priority"
@@ -33,23 +34,25 @@ config VM_VGICV3_INIT_PRIORITY
 
 endif
 
-config VM_VSERIAL
+config ENABLE_VM_VSERIAL
 	bool "VM VSERIAL that get from vm."
 	help
 		This option is used for building memory that get from overlay.
 
-if VM_VSERIAL
+if ENABLE_VM_VSERIAL
 
 config VM_VSERIAL_INIT_PRIORITY
 	int "VM virt serial init priority."
-	default 52
+	default 53
 	help
 		When serial is init, it judge the initialization priority in POST_KERNLE.
 
-config VIRT_SERIAL_CTRL_INIT_PRIORITY
-	int "VM virt serial init priority."
+config vserial_ctrl_BLOCK_INIT_PRIORITY
+	int "VM virt serial ctrl block init priority."
 	default 51
 	help
-		When serial is init, it judge the initialization priority in POST_KERNLE.
+		Initialization priority for the virtual serial control block in POST_KERNEL.
+
+endif
 
 endif

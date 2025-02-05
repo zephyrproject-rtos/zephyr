@@ -34,7 +34,7 @@ config MAX_VCPU_PER_VM
 	  Specify the maximum number of vCPUs that each VM can possess.
 
 config ZVM_DEBUG_LOG_INFO
-	bool "Enable System Boot Info Logging"
+	bool "System Boot Info Logging"
 	help
 	  Enable logging of system boot information for debugging purposes.
 
