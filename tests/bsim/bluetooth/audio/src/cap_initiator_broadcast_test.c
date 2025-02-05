@@ -37,10 +37,10 @@
 #if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 CREATE_FLAG(flag_source_started);
 
-#define BROADCAST_STREMT_CNT    CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
 #define CAP_AC_MAX_STREAM       2
 #define LOCATION                (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
 #define CONTEXT                 (BT_AUDIO_CONTEXT_TYPE_MEDIA)
+#define BROADCAST_STREMT_CNT    MIN(CAP_AC_MAX_STREAM, CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)
 
 struct cap_initiator_ac_param {
 	char *name;
@@ -673,7 +673,8 @@ static void test_main_cap_initiator_broadcast(void)
 	WAIT_FOR_FLAG(flag_source_started);
 
 	/* Wait for other devices to have received the data they wanted */
-	backchannel_sync_wait_any();
+	printk("Waiting for broadcast stop signal");
+	backchannel_sync_wait_all();
 
 	test_broadcast_audio_tx_sync();
 
