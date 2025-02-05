@@ -56,6 +56,43 @@ typedef volatile struct {
 
 typedef union {
 	struct {
+		uint32_t: 7;
+		uint32_t MANW: 1;
+		uint32_t: 24;
+	} bit;
+	uint32_t reg;
+} nvmctrl_ctrlb_t;
+
+typedef const union {
+	struct {
+		uint32_t READY: 1;
+		uint32_t: 31;
+	} bit;
+	uint32_t reg;
+} nvmctrl_intflag_t;
+
+typedef union {
+	struct {
+		uint32_t: 2;
+		uint32_t PROGE: 1;
+		uint32_t LOCKE: 1;
+		uint32_t NVME: 1;
+		uint32_t: 27;
+	} bit;
+	uint32_t reg;
+} NVMCTRL_STATUS_Type;
+
+typedef volatile struct {
+	_reg32_t CTRLA;
+	nvmctrl_ctrlb_t CTRLB;
+	uint32_t res0[3];
+	nvmctrl_intflag_t INTFLAG;
+	NVMCTRL_STATUS_Type STATUS;
+	_reg32_t ADDR;
+} __packed nvmctrl_t;
+
+typedef union {
+	struct {
 		uint8_t PMUXEN: 1;
 		uint8_t INEN: 1;
 		uint8_t PULLEN: 1;
@@ -193,12 +230,26 @@ typedef enum IRQn {
 #define MCLK_CPUDIV ((uintptr_t)MCLK + 0x04)
 
 #define MCLK_APBAMASK_EIC           BIT(10)
+#define MCLK_APBBMASK_NVMCTRL       BIT(2)
 #define MCLK_CPUDIV_CPUDIV_DIV1_VAL 1
 
-#define NVMCTRL       DT_REG_ADDR(DT_INST(0, atmel_sam0_nvmctrl))
-#define NVMCTRL_CTRLB (NVMCTRL + 0x04)
+#define NVMCTRL       ((nvmctrl_t *)DT_REG_ADDR(DT_INST(0, atmel_sam0_nvmctrl)))
+#define NVMCTRL_CTRLB ((uintptr_t)NVMCTRL + 0x04)
 
-#define NVMCTRL_CTRLB_RWS_MASK GENMASK(4, 1)
+#define NVMCTRL_CTRLA_CMDEX_KEY FIELD_PREP(GENMASK(15, 8), 0xA5)
+#define NVMCTRL_CTRLB_MANW      BIT(7)
+#define NVMCTRL_CTRLB_RWS_MASK  GENMASK(4, 1)
+
+#define NVMCTRL_CTRLA_CMD_MASK  GENMASK(6, 0)
+#define NVMCTRL_CTRLA_CMD_ER    FIELD_PREP(NVMCTRL_CTRLA_CMD_MASK, 0x02)
+#define NVMCTRL_CTRLA_CMD_LR    FIELD_PREP(NVMCTRL_CTRLA_CMD_MASK, 0x40)
+#define NVMCTRL_CTRLA_CMD_PBC   FIELD_PREP(NVMCTRL_CTRLA_CMD_MASK, 0x44)
+#define NVMCTRL_CTRLA_CMD_UR    FIELD_PREP(NVMCTRL_CTRLA_CMD_MASK, 0x41)
+#define NVMCTRL_CTRLA_CMD_WP    FIELD_PREP(NVMCTRL_CTRLA_CMD_MASK, 0x04)
+
+#define FLASH_PAGE_SIZE  64
+#define FLASH_SIZE       CONFIG_FLASH_SIZE
+#define NVMCTRL_ROW_SIZE 256
 
 #define NVM_SW_CAL_ADDR        0x00806020
 #define NVM_SW_CAL_CAL48M_MASK GENMASK64(40, 19)
