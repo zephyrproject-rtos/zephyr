@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2024-2025 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
