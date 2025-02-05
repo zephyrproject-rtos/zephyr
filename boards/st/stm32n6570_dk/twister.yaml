@@ -5,9 +5,11 @@ ram: 1024
 flash: 1024
 vendor: st
 supported:
+  - arduino_i2c
   - arduino_serial
   - can
   - dma
+  - i2c
   - gpio
   - uart
 variants:
