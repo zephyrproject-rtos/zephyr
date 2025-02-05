@@ -12,10 +12,8 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/dma.h>
 
-#ifdef CONFIG_DCACHE
-#ifdef CONFIG_CACHE_MANAGEMENT
+#if defined(CONFIG_DCACHE) && defined(CONFIG_CACHE_MANAGEMENT) && !defined(CONFIG_NOCACHE_MEMORY)
 #include <zephyr/cache.h>
-#endif
 #endif
 
 #define DT_DRV_COMPAT andestech_atcdmacx00
@@ -117,6 +115,11 @@ LOG_MODULE_REGISTER(dma_andes_atcdmacx00);
 
 typedef void (*atcdmacx00_cfg_func_t)(void);
 
+/*
+ * The chain block is now an array to support multi-serial.
+ * It accommodates various block layouts and is sized to the
+ * largest possible size within the series.
+ */
 struct chain_block {
 	uint32_t __aligned(64) array[8];
 };
@@ -129,7 +132,10 @@ struct dma_chan_data {
 	struct dma_status status;
 };
 
-/* reg information */
+/*
+ * The register offsets vary slightly across different series.
+ * To handle this, using a struct to set the offset values on init time.
+ */
 struct offset_table {
 	uint32_t ch_offset;
 	uint32_t abort;
@@ -445,13 +451,11 @@ static int dma_atcdmacx00_config(const struct device *dev, uint32_t channel,
 		}
 	}
 
-#ifdef CONFIG_DCACHE
-#ifdef CONFIG_CACHE_MANAGEMENT
+#if defined(CONFIG_DCACHE) && defined(CONFIG_CACHE_MANAGEMENT) && !defined(CONFIG_NOCACHE_MEMORY)
 	cache_data_flush_range((void *)&dma_chain, sizeof(dma_chain));
-#else
+#elif defined(CONFIG_DCACHE) && !defined(CONFIG_CACHE_MANAGEMENT) && !defined(CONFIG_NOCACHE_MEMORY)
 #error "Data cache is enabled; please flush the cache after \
-setting dma_chain to ensure memory coherence."
-#endif
+	setting dma_chain to ensure memory coherence."
 #endif
 
 end:
