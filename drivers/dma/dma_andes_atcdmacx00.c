@@ -12,10 +12,8 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/dma.h>
 
-#ifdef CONFIG_DCACHE
-#ifdef CONFIG_CACHE_MANAGEMENT
+#if defined(CONFIG_DCACHE) && defined(CONFIG_CACHE_MANAGEMENT) && !defined(CONFIG_NOCACHE_MEMORY)
 #include <zephyr/cache.h>
-#endif
 #endif
 
 #define DT_DRV_COMPAT andestech_atcdmacx00
@@ -445,13 +443,11 @@ static int dma_atcdmacx00_config(const struct device *dev, uint32_t channel,
 		}
 	}
 
-#ifdef CONFIG_DCACHE
-#ifdef CONFIG_CACHE_MANAGEMENT
+#if defined(CONFIG_DCACHE) && defined(CONFIG_CACHE_MANAGEMENT) && !defined(CONFIG_NOCACHE_MEMORY)
 	cache_data_flush_range((void *)&dma_chain, sizeof(dma_chain));
-#else
+#elif defined(CONFIG_DCACHE) && !defined(CONFIG_CACHE_MANAGEMENT) && !defined(CONFIG_NOCACHE_MEMORY)
 #error "Data cache is enabled; please flush the cache after \
-setting dma_chain to ensure memory coherence."
-#endif
+	setting dma_chain to ensure memory coherence."
 #endif
 
 end:
