@@ -557,9 +557,30 @@ static const struct fs_file_system_t fatfs_fs = {
 #endif
 };
 
+#if CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT
+const char *VolumeStr[CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT];
+#endif /* CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT */
+
 static int fatfs_init(void)
 {
+#if CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT
+	static char mount_points[] = CONFIG_FS_FATFS_CUSTOM_MOUNT_POINTS;
+	int mount_point_count = 0;
 
+	VolumeStr[0] = mount_points;
+	for (int i = 0; i < ARRAY_SIZE(mount_points) - 1; i++) {
+		if (mount_points[i] == ',') {
+			mount_points[i] = 0;
+			mount_point_count++;
+			if (mount_point_count >= ARRAY_SIZE(VolumeStr)) {
+				LOG_ERR("Mount point count not sufficient for defined mount "
+					"points.");
+				return -1;
+			}
+			VolumeStr[mount_point_count] = &mount_points[i + 1];
+		}
+	}
+#endif /* CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT */
 	return fs_register(FS_FATFS, &fatfs_fs);
 }
 
