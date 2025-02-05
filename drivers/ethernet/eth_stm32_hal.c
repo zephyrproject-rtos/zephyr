@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/irq.h>
 #include <zephyr/net/lldp.h>
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/cache.h>
 
 #if defined(CONFIG_NET_DSA)
 #include <zephyr/net/dsa.h>
@@ -427,6 +428,14 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Reset TX complete interrupt semaphore before TX request*/
 	k_sem_reset(&dev_data->tx_int_sem);
+
+	/**
+	 * Assure cache coherency before DMA read operation.
+	 * Clean the data cache for the memory region specified by tx_config.TxBuffer->buffer
+	 * and tx_config.TxBuffer->len to ensure that any modified data in the cache is written
+	 * back to the main memory before the DMA controller reads it.
+	 */
+	sys_cache_data_flush_range((void *)(tx_config.TxBuffer->buffer), tx_config.TxBuffer->len);
 
 	/* tx_buffer is allocated on function stack, we need */
 	/* to wait for the transfer to complete */
