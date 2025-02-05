@@ -84,7 +84,7 @@ uint8_t boot_fetch_active_slot(void)
 	int rc;
 	uint8_t slot;
 
-	rc = blinfo_lookup(BLINFO_RUNNING_SLOT, &slot, sizeof(slot));
+	rc = blinfo_lookup(BLINFO_FLASH_AREA, &slot, sizeof(slot));
 
 	if (rc <= 0) {
 		LOG_ERR("Failed to fetch active slot: %d", rc);
