@@ -7,6 +7,14 @@
 #include <st/l4/stm32l4.dtsi>
 
 / {
+	clocks {
+		pllsai2: pllsai2 {
+			#clock-cells = <0>;
+			compatible = "st,stm32l4-pllsai-clock";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32l471", "st,stm32l4", "simple-bus";
 
