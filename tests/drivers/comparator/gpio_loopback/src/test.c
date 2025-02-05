@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +9,34 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#ifdef CONFIG_DAC_REFERENCE_SOURCE
+#include <zephyr/drivers/dac.h>
+#endif
 
 static const struct device *test_dev = DEVICE_DT_GET(DT_ALIAS(test_comp));
 static const struct gpio_dt_spec test_pin = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), test_gpios);
 static K_SEM_DEFINE(test_sem, 0, 1);
+
+#ifdef CONFIG_DAC_REFERENCE_SOURCE
+static const struct dac_channel_cfg dac_ch_cfg = {
+	.channel_id = DT_PROP(DT_PATH(zephyr_user), dac_channel_id),
+	.resolution = DT_PROP(DT_PATH(zephyr_user), dac_resolution),
+	.buffered = true,
+};
+
+static const struct device *init_dac(void)
+{
+	int ret;
+	const struct device *const dac_dev = DEVICE_DT_GET(DT_PROP(DT_PATH(zephyr_user), dac));
+
+	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
+
+	ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
+	zassert_equal(ret, 0, "Setting up of the first channel failed with code %d", ret);
+
+	return dac_dev;
+}
+#endif
 
 static void test_callback(const struct device *dev, void *user_data)
 {
@@ -21,6 +46,15 @@ static void test_callback(const struct device *dev, void *user_data)
 
 static void *test_setup(void)
 {
+#ifdef CONFIG_DAC_REFERENCE_SOURCE
+	int ret;
+	const struct device *dac_dev = init_dac();
+
+	zassert_not_ok(dac_dev, "init_dac failed");
+	/* write a value of half the full scale resolution */
+	ret = dac_write_value(dac_dev, dac_ch_cfg.channel_id, (1U << dac_ch_cfg.resolution) / 2);
+	zassert_ok(ret, "dac_write_value() failed with code %d", ret);
+#endif
 	zassert_ok(gpio_pin_configure_dt(&test_pin, GPIO_OUTPUT_INACTIVE));
 	return NULL;
 }
