@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -624,6 +624,49 @@ static void test_main_cap_initiator_broadcast(void)
 
 	setup_broadcast_adv(&adv);
 
+	test_broadcast_audio_create(&broadcast_source);
+
+	test_broadcast_audio_start(broadcast_source, adv);
+
+	setup_extended_adv_data(broadcast_source, adv);
+
+	start_extended_adv(adv);
+
+	/* Wait for all to be started */
+	printk("Waiting for broadcast_streams to be started\n");
+	for (size_t i = 0U; i < stream_count; i++) {
+		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+	}
+
+	WAIT_FOR_FLAG(flag_source_started);
+
+	/* Wait for other devices to have received the data they wanted */
+	backchannel_sync_wait_any();
+
+	test_broadcast_audio_tx_sync();
+
+	test_broadcast_audio_stop(broadcast_source);
+
+	test_broadcast_audio_delete(broadcast_source);
+	broadcast_source = NULL;
+
+	stop_and_delete_extended_adv(adv);
+	adv = NULL;
+
+	PASS("CAP initiator broadcast passed\n");
+}
+
+static void test_main_cap_initiator_broadcast_inval(void)
+{
+	struct bt_cap_broadcast_source *broadcast_source;
+	struct bt_le_ext_adv *adv;
+
+	(void)memset(broadcast_source_streams, 0, sizeof(broadcast_source_streams));
+
+	init();
+
+	setup_extended_adv(&adv);
+
 	test_broadcast_audio_create_inval();
 	test_broadcast_audio_create(&broadcast_source);
 
@@ -642,21 +685,64 @@ static void test_main_cap_initiator_broadcast(void)
 
 	WAIT_FOR_FLAG(flag_source_started);
 
-	/* Wait for other devices to have received what they wanted */
-	backchannel_sync_wait_any();
-
 	test_broadcast_audio_update_inval(broadcast_source);
 	test_broadcast_audio_update(broadcast_source);
 
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
 
-	test_broadcast_audio_tx_sync();
-
 	test_broadcast_audio_stop_inval();
 	test_broadcast_audio_stop(broadcast_source);
 
 	test_broadcast_audio_delete_inval();
+	test_broadcast_audio_delete(broadcast_source);
+	broadcast_source = NULL;
+
+	stop_and_delete_extended_adv(adv);
+	adv = NULL;
+
+	PASS("CAP initiator broadcast inval passed\n");
+}
+
+static void test_main_cap_initiator_broadcast_update(void)
+{
+	struct bt_cap_broadcast_source *broadcast_source;
+	struct bt_le_ext_adv *adv;
+
+	(void)memset(broadcast_source_streams, 0, sizeof(broadcast_source_streams));
+
+	init();
+
+	setup_extended_adv(&adv);
+
+	test_broadcast_audio_create(&broadcast_source);
+
+	test_broadcast_audio_start(broadcast_source, adv);
+
+	setup_extended_adv_data(broadcast_source, adv);
+
+	start_extended_adv(adv);
+
+	/* Wait for all to be started */
+	printk("Waiting for broadcast_streams to be started\n");
+	for (size_t i = 0U; i < stream_count; i++) {
+		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+	}
+
+	WAIT_FOR_FLAG(flag_source_started);
+
+	/* Wait for other devices to have received the data they wanted */
+	backchannel_sync_wait_any();
+
+	test_broadcast_audio_update(broadcast_source);
+
+	/* Wait for other devices to have received the update */
+	backchannel_sync_wait_any();
+
+	test_broadcast_audio_tx_sync();
+
+	test_broadcast_audio_stop(broadcast_source);
+
 	test_broadcast_audio_delete(broadcast_source);
 	broadcast_source = NULL;
 
@@ -828,6 +914,18 @@ static const struct bst_test_instance test_cap_initiator_broadcast[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_initiator_broadcast,
+	},
+	{
+		.test_id = "cap_initiator_broadcast_inval",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_cap_initiator_broadcast_inval,
+	},
+	{
+		.test_id = "cap_initiator_broadcast_update",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_cap_initiator_broadcast_update,
 	},
 	{
 		.test_id = "cap_initiator_ac_12",
