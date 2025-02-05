@@ -1053,6 +1053,28 @@ static void test_cap_acceptor_broadcast(void)
 	PASS("CAP acceptor broadcast passed\n");
 }
 
+static void test_cap_acceptor_broadcast_update(void)
+{
+	static struct bt_bap_stream *bap_streams[ARRAY_SIZE(broadcast_sink_streams)];
+	size_t stream_count;
+
+	init();
+
+	pa_sync_to_broadcaster();
+
+	create_and_sync_sink(bap_streams, &stream_count);
+
+	sink_wait_for_data();
+
+	printk("Waiting for metadata update");
+	WAIT_FOR_FLAG(flag_base_metadata_updated);
+	backchannel_sync_send_all(); /* let other devices know we have received metadata */
+
+	wait_for_streams_stop(stream_count);
+
+	PASS("CAP acceptor broadcast passed\n");
+}
+
 static void test_cap_acceptor_broadcast_reception(void)
 {
 	static struct bt_bap_stream *bap_streams[ARRAY_SIZE(broadcast_sink_streams)];
@@ -1123,6 +1145,12 @@ static const struct bst_test_instance test_cap_acceptor[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_broadcast,
+	},
+	{
+		.test_id = "cap_acceptor_broadcast_update",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_acceptor_broadcast_update,
 	},
 	{
 		.test_id = "cap_acceptor_broadcast_reception",
