@@ -135,9 +135,6 @@ Device Drivers and Devicetree
   The :c:macro:`DEVICE_API()` macro should be used by out-of-tree driver implementations for
   all the upstream driver classes.
 
-* The :c:func:`video_buffer_alloc` and :c:func:`video_buffer_aligned_alloc` functions in the
-  video API now take an additional timeout parameter.
-
 ADC
 ===
 
@@ -470,6 +467,9 @@ Video
   ``video_bits_per_pixel()`` which return a bit count. For instance, invocations such as
   ``pitch = width * video_pix_fmt_bpp(pixfmt)`` needs to be replaced by an equivalent
   ``pitch = width * video_bits_per_pixel(pixfmt) / BITS_PER_BYTE``.
+
+* The :c:func:`video_buffer_alloc` and :c:func:`video_buffer_aligned_alloc` functions in the
+  video API now take an additional timeout parameter.
 
 * The :c:func:`video_stream_start` and :c:func:`video_stream_stop` driver APIs are now merged
   into the new :c:func:`video_set_stream` driver API. The user APIs are however unchanged to
