@@ -174,13 +174,17 @@ endif()
 
 # @Intent: Set compiler flags to detect general stack overflows across all functions
 if(CONFIG_STACK_CANARIES)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries>)
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries>>")
 elseif(CONFIG_STACK_CANARIES_STRONG)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries_strong>)
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_strong>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_strong>>")
 elseif(CONFIG_STACK_CANARIES_ALL)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries_all>)
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_all>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_all>>")
 elseif(CONFIG_STACK_CANARIES_EXPLICIT)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries_explicit>)
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_explicit>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_explitic>>")
 endif()
 
 # @Intent: Obtain compiler optimizations flags and store in variables
@@ -227,7 +231,8 @@ SOC_* symbol.")
 endif()
 
 # Apply the final optimization flag(s)
-zephyr_compile_options(${OPTIMIZATION_FLAG})
+zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${OPTIMIZATION_FLAG}>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${OPTIMIZATION_FLAG}>)
 
 if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
@@ -315,7 +320,9 @@ if(CONFIG_CODING_GUIDELINE_CHECK)
 endif()
 
 # @Intent: Set compiler specific macro inclusion of AUTOCONF_H
-zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}")
+zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}>")
+zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}>")
+zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,imacros> ${AUTOCONF_H}>")
 
 if(CONFIG_COMPILER_FREESTANDING)
   # @Intent: Set compiler specific flag for bare metal freestanding option
@@ -360,7 +367,9 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,required>
 # @Intent: Enforce standard integer type correspondence to match Zephyr usage.
 # (must be after compiler specific flags)
 if(CONFIG_ENFORCE_ZEPHYR_STDINT)
-  zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h")
+  zephyr_compile_options("SHELL:$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h>")
+  zephyr_compile_options("SHELL:$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h>")
+  zephyr_compile_options("SHELL:$<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h>")
 endif()
 
 # Common toolchain-agnostic assembly flags
