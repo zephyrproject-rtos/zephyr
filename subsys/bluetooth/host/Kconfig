@@ -90,8 +90,12 @@ config BT_RECV_WORKQ_SYS
 	  High priority HCI packets will processed in the context of the caller of bt_recv().
 	  The application needs to ensure the system workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE)
 	  is large enough, refer to BT_RX_STACK_SIZE for the recommended minimum.
-	  Note: When this option is used, other users of the system work queue will influence the
-	  latency of incoming Bluetooth events.
+	  Warning: Enabling this option will cause the latency of incoming Bluetooth events to be
+	  affected by other tasks using the system work queue. When this option is active, the Host
+	  will process Bluetooth events in a blocking manner. This can lead to deadlocks if the
+	  application waits for the system work queue while handling Bluetooth events. This feature
+	  is intended for advanced users to allow aggressive memory optimization for devices with
+	  very limited memory. It is strongly advised not to use this option.
 
 config BT_RECV_WORKQ_BT
 	bool "Process low priority HCI packets in the bluetooth-specific work queue"
