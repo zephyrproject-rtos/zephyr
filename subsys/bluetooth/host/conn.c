@@ -2251,7 +2251,10 @@ static void deferred_work(struct k_work *work)
 		 * auto connect flag if it was set, instead just cancel
 		 * connection directly
 		 */
-		bt_le_create_conn_cancel();
+		if (bt_le_create_conn_cancel() == -ENOBUFS) {
+			LOG_WRN("No buffers to cancel connection, retrying in 10 ms");
+			k_work_reschedule(dwork, K_MSEC(10));
+		}
 		return;
 	}
 
