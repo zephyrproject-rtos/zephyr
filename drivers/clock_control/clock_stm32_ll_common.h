@@ -58,6 +58,25 @@
 #define z_pllsai1_r(v) LL_RCC_PLLSAI1R_DIV_ ## v
 #define pllsai1r(v) z_pllsai1_r(v)
 
+#if defined(RCC_PLLSAI2M_DIV_1_16_SUPPORT)
+#define z_pllsai2_m(v) LL_RCC_PLLSAI2M_DIV_ ## v
+#else
+#define z_pllsai2_m(v) LL_RCC_PLLM_DIV_ ## v
+#endif
+#define pllsai2m(v) z_pllsai2_m(v)
+
+#define z_pllsai2_p(v) LL_RCC_PLLSAI2P_DIV_ ## v
+#define pllsai2p(v) z_pllsai2_p(v)
+
+#define z_pllsai2_q(v) LL_RCC_PLLSAI2Q_DIV_ ## v
+#define pllsai2q(v) z_pllsai2_q(v)
+
+#define z_pllsai2_r(v) LL_RCC_PLLSAI2R_DIV_ ## v
+#define pllsai2r(v) z_pllsai2_r(v)
+
+#define z_pllsai2_divr(v) LL_RCC_PLLSAI2DIVR_DIV_ ## v
+#define pllsai2divr(v) z_pllsai2_divr(v)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -76,6 +95,10 @@ void config_plli2s(void);
 #if defined(STM32_PLLSAI1_ENABLED)
 uint32_t get_pllsai1src_frequency(void);
 void config_pllsai1(void);
+#endif
+#if defined(STM32_PLLSAI2_ENABLED)
+uint32_t get_pllsai2src_frequency(void);
+void config_pllsai2(void);
 #endif
 void config_enable_default_clocks(void);
 void config_regulator_voltage(uint32_t hclk_freq);
