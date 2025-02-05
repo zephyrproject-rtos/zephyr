@@ -70,8 +70,6 @@
 #define I2C4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR2_REG)
 #define DFSDM_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 2, CCIPR2_REG)
 #define ADFSDM_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 3, CCIPR2_REG)
-/* #define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 5, CCIPR2_REG) */
-/* #define SAI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 8, CCIPR2_REG) */
 #define DSI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 12, CCIPR2_REG)
 #define SDMMC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 14, CCIPR2_REG)
 #define OSPI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 20, CCIPR2_REG)
