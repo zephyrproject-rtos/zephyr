@@ -13,6 +13,11 @@
 
 #define SILABS_VCOM DT_DRV_INST(0)
 
+#warning This sucks
+#define SWO_FREQ_DIV                                                           \
+  ((CONFIG_LOG_BACKEND_SWO_REF_FREQ_HZ + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2)) \
+   / CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
+
 struct vcom_config {
   uint8_t type;
   uint8_t reserved1;
@@ -149,6 +154,27 @@ static int uart_silabs_vcom_init(const struct device *dev)
   /* Enable SWO */
   DBG_SWOEnable(0);
 
+#warning This sucks 2
+  {
+    /* Enable DWT and ITM units */
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    /* Enable access to ITM registers */
+    ITM->LAR = 0xC5ACCE55;
+    /* Disable ITM */
+    ITM->TCR = 0x0;
+    /* Select TPIU encoding protocol */
+    TPI->SPPR = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_PROTOCOL_NRZ) ? 2 : 1;
+    /* Set SWO baud rate prescaler value: SWO_clk = ref_clock/(ACPR + 1) */
+    TPI->ACPR = SWO_FREQ_DIV - 1;
+    /* Enable unprivileged access to ITM stimulus ports */
+    ITM->TPR = 0x0;
+    /* Configure Formatter and Flush Control Register */
+    TPI->FFCR = 0x00000100;
+    /* Enable ITM, set TraceBusID=1, no local timestamp generation */
+    ITM->TCR = ((1UL << 16U) | (1UL << ITM_TCR_ITMENA_Pos));
+    /* Enable ITM VCOM config port */
+    ITM->TER |= 1 << VCOM_CONFIG_ITM_CHANNEL;
+  }
   /* Enable ITM VCOM config port */
   ITM->TER |= 1 << VCOM_CONFIG_ITM_CHANNEL;
 
