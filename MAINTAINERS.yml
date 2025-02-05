@@ -4914,9 +4914,6 @@ West:
     - bperseghetti
   files:
     - modules/hal_nxp/
-    - modules/Kconfig.imx
-    - modules/Kconfig.mcux
-    - modules/Kconfig.nxp_s32
   labels:
     - "platform: NXP"
 
