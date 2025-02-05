@@ -123,6 +123,16 @@
 	status = "okay";
 };
 
+&usart2 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>,
+		 <&rcc STM32_SRC_HSI16 USART2_SEL(2)>;
+	pinctrl-0 = <&usart2_tx_pa12 &usart2_rx_pb8>;
+	pinctrl-1 = <&analog_pa12 &analog_pb8>;
+	pinctrl-names = "default", "sleep";
+	current-speed = <115200>;
+	status = "okay";
+};
+
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pb5 &lpuart1_rx_pa10>;
 	pinctrl-names = "default";
