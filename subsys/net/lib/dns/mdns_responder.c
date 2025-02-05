@@ -787,6 +787,9 @@ static int init_listener(void)
 			if (ret < 0) {
 				NET_DBG("Cannot bind sock %d to interface %d (%d)",
 					v6, ifindex, ret);
+			} else {
+				NET_DBG("Bound %s sock %d to interface %d",
+					"IPv6", v6, ifindex);
 			}
 		}
 
@@ -880,6 +883,9 @@ static int init_listener(void)
 			if (ret < 0) {
 				NET_DBG("Cannot bind sock %d to interface %d (%d)",
 					v4, ifindex, ret);
+			} else {
+				NET_DBG("Bound %s sock %d to interface %d",
+					"IPv4", v4, ifindex);
 			}
 		}
 
