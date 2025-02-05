@@ -19,6 +19,7 @@
 		zephyr,shell-uart = &uart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,entropy = &trng;
 		zephyr,code-partition = &code_partition;
 	};
 };
@@ -40,6 +41,18 @@
 	status = "okay";
 };
 
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
 &port_irq0 {
 	interrupts = <27 12>;
 	status = "okay";
@@ -47,6 +60,29 @@
 
 &port_irq1 {
 	interrupts = <28 12>;
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&pwm7 {
+	pinctrl-0 = <&pwm7_default>;
+	pinctrl-names = "default";
+	interrupts = <8 1>, <9 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&iic1 {
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <10 1>, <11 1>, <12 1>, <13 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 };
 
