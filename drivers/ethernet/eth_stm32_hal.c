@@ -65,7 +65,7 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 
 #define PHY_BSR  ((uint16_t)0x0001U)  /*!< Transceiver Basic Status Register */
 #define PHY_LINKED_STATUS  ((uint16_t)0x0004U)  /*!< Valid link established */
@@ -78,6 +78,9 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 
 #define ETH_MEDIA_INTERFACE_MII		HAL_ETH_MII_MODE
 #define ETH_MEDIA_INTERFACE_RMII	HAL_ETH_RMII_MODE
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+#define ETH_MEDIA_INTERFACE_RGMII	HAL_ETH_RGMII_MODE
+#endif
 
 /* Only one tx_buffer is sufficient to pass only 1 dma_buffer */
 #define ETH_TXBUF_DEF_NB	1U
@@ -86,7 +89,7 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 #define IS_ETH_DMATXDESC_OWN(dma_tx_desc)	(dma_tx_desc->Status & \
 							ETH_DMATXDESC_OWN)
 
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 
 #define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
 
@@ -105,8 +108,14 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 #define __eth_stm32_buf  __aligned(4)
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_DMA_RX_CH_CNT][ETH_RXBUFNB] __eth_stm32_desc;
+static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_DMA_TX_CH_CNT][ETH_TXBUFNB] __eth_stm32_desc;
+#else
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __eth_stm32_desc;
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
+#endif
+
 static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
 static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
 
@@ -253,7 +262,7 @@ static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 {
 	__ASSERT_NO_MSG(heth != NULL);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	ETH_MACFilterConfigTypeDef MACFilterConf;
 
 	HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
@@ -294,7 +303,7 @@ static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 	tmp = heth->Instance->MACFFR;
 	k_sleep(K_MSEC(1));
 	heth->Instance->MACFFR = tmp;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 }
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
@@ -807,19 +816,24 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 	__ASSERT_NO_MSG(heth != NULL);
 
 	uint32_t dma_error;
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	uint32_t mac_error;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 	const uint32_t error_code = HAL_ETH_GetError(heth);
 
 	struct eth_stm32_hal_dev_data *dev_data =
 		CONTAINER_OF(heth, struct eth_stm32_hal_dev_data, heth);
 
 	switch (error_code) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+	case HAL_ETH_ERROR_DMA_CH0:
+	case HAL_ETH_ERROR_DMA_CH1:
+#else
 	case HAL_ETH_ERROR_DMA:
+#endif
 		dma_error = HAL_ETH_GetDMAError(heth);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 		if ((dma_error & ETH_DMA_RX_WATCHDOG_TIMEOUT_FLAG)   ||
 			(dma_error & ETH_DMA_RX_PROCESS_STOPPED_FLAG)    ||
 			(dma_error & ETH_DMA_RX_BUFFER_UNAVAILABLE_FLAG)) {
@@ -840,10 +854,10 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 			(dma_error & ETH_DMASR_TJTS)) {
 			eth_stats_update_errors_tx(dev_data->iface);
 		}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 		break;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	case HAL_ETH_ERROR_MAC:
 		mac_error = HAL_ETH_GetMACError(heth);
 
@@ -860,16 +874,16 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 			eth_stats_update_errors_tx(dev_data->iface);
 		}
 		break;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	dev_data->stats.error_details.rx_crc_errors = heth->Instance->MMCRCRCEPR;
 	dev_data->stats.error_details.rx_align_errors = heth->Instance->MMCRAEPR;
 #else
 	dev_data->stats.error_details.rx_crc_errors = heth->Instance->MMCRFCECR;
 	dev_data->stats.error_details.rx_align_errors = heth->Instance->MMCRFAECR;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 }
@@ -913,6 +927,32 @@ static void generate_mac(uint8_t *mac_addr)
 #endif
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+/**
+ * Configures the RISAF (RIF Security Attribute Framework) for Ethernet on STM32N6.
+ * This function sets up the master and slave security attributes for the Ethernet peripheral.
+ */
+
+static void RISAF_Config(void)
+{
+	/* Define and initialize the master configuration structure */
+	RIMC_MasterConfig_t RIMC_master = {0};
+
+	/* Enable the clock for the RIFSC (RIF Security Controller) */
+	__HAL_RCC_RIFSC_CLK_ENABLE();
+
+	RIMC_master.MasterCID = RIF_CID_1;
+	RIMC_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
+
+	/* Configure the master attributes for the Ethernet peripheral (ETH1) */
+	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_ETH1, &RIMC_master);
+
+	/* Set the secure and privileged attributes for the Ethernet peripheral (ETH1) as a slave */
+	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_ETH1,
+					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
+}
+#endif
+
 static int eth_initialize(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
@@ -935,6 +975,11 @@ static int eth_initialize(const struct device *dev)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+	/* RISAF Configuration */
+	RISAF_Config();
+#endif
 
 	/* enable clock */
 	ret = clock_control_on(dev_data->clock,
@@ -967,8 +1012,15 @@ static int eth_initialize(const struct device *dev)
 	heth->Init.MACAddr = dev_data->mac_addr;
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+	for (int ch = 0; ch < ETH_DMA_CH_CNT; ch++) {
+		heth->Init.TxDesc[ch] = dma_tx_desc_tab[ch];
+		heth->Init.RxDesc[ch] = dma_rx_desc_tab[ch];
+	}
+#else
 	heth->Init.TxDesc = dma_tx_desc_tab;
 	heth->Init.RxDesc = dma_rx_desc_tab;
+#endif
 	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
@@ -987,11 +1039,11 @@ static int eth_initialize(const struct device *dev)
 	/* Enable timestamping of RX packets. We enable all packets to be
 	 * timestamped to cover both IEEE 1588 and gPTP.
 	 */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	heth->Instance->MACTSCR |= ETH_MACTSCR_TSENALL;
 #else
 	heth->Instance->PTPTSCR |= ETH_PTPTSCR_TSSARFE;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -1080,13 +1132,13 @@ static void eth_stm32_mcast_filter(const struct device *dev, const struct ethern
 
 	__ASSERT_NO_MSG(hash_index < ARRAY_SIZE(dev_data->hash_index_cnt));
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	hash_table[0] = heth->Instance->MACHT0R;
 	hash_table[1] = heth->Instance->MACHT1R;
 #else
 	hash_table[0] = heth->Instance->MACHTLR;
 	hash_table[1] = heth->Instance->MACHTHR;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 
 	if (filter->set) {
 		dev_data->hash_index_cnt[hash_index]++;
@@ -1103,13 +1155,13 @@ static void eth_stm32_mcast_filter(const struct device *dev, const struct ethern
 		}
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	heth->Instance->MACHT0R = hash_table[0];
 	heth->Instance->MACHT1R = hash_table[1];
 #else
 	heth->Instance->MACHTLR = hash_table[0];
 	heth->Instance->MACHTHR = hash_table[1];
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 }
 
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
@@ -1224,7 +1276,7 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		break;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 		if (config->promisc_mode) {
 			heth->Instance->MACPFR |= ETH_MACPFR_PR;
 		} else {
@@ -1236,7 +1288,7 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		} else {
 			heth->Instance->MACFFR &= ~ETH_MACFFR_PM;
 		}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet || st_stm32n6_ethernet) */
 		ret = 0;
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
 		break;
@@ -1331,7 +1383,12 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
 			.MediaInterface = IS_ENABLED(CONFIG_ETH_STM32_HAL_MII) ?
-					  ETH_MEDIA_INTERFACE_MII : ETH_MEDIA_INTERFACE_RMII,
+					  ETH_MEDIA_INTERFACE_MII :
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+					  IS_ENABLED(CONFIG_ETH_STM32_HAL_GRMII) ?
+					  ETH_MEDIA_INTERFACE_RGMII :
+#endif
+					  ETH_MEDIA_INTERFACE_RMII,
 		},
 	},
 };
