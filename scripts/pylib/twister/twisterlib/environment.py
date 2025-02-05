@@ -400,8 +400,8 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                 action="store_true", default=False,
                 help="""Don't aggregate coverage report statistics for all the test suites
                         selected to run with enabled coverage. Requires another reporting mode to be
-                        active (`--coverage-split`) to have at least one of these reporting modes.
-                        Default: %(default)s""")
+                        active (`--coverage-per-instance`) to have at least one of these reporting
+                        modes. Default: %(default)s""")
 
     parser.add_argument(
         "--test-config",
