@@ -800,7 +800,6 @@ void k_sched_unlock(void)
 
 struct k_thread *z_swap_next_thread(void)
 {
-#ifdef CONFIG_SMP
 	struct k_thread *ret = next_up();
 
 	if (ret == _current) {
@@ -811,9 +810,6 @@ struct k_thread *z_swap_next_thread(void)
 		signal_pending_ipi();
 	}
 	return ret;
-#else
-	return _kernel.ready_q.cache;
-#endif /* CONFIG_SMP */
 }
 
 #ifdef CONFIG_USE_SWITCH
