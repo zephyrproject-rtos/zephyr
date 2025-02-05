@@ -1523,13 +1523,11 @@ config BT_MESH_USES_MBEDTLS_PSA
 	  Use Mbed TLS as PSA Crypto API provider.
 
 config BT_MESH_USES_TFM_PSA
-	bool "Use TF-M PSA [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "TF-M PSA"
 	depends on BUILD_WITH_TFM
 	help
 	  Use TF-M as PSA Crypto API provider. This is only possible on platforms
 	  that support TF-M.
-	  This feature is experimental.
 
 endchoice
 
