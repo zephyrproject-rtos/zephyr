@@ -26,14 +26,6 @@ enum registers {
 	OFFSET		= 0x30,
 };
 
-#define RX8130CE_SECONDS_MASK	GENMASK(6, 0)
-#define RX8130CE_MINUTES_MASK	GENMASK(6, 0)
-#define RX8130CE_HOURS_MASK	GENMASK(5, 0)
-#define RX8130CE_DAYS_MASK	GENMASK(5, 0)
-#define RX8130CE_WEEKDAYS_MASK	GENMASK(6, 0)
-#define RX8130CE_MONTHS_MASK	GENMASK(4, 0)
-#define RX8130CE_YEARS_MASK	GENMASK(7, 0)
-
 #define RX8130CE_MONTHS_OFFSET (1)
 #define RX8130CE_YEARS_OFFSET (100)
 
@@ -177,13 +169,13 @@ static int rx8130ce_get_time(const struct device *dev, struct rtc_time *timeptr)
 		LOG_ERR("Failed to read time");
 		goto error;
 	}
-	timeptr->tm_sec = bcd2bin(rtc_time.second & RX8130CE_SECONDS_MASK);
-	timeptr->tm_min = bcd2bin(rtc_time.minute & RX8130CE_MINUTES_MASK);
-	timeptr->tm_hour = bcd2bin(rtc_time.hour & RX8130CE_HOURS_MASK);
-	timeptr->tm_mday = bcd2bin(rtc_time.day & RX8130CE_DAYS_MASK);
-	timeptr->tm_wday = rtc2wday(rtc_time.weekday & RX8130CE_WEEKDAYS_MASK);
-	timeptr->tm_mon = bcd2bin(rtc_time.month & RX8130CE_MONTHS_MASK) - RX8130CE_MONTHS_OFFSET;
-	timeptr->tm_year = bcd2bin(rtc_time.year & RX8130CE_YEARS_MASK) + RX8130CE_YEARS_OFFSET;
+	timeptr->tm_sec = bcd2bin(rtc_time.second);
+	timeptr->tm_min = bcd2bin(rtc_time.minute);
+	timeptr->tm_hour = bcd2bin(rtc_time.hour);
+	timeptr->tm_mday = bcd2bin(rtc_time.day);
+	timeptr->tm_wday = rtc2wday(rtc_time.weekday);
+	timeptr->tm_mon = bcd2bin(rtc_time.month) - RX8130CE_MONTHS_OFFSET;
+	timeptr->tm_year = bcd2bin(rtc_time.year) + RX8130CE_YEARS_OFFSET;
 	timeptr->tm_yday = -1;
 	timeptr->tm_isdst = -1;
 
@@ -316,7 +308,7 @@ static int rx8130ce_alarm_set_time(const struct device *dev, uint16_t id, uint16
 					const struct rtc_time *timeptr)
 {
 	int rc = 0;
-	bool alarm_enabled;
+	bool alarm_enabled = false;
 	struct rx8130ce_alarm alarm_time;
 	struct rx8130ce_data *data = dev->data;
 	const struct rx8130ce_config *cfg = dev->config;
@@ -358,7 +350,7 @@ static int rx8130ce_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	alarm_time.minute = bin2bcd(timeptr->tm_min);
 	alarm_time.hour = bin2bcd(timeptr->tm_hour);
 	alarm_time.day = bin2bcd(timeptr->tm_mday);
-	data->reg.extension &= ~EXT_WADA;
+	data->reg.extension |= EXT_WADA;
 
 	if ((mask & RTC_ALARM_TIME_MASK_MINUTE) == 0U) {
 		alarm_time.minute |= ALARM_DISABLE;
@@ -417,8 +409,8 @@ static int rx8130ce_alarm_get_time(const struct device *dev, uint16_t id, uint16
 		goto error;
 	}
 
-	timeptr->tm_min = bcd2bin(alarm_time.minute & RX8130CE_MINUTES_MASK);
-	timeptr->tm_hour = bcd2bin(alarm_time.hour & RX8130CE_HOURS_MASK);
+	timeptr->tm_min = bcd2bin(alarm_time.minute);
+	timeptr->tm_hour = bcd2bin(alarm_time.hour);
 	if (!(alarm_time.minute & ALARM_DISABLE)) {
 		*mask |= RTC_ALARM_TIME_MASK_MINUTE;
 	}
@@ -426,14 +418,14 @@ static int rx8130ce_alarm_get_time(const struct device *dev, uint16_t id, uint16
 		*mask |= RTC_ALARM_TIME_MASK_HOUR;
 	}
 	if (data->reg.extension & EXT_WADA) {
-		timeptr->tm_wday = rtc2wday(alarm_time.wday & RX8130CE_WEEKDAYS_MASK);
-		if (!(alarm_time.wday & ALARM_DISABLE)) {
-			*mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
-		}
-	} else {
-		timeptr->tm_mday = bcd2bin(alarm_time.day & RX8130CE_DAYS_MASK);
+		timeptr->tm_mday = bcd2bin(alarm_time.day);
 		if (!(alarm_time.day & ALARM_DISABLE)) {
 			*mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
+		}
+	} else {
+		timeptr->tm_wday = rtc2wday(alarm_time.wday);
+		if (!(alarm_time.wday & ALARM_DISABLE)) {
+			*mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
 		}
 	}
 error:
