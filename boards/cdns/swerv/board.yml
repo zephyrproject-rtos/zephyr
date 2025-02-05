@@ -12,3 +12,6 @@ board:
     - name: s420
       variants:
         - name: whisper
+    - name: s420_64
+      variants:
+        - name: whisper
