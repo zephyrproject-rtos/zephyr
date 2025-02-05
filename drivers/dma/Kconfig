@@ -70,7 +70,7 @@ source "drivers/dma/Kconfig.max32"
 
 source "drivers/dma/Kconfig.mcux_smartdma"
 
-source "drivers/dma/Kconfig.andes_atcdmac300"
+source "drivers/dma/Kconfig.andes_atcdmacx00"
 
 source "drivers/dma/Kconfig.sedi"
 

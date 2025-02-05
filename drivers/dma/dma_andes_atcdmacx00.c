@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Andes Technology Corporation.
+ * Copyright (c) 2025 Andes Technology Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,35 +18,39 @@
 #endif
 #endif
 
-#define DT_DRV_COMPAT andestech_atcdmac300
-
+#define DT_DRV_COMPAT andestech_atcdmacx00
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(dma_andes_atcdmac300);
+LOG_MODULE_REGISTER(dma_andes_atcdmacx00);
 
-#define ATCDMAC100_MAX_CHAN	8
+#define ATCDMACx00_MAX_CHAN	8
+#define ATCDMAC300_VERSION	0x10230
+#define ATCDMAC100_VERSION      0x1021
 
-#define DMA_ABORT(dev)		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x24)
-#define DMA_INT_STATUS(dev)		\
-		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x30)
+#define DMA_INT_IDREV(dev)		(((struct dma_atcdmacx00_cfg *)dev->config)->base + 0x00)
+#define DMA_INT_STATUS(dev)		(((struct dma_atcdmacx00_cfg *)dev->config)->base + 0x30)
 
-#define DMA_CH_OFFSET(ch)	(ch * 0x20)
-#define DMA_CH_CTRL(dev, ch)		\
-		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x40 + DMA_CH_OFFSET(ch))
-#define DMA_CH_TRANSIZE(dev, ch)	\
-		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x44 + DMA_CH_OFFSET(ch))
-#define DMA_CH_SRC_ADDR_L(dev, ch)	\
-		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x48 + DMA_CH_OFFSET(ch))
-#define DMA_CH_SRC_ADDR_H(dev, ch)	\
-		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x4C + DMA_CH_OFFSET(ch))
-#define DMA_CH_DST_ADDR_L(dev, ch)	\
-		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x50 + DMA_CH_OFFSET(ch))
-#define DMA_CH_DST_ADDR_H(dev, ch)	\
-		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x54 + DMA_CH_OFFSET(ch))
-#define DMA_CH_LL_PTR_L(dev, ch)	\
-		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x58 + DMA_CH_OFFSET(ch))
-#define DMA_CH_LL_PTR_H(dev, ch)	\
-		(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x5C + DMA_CH_OFFSET(ch))
+#define OFFSET_TABLE(dev)		(((struct dma_atcdmacx00_data *)dev->data)->table)
+#define DMA_CH_OFFSET(ch)		(ch * (OFFSET_TABLE(dev).ch_offset))
+
+#define DMA_ABORT(dev)			(((struct dma_atcdmacx00_cfg *)dev->config)->base	\
+					+ OFFSET_TABLE(dev).abort)
+#define DMA_CH_CTRL(dev, ch)		(((struct dma_atcdmacx00_cfg *)dev->config)->base	\
+					+ OFFSET_TABLE(dev).ctrl + DMA_CH_OFFSET(ch))
+#define DMA_CH_TRANSIZE(dev, ch)	(((struct dma_atcdmacx00_cfg *)dev->config)->base	\
+					+ OFFSET_TABLE(dev).transize + DMA_CH_OFFSET(ch))
+#define DMA_CH_SRC_ADDR(dev, ch)	(((struct dma_atcdmacx00_cfg *)dev->config)->base	\
+					+ OFFSET_TABLE(dev).srcaddr + DMA_CH_OFFSET(ch))
+#define DMA_CH_SRC_ADDR_H(dev, ch)	(((struct dma_atcdmacx00_cfg *)dev->config)->base       \
+					+ OFFSET_TABLE(dev).srcaddrh + DMA_CH_OFFSET(ch))
+#define DMA_CH_DST_ADDR(dev, ch)	(((struct dma_atcdmacx00_cfg *)dev->config)->base       \
+					+ OFFSET_TABLE(dev).dstaddr + DMA_CH_OFFSET(ch))
+#define DMA_CH_DST_ADDR_H(dev, ch)	(((struct dma_atcdmacx00_cfg *)dev->config)->base       \
+					+ OFFSET_TABLE(dev).dstaddrh + DMA_CH_OFFSET(ch))
+#define DMA_CH_LL_PTR(dev, ch)		(((struct dma_atcdmacx00_cfg *)dev->config)->base       \
+					+ OFFSET_TABLE(dev).llpointer + DMA_CH_OFFSET(ch))
+#define DMA_CH_LL_PTR_H(dev, ch)	(((struct dma_atcdmacx00_cfg *)dev->config)->base       \
+					+ OFFSET_TABLE(dev).llpointerh + DMA_CH_OFFSET(ch))
 
 /* Source burst size options */
 #define DMA_BSIZE_1		(0)
@@ -111,21 +115,10 @@ LOG_MODULE_REGISTER(dma_andes_atcdmac300);
 #define DMA_INT_STATUS_ERROR_VAL(x)	FIELD_GET(DMA_INT_STATUS_ERROR_MASK, (x))
 #define DMA_INT_STATUS_CH_MSK(ch)	(0x111 << ch)
 
-typedef void (*atcdmac300_cfg_func_t)(void);
+typedef void (*atcdmacx00_cfg_func_t)(void);
 
 struct chain_block {
-	uint32_t ctrl;
-	uint32_t transize;
-	uint32_t srcaddrl;
-	uint32_t srcaddrh;
-	uint32_t dstaddrl;
-	uint32_t dstaddrh;
-	uint32_t llpointerl;
-	uint32_t llpointerh;
-#if __riscv_xlen == 32
-	uint32_t reserved;
-#endif
-	struct chain_block *next_block;
+	uint32_t __aligned(64) array[8];
 };
 
 /* data for each DMA channel */
@@ -136,26 +129,49 @@ struct dma_chan_data {
 	struct dma_status status;
 };
 
+/* reg information */
+struct offset_table {
+	uint32_t ch_offset;
+	uint32_t abort;
+	uint32_t ctrl;
+	uint32_t transize;
+	uint32_t srcaddr;
+	uint32_t srcaddrh;
+	uint32_t dstaddr;
+	uint32_t dstaddrh;
+	uint32_t llpointer;
+	uint32_t llpointerh;
+};
+
 /* Device run time data */
-struct dma_atcdmac300_data {
-	struct dma_chan_data chan[ATCDMAC100_MAX_CHAN];
+struct dma_atcdmacx00_data {
+	struct dma_context dma_ctx;
+	atomic_t channel_flags;
+	struct dma_chan_data chan[ATCDMACx00_MAX_CHAN];
+	uint32_t version;
+	struct offset_table table;
 	struct k_spinlock lock;
 };
 
 /* Device constant configuration parameters */
-struct dma_atcdmac300_cfg {
-	atcdmac300_cfg_func_t irq_config;
+struct dma_atcdmacx00_cfg {
+	atcdmacx00_cfg_func_t irq_config;
 	uint32_t base;
 	uint32_t irq_num;
 };
 
-static struct __aligned(64)
-	chain_block dma_chain[ATCDMAC100_MAX_CHAN][sizeof(struct chain_block) * 16];
+#if CONFIG_NOCACHE_MEMORY
+static struct chain_block __nocache __aligned(64)
+	dma_chain[ATCDMACx00_MAX_CHAN][16];
+#else /* CONFIG_NOCACHE_MEMORY */
+static struct chain_block __aligned(64)
+	dma_chain[ATCDMACx00_MAX_CHAN][16];
+#endif /* CONFIG_NOCACHE_MEMORY */
 
-static void dma_atcdmac300_isr(const struct device *dev)
+static void dma_atcdmacx00_isr(const struct device *dev)
 {
 	uint32_t int_status, int_ch_status, channel;
-	struct dma_atcdmac300_data *const data = dev->data;
+	struct dma_atcdmacx00_data *const data = dev->data;
 	struct dma_chan_data *ch_data;
 	k_spinlock_key_t key;
 
@@ -192,24 +208,28 @@ static void dma_atcdmac300_isr(const struct device *dev)
 	}
 }
 
-static int dma_atcdmac300_config(const struct device *dev, uint32_t channel,
+static int dma_atcdmacx00_config(const struct device *dev, uint32_t channel,
 				 struct dma_config *cfg)
 {
-	struct dma_atcdmac300_data *const data = dev->data;
+	struct dma_atcdmacx00_data *const data = dev->data;
 	uint32_t src_width, dst_width, src_burst_size, ch_ctrl, tfr_size;
 	int32_t ret = 0;
 	struct dma_block_config *cfg_blocks;
 	k_spinlock_key_t key;
 
-	if (channel >= ATCDMAC100_MAX_CHAN) {
+	if (channel >= ATCDMACx00_MAX_CHAN) {
 		return -EINVAL;
 	}
 
 	__ASSERT_NO_MSG(cfg->source_data_size == cfg->dest_data_size);
 	__ASSERT_NO_MSG(cfg->source_burst_length == cfg->dest_burst_length);
 
-	if (cfg->source_data_size != 1 && cfg->source_data_size != 2 &&
-	    cfg->source_data_size != 4) {
+	if ((data->version == ATCDMAC100_VERSION &&
+		cfg->source_data_size != 1 && cfg->source_data_size != 2 &&
+		cfg->source_data_size != 4) ||
+	    (cfg->source_data_size != 1 && cfg->source_data_size != 2 &&
+		cfg->source_data_size != 4 && cfg->source_data_size != 8 &&
+		cfg->source_data_size != 16 && cfg->source_data_size != 32)) {
 		LOG_ERR("Invalid 'source_data_size' value");
 		ret = -EINVAL;
 		goto end;
@@ -244,7 +264,6 @@ static int dma_atcdmac300_config(const struct device *dev, uint32_t channel,
 		ret = -EINVAL;
 		goto end;
 	}
-
 
 	switch (cfg_blocks->source_addr_adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
@@ -317,19 +336,31 @@ static int dma_atcdmac300_config(const struct device *dev, uint32_t channel,
 	sys_write32(ch_ctrl, DMA_CH_CTRL(dev, channel));
 
 	/* Set source and destination address */
-	sys_write32(cfg_blocks->source_address,
-					DMA_CH_SRC_ADDR_L(dev, channel));
-	sys_write32(0, DMA_CH_SRC_ADDR_H(dev, channel));
-	sys_write32(cfg_blocks->dest_address,
-					DMA_CH_DST_ADDR_L(dev, channel));
-	sys_write32(0, DMA_CH_DST_ADDR_H(dev, channel));
+	sys_write32((uint32_t)FIELD_GET(GENMASK(31, 0), (cfg_blocks->source_address)),
+							DMA_CH_SRC_ADDR(dev, channel));
+	sys_write32((uint32_t)FIELD_GET(GENMASK(31, 0), (cfg_blocks->dest_address)),
+							DMA_CH_DST_ADDR(dev, channel));
 
-	if (cfg->dest_chaining_en == 1 && cfg_blocks->next_block) {
+	if (data->version == ATCDMAC300_VERSION) {
+		sys_write32((uint32_t)FIELD_GET(GENMASK64(63, 32), (cfg_blocks->source_address)),
+								DMA_CH_SRC_ADDR_H(dev, channel));
+		sys_write32((uint32_t)FIELD_GET(GENMASK64(63, 32), (cfg_blocks->dest_address)),
+								DMA_CH_DST_ADDR_H(dev, channel));
+	}
+
+	if ((cfg->block_count > 1) && cfg_blocks->next_block) {
+
 		uint32_t current_block_idx = 0;
 
-		sys_write32((uint32_t)((long)&dma_chain[channel][current_block_idx]),
-							DMA_CH_LL_PTR_L(dev, channel));
-		sys_write32(0, DMA_CH_LL_PTR_H(dev, channel));
+		sys_write32((uint32_t)FIELD_GET(GENMASK(31, 0),
+					((long)&dma_chain[channel][current_block_idx])),
+					DMA_CH_LL_PTR(dev, channel));
+
+		if (data->version == ATCDMAC300_VERSION) {
+			sys_write32((uint32_t)FIELD_GET(GENMASK64(63, 32),
+						((long)&dma_chain[channel][current_block_idx])),
+						DMA_CH_LL_PTR_H(dev, channel));
+		}
 
 		for (cfg_blocks = cfg_blocks->next_block; cfg_blocks != NULL;
 				cfg_blocks = cfg_blocks->next_block) {
@@ -366,37 +397,52 @@ static int dma_atcdmac300_config(const struct device *dev, uint32_t channel,
 				ret = -EINVAL;
 				goto end;
 			}
-			dma_chain[channel][current_block_idx].ctrl = ch_ctrl;
-			dma_chain[channel][current_block_idx].transize =
+
+			uint32_t index = 0;
+
+			dma_chain[channel][current_block_idx].array[index++] = ch_ctrl;
+			dma_chain[channel][current_block_idx].array[index++] =
 						cfg_blocks->block_size/cfg->source_data_size;
 
-			dma_chain[channel][current_block_idx].srcaddrl =
-						(uint32_t)cfg_blocks->source_address;
-			dma_chain[channel][current_block_idx].srcaddrh = 0x0;
+			dma_chain[channel][current_block_idx].array[index++] =
+				(uint32_t)FIELD_GET(GENMASK(31, 0), (cfg_blocks->source_address));
+			if (data->version == ATCDMAC300_VERSION) {
+				dma_chain[channel][current_block_idx].array[index++] =
+							(uint32_t)FIELD_GET(GENMASK64(63, 32),
+							(cfg_blocks->source_address));
+			}
 
-			dma_chain[channel][current_block_idx].dstaddrl =
-						(uint32_t)((long)cfg_blocks->dest_address);
-			dma_chain[channel][current_block_idx].dstaddrh = 0x0;
+			dma_chain[channel][current_block_idx].array[index++] =
+				(uint32_t)FIELD_GET(GENMASK(31, 0), (cfg_blocks->dest_address));
+			if (data->version == ATCDMAC300_VERSION) {
+				dma_chain[channel][current_block_idx].array[index++] =
+							(uint32_t)FIELD_GET(GENMASK64(63, 32),
+							(cfg_blocks->dest_address));
+			}
 
 			if (cfg_blocks->next_block) {
-				dma_chain[channel][current_block_idx].llpointerl =
-					(uint32_t)&dma_chain[channel][current_block_idx + 1];
-				dma_chain[channel][current_block_idx].llpointerh = 0x0;
+				dma_chain[channel][current_block_idx].array[index++] =
+					(uint32_t)FIELD_GET(GENMASK(31, 0),
+					((long)&dma_chain[channel][current_block_idx + 1]));
+				dma_chain[channel][current_block_idx].array[index] =
+					(uint32_t)FIELD_GET(GENMASK64(63, 32),
+					((long)&dma_chain[channel][current_block_idx + 1]));
 
 				current_block_idx = current_block_idx + 1;
 
 			} else {
-				dma_chain[channel][current_block_idx].llpointerl = 0x0;
-				dma_chain[channel][current_block_idx].llpointerh = 0x0;
-				dma_chain[channel][current_block_idx].next_block = NULL;
+				dma_chain[channel][current_block_idx].array[index++] = 0x0;
+				dma_chain[channel][current_block_idx].array[index] = 0x0;
 			}
 		}
 	} else {
 		/* Single transfer is supported, but Chain transfer is still
 		 * not supported. Therefore, set LLPointer to zero
 		 */
-		sys_write32(0, DMA_CH_LL_PTR_L(dev, channel));
-		sys_write32(0, DMA_CH_LL_PTR_H(dev, channel));
+		sys_write32(0, DMA_CH_LL_PTR(dev, channel));
+		if (data->version == ATCDMAC300_VERSION) {
+			sys_write32(0, DMA_CH_LL_PTR_H(dev, channel));
+		}
 	}
 
 #ifdef CONFIG_DCACHE
@@ -412,20 +458,31 @@ end:
 	return ret;
 }
 
-static int dma_atcdmac300_reload(const struct device *dev, uint32_t channel,
+#ifdef CONFIG_DMA_64BIT
+static int dma_atcdmacx00_reload(const struct device *dev, uint32_t channel,
+				 uint64_t src, uint64_t dst, size_t size)
+#else
+static int dma_atcdmacx00_reload(const struct device *dev, uint32_t channel,
 				 uint32_t src, uint32_t dst, size_t size)
+#endif
 {
+	struct dma_atcdmacx00_data *const data = dev->data;
 	uint32_t src_width;
 
-	if (channel >= ATCDMAC100_MAX_CHAN) {
+	if (channel >= ATCDMACx00_MAX_CHAN) {
 		return -EINVAL;
 	}
 
 	/* Set source and destination address */
-	sys_write32(src, DMA_CH_SRC_ADDR_L(dev, channel));
-	sys_write32(0, DMA_CH_SRC_ADDR_H(dev, channel));
-	sys_write32(dst, DMA_CH_DST_ADDR_L(dev, channel));
-	sys_write32(0, DMA_CH_DST_ADDR_H(dev, channel));
+	sys_write32((uint32_t)FIELD_GET(GENMASK(31, 0), (src)),	DMA_CH_SRC_ADDR(dev, channel));
+	sys_write32((uint32_t)FIELD_GET(GENMASK(31, 0), (dst)), DMA_CH_DST_ADDR(dev, channel));
+
+	if (data->version == ATCDMAC300_VERSION) {
+		sys_write32((uint32_t)FIELD_GET(GENMASK64(63, 32), (src)),
+					DMA_CH_SRC_ADDR_H(dev, channel));
+		sys_write32((uint32_t)FIELD_GET(GENMASK64(63, 32), (dst)),
+					DMA_CH_DST_ADDR_H(dev, channel));
+	}
 
 	src_width = FIELD_GET(DMA_CH_CTRL_SWIDTH_MASK, sys_read32(DMA_CH_CTRL(dev, channel)));
 	src_width = BIT(src_width);
@@ -436,12 +493,12 @@ static int dma_atcdmac300_reload(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_atcdmac300_transfer_start(const struct device *dev,
+static int dma_atcdmacx00_transfer_start(const struct device *dev,
 					 uint32_t channel)
 {
-	struct dma_atcdmac300_data *const data = dev->data;
+	struct dma_atcdmacx00_data *const data = dev->data;
 
-	if (channel >= ATCDMAC100_MAX_CHAN) {
+	if (channel >= ATCDMACx00_MAX_CHAN) {
 		return -EINVAL;
 	}
 
@@ -453,13 +510,13 @@ static int dma_atcdmac300_transfer_start(const struct device *dev,
 	return 0;
 }
 
-static int dma_atcdmac300_transfer_stop(const struct device *dev,
+static int dma_atcdmacx00_transfer_stop(const struct device *dev,
 					uint32_t channel)
 {
-	struct dma_atcdmac300_data *const data = dev->data;
+	struct dma_atcdmacx00_data *const data = dev->data;
 	k_spinlock_key_t key;
 
-	if (channel >= ATCDMAC100_MAX_CHAN) {
+	if (channel >= ATCDMACx00_MAX_CHAN) {
 		return -EINVAL;
 	}
 
@@ -475,13 +532,44 @@ static int dma_atcdmac300_transfer_stop(const struct device *dev,
 	return 0;
 }
 
-static int dma_atcdmac300_init(const struct device *dev)
+static int dma_atcdmacx00_init(const struct device *dev)
 {
-	const struct dma_atcdmac300_cfg *const config = (struct dma_atcdmac300_cfg *)dev->config;
+	struct dma_atcdmacx00_data *const data = dev->data;
+	const struct dma_atcdmacx00_cfg *const config = (struct dma_atcdmacx00_cfg *)dev->config;
 	uint32_t ch_num;
 
+	if (FIELD_GET(GENMASK(31, 8), sys_read32(DMA_INT_IDREV(dev))) == ATCDMAC300_VERSION) {
+		data->version = ATCDMAC300_VERSION;
+		data->table.ch_offset = 0x20;
+		data->table.abort = 0x24;
+		data->table.ctrl = 0x40;
+		data->table.transize = 0x44;
+		data->table.srcaddr = 0x48;
+		data->table.srcaddrh = 0x4c;
+		data->table.dstaddr = 0x50;
+		data->table.dstaddrh = 0x54;
+		data->table.llpointer = 0x58;
+		data->table.llpointerh = 0x5c;
+	} else {
+#ifndef CONFIG_DMA_64BIT
+		data->version = ATCDMAC100_VERSION;
+		data->table.ch_offset = 0x14;
+		data->table.abort = 0x40;
+		data->table.ctrl = 0x44;
+		data->table.transize = 0x50;
+		data->table.srcaddr = 0x48;
+		data->table.dstaddr = 0x4c;
+		data->table.llpointer = 0x54;
+#else
+		LOG_ERR("ATCDMAC100 doesn't support 64bit dma.\n");
+#endif
+	}
+
+	data->channel_flags = ATOMIC_INIT(0);
+	data->dma_ctx.atomic = &data->channel_flags;
+
 	/* Disable all channels and Channel interrupts */
-	for (ch_num = 0; ch_num < ATCDMAC100_MAX_CHAN; ch_num++) {
+	for (ch_num = 0; ch_num < ATCDMACx00_MAX_CHAN; ch_num++) {
 		sys_write32(0, DMA_CH_CTRL(dev, ch_num));
 	}
 
@@ -495,11 +583,11 @@ static int dma_atcdmac300_init(const struct device *dev)
 	return 0;
 }
 
-static int dma_atcdmac300_get_status(const struct device *dev,
+static int dma_atcdmacx00_get_status(const struct device *dev,
 				     uint32_t channel,
 				     struct dma_status *stat)
 {
-	struct dma_atcdmac300_data *const data = dev->data;
+	struct dma_atcdmacx00_data *const data = dev->data;
 
 	stat->busy = data->chan[channel].status.busy;
 	stat->dir = data->chan[channel].status.dir;
@@ -508,43 +596,44 @@ static int dma_atcdmac300_get_status(const struct device *dev,
 	return 0;
 }
 
-static DEVICE_API(dma, dma_atcdmac300_api) = {
-	.config = dma_atcdmac300_config,
-	.reload = dma_atcdmac300_reload,
-	.start = dma_atcdmac300_transfer_start,
-	.stop = dma_atcdmac300_transfer_stop,
-	.get_status = dma_atcdmac300_get_status
+static const struct dma_driver_api dma_atcdmacx00_api = {
+	.config = dma_atcdmacx00_config,
+	.reload = dma_atcdmacx00_reload,
+	.start = dma_atcdmacx00_transfer_start,
+	.stop = dma_atcdmacx00_transfer_stop,
+	.get_status = dma_atcdmacx00_get_status
 };
 
-#define ATCDMAC300_INIT(n)						\
+#define ATCDMACx00_INIT(n)						\
 									\
-	static void dma_atcdmac300_irq_config_##n(void);		\
-									\
-	static const struct dma_atcdmac300_cfg dma_config_##n = {	\
-		.irq_config = dma_atcdmac300_irq_config_##n,		\
+	static struct dma_atcdmacx00_data dma_data_##n = {		\
+		.dma_ctx.magic = DMA_MAGIC,				\
+		.dma_ctx.dma_channels = DT_INST_PROP(n, dma_channels),	\
+		.dma_ctx.atomic = ATOMIC_INIT(0),			\
+	};								\
+	static void dma_atcdmacx00_irq_config_##n(void);		\
+	static const struct dma_atcdmacx00_cfg dma_config_##n = {	\
+		.irq_config = dma_atcdmacx00_irq_config_##n,		\
 		.base = DT_INST_REG_ADDR(n),				\
 		.irq_num = DT_INST_IRQN(n),				\
 	};								\
 									\
-	static struct dma_atcdmac300_data dma_data_##n;			\
-									\
-	DEVICE_DT_INST_DEFINE(0,					\
-		dma_atcdmac300_init,					\
+	DEVICE_DT_INST_DEFINE(n,					\
+		dma_atcdmacx00_init,					\
 		NULL,							\
 		&dma_data_##n,						\
 		&dma_config_##n,					\
 		POST_KERNEL,						\
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
-		&dma_atcdmac300_api);					\
+		&dma_atcdmacx00_api);					\
 									\
-	static void dma_atcdmac300_irq_config_##n(void)			\
+	static void dma_atcdmacx00_irq_config_##n(void)			\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    1,						\
-			    dma_atcdmac300_isr,				\
+			    dma_atcdmacx00_isr,				\
 			    DEVICE_DT_INST_GET(n),			\
 			    0);						\
 	}
 
-
-DT_INST_FOREACH_STATUS_OKAY(ATCDMAC300_INIT)
+DT_INST_FOREACH_STATUS_OKAY(ATCDMACx00_INIT)
