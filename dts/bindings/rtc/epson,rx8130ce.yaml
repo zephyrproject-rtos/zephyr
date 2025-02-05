@@ -13,7 +13,7 @@ properties:
   clockout-frequency:
     type: int
     description: |
-      Specify the ociillator frequency in Hz, if not specified the clockout will be disabled.
+      Specify the oscillator frequency in Hz, if not specified the clockout will be disabled.
       - 1 # 1 Hz oscillator
       - 1024 # 1 kHz oscillator
       - 32768 # 32 kHz oscillator
