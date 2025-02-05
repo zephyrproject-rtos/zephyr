@@ -16,3 +16,5 @@ common:
     - nrf5340dk/nrf5340/cpuapp/ns # Excluding due to ROM overflow.
 tests:
   sample.net.sockets.http.server: {}
+  sample.net.sockets.https.server:
+    extra_args: EXTRA_CONF_FILE="overlay-tls.conf"
