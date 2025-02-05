@@ -179,6 +179,7 @@ function(zephyr_mcuboot_tasks)
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
                    ${imgtool_sign} ${imgtool_args} --pad --confirm ${output}.bin
                    ${output}.signed.confirmed.bin)
+      zephyr_runner_file(bin ${output}.signed.confirmed.bin)
     endif()
 
     if(NOT "${keyfile_enc}" STREQUAL "")
@@ -242,6 +243,7 @@ function(zephyr_mcuboot_tasks)
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
                    ${imgtool_sign} ${imgtool_args} --pad --confirm ${output}.hex
                    ${output}.signed.confirmed.hex)
+      zephyr_runner_file(hex ${output}.signed.confirmed.hex)
     endif()
 
     if(NOT "${keyfile_enc}" STREQUAL "")
