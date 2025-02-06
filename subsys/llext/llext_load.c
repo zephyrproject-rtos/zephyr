@@ -162,13 +162,14 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
-			"addr 0x%zx, size %zd, link %d, info %d",
+			"addr 0x%zx, align 0x%zx, size %zd, link %d, info %d",
 			i,
 			(size_t)shdr->sh_offset,
 			shdr->sh_name,
 			shdr->sh_type,
 			(size_t)shdr->sh_flags,
 			(size_t)shdr->sh_addr,
+			(size_t)shdr->sh_addralign,
 			(size_t)shdr->sh_size,
 			shdr->sh_link,
 			shdr->sh_info);
@@ -361,6 +362,31 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			region->sh_addr = address;
 			region->sh_offset = bot_ofs;
 			region->sh_size = top_ofs - bot_ofs;
+
+			if (shdr->sh_addralign > region->sh_addralign) {
+				/* This section uses a larger alignment value
+				 * than what is currently used by the region.
+				 * Make sure its final position in memory is
+				 * correct by adjusting the start of the
+				 * region, if needed.
+				 */
+				size_t rest = (shdr->sh_offset - bot_ofs) % shdr->sh_addralign;
+
+				if ((rest > region->sh_offset) ||
+				    (rest > region->sh_addr && ldr->hdr.e_type == ET_DYN)) {
+					LOG_ERR("Bad section alignment for %s (region %d)",
+						name, mem_idx);
+					return -ENOEXEC;
+				}
+				if (rest) {
+					if (ldr->hdr.e_type == ET_DYN) {
+						region->sh_addr -= rest;
+					}
+					region->sh_offset -= rest;
+					region->sh_size += rest;
+				}
+				region->sh_addralign = shdr->sh_addralign;
+			}
 		}
 	}
 
