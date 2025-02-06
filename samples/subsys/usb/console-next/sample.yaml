@@ -1,0 +1,10 @@
+sample:
+  name: Console over CDC ACM serial
+tests:
+  sample.usbd.console:
+    depends_on:
+      - usbd
+    tags: usb
+    harness: console
+    harness_config:
+      fixture: fixture_usb_cdc
