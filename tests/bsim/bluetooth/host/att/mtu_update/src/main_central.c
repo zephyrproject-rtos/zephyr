@@ -14,15 +14,15 @@
 
 #include <zephyr/bluetooth/gatt.h>
 
-#include "common.h"
-#include "time_machine.h"
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_bsim_mtu_update, LOG_LEVEL_DBG);
 
 extern void run_central_sample(void *cb);
 
-CREATE_FLAG(flag_notification_received);
+DEFINE_FLAG_STATIC(flag_notification_received);
 uint8_t notify_data[100] = {};
 uint8_t is_data_equal;
 
@@ -51,31 +51,16 @@ static void test_central_main(void)
 	WAIT_FOR_FLAG(flag_notification_received);
 
 	if (is_data_equal) {
-		PASS("MTU Update test passed\n");
+		TEST_PASS("MTU Update test passed");
 	} else {
-		FAIL("MTU Update test failed\n");
+		TEST_FAIL("MTU Update test failed");
 	}
-}
-
-void test_tick(bs_time_t HW_device_time)
-{
-	if (bst_result != Passed) {
-		FAIL("Test failed (not passed after %i seconds)\n", WAIT_TIME);
-	}
-}
-
-static void test_mtu_update_init(void)
-{
-	bst_ticker_set_next_tick_absolute(WAIT_TIME);
-	bst_result = In_progress;
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central GATT MTU Update",
-		.test_pre_init_f = test_mtu_update_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_central_main
 	},
 	BSTEST_END_MARKER

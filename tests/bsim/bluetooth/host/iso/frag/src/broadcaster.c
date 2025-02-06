@@ -21,8 +21,8 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-static DEFINE_FLAG(iso_connected);
-static DEFINE_FLAG(sdu_sent);
+DEFINE_FLAG_STATIC(iso_connected);
+DEFINE_FLAG_STATIC(sdu_sent);
 
 static int send_data(struct bt_iso_chan *chan, bool ts)
 {
