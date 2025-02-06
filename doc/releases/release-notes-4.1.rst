@@ -82,6 +82,8 @@ Removed APIs and options
 * The :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` option has been removed
   after being deprecated in favor of :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
 
+* The ``z_pm_save_idle_exit()`` PM API function has been removed.
+
 
 Deprecated APIs and options
 ===========================
