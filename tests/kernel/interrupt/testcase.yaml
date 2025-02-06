@@ -56,7 +56,7 @@ tests:
     extra_configs:
       - CONFIG_SHARED_INTERRUPTS=y
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
-  arch.shared_interrupt.lto:
+  arch.shared_interrupt.lto: &shared-interrupt-lto
     # excluded because of failures during test_prevent_interruption
     platform_exclude: qemu_cortex_m0
     arch_exclude:
@@ -79,6 +79,14 @@ tests:
     filter: >
       not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
       and not CONFIG_CODE_DATA_RELOCATION
+  arch.shared_interrupt.lto.speed:
+    <<: *shared-interrupt-lto
+    extra_configs:
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+      - CONFIG_LTO=y
+      - CONFIG_SPEED_OPTIMIZATIONS=y
   arch.interrupt.multilevel:
     filter: CONFIG_MULTI_LEVEL_INTERRUPTS
     extra_args:
