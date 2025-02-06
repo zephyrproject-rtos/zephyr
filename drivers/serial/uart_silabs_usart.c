@@ -664,8 +664,6 @@ static int uart_silabs_async_init(const struct device *dev)
 		USART_TIMECMP2_TSTOP_TXST | USART_TIMECMP2_TSTART_TXEOF | USART_TIMECMP2_RESTARTEN |
 		(SILABS_USART_TIMER_COMPARE_VALUE << _USART_TIMECMP2_TCMPVAL_SHIFT);
 
-	USART_Enable(config->base, usartEnable);
-
 	return 0;
 }
 #endif /* CONFIG_UART_ASYNC_API */
@@ -866,6 +864,22 @@ static inline enum uart_config_flow_control uart_silabs_ll2cfg_hwctrl(
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
+static void uart_silabs_configure_peripheral(const struct device *dev)
+{
+	const struct uart_silabs_config *config = dev->config;
+	const struct uart_silabs_data *data = dev->data;
+	USART_InitAsync_TypeDef usartInit = USART_INITASYNC_DEFAULT;
+
+	usartInit.baudrate = data->uart_cfg->baudrate;
+	usartInit.parity = uart_silabs_cfg2ll_parity(data->uart_cfg->parity);
+	usartInit.stopbits = uart_silabs_cfg2ll_stopbits(data->uart_cfg->stop_bits);
+	usartInit.databits = uart_silabs_cfg2ll_databits(data->uart_cfg->data_bits,
+							 data->uart_cfg->parity);
+	usartInit.hwFlowControl = uart_silabs_cfg2ll_hwctrl(data->uart_cfg->flow_ctrl);
+
+	USART_InitAsync(config->base, &usartInit);
+}
+
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_silabs_configure(const struct device *dev,
 				const struct uart_config *cfg)
@@ -873,8 +887,6 @@ static int uart_silabs_configure(const struct device *dev,
 	const struct uart_silabs_config *config = dev->config;
 	USART_TypeDef *base = config->base;
 	struct uart_silabs_data *data = dev->data;
-	struct uart_config *uart_cfg = data->uart_cfg;
-	USART_InitAsync_TypeDef usartInit = USART_INITASYNC_DEFAULT;
 
 #ifdef CONFIG_UART_ASYNC_API
 	if (data->dma_rx.enabled || data->dma_tx.enabled) {
@@ -892,19 +904,10 @@ static int uart_silabs_configure(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	*uart_cfg = *cfg;
-	usartInit.baudrate = uart_cfg->baudrate;
-	usartInit.parity = uart_silabs_cfg2ll_parity(uart_cfg->parity);
-	usartInit.stopbits = uart_silabs_cfg2ll_stopbits(uart_cfg->stop_bits);
-	usartInit.databits = uart_silabs_cfg2ll_databits(uart_cfg->data_bits,
-								 uart_cfg->parity);
-	usartInit.hwFlowControl = uart_silabs_cfg2ll_hwctrl(uart_cfg->flow_ctrl);
-
+	*data->uart_cfg = *cfg;
 	USART_Enable(base, usartDisable);
 
-	USART_InitAsync(base, &usartInit);
-
-	USART_Enable(base, usartEnable);
+	uart_silabs_configure_peripheral(dev);
 
 	return 0;
 };
@@ -929,9 +932,6 @@ static int uart_silabs_init(const struct device *dev)
 {
 	int err;
 	const struct uart_silabs_config *config = dev->config;
-	const struct uart_silabs_data *data = dev->data;
-	const struct uart_config *uart_cfg = data->uart_cfg;
-	USART_InitAsync_TypeDef usartInit = USART_INITASYNC_DEFAULT;
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio driver */
 	/* Enable USART clock */
@@ -945,18 +945,10 @@ static int uart_silabs_init(const struct device *dev)
 		return err;
 	}
 
-	usartInit.baudrate = uart_cfg->baudrate;
-	usartInit.parity = uart_silabs_cfg2ll_parity(uart_cfg->parity);
-	usartInit.stopbits = uart_silabs_cfg2ll_stopbits(uart_cfg->stop_bits);
-	usartInit.databits = uart_silabs_cfg2ll_databits(uart_cfg->data_bits, uart_cfg->parity);
-	usartInit.hwFlowControl =
-		uart_cfg->flow_ctrl ? usartHwFlowControlCtsAndRts : usartHwFlowControlNone;
-
-	USART_InitAsync(config->base, &usartInit);
+	uart_silabs_configure_peripheral(dev);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
-	USART_Enable(config->base, usartEnable);
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
