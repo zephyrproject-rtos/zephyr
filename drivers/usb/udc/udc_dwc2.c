@@ -2264,12 +2264,36 @@ static int dwc2_driver_preinit(const struct device *dev)
 
 static int udc_dwc2_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	struct udc_dwc2_data *priv = udc_get_private(dev);
+	int ret;
+
+	k_sched_lock();
+	ret = udc_lock_internal(dev, K_FOREVER);
+	if (k_current_get() != &priv->thread_data) {
+		/* When DWC2 thread is woken up, for example after a buffer is
+		 * enqueued, it will try to obtain the mutex. Suspend the thread
+		 * to avoid unnecessary context switches.
+		 */
+		k_thread_suspend(&priv->thread_data);
+	}
+	k_sched_unlock();
+
+	return ret;
 }
 
 static int udc_dwc2_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	struct udc_dwc2_data *priv = udc_get_private(dev);
+	int ret;
+
+	k_sched_lock();
+	if (k_current_get() != &priv->thread_data) {
+		k_thread_resume(&priv->thread_data);
+	}
+	ret = udc_unlock_internal(dev);
+	k_sched_unlock();
+
+	return ret;
 }
 
 static void dwc2_on_bus_reset(const struct device *dev)
