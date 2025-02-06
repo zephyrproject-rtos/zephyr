@@ -92,7 +92,7 @@ static int codec_configure(const struct device *dev,
 	/* Configure reset GPIO, and set the line to inactive, which will also
 	 * de-assert the reset line and thus enable the codec.
 	 */
-	gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	ret = gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
 
 	codec_soft_reset(dev);
 
@@ -180,16 +180,17 @@ static int codec_apply_properties(const struct device *dev)
 static void codec_write_reg(const struct device *dev, struct reg_addr reg,
 			    uint8_t val)
 {
+	int ret;
 	struct codec_driver_data *const dev_data = dev->data;
 	const struct codec_driver_config *const dev_cfg = dev->config;
 
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
-		i2c_reg_write_byte_dt(&dev_cfg->bus, 0, reg.page);
+		ret = i2c_reg_write_byte_dt(&dev_cfg->bus, 0, reg.page);
 		dev_data->reg_addr_cache.page = reg.page;
 	}
 
-	i2c_reg_write_byte_dt(&dev_cfg->bus, reg.reg_addr, val);
+	ret = i2c_reg_write_byte_dt(&dev_cfg->bus, reg.reg_addr, val);
 	LOG_DBG("WR PG:%u REG:%02u VAL:0x%02x",
 			reg.page, reg.reg_addr, val);
 }
@@ -197,16 +198,17 @@ static void codec_write_reg(const struct device *dev, struct reg_addr reg,
 static void codec_read_reg(const struct device *dev, struct reg_addr reg,
 			   uint8_t *val)
 {
+	int ret;
 	struct codec_driver_data *const dev_data = dev->data;
 	const struct codec_driver_config *const dev_cfg = dev->config;
 
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
-		i2c_reg_write_byte_dt(&dev_cfg->bus, 0, reg.page);
+		ret = i2c_reg_write_byte_dt(&dev_cfg->bus, 0, reg.page);
 		dev_data->reg_addr_cache.page = reg.page;
 	}
 
-	i2c_reg_read_byte_dt(&dev_cfg->bus, reg.reg_addr, val);
+	ret = i2c_reg_read_byte_dt(&dev_cfg->bus, reg.reg_addr, val);
 	LOG_DBG("RD PG:%u REG:%02u VAL:0x%02x",
 			reg.page, reg.reg_addr, *val);
 }
