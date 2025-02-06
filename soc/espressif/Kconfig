@@ -35,6 +35,12 @@ endmenu
 
 menu "RTC Clock Config"
 
+config RESERVE_RTC_MEM
+	int
+	default 0
+	help
+	  This option reserves an area in RTC FAST memory.
+
 config RTC_CLK_CAL_CYCLES
 	int "Number of cycles for RTC_SLOW_CLK calibration"
 	default 3000
