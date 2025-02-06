@@ -350,7 +350,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 				   const char *servers[],
 				   const struct sockaddr *servers_sa[],
 				   const struct net_socket_service_desc *svc,
-				   uint16_t port)
+				   uint16_t port, int interfaces[])
 {
 #if defined(CONFIG_NET_IPV6)
 	struct sockaddr_in6 local_addr6 = {
@@ -389,6 +389,12 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		ctx->fds[j].fd = -1;
 	}
 
+	/* If user has provided a list of servers in string format, then
+	 * figure out the network interface from that list. If user used
+	 * list of sockaddr servers, then use the interfaces parameter.
+	 * The interfaces parameter should point to an array that is the
+	 * the same length as the servers_sa parameter array.
+	 */
 	if (servers) {
 		for (i = 0; idx < SERVER_COUNT && servers[i]; i++) {
 			const char *iface_str;
@@ -449,6 +455,11 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		for (i = 0; idx < SERVER_COUNT && servers_sa[i]; i++) {
 			memcpy(&ctx->servers[idx].dns_server, servers_sa[i],
 			       sizeof(ctx->servers[idx].dns_server));
+
+			if (interfaces != NULL) {
+				ctx->servers[idx].if_index = interfaces[idx];
+			}
+
 			dns_postprocess_server(ctx, idx);
 			idx++;
 		}
@@ -613,7 +624,7 @@ fail:
 int dns_resolve_init_with_svc(struct dns_resolve_context *ctx, const char *servers[],
 			      const struct sockaddr *servers_sa[],
 			      const struct net_socket_service_desc *svc,
-			      uint16_t port)
+			      uint16_t port, int interfaces[])
 {
 	if (!ctx) {
 		return -ENOENT;
@@ -627,14 +638,15 @@ int dns_resolve_init_with_svc(struct dns_resolve_context *ctx, const char *serve
 	/* As this function is called only once during system init, there is no
 	 * reason to acquire lock.
 	 */
-	return dns_resolve_init_locked(ctx, servers, servers_sa, svc, port);
+	return dns_resolve_init_locked(ctx, servers, servers_sa, svc, port,
+				       interfaces);
 }
 
 int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 		     const struct sockaddr *servers_sa[])
 {
 	return dns_resolve_init_with_svc(ctx, servers, servers_sa,
-					 &resolve_svc, 0);
+					 &resolve_svc, 0, NULL);
 }
 
 /* Check whether a slot is available for use, or optionally whether it can be
@@ -1780,7 +1792,7 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 		}
 	}
 
-	err = dns_resolve_init_locked(ctx, servers, servers_sa, &resolve_svc, 0);
+	err = dns_resolve_init_locked(ctx, servers, servers_sa, &resolve_svc, 0, NULL);
 
 unlock:
 	k_mutex_unlock(&ctx->lock);
