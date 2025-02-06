@@ -6,9 +6,9 @@
 
 /* LP-SRAM (16kB) memory */
 #define LPSRAM_IRAM_START      DT_REG_ADDR(DT_NODELABEL(sramlp))
-#define LPSRAM_SIZE            DT_REG_SIZE(DT_NODELABEL(sramlp))
+#define LPSRAM_SIZE            (0x4000)
 #define ULP_SHARED_MEM         DT_REG_SIZE(DT_NODELABEL(shmlp))
-#define ULP_COPROC_RESERVE_MEM (0x4000)
+#define ULP_COPROC_RESERVE_MEM DT_REG_SIZE(DT_NODELABEL(sramlp))
 
 /* HP-SRAM (512kB) memory */
 #define HPSRAM_START          DT_REG_ADDR(DT_NODELABEL(sramhp))

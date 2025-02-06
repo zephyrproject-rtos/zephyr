@@ -7,6 +7,7 @@ config ULP_COPROC_ENABLED
 	bool "Ultra Low Power (ULP) Coprocessor"
 	default y if SOC_ESP32C6_LPCORE
 	select SOC_LATE_INIT_HOOK if SOC_ESP32C6_HPCORE
+	select HWINFO if SOC_ESP32C6_HPCORE
 	help
 	  Enable this feature if you plan to use the ULP Coprocessor.
 	  Once this option is enabled, further ULP co-processor configuration will appear in the menu.

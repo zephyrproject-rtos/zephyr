@@ -1,0 +1,5 @@
+#include <mem.h>
+
+&sramlp {
+	reg = <0x50000000 DT_SIZE_K(8)>;
+};

@@ -7,8 +7,9 @@
 #include <zephyr/kernel.h>
 #include "bootloader_flash_priv.h"
 #include <zephyr/storage/flash_map.h>
-#include "ulp_lp_core.h"
-#include "lp_core_uart.h"
+#include <ulp_lp_core.h>
+#include <lp_core_uart.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -16,7 +17,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 void IRAM_ATTR lp_core_image_init(void)
 {
 	const uint32_t lpcore_img_off = FIXED_PARTITION_OFFSET(slot0_lpcore_partition);
-	const uint32_t lpcore_img_size = 0x4000;
+	const uint32_t lpcore_img_size = DT_REG_SIZE(DT_NODELABEL(sramlp));
 	int ret = 0;
 
 	LOG_INF("Getting LPU image at %p, size %d", (void *)lpcore_img_off, lpcore_img_size);
@@ -43,5 +44,11 @@ void IRAM_ATTR lp_core_image_init(void)
 
 void soc_late_init_hook(void)
 {
-	lp_core_image_init();
+	uint32_t reset_cause;
+	hwinfo_get_reset_cause(&reset_cause);
+
+	if (reset_cause != RESET_LOW_POWER_WAKE)	{
+		LOG_INF("Not a ULP wakeup, initializing it!");
+		lp_core_image_init();
+	}
 }

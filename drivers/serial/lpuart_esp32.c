@@ -11,6 +11,7 @@
 
 #include <hal/uart_hal.h>
 #if defined(CONFIG_SOC_ESP32C6_HPCORE)
+#include <zephyr/drivers/hwinfo.h>
 #include <hal/uart_ll.h>
 #include <hal/clk_tree_ll.h>
 #include <hal/clk_tree_hal.h>
@@ -156,6 +157,13 @@ static void lp_uart_esp32_set_pin(const struct device *dev)
 static int lp_uart_esp32_init(const struct device *dev)
 {
 	int ret = 0;
+	uint32_t reset_cause;
+
+	hwinfo_get_reset_cause(&reset_cause);
+
+	if (reset_cause == RESET_LOW_POWER_WAKE) {
+		return 0;
+	}
 
 	ret = lp_uart_esp32_param_config(dev);
 	if (ret != 0) {

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
+
 &lp_uart {
 	status = "okay";
+};
+
+&sramlp {
+	reg = <0x50000000 DT_SIZE_K(8)>;
 };
