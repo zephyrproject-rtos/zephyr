@@ -30,14 +30,6 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
-  message(FATAL_ERROR
-    "The LLEXT EDK is not compatible with CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID.")
-endif()
-
-set(llext_edk ${PROJECT_BINARY_DIR}/${llext_edk_name})
-set(llext_edk_inc ${llext_edk}/include)
-
 # Usage:
 #   relative_dir(<dir> <relative_out> <bindir_out>)
 #
@@ -88,6 +80,16 @@ function(relative_dir dir relative_out bindir_out)
         set(${bindir_out} FALSE PARENT_SCOPE)
     endif()
 endfunction()
+
+
+
+if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+  message(FATAL_ERROR
+    "The LLEXT EDK is not compatible with CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID.")
+endif()
+
+set(llext_edk ${PROJECT_BINARY_DIR}/${llext_edk_name})
+set(llext_edk_inc ${llext_edk}/include)
 
 string(REGEX REPLACE "[^a-zA-Z0-9]" "_" llext_edk_name_sane ${llext_edk_name})
 string(TOUPPER ${llext_edk_name_sane} llext_edk_name_sane)
