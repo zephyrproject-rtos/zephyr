@@ -13,6 +13,5 @@ config UART_SILABS_USART
 	select DMA if UART_ASYNC_API
 	select PINCTRL
 	select CLOCK_CONTROL
-	select PM_DEVICE if PM
 	help
 	  Enable the Silicon Labs usart driver.
