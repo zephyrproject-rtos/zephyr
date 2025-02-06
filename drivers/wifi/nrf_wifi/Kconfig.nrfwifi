@@ -45,17 +45,15 @@ choice NRF70_OPER_MODES
 	help
 	  Select the operating mode of the nRF70 driver
 
-config NRF70_SYSTEM_MODE
-	bool "nRF70 system mode"
-	depends on WIFI_NRF7002 || WIFI_NRF7001
-	select WIFI_NM_WPA_SUPPLICANT
-	help
-	  Select this option to enable system mode of the nRF70 driver
-
 config NRF70_SCAN_ONLY
 	bool "nRF70 scan only mode"
 	help
 	  Select this option to enable scan only mode of the nRF70 driver
+
+config NRF70_SYSTEM_MODE
+	bool "System mode of the nRF70 driver"
+	help
+	  Select this option to enable system mode of the nRF70 driver
 
 config NRF70_RADIO_TEST
 	bool "Radio test mode of the nRF70 driver"
@@ -64,13 +62,6 @@ config NRF70_OFFLOADED_RAW_TX
 	bool "Offloaded raw TX mode of the nRF70 driver"
 
 endchoice
-
-config NRF70_SYSTEM_WITH_RAW_MODES
-	bool "nRF70 system mode with raw modes"
-	depends on NRF70_SYSTEM_MODE
-	default y if (NRF70_RAW_DATA_TX || NRF70_RAW_DATA_RX || NRF70_PROMISC_DATA_RX)
-	help
-	  Select this option to enable system mode of the nRF70 driver with raw modes.
 
 config NET_L2_ETHERNET
 	default y if (!NRF70_RADIO_TEST && !NRF70_OFFLOADED_RAW_TX)
@@ -85,17 +76,27 @@ if NRF70_SYSTEM_MODE
 config NRF70_STA_MODE
 	bool "nRF70 STA mode"
 	default y
+	depends on WIFI_NRF7002 || WIFI_NRF7001
+	select WIFI_NM_WPA_SUPPLICANT
+	select NRF70_DATA_TX
 	help
 	  Select this option to enable STA mode of the nRF70 driver.
-
 config NRF70_AP_MODE
 	bool "Access point mode"
+	depends on WIFI_NRF7002 || WIFI_NRF7001
+	select NRF70_DATA_TX
 	depends on WIFI_NM_WPA_SUPPLICANT_AP
 	default y if WIFI_NM_WPA_SUPPLICANT_AP
 
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
-endif # NRF70_SYSTEM_MODE
+
+config NRF70_SYSTEM_WITH_RAW_MODES
+	bool
+	default y if (NRF70_RAW_DATA_TX || NRF70_RAW_DATA_RX || NRF70_PROMISC_DATA_RX)
+	depends on WIFI_NRF7002 || WIFI_NRF7001
+	help
+	  Select this option to enable system mode of the nRF70 driver with raw modes.
 
 config NRF70_RAW_DATA_TX
 	bool "RAW TX data path in the driver"
@@ -112,8 +113,8 @@ config NRF70_PROMISC_DATA_RX
 	select NET_PROMISCUOUS_MODE
 
 config NRF70_DATA_TX
-	bool "TX data path in the driver"
-	default y if NRF70_SYSTEM_MODE
+	bool
+endif # NRF70_SYSTEM_MODE
 
 config NRF_WIFI_IF_AUTO_START
 	bool "Wi-Fi interface auto start on boot"

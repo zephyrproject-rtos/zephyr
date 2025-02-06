@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/wifi/nrf_wifi/off_raw_tx/off_raw_tx_api.h>
 #include <off_raw_tx.h>
-#include <fmac_api.h>
+#include <offload_raw_tx/fmac_api.h>
 
 #define DT_DRV_COMPAT nordic_wlan
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
@@ -146,7 +146,7 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 
 	key = k_spin_lock(&off_raw_tx_drv_priv.lock);
 
-	off_raw_tx_drv_priv.fmac_priv = nrf_wifi_fmac_off_raw_tx_init();
+	off_raw_tx_drv_priv.fmac_priv = nrf_wifi_off_raw_tx_fmac_init();
 
 	if (off_raw_tx_drv_priv.fmac_priv == NULL) {
 		LOG_ERR("%s: Failed to initialize nRF70 driver",
@@ -158,8 +158,8 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 
 	rpu_ctx_zep->drv_priv_zep = &off_raw_tx_drv_priv;
 
-	rpu_ctx = nrf_wifi_fmac_dev_add(off_raw_tx_drv_priv.fmac_priv,
-					rpu_ctx_zep);
+	rpu_ctx = nrf_wifi_off_raw_tx_fmac_dev_add(off_raw_tx_drv_priv.fmac_priv,
+						   rpu_ctx_zep);
 	if (!rpu_ctx) {
 		LOG_ERR("%s: Failed to add nRF70 device", __func__);
 		rpu_ctx_zep = NULL;
@@ -197,7 +197,7 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 
 	configure_board_dep_params(&board_params);
 
-	status = nrf_wifi_fmac_off_raw_tx_dev_init(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_off_raw_tx_fmac_dev_init(rpu_ctx_zep->rpu_ctx,
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
 						   HW_SLEEP_ENABLE,
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
@@ -257,7 +257,7 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 	return 0;
 err:
 	if (rpu_ctx) {
-		nrf_wifi_fmac_off_raw_tx_dev_rem(rpu_ctx);
+		nrf_wifi_fmac_dev_rem(rpu_ctx);
 		rpu_ctx_zep->rpu_ctx = NULL;
 	}
 
@@ -278,7 +278,7 @@ void nrf70_off_raw_tx_deinit(void)
 		return;
 	}
 
-	nrf_wifi_fmac_off_raw_tx_deinit(off_raw_tx_drv_priv.fmac_priv);
+	nrf_wifi_fmac_deinit(off_raw_tx_drv_priv.fmac_priv);
 
 	k_spin_unlock(&off_raw_tx_drv_priv.lock, key);
 }
@@ -361,7 +361,7 @@ int nrf70_off_raw_tx_conf_update(struct nrf_wifi_off_raw_tx_conf *conf)
 		goto out;
 	}
 
-	status = nrf_wifi_fmac_off_raw_tx_conf(fmac_dev_ctx,
+	status = nrf_wifi_off_raw_tx_fmac_conf(fmac_dev_ctx,
 					       off_ctrl_params,
 					       off_tx_params);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
@@ -398,7 +398,7 @@ int nrf70_off_raw_tx_start(struct nrf_wifi_off_raw_tx_conf *conf)
 		goto out;
 	}
 
-	status = nrf_wifi_fmac_off_raw_tx_start(off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx);
+	status = nrf_wifi_off_raw_tx_fmac_start(off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nRF70 offloaded raw TX start failed",
 				      __func__);
@@ -425,7 +425,7 @@ int nrf70_off_raw_tx_stop(void)
 		goto out;
 	}
 
-	status = nrf_wifi_fmac_off_raw_tx_stop(off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx);
+	status = nrf_wifi_off_raw_tx_fmac_stop(off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nRF70 offloaded raw TX stop failed",
 				      __func__);
@@ -454,10 +454,10 @@ int nrf70_off_raw_tx_stats(struct nrf_wifi_off_raw_tx_stats *off_raw_tx_stats)
 {
 	int ret = -1;
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
-	struct rpu_op_stats stats;
+	struct rpu_off_raw_tx_op_stats stats;
 	k_spinlock_key_t key;
 
-	memset(&stats, 0, sizeof(struct rpu_op_stats));
+	memset(&stats, 0, sizeof(stats));
 
 	key = k_spin_lock(&off_raw_tx_drv_priv.lock);
 
@@ -466,14 +466,16 @@ int nrf70_off_raw_tx_stats(struct nrf_wifi_off_raw_tx_stats *off_raw_tx_stats)
 		goto out;
 	}
 
-	status = nrf_wifi_fmac_stats_get(off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx, 0, &stats);
+	status = nrf_wifi_off_raw_tx_fmac_stats_get(off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx,
+						    0,
+						    &stats);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nRF70 offloaded raw TX stats failed",
 				      __func__);
 		goto out;
 	}
 
-	off_raw_tx_stats->off_raw_tx_pkt_sent = stats.fw.offloaded_raw_tx.offload_raw_tx_cnt;
+	off_raw_tx_stats->off_raw_tx_pkt_sent = stats.fw.offload_raw_tx_cnt;
 
 	ret = 0;
 out:

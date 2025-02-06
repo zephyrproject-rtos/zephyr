@@ -15,8 +15,8 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
-#include <fmac_structs.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <system/fmac_structs.h>
 
 #define UNICAST_MASK GENMASK(7, 1)
 #define LOCAL_BIT BIT(1)
