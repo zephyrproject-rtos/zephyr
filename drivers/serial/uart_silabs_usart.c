@@ -14,6 +14,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <em_usart.h>
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
@@ -50,6 +51,13 @@ struct uart_silabs_config {
 	void (*irq_config_func)(const struct device *dev);
 };
 
+enum uart_silabs_pm_lock {
+	UART_SILABS_PM_LOCK_TX,
+	UART_SILABS_PM_LOCK_TX_POLL,
+	UART_SILABS_PM_LOCK_RX,
+	UART_SILABS_PM_LOCK_COUNT,
+};
+
 struct uart_silabs_data {
 	struct uart_config *uart_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -65,9 +73,64 @@ struct uart_silabs_data {
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
 #endif
+#ifdef CONFIG_PM
+	ATOMIC_DEFINE(pm_lock, UART_SILABS_PM_LOCK_COUNT);
+#endif
 };
 
 static int uart_silabs_pm_action(const struct device *dev, enum pm_device_action action);
+
+/**
+ * @brief Get PM lock on low power states
+ *
+ * @param dev  UART device struct
+ * @param lock UART PM lock type
+ *
+ * @return true if lock was taken, false otherwise
+ */
+static bool uart_silabs_pm_lock_get(const struct device *dev, enum uart_silabs_pm_lock lock)
+{
+#ifdef CONFIG_PM
+	struct uart_silabs_data *data = dev->data;
+	bool was_locked = atomic_test_and_set_bit(data->pm_lock, lock);
+
+	if (!was_locked) {
+		/* Lock out low-power states that would interfere with UART traffic */
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+
+	return !was_locked;
+#else
+	return false;
+#endif
+}
+
+/**
+ * @brief Release PM lock on low power states
+ *
+ * @param dev  UART device struct
+ * @param lock UART PM lock type
+ *
+ * @return true if lock was released, false otherwise
+ */
+static bool uart_silabs_pm_lock_put(const struct device *dev, enum uart_silabs_pm_lock lock)
+{
+#ifdef CONFIG_PM
+	struct uart_silabs_data *data = dev->data;
+	bool was_locked = atomic_test_and_clear_bit(data->pm_lock, lock);
+
+	if (was_locked) {
+		/* Unlock low-power states that would interfere with UART traffic */
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+
+	return was_locked;
+#else
+	return false;
+#endif
+}
 
 static int uart_silabs_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -85,6 +148,10 @@ static int uart_silabs_poll_in(const struct device *dev, unsigned char *c)
 static void uart_silabs_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_silabs_config *config = dev->config;
+
+	if (uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX_POLL)) {
+		USART_IntEnable(config->base, USART_IF_TXC);
+	}
 
 	USART_Tx(config->base, c);
 }
@@ -141,6 +208,7 @@ static void uart_silabs_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_silabs_config *config = dev->config;
 
+	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX);
 	USART_IntEnable(config->base, USART_IEN_TXBL | USART_IEN_TXC);
 }
 
@@ -149,6 +217,7 @@ static void uart_silabs_irq_tx_disable(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 
 	USART_IntDisable(config->base, USART_IEN_TXBL | USART_IEN_TXC);
+	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX);
 }
 
 static int uart_silabs_irq_tx_complete(const struct device *dev)
@@ -173,6 +242,7 @@ static void uart_silabs_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_silabs_config *config = dev->config;
 
+	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_RX);
 	USART_IntEnable(config->base, USART_IEN_RXDATAV);
 }
 
@@ -181,6 +251,7 @@ static void uart_silabs_irq_rx_disable(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 
 	USART_IntDisable(config->base, USART_IEN_RXDATAV);
+	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_RX);
 }
 
 static int uart_silabs_irq_rx_full(const struct device *dev)
@@ -423,6 +494,7 @@ static int uart_silabs_async_tx(const struct device *dev, const uint8_t *tx_data
 	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.buffer;
 	data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length;
 
+	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX);
 	USART_IntClear(config->base, USART_IF_TXC | USART_IF_TCMP2);
 	USART_IntEnable(config->base, USART_IF_TXC);
 	if (timeout >= 0) {
@@ -460,6 +532,7 @@ static int uart_silabs_async_tx_abort(const struct device *dev)
 	USART_IntDisable(config->base, USART_IF_TXC);
 	USART_IntDisable(config->base, USART_IF_TCMP2);
 	USART_IntClear(config->base, USART_IF_TXC | USART_IF_TCMP2);
+	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX);
 
 	if (!dma_get_status(data->dma_tx.dma_dev, data->dma_tx.dma_channel, &stat)) {
 		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
@@ -519,6 +592,7 @@ static int uart_silabs_async_rx_enable(const struct device *dev, uint8_t *rx_buf
 		return -EFAULT;
 	}
 
+	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_RX);
 	USART_IntClear(config->base, USART_IF_RXOF | USART_IF_TCMP1);
 	USART_IntEnable(config->base, USART_IF_RXOF);
 
@@ -549,6 +623,7 @@ static int uart_silabs_async_rx_disable(const struct device *dev)
 	USART_IntDisable(usart, USART_IF_RXOF);
 	USART_IntDisable(usart, USART_IF_TCMP1);
 	USART_IntClear(usart, USART_IF_RXOF | USART_IF_TCMP1);
+	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_RX);
 
 	if (!data->dma_rx.enabled) {
 		usart->CMD = USART_CMD_CLEARRX;
@@ -670,19 +745,27 @@ static int uart_silabs_async_init(const struct device *dev)
 
 static void uart_silabs_isr(const struct device *dev)
 {
-	struct uart_silabs_data *data = dev->data;
-#ifdef CONFIG_UART_ASYNC_API
+	__maybe_unused struct uart_silabs_data *data = dev->data;
 	const struct uart_silabs_config *config = dev->config;
 	USART_TypeDef *usart = config->base;
+	uint32_t flags = USART_IntGet(usart);
+#ifdef CONFIG_UART_ASYNC_API
 	struct dma_status stat;
 #endif
+
+	if (flags & USART_IF_TXC) {
+		if (uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX_POLL)) {
+			USART_IntDisable(usart, USART_IEN_TXC);
+			USART_IntClear(usart, USART_IF_TXC);
+		}
+	}
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
 	}
 #endif
 #ifdef CONFIG_UART_ASYNC_API
-	if (usart->IF & USART_IF_TCMP1) {
+	if (flags & USART_IF_TCMP1) {
 
 		data->dma_rx.timeout_cnt++;
 		if (data->dma_rx.timeout_cnt >= data->dma_rx.timeout) {
@@ -695,14 +778,14 @@ static void uart_silabs_isr(const struct device *dev)
 
 		USART_IntClear(usart, USART_IF_TCMP1);
 	}
-	if (usart->IF & USART_IF_RXOF) {
+	if (flags & USART_IF_RXOF) {
 		async_evt_rx_err(data, UART_ERROR_OVERRUN);
 
 		uart_silabs_async_rx_disable(dev);
 
 		USART_IntClear(usart, USART_IF_RXOF);
 	}
-	if (usart->IF & USART_IF_TXC) {
+	if (flags & USART_IF_TXC) {
 		if (!dma_get_status(data->dma_tx.dma_dev, data->dma_tx.dma_channel, &stat)) {
 			data->dma_tx.counter = data->dma_tx.buffer_length - stat.pending_length;
 		}
@@ -711,6 +794,7 @@ static void uart_silabs_isr(const struct device *dev)
 			USART_IntDisable(config->base, USART_IF_TXC);
 			USART_IntDisable(config->base, USART_IF_TCMP2);
 			USART_IntClear(usart, USART_IF_TXC | USART_IF_TCMP2);
+			(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX);
 
 			usart->TIMECMP2 &= ~_USART_TIMECMP2_TSTART_MASK;
 			usart->TIMECMP2 |= USART_TIMECMP2_TSTART_DISABLE;
@@ -718,7 +802,7 @@ static void uart_silabs_isr(const struct device *dev)
 
 		async_evt_tx_done(data);
 	}
-	if (usart->IF & USART_IF_TCMP2) {
+	if (flags & USART_IF_TCMP2) {
 		data->dma_tx.timeout_cnt++;
 		if (data->dma_tx.timeout_cnt >= data->dma_tx.timeout) {
 			usart->TIMECMP2 &= ~_USART_TIMECMP2_TSTART_MASK;
