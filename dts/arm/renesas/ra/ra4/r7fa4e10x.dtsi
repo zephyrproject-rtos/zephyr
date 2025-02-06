@@ -12,6 +12,7 @@
 /delete-node/ &agt4;
 /delete-node/ &adc1;
 /delete-node/ &iic1;
+/delete-node/ &pwm0;
 
 / {
 	soc {
