@@ -99,5 +99,113 @@
 			compatible = "renesas,rzt-pinctrl";
 			reg = <0x800a0000 0x1000 0x81030c00 0x1000>;
 		};
+
+		sci0: sci0@80001000 {
+			compatible = "renesas,rz-sci";
+			reg = <0x80001000 0x400>;
+			channel = <0>;
+			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 289 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 290 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rz-sci-uart";
+				current-speed = <115200>;
+				status = "disabled";
+			};
+		};
+
+		sci1: sci1@80001400 {
+			compatible = "renesas,rz-sci";
+			reg = <0x80001400 0x400>;
+			channel = <1>;
+			interrupts = <GIC_SPI 292 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 293 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 294 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rz-sci-uart";
+				current-speed = <115200>;
+				status = "disabled";
+			};
+		};
+
+		sci2: sci2@80001800 {
+			compatible = "renesas,rz-sci";
+			reg = <0x80001800 0x400>;
+			channel = <2>;
+			interrupts = <GIC_SPI 296 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 297 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 298 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rz-sci-uart";
+				current-speed = <115200>;
+				status = "disabled";
+			};
+		};
+
+		sci3: sci3@80001c00 {
+			compatible = "renesas,rz-sci";
+			reg = <0x80001c00 0x400>;
+			channel = <3>;
+			interrupts = <GIC_SPI 300 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 301 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 302 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rz-sci-uart";
+				current-speed = <115200>;
+				status = "disabled";
+			};
+		};
+
+		sci4: sci4@80002000 {
+			compatible = "renesas,rz-sci";
+			reg = <0x80002000 0x400>;
+			channel = <4>;
+			interrupts = <GIC_SPI 304 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 305 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 306 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 307 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rz-sci-uart";
+				current-speed = <115200>;
+				status = "disabled";
+			};
+		};
+
+		sci5: sci5@81001000 {
+			compatible = "renesas,rz-sci";
+			reg = <0x81001000 0x400>;
+			channel = <5>;
+			interrupts = <GIC_SPI 435 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 436 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 437 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 438 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rz-sci-uart";
+				current-speed = <115200>;
+				status = "disabled";
+			};
+		};
 	};
 };
