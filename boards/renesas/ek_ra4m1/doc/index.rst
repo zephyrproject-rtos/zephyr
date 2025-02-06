@@ -87,6 +87,12 @@ The below features are currently supported on Zephyr for the ``ek_ra4m1`` board:
 +-----------+------------+----------------------+
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
+| ENTROPY   | on-chip    | entropy              |
++-----------+------------+----------------------+
+| PWM       | on-chip    | pwm                  |
++-----------+------------+----------------------+
+| I2C       | on-chip    | i2c                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
