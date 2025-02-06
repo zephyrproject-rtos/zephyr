@@ -168,7 +168,7 @@ extern int dns_resolve_init_with_svc(struct dns_resolve_context *ctx,
 				     const char *servers[],
 				     const struct sockaddr *servers_sa[],
 				     const struct net_socket_service_desc *svc,
-				     uint16_t port);
+				     uint16_t port, int interfaces[]);
 #endif /* CONFIG_DNS_RESOLVER */
 
 #if defined(CONFIG_NET_TEST)
