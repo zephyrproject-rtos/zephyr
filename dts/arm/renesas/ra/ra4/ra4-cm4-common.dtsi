@@ -362,7 +362,6 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_2>;
-			clocks = <&pclkd MSTPD 5>;
 			reg = <0x40078200 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -372,7 +371,6 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_3>;
-			clocks = <&pclkd MSTPD 5>;
 			reg = <0x40078300 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -382,7 +380,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_4>;
-			clocks = <&pclkd MSTPD 5>;
+			clocks = <&pclkd MSTPD 6>;
 			reg = <0x40078400 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
