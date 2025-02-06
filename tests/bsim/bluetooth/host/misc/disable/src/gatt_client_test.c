@@ -18,10 +18,10 @@
 #include "babblekit/flags.h"
 #include "common.h"
 
-static DEFINE_FLAG(flag_is_connected);
-static DEFINE_FLAG(flag_discover_complete);
-static DEFINE_FLAG(flag_write_complete);
-static DEFINE_FLAG(flag_read_complete);
+DEFINE_FLAG_STATIC(flag_is_connected);
+DEFINE_FLAG_STATIC(flag_discover_complete);
+DEFINE_FLAG_STATIC(flag_write_complete);
+DEFINE_FLAG_STATIC(flag_read_complete);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;

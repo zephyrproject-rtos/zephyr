@@ -1,9 +1,6 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 
-void test_tick(bs_time_t HW_device_time);
-void test_init(void);
-
 void bs_bt_utils_setup(void);
 
 void clear_conn(struct bt_conn *conn);

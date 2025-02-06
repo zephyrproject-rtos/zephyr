@@ -25,12 +25,12 @@ static struct bt_conn *g_conn;
 static bt_addr_le_t per_addr;
 static uint8_t per_sid;
 
-static DEFINE_FLAG(flag_connected);
-static DEFINE_FLAG(flag_bonded);
-static DEFINE_FLAG(flag_per_adv);
-static DEFINE_FLAG(flag_per_adv_sync);
-static DEFINE_FLAG(flag_per_adv_sync_lost);
-static DEFINE_FLAG(flag_per_adv_recv);
+DEFINE_FLAG_STATIC(flag_connected);
+DEFINE_FLAG_STATIC(flag_bonded);
+DEFINE_FLAG_STATIC(flag_per_adv);
+DEFINE_FLAG_STATIC(flag_per_adv_sync);
+DEFINE_FLAG_STATIC(flag_per_adv_sync_lost);
+DEFINE_FLAG_STATIC(flag_per_adv_recv);
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
