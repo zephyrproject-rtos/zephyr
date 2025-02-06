@@ -781,18 +781,18 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	}
 
 #ifdef CONFIG_NRF70_DATA_TX
-	struct nrf_wifi_fmac_priv_def *def_priv = NULL;
+	struct nrf_wifi_sys_fmac_priv *sys_fpriv = NULL;
 
-	def_priv = wifi_fmac_priv(rpu_drv_priv_zep.fmac_priv);
-	def_priv->max_ampdu_len_per_token =
+	sys_fpriv = wifi_fmac_priv(rpu_drv_priv_zep.fmac_priv);
+	sys_fpriv->max_ampdu_len_per_token =
 		(RPU_PKTRAM_SIZE - (CONFIG_NRF70_RX_NUM_BUFS * CONFIG_NRF70_RX_MAX_DATA_SIZE)) /
 		CONFIG_NRF70_MAX_TX_TOKENS;
 	/* Align to 4-byte */
-	def_priv->max_ampdu_len_per_token &= ~0x3;
+	sys_fpriv->max_ampdu_len_per_token &= ~0x3;
 
 	/* Alignment overhead for size based coalesce */
-	def_priv->avail_ampdu_len_per_token =
-	def_priv->max_ampdu_len_per_token -
+	sys_fpriv->avail_ampdu_len_per_token =
+	sys_fpriv->max_ampdu_len_per_token -
 		(MAX_PKT_RAM_TX_ALIGN_OVERHEAD * max_tx_aggregation);
 #endif /* CONFIG_NRF70_DATA_TX */
 
