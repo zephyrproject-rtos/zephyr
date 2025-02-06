@@ -163,6 +163,11 @@ config USE_RZ_FSP_IOPORT
 	help
 	  Enable RZ FSP IOPORT driver
 
+config USE_RZ_FSP_SCI_UART
+	bool
+	help
+	  Enable RZ FSP SCI UART driver
+
 config USE_RZ_FSP_SCIF_UART
 	bool
 	help
