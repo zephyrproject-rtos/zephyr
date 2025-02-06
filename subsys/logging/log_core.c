@@ -563,9 +563,9 @@ bool z_impl_log_process(void)
 	msg = z_log_msg_claim(&backoff);
 
 	if (msg) {
-		atomic_dec(&buffered_cnt);
 		msg_process(msg);
 		z_log_msg_free(msg);
+		atomic_dec(&buffered_cnt);
 	} else if (CONFIG_LOG_PROCESSING_LATENCY_US > 0 && !K_TIMEOUT_EQ(backoff, K_NO_WAIT)) {
 		/* If backoff is requested, it means that there are pending
 		 * messages but they are too new and processing shall back off
@@ -1002,10 +1002,9 @@ static int enable_logger(void)
 void log_flush(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
-		while (log_data_pending()) {
+		while (atomic_get(&buffered_cnt)) {
 			k_sleep(K_MSEC(10));
 		}
-		k_sleep(K_MSEC(10));
 	} else {
 		while (LOG_PROCESS()) {
 		}
