@@ -307,6 +307,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     def _get_core(self):
         if self.family in ('nrf54h', 'nrf92'):
             if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUFLPR') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUPPR') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')):
                 return 'Application'
             if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
