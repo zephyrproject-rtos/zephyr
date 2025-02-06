@@ -3679,11 +3679,11 @@ function(topological_sort)
 endfunction()
 
 # Usage:
-#   build_info(<tag>... VALUE <value>... )
-#   build_info(<tag>... PATH  <path>... )
+#   build_info(<tag>... VALUE <value>...)
+#   build_info(<tag>... PATH  <path>...)
 #
-# This function populates updates the build_info.yml info file with exchangable build information
-# related to the current build.
+# This function populates the build_info.yml info file with exchangable build
+# information related to the current build.
 #
 # Example:
 #   build_info(devicetree files VALUE file1.dts file2.dts file3.dts)
@@ -3711,6 +3711,14 @@ function(build_info)
 
   if(index EQUAL -1)
     message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) missing a required argument: VALUE or PATH")
+  endif()
+
+  string(GENEX_STRIP "${arg_list}" arg_list_no_genexes)
+  if (NOT "${arg_list}" STREQUAL "${arg_list_no_genexes}")
+    if (convert_path)
+      message(FATAL_ERROR "build_info: generator expressions unsupported on PATH entries")
+    endif()
+    set(genex_flag GENEX)
   endif()
 
   yaml_context(EXISTS NAME build_info result)
@@ -3755,7 +3763,7 @@ function(build_info)
     endif()
   endif()
 
-  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}")
+  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}" ${genex_flag})
 endfunction()
 
 ########################################################
