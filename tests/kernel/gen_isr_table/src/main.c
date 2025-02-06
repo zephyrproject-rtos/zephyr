@@ -76,8 +76,8 @@ extern uint32_t _irq_vector_table[];
  * with isr used here, so add a workaround
  */
 #define TEST_NUM_IRQS	105
-#elif defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_NRF9160)
-/* In nRF9160 and application core in nRF5340, not all interrupts with highest
+#elif defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_SERIES_NRF91X)
+/* In the application core of nRF5340 and nRF9 series, not all interrupts with highest
  * numbers are implemented. Thus, limit the number of interrupts reported to
  * the test, so that it does not try to use some unavailable ones.
  */
