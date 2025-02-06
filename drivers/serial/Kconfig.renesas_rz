@@ -12,6 +12,17 @@ config UART_RENESAS_RZ_SCIF
 	help
 	  Enable Renesas RZ SCIF UART Driver.
 
+config UART_RENESAS_RZ_SCI
+	bool "Renesas RZ SCI UART"
+	default y
+	depends on DT_HAS_RENESAS_RZ_SCI_UART_ENABLED
+	select PINCTRL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select USE_RZ_FSP_SCI_UART
+	help
+	  Enable Renesas RZ SCI UART Driver.
+
 if UART_RENESAS_RZ_SCIF
 
 config UART_RENESAS_RZG_INIT_DELAY_MS
