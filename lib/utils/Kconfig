@@ -16,6 +16,13 @@ config RING_BUFFER
 	  Some facilities such as kernel pipes are built on top of this.
 	  May be used directly e.g. when the pipe overhead is unnecessary.
 
+config RING_BUFFER_LARGE
+	bool "Allow large ring buffer sizes"
+	depends on RING_BUFFER
+	help
+	  Increase maximum buffer size from 32KB to 2GB. When this is enabled,
+	  all struct ring_buf instances become 12 bytes bigger.
+
 config NOTIFY
 	bool "Asynchronous Notifications"
 	help
