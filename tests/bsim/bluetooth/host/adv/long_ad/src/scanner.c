@@ -62,7 +62,7 @@ static void start_scan(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err) {
-		TEST_FAIL("Scanning failed to start (err %d)\n", err);
+		TEST_FAIL("Scanning failed to start (err %d)", err);
 	}
 
 	LOG_DBG("Scanning successfully started");

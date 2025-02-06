@@ -23,8 +23,8 @@ extern enum bst_result_t bst_result;
 
 static struct bt_conn *g_conn;
 
-static DEFINE_FLAG(flag_connected);
-static DEFINE_FLAG(flag_bonded);
+DEFINE_FLAG_STATIC(flag_connected);
+DEFINE_FLAG_STATIC(flag_bonded);
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {

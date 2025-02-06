@@ -32,7 +32,7 @@ static void create_adv(struct bt_le_ext_adv **adv)
 
 	err = bt_le_ext_adv_create(&params, NULL, adv);
 	if (err) {
-		TEST_FAIL("Failed to create advertiser (%d)\n", err);
+		TEST_FAIL("Failed to create advertiser (%d)", err);
 	}
 }
 
@@ -49,7 +49,7 @@ static void start_adv(struct bt_le_ext_adv *adv)
 
 	err = bt_le_ext_adv_start(adv, &start_params);
 	if (err) {
-		TEST_FAIL("Failed to start advertiser (%d)\n", err);
+		TEST_FAIL("Failed to start advertiser (%d)", err);
 	}
 }
 
@@ -99,7 +99,7 @@ static int set_ad_data(struct bt_le_ext_adv *adv, const uint8_t *serialized_ad,
 
 	err = bt_le_ext_adv_set_data(adv, ad, ad_len, NULL, 0);
 	if (err != 0 && err != -EDOM) {
-		TEST_FAIL("Failed to set advertising data (%d)\n", err);
+		TEST_FAIL("Failed to set advertising data (%d)", err);
 	}
 
 	return err;

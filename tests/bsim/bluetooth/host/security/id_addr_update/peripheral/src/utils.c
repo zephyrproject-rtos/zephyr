@@ -6,25 +6,12 @@
 
 #include "bs_bt_utils.h"
 #include "utils.h"
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
 
 BUILD_ASSERT(CONFIG_BT_MAX_PAIRED >= 2, "CONFIG_BT_MAX_PAIRED is too small.");
 BUILD_ASSERT(CONFIG_BT_ID_MAX >= 3, "CONFIG_BT_ID_MAX is too small.");
 BUILD_ASSERT(CONFIG_BT_MAX_CONN == 2, "CONFIG_BT_MAX_CONN should be equal to two.");
-
-void test_tick(bs_time_t HW_device_time)
-{
-	bs_trace_debug_time(0, "Simulation ends now.\n");
-	if (bst_result != Passed) {
-		bst_result = Failed;
-		bs_trace_error("Test did not pass before simulation ended.\n");
-	}
-}
-
-void test_init(void)
-{
-	bst_ticker_set_next_tick_absolute(TEST_TIMEOUT_SIMULATED);
-	bst_result = In_progress;
-}
 
 DEFINE_FLAG(flag_has_new_conn);
 struct bt_conn *new_conn;
@@ -37,7 +24,7 @@ void clear_conn(struct bt_conn *conn)
 		new_conn = NULL;
 	}
 
-	ASSERT(conn, "Test error: No new_conn!\n");
+	TEST_ASSERT(conn, "Test error: No new_conn!");
 	bt_conn_unref(conn);
 }
 
@@ -46,7 +33,7 @@ void wait_connected(struct bt_conn **conn)
 	WAIT_FOR_FLAG(flag_has_new_conn);
 	UNSET_FLAG(flag_has_new_conn);
 
-	ASSERT(new_conn, "connection unpopulated.");
+	TEST_ASSERT(new_conn, "connection unpopulated.");
 	*conn = new_conn;
 	new_conn = NULL;
 }
@@ -64,7 +51,7 @@ static void print_conn_state_transition(const char *prefix, struct bt_conn *conn
 	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	err = bt_conn_get_info(conn, &info);
-	ASSERT(!err, "Unexpected conn info result.");
+	TEST_ASSERT(!err, "Unexpected conn info result.");
 
 	bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
 	printk("%s: %s\n", prefix, addr_str);
@@ -78,7 +65,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	ASSERT((!new_conn || (conn == new_conn)), "Unexpected new connection.");
+	TEST_ASSERT((!new_conn || (conn == new_conn)), "Unexpected new connection.");
 
 	if (!new_conn) {
 		new_conn = bt_conn_ref(conn);
@@ -115,7 +102,7 @@ void set_security(struct bt_conn *conn, bt_security_t sec)
 	int err;
 
 	err = bt_conn_set_security(conn, sec);
-	ASSERT(!err, "Err bt_conn_set_security %d", err);
+	TEST_ASSERT(!err, "Err bt_conn_set_security %d", err);
 }
 
 void wait_pairing_completed(void)
@@ -129,12 +116,12 @@ void bs_bt_utils_setup(void)
 	int err;
 
 	err = bt_enable(NULL);
-	ASSERT(!err, "bt_enable failed.\n");
+	TEST_ASSERT(!err, "bt_enable failed.");
 	err = bt_conn_auth_info_cb_register(&bt_conn_auth_info_cb);
-	ASSERT(!err, "bt_conn_auth_info_cb_register failed.\n");
+	TEST_ASSERT(!err, "bt_conn_auth_info_cb_register failed.");
 
 	err = settings_load();
-	ASSERT(!err, "settings_load failed.\n");
+	TEST_ASSERT(!err, "settings_load failed.");
 }
 
 void disconnect(struct bt_conn *conn)
@@ -142,7 +129,7 @@ void disconnect(struct bt_conn *conn)
 	int err;
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	ASSERT(!err, "Err bt_conn_disconnect %d", err);
+	TEST_ASSERT(!err, "Err bt_conn_disconnect %d", err);
 }
 
 void advertise_connectable(int id)
@@ -156,7 +143,7 @@ void advertise_connectable(int id)
 	param.options |= BT_LE_ADV_OPT_CONN;
 
 	err = bt_le_adv_start(&param, NULL, 0, NULL, 0);
-	ASSERT(!err, "Advertising failed to start (err %d)\n", err);
+	TEST_ASSERT(!err, "Advertising failed to start (err %d)", err);
 }
 
 DEFINE_FLAG(flag_bas_ccc_subscribed);
@@ -203,7 +190,7 @@ void bas_notify(struct bt_conn *conn)
 	int err;
 
 	err = bt_gatt_notify(conn, &bas.attrs[2], &bas_level, sizeof(bas_level));
-	ASSERT(!err, "bt_gatt_notify failed (err %d)\n", err);
+	TEST_ASSERT(!err, "bt_gatt_notify failed (err %d)", err);
 }
 
 DEFINE_FLAG(flag_bas_has_notification);

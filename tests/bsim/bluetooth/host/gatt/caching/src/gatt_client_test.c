@@ -20,13 +20,13 @@
 #include "babblekit/sync.h"
 #include "common.h"
 
-static DEFINE_FLAG(flag_is_connected);
-static DEFINE_FLAG(flag_discover_complete);
-static DEFINE_FLAG(flag_write_complete);
-static DEFINE_FLAG(flag_chan_1_read);
-static DEFINE_FLAG(flag_chan_2_read);
-static DEFINE_FLAG(flag_db_hash_read);
-static DEFINE_FLAG(flag_encrypted);
+DEFINE_FLAG_STATIC(flag_is_connected);
+DEFINE_FLAG_STATIC(flag_discover_complete);
+DEFINE_FLAG_STATIC(flag_write_complete);
+DEFINE_FLAG_STATIC(flag_chan_1_read);
+DEFINE_FLAG_STATIC(flag_chan_2_read);
+DEFINE_FLAG_STATIC(flag_db_hash_read);
+DEFINE_FLAG_STATIC(flag_encrypted);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;

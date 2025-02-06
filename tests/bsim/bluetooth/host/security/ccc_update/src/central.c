@@ -29,9 +29,9 @@
 #define CLIENT_CLIENT_CHAN 0
 #define SERVER_CLIENT_CHAN 1
 
-static DEFINE_FLAG(connected_flag);
-static DEFINE_FLAG(disconnected_flag);
-static DEFINE_FLAG(security_updated_flag);
+DEFINE_FLAG_STATIC(connected_flag);
+DEFINE_FLAG_STATIC(disconnected_flag);
+DEFINE_FLAG_STATIC(security_updated_flag);
 
 #define BT_UUID_DUMMY_SERVICE BT_UUID_DECLARE_128(DUMMY_SERVICE_TYPE)
 #define BT_UUID_DUMMY_SERVICE_NOTIFY BT_UUID_DECLARE_128(DUMMY_SERVICE_NOTIFY_TYPE)
@@ -40,7 +40,7 @@ static struct bt_conn *default_conn;
 
 static struct bt_conn_cb central_cb;
 
-static DEFINE_FLAG(gatt_write_flag);
+DEFINE_FLAG_STATIC(gatt_write_flag);
 static uint8_t gatt_write_att_err;
 
 static void gatt_write_cb(struct bt_conn *conn, uint8_t att_err,

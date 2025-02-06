@@ -22,8 +22,8 @@
 
 extern enum bst_result_t bst_result;
 
-static DEFINE_FLAG(flag_is_connected);
-static DEFINE_FLAG(flag_is_encrypted);
+DEFINE_FLAG_STATIC(flag_is_connected);
+DEFINE_FLAG_STATIC(flag_is_encrypted);
 
 static struct bt_conn *g_conn;
 

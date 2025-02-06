@@ -19,11 +19,11 @@
 #include "babblekit/flags.h"
 #include "common.h"
 
-static DEFINE_FLAG(flag_is_connected);
-static DEFINE_FLAG(flag_is_encrypted);
-static DEFINE_FLAG(flag_discover_complete);
-static DEFINE_FLAG(flag_short_subscribed);
-static DEFINE_FLAG(flag_long_subscribed);
+DEFINE_FLAG_STATIC(flag_is_connected);
+DEFINE_FLAG_STATIC(flag_is_encrypted);
+DEFINE_FLAG_STATIC(flag_discover_complete);
+DEFINE_FLAG_STATIC(flag_short_subscribed);
+DEFINE_FLAG_STATIC(flag_long_subscribed);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;

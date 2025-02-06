@@ -6,7 +6,6 @@ find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(app)
 
 target_sources(app PRIVATE
-  ../bs_main.c
   main.c
 )
 
@@ -15,5 +14,10 @@ zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
 )
 
+add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/common/testlib testlib)
-target_link_libraries(app PRIVATE testlib)
+target_link_libraries(app
+  PRIVATE
+    babblekit
+    testlib
+)

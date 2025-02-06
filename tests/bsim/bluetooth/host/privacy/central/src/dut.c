@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_bt_utils.h"
-
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
@@ -13,6 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 
 #include <babblekit/testcase.h>
+#include <babblekit/sync.h>
 #include <testlib/conn.h>
 #include <testlib/scan.h>
 
@@ -24,7 +23,7 @@ void start_scanning(void)
 	/* Enable bluetooth */
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Failed to enable bluetooth (err %d\n)", err);
+		TEST_FAIL("Failed to enable bluetooth (err %d)", err);
 	}
 
 	/* Start active scanning */
@@ -38,7 +37,7 @@ void start_scanning(void)
 
 	err = bt_le_scan_start(&param, NULL);
 	if (err) {
-		FAIL("Failed to start scanning");
+		TEST_FAIL("Failed to start scanning");
 	}
 }
 
@@ -48,12 +47,12 @@ void dut_procedure(void)
 
 	/* Nothing to do */
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }
 
 void dut_procedure_connect_short_rpa_timeout(void)
 {
-	backchannel_init(1);
+	TEST_ASSERT(bk_sync_init() == 0);
 
 	const uint16_t rpa_timeout_s = 1;
 
@@ -73,13 +72,13 @@ void dut_procedure_connect_short_rpa_timeout(void)
 	TEST_ASSERT(!err, "Failed to start scan (err %d)", err);
 
 	/* Indicate to the peer device that we have found the advertiser. */
-	backchannel_sync_send();
+	bk_sync_send();
 
 	/* Create a connection using that address */
 	err = bt_testlib_connect(&peer, &conn);
 	TEST_ASSERT(!err, "Failed to initiate connection (err %d)", err);
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }
 
 void dut_procedure_connect_timeout(void)
@@ -114,5 +113,5 @@ void dut_procedure_connect_timeout(void)
 	TEST_ASSERT(diff_to_expected_ms < 0.1 * expected_conn_timeout_ms,
 		    "Connection timeout not within 10 \%% of expected timeout");
 
-	PASS("PASS\n");
+	TEST_PASS("PASS");
 }
