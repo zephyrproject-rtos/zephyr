@@ -57,7 +57,7 @@ class MiniChLinkBinaryRunner(ZephyrBinaryRunner):
             minichlink=args.minichlink,
             erase=args.erase,
             reset=args.reset,
-            dt_flash=(args.dt_flash == "y"),
+            dt_flash=args.dt_flash,
             terminal=args.terminal,
         )
 

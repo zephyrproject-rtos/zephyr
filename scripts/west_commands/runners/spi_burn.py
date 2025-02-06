@@ -56,11 +56,14 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
             iceman  = 'ICEman'
 
         # Get flash address offset
-        if args.dt_flash == 'y':
+        if args.dt_flash:
             build_conf = BuildConfiguration(cfg.build_dir)
-            address = hex(
-                cls.get_flash_address(args, build_conf) - build_conf['CONFIG_FLASH_BASE_ADDRESS']
-            )
+
+            if build_conf.getboolean('CONFIG_HAS_FLASH_LOAD_OFFSET'):
+                address = hex(build_conf['CONFIG_FLASH_LOAD_OFFSET'])
+            else:
+                address = '0x0'
+
         else:
             address = args.addr
 
