@@ -494,7 +494,7 @@ __weak void clock_init(void)
 #endif
 #endif
 
-#ifdef CONFIG_MCUX_ACMP
+#if defined(CONFIG_COMPARATOR_MCUX_ACMP) || defined(CONFIG_SENSOR_MCUX_ACMP)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp1))
 	/* Configure ACMP1 using Osc48MDiv2*/
 	rootCfg.mux = kCLOCK_ACMP_ClockRoot_MuxOscRc48MDiv2;
