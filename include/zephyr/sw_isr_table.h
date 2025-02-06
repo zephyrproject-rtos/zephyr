@@ -182,6 +182,12 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #define _MK_ISR_NAME(x, y) __MK_ISR_NAME(x, y)
 #define __MK_ISR_NAME(x, y) __isr_ ## x ## _irq_ ## y
 
+#if TOOLCHAIN_GCC_VERSION < 40400
+#define _PREVENT_UNUSED(name) __asm__ ("" :: "i" (&(name)))
+#else
+#define _PREVENT_UNUSED(name)
+#endif
+
 
 #if defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
 
@@ -215,7 +221,8 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 	_Z_ISR_TABLE_ENTRY(irq, func, param, _MK_ISR_ELEMENT_SECTION(counter));           \
 	static Z_DECL_ALIGN(struct _isr_list_sname) Z_GENERIC_SECTION(.intList)           \
 		__used _MK_ISR_NAME(func, counter) =                                      \
-		{irq, flags, _MK_ISR_ELEMENT_SECTION(counter)}
+		{irq, flags, _MK_ISR_ELEMENT_SECTION(counter)}                            \
+	_PREVENT_UNUSED(_MK_ISR_NAME(func, counter))
 
 /* Create an entry for _isr_table to be then placed by the linker.
  * An instance of struct _isr_list which gets put in the .intList
@@ -251,7 +258,8 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 		__used _MK_ISR_NAME(func, counter) = {                                             \
 			irq,                                                                       \
 			ISR_FLAG_DIRECT | (flags),                                                 \
-			_MK_IRQ_ELEMENT_SECTION(counter)}
+			_MK_IRQ_ELEMENT_SECTION(counter)};                                         \
+	_PREVENT_UNUSED(_MK_ISR_NAME(func, counter))
 
 /* Create an entry to irq table and place it in specific section which name is then placed
  * in an instance of struct _isr_list to be then used by the isr generation script to create
@@ -266,14 +274,18 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 
 #else /* defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION) */
 
+#define _Z_ISR_DECLARE(irq, flags, func, param, counter) \
+	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
+		__used _MK_ISR_NAME(func, counter) = \
+			{irq, flags, (void *)&func, (const void *)param}; \
+	_PREVENT_UNUSED(_MK_ISR_NAME(func, counter))
+
 /* Create an instance of struct _isr_list which gets put in the .intList
  * section. This gets consumed by gen_isr_tables.py which creates the vector
  * and/or SW ISR tables.
  */
 #define Z_ISR_DECLARE(irq, flags, func, param) \
-	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
-		__used _MK_ISR_NAME(func, __COUNTER__) = \
-			{irq, flags, (void *)&func, (const void *)param}
+	_Z_ISR_DECLARE(irq, flags, func, param, __COUNTER__)
 
 /* The version of the Z_ISR_DECLARE that should be used for direct ISR declaration.
  * It is here for the API match the version with CONFIG_ISR_TABLES_LOCAL_DECLARATION enabled.
