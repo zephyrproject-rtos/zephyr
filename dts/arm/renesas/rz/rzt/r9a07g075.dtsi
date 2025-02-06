@@ -94,5 +94,10 @@
 				};
 			};
 		};
+
+		pinctrl: pinctrl@800a0000 {
+			compatible = "renesas,rzt-pinctrl";
+			reg = <0x800a0000 0x1000 0x81030c00 0x1000>;
+		};
 	};
 };
