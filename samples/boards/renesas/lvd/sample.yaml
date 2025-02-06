@@ -1,0 +1,8 @@
+sample:
+  name: Low Voltage Detector (LVD)
+tests:
+  sample.boards.renesas.lvd:
+    build_only: true
+    platform_allow:
+      - rsk_rx130@512kb
+    tags: lvd
