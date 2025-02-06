@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2025 Siemens AG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "RAM Disk backed by Embedded Disk Image Sample Application"
+
+config RAMDISK_DISKIMAGE_SAMPLE_DISK_SIZE
+	int "Size of the disk image (in KiB) to be created for the sample"
+	default 1024
+
+source "Kconfig.zephyr"
