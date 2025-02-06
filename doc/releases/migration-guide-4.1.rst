@@ -386,6 +386,20 @@ Sensors
         };
       };
 
+  * The :dtcompatible:`nxp,fxls8974` compatible has added a Devicetree
+    property ``whoami_value`` to allow the binding to be used for
+    related sensors of compatible functionality.
+
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &fxls8974 {
+            ..
+            whoami-value = <0x84>;
+            ..
+      };
+
 Serial
 ======
 

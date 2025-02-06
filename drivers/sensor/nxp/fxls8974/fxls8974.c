@@ -491,7 +491,7 @@ static int fxls8974_init(const struct device *dev)
 			return -EIO;
 		}
 
-		if (data->whoami == WHOAMI_ID_FXLS8974) {
+		if (data->whoami == cfg->expected_whoami_value) {
 			LOG_DBG("Device ID 0x%x, FXLS8974", data->whoami);
 		} else {
 			LOG_ERR("Unknown Device ID 0x%x", data->whoami);
@@ -618,6 +618,7 @@ static DEVICE_API(sensor, fxls8974_driver_api) = {
 
 #define FXLS8974_INIT(n)									\
 		static const struct fxls8974_config fxls8974_config_##n = {			\
+				.expected_whoami_value = DT_INST_PROP(n, whoami_value),\
 				COND_CODE_1(DT_INST_ON_BUS(n, spi),				\
 				(FXLS8974_CONFIG_SPI(n)),					\
 				(FXLS8974_CONFIG_I2C(n)))					\
