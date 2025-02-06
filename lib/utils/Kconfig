@@ -12,9 +12,9 @@ config JSON_LIBRARY
 config RING_BUFFER
 	bool "Ring buffers"
 	help
-	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
-	  buffers manage their own buffer memory and can store arbitrary data.
-	  For optimal performance, use buffer sizes that are a power of 2.
+	  Provide highly efficient ring buffer management for arbitrary data.
+	  Some facilities such as kernel pipes are built on top of this.
+	  May be used directly e.g. when the pipe overhead is unnecessary.
 
 config NOTIFY
 	bool "Asynchronous Notifications"
