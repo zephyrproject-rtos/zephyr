@@ -66,8 +66,8 @@ struct channel {
 };
 static struct channel channels[L2CAP_CHANNELS];
 
-static DEFINE_FLAG(is_connected);
-static DEFINE_FLAG(unsequenced_data);
+DEFINE_FLAG_STATIC(is_connected);
+DEFINE_FLAG_STATIC(unsequenced_data);
 
 #define T_STACK_SIZE 512
 #define T_PRIORITY 5

@@ -27,8 +27,8 @@
 
 LOG_MODULE_REGISTER(client, LOG_LEVEL_DBG);
 
-static DEFINE_FLAG(client_security_changed_flag);
-static DEFINE_FLAG(client_is_subscribed_flag);
+DEFINE_FLAG_STATIC(client_security_changed_flag);
+DEFINE_FLAG_STATIC(client_is_subscribed_flag);
 
 /* Subscription parameters have the same lifetime as a subscription.
  * That is the backing struct should stay valid until a call to
