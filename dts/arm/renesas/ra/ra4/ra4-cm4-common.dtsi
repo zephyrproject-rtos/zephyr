@@ -338,62 +338,62 @@
 			status = "disabled";
 		};
 
-		pwm0: pwm0@40169000 {
+		pwm0: pwm0@40078000 {
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_0>;
 			clocks = <&pclkd MSTPD 5>;
-			reg = <0x40169000 0x100>;
+			reg = <0x40078000 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-		pwm1: pwm1@40169100 {
+		pwm1: pwm1@40078100 {
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_1>;
 			clocks = <&pclkd MSTPD 5>;
-			reg = <0x40169100 0x100>;
+			reg = <0x40078100 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-		pwm2: pwm2@40169200 {
+		pwm2: pwm2@40078200 {
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_2>;
 			clocks = <&pclkd MSTPD 5>;
-			reg = <0x40169200 0x100>;
+			reg = <0x40078200 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-		pwm3: pwm3@40169300 {
+		pwm3: pwm3@40078300 {
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_3>;
 			clocks = <&pclkd MSTPD 5>;
-			reg = <0x40169300 0x100>;
+			reg = <0x40078300 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-		pwm4: pwm4@40169400 {
+		pwm4: pwm4@40078400 {
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_4>;
 			clocks = <&pclkd MSTPD 5>;
-			reg = <0x40169400 0x100>;
+			reg = <0x40078400 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-		pwm5: pwm5@40169500 {
+		pwm5: pwm5@40078500 {
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_5>;
 			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40169500 0x100>;
+			reg = <0x40078500 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
