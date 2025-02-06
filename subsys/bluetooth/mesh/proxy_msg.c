@@ -176,6 +176,7 @@ int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 			   bt_gatt_complete_func_t end, void *user_data)
 {
 	int err;
+	uint16_t att_mtu = bt_gatt_get_mtu(conn);
 	uint16_t mtu;
 	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
 
@@ -183,7 +184,12 @@ int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 		bt_hex(msg->data, msg->len));
 
 	/* ATT_MTU - OpCode (1 byte) - Handle (2 bytes) */
-	mtu = bt_gatt_get_mtu(conn) - 3;
+	if (att_mtu < 3) {
+		LOG_WRN("Invalid ATT MTU: %d", att_mtu);
+		return -EINVAL;
+	}
+
+	mtu = att_mtu - 3;
 	if (mtu > msg->len) {
 		net_buf_simple_push_u8(msg, PDU_HDR(SAR_COMPLETE, type));
 		return role->cb.send(conn, msg->data, msg->len, end, user_data);
