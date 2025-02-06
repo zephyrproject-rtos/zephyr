@@ -45,6 +45,10 @@ config BT_CTLR_PHY_CODED_SUPPORT
 config BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
+config BT_CTLR_ADV_EXT_CODING_SELECTION_SUPPORT
+	depends on BT_CTLR_PHY_CODED_SUPPORT
+	bool
+
 config BT_CTLR_ADV_PERIODIC_SUPPORT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	bool
@@ -779,6 +783,14 @@ config BT_CTLR_ADV_PERIODIC_RSP
 	help
 	  Enable support for Bluetooth 5.4 LE Periodic Advertising with
 	  Responses in the Controller.
+
+config BT_CTLR_ADV_EXT_CODING_SELECTION
+	bool "Advertising Coding Selection support"
+	depends on BT_CTLR_PHY_CODED && BT_CTLR_ADV_EXT_CODING_SELECTION_SUPPORT
+	default y if BT_EXT_ADV_CODING_SELECTION
+	help
+	  Enable support for Bluetooth 6.0 Advertising Coding Selection
+	  in the Controller.
 
 if BT_CTLR_ADV_PERIODIC
 
