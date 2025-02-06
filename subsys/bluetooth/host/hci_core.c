@@ -3287,11 +3287,9 @@ static int common_init(void)
 	read_supported_commands_complete(rsp);
 	net_buf_unref(rsp);
 
-	if (IS_ENABLED(CONFIG_BT_HOST_CRYPTO_PRNG)) {
-		/* Initialize the PRNG so that it is safe to use it later
-		 * on in the initialization process.
-		 */
-		err = prng_init();
+	if (IS_ENABLED(CONFIG_BT_HOST_CRYPTO)) {
+		/* Initialize crypto for host */
+		err = bt_crypto_init();
 		if (err) {
 			return err;
 		}
