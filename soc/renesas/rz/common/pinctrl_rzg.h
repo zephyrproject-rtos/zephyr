@@ -101,4 +101,4 @@ typedef struct pinctrl_soc_pin_t {
 #ifdef __cplusplus
 }
 #endif
-#endif /*ZEPHYR_SOC_RENESAS_RZ_COMMON_PINCTRL_RZG_H_*/
+#endif /* ZEPHYR_SOC_RENESAS_RZ_COMMON_PINCTRL_RZG_H_ */
