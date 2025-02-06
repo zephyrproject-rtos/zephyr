@@ -13,6 +13,8 @@
 /delete-node/ &agt3;
 /delete-node/ &agt4;
 /delete-node/ &agt5;
+/delete-node/ &eth;
+/delete-node/ &mdio;
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
 /delete-node/ &adc1;
