@@ -125,5 +125,12 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		eth0: ethernet@1a120000 {
+			compatible = "sensry,sy1xx-mac";
+			reg = <0x1a120000 0x1000>, <0x1a102a00 0x100>;
+			reg-names = "ctrl", "data";
+			status = "disabled";
+		};
 	};
 };
