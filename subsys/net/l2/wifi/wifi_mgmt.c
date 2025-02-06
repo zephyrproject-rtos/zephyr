@@ -359,6 +359,10 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	LOG_HEXDUMP_DBG(params->ssid, params->ssid_length, "ssid");
 	LOG_HEXDUMP_DBG(params->psk, params->psk_length, "psk");
 	if (params->sae_password) {
@@ -431,6 +435,10 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 #ifdef CONFIG_WIFI_MGMT_FORCED_PASSIVE_SCAN
 	struct wifi_scan_params default_params = {0};
 
@@ -453,6 +461,10 @@ static int wifi_disconnect(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->disconnect == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->disconnect(dev);
@@ -492,6 +504,11 @@ static int wifi_start_roaming(uint32_t mgmt_request, struct net_if *iface,
 	if (wifi_mgmt_api == NULL) {
 		return -ENOTSUP;
 	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	if (roaming_params.is_11r_used) {
 		if (wifi_mgmt_api->start_11r_roaming == NULL) {
 			return -ENOTSUP;
@@ -527,6 +544,10 @@ static int wifi_neighbor_rep_complete(uint32_t mgmt_request, struct net_if *ifac
 	const struct device *dev = net_if_get_device(iface);
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
 	struct wifi_scan_params params = {0};
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
 
 	for (int i = 0; i < roaming_params.neighbor_rep.neighbor_cnt; i++) {
 		params.band_chan[i].channel = roaming_params.neighbor_rep.neighbor_ap[i].channel;
@@ -624,6 +645,10 @@ static int wifi_ap_enable(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->ap_enable(dev, params);
 }
 
@@ -637,6 +662,10 @@ static int wifi_ap_disable(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_disable == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->ap_disable(dev);
@@ -657,6 +686,10 @@ static int wifi_ap_sta_disconnect(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_sta_disconnect == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (!data || len != sizeof(uint8_t) * WIFI_MAC_ADDR_LEN) {
@@ -682,6 +715,10 @@ static int wifi_ap_config_params(uint32_t mgmt_request, struct net_if *iface,
 	if (wifi_mgmt_api == NULL ||
 	    wifi_mgmt_api->ap_config_params == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (!data || len != sizeof(*params)) {
@@ -711,6 +748,10 @@ static int wifi_ap_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_rts_threshold == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (data == NULL || len != sizeof(*rts_threshold)) {
@@ -795,6 +836,10 @@ static int wifi_11k_cfg(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 	if (params->oper == WIFI_MGMT_SET) {
 		roaming_params.is_11k_enabled = params->enable_11k;
@@ -817,6 +862,10 @@ static int wifi_11k_neighbor_request(uint32_t mgmt_request, struct net_if *iface
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->send_11k_neighbor_request(dev, params);
 }
 
@@ -833,6 +882,10 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_power_save == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	switch (ps_params->type) {
@@ -884,6 +937,10 @@ static int wifi_get_power_save_config(uint32_t mgmt_request, struct net_if *ifac
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	if (!data || len != sizeof(*ps_config)) {
 		return -EINVAL;
 	}
@@ -905,6 +962,10 @@ static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 		twt_params->fail_reason =
 			WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (twt_params->operation == WIFI_TWT_TEARDOWN) {
@@ -970,6 +1031,10 @@ static int wifi_set_btwt(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
 			sizeof(struct wifi_iface_status))) {
 		twt_params->fail_reason =
@@ -1001,6 +1066,10 @@ static int wifi_reg_domain(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->reg_domain == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (!data || len != sizeof(*reg_domain)) {
@@ -1035,6 +1104,10 @@ static int wifi_mode(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->mode(dev, mode_info);
 }
 
@@ -1055,6 +1128,10 @@ static int wifi_packet_filter(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->filter(dev, filter_info);
 }
 
@@ -1073,6 +1150,10 @@ static int wifi_channel(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->channel == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->channel(dev, channel_info);
@@ -1107,6 +1188,10 @@ static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface, void *dat
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	if (query_reason >= WIFI_BTM_QUERY_REASON_UNSPECIFIED &&
 	    query_reason <= WIFI_BTM_QUERY_REASON_LEAVING_ESS) {
 		return wifi_mgmt_api->btm_query(dev, query_reason);
@@ -1129,6 +1214,10 @@ static int wifi_get_connection_params(uint32_t mgmt_request, struct net_if *ifac
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->get_conn_params(dev, conn_params);
 }
 
@@ -1142,6 +1231,10 @@ static int wifi_wps_config(uint32_t mgmt_request, struct net_if *iface, void *da
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->wps_config == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->wps_config(dev, params);
@@ -1158,6 +1251,10 @@ static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_rts_threshold == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (!data || len != sizeof(*rts_threshold)) {
@@ -1181,6 +1278,10 @@ static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->dpp_dispatch(dev, params);
 }
 
@@ -1198,6 +1299,10 @@ static int wifi_pmksa_flush(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	return wifi_mgmt_api->pmksa_flush(dev);
 }
 
@@ -1212,6 +1317,10 @@ static int wifi_get_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->get_rts_threshold == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (!data || len != sizeof(*rts_threshold)) {
@@ -1233,6 +1342,10 @@ static int wifi_set_enterprise_creds(uint32_t mgmt_request, struct net_if *iface
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->enterprise_creds == NULL) {
 		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	return wifi_mgmt_api->enterprise_creds(dev, params);
