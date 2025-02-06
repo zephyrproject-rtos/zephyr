@@ -725,7 +725,7 @@ static const struct bt_gatt_attr _pacs_attrs[] = BT_PACS_SERVICE_DEFINITION();
 static struct bt_gatt_attr pacs_attrs[] = BT_PACS_SERVICE_DEFINITION();
 static struct bt_gatt_service pacs_svc = (struct bt_gatt_service)BT_GATT_SERVICE(pacs_attrs);
 
-static void configure_pacs_char(const struct bt_bap_pacs_register_param *param)
+static void configure_pacs_char(const struct bt_pacs_register_param *param)
 {
 	const uint8_t first_attr_offset = 1U;
 	struct bt_gatt_attr *svc_attrs =
@@ -784,7 +784,7 @@ static void configure_pacs_char(const struct bt_bap_pacs_register_param *param)
 #endif /* CONFIG_BT_PAC_SRC */
 }
 
-static bool valid_pacs_register_param(const struct bt_bap_pacs_register_param *param)
+static bool valid_pacs_register_param(const struct bt_pacs_register_param *param)
 {
 	bool any_pac_registered = false;
 
@@ -820,7 +820,7 @@ static bool valid_pacs_register_param(const struct bt_bap_pacs_register_param *p
 	return true;
 }
 
-int bt_pacs_register(const struct bt_bap_pacs_register_param *param)
+int bt_pacs_register(const struct bt_pacs_register_param *param)
 {
 	int err = 0;
 
