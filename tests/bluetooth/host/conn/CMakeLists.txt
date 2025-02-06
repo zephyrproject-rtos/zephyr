@@ -16,6 +16,10 @@ add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host/conn/mocks mocks)
 
 target_link_libraries(testbinary PRIVATE mocks host_mocks)
 
+target_include_directories(mocks PUBLIC
+  ${ZEPHYR_BASE}/subsys/bluetooth/host
+)
+
 target_sources(testbinary
     PRIVATE
     src/main.c
