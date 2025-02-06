@@ -373,6 +373,19 @@ Sensors
         };
       };
 
+  * The :dtcompatible:`invensense,icp10125` driver has been renamed to
+    :dtcompatible:`invensense,icp101xx`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        icp101xx:icp101xx@63 {
+           compatible = "invensense,icp101xx";
+           reg = <0x63>;
+        };
+      };
+
 Serial
 ======
 
