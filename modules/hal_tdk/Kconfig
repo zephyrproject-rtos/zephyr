@@ -17,4 +17,10 @@ config USE_EMD_ICM42670
 	depends on DT_HAS_INVENSENSE_ICM42670P_ENABLED \
 		|| DT_HAS_INVENSENSE_ICM42670S_ENABLED
 
+config USE_EMD_ICP101XX
+	bool "ICP101XX Barometric Pressure and Temperature Sensors"
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on DT_HAS_INVENSENSE_ICP101XX_ENABLED
+
 endmenu
