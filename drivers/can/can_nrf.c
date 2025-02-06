@@ -17,6 +17,10 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+#endif
+
 /* nRF CAN wrapper offsets */
 #define CAN_TASKS_START	  offsetof(NRF_CAN_Type, TASKS_START)
 #define CAN_EVENTS_CORE_0 offsetof(NRF_CAN_Type, EVENTS_CORE[0])
@@ -177,10 +181,18 @@ static int can_nrf_init(const struct device *dev)
 		return ret;
 	}
 
+
 	sys_write32(0U, config->wrapper + CAN_EVENTS_CORE_0);
 	sys_write32(0U, config->wrapper + CAN_EVENTS_CORE_1);
 	sys_write32(CAN_INTEN_CORE0_Msk | CAN_INTEN_CORE1_Msk, config->wrapper + CAN_INTEN);
 	sys_write32(1U, config->wrapper + CAN_TASKS_START);
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	ret = nrf_gpd_retain_pins_set(config->pcfg, false);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 	config->irq_configure();
 
