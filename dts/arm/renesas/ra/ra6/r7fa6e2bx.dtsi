@@ -17,6 +17,8 @@
 /delete-node/ &adc1;
 /delete-node/ &usbfs;
 /delete-node/ &usbfs_phy;
+/delete-node/ &eth;
+/delete-node/ &mdio;
 
 / {
 	soc {
