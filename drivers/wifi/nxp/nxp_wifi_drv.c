@@ -1261,6 +1261,10 @@ static int nxp_wifi_stats(const struct device *dev, struct net_stats_wifi *stats
 	stats->unicast.tx = if_handle->stats.unicast.tx;
 	stats->overrun_count = if_handle->stats.errors.rx + if_handle->stats.errors.tx;
 
+	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+		return 0;
+	}
+
 #ifdef CONFIG_NXP_WIFI_GET_LOG
 	wifi_stats = k_malloc(sizeof(wlan_pkt_stats_t));
 	if (!wifi_stats) {
@@ -1308,6 +1312,10 @@ int nxp_wifi_reset_stats(const struct device *dev)
 
 	/* clear local statistics */
 	memset(&if_handle->stats, 0, sizeof(if_handle->stats));
+
+	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+		return 0;
+	}
 
 #ifdef CONFIG_NXP_WIFI_GET_LOG
 	/* store firmware statistics */
