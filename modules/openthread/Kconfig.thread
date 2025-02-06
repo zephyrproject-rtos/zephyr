@@ -250,3 +250,11 @@ config OPENTHREAD_MLE_CHILD_TIMEOUT
 	default 240
 	help
 	  The value of MLE child timeout in seconds.
+
+config OPENTHREAD_PSA_ITS_NVM_OFFSET
+	hex "NVM offset while using key refs"
+	default 0x20000
+	help
+	  The offset value in the PSA ITS non-volatile space is dedicated to OpenThread
+	  key reference IDs. This offset must not overwrite any other ranges already in
+	  use within the PSA ITS non-volatile space.
