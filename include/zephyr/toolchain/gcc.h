@@ -689,6 +689,13 @@ do {                                                                    \
 #define FUNC_NO_STACK_PROTECTOR
 #endif
 
+#ifndef __COUNTER__
+/* GCC versions before 4.3.0 do not support __COUNTER__
+ * but this should be good enough
+ */
+#define __COUNTER__ __LINE__
+#endif
+
 #endif /* !_LINKER */
 
 #define TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER "-Waddress-of-packed-member"
