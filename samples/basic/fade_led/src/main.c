@@ -15,8 +15,8 @@
 #include <zephyr/drivers/pwm.h>
 
 #define PWM_LED_ALIAS(i) DT_ALIAS(_CONCAT(pwm_led, i))
-#define PWM_LED(i, _)                                                                              \
-	IF_ENABLED(DT_NODE_EXISTS(PWM_LED_ALIAS(i)), (PWM_DT_SPEC_GET(PWM_LED_ALIAS(i)),))
+#define PWM_LED_IS_OKAY(i) DT_NODE_HAS_STATUS_OKAY(DT_PARENT(PWM_LED_ALIAS(i)))
+#define PWM_LED(i, _) IF_ENABLED(PWM_LED_IS_OKAY(i), (PWM_DT_SPEC_GET(PWM_LED_ALIAS(i)),))
 
 #define MAX_LEDS 10
 static const struct pwm_dt_spec pwm_leds[] = {LISTIFY(MAX_LEDS, PWM_LED, ())};
