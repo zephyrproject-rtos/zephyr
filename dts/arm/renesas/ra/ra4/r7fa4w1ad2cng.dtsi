@@ -229,3 +229,11 @@
 	port-irq-names = "port-irq11";
 	port-irq11-pins = <1>;
 };
+
+&pwm2 {
+	clocks = <&pclkd MSTPD 5>;
+};
+
+&pwm3 {
+	clocks = <&pclkd MSTPD 5>;
+};
