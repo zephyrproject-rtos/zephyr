@@ -682,8 +682,8 @@ void nrf_wifi_event_proc_twt_sleep_zep(void *vif_ctx,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
-	struct nrf_wifi_fmac_priv_def *def_priv = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_priv *sys_fpriv = NULL;
 #ifdef CONFIG_NRF70_DATA_TX
 	int desc = 0;
 	int ac = 0;
@@ -708,8 +708,8 @@ void nrf_wifi_event_proc_twt_sleep_zep(void *vif_ctx,
 	}
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
-	def_priv = wifi_fmac_priv(fmac_dev_ctx->fpriv);
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+	sys_fpriv = wifi_fmac_priv(fmac_dev_ctx->fpriv);
 
 	if (!sleep_evnt) {
 		LOG_ERR("%s: sleep_evnt is NULL", __func__);
@@ -718,29 +718,29 @@ void nrf_wifi_event_proc_twt_sleep_zep(void *vif_ctx,
 
 	switch (sleep_evnt->info.type) {
 	case TWT_BLOCK_TX:
-		nrf_wifi_osal_spinlock_take(def_dev_ctx->tx_config.tx_lock);
+		nrf_wifi_osal_spinlock_take(sys_dev_ctx->tx_config.tx_lock);
 
-		def_dev_ctx->twt_sleep_status = NRF_WIFI_FMAC_TWT_STATE_SLEEP;
+		sys_dev_ctx->twt_sleep_status = NRF_WIFI_FMAC_TWT_STATE_SLEEP;
 
 		wifi_mgmt_raise_twt_sleep_state(vif_ctx_zep->zep_net_if_ctx,
 						WIFI_TWT_STATE_SLEEP);
-		nrf_wifi_osal_spinlock_rel(def_dev_ctx->tx_config.tx_lock);
+		nrf_wifi_osal_spinlock_rel(sys_dev_ctx->tx_config.tx_lock);
 	break;
 	case TWT_UNBLOCK_TX:
-		nrf_wifi_osal_spinlock_take(def_dev_ctx->tx_config.tx_lock);
-		def_dev_ctx->twt_sleep_status = NRF_WIFI_FMAC_TWT_STATE_AWAKE;
+		nrf_wifi_osal_spinlock_take(sys_dev_ctx->tx_config.tx_lock);
+		sys_dev_ctx->twt_sleep_status = NRF_WIFI_FMAC_TWT_STATE_AWAKE;
 		wifi_mgmt_raise_twt_sleep_state(vif_ctx_zep->zep_net_if_ctx,
 						WIFI_TWT_STATE_AWAKE);
 #ifdef CONFIG_NRF70_DATA_TX
 		for (ac = NRF_WIFI_FMAC_AC_BE;
 		     ac <= NRF_WIFI_FMAC_AC_MAX; ++ac) {
 			desc = tx_desc_get(fmac_dev_ctx, ac);
-			if (desc < def_priv->num_tx_tokens) {
+			if (desc < sys_fpriv->num_tx_tokens) {
 				tx_pending_process(fmac_dev_ctx, desc, ac);
 			}
 		}
 #endif
-		nrf_wifi_osal_spinlock_rel(def_dev_ctx->tx_config.tx_lock);
+		nrf_wifi_osal_spinlock_rel(sys_dev_ctx->tx_config.tx_lock);
 	break;
 	default:
 	break;
@@ -757,7 +757,7 @@ int nrf_wifi_mode(const struct device *dev,
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	int ret = -1;
 
 	if (!dev || !mode) {
@@ -784,7 +784,7 @@ int nrf_wifi_mode(const struct device *dev,
 	}
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("%s: Device %s is not ready",
@@ -819,18 +819,18 @@ int nrf_wifi_mode(const struct device *dev,
 		}
 
 	} else {
-		mode->mode = def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode;
+		mode->mode = sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode;
 		/**
 		 * This is a work-around to handle current UMAC mode handling.
 		 * This might be removed in future versions when UMAC has more space.
 		 */
 #ifdef CONFIG_NRF70_RAW_DATA_TX
-		if (def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode == true) {
+		if (sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode == true) {
 			mode->mode ^= NRF_WIFI_TX_INJECTION_MODE;
 		}
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 #ifdef CONFIG_NRF70_PROMISC_DATA_RX
-		if (def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->promisc_mode == true) {
+		if (sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->promisc_mode == true) {
 			mode->mode ^= NRF_WIFI_PROMISCUOUS_MODE;
 		}
 #endif /* CONFIG_NRF70_PROMISC_DATA_RX */
@@ -849,7 +849,7 @@ int nrf_wifi_channel(const struct device *dev,
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 	int ret = -1;
 
@@ -882,7 +882,7 @@ int nrf_wifi_channel(const struct device *dev,
 	}
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
 
 	if (channel->oper == WIFI_MGMT_SET) {
 		/**
@@ -899,7 +899,7 @@ int nrf_wifi_channel(const struct device *dev,
 			goto out;
 		}
 	} else {
-		channel->channel = def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->channel;
+		channel->channel = sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->channel;
 	}
 	ret = 0;
 out:
@@ -916,7 +916,7 @@ int nrf_wifi_filter(const struct device *dev,
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	int ret = -1;
 
 	if (!dev || !filter) {
@@ -932,7 +932,7 @@ int nrf_wifi_filter(const struct device *dev,
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
 
 	if (filter->oper == WIFI_MGMT_SET) {
 		/**
@@ -942,9 +942,9 @@ int nrf_wifi_filter(const struct device *dev,
 		 * driver and filter packet type on packet receive by
 		 * checking the 802.11 header in the packet
 		 */
-		if (((def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) &
+		if (((sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) &
 		    (NRF_WIFI_PROMISCUOUS_MODE)) == NRF_WIFI_PROMISCUOUS_MODE) {
-			def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->packet_filter =
+			sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->packet_filter =
 				filter->filter;
 			ret = 0;
 			goto out;
@@ -963,7 +963,7 @@ int nrf_wifi_filter(const struct device *dev,
 			filter->filter = 1;
 		} else if (filter->filter == 0) {
 			filter->filter =
-				def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->packet_filter;
+				sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->packet_filter;
 		}
 
 		/**
@@ -979,7 +979,7 @@ int nrf_wifi_filter(const struct device *dev,
 			goto out;
 		}
 	} else {
-		filter->filter = def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->packet_filter;
+		filter->filter = sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->packet_filter;
 	}
 	ret = 0;
 out:
