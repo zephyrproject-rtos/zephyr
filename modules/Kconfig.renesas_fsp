@@ -213,4 +213,9 @@ config USE_RZ_FSP_CPG
 	help
 	  Enable RZ FSP CLOCK CONTROL driver
 
+config USE_RZ_FSP_SCI_UART
+	bool
+	help
+	  Enable RZ FSP SCI UART driver
+
 endif
