@@ -175,7 +175,8 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	return pinctrl_configure_pins(&pincfg, 1, PINCTRL_REG_NONE);
 }
 
-static int gpio_ra_pin_get_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t *flags)
+__maybe_unused static int gpio_ra_pin_get_config(const struct device *dev, gpio_pin_t pin,
+						 gpio_flags_t *flags)
 {
 	const struct gpio_ra_config *config = dev->config;
 	uint32_t pincfg;
@@ -260,7 +261,15 @@ static int gpio_ra_port_toggle_bits(const struct device *dev, gpio_port_pins_t p
 static int gpio_ra_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
 					   enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
-	return gpio_ra_pin_configure(port, pin, (mode | trig));
+	gpio_flags_t flags;
+	int err;
+
+	err = gpio_ra_pin_get_config(port, pin, &flags);
+	if (err) {
+		return err;
+	}
+
+	return gpio_ra_pin_configure(port, pin, (flags | mode | trig));
 }
 
 static int gpio_ra_manage_callback(const struct device *dev, struct gpio_callback *callback,
