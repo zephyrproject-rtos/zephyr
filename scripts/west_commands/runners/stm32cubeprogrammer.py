@@ -169,7 +169,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             # is displayed when an invalid value is provided for this argument.
             type=functools.wraps(int)(lambda s: int(s, base=0)),
             required=False,
-            help="Address where flashing should be done"
+            help="Flashing location address. To be used only with .bin files"
         )
         parser.add_argument(
             "--download-modifiers",
@@ -271,15 +271,19 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         if self._erase:
             self.check_call(cmd + ["--erase", "all"])
 
-        # flash image and run application
+        # Define binary to be loaded
         if self._use_elf:
+            # Use elf file if instructed to do so.
             dl_file = self.cfg.elf_file
-        elif self.cfg.bin_file is not None and os.path.isfile(self.cfg.bin_file) and \
-            "zephyr.signed" in self.cfg.bin_file:
+        elif self.cfg.bin_file is not None and self._download_address is not None:
+            # Use bin file if a binary is available and --download-address provided
             dl_file = self.cfg.bin_file
-        elif self.cfg.hex_file is not None and os.path.isfile(self.cfg.hex_file):
-            # --user-elf not used and no bin file given, default to hex
+        elif self.cfg.hex_file is not None:
+            # Neither --use-elf nor --download-address are present:
+            # default to flashing using hex file.
             dl_file = self.cfg.hex_file
+
+        # Verify file configuration
         if dl_file is None:
             raise RuntimeError('cannot flash; no download file was specified')
         elif not os.path.isfile(dl_file):
