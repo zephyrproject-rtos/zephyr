@@ -416,11 +416,11 @@ static struct bt_pacs_cap cap_source = {
 
 int bap_unicast_sr_init(void)
 {
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 		.snk_pac = true,
 		.snk_loc = true,
 		.src_pac = true,
-		.src_loc = true
+		.src_loc = true,
 	};
 	int err;
 
