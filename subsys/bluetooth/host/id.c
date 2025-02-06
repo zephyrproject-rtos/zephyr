@@ -1,13 +1,15 @@
 /*
- * Copyright (c) 2017-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
@@ -2133,7 +2135,12 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const uint8_t *tk)
 {
-	CHECKIF(conn == NULL || tk == NULL) {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	CHECKIF(tk == NULL) {
 		return -EINVAL;
 	}
 
@@ -2146,7 +2153,8 @@ int bt_le_oob_set_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data *oobd_local,
 			  const struct bt_le_oob_sc_data *oobd_remote)
 {
-	CHECKIF(conn == NULL) {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
 		return -EINVAL;
 	}
 
@@ -2161,7 +2169,9 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_local,
 			  const struct bt_le_oob_sc_data **oobd_remote)
 {
-	CHECKIF(conn == NULL) {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_ERR("Invalid connection: %p", conn);
+		LOG_ERR("Invalid connection type: %u for %p", conn->handle, conn);
 		return -EINVAL;
 	}
 

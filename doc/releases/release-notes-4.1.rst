@@ -133,6 +133,10 @@ New APIs and options
 
 * Bluetooth
 
+  * Host
+
+    * :c:func:`bt_conn_is_type`
+
   * Mesh
 
     * :c:member:`bt_mesh_health_cli::update` callback can be used to periodically update the message

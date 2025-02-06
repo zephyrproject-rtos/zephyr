@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -5440,6 +5440,11 @@ static inline int smp_self_test(void)
 int bt_conn_set_bondable(struct bt_conn *conn, bool enable)
 {
 	struct bt_smp *smp;
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CLASSIC) && (conn->type == BT_CONN_TYPE_BR)) {
 		if (enable && atomic_test_and_set_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
