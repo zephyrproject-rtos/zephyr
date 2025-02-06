@@ -195,14 +195,12 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central_connect_timeout",
 		.test_descr = "Verifies that the default connection timeout is used correctly",
-		.test_tick_f = bst_tick,
 		.test_main_f = test_central_connect_timeout,
 	},
 	{
 		.test_id = "central_connect_when_connecting",
 		.test_descr = "Verifies that the stack returns an error code when trying to connect"
 			      " while already connecting",
-		.test_tick_f = bst_tick,
 		.test_main_f = test_central_connect_when_connecting,
 	},
 	{
@@ -210,7 +208,6 @@ static const struct bst_test_instance test_def[] = {
 		.test_descr =
 			"Verifies that the stack returns an error code when trying to connect"
 			" to an existing device and does not unref the existing connection object.",
-		.test_tick_f = bst_tick,
 		.test_main_f = test_central_connect_to_existing,
 	},
 	BSTEST_END_MARKER,

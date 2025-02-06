@@ -29,7 +29,7 @@
 
 LOG_MODULE_REGISTER(client, LOG_LEVEL_DBG);
 
-static DEFINE_FLAG(client_security_changed_flag);
+DEFINE_FLAG_STATIC(client_security_changed_flag);
 
 static struct bt_conn_cb client_conn_cb;
 
