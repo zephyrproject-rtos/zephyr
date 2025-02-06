@@ -82,11 +82,30 @@ function(relative_dir dir relative_out bindir_out)
 endfunction()
 
 # Usage:
+#   edk_escape(<target> <str_in> <str_out>)
+#
+# Escape problematic characters in the string <str_in> and store the result in
+# <str_out>. The escaping is done to make the string suitable for <target>.
+function(edk_escape target str_in str_out)
+    string(REPLACE "\\" "\\\\" str_escaped "${str_in}")
+    string(REPLACE "\"" "\\\"" str_escaped "${str_escaped}")
+    set(${str_out} "${str_escaped}" PARENT_SCOPE)
+endfunction()
+
+# Usage:
 #   edk_write_header(<target>)
 #
 # Initialize the file associated with <target> and write its header.
 function(edk_write_header target)
     file(WRITE ${edk_file_${target}} "")
+endfunction()
+
+# Usage:
+#   edk_write_comment(<target> <text>)
+#
+# Write to the file associated with <target> the string <text> as a comment.
+function(edk_write_comment target text)
+    file(APPEND ${edk_file_${target}} "\n# ${text}\n")
 endfunction()
 
 # Usage:
@@ -98,16 +117,26 @@ function(edk_write_var target var_name var_value)
     if(target STREQUAL "CMAKE")
         # CMake: export assignments of the form:
         #
-        #   set(var value1;value2;...)
+        #   set(var "value1;value2;...")
         #
-        file(APPEND ${edk_file_${target}} "set(${var_name} ${var_value})\n")
+        set(DASHIMACROS "-imacros\${CMAKE_CURRENT_LIST_DIR}/")
+        set(DASHI "-I\${CMAKE_CURRENT_LIST_DIR}/")
+        edk_escape(${target} "${var_value}" var_value)
+        string(CONFIGURE "${var_value}" exp_var_value @ONLY)
+        # The list is otherwise exported verbatim, surrounded by quotes.
+        file(APPEND ${edk_file_${target}} "set(${var_name} \"${exp_var_value}\")\n")
     elseif(target STREQUAL "MAKEFILE")
         # Makefile: export assignments of the form:
         #
-        #   var = value1 value2 ...
+        #   var = "value1" "value2" ...
         #
-        list(JOIN var_value " " var_value_str)
-        file(APPEND ${edk_file_${target}} "${var_name} = ${var_value_str}\n")
+        set(DASHIMACROS "-imacros\$(${install_dir_var})/")
+        set(DASHI "-I\$(${install_dir_var})/")
+        edk_escape(${target} "${var_value}" var_value)
+        string(CONFIGURE "${var_value}" exp_var_value @ONLY)
+        # Each element of the list is wrapped in quotes and is separated by a space.
+        list(JOIN exp_var_value "\" \"" exp_var_value_str)
+        file(APPEND ${edk_file_${target}} "${var_name} = \"${exp_var_value_str}\"\n")
     endif()
 endfunction()
 
@@ -138,11 +167,9 @@ foreach(flag ${llext_edk_cflags})
         relative_dir(${parent} dest bindir)
         cmake_path(RELATIVE_PATH dest BASE_DIRECTORY ${llext_edk} OUTPUT_VARIABLE dest_rel)
         if(bindir)
-            list(APPEND imacros_gen_make "-imacros\$(${install_dir_var})/${dest_rel}/${name}")
-            list(APPEND imacros_gen_cmake "-imacros\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}/${name}")
+            list(APPEND imacros_gen "@DASHIMACROS@${dest_rel}/${name}")
         else()
-            list(APPEND imacros_make "-imacros\$(${install_dir_var})/${dest_rel}/${name}")
-            list(APPEND imacros_cmake "-imacros\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}/${name}")
+            list(APPEND imacros "@DASHIMACROS@${dest_rel}/${name}")
         endif()
     else()
         list(APPEND new_cflags ${flag})
@@ -150,8 +177,7 @@ foreach(flag ${llext_edk_cflags})
 endforeach()
 set(llext_edk_cflags ${new_cflags})
 
-list(APPEND base_flags_make ${llext_edk_cflags} ${imacros_make})
-list(APPEND base_flags_cmake ${llext_edk_cflags} ${imacros_cmake})
+list(APPEND base_flags ${llext_edk_cflags} ${imacros})
 
 separate_arguments(include_dirs NATIVE_COMMAND ${INTERFACE_INCLUDE_DIRECTORIES})
 file(MAKE_DIRECTORY ${llext_edk_inc})
@@ -169,49 +195,39 @@ foreach(dir ${include_dirs})
 
     cmake_path(RELATIVE_PATH dest BASE_DIRECTORY ${llext_edk} OUTPUT_VARIABLE dest_rel)
     if(bindir)
-        list(APPEND inc_gen_flags_make "-I\$(${install_dir_var})/${dest_rel}")
-        list(APPEND inc_gen_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
+        list(APPEND gen_inc_flags "@DASHI@${dest_rel}")
     else()
-        list(APPEND inc_flags_make "-I\$(${install_dir_var})/${dest_rel}")
-        list(APPEND inc_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
+        list(APPEND inc_flags "@DASHI@${dest_rel}")
     endif()
-    list(APPEND all_inc_flags_make "-I\$(${install_dir_var})/${dest_rel}")
-    list(APPEND all_inc_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
+    list(APPEND all_inc_flags "@DASHI@${dest_rel}")
 endforeach()
 
-list(APPEND all_flags_make ${base_flags_make} ${imacros_gen_make} ${all_inc_flags_make})
-list(APPEND all_flags_cmake ${base_flags_cmake} ${imacros_gen_cmake} ${all_inc_flags_cmake})
+list(APPEND all_flags ${base_flags} ${imacros_gen} ${all_inc_flags})
 
 if(CONFIG_LLEXT_EDK_USERSPACE_ONLY)
     # Copy syscall headers from edk directory, as they were regenerated there.
     file(COPY ${PROJECT_BINARY_DIR}/edk/include/generated/ DESTINATION ${llext_edk_inc}/zephyr/include/generated)
 endif()
 
-
 #
 # Generate the EDK flags files
 #
 
+set(edk_targets MAKEFILE CMAKE)
 set(edk_file_MAKEFILE ${llext_edk}/Makefile.cflags)
 set(edk_file_CMAKE ${llext_edk}/cmake.cflags)
 
-# Generate flags for Makefile
-edk_write_header(MAKEFILE)
-edk_write_var(MAKEFILE "LLEXT_CFLAGS" "${all_flags_make}")
-edk_write_var(MAKEFILE "LLEXT_ALL_INCLUDE_CFLAGS" "${all_inc_flags_make}")
-edk_write_var(MAKEFILE "LLEXT_INCLUDE_CFLAGS" "${inc_flags_make}")
-edk_write_var(MAKEFILE "LLEXT_GENERATED_INCLUDE_CFLAGS" "${gen_inc_flags_make}")
-edk_write_var(MAKEFILE "LLEXT_BASE_CFLAGS" "${base_flags_make}")
-edk_write_var(MAKEFILE "LLEXT_GENERATED_IMACROS_CFLAGS" "${imacros_gen_make}")
+foreach(target ${edk_targets})
+    edk_write_header(${target})
 
-# Generate flags for CMake
-edk_write_header(CMAKE)
-edk_write_var(CMAKE "LLEXT_CFLAGS" "${all_flags_cmake}")
-edk_write_var(CMAKE "LLEXT_ALL_INCLUDE_CFLAGS" "${all_inc_flags_cmake}")
-edk_write_var(CMAKE "LLEXT_INCLUDE_CFLAGS" "${inc_flags_cmake}")
-edk_write_var(CMAKE "LLEXT_GENERATED_INCLUDE_CFLAGS" "${gen_inc_flags_cmake}")
-edk_write_var(CMAKE "LLEXT_BASE_CFLAGS" "${base_flags_cmake}")
-edk_write_var(CMAKE "LLEXT_GENERATED_IMACROS_CFLAGS" "${imacros_gen_cmake}")
+    edk_write_comment(${target} "Compile flags")
+    edk_write_var(${target} "LLEXT_CFLAGS" "${all_flags}")
+    edk_write_var(${target} "LLEXT_ALL_INCLUDE_CFLAGS" "${all_inc_flags}")
+    edk_write_var(${target} "LLEXT_INCLUDE_CFLAGS" "${inc_flags}")
+    edk_write_var(${target} "LLEXT_GENERATED_INCLUDE_CFLAGS" "${gen_inc_flags}")
+    edk_write_var(${target} "LLEXT_BASE_CFLAGS" "${base_flags}")
+    edk_write_var(${target} "LLEXT_GENERATED_IMACROS_CFLAGS" "${imacros_gen}")
+endforeach()
 
 # Generate the tarball
 file(ARCHIVE_CREATE
