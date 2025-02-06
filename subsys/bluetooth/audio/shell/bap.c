@@ -3770,7 +3770,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
 		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
 	};
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 #if defined(CONFIG_BT_PAC_SNK)
 		.snk_pac = true,
 #endif /* CONFIG_BT_PAC_SNK */
@@ -3781,7 +3781,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		.src_pac = true,
 #endif /* CONFIG_BT_PAC_SRC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-		.src_loc = true
+		.src_loc = true,
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	};
 
