@@ -464,6 +464,8 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd,
 		return WIFI_SECURITY_TYPE_FT_EAP;
 	case WPA_KEY_MGMT_FT_IEEE8021X_SHA384:
 		return WIFI_SECURITY_TYPE_FT_EAP_SHA384;
+	case WPA_KEY_MGMT_SAE_EXT_KEY:
+		return WIFI_SECURITY_TYPE_SAE_EXT_KEY;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
@@ -1022,7 +1024,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 		if (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
 		    params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
-		    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+		    params->security == WIFI_SECURITY_TYPE_SAE_AUTO ||
+		    params->security == WIFI_SECURITY_TYPE_SAE_EXT_KEY) {
 			if (params->sae_password) {
 				if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
 				    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
@@ -1045,19 +1048,26 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
-
 			if (!wpa_cli_cmd_v("set sae_pwe %d",
 				(params->security == WIFI_SECURITY_TYPE_SAE_H2E)
 				   ? 1
-				   : ((params->security == WIFI_SECURITY_TYPE_SAE_AUTO)
-					   ? 2
-					   : 0))) {
+				   : ((params->security == WIFI_SECURITY_TYPE_SAE_HNP)
+					   ? 0
+					   : 2))) {
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE%s", resp.network_id,
-					   params->ft_used ? " FT-SAE" : "")) {
-				goto out;
+			if (params->security != WIFI_SECURITY_TYPE_SAE_EXT_KEY) {
+				if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE%s", resp.network_id,
+						   params->ft_used ? " FT-SAE" : "")) {
+					goto out;
+				}
+			} else {
+				if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE-EXT-KEY%s",
+						   resp.network_id,
+						   params->ft_used ? " FT-SAE-EXT-KEY" : "")) {
+					goto out;
+				}
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"",
