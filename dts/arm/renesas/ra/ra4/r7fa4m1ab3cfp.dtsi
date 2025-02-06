@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,6 +107,31 @@
 			channel = <12>;
 			renesas,sample-clock-div = <64>;
 			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		trng: trng {
+			compatible = "renesas,ra-sce5-rng";
+			status = "disabled";
+		};
+
+		pwm6: pwm6@40078600 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_6>;
+			clocks = <&pclkd MSTPD 6>;
+			reg = <0x40078600 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm7: pwm7@40078700 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_7>;
+			clocks = <&pclkd MSTPD 6>;
+			reg = <0x40078700 0x100>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};
