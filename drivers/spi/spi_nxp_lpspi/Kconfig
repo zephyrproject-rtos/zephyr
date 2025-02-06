@@ -14,6 +14,7 @@ if SPI_MCUX_LPSPI
 
 config SPI_MCUX_LPSPI_DMA
 	bool "MCUX LPSPI SPI DMA Support"
+	default y
 	select DMA
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas)
 	help
