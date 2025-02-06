@@ -648,7 +648,7 @@ static void init(void)
 		BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
 		BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
 		(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
-	const struct bt_bap_pacs_register_param pacs_param = {
+	const struct bt_pacs_register_param pacs_param = {
 #if defined(CONFIG_BT_PAC_SNK)
 		.snk_pac = true,
 #endif /* CONFIG_BT_PAC_SNK */
@@ -659,7 +659,7 @@ static void init(void)
 		.src_pac = true,
 #endif /* CONFIG_BT_PAC_SRC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-		.src_loc = true
+		.src_loc = true,
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	};
 	int err;
