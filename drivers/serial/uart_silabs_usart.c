@@ -47,9 +47,7 @@ struct uart_silabs_config {
 	const struct device *clock_dev;
 	const struct silabs_clock_control_cmu_config clock_cfg;
 	USART_TypeDef *base;
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	void (*irq_config_func)(const struct device *dev);
-#endif
 };
 
 struct uart_silabs_data {
@@ -68,6 +66,8 @@ struct uart_silabs_data {
 	size_t rx_next_buffer_len;
 #endif
 };
+
+static int uart_silabs_pm_action(const struct device *dev, enum pm_device_action action);
 
 static int uart_silabs_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -668,7 +668,6 @@ static int uart_silabs_async_init(const struct device *dev)
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 static void uart_silabs_isr(const struct device *dev)
 {
 	struct uart_silabs_data *data = dev->data;
@@ -733,7 +732,6 @@ static void uart_silabs_isr(const struct device *dev)
 	}
 #endif /* CONFIG_UART_ASYNC_API */
 }
-#endif
 
 static inline USART_Parity_TypeDef uart_silabs_cfg2ll_parity(
 	enum uart_config_parity parity)
@@ -864,7 +862,7 @@ static inline enum uart_config_flow_control uart_silabs_ll2cfg_hwctrl(
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
-static void uart_silabs_configure_peripheral(const struct device *dev)
+static void uart_silabs_configure_peripheral(const struct device *dev, bool enable)
 {
 	const struct uart_silabs_config *config = dev->config;
 	const struct uart_silabs_data *data = dev->data;
@@ -876,6 +874,7 @@ static void uart_silabs_configure_peripheral(const struct device *dev)
 	usartInit.databits = uart_silabs_cfg2ll_databits(data->uart_cfg->data_bits,
 							 data->uart_cfg->parity);
 	usartInit.hwFlowControl = uart_silabs_cfg2ll_hwctrl(data->uart_cfg->flow_ctrl);
+	usartInit.enable = enable ? usartEnable : usartDisable;
 
 	USART_InitAsync(config->base, &usartInit);
 }
@@ -907,7 +906,7 @@ static int uart_silabs_configure(const struct device *dev,
 	*data->uart_cfg = *cfg;
 	USART_Enable(base, usartDisable);
 
-	uart_silabs_configure_peripheral(dev);
+	uart_silabs_configure_peripheral(dev, true);
 
 	return 0;
 };
@@ -940,47 +939,63 @@ static int uart_silabs_init(const struct device *dev)
 		return err;
 	}
 
-	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	uart_silabs_configure_peripheral(dev, false);
+
+	config->irq_config_func(dev);
+
+#ifdef CONFIG_UART_ASYNC_API
+	err = uart_silabs_async_init(dev);
 	if (err < 0) {
 		return err;
 	}
-
-	uart_silabs_configure_peripheral(dev);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	config->irq_config_func(dev);
 #endif
-
-#ifdef CONFIG_UART_ASYNC_API
-	config->irq_config_func(dev);
-	return uart_silabs_async_init(dev);
-#else
-	return 0;
-#endif
+	return pm_device_driver_init(dev, uart_silabs_pm_action);
 }
 
-#ifdef CONFIG_PM_DEVICE
 static int uart_silabs_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	__maybe_unused const struct uart_silabs_config *config = dev->config;
+	int err;
+	const struct uart_silabs_config *config = dev->config;
+	__maybe_unused struct uart_silabs_data *data = dev->data;
 
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		/* Wait for TX FIFO to flush before suspending */
-		while (!(USART_StatusGet(config->base) & USART_STATUS_TXIDLE)) {
+	if (action == PM_DEVICE_ACTION_RESUME) {
+		err = clock_control_on(config->clock_dev,
+				       (clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0 && err != -EALREADY) {
+			return err;
 		}
-		break;
 
-	case PM_DEVICE_ACTION_RESUME:
-		break;
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
 
-	default:
+		USART_Enable(config->base, usartEnable);
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
+#ifdef CONFIG_UART_ASYNC_API
+		/* Entering suspend requires there to be no active asynchronous calls. */
+		__ASSERT_NO_MSG(!data->dma_rx.enabled);
+		__ASSERT_NO_MSG(!data->dma_tx.enabled);
+#endif
+		USART_Enable(config->base, usartDisable);
+
+		err = clock_control_off(config->clock_dev,
+					(clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+	} else {
 		return -ENOTSUP;
 	}
 
 	return 0;
 }
-#endif
 
 static DEVICE_API(uart, uart_silabs_driver_api) = {
 	.poll_in = uart_silabs_poll_in,
@@ -1040,7 +1055,6 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
 
 #endif
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 #define SILABS_USART_IRQ_HANDLER_FUNC(idx) .irq_config_func = usart_silabs_config_func_##idx,
 #define SILABS_USART_IRQ_HANDLER(idx)                                                              \
 	static void usart_silabs_config_func_##idx(const struct device *dev)                       \
@@ -1055,10 +1069,6 @@ static DEVICE_API(uart, uart_silabs_driver_api) = {
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, rx, irq));                                     \
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, tx, irq));                                     \
 	}
-#else
-#define SILABS_USART_IRQ_HANDLER_FUNC(idx)
-#define SILABS_USART_IRQ_HANDLER(idx)
-#endif
 
 #define SILABS_USART_INIT(idx)                                                                     \
 	SILABS_USART_IRQ_HANDLER(idx);                                                             \
