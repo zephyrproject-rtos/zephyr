@@ -59,6 +59,7 @@ extern void net_if_init(void);
 extern void net_if_post_init(void);
 extern void net_if_stats_reset(struct net_if *iface);
 extern void net_if_stats_reset_all(void);
+extern const char *net_if_oper_state2str(enum net_if_oper_state state);
 extern void net_process_rx_packet(struct net_pkt *pkt);
 extern void net_process_tx_packet(struct net_pkt *pkt);
 
