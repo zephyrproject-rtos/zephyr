@@ -46,8 +46,8 @@
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
 /* These lengths can be adjusted, if necessary: */
-#define BOOTLOADER_DRAM_SEG_LEN        0x9800
-#define BOOTLOADER_IRAM_SEG_LEN        0x9800
+#define BOOTLOADER_DRAM_SEG_LEN        0xe800
+#define BOOTLOADER_IRAM_SEG_LEN        0xe800
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1400
 
 /* Start of the lower region is determined by region size and the end of the higher region */
