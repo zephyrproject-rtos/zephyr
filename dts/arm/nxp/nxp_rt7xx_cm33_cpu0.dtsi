@@ -57,6 +57,13 @@
 	pinctrl: pinctrl {
 		compatible = "nxp,rt-iocon-pinctrl";
 	};
+
+	/* USB PLL */
+	usbclk: usbpll-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
 };
 
 
@@ -965,6 +972,32 @@
 		#size-cells = <0>;
 		tx-fifo-size = <8>;
 		rx-fifo-size = <8>;
+		status = "disabled";
+	};
+
+	usb0: usbd@418000 {
+		compatible = "nxp,ehci";
+		reg = <0x418000 0x1000>;
+		interrupts = <40 0>;
+		interrupt-names = "usb_otg";
+		clocks = <&usbclk>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usb1: usbd@419000 {
+		compatible = "nxp,ehci";
+		reg = <0x419000 0x1000>;
+		interrupts = <41 0>;
+		interrupt-names = "usb_otg";
+		clocks = <&usbclk>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usbphy: usbphy@414000 {
+		compatible = "nxp,usbphy";
+		reg = <0x414000 0x1000>;
 		status = "disabled";
 	};
 
