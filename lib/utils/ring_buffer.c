@@ -12,7 +12,7 @@
 uint32_t ring_buf_area_claim(struct ring_buf *buf, struct ring_buf_index *ring,
 			     uint8_t **data, uint32_t size)
 {
-	uint32_t head_offset, wrap_size;
+	ring_buf_idx_t head_offset, wrap_size;
 
 	head_offset = ring->head - ring->base;
 	if (unlikely(head_offset >= buf->size)) {
@@ -31,7 +31,7 @@ uint32_t ring_buf_area_claim(struct ring_buf *buf, struct ring_buf_index *ring,
 int ring_buf_area_finish(struct ring_buf *buf, struct ring_buf_index *ring,
 			 uint32_t size)
 {
-	uint32_t claimed_size, tail_offset;
+	ring_buf_idx_t claimed_size, tail_offset;
 
 	claimed_size = ring->head - ring->tail;
 	if (unlikely(size > claimed_size)) {
