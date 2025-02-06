@@ -137,6 +137,12 @@ ADC
 
 * Renamed the ``compatible`` from ``nxp,kinetis-adc12`` to :dtcompatible:`nxp,adc12`.
 
+Clock
+=====
+* Renamed the devicetree property ``freqs_mhz`` to ``freqs-mhz``.
+* Renamed the devicetree property ``cg_reg`` to ``cg-reg``.
+* Renamed the devicetree property ``pll_ctrl_reg`` to ``pll-ctrl-reg``.
+
 Counter
 =======
 
