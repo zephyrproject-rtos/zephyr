@@ -101,6 +101,10 @@ PORTB/GPIOB, PORTC/GPIOC, PORTD/GPIOD, and PORTE/GPIOE) for the FRDM-MCXC242 boa
 +-------+-------------+---------------------------+
 | PTA2  | LPUART0_TX  | UART Console              |
 +-------+-------------+---------------------------+
+| PTE1  | LPUART1_RX  | UART                      |
++-------+-------------+---------------------------+
+| PTE0  | LPUART1_TX  | UART                      |
++-------+-------------+---------------------------+
 | PTA20 | RESET       | RESET Button SW1          |
 +-------+-------------+---------------------------+
 | PTC1  | GPIO        | User button SW2           |

@@ -47,6 +47,7 @@ struct uac2_ops {
 	 * @brief Start of Frame callback
 	 *
 	 * Notifies application about SOF event on the bus.
+	 * This callback is mandatory to register.
 	 *
 	 * @param dev USB Audio 2 device
 	 * @param user_data Opaque user data pointer
@@ -56,6 +57,7 @@ struct uac2_ops {
 	 * @brief Terminal update callback
 	 *
 	 * Notifies application that host has enabled or disabled a terminal.
+	 * This callback is mandatory to register.
 	 *
 	 * @param dev USB Audio 2 device
 	 * @param terminal Terminal ID linked to AudioStreaming interface
@@ -73,6 +75,7 @@ struct uac2_ops {
 	 * AudioStreaming interface. The buffer is owned by USB stack until
 	 * @ref data_recv_cb callback is called. The buffer must be sufficiently
 	 * aligned and otherwise suitable for use by UDC driver.
+	 * This callback is mandatory to register for devices receiving USB audio from the USB host.
 	 *
 	 * @param dev USB Audio 2 device
 	 * @param terminal Input Terminal ID linked to AudioStreaming interface
@@ -86,6 +89,7 @@ struct uac2_ops {
 	 *
 	 * This function releases buffer obtained in @ref get_recv_buf after USB
 	 * has written data to the buffer and/or no longer needs it.
+	 * This callback is mandatory to register for devices receiving USB audio from the USB host.
 	 *
 	 * @param dev USB Audio 2 device
 	 * @param terminal Input Terminal ID linked to AudioStreaming interface
@@ -100,6 +104,7 @@ struct uac2_ops {
 	 *
 	 * This function releases buffer provided in @ref usbd_uac2_send when
 	 * the class no longer needs it.
+	 * This callback is mandatory to register if calling @ref usbd_uac2_send.
 	 *
 	 * @param dev USB Audio 2 device
 	 * @param terminal Output Terminal ID linked to AudioStreaming interface
@@ -118,6 +123,9 @@ struct uac2_ops {
 	 * capable device is operating at Full-Speed (microframes was false),
 	 * the format is Q10.14 stored on 24 least significant bits (i.e. 8 most
 	 * significant bits are ignored).
+	 * This callback is mandatory to register if there is USB Audio Streaming interface linked
+	 * to Input Terminal clocked from asynchronous clock (i.e. clock source without
+	 * sof-synchronized;) and there is no implicit-feedback; on the interface.
 	 *
 	 * @param dev USB Audio 2 device
 	 * @param terminal Input Terminal ID whose feedback should be returned

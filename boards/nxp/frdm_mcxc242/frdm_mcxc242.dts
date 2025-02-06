@@ -122,6 +122,13 @@
 	pinctrl-names = "default";
 };
 
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
 &uart2 {
 	status = "disabled";
 	current-speed = <115200>;

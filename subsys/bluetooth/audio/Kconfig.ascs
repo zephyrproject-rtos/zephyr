@@ -8,6 +8,7 @@
 
 config BT_ASCS
 	bool "Audio Stream Control Service Support"
+	depends on BT_SMP
 	help
 	  This option enables support for Audio Stream Control Service.
 
@@ -39,7 +40,7 @@ config BT_ASCS_MAX_ACTIVE_ASES
 	default BT_ISO_MAX_CHAN
 	range 1 $(UINT16_MAX)
 	help
-	  The number of simultanesouly supported active ASEs, in particular
+	  The number of simultaneously supported active ASEs, in particular
 	  meaning the number of ASEs that are allowed to be in a non-idle state at
 	  a single time.
 

@@ -4,7 +4,7 @@
 # Copyright (c) 2020 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-DT_STM32_QUADSPI_HAS_DMA := $(dt_nodelabel_has_prop,quadspi,dmas)
+DT_STM32_QUADSPI_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_QSPI),dmas)
 
 config FLASH_STM32_QSPI
 	bool "STM32 Quad SPI Flash driver"

@@ -179,19 +179,28 @@ enum img_mgmt_group_events {
 	/** Callback when a DFU operation has finished being transferred. */
 	MGMT_EVT_OP_IMG_MGMT_DFU_PENDING		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 3),
 
-	/** Callback when an image has been confirmed. */
+	/** Callback when an image has been confirmed. data is img_mgmt_image_confirmed(). */
 	MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 4),
 
 	/** Callback when an image write command has finished writing to flash. */
 	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK_WRITE_COMPLETE	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 5),
 
-	/** Callback when an image slot's state is encoded for a response. */
+	/**
+	 * Callback when an image slot's state is encoded for a response, data is
+	 * img_mgmt_state_slot_encode().
+	 */
 	MGMT_EVT_OP_IMG_MGMT_IMAGE_SLOT_STATE		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 6),
 
-	/** Callback when an slot list command outputs fields for an image. */
+	/**
+	 * Callback when a slot list command outputs fields for an image, data is
+	 * img_mgmt_slot_info_image().
+	 */
 	MGMT_EVT_OP_IMG_MGMT_SLOT_INFO_IMAGE		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 7),
 
-	/** Callback when an slot list command outputs fields for a slot of an image. */
+	/**
+	 * Callback when a slot list command outputs fields for a slot of an image, data is
+	 * img_mgmt_slot_info_slot().
+	 */
 	MGMT_EVT_OP_IMG_MGMT_SLOT_INFO_SLOT		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 8),
 
 	/** Used to enable all img_mgmt_group events. */
@@ -202,13 +211,13 @@ enum img_mgmt_group_events {
  * MGMT event opcodes for operating system management group.
  */
 enum os_mgmt_group_events {
-	/** Callback when a reset command has been received, data is os_mgmt_reset_data. */
+	/** Callback when a reset command has been received, data is os_mgmt_reset_data(). */
 	MGMT_EVT_OP_OS_MGMT_RESET		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 0),
 
-	/** Callback when an info command is processed, data is os_mgmt_info_check. */
+	/** Callback when an info command is processed, data is os_mgmt_info_check(). */
 	MGMT_EVT_OP_OS_MGMT_INFO_CHECK		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 1),
 
-	/** Callback when an info command needs to output data, data is os_mgmt_info_append. */
+	/** Callback when an info command needs to output data, data is os_mgmt_info_append(). */
 	MGMT_EVT_OP_OS_MGMT_INFO_APPEND		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 2),
 
 	/** Callback when a datetime get command has been received. */
@@ -219,7 +228,7 @@ enum os_mgmt_group_events {
 
 	/**
 	 * Callback when a bootloader info command has been received, data is
-	 * os_mgmt_bootloader_info_data.
+	 * os_mgmt_bootloader_info_data().
 	 */
 	MGMT_EVT_OP_OS_MGMT_BOOTLOADER_INFO	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 5),
 

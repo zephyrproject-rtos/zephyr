@@ -121,6 +121,8 @@ struct udc_dwc2_data {
 	unsigned int dynfifosizing : 1;
 	unsigned int bufferdma : 1;
 	unsigned int syncrst : 1;
+	/* Defect workarounds */
+	unsigned int wa_essregrestored : 1;
 	/* Runtime state flags */
 	unsigned int hibernated : 1;
 	unsigned int enumdone : 1;
@@ -948,6 +950,11 @@ static void dwc2_restore_essential_registers(const struct device *dev,
 	struct dwc2_reg_backup *backup = &priv->backup;
 	uint32_t pcgcctl = backup->pcgcctl & USB_DWC2_PCGCCTL_RESTOREVALUE_MASK;
 
+	if (usb_dwc2_get_pcgcctl_p2hd_dev_enum_spd(pcgcctl) ==
+	    USB_DWC2_PCGCCTL_P2HD_DEV_ENUM_SPD_HS) {
+		pcgcctl |= BIT(17);
+	}
+
 	sys_write32(backup->glpmcfg, (mem_addr_t)&base->glpmcfg);
 	sys_write32(backup->gi2cctl, (mem_addr_t)&base->gi2cctl);
 	sys_write32(pcgcctl, (mem_addr_t)&base->pcgcctl);
@@ -973,6 +980,21 @@ static void dwc2_restore_essential_registers(const struct device *dev,
 
 	pcgcctl |= USB_DWC2_PCGCCTL_ESSREGRESTORED;
 	sys_write32(pcgcctl, (mem_addr_t)&base->pcgcctl);
+
+	/* Note: in Remote Wakeup case 15 ms max signaling time starts now */
+
+	/* Wait for Restore Done Interrupt */
+	dwc2_wait_for_bit(dev, (mem_addr_t)&base->gintsts, USB_DWC2_GINTSTS_RSTRDONEINT);
+
+	if (priv->wa_essregrestored) {
+		pcgcctl &= ~USB_DWC2_PCGCCTL_ESSREGRESTORED;
+		sys_write32(pcgcctl, (mem_addr_t)&base->pcgcctl);
+		k_busy_wait(1);
+	}
+
+	if (!bus_reset) {
+		sys_write32(0xFFFFFFFFUL, (mem_addr_t)&base->gintsts);
+	}
 }
 
 static void dwc2_restore_device_registers(const struct device *dev, bool rwup)
@@ -1108,14 +1130,6 @@ static void dwc2_exit_hibernation(const struct device *dev,
 	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PMUINTSEL);
 
 	dwc2_restore_essential_registers(dev, rwup, bus_reset);
-
-	/* Note: in Remote Wakeup case 15 ms max signaling time starts now */
-
-	/* Wait for Restore Done Interrupt */
-	dwc2_wait_for_bit(dev, (mem_addr_t)&base->gintsts, USB_DWC2_GINTSTS_RSTRDONEINT);
-	if (!bus_reset) {
-		sys_write32(0xFFFFFFFFUL, (mem_addr_t)&base->gintsts);
-	}
 
 	/* Disable restore from PMU */
 	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_RESTORE);
@@ -1788,6 +1802,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	mem_addr_t gahbcfg_reg = (mem_addr_t)&base->gahbcfg;
 	mem_addr_t gusbcfg_reg = (mem_addr_t)&base->gusbcfg;
 	mem_addr_t dcfg_reg = (mem_addr_t)&base->dcfg;
+	uint32_t gsnpsid;
 	uint32_t dcfg;
 	uint32_t gusbcfg;
 	uint32_t gahbcfg;
@@ -1802,6 +1817,10 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	/* Enable RTL workarounds based on controller revision */
+	gsnpsid = sys_read32((mem_addr_t)&base->gsnpsid);
+	priv->wa_essregrestored = gsnpsid < USB_DWC2_GSNPSID_REV_5_00A;
 
 	priv->ghwcfg1 = sys_read32((mem_addr_t)&base->ghwcfg1);
 	ghwcfg2 = sys_read32((mem_addr_t)&base->ghwcfg2);

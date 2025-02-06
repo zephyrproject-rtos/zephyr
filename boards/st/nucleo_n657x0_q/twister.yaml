@@ -1,0 +1,16 @@
+name: ST Nucleo N657X0-Q
+type: mcu
+arch: arm
+ram: 1024
+flash: 1024
+supported:
+  - gpio
+  - uart
+vendor: st
+variants:
+  nucleo_n657x0_q/stm32n657xx:
+    twister: false
+  nucleo_n657x0_q/stm32n657xx/sb:
+    toolchain:
+      - zephyr
+      - gnuarmemb

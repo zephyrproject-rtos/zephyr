@@ -50,6 +50,8 @@ The ``xg29_rb4412a`` board target supports the following hardware features:
 +-----------+------------+------------------------+
 | RADIO     | on-chip    | bluetooth              |
 +-----------+------------+------------------------+
+| ACMP      | on-chip    | comparator             |
++-----------+------------+------------------------+
 
 Programming and Debugging
 *************************

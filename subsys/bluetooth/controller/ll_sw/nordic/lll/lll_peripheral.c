@@ -177,6 +177,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->periph.window_size_prepare_us;
 	lll->periph.window_size_prepare_us = 0;
 
+#if defined(CONFIG_BT_CTLR_PHY)
+	/* back up rx PHY for use in drift compensation */
+	lll->periph.phy_rx_event = lll->phy_rx;
+#endif /* CONFIG_BT_CTLR_PHY */
+
 	/* Ensure that empty flag reflects the state of the Tx queue, as a
 	 * peripheral if this is the first connection event and as no prior PDU
 	 * is transmitted, an incorrect acknowledgment by peer should not

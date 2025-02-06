@@ -3,10 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stddef.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/types.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/fff.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #include "pacs.h"
 #include "pacs_internal.h"

@@ -161,12 +161,12 @@ endchoice
 
 choice
 	prompt "LwM2M Engine operation mode"
-	default LWM2M_TICKLESS if NET_SOCKETPAIR
-	default LWM2M_INTERVAL if !NET_SOCKETPAIR
+	default LWM2M_TICKLESS if ZVFS_EVENTFD_MAX > 1
+	default LWM2M_INTERVAL
 
 config LWM2M_TICKLESS
 	bool "Tickless operation mode"
-	depends on NET_SOCKETPAIR
+	depends on ZVFS_EVENTFD
 
 config LWM2M_INTERVAL
 	bool "Interval based polling mode"

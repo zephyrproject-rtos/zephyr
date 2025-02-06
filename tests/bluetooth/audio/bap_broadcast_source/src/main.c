@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +24,6 @@
 
 #include "bap_broadcast_source.h"
 #include "bap_stream.h"
-#include "bap_stream_expects.h"
 #include "bluetooth.h"
 #include "expects_util.h"
 #include "ztest_assert.h"

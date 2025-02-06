@@ -41,7 +41,7 @@ int stmemsc_i2c_read_incr(const struct i2c_dt_spec *stmemsc,
 int stmemsc_i2c_write_incr(const struct i2c_dt_spec *stmemsc,
 			   uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
-	uint8_t buf[17];
+	uint8_t buf[CONFIG_STMEMSC_I3C_I2C_WRITE_BUFFER_SIZE];
 
 	__ASSERT_NO_MSG(len <= sizeof(buf) - 1);
 

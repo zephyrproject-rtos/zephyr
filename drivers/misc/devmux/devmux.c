@@ -148,11 +148,8 @@ static int devmux_init(struct device *const dev)
 	return 0;
 }
 
-#define DEVMUX_PHANDLE_TO_DEVICE(node_id, prop, idx)                                               \
-	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))
-
 #define DEVMUX_PHANDLE_DEVICES(_n)                                                                 \
-	DT_INST_FOREACH_PROP_ELEM_SEP(_n, devices, DEVMUX_PHANDLE_TO_DEVICE, (,))
+	DT_INST_FOREACH_PROP_ELEM_SEP(_n, devices, DEVICE_DT_GET_BY_IDX, (,))
 
 #define DEVMUX_SELECTED(_n) DT_INST_PROP(_n, selected)
 

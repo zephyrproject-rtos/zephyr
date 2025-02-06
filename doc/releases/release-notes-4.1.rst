@@ -79,6 +79,10 @@ Removed APIs and options
 
 * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO`
 
+* The :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` option has been removed
+  after being deprecated in favor of :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
+
+
 Deprecated APIs and options
 ===========================
 
@@ -134,6 +138,20 @@ New APIs and options
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS`
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT`
 
+* Management
+
+  * hawkBit
+
+    * The hawkBit subsystem now uses the State Machine Framework internally.
+    * :kconfig:option:`CONFIG_HAWKBIT_TENANT`
+    * :kconfig:option:`CONFIG_HAWKBIT_EVENT_CALLBACKS`
+    * :kconfig:option:`CONFIG_HAWKBIT_SAVE_PROGRESS`
+
+  * MCUmgr
+
+    * Image management :c:macro:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` now has image data field
+      :c:struct:`img_mgmt_image_confirmed`.
+
 * Other
 
   * :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA`
@@ -145,7 +163,7 @@ New Boards
 **********
 ..
   You may update this list as you contribute a new board during the release cycle, in order to make
-  is visible to people who might be looking at the working draft of the release notes. However, note
+  it visible to people who might be looking at the working draft of the release notes. However, note
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
 
@@ -298,6 +316,9 @@ New Drivers
    * :dtcompatible:`ti,ads131m02`
    * :dtcompatible:`ti,tla2022`
    * :dtcompatible:`ti,tla2024`
+   * :dtcompatible:`ti,ads114s06`
+   * :dtcompatible:`ti,ads124s06`
+   * :dtcompatible:`ti,ads124s08`
 
 * ARM architecture
 
@@ -521,6 +542,7 @@ New Drivers
    * :dtcompatible:`st,lsm6dsv16x`
    * :dtcompatible:`ti,tmag3001`
    * :dtcompatible:`ti,tmp435`
+   * :dtcompatible:`we,wsen-pads-2511020213301`
    * :dtcompatible:`we,wsen-pdus-25131308XXXXX`
    * :dtcompatible:`we,wsen-tids-2521020222501`
 

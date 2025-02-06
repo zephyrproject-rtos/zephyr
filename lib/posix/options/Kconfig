@@ -29,7 +29,16 @@ rsource "Kconfig.signal"
 rsource "Kconfig.spinlock"
 rsource "Kconfig.sync_io"
 rsource "Kconfig.timer"
-rsource "Kconfig.xsi"
+
+menu "X/Open system interfaces"
+
+rsource "Kconfig.xsi_realtime"
+rsource "Kconfig.xsi_single_process"
+rsource "Kconfig.xsi_streams"
+rsource "Kconfig.xsi_system_logging"
+rsource "Kconfig.xsi_threads_ext"
+
+endmenu # "X/Open system interfaces"
 
 rsource "Kconfig.compat"
 

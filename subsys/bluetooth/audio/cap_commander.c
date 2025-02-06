@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/check.h>
@@ -517,7 +518,7 @@ static void cap_commander_broadcast_assistant_mod_src_cb(struct bt_conn *conn, i
 
 		bt_cap_common_abort_proc(conn, err);
 	} else {
-		LOG_DBG("Conn %p broadcast source modifified (%zu/%zu streams done)", (void *)conn,
+		LOG_DBG("Conn %p broadcast source modified (%zu/%zu streams done)", (void *)conn,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
 	}
 

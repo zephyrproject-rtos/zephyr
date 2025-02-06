@@ -33,6 +33,8 @@
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <nrfx_clock.h>
+#include <drivers/nrfx_errors.h>
+#include <hal/nrf_clock.h>
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 #include "audio.h"

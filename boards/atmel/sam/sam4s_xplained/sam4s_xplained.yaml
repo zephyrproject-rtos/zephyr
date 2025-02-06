@@ -10,6 +10,7 @@ ram: 128
 supported:
   - adc
   - counter
+  - dac
   - gpio
   - hwinfo
   - memc

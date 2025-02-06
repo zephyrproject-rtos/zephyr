@@ -330,6 +330,10 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	sl_btctrl_hci_parser_init_adv();
 	sl_btctrl_hci_parser_init_phy();
 
+	if (IS_ENABLED(CONFIG_BT_SILABS_EFR32_HCI_VS)) {
+		sl_bthci_init_vs();
+	}
+
 	if (IS_ENABLED(CONFIG_PM)) {
 		RAIL_ConfigSleep(BTLE_LL_GetRadioHandle(), RAIL_SLEEP_CONFIG_TIMERSYNC_ENABLED);
 		RAIL_Status_t status = RAIL_InitPowerManager();

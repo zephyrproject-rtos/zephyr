@@ -78,7 +78,7 @@ properties:
 
 # Parameter syntax of stm32 follows the dma client dts syntax
 # in the Linux kernel declared in
-# https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/plain/Bindings/dma/st,stm32-dma.yaml
+# https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/plain/Bindings/dma/stm32/st,stm32-dma.yaml
 
 dma-cells:
   - channel

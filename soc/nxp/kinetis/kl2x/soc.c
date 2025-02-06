@@ -24,7 +24,7 @@
  * Variables
  ******************************************************************************/
 
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
    /*
     * Core clock: 48MHz

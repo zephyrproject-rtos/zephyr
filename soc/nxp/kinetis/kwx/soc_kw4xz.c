@@ -52,7 +52,7 @@ static void CLOCK_SYS_FllStableDelay(void)
 	}
 }
 
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 

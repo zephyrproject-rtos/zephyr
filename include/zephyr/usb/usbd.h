@@ -841,14 +841,30 @@ int usbd_register_class(struct usbd_context *uds_ctx,
  * usbd_register_class for any device, configuration number, or instance,
  * either usbd_register_class or this function will fail.
  *
+ * There may be situations where a particular function should not be
+ * registered, for example, when using the USB DFU implementation, the DFU mode
+ * function must be excluded during normal device operation. To do this, the
+ * device can pass a blocklist in the form shown below as an optional argument.
+ * If the blocklist is not needed, the argument should be NULL.
+ *
+ * @code{.c}
+ * static const char *const blocklist[] = {
+ *         "dfu_dfu",
+ *         NULL,
+ * };
+ * @endcode
+ *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration value (bConfigurationValue)
+ * @param[in] blocklist Null pointer terminated array of pointers to string
+ *                      literals to be used as a block list
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_register_all_classes(struct usbd_context *uds_ctx,
-			      const enum usbd_speed speed, uint8_t cfg);
+			      const enum usbd_speed speed, uint8_t cfg,
+			      const char *const blocklist[]);
 
 /**
  * @brief Unregister an USB class instance

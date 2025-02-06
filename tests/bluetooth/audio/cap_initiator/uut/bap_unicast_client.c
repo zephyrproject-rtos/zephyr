@@ -16,11 +16,11 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/ztest_assert.h>
 #include <sys/errno.h>
 
 #include "bap_endpoint.h"
 #include "bap_iso.h"
-#include "ztest_assert.h"
 
 static struct bt_bap_unicast_client_cb *unicast_client_cb;
 

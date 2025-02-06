@@ -642,18 +642,6 @@ static int regulator_npm2100_ship_mode(const struct device *dev)
 {
 	const struct regulator_npm2100_pconfig *pconfig = dev->config;
 
-	/* Ensure shiphold button is enabled so that wakeup will work */
-	int ret = i2c_reg_write_byte_dt(&pconfig->i2c, RESET_WRITESTICKY, 0);
-
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = i2c_reg_write_byte_dt(&pconfig->i2c, RESET_STROBESTICKY, 1U);
-	if (ret < 0) {
-		return ret;
-	}
-
 	return i2c_reg_write_byte_dt(&pconfig->i2c, SHIP_TASK_SHIP, 1U);
 }
 

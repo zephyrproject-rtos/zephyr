@@ -28,10 +28,7 @@
 
 #include "assert.h"
 #include "bap_unicast_server.h"
-#include "bap_unicast_server_expects.h"
 #include "bap_stream.h"
-#include "bap_stream_expects.h"
-#include "conn.h"
 
 #include "test_common.h"
 

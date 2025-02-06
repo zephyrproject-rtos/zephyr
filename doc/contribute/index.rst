@@ -18,7 +18,7 @@ General Guidelines
    contributor_expectations.rst
    reviewer_expectations.rst
    coding_guidelines/index.rst
-   style_guidelines.rst
+   style/index.rst
    proposals_and_rfcs.rst
    modifying_contributions.rst
 

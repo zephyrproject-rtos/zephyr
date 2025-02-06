@@ -56,6 +56,9 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_pwm)
 #define PWM_DEV_NODE DT_INST(0, renesas_ra_pwm)
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_gpt_pwm)
+#define PWM_DEV_NODE DT_INST(0, renesas_rz_gpt_pwm)
+
 #else
 #error "Define a PWM device"
 #endif

@@ -46,8 +46,11 @@ LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 		    (IS_EQ(DT_PHA(PWM(idx), power_domains, id), NRF_GPD_FAST_ACTIVE1)),	\
 		    (0))), (0))
 
-#if (NRFX_FOREACH_PRESENT(PWM, PWM_NRFX_IS_FAST, (||), (0))) && \
-	CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL
+#if NRFX_FOREACH_PRESENT(PWM, PWM_NRFX_IS_FAST, (||), (0))
+#define PWM_NRFX_FAST_PRESENT 1
+#endif
+
+#if defined(PWM_NRFX_FAST_PRESENT) && CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL
 #define PWM_NRFX_USE_CLOCK_CONTROL 1
 #endif
 
@@ -84,6 +87,18 @@ struct pwm_nrfx_data {
 /* Ensure the pwm_needed bit mask can accommodate all available channels. */
 #if (NRF_PWM_CHANNEL_COUNT > 8)
 #error "Current implementation supports maximum 8 channels."
+#endif
+
+#ifdef PWM_NRFX_FAST_PRESENT
+static bool pwm_is_fast(const struct pwm_nrfx_config *config)
+{
+	return config->clock_freq > MHZ(16);
+}
+#else
+static bool pwm_is_fast(const struct pwm_nrfx_config *config)
+{
+	return false;
+}
 #endif
 
 static uint16_t *seq_values_ptr_get(const struct device *dev)
@@ -259,8 +274,20 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 			if (inverted) {
 				out_level ^= 1;
 			}
-
-			nrf_gpio_pin_write(psel, out_level);
+			/* Output of fast PWM instance is directly connected to GPIO pads,
+			 * thus it cannot controlled by GPIO. Use regular 0%/100% duty cycle
+			 * playback instead.
+			 */
+#ifdef PWM_NRFX_FAST_PRESENT
+			if (pwm_is_fast(config)) {
+				nrfx_pwm_simple_playback(&config->pwm, &config->seq, 1,
+							 NRFX_PWM_FLAG_NO_EVT_FINISHED);
+			} else {
+#else
+			{
+#endif
+				nrf_gpio_pin_write(psel, out_level);
+			}
 		}
 
 		data->pwm_needed &= ~BIT(channel);
@@ -275,6 +302,22 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 	 * registers and drives its outputs accordingly.
 	 */
 	if (data->pwm_needed == 0) {
+		if (pwm_is_fast(config)) {
+#if PWM_NRFX_USE_CLOCK_CONTROL
+			if (data->clock_requested) {
+				int ret = nrf_clock_control_release(config->clk_dev,
+							    &config->clk_spec);
+
+				if (ret < 0) {
+					LOG_ERR("Global HSFLL release failed: %d", ret);
+					return ret;
+				}
+
+				data->clock_requested = false;
+			}
+#endif
+			return 0;
+		}
 		int ret = stop_pwm(dev);
 
 		if (ret < 0) {

@@ -7,7 +7,8 @@ arch: arm64
 toolchain:
   - zephyr
   - cross-compile
-ram: 128
+ram: 131072
+flash: 65536
 testing:
   default: true
   ignore_tags:

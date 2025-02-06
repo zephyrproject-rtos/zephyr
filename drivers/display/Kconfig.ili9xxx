@@ -12,12 +12,12 @@ config ILI9XXX
 
 config ILI9XXX_READ
 	bool "Allow display_read API with ILI9XXX"
+	depends on ILI9XXX
 	help
 	  Support display_read API with ILI9XXX controllers. This API is opt-in,
 	  because it adds code overhead and is not very performant due to
 	  the requirement to bitshift data read from the ILI9XXX. Note the
 	  API only supports RGB565 mode.
-
 
 config ILI9340
 	bool "ILI9340 display driver"

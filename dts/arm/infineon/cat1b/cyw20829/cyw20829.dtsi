@@ -113,6 +113,14 @@
 			#gpio-cells = <2>;
 		};
 
+		adc0: adc@40520000 {
+			compatible = "infineon,cat1-adc";
+			reg = <0x40520000 0x10000>;
+			interrupts = <67 6>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		ipc0: ipc@401d0000 {
 			compatible = "infineon,cat1-ipc";
 			reg = <0x401d0000 0x10000>;

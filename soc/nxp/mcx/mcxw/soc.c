@@ -19,7 +19,7 @@
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
 
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	/* Unlock Reference Clock Status Registers to allow writes */
 	CLOCK_UnlockFircControlStatusReg();
@@ -39,6 +39,7 @@ static ALWAYS_INLINE void clock_init(void)
 	};
 	/* Enable OSC32K */
 	CCM32K_Set32kOscConfig(CCM32K, kCCM32K_Enable32kHzCrystalOsc, &ccm32k_osc_config);
+
 	/* Disable ROSC Monitor, because switching the source would generate an expected error */
 	CLOCK_SetRoscMonitorMode(kSCG_RoscMonitorDisable);
 

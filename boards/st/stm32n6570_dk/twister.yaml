@@ -1,0 +1,16 @@
+name: STM32N6570 Discovery Kit
+type: mcu
+arch: arm
+ram: 1024
+flash: 1024
+vendor: st
+supported:
+  - gpio
+  - uart
+variants:
+  stm32n6570_dk/stm32n657xx:
+    twister: false
+  stm32n6570_dk/stm32n657xx/sb:
+    toolchain:
+      - zephyr
+      - gnuarmemb

@@ -134,7 +134,7 @@ static void *usb_test_enable(void)
 	zassert_equal(err, 0, "Failed to add configuration (%d)");
 
 	if (usbd_caps_speed(&test_usbd) == USBD_SPEED_HS) {
-		err = usbd_register_all_classes(&test_usbd, USBD_SPEED_HS, 1);
+		err = usbd_register_all_classes(&test_usbd, USBD_SPEED_HS, 1, NULL);
 		zassert_equal(err, 0, "Failed to unregister all instances(%d)");
 
 		err = usbd_unregister_all_classes(&test_usbd, USBD_SPEED_HS, 1);
@@ -144,7 +144,7 @@ static void *usb_test_enable(void)
 		zassert_equal(err, 0, "Failed to register loopback_0 class (%d)");
 	}
 
-	err = usbd_register_all_classes(&test_usbd, USBD_SPEED_FS, 1);
+	err = usbd_register_all_classes(&test_usbd, USBD_SPEED_FS, 1, NULL);
 	zassert_equal(err, 0, "Failed to unregister all instances(%d)");
 
 	err = usbd_unregister_all_classes(&test_usbd, USBD_SPEED_FS, 1);

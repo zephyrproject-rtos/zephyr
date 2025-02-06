@@ -33,6 +33,8 @@ config RISCV_ISA_EXT_M
 
 config RISCV_ISA_EXT_A
 	bool
+	imply RISCV_ISA_EXT_ZAAMO
+	imply RISCV_ISA_EXT_ZLRSC
 	help
 	  (A) - Standard Extension for Atomic Instructions
 
@@ -110,6 +112,20 @@ config RISCV_ISA_EXT_ZIFENCEI
 	  The "Zifencei" extension includes the FENCE.I instruction that
 	  provides explicit synchronization between writes to instruction
 	  memory and instruction fetches on the same hart.
+
+config RISCV_ISA_EXT_ZAAMO
+	bool
+	help
+	  (Zaamo) - Atomic memory operation subset of the A extension
+
+	  The Zaamo extension enables support for AMO*.W/D-style instructions.
+
+config RISCV_ISA_EXT_ZLRSC
+	bool
+	help
+	  (Zlrsc) - Load-Reserved/Store-Conditional subset of the A extension
+
+	  The Zlrsc extension enables support for LR.W/D and SC.W/D-style instructions.
 
 config RISCV_ISA_EXT_ZBA
 	bool

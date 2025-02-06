@@ -401,9 +401,6 @@ class Pytest(Harness):
             '-s', '-v',
             f'--build-dir={self.running_dir}',
             f'--junit-xml={self.report_file}',
-            '--log-file-level=DEBUG',
-            '--log-file-format=%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s: %(message)s',
-            f'--log-file={self.pytest_log_file_path}',
             f'--platform={self.instance.platform.name}'
         ]
         command.extend([os.path.normpath(os.path.join(
@@ -529,9 +526,9 @@ class Pytest(Harness):
         if proc.returncode in (ExitCode.INTERRUPTED, ExitCode.USAGE_ERROR, ExitCode.INTERNAL_ERROR):
             self.status = TwisterStatus.ERROR
             self.instance.reason = f'Pytest error - return code {proc.returncode}'
-            with open(self.pytest_log_file_path, 'w') as log_file:
-                log_file.write(shlex.join(cmd) + '\n\n')
-                log_file.write('\n'.join(self._output))
+        with open(self.pytest_log_file_path, 'w') as log_file:
+            log_file.write(shlex.join(cmd) + '\n\n')
+            log_file.write('\n'.join(self._output))
 
     @staticmethod
     def _update_command_with_env_dependencies(cmd):

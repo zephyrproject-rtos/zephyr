@@ -2750,6 +2750,8 @@ static void http_server_tests_after(void *fixture)
 	}
 
 	(void)http_server_stop();
+
+	k_yield();
 }
 
 ZTEST_SUITE(server_function_tests, NULL, NULL, http_server_tests_before,

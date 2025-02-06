@@ -21,7 +21,7 @@ jobs:
           echo "TRIMMED_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: REUSE Compliance Check
-        uses: fsfe/reuse-action@v4
+        uses: fsfe/reuse-action@v5
         with:
           args: spdx -o zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
 

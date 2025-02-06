@@ -454,7 +454,7 @@ static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 	return retcode;
 }
 
-void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
+bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
 {
 	struct k_poll_event *poll_event;
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -465,6 +465,8 @@ void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
 	}
 
 	k_spin_unlock(&lock, key);
+
+	return (poll_event != NULL);
 }
 
 void z_impl_k_poll_signal_init(struct k_poll_signal *sig)

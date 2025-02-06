@@ -29,13 +29,10 @@ static void notif_enabled(bool enabled, void *ctx)
 
 static void received(struct bt_conn *conn, const void *data, uint16_t len, void *ctx)
 {
-	char message[CONFIG_BT_L2CAP_TX_MTU + 1] = "";
-
 	ARG_UNUSED(conn);
 	ARG_UNUSED(ctx);
 
-	memcpy(message, data, MIN(sizeof(message) - 1, len));
-	printk("%s() - Len: %d, Message: %s\n", __func__, len, message);
+	printk("%s() - Len: %d, Message: %.*s\n", __func__, len, len, (char *)data);
 }
 
 struct bt_nus_cb nus_listener = {

@@ -27,11 +27,21 @@ static inline void cold_reboot(void)
 	sys_out8(reset_value, X86_RST_CNT_REG);
 }
 
+static inline void warm_reboot(void)
+{
+	uint8_t reset_value = X86_RST_CNT_CPU_RST | X86_RST_CNT_SYS_RST;
+
+	sys_out8(reset_value, X86_RST_CNT_REG);
+}
+
 void __weak sys_arch_reboot(int type)
 {
 	switch (type) {
 	case SYS_REBOOT_COLD:
 		cold_reboot();
+		break;
+	case SYS_REBOOT_WARM:
+		warm_reboot();
 		break;
 	default:
 		/* do nothing */

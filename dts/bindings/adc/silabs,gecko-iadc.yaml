@@ -5,7 +5,7 @@ description: Silicon Labs Gecko Family IADC
 
 compatible: "silabs,gecko-iadc"
 
-include: adc-controller.yaml
+include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

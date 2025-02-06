@@ -6,7 +6,11 @@
 
 #ifndef MOCKS_BAP_UNICAST_SERVER_H_
 #define MOCKS_BAP_UNICAST_SERVER_H_
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/fff.h>
 #include <zephyr/bluetooth/audio/bap.h>
 

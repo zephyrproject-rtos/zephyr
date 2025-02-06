@@ -12,14 +12,6 @@ struct queue_item {
 	size_t size;
 };
 
-/* Minimal ring buffer implementation */
-struct ring_buffer {
-	struct queue_item *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
-};
-
 /* Device constant configuration parameters */
 struct i2s_stm32_cfg {
 	SPI_TypeDef *i2s;
@@ -32,7 +24,7 @@ struct i2s_stm32_cfg {
 
 struct stream {
 	int32_t state;
-	struct k_sem sem;
+	struct k_msgq *msgq;
 
 	const struct device *dev_dma;
 	uint32_t dma_channel;
@@ -44,13 +36,11 @@ struct stream {
 	bool tx_stop_for_drain;
 
 	struct i2s_config cfg;
-	struct ring_buffer mem_block_queue;
 	void *mem_block;
 	bool last_block;
 	bool master;
 	int (*stream_start)(struct stream *, const struct device *dev);
 	void (*stream_disable)(struct stream *, const struct device *dev);
-	void (*queue_drop)(struct stream *);
 };
 
 /* Device run time data */

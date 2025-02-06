@@ -69,6 +69,8 @@ The board configuration supports the following hardware features:
 +-----------+------------+------------------------------------+
 | RADIO     | on-chip    | bluetooth                          |
 +-----------+------------+------------------------------------+
+| ACMP      | on-chip    | comparator                         |
++-----------+------------+------------------------------------+
 
 Other hardware features are currently not supported by the port.
 

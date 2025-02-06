@@ -12,7 +12,3 @@ tests:
       - nucleo_f767zi
       - mimxrt1060_evk/mimxrt1062/qspi
       - native_sim
-    integration_platforms:
-      - nucleo_f767zi
-      - mimxrt1060_evk/mimxrt1062/qspi
-      - native_sim

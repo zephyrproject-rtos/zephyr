@@ -15,13 +15,25 @@ else()
   set(SIGNING_TOOL STM32_SigningTool_CLI)
 endif()
 
-set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-  COMMAND ${SIGNING_TOOL}
-  -in ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
-  -nk -t fsbl -hv 2.3
-  -o ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.signed.bin
-  -dump ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.signed.bin
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-)
+find_file(SIGNING_TOOL_FIND ${SIGNING_TOOL})
+if(SIGNING_TOOL_FIND STREQUAL SIGNING_TOOL_FIND-NOTFOUND)
+  message(WARNING "
+  Signing Image tool (${SIGNING_TOOL}) is not available.
+  Signed image will not be generated.
+  You won't be able to run image on board.")
+endif()
 
-set_property(TARGET runners_yaml_props_target PROPERTY bin_file ${CONFIG_KERNEL_BIN_NAME}.signed.bin)
+if(NOT SIGNING_TOOL_FIND STREQUAL SIGNING_TOOL_FIND-NOTFOUND)
+
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${SIGNING_TOOL}
+    -in ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
+    -nk -t fsbl -hv 2.3
+    -o ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.signed.bin
+    -dump ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.signed.bin
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  )
+
+  set_property(TARGET runners_yaml_props_target PROPERTY bin_file ${CONFIG_KERNEL_BIN_NAME}.signed.bin)
+
+endif()

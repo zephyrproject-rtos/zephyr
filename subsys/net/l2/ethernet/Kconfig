@@ -32,6 +32,14 @@ config NET_L2_ETHERNET_MGMT
 	  Enable support net_mgmt Ethernet interface which can be used to
 	  configure at run-time Ethernet drivers and L2 settings.
 
+
+config NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR
+	bool "Accept mismatched L3 and L2 addresses"
+	help
+	  If enabled, then accept packets where the L3 and L2 addresses do not
+	  conform to RFC1122 section 3.3.6. This is useful in dealing with
+	  buggy devices that do not follow the RFC.
+
 config NET_VLAN
 	bool "Virtual LAN support"
 	select NET_L2_VIRTUAL
@@ -41,10 +49,14 @@ config NET_VLAN
 config NET_VLAN_COUNT
 	int "Max VLAN tags supported in the system"
 	default 1
-	range 1 $(UINT8_MAX)
+	range 0 $(UINT8_MAX)
 	depends on NET_VLAN
 	help
-	  How many VLAN tags can be configured.
+	  How many VLAN tags can be configured. If set to 0, then only
+	  priority tagged VLAN frames with tag value 0 can be handled.
+	  This is useful if you do not want to receive any other VLAN
+	  tagged frames than tag 0. This will save some memory as the
+	  VLAN virtual interface is not created in this case.
 
 config NET_VLAN_TXRX_DEBUG
 	bool "Debug received and sent packets in VLAN"

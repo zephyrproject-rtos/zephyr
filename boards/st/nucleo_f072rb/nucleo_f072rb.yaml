@@ -1,4 +1,4 @@
-identifier: nucleo_f070rb
+identifier: nucleo_f072rb
 name: ST Nucleo F072RB
 type: mcu
 arch: arm

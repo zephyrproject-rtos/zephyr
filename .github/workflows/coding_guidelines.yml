@@ -29,7 +29,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install coccinelle
 
-    - name: Run Coding Guildeines Checks
+    - name: Run Coding Guidelines Checks
       continue-on-error: true
       id: coding_guidelines
       env:

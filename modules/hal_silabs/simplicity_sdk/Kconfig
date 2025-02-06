@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "SiSDK configuration"
+	depends on HAS_SILABS_SISDK
+
+config RAIL_PA_CURVE_HEADER
+	string "RAIL PA custom curve header file"
+	default "pa_curves_efr32.h"
+	help
+	  Name of custom PA curve header file for use by PA initialization.
+	  See AN1127 for information on how to create a custom PA curve.
+	  The header file must be available on the include path.
+
+config RAIL_PA_CURVE_TYPES_HEADER
+	string "RAIL PA curve types header file"
+	default "pa_curve_types_efr32.h"
+	help
+	  Name of custom PA curve type header file for use by PA initialization.
+	  See AN1127 for information on how to create a custom PA curve.
+	  The header file must be available on the include path.
+
+config RAIL_PA_ENABLE_CALIBRATION
+	bool "RAIL PA: apply factory calibration offset"
+	default y
+	help
+	  Ensure that the PA power remains constant chip-to-chip by applying factory
+	  calibration. This option is enabled by default, and is recommended for all
+	  Series 2 devices.
+
+endmenu

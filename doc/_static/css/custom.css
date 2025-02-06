@@ -1128,6 +1128,10 @@ li>a.code-sample-link.reference.internal.current {
     }
 }
 
+.sidebar.board-overview {
+    color: var(--admonition-note-color);
+}
+
 .sidebar.board-overview .sidebar-title {
     font-family: var(--header-font-family);
     background: var(--admonition-note-title-background-color);
@@ -1135,10 +1139,6 @@ li>a.code-sample-link.reference.internal.current {
     border-radius: 12px 12px 0px 0px;
     margin: 0px;
     text-align: center;
-}
-
-.sidebar.board-overview * {
-    color: var(--admonition-note-color);
 }
 
 .sidebar.board-overview figure {
@@ -1174,4 +1174,18 @@ li>a.code-sample-link.reference.internal.current {
 
 .sidebar.board-overview dl.field-list>dd code {
     font-size: 0.9em;
+}
+
+.sidebar.board-overview #board-github-link {
+    text-align: center;
+    margin-bottom: 1em;
+    font-size: 0.9em;
+}
+
+.sidebar.board-overview #board-github-link a {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width:80%;
 }

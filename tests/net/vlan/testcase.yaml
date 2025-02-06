@@ -17,3 +17,6 @@ tests:
       - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=y
       - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y
       - CONFIG_TEST_EXTRA_STACK_SIZE=1024
+  net.vlan.priority_tagging_only:
+    extra_configs:
+      - CONFIG_NET_VLAN_COUNT=0

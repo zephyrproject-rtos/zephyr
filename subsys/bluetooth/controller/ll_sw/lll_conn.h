@@ -86,10 +86,14 @@ struct lll_conn {
 
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
-			uint8_t  initiated:1;
-			uint8_t  cancelled:1;
-			uint8_t  forced:1;
-			uint8_t  latency_enabled:1;
+			uint8_t initiated:1;
+			uint8_t cancelled:1;
+			uint8_t forced:1;
+			uint8_t latency_enabled:1;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+			uint8_t phy_rx_event:3;
+#endif /* CONFIG_BT_CTLR_PHY */
 
 			uint32_t window_widening_periodic_us;
 			uint32_t window_widening_max_us;

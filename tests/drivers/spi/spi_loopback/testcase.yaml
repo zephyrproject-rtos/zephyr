@@ -65,6 +65,7 @@ tests:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
     platform_allow:
       - b_u585i_iot02a
+      - nucleo_c071rb
       - nucleo_g474re
       - nucleo_f207zg
       - nucleo_f429zi
@@ -120,6 +121,7 @@ tests:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-interrupt.conf"
     platform_allow:
       - b_u585i_iot02a
+      - nucleo_c071rb
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg

@@ -1,0 +1,51 @@
+# Copyright (c) 2024 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+description: MIDI2 device
+
+compatible: "zephyr,midi2-device"
+
+properties:
+  "#address-cells":
+    type: int
+    const: 1
+
+  "#size-cells":
+    type: int
+    const: 1
+
+child-binding:
+  description: |
+    MIDI2 Group terminal block.
+    This represent a set of contiguous MIDI2 groups through which the
+    device exchange Universal MIDI Packets with the host.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: |
+        First MIDI2 Group number (address) and number of Group Terminals (size)
+        in this MIDI2 Group Terminal Block.
+        The MIDI2 Groups 1 to 16 corresponds to address 0x0 to 0xf. There are
+        at most 16 addressable groups (of 16 chans each) per MIDI2 interface.
+
+    protocol:
+      type: string
+      enum:
+      - "use-midi-ci"
+      - "midi1-up-to-64b"
+      - "midi1-up-to-128b"
+      - "midi2"
+      description: |
+        Default MIDI protocol of the Group Terminals in this Block.
+
+    terminal-type:
+      type: string
+      default: "bidirectional"
+      enum:
+      - "bidirectional"
+      - "input-only"
+      - "output-only"
+      description: |
+        Type (data direction) of Group Terminals in this Block.

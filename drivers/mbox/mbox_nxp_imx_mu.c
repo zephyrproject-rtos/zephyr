@@ -46,7 +46,7 @@ static int nxp_imx_mu_send(const struct device *dev, uint32_t channel, const str
 	}
 
 	/* Data transfer mode. */
-	if (msg->size != MU_MBOX_SIZE) {
+	if (msg->size > MU_MBOX_SIZE) {
 		/* We can only send this many bytes at a time. */
 		return -EMSGSIZE;
 	}

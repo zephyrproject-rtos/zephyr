@@ -17,4 +17,5 @@ config MBOX_NRF_VEVIF_EVENT_TX
 
 config MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16
 	bool "Apply errata 16 for nRF54L series"
-	default y if SOC_SERIES_NRF54LX
+	depends on SOC_SERIES_NRF54LX
+	default y

@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+GROUP_START(FLASH_CCFG)
+
+CRC_CCFG_BOOT_CFG_begin = 0x4e020000;
+CRC_CCFG_BOOT_CFG_end = 0x4e02000B;
+CRC_CCFG_begin = 0x4E020010;
+CRC_CCFG_end = 0x4E02074B;
+CRC_CCFG_DEBUG_begin = 0x4E0207D0;
+CRC_CCFG_DEBUG_end = 0x4E0207FB;
+CRC_CCFG_USER_RECORD_begin = 0x4E020750;
+CRC_CCFG_USER_RECORD_end = 0x4E0207CB;
+SECTION_PROLOGUE(.ti_ccfg,,)
+{
+    KEEP(*(_TI_CCFG_SECTION_NAME))
+} GROUP_LINK_IN(LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(ti_ccfg_partition)))
+
+GROUP_END(FLASH_CCFG)

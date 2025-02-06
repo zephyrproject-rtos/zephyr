@@ -2017,7 +2017,7 @@ class TwisterRunner:
                             break
                 return True
         except Exception as e:
-            logger.error(f"General exception: {e}")
+            logger.error(f"General exception: {e}\n{traceback.format_exc()}")
             sys.exit(1)
 
     def execute(self, pipeline, done):

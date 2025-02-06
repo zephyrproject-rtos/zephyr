@@ -66,6 +66,8 @@ The board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| ACMP      | on-chip    | comparator                          |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 

@@ -83,7 +83,7 @@ const osc_config_t oscConfig_BOARD_BootClockRUN = {
 	}
 };
 
-static void clock_init(void)
+__weak void clock_init(void)
 {
 	/* Set the system clock dividers in SIM to safe value. */
 	CLOCK_SetSimSafeDivs();

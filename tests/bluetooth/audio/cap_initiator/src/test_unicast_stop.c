@@ -21,6 +21,7 @@
 #include <zephyr/fff.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/ztest_assert.h>
 #include <sys/errno.h>
 
 #include "bap_endpoint.h"

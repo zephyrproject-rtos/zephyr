@@ -10,17 +10,24 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
+#include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
 #include "audio.h"
 
@@ -813,7 +820,7 @@ static int cmd_cap_commander_distribute_broadcast_code(const struct shell *sh, s
 
 		src_id = shell_strtoul(arg, 0, &err);
 		if (err != 0) {
-			shell_error(sh, "Could not parce src_id: %d", err);
+			shell_error(sh, "Could not parse src_id: %d", err);
 			return -ENOEXEC;
 		}
 		if (src_id > UINT8_MAX) {

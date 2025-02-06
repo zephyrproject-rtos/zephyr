@@ -2,16 +2,19 @@
 
 if BT_ESP32
 
+config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
+	int
+	default 25600 if ESP_BT_HEAP_SYSTEM
+	default 0
+	help
+	  Make sure there is a minimal heap available for BT driver.
+
 choice ESP_BT_HEAP
 	prompt "Bluetooth adapter heap in use"
-	default ESP_BT_HEAP_RUNTIME
-
-	config ESP_BT_HEAP_RUNTIME
-		bool "Bluetooth adapter use ESP runtime heap"
-		depends on ESP_HEAP_RUNTIME
+	default ESP_BT_HEAP_SYSTEM
 
 	config ESP_BT_HEAP_SYSTEM
-		bool "Bluetooth adapter use system heap"
+		bool "Bluetooth adapter use the kernel mempool heap (k_malloc)"
 
 endchoice # ESP_BT_HEAP
 

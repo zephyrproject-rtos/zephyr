@@ -120,7 +120,7 @@ class Blobs(WestCommand):
 
     # Compare the checksum of a file we've just downloaded
     # to the digest in blob metadata, warn user if they differ.
-    def verify_blob(self, blob):
+    def verify_blob(self, blob) -> bool:
         self.dbg('Verifying blob {module}: {abspath}'.format(**blob))
 
         status = zephyr_module.get_blob_status(blob['abspath'], blob['sha256'])
@@ -140,8 +140,11 @@ class Blobs(WestCommand):
                 Blob:   {blob['path']}
                 URL:    {blob['url']}
                 Info:   {blob['description']}'''))
+            return False
+        return True
 
     def fetch(self, args):
+        bad_checksum_count = 0
         blobs = self.get_blobs(args)
         for blob in blobs:
             if blob['status'] == zephyr_module.BLOB_PRESENT:
@@ -149,7 +152,12 @@ class Blobs(WestCommand):
                 continue
             self.inf('Fetching blob {module}: {abspath}'.format(**blob))
             self.fetch_blob(blob['url'], blob['abspath'])
-            self.verify_blob(blob)
+            if not self.verify_blob(blob):
+                bad_checksum_count += 1
+
+        if bad_checksum_count:
+            self.err(f"{bad_checksum_count} blobs have bad checksums")
+            sys.exit(os.EX_DATAERR)
 
     def clean(self, args):
         blobs = self.get_blobs(args)

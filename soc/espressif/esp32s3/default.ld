@@ -102,12 +102,14 @@ MEMORY
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
 
-/* Used as a pointer to the heap end */
+/* Heap size calculations differs between the APPCPU and PROCPU */
 #ifdef CONFIG_SOC_ENABLE_APPCPU
 _heap_sentry = procpu_dram_end;
 #else
 _heap_sentry = DRAM_RESERVED_START;
 #endif
+
+_libc_heap_size = _heap_sentry - _end;
 
 SECTIONS
 {
