@@ -16,14 +16,6 @@ struct lpspi_driver_data {
 	uint8_t word_size_bytes;
 };
 
-static inline void lpspi_wait_tx_fifo_empty(const struct device *dev)
-{
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-
-	while (LPSPI_GetTxFifoCount(base) != 0) {
-	}
-}
-
 static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
 {
 	return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
