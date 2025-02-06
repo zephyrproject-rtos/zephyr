@@ -102,8 +102,8 @@ class TestOutfile:
         zephyr_listdir = os.listdir(os.path.join(sample_path, 'zephyr'))
 
         expected_contents = ['CMakeFiles', 'handler.log', 'build.ninja', 'CMakeCache.txt',
-                             'zephyr', 'build.log']
-        expected_zephyr_contents = ['.config']
+                             'zephyr', 'build.log', 'build_info.yml']
+        expected_zephyr_contents = ['.config', 'zephyr.dts']
 
         assert all([content in expected_zephyr_contents for content in zephyr_listdir]), \
                'Cleaned zephyr directory has unexpected files.'
