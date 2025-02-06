@@ -12,11 +12,12 @@
 
 #include <zephyr/sys/printk.h>
 
-#include "common.h"
-#include "time_machine.h"
+#include "babblekit/testcase.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_bsim_mtu_update, LOG_LEVEL_DBG);
+
+#define PERIPHERAL_NOTIFY_TIME 10 /* seconds */
 
 extern void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size, uint16_t seconds);
 
@@ -29,28 +30,13 @@ static void test_peripheral_main(void)
 
 	run_peripheral_sample(notify_data, sizeof(notify_data), PERIPHERAL_NOTIFY_TIME);
 
-	PASS("MTU Update test passed\n");
-}
-
-void test_tick(bs_time_t HW_device_time)
-{
-	if (bst_result != Passed) {
-		FAIL("Test failed (not passed after %i seconds)\n", WAIT_TIME);
-	}
-}
-
-static void test_mtu_update_init(void)
-{
-	bst_ticker_set_next_tick_absolute(WAIT_TIME);
-	bst_result = In_progress;
+	TEST_PASS("MTU Update test passed");
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral GATT MTU Update",
-		.test_pre_init_f = test_mtu_update_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_peripheral_main
 	},
 	BSTEST_END_MARKER

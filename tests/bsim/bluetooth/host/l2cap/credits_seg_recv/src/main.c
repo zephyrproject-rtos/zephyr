@@ -21,8 +21,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
 
-static DEFINE_FLAG(is_connected);
-static DEFINE_FLAG(flag_l2cap_connected);
+DEFINE_FLAG_STATIC(is_connected);
+DEFINE_FLAG_STATIC(flag_l2cap_connected);
 
 #define L2CAP_MPS CONFIG_BT_L2CAP_TX_MTU
 #define SDU_NUM   3

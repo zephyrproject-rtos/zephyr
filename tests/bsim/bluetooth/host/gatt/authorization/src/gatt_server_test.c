@@ -21,7 +21,7 @@
 
 extern enum bst_result_t bst_result;
 
-static DEFINE_FLAG(flag_is_chrc_ctx_validated);
+DEFINE_FLAG_STATIC(flag_is_chrc_ctx_validated);
 
 static struct bt_conn *g_conn;
 

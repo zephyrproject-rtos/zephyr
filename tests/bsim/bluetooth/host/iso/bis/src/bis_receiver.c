@@ -22,11 +22,11 @@ LOG_MODULE_REGISTER(bis_receiver, LOG_LEVEL_INF);
 
 extern enum bst_result_t bst_result;
 
-static DEFINE_FLAG(flag_broadcaster_found);
-static DEFINE_FLAG(flag_iso_connected);
-static DEFINE_FLAG(flag_data_received);
-static DEFINE_FLAG(flag_pa_synced);
-static DEFINE_FLAG(flag_biginfo);
+DEFINE_FLAG_STATIC(flag_broadcaster_found);
+DEFINE_FLAG_STATIC(flag_iso_connected);
+DEFINE_FLAG_STATIC(flag_data_received);
+DEFINE_FLAG_STATIC(flag_pa_synced);
+DEFINE_FLAG_STATIC(flag_biginfo);
 
 static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_le_scan_recv_info broadcaster_info;
