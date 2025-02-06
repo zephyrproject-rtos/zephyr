@@ -103,7 +103,7 @@ union max14916_interrupt {
 		uint8_t OW_OFF_FLT: 1;
 		uint8_t OW_ON_FLT: 1;
 		uint8_t SHT_VDD_FLT: 1;
-		uint8_t DE_MAG_FLT: 1;
+		uint8_t THERM_ERR: 1;
 		uint8_t SUPPLY_ERR: 1;
 		uint8_t COM_ERR: 1; /* BIT7 */
 	} reg_bits;
