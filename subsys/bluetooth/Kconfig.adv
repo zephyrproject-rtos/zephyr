@@ -68,6 +68,14 @@ config BT_PER_ADV_SYNC_RSP
 	  Select this to enable Periodic Advertising with Responses Sync
 	  API support.
 
+config BT_EXT_ADV_CODING_SELECTION
+	bool "Advertising Coding Selection support"
+	depends on !HAS_BT_CTLR || BT_CTLR_PHY_CODED
+	help
+	  Select this to enable Advertising Coding Selection API support.
+	  This allows the Host to indicate their strict requirement
+	  concerning coding scheme when using Extended Advertising.
+
 if BT_PER_ADV_SYNC
 
 config BT_PER_ADV_SYNC_MAX

@@ -1121,20 +1121,32 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 				const struct bt_le_adv_param *param,
 				bool  has_scan_data)
 {
-	struct bt_hci_cp_le_set_ext_adv_param *cp;
+	struct bt_hci_cp_le_set_ext_adv_param_v2 *cp;
+
+	uint16_t opcode;
+	uint16_t size;
 	bool dir_adv = param->peer != NULL, scannable;
 	struct net_buf *buf, *rsp;
 	int err;
 	enum adv_name_type name_type;
 	uint16_t props = 0;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, sizeof(*cp));
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV_CODING_SELECTION) &&
+	    BT_FEAT_LE_ADV_CODING_SEL(bt_dev.le.features)) {
+		opcode = BT_HCI_OP_LE_SET_EXT_ADV_PARAM_V2;
+		size = sizeof(struct bt_hci_cp_le_set_ext_adv_param_v2);
+	} else {
+		opcode = BT_HCI_OP_LE_SET_EXT_ADV_PARAM;
+		size = sizeof(struct bt_hci_cp_le_set_ext_adv_param);
+	}
+
+	buf = bt_hci_cmd_create(opcode, size);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
+	cp = net_buf_add(buf, size);
+	(void)memset(cp, 0, size);
 
 	adv->options = param->options;
 
@@ -1171,6 +1183,22 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	if (param->options & BT_LE_ADV_OPT_CODED) {
 		cp->prim_adv_phy = BT_HCI_LE_PHY_CODED;
 		cp->sec_adv_phy = BT_HCI_LE_PHY_CODED;
+
+		if (IS_ENABLED(CONFIG_BT_EXT_ADV_CODING_SELECTION) &&
+		    opcode == BT_HCI_OP_LE_SET_EXT_ADV_PARAM_V2) {
+			uint8_t adv_phy_opt;
+
+			if (param->options & BT_LE_ADV_OPT_REQUIRE_S8_CODING) {
+				adv_phy_opt = BT_HCI_LE_ADV_PHY_OPTION_REQUIRE_S8;
+			} else if (param->options & BT_LE_ADV_OPT_REQUIRE_S2_CODING) {
+				adv_phy_opt = BT_HCI_LE_ADV_PHY_OPTION_REQUIRE_S2;
+			} else {
+				adv_phy_opt = BT_HCI_LE_ADV_PHY_OPTION_NO_REQUIRED;
+			}
+
+			cp->prim_adv_phy_opt = adv_phy_opt;
+			cp->sec_adv_phy_opt = adv_phy_opt;
+		}
 	}
 
 	if (!(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
@@ -1222,7 +1250,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	cp->sec_adv_max_skip = param->secondary_max_skip;
 
 	cp->props = sys_cpu_to_le16(props);
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, buf, &rsp);
+	err = bt_hci_cmd_send_sync(opcode, buf, &rsp);
 	if (err) {
 		return err;
 	}

@@ -198,6 +198,8 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_CONN_SUBRATING           37
 #define BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP 38
 #define BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION   39
+#define BT_LE_FEAT_BIT_ADV_CODING_SEL           40
+#define BT_LE_FEAT_BIT_ADV_CODING_SEL_HOST      41
 
 #define BT_LE_FEAT_BIT_PAWR_ADVERTISER          43
 #define BT_LE_FEAT_BIT_PAWR_SCANNER             44
@@ -268,6 +270,10 @@ struct bt_hci_cmd_hdr {
 						  BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP)
 #define BT_FEAT_LE_CHANNEL_CLASSIFICATION(feat)   BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION)
+#define BT_FEAT_LE_ADV_CODING_SEL(feat)	          BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_ADV_CODING_SEL)
+#define BT_FEAT_LE_ADV_CODING_SEL_HOST(feat)	  BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_ADV_CODING_SEL_HOST)
 #define BT_FEAT_LE_PAWR_ADVERTISER(feat)	  BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_PAWR_ADVERTISER)
 #define BT_FEAT_LE_PAWR_SCANNER(feat)             BT_LE_FEAT_TEST(feat, \
@@ -1536,6 +1542,30 @@ struct bt_hci_cp_le_set_ext_adv_param {
 struct bt_hci_rp_le_set_ext_adv_param {
 	uint8_t status;
 	int8_t  tx_power;
+} __packed;
+
+#define BT_HCI_LE_ADV_PHY_OPTION_NO_REQUIRED 0x00
+#define BT_HCI_LE_ADV_PHY_OPTION_REQUIRE_S2  0x03
+#define BT_HCI_LE_ADV_PHY_OPTION_REQUIRE_S8  0x04
+
+#define BT_HCI_OP_LE_SET_EXT_ADV_PARAM_V2        BT_OP(BT_OGF_LE, 0x007F) /* 0x207F */
+struct bt_hci_cp_le_set_ext_adv_param_v2 {
+	uint8_t      handle;
+	uint16_t     props;
+	uint8_t      prim_min_interval[3];
+	uint8_t      prim_max_interval[3];
+	uint8_t      prim_channel_map;
+	uint8_t      own_addr_type;
+	bt_addr_le_t peer_addr;
+	uint8_t      filter_policy;
+	int8_t       tx_power;
+	uint8_t      prim_adv_phy;
+	uint8_t      sec_adv_max_skip;
+	uint8_t      sec_adv_phy;
+	uint8_t      sid;
+	uint8_t      scan_req_notify_enable;
+	uint8_t      prim_adv_phy_opt;
+	uint8_t      sec_adv_phy_opt;
 } __packed;
 
 #define BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG        0x00
