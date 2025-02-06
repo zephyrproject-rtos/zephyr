@@ -23,8 +23,7 @@
 
 
 #include <util.h>
-#include <fmac_api.h>
-#include "fmac_util.h"
+#include "common/fmac_util.h"
 #include <fmac_main.h>
 
 #ifndef CONFIG_NRF70_RADIO_TEST
@@ -37,8 +36,11 @@
 #include <wifi_mgmt.h>
 #include <wifi_mgmt_scan.h>
 #endif /* CONFIG_NRF70_STA_MODE */
-#include <zephyr/net/conn_mgr_connectivity.h>
 
+#include <system/fmac_api.h>
+#include <zephyr/net/conn_mgr_connectivity.h>
+#else
+#include <radio_test/fmac_api.h>
 #endif /* !CONFIG_NRF70_RADIO_TEST */
 
 #define DT_DRV_COMPAT nordic_wlan
@@ -582,7 +584,11 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 	rpu_ctx_zep->drv_priv_zep = drv_priv_zep;
 
-	rpu_ctx = nrf_wifi_fmac_dev_add(drv_priv_zep->fmac_priv, rpu_ctx_zep);
+#ifdef CONFIG_NRF70_RADIO_TEST
+	rpu_ctx = nrf_wifi_rt_fmac_dev_add(drv_priv_zep->fmac_priv, rpu_ctx_zep);
+#else
+	rpu_ctx = nrf_wifi_sys_fmac_dev_add(drv_priv_zep->fmac_priv, rpu_ctx_zep);
+#endif /* CONFIG_NRF70_RADIO_TEST */
 
 	if (!rpu_ctx) {
 		LOG_ERR("%s: nrf_wifi_fmac_dev_add failed", __func__);
@@ -618,7 +624,7 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 	configure_board_dep_params(&board_params);
 
 #ifdef CONFIG_NRF70_RADIO_TEST
-	status = nrf_wifi_fmac_dev_init_rt(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_rt_fmac_dev_init(rpu_ctx_zep->rpu_ctx,
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
 					sleep_type,
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
@@ -630,7 +636,7 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 					&board_params,
 					STRINGIFY(CONFIG_NRF70_REG_DOMAIN));
 #else
-	status = nrf_wifi_fmac_dev_init(rpu_ctx_zep->rpu_ctx,
+	status = nrf_wifi_sys_fmac_dev_init(rpu_ctx_zep->rpu_ctx,
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
 					sleep_type,
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
@@ -645,18 +651,14 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_dev_init failed", __func__);
+		LOG_ERR("%s: nrf_wifi_sys_fmac_dev_init failed", __func__);
 		goto err;
 	}
 
 	return status;
 err:
 	if (rpu_ctx) {
-#ifdef CONFIG_NRF70_RADIO_TEST
-		nrf_wifi_fmac_dev_rem_rt(rpu_ctx);
-#else
 		nrf_wifi_fmac_dev_rem(rpu_ctx);
-#endif /* CONFIG_NRF70_RADIO_TEST */
 		rpu_ctx_zep->rpu_ctx = NULL;
 	}
 	return status;
@@ -668,12 +670,12 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_rem_zep(struct nrf_wifi_drv_priv_zep *drv
 
 	rpu_ctx_zep = &drv_priv_zep->rpu_ctx_zep;
 #ifdef CONFIG_NRF70_RADIO_TEST
-	nrf_wifi_fmac_dev_deinit_rt(rpu_ctx_zep->rpu_ctx);
-	nrf_wifi_fmac_dev_rem_rt(rpu_ctx_zep->rpu_ctx);
+	nrf_wifi_rt_fmac_dev_deinit(rpu_ctx_zep->rpu_ctx);
 #else
-	nrf_wifi_fmac_dev_deinit(rpu_ctx_zep->rpu_ctx);
-	nrf_wifi_fmac_dev_rem(rpu_ctx_zep->rpu_ctx);
+	nrf_wifi_sys_fmac_dev_deinit(rpu_ctx_zep->rpu_ctx);
 #endif /* CONFIG_NRF70_RADIO_TEST */
+
+	nrf_wifi_fmac_dev_rem(rpu_ctx_zep->rpu_ctx);
 
 	k_free(rpu_ctx_zep->extended_capa);
 	rpu_ctx_zep->extended_capa = NULL;
@@ -760,9 +762,9 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	 */
 	nrf_wifi_osal_init(&nrf_wifi_os_zep_ops);
 
-	rpu_drv_priv_zep.fmac_priv = nrf_wifi_fmac_init(&data_config,
-							rx_buf_pools,
-							&callbk_fns);
+	rpu_drv_priv_zep.fmac_priv = nrf_wifi_sys_fmac_init(&data_config,
+							    rx_buf_pools,
+							    &callbk_fns);
 #else /* !CONFIG_NRF70_RADIO_TEST */
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 
@@ -771,7 +773,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	 */
 	nrf_wifi_osal_init(&nrf_wifi_os_zep_ops);
 
-	rpu_drv_priv_zep.fmac_priv = nrf_wifi_fmac_init_rt();
+	rpu_drv_priv_zep.fmac_priv = nrf_wifi_rt_fmac_init();
 #endif /* CONFIG_NRF70_RADIO_TEST */
 
 	if (rpu_drv_priv_zep.fmac_priv == NULL) {
@@ -811,7 +813,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	return 0;
 #ifdef CONFIG_NRF70_RADIO_TEST
 fmac_deinit:
-	nrf_wifi_fmac_deinit_rt(rpu_drv_priv_zep.fmac_priv);
+	nrf_wifi_fmac_deinit(rpu_drv_priv_zep.fmac_priv);
 	nrf_wifi_osal_deinit();
 #endif /* CONFIG_NRF70_RADIO_TEST */
 err:
