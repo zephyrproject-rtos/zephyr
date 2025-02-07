@@ -1160,7 +1160,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 				break;
 			}
 
-			if (write_buf_len == sizeof(time_t)) {
+			if (write_buf_len >= sizeof(time_t)) {
 				*(time_t *)write_buf = temp_time;
 				len = sizeof(time_t);
 			} else if (write_buf_len == sizeof(uint32_t)) {
