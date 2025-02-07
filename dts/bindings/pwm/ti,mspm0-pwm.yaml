@@ -5,27 +5,27 @@ description: |
   TI MSPM0 PWM node for MSPM0 SoCs. Each channel in MSPM0 can be configured
   to use for PWM operation. There are three PWM modes supported by this module.
 
-  For example to configuring eMIOS instance 0 with:
-    - Channel 0 for mode OPWFMB
-    - Channel 1 for mode OPWMB
+  mspm0pwm: pwm {
+    pwm_0 {
+      ti,cc-index = <0>;
+      ti,clk-prescaler = <255>;
+      ti,clk-div = <1>;
 
-    mspm0pwm: pwm {
-      pwm_0 {
-        channel = <0>;
-        pwm-mode = "EDGE_ALIGN_UP";
-        prescaler = <0>;
-        period = <65534>;
-        duty-cycle = <32768>;
-      };
+      ti,cc-mode = "PULSE_WIDTH";
+      ti,period = <62499>;
 
-      pwm_1 {
-        channel = <1>;
-        pwm-mode = "CENTER_ALIGN";
-        prescaler = <4>;
-        period = <65534>;
-        duty-cycle = <32768>;
-      };
     };
+
+    pwm_1 {
+      ti,cc-index = <0>;
+      ti,clk-prescaler = <255>;
+      ti,clk-div = <1>;
+
+      ti,pwm-mode = "EDGE_ALIGN";
+      ti,pulse-cycle = <249>;
+      ti,period = <1000>;
+    };
+  };
 
 compatible: "ti,mspm0g1x0x_g3x0x-timer-pwm"
 
@@ -38,61 +38,64 @@ properties:
   pinctrl-names:
     required: true
 
-  "#pwm-cells":
-    const: 2
+  ti,advanced:
+    type: boolean
+    description: |
+      Indicate as General Purpose Timer Advance (TIMA).
 
-  channel:
-      type: int
-      required: true
-      description: MSPM0 PWM channel
+  ti,cc-index:
+    type: int
+    required: true
+    description: |
+      Capture input/Compare output index, should match with the pin function.
 
   ti,pwm-mode:
     type: string
-    required: true
     description: |
-      Select PWM mode:
-      - EDGE_ALIGN: generate pulses with edge aligned down counting mode
+      Select PWM OUT mode:
+      - EDGE_ALIGN: generate pulses with edge aligned down counting mode.
 
-      - EDGE_ALIGN_UP:  generate pulses with edge aligned up counting mode
+      - EDGE_ALIGN_UP:  generate pulses with edge aligned up counting mode.
 
-      - CENTER_ALIGN: generates pulses center aligned up and down counting mode
+      - CENTER_ALIGN: generates pulses center aligned up and down counting mode.
 
     enum:
       - "EDGE_ALIGN"
       - "EDGE_ALIGN_UP"
       - "CENTER_ALIGN"
 
-  ti,advanced:
-    type: boolean
+  ti,cc-mode:
+    type: string
     description: |
-      Indicate as General Purpose Timer Advance (TIMA)
+      Select input capture mode:
+      - EDGE_TIME: capture edge time mode.
 
-  ti,cc-index:
-    type: int
-    required: true
-    description: |
-      Capture input/Compare output index, should match with to pin function
+      - PULSE_WIDTH: capture pulse width and/or period mode.
+
+    enum:
+      - "EDGE_TIME"
+      - "PULSE_WIDTH"
 
   ti,pulse-cycle:
     type: int
-    required: true
     description: |
-      Duty-cycle (in ticks) for PWM channel at boot time.
+      Duty-cycle in TIMCLK cycle for PWM out at boot time.
 
   ti,period:
     type: int
     required: true
     description: |
-      PWM Period in cycle at boot time.
+      Time period in TIMCLK cycle for Capture mode or PWM output.
 
-  ti,prescaler:
+  ti,clk-prescaler:
     type: int
     required: true
     description: |
-      The clock divider for internal counter prescaler.
+      TIMCLK clock source prescaler value.
       Valid range [0 ... 255].
 
-pwm-cells:
-  - channel
-  # Period in terms of nanoseconds
-  - period
+  ti,clk-div:
+    type: int
+    required: true
+    description: |
+      TIMCLK clock source divider.
