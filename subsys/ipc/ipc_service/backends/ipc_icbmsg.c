@@ -501,6 +501,30 @@ static void bit_inv_block(atomic_t *bitmap, size_t num_blocks, size_t start, siz
 	}
 }
 
+static void waiting_cnt_inc(struct backend_data *dev_data)
+{
+	atomic_inc(dev_data->conf->tx.waiting_cnt);
+	__sync_synchronize();
+	sys_cache_data_flush_range(dev_data->conf->tx.waiting_cnt,
+				   sizeof(*dev_data->conf->tx.waiting_cnt));
+}
+
+static void waiting_cnt_dec(struct backend_data *dev_data)
+{
+	atomic_dec(dev_data->conf->tx.waiting_cnt);
+	__sync_synchronize();
+	sys_cache_data_flush_range(dev_data->conf->tx.waiting_cnt,
+				   sizeof(*dev_data->conf->tx.waiting_cnt));
+}
+
+static bool waiting_cnt_get(struct backend_data *dev_data)
+{
+	sys_cache_data_invd_range(dev_data->conf->rx.waiting_cnt,
+				  sizeof(*dev_data->conf->rx.waiting_cnt));
+	__sync_synchronize();
+	return atomic_get(dev_data->conf->rx.waiting_cnt);
+}
+
 /**
  * Allocate buffer for transmission
  *
@@ -537,7 +561,8 @@ static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
 		r = bit_alloc(conf->tx_usage_bm, &num_blocks, conf->tx.block_count);
 		tx_block_index = r;
 
-		if (r == -ENOSPC && first_try) {
+		if (r == -ENOSPC && first_try)
+		{
 			waiting_cnt_inc(dev_data);
 			first_try = false;
 			update_tx_usage(dev_data);
@@ -566,6 +591,10 @@ static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
 	 */
 	if (sem_taken) {
 		k_sem_give(&dev_data->block_wait_sem);
+	}
+
+	if (!first_try) {
+		waiting_cnt_dec(dev_data);
 	}
 #else
 	/* Try to allocate specified number of blocks. */
@@ -757,9 +786,11 @@ static int send_release(struct backend_data *dev_data, const uint8_t *buffer,
 	sys_cache_data_flush_range(conf->tx.proc_bitmask,
 				   ATOMIC_BITMAP_SIZE(conf->rx.block_count) * sizeof(atomic_val_t));
 
-#warning Optimisation: Send release message only if the waiting_count is non-zero.
-/* Note - this should work anyway, but the performance would be compromised */
-	return send_control_message(dev_data, msg_type, ept_addr, rx_block_index);
+	/* Send data release message only if any thread is waiting for a buffer */
+	if (waiting_cnt_get(dev_data)) {
+		return send_control_message(dev_data, msg_type, ept_addr, rx_block_index);
+	}
+	return 0;
 }
 
 /**
@@ -1248,6 +1279,11 @@ static int open(const struct device *instance)
 	__sync_synchronize();
 	sys_cache_data_flush_range(conf->tx.proc_bitmask,
 				   ATOMIC_BITMAP_SIZE(conf->rx.block_count) * sizeof(atomic_val_t));
+
+	/* Clear waiting threads */
+	atomic_set(conf->tx.waiting_cnt, 0);
+	__sync_synchronize();
+	sys_cache_data_flush_range(conf->tx.waiting_cnt, sizeof(conf->tx.waiting_cnt));
 
 	return icmsg_open(&conf->control_config, &dev_data->control_data, &cb,
 			  (void *)instance);
