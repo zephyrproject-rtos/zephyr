@@ -2316,14 +2316,14 @@ static int dwc2_driver_preinit(const struct device *dev)
 	return 0;
 }
 
-static int udc_dwc2_lock(const struct device *dev)
+static void udc_dwc2_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_dwc2_unlock(const struct device *dev)
+static void udc_dwc2_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 static void dwc2_on_bus_reset(const struct device *dev)
