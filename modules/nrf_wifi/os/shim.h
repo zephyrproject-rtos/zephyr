@@ -16,6 +16,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/net/net_pkt.h>
 
+#define NRF_WIFI_EXTRA_TX_HEADROOM 100
+
 /**
  * struct zep_shim_bus_qspi_priv - Structure to hold context information for the Linux OS
  *                        shim.
