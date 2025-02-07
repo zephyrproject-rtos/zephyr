@@ -188,16 +188,7 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
  *
  * @return CoAP client initial Block2 option structure
  */
-static inline struct coap_client_option coap_client_option_initial_block2(void)
-{
-	struct coap_client_option block2 = {
-		.code = COAP_OPTION_BLOCK2,
-		.len = 1,
-		.value[0] = coap_bytes_to_block_size(CONFIG_COAP_CLIENT_BLOCK_SIZE),
-	};
-
-	return block2;
-}
+struct coap_client_option coap_client_option_initial_block2(void);
 
 #ifdef __cplusplus
 }

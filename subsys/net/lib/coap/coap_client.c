@@ -1112,6 +1112,16 @@ int coap_client_init(struct coap_client *client, const char *info)
 	return 0;
 }
 
+struct coap_client_option coap_client_option_initial_block2(void)
+{
+	struct coap_client_option block2 = {
+		.code = COAP_OPTION_BLOCK2,
+		.len = 1,
+		.value[0] = coap_bytes_to_block_size(CONFIG_COAP_CLIENT_BLOCK_SIZE),
+	};
+
+	return block2;
+}
 
 K_THREAD_DEFINE(coap_client_recv_thread, CONFIG_COAP_CLIENT_STACK_SIZE,
 		coap_client_recv, NULL, NULL, NULL,
