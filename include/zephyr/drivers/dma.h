@@ -196,7 +196,7 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
  */
 struct dma_config {
 	/** Which peripheral and direction, HW specific */
-	uint32_t  dma_slot :             8;
+	uint32_t  dma_slot :             10;
 	/**
 	 * Direction the transfers are occurring
 	 *
@@ -250,7 +250,7 @@ struct dma_config {
 	/** Cyclic transfer list, HW specific */
 	uint32_t  cyclic :				 1;
 
-	uint32_t  _reserved :             3;
+	uint32_t  _reserved :             1;
 	/** Width of source data (in bytes) */
 	uint32_t  source_data_size :    16;
 	/** Width of destination data (in bytes) */

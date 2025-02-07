@@ -22,6 +22,34 @@
 
 LOG_MODULE_REGISTER(silabs_dma, CONFIG_DMA_LOG_LEVEL);
 
+//_LDMAXBAR_CH_REQSEL_SOURCESEL_MASK >> _LDMAXBAR_CH_REQSEL_SOURCESEL_SHIFT => 3F
+//_LDMAXBAR_CH_REQSEL_SIGSEL_MASK => 0xF
+
+/*
+ * @def UNWRAP_SOURCE_AND_SIG
+ * Expand packed source/signal choice to REQSEL register layout.
+ * DMA request source is set using SOURCE (6 bits) and SIGNAL (4 bits) fields in
+ * REQSEL (LDMA_CH_REQSL or DMAXBAR_CH_REQSEL depending on device). We do check
+ * that this is actually the case with the asserts below (for future devices).
+ * Zephyr only allows 10 bits to be given in `struct dma_config` which is the
+ * API supported way of setting this kind of information, so we expand the
+ * SOURCE and SIGNAL bits into REQSL register setting here.
+ */
+#if defined (_LDMAXBAR_CH_REQSEL_MASK)
+BUILD_ASSERT((_LDMAXBAR_CH_REQSEL_SOURCESEL_MASK >> _LDMAXBAR_CH_REQSEL_SOURCESEL_SHIFT) >= 0x3FU)
+BUILD_ASSERT((_LDMAXBAR_CH_REQSEL_SOURCESEL_MASK >> _LDMAXBAR_CH_SIGSEL_SOURCESEL_SHIFT) >= 0x0FU)
+#define EXPAND_SOURCE_AND_SIG(slot) \
+	((((slot) & 0x3F) << _LDMAXBAR_CH_REQSEL_SOURCESEL_SHIFT) | \
+	 (((slot) & 0x0F) << _LDMAXBAR_CH_REQSEL_SIGSEL_SHIFT))
+#elif defined (_LDMA_CH_REQSEL_MASK)
+BUILD_ASSERT((_LDMA_CH_REQSEL_SOURCESEL_MASK >> _LDMA_CH_REQSEL_SOURCESEL_SHIFT) >= 0x3FU)
+BUILD_ASSERT((_LDMA_CH_REQSEL_SOURCESEL_MASK >> _LDMA_CH_SIGSEL_SOURCESEL_SHIFT) >= 0x0FU)
+#define EXPAND_SOURCE_AND_SIG(slot) \
+	((((slot) & 0x3F) << _LDMA_CH_REQSEL_SOURCESEL_SHIFT) | \
+	 (((slot) & 0x0F) << _LDMA_CH_REQSEL_SIGSEL_SHIFT))
+#endif
+
+
 struct dma_silabs_channel {
 	enum dma_channel_direction dir;
 	uint32_t complete_callback_en;
@@ -351,7 +379,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 		break;
 	case PERIPHERAL_TO_MEMORY:
 	case MEMORY_TO_PERIPHERAL:
-		xfer_config->ldmaReqSel = config->dma_slot;
+		xfer_config->ldmaReqSel = EXPAND_SOURCE_AND_SIG(config->dma_slot);
 		break;
 	case PERIPHERAL_TO_PERIPHERAL:
 	case HOST_TO_MEMORY:
