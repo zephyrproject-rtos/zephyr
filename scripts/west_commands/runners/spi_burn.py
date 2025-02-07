@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import argparse
 import os
 import re
 import subprocess
@@ -9,6 +10,15 @@ import time
 
 from runners.core import BuildConfiguration, RunnerCaps, ZephyrBinaryRunner
 
+_YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
+
+class _DTFlashAction(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values.lower().startswith('y'):
+            namespace.dt_flash = True
+        else:
+            namespace.dt_flash = False
 
 class SpiBurnBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for SPI_burn.'''
@@ -30,12 +40,18 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug'}, erase=True, flash_addr=True)
+        return RunnerCaps(commands={'flash', 'debug'}, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--addr', default='0x0',
                             help='start flash address to write')
+        parser.add_argument('--dt-flash', default=False, choices=_YN_CHOICES,
+                            action=_DTFlashAction,
+                            help='''If 'yes', try to use flash address
+                            information from devicetree when flash
+                            addresses are unknown (e.g. when flashing a .bin)''')
+
         parser.add_argument('--timeout', default=10,
                             help='ICEman connection establishing timeout in seconds')
         parser.add_argument('--telink-tools-path', help='path to Telink flash tools')

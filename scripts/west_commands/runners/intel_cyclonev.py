@@ -98,7 +98,7 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'attach'},
-                          dev_id=False, flash_addr=False, erase=False)
+                          dev_id=False, erase=False)
 
     @classmethod
     def do_add_parser(cls, parser):
