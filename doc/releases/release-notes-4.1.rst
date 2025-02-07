@@ -531,6 +531,7 @@ New Drivers
    * :dtcompatible:`adi,adxl366`
    * :dtcompatible:`hc-sr04`
    * :dtcompatible:`invensense,icm42670s`
+   * :dtcompatible:`invensense,icm42370`
    * :dtcompatible:`maxim,ds3231-sensor`
    * :dtcompatible:`melexis,mlx90394`
    * :dtcompatible:`nordic,npm2100-vbat`
