@@ -14,6 +14,8 @@ config DMA_XILINX_AXI_DMA
 config DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
 	bool "Disable data cache while accessing Scatter-Gather Descriptors."
 	depends on DMA_XILINX_AXI_DMA
+	depends on CACHE_MANAGEMENT
+	depends on DCACHE
 	default n
 	help
 		Disable dcache while operating on Scatter-Gather descriptors.
