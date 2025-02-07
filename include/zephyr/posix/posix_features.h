@@ -245,6 +245,13 @@
 /* #define _XOPEN_UNIX (-1L) */
 /* #define _XOPEN_UUCP (-1L) */
 
+#if _POSIX_C_SOURCE >= 200809L && (__PICOLIBC__ > 1 ||			\
+(__PICOLIBC__ == 1 && (__PICOLIBC_MINOR__ > 8 ||			\
+__PICOLIBC_MINOR__ == 8 && __PICOLIBC_PATCHLEVEL__ >= 9)))
+/* Use picolibc's limits.h when building POSIX code */
+#include <limits.h>
+#else
+
 /* Maximum values */
 #define _POSIX_CLOCKRES_MIN (20000000L)
 
@@ -306,6 +313,8 @@
 #define _XOPEN_IOV_MAX                      (16)
 #define _XOPEN_NAME_MAX                     (255)
 #define _XOPEN_PATH_MAX                     (1024)
+
+#endif /* __PICOLIBC__ */
 
 /* Other invariant values */
 #define NL_LANGMAX (14)
