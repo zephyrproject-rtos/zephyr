@@ -12,4 +12,7 @@ config FLASH_BASE_ADDRESS
 config BOOTLOADER_MCUBOOT
 	default y if SOC_ESP32S3_APPCPU
 
+config MAIN_STACK_SIZE
+	default 4096
+
 endif # SOC_SERIES_ESP32S3
