@@ -45,6 +45,7 @@ ZTEST_SUITE(pacs_test_suite, NULL, NULL, NULL, pacs_test_suite_after, NULL);
 static ZTEST(pacs_test_suite, test_pacs_register)
 {
 	const struct bt_bap_pacs_register_param pacs_params[] = {
+#if defined(CONFIG_BT_PAC_SNK)
 		/* valid snk_pac combinations */
 		PACS_REGISTER_PARAM(true, true, true, true),
 		PACS_REGISTER_PARAM(true, true, true, false),
@@ -52,7 +53,9 @@ static ZTEST(pacs_test_suite, test_pacs_register)
 		PACS_REGISTER_PARAM(true, false, true, true),
 		PACS_REGISTER_PARAM(true, false, true, false),
 		PACS_REGISTER_PARAM(true, false, false, false),
+#endif /* CONFIG_BT_PAC_SNK */
 
+#if defined(CONFIG_BT_PAC_SRC)
 		/* valid src_pac combinations */
 		PACS_REGISTER_PARAM(true, true, true, true),
 		PACS_REGISTER_PARAM(true, false, true, true),
@@ -60,6 +63,7 @@ static ZTEST(pacs_test_suite, test_pacs_register)
 		PACS_REGISTER_PARAM(true, true, true, false),
 		PACS_REGISTER_PARAM(true, false, true, false),
 		PACS_REGISTER_PARAM(false, false, true, false),
+#endif /* CONFIG_BT_PAC_SRC */
 	};
 
 	for (size_t i = 0U; i < ARRAY_SIZE(pacs_params); i++) {
