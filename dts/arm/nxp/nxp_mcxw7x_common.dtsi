@@ -19,6 +19,8 @@
 
 	chosen {
 		zephyr,bt-hci = &hci;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,entropy = &trng;
 		zephyr,nbu = &nbu;
 	};
 
@@ -284,6 +286,14 @@
 
 	hci: hci_ble {
 		compatible = "nxp,hci-ble";
+	};
+
+	ieee802154: ieee802154 {
+		compatible = "nxp,mcxw-ieee802154";
+	};
+
+	trng: trng {
+		compatible = "nxp,mcxw-trng";
 	};
 
 	flexcan0: can@3b000 {
