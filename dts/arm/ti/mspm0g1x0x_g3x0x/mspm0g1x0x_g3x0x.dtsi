@@ -118,10 +118,10 @@
 		pll: pll {
 			compatible = "ti,mspm0-pll";
 			clocks = <&sysosc 0>;
-			p-div = <2>;
-			q-div = <5>;
-			clk1-div = <2>;
-			clk2x-div = <2>;
+			p-div = <8>;
+			q-div = <10>;
+			clk1-div = <1>;
+			clk2x-div = <1>;
 			#clock-cells = <0>;
 			status = "okay";
 		};
