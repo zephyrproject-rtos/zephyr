@@ -1,0 +1,6 @@
+# Copyright (c) Paul Timke <ptimkec@live.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/pixart/paj7620/Kconfig"
+# zephyr-keep-sorted-stop
