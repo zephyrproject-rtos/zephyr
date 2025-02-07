@@ -8152,8 +8152,11 @@ static void le_big_complete(struct pdu_data *pdu_data,
 			    struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_complete *sep;
+	uint32_t transport_latency_big;
 	struct ll_adv_iso_set *adv_iso;
+	uint32_t iso_interval_us;
 	struct lll_adv_iso *lll;
+	uint32_t big_sync_delay;
 	size_t evt_size;
 
 	adv_iso = node_rx->rx_ftr.param;
@@ -8170,9 +8173,36 @@ static void le_big_complete(struct pdu_data *pdu_data,
 		return;
 	}
 
-	/* FIXME: Fill sync delay and latency */
-	sys_put_le24(0, sep->sync_delay);
-	sys_put_le24(0, sep->latency);
+	/* BT Core v5.4 - Vol 6, Part B, Section 4.4.6.4:
+	 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing + (NSE – 1) × Sub_Interval + MPT.
+	 *
+	 * BT Core v5.4 - Vol 6, Part G, Section 3.2.1: (Framed)
+	 * Transport_Latenct_BIG = BIG_Sync_Delay + PTO × (NSE / BN – IRC) * ISO_Interval +
+	 *                             ISO_Interval + SDU_Interval
+	 *
+	 * BT Core v5.4 - Vol 6, Part G, Section 3.2.2: (Unframed)
+	 * Transport_Latenct_BIG = BIG_Sync_Delay + (PTO × (NSE / BN – IRC) + 1) * ISO_Interval -
+	 *                             SDU_Interval
+	 */
+	iso_interval_us = lll->iso_interval * ISO_INT_UNIT_US;
+	big_sync_delay = ull_iso_big_sync_delay(lll->num_bis, lll->bis_spacing, lll->nse,
+						lll->sub_interval, lll->phy, lll->max_pdu,
+						lll->enc);
+	sys_put_le24(big_sync_delay, sep->sync_delay);
+
+	if (lll->framing) {
+		/* Framed */
+		transport_latency_big = big_sync_delay +
+					lll->pto * (lll->nse / lll->bn - lll->irc) *
+					iso_interval_us + iso_interval_us + lll->sdu_interval;
+	} else {
+		/* Unframed */
+		transport_latency_big = big_sync_delay +
+					(lll->pto * (lll->nse / lll->bn - lll->irc) + 1) *
+					iso_interval_us - lll->sdu_interval;
+	}
+
+	sys_put_le24(transport_latency_big, sep->latency);
 
 	sep->phy = find_lsb_set(lll->phy);
 	sep->nse = lll->nse;
