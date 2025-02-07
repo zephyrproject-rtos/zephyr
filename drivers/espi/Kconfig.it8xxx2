@@ -5,7 +5,7 @@ config ESPI_IT8XXX2
 	bool "ITE IT8XXX2 embedded controller ESPI driver"
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_ESPI_ENABLED
-	depends on SOC_IT8XXX2
+	depends on SOC_IT8XXX2 || SOC_IT51XXX
 	help
 	  Enable ITE IT8XXX2 ESPI driver.
 
