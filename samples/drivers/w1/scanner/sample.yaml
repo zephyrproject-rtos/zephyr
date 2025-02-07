@@ -50,3 +50,20 @@ tests:
       regex:
         - "Number of devices found on bus: .*"
       fixture: w1_scanner_w1_serial
+  sample.drivers.w1.scanner.max:
+    depends_on: w1
+    platform_allow:
+      - max32655evkit/max32655/m4
+      - max32666evkit/max32666/cpu0
+      - max32666fthr/max32666/cpu0
+      - max32690evkit/max32690/m4
+      - max78000evkit/max78000/m4
+      - max78000fthr/max78000/m4
+      - max78002evkit/max78002/m4
+    integration_platforms:
+      - max32655evkit/max32655/m4
+    harness_config:
+      type: one_line
+      regex:
+        - "Number of devices found on bus: .*"
+      fixture: w1_scanner_w1_max
