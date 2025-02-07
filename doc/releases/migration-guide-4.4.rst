@@ -966,6 +966,13 @@ Other subsystems
   * Use :kconfig:option:`CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS` instead of
     :kconfig:option:`CONFIG_CACHE_DOUBLEMAP` as the former is more descriptive of the feature.
 
+CFB
+===
+
+* :c:func:`cfb_get_font_size` and :c:func:`cfb_get_numof_fonts` take a
+  :c:struct:`driver` pointer as a first argument, but not used it.
+  Removed this argument.
+
 Flash
 =====
 
