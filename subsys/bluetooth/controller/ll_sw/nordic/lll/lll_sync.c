@@ -834,6 +834,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 
 			ftr = &(node_rx->rx_ftr);
 			ftr->param = lll;
+			ftr->lll_aux = lll->lll_aux;
 			ftr->aux_failed = 0U;
 			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
