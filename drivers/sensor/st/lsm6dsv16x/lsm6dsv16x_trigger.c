@@ -133,6 +133,10 @@ int lsm6dsv16x_trigger_set(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (!lsm6dsv16x_is_active(dev)) {
+		return -EBUSY;
+	}
+
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
 		if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
