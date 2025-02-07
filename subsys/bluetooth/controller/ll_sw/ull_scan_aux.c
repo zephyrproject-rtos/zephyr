@@ -1132,7 +1132,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		lll = rx->rx_ftr.param;
-		lll_aux = lll->lll_aux;
+		lll_aux = rx->rx_ftr.lll_aux;
 
 	} else if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) ||
 		   ull_scan_aux_is_valid_get(param_ull)) {
@@ -1151,7 +1151,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 		sync->data_len = 0U;
 
 		lll = rx->rx_ftr.param;
-		lll_aux = lll->lll_aux;
+		lll_aux = rx->rx_ftr.lll_aux;
 
 		/* Change node type so HCI can dispatch report for truncated
 		 * data properly.
