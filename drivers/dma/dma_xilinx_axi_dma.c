@@ -209,23 +209,9 @@ struct dma_xilinx_axi_dma_config {
 
 typedef void (*dma_xilinx_axi_dma_isr_t)(const struct device *dev);
 
-/* parameters for polling timer */
-struct dma_xilinx_axi_dma_timer_params {
-	/* back reference for the device */
-	const struct device *dev;
-	/* number of this channel's IRQ */
-	unsigned int irq_number;
-	/* ISR that normally handles the channel's interrupts */
-	dma_xilinx_axi_dma_isr_t isr;
-};
-
 /* per-channel state */
 struct dma_xilinx_axi_dma_channel {
 	volatile struct dma_xilinx_axi_dma_sg_descriptor *descriptors;
-
-	struct k_timer polling_timer;
-
-	struct dma_xilinx_axi_dma_timer_params polling_timer_params;
 
 	size_t num_descriptors;
 
@@ -612,8 +598,6 @@ static int dma_xilinx_axi_dma_stop(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	k_timer_stop(&channel_data->polling_timer);
-
 	new_control = dma_xilinx_axi_dma_read_reg(channel_data, XILINX_AXI_DMA_REG_DMACR);
 	/* RS = 0 --> DMA will complete ongoing transactions and then go into hold */
 	new_control = new_control & ~XILINX_AXI_DMA_REGS_DMACR_RS;
@@ -748,27 +732,6 @@ static inline int dma_xilinx_axi_dma_config_reload(const struct device *dev, uin
 		size, true, true);
 }
 
-/* regularly check if we missed an interrupt from the device */
-/* as interrupts are level-sensitive, this can happen on certain platforms */
-static void polling_timer_handler(struct k_timer *timer)
-{
-	struct dma_xilinx_axi_dma_channel *channel =
-		CONTAINER_OF(timer, struct dma_xilinx_axi_dma_channel, polling_timer);
-	const struct device *dev = channel->polling_timer_params.dev;
-	const unsigned int irq_number = channel->polling_timer_params.irq_number;
-	const int was_enabled = irq_is_enabled(irq_number);
-
-	irq_disable(irq_number);
-
-	LOG_DBG("Polling ISR!");
-
-	channel->polling_timer_params.isr(dev);
-
-	if (was_enabled) {
-		irq_enable(irq_number);
-	}
-}
-
 static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t channel,
 					struct dma_config *dma_cfg)
 {
@@ -816,14 +779,6 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 		LOG_ERR("RX channel must be used with PERIPHERAL_TO_MEMORY!");
 		return -ENOTSUP;
 	}
-
-	k_timer_init(&data->channels[channel].polling_timer, polling_timer_handler, NULL);
-
-	data->channels[channel].polling_timer_params.dev = dev;
-	data->channels[channel].polling_timer_params.irq_number = cfg->irq0_channels[channel];
-	data->channels[channel].polling_timer_params.isr =
-		(channel == XILINX_AXI_DMA_TX_CHANNEL_NUM) ? dma_xilinx_axi_dma_tx_isr
-							   : dma_xilinx_axi_dma_rx_isr;
 
 	dma_xilinx_axi_dma_disable_cache();
 
@@ -920,10 +875,6 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 							current_block->next_block == NULL);
 		block_count++;
 	} while ((current_block = current_block->next_block) && ret == 0);
-
-	k_timer_start(&data->channels[channel].polling_timer,
-		      K_MSEC(CONFIG_DMA_XILINX_AXI_DMA_POLL_INTERVAL),
-		      K_MSEC(CONFIG_DMA_XILINX_AXI_DMA_POLL_INTERVAL));
 
 	return ret;
 }
