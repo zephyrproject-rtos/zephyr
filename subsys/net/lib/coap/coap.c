@@ -498,6 +498,7 @@ static int decode_delta(uint8_t *data, uint16_t offset, uint16_t *pos, uint16_t 
 			uint16_t opt, uint16_t *opt_ext, uint16_t *hdr_len)
 {
 	int ret = 0;
+	*hdr_len = 0;
 
 	if (opt == COAP_OPTION_EXT_13) {
 		uint8_t val;
