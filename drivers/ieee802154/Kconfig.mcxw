@@ -1,0 +1,28 @@
+# NXP MCXW 802.15.4 configuration options
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_MCXW
+	bool "NXP MCXW series IEEE 802.15.4 Driver"
+	default y
+	depends on DT_HAS_NXP_MCXW_IEEE802154_ENABLED
+	depends on COUNTER
+
+if IEEE802154_MCXW
+
+config IEEE802154_MCXW_INIT_PRIO
+	int "Initial priority for the IEEE802154 driver"
+	default 80
+
+config IEEE802154_MCXW_RX_STACK_SIZE
+	int "Driver's internal RX thread stack size"
+	default 800
+
+
+config IEEE802154_MCXW_CSL_ACCURACY
+	int "Csl accuracy for delayed operations"
+	default 100
+
+
+endif
