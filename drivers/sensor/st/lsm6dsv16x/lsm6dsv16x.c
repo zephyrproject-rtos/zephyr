@@ -14,15 +14,28 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/pm/device.h>
 #include <string.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
+#include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include "lsm6dsv16x.h"
 #include "lsm6dsv16x_decoder.h"
 #include "lsm6dsv16x_rtio.h"
 
 LOG_MODULE_REGISTER(LSM6DSV16X, CONFIG_SENSOR_LOG_LEVEL);
+
+bool lsm6dsv16x_is_active(const struct device *dev)
+{
+#if defined(CONFIG_PM_DEVICE)
+	enum pm_device_state state;
+	(void)pm_device_state_get(dev, &state);
+	return (state == PM_DEVICE_STATE_ACTIVE);
+#else
+	return true;
+#endif /* CONFIG_PM_DEVICE*/
+}
 
 /*
  * values taken from lsm6dsv16x_data_rate_t in hal/st module. The mode/accuracy
@@ -361,6 +374,10 @@ static int lsm6dsv16x_attr_set(const struct device *dev,
 	struct lsm6dsv16x_data *data = dev->data;
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 
+	if (!lsm6dsv16x_is_active(dev)) {
+		return -EBUSY;
+	}
+
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm6dsv16x_accel_config(dev, chan, attr, val);
@@ -517,6 +534,10 @@ static int lsm6dsv16x_attr_get(const struct device *dev,
 			       enum sensor_attribute attr,
 			       struct sensor_value *val)
 {
+	if (!lsm6dsv16x_is_active(dev)) {
+		return -EBUSY;
+	}
+
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm6dsv16x_accel_get_config(dev, chan, attr, val);
@@ -592,6 +613,10 @@ static int lsm6dsv16x_sample_fetch(const struct device *dev,
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 	struct lsm6dsv16x_data *data = dev->data;
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
+
+	if (!lsm6dsv16x_is_active(dev)) {
+		return -EBUSY;
+	}
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -864,6 +889,10 @@ static int lsm6dsv16x_channel_get(const struct device *dev,
 {
 	struct lsm6dsv16x_data *data = dev->data;
 
+	if (!lsm6dsv16x_is_active(dev)) {
+		return -EBUSY;
+	}
+
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
@@ -1099,6 +1128,46 @@ static int lsm6dsv16x_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_PM_DEVICE)
+static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct lsm6dsv16x_data *data = dev->data;
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int ret = 0;
+
+	LOG_DBG("PM action: %d", (int)action);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (lsm6dsv16x_xl_data_rate_set(ctx, data->accel_freq) < 0) {
+			LOG_ERR("failed to set accelerometer odr %d", (int)data->accel_freq);
+			ret = -EIO;
+		}
+		if (lsm6dsv16x_gy_data_rate_set(ctx, data->gyro_freq) < 0) {
+			LOG_ERR("failed to set gyroscope odr %d", (int)data->gyro_freq);
+			ret = -EIO;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (lsm6dsv16x_xl_data_rate_set(ctx, LSM6DSV16X_DT_ODR_OFF) < 0) {
+			LOG_ERR("failed to disable accelerometer");
+			ret = -EIO;
+		}
+		if (lsm6dsv16x_gy_data_rate_set(ctx, LSM6DSV16X_DT_ODR_OFF) < 0) {
+			LOG_ERR("failed to disable gyroscope");
+			ret = -EIO;
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "LSM6DSV16X driver enabled without any devices"
 #endif
@@ -1108,15 +1177,12 @@ static int lsm6dsv16x_init(const struct device *dev)
  * LSM6DSV16X_DEFINE_I2C().
  */
 
-#define LSM6DSV16X_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			    lsm6dsv16x_init,				\
-			    NULL,					\
-			    &lsm6dsv16x_data_##inst,			\
-			    &lsm6dsv16x_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &lsm6dsv16x_driver_api);
+#define LSM6DSV16X_DEVICE_INIT(inst)                                                               \
+	PM_DEVICE_DT_INST_DEFINE(inst, lsm6dsv16x_pm_action);                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm6dsv16x_init, PM_DEVICE_DT_INST_GET(inst),           \
+				     &lsm6dsv16x_data_##inst, &lsm6dsv16x_config_##inst,           \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+				     &lsm6dsv16x_driver_api);
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 #define LSM6DSV16X_CFG_IRQ(inst)					\
