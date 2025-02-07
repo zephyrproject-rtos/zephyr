@@ -4322,6 +4322,17 @@ Secure storage:
   tests:
     - psa.secure_storage
 
+Sensry Platforms:
+  status: maintained
+  maintainers:
+    - tswaehn
+  files:
+    - boards/sensry/
+  files-regex:
+    - .*sy1xx.*
+  labels:
+    - "platform: sensry"
+
 Storage:
   status: odd fixes
   files:
