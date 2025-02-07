@@ -4,27 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM42670_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM42670_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM42X70_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM42X70_H_
 
 #include <zephyr/drivers/sensor.h>
 
 /**
  * @file
- * @brief Extended public API for ICM42670 6-axis MEMS sensor
+ * @brief Extended public API for ICM42X70 MEMS sensor
  *
  * Some capabilities and operational requirements for this sensor
  * cannot be expressed within the sensor driver abstraction.
  */
 
-/** ICM42670 power mode */
-#define ICM42670_LOW_NOISE_MODE (0)
-#define ICM42670_LOW_POWER_MODE (1)
+/** ICM42X70 power mode */
+#define ICM42X70_LOW_NOISE_MODE (0)
+#define ICM42X70_LOW_POWER_MODE (1)
 
 /**
- * @brief Extended sensor attributes for ICM42670 6-axis MEMS sensor
+ * @brief Extended sensor attributes for ICM42X70 MEMS sensor
  *
- * This exposes attributes for the ICM42670 which can be used for
+ * This exposes attributes for the ICM42X70 which can be used for
  * setting the signal path filtering parameters.
  *
  * The signal path starts with ADCs for the gyroscope and accelerometer.
@@ -39,7 +39,7 @@
  * The output of 1st Order LPF in Low-Noise Mode, or Average filter in Low-Power
  * Mode is subject to ODR selection, with user selectable ODR.
  */
-enum sensor_attribute_icm42670 {
+enum sensor_attribute_icm42x70 {
 	/** BW filtering */
 
 	/** Low-pass filter configuration */
@@ -47,4 +47,4 @@ enum sensor_attribute_icm42670 {
 	/** Averaging configuration */
 	SENSOR_ATTR_AVERAGING,
 };
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM42670_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM42X70_H_ */

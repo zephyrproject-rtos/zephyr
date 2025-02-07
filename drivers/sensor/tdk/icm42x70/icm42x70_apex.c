@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "icm42670.h"
+#include "icm42x70.h"
 #include "imu/inv_imu_apex.h"
 
-int icm42670_apex_enable(inv_imu_device_t *s)
+int icm42x70_apex_enable(inv_imu_device_t *s)
 {
 	int err = 0;
 	inv_imu_apex_parameters_t apex_inputs;
@@ -47,9 +47,9 @@ int icm42670_apex_enable(inv_imu_device_t *s)
 	return err;
 }
 
-int icm42670_apex_fetch_from_dmp(const struct device *dev)
+int icm42x70_apex_fetch_from_dmp(const struct device *dev)
 {
-	struct icm42670_data *data = dev->data;
+	struct icm42x70_data *data = dev->data;
 	int rc = 0;
 	uint8_t int_status2, int_status3;
 
@@ -81,30 +81,30 @@ int icm42670_apex_fetch_from_dmp(const struct device *dev)
 	}
 	/* Test Tilt interrupt */
 	if (int_status3 & (INT_STATUS3_TILT_DET_INT_MASK)) {
-		data->apex_status = ICM42670_APEX_STATUS_MASK_TILT;
+		data->apex_status = ICM42X70_APEX_STATUS_MASK_TILT;
 	}
 	/* Test SMD interrupt */
 	if ((int_status2 & (INT_STATUS2_SMD_INT_MASK)) || (rc != 0)) {
-		data->apex_status = ICM42670_APEX_STATUS_MASK_SMD;
+		data->apex_status = ICM42X70_APEX_STATUS_MASK_SMD;
 	}
 	/* Test WOM interrupts */
 	if (int_status2 & (INT_STATUS2_WOM_X_INT_MASK | INT_STATUS2_WOM_Y_INT_MASK |
 			   INT_STATUS2_WOM_Z_INT_MASK)) {
 		data->apex_status = 0;
 		if (int_status2 & INT_STATUS2_WOM_X_INT_MASK) {
-			data->apex_status |= ICM42670_APEX_STATUS_MASK_WOM_X;
+			data->apex_status |= ICM42X70_APEX_STATUS_MASK_WOM_X;
 		}
 		if (int_status2 & INT_STATUS2_WOM_Y_INT_MASK) {
-			data->apex_status |= ICM42670_APEX_STATUS_MASK_WOM_Y;
+			data->apex_status |= ICM42X70_APEX_STATUS_MASK_WOM_Y;
 		}
 		if (int_status2 & INT_STATUS2_WOM_Z_INT_MASK) {
-			data->apex_status |= ICM42670_APEX_STATUS_MASK_WOM_Z;
+			data->apex_status |= ICM42X70_APEX_STATUS_MASK_WOM_Z;
 		}
 	}
 	return rc;
 }
 
-void icm42670_apex_pedometer_cadence_convert(struct sensor_value *val, uint8_t raw_val,
+void icm42x70_apex_pedometer_cadence_convert(struct sensor_value *val, uint8_t raw_val,
 					     uint8_t dmp_odr_hz)
 {
 	int64_t conv_val;
@@ -115,22 +115,22 @@ void icm42670_apex_pedometer_cadence_convert(struct sensor_value *val, uint8_t r
 	val->val2 = conv_val % 1000000;
 }
 
-int icm42670_apex_enable_pedometer(const struct device *dev, inv_imu_device_t *s)
+int icm42x70_apex_enable_pedometer(const struct device *dev, inv_imu_device_t *s)
 {
-	struct icm42670_data *data = dev->data;
+	struct icm42x70_data *data = dev->data;
 
 	data->dmp_odr_hz = 50;
 	/* Enable the pedometer */
 	return inv_imu_apex_enable_pedometer(s);
 }
 
-int icm42670_apex_enable_tilt(inv_imu_device_t *s)
+int icm42x70_apex_enable_tilt(inv_imu_device_t *s)
 {
 	/* Enable Tilt */
 	return inv_imu_apex_enable_tilt(s);
 }
 
-int icm42670_apex_enable_smd(inv_imu_device_t *s)
+int icm42x70_apex_enable_smd(inv_imu_device_t *s)
 {
 	int rc = 0;
 
@@ -141,7 +141,7 @@ int icm42670_apex_enable_smd(inv_imu_device_t *s)
 	return rc;
 }
 
-int icm42670_apex_enable_wom(inv_imu_device_t *s)
+int icm42x70_apex_enable_wom(inv_imu_device_t *s)
 {
 	int rc = 0;
 	inv_imu_interrupt_parameter_t config_int = {(inv_imu_interrupt_value)0};
