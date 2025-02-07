@@ -515,10 +515,19 @@ static int icm42688_decoder_get_frame_count(const uint8_t *buffer,
 					    uint16_t *frame_count)
 {
 	const struct icm42688_fifo_data *data = (const struct icm42688_fifo_data *)buffer;
+	const struct icm42688_encoded_data *enc_data = (const struct icm42688_encoded_data *)buffer;
 	const struct icm42688_decoder_header *header = &data->header;
 
 	if (chan_spec.chan_idx != 0) {
 		return -ENOTSUP;
+	}
+
+	uint8_t channel_request = icm42688_encode_channel(chan_spec.chan_type);
+
+
+	if ((!enc_data->header.is_fifo) &&
+	    (enc_data->channels & channel_request) != channel_request) {
+		return -ENODATA;
 	}
 
 	if (!header->is_fifo) {
