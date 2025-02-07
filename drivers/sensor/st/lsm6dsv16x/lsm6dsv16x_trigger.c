@@ -113,6 +113,53 @@ static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
 }
 
 /**
+ * lsm6dsv16x_enable_wake_int - Enable selected int pin to generate wakeup interrupt
+ */
+static int lsm6dsv16x_enable_wake_int(const struct device *dev, int enable)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int ret;
+	lsm6dsv16x_interrupt_mode_t int_mode;
+
+	int_mode.enable = enable ? 1 : 0;
+	int_mode.lir = !cfg->drdy_pulsed;
+	ret = lsm6dsv16x_interrupt_enable_set(ctx, int_mode);
+	if (ret < 0) {
+		LOG_ERR("interrupt_enable_set error");
+		return ret;
+	}
+
+	if ((cfg->drdy_pin == 1) || ON_I3C_BUS(cfg)) {
+		lsm6dsv16x_pin_int_route_t val;
+
+		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
+		if (ret < 0) {
+			LOG_ERR("pint_int1_route_get error");
+			return ret;
+		}
+
+		val.wakeup = enable ? 1 : 0;
+
+		ret = lsm6dsv16x_pin_int1_route_set(ctx, &val);
+	} else {
+		lsm6dsv16x_pin_int_route_t val;
+
+		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
+		if (ret < 0) {
+			LOG_ERR("pint_int2_route_get error");
+			return ret;
+		}
+
+		val.wakeup = enable ? 1 : 0;
+
+		ret = lsm6dsv16x_pin_int2_route_set(ctx, &val);
+	}
+
+	return ret;
+}
+
+/**
  * lsm6dsv16x_trigger_set - link external trigger to event data ready
  */
 int lsm6dsv16x_trigger_set(const struct device *dev,
@@ -156,7 +203,18 @@ int lsm6dsv16x_trigger_set(const struct device *dev,
 				lsm6dsv16x_enable_g_int(dev, LSM6DSV16X_DIS_BIT);
 			}
 		}
-
+		break;
+	case SENSOR_TRIG_DELTA:
+		if (trig->chan != SENSOR_CHAN_ACCEL_XYZ) {
+			return -ENOTSUP;
+		}
+		lsm6dsv16x->handler_wakeup = handler;
+		lsm6dsv16x->trig_wakeup = trig;
+		if (handler) {
+			lsm6dsv16x_enable_wake_int(dev, LSM6DSV16X_EN_BIT);
+		} else {
+			lsm6dsv16x_enable_wake_int(dev, LSM6DSV16X_DIS_BIT);
+		}
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -178,6 +236,7 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lsm6dsv16x_data_ready_t status;
+	lsm6dsv16x_all_int_src_t all_int_src;
 	int ret;
 
 	while (1) {
@@ -194,7 +253,13 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 			return;
 		}
 
-		if (((status.drdy_xl == 0) && (status.drdy_gy == 0)) ||
+		ret = lsm6dsv16x_read_reg(ctx, LSM6DSV16X_ALL_INT_SRC, (uint8_t *)&all_int_src, 1);
+		if (ret < 0) {
+			LOG_DBG("failed reading all_int_src reg");
+			return;
+		}
+
+		if (((status.drdy_xl == 0) && (status.drdy_gy == 0) && (all_int_src.wu_ia == 0)) ||
 		    IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
 			break;
 		}
@@ -207,6 +272,9 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 			lsm6dsv16x->handler_drdy_gyr(dev, lsm6dsv16x->trig_drdy_gyr);
 		}
 
+		if ((all_int_src.wu_ia) && lsm6dsv16x->handler_wakeup != NULL) {
+			lsm6dsv16x->handler_wakeup(dev, lsm6dsv16x->trig_wakeup);
+		}
 	}
 
 	if (!ON_I3C_BUS(cfg) || (I3C_INT_PIN(cfg))) {
