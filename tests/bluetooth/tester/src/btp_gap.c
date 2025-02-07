@@ -45,10 +45,8 @@ static uint8_t oob_legacy_tk[16] = { 0 };
 
 static bool filter_list_in_use;
 
-#if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 static struct bt_le_oob oob_sc_local = { 0 };
 static struct bt_le_oob oob_sc_remote = { 0 };
-#endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 
 /* connection parameters for rejection test */
 #define REJECT_INTERVAL_MIN 0x0C80
@@ -266,10 +264,10 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 
 	/* octet 3 */
 	tester_set_bit(rp->data, BTP_GAP_OOB_LEGACY_SET_DATA);
-#if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
-	tester_set_bit(rp->data, BTP_GAP_OOB_SC_GET_LOCAL_DATA);
-	tester_set_bit(rp->data, BTP_GAP_OOB_SC_SET_REMOTE_DATA);
-#endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
+	if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		tester_set_bit(rp->data, BTP_GAP_OOB_SC_GET_LOCAL_DATA);
+		tester_set_bit(rp->data, BTP_GAP_OOB_SC_SET_REMOTE_DATA);
+	}
 	tester_set_bit(rp->data, BTP_GAP_SET_MITM);
 	tester_set_bit(rp->data, BTP_GAP_SET_FILTER_LIST);
 #if defined(CONFIG_BT_EXT_ADV)
@@ -308,9 +306,9 @@ static uint8_t controller_info(const void *cmd, uint16_t cmd_len,
 	/*
 	 * Re-use the oob data read here in get_oob_sc_local_data()
 	 */
-#if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
-	oob_sc_local = oob_local;
-#endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
+	if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		oob_sc_local = oob_local;
+	}
 
 	/*
 	 * If privacy is used, the device uses random type address, otherwise
@@ -339,9 +337,11 @@ static uint8_t controller_info(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-#if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 static const char *oob_config_str(int oob_config)
 {
+	if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		return "no";
+	}
 	switch (oob_config) {
 	case BT_CONN_OOB_LOCAL_ONLY:
 		return "Local";
@@ -354,7 +354,6 @@ static const char *oob_config_str(int oob_config)
 		return "no";
 	}
 }
-#endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 
 static void oob_data_request(struct bt_conn *conn,
 			     struct bt_conn_oob_info *oob_info)
@@ -371,9 +370,12 @@ static void oob_data_request(struct bt_conn *conn,
 	bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 
 	switch (oob_info->type) {
-#if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 	case BT_CONN_OOB_LE_SC:
 	{
+		if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+			LOG_ERR("OOB LE SC not supported");
+			break;
+		}
 		LOG_DBG("Set %s OOB SC data for %s, ",
 			oob_config_str(oob_info->lesc.oob_config),
 			addr);
@@ -411,7 +413,6 @@ static void oob_data_request(struct bt_conn *conn,
 
 		break;
 	}
-#endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 	case BT_CONN_OOB_LE_LEGACY:
@@ -430,7 +431,7 @@ static void oob_data_request(struct bt_conn *conn,
 	}
 }
 
-#if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
+# if !defined (CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 static uint8_t get_oob_sc_local_data(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
