@@ -95,6 +95,17 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_HAS_FRAME_TIMEOUT 1
 #endif
 
+/* Frame timeout has a bug that countdown counter may not be triggered in some
+ * specific condition. It may happen if RX is manually started after ENDRX (STOPRX
+ * task was not triggered) and there is ongoing reception of a byte. RXDRDY event
+ * triggered by the reception of that byte may not trigger frame timeout counter.
+ * If this is the last byte of a transfer then without the workaround there will
+ * be no expected RX timeout.
+ */
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+#define RX_FRAMETIMEOUT_WORKAROUND 1
+#endif
+
 #define INSTANCE_NEEDS_CACHE_MGMT(unused, prefix, i, prop) UARTE_IS_CACHEABLE(prefix##i)
 
 #if UARTE_FOR_EACH_INSTANCE(INSTANCE_NEEDS_CACHE_MGMT, (+), (0), _)
@@ -251,6 +262,8 @@ struct uarte_nrfx_data {
 #define UARTE_FLAG_LOW_POWER (UARTE_FLAG_LOW_POWER_TX | UARTE_FLAG_LOW_POWER_RX)
 #define UARTE_FLAG_TRIG_RXTO BIT(2)
 #define UARTE_FLAG_POLL_OUT BIT(3)
+/* Flag indicating that a workaround for not working frame timeout is active. */
+#define UARTE_FLAG_FTIMEOUT_WATCH BIT(4)
 
 /* If enabled then ENDTX is PPI'ed to TXSTOP */
 #define UARTE_CFG_FLAG_PPI_ENDTX   BIT(0)
@@ -1317,9 +1330,22 @@ static void rx_timeout(struct k_timer *timer)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 #ifdef UARTE_HAS_FRAME_TIMEOUT
-	if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXDRDY)) {
-		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	bool rxdrdy = nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXDRDY);
+
+	if (IS_ENABLED(RX_FRAMETIMEOUT_WORKAROUND) &&
+	    (atomic_and(&data->flags, ~UARTE_FLAG_FTIMEOUT_WATCH) & UARTE_FLAG_FTIMEOUT_WATCH)) {
+		if (rxdrdy) {
+			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXDRDY);
+			k_timer_start(&async_rx->timer, async_rx->timeout, K_NO_WAIT);
+		}
+	} else {
+		if (!rxdrdy) {
+			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+		}
 	}
+
 	return;
 #else /* UARTE_HAS_FRAME_TIMEOUT */
 	struct uarte_nrfx_data *data = dev->data;
@@ -1545,6 +1571,7 @@ static void endrx_isr(const struct device *dev)
 	async_rx->offset = 0;
 
 	if (async_rx->enabled) {
+		bool start_timeout = false;
 		/* If there is a next buffer, then STARTRX will have already been
 		 * invoked by the short (the next buffer will be filling up already)
 		 * and here we just do the swap of which buffer the driver is following,
@@ -1570,6 +1597,11 @@ static void endrx_isr(const struct device *dev)
 			 */
 			if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
 				nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
+				if (IS_ENABLED(RX_FRAMETIMEOUT_WORKAROUND)) {
+					data->flags |= UARTE_FLAG_FTIMEOUT_WATCH;
+					start_timeout = true;
+				}
 			}
 			/* Remove the short until the subsequent next buffer is setup */
 			nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
@@ -1578,6 +1610,11 @@ static void endrx_isr(const struct device *dev)
 		}
 
 		irq_unlock(key);
+		if (IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT)) {
+			if (start_timeout && !K_TIMEOUT_EQ(async_rx->timeout, K_NO_WAIT)) {
+				k_timer_start(&async_rx->timer, async_rx->timeout, K_NO_WAIT);
+			}
+		}
 	}
 
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
@@ -1634,6 +1671,12 @@ static void rxto_isr(const struct device *dev)
 	const struct uarte_nrfx_config *config = dev->config;
 	struct uarte_nrfx_data *data = dev->data;
 	struct uarte_async_rx *async_rx = &data->async->rx;
+
+	if (IS_ENABLED(RX_FRAMETIMEOUT_WORKAROUND)) {
+		if (atomic_test_and_clear_bit(&data->flags, UARTE_FLAG_FTIMEOUT_WATCH)) {
+			k_timer_stop(&async_rx->timer);
+		}
+	}
 
 	if (async_rx->buf) {
 #ifdef CONFIG_HAS_NORDIC_DMM
