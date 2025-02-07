@@ -1622,14 +1622,14 @@ static int udc_numaker_shutdown(const struct device *dev)
 	return 0;
 }
 
-static int udc_numaker_lock(const struct device *dev)
+static void udc_numaker_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_numaker_unlock(const struct device *dev)
+static void udc_numaker_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 static int udc_numaker_driver_preinit(const struct device *dev)
