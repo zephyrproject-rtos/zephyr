@@ -13,26 +13,27 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/drivers/sensor/icm42670.h>
+#include <zephyr/drivers/sensor/icm42x70.h>
 #include <zephyr/drivers/sensor/tdk_apex.h>
 
+#include "icm42x70.h"
+#include "icm42x70_trigger.h"
 #include "icm42670.h"
-#include "icm42670_trigger.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(ICM42670, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(ICM42X70, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Convert DT enum to sensor ODR selection */
-#define ICM42670_CONVERT_ENUM_TO_ODR_POS (4)
+#define ICM42X70_CONVERT_ENUM_TO_ODR_POS (4)
 
-/* Maximum bytes to read/write on ICM42670 serial interface */
-#define ICM42670_SERIAL_INTERFACE_MAX_READ  (1024 * 32)
-#define ICM42670_SERIAL_INTERFACE_MAX_WRITE (1024 * 32)
+/* Maximum bytes to read/write on ICM42X70 serial interface */
+#define ICM42X70_SERIAL_INTERFACE_MAX_READ  (1024 * 32)
+#define ICM42X70_SERIAL_INTERFACE_MAX_WRITE (1024 * 32)
 
-static inline int icm42670_reg_read(const struct device *dev, uint8_t reg, uint8_t *buf,
+static inline int icm42x70_reg_read(const struct device *dev, uint8_t reg, uint8_t *buf,
 				    uint32_t size)
 {
-	const struct icm42670_config *cfg = dev->config;
+	const struct icm42x70_config *cfg = dev->config;
 
 	return cfg->bus_io->read(&cfg->bus, reg, buf, size);
 }
@@ -40,13 +41,13 @@ static inline int icm42670_reg_read(const struct device *dev, uint8_t reg, uint8
 static inline int inv_io_hal_read_reg(struct inv_imu_serif *serif, uint8_t reg, uint8_t *rbuffer,
 				      uint32_t rlen)
 {
-	return icm42670_reg_read(serif->context, reg, rbuffer, rlen);
+	return icm42x70_reg_read(serif->context, reg, rbuffer, rlen);
 }
 
-static inline int icm42670_reg_write(const struct device *dev, uint8_t reg, const uint8_t *buf,
+static inline int icm42x70_reg_write(const struct device *dev, uint8_t reg, const uint8_t *buf,
 				     uint32_t size)
 {
-	const struct icm42670_config *cfg = dev->config;
+	const struct icm42x70_config *cfg = dev->config;
 
 	return cfg->bus_io->write(&cfg->bus, reg, (uint8_t *)buf, size);
 }
@@ -54,7 +55,7 @@ static inline int icm42670_reg_write(const struct device *dev, uint8_t reg, cons
 static inline int inv_io_hal_write_reg(struct inv_imu_serif *serif, uint8_t reg,
 				       const uint8_t *wbuffer, uint32_t wlen)
 {
-	return icm42670_reg_write(serif->context, reg, wbuffer, wlen);
+	return icm42x70_reg_write(serif->context, reg, wbuffer, wlen);
 }
 
 void inv_imu_sleep_us(uint32_t us)
@@ -116,7 +117,7 @@ static uint16_t convert_dt_enum_to_freq(uint8_t val)
 	return freq;
 }
 
-static uint32_t convert_freq_to_bitfield(uint32_t val, uint16_t *freq)
+uint32_t convert_freq_to_bitfield(uint32_t val, uint16_t *freq)
 {
 	uint32_t odr_bitfield = 0;
 
@@ -177,27 +178,7 @@ static uint32_t convert_acc_fs_to_bitfield(uint32_t val, uint8_t *fs)
 	return bitfield;
 }
 
-static uint32_t convert_gyr_fs_to_bitfield(uint32_t val, uint16_t *fs)
-{
-	uint32_t bitfield = 0;
-
-	if (val < 500 && val >= 250) {
-		bitfield = GYRO_CONFIG0_FS_SEL_250dps;
-		*fs = 250;
-	} else if (val < 1000 && val >= 500) {
-		bitfield = GYRO_CONFIG0_FS_SEL_500dps;
-		*fs = 500;
-	} else if (val < 2000 && val >= 1000) {
-		bitfield = GYRO_CONFIG0_FS_SEL_1000dps;
-		*fs = 1000;
-	} else if (val == 2000) {
-		bitfield = GYRO_CONFIG0_FS_SEL_2000dps;
-		*fs = 2000;
-	}
-	return bitfield;
-}
-
-static uint32_t convert_ln_bw_to_bitfield(uint32_t val)
+uint32_t convert_ln_bw_to_bitfield(uint32_t val)
 {
 	uint32_t bitfield = 0xFF;
 
@@ -258,27 +239,11 @@ static uint8_t convert_bitfield_to_acc_fs(uint8_t bitfield)
 	return acc_fs;
 }
 
-static uint16_t convert_bitfield_to_gyr_fs(uint8_t bitfield)
-{
-	uint16_t gyr_fs = 0;
-
-	if (bitfield == GYRO_CONFIG0_FS_SEL_250dps) {
-		gyr_fs = 250;
-	} else if (bitfield == GYRO_CONFIG0_FS_SEL_500dps) {
-		gyr_fs = 500;
-	} else if (bitfield == GYRO_CONFIG0_FS_SEL_1000dps) {
-		gyr_fs = 1000;
-	} else if (bitfield == GYRO_CONFIG0_FS_SEL_2000dps) {
-		gyr_fs = 2000;
-	}
-	return gyr_fs;
-}
-
-static int icm42670_set_accel_power_mode(struct icm42670_data *drv_data,
+static int icm42x70_set_accel_power_mode(struct icm42x70_data *drv_data,
 					 const struct sensor_value *val)
 {
-	if ((val->val1 == ICM42670_LOW_POWER_MODE) &&
-	    (drv_data->accel_pwr_mode != ICM42670_LOW_POWER_MODE)) {
+	if ((val->val1 == ICM42X70_LOW_POWER_MODE) &&
+	    (drv_data->accel_pwr_mode != ICM42X70_LOW_POWER_MODE)) {
 		if (drv_data->accel_hz != 0) {
 			if (drv_data->accel_hz <= 400) {
 				inv_imu_enable_accel_low_power_mode(&drv_data->driver);
@@ -288,8 +253,8 @@ static int icm42670_set_accel_power_mode(struct icm42670_data *drv_data,
 			}
 		}
 		drv_data->accel_pwr_mode = val->val1;
-	} else if ((val->val1 == ICM42670_LOW_NOISE_MODE) &&
-		   (drv_data->accel_pwr_mode != ICM42670_LOW_NOISE_MODE)) {
+	} else if ((val->val1 == ICM42X70_LOW_NOISE_MODE) &&
+		   (drv_data->accel_pwr_mode != ICM42X70_LOW_NOISE_MODE)) {
 		if (drv_data->accel_hz != 0) {
 			if (drv_data->accel_hz >= 12) {
 				inv_imu_enable_accel_low_noise_mode(&drv_data->driver);
@@ -306,16 +271,16 @@ static int icm42670_set_accel_power_mode(struct icm42670_data *drv_data,
 	return 0;
 }
 
-static int icm42670_set_accel_odr(struct icm42670_data *drv_data, const struct sensor_value *val)
+static int icm42x70_set_accel_odr(struct icm42x70_data *drv_data, const struct sensor_value *val)
 {
 	if (val->val1 <= 1600 && val->val1 >= 1) {
 		if (drv_data->accel_hz == 0) {
 			inv_imu_set_accel_frequency(
 				&drv_data->driver,
 				convert_freq_to_bitfield(val->val1, &drv_data->accel_hz));
-			if (drv_data->accel_pwr_mode == ICM42670_LOW_POWER_MODE) {
+			if (drv_data->accel_pwr_mode == ICM42X70_LOW_POWER_MODE) {
 				inv_imu_enable_accel_low_power_mode(&drv_data->driver);
-			} else if (drv_data->accel_pwr_mode == ICM42670_LOW_NOISE_MODE) {
+			} else if (drv_data->accel_pwr_mode == ICM42X70_LOW_NOISE_MODE) {
 				inv_imu_enable_accel_low_noise_mode(&drv_data->driver);
 			}
 		} else {
@@ -333,7 +298,7 @@ static int icm42670_set_accel_odr(struct icm42670_data *drv_data, const struct s
 	return 0;
 }
 
-static int icm42670_set_accel_fs(struct icm42670_data *drv_data, const struct sensor_value *val)
+static int icm42x70_set_accel_fs(struct icm42x70_data *drv_data, const struct sensor_value *val)
 {
 	if (val->val1 > 16 || val->val1 < 2) {
 		LOG_ERR("Incorrect fullscale value");
@@ -345,26 +310,26 @@ static int icm42670_set_accel_fs(struct icm42670_data *drv_data, const struct se
 	return 0;
 }
 
-static int icm42670_accel_config(struct icm42670_data *drv_data, enum sensor_attribute attr,
+static int icm42x70_accel_config(struct icm42x70_data *drv_data, enum sensor_attribute attr,
 				 const struct sensor_value *val)
 {
 	if (attr == SENSOR_ATTR_CONFIGURATION) {
-		icm42670_set_accel_power_mode(drv_data, val);
+		icm42x70_set_accel_power_mode(drv_data, val);
 
 	} else if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
-		icm42670_set_accel_odr(drv_data, val);
+		icm42x70_set_accel_odr(drv_data, val);
 
 	} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-		icm42670_set_accel_fs(drv_data, val);
+		icm42x70_set_accel_fs(drv_data, val);
 
-	} else if ((enum sensor_attribute_icm42670)attr == SENSOR_ATTR_BW_FILTER_LPF) {
+	} else if ((enum sensor_attribute_icm42x70)attr == SENSOR_ATTR_BW_FILTER_LPF) {
 		if (val->val1 > 180) {
 			LOG_ERR("Incorrect low pass filter bandwidth value");
 			return -EINVAL;
 		}
 		inv_imu_set_accel_ln_bw(&drv_data->driver, convert_ln_bw_to_bitfield(val->val1));
 
-	} else if ((enum sensor_attribute_icm42670)attr == SENSOR_ATTR_AVERAGING) {
+	} else if ((enum sensor_attribute_icm42x70)attr == SENSOR_ATTR_AVERAGING) {
 		if (val->val1 > 64 || val->val1 < 2) {
 			LOG_ERR("Incorrect averaging filter value");
 			return -EINVAL;
@@ -377,76 +342,18 @@ static int icm42670_accel_config(struct icm42670_data *drv_data, enum sensor_att
 	return 0;
 }
 
-static int icm42670_set_gyro_odr(struct icm42670_data *drv_data, const struct sensor_value *val)
+static int icm42x70_sensor_init(const struct device *dev)
 {
-	if (val->val1 <= 1600 && val->val1 > 12) {
-		if (drv_data->gyro_hz == 0) {
-			inv_imu_set_gyro_frequency(
-				&drv_data->driver,
-				convert_freq_to_bitfield(val->val1, &drv_data->gyro_hz));
-			inv_imu_enable_gyro_low_noise_mode(&drv_data->driver);
-		} else {
-			inv_imu_set_gyro_frequency(
-				&drv_data->driver,
-				convert_freq_to_bitfield(val->val1, &drv_data->gyro_hz));
-		}
-	} else if (val->val1 == 0) {
-		inv_imu_disable_gyro(&drv_data->driver);
-		drv_data->gyro_hz = val->val1;
-	} else {
-		LOG_ERR("Incorrect sampling value");
-		return -EINVAL;
-	}
-	return 0;
-}
-
-static int icm42670_set_gyro_fs(struct icm42670_data *drv_data, const struct sensor_value *val)
-{
-	if (val->val1 > 2000 || val->val1 < 250) {
-		LOG_ERR("Incorrect fullscale value");
-		return -EINVAL;
-	}
-	inv_imu_set_gyro_fsr(&drv_data->driver,
-			     convert_gyr_fs_to_bitfield(val->val1, &drv_data->gyro_fs));
-	LOG_DBG("Set gyro fullscale to: %d dps", drv_data->gyro_fs);
-	return 0;
-}
-
-static int icm42670_gyro_config(struct icm42670_data *drv_data, enum sensor_attribute attr,
-				const struct sensor_value *val)
-{
-	if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
-		icm42670_set_gyro_odr(drv_data, val);
-
-	} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-		icm42670_set_gyro_fs(drv_data, val);
-
-	} else if ((enum sensor_attribute_icm42670)attr == SENSOR_ATTR_BW_FILTER_LPF) {
-		if (val->val1 > 180) {
-			LOG_ERR("Incorrect low pass filter bandwidth value");
-			return -EINVAL;
-		}
-		inv_imu_set_gyro_ln_bw(&drv_data->driver, convert_ln_bw_to_bitfield(val->val1));
-
-	} else {
-		LOG_ERR("Unsupported attribute");
-		return -EINVAL;
-	}
-	return 0;
-}
-
-static int icm42670_sensor_init(const struct device *dev)
-{
-	struct icm42670_data *data = dev->data;
-	const struct icm42670_config *config = dev->config;
+	struct icm42x70_data *data = dev->data;
+	const struct icm42x70_config *config = dev->config;
 	int err = 0;
 
 	/* Initialize serial interface and device */
 	data->serif.context = (struct device *)dev;
 	data->serif.read_reg = inv_io_hal_read_reg;
 	data->serif.write_reg = inv_io_hal_write_reg;
-	data->serif.max_read = ICM42670_SERIAL_INTERFACE_MAX_READ;
-	data->serif.max_write = ICM42670_SERIAL_INTERFACE_MAX_WRITE;
+	data->serif.max_read = ICM42X70_SERIAL_INTERFACE_MAX_READ;
+	data->serif.max_write = ICM42X70_SERIAL_INTERFACE_MAX_WRITE;
 	data->serif.serif_type = config->serif_type;
 	err = inv_imu_init(&data->driver, &data->serif, NULL);
 	if (err < 0) {
@@ -470,10 +377,10 @@ static int icm42670_sensor_init(const struct device *dev)
 	return 0;
 }
 
-static int icm42670_turn_on_sensor(const struct device *dev)
+static int icm42x70_turn_on_sensor(const struct device *dev)
 {
-	struct icm42670_data *data = dev->data;
-	const struct icm42670_config *cfg = dev->config;
+	struct icm42x70_data *data = dev->data;
+	const struct icm42x70_config *cfg = dev->config;
 	int err = 0;
 
 	err = inv_imu_set_accel_fsr(&data->driver,
@@ -486,22 +393,32 @@ static int icm42670_turn_on_sensor(const struct device *dev)
 	}
 	LOG_DBG("Set accel full scale to: %d G", data->accel_fs);
 
-	err = inv_imu_set_gyro_fsr(&data->driver,
-				   (cfg->gyro_fs << GYRO_CONFIG0_GYRO_UI_FS_SEL_POS));
-	data->gyro_fs =
-		convert_bitfield_to_gyr_fs((cfg->gyro_fs << GYRO_CONFIG0_GYRO_UI_FS_SEL_POS));
-	if ((err < 0) || (data->gyro_fs == 0)) {
-		LOG_ERR("Failed to configure gyro FSR");
-		return -EIO;
+#if CONFIG_USE_EMD_ICM42670
+	if ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+	    (data->imu_whoami == INV_ICM42670S_WHOAMI)) {
+		err = inv_imu_set_gyro_fsr(&data->driver,
+					   (cfg->gyro_fs << GYRO_CONFIG0_GYRO_UI_FS_SEL_POS));
+		data->gyro_fs = convert_bitfield_to_gyr_fs(
+			(cfg->gyro_fs << GYRO_CONFIG0_GYRO_UI_FS_SEL_POS));
+		if ((err < 0) || (data->gyro_fs == 0)) {
+			LOG_ERR("Failed to configure gyro FSR");
+			return -EIO;
+		}
+		LOG_DBG("Set gyro full scale to: %d dps", data->gyro_fs);
 	}
-	LOG_DBG("Set gyro full scale to: %d dps", data->gyro_fs);
+#endif
 
 	err = inv_imu_set_accel_lp_avg(&data->driver,
 				       (cfg->accel_avg << ACCEL_CONFIG1_ACCEL_UI_AVG_POS));
 	err |= inv_imu_set_accel_ln_bw(&data->driver,
 				       (cfg->accel_filt_bw << ACCEL_CONFIG1_ACCEL_UI_FILT_BW_POS));
-	err |= inv_imu_set_gyro_ln_bw(&data->driver,
-				      (cfg->gyro_filt_bw << GYRO_CONFIG1_GYRO_UI_FILT_BW_POS));
+#if CONFIG_USE_EMD_ICM42670
+	if ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+	    (data->imu_whoami == INV_ICM42670S_WHOAMI)) {
+		err |= inv_imu_set_gyro_ln_bw(
+			&data->driver, (cfg->gyro_filt_bw << GYRO_CONFIG1_GYRO_UI_FILT_BW_POS));
+	}
+#endif
 	if (err < 0) {
 		LOG_ERR("Failed to configure filtering.");
 		return -EIO;
@@ -509,23 +426,27 @@ static int icm42670_turn_on_sensor(const struct device *dev)
 
 	if (cfg->accel_hz != 0) {
 		err |= inv_imu_set_accel_frequency(
-			&data->driver, cfg->accel_hz + ICM42670_CONVERT_ENUM_TO_ODR_POS);
-		if ((cfg->accel_pwr_mode == ICM42670_LOW_NOISE_MODE) &&
+			&data->driver, cfg->accel_hz + ICM42X70_CONVERT_ENUM_TO_ODR_POS);
+		if ((cfg->accel_pwr_mode == ICM42X70_LOW_NOISE_MODE) &&
 		    (convert_dt_enum_to_freq(cfg->accel_hz) >= 12)) {
 			err |= inv_imu_enable_accel_low_noise_mode(&data->driver);
-		} else if ((cfg->accel_pwr_mode == ICM42670_LOW_POWER_MODE) &&
+		} else if ((cfg->accel_pwr_mode == ICM42X70_LOW_POWER_MODE) &&
 			   (convert_dt_enum_to_freq(cfg->accel_hz) <= 400)) {
 			err |= inv_imu_enable_accel_low_power_mode(&data->driver);
 		} else {
 			LOG_ERR("Not supported power mode value");
 		}
 	}
-	if (cfg->gyro_hz != 0) {
-		err |= inv_imu_set_gyro_frequency(&data->driver,
-						  cfg->gyro_hz + ICM42670_CONVERT_ENUM_TO_ODR_POS);
-		err |= inv_imu_enable_gyro_low_noise_mode(&data->driver);
+#if CONFIG_USE_EMD_ICM42670
+	if ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+	    (data->imu_whoami == INV_ICM42670S_WHOAMI)) {
+		if (cfg->gyro_hz != 0) {
+			err |= inv_imu_set_gyro_frequency(
+				&data->driver, cfg->gyro_hz + ICM42X70_CONVERT_ENUM_TO_ODR_POS);
+			err |= inv_imu_enable_gyro_low_noise_mode(&data->driver);
+		}
 	}
-
+#endif
 	if (err < 0) {
 		LOG_ERR("Failed to configure ODR.");
 		return -EIO;
@@ -533,7 +454,12 @@ static int icm42670_turn_on_sensor(const struct device *dev)
 
 	data->accel_pwr_mode = cfg->accel_pwr_mode;
 	data->accel_hz = convert_dt_enum_to_freq(cfg->accel_hz);
-	data->gyro_hz = convert_dt_enum_to_freq(cfg->gyro_hz);
+#if CONFIG_USE_EMD_ICM42670
+	if ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+	    (data->imu_whoami == INV_ICM42670S_WHOAMI)) {
+		data->gyro_hz = convert_dt_enum_to_freq(cfg->gyro_hz);
+	}
+#endif
 
 	/*
 	 * Accelerometer sensor need at least 10ms startup time
@@ -544,7 +470,7 @@ static int icm42670_turn_on_sensor(const struct device *dev)
 	return 0;
 }
 
-static void icm42670_convert_accel(struct sensor_value *val, int16_t raw_val, uint16_t fs)
+static void icm42x70_convert_accel(struct sensor_value *val, int16_t raw_val, uint16_t fs)
 {
 	int64_t conv_val;
 
@@ -556,19 +482,7 @@ static void icm42670_convert_accel(struct sensor_value *val, int16_t raw_val, ui
 	val->val2 = conv_val % 1000000;
 }
 
-static void icm42670_convert_gyro(struct sensor_value *val, int16_t raw_val, uint16_t fs)
-{
-	int64_t conv_val;
-
-	/* 16 bit gyroscope. 2^15 bits represent the range in degrees/s */
-	/* see datasheet section 3.1 for details */
-	conv_val = ((int64_t)raw_val * fs * SENSOR_PI) / (INT16_MAX * 180U);
-
-	val->val1 = conv_val / 1000000;
-	val->val2 = conv_val % 1000000;
-}
-
-static void icm42670_convert_temp(struct sensor_value *val, int16_t raw_val)
+static void icm42x70_convert_temp(struct sensor_value *val, int16_t raw_val)
 {
 	int64_t conv_val;
 
@@ -578,50 +492,56 @@ static void icm42670_convert_temp(struct sensor_value *val, int16_t raw_val)
 	val->val2 = conv_val % 1000000;
 }
 
-static int icm42670_channel_get(const struct device *dev, enum sensor_channel chan,
+static int icm42x70_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	int res = 0;
-	struct icm42670_data *data = dev->data;
+	struct icm42x70_data *data = dev->data;
 #ifdef CONFIG_TDK_APEX
-	const struct icm42670_config *cfg = dev->config;
+	const struct icm42x70_config *cfg = dev->config;
 #endif
 
-	icm42670_lock(dev);
+	icm42x70_lock(dev);
 
 	if (chan == SENSOR_CHAN_ACCEL_XYZ) {
-		icm42670_convert_accel(&val[0], data->accel_x, data->accel_fs);
-		icm42670_convert_accel(&val[1], data->accel_y, data->accel_fs);
-		icm42670_convert_accel(&val[2], data->accel_z, data->accel_fs);
+		icm42x70_convert_accel(&val[0], data->accel_x, data->accel_fs);
+		icm42x70_convert_accel(&val[1], data->accel_y, data->accel_fs);
+		icm42x70_convert_accel(&val[2], data->accel_z, data->accel_fs);
 	} else if (chan == SENSOR_CHAN_ACCEL_X) {
-		icm42670_convert_accel(val, data->accel_x, data->accel_fs);
+		icm42x70_convert_accel(val, data->accel_x, data->accel_fs);
 	} else if (chan == SENSOR_CHAN_ACCEL_Y) {
-		icm42670_convert_accel(val, data->accel_y, data->accel_fs);
+		icm42x70_convert_accel(val, data->accel_y, data->accel_fs);
 	} else if (chan == SENSOR_CHAN_ACCEL_Z) {
-		icm42670_convert_accel(val, data->accel_z, data->accel_fs);
-	} else if (chan == SENSOR_CHAN_GYRO_XYZ) {
+		icm42x70_convert_accel(val, data->accel_z, data->accel_fs);
+#if CONFIG_USE_EMD_ICM42670
+	} else if ((chan == SENSOR_CHAN_GYRO_XYZ) && ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+						      (data->imu_whoami == INV_ICM42670S_WHOAMI))) {
 		icm42670_convert_gyro(&val[0], data->gyro_x, data->gyro_fs);
 		icm42670_convert_gyro(&val[1], data->gyro_y, data->gyro_fs);
 		icm42670_convert_gyro(&val[2], data->gyro_z, data->gyro_fs);
-	} else if (chan == SENSOR_CHAN_GYRO_X) {
+	} else if ((chan == SENSOR_CHAN_GYRO_X) && ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+						    (data->imu_whoami == INV_ICM42670S_WHOAMI))) {
 		icm42670_convert_gyro(val, data->gyro_x, data->gyro_fs);
-	} else if (chan == SENSOR_CHAN_GYRO_Y) {
+	} else if ((chan == SENSOR_CHAN_GYRO_Y) && ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+						    (data->imu_whoami == INV_ICM42670S_WHOAMI))) {
 		icm42670_convert_gyro(val, data->gyro_y, data->gyro_fs);
-	} else if (chan == SENSOR_CHAN_GYRO_Z) {
+	} else if ((chan == SENSOR_CHAN_GYRO_Z) && ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+						    (data->imu_whoami == INV_ICM42670S_WHOAMI))) {
 		icm42670_convert_gyro(val, data->gyro_z, data->gyro_fs);
+#endif
 	} else if (chan == SENSOR_CHAN_DIE_TEMP) {
-		icm42670_convert_temp(val, data->temp);
+		icm42x70_convert_temp(val, data->temp);
 #ifdef CONFIG_TDK_APEX
 	} else if ((enum sensor_channel_tdk_apex)chan == SENSOR_CHAN_APEX_MOTION) {
 		if (cfg->apex == TDK_APEX_PEDOMETER) {
 			val[0].val1 = data->pedometer_cnt;
 			val[1].val1 = data->pedometer_activity;
-			icm42670_apex_pedometer_cadence_convert(&val[2], data->pedometer_cadence,
+			icm42x70_apex_pedometer_cadence_convert(&val[2], data->pedometer_cadence,
 								data->dmp_odr_hz);
 		} else if (cfg->apex == TDK_APEX_WOM) {
-			val[0].val1 = (data->apex_status & ICM42670_APEX_STATUS_MASK_WOM_X) ? 1 : 0;
-			val[1].val1 = (data->apex_status & ICM42670_APEX_STATUS_MASK_WOM_Y) ? 1 : 0;
-			val[2].val1 = (data->apex_status & ICM42670_APEX_STATUS_MASK_WOM_Z) ? 1 : 0;
+			val[0].val1 = (data->apex_status & ICM42X70_APEX_STATUS_MASK_WOM_X) ? 1 : 0;
+			val[1].val1 = (data->apex_status & ICM42X70_APEX_STATUS_MASK_WOM_Y) ? 1 : 0;
+			val[2].val1 = (data->apex_status & ICM42X70_APEX_STATUS_MASK_WOM_Z) ? 1 : 0;
 		} else if ((cfg->apex == TDK_APEX_TILT) || (cfg->apex == TDK_APEX_SMD)) {
 			val[0].val1 = data->apex_status;
 		}
@@ -630,15 +550,15 @@ static int icm42670_channel_get(const struct device *dev, enum sensor_channel ch
 		res = -ENOTSUP;
 	}
 
-	icm42670_unlock(dev);
+	icm42x70_unlock(dev);
 
 	return res;
 }
 
-#ifdef CONFIG_ICM42670_TRIGGER
-static int icm42670_fetch_from_fifo(const struct device *dev)
+#ifdef CONFIG_ICM42X70_TRIGGER
+static int icm42x70_fetch_from_fifo(const struct device *dev)
 {
-	struct icm42670_data *data = dev->data;
+	struct icm42x70_data *data = dev->data;
 	int status = 0;
 	uint8_t int_status;
 	uint16_t packet_size = FIFO_HEADER_SIZE + FIFO_ACCEL_DATA_SIZE + FIFO_GYRO_DATA_SIZE +
@@ -697,11 +617,16 @@ static int icm42670_fetch_from_fifo(const struct device *dev)
 				data->accel_y = event.accel[1];
 				data->accel_z = event.accel[2];
 			}
-			if (event.sensor_mask & (1 << INV_SENSOR_GYRO)) {
-				data->gyro_x = event.gyro[0];
-				data->gyro_y = event.gyro[1];
-				data->gyro_z = event.gyro[2];
+#if CONFIG_USE_EMD_ICM42670
+			if ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+			    (data->imu_whoami == INV_ICM42670S_WHOAMI)) {
+				if (event.sensor_mask & (1 << INV_SENSOR_GYRO)) {
+					data->gyro_x = event.gyro[0];
+					data->gyro_y = event.gyro[1];
+					data->gyro_z = event.gyro[2];
+				}
 			}
+#endif
 			if (event.sensor_mask & (1 << INV_SENSOR_TEMPERATURE)) {
 				data->temp = event.temperature;
 			}
@@ -722,10 +647,10 @@ static int icm42670_fetch_from_fifo(const struct device *dev)
 }
 #endif
 
-#ifndef CONFIG_ICM42670_TRIGGER
-static int icm42670_sample_fetch_accel(const struct device *dev)
+#ifndef CONFIG_ICM42X70_TRIGGER
+static int icm42x70_sample_fetch_accel(const struct device *dev)
 {
-	struct icm42670_data *data = dev->data;
+	struct icm42x70_data *data = dev->data;
 	uint8_t buffer[ACCEL_DATA_SIZE];
 
 	int res = inv_imu_read_reg(&data->driver, ACCEL_DATA_X1, ACCEL_DATA_SIZE, buffer);
@@ -741,27 +666,9 @@ static int icm42670_sample_fetch_accel(const struct device *dev)
 	return 0;
 }
 
-static int icm42670_sample_fetch_gyro(const struct device *dev)
+static int icm42x70_sample_fetch_temp(const struct device *dev)
 {
-	struct icm42670_data *data = dev->data;
-	uint8_t buffer[GYRO_DATA_SIZE];
-
-	int res = inv_imu_read_reg(&data->driver, GYRO_DATA_X1, GYRO_DATA_SIZE, buffer);
-
-	if (res) {
-		return res;
-	}
-
-	data->gyro_x = (int16_t)sys_get_be16(&buffer[0]);
-	data->gyro_y = (int16_t)sys_get_be16(&buffer[2]);
-	data->gyro_z = (int16_t)sys_get_be16(&buffer[4]);
-
-	return 0;
-}
-
-static int icm42670_sample_fetch_temp(const struct device *dev)
-{
-	struct icm42670_data *data = dev->data;
+	struct icm42x70_data *data = dev->data;
 	uint8_t buffer[TEMP_DATA_SIZE];
 
 	int res = inv_imu_read_reg(&data->driver, TEMP_DATA1, TEMP_DATA_SIZE, buffer);
@@ -775,15 +682,15 @@ static int icm42670_sample_fetch_temp(const struct device *dev)
 	return 0;
 }
 
-static int icm42670_fetch_from_registers(const struct device *dev, enum sensor_channel chan)
+static int icm42x70_fetch_from_registers(const struct device *dev, enum sensor_channel chan)
 {
-	struct icm42670_data *data = dev->data;
+	struct icm42x70_data *data = dev->data;
 	int res = 0;
 	uint8_t int_status;
 
-	LOG_ERR("Fetch from reg");
+	LOG_DBG("Fetch from reg");
 
-	icm42670_lock(dev);
+	icm42x70_lock(dev);
 
 	/* Ensure data ready status bit is set */
 	int err = inv_imu_read_reg(&data->driver, INT_STATUS_DRDY, 1, &int_status);
@@ -791,24 +698,36 @@ static int icm42670_fetch_from_registers(const struct device *dev, enum sensor_c
 	if (int_status & INT_STATUS_DRDY_DATA_RDY_INT_MASK) {
 		switch (chan) {
 		case SENSOR_CHAN_ALL:
-			err |= icm42670_sample_fetch_accel(dev);
-			err |= icm42670_sample_fetch_gyro(dev);
-			err |= icm42670_sample_fetch_temp(dev);
+			err |= icm42x70_sample_fetch_accel(dev);
+#if CONFIG_USE_EMD_ICM42670
+			if ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+			    (data->imu_whoami == INV_ICM42670S_WHOAMI)) {
+				err |= icm42670_sample_fetch_gyro(dev);
+			}
+#endif
+			err |= icm42x70_sample_fetch_temp(dev);
 			break;
 		case SENSOR_CHAN_ACCEL_XYZ:
 		case SENSOR_CHAN_ACCEL_X:
 		case SENSOR_CHAN_ACCEL_Y:
 		case SENSOR_CHAN_ACCEL_Z:
-			err |= icm42670_sample_fetch_accel(dev);
+			err |= icm42x70_sample_fetch_accel(dev);
 			break;
+#if CONFIG_USE_EMD_ICM42670
 		case SENSOR_CHAN_GYRO_XYZ:
 		case SENSOR_CHAN_GYRO_X:
 		case SENSOR_CHAN_GYRO_Y:
 		case SENSOR_CHAN_GYRO_Z:
-			err |= icm42670_sample_fetch_gyro(dev);
+			if ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+			    (data->imu_whoami == INV_ICM42670S_WHOAMI)) {
+				err |= icm42670_sample_fetch_gyro(dev);
+			} else {
+				res = -ENOTSUP;
+			}
 			break;
+#endif
 		case SENSOR_CHAN_DIE_TEMP:
-			err |= icm42670_sample_fetch_temp(dev);
+			err |= icm42x70_sample_fetch_temp(dev);
 			break;
 		default:
 			res = -ENOTSUP;
@@ -816,7 +735,7 @@ static int icm42670_fetch_from_registers(const struct device *dev, enum sensor_c
 		}
 	}
 
-	icm42670_unlock(dev);
+	icm42x70_unlock(dev);
 
 	if (err < 0) {
 		res = -EIO;
@@ -825,57 +744,61 @@ static int icm42670_fetch_from_registers(const struct device *dev, enum sensor_c
 }
 #endif
 
-static int icm42670_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int icm42x70_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+#if CONFIG_USE_EMD_ICM42670
+	struct icm42x70_data *data = dev->data;
+#endif
 	int status = -ENOTSUP;
 
-	icm42670_lock(dev);
+	icm42x70_lock(dev);
 
 #ifdef CONFIG_TDK_APEX
 	if ((enum sensor_channel_tdk_apex)chan == SENSOR_CHAN_APEX_MOTION) {
-		status = icm42670_apex_fetch_from_dmp(dev);
+		status = icm42x70_apex_fetch_from_dmp(dev);
 	}
 #endif
 
-	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_ACCEL_XYZ) ||
-	    (chan == SENSOR_CHAN_ACCEL_X) || (chan == SENSOR_CHAN_ACCEL_Y) ||
-	    (chan == SENSOR_CHAN_ACCEL_Z) || (chan == SENSOR_CHAN_GYRO_XYZ) ||
-	    (chan == SENSOR_CHAN_GYRO_X) || (chan == SENSOR_CHAN_GYRO_Y) ||
-	    (chan == SENSOR_CHAN_GYRO_Z) || (chan == SENSOR_CHAN_DIE_TEMP)) {
-#ifdef CONFIG_ICM42670_TRIGGER
-		status = icm42670_fetch_from_fifo(dev);
+	if ((chan == SENSOR_CHAN_ALL) || SENSOR_CHANNEL_IS_ACCEL(chan) ||
+#if CONFIG_USE_EMD_ICM42670
+	    (SENSOR_CHANNEL_IS_GYRO(chan) && ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+					      (data->imu_whoami == INV_ICM42670S_WHOAMI))) ||
+#endif
+	    (chan == SENSOR_CHAN_DIE_TEMP)) {
+#ifdef CONFIG_ICM42X70_TRIGGER
+		status = icm42x70_fetch_from_fifo(dev);
 #else
-		status = icm42670_fetch_from_registers(dev, chan);
+		status = icm42x70_fetch_from_registers(dev, chan);
 #endif
 	}
 
-	icm42670_unlock(dev);
+	icm42x70_unlock(dev);
 	return status;
 }
 
-static int icm42670_attr_set(const struct device *dev, enum sensor_channel chan,
+static int icm42x70_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
-	struct icm42670_data *drv_data = dev->data;
+	struct icm42x70_data *drv_data = dev->data;
 
 	__ASSERT_NO_MSG(val != NULL);
 
-	icm42670_lock(dev);
+	icm42x70_lock(dev);
 
 	if ((enum sensor_channel_tdk_apex)chan == SENSOR_CHAN_APEX_MOTION) {
 		if (attr == SENSOR_ATTR_CONFIGURATION) {
 #ifdef CONFIG_TDK_APEX
 			if (val->val1 == TDK_APEX_PEDOMETER) {
-				icm42670_apex_enable(&drv_data->driver);
-				icm42670_apex_enable_pedometer(dev, &drv_data->driver);
+				icm42x70_apex_enable(&drv_data->driver);
+				icm42x70_apex_enable_pedometer(dev, &drv_data->driver);
 			} else if (val->val1 == TDK_APEX_TILT) {
-				icm42670_apex_enable(&drv_data->driver);
-				icm42670_apex_enable_tilt(&drv_data->driver);
+				icm42x70_apex_enable(&drv_data->driver);
+				icm42x70_apex_enable_tilt(&drv_data->driver);
 			} else if (val->val1 == TDK_APEX_SMD) {
-				icm42670_apex_enable(&drv_data->driver);
-				icm42670_apex_enable_smd(&drv_data->driver);
+				icm42x70_apex_enable(&drv_data->driver);
+				icm42x70_apex_enable_smd(&drv_data->driver);
 			} else if (val->val1 == TDK_APEX_WOM) {
-				icm42670_apex_enable_wom(&drv_data->driver);
+				icm42x70_apex_enable_wom(&drv_data->driver);
 			} else {
 				LOG_ERR("Not supported ATTR value");
 			}
@@ -884,35 +807,35 @@ static int icm42670_attr_set(const struct device *dev, enum sensor_channel chan,
 			LOG_ERR("Not supported ATTR");
 			return -EINVAL;
 		}
-	} else if ((chan == SENSOR_CHAN_ACCEL_XYZ) || (chan == SENSOR_CHAN_ACCEL_X) ||
-		   (chan == SENSOR_CHAN_ACCEL_Y) || (chan == SENSOR_CHAN_ACCEL_Z)) {
-		icm42670_accel_config(drv_data, attr, val);
-
-	} else if ((chan == SENSOR_CHAN_GYRO_XYZ) || (chan == SENSOR_CHAN_GYRO_X) ||
-		   (chan == SENSOR_CHAN_GYRO_Y) || (chan == SENSOR_CHAN_GYRO_Z)) {
+	} else if (SENSOR_CHANNEL_IS_ACCEL(chan)) {
+		icm42x70_accel_config(drv_data, attr, val);
+#if CONFIG_USE_EMD_ICM42670
+	} else if ((SENSOR_CHANNEL_IS_GYRO(chan)) &&
+		   ((drv_data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+		    (drv_data->imu_whoami == INV_ICM42670S_WHOAMI))) {
 		icm42670_gyro_config(drv_data, attr, val);
-
+#endif
 	} else {
 		LOG_ERR("Unsupported channel");
 		(void)drv_data;
 		return -EINVAL;
 	}
 
-	icm42670_unlock(dev);
+	icm42x70_unlock(dev);
 
 	return 0;
 }
 
-static int icm42670_attr_get(const struct device *dev, enum sensor_channel chan,
+static int icm42x70_attr_get(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, struct sensor_value *val)
 {
-	const struct icm42670_data *data = dev->data;
-	const struct icm42670_config *cfg = dev->config;
+	const struct icm42x70_data *data = dev->data;
+	const struct icm42x70_config *cfg = dev->config;
 	int res = 0;
 
 	__ASSERT_NO_MSG(val != NULL);
 
-	icm42670_lock(dev);
+	icm42x70_lock(dev);
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -928,21 +851,26 @@ static int icm42670_attr_get(const struct device *dev, enum sensor_channel chan,
 			res = -EINVAL;
 		}
 		break;
-
+#if CONFIG_USE_EMD_ICM42670
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
-		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
-			val->val1 = data->gyro_hz;
-		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-			val->val1 = data->gyro_fs;
+		if ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+		    (data->imu_whoami == INV_ICM42670S_WHOAMI)) {
+			if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+				val->val1 = data->gyro_hz;
+			} else if (attr == SENSOR_ATTR_FULL_SCALE) {
+				val->val1 = data->gyro_fs;
+			} else {
+				LOG_ERR("Unsupported attribute");
+				res = -EINVAL;
+			}
 		} else {
-			LOG_ERR("Unsupported attribute");
 			res = -EINVAL;
 		}
 		break;
-
+#endif
 	case SENSOR_CHAN_APEX_MOTION:
 		if (attr == SENSOR_ATTR_CONFIGURATION) {
 			val->val1 = cfg->apex;
@@ -955,24 +883,24 @@ static int icm42670_attr_get(const struct device *dev, enum sensor_channel chan,
 		break;
 	}
 
-	icm42670_unlock(dev);
+	icm42x70_unlock(dev);
 
 	return res;
 }
 
-static inline int icm42670_bus_check(const struct device *dev)
+static inline int icm42x70_bus_check(const struct device *dev)
 {
-	const struct icm42670_config *cfg = dev->config;
+	const struct icm42x70_config *cfg = dev->config;
 
 	return cfg->bus_io->check(&cfg->bus);
 }
 
-static int icm42670_init(const struct device *dev)
+static int icm42x70_init(const struct device *dev)
 {
-	struct icm42670_data *data = dev->data;
+	struct icm42x70_data *data = dev->data;
 	int res = 0;
 
-	if (icm42670_bus_check(dev) < 0) {
+	if (icm42x70_bus_check(dev) < 0) {
 		LOG_ERR("bus check failed");
 		return -ENODEV;
 	}
@@ -980,109 +908,125 @@ static int icm42670_init(const struct device *dev)
 	data->accel_x = 0;
 	data->accel_y = 0;
 	data->accel_z = 0;
-	data->gyro_x = 0;
-	data->gyro_y = 0;
-	data->gyro_z = 0;
+#if CONFIG_USE_EMD_ICM42670
+	if ((data->imu_whoami == INV_ICM42670P_WHOAMI) ||
+	    (data->imu_whoami == INV_ICM42670S_WHOAMI)) {
+		data->gyro_x = 0;
+		data->gyro_y = 0;
+		data->gyro_z = 0;
+	}
+#endif
 	data->temp = 0;
 
-	if (icm42670_sensor_init(dev)) {
+	if (icm42x70_sensor_init(dev)) {
 		LOG_ERR("could not initialize sensor");
 		return -EIO;
 	}
 
-#ifdef CONFIG_ICM42670_TRIGGER
-	res |= icm42670_trigger_enable_interrupt(dev);
-	res |= icm42670_trigger_init(dev);
+#ifdef CONFIG_ICM42X70_TRIGGER
+	res |= icm42x70_trigger_enable_interrupt(dev);
+	res |= icm42x70_trigger_init(dev);
 	if (res < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
 		return res;
 	}
 #endif
 
-	res |= icm42670_turn_on_sensor(dev);
+	res |= icm42x70_turn_on_sensor(dev);
 
 	return res;
 }
 
-#ifndef CONFIG_ICM42670_TRIGGER
+#ifndef CONFIG_ICM42X70_TRIGGER
 
-void icm42670_lock(const struct device *dev)
+void icm42x70_lock(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-void icm42670_unlock(const struct device *dev)
+void icm42x70_unlock(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
 #endif
 
-static DEVICE_API(sensor, icm42670_driver_api) = {
-#ifdef CONFIG_ICM42670_TRIGGER
-	.trigger_set = icm42670_trigger_set,
+static DEVICE_API(sensor, icm42x70_driver_api) = {
+#ifdef CONFIG_ICM42X70_TRIGGER
+	.trigger_set = icm42x70_trigger_set,
 #endif
-	.sample_fetch = icm42670_sample_fetch,
-	.channel_get = icm42670_channel_get,
-	.attr_set = icm42670_attr_set,
-	.attr_get = icm42670_attr_get,
+	.sample_fetch = icm42x70_sample_fetch,
+	.channel_get = icm42x70_channel_get,
+	.attr_set = icm42x70_attr_set,
+	.attr_get = icm42x70_attr_get,
 };
 
 /* device defaults to spi mode 0/3 support */
-#define ICM42670_SPI_CFG (SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL | SPI_MODE_CPHA)
+#define ICM42X70_SPI_CFG (SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-/* Initializes a common struct icm42670_config */
-#define ICM42670_CONFIG_COMMON(inst)                                                               \
-	IF_ENABLED(CONFIG_ICM42670_TRIGGER,	\
+/* Initializes a common struct icm42x70_config */
+#define ICM42X70_CONFIG_COMMON(inst)                                                               \
+	IF_ENABLED(CONFIG_ICM42X70_TRIGGER,	\
 				(.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),))     \
 				    .accel_fs = DT_INST_ENUM_IDX(inst, accel_fs),                  \
 				    .accel_hz = DT_INST_ENUM_IDX(inst, accel_hz),                  \
 				    .accel_avg = DT_INST_ENUM_IDX(inst, accel_avg),                \
 				    .accel_filt_bw = DT_INST_ENUM_IDX(inst, accel_filt_bw_hz),     \
-				    .gyro_fs = DT_INST_ENUM_IDX(inst, gyro_fs),                    \
-				    .gyro_hz = DT_INST_ENUM_IDX(inst, gyro_hz),                    \
-				    .gyro_filt_bw = DT_INST_ENUM_IDX(inst, gyro_filt_bw_hz),       \
 				    .accel_pwr_mode = DT_INST_ENUM_IDX(inst, power_mode),          \
-				    .apex = DT_INST_ENUM_IDX(inst, apex),
+				    .apex = DT_INST_ENUM_IDX(inst, apex),                          \
+				    .accel_pwr_mode = DT_INST_ENUM_IDX(inst, power_mode),          \
+				    .apex = DT_INST_ENUM_IDX(inst, apex),                          \
+		 IF_ENABLED(CONFIG_USE_EMD_ICM42670,                                       \
+				(.gyro_fs = DT_INST_ENUM_IDX(inst, gyro_fs),))                     \
+		 IF_ENABLED(CONFIG_USE_EMD_ICM42670,                                       \
+				(.gyro_hz = DT_INST_ENUM_IDX(inst, gyro_hz),))                     \
+		 IF_ENABLED(CONFIG_USE_EMD_ICM42670,                                       \
+				(.gyro_filt_bw = DT_INST_ENUM_IDX(inst, gyro_filt_bw_hz),))
 
 /* Initializes the bus members for an instance on a SPI bus. */
-#define ICM42670_CONFIG_SPI(inst)                                                                  \
-	{.bus.spi = SPI_DT_SPEC_INST_GET(inst, ICM42670_SPI_CFG, 0),                               \
-	 .bus_io = &icm42670_bus_io_spi,                                                           \
+#define ICM42X70_CONFIG_SPI(inst)                                                                  \
+	{.bus.spi = SPI_DT_SPEC_INST_GET(inst, ICM42X70_SPI_CFG, 0),                               \
+	 .bus_io = &icm42x70_bus_io_spi,                                                           \
 	 .serif_type = UI_SPI4,                                                                    \
-	 ICM42670_CONFIG_COMMON(inst)}
+	 ICM42X70_CONFIG_COMMON(inst)}
 
 /* Initializes the bus members for an instance on an I2C bus. */
-#define ICM42670_CONFIG_I2C(inst)                                                                  \
+#define ICM42X70_CONFIG_I2C(inst)                                                                  \
 	{.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                                    \
-	 .bus_io = &icm42670_bus_io_i2c,                                                           \
+	 .bus_io = &icm42x70_bus_io_i2c,                                                           \
 	 .serif_type = UI_I2C,                                                                     \
-	 ICM42670_CONFIG_COMMON(inst)}
+	 ICM42X70_CONFIG_COMMON(inst)}
 
 /*
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define ICM42670_DEFINE(inst, name, whoami)                                                        \
-	static struct icm42670_data icm42670_data_##inst = {                                       \
+#define ICM42X70_DEFINE(inst, name, whoami)                                                        \
+	static struct icm42x70_data icm42x70_data_##inst = {                                       \
 		.imu_name = name,                                                                  \
 		.imu_whoami = whoami,                                                              \
 	};                                                                                         \
-	static const struct icm42670_config icm42670_config_##inst = \
+	static const struct icm42x70_config icm42x70_config_##inst = \
 			COND_CODE_1(DT_INST_ON_BUS(inst, spi),	\
-			(ICM42670_CONFIG_SPI(inst)),	\
-			(ICM42670_CONFIG_I2C(inst)));             \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm42670_init, NULL, &icm42670_data_##inst,             \
-				     &icm42670_config_##inst, POST_KERNEL,                         \
-				     CONFIG_SENSOR_INIT_PRIORITY, &icm42670_driver_api);
+			(ICM42X70_CONFIG_SPI(inst)),	\
+			(ICM42X70_CONFIG_I2C(inst)));             \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm42x70_init, NULL, &icm42x70_data_##inst,             \
+				     &icm42x70_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &icm42x70_driver_api);
 
 #define DT_DRV_COMPAT invensense_icm42670p
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
-DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM42670_DEFINE, INV_ICM42670P_STRING_ID, INV_ICM42670P_WHOAMI);
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM42X70_DEFINE, INV_ICM42670P_STRING_ID, INV_ICM42670P_WHOAMI);
 #endif
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT invensense_icm42670s
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
-DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM42670_DEFINE, INV_ICM42670S_STRING_ID, INV_ICM42670S_WHOAMI);
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM42X70_DEFINE, INV_ICM42670S_STRING_ID, INV_ICM42670S_WHOAMI);
+#endif
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT invensense_icm42370p
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM42X70_DEFINE, INV_ICM42370P_STRING_ID, INV_ICM42370P_WHOAMI);
 #endif
