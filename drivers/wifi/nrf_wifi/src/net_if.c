@@ -946,7 +946,7 @@ int nrf_wifi_if_get_config_zep(const struct device *dev,
 			       struct ethernet_config *config)
 {
 	int ret = -1;
-#ifdef CONFIG_NRF70_RAW_DATA_TX
+
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
@@ -986,11 +986,12 @@ int nrf_wifi_if_get_config_zep(const struct device *dev,
 	}
 
 	memset(config, 0, sizeof(struct ethernet_config));
-
+#ifdef CONFIG_NRF70_RAW_DATA_TX
 	if (type == ETHERNET_CONFIG_TYPE_TXINJECTION_MODE) {
 		config->txinjection_mode =
 			sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode;
 	}
+#endif
 #ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	if (type  == ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT ||
 	    type == ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT) {
@@ -1006,7 +1007,6 @@ int nrf_wifi_if_get_config_zep(const struct device *dev,
 unlock:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 out:
-#endif
 	return ret;
 }
 
