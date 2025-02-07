@@ -70,19 +70,6 @@ config DMA_XILINX_AXI_DMA_LOCK_CHANNEL_IRQ
 
 endchoice
 
-config DMA_XILINX_AXI_DMA_POLL_INTERVAL
-	int "Period of the timer used for polling the DMA in milliseconds"
-	depends on DMA_XILINX_AXI_DMA
-	default 100
-	help
-		On certain platforms (e.g., RISC-V), the DMA driver can sometimes miss interrupts.
-		This can cause the DMA driver to stop processing completed transactions.
-		In order to prevent this, the DMA driver periodically polls the DMA's registers and
-		determines whether it needs to handle outstanding transactions.
-		This configuration controls how often this happens.
-		Choose a larger value to minimize overhead and a smaller value to minimize
-		worst-case latency.
-
 config DMA_XILINX_AXI_DMA_INTERRUPT_THRESHOLD
 	int "Number of completed transactions after which to trigger an interrupt"
 	depends on DMA_XILINX_AXI_DMA
