@@ -1,4 +1,4 @@
-# Copyright 2023-2024 NXP
+# Copyright 2023-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_MCXW
@@ -45,4 +45,14 @@ config HCI_NXP_RX_THREAD
 	default y
 
 endif # BT
+
+if NET_L2_IEEE802154 || NET_L2_OPENTHREAD
+
+# Include intercore messaging component
+config NXP_RF_IMU
+	default y
+
+endif # NET_L2_IEEE802154 || NET_L2_OPENTHREAD
+
+
 endif # SOC_SERIES_MCXW
