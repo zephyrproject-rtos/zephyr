@@ -146,6 +146,7 @@ static inline unsigned int llext_section_count(const struct llext *ext)
 struct llext_load_param {
 	/** Perform local relocation */
 	bool relocate_local;
+
 	/**
 	 * Use the virtual symbol addresses from the ELF, not addresses within
 	 * the memory buffer, when calculating relocation targets. It also
@@ -154,12 +155,22 @@ struct llext_load_param {
 	 * allocation and copying internally.
 	 */
 	bool pre_located;
+
 	/**
 	 * Extensions can implement custom ELF sections to be loaded in specific
 	 * memory regions, detached from other sections of compatible types.
 	 * This optional callback checks whether a section should be detached.
 	 */
 	bool (*section_detached)(const elf_shdr_t *shdr);
+
+	/**
+	 * Keep the ELF section data in memory after loading the extension. This
+	 * is needed to use some of the functions in @ref llext_inspect_apis.
+	 *
+	 * @note Related memory must be freed by @ref llext_free_inspection_data
+	 *       before the extension can be unloaded via @ref llext_unload.
+	 */
+	bool keep_section_info;
 };
 
 /** Default initializer for @ref llext_load_param */
@@ -210,6 +221,19 @@ int llext_load(struct llext_loader *loader, const char *name, struct llext **ext
  * @param[in] ext Extension to unload
  */
 int llext_unload(struct llext **ext);
+
+/**
+ * @brief Free any inspection-related memory for the specified loader and extension.
+ *
+ * This is only required if inspection data was requested at load time by
+ * setting @ref llext_load_param.keep_section_info; otherwise, this call will
+ * be a no-op.
+ *
+ * @param[in] ldr Extension loader
+ * @param[in] ext Extension
+ * @returns 0 on success, or a negative error code.
+ */
+int llext_free_inspection_data(struct llext_loader *ldr, struct llext *ext);
 
 /** @brief Entry point function signature for an extension. */
 typedef void (*llext_entry_fn_t)(void *user_data);

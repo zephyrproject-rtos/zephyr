@@ -112,6 +112,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		LOG_ERR("Failed to allocate section map, size %zu", sect_map_sz);
 		return -ENOMEM;
 	}
+	ext->alloc_size += sect_map_sz;
 	for (int i = 0; i < ext->sect_cnt; i++) {
 		ldr->sect_map[i].mem_idx = LLEXT_MEM_COUNT;
 		ldr->sect_map[i].offset = 0;
@@ -740,12 +741,13 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 
 out:
 	/*
-	 * Free resources only used during loading. Note that this exploits
-	 * the fact that freeing a NULL pointer has no effect.
+	 * Free resources only used during loading, unless explicitly requested.
+	 * Note that this exploits the fact that freeing a NULL pointer has no effect.
 	 */
 
-	llext_free(ldr->sect_map);
-	ldr->sect_map = NULL;
+	if (ret != 0 || !ldr_parm || !ldr_parm->keep_section_info) {
+		llext_free_inspection_data(ldr, ext);
+	}
 
 	/* Until proper inter-llext linking is implemented, the symbol table is
 	 * not useful outside of the loading process; keep it only if debugging
@@ -776,4 +778,15 @@ out:
 	llext_finalize(ldr);
 
 	return ret;
+}
+
+int llext_free_inspection_data(struct llext_loader *ldr, struct llext *ext)
+{
+	if (ldr->sect_map) {
+		ext->alloc_size -= ext->sect_cnt * sizeof(ldr->sect_map[0]);
+		llext_free(ldr->sect_map);
+		ldr->sect_map = NULL;
+	}
+
+	return 0;
 }
