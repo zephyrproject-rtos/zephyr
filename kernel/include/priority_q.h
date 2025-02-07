@@ -124,14 +124,16 @@ static ALWAYS_INLINE void z_priq_simple_remove(sys_dlist_t *pq, struct k_thread 
 	sys_dlist_remove(&thread->base.qnode_dlist);
 }
 
-static ALWAYS_INLINE void z_priq_simple_yield(sys_dlist_t *pq)
+static ALWAYS_INLINE void z_priq_simple_yield(sys_dlist_t *pq, struct k_thread *curr)
 {
-#ifndef CONFIG_SMP
+#ifdef CONFIG_SMP
+	ARG_UNUSED(curr);
+#else
 	sys_dnode_t *n;
 
-	n = sys_dlist_peek_next_no_check(pq, &_current->base.qnode_dlist);
+	n = sys_dlist_peek_next_no_check(pq, &curr->base.qnode_dlist);
 
-	sys_dlist_dequeue(&_current->base.qnode_dlist);
+	sys_dlist_dequeue(&curr->base.qnode_dlist);
 
 	struct k_thread *t;
 
@@ -143,15 +145,15 @@ static ALWAYS_INLINE void z_priq_simple_yield(sys_dlist_t *pq)
 
 	while (n != NULL) {
 		t = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
-		if (z_sched_prio_cmp(_current, t) > 0) {
+		if (z_sched_prio_cmp(curr, t) > 0) {
 			sys_dlist_insert(&t->base.qnode_dlist,
-					 &_current->base.qnode_dlist);
+					 &curr->base.qnode_dlist);
 			return;
 		}
 		n = sys_dlist_peek_next_no_check(pq, n);
 	}
 
-	sys_dlist_append(pq, &_current->base.qnode_dlist);
+	sys_dlist_append(pq, &curr->base.qnode_dlist);
 #endif
 }
 
@@ -227,11 +229,13 @@ static ALWAYS_INLINE void z_priq_rb_remove(struct _priq_rb *pq, struct k_thread 
 	}
 }
 
-static ALWAYS_INLINE void z_priq_rb_yield(struct _priq_rb *pq)
+static ALWAYS_INLINE void z_priq_rb_yield(struct _priq_rb *pq, struct k_thread *curr)
 {
-#ifndef CONFIG_SMP
-	z_priq_rb_remove(pq, _current);
-	z_priq_rb_add(pq, _current);
+#ifdef CONFIG_SMP
+	ARG_UNUSED(curr);
+#else
+	z_priq_rb_remove(pq, curr);
+	z_priq_rb_add(pq, curr);
 #endif
 }
 
@@ -318,14 +322,16 @@ static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
 	}
 }
 
-static ALWAYS_INLINE void z_priq_mq_yield(struct _priq_mq *pq)
+static ALWAYS_INLINE void z_priq_mq_yield(struct _priq_mq *pq, struct k_thread *curr)
 {
-#ifndef CONFIG_SMP
-	struct prio_info pos = get_prio_info(_current->base.prio);
+#ifdef CONFIG_SMP
+	ARG_UNUSED(curr);
+#else
+	struct prio_info pos = get_prio_info(curr->base.prio);
 
-	sys_dlist_dequeue(&_current->base.qnode_dlist);
+	sys_dlist_dequeue(&curr->base.qnode_dlist);
 	sys_dlist_append(&pq->queues[pos.offset_prio],
-			 &_current->base.qnode_dlist);
+			 &curr->base.qnode_dlist);
 #endif
 }
 
