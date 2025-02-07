@@ -24,6 +24,10 @@
 #include <zephyr/net/coap.h>
 #include <zephyr/kernel.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
@@ -194,6 +198,10 @@ static inline struct coap_client_option coap_client_option_initial_block2(void)
 
 	return block2;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
