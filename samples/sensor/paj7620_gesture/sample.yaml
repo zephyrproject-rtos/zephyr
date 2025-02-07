@@ -1,0 +1,17 @@
+sample:
+  name: PAJ7620 gesture trigger sample
+tests:
+  sample.sensor.paj7620_gesture_trig:
+    build_only: true
+    tags: sensors
+    platform_allow: nucleo_f334r8
+    depends_on:
+      - i2c
+      - gpio
+    filter: dt_compat_enabled("pixart,paj7620")
+  sample.sensor.paj7620_gesture_polling:
+    build_only: true
+    tags: sensors
+    platform_allow: nucleo_f334r8
+    depends_on: i2c
+    filter: dt_compat_enabled("pixart,paj7620")
