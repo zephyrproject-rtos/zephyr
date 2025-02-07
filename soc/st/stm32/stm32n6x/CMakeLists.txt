@@ -20,7 +20,8 @@ if(SIGNING_TOOL_FIND STREQUAL SIGNING_TOOL_FIND-NOTFOUND)
   message(WARNING "
   Signing Image tool (${SIGNING_TOOL}) is not available.
   Signed image will not be generated.
-  You won't be able to run image on board.")
+  You won't be able to run application on the board.
+  Refer to board documentation for more information")
 endif()
 
 if(NOT SIGNING_TOOL_FIND STREQUAL SIGNING_TOOL_FIND-NOTFOUND)
