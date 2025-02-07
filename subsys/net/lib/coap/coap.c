@@ -1395,7 +1395,7 @@ int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value,
 	uint16_t opt_len = 0;
 	uint16_t last_opt = 0;
 	uint16_t last_offset = cpkt->hdr_len;
-	struct coap_option option;
+	struct coap_option option = {0};
 	int r;
 
 	while (offset < cpkt->hdr_len + cpkt->opt_len) {
