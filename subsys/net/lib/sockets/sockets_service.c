@@ -254,8 +254,8 @@ restart:
 			if (ctx.events[i].revents > 0) {
 				ret = trigger_work(&ctx.events[i]);
 				if (ret < 0) {
-					NET_ERR("Triggering work failed (%d)", ret);
-					goto out;
+					NET_DBG("Triggering work failed (%d)", ret);
+					goto restart;
 				}
 			}
 		}
