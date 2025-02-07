@@ -249,8 +249,8 @@ struct udc_api {
 	int (*disable)(const struct device *dev);
 	int (*init)(const struct device *dev);
 	int (*shutdown)(const struct device *dev);
-	int (*lock)(const struct device *dev);
-	int (*unlock)(const struct device *dev);
+	void (*lock)(const struct device *dev);
+	void (*unlock)(const struct device *dev);
 };
 
 /**
