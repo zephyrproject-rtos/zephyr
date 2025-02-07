@@ -1245,3 +1245,9 @@ test_i2c_tmp435: tmp435@a9 {
 	resistance-correction;
 	beta-compensation = <0x0f>;
 };
+
+test_i2c_paj7620: paj7620@aa {
+	compatible = "pixart,paj7620";
+	reg = <0xaa>;
+	int-gpios = <&test_gpio 0 0>;
+};
