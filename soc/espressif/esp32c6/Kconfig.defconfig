@@ -14,4 +14,7 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,/soc/flash-controller@60002000/flash@0)
 
+config MAIN_STACK_SIZE
+	default 2048
+
 endif # SOC_SERIES_ESP32C6
