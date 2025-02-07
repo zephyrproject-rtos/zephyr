@@ -1,0 +1,12 @@
+# NXP ELE entropy configuration options
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_NXP_ELE_TRNG
+	bool "NXP ELE TRNG driver"
+	default y
+	depends on DT_HAS_NXP_ELE_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the ELE true random number generator (TRNG)
