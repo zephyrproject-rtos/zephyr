@@ -157,6 +157,8 @@
 
 	/omit-if-no-ref/ timg0c0_pa12: timg0c0_pa12 {
 		pinmux = <MSP_PINMUX(34,MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		bias-pull-down;
 	};
 
 	/omit-if-no-ref/ timg0c1_pa13: timg0c1_pa13 {
@@ -185,5 +187,17 @@
 
 	/omit-if-no-ref/ tima1c1_pb0: timg0c1_pb0 {
 		pinmux = <MSP_PINMUX(12,MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ tima0c0_pb8: tima0c0_pb8 {
+		pinmux = <MSP_PINMUX(25,MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ tima0c0_pa8: tima0c0_pa8{
+		pinmux = <MSP_PINMUX(19,MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ timg7c0_pb15: timg7c0_pb15{
+		pinmux = <MSP_PINMUX(32,MSPM0_PIN_FUNCTION_6)>;
 	};
 };
