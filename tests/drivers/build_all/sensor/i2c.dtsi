@@ -1256,3 +1256,9 @@ test_i2c_veml6031: veml6031@ab {
 	compatible = "vishay,veml6031";
 	reg = <0xab>;
 };
+
+test_i2c_paj7620: paj7620@ac {
+	compatible = "pixart,paj7620";
+	reg = <0xac>;
+	int-gpios = <&test_gpio 0 0>;
+};
