@@ -635,6 +635,9 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll = prepare_param->param;
 	lll->skip_prepare += (lll->lazy_prepare + 1U);
 
+	/* Reset Sync context association with any Aux context as the chain reception is aborted. */
+	lll->lll_aux = NULL;
+
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);
@@ -1184,6 +1187,9 @@ isr_rx_aux_chain_done:
 static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_term)
 {
 	struct event_done_extra *e;
+
+	/* Reset Sync context association with any Aux context as the chain reception is done. */
+	lll->lll_aux = NULL;
 
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
