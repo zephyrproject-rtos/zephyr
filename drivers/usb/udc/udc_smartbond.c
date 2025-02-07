@@ -1695,14 +1695,14 @@ static int udc_smartbond_init(const struct device *dev)
 	return 0;
 }
 
-static int udc_smartbond_lock(const struct device *dev)
+static void udc_smartbond_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_smartbond_unlock(const struct device *dev)
+static void udc_smartbond_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 static const struct udc_api udc_smartbond_api = {
