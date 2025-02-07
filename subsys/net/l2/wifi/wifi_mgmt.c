@@ -334,8 +334,13 @@ const char *wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strateg
 static const struct wifi_mgmt_ops *const get_wifi_api(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct net_wifi_mgmt_offload *off_api =
-			(struct net_wifi_mgmt_offload *) dev->api;
+	struct net_wifi_mgmt_offload *off_api;
+
+	if (dev == NULL) {
+		return NULL;
+	}
+
+	off_api = (struct net_wifi_mgmt_offload *) dev->api;
 #ifdef CONFIG_WIFI_NM
 	struct wifi_nm_instance *nm = wifi_nm_get_instance_iface(iface);
 
