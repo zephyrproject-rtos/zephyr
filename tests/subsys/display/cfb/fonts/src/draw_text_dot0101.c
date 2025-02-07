@@ -15,31 +15,20 @@
 
 LOG_MODULE_REGISTER(draw_text_dot0101, CONFIG_DISPLAY_LOG_LEVEL);
 
-static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-static const uint32_t display_width = DT_PROP(DT_CHOSEN(zephyr_display), width);
-static const uint32_t display_height = DT_PROP(DT_CHOSEN(zephyr_display), height);
+static struct cfb_display *disp;
+static struct cfb_framebuffer *fb;
 
 /**
  * Fill the buffer with 0 before running tests.
  */
 static void cfb_test_before(void *text_fixture)
 {
-	struct display_buffer_descriptor desc = {
-		.height = display_height,
-		.pitch = display_width,
-		.width = display_width,
-		.buf_size = display_height * display_width / 8,
-	};
 	uint8_t font_width;
 	uint8_t font_height;
 	bool font_found = false;
 
-	memset(read_buffer, 0, sizeof(read_buffer));
-	zassert_ok(display_write(dev, 0, 0, &desc, read_buffer));
-
-	zassert_ok(display_blanking_off(dev));
-
-	zassert_ok(cfb_framebuffer_init(fb));
+	disp = display_init();
+	fb = cfb_display_get_framebuffer(disp);
 
 	for (int idx = 0; idx < cfb_get_numof_fonts(fb); idx++) {
 		if (cfb_get_font_size(fb, idx, &font_width, &font_height)) {
@@ -58,7 +47,7 @@ static void cfb_test_before(void *text_fixture)
 
 static void cfb_test_after(void *test_fixture)
 {
-	cfb_framebuffer_deinit(fb);
+	display_deinit(disp);
 }
 
 /*
