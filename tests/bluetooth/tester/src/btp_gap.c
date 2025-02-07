@@ -54,22 +54,10 @@ static struct bt_le_oob oob_sc_remote = { 0 };
 #define REJECT_LATENCY 0x0000
 #define REJECT_SUPERVISION_TIMEOUT 0x0C80
 
-#if defined(CONFIG_BT_PRIVACY)
 static struct {
 	bt_addr_le_t addr;
 	bool supported;
 } cars[CONFIG_BT_MAX_PAIRED];
-
-static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
-			  struct bt_gatt_read_params *params, const void *data,
-			  uint16_t length);
-
-static struct bt_gatt_read_params read_car_params = {
-		.func = read_car_cb,
-		.by_uuid.uuid = BT_UUID_CENTRAL_ADDR_RES,
-		.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE,
-		.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
-};
 
 static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_read_params *params, const void *data,
@@ -98,7 +86,13 @@ static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 
 	return BT_GATT_ITER_STOP;
 }
-#endif
+
+static struct bt_gatt_read_params read_car_params = {
+	.func = read_car_cb,
+	.by_uuid.uuid = BT_UUID_CENTRAL_ADDR_RES,
+	.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE,
+	.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
+};
 
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
@@ -314,11 +308,11 @@ static uint8_t controller_info(const void *cmd, uint16_t cmd_len,
 	 * If privacy is used, the device uses random type address, otherwise
 	 * static random or public type address is used.
 	 */
-#if !defined(CONFIG_BT_PRIVACY)
-	if (oob_local.addr.type == BT_ADDR_LE_RANDOM) {
-		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_STATIC_ADDRESS);
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		if (oob_local.addr.type == BT_ADDR_LE_RANDOM) {
+			atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_STATIC_ADDRESS);
+		}
 	}
-#endif /* CONFIG_BT_PRIVACY */
 
 	supported_settings = BIT(BTP_GAP_SETTINGS_POWERED);
 	supported_settings |= BIT(BTP_GAP_SETTINGS_CONNECTABLE);
@@ -642,20 +636,24 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 	case BTP_GAP_ADDR_TYPE_IDENTITY:
 		param->options |= BT_LE_ADV_OPT_USE_IDENTITY;
 		break;
-#if defined(CONFIG_BT_PRIVACY)
 	case BTP_GAP_ADDR_TYPE_RESOLVABLE_PRIVATE:
+		if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			return -EINVAL;
+		}
 		/* RPA usage is controlled via privacy settings */
 		if (!atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_PRIVACY)) {
 			return -EINVAL;
 		}
 		break;
 	case BTP_GAP_ADDR_TYPE_NON_RESOLVABLE_PRIVATE:
+		if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			return -EINVAL;
+		}
 		/* NRPA is used only for non-connectable advertising */
 		if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
 			return -EINVAL;
 		}
 		break;
-#endif
 	default:
 		return -EINVAL;
 	}
@@ -786,8 +784,7 @@ static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 		adv_param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 	}
 
-	if (options & BTP_GAP_START_DIRECTED_ADV_PEER_RPA) {
-#if defined(CONFIG_BT_PRIVACY)
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) && (options & BTP_GAP_START_DIRECTED_ADV_PEER_RPA)) {
 		/* check if peer supports Central Address Resolution */
 		for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
 			if (bt_addr_le_eq(&cp->address, &cars[i].addr)) {
@@ -796,7 +793,6 @@ static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 				}
 			}
 		}
-#endif
 	}
 
 	if (bt_le_adv_start(&adv_param, NULL, 0, NULL, 0) < 0) {
@@ -1127,12 +1123,10 @@ void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 {
-#if defined(CONFIG_BT_PRIVACY)
-	/* Read peer's Central Address Resolution if bonded */
-	if (bonded) {
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) && bonded) {
+		/* Read peer's Central Address Resolution if bonded */
 		bt_gatt_read(conn, &read_car_params);
 	}
-#endif
 }
 
 static struct bt_conn_auth_info_cb auth_info_cb = {
@@ -1918,9 +1912,9 @@ uint8_t tester_init_gap(void)
 	atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE);
 	atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_BONDABLE);
 	atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_LE);
-#if defined(CONFIG_BT_PRIVACY)
-	atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_PRIVACY);
-#endif /* CONFIG_BT_PRIVACY */
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_PRIVACY);
+	}
 
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_info_cb_register(&auth_info_cb);
