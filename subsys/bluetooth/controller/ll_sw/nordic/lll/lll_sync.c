@@ -1152,6 +1152,7 @@ isr_rx_aux_chain_done:
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 		node_rx->rx_ftr.aux_failed = 1U;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
@@ -1250,6 +1251,7 @@ static void isr_done(void *param)
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.lll_aux = lll->lll_aux;
 		node_rx->rx_ftr.aux_failed = 1U;
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
