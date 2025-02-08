@@ -17,6 +17,8 @@ if POSIX_TIMERS
 
 config POSIX_THREAD_CPUTIME
 	bool "POSIX per-thread CPU-time clocks"
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE_ANALYSIS
 	help
 	  This enables CLOCK_THREAD_CPUTIME_ID.
 
