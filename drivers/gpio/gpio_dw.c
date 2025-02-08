@@ -399,6 +399,39 @@ static void gpio_dw_isr(const struct device *port)
 }
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts) */
 
+int gpio_dw_set_hw_mode(const struct device *port, gpio_pin_t pin, bool hw_mode)
+{
+	struct gpio_dw_runtime *context = port->data;
+	__unused const struct gpio_driver_config *const cfg =
+		(const struct gpio_driver_config *)port->config;
+	uint32_t base_addr = dw_base_to_block_base(context->base_addr);
+	uint32_t port_id = dw_derive_port_from_base(context->base_addr);
+	uint32_t ctl_port;
+
+	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U, "Unsupported pin");
+
+	/* 4-port GPIO implementation translates from base address to port */
+	switch (port_id) {
+	case 1:
+		ctl_port = SWPORTB_CTL;
+		break;
+	case 2:
+		ctl_port = SWPORTC_CTL;
+		break;
+	case 3:
+		ctl_port = SWPORTD_CTL;
+		break;
+	case 0:
+	default:
+		ctl_port = SWPORTA_CTL;
+		break;
+	}
+
+	dw_set_bit(base_addr, ctl_port, pin, hw_mode);
+
+	return 0;
+}
+
 static DEVICE_API(gpio, api_funcs) = {
 	.pin_configure = gpio_dw_config,
 	.port_get_raw = gpio_dw_port_get_raw,
