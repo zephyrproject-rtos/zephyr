@@ -265,6 +265,35 @@ static inline void dw_pin_config(const struct device *port,
 	}
 }
 
+static void gpio_dw_set_hw_mode(const struct device *port, gpio_pin_t pin, bool hw_mode)
+{
+	struct gpio_dw_runtime *context = port->data;
+	__unused const struct gpio_driver_config *const cfg =
+		(const struct gpio_driver_config *)port->config;
+	uint32_t base_addr = dw_base_to_block_base(context->base_addr);
+	uint32_t port_id = dw_derive_port_from_base(context->base_addr);
+	uint32_t ctl_port;
+
+	/* 4-port GPIO implementation translates from base address to port */
+	switch (port_id) {
+	case 1:
+		ctl_port = SWPORTB_CTL;
+		break;
+	case 2:
+		ctl_port = SWPORTC_CTL;
+		break;
+	case 3:
+		ctl_port = SWPORTD_CTL;
+		break;
+	case 0:
+	default:
+		ctl_port = SWPORTA_CTL;
+		break;
+	}
+
+	dw_set_bit(base_addr, ctl_port, pin, hw_mode);
+}
+
 static inline int gpio_dw_config(const struct device *port,
 				 gpio_pin_t pin,
 				 gpio_flags_t flags)
@@ -275,6 +304,11 @@ static inline int gpio_dw_config(const struct device *port,
 	/* Check for invalid pin number */
 	if (pin >= config->ngpios) {
 		return -EINVAL;
+	}
+
+	if ((flags & DW_GPIO_HW_MODE) != 0U) {
+		gpio_dw_set_hw_mode(port, pin, true);
+		return 0;
 	}
 
 	/* Does not support disconnected pin, and
@@ -295,6 +329,8 @@ static inline int gpio_dw_config(const struct device *port,
 	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
 		return -ENOTSUP;
 	}
+
+	gpio_dw_set_hw_mode(port, pin, false);
 
 	dw_pin_config(port, pin, flags);
 
