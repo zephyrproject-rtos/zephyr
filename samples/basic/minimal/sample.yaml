@@ -9,81 +9,86 @@ common:
     regex:
       - "Hello World from minimal!"
 tests:
-  sample.minimal.mt.arm:
-    extra_args: CONF_FILE='common.conf;mt.conf;arm.conf'
+  sample.minimal.mt:
+    arch_allow:
+      - arm
+      - x86
+    extra_args:
+      - CONF_FILE='common.conf;mt.conf;arm.conf'
+      - arch:arm:EXTRA_CONF_FILE=arm.conf
+      - arch:x86:EXTRA_CONF_FILE=x86.conf
     build_only: true
-    platform_allow:
+    integration_platforms:
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
-    integration_platforms:
-      - frdm_k64f
-  sample.minimal.mt-no-preempt.arm:
-    extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;arm.conf'
+      - qemu_x86
+  sample.minimal.mt-no-preempt:
+    arch_allow:
+      - arm
+      - x86
+    extra_args:
+      - CONF_FILE='common.conf;mt.conf;no-preempt.conf'
+      - arch:arm:EXTRA_CONF_FILE=arm.conf
+      - arch:x86:EXTRA_CONF_FILE=x86.conf
     build_only: true
-    platform_allow:
+    integration_platforms:
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
-    integration_platforms:
-      - frdm_k64f
-  sample.minimal.mt-no-preempt-no-timers.arm:
-    extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;no-timers.conf;arm.conf'
+      - qemu_x86
+  sample.minimal.mt-no-preempt-no-timers:
+    arch_allow:
+      - arm
+      - x86
+    extra_args:
+      - CONF_FILE='common.conf;mt.conf;no-preempt.conf;no-timers.conf'
+      - arch:arm:EXTRA_CONF_FILE=arm.conf
+      - arch:x86:EXTRA_CONF_FILE=x86.conf
     build_only: true
-    platform_allow:
+    integration_platforms:
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
-    integration_platforms:
-      - frdm_k64f
-  sample.minimal.no-mt.arm:
-    extra_args: CONF_FILE='common.conf;no-mt.conf;arm.conf'
+      - qemu_x86
+  sample.minimal.no-mt:
+    arch_allow:
+      - arm
+      - x86
+    extra_args:
+      - CONF_FILE='common.conf;no-mt.conf'
+      - arch:arm:EXTRA_CONF_FILE=arm.conf
+      - arch:x86:EXTRA_CONF_FILE=x86.conf
     build_only: true
-    platform_allow:
+    integration_platforms:
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
-    integration_platforms:
-      - frdm_k64f
-  sample.minimal.no-mt-no-timers.arm:
-    extra_args: CONF_FILE='common.conf;no-mt.conf;no-timers.conf;arm.conf'
+      - qemu_x86
+  sample.minimal.no-mt-no-timers:
+    arch_allow:
+      - arm
+      - x86
+    extra_args:
+      - CONF_FILE='common.conf;no-mt.conf;no-timers.conf'
+      - arch:arm:EXTRA_CONF_FILE=arm.conf
+      - arch:x86:EXTRA_CONF_FILE=x86.conf
     build_only: true
-    platform_allow:
+    integration_platforms:
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
-    integration_platforms:
-      - frdm_k64f
-  sample.minimal.mt.x86:
-    extra_args: CONF_FILE='common.conf;mt.conf;x86.conf'
-    build_only: true
-    platform_allow: qemu_x86
-  sample.minimal.mt-no-preempt.x86:
-    extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;x86.conf'
-    build_only: true
-    platform_allow: qemu_x86
-  sample.minimal.mt-no-preempt-no-timers.x86:
-    extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;no-timers.conf;x86.conf'
-    build_only: true
-    platform_allow: qemu_x86
-  sample.minimal.no-mt.x86:
-    extra_args: CONF_FILE='common.conf;no-mt.conf;x86.conf'
-    build_only: true
-    platform_allow: qemu_x86
-  sample.minimal.no-mt-no-timers.x86:
-    extra_args: CONF_FILE='common.conf;no-mt.conf;no-timers.conf;x86.conf'
-    build_only: true
-    platform_allow: qemu_x86
+      - qemu_x86
   sample.minimal.arc.runtime:
     extra_args:
       - CONF_FILE='common-runtime.conf;no-timers.conf'
@@ -95,7 +100,7 @@ tests:
   sample.minimal.riscv.runtime:
     extra_args:
       - CONF_FILE='common-runtime.conf;no-timers.conf;no-mt.conf;riscv.conf'
-    platform_allow: qemu_riscv32
+    arch_allow: riscv
     tags:
       - kernel
     integration_platforms:
