@@ -376,10 +376,11 @@ static void entrypoint_peer(void)
 
 	tx = 0;
 	while (true) {
+		UNSET_FLAG(is_subscribed);
+
 		conn = connect_as_peripheral();
 
 		LOG_INF("wait until DUT subscribes");
-		UNSET_FLAG(is_subscribed);
 		WAIT_FOR_FLAG(is_subscribed);
 
 		LOG_INF("send notifications");
