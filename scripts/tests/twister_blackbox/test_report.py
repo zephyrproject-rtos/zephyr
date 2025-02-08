@@ -114,8 +114,8 @@ class TestReport:
             os.path.join(TEST_DATA, 'tests', 'one_fail_two_error_one_pass'),
             ['qemu_x86/atom'],
             [r'one_fail_two_error_one_pass.agnostic.group1.subgroup2 on qemu_x86/atom FAILED \(.*\)',
-            r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86/atom ERROR \(Build failure\)',
-            r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86/atom ERROR \(Build failure\)'],
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86/atom ERROR \(Build failure.*\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86/atom ERROR \(Build failure.*\)'],
         )
     ]
 
