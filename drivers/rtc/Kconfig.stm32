@@ -8,5 +8,6 @@ config RTC_STM32
 	select USE_STM32_LL_RTC
 	select USE_STM32_LL_PWR
 	select USE_STM32_LL_RCC
+	select EXTI_STM32
 	help
 	  Build RTC driver for STM32 SoCs, excluding STM32F1 series.
