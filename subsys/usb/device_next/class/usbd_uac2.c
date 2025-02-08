@@ -587,6 +587,12 @@ static void layout3_range_response(struct net_buf *const buf, uint16_t length,
 	int i;
 	int item;
 
+
+	/* Ensure valid length before proceeding */
+	if (!buf || length <= 0 || n <= 0) {
+		return;
+	}
+
 	/* wNumSubRanges */
 	sys_put_le16(n, tmp);
 	to_add = MIN(length, 2);
