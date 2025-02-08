@@ -125,11 +125,14 @@ config BT_MESH_WORKQ_SYS
 	  workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE) is large enough,
 	  refer to BT_MESH_ADV_STACK_SIZE for the recommended minimum.
 
-	  When this option is enabled and the mesh tries to send a message,
-	  and the host ran out the HCI command buffers controlled by
-	  CONFIG_BT_BUF_CMD_TX_COUNT, the host returns -ENOBUFS immediately
-	  and the mesh drops the message transmission. To mitigate this
-	  issue, make sure to have sufficient number of HCI command buffers.
+	  When this option is enabled and the mesh tries to send a message, the
+	  Host can run out of the HCI command buffers controlled by the
+	  CONFIG_BT_BUF_CMD_TX_COUNT value and the Host returns -ENOBUFS
+	  immediately and the mesh drops the message transmission.
+
+	  To mitigate dropping of messages, make sure to have sufficient number
+	  of HCI command buffers (CONFIG_BT_BUF_CMD_TX_COUNT).
+
 	  When this option is enabled, the latency of sending mesh messages
 	  will be affected by other users on the system work queue, resulting in
 	  reduced reliability for sending mesh messages.
