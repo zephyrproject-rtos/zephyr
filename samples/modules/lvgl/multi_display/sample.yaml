@@ -1,0 +1,22 @@
+sample:
+  description: LVGL multi-display sample
+  name: LVGL Multi-display
+common:
+  modules:
+    - lvgl
+  harness: console
+  filter: dt_comp_enabled("zephyr,displays")
+  tags:
+    - samples
+    - display
+    - lvgl
+    - gui
+  harness_config:
+    fixture: fixture_display
+    type: one_line
+    regex:
+      - "\\[\\w+ free bytes, \\w+ allocated bytes, overhead = \\w+ bytes | lvgl in malloc mode\\]"
+tests:
+  sample.modules.lvgl.multi_display:
+    integration_platforms:
+      - native_sim/native/64
