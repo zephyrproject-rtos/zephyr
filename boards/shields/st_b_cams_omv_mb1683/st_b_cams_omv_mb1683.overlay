@@ -35,15 +35,15 @@
 	status = "okay";
 	sensor = <&ov5640>;
 
-	bus-width = <8>;
-	hsync-active = <0>;
-	vsync-active = <0>;
-	pixelclk-active = <1>;
 	capture-rate = <1>;
 
 	port {
 		dcmi_ep_in: endpoint {
 			remote-endpoint-label = "ov5640_ep_out";
+			bus-width = <8>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			pclk-sample = <1>;
 		};
 	};
 };

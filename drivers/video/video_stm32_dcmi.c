@@ -444,16 +444,16 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
 		.Init = {
 				.SynchroMode = DCMI_SYNCHRO_HARDWARE,
-				.PCKPolarity = (DT_INST_PROP(0, pixelclk_active) ?
+				.PCKPolarity = (DT_PROP(DT_CHILD(DT_INST_CHILD(0, port), endpoint), pclk_sample) ?
 						DCMI_PCKPOLARITY_RISING : DCMI_PCKPOLARITY_FALLING),
-				.HSPolarity = (DT_INST_PROP(0, hsync_active) ?
+				.HSPolarity = (DT_PROP(DT_CHILD(DT_INST_CHILD(0, port), endpoint), hsync_active) ?
 						DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW),
-				.VSPolarity = (DT_INST_PROP(0, vsync_active) ?
+				.VSPolarity = (DT_PROP(DT_CHILD(DT_INST_CHILD(0, port), endpoint), vsync_active) ?
 						DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW),
 				.CaptureRate = STM32_DCMI_GET_CAPTURE_RATE(
 							DT_INST_PROP(0, capture_rate)),
 				.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
-							DT_INST_PROP(0, bus_width)),
+						DT_PROP(DT_CHILD(DT_INST_CHILD(0, port), endpoint), bus_width)),
 				.JPEGMode = DCMI_JPEG_DISABLE,
 				.ByteSelectMode = DCMI_BSM_ALL,
 				.ByteSelectStart = DCMI_OEBS_ODD,
