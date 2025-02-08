@@ -4,3 +4,6 @@ board:
   vendor: raspberrypi
   socs:
   - name: rp2350a
+    variants:
+    - name: w
+      cpucluster: m33

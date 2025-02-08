@@ -3,7 +3,25 @@
 
 if BOARD_RPI_PICO2
 
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 125
+
+endif # I2C_DW
+
 config USB_SELF_POWERED
 	default n
+
+if BOARD_RPI_PICO2_RP2350A_M33_W && WIFI_AIROC
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 16384
+
+endif # BOARD_RPI_PICO2_RP2350A_M33_W && WIFI_AIROC
 
 endif # BOARD_RPI_PICO2
