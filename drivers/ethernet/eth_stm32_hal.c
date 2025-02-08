@@ -1293,6 +1293,12 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	return ret;
 }
 
+static const struct device *eth_stm32_hal_get_phy(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return eth_stm32_phy_dev;
+}
+
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 static const struct device *eth_stm32_get_ptp_clock(const struct device *dev)
 {
@@ -1319,6 +1325,7 @@ static const struct ethernet_api eth_api = {
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
 	.get_config = eth_stm32_hal_get_config,
+	.get_phy = eth_stm32_hal_get_phy,
 #if defined(CONFIG_NET_DSA)
 	.send = dsa_tx,
 #else
