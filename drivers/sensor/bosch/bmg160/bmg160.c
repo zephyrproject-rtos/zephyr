@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Datasheet:
- * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMG160-DS000-09.pdf
+ * https://web.archive.org/web/20181111220522/https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMG160-DS000-09.pdf
  */
 
 #define DT_DRV_COMPAT bosch_bmg160
