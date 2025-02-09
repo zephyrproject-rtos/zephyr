@@ -196,7 +196,7 @@ static ALWAYS_INLINE void region_init(const uint32_t index,
 				  .limit = (reg).dt_addr + (reg).dt_size,	\
 				  .attr  = _ATTR,				\
 				}
-
+#ifdef CONFIG_MEM_ATTR
 /* This internal function programs the MPU regions defined in the DT when using
  * the `zephyr,memory-attr = <( DT_MEM_ARM(...) )>` property.
  */
@@ -247,7 +247,7 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 
 	return 0;
 }
-
+#endif /* CONFIG_MEM_ATTR */
 /*
  * @brief MPU default configuration
  *
@@ -303,13 +303,13 @@ FUNC_NO_STACK_PROTECTOR void z_arm64_mm_init(bool is_primary_core)
 
 	/* Update the number of programmed MPU regions. */
 	tmp_static_num = mpu_config.num_regions;
-
+#ifdef CONFIG_MEM_ATTR
 	/* DT-defined MPU regions. */
 	if (mpu_configure_regions_from_dt(&tmp_static_num) == -EINVAL) {
 		__ASSERT(0, "Failed to allocate MPU regions from DT\n");
 		return;
 	}
-
+#endif
 	arm_core_mpu_enable();
 
 	if (!is_primary_core) {
