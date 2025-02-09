@@ -1,0 +1,113 @@
+# The west manifest file for upstream Zephyr.
+#
+# The per-installation west configuration file, .west/config, sets the
+# path to the project containing this file in the [manifest] section's
+# "path" variable.
+#
+# You are free to create your own manifest files and put them in any
+# repository you want, to create your own custom Zephyr installations.
+# For example, you could create a manifest file in your own out of
+# tree application directory, which would pull this zephyr repository
+# in as an ordinary project.
+#
+# You can pass your manifest repositories to west init when creating a
+# new Zephyr installation. See the west documentation for more
+# information.
+
+manifest:
+  defaults:
+    remote: upstream
+
+  remotes:
+    - name: upstream
+      url-base: https://github.com/zephyrproject-rtos
+    - name: babblesim
+      url-base: https://github.com/BabbleSim
+
+  group-filter: [-babblesim, -optional]
+
+  #
+  # Please add items below based on alphabetical order
+  # zephyr-keep-sorted-start re(^\s+\- name:)
+  projects:
+    - name: acpica
+      revision: 8d24867bc9c9d81c81eeac59391cda59333affd4
+      path: modules/lib/acpica
+    - name: cmsis
+      revision: 4b96cbb174678dcd3ca86e11e1f24bc5f8726da0
+      path: modules/hal/cmsis
+      groups:
+        - hal
+    - name: cmsis-dsp
+      revision: d80a49b2bb186317dc1db4ac88da49c0ab77e6e7
+      path: modules/lib/cmsis-dsp
+    - name: cmsis-nn
+      revision: ea987c1ca661be723de83bd159aed815d6cbd430
+      path: modules/lib/cmsis-nn
+    - name: cmsis_6
+      repo-path: CMSIS_6
+      revision: 783317a3072554acbac86cca2ff24928cbf98d30
+      path: modules/lib/cmsis_6
+    - name: edtt
+      revision: b9ca3c7030518f07b7937dacf970d37a47865a76
+      path: tools/edtt
+      groups:
+        - tools
+    - name: fatfs
+      revision: 427159bf95ea49b7680facffaa29ad506b42709b
+      path: modules/fs/fatfs
+      groups:
+        - fs
+    - name: littlefs
+      path: modules/fs/littlefs
+      groups:
+        - fs
+      revision: 009bcff0ed4853a53df8256039fa815bda6854dd
+    - name: lvgl
+      revision: 2b498e6f36d6b82ae1da12c8b7742e318624ecf5
+      path: modules/lib/gui/lvgl
+    - name: mbedtls
+      revision: 4952e1328529ee549d412b498ea71c54f30aa3b1
+      path: modules/crypto/mbedtls
+      groups:
+        - crypto
+    - name: mcuboot
+      revision: 5d6471bac184c8accaeeb0efcfad8dd35225a28d
+      path: bootloader/mcuboot
+      groups:
+        - bootloader
+    - name: mipi-sys-t
+      path: modules/debug/mipi-sys-t
+      groups:
+        - debug
+      revision: 71ace1f5caa03e56c8740a09863e685efb4b2360
+    - name: net-tools
+      revision: 93acc8bac4661e74e695eb1aea94c7c5262db2e2
+      path: tools/net-tools
+      groups:
+        - tools
+    - name: open-amp
+      revision: 52bb1783521c62c019451cee9b05b8eda9d7425f
+      path: modules/lib/open-amp
+    - name: openthread
+      revision: 2aeb8b833ba760ec29d5f340dd1ce7bcb61c5d56
+      path: modules/lib/openthread
+    - name: percepio
+      path: modules/debug/percepio
+      revision: b68d17993109b9bee6b45dc8c9794e7b7bce236d
+      groups:
+        - debug
+    - name: picolibc
+      path: modules/lib/picolibc
+      revision: d492d5fa7c96918e37653f303028346bb0dd51a2
+    - name: tinycrypt
+      revision: 1012a3ebee18c15ede5efc8332ee2fc37817670f
+      path: modules/crypto/tinycrypt
+      groups:
+        - crypto
+  # zephyr-keep-sorted-stop
+
+  self:
+    path: zephyr
+    west-commands: scripts/west-commands.yml
+    import: submanifests
