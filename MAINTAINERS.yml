@@ -3571,6 +3571,7 @@ Raspberry Pi Pico Platforms:
   collaborators:
     - yonsch
     - threeeights
+    - ajf58
   files:
     - boards/raspberrypi/
     - boards/adafruit/kb2040/
@@ -4974,6 +4975,7 @@ West:
   collaborators:
     - yonsch
     - threeeights
+    - ajf58
   files:
     - modules/hal_rpi_pico/
   labels:
