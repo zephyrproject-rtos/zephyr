@@ -29,3 +29,33 @@ page 78.
 
 .. _BMG160 datasheet:
    https://www.mouser.com/datasheet/2/783/BST-BMG160-DS000-1509613.pdf
+
+Sample Output
+=============
+
+The sample prints output to the serial console. BMG160 device driver messages
+are also logged. Refer to your board's documentation for information on
+connecting to its serial console.
+
+Here is example output for the default application settings, assuming that only
+one BMG160 sensor is connected to the standard Arduino I2C pins:
+
+.. code-block:: none
+
+   *** Booting Zephyr OS v3.7.0 ***
+   Testing the polling mode.
+   Gyro (rad/s): X=3.6, Y=14.0, Z=0.0f,
+   Temperature (Celsius): 29.4
+   Gyro (rad/s): X=5.1, Y=-9.0, Z=0.0f,
+   Temperature (Celsius): 29.5
+   ...
+   Polling mode test finished.
+   Testing the trigger mode.
+   Gyro: Testing anymotion trigger.
+   Gyro: rotate the device and wait for events.
+   Gyro (rad/s): X=13.6, Y=14.0, Z=10.0f,
+   Gyro: Anymotion trigger test finished.
+   Gyro: Testing data ready trigger.
+   Gyro (rad/s): X=3.6, Y=5.4, Z=1.1f,
+   Gyro: Data ready trigger test finished.
+   Trigger mode test finished
