@@ -140,6 +140,11 @@ static void zsock_flush_queue(struct net_context *ctx)
 	while ((p = k_fifo_get(&ctx->recv_q, K_NO_WAIT)) != NULL) {
 		if (is_listen) {
 			NET_DBG("discarding ctx %p", p);
+
+			/* Note that we must release all the packets we
+			 * might have received to the accepted socket.
+			 */
+			zsock_flush_queue(p);
 			net_context_put(p);
 		} else {
 			NET_DBG("discarding pkt %p", p);
