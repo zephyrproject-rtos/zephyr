@@ -13,4 +13,6 @@ supported:
   - watchdog
   - entropy
   - adc
+  - spi
+  - octospi
 vendor: st

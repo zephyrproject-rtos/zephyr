@@ -19,6 +19,8 @@
 		zephyr,shell-uart = &uart4;
 		zephyr,flash = &flash0;
 		zephyr,sram = &sram0;
+		zephyr,flash-controller = &mx66uw1g45;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -97,6 +99,18 @@
 	ppre5 = <2>;
 };
 
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
 &uart4 {
 	pinctrl-0 = <&uart4_tx_pd1 &uart4_rx_pd0>;
 	pinctrl-names = "default";
@@ -171,6 +185,52 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+};
+
+&xspi1 {
+	/* same pins as xspi2 */
+	pinctrl-0 = <&xspim_p2_clk_pn6 &xspim_p2_ncs1_pn1
+		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3
+		     &xspim_p2_io2_pn4 &xspim_p2_io3_pn5
+		     &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
+		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11
+		     &xspim_p2_dqs0_pn0>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	mx66uw1g45: xspi-nor-flash@72000000 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0x72000000 DT_SIZE_M(96)>; /* bank1 - 3*/
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* bank1 */
+			slot0_partition: partition@0000000 {
+				label = "image-0";
+				reg = <0x0000000 DT_SIZE_K(2048)>;
+			};
+
+			/* bank2 */
+			slot1_partition: partition@2000000 {
+				label = "image-1";
+				reg = <0x2000000 DT_SIZE_K(2048)>;
+			};
+
+			/* bank3 */
+			storage_partition: partition@4000000 {
+				label = "storage";
+				reg = <0x4000000 DT_SIZE_K(128)>;
+			};
+		};
+	};
 };
 
 &die_temp {
