@@ -239,7 +239,7 @@ zephyr_udc0: &usbotg_fs {
 		     &octospim_p1_io2_pe14 &octospim_p1_io3_pe15>;
 	pinctrl-names = "default";
 
-	dmas = <&dma1 0 40 0x480>; /* request 40 for OCTOSPI1 */
+	dmas = <&dma1 0 40 STM32_DMA_PERIPH_RX>; /* request 40 for OCTOSPI1 */
 	dma-names = "tx_rx";
 
 	status = "okay";
