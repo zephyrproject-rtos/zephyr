@@ -51,7 +51,7 @@ enum stm32_exti_mode {
 };
 
 /**
- * @brief Set EXTI trigger type for a line
+ * @brief Set EXTI trigger type for a line and enables it.
  *
  * @param linenum EXTI line number
  * @param trigger EXTI trigger type (see @ref stm32_exti_trigger_type)
