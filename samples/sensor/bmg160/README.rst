@@ -11,7 +11,7 @@ This sample shows how to use the Zephyr :ref:`sensor` API driver for the
 `Bosch BMG160`_ environmental sensor.
 
 .. _Bosch BMG160:
-   https://www.mouser.com/datasheet/2/783/BST-BMG160-DS000-1509613.pdf
+https://web.archive.org/web/20181111220522/https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMG160-DS000-09.pdf
 
 The sample first runs in polling mode for 15 seconds, then in trigger mode, display the temperature and angular velocity data from the BMG160 sensor.
 
