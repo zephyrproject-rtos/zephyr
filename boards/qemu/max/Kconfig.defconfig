@@ -1,0 +1,36 @@
+# Copyright 2024-2025 HNU-ESNL: Guoqi Xie, Chenglai Xiong, Xingyu Hu and etc.
+# Copyright 2024-2025 openEuler SIG-Zephyr
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_MAX
+
+config BUILD_OUTPUT_BIN
+	default y
+
+config MAX_THREAD_BYTES
+	default 3
+
+# QEMU PCI requires at least 256M of virtual space
+config KERNEL_VM_SIZE
+	default 0x80000000 if PCIE
+
+# QEMU PCI requires physical addresses with more than 32 bits
+choice ARM64_VA_BITS
+	default ARM64_VA_BITS_40 if PCIE
+endchoice
+
+choice ARM64_PA_BITS
+	default ARM64_PA_BITS_40 if PCIE
+endchoice
+
+if QEMU_ICOUNT
+
+config QEMU_ICOUNT_SHIFT
+	default 4
+
+config QEMU_ICOUNT_SLEEP
+	default y
+
+endif # QEMU_ICOUNT
+
+endif # BOARD_QEMU_MAX
