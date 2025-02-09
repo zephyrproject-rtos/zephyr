@@ -16,6 +16,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fff.h>
+#include <zephyr/logging/log_backend.h>
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
 #define TEST_AUTOMOUNT DT_PROP(DT_DRV_INST(0), automount)
