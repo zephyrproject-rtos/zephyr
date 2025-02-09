@@ -108,3 +108,26 @@ tests:
     extra_args: SHIELD=rtkmipilcdb00000be
     harness_config:
       fixture: fixture_display
+  samples.subsys.display.lvgl.seeed_xiao_round_display:
+    min_flash: 320
+    min_ram: 64
+    depends_on:
+      - xiao_adc
+      - xiao_gpio
+      - xiao_i2c
+      - xiao_spi
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
+    modules:
+      - lvgl
+    integration_platforms:
+      - xiao_ble
+      - xiao_esp32s3/esp32s3/procpu
+    extra_args: SHIELD=seeed_xiao_round_display
+    harness: console
+    harness_config:
+      fixture: fixture_seeed_xiao_round_display
