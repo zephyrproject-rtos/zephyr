@@ -172,6 +172,7 @@ config BT_BUF_CMD_TX_SIZE
 
 config BT_BUF_CMD_TX_COUNT
 	int "Number of HCI command buffers"
+	default 3 if BT_EXT_ADV && BT_CENTRAL
 	default 2
 	range 2 64
 	help
