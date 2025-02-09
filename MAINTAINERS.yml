@@ -2121,6 +2121,7 @@ Release Notes:
     - include/zephyr/drivers/stepper.h
     - dts/bindings/stepper/
     - doc/hardware/peripherals/stepper.rst
+    - samples/drivers/stepper/
     - tests/drivers/build_all/stepper/
   labels:
     - "area: Stepper"
