@@ -11,4 +11,9 @@ supported:
   - uart
   - watchdog
   - can
+  - xiao_adc
+  - xiao_gpio
+  - xiao_i2c
+  - xiao_serial
+  - xiao_spi
 vendor: seeed
