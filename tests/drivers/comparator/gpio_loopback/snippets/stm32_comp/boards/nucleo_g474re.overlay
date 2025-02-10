@@ -1,0 +1,34 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ */
+
+ #include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &comp1;
+	};
+
+	zephyr,user {
+		/* connected also to green led and will toggle it */
+		test-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	/omit-if-no-ref/ comp1_in_p_pa1: comp1_in_p_pa1 {
+		pinmux = <STM32_PINMUX('A', 1, ANALOG)>;
+	};
+};
+
+&comp1 {
+	status = "okay";
+	pinctrl-0 = <&comp1_in_p_pa1>;
+	pinctrl-names = "default";
+	hysteresis = "NONE";
+	positive-input = "IN0";
+	negative-input = "1_4VREFINT";
+	invert-output = "NONINVERTED";
+	st,blank-sel = "NONE";
+};

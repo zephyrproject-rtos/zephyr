@@ -1,0 +1,185 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Comparator
+
+  The following example displays the minimum node layout:
+
+    comp1: comparator@deadbeef {
+        compatible = "st,stm32-comp";
+        reg = <0xdeadbeef 0x4>;
+        interrupts = <0 0>;
+        status = "disabled";
+    };
+
+  Enabling the comparator node requires setting the minimum default
+  configuration of the comparator. This includes selecting the
+  positive and negative inputs, and routing them using pinctrl:
+
+    &pinctrl {
+        comp1_default: comp1_default {
+            ...
+        };
+    };
+
+    &comp1 {
+        status = "okay";
+        pinctrl-0 = <&comp1_default>;
+        pinctrl-names = "default";
+
+        positive-input = "IO0";
+        negative-input = "IO1";
+    };
+
+compatible: "st,stm32-comp"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  reg:
+    required: true
+
+  hysteresis:
+    type: string
+    enum:
+      - NONE
+      - LOW
+      - MEDIUM
+      - HIGH
+      - 10MV
+      - 20MV
+      - 30MV
+      - 40MV
+      - 50MV
+      - 60MV
+      - 70MV
+    default: NONE
+
+  invert-output:
+    type: string
+    enum:
+      - NONINVERTED
+      - INVERTED
+    default: NONINVERTED
+
+  st,exti-line:
+    required: true
+    type: int
+    description: |
+      Extended Interrupts and Event Controller (EXTI) interrupt
+      line number connected to the COMPx event.
+
+  st,lock-enable:
+    type: boolean
+
+  st,blank-sel:
+    type: string
+    description: |
+      The purpose of the blanking function is to prevent the current regulation
+      from tripping upon short current spikes at the beginning of PWM period
+      (typically the recovery current in power switch anti-parallel diodes).
+      This goes through setting a dead window defined with a timer output
+      compare signal. The blanking source is selected individually per
+      comparator channel. The inverted blanking signal is logical AND-ed with
+      the comparator stage output to produce the comparator channel x output.
+      source: STM32G4 Reference Manual (RM0440 Rev 8, page 768, chapter 24.3.6)
+    enum:
+      - NONE
+      - TIM1_OC5
+      - TIM2_OC3
+      - TIM3_OC3
+      - TIM3_OC4
+      - TIM4_OC3
+      - TIM8_OC5
+      - TIM15_OC1
+      - TIM20_OC5
+      - TIM1_OC5_COMP1
+      - TIM1_OC5_COMP2
+      - TIM1_OC5_COMP3
+      - TIM1_OC5_COMP4
+      - TIM1_OC5_COMP5
+      - TIM1_OC5_COMP6
+      - TIM1_OC5_COMP7
+      - TIM2_OC3_COMP1
+      - TIM2_OC3_COMP2
+      - TIM2_OC3_COMP5
+      - TIM2_OC4_COMP3
+      - TIM2_OC4_COMP6
+      - TIM3_OC3_COMP1
+      - TIM3_OC3_COMP2
+      - TIM3_OC3_COMP3
+      - TIM3_OC3_COMP5
+      - TIM3_OC3_COMP7
+      - TIM3_OC4_COMP4
+      - TIM8_OC5_COMP1
+      - TIM8_OC5_COMP2
+      - TIM8_OC5_COMP3
+      - TIM8_OC5_COMP4
+      - TIM8_OC5_COMP5
+      - TIM8_OC5_COMP6
+      - TIM8_OC5_COMP7
+      - TIM15_OC1_COMP4
+      - TIM15_OC2_COMP6
+      - TIM15_OC2_COMP7
+    default: NONE
+
+  positive-input:
+    required: true
+    type: string
+    description: |
+      Selects positive input pin given by pinmux controller. This input can be
+      typically assigned to one of the predefinded package pins.
+      IO0 will correspond to first pinmux pin option and IO1 to the second one.
+    enum:
+      - IN0
+      - IN1
+    default: IN0
+
+  negative-input:
+    required: true
+    type: string
+    description: |
+      Selects negative input pin given by pinmux controller.
+      This input can be typically assigned to one of the predefinded package pins
+      or to one of internal signals like VREF_INT or DAC.
+      In case of package pin assignment IO0 will correspond to first pinmux pin
+      option and IO1 to the second one.
+    enum:
+      - 1_4VREFINT
+      - 1_2VREFINT
+      - 3_4VREFINT
+      - VREFINT
+      - DAC1_CH1
+      - DAC1_CH2
+      - DAC2_CH1
+      - DAC3_CH1
+      - DAC3_CH2
+      - DAC4_CH1
+      - DAC4_CH2
+      - IN0
+      - IN1
+    default: VREFINT
+
+  st,miller-effect-hold-enable:
+    type: boolean
+    description: |
+      Miller effect is a hidden feature of stm32, which may be enabled by setting
+      bit 1 of COMP_CxCSR register.
+      for more info see:
+        https://community.st.com/t5/stm32-mcus-products/stm32g431-comparator-bug/m-p/679540#M250779
+
+  st,power-mode:
+    type: string
+    description: |
+      Power mode is not supported by all stm32 series.
+    enum:
+      - HIGHSPEED
+      - MEDIUMSPEED
+      - ULTRALOWPOWER
+    default: MEDIUMSPEED
