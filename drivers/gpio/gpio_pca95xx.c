@@ -253,16 +253,6 @@ static int write_port_regs(const struct device *dev, uint8_t reg,
 	return ret;
 }
 
-static inline int update_input_reg(const struct device *dev, uint8_t pin,
-				   uint16_t *buf)
-{
-	struct gpio_pca95xx_drv_data * const drv_data =
-		(struct gpio_pca95xx_drv_data * const)dev->data;
-
-	return read_port_reg(dev, REG_INPUT_PORT0, pin,
-			     &drv_data->reg_cache.input, buf);
-}
-
 static inline int update_input_regs(const struct device *dev, uint16_t *buf)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
