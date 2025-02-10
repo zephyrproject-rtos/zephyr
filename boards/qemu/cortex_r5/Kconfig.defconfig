@@ -13,4 +13,7 @@ config COMPILER_ISA_THUMB2
 
 endif
 
+config ISR_STACK_SIZE
+	default 512
+
 endif # BOARD_QEMU_CORTEX_R5
