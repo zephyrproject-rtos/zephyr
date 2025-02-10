@@ -41,10 +41,8 @@ ZTEST(arm_irq_advanced_features, test_arm_dynamic_direct_interrupts)
 	irq_disable(DIRECT_ISR_OFFSET);
 
 	/* Attach the ISR handler at run time. */
-	irq_connect_dynamic(DIRECT_ISR_OFFSET, 0 /* highest priority */,
-		arm_direct_isr_handler_0,
-		NULL,
-		0);
+	irq_connect_dynamic(DIRECT_ISR_OFFSET, 0 /* highest priority */, arm_direct_isr_handler_0,
+			    NULL, 0);
 
 	/* Enable and pend the interrupt */
 	irq_enable(DIRECT_ISR_OFFSET);
@@ -65,10 +63,8 @@ ZTEST(arm_irq_advanced_features, test_arm_dynamic_direct_interrupts)
 	irq_disable(DIRECT_ISR_OFFSET);
 
 	/* Attach an alternative ISR handler at run-time. */
-	irq_connect_dynamic(DIRECT_ISR_OFFSET, 0 /* highest priority */,
-		arm_direct_isr_handler_1,
-		NULL,
-		0);
+	irq_connect_dynamic(DIRECT_ISR_OFFSET, 0 /* highest priority */, arm_direct_isr_handler_1,
+			    NULL, 0);
 
 	/* Enable and pend the interrupt */
 	irq_enable(DIRECT_ISR_OFFSET);
