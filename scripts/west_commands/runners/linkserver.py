@@ -23,7 +23,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for NXP Linkserver'''
     def __init__(self, cfg, device, core,
                  linkserver=DEFAULT_LINKSERVER_EXE,
-                 dt_flash=True, erase=True,
+                 erase=True,
                  probe='#1',
                  gdb_host='',
                  gdb_port=DEFAULT_LINKSERVER_GDB_PORT,
@@ -40,7 +40,6 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         self.device = device
         self.core = core
         self.linkserver = linkserver
-        self.dt_flash = dt_flash
         self.erase = erase
         self.probe = probe
         self.gdb_host = gdb_host
@@ -62,8 +61,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          dev_id=True, flash_addr=True, erase=True,
-                          tool_opt=True, file=True)
+                          dev_id=True, erase=True, tool_opt=True, file=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -98,7 +96,6 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         print(f"RUNNER - gdb_port = {args.gdb_port}, semih port = {args.semihost_port}")
         return LinkServerBinaryRunner(cfg, args.device, args.core,
                                  linkserver=args.linkserver,
-                                 dt_flash=args.dt_flash,
                                  erase=args.erase,
                                  probe=args.probe,
                                  semihost_port=args.semihost_port,
@@ -198,12 +195,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
             flash_cmd = (["load", self.hex_name])
         # Preferring .bin over .elf
         elif self.bin_name is not None and os.path.isfile(self.bin_name):
-            if self.dt_flash:
-                load_addr = self.flash_address_from_build_conf(self.build_conf)
-            else:
-                self.logger.critical("no load flash address could be found...")
-                raise RuntimeError("no load flash address could be found...")
-
+            load_addr = self.flash_address_from_build_conf(self.build_conf)
             flash_cmd = (["load", "--addr", str(load_addr), self.bin_name])
         elif self.elf_name is not None and os.path.isfile(self.elf_name):
             flash_cmd = (["load", self.elf_name])
