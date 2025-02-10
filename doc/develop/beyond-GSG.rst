@@ -144,6 +144,21 @@ the previous paragraph.
    git pull
    west update
 
+Keeping Zephyr dependencies updated
+===================================
+
+To update the Python dependencies of the Zephyr project, you can use the
+``west packages pip --install -- --upgrade`` command. This command will install or upgrade the
+Python packages required by Zephyr and it's modules. This should be done after updating the Zephyr
+project source code. Make sure to execute this command while the virtual environment, you use when
+working with Zephyr, is active.
+
+.. code-block:: console
+
+   # replace zephyrproject with the path you gave west init
+   cd zephyrproject/zephyr
+   west packages pip --install -- --upgrade
+
 Export Zephyr CMake package
 ***************************
 
