@@ -30,6 +30,7 @@ DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if SOC_SERIES_IMXRT10XX && CORTEX_M_SYSTICK
 	default 32768 if MCUX_GPT_TIMER
+	default 100
 
 # Disable systick if using MCUX_GPT_TIMER, as they will conflict
 config CORTEX_M_SYSTICK

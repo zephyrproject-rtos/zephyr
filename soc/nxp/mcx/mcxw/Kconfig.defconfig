@@ -9,6 +9,7 @@ config NUM_IRQS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 96000000 if CORTEX_M_SYSTICK
+	default 100
 
 config MCUX_FLASH_K4_API
 	default y
