@@ -152,11 +152,18 @@ def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, dict[str, str]]:
             if not build_conf:
                 continue
 
+            # Module Kconfig file has already been specified
+            if f"ZEPHYR_{name_var}_KCONFIG" in os.environ:
+                continue
+
             if build_conf.get("kconfig"):
                 kconfig = Path(module.project) / build_conf["kconfig"]
                 os.environ[f"ZEPHYR_{name_var}_KCONFIG"] = str(kconfig)
             elif build_conf.get("kconfig-ext"):
                 for path in app.config.kconfig_ext_paths:
+                    # Assume that the kconfig file exists at this path.
+                    # Technically the cmake variable can be constructed arbitarily
+                    # by "{ext_path}/modules/modules.cmake"
                     kconfig = Path(path) / "modules" / name / "Kconfig"
                     if kconfig.exists():
                         os.environ[f"ZEPHYR_{name_var}_KCONFIG"] = str(kconfig)
