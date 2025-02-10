@@ -20,3 +20,8 @@ include:
       - status
       - compatible
       - clocks
+
+properties:
+
+  clocks:
+    required: true
