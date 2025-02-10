@@ -131,9 +131,9 @@
 	 *  - Bell 6: cpusys
 	 *  - Bell 13: cpuppr
 	 *  - Bell 18: cpurad
-	 *  - Bells 24, 25, 29, 31: cpucell
+	 *  - Bells 24, 25, 29, 30, 31: cpucell
 	 */
-	nordic,interrupt-mapping = <0xA3042041 0>;
+	nordic,interrupt-mapping = <0xE3042041 0>;
 };
 
 &cpurad_bellboard {
