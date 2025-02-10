@@ -27,7 +27,7 @@ static void log_backend_ble_connect(struct bt_conn *conn, uint8_t err);
 static void log_backend_ble_disconnect(struct bt_conn *conn, uint8_t reason);
 
 /**
- * @brief Callback for the subscription to the ble logger notification characteristic
+ * @brief Callback for the subscription to the Bluetooth logger notification characteristic
  * @details This callback enables/disables automatically the logger when the notification
  *			is subscribed.
  *  @param attr   The attribute that's changed value
@@ -35,7 +35,7 @@ static void log_backend_ble_disconnect(struct bt_conn *conn, uint8_t reason);
  */
 static void log_notify_changed(const struct bt_gatt_attr *attr, uint16_t value);
 
-/** BLE Logger based on the UUIDs for the NRF Connect SDK NUS service
+/** Bluetooth Logger based on the UUIDs for the NRF Connect SDK NUS service
  *	https://developer.nordicsemi.com/nRF_Connect_SDK/doc/2.3.0/nrf/libraries/bluetooth_services/services/nus.html
  */
 #define NUS_SERVICE_UUID                                                                           \
@@ -55,7 +55,7 @@ BT_CONN_CB_DEFINE(log_backend_ble) = {
 };
 
 /**
- * @brief BLE Service that represents this backend
+ * @brief Bluetooth Service that represents this backend
  * @note Only transmission characteristic is used. The RX characteristic
  *       is added to make the backend usable with the NRF toolbox app
  *       which expects both characteristics.
@@ -175,7 +175,7 @@ static void panic(struct log_backend const *const backend)
 }
 
 /**
- * @brief Backend ready function for ble logger
+ * @brief Backend ready function for Bluetooth logger
  * @details After initialization of the logger, this function avoids
  *          the logger subys to enable it. The logger is enabled automatically
  *          via the notification changed callback.

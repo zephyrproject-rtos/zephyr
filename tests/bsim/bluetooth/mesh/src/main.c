@@ -96,7 +96,7 @@ int main(void)
 	k_thread_create(&bsim_mesh_thread, bsim_mesh_thread_stack,
 			K_KERNEL_STACK_SIZEOF(bsim_mesh_thread_stack), bsim_mesh_entry_point, NULL,
 			NULL, NULL, K_PRIO_COOP(1), 0, K_NO_WAIT);
-	k_thread_name_set(&bsim_mesh_thread, "BabbleSim BLE Mesh tests");
+	k_thread_name_set(&bsim_mesh_thread, "BabbleSim Bluetooth Mesh tests");
 
 	return 0;
 }
