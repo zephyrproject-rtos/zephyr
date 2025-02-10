@@ -10,6 +10,8 @@
 #include <zephyr/dt-bindings/adc/nrf-saadc-v3.h>
 #include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
 #include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -168,6 +170,26 @@ static int adc_convert_acq_time(uint16_t acquisition_time, nrf_saadc_acqtime_t *
 	return result;
 }
 
+static int saadc_pm_hook(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		nrf_saadc_disable(NRF_SAADC);
+		return 0;
+
+	case PM_DEVICE_ACTION_RESUME:
+		nrf_saadc_enable(NRF_SAADC);
+		return 0;
+
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
 /* Implementation of the ADC driver API function: adc_channel_setup. */
 static int adc_nrfx_channel_setup(const struct device *dev,
 				  const struct adc_channel_cfg *channel_cfg)
@@ -320,7 +342,11 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
+#if defined(CONFIG_PM_DEVICE_RUNTIME)
+	pm_device_runtime_get(DEVICE_DT_INST_GET(0));
+#else
 	nrf_saadc_enable(NRF_SAADC);
+#endif
 
 	if (ctx->sequence.calibrate) {
 		nrf_saadc_task_trigger(NRF_SAADC,
@@ -623,7 +649,12 @@ static void saadc_irq_handler(const struct device *dev)
 		nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_END);
 
 		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_STOP);
+
+#if defined(CONFIG_PM_DEVICE_RUNTIME)
+		pm_device_runtime_put(DEVICE_DT_INST_GET(0));
+#else
 		nrf_saadc_disable(NRF_SAADC);
+#endif
 
 		if (has_single_ended(&m_data.ctx.sequence)) {
 			correct_single_ended(&m_data.ctx.sequence);
@@ -663,7 +694,7 @@ static int init_saadc(const struct device *dev)
 
 	adc_context_unlock_unconditionally(&m_data.ctx);
 
-	return 0;
+	return pm_device_driver_init(dev, saadc_pm_hook);
 }
 
 static DEVICE_API(adc, adc_nrfx_driver_api) = {
@@ -693,9 +724,10 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #define SAADC_INIT(inst)						\
 	BUILD_ASSERT((inst) == 0,					\
 		     "multiple instances not supported");		\
+	PM_DEVICE_DT_INST_DEFINE(0, saadc_pm_hook, 1);			\
 	DEVICE_DT_INST_DEFINE(0,					\
 			    init_saadc,					\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(0),			\
 			    NULL,					\
 			    NULL,					\
 			    POST_KERNEL,				\
