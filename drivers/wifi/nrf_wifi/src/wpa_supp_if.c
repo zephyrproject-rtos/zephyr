@@ -1969,7 +1969,7 @@ static int nrf_wifi_vif_state_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 	unsigned int timeout = 0;
 	struct nrf_wifi_fmac_vif_ctx *vif_ctx = NULL;
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
-	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	int ret = -1;
 
 	if (!vif_ctx_zep) {
@@ -1988,8 +1988,8 @@ static int nrf_wifi_vif_state_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 		goto out;
 	}
 
-	def_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
-	vif_ctx = def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx];
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	vif_ctx = sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx];
 
 	vif_state_info.state = state;
 	vif_state_info.if_index = vif_ctx_zep->vif_idx;
