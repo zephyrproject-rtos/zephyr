@@ -73,6 +73,9 @@ class HardwareAdapter(DeviceAdapter):
             if runner == 'pyocd':
                 extra_args.append('--board-id')
                 extra_args.append(board_id)
+            elif runner == "esp32":
+                extra_args.append("--esp-device")
+                extra_args.append(board_id)
             elif runner in ('nrfjprog', 'nrfutil'):
                 extra_args.append('--dev-id')
                 extra_args.append(board_id)
