@@ -1,0 +1,5 @@
+# Copyright 2024 Université Gustave Eiffel
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KHADAS_EDGE2
+	select SOC_RK3588S
