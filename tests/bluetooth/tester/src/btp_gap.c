@@ -411,8 +411,11 @@ static void oob_data_request(struct bt_conn *conn,
 		break;
 	}
 
-#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 	case BT_CONN_OOB_LE_LEGACY:
+		if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+			LOG_ERR("OOB LE Legacy not supported");
+			break;
+		}
 		LOG_DBG("Legacy OOB TK requested from remote %s", addr);
 
 		err = bt_le_oob_set_legacy_tk(conn, oob_legacy_tk);
@@ -421,7 +424,6 @@ static void oob_data_request(struct bt_conn *conn,
 		}
 
 		break;
-#endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
 	default:
 		LOG_ERR("Unhandled OOB type %d", oob_info->type);
 		break;
