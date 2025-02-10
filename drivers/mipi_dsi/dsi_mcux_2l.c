@@ -16,16 +16,23 @@
 #include <zephyr/drivers/dma/dma_mcux_smartdma.h>
 #include <zephyr/logging/log.h>
 
-#include <fsl_inputmux.h>
 #include <fsl_mipi_dsi.h>
 #include <fsl_clock.h>
 #ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
+#include <fsl_inputmux.h>
 #include <fsl_smartdma.h>
+#endif
+#ifdef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
+#include <zephyr/drivers/mipi_dbi.h>
 #endif
 
 #include <soc.h>
 
 LOG_MODULE_REGISTER(dsi_mcux_host, CONFIG_MIPI_DSI_LOG_LEVEL);
+
+#if CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
+#define MIPI_DSI_MAX_PAYLOAD_SIZE 0xFFFF
+#endif
 
 struct mcux_mipi_dsi_config {
 	MIPI_DSI_HOST_Type *base;
@@ -44,6 +51,9 @@ struct mcux_mipi_dsi_config {
 #else
 	void (*irq_config_func)(const struct device *dev);
 #endif
+#ifdef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
+	const struct device *mipi_dbi;
+#endif
 };
 
 struct mcux_mipi_dsi_data {
@@ -53,6 +63,11 @@ struct mcux_mipi_dsi_data {
 	smartdma_dsi_param_t smartdma_params __aligned(4);
 	uint32_t smartdma_stack[32];
 	uint8_t dma_slot;
+#endif
+#ifdef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
+	uint32_t width;
+	uint32_t height;
+	uint8_t src_bytes_per_pixel;
 #endif
 };
 
@@ -151,7 +166,7 @@ static void dsi_transfer_complete(MIPI_DSI_HOST_Type *base,
 	k_sem_give(&data->transfer_sem);
 }
 
-
+#if !CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 /* Helper function to transfer DSI color (Interrupt based implementation) */
 static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 			     struct mipi_dsi_msg *msg)
@@ -201,6 +216,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	}
 	return xfer.txDataSize;
 }
+#endif
 
 /* ISR is used for DSI interrupt based implementation, unnecessary if DMA is used */
 static int mipi_dsi_isr(const struct device *dev)
@@ -382,7 +398,6 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	const struct mcux_mipi_dsi_config *config = dev->config;
 	dsi_transfer_t dsi_xfer = {0};
 	status_t status;
-	int ret;
 
 	dsi_xfer.virtualChannel = channel;
 	dsi_xfer.txDataSize = msg->tx_len;
@@ -410,6 +425,9 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		dsi_xfer.sendDscCmd = true;
 		dsi_xfer.dscCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsLongWr;
+#if !CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
+		int ret;
+
 		if (msg->flags & MCUX_DSI_2L_FB_DATA) {
 			/*
 			 * Special case- transfer framebuffer data using
@@ -423,6 +441,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 			}
 			return ret;
 		}
+#endif
 		break;
 	case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
 		dsi_xfer.txDataType = kDSI_TxDataGenShortWrNoParam;
@@ -448,11 +467,90 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		return -ENOTSUP;
 	}
 
+#if CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
+	struct mcux_mipi_dsi_data *data = dev->data;
+	uint8_t *tx_buf = (uint8_t *)msg->tx_buf;
+
+	if (channel == 0U) {
+		if (msg->cmd == MIPI_DCS_SET_PIXEL_FORMAT) {
+			if (tx_buf[0] == MIPI_DCS_PIXEL_FORMAT_16BIT) {
+				data->src_bytes_per_pixel = 2U;
+			} else {
+				data->src_bytes_per_pixel = 3U;
+			}
+		} else if (msg->cmd == MIPI_DCS_SET_COLUMN_ADDRESS) {
+			data->width = ((tx_buf[2] << 8U) | tx_buf[3]) -
+				((tx_buf[0] << 8U) | tx_buf[1]) + 1U;
+		} else if (msg->cmd == MIPI_DCS_SET_PAGE_ADDRESS) {
+			data->height = ((tx_buf[2] << 8U) | tx_buf[3]) -
+				((tx_buf[0] << 8U) | tx_buf[1]) + 1U;
+		}
+	}
+
+	if (((msg->cmd == MIPI_DCS_WRITE_MEMORY_START) ||
+		(msg->cmd == MIPI_DCS_WRITE_MEMORY_CONTINUE)) && (channel == 0U)) {
+		enum display_pixel_format pixfmt;
+		struct display_buffer_descriptor desc = {
+			.width = data->width,
+			.height = data->height,
+			.pitch = data->width,
+		};
+
+		/* Every time buffer 64 pixels first before the transfer. */
+		DSI_SetDbiPixelFifoSendLevel(config->base, 64U);
+
+		/* Set payload size. */
+		if ((desc.height * desc.width * data->src_bytes_per_pixel) >
+			MIPI_DSI_MAX_PAYLOAD_SIZE) {
+			desc.height = MIPI_DSI_MAX_PAYLOAD_SIZE /
+				(desc.width * data->src_bytes_per_pixel);
+		}
+
+		DSI_SetDbiPixelPayloadSize(config->base,
+			(desc.height * desc.width * data->src_bytes_per_pixel) >> 1U);
+
+		/* Get the source buffer pixel format and DBI output format
+		 * Currently only support RGB565 and RGB888 when using DCNano DBI.
+		 */
+		switch (data->src_bytes_per_pixel) {
+		case 2:
+			pixfmt = PIXEL_FORMAT_RGB_565;
+			DSI_SetDbiPixelFormat(config->base, kDSI_DbiRGB565);
+			break;
+		case 3:
+			pixfmt = PIXEL_FORMAT_RGB_888;
+			DSI_SetDbiPixelFormat(config->base, kDSI_DbiRGB888);
+			break;
+		default:
+			/* MIPI-DSI do not support other format of DBI pixel. */
+			LOG_ERR("Pixel type not supported yet.");
+			return -EIO;
+		}
+
+		if (msg->cmd == MIPI_DCS_WRITE_MEMORY_START) {
+			desc.first_write = true;
+		} else {
+			desc.first_write = false;
+		}
+
+		mipi_dbi_write_display(config->mipi_dbi, NULL, msg->tx_buf,
+			&desc, pixfmt);
+
+		msg->tx_len = desc.height * desc.width * data->src_bytes_per_pixel;
+	} else {
+		status = DSI_TransferBlocking(config->base, &dsi_xfer);
+		if (status != kStatus_Success) {
+			LOG_ERR("Transmission failed");
+			return -EIO;
+		}
+	}
+#else
 	status = DSI_TransferBlocking(config->base, &dsi_xfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transmission failed");
 		return -EIO;
 	}
+#endif
 
 	if (msg->rx_len != 0) {
 		/* Return rx_len on a read */
@@ -533,6 +631,8 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 		COND_CODE_1(CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA,					\
 		(.smart_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, smartdma)),),		\
 		(.irq_config_func = mipi_dsi_##n##_irq_config_func,))				\
+		COND_CODE_1(CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF,				\
+		(.mipi_dbi = DEVICE_DT_GET(DT_NODELABEL(zephyr_lcdif)),), ())			\
 		.base = (MIPI_DSI_HOST_Type *)DT_INST_REG_ADDR(id),				\
 		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
 		.noncontinuous_hs_clk = DT_INST_PROP(id, noncontinuous_hs_clk),			\
