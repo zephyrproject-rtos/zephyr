@@ -349,3 +349,7 @@ pmod_header: &pmod1_header {};
 };
 
 pmod_sd_shield: &sdhc0 {};
+
+&ulpt0 {
+	status = "okay";
+};
