@@ -170,6 +170,8 @@ static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir i2s_dir)
 	return 0;
 }
 
+#if SOC_GDMA_SUPPORTED
+
 static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir i2s_dir)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
@@ -230,6 +232,78 @@ unlock:
 	return ret;
 }
 
+#else
+
+/*
+int esp_intr_alloc(int source,
+		int flags,
+		intr_handler_t handler,
+		void *arg,
+		struct intr_handle_data_t **ret_handle)
+
+int esp_intr_alloc_intrstatus(int source,
+			      int flags,
+			      uint32_t intrstatusreg,
+			      uint32_t intrstatusmask,
+			      intr_handler_t handler,
+			      void *arg,
+			      struct intr_handle_data_t **ret_handle)
+
+flags = ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
+	ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags)) |
+	ESP_INTR_FLAG_SHARED;
+err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq), flags, esp32_touch_rtc_isr,
+		     (void *)dev, NULL);
+*/
+static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir i2s_dir)
+{
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+	struct i2s_esp32_data *const dev_data = dev->data;
+	struct i2s_esp32_stream *stream = NULL;
+	uint32_t interrupt_status_reg
+	int err, ret = 0;
+
+	if (i2s_dir == I2S_DIR_RX) {
+		stream = &dev_data->rx;
+	} else if (i2s_dir == I2S_DIR_TX) {
+		stream = &dev_data->tx;
+	} else {
+		LOG_ERR("Invalid DMA direction");
+		return -EINVAL;
+	}
+
+	int intr_flag |= handle->intr_prio_flags;
+	interrupt_status_reg = (uint32_t)i2s_ll_get_interrupt_status_reg(handle->controller->hal.dev)
+
+	esp_intr_enable(stream->dma_channel);
+	if (i2s_dir == I2S_DIR_TX) {
+		i2s_hal_rx_enable_intr(&(dev_cfg->hal_cxt));
+		i2s_hal_rx_enable_dma(&(dev_cfg->hal_cxt));
+		i2s_hal_rx_start_link(&(dev_cfg->hal_cxt), (uint32_t) ...->dma_desc[0]);
+
+		esp_intr_alloc_intrstatus(i2s_periph_signal[port_id].irq, intr_flag,
+					  interrupt_status_reg,
+					  I2S_LL_TX_EVENT_MASK,
+                        		  i2s_dma_tx_callback,
+					  dev,
+					  &stream->dma_channel);
+	} else {
+		i2s_hal_rx_enable_intr(&(dev_cfg->hal_cxt));
+		i2s_hal_rx_enable_dma(&(dev_cfg->hal_cxt));
+		i2s_hal_rx_start_link(&(dev_cfg->hal_cxt), (uint32_t) ...->dma_desc[0]);
+		esp_intr_alloc_intrstatus(i2s_periph_signal[port_id].irq, intr_flag,
+					  interrupt_status_reg,
+					  I2S_LL_RX_EVENT_MASK,
+                        		  i2s_dma_rx_callback,
+					  dev,
+					  &stream->dma_channel);
+	}
+
+	i2s_ll_enable_dma(handle->controller->hal.dev, true);
+}
+
+#endif /* SOC_GDMA_SUPPORTED */
+
 static int i2s_esp32_rx_start_transfer(const struct device *dev)
 {
 	struct i2s_esp32_data *const dev_data = dev->data;
@@ -244,6 +318,9 @@ static int i2s_esp32_rx_start_transfer(const struct device *dev)
 	}
 	stream->mem_block_len = stream->i2s_cfg.block_size;
 
+#if !SOC_GDMA_SUPPORTED
+	i2s_hal_rx_reset_dma();
+#endif
 	i2s_hal_rx_stop(hal_cxt);
 	i2s_hal_rx_reset(hal_cxt);
 	i2s_hal_rx_reset_fifo(hal_cxt);
@@ -276,6 +353,10 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 	stream->mem_block = item.buffer;
 	stream->mem_block_len = item.size;
 
+#if !SOC_GDMA_SUPPORTED
+	i2s_hal_tx_reset_dma();
+#endif
+
 	i2s_hal_tx_stop(hal_cxt);
 	i2s_hal_tx_reset(hal_cxt);
 	i2s_hal_tx_reset_fifo(hal_cxt);
@@ -296,7 +377,16 @@ static void i2s_esp32_rx_stop_transfer(const struct device *dev)
 	struct i2s_esp32_data *const dev_data = dev->data;
 	struct i2s_esp32_stream *stream = &dev_data->rx;
 
+#if SOC_GDM_SUPPORTED
 	dma_stop(stream->dma_dev, stream->dma_channel);
+#else
+	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
+
+	i2s_hal_rx_stop_link(&(dev_cfg->hal_cxt));
+	i2s_hal_rx_disable_intr(&(dev_cfg->hal_cxt));
+	i2s_hal_rx_disable_dma(&(dev_cfg->hal_cxt));
+	esp_intr_disable(stream->dma_channel);
+#endif /* SOC_GDM_SUPPORTED */
 
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(stream->i2s_cfg.mem_slab, stream->mem_block);
@@ -310,7 +400,16 @@ static void i2s_esp32_tx_stop_transfer(const struct device *dev)
 	struct i2s_esp32_data *const dev_data = dev->data;
 	struct i2s_esp32_stream *stream = &dev_data->tx;
 
+#if SOC_GDM_SUPPORTED
 	dma_stop(stream->dma_dev, stream->dma_channel);
+#else
+	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
+
+	i2s_hal_tx_stop_link(&(dev_cfg->hal_cxt));
+	i2s_hal_tx_disable_intr(&(dev_cfg->hal_cxt));
+	i2s_hal_tx_disable_dma(&(dev_cfg->hal_cxt));
+	esp_intr_disable(stream->dma_channel);
+#endif /* SOC_GDM_SUPPORTED */
 
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(stream->i2s_cfg.mem_slab, stream->mem_block);
@@ -318,6 +417,8 @@ static void i2s_esp32_tx_stop_transfer(const struct device *dev)
 		stream->mem_block_len = 0;
 	}
 }
+
+#if SOC_GDM_SUPPORTED
 
 static void i2s_esp32_rx_callback(const struct device *dma_dev, void *arg, uint32_t channel,
 				  int status)
@@ -444,6 +545,59 @@ static void i2s_esp32_tx_callback(const struct device *dma_dev, void *arg, uint3
 tx_disable:
 	stream->stop_transfer(dev);
 }
+
+#else
+
+(const struct device *dev)
+{
+	struct i2s_esp32_data *const dev_data = dev->data;
+	struct i2s_esp32_stream *stream = &dev_data->rx;
+
+#if SOC_GDM_SUPPORTED
+
+static void IRAM_ATTR i2s_dma_rx_callback(void *arg)
+{
+	struct device *dev = (struct device *)arg;
+	/*struct i2s_esp32_data *const dev_data = dev->data;*/
+	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
+	/*struct i2s_esp32_stream *stream = &dev_data->rx;*/
+	lldesc_t *finish_desc = NULL;
+
+	uint32_t status = i2s_hal_get_intr_status(&(dev_cfg->hal_cxt));
+	i2s_hal_clear_intr_status(&(dev_cfg->hal_cxt), status);
+	if (!status) {
+		return;
+	}
+
+	if (dev && (status & I2S_LL_EVENT_TX_EOF)) {
+		i2s_hal_get_out_eof_des_addr(&(dev_cfg->hal_cxt), (uint32_t *)&finish_desc);
+		dma_buf = (void *)finish_desc->buf;
+		dma_buf_size = handle->dma.buf_size;
+	}
+}
+
+static void IRAM_ATTR i2s_dma_tx_callback(void *arg)
+{
+	struct device *dev = (struct device *)arg;
+	/*struct i2s_esp32_data *const dev_data = dev->data;*/
+	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
+	/*struct i2s_esp32_stream *stream = &dev_data->rx;*/
+	lldesc_t *finish_desc = NULL;
+
+	uint32_t status = i2s_hal_get_intr_status(&(dev_cfg->hal_cxt));
+	i2s_hal_clear_intr_status(&(dev_cfg->hal_cxt), status);
+	if (!status) {
+		return;
+	}
+
+	if (dev && (status & I2S_LL_EVENT_RX_EOF)) {
+		i2s_hal_get_in_eof_des_addr(&(dev_cfg->hal_cxt), (uint32_t *)&finish_desc);
+		dma_buf = (void *)finish_desc->buf;
+		dma_buf_size = handle->dma.buf_size;
+	}
+}
+
+#endif /* SOC_GDM_SUPPORTED */
 
 static int i2s_esp32_initialize(const struct device *dev)
 {
