@@ -283,7 +283,11 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 
-	bt_long_wq_submit(&pub_key_work);
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		bt_long_wq_submit(&pub_key_work);
+	} else {
+		k_work_submit(&pub_key_work);
+	}
 
 	return 0;
 }
@@ -341,7 +345,11 @@ int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb)
 	sys_memcpy_swap(&ecc.public_key_be[BT_PUB_KEY_COORD_LEN],
 			&remote_pk[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
 
-	bt_long_wq_submit(&dh_key_work);
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		bt_long_wq_submit(&dh_key_work);
+	} else {
+		k_work_submit(&dh_key_work);
+	}
 
 	return 0;
 }
