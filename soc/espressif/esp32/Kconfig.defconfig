@@ -12,6 +12,9 @@ config FLASH_BASE_ADDRESS
 config BOOTLOADER_MCUBOOT
 	default y if SOC_ESP32_APPCPU
 
+config MAIN_STACK_SIZE
+	default 2048
+
 if SMP
 
 config SCHED_IPI_SUPPORTED
