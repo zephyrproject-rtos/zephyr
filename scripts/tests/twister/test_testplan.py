@@ -1095,138 +1095,95 @@ def test_testplan_info(capfd):
 
 
 TESTDATA_8 = [
-    (False, ['p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'], ['p2/unit_testing', 'p3/unit_testing']),
-    (True, ['p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'], ['p3/unit_testing']),
+    (['zephyr'], None,
+     ['p1e2/s1', 'p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1'],
+     ['p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1'], False),
+
+    (['zephyr'], None,
+     ['p1e2/s1', 'p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1'],
+     ['p3@A/s2/c1'], True),
+
+    (['zephyr', 'm1'], None,
+     ['p1e1/s1/v1', 'p1e1/s1/v2', 'p1e2/s1', 'p1e2/s1/v1', 'p2/s1', 'p2/s1/v1',
+      'p3@A/s2/c1', 'p3@B/s2/c1'],
+     ['p1e1/s1/v2', 'p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1'], False),
+
+    (['zephyr', 'm1', 'm2'], None,
+     ['p1e1/s1/v1', 'p1e1/s1/v2', 'p1e2/s1', 'p1e2/s1/v1', 'p2/s1', 'p2/s1/v1',
+      'p3@A/s2/c1', 'p3@A/s2/c2', 'p3@B/s2/c1', 'p3@B/s2/c2', 'p4/s1'],
+     ['p1e1/s1/v2', 'p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1', 'p3@B/s2/c2'], False),
+
+    (['zephyr', 'm1', 'm2'], None,
+     ['p1e1/s1/v1', 'p1e1/s1/v2', 'p1e2/s1', 'p1e2/s1/v1', 'p2/s1', 'p2/s1/v1',
+      'p3@A/s2/c1', 'p3@A/s2/c2', 'p3@B/s2/c1', 'p3@B/s2/c2', 'p4/s1'],
+     ['p3@A/s2/c1', 'p3@A/s2/c2'], True),
+
+    (['zephyr', 'm3'], Exception("Duplicate platform identifier p1e1/s1 found"),
+     [], [], False),
+
+    (['zephyr', 'm1', 'm4'], Exception("Duplicate platform identifier p1e2/s1/v1 found"),
+     [], [], False),
 ]
 
 @pytest.mark.parametrize(
-    'override_default_platforms, expected_platform_names, expected_defaults',
+    'roots, expected_exception,' \
+    ' expected_platform_names,' \
+    ' expected_defaults, override_default_platforms',
     TESTDATA_8,
-    ids=['no override defaults', 'override defaults']
+    ids=[
+        'default board root',
+        'default board root, override defaults',
+        '1 extra board root',
+        '2 extra board roots',
+        '2 extra board roots, override defaults',
+        '1 extra board root, duplicate platform',
+        '2 extra board roots, duplicate platform',
+    ]
 )
 def test_testplan_add_configurations(
     tmp_path,
-    override_default_platforms,
+    roots,
+    expected_exception,
     expected_platform_names,
-    expected_defaults
+    expected_defaults,
+    override_default_platforms,
 ):
-    # tmp_path
-    # └ boards  <- board root
-    #   ├ zephyr
-    #   │ ├ p1
-    #   │ | ├ p1e1.yaml
-    #   │ | └ p1e2.yaml
-    #   │ └ p2
-    #   │   ├ p2.yaml
-    #   │   └ p2-1.yaml <- duplicate
-    #   │   └ p2-2.yaml <- load error
-    #   └ arm
-    #     └ p3
-    #       ├ p3.yaml
-    #       └ p3_B.conf
-    tmp_soc_root_dir = tmp_path / 'soc'
-    tmp_soc_root_dir.mkdir()
-
-    tmp_vend1_dir = tmp_soc_root_dir / 'zephyr'
-    tmp_vend1_dir.mkdir()
-
-    tmp_soc1_dir = tmp_vend1_dir / 's1'
-    tmp_soc1_dir.mkdir()
-
-    soc1_yaml = """\
-family:
-  - name: zephyr
-    series:
-      - name: zephyr_testing
-        socs:
-          - name: unit_testing
-"""
-    soc1_yamlfile = tmp_soc1_dir / 'soc.yml'
-    soc1_yamlfile.write_text(soc1_yaml)
-
-    tmp_board_root_dir = tmp_path / 'boards'
-    tmp_board_root_dir.mkdir()
-
-    tmp_vend1_dir = tmp_board_root_dir / 'zephyr'
-    tmp_vend1_dir.mkdir()
-
-    tmp_p1_dir = tmp_vend1_dir / 'p1'
-    tmp_p1_dir.mkdir()
-
-    p1e1_bs_yaml = """\
+    tmp_files = {
+        'zephyr/boards/zephyr/p1/board.yml': """\
 boards:
-
   - name: p1e1
     vendor: zephyr
     socs:
-      - name: unit_testing
+      - name: s1
   - name: p1e2
     vendor: zephyr
     socs:
-      - name: unit_testing
-"""
-    p1e1_yamlfile = tmp_p1_dir / 'board.yml'
-    p1e1_yamlfile.write_text(p1e1_bs_yaml)
-
-    p1e1_yaml = """\
-identifier: p1e1
-name: Platform 1 Edition 1
+      - name: s1
+""",
+        'zephyr/boards/zephyr/p1/twister.yaml': """\
 type: native
 arch: x86
-vendor: zephyr
 toolchain:
   - zephyr
-twister: False
-"""
-    p1e1_yamlfile = tmp_p1_dir / 'p1e1.yaml'
-    p1e1_yamlfile.write_text(p1e1_yaml)
-
-    p1e2_yaml = """\
-identifier: p1e2
-name: Platform 1 Edition 2
-type: native
-arch: x86
-vendor: zephyr
-toolchain:
-  - zephyr
-"""
-    p1e2_yamlfile = tmp_p1_dir / 'p1e2.yaml'
-    p1e2_yamlfile.write_text(p1e2_yaml)
-
-    tmp_p2_dir = tmp_vend1_dir / 'p2'
-    tmp_p2_dir.mkdir()
-
-    p2_bs_yaml = """\
+variants:
+  p1e1:
+    name: Platform 1 Edition 1
+    twister: False
+  p1e2:
+    name: Platform 1 Edition 2
+""",
+        'zephyr/boards/zephyr/p2/board.yml': """\
 boards:
-
   - name: p2
     vendor: zephyr
     socs:
-      - name: unit_testing
+      - name: s1
   - name: p2_2
     vendor: zephyr
     socs:
-      - name: unit_testing
-"""
-    p2_yamlfile = tmp_p2_dir / 'board.yml'
-    p2_yamlfile.write_text(p2_bs_yaml)
-
-    p2_yaml = """\
-identifier: p2/unit_testing
-name: Platform 2
-type: sim
-arch: x86
-vendor: vendor2
-toolchain:
-  - zephyr
-testing:
-  default: True
-"""
-    p2_yamlfile = tmp_p2_dir / 'p2.yaml'
-    p2_yamlfile.write_text(p2_yaml)
-
-
-    p2_2_yaml = """\
+      - name: s1
+""",
+        'zephyr/boards/zephyr/p2/p2-2.yaml': """\
 testing:
   ć#@%!#!#^#@%@:1.0
 identifier: p2_2
@@ -1236,29 +1193,32 @@ arch: x86
 vendor: vendor2
 toolchain:
   - zephyr
-"""
-    p2_2_yamlfile = tmp_p2_dir / 'p2-2.yaml'
-    p2_2_yamlfile.write_text(p2_2_yaml)
-
-    tmp_vend2_dir = tmp_board_root_dir / 'arm'
-    tmp_vend2_dir.mkdir()
-
-    tmp_p3_dir = tmp_vend2_dir / 'p3'
-    tmp_p3_dir.mkdir()
-
-    p3_bs_yaml = """\
-boards:
-  - name: p3
-    vendor: zephyr
-    socs:
-      - name: unit_testing
-"""
-    p3_yamlfile = tmp_p3_dir / 'board.yml'
-    p3_yamlfile.write_text(p3_bs_yaml)
-
-    p3_yaml = """\
-identifier: p3
-name: Platform 3
+""",
+        'zephyr/boards/zephyr/p2/p2.yaml': """\
+identifier: p2/s1
+name: Platform 2
+type: sim
+arch: x86
+vendor: vendor2
+toolchain:
+  - zephyr
+testing:
+  default: True
+""",
+        'zephyr/boards/arm/p3/board.yml': """\
+board:
+  name: p3
+  vendor: arm
+  revision:
+    format: letter
+    default: "A"
+    revisions:
+      - name: "A"
+      - name: "B"
+  socs:
+    - name: s2
+""",
+        'zephyr/boards/arm/p3/twister.yaml': """\
 type: unit
 arch: arm
 vendor: vendor3
@@ -1266,24 +1226,244 @@ toolchain:
   - zephyr
 testing:
   default: True
-"""
-    p3_yamlfile = tmp_p3_dir / 'p3.yaml'
-    p3_yamlfile.write_text(p3_yaml)
+variants:
+  p3/s2/c1:
+    name: Platform 3 Revision A
+  p3@B/s2/c1:
+    name: Platform 3 Revision B
+""",
+        'zephyr/soc/zephyr/soc.yml': """\
+family:
+  - name: zephyr
+    series:
+      - name: zephyr_testing
+        socs:
+          - name: s1
+          - name: s2
+            cpuclusters:
+              - name: c1
+""",
+        'm1/boards/zephyr/p1e1/board.yml': """\
+board:
+  extend: p1e1
+  variants:
+    - name: v1
+      qualifier: s1
+    - name: v2
+      qualifier: s1
+""",
+        'm1/boards/zephyr/p1e1/twister.yaml': """\
+variants:
+  p1e1/s1/v1:
+    name: Platform 1 Edition 1 Variant 1
+  p1e1/s1/v2:
+    name: Platform 1 Edition 1 Variant 2
+    testing:
+      default: True
+""",
+        'm1/boards/zephyr/p1e2/board.yml': """\
+board:
+  extend: p1e2
+  variants:
+    - name: v1
+      qualifier: s1
+""",
+        'm1/boards/zephyr/p2/board.yml': """\
+board:
+  extend: p2
+  variants:
+    - name: v1
+      qualifier: s1
+""",
+        'm1/boards/zephyr/p2/p2_s1_v1.yaml': """\
+identifier: p2/s1/v1
+name: Platform 2 Variant 1
+""",
+        'm2/boards/misc/board.yml': """\
+boards:
+  - extend: p3
+  - name: p4
+    vendor: misc
+    socs:
+      - name: s1
+""",
+        'm2/boards/misc/twister.yaml': """\
+name: Platform 4
+type: qemu
+arch: riscv
+vendor: vendor4
+simulation:
+  - name: qemu
+variants:
+  p3@A/s2/c2:
+    testing:
+      default: False
+""",
+        'm2/soc/zephyr/soc.yml': """\
+socs:
+  - extend: s2
+    cpuclusters:
+      - name: c2
+""",
+        'm3/boards/zephyr/p1e1/board.yml': """\
+board:
+  extend: p1e1
+""",
+        'm3/boards/zephyr/p1e1/twister.yaml': """\
+variants:
+  p1e1/s1:
+    name: Duplicate Platform
+""",
+        'm4/boards/zephyr/p1e2/board.yml': """\
+board:
+  extend: p2
+""",
+        'm4/boards/zephyr/p1e2/p1e2_s1_v1.yaml': """\
+identifier: p1e2/s1/v1
+name: Duplicate Platform
+""",
+    }
 
-    env = mock.Mock(board_roots=[tmp_board_root_dir],soc_roots=[tmp_path], arch_roots=[tmp_path])
+    for filename, content in tmp_files.items():
+        (tmp_path / filename).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / filename).write_text(content)
+
+    actual_platform_input = {}
+    expected_platform_input = {
+        'p1e1/s1': {
+            # zephyr/boards/zephyr/p1/twister.yaml (base + variant)
+            'name': 'Platform 1 Edition 1',
+            'type': 'native',
+            'arch': 'x86',
+            'toolchain': ['zephyr'],
+            'twister': False,
+        },
+        'p1e2/s1': {
+            # zephyr/boards/zephyr/p1/twister.yaml (base + variant)
+            'name': 'Platform 1 Edition 2',
+            'type': 'native',
+            'arch': 'x86',
+            'toolchain': ['zephyr'],
+        },
+        'p1e1/s1/v1': {
+            # zephyr/boards/zephyr/p1/twister.yaml (base)
+            # m1/boards/zephyr/p1e1/twister.yaml (variant)
+            'name': 'Platform 1 Edition 1 Variant 1',
+            'type': 'native',
+            'arch': 'x86',
+            'toolchain': ['zephyr'],
+        },
+        'p1e1/s1/v2': {
+            # zephyr/boards/zephyr/p1/twister.yaml (base)
+            # m1/boards/zephyr/p1e1/twister.yaml (variant)
+            'name': 'Platform 1 Edition 1 Variant 2',
+            'type': 'native',
+            'arch': 'x86',
+            'toolchain': ['zephyr'],
+            'testing': {'default': True},
+        },
+        'p1e2/s1/v1': {
+            # zephyr/boards/zephyr/p1/twister.yaml (base)
+            'type': 'native',
+            'arch': 'x86',
+            'toolchain': ['zephyr'],
+        },
+        'p2/s1': {
+            # zephyr/boards/zephyr/p2/p2.yaml
+            'name': 'Platform 2',
+            'identifier': 'p2/s1',
+            'type': 'sim',
+            'arch': 'x86',
+            'vendor': 'vendor2',
+            'toolchain': ['zephyr'],
+            'testing': {'default': True},
+        },
+        'p2/s1/v1': {
+            # m1/boards/zephyr/p2/p2_s1_v1.yaml
+            'name': 'Platform 2 Variant 1',
+            'identifier': 'p2/s1/v1',
+        },
+        'p3@A/s2/c1': {
+            # zephyr/boards/arm/p3/twister.yaml (base + variant)
+            'name': 'Platform 3 Revision A',
+            'type': 'unit',
+            'arch': 'arm',
+            'vendor': 'vendor3',
+            'toolchain': ['zephyr'],
+            'testing': {'default': True},
+        },
+        'p3@A/s2/c2': {
+            # zephyr/boards/arm/p3/twister.yaml (base)
+            # m2/boards/misc/twister.yaml (variant)
+            'type': 'unit',
+            'arch': 'arm',
+            'vendor': 'vendor3',
+            'toolchain': ['zephyr'],
+            'testing': {'default': False},
+        },
+        'p3@B/s2/c1': {
+            # zephyr/boards/arm/p3/twister.yaml (base + variant)
+            'name': 'Platform 3 Revision B',
+            'type': 'unit',
+            'arch': 'arm',
+            'vendor': 'vendor3',
+            'toolchain': ['zephyr'],
+            'testing': {'default': True},
+        },
+        'p3@B/s2/c2': {
+            # zephyr/boards/arm/p3/twister.yaml (base)
+            'type': 'unit',
+            'arch': 'arm',
+            'vendor': 'vendor3',
+            'toolchain': ['zephyr'],
+            'testing': {'default': True},
+        },
+        'p4/s1': {
+            # m2/boards/misc/twister.yaml (base)
+            'name': 'Platform 4',
+            'type': 'qemu',
+            'simulation': [{'name': 'qemu'}],
+            'arch': 'riscv',
+            'vendor': 'vendor4',
+        },
+    }
+
+    abs_roots = list(map(tmp_path.joinpath, roots))
+    env = mock.Mock(
+        board_roots=[root / 'boards' for root in abs_roots],
+        soc_roots=abs_roots,
+        arch_roots=abs_roots,
+    )
 
     testplan = TestPlan(env=env)
 
     testplan.test_config = {
         'platforms': {
             'override_default_platforms': override_default_platforms,
-            'default_platforms': ['p3', 'p1e1']
+            'default_platforms': ['p3/s2/c1', 'p3/s2/c2', 'p1e1']
         }
     }
 
 
-    testplan.add_configurations()
+    def mock_plat_load(self, board, target, aliases, data):
+        actual_platform_input[target] = data
 
+        self.name = target
+        self.aliases = aliases
+        self.default = data.get("testing", {}).get("default", self.default)
+        self.twister = data.get("twister", self.twister)
+
+    with mock.patch.object(Platform, 'load', mock_plat_load), \
+         pytest.raises(type(expected_exception)) if \
+          expected_exception else nullcontext() as exception:
+        testplan.add_configurations()
+
+    if expected_exception:
+        assert str(expected_exception) == str(exception.value)
+        return
+
+    for target in actual_platform_input:
+        assert actual_platform_input[target] == expected_platform_input[target]
     if expected_defaults is not None:
         print(expected_defaults)
         print(testplan.default_platforms)
