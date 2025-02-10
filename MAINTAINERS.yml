@@ -5585,6 +5585,21 @@ Random:
   labels:
     - "area: Random"
 
+Morse:
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - doc/services/morse/
+    - dts/bindings/morse/
+    - include/zephyr/morse/
+    - samples/subsys/morse/
+    - subsys/morse/
+  labels:
+    - "area: Morse"
+  tests:
+    - sample.subsys.morse
+
 # This area is to be converted to a subarea
 Testing with Renode:
   status: odd fixes

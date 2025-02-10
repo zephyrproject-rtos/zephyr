@@ -1,0 +1,15 @@
+sample:
+  name: Morse Code Sample
+tests:
+  sample.subsys.morse.morse_code:
+    tags:
+      - drivers
+      - morse
+    harness: grove
+    depends_on: counter
+    filter: dt_compat_enabled("zephyr,morse")
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nucleo_f767zi
+      - nucleo_g474re
+      - sam_v71_xult/samv71q21
