@@ -100,7 +100,7 @@ endif # KERNEL_VM_SUPPORT
 
 menuconfig MMU
 	bool "MMU features"
-	depends on CPU_HAS_MMU
+	depends on CPU_HAS_MMU && (!X86 || (X86 && X86_MMU))
 	select KERNEL_VM_SUPPORT
 	help
 	  This option is enabled when the CPU's memory management unit is active
