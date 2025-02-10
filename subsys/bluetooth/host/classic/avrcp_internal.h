@@ -21,21 +21,6 @@
 #define AVRCP_SUBUNIT_EXTENSION_COED (7) /* Fixed value according to TA Document 2001012 */
 
 typedef enum __packed {
-	BT_AVRCP_CTYPE_CONTROL = 0x0,
-	BT_AVRCP_CTYPE_STATUS = 0x1,
-	BT_AVRCP_CTYPE_SPECIFIC_INQUIRY = 0x2,
-	BT_AVRCP_CTYPE_NOTIFY = 0x3,
-	BT_AVRCP_CTYPE_GENERAL_INQUIRY = 0x4,
-	BT_AVRCP_CTYPE_NOT_IMPLEMENTED = 0x8,
-	BT_AVRCP_CTYPE_ACCEPTED = 0x9,
-	BT_AVRCP_CTYPE_REJECTED = 0xA,
-	BT_AVRCP_CTYPE_IN_TRANSITION = 0xB,
-	BT_AVRCP_CTYPE_IMPLEMENTED_STABLE = 0xC,
-	BT_AVRCP_CTYPE_CHANGED = 0xD,
-	BT_AVRCP_CTYPE_INTERIM = 0xF,
-} bt_avrcp_ctype_t;
-
-typedef enum __packed {
 	BT_AVRCP_SUBUNIT_ID_ZERO = 0x0,
 	BT_AVRCP_SUBUNIT_ID_IGNORE = 0x7,
 } bt_avrcp_subunit_id_t;
@@ -97,7 +82,7 @@ struct bt_avrcp_header {
 #define BT_AVRCP_HDR_SET_SUBUNIT_TYPE(hdr, subunit_type)                                           \
 	(hdr)->byte1 = (((hdr)->byte1) & ~GENMASK(7, 3)) | FIELD_PREP(GENMASK(7, 3), (subunit_type))
 
-struct bt_avrcp_unit_info_cmd {
+struct bt_avrcp_frame {
 	struct bt_avrcp_header hdr;
 	uint8_t data[0];
 } __packed;
