@@ -2,7 +2,7 @@
    :name: ST Bluetooth LE Sensor Demo
    :relevant-api: bt_gatt bluetooth
 
-   Export vendor-specific GATT services over BLE.
+   Export vendor-specific GATT services over Bluetooth.
 
 Overview
 ********
