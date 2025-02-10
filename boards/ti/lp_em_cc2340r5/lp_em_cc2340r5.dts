@@ -73,3 +73,11 @@
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
 };
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_default
+		     &i2c0_sda_default>;
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+};
