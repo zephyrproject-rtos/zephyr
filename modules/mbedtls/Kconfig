@@ -42,6 +42,16 @@ config MBEDTLS_LIBRARY
 
 endchoice
 
+config MBEDTLS_INSTALL_PATH
+	string "mbedTLS install path"
+	depends on MBEDTLS_LIBRARY
+	help
+	  This option holds the path where the mbedTLS external libraries
+	  and headers are installed. Make sure this option is properly set
+	  when MBEDTLS_LIBRARY is enabled otherwise the build will fail.
+
+if MBEDTLS_BUILTIN
+
 config CUSTOM_MBEDTLS_CFG_FILE
 	bool "Custom mbed TLS configuration file"
 	help
@@ -50,9 +60,8 @@ config CUSTOM_MBEDTLS_CFG_FILE
 	  MBEDTLS_CFG_FILE setting.
 
 config MBEDTLS_CFG_FILE
-	string "mbed TLS configuration file" if CUSTOM_MBEDTLS_CFG_FILE
-	depends on MBEDTLS_BUILTIN
-	default "config-tls-generic.h"
+	string "Mbed TLS configuration file" if CUSTOM_MBEDTLS_CFG_FILE
+	default "config-mbedtls.h"
 	help
 	  Use a specific mbedTLS configuration file. The default config file
 	  file can be tweaked with Kconfig. The default configuration is
@@ -61,26 +70,54 @@ config MBEDTLS_CFG_FILE
 	  special TLS usage, use available Kconfig options, or select an
 	  alternative config.
 
-rsource "Kconfig.tls-generic"
-
-config MBEDTLS_SSL_MAX_CONTENT_LEN
-	int "Max payload size for TLS protocol message"
-	default 1500
-	depends on MBEDTLS_BUILTIN
+config MBEDTLS_USER_CONFIG_ENABLE
+	bool "User mbedTLS config file"
 	help
-	  The TLS standards mandate max payload size of 16384 bytes. So, for
-	  maximum operability and for general-purpose usage, that value must
-	  be used. For specific usages, that value can be largely decreased.
-	  E.g. for DTLS, payload size is limited by UDP datagram size, and
-	  even for HTTPS REST API, the payload can be limited to max size of
-	  (REST request, REST response, server certificate(s)).
-	  mbedTLS uses this value separate for input and output buffers, so
-	  twice this value will be allocated (on mbedTLS own heap, so the
-	  value of MBEDTLS_HEAP_SIZE should accommodate that).
+	  Enable user mbedTLS config file that will be included at the end of
+	  the generic config file.
+
+config MBEDTLS_USER_CONFIG_FILE
+	string "User configuration file for mbed TLS"
+	depends on MBEDTLS_USER_CONFIG_ENABLE
+	help
+	  User config file that can contain mbedTLS configs that were not
+	  covered by the generic config file.
 
 module = MBEDTLS
 module-str = Log level mbedTLS library debug hook
 source "subsys/logging/Kconfig.template.log_config"
+
+menu "Mbed TLS configuration"
+	depends on MBEDTLS_CFG_FILE = "config-mbedtls.h"
+
+rsource "Kconfig.crypto"
+rsource "Kconfig.tls-x509"
+
+endmenu # "Mbed TLS configuration"
+
+config MBEDTLS_MEMORY_DEBUG
+	bool "mbed TLS memory debug activation"
+	help
+	  Enable debugging of buffer allocator memory issues. Automatically
+	  prints (to stderr) all (fatal) messages on memory allocation
+	  issues. Enables function for 'debug output' of allocated memory.
+
+config MBEDTLS_TEST
+	bool "Compile internal self test functions"
+	help
+	  Enable self test function for the crypto algorithms
+
+config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
+	bool "MbedTLS optimizations for OpenThread"
+	depends on NET_L2_OPENTHREAD
+	default y if !NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  save some RAM/ROM when OpenThread is used. Note, that when application
+	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  sockets), it's advised to disable this option.
+
+endif # MBEDTLS_BUILTIN
 
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
@@ -155,28 +192,6 @@ config MBEDTLS_DEBUG_STRIP_NEWLINE
 	  newline.
 
 endif # MBEDTLS_DEBUG
-
-config MBEDTLS_MEMORY_DEBUG
-	bool "mbed TLS memory debug activation"
-	depends on MBEDTLS_BUILTIN
-	help
-	  Enable debugging of buffer allocator memory issues. Automatically
-	  prints (to stderr) all (fatal) messages on memory allocation
-	  issues. Enables function for 'debug output' of allocated memory.
-
-config MBEDTLS_TEST
-	bool "Compile internal self test functions"
-	depends on MBEDTLS_BUILTIN
-	help
-	  Enable self test function for the crypto algorithms
-
-config MBEDTLS_INSTALL_PATH
-	string "mbedTLS install path"
-	depends on MBEDTLS_LIBRARY
-	help
-	  This option holds the path where the mbedTLS libraries and headers are
-	  installed. Make sure this option is properly set when MBEDTLS_LIBRARY
-	  is enabled otherwise the build will fail.
 
 config MBEDTLS_ENABLE_HEAP
 	bool "Global heap for mbed TLS"

@@ -2,6 +2,7 @@
  * Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  * Copyright (c) 2017 Intel Corporation.
  * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2024 BayLibre SAS
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -11,13 +12,16 @@
 #ifndef MBEDTLS_CONFIG_H
 #define MBEDTLS_CONFIG_H
 
-/* System support */
+/* Always-enabled build symbols */
+
 #define MBEDTLS_PLATFORM_C
 #define MBEDTLS_PLATFORM_MEMORY
 #define MBEDTLS_MEMORY_BUFFER_ALLOC_C
 #define MBEDTLS_MEMORY_ALIGN_MULTIPLE (sizeof(void *))
 #define MBEDTLS_PLATFORM_EXIT_ALT
 #define MBEDTLS_NO_PLATFORM_ENTROPY
+
+/* Mapping of Kconfig options to Mbed TLS build symbols */
 
 #if defined(CONFIG_MBEDTLS_ZEROIZE_ALT)
 #define MBEDTLS_PLATFORM_ZEROIZE_ALT
@@ -47,11 +51,6 @@
 #define MBEDTLS_SELF_TEST
 #define MBEDTLS_DEBUG_C
 #endif
-
-/* mbedTLS feature support */
-
-/* Supported TLS versions */
-
 
 #if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2)
 #define MBEDTLS_SSL_PROTO_TLS1_2
@@ -91,8 +90,6 @@
 #define MBEDTLS_SSL_DTLS_HELLO_VERIFY
 #define MBEDTLS_SSL_COOKIE_C
 #endif
-
-/* Supported key exchange methods */
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
 #define MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -164,8 +161,6 @@
 #define MBEDTLS_HKDF_C
 #endif
 
-/* Supported cipher modes */
-
 #if defined(CONFIG_MBEDTLS_CIPHER_AES_ENABLED)
 #define MBEDTLS_AES_C
 #endif
@@ -210,8 +205,6 @@
 #define MBEDTLS_CIPHER_MODE_CTR
 #endif
 
-/* Supported elliptic curve libraries */
-
 #if defined(CONFIG_MBEDTLS_ECDH_C)
 #define MBEDTLS_ECDH_C
 #endif
@@ -227,8 +220,6 @@
 #if defined(CONFIG_MBEDTLS_ECP_C)
 #define MBEDTLS_ECP_C
 #endif
-
-/* Supported elliptic curves */
 
 #if defined(CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED)
 #define MBEDTLS_ECP_DP_SECP192R1_ENABLED
@@ -286,8 +277,6 @@
 #define MBEDTLS_ECP_NIST_OPTIM
 #endif
 
-/* Supported hash algorithms */
-
 #if defined(CONFIG_MBEDTLS_MD5)
 #define MBEDTLS_MD5_C
 #endif
@@ -324,7 +313,6 @@
 #define MBEDTLS_CMAC_C
 #endif
 
-/* mbedTLS modules */
 #if defined(CONFIG_MBEDTLS_CTR_DRBG_ENABLED)
 #define MBEDTLS_CTR_DRBG_C
 #endif
@@ -368,85 +356,6 @@
 #define MBEDTLS_MD_C
 #endif
 
-/* Automatic dependencies */
-
-#if defined(MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
-#define MBEDTLS_DHM_C
-#endif
-
-#if defined(MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_RSA_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED)
-#define MBEDTLS_RSA_C
-#define MBEDTLS_PKCS1_V15
-#define MBEDTLS_PKCS1_V21
-#endif
-
-#if defined(MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED) || \
-	defined(MBEDTLS_KEY_EXCHANGE_RSA_ENABLED) || \
-	defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED) || \
-	defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) || \
-	defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED) || \
-	defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED) || \
-	defined(MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED) || \
-	defined(MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED)
-#define MBEDTLS_X509_CRT_PARSE_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT) && \
-    defined(MBEDTLS_X509_CRT_PARSE_C)
-#define MBEDTLS_PEM_PARSE_C
-#define MBEDTLS_PEM_WRITE_C
-#define MBEDTLS_BASE64_C
-#endif
-
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-#define MBEDTLS_X509_USE_C
-#endif
-
-#if defined(MBEDTLS_DHM_C) || \
-    defined(MBEDTLS_ECP_C) || \
-    defined(MBEDTLS_RSA_C) || \
-    defined(MBEDTLS_X509_USE_C) || \
-    defined(MBEDTLS_GENPRIME)
-#define MBEDTLS_BIGNUM_C
-#endif
-
-#if defined(MBEDTLS_RSA_C) || \
-    defined(MBEDTLS_X509_USE_C)
-#define MBEDTLS_OID_C
-#endif
-
-#if defined(MBEDTLS_X509_USE_C)
-#define MBEDTLS_PK_PARSE_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_PK_WRITE_C)
-#define MBEDTLS_PK_WRITE_C
-#endif
-
-#if defined(MBEDTLS_PK_PARSE_C) || defined(MBEDTLS_PK_WRITE_C)
-#define MBEDTLS_PK_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_ASN1_PARSE_C) || defined(MBEDTLS_X509_USE_C)
-#define MBEDTLS_ASN1_PARSE_C
-#endif
-
-#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_RSA_C) || defined(MBEDTLS_PK_WRITE_C)
-#define MBEDTLS_ASN1_WRITE_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_PKCS5_C)
-#define MBEDTLS_PKCS5_C
-#endif
-
-#define MBEDTLS_SSL_IN_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
-#define MBEDTLS_SSL_OUT_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
-
-/* Enable OpenThread optimizations. */
 #if defined(CONFIG_MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED)
 #define MBEDTLS_MPI_WINDOW_SIZE            1 /**< Maximum windows size used. */
 #define MBEDTLS_MPI_MAX_SIZE              32 /**< Maximum number of bytes for usable MPIs. */
@@ -455,9 +364,8 @@
 #define MBEDTLS_ENTROPY_MAX_SOURCES        1 /**< Maximum number of sources supported */
 #endif
 
-#if defined(CONFIG_MBEDTLS_SERVER_NAME_INDICATION) && \
-	defined(MBEDTLS_X509_CRT_PARSE_C)
-#define MBEDTLS_SSL_SERVER_NAME_INDICATION
+#if defined(CONFIG_MBEDTLS_PKCS5_C)
+#define MBEDTLS_PKCS5_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_SSL_CACHE_C)
@@ -542,5 +450,75 @@
 #if defined(CONFIG_MBEDTLS_USER_CONFIG_FILE)
 #include CONFIG_MBEDTLS_USER_CONFIG_FILE
 #endif
+
+#if defined(CONFIG_MBEDTLS_RSA_C)
+#define MBEDTLS_RSA_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_PKCS1_V15)
+#define MBEDTLS_PKCS1_V15
+#endif
+
+#if defined(CONFIG_MBEDTLS_PKCS1_V21)
+#define MBEDTLS_PKCS1_V21
+#endif
+
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
+#define MBEDTLS_X509_CRT_PARSE_C
+#define MBEDTLS_X509_USE_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT)
+#define MBEDTLS_PEM_PARSE_C
+#define MBEDTLS_PEM_WRITE_C
+#define MBEDTLS_BASE64_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_SERVER_NAME_INDICATION)
+#define MBEDTLS_SSL_SERVER_NAME_INDICATION
+#endif
+
+/* Automatic dependencies */
+
+#if defined(MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED) || \
+	defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
+#define MBEDTLS_DHM_C
+#endif
+
+#if defined(MBEDTLS_DHM_C) || \
+	defined(MBEDTLS_ECP_C) || \
+	defined(MBEDTLS_RSA_C) || \
+	defined(MBEDTLS_X509_USE_C) || \
+	defined(MBEDTLS_GENPRIME)
+#define MBEDTLS_BIGNUM_C
+#endif
+
+#if defined(MBEDTLS_RSA_C) || \
+	defined(MBEDTLS_X509_USE_C)
+#define MBEDTLS_OID_C
+#endif
+
+#if defined(MBEDTLS_X509_USE_C)
+#define MBEDTLS_PK_PARSE_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_PK_WRITE_C)
+#define MBEDTLS_PK_WRITE_C
+#endif
+
+#if defined(MBEDTLS_PK_PARSE_C) || defined(MBEDTLS_PK_WRITE_C)
+#define MBEDTLS_PK_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_ASN1_PARSE_C) || defined(MBEDTLS_X509_USE_C)
+#define MBEDTLS_ASN1_PARSE_C
+#endif
+
+#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_RSA_C) || defined(MBEDTLS_PK_WRITE_C)
+#define MBEDTLS_ASN1_WRITE_C
+#endif
+
+#define MBEDTLS_SSL_IN_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
+#define MBEDTLS_SSL_OUT_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
 
 #endif /* MBEDTLS_CONFIG_H */
