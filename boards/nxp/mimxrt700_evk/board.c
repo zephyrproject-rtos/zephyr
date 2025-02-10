@@ -347,6 +347,60 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Gpio10);
 	RESET_ClearPeripheralReset(kGPIO10_RST_SHIFT_RSTn);
 #endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lcdif), nxp_dcnano_lcdif, okay) && CONFIG_DISPLAY
+	/* Assert LCDIF reset. */
+	RESET_SetPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+
+	/* Disable media main and LCDIF power down. */
+	POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
+	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
+	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
+
+	/* Apply power down configuration. */
+	POWER_ApplyPD();
+
+	CLOCK_AttachClk(kMAIN_PLL_PFD2_to_LCDIF);
+	/* Note- pixel clock follows formula
+	 * (height  VSW  VFP  VBP) * (width  HSW  HFP  HBP) * frame rate.
+	 * this means the clock divider will vary depending on
+	 * the attached display.
+	 *
+	 * The root clock used here is the main PLL (PLL PFD2).
+	 */
+	CLOCK_SetClkDiv(
+		kCLOCK_DivLcdifClk,
+		(CLOCK_GetMainPfdFreq(kCLOCK_Pfd2) /
+		  DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings), clock_frequency)));
+
+	CLOCK_EnableClock(kCLOCK_Lcdif);
+
+	/* Clear LCDIF reset. */
+	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lcdif), nxp_dcnano_lcdif_dbi, okay)
+	/* Assert LCDIF reset. */
+	RESET_SetPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+
+	/* Disable media main and LCDIF power down. */
+	POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
+	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
+	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
+
+	/* Apply power down configuration. */
+	POWER_ApplyPD();
+
+	/* Calculate the divider for MEDIA MAIN clock source main pll pfd2. */
+	CLOCK_InitMainPfd(kCLOCK_Pfd2, (uint64_t)CLOCK_GetMainPllFreq() * 18UL / DT_PROP(DT_NODELABEL(lcdif), clock_frequency));
+	CLOCK_SetClkDiv(kCLOCK_DivMediaMainClk, 1U);
+	CLOCK_AttachClk(kMAIN_PLL_PFD2_to_MEDIA_MAIN);
+
+	CLOCK_EnableClock(kCLOCK_Lcdif);
+
+	/* Clear LCDIF reset. */
+	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
