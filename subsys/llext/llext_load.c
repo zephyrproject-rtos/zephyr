@@ -740,12 +740,13 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 
 out:
 	/*
-	 * Free resources only used during loading. Note that this exploits
-	 * the fact that freeing a NULL pointer has no effect.
+	 * Free resources only used during loading, unless explicitly requested.
+	 * Note that this exploits the fact that freeing a NULL pointer has no effect.
 	 */
 
-	llext_free(ldr->sect_map);
-	ldr->sect_map = NULL;
+	if (ret != 0 || !ldr_parm || !ldr_parm->keep_section_info) {
+		llext_free_inspection_data(ldr, ext);
+	}
 
 	/* Until proper inter-llext linking is implemented, the symbol table is
 	 * not useful outside of the loading process; keep it only if debugging
@@ -776,4 +777,12 @@ out:
 	llext_finalize(ldr);
 
 	return ret;
+}
+
+int llext_free_inspection_data(struct llext_loader *ldr, struct llext *ext)
+{
+	llext_free(ldr->sect_map);
+	ldr->sect_map = NULL;
+
+	return 0;
 }
