@@ -8,6 +8,7 @@ Storage
 
    nvs/nvs.rst
    zms/zms.rst
+   secure_storage/secure_storage.rst
    disk/access.rst
    flash_map/flash_map.rst
    fcb/fcb.rst

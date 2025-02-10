@@ -1,7 +1,7 @@
 .. _secure_storage:
 
-Secure storage
-##############
+PSA Secure Storage
+##################
 
 | The secure storage subsystem provides an implementation of the functions defined in the
   `Platform Security Architecture (PSA) Secure Storage API <https://arm-software.github.io/psa-api/storage/>`_.

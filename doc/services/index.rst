@@ -29,7 +29,6 @@ OS Services
    portability/index.rst
    poweroff.rst
    profiling/index.rst
-   secure_storage.rst
    shell/index.rst
    serialization/index.rst
    settings/index.rst
