@@ -131,20 +131,12 @@ static int emul_rx_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return video_get_caps(cfg->source_dev, VIDEO_EP_OUT, caps);
 }
 
-static int emul_rx_stream_start(const struct device *dev)
+static int emul_rx_set_stream(const struct device *dev, bool enable)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
-	/* A real hardware driver would first start its own peripheral */
-	return video_stream_start(cfg->source_dev);
-}
-
-static int emul_rx_stream_stop(const struct device *dev)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	return video_stream_stop(cfg->source_dev);
-	/* A real hardware driver would then stop its own peripheral */
+	/* A real hardware driver would first start / stop its own peripheral */
+	return enable ? video_stream_start(cfg->source_dev) : video_stream_stop(cfg->source_dev);
 }
 
 static void emul_rx_worker(struct k_work *work)
@@ -259,8 +251,7 @@ static DEVICE_API(video, emul_rx_driver_api) = {
 	.set_format = emul_rx_set_fmt,
 	.get_format = emul_rx_get_fmt,
 	.get_caps = emul_rx_get_caps,
-	.stream_start = emul_rx_stream_start,
-	.stream_stop = emul_rx_stream_stop,
+	.set_stream = emul_rx_set_stream,
 	.enqueue = emul_rx_enqueue,
 	.dequeue = emul_rx_dequeue,
 	.flush = emul_rx_flush,

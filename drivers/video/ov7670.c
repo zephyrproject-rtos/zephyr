@@ -550,12 +550,7 @@ static int ov7670_init(const struct device *dev)
 	return 0;
 }
 
-static int ov7670_stream_start(const struct device *dev)
-{
-	return 0;
-}
-
-static int ov7670_stream_stop(const struct device *dev)
+static int ov7670_set_stream(const struct device *dev, bool enable)
 {
 	return 0;
 }
@@ -580,8 +575,7 @@ static DEVICE_API(video, ov7670_api) = {
 	.set_format = ov7670_set_fmt,
 	.get_format = ov7670_get_fmt,
 	.get_caps = ov7670_get_caps,
-	.stream_start = ov7670_stream_start,
-	.stream_stop = ov7670_stream_stop,
+	.set_stream = ov7670_set_stream,
 	.set_ctrl = ov7670_set_ctrl,
 };
 
