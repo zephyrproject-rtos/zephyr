@@ -160,6 +160,7 @@ New APIs and options
   * :c:macro:`DT_ANY_INST_HAS_BOOL_STATUS_OKAY`
   * :c:struct:`led_dt_spec`
   * :kconfig:option:`CONFIG_STEP_DIR_STEPPER`
+  * :c:func:`count_bits`
 
 New Boards
 **********
