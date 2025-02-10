@@ -34,6 +34,8 @@
 #include <zephyr/sys/printk.h>
 
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
+#include "debugpin.h"
+#include "hexdump.h"
 
 void __appcpu_start(void);
 static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
@@ -85,9 +87,14 @@ void IRAM_ATTR __appcpu_start(void)
 	 */
 	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[1]));
 
+ets_printf("-------------------------->>>\n");
+hexdump("0x3f600000:", (void*)0x3f600000, 512);
+hexdump("0x40a00000:", (void*)0x40a00000, 512);
+ets_printf("<<<--------------------------\n");
 	core_intr_matrix_clear();
 
 	esp_intr_initialize();
+
 
 	/* Start Zephyr */
 	z_prep_c();

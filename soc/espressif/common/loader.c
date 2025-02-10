@@ -248,6 +248,17 @@ void map_rom_segments(int core, struct rom_segments *map)
 	/* Split the cache usage by the segment sizes */
 	Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif
+
+	if (cache_ll_l1_is_cache_enabled(0, 0)) {
+		ets_printf("(%d) PRO_CPU cache enabled\n", core);
+	}
+	if (cache_ll_l1_is_cache_enabled(1, 0)) {
+		ets_printf("(%d) APP_CPU cache enabled\n", core);
+	}
+
+	ets_printf("(%d) cache mux mode : 0x%x\n", core, cache_ll_l1_get_cache_mux_mode());
+	ets_printf("(0) enabled bus    : 0x%x\n", cache_ll_l1_get_enabled_bus(0));
+	ets_printf("(1) enabled bus    : 0x%x\n", cache_ll_l1_get_enabled_bus(1));
 }
 #endif /* !CONFIG_MCUBOOT */
 

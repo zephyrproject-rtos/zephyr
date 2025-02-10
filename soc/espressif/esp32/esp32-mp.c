@@ -13,11 +13,21 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <soc.h>
+#include <esp_log.h>
 #include <esp_cpu.h>
 #include "esp_rom_uart.h"
 
 #include "esp_mcuboot_image.h"
 #include "esp_memory_utils.h"
+#include "hw_init.h"
+
+#include "debugpin.h"
+#include <hal/cache_types.h>
+#include <hal/cache_ll.h>
+#include <hal/cache_hal.h>
+#include <rom/cache.h>
+
+#include "hexdump.h"
 
 #ifdef CONFIG_SMP
 
@@ -318,10 +328,13 @@ void esp_appcpu_start2(void *entry_point)
 	esp_rom_ets_set_appcpu_boot_addr((void *)entry_point);
 
 	esp_cpu_reset(1);
+	k_msleep(1000);
 }
 
 /* AMP support */
 #ifdef CONFIG_SOC_ENABLE_APPCPU
+
+#define TAG "amp"
 
 #include "bootloader_flash_priv.h"
 
@@ -333,7 +346,7 @@ static int load_segment(uint32_t src_addr, uint32_t src_len, uint32_t dst_addr)
 	const uint32_t *data = (const uint32_t *)sys_mmap(src_addr, src_len);
 
 	if (!data) {
-		ets_printf("%s: mmap failed", __func__);
+		ESP_EARLY_LOGE(TAG, "%s: mmap failed", __func__);
 		return -1;
 	}
 
@@ -350,12 +363,12 @@ static int load_segment(uint32_t src_addr, uint32_t src_len, uint32_t dst_addr)
 
 int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry_addr)
 {
-	const uint32_t img_off = FIXED_PARTITION_OFFSET(slot0_appcpu_partition);
+	const uint32_t fa_off = FIXED_PARTITION_OFFSET(slot0_appcpu_partition);
 	const uint32_t fa_size = FIXED_PARTITION_SIZE(slot0_appcpu_partition);
 	const uint8_t fa_id = FIXED_PARTITION_ID(slot0_appcpu_partition);
 
 	if (entry_addr == NULL) {
-		ets_printf("Can't return the entry address. Aborting!\n");
+		ESP_EARLY_LOGE(TAG, "Can't return the entry address. Aborting!");
 		abort();
 		return -1;
 	}
@@ -363,7 +376,7 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	uint32_t mcuboot_header[8] = {0};
 	esp_image_load_header_t image_header = {0};
 
-	const uint32_t *data = (const uint32_t *)sys_mmap(img_off, 0x40);
+	const uint32_t *data = (const uint32_t *)sys_mmap(fa_off, 0x80);
 
 	memcpy((void *)&mcuboot_header, data, sizeof(mcuboot_header));
 	memcpy((void *)&image_header, data + (hdr_offset / sizeof(uint32_t)),
@@ -372,49 +385,99 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	sys_munmap(data);
 
 	if (image_header.header_magic == ESP_LOAD_HEADER_MAGIC) {
-		ets_printf("APPCPU image, area id: %d, offset: 0x%x, hdr.off: 0x%x, size: %d kB\n",
-			   fa_id, img_off, hdr_offset, fa_size / 1024);
+		ESP_EARLY_LOGI(TAG, "APPCPU image, area id: %d, offset: 0x%x, hdr.off: 0x%x, size: %d kB",
+			   fa_id, fa_off, hdr_offset, fa_size / 1024);
 	} else if ((image_header.header_magic & 0xff) == 0xE9) {
-		ets_printf("ESP image format is not supported\n");
+		ESP_EARLY_LOGE(TAG, "ESP image format is not supported!");
 		abort();
 	} else {
-		ets_printf("Unknown or empty image detected. Aborting!\n");
+		ESP_EARLY_LOGE(TAG, "Unknown or empty image detected. Aborting!");
 		abort();
 	}
 
 	if (!esp_ptr_in_iram((void *)image_header.iram_dest_addr) ||
 	    !esp_ptr_in_iram((void *)(image_header.iram_dest_addr + image_header.iram_size))) {
-		ets_printf("IRAM region in load header is not valid. Aborting");
+		ESP_EARLY_LOGE(TAG, "IRAM region in load header is not valid. Aborting");
 		abort();
 	}
 
 	if (!esp_ptr_in_dram((void *)image_header.dram_dest_addr) ||
 	    !esp_ptr_in_dram((void *)(image_header.dram_dest_addr + image_header.dram_size))) {
-		ets_printf("DRAM region in load header is not valid. Aborting");
+		ESP_EARLY_LOGE(TAG, "DRAM region in load header is not valid. Aborting");
 		abort();
 	}
 
 	if (!esp_ptr_in_iram((void *)image_header.entry_addr)) {
-		ets_printf("Application entry point (%xh) is not in IRAM. Aborting",
+		ESP_EARLY_LOGE(TAG, "Application entry point (%xh) is not in IRAM. Aborting",
 			   image_header.entry_addr);
 		abort();
 	}
 
-	ets_printf("IRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load\n",
-		   (img_off + image_header.iram_flash_offset), image_header.iram_dest_addr,
+	ESP_EARLY_LOGI(TAG, "IRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load",
+		   (fa_off + image_header.iram_flash_offset), image_header.iram_dest_addr,
 		   image_header.iram_size, image_header.iram_size);
 
-	load_segment(img_off + image_header.iram_flash_offset, image_header.iram_size,
+	load_segment(fa_off + image_header.iram_flash_offset, image_header.iram_size,
 		     image_header.iram_dest_addr);
 
-	ets_printf("DRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load\n",
-		   (img_off + image_header.dram_flash_offset), image_header.dram_dest_addr,
+	ESP_EARLY_LOGI(TAG, "DRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load",
+		   (fa_off + image_header.dram_flash_offset), image_header.dram_dest_addr,
 		   image_header.dram_size, image_header.dram_size);
 
-	load_segment(img_off + image_header.dram_flash_offset, image_header.dram_size,
+	load_segment(fa_off + image_header.dram_flash_offset, image_header.dram_size,
 		     image_header.dram_dest_addr);
 
-	ets_printf("Application start=%xh\n\n", image_header.entry_addr);
+#if 1
+#if 1
+	ESP_EARLY_LOGI(TAG, "IROM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) map",
+		   (fa_off + image_header.irom_flash_offset), image_header.irom_map_addr,
+		   image_header.irom_size, image_header.irom_size);
+
+	ESP_EARLY_LOGI(TAG, "DROM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) map",
+		   (fa_off + image_header.drom_flash_offset), image_header.drom_map_addr,
+		   image_header.drom_size, image_header.drom_size);
+
+	/* Fill the rom mapping struct
+	 * NOTE: - The order of fields reflects the image header order.
+	 */
+	struct rom_segments rom = {
+		.irom_map_addr = image_header.drom_map_addr,
+		.irom_flash_offset = image_header.drom_flash_offset + fa_off,
+		.irom_size = image_header.drom_size,
+		.drom_map_addr = image_header.irom_map_addr,
+		.drom_flash_offset = image_header.irom_flash_offset + fa_off,
+		.drom_size = image_header.irom_size,
+	};
+	hexdump("hdr", &image_header, sizeof(esp_program_header_t));
+#else
+	struct rom_segments rom = {
+		0x3f600000, //image_header.drom_map_addr,
+		0x2d0000,   //image_header.drom_flash_offset + fa_off,
+		0x1000,     //image_header.drom_size,
+		0x40a00000, //image_header.irom_map_addr,
+		0x2e0000,   //image_header.irom_flash_offset + fa_off,
+		0x1000,     //image_header.irom_size,
+	};
+#endif
+	ESP_EARLY_LOGI(TAG, "%s segment: paddr=%08xh, vaddr=%08xh, size=%05Xh (%6d) map", "IROM",
+		       rom.irom_flash_offset, rom.irom_map_addr, rom.irom_size, rom.irom_size);
+	ESP_EARLY_LOGI(TAG, "%s segment: paddr=%08xh, vaddr=%08xh, size=%05Xh (%6d) map", "DROM",
+		       rom.drom_flash_offset, rom.drom_map_addr, rom.drom_size, rom.drom_size);
+	cache_bus_mask_t mask;
+
+	mask = cache_ll_l1_get_bus(1, rom.irom_map_addr, 0x1000);
+	ets_printf("core 1 bus for 0x%x - 0x%x\n", rom.irom_map_addr, mask);
+
+	mask = cache_ll_l1_get_bus(1, rom.drom_map_addr, 0x1000);
+	ets_printf("core 1 bus for 0x%x - 0x%x\n", rom.drom_map_addr, mask);
+
+	mask = CACHE_BUS_IBUS2 | CACHE_BUS_DBUS2;
+	cache_ll_l1_enable_bus(1, mask);
+
+	map_rom_segments(1, &rom);
+
+#endif
+	ESP_EARLY_LOGI(TAG, "Application start=%xh\n", image_header.entry_addr);
 	esp_rom_uart_tx_wait_idle(0);
 
 	assert(entry_addr != NULL);
