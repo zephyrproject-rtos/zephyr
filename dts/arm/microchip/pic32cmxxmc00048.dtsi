@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 GP Orcullo
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		pinctrl: pinctrl@41000000 {
+			porta: gpio@41000000 {
+				status = "okay";
+			};
+
+			portb: gpio@41000080 {
+				status = "okay";
+			};
+		};
+	};
+};
