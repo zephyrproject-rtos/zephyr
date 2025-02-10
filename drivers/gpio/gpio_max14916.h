@@ -103,7 +103,7 @@ union max14916_interrupt {
 		uint8_t OW_OFF_FLT: 1;
 		uint8_t OW_ON_FLT: 1;
 		uint8_t SHT_VDD_FLT: 1;
-		uint8_t DE_MAG_FLT: 1;
+		uint8_t THERM_ERR: 1;
 		uint8_t SUPPLY_ERR: 1;
 		uint8_t COM_ERR: 1; /* BIT7 */
 	} reg_bits;
@@ -195,6 +195,11 @@ struct max14916_data {
 		union max14916_global_err glob_err;
 		union max14916_mask mask;
 	} glob;
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+	sys_slist_t diag_callbacks;
+	struct gpio_callback diag_cb_data;
+	const struct device *dev;
+#endif
 };
 
 #endif
