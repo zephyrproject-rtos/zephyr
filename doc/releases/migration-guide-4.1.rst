@@ -608,6 +608,13 @@ Networking
 Other Subsystems
 ****************
 
+CFB
+===
+
+* :c:func:`cfb_get_font_size` and :c:func:`cfb_get_numof_fonts` take a
+  :c:struct:`driver` pointer as a first argument, but not used it.
+  Removed this argument.
+
 Flash map
 =========
 
