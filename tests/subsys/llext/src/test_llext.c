@@ -13,6 +13,7 @@
 #endif
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/inspect.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/llext/buf_loader.h>
 #include <zephyr/llext/fs_loader.h>
@@ -315,6 +316,72 @@ static LLEXT_CONST uint8_t threads_kernel_objects_ext[] ELF_ALIGN = {
 LLEXT_LOAD_UNLOAD(threads_kernel_objects,
 	.test_setup = threads_objects_test_setup,
 )
+
+static LLEXT_CONST uint8_t inspect_ext[] ELF_ALIGN = {
+	#include "inspect.inc"
+};
+
+void do_inspect_checks(struct llext_loader *ldr, struct llext *ext, enum llext_mem reg_idx,
+		       const char *sect_name, const char *sym_name)
+{
+	const elf_shdr_t *sect_hdr = NULL, *reg_hdr = NULL;
+	enum llext_mem sect_region = LLEXT_MEM_COUNT;
+	uintptr_t reg_addr = 0, sym_addr = 0;
+	size_t reg_size = 0, sect_offset = 0;
+	int sect_shndx, res;
+
+	res = llext_get_region_info(ldr, ext, reg_idx,
+				    &reg_hdr, (const void **)&reg_addr, &reg_size);
+	zassert_ok(res, "get_region_info() should succeed");
+	sect_shndx = llext_section_shndx(ldr, ext, sect_name);
+	zassert_true(sect_shndx > 0, "section %s should be found", sect_name);
+	res = llext_get_section_info(ldr, ext, sect_shndx,
+				     &sect_hdr, &sect_region, &sect_offset);
+	zassert_ok(res, "get_section_info() should succeed");
+	sym_addr = (uintptr_t)llext_find_sym(&ext->exp_tab, sym_name);
+	zassert_true(sym_addr, "symbol %s must be exported", sym_name);
+
+	zassert_equal(reg_idx, sect_region, "region mismatch (expected %d, got %d)",
+		      reg_idx, sect_region);
+	zassert_true(sect_hdr->sh_offset >= reg_hdr->sh_offset &&
+		     (sect_hdr->sh_offset + sect_hdr->sh_size <=
+		      reg_hdr->sh_offset + reg_hdr->sh_size),
+		     "section %s overflows its region %d", sect_name, reg_idx);
+	zassert_true(sect_offset < reg_size, "section offset outside region");
+	zassert_true(sym_addr >= reg_addr && sym_addr < reg_addr + reg_size,
+		     "symbol %s mapped outside region %d", sym_name, reg_idx);
+	zassert_true(sym_addr >= reg_addr + sect_offset &&
+		     sym_addr < reg_addr + sect_offset + sect_hdr->sh_size,
+		     "symbol %s mapped outside section %s", sym_name, sect_name);
+}
+
+ZTEST(llext, test_inspect)
+{
+	int res;
+
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(inspect_ext, sizeof(inspect_ext));
+	struct llext_loader *ldr = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+	size_t max_alloc_bytes;
+
+	ldr_parm.keep_section_info = true;
+	res = llext_load(ldr, "inspect", &ext, &ldr_parm);
+	zassert_ok(res, "load should succeed");
+
+	do_inspect_checks(ldr, ext, LLEXT_MEM_BSS, ".bss", "number_in_bss");
+	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".data", "number_in_data");
+	do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".rodata", "number_in_rodata");
+	do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".my_rodata", "number_in_my_rodata");
+	do_inspect_checks(ldr, ext, LLEXT_MEM_TEXT, ".text", "function_in_text");
+
+	max_alloc_bytes = ext->alloc_size;
+	llext_free_inspection_data(ldr, ext);
+	zassert_true(ext->alloc_size < max_alloc_bytes, "inspection data should be freed");
+
+	llext_unload(&ext);
+}
 
 #ifndef CONFIG_LLEXT_TYPE_ELF_OBJECT
 static LLEXT_CONST uint8_t multi_file_ext[] ELF_ALIGN = {
