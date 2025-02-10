@@ -76,6 +76,8 @@ source "drivers/ieee802154/Kconfig.kw41z"
 
 source "drivers/ieee802154/Kconfig.mcr20a"
 
+source "drivers/ieee802154/Kconfig.mcxw"
+
 source "drivers/ieee802154/Kconfig.nrf5"
 
 source "drivers/ieee802154/Kconfig.cc1200"
