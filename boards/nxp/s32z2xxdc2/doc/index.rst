@@ -64,6 +64,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | QSPI      | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
+| SENT      | on-chip    | sent                                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
