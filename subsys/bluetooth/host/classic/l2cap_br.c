@@ -1155,7 +1155,10 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 static int bt_l2cap_br_allocate_psm(uint16_t *psm)
 {
-	static uint16_t allocated_psm = L2CAP_BR_PSM_DYN_START;
+	/* DYN_END is UINT16_MAX, so to be able to do a psm <= DYN_END comparison
+	 * we need to use uint32_t as the type.
+	 */
+	static uint32_t allocated_psm = L2CAP_BR_PSM_DYN_START;
 
 	if (allocated_psm < L2CAP_BR_PSM_DYN_END) {
 		allocated_psm = allocated_psm + 1;
@@ -1174,13 +1177,13 @@ static int bt_l2cap_br_allocate_psm(uint16_t *psm)
 			continue;
 		}
 
-		if (l2cap_br_server_lookup_psm(allocated_psm)) {
+		if (l2cap_br_server_lookup_psm((uint16_t)allocated_psm)) {
 			LOG_DBG("PSM 0x%04x has been used", allocated_psm);
 			continue;
 		}
 
 		LOG_DBG("Allocated PSM 0x%04x for new server", allocated_psm);
-		*psm = allocated_psm;
+		*psm = (uint16_t)allocated_psm;
 		return 0;
 	}
 
