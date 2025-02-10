@@ -218,4 +218,9 @@ config USE_RZ_FSP_SCI_UART
 	help
 	  Enable RZ FSP SCI UART driver
 
+config USE_RZ_FSP_EXT_IRQ
+	bool
+	help
+	  Enable RZ FSP External IRQ driver
+
 endif
