@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 Seagate Technology LLC
  * Copyright (c) 2022 Grinn
+ * Copyright (c) 2025 TecInvent Electronics Ltd
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,7 +133,13 @@ static int lp50xx_set_brightness(const struct device *dev,
 		return -EINVAL;
 	}
 
-	buf[0] = LP50XX_LED0_BRIGHTNESS(config->num_modules) + led_info->index;
+	if (led_info->num_colors == 3) {
+		buf[0] = LP50XX_LED0_BRIGHTNESS(config->num_modules) + led_info->index;
+	} else {
+		buf[0] = LP50XX_OUT0_COLOR(config->num_modules);
+		buf[0] += led_info->num_colors * led_info->index;
+	}
+
 	buf[1] = (value * 0xff) / 100;
 
 	return i2c_write_dt(&config->bus, buf, sizeof(buf));
@@ -167,14 +174,17 @@ static int lp50xx_set_color(const struct device *dev, uint32_t led,
 		return -EINVAL;
 	}
 
+	/* Limit to RGB combination (three LEDs) */
+	if (num_colors > 3) {
+		num_colors = 3;
+	}
+
 	buf[0] = LP50XX_OUT0_COLOR(config->num_modules);
-	buf[0] += LP50XX_COLORS_PER_LED * led_info->index;
+	buf[0] += led_info->num_colors * led_info->index;
 
-	buf[1] = color[0];
-	buf[2] = color[1];
-	buf[3] = color[2];
+	memcpy(&buf[1], color, num_colors);
 
-	return i2c_write_dt(&config->bus, buf, sizeof(buf));
+	return i2c_write_dt(&config->bus, buf, num_colors + 1);
 }
 
 static int lp50xx_write_channels(const struct device *dev,
@@ -266,17 +276,26 @@ static int lp50xx_enable(const struct device *dev, bool enable)
 static int lp50xx_init(const struct device *dev)
 {
 	const struct lp50xx_config *config = dev->config;
+	const struct led_info *info;
 	int err;
+	int led;
+	int num_leds = 0;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
 		LOG_ERR("%s: I2C device not ready", dev->name);
 		return -ENODEV;
 	}
 
-	if (config->num_leds > config->max_leds) {
+	/* Sum number of LEDs defined in the device tree */
+	for (led = 0; led < config->num_leds; led++) {
+		info = lp50xx_led_to_info(config, led);
+		num_leds += info->num_colors;
+	}
+
+	if (num_leds > config->max_leds) {
 		LOG_ERR("%s: invalid number of LEDs %d (max %d)",
 			dev->name,
-			config->num_leds,
+			num_leds,
 			config->max_leds);
 		return -EINVAL;
 	}
