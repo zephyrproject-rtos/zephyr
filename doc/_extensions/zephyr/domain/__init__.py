@@ -962,6 +962,7 @@ def load_board_catalog_into_domain(app: Sphinx) -> None:
 
 def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
+    app.add_config_value("zephyr_generate_hw_features", False, "env")
 
     app.add_domain(ZephyrDomain)
 

@@ -79,7 +79,8 @@ hardware features:
 Connections and IOs
 ===================
 
-The default pin mapping is unchanged from the Pico 1 (see :ref:`rpi_pico_pin_mapping`).
+The default pin mapping is unchanged from the Pico 1 (see
+:ref:`Raspberry Pi Pico Pin Mapping <rpi_pico_pin_mapping>`).
 
 Programming and Debugging
 *************************

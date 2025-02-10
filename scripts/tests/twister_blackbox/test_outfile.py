@@ -102,7 +102,7 @@ class TestOutfile:
         zephyr_listdir = os.listdir(os.path.join(sample_path, 'zephyr'))
 
         expected_contents = ['CMakeFiles', 'handler.log', 'build.ninja', 'CMakeCache.txt',
-                             'zephyr', 'build.log']
+                             'zephyr', 'build.log', 'build_info.yml']
         expected_zephyr_contents = ['.config']
 
         assert all([content in expected_zephyr_contents for content in zephyr_listdir]), \
