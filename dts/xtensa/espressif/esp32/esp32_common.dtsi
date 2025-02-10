@@ -94,6 +94,32 @@
 	};
 
 	soc {
+		icache0: memory@400d0000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x400d0000 DT_SIZE_K(11456)>;
+			zephyr,memory-region = "ICACHE";
+		};
+
+		dcache0: memory@3f400000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x3F400000 DT_SIZE_M(4)>;
+			zephyr,memory-region = "DCACHE";
+		};
+/*
+		dcache1: memory@3f800000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x3f800000 DT_SIZE_M(4)>;
+			zephyr,memory-region = "DCACHE";
+		};
+*/
+		psram0: psram@3f800000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			/* PSRAM size is specified in SOC/SIP dtsi */
+			reg = <0x3f800000 DT_SIZE_M(2)>;
+			status = "disabled";
+		};
+
 		sram0: memory@40070000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40070000 DT_SIZE_K(192)>;
@@ -187,14 +213,6 @@
 				write-block-size = <4>;
 				/* Flash size is specified in SOC/SIP dtsi */
 			};
-		};
-
-		psram0: psram@3f800000 {
-			device_type = "memory";
-			compatible = "mmio-sram";
-			/* PSRAM size is specified in SOC/SIP dtsi */
-			reg = <0x3f800000 DT_SIZE_M(2)>;
-			status = "disabled";
 		};
 
 		ipi0: ipi@3f4c0058 {
