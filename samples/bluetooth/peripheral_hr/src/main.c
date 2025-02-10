@@ -186,6 +186,22 @@ static void blink_stop(void)
 #endif /* LED0_NODE */
 #endif /* CONFIG_GPIO */
 
+static void disconnect(struct bt_conn *conn, void *data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Disconnecting %s...\n", addr);
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err) {
+		printk("Failed disconnection %s.\n", addr);
+		return;
+	}
+	printk("success.\n");
+}
+
 int main(void)
 {
 	int err;
@@ -300,6 +316,16 @@ int main(void)
 #if defined(HAS_LED)
 			blink_start();
 #endif /* HAS_LED */
+		}
+
+
+		static uint8_t s_countdown;
+
+		if (!s_countdown--) {
+			s_countdown = 10U;
+
+			printk("Disconnecting all...\n");
+			bt_conn_foreach(BT_CONN_TYPE_LE, disconnect, NULL);
 		}
 	}
 
