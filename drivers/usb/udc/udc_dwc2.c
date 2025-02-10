@@ -44,10 +44,10 @@ enum dwc2_drv_event_type {
 };
 
 /* Minimum RX FIFO size in 32-bit words considering the largest used OUT packet
- * of 512 bytes. The value must be adjusted according to the number of OUT
- * endpoints.
+ * of 64 bytes (FS mode). The value must be adjusted according to the number
+ * of OUT endpoints.
  */
-#define UDC_DWC2_GRXFSIZ_FS_DEFAULT	(15U + 512U/4U)
+#define UDC_DWC2_GRXFSIZ_FS_DEFAULT (15U + 2 * (64U/4U + 1))
 /* Default Rx FIFO size in 32-bit words calculated to support High-Speed with:
  *   * 1 control endpoint in Completer/Buffer DMA mode: 13 locations
  *   * Global OUT NAK: 1 location
