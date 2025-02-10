@@ -87,6 +87,7 @@ config PICOLIBC
 	select NEED_LIBC_MEM_PARTITION
 	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
 	imply COMMON_LIBC_MALLOC
+	imply COMMON_LIBC_ABORT
 	depends on PICOLIBC_SUPPORTED
 	help
 	  Build with picolibc library. The picolibc library is built as
