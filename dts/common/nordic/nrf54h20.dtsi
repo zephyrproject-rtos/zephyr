@@ -1007,7 +1007,7 @@
 				zephyr,pm-device-runtime-auto;
 			};
 
-			spi130: spi@9a5000 {
+			wifi_spi: spi130: spi@9a5000 {
 				compatible = "nordic,nrf-spim";
 				reg = <0x9a5000 0x1000>;
 				status = "disabled";

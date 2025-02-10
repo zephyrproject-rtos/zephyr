@@ -364,7 +364,7 @@
 				zephyr,pm-device-runtime-auto;
 			};
 
-			spi22: spi@c8000 {
+			wifi_spi: spi22: spi@c8000 {
 				/*
 				 * This spi node can be either SPIM or SPIS,
 				 * for the user to pick:
