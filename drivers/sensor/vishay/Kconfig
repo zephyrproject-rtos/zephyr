@@ -4,5 +4,6 @@
 # zephyr-keep-sorted-start
 source "drivers/sensor/vishay/vcnl36825t/Kconfig"
 source "drivers/sensor/vishay/vcnl4040/Kconfig"
+source "drivers/sensor/vishay/veml6031/Kconfig"
 source "drivers/sensor/vishay/veml7700/Kconfig"
 # zephyr-keep-sorted-stop
