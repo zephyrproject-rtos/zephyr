@@ -1006,10 +1006,11 @@ config BT_ECC
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_ECC_SECP_R1_256
 	imply MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
-	select BT_LONG_WQ
+	imply BT_LONG_WQ
 	help
-	  If this option is set, internal APIs will be available to perform ECDH operations
-	  through the long work queue. operations needed e.g. by LE Secure Connections.
+	  If this option is set, internal APIs will be available to perform ECDH operations through
+	  the long work queue (or system work queue). The operations are used e.g. by LE Secure
+	  Connections.
 
 endif # BT_HCI_HOST
 
