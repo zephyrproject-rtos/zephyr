@@ -35,6 +35,45 @@ perform a full erase, pass the ``--erase`` option when executing ``west flash``.
 Kernel
 ******
 
+
+k_pipe API
+==========
+
+The k_pipe API has been reworked and the API used in ``CONFIG_PIPES`` is now deprecated.
+The k_pipe API is enabled by default when ``CONFIG_MULTITHREADING`` is set.
+Function renames and modifications:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Old API
+     - New API
+     - Changes
+   * - ``k_pipe_put(..)``
+     - ``k_pipe_write(..)``
+     - Removed ``min_xfer`` parameter (partial transfers based on thresholds are no longer supported)
+       ``bytes_written`` is now the return value
+   * - ``k_pipe_get(..)``
+     - ``k_pipe_read(..)``
+     - Removed ``min_xfer`` parameter (partial transfers based on thresholds are no longer supported)
+       ``bytes_read`` is now the return value
+   * - ``k_pipe_flush(..)`` & ``k_pipe_buffer_flush(..)``
+     - ``k_pipe_reset(..)``
+     - Reset the pipe, discarding all data in the pipe, non blocking.
+   * - ``k_pipe_alloc_init(..)``, ``k_pipe_cleanup(..)``
+     - **Removed**
+     - Dynamic allocation of pipes is no longer supported
+   * - ``k_pipe_read_avail(..)``, ``k_pipe_write_avail(..)``
+     - **Removed**
+     - Querying the number of bytes in the pipe is no longer supported
+   * - None
+     - ``k_pipe_close(..)``
+     - Close a pipe, waking up all pending readers and writers with an error code. No further
+       reading or writing is allowed on the pipe. The pipe can be re-opened by calling
+       ``k_pipe_init(..)`` again. **Note**, all data in the pipe is available to readers until the
+       pipe is emptied.
+
+
 Security
 ********
 
