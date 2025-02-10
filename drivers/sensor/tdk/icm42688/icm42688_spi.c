@@ -34,14 +34,20 @@ static inline int spi_read_register(const struct spi_dt_spec *bus, uint8_t reg, 
 {
 	uint8_t tx_buffer = REG_SPI_READ_BIT | reg;
 
-	const struct spi_buf tx_buf = {
-		.buf = &tx_buffer,
-		.len = 1,
+	const struct spi_buf tx_buf[2] = {
+		{
+			.buf = &tx_buffer,
+			.len = 1,
+		},
+		{
+			.buf = NULL,
+			.len = len,
+		}
 	};
 
 	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1,
+		.buffers = tx_buf,
+		.count = 2,
 	};
 
 	struct spi_buf rx_buf[2] = {
