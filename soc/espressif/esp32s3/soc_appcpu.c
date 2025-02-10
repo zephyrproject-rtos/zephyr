@@ -33,6 +33,8 @@
 #include <esp_app_format.h>
 #include <esp_clk_internal.h>
 
+#include "debugpin.h"
+
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 
 void __appcpu_start(void);

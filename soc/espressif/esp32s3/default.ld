@@ -17,8 +17,24 @@ procpu_dram_end = USER_DRAM_END - APPCPU_SRAM_SIZE;
 procpu_iram_org = SRAM_USER_IRAM_START;
 procpu_iram_len = procpu_iram_end - procpu_iram_org;
 
+procpu_dram_org2 = ORIGIN(dram0_0_seg);
 procpu_dram_org = SRAM1_DRAM_START;
 procpu_dram_len = procpu_dram_end - procpu_dram_org;
+
+/* User available ROM memory segments */
+procpu_irom_end = ICACHE0_START + ICACHE0_SIZE - APPCPU_ROM_SIZE;
+procpu_drom_end = DCACHE0_START + DCACHE0_SIZE - APPCPU_ROM_SIZE;
+
+procpu_irom_org = ICACHE0_START;
+procpu_irom_len = ICACHE0_SIZE - APPCPU_ROM_SIZE;
+
+procpu_drom_org = DCACHE0_START;
+procpu_drom_len = DCACHE0_SIZE - APPCPU_ROM_SIZE;
+
+#if defined(CONFIG_ESP_SPIRAM)
+procpu_extram_org = DCACHE0_START
+procpu_extram_len = CONFIG_ESP_SPIRAM_SIZE
+#endif
 
 /* Aliases */
 #define FLASH_CODE_REGION  irom0_0_seg
@@ -61,8 +77,8 @@ MEMORY
   iram0_0_seg(RX): org = procpu_iram_org, len = procpu_iram_len
   dram0_0_seg(RW): org = procpu_dram_org, len = procpu_dram_len
 
-  irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
-  drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
+  irom0_0_seg(RX): org = procpu_irom_org, len = procpu_irom_len
+  drom0_0_seg(R):  org = procpu_drom_org, len = procpu_drom_len
 
   /* The `ext_ram_seg` and `drom0_0_seg` share the same bus and the address region.
    * A dummy section is used to avoid overlap. See `.ext_ram.dummy` in `sections.ld.in`
@@ -70,8 +86,8 @@ MEMORY
 #if defined(CONFIG_ESP_SPIRAM)
   /* `ext_[id]ram_seg` and `drom0_0_seg` share the same bus and the address region.
    * A dummy section is used to avoid overlap. See `.ext_ram.dummy` */
-  ext_dram_seg(RW): org = DROM_SEG_ORG, len = (CONFIG_ESP_SPIRAM_SIZE)
-  ext_iram_seg(RX): org = IROM_SEG_ORG, len = (CONFIG_ESP_SPIRAM_SIZE)
+  ext_dram_seg(RW): org = procpu_extram_org, len = procpu_extram_len
+  ext_iram_seg(RX): org = procpu_extram_org, len = procpu_extram_len
 #endif
 
   /* RTC fast memory (executable). Persists over deep sleep.
@@ -149,7 +165,7 @@ SECTIONS
      */
     LONG(ADDR(.dram0.data))
     LONG(LOADADDR(.dram0.data))
-    LONG(LOADADDR(.dram0.end) + SIZEOF(.dram0.end) - LOADADDR(.dram0.data))
+    LONG(LOADADDR(.dram0.data_end) + SIZEOF(.dram0.data_end) - LOADADDR(.dram0.data))
 
     /* RTC_IRAM metadata:
      * 8. Destination address (VMA) for RTC_IRAM region
@@ -559,8 +575,8 @@ SECTIONS
     /* Spacer section is required to skip .iram0.text area because
      * iram0_0_seg and dram0_0_seg reflect the same address space on different buses.
      */
-    . = ORIGIN(dram0_0_seg) + MAX(_iram_end, SRAM1_IRAM_START) - SRAM1_IRAM_START;
-    . = ALIGN(4) + 16;
+    . = ORIGIN(dram0_0_seg) + (MAX(_iram_end, SRAM1_IRAM_START) - SRAM1_IRAM_START);
+    . = ALIGN(16);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   .dram0.data :
@@ -753,7 +769,7 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-logging.ld>
   #pragma pop_macro("GROUP_ROM_LINK_IN")
 
-  .dram0.end :
+  .dram0.data_end :
   {
     __data_end = ABSOLUTE(.);
     _data_end = ABSOLUTE(.);
