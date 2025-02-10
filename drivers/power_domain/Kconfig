@@ -90,4 +90,13 @@ config POWER_DOMAIN_NXP_SCU_INIT_PRIORITY
 
 endif #POWER_DOMAIN_NXP_SCU
 
+config POWER_DOMAIN_STATE_CHANGE_DEVICEONOFF
+	bool "Turn on/off devices during a PM state change"
+	default y
+	depends on DT_HAS_POWER_DOMAIN_STATE_CHANGE_DEVICEONOFF_ENABLED
+	select DEVICE_DEPS
+	help
+	  Generic power domain control to turn on/off devices when the
+	  PM subsystem transitions in and out certain power states.
+
 endif

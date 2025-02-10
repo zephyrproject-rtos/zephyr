@@ -30,7 +30,7 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			cpu-power-states = <&idle &suspend>;
+			cpu-power-states = <&idle &suspend &standby>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
@@ -58,6 +58,20 @@
 							<0x100>,
 							<0x0>;
 			};
+			/* This is the setting for Sleep Mode */
+			standby: standby {
+				compatible = "nxp,pdcfg-power", "zephyr,power-state";
+				power-state-name = "standby";
+				/* TODO: Revisit latency numbers */
+				min-residency-us = <5000>;
+				exit-latency-us = <1000>;
+				deep-sleep-config = <0x180000>,
+							<0x0>,
+							<0x4>,
+							<0x100>,
+							<0x0>;
+				status = "disabled";
+			};
 		};
 	};
 
@@ -69,6 +83,11 @@
 		ranges = <0x0 0x443C0000 DT_SIZE_K(140)>;
 	};
 
+	power_mode3_domain: power_mode3_domain {
+		compatible = "power-domain-state-change-deviceonoff";
+		onoff-power-states = <&standby>;
+		#power-domain-cells = <0>;
+	};
 };
 
 &sram {
@@ -197,6 +216,7 @@
 			#gpio-cells = <2>;
 			reg = <0>;
 			int-source = "pint";
+			power-domains = <&power_mode3_domain>;
 		};
 
 		hsgpio1: gpio@1 {
@@ -205,6 +225,7 @@
 			#gpio-cells = <2>;
 			reg = <1>;
 			int-source = "pint";
+			power-domains = <&power_mode3_domain>;
 		};
 	};
 
@@ -225,6 +246,7 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 8)>;
 		dmas = <&dma0 0>, <&dma0 1>;
 		dma-names = "rx", "tx";
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
@@ -236,6 +258,8 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 9)>;
 		dmas = <&dma0 2>, <&dma0 3>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
@@ -247,6 +271,8 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 10)>;
 		dmas = <&dma0 4>, <&dma0 5>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
@@ -258,6 +284,8 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 11)>;
 		dmas = <&dma0 6>, <&dma0 7>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
@@ -269,6 +297,8 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 22)>;
 		dmas = <&dma0 26>, <&dma0 27>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};
 
@@ -320,6 +350,17 @@
 		#size-cells = <0>;
 		clocks = <&clkctl1 MCUX_LCDIC_CLK>;
 		dmas = <&dma0 0>;
+	};
+
+	rtc: rtc@30000 {
+		compatible = "nxp,lpc-rtc";
+		reg = <0x30000 0x1000>;
+		interrupts = <32 0>;
+		status = "disabled";
+		rtc_highres: rtc_highres {
+			compatible = "nxp,lpc-rtc-highres";
+			status = "disabled";
+		};
 	};
 
 	ctimer0: ctimer@28000 {
