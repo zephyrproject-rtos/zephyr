@@ -46,6 +46,8 @@ struct udc_device_caps {
 	uint32_t can_detect_vbus : 1;
 	/** Maximum packet size for control endpoint */
 	enum udc_mps0 mps0 : 2;
+	/** Maximum packet size for data endpoints */
+	uint16_t mps : 11;
 };
 
 /**
