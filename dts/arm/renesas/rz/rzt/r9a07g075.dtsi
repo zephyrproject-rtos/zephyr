@@ -95,6 +95,157 @@
 			};
 		};
 
+		icu: icu@81048000 {
+			reg = <0x81048000 0x1000>;
+			interrupt-parent = <&gic>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			irq0: irq0@0 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x0>;
+				interrupts = <GIC_SPI 6 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq1: irq@1 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x1>;
+				interrupts = <GIC_SPI 7 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq2: irq@2 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x2>;
+				interrupts = <GIC_SPI 8 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq3: irq@3 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x3>;
+				interrupts = <GIC_SPI 9 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq4: irq@4 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x4>;
+				interrupts = <GIC_SPI 10 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq5: irq@5 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x5>;
+				interrupts = <GIC_SPI 11 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq6: irq@6 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x6>;
+				interrupts = <GIC_SPI 12 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq7: irq@7 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x7>;
+				interrupts = <GIC_SPI 13 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq8: irq@8 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x8>;
+				interrupts = <GIC_SPI 14 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq9: irq@9 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x9>;
+				interrupts = <GIC_SPI 15 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq10: irq@a {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0xa>;
+				interrupts = <GIC_SPI 16 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq11: irq@b {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0xb>;
+				interrupts = <GIC_SPI 17 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq12: irq@c {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0xc>;
+				interrupts = <GIC_SPI 18 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq13: irq@d {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0xd>;
+				interrupts = <GIC_SPI 19 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq14: irq@e {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0xe>;
+				interrupts = <GIC_SPI 394 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			irq15: irq@f {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0xf>;
+				interrupts = <GIC_SPI 395 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+		};
+
 		pinctrl: pinctrl@800a0000 {
 			compatible = "renesas,rzt-pinctrl";
 			reg = <0x800a0000 0x1000 0x81030c00 0x1000>;
