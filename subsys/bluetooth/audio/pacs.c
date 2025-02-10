@@ -737,7 +737,7 @@ static struct bt_gatt_service pacs_svc = (struct bt_gatt_service)BT_GATT_SERVICE
 #define PACS_SOURCE_PAC_LOC_CHAR_ATTR_COUNT 2  /* declaration + value*/
 #endif /* BT_PAC_SRC_LOC_NOTIFIABLE */
 
-static void configure_pacs_char(const struct bt_bap_pacs_register_param *param)
+static void configure_pacs_char(const struct bt_pacs_register_param *param)
 {
 	size_t attrs_to_rem;
 	uint8_t first_to_rem;
@@ -780,7 +780,7 @@ static void configure_pacs_char(const struct bt_bap_pacs_register_param *param)
 	pacs_svc.attr_count -= attrs_to_rem;
 }
 
-static bool valid_pacs_register_param(const struct bt_bap_pacs_register_param *param)
+static bool valid_pacs_register_param(const struct bt_pacs_register_param *param)
 {
 	bool any_pac_registered = false;
 
@@ -816,7 +816,7 @@ static bool valid_pacs_register_param(const struct bt_bap_pacs_register_param *p
 	return true;
 }
 
-int bt_pacs_register(const struct bt_bap_pacs_register_param *param)
+int bt_pacs_register(const struct bt_pacs_register_param *param)
 {
 	int err = 0;
 
