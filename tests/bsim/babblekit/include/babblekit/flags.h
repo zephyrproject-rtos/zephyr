@@ -19,11 +19,17 @@
 #define DECLARE_FLAG(flag) extern atomic_t flag
 
 /* Define a new binary flag.
- * Declare them static if defining flags with the same name in multiple files.
+ * Use @ref DEFINE_FLAG_STATIC if defining flags with the same name in multiple files.
  *
  * @param flag Name of the flag
  */
 #define DEFINE_FLAG(flag)  atomic_t flag = (atomic_t) false
+
+/* Define a new, static binary flag.
+ *
+ * @param flag Name of the flag
+ */
+#define DEFINE_FLAG_STATIC(flag)  static atomic_t flag = (atomic_t) false
 
 #define SET_FLAG(flag)     (void)atomic_set(&flag, (atomic_t) true)
 #define UNSET_FLAG(flag)   (void)atomic_set(&flag, (atomic_t) false)
