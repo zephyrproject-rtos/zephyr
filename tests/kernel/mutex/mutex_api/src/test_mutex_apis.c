@@ -409,12 +409,8 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 
 static void tThread_mutex_lock_should_fail(void *p1, void *p2, void *p3)
 {
-	k_timeout_t timeout;
 	struct k_mutex *mutex = (struct k_mutex *)p1;
-
-	timeout.ticks = 0;
-	timeout.ticks |= (uint64_t)(uintptr_t)p2 << 32;
-	timeout.ticks |= (uint64_t)(uintptr_t)p3 << 0;
+	k_timeout_t timeout = *(k_timeout_t *)p2;
 
 	zassert_equal(-EAGAIN, k_mutex_lock(mutex, timeout), NULL);
 }
@@ -440,30 +436,32 @@ static void tThread_mutex_lock_should_fail(void *p1, void *p2, void *p3)
  */
 ZTEST(mutex_api_1cpu, test_mutex_timeout_race_during_priority_inversion)
 {
-	k_timeout_t timeout;
-	uintptr_t timeout_upper;
-	uintptr_t timeout_lower;
-	int helper_prio = k_thread_priority_get(k_current_get()) + 1;
+	const int low_prio = 2, helper_prio = 1, high_prio = 0;
+
+	static ZTEST_DMEM k_timeout_t timeout;
 
 	k_mutex_init(&tmutex);
 
-	/* align to tick boundary */
-	k_sleep(K_TICKS(1));
+	/* Set our priority to the "low" value so the thread can preempt us */
+	k_thread_priority_set(k_current_get(), low_prio);
 
-	/* allow non-kobject data to be shared (via registers) */
 	timeout = K_TIMEOUT_ABS_TICKS(k_uptime_ticks()
 		+ CONFIG_TEST_MUTEX_API_THREAD_CREATE_TICKS);
-	timeout_upper = timeout.ticks >> 32;
-	timeout_lower = timeout.ticks & BIT64_MASK(32);
 
 	k_mutex_lock(&tmutex, K_FOREVER);
+
+	/* This thread will run immediately, preempt us, and boost our priority */
 	k_thread_create(&tdata, tstack, K_THREAD_STACK_SIZEOF(tstack),
-			tThread_mutex_lock_should_fail, &tmutex, (void *)timeout_upper,
-			(void *)timeout_lower, helper_prio,
+			tThread_mutex_lock_should_fail, &tmutex, &timeout, NULL, helper_prio,
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
-	k_thread_priority_set(k_current_get(), K_HIGHEST_THREAD_PRIO);
-
+	/* Now we wait for the same absolute timeout the thread is
+	 * blocked on, so we wake up simultaneously.  But further
+	 * boost our own priority so that we wake up first, creating
+	 * the situation where the target thread sees both a timeout
+	 * and an unlocked mutex simultaneously.
+	 */
+	k_thread_priority_set(k_current_get(), high_prio);
 	k_sleep(timeout);
 
 	k_mutex_unlock(&tmutex);

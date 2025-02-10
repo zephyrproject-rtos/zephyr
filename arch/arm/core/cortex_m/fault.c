@@ -1048,6 +1048,9 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 	bool recoverable, nested_exc;
 	struct arch_esf *esf;
+#if defined(CONFIG_THREAD_STACK_INFO) && defined(CONFIG_USE_SWITCH)
+	struct k_thread *curr = _current;
+#endif
 
 	/* Create a stack-ed copy of the ESF to be used during
 	 * the fault handling process.
@@ -1105,6 +1108,19 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 	}
 
 	z_arm_fatal_error(reason, &esf_copy);
+
+#if defined(CONFIG_THREAD_STACK_INFO) && defined(CONFIG_USE_SWITCH)
+	/* The arch_switch implementation can expand the size
+	 * of the frame when it saves the outgoing context (to
+	 * the aborted thread!), so make sure it has room
+	 * since PSP may have run off the end of the stack.
+	 */
+	uint32_t pspmin = curr->stack_info.start + arm_m_switch_stack_buffer;
+
+	__asm__ volatile("mrs %0, psp" : "=r"(psp));
+	psp = MAX(psp, pspmin);
+	__asm__ volatile("msr psp, %0" ::"r"(psp));
+#endif
 }
 
 /**
