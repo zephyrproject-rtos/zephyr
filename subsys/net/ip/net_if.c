@@ -1907,6 +1907,7 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 				    uint32_t vlifetime)
 {
 	ifaddr->is_used = true;
+	ifaddr->is_added = true;
 	ifaddr->is_temporary = false;
 	ifaddr->address.family = AF_INET6;
 	ifaddr->addr_type = addr_type;
@@ -1945,6 +1946,17 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 
 	ifaddr = ipv6_addr_find(iface, addr);
 	if (ifaddr) {
+		/* Address already exists, just return it but update ref count
+		 * if it was not updated. This could happen if the address was
+		 * added and then removed but for example an active connection
+		 * was still using it. In this case we must update the ref count
+		 * so that the address is not removed if the connection is closed.
+		 */
+		if (!ifaddr->is_added) {
+			atomic_inc(&ifaddr->atomic_ref);
+			ifaddr->is_added = true;
+		}
+
 		goto out;
 	}
 
@@ -2002,6 +2014,7 @@ out:
 
 bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
+	struct net_if_addr *ifaddr;
 	struct net_if_ipv6 *ipv6;
 	bool result = true;
 	int ret;
@@ -2016,11 +2029,12 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 		goto out;
 	}
 
-	ret = net_if_addr_unref(iface, AF_INET6, addr);
+	ret = net_if_addr_unref(iface, AF_INET6, addr, &ifaddr);
 	if (ret > 0) {
 		NET_DBG("Address %s still in use (ref %d)",
 			net_sprint_ipv6_addr(addr), ret);
 		result = false;
+		ifaddr->is_added = false;
 		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
@@ -4229,6 +4243,17 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 	ifaddr = ipv4_addr_find(iface, addr);
 	if (ifaddr) {
 		/* TODO: should set addr_type/vlifetime */
+		/* Address already exists, just return it but update ref count
+		 * if it was not updated. This could happen if the address was
+		 * added and then removed but for example an active connection
+		 * was still using it. In this case we must update the ref count
+		 * so that the address is not removed if the connection is closed.
+		 */
+		if (!ifaddr->is_added) {
+			atomic_inc(&ifaddr->atomic_ref);
+			ifaddr->is_added = true;
+		}
+
 		goto out;
 	}
 
@@ -4251,6 +4276,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 
 	if (ifaddr) {
 		ifaddr->is_used = true;
+		ifaddr->is_added = true;
 		ifaddr->address.family = AF_INET;
 		ifaddr->address.in_addr.s4_addr32[0] =
 						addr->s4_addr32[0];
@@ -4295,6 +4321,7 @@ out:
 
 bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 {
+	struct net_if_addr *ifaddr;
 	struct net_if_ipv4 *ipv4;
 	bool result = true;
 	int ret;
@@ -4309,11 +4336,12 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 		goto out;
 	}
 
-	ret = net_if_addr_unref(iface, AF_INET, addr);
+	ret = net_if_addr_unref(iface, AF_INET, addr, &ifaddr);
 	if (ret > 0) {
 		NET_DBG("Address %s still in use (ref %d)",
 			net_sprint_ipv4_addr(addr), ret);
 		result = false;
+		ifaddr->is_added = false;
 		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
@@ -5048,11 +5076,13 @@ struct net_if_addr *net_if_addr_ref(struct net_if *iface,
 int net_if_addr_unref_debug(struct net_if *iface,
 			    sa_family_t family,
 			    const void *addr,
+			    struct net_if_addr **ret_ifaddr,
 			    const char *caller, int line)
 #else
 int net_if_addr_unref(struct net_if *iface,
 		      sa_family_t family,
-		      const void *addr)
+		      const void *addr,
+		      struct net_if_addr **ret_ifaddr)
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 {
 	struct net_if_addr *ifaddr;
@@ -5106,6 +5136,10 @@ int net_if_addr_unref(struct net_if *iface,
 #endif
 
 	if (ref > 1) {
+		if (ret_ifaddr) {
+			*ret_ifaddr = ifaddr;
+		}
+
 		return ref - 1;
 	}
 
