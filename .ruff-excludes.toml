@@ -435,6 +435,9 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
+"./scripts/migrate_bindings_style.py" = [
+    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
+]
 "./scripts/dts/python-devicetree/src/devicetree/dtlib.py" = [
     "E701",     # https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
