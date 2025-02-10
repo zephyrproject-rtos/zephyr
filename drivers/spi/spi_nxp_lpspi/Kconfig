@@ -1,7 +1,7 @@
-# Copyright 2018, 2024 NXP
+# Copyright 2018, 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SPI_MCUX_LPSPI
+config SPI_NXP_LPSPI
 	bool "NXP LPSPI peripheral"
 	default y
 	depends on DT_HAS_NXP_LPSPI_ENABLED
@@ -10,21 +10,21 @@ config SPI_MCUX_LPSPI
 	help
 	  Enable support for NXP LPSPI.
 
-if SPI_MCUX_LPSPI
+if SPI_NXP_LPSPI
 
-config SPI_MCUX_LPSPI_DMA
-	bool "MCUX LPSPI SPI DMA Support"
+config SPI_NXP_LPSPI_DMA
+	bool "NXP LPSPI SPI DMA Driver"
 	select DMA
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas)
 	help
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
 
-config SPI_MCUX_LPSPI_NORMAL
-	bool "NXP MCUX LPSPI driver"
+config SPI_NXP_LPSPI_CPU
+	bool "NXP LPSPI CPU based driver"
 	default y
-	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas) || !SPI_MCUX_LPSPI_DMA
+	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas) || !SPI_NXP_LPSPI_DMA
 	help
 	  Use the traditional (non-RTIO) SPI driver for NXP LPSPI.
 
-endif # SPI_MCUX_LPSPI
+endif # SPI_NXP_LPSPI

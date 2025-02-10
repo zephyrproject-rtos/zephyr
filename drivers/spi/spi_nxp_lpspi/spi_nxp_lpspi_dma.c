@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nxp_lpspi
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_mcux_lpspi_dma, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(spi_nxp_lpspi_dma, CONFIG_SPI_LOG_LEVEL);
 
 #include <zephyr/drivers/dma.h>
 #include "spi_nxp_lpspi_priv.h"
@@ -34,11 +34,11 @@ struct spi_nxp_dma_data {
 #define LPSPI_DMA_DONE_FLAG    (LPSPI_DMA_RX_DONE_FLAG | LPSPI_DMA_TX_DONE_FLAG)
 
 /* This function is executed in the interrupt context */
-static void spi_mcux_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
+static void spi_nxp_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
 	/* arg directly holds the spi device */
 	const struct device *spi_dev = arg;
-	struct spi_mcux_data *data = (struct spi_mcux_data *)spi_dev->data;
+	struct spi_nxp_data *data = (struct spi_nxp_data *)spi_dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 	char debug_char;
 
@@ -83,11 +83,11 @@ done:
 	spi_context_complete(&data->ctx, spi_dev, 0);
 }
 
-static struct dma_block_config *spi_mcux_dma_common_load(struct spi_dma_stream *stream,
+static struct dma_block_config *spi_nxp_dma_common_load(struct spi_dma_stream *stream,
 							 const struct device *dev,
 							 const uint8_t *buf, size_t len)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 	struct dma_block_config *blk_cfg = &stream->dma_blk_cfg;
 
@@ -114,14 +114,14 @@ static struct dma_block_config *spi_mcux_dma_common_load(struct spi_dma_stream *
 	return blk_cfg;
 }
 
-static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
+static int spi_nxp_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 	/* remember active TX DMA channel (used in callback) */
 	struct spi_dma_stream *stream = &dma_data->dma_tx;
-	struct dma_block_config *blk_cfg = spi_mcux_dma_common_load(stream, dev, buf, len);
+	struct dma_block_config *blk_cfg = spi_nxp_dma_common_load(stream, dev, buf, len);
 
 	if (buf != NULL) {
 		/* tx direction has memory as source and periph as dest. */
@@ -129,21 +129,21 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, si
 	}
 
 	/* Dest is LPSPI tx fifo */
-	blk_cfg->dest_address = LPSPI_GetTxRegisterAddress(base);
+	blk_cfg->dest_address = (uint32_t) &(base->TDR);
 
 	/* give the client dev as arg, as the callback comes from the dma */
 	/* pass our client origin to the dma: data->dma_tx.dma_channel */
 	return dma_config(stream->dma_dev, stream->channel, &stream->dma_cfg);
 }
 
-static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
+static int spi_nxp_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 	/* retrieve active RX DMA channel (used in callback) */
 	struct spi_dma_stream *stream = &dma_data->dma_rx;
-	struct dma_block_config *blk_cfg = spi_mcux_dma_common_load(stream, dev, buf, len);
+	struct dma_block_config *blk_cfg = spi_nxp_dma_common_load(stream, dev, buf, len);
 
 	if (buf != NULL) {
 		/* rx direction has periph as source and mem as dest. */
@@ -151,7 +151,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t l
 	}
 
 	/* Source is LPSPI rx fifo */
-	blk_cfg->source_address = LPSPI_GetRxRegisterAddress(base);
+	blk_cfg->source_address = (uint32_t) &(base->RDR);
 
 	/* pass our client origin to the dma: data->dma_rx.channel */
 	return dma_config(stream->dma_dev, stream->channel, &stream->dma_cfg);
@@ -159,7 +159,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t l
 
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 	int ret;
 
@@ -177,9 +177,9 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	return 0;
 }
 
-static inline int spi_mcux_dma_rxtx_load(const struct device *dev, size_t *dma_size)
+static inline int spi_nxp_dma_rxtx_load(const struct device *dev, size_t *dma_size)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	int ret = 0;
@@ -190,12 +190,12 @@ static inline int spi_mcux_dma_rxtx_load(const struct device *dev, size_t *dma_s
 	/* Load dma blocks of equal length */
 	*dma_size = spi_context_max_continuous_chunk(ctx);
 
-	ret = spi_mcux_dma_tx_load(dev, ctx->tx_buf, *dma_size);
+	ret = spi_nxp_dma_tx_load(dev, ctx->tx_buf, *dma_size);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = spi_mcux_dma_rx_load(dev, ctx->rx_buf, *dma_size);
+	ret = spi_nxp_dma_rx_load(dev, ctx->rx_buf, *dma_size);
 	if (ret != 0) {
 		return ret;
 	}
@@ -213,7 +213,7 @@ static inline int spi_mcux_dma_rxtx_load(const struct device *dev, size_t *dma_s
 #ifdef CONFIG_SPI_ASYNC
 static int transceive_dma_async(const struct device *dev, spi_callback_t cb, void *userdata)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	size_t dma_size;
 	int ret;
@@ -222,13 +222,13 @@ static int transceive_dma_async(const struct device *dev, spi_callback_t cb, voi
 	ctx->callback = cb;
 	ctx->callback_data = userdata;
 
-	ret = spi_mcux_dma_rxtx_load(dev, &dma_size);
+	ret = spi_nxp_dma_rxtx_load(dev, &dma_size);
 	if (ret) {
 		return ret;
 	}
 
 	/* Enable DMA Requests */
-	LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
+	base->DER |= LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK;
 
 	return 0;
 }
@@ -239,7 +239,7 @@ static int transceive_dma_async(const struct device *dev, spi_callback_t cb, voi
 static int transceive_dma_sync(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	size_t dma_size;
 	int ret;
@@ -249,19 +249,19 @@ static int transceive_dma_sync(const struct device *dev)
 	/* Send each spi buf via DMA, updating context as DMA completes */
 	while (ctx->rx_len > 0 || ctx->tx_len > 0) {
 		/* Load dma block */
-		ret = spi_mcux_dma_rxtx_load(dev, &dma_size);
+		ret = spi_nxp_dma_rxtx_load(dev, &dma_size);
 		if (ret) {
 			return ret;
 		}
 
 #ifdef CONFIG_SOC_SERIES_MCXN
-		while (!(LPSPI_GetStatusFlags(base) & kLPSPI_TxDataRequestFlag)) {
+		while (!(base->SR & LPSPI_SR_TDF_MASK)) {
 			/* wait until previous tx finished */
 		}
 #endif
 
 		/* Enable DMA Requests */
-		LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
+		base->DER = LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK;
 
 		/* Wait for DMA to finish */
 		ret = wait_dma_rx_tx_done(dev);
@@ -270,13 +270,13 @@ static int transceive_dma_sync(const struct device *dev)
 		}
 
 #ifndef CONFIG_SOC_SERIES_MCXN
-		while ((LPSPI_GetStatusFlags(base) & kLPSPI_ModuleBusyFlag)) {
+		while (base->SR & LPSPI_SR_MBF_MASK) {
 			/* wait until module is idle */
 		}
 #endif
 
 		/* Disable DMA */
-		LPSPI_DisableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
+		base->DER &= ~(LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK);
 
 		/* Update SPI contexts with amount of data we just sent */
 		spi_context_update_tx(ctx, 1, dma_size);
@@ -294,7 +294,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 			  const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 			  bool asynchronous, spi_callback_t cb, void *userdata)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	int ret;
 
@@ -302,7 +302,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 		spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 	}
 
-	ret = spi_mcux_configure(dev, spi_cfg);
+	ret = spi_nxp_configure(dev, spi_cfg);
 	if (ret && !asynchronous) {
 		goto out;
 	} else if (ret) {
@@ -313,8 +313,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	base->TCR |= LPSPI_TCR_CONT_MASK;
 #endif
 
-	/* DMA is fast enough watermarks are not required */
-	LPSPI_SetFifoWatermarks(base, 0U, 0U);
+	base->FCR = 0;
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
@@ -339,7 +338,7 @@ static int lpspi_dma_dev_ready(const struct device *dma_dev)
 	return 0;
 }
 
-static int lpspi_dma_devs_ready(struct spi_mcux_data *data)
+static int lpspi_dma_devs_ready(struct spi_nxp_data *data)
 {
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 
@@ -347,9 +346,9 @@ static int lpspi_dma_devs_ready(struct spi_mcux_data *data)
 	       lpspi_dma_dev_ready(dma_data->dma_rx.dma_dev);
 }
 
-static int spi_mcux_dma_init(const struct device *dev)
+static int spi_nxp_dma_init(const struct device *dev)
 {
-	struct spi_mcux_data *data = dev->data;
+	struct spi_nxp_data *data = dev->data;
 	int err = 0;
 
 	err = lpspi_dma_devs_ready(data);
@@ -384,7 +383,7 @@ static int spi_nxp_dma_transceive_async(const struct device *dev, const struct s
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static DEVICE_API(spi, spi_mcux_driver_api) = {
+static DEVICE_API(spi, spi_nxp_driver_api) = {
 	.transceive = spi_nxp_dma_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_nxp_dma_transceive_async,
@@ -392,7 +391,7 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_mcux_release,
+	.release = spi_nxp_release,
 };
 
 static void lpspi_isr(const struct device *dev)
@@ -406,17 +405,17 @@ static void lpspi_isr(const struct device *dev)
 		(.dma_tx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),            \
 			    .channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, mux),                      \
 			    .dma_cfg = {.channel_direction = MEMORY_TO_PERIPHERAL,                 \
-					.dma_callback = spi_mcux_dma_callback,                     \
+					.dma_callback = spi_nxp_dma_callback,                      \
 					.source_data_size = 1,                                     \
 					.dest_data_size = 1,                                       \
 					.block_count = 1,                                          \
-					.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)}},)) \
+					.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)}},))  \
 	IF_ENABLED(                                                                                \
 		DT_INST_DMAS_HAS_NAME(n, rx),                                                      \
 		(.dma_rx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),            \
 			    .channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, mux),                      \
 			    .dma_cfg = {.channel_direction = PERIPHERAL_TO_MEMORY,                 \
-					.dma_callback = spi_mcux_dma_callback,                     \
+					.dma_callback = spi_nxp_dma_callback,                      \
 					.source_data_size = 1,                                     \
 					.dest_data_size = 1,                                       \
 					.block_count = 1,                                          \
@@ -424,16 +423,16 @@ static void lpspi_isr(const struct device *dev)
 
 #define LPSPI_DMA_INIT(n)                                                                          \
 	SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
-	SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
+	SPI_NXP_LPSPI_CONFIG_INIT(n)                                                               \
                                                                                                    \
 	static struct spi_nxp_dma_data lpspi_dma_data##n = {SPI_DMA_CHANNELS(n)};                  \
                                                                                                    \
-	static struct spi_mcux_data spi_mcux_data_##n = {.driver_data = &lpspi_dma_data##n,        \
+	static struct spi_nxp_data spi_nxp_data_##n = {.driver_data = &lpspi_dma_data##n,          \
 							 SPI_NXP_LPSPI_COMMON_DATA_INIT(n)};       \
                                                                                                    \
-	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_dma_init, NULL, &spi_mcux_data_##n,                  \
-				  &spi_mcux_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
-				  &spi_mcux_driver_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_nxp_dma_init, NULL, &spi_nxp_data_##n,                    \
+				  &spi_nxp_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,      \
+				  &spi_nxp_driver_api);
 
 #define SPI_NXP_LPSPI_DMA_INIT(n) IF_ENABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_DMA_INIT(n)))
 
