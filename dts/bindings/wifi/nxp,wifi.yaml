@@ -8,3 +8,17 @@ description: |
 compatible: "nxp,wifi"
 
 include: [sd-device.yaml, pinctrl-device.yaml]
+
+properties:
+
+  pdn-gpios:
+    type: phandle-array
+    description: Power Down control GPIO pin.
+
+  wl_rst-gpios:
+    type: phandle-array
+    description: WiFi SDIO reset control GPIO pin.
+
+  bt_rst-gpios:
+    type: phandle-array
+    description: Bluetooth reset control GPIO pin.
