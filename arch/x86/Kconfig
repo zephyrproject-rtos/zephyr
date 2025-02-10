@@ -43,7 +43,16 @@ config CPU_APOLLO_LAKE
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
-config CPU_LAKEMONT
+config CPU_LAKEMONT_VALUE
+	bool
+	select CPU_HAS_FPU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
+	select CPU_HAS_DCACHE
+	help
+	  This option signifies the use of a CPU from the Lakemont Value family.
+
+config CPU_LAKEMONT_PERF
 	bool
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
@@ -55,7 +64,7 @@ config CPU_LAKEMONT
 	select X86_CPU_HAS_SSSE3
 	select CPU_HAS_DCACHE
 	help
-	  This option signifies the use of a CPU from the Lakemont family.
+	  This option signifies the use of a CPU from the Lakemont Performance family.
 
 #
 # Configuration common to both IA32 and Intel64 sub-architectures.
