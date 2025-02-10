@@ -6,11 +6,11 @@
 
 / {
 	chosen {
-		zephyr,camera = &zephyr_camera_dvp;
+		zephyr,camera = &st_cam_dvp;
 	};
 };
 
-&zephyr_camera_i2c {
+&st_cam_i2c {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -21,24 +21,24 @@
 
 		port {
 			ov2640_ep_out: endpoint {
-				remote-endpoint = <&zephyr_camera_dvp_in>;
+				remote-endpoint-label = "dcmi_ep_in";
 			};
 		};
 	};
 };
 
-&zephyr_camera_dvp {
+&st_cam_dvp {
 	status = "okay";
 	sensor = <&ov2640>;
-	bus-width = <8>;
-	hsync-active = <0>;
-	vsync-active = <0>;
-	pixelclk-active = <1>;
 	capture-rate = <1>;
 
 	port {
-		zephyr_camera_dvp_in: endpoint {
-			remote-endpoint = <&ov2640_ep_out>;
+		dcmi_ep_in: endpoint {
+			remote-endpoint-label = "ov2640_ep_out";
+			bus-width = <8>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			pclk-sample = <1>;
 		};
 	};
 };
