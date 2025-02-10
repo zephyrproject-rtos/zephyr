@@ -15,3 +15,25 @@ config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,/soc/flash-controller@60002000/flash@0)
 
 endif # SOC_SERIES_ESP32C6
+
+if SOC_ESP32C6_LPCORE
+
+config GEN_ISR_TABLES
+	default n
+
+config SYS_CLOCK_EXISTS
+	default n
+
+config KERNEL_MEM_POOL
+	default n
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 0
+
+config MULTITHREADING
+	default n
+
+config NUM_PREEMPT_PRIORITIES
+	default 0
+
+endif

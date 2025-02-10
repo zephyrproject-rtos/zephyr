@@ -1,4 +1,4 @@
-identifier: esp32c6_devkitc
+identifier: esp32c6_devkitc/esp32c6/hpcore
 name: ESP32-C6
 vendor: espressif
 type: mcu
