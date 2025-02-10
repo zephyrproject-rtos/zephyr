@@ -13,6 +13,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/cache.h>
 
 #include "dma_xilinx_axi_dma.h"
 
@@ -123,26 +124,18 @@ LOG_MODULE_REGISTER(dma_xilinx_axi_dma, CONFIG_DMA_LOG_LEVEL);
 #define XILINX_AXI_DMA_REGS_SG_CTRL_USER_MASK  0x00000F00
 #define XILINX_AXI_DMA_REGS_SG_CTRL_RES2_MASK  0xFFFFF000
 
+static inline void dma_xilinx_axi_dma_flush_dcache(void *addr, size_t len)
+{
 #ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
-#include <zephyr/arch/cache.h>
-static inline void dma_xilinx_axi_dma_disable_cache(void)
-{
-	cache_data_disable();
-}
-static inline void dma_xilinx_axi_dma_enable_cache(void)
-{
-	cache_data_enable();
-}
-#else
-static inline void dma_xilinx_axi_dma_disable_cache(void)
-{
-	/* do nothing */
-}
-static inline void dma_xilinx_axi_dma_enable_cache(void)
-{
-	/* do nothing */
-}
+	sys_cache_data_flush_range(addr, len);
 #endif
+}
+static inline void dma_xilinx_axi_dma_invd_dcache(void *addr, size_t len)
+{
+#ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+	sys_cache_data_invd_range(addr, len);
+#endif
+}
 
 /* in-memory descriptor, read by the DMA, that instructs it how many bits to transfer from which */
 /* buffer */
@@ -345,7 +338,10 @@ dma_xilinx_axi_dma_clean_up_sg_descriptors(const struct device *dev,
 	volatile struct dma_xilinx_axi_dma_sg_descriptor *current_descriptor =
 		&channel_data->descriptors[channel_data->completion_desc_index];
 	unsigned int processed_packets = 0;
-	uint32_t current_status = current_descriptor->status;
+	uint32_t current_status;
+
+	dma_xilinx_axi_dma_invd_dcache((void *)current_descriptor, sizeof(*current_descriptor));
+	current_status = current_descriptor->status;
 
 	while (current_status & ~XILINX_AXI_DMA_SG_DESCRIPTOR_STATUS_TRANSFERRED_MASK) {
 		/* descriptor completed or errored out - need to call callback */
@@ -408,13 +404,24 @@ dma_xilinx_axi_dma_clean_up_sg_descriptors(const struct device *dev,
 		if (channel_data->completion_callback) {
 			LOG_DBG("Completed packet descriptor %zu with %u bytes!",
 				channel_data->completion_desc_index, channel_data->last_rx_size);
+			if (channel_data->direction == PERIPHERAL_TO_MEMORY) {
+				dma_xilinx_axi_dma_invd_dcache(
+					(void *)current_descriptor->buffer_address,
+					channel_data->last_rx_size);
+			}
 			channel_data->completion_callback(
 				dev, channel_data->completion_callback_user_data,
-				XILINX_AXI_DMA_TX_CHANNEL_NUM, retval);
+				channel_data->direction == MEMORY_TO_PERIPHERAL
+					? XILINX_AXI_DMA_TX_CHANNEL_NUM
+					: XILINX_AXI_DMA_RX_CHANNEL_NUM,
+				retval);
 		}
 
 		/* clears the flags such that the DMA does not transfer it twice or errors */
 		current_descriptor->control = current_descriptor->status = 0;
+		barrier_dmem_fence_full();
+		dma_xilinx_axi_dma_flush_dcache((void *)current_descriptor,
+						sizeof(*current_descriptor));
 
 		channel_data->completion_desc_index++;
 		if (channel_data->completion_desc_index >= channel_data->num_descriptors) {
@@ -422,12 +429,11 @@ dma_xilinx_axi_dma_clean_up_sg_descriptors(const struct device *dev,
 		}
 		current_descriptor =
 			&channel_data->descriptors[channel_data->completion_desc_index];
+		dma_xilinx_axi_dma_invd_dcache((void *)current_descriptor,
+					       sizeof(*current_descriptor));
 		current_status = current_descriptor->status;
 		processed_packets++;
 	}
-
-	/* writes must commit before returning from ISR */
-	barrier_dmem_fence_full();
 
 	return processed_packets;
 }
@@ -453,12 +459,8 @@ static void dma_xilinx_axi_dma_tx_isr(const struct device *dev)
 					     dmasr & (XILINX_AXI_DMA_REGS_DMASR_IOC_IRQ |
 						      XILINX_AXI_DMA_REGS_DMASR_DLY_IRQ));
 
-		dma_xilinx_axi_dma_disable_cache();
-
 		processed_packets =
 			dma_xilinx_axi_dma_clean_up_sg_descriptors(dev, channel_data, "TX");
-
-		dma_xilinx_axi_dma_enable_cache();
 
 		LOG_DBG("Completed %u TX packets in this ISR!\n", processed_packets);
 	}
@@ -485,12 +487,8 @@ static void dma_xilinx_axi_dma_rx_isr(const struct device *dev)
 					     dmasr & (XILINX_AXI_DMA_REGS_DMASR_IOC_IRQ |
 						      XILINX_AXI_DMA_REGS_DMASR_DLY_IRQ));
 
-		dma_xilinx_axi_dma_disable_cache();
-
 		processed_packets =
 			dma_xilinx_axi_dma_clean_up_sg_descriptors(dev, channel_data, "RX");
-
-		dma_xilinx_axi_dma_enable_cache();
 
 		LOG_DBG("Cleaned up %u RX packets in this ISR!", processed_packets);
 	}
@@ -521,8 +519,6 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 
 	channel_data = &data->channels[channel];
 	current_descriptor = &channel_data->descriptors[channel_data->populated_desc_index];
-
-	dma_xilinx_axi_dma_disable_cache();
 
 	LOG_DBG("Starting DMA on %s channel with descriptor %zu at %p",
 		channel == XILINX_AXI_DMA_TX_CHANNEL_NUM ? "TX" : "RX",
@@ -573,8 +569,6 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 	dma_xilinx_axi_dma_write_reg(channel_data, XILINX_AXI_DMA_REG_TAILDESC,
 				     (uint32_t)(uintptr_t)current_descriptor);
 #endif
-
-	dma_xilinx_axi_dma_enable_cache();
 
 	dma_xilinx_axi_dma_unlock_irq(cfg, channel, irq_key);
 
@@ -658,15 +652,31 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct dma_xilinx_axi_
 
 	current_descriptor = &channel_data->descriptors[next_desc_index];
 
-	dma_xilinx_axi_dma_disable_cache();
-
+	dma_xilinx_axi_dma_invd_dcache((void *)current_descriptor, sizeof(*current_descriptor));
 	if (current_descriptor->control || current_descriptor->status) {
 		/* Do not overwrite this descriptor as it has not been completed yet. */
 		LOG_WRN("Descriptor %" PRIu32 " is not yet completed, not starting new transfer!",
 			next_desc_index);
-		dma_xilinx_axi_dma_enable_cache();
 		dma_xilinx_axi_dma_unlock_irq(cfg, channel, irq_key);
 		return -EBUSY;
+	}
+
+	if (channel == XILINX_AXI_DMA_TX_CHANNEL_NUM) {
+		/* Ensure DMA can see contents of TX buffer */
+		dma_xilinx_axi_dma_flush_dcache((void *)buffer_addr, block_size);
+	} else {
+#ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+		if (((uintptr_t)buffer_addr & (sys_cache_data_line_size_get() - 1)) ||
+		    (block_size & (sys_cache_data_line_size_get() - 1))) {
+			LOG_ERR("RX buffer address and block size must be cache line size aligned");
+			dma_xilinx_axi_dma_unlock_irq(cfg, channel, irq_key);
+			return -EINVAL;
+		}
+#endif
+		/* Invalidate before starting the read, to ensure the CPU does not
+		 * try to write back data to the buffer and clobber the DMA transfer.
+		 */
+		dma_xilinx_axi_dma_invd_dcache((void *)buffer_addr, block_size);
 	}
 
 #ifdef CONFIG_DMA_64BIT
@@ -680,7 +690,6 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct dma_xilinx_axi_
 	if (block_size > UINT32_MAX) {
 		LOG_ERR("Too large block: %zu bytes!", block_size);
 
-		dma_xilinx_axi_dma_enable_cache();
 		dma_xilinx_axi_dma_unlock_irq(cfg, channel, irq_key);
 
 		return -EINVAL;
@@ -699,8 +708,7 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct dma_xilinx_axi_
 
 	/* SG descriptor must be completed BEFORE hardware is made aware of it */
 	barrier_dmem_fence_full();
-
-	dma_xilinx_axi_dma_enable_cache();
+	dma_xilinx_axi_dma_flush_dcache((void *)current_descriptor, sizeof(*current_descriptor));
 
 	channel_data->populated_desc_index = next_desc_index;
 
@@ -780,8 +788,6 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 		return -ENOTSUP;
 	}
 
-	dma_xilinx_axi_dma_disable_cache();
-
 	LOG_DBG("Configuring %zu DMA descriptors for %s", data->channels[channel].num_descriptors,
 		channel == XILINX_AXI_DMA_TX_CHANNEL_NUM ? "TX" : "RX");
 
@@ -814,9 +820,9 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 		high_bytes = (uint32_t)(((uint64_t)nextdesc >> 32) & 0xffffffff);
 		data->channels[channel].descriptors[i].nxtdesc_msb = high_bytes;
 #endif
+		dma_xilinx_axi_dma_flush_dcache((void *)&data->channels[channel].descriptors[i],
+						sizeof(data->channels[channel].descriptors[i]));
 	}
-
-	dma_xilinx_axi_dma_enable_cache();
 
 #ifdef CONFIG_DMA_64BIT
 	dma_xilinx_axi_dma_write_reg(
