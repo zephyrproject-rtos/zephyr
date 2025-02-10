@@ -85,7 +85,7 @@ class Counters:
     def print_counters(self, indent: int = 0):
         for key, value in self.counters.items():
             print(f'{" " * indent}{value.quantity:4}    {key}')
-            if value.subcounters.counters:
+            if value.has_subcounters():
                 value.subcounters.print_counters(indent + 4)
 
     def sort_by_quantity(self):
@@ -93,14 +93,14 @@ class Counters:
             sorted(self.counters.items(), key=lambda item: item[1].quantity, reverse=True)
         )
         for value in self.counters.values():
-            if value.subcounters.counters:
+            if value.has_subcounters():
                 value.subcounters.sort_by_quantity()
 
     def get_next_entry(self, depth: int = 0, max_depth: int = 10):
         for key, value in self.counters.items():
             # limit number of test files to 100 to not exceed CSV cell limit
             yield depth, value.quantity, key, ', '.join(value.tests[0:100])
-            if value.subcounters.counters and depth < max_depth:
+            if value.has_subcounters() and depth < max_depth:
                 yield from value.subcounters.get_next_entry(depth + 1, max_depth)
 
     def _flatten(self):
@@ -110,7 +110,7 @@ class Counters:
         do not contain any further nested subcounters.
         """
         for key, value in self.counters.items():
-            if value.subcounters.counters:
+            if value.has_subcounters():
                 yield from value.subcounters._flatten()
             else:
                 yield key, value
@@ -129,6 +129,9 @@ class TestCollection:
         self.quantity += 1
         if test:
             self.tests.append(test)
+
+    def has_subcounters(self):
+        return bool(self.subcounters.counters)
 
 
 class TwisterReports:
@@ -161,16 +164,33 @@ class TwisterReports:
         if ts_status not in ('error', 'failed'):
             return
 
-        ts_reason = testsuite.get('reason') or 'Unknown reason'
-        self.errors.add_counter(ts_reason)
         ts_platform = testsuite.get('platform') or 'Unknown platform'
         self.platforms.add_counter(ts_platform)
+        ts_reason = testsuite.get('reason') or 'Unknown reason'
         ts_log = testsuite.get('log')
         test_identifier = f'{testsuite.get("platform")}:{testsuite.get("name")}'
 
-        matched = self._parse_ts_error_log(
-            self.errors.counters[ts_reason].subcounters, ts_reason, ts_log, test_identifier
-        )
+        # CMake and Build failures are treated separately.
+        # Extract detailed information to group errors. Keep the parsing methods
+        # to allow for further customization and keep backward compatibility.
+        if ts_reason.startswith('CMake build failure'):
+            reason = 'CMake build failure'
+            self.errors.add_counter(reason)
+            error_key = ts_reason.split(reason, 1)[-1].lstrip(' -')
+            if not error_key:
+                error_key = self._parse_cmake_build_failure(ts_log)
+            self.errors.counters[reason].subcounters.add_counter(error_key, test_identifier)
+            ts_reason = reason
+        elif ts_reason.startswith('Build failure'):
+            reason = 'Build failure'
+            self.errors.add_counter(reason)
+            error_key = ts_reason.split(reason, 1)[-1].lstrip(' -')
+            if not error_key:
+                error_key = self._parse_build_failure(ts_log)
+            self.errors.counters[reason].subcounters.add_counter(error_key, test_identifier)
+            ts_reason = reason
+        else:
+            self.errors.add_counter(ts_reason)
 
         # Process testcases
         for tc in testsuite.get('testcases', []):
@@ -178,23 +198,9 @@ class TwisterReports:
             tc_log = tc.get('log')
             if tc_reason and tc_log:
                 self.errors.counters[ts_reason].subcounters.add_counter(tc_reason, test_identifier)
-                matched = True
 
-        if not matched:
+        if not self.errors.counters[ts_reason].has_subcounters():
             self.errors.counters[ts_reason].tests.append(test_identifier)
-
-    def _parse_ts_error_log(
-        self, counters: Counters, reason: str, log: str, test: str = ''
-    ) -> bool:
-        if reason == 'CMake build failure':
-            if error_key := self._parse_cmake_build_failure(log):
-                counters.add_counter(error_key, test)
-                return True
-        elif reason == 'Build failure':  # noqa SIM102
-            if error_key := self._parse_build_failure(log):
-                counters.add_counter(error_key, test)
-                return True
-        return False
 
     def _parse_cmake_build_failure(self, log: str) -> str | None:
         last_warning = 'no warning found'
@@ -263,32 +269,23 @@ class TwisterReportsWithPatterns(TwisterReports):
         if ts_status not in ('error', 'failed'):
             return
 
-        ts_reason = testsuite.get('reason') or 'Unknown reason'
-        self.errors.add_counter(ts_reason)
         ts_log = testsuite.get('log')
         test_identifier = f'{testsuite.get("platform")}:{testsuite.get("name")}'
-        self._parse_log_with_error_paterns(
-            self.errors.counters[ts_reason].subcounters, ts_log, test_identifier
-        )
+        if key := self._parse_log_with_error_paterns(ts_log):
+            self.errors.add_counter(key, test_identifier)
         # Process testcases
         for tc in testsuite.get('testcases', []):
-            tc_reason = tc.get('reason')
             tc_log = tc.get('log')
-            if tc_reason and tc_log:
-                self.errors.counters[ts_reason].subcounters.add_counter(tc_reason)
-                self._parse_log_with_error_paterns(
-                    self.errors.counters[ts_reason].subcounters.counters[tc_reason].subcounters,
-                    tc_log,
-                    test_identifier,
-                )
+            if tc_log and (key := self._parse_log_with_error_paterns(tc_log)):
+                self.errors.add_counter(key, test_identifier)
 
-    def _parse_log_with_error_paterns(self, counters: Counters, log: str, test: str = ''):
+    def _parse_log_with_error_paterns(self, log: str) -> str | None:
         for line in log.splitlines():
             for error_pattern in self.error_patterns:
                 if error_pattern in line:
                     logger.debug(f'Matched: {error_pattern} in {line}')
-                    counters.add_counter(error_pattern, test)
-                    return
+                    return error_pattern
+        return None
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -363,7 +360,7 @@ def main():
     if not reports.errors.counters:
         return
 
-    if args.platforms:
+    if args.platforms and reports.platforms.counters:
         print('\nErrors per platform:')
         reports.platforms.print_counters()
 
