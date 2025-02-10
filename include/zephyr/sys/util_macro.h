@@ -401,6 +401,16 @@ extern "C" {
 #define GET_ARGS_LESS_N(N, ...) Z_GET_ARGS_LESS_##N(__VA_ARGS__)
 
 /**
+ * @brief Get the first N arguments from the argument list.
+ *
+ * @param N Number of arguments to take.
+ * @param ... Variable list of arguments.
+ *
+ * @return argument list only contains first N arguments.
+ */
+#define GET_ARGS_FIRST_N(N, ...) Z_GET_ARGS_FIRST_##N(__VA_ARGS__)
+
+/**
  * @brief Like <tt>a || b</tt>, but does evaluation and
  * short-circuiting at C preprocessor time.
  *
@@ -448,6 +458,19 @@ extern "C" {
  */
 #define UTIL_X2(y) UTIL_PRIMITIVE_CAT(Z_UTIL_X2_, y)
 
+/**
+ * @brief UTIL_ADD(x, n) executes n-times UTIL_INC on x to create the value x + n.
+ *        Both the arguments and the result of the operation must be in the range
+ *        of 0 to 4095.
+ */
+#define UTIL_ADD(x, n) UTIL_PRIMITIVE_CAT(Z_UTIL_ADD_, n)(x)
+
+/**
+ * @brief UTIL_SUB(x, n) executes n-times UTIL_DEC on x to create the value x - n.
+ *        Both the arguments and the result of the operation must be in the range
+ *        of 0 to 4095.
+ */
+#define UTIL_SUB(x, n) UTIL_PRIMITIVE_CAT(Z_UTIL_SUB_, n)(x)
 
 /**
  * @brief Generates a sequence of code with configurable separator.
