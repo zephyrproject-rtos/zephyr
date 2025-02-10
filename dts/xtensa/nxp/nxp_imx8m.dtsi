@@ -90,6 +90,7 @@
 		sdma3: dma@30e00000 {
 			compatible = "nxp,sdma";
 			reg = <0x30e00000 DT_SIZE_K(64)>;
+			clocks = <&ccm IMX_CCM_SDMA3_CLK 0x0 0x0>;
 			interrupt-parent = <&master1>;
 			interrupts = <2 0 0>;
 			#dma-cells = <2>;
@@ -101,8 +102,8 @@
 			reg = <0x30c30000 DT_SIZE_K(64)>;
 
 			mclk-is-output;
-			clocks = <&mclk1>;
-			clock-names = "mclk1";
+			clocks = <&ccm IMX_CCM_SAI3_CLK 0x0 0x0>, <&mclk1>;
+			clock-names = "bus", "mclk1";
 
 			interrupt-parent = <&master1>;
 			interrupts = <18>;
