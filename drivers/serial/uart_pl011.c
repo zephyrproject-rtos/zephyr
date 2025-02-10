@@ -343,6 +343,8 @@ static void pl011_irq_tx_enable(const struct device *dev)
 
 	get_uart(dev)->imsc |= PL011_IMSC_TXIM;
 	if (data->sw_call_txdrdy) {
+		data->sw_call_txdrdy = false;
+
 		/* Verify if the callback has been registered */
 		if (data->irq_cb) {
 			/*
@@ -357,14 +359,18 @@ static void pl011_irq_tx_enable(const struct device *dev)
 			 * [1]: PrimeCell UART (PL011) Technical Reference Manual
 			 *      functional-overview/interrupts
 			 */
-			data->irq_cb(dev, data->irq_cb_data);
+			while (get_uart(dev)->imsc & PL011_IMSC_TXIM) {
+				data->irq_cb(dev, data->irq_cb_data);
+			}
 		}
-		data->sw_call_txdrdy = false;
 	}
 }
 
 static void pl011_irq_tx_disable(const struct device *dev)
 {
+	struct pl011_data *data = dev->data;
+
+	data->sw_call_txdrdy = true;
 	get_uart(dev)->imsc &= ~PL011_IMSC_TXIM;
 }
 
