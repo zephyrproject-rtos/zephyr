@@ -33,10 +33,8 @@ config BT_LONG_WQ_INIT_PRIO
 endif # BT_LONG_WQ
 
 config BT_HCI_HOST
-	# Hidden option to make the conditions more intuitive
-	bool
-	default y
-	depends on !BT_HCI_RAW
+	bool "Zephyr Bluetooth Host"
+	default y if !BT_HCI_RAW
 	select POLL
 
 
