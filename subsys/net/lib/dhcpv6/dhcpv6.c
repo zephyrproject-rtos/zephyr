@@ -2222,7 +2222,7 @@ int net_dhcpv6_init(void)
 	unspec_addr.sa_family = AF_INET6;
 
 	ret = net_udp_register(AF_INET6, NULL, &unspec_addr,
-			       DHCPV6_SERVER_PORT, DHCPV6_CLIENT_PORT,
+			       0, DHCPV6_CLIENT_PORT,
 			       NULL, dhcpv6_input, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("UDP callback registration failed");

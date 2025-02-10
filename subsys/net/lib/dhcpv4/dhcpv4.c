@@ -1885,8 +1885,7 @@ int net_dhcpv4_init(void)
 	 * all dhcpv4 related incoming packets.
 	 */
 	ret = net_udp_register(AF_INET, NULL, &local_addr,
-			       DHCPV4_SERVER_PORT,
-			       DHCPV4_CLIENT_PORT,
+			       0, DHCPV4_CLIENT_PORT,
 			       NULL, net_dhcpv4_input, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("UDP callback registration failed");
