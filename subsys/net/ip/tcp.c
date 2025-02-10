@@ -784,7 +784,8 @@ static void tcp_conn_release(struct k_work *work)
 		net_if_addr_unref(conn->iface, conn->src.sa.sa_family,
 				  conn->src.sa.sa_family == AF_INET ?
 				  (const void *)&conn->src.sin.sin_addr :
-				  (const void *)&conn->src.sin6.sin6_addr);
+				  (const void *)&conn->src.sin6.sin6_addr,
+				  NULL);
 	}
 
 	conn->context->tcp = NULL;
