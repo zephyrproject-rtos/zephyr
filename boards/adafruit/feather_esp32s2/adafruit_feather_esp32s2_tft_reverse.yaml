@@ -1,0 +1,19 @@
+identifier: adafruit_feather/esp32s2/tft_reverse
+name: Adafruit ESP32-S2 TFT Feather Reverse
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - display
+  - fuel_gauge
+vendor: adafruit
