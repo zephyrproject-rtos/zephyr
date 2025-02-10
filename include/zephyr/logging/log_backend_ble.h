@@ -9,7 +9,7 @@
 
 #include <stdbool.h>
 /**
- * @brief Raw adv UUID data to add the ble backend for the use with apps
+ * @brief Raw adv UUID data to add the Bluetooth backend for the use with apps
  *        such as the NRF Toolbox
  *
  */
@@ -19,7 +19,7 @@
 		0x6E
 
 /**
- * @brief Hook for application to know when the ble backend
+ * @brief Hook for application to know when the Bluetooth backend
  *        is enabled or disabled.
  * @param backend_status True if the backend is enabled or false if disabled
  * @param ctx User context
@@ -28,10 +28,10 @@
 typedef void (*logger_backend_ble_hook)(bool backend_status, void *ctx);
 
 /**
- * @brief Allows application to add a hook for the status of the BLE
+ * @brief Allows application to add a hook for the status of the Bluetooth
  *        logger backend.
- * @details The BLE logger backend is enabled or disabled auomatically by
- *          the subscription of the notification characteristic of this BLE
+ * @details The Bluetooth logger backend is enabled or disabled auomatically by
+ *          the subscription of the notification characteristic of this Bluetooth
  *          Logger backend service.
  *
  * @param hook The hook that will be called when the status of the backend changes

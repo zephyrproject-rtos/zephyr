@@ -2098,7 +2098,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	       CCM_MODE_MODE_Msk;
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-	/* Enable CCM Protocol Mode BLE */
+	/* Enable CCM Protocol Mode Bluetooth LE */
 	mode |= (CCM_MODE_PROTOCOL_Ble << CCM_MODE_PROTOCOL_Pos) &
 		CCM_MODE_PROTOCOL_Msk;
 
@@ -2342,7 +2342,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 		CCM_MODE_DATARATE_Msk;
 
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-	/* Enable CCM Protocol Mode BLE */
+	/* Enable CCM Protocol Mode Bluetooth LE */
 	mode |= (CCM_MODE_PROTOCOL_Ble << CCM_MODE_PROTOCOL_Pos) &
 		CCM_MODE_PROTOCOL_Msk;
 

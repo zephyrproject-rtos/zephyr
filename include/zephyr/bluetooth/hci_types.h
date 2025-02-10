@@ -1028,7 +1028,7 @@ struct bt_hci_rp_read_encryption_key_size {
 	uint8_t  key_size;
 } __packed;
 
-/* BLE */
+/* Bluetooth LE */
 
 #define BT_HCI_OP_LE_SET_EVENT_MASK             BT_OP(BT_OGF_LE, 0x0001) /* 0x2001 */
 struct bt_hci_cp_le_set_event_mask {
