@@ -71,6 +71,8 @@ The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
 +===========+============+=====================================+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access Controller     |
++-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
