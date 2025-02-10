@@ -702,7 +702,7 @@ static int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cf
 	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * rtc_clk_cfg.cpu_freq_mhz /
 				old_config.freq_mhz);
 
-#if !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+#if defined(CONFIG_ESP_CONSOLE_UART)
 #if !defined(CONFIG_SOC_SERIES_ESP32C2) && !defined(CONFIG_SOC_SERIES_ESP32C6)
 #if defined(CONFIG_MCUBOOT) && defined(ESP_ROM_UART_CLK_IS_XTAL)
 	uint32_t uart_clock_src_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
