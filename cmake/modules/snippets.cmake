@@ -94,7 +94,20 @@ function(zephyr_process_snippets)
     ERROR_VARIABLE output
     RESULT_VARIABLE ret)
   if(${ret})
-    message(FATAL_ERROR "${output}")
+    list(JOIN SNIPPET_ROOT "\n    " snippet_root_paths)
+    set(snippet_root_paths "\n    ${snippet_root_paths}")
+
+    if(SYSBUILD)
+      zephyr_get(SYSBUILD_NAME SYSBUILD GLOBAL)
+      set(extra_output "Snippet roots for image ${SYSBUILD_NAME}:${snippet_root_paths}\n"
+          "Note that snippets will be applied to all images unless prefixed with the image name "
+          "e.g. `-D${SYSBUILD_NAME}_SNIPPET=...`, local snippet roots for one image are not set "
+          "for other images in a build")
+    else()
+      set(extra_output "Snippet roots for application:${snippet_root_paths}")
+    endif()
+
+    message(FATAL_ERROR "${output}" ${extra_output})
   endif()
   include(${snippets_generated})
 
