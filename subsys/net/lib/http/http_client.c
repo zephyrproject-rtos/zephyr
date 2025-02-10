@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_http_client, CONFIG_NET_HTTP_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/http/client.h>
+#include <zephyr/net/http/status.h>
 
 #include "net_private.h"
 
@@ -325,6 +326,11 @@ static int on_headers_complete(struct http_parser *parser)
 	if (req->internal.response.http_cb &&
 	    req->internal.response.http_cb->on_headers_complete) {
 		req->internal.response.http_cb->on_headers_complete(parser);
+	}
+
+	if (parser->status_code == HTTP_101_SWITCHING_PROTOCOLS) {
+		NET_DBG("Switching protocols, skipping body");
+		return 1;
 	}
 
 	if (parser->status_code >= 500 && parser->status_code < 600) {
