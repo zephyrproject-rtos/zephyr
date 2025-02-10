@@ -34,11 +34,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_PWM_LOG_LEVEL);
 #define PWM_INITIAL_DUTY   0U /* initially off */
 
 struct pwm_cc13xx_cc26xx_data {
+	bool standby_disabled;
 };
 
 struct pwm_cc13xx_cc26xx_config {
 	const uint32_t gpt_base; /* GPT register base address */
 	const struct pinctrl_dev_config *pcfg;
+
+	struct pwm_cc13xx_cc26xx_data *data;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
@@ -58,12 +61,16 @@ static void write_value(const struct pwm_cc13xx_cc26xx_config *config, uint32_t 
 static int set_period_and_pulse(const struct pwm_cc13xx_cc26xx_config *config, uint32_t period,
 				uint32_t pulse)
 {
+	struct pwm_cc13xx_cc26xx_data *data = config->data;
 	uint32_t match_value = pulse;
 
 	if (pulse == 0U) {
 		TimerDisable(config->gpt_base, TIMER_B);
 #ifdef CONFIG_PM
-		Power_releaseConstraint(PowerCC26XX_DISALLOW_STANDBY);
+		if (data->standby_disabled) {
+			Power_releaseConstraint(PowerCC26XX_DISALLOW_STANDBY);
+			data->standby_disabled = false;
+		}
 #endif
 		match_value = period + 1;
 	}
@@ -86,7 +93,10 @@ static int set_period_and_pulse(const struct pwm_cc13xx_cc26xx_config *config, u
 
 	if (pulse > 0U) {
 #ifdef CONFIG_PM
-		Power_setConstraint(PowerCC26XX_DISALLOW_STANDBY);
+		if (!data->standby_disabled) {
+			Power_setConstraint(PowerCC26XX_DISALLOW_STANDBY);
+			data->standby_disabled = true;
+		}
 #endif
 		TimerEnable(config->gpt_base, TIMER_B);
 	}
@@ -234,12 +244,14 @@ static int init_pwm(const struct device *dev)
 #define PWM_DEVICE_INIT(idx)                                                                       \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_PWM_LOG_LEVEL);                         \
+	static struct pwm_cc13xx_cc26xx_data pwm_cc13xx_cc26xx_##idx##_data = {                    \
+		.standby_disabled = false                                                          \
+	};                                                                                         \
 	static const struct pwm_cc13xx_cc26xx_config pwm_cc13xx_cc26xx_##idx##_config = {          \
 		.gpt_base = DT_TIMER_BASE_ADDR(idx),                                               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		.data = &pwm_cc13xx_cc26xx_##idx##_data,                                           \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)};                                 \
-                                                                                                   \
-	static struct pwm_cc13xx_cc26xx_data pwm_cc13xx_cc26xx_##idx##_data;                       \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, init_pwm, NULL, &pwm_cc13xx_cc26xx_##idx##_data,                \
 			      &pwm_cc13xx_cc26xx_##idx##_config, POST_KERNEL,                      \
