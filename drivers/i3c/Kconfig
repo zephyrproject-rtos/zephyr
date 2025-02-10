@@ -117,6 +117,22 @@ config I3C_INIT_RSTACT
 	  This determines whether the bus initialization routine
 	  sends a reset action command to I3C targets.
 
+config I3C_NUM_OF_DESC_MEM_SLABS
+	int "Number of I3C Device Descriptors Mem Slabs"
+	default 3
+	help
+	  This is the number of memory slabs allocated from when
+	  there is a device encounted through ENTDAA or DEFTGTS that
+	  is not within known I3C devices.
+
+config I3C_I2C_NUM_OF_DESC_MEM_SLABS
+	int "Number of I2C Device Descriptors Mem Slabs"
+	default 3
+	help
+	  This is the number of memory slabs allocated from when
+	  there is a device encounted through DEFTGTS that is not
+	  within known I2C devices.
+
 config I3C_RTIO
 	bool "I3C RTIO API"
 	select EXPERIMENTAL
