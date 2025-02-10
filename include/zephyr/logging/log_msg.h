@@ -336,9 +336,9 @@ do { \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
 					__VA_ARGS__); \
 	} \
-	TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_SHADOW) \
 	struct log_msg *_msg; \
-	TOOLCHAIN_IGNORE_WSHADOW_END \
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_SHADOW) \
 	Z_LOG_MSG_ON_STACK_ALLOC(_msg, Z_LOG_MSG_LEN(_plen, 0)); \
 	Z_LOG_ARM64_VLA_PROTECT(); \
 	if (_plen != 0) { \
@@ -569,10 +569,9 @@ do { \
 #define Z_LOG_MSG_CREATE2(_try_0cpy, _mode, _cstr_cnt,  _domain_id, _source, \
 			   _level, _data, _dlen, ...) \
 do { \
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	FOR_EACH_IDX(Z_LOG_LOCAL_ARG_CREATE, (;), __VA_ARGS__); \
-	_Pragma("GCC diagnostic pop") \
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH); \
 	Z_LOG_MSG_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
