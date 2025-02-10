@@ -1,0 +1,18 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	resources {
+		compatible = "test-gpio-basic-api";
+		/*
+		 * Use connector J1003 Pin-12 GPIO.1 which connect to pca6416 P1_2 as input
+		 * GPIO, and connector J1003 Pin-16 GPIO.4 which connect to pca6416 P1_5 as
+		 * output GPIO, connect these two pins with a Dupont Line.
+		 */
+		out-gpios = <&gpio_exp1 10 0>;
+		in-gpios = <&gpio_exp1 13 0>;
+	};
+};
