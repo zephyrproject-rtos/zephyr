@@ -74,9 +74,42 @@ The Zephyr ``nucleo_n657x0_q`` board supports the following hardware features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB High Speed device               |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on this Zephyr port.
+
+USB:
+====
+
+The USB pin assignments on the STM32N657XX microcontroller are immutable. This means that the specific
+pins designated for USB functionality are fixed and cannot be changed or reassigned to other functions,
+ensuring consistent and reliable USB communication.
+
+USB PIN (IOs)
+=============
+
++------------------+--------------------------------------+
+| Name             | Description                          |
++==========================+==============================+
+| OTG1_HSDM        | USB OTG1 High-Speed Data- (negative) |
++--------------------------+------------------------------+
+| OTG1_HSDP        | USB OTG1 High-Speed Data+ (positive) |
++---------+-----------------+-----------------------------+
+| OTG1_ID          | USB OTG1 ID Pin                      |
++--------------------------+------------------------------+
+| OTG1_TXRTUNE     | USB OTG1 Transmit Retune             |
++---------+-----------------+-----------------------------+
+| OTG2_HSDM        | USB OTG2 High-Speed Data- (negative) |
++--------------------------+------------------------------+
+| OTG2_HSDP        | USB OTG2 High-Speed Data+ (positive) |
++---------+-----------------+-----------------------------+
+| OTG2_ID          | USB OTG2 ID Pin                      |
++--------------------------+------------------------------+
+| OTG2_TXRTUNE     | USB OTG2 Transmit Retune             |
++---------+-----------------+-----------------------------+
+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/st/nucleo_n657x0_q/nucleo_n657x0_q_defconfig`
