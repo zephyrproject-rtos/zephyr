@@ -281,7 +281,7 @@ The mandatory files are:
 #. :file:`plank_<qualifiers>.dts`: a hardware description
    in :ref:`devicetree <dt-guide>` format. This declares your SoC, connectors,
    and any other hardware components such as LEDs, buttons, sensors, or
-   communication peripherals (USB, BLE controller, etc).
+   communication peripherals (USB, Bluetooth controller, etc).
 
 #. :file:`Kconfig.plank`: the base software configuration for selecting SoC and
    other board and SoC related settings. Kconfig settings outside of the board
