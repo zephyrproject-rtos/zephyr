@@ -89,9 +89,11 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/pico_platform_panic/include
     ${common_dir}/boot_picoboot_headers/include
     ${common_dir}/boot_picobin_headers/include
+    ${common_dir}/pico_binary_info/include
     ${rp2xxx_dir}/hardware_regs/include
     ${rp2xxx_dir}/hardware_structs/include
     ${rp2xxx_dir}/pico_platform/include
+    ${boot_stage_dir}/include
     ${CMAKE_CURRENT_LIST_DIR}
   )
 
