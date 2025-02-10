@@ -754,6 +754,15 @@ struct gpio_callback {
 	 * an interrupt.
 	 */
 	gpio_port_pins_t pin_mask;
+
+#if CONFIG_GPIO_INTERNAL_CALLBACK
+	/** A flag to indicate if the callback is internal for driver use
+	 * only or not. In the normal case, the pin will have internal and
+	 * user callback at the same time. And the user callback will be called
+	 * via driver explicit call to the handler.
+	 */
+	bool is_internal;
+#endif
 };
 
 /**
@@ -1752,6 +1761,9 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
 
 	callback->handler = handler;
 	callback->pin_mask = pin_mask;
+#if CONFIG_GPIO_INTERNAL_CALLBACK
+	callback->is_internal = false;
+#endif
 
 	SYS_PORT_TRACING_FUNC_EXIT(gpio, init_callback, callback);
 }
