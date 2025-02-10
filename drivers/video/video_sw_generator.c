@@ -99,20 +99,15 @@ static int video_sw_generator_get_fmt(const struct device *dev, enum video_endpo
 	return 0;
 }
 
-static int video_sw_generator_stream_start(const struct device *dev)
+static int video_sw_generator_set_stream(const struct device *dev, bool enable)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	k_work_schedule(&data->buf_work, K_MSEC(1000 / data->frame_rate));
-
-	return 0;
-}
-
-static int video_sw_generator_stream_stop(const struct device *dev)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	k_work_cancel_delayable_sync(&data->buf_work, &data->work_sync);
+	if (enable) {
+		k_work_schedule(&data->buf_work, K_MSEC(1000 / data->frame_rate));
+	} else {
+		k_work_cancel_delayable_sync(&data->buf_work, &data->work_sync);
+	}
 
 	return 0;
 }
@@ -340,8 +335,7 @@ static int video_sw_generator_enum_frmival(const struct device *dev, enum video_
 static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_format = video_sw_generator_set_fmt,
 	.get_format = video_sw_generator_get_fmt,
-	.stream_start = video_sw_generator_stream_start,
-	.stream_stop = video_sw_generator_stream_stop,
+	.set_stream = video_sw_generator_set_stream,
 	.flush = video_sw_generator_flush,
 	.enqueue = video_sw_generator_enqueue,
 	.dequeue = video_sw_generator_dequeue,
