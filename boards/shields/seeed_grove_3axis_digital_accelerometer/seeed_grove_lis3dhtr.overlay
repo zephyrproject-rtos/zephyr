@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define SHIELD_DEFAULT_CONNECTOR_NAME grove_i2c
+#define SHIELD_DEFAULT_ADDR 19
+#define SHIELD_OPTION_DEFAULT_ADDR 19
+#define SHIELD_OPTION_DEFAULT_CONNECTOR_NAME grove_i2c
+
+&SHIELD_CONNECTOR_NAME {
+	UTIL_CAT(lis3dh_, SHIELD_OPTION(ADDR)): lis3dh@SHIELD_OPTION(ADDR) {
+		compatible = "st,lis3dh", "st,lis2dh";
+		reg = <SHIELD_PREFIX_0X(SHIELD_OPTION(ADDR))>;
+	};
+};
+
+#undef SHIELD_DEFAULT_ADDR
+#undef SHIELD_DEFAULT_CONNECTOR_NAME
