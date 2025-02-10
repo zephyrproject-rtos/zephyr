@@ -3,7 +3,7 @@
 Overview
 ********
 
-The Seeeduino XIAO is a tiny (20 mm x 17.5 mm) ARM development
+The Seeeduino XIAO, now renamed as Seeed Studio XIAO SAMD21, is a tiny (20 mm x 17.5 mm) ARM development
 board with onboard LEDs, USB port, and range of I/O broken out
 onto 14 pins.
 
