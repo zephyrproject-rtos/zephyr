@@ -36,18 +36,6 @@ int hardware_init(void)
 #ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
 	esp_cpu_configure_region_protection();
 #endif
-#if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
-	rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
-
-	if (cfg.enable == 1 && cfg.tieh == RTC_VDDSDIO_TIEH_1_8V) {
-		cfg.drefh = 3;
-		cfg.drefm = 3;
-		cfg.drefl = 3;
-		cfg.force = 1;
-		rtc_vddsdio_set_config(cfg);
-		esp_rom_delay_us(10);
-	}
-#endif /* CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V */
 
 	bootloader_clock_configure();
 
