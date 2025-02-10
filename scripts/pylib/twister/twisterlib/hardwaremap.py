@@ -168,10 +168,10 @@ class HardwareMap:
         ]
     }
 
-    def __init__(self, env=None):
+    def __init__(self, options=None):
         self.detected = []
         self.duts = []
-        self.options = env.options
+        self.options = options
 
     def discover(self):
 
