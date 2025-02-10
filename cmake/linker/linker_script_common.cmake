@@ -94,15 +94,34 @@ function(create_group)
   set(${OBJECT_OBJECT} GROUP_${OBJECT_NAME} PARENT_SCOPE)
 endfunction()
 
+function(is_active_in_pass ret_ptr current_pass pass_rules)
+  list(FIND pass_rules "NOT" have_not) # -1 if there is no NOT
+  list(FIND pass_rules ${current_pass} found_current)
+
+  if(found_current GREATER_EQUAL "0")
+    set(found_current "1")
+  endif()
+
+  if(have_not GREATER_EQUAL "0")
+    math(EXPR found_current "-1 * ${found_current}")
+  endif()
+
+  if(${found_current} GREATER -1)
+    set(${ret_ptr} "1" PARENT_SCOPE)
+  else()
+    set(${ret_ptr} "0" PARENT_SCOPE)
+  endif()
+endfunction()
+
 function(create_section)
-  set(single_args "NAME;ADDRESS;ALIGN_WITH_INPUT;TYPE;ALIGN;ENDALIGN;SUBALIGN;VMA;LMA;NOINPUT;NOINIT;NOSYMBOLS;GROUP;SYSTEM")
+  set(single_args "NAME;ADDRESS;ALIGN_WITH_INPUT;TYPE;ALIGN;ENDALIGN;SUBALIGN;VMA;LMA;NOINPUT;NOINIT;NOSYMBOLS;GROUP;SYSTEM;MIN_SIZE;MAX_SIZE")
   set(multi_args  "PASS")
 
   cmake_parse_arguments(SECTION "" "${single_args}" "${multi_args}" ${ARGN})
 
   if(DEFINED SECTION_PASS)
-    if(NOT (${SECTION_PASS} IN_LIST PASS))
-      # This section is not active in this pass, ignore.
+    is_active_in_pass(active ${PASS} "${SECTION_PASS}")
+    if(NOT ${active})
       return()
     endif()
   endif()
@@ -119,6 +138,8 @@ function(create_section)
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NOINPUT          ${SECTION_NOINPUT})
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NOINIT           ${SECTION_NOINIT})
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NOSYMBOLS        ${SECTION_NOSYMBOLS})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_MIN_SIZE         ${SECTION_MIN_SIZE})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_MAX_SIZE         ${SECTION_MAX_SIZE})
 
   string(REGEX REPLACE "^[\.]" "" name_clean "${SECTION_NAME}")
   string(REPLACE "." "_" name_clean "${name_clean}")
@@ -130,7 +151,7 @@ function(create_section)
   set_property(GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_end        ${name_clean})
 
   set(INDEX 100)
-  set(settings_single "ALIGN;ANY;FIRST;KEEP;OFFSET;PRIO;SECTION;SORT")
+  set(settings_single "ALIGN;ANY;FIRST;KEEP;OFFSET;PRIO;SECTION;SORT;MIN_SIZE;MAX_SIZE")
   set(settings_multi  "FLAGS;INPUT;PASS;SYMBOLS")
   foreach(settings ${SECTION_SETTINGS} ${DEVICE_API_SECTION_SETTINGS})
     if("${settings}" MATCHES "^{(.*)}$")
@@ -141,8 +162,8 @@ function(create_section)
       endif()
 
       if(DEFINED SETTINGS_PASS)
-        if(NOT (${SETTINGS_PASS} IN_LIST PASS))
-          # This section setting is not active in this pass, ignore.
+        is_active_in_pass(active ${PASS} "${SETTINGS_PASS}")
+        if(NOT ${active})
           continue()
         endif()
       endif()
