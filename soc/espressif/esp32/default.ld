@@ -24,6 +24,18 @@ procpu_dram_len = SRAM2_DRAM_USER_SIZE - CONFIG_ESP32_BT_RESERVE_DRAM;
 user_dram_2_seg_org = SRAM1_DRAM_USER_START;
 user_dram_2_seg_len = SRAM1_USER_SIZE;
 
+/* User available cache memory */
+procpu_irom_org = ICACHE0_START;
+procpu_irom_len = ICACHE0_SIZE - APPCPU_IROM_SIZE;
+
+procpu_drom_org = DCACHE0_START;
+procpu_drom_len = DCACHE0_SIZE - APPCPU_DROM_SIZE;
+
+#if defined(CONFIG_ESP_SPIRAM)
+procpu_extram_org = DCACHE1_START
+procpu_extram_len = CONFIG_ESP_SPIRAM_SIZE
+#endif
+
 /* Aliases */
 #define FLASH_CODE_REGION   irom0_0_seg
 #define RODATA_REGION       drom0_0_seg
@@ -65,8 +77,8 @@ MEMORY
   iram0_0_seg(RX): org = procpu_iram_org, len = procpu_iram_len
   dram0_0_seg(RW): org = procpu_dram_org, len = procpu_dram_len
 
-  irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
-  drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
+  irom0_0_seg(RX): org = procpu_irom_org, len = procpu_irom_len
+  drom0_0_seg(R):  org = procpu_drom_org, len = procpu_drom_len
 
   rtc_iram_seg(RWX): org = 0x400c0000, len = 0x2000
   rtc_slow_seg(RW):  org = 0x50000000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
@@ -84,7 +96,7 @@ MEMORY
 #endif
 
 #ifdef CONFIG_ESP_SPIRAM
-  ext_ram_seg(RW): org = 0x3f800000, len = CONFIG_ESP_SPIRAM_SIZE
+  ext_ram_seg(RW): org = procpu_extram_org, len = procpu_extram_len
 #endif /* CONFIG_ESP_SPIRAM */
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -537,8 +549,10 @@ SECTIONS
   } GROUP_LINK_IN(IRAM_REGION)
 
   /* This symbol is here to check SRAM1 usage in case it is used for data too */
+#if _iram_end > SRAM1_IRAM_START
   _iram_end_at_dram_addr = SRAM1_IRAM_DRAM_CALC(_iram_end);
   _unallocated_iram_memory_size = ORIGIN(iram0_0_seg) + LENGTH(iram0_0_seg) - _iram_end;
+#endif
 
   ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)), "IRAM code does not fit.")
 

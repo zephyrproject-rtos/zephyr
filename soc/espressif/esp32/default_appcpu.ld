@@ -21,7 +21,7 @@ appcpu_iram_end = USER_IRAM_END - APPCPU_DRAM_SIZE;
 appcpu_iram_org = appcpu_iram_end - APPCPU_IRAM_SIZE;
 appcpu_iram_len = APPCPU_IRAM_SIZE;
 
-appcpu_dram_org = SRAM1_DRAM_USER_START;
+appcpu_dram_org = DRAM1_AMP_SHM_BUFFERS_END;
 appcpu_dram_len = APPCPU_DRAM_SIZE;
 
 /* Aliases */
@@ -72,9 +72,7 @@ _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
-/* Heap size calculations for APPCPU */
 _heap_sentry = BOOTLOADER_DRAM_SEG_START + APPCPU_DRAM_SIZE;
-_libc_heap_size = _heap_sentry - _end;
 
 SECTIONS
 {
