@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2025 Panasonic Industrial Devices Europe GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54l15_cpuapp.dtsi>
+#include "panb511evb_nrf54l15_cpuapp_common.dtsi"
+
+/ {
+	compatible = "panasonic-industrial-devices-europe-gmbh,panb511evb-cpuapp";
+	model = "Panasonic PAN B511 EVB nRF54L15 Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(324)>;
+		};
+
+		slot0_ns_partition: partition@61000 {
+			label = "image-0-nonsecure";
+			reg = <0x61000 DT_SIZE_K(324)>;
+		};
+
+		slot1_partition: partition@b2000 {
+			label = "image-1";
+			reg = <0xb2000 DT_SIZE_K(324)>;
+		};
+
+		slot1_ns_partition: partition@103000 {
+			label = "image-1-nonsecure";
+			reg = <0x103000 DT_SIZE_K(324)>;
+		};
+
+		/* 32k from 0x154000 to 0x15bfff reserved for TF-M partitions */
+		storage_partition: partition@15c000 {
+			label = "storage";
+			reg = <0x15c000 DT_SIZE_K(36)>;
+		};
+	};
+};
