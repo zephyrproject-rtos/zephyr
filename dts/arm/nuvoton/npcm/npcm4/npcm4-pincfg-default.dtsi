@@ -1,0 +1,1822 @@
+/*
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	/*
+	 * Multi-function pin declaration.
+	 *
+	 * The cfg index of GPIO must be the first alt function in each pinmux node.
+	 *
+	 * The name of node and id follows the config order.
+	 * For example, the id of pin gpio26 is defined as:
+	 *   nuvoton,id = <GPIO26__I3C3_SCL__PD5__LED_B__SCL1B>;
+	 * and the alt function 0 is GPIO26,
+	 *     the alt function 1 is I3C3_SCL,
+	 *     the alt function 2 is PD5,
+	 *     the alt function 3 is LED_B,
+	 *     the alt function 4 is SCL1B.
+	 * Please note that the prop. nuvoton,pin-reg index starts from 4 to 0 with total 5
+	 * registers can be defined.
+	 */
+	/* GPIOB0 / SMI */
+	gpiob0__smi: pin_gpiob0__smi {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5_6_SMI_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOB0__SMI>;
+	};
+
+	/* GPIO00 / EMAC_RXD1 / CTSB / PWM7 */
+	gpio00__emac_rxd1__ctsb__pwm7: pin_gpio00__emac_rxd1__ctsb__pwm7 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_EMCCTL_0_RMII_EN
+				NPCM_PINCTRL_ALT9_4_CTS2_SL
+				NPCM_PINCTRL_ALT5_1_PWM7_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO00__EMAC_RXD1__CTSB__PWM7>;
+	};
+
+	/* GPIO01 / EMAC_RXD0 / DSRB / TA7 */
+	gpio01__emac_rxd0__dsrb__ta7: pin_gpio01__emac_rxd0__dsrb__ta7 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_EMCCTL_0_RMII_EN
+				NPCM_PINCTRL_ALT9_3_SP2CTL_SL
+				NPCM_PINCTRL_ALT3_7_TA7_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO01__EMAC_RXD0__DSRB__TA7>;
+	};
+
+	/* GPIO02 / EMAC_REF_CLK / RTSB / PWM8 */
+	gpio02__emac_ref_clk__rtsb__pwm8: pin_gpio02__emac_ref_clk__rtsb__pwm8 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_EMCCTL_0_RMII_EN
+				NPCM_PINCTRL_ALT9_0_RTS2_SL
+				NPCM_PINCTRL_ALT5_2_PWM8_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO02__EMAC_REF_CLK__RTSB__PWM8>;
+	};
+
+	/* GPIO03 / EMAC_TXD1 / DTRB / TA8 */
+	gpio03__emac_txd1__dtrb__ta8: pin_gpio03__emac_txd1__dtrb__ta8 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_EMCCTL_0_RMII_EN
+				NPCM_PINCTRL_ALT9_3_SP2CTL_SL
+				NPCM_PINCTRL_ALT4_0_TA8_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO03__EMAC_TXD1__DTRB__TA8>;
+	};
+
+	/* GPIO04 / EMAC_TXD0 / SINB / CR_SIN1 / PWM1 */
+	gpio04__emac_txd0__sinb__cr_sin1__pwm1: pin_gpio04__emac_txd0__sinb__cr_sin1__pwm1 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_EMCCTL_0_RMII_EN
+				NPCM_PINCTRL_ALT9_1_SP2I_SL
+				NPCM_PINCTRL_ALTB_1_URTI_SL
+				NPCM_PINCTRL_ALT4_3_PWM1_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO04__EMAC_TXD0__SINB__CR_SIN1__PWM1>;
+	};
+
+	/* GPIO05 / EMAC_TX_EN / SOUTB / CR_SOUT1 / TA1 */
+	gpio05__emac_tx_en__soutb__cr_sout1__ta1:
+	pin_gpio05__emac_tx_en__soutb__cr_sout1__ta1 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_EMCCTL_0_RMII_EN
+				NPCM_PINCTRL_ALT9_2_SP2O_SL
+				NPCM_PINCTRL_ALTA_6_URTO1_SL
+				NPCM_PINCTRL_ALT3_1_TA1_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO05__EMAC_TX_EN__SOUTB__CR_SOUT1__TA1>;
+	};
+
+	/* GPIO06 / EMAC_MDI0 / DCDB / PWM9 */
+	gpio06__emac_mdi0__dcdb__pwm9: pin_gpio06__emac_mdi0__dcdb__pwm9 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_EMCCTL_0_RMII_EN
+				NPCM_PINCTRL_ALT9_3_SP2CTL_SL
+				NPCM_PINCTRL_ALT5_3_PWM9_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO06__EMAC_MDI0__DCDB__PWM9>;
+	};
+
+	/* GPIO07 / EMAC_MDC / RIB / TA9 */
+	gpio07__emac_mdc__rib__ta9: pin_gpio07__emac_mdc__rib__ta9 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_EMCCTL_1_MDIO_EN
+				NPCM_PINCTRL_ALT9_5_RI2_SL
+				NPCM_PINCTRL_ALT4_1_TA9_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO07__EMAC_MDC__RIB__TA9>;
+	};
+
+	/* GPIOB1 / CLKRUN */
+	gpiob1__clkrun: pin_gpiob1__clkrun {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT0_5_CLKRN_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOB1__CLKRUN>;
+	};
+
+	/*
+	 * GPIOB2 / LPCPD / ESPI_RST / LDRQ
+	 * Set ESPI_EN strap pin for ESPI_RST.
+	 */
+	gpiob2__lpcpd__espi_rst__ldrq: pin_gpiob2__lpcpd__espi_rst__ldrq {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT0_6_LPCPD_SL
+				NPCM_PINCTRL_ALTB_7_LDRQ_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOB2__LPCPD__ESPI_RST__LDRQ>;
+	};
+
+	/*
+	 * GPIOB3 / ESPI_ALERT / SERIRQ
+	 * Set ESPI_EN strap pin for eSPI_ALERT.
+	 */
+	gpiob3__espi_alert__serirq: pin_gpiob3__espi_alert__serirq {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT0_7_SERIRQ_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOB3__ESPI_ALERT__SERIRQ>;
+	};
+
+	/*
+	 * GPIOB7 / PLTRST
+	 * Set ESPI_EN strap pin for GPIOB7.
+	 */
+	gpiob7__pltrst: pin_gpiob7__pltrst {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOB7__PLTRST>;
+	};
+
+	/* GPIOB4 */
+	gpiob4: pin_gpiob4 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOB4>;
+	};
+
+	/* GPIOB5 */
+	gpiob5: pin_gpiob5 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOB5>;
+	};
+
+	/* GPIO10 / CTSA */
+	gpio10__ctsa: pin_gpio10__ctsa {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTB_5_CTS1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO10__CTSA>;
+	};
+
+	/* GPIO11 / SCL2A / DRSA */
+	gpio11__scl2a__drsa: pin_gpio11__scl2a__drsa {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTE_5_SMB2A_SL
+				NPCM_PINCTRL_ALTB_4_SP1CTL_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL1_7_SCL2A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x3>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_2_SMB2A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x2>;
+		nuvoton,id = <GPIO11__SCL2A__DRSA>;
+	};
+
+	/* GPIO12 / RTSA */
+	gpio12__rtsa: pin_gpio12__rtsa {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTB_0_RTS1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO12__RTSA>;
+	};
+
+	/* GPIO13 / SDA2A / DTRA */
+	gpio13__sda2a__dtra: pin_gpio13__sda2a__dtra {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTE_5_SMB2A_SL
+				NPCM_PINCTRL_ALTB_4_SP1CTL_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL0_7_SDA2A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x3>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_2_SMB2A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x2>;
+		nuvoton,id = <GPIO13__SDA2A__DTRA>;
+	};
+
+	/* GPIO14 / SINA / CR_SIN1 */
+	gpiob14__sina__cr_sin1: pin_gpiob14__sina__cr_sin1 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTB_2_SP1I_SL
+				NPCM_PINCTRL_ALTC_6_URTI1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO14__SINA__CR_SIN1>;
+	};
+
+	/* GPIO15 / SOUTA / CR_SOUT1 / SOUTA_P80 */
+	gpiob15__souta__cr_sout1__souta_p80: pin_gpiob15__souta__cr_sout1__souta_p80 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTB_3_SP1O_SL
+				NPCM_PINCTRL_ALTA_7_URTO2_SL
+				NPCM_PINCTRL_ALTC_7_SOUTA_P80_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO15__SOUTA__CR_SOUT1__SOUTA_P80>;
+	};
+
+	/* GPIO16 / DCDA / SCL6B */
+	gpiob16__dcda__scl6b: pin_gpiob16__dcda__scl6b {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTB_4_SP1CTL_SL
+				NPCM_PINCTRL_ALT6D_7_SMB6B_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD1_4_SMB6B_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIO16__DCDA__SCL6B>;
+	};
+
+	/* GPIO17 / CLKOUT / RIA / SDA6B */
+	gpiob17__clkout__ria__sda6b: pin_gpiob17__clkout__ria__sda6b {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT7_6_CLKOUT_SL
+				NPCM_PINCTRL_ALTB_6_RI1_SL
+				NPCM_PINCTRL_ALT6D_7_SMB6B_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL3_7_SDA6B_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x5>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD1_4_SMB6B_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x8>;
+		nuvoton,id = <GPIO17__CLKOUT__RIA__SDA6B>;
+	};
+
+	/* GPIOC0 / CR_SIN3 / SINC */
+	gpioc0__cr_sin3__sinc: pin_gpioc0__cr_sin3__sinc {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT31_6_URTI3_SL
+				NPCM_PINCTRL_ALT62_0_SINC_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOC0__CR_SIN3__SINC>;
+	};
+
+	/* GPIOC1 / CR_SOUT3 / SOUTC */
+	gpioc1__cr_sout3__soutc: pin_gpioc1__cr_sout3__soutc {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT31_7_URTO4_SL
+				NPCM_PINCTRL_ALT62_1_SOUTC_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOC1__CR_SOUT3__SOUTC>;
+	};
+
+	/* GPIOC2 / RTSC / SCL7A */
+	gpioc2__rtsc__scl7a: pin_gpioc2__rtsc__scl7a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT62_2_RTSC_SL
+				NPCM_PINCTRL_ALT6D_0_SMB7A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_0_SMB7A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOC2__RTSC__SCL7A>;
+	};
+
+	/* GPIOC3 / CTSC / SDA7A */
+	gpioc3__ctsc__sda7a: pin_gpioc3__ctsc__sda7a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT62_3_CTSC_SL
+				NPCM_PINCTRL_ALT6D_0_SMB7A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL3_0_SDA7A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x5>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_0_SMB7A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOC3__CTSC__SDA7A>;
+	};
+
+	/* GPIOC4 / CR_SIN4 / SIND */
+	gpioc4__cr_sin4__sind: pin_gpioc4__cr_sin4__sind {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6C_0_URTI4_SL
+				NPCM_PINCTRL_ALT62_4_SIND_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOC4__CR_SIN4__SIND>;
+	};
+
+	/* GPIOC5 / CR_SOUT4 / SOUTD */
+	gpioc5__cr_sout4__soutd: pin_gpioc5__cr_sout4__soutd {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6C_1_URTO5_SL
+				NPCM_PINCTRL_ALT62_5_SOUTD_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOC5__CR_SOUT4__SOUTD>;
+	};
+
+	/* GPIOC6 / RTSD / SCL8A */
+	gpioc6__rtsd__scl8a: pin_gpioc6__rtsd__scl8a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT62_6_RTSD_SL
+				NPCM_PINCTRL_ALT6D_1_SMB8A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_1_SMB8A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOC6__RTSD__SCL8A>;
+	};
+
+	/* GPIOC7 / CTSD / SDA8A */
+	gpioc7__ctsd__sda8a: pin_gpioc7__ctsd__sda8a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT62_7_CTSD_SL
+				NPCM_PINCTRL_ALT6D_1_SMB8A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL3_1_SDA8A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x5>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_1_SMB8A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOC7__CTSD__SDA8A>;
+	};
+
+	/* GPIOE3 */
+	gpioe3: pin_gpioe3 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOE3>;
+	};
+
+	/* GPIO20 / MHZ_CLKIN / SLCT / YLW_LED */
+	gpio20__mhz_clkin__slct__ylw_led: pin_gpio20__mhz_clkin__slct__ylw_led {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6_7_UART_EXT_SEL
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALTE_7_YLW_LED_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO20__MHZ_CLKIN__SLCT__YLW_LED>;
+	};
+
+	/* GPIO21 / BACK_CS / I3C1_SCL / DSRB / PE / CIRRX */
+	gpio21__back_cs__i3c1_scl__dsrb__pe__cirrx:
+	pin_gpio21__back_cs__i3c1_scl__dsrb__pe__cirrx {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT0_2_FIU_BACK_CS_SL
+				NPCM_PINCTRL_ALT10_6_I3C1_SL
+				NPCM_PINCTRL_ALT6B_4_URTB_DSR_SL2
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT7_1_CIRRX_SL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 0x1>;
+		nuvoton,id = <GPIO21__BACK_CS__I3C1_SCL__DSRB__PE__CIRRX>;
+	};
+
+	/* GPIO22 / I3C1_SDA / DTRB / BUSY / P2_DGL */
+	gpio22__i3c1_sda__dtrb__busy__p2_dgl: pin_gpio22__i3c1_sda__dtrb__busy__p2_dgl {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT10_0_CRGPIO_RST_SL
+				NPCM_PINCTRL_ALT6B_5_URTB_DTR_SL2
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD1_2_I3C_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x2>;
+		nuvoton,id = <GPIO22__I3C1_SDA__DTRB__BUSY__P2_DGL>;
+	};
+
+	/* GPIO23 / PVT_CS / I3C2_SCL / DCDB / ACK */
+	gpio23__pvt_cs__i3c2_scl__dcdb__ack: pin_gpio23__pvt_cs__i3c2_scl__dcdb__ack {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT0_1_FIU_PVT_CS_SL
+				NPCM_PINCTRL_ALT10_1_I3C2_SL
+				NPCM_PINCTRL_ALT6B_6_URTB_DTR_SL2
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO23__PVT_CS__I3C2_SCL__DCDB__ACK>;
+	};
+
+	/* GPIO24 / I3C2_SDA / RIB / PD7 / P2_DGH */
+	gpio24__i3c2_sda__rib__pd7__p2_dgh: pin_gpio24__i3c2_sda__rib__pd7__p2_dgh {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT10_1_I3C2_SL
+				NPCM_PINCTRL_ALT6B_7_RTB_RI_SL2
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD3_0_I3C2_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x2>;
+		nuvoton,id = <GPIO24__I3C2_SDA__RIB__PD7__P2_DGH>;
+	};
+
+	/* GPIO25 / I3C3_SDA / PD6 / LED_A / SDA1B */
+	gpio25__i3c3_sda__pd6__led_a__sda1b: pin_gpio25__i3c3_sda__pd6__led_a__sda1b {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT10_2_I3C3_SL
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PINCTRL_ALTA_5_SMB1B_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL0_4_SDA1B_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x11>;
+		nuvoton,pull-up-down-config-extend;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD3_1_I3C3_PUE>,
+						<NPCM_PINCTRL_DEVPU0_1_SMB1B_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x12>;
+		nuvoton,id = <GPIO25__I3C3_SDA__PD6__LED_A__SDA1B>;
+	};
+
+	/* GPIO26 / I3C3_SCL / PD5 / LED_B / SCL1B */
+	gpio26__i3c3_scl__pd5__led_b__scl1b: pin_gpio26__i3c3_scl__pd5__led_b__scl1b {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT10_2_I3C3_SL
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PINCTRL_ALTA_5_SMB1B_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL1_4_SCL1B_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x11>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_1_SMB1B_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x10>;
+		nuvoton,id = <GPIO26__I3C3_SCL__PD5__LED_B__SCL1B>;
+	};
+
+	/* GPIO27 / SMI / PD4 / LED_C / BEEP */
+	gpio27__smi__pd4__led_c__beep: pin_gpio27__smi__pd4__led_c__beep {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT10_4_SMI_SL
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PINCTRL_ALT6_1_BEEP_SEL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO27__SMI__PD4__LED_C__BEEP>;
+	};
+
+	/* GPIO30 / SINB / CR_SIN2 / PD3 / LED_D */
+	gpio30__sinb__cr_sin2__pd3__led_d: pin_gpio30__sinb__cr_sin2__pd3__led_d {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6B_0_URTB_SIN_SL2
+				NPCM_PINCTRL_ALT31_4_URTI2_SL
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO30__SINB__CR_SIN2__PD3__LED_D>;
+	};
+
+	/* GPIO31 / SOUTB / CR_SOUT2 / PD2 / LED_E */
+	gpio31__soutb__cr_sout2__pd2__led_e: pin_gpio31__soutb__cr_sout2__pd2__led_e {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6B_1_URTB_SOUT_SL2
+				NPCM_PINCTRL_ALT31_5_URTO3_SL
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO31__SOUTB__CR_SOUT2__PD2__LED_E>;
+	};
+
+	/* GPIO32 / RTSB / PD1 / LED_F / SCL9A */
+	gpio32__rtsb__pd1__led_f__scl9a: pin_gpio32__rtsb__pd1__led_f__scl9a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6B_2_URTB_RTS_SL2
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PINCTRL_ALT6D_2_SMB9A_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_2_SMB9A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x10>;
+		nuvoton,id = <GPIO32__RTSB__PD1__LED_F__SCL9A>;
+	};
+
+	/* GPIO33 / CTSB / PD0 / LED_G / SDA9A */
+	gpio33__ctsb__pd0__led_g__sda9a: pin_gpio33__ctsb__pd0__led_g__sda9a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6B_3_URTB_CTS_SL2
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PINCTRL_ALT6D_2_SMB9A_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL3_2_SDA9A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x11>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_2_SMB9A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x10>;
+		nuvoton,id = <GPIO33__CTSB__PD0__LED_G__SDA9A>;
+	};
+
+	/*
+	 * GPIO34 / (SWDIO_1/CR_SOUT1) / SLIN / SCL5A
+	 * See JTAG Hot-Plug HPLUG_CONN[3:0] for SWDIO_1/CR_SOUT1.
+	 */
+	gpio34__swdio_1_cr_sout1__slin__scl5a: pin_gpio34__swdio_1_cr_sout1__slin__scl5a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALTA_3_SMB5A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL1_3_SCL5A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0xB>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD1_0_SMB5A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x8>;
+		nuvoton,id = <GPIO34__SWDIO_1_CR_SOUT1__SLIN__SCL5A>;
+	};
+
+	/*
+	 * GPIO35 / (SWCLK_1/CR_SIN1) / INIT / P1_DGL / SDA5A
+	 * See JTAG Hot-Plug HPLUG_CONN[3:0] for SWCLK_1/CR_SIN1.
+	 */
+	gpio35__swclk_1_cr_sin1__init__p1_dgl__sda5a:
+	pin_gpio35__swclk_1_cr_sin1__init__p1_dgl__sda5a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PINCTRL_ALTA_3_SMB5A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL0_3_SDA5A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x13>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD1_0_SMB5A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x10>;
+		nuvoton,id = <GPIO35__SWCLK_1_CR_SIN1__INIT__P1_DGL__SDA5A>;
+	};
+
+	/* GPIO36 / ERR / VSBY_32KHZ_IN / PWM2 / SCL4A */
+	gpio36__err__vsby_32khz_in__pwm2__scl4a:
+	pin_gpio36__err__vsby_32khz_in__pwm2__scl4a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT7_5_EXT32KSL
+				NPCM_PINCTRL_ALT4_4_PWM2_SL
+				NPCM_PINCTRL_ALTA_2_SMB4A_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL1_2_SCL4A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x15>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_6_SMB4A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x10>;
+		nuvoton,id = <GPIO36__ERR__VSBY_32KHZ_IN__PWM2__SCL4A>;
+	};
+
+	/* GPIO37 / AFD / P1_DGH / TA2 / SDA4A */
+	gpio37__afd__p1_dgh__ta2__sda4a: pin_gpio37__afd__p1_dgh__ta2__sda4a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALT6_3_PORT80_SL
+				NPCM_PINCTRL_ALT3_2_TA2_SL
+				NPCM_PINCTRL_ALTA_2_SMB4A_SL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 0x2 NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL0_2_SDA4A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x19>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_6_SMB4A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x10>;
+		nuvoton,id = <GPIO37__AFD__P1_DGH__TA2__SDA4A>;
+	};
+
+	/* GPIOB6 / ECSCI / STB / GRN_LED */
+	gpiob6__ecsci__stb__grn_led: pin_gpiob6__ecsci__stb__grn_led {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT10_5_ECSCI_SL
+				NPCM_PINCTRL_ALT6_2_PRT_SL
+				NPCM_PINCTRL_ALTE_6_GRN_LED_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOB6__ECSCI__STB__GRN_LED>;
+	};
+
+	/*
+	 * GPIO40 / JTAG_TDI / DB_MOSI / MCLK
+	 * Set JEN strap pin for JTAG_TDI, set FIU Gang for DB_MOSI.
+	 */
+	gpio40__jtag_tdi__db_mosi__mclk: pin_gpio40__jtag_tdi__db_mosi__mclk {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTE_3_KBC_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0 0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO40__JTAG_TDI__DB_MOSI__MCLK>;
+	};
+
+	/*
+	 * GPIO41 / (SWCLK_0/CR_SIN1) / JTAG_TCK / DB_SCK / MDAT
+	 * See JTAG Hot-Plug HPLUG_CONN[3:0] for SWCLK_0/CR_SIN1.
+	 * Set JEN strap pin for JTAG_TCK.
+	 * Set FIU Gang for DB_SCK.
+	 */
+	gpio41__swclk_0_cr_sin1__jtag_tck__db_sck__mdat:
+	pin_gpio41__swclk_0_cr_sin1__jtag_tck__db_sck__mdat {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTE_3_KBC_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0 0 0 0x10 NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO41__SWCLK_0_CR_SIN1__JTAG_TCK__DB_SCK__MDAT>;
+	};
+
+	/*
+	 * GPIO42 / JTAG_TDO / DB_MISO / KCLK
+	 * Set JEN strap pin for JTAG_TDO, set FIU Gang for DB_MISO.
+	 */
+	gpio42__jtag_tdo__db_miso__kclk: pin_gpio42__jtag_tdo__db_miso__kclk {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTE_3_KBC_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0 0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO42__JTAG_TDO__DB_MISO__KCLK>;
+	};
+
+	/*
+	 * GPIO43 / (SWDIO_0/CR_SOUT1) / JTAG_TMS / DB_SCE / KDAT
+	 * See JTAG Hot-Plug HPLUG_CONN[3:0] for SWDIO_0/CR_SOUT1.
+	 * Set JEN strap pin for JTAG_TMS.
+	 * Set FIU Gang for DB_SCE.
+	 */
+	gpio43__swdio_0_cr_sout1__jtag_tms__db_sce__kdat:
+	pin_gpio43__swdio_0_cr_sout1__jtag_tms__db_sce__kdat {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTE_3_KBC_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0 0 0 0x10 NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO43__SWDIO_0_CR_SOUT1__JTAG_TMS__DB_SCE__KDAT>;
+	};
+
+	/* GPIO50 / PSOUT */
+	gpio50__psout: pin_gpio50__psout {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5C_1_ACPI_GPIO50_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO50__PSOUT>;
+	};
+
+	/* GPIO51 / PSIN */
+	gpio51__psin: pin_gpio51__psin {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5C_0_ACPI_GPIO51_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO51__PSIN>;
+	};
+
+	/* GPIO52 / PSON */
+	gpio52__pson: pin_gpio52__pson {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5C_2_ACPI_GPIO52_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO52__PSON>;
+	};
+
+	/* GPIO53 / SLP_S3 */
+	gpio53__slp_s3: pin_gpio53__slp_s3 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5F_0_ACPI_GPIO53_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL1_5_SLP_S3_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x2>;
+		nuvoton,id = <GPIO53__SLP_S3>;
+	};
+
+	/* GPIO54 / PME / ECSCI */
+	gpio54__pme__ecsci: pin_gpio54__pme__ecsci {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5C_3_ACPI_GPIO54_SEL
+				NPCM_PINCTRL_ALT5_5_ECSCI_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 0x18 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO54__PME__ECSCI>;
+	};
+
+	/* GPIO44 / SHD_CS */
+	gpio44__shd_cs: pin_gpio44__shd_cs {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_3_SHD_SPI
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO44__SHD_CS>;
+	};
+
+	/* GPIO45 / SHD_DIO0 */
+	gpio45__shd_dio0: pin_gpio45__shd_dio0 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_3_SHD_SPI
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO45__SHD_DIO0>;
+	};
+
+	/* GPIO46 / SHD_DIO1 */
+	gpio46__shd_dio1: pin_gpio46__shd_dio1 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_3_SHD_SPI
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO46__SHD_DIO1>;
+	};
+
+	/* GPIO47 / SHD_SCLK */
+	gpio47__shd_sclk: pin_gpio47__shd_sclk {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_3_SHD_SPI
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO47__SHD_SCLK>;
+	};
+
+	/* GPIO55 / SHD_DIO2 / WP_GPIO55 */
+	gpio55__shd_dio2__wp_gpio55: pin_gpio55__shd_dio2__wp_gpio55 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_DEV_CTL3_1_WP_GPIO55
+				NPCM_PINCTRL_ALTC_2_SHD_SPI_QUAD
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x8 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO55__SHD_DIO2__WP_GPIO55>;
+	};
+
+	/* GPIO56 / SHD_DIO3 */
+	gpio56__shd_dio3: pin_gpio56__shd_dio3 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_2_SHD_SPI_QUAD
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO56__SHD_DIO3>;
+	};
+
+	/* GPIOE1 / DPWROK */
+	gpioe1__dpwrok: pin_gpioe1__dpwrok {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5E_0_ACPI_GPIOE1_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOE1__DPWROK>;
+	};
+
+	/* GPIOE0 / DEEP_S5 / 3VSBSW */
+	gpioe0__deep_s5__3vsbsw: pin_gpioe0__deep_s5__3vsbsw {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5E_2_ACPI_GPIOE0_DEEP_S5_SEL
+				NPCM_PINCTRL_ALT5E_5_ACPI_GPIOE0_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x18 0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOE0__DEEP_S5__3VSBSW>;
+	};
+
+	/* GPIO60 / RSTOUT2 / SCL1A */
+	gpio60__rstout2__scl1a: pin_gpio60__rstout2__scl1a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5D_2_ACPI_GPIO60_SEL
+				NPCM_PINCTRL_ALTA_0_SMB1A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 0x18 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL1_0_SCL1A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x5>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_0_SMB1A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIO60__RSTOUT2__SCL1A>;
+	};
+
+	/* GPIO61 / RSTOUT1 / SDA1A */
+	gpio61__rstout1__sda1a: pin_gpio61__rstout1__sda1a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5D_1_ACPI_GPIO61_SEL
+				NPCM_PINCTRL_ALTA_0_SMB1A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 0x18 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL0_0_SDA1A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x5>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_0_SMB1A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIO61__RSTOUT1__SDA1A>;
+	};
+
+	/* GPIO62 / RSTOUT0 */
+	gpio62__rstout0: pin_gpio62__rstout0 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5D_0_ACPI_GPIO62_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO62__RSTOUT0>;
+	};
+
+	/* GPIO63 / ATXPGD */
+	gpio63__atxpgd: pin_gpio63__atxpgd {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5F_2_ACPI_GPIO63_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO63__ATXPGD>;
+	};
+
+	/* GPIOE2 / PWROK0 */
+	gpioe2__pwrok0: pin_gpioe2__pwrok0 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5E_3_ACPI_GPIOE2_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOE2__PWROK0>;
+	};
+
+	/* GPIO57 */
+	gpio57: pin_gpio57 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO57>;
+	};
+
+	/* GPIO64 / RESETCON / DPWROKI / PWM3 */
+	gpio64__resetcon__dpwroki__pwm3: pin_gpio64__resetcon__dpwroki__pwm3 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5F_3_ACPI_GPIO64_SEL
+				NPCM_PINCTRL_ALT9_6_DPWORK_SL
+				NPCM_PINCTRL_ALT4_5_PWM3_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 0x4 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO64__RESETCON__DPWROKI__PWM3>;
+	};
+
+	/* GPIO65 / SLP_S5 */
+	gpio65__slp_s5: pin_gpio65__slp_s5 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5F_1_ACPI_GPIO65_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL1_6_SLP_S5_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x2>;
+		nuvoton,id = <GPIO65__SLP_S5>;
+	};
+
+	/* GPIO66 / SPIP1_CLK */
+	gpio66__spip1_clk: pin_gpio66__spip1_clk {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_1_SPIP1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO66__SPIP1_CLK>;
+	};
+
+	/* GPIO67 / SPIP1_MOSI */
+	gpio67__spip1_mosi: pin_gpio67__spip1_mosi {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_1_SPIP1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO67__SPIP1_MOSI>;
+	};
+
+	/* GPIO70 / SPIP1_DIO1 */
+	gpio70__spip1_dio1: pin_gpio70__spip1_dio1 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_1_SPIP1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO70__SPIP1_DIO1>;
+	};
+
+	/* GPIO71 / SLP_SUS */
+	gpio71__slp_sus: pin_gpio71__slp_sus {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5C_5_ACPI_GPIO71_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO71__SLP_SUS>;
+	};
+
+	/* GPIO72 / FW_RDY */
+	gpio72__fw_rdy: pin_gpio72__fw_rdy {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT7_0_GP72_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO72__FW_RDY>;
+	};
+
+	/* GPIO73 / SPIP1_CS */
+	gpio73__spip1_cs: pin_gpio73__spip1_cs {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_1_SPIP1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO73__SPIP1_CS>;
+	};
+
+	/* GPIOD0 / I3C4_SCL / SINE */
+	gpiod0__i3c4_scl__sine: pin_gpiod0__i3c4_scl__sine {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT10_3_I3C4_SL
+				NPCM_PINCTRL_ALT66_0_SINE_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOD0__I3C4_SCL__SINE>;
+	};
+
+	/* GPIOD1 / I3C4_SDA / SOUTE */
+	gpiod1__i3c4_sda__soute: pin_gpiod1__i3c4_sda__soute {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT10_3_I3C4_SL
+				NPCM_PINCTRL_ALT66_1_SOUTE_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD3_2_I3C4_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x2>;
+		nuvoton,id = <GPIOD1__I3C4_SDA__SOUTE>;
+	};
+
+	/* GPIOD2 / RTSE / SCL10A */
+	gpiod2__rtse__scl10a: pin_gpiod2__rtse__scl10a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT66_2_RTSE_SL
+				NPCM_PINCTRL_ALT6D_3_SMB10A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_3_SMB10A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOD2__RTSE__SCL10A>;
+	};
+
+	/* GPIOD3 / CTSE / SDA10A */
+	gpiod3__ctse__sda10a: pin_gpiod3__ctse__sda10a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT66_3_CTSE_SL
+				NPCM_PINCTRL_ALT6D_3_SMB10A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL3_3_SDA10A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x5>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_3_SMB10A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOD3__CTSE__SDA10A>;
+	};
+
+	/* GPIOD4 / SINF / SCL11A */
+	gpiod4__sinf__scl11a: pin_gpiod4__sinf__scl11a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT66_4_SINF_SL
+				NPCM_PINCTRL_ALT6D_4_SMB11A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_4_SMB11A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOD4__SINF__SCL11A>;
+	};
+
+	/* GPIOD5 / SOUTF / SDA11A */
+	gpiod5__soutf__sda11a: pin_gpiod5__soutf__sda11a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT66_5_SOUTF_SL
+				NPCM_PINCTRL_ALT6D_4_SMB11A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL3_4_SDA11A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x5>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_4_SMB11A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOD5__SOUTF__SDA11A>;
+	};
+
+	/* GPIOD6 / RTSF / SCL12A */
+	gpiod6__rtsf__scl12a: pin_gpiod6__rtsf__scl12a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT66_6_RTSF_SL
+				NPCM_PINCTRL_ALT6D_5_SMB12A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_5_SMB12A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOD6__RTSF__SCL12A>;
+	};
+
+	/* GPIOD7 / CTSF / SDA12A */
+	gpiod7__ctsf__sda12a: pin_gpiod7__ctsf__sda12a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT66_7_CTSF_SL
+				NPCM_PINCTRL_ALT6D_5_SMB12A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL3_5_SDA12A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x5>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU2_5_SMB12A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOD7__CTSF__SDA12A>;
+	};
+
+	/* GPIO74 / IOX1_LDSH */
+	gpio74__iox1_ldsh: pin_gpio74__iox1_ldsh {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6A_0_SIOX1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO74__IOX1_LDSH>;
+	};
+
+	/* GPIO75 / IOX_DOUT */
+	gpio75__iox1_dout: pin_gpio75__iox1_dout {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6A_0_SIOX1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO75__IOX1_DOUT>;
+	};
+
+	/* GPIO76 / WP_GPIO76 / SPIP1_DIO2 */
+	gpio76__wp_gpio76__spip1_dio2: pin_gpio76__wp_gpio76__spip1_dio2 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_DEV_CTL3_2_WP_GPIO76
+				NPCM_PINCTRL_ALTC_1_SPIP1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO76__WP_GPIO76__SPIP1_DIO2>;
+	};
+
+	/* GPIO77 / SPIP1_DIO3 */
+	gpio77__spip1_dio3: pin_gpio77__spip1_dio3 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTC_1_SPIP1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO77__SPIP1_DIO3>;
+	};
+
+	/* GPIO80 / KBC_TEST / PCHVSB */
+	gpio80__kbc_test__pchvsb: pin_gpio80__kbc_test__pchvsb {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTE_0_KBC_TEST
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO80__KBC_TEST__PCHVSB>;
+	};
+
+	/* GPIO81 / TA3 */
+	gpio81__ta3: pin_gpio81__ta3 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT3_3_TA3_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO81__TA3>;
+	};
+
+	/* GPIOE4 / CASEOPEN */
+	gpioe4__caseopen: pin_gpioe4__caseopen {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5D_5_ACPI_GPIOE4_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOE4__CASEOPEN>;
+	};
+
+	/* GPIOE5 / RSMRST */
+	gpioe5__rsmrst: pin_gpioe5__rsmrst {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5E_1_ACPI_GPIOE5_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOE5__RSMRST>;
+	};
+
+	/* GPIOE6 / SKTOCC */
+	gpioe6__sktooc: pin_gpioe6__sktooc {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5D_4_ACPI_GPIOE6_SEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOE6__SKTOCC>;
+	};
+
+	/* GPIO82 / I3C5_SCL / PWM0 */
+	gpio82__i3c5_scl__pwm0: pin_gpio82__i3c5_scl__pwm0 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTA_4_I3C5_SL
+				NPCM_PINCTRL_ALT4_2_PWM0_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO82__I3C5_SCL__PWM0>;
+	};
+
+	/* GPIO83 / I3C5_SDA / TA0 */
+	gpio83__i3c5_sda__ta0: pin_gpio83__i3c5_sda__ta0 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTA_4_I3C5_SL
+				NPCM_PINCTRL_ALT3_0_TA0_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD3_3_I3C5_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x2>;
+		nuvoton,id = <GPIO83__I3C5_SDA__TA0>;
+	};
+
+	/* GPIO84 */
+	gpio84: pin_gpio84 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+		NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO84>;
+	};
+
+	/* GPIO85 */
+	gpio85: pin_gpio85 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO85>;
+	};
+
+	/* GPIOF0 / SCL4B */
+	gpiof0__scl4b: pin_gpiof0__scl4b {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT34_6_RES
+				NPCM_PINCTRL_ALT6D_6_SMB4B_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_7_SMB4B_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x2>;
+		nuvoton,id = <GPIOF0__SCL4B>;
+	};
+
+	/* GPIOF1 / SDA4B */
+	gpiof1__sda4b: pin_gpiof1__sda4b {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT34_6_RES
+				NPCM_PINCTRL_ALT6D_6_SMB4B_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL3_6_SDA4B_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x3>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_7_SMB4B_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x2>;
+		nuvoton,id = <GPIOF1__SDA4B>;
+	};
+
+	/* GPIOF2 / IOX_DIN */
+	gpiof2__iox1_din: pin_gpiof2__iox1_din {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6A_0_SIOX1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOF2__IOX1_DIN>;
+	};
+
+	/* GPIOF3 / IOX_SCLK */
+	gpiof3__iox1_sclk: pin_gpiof3__iox1_sclk {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT6A_0_SIOX1_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOF3__IOX1_SCLK>;
+	};
+
+	/* GPIO86 / VIN7 */
+	gpio86__vin7: pin_gpio86__vin7 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT1_7_VIN7_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO86__VIN7>;
+	};
+
+	/* GPIO87 / VIN5 */
+	gpio87__vin5: pin_gpio87__vin5 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT1_5_VIN5_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO87__VIN5>;
+	};
+
+	/* GPIO90 / (THR16/VIN16/TD2P) / DSMOUT */
+	gpio90__thr16_vin16_td2p__dsmout: pin_gpio90__thr16_vin16_td2p__dsmout {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT2_2_VIN16_SL
+				NPCM_PINCTRL_ALT2_3_RES_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO90__THR16_VIN16_TD2P__DSMOUT>;
+	};
+
+	/* GPIO91 / (THR15/VIN15/TD1P) */
+	gpio91__thr15_vin15_td1p: pin_gpio91__thr15_vin15_td1p {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT2_1_VIN15_SL
+				NPCM_PINCTRL_ALT2_3_RES_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO91__THR15_VIN15_TD1P>;
+	};
+
+	/* GPIO92 / (THR14/VIN14/TD0P) */
+	gpio92__thr14_vin14_td0p: pin_gpio92__thr14_vin14_td0p {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT2_0_VIN14_SL
+				NPCM_PINCTRL_ALT2_3_RES_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO92__THR14_VIN14_TD0P>;
+	};
+
+	/* GPIO93 / (THR1/VIN1/TD3P) / DSADC_CLK */
+	gpio93__thr1_vin1_td3p__dsadc_clk: pin_gpio93__thr1_vin1_td3p__dsadc_clk {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT1_1_VIN1_SL
+				NPCM_PINCTRL_ALT2_3_RES_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO93__THR1_VIN1_TD3P__DSADC_CLK>;
+	};
+
+	/* GPIO94 / (VIN2/THR2/TD4P) */
+	gpio94__vin2_thr2_td4p: pin_gpio94__vin2_thr2_td4p {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT1_2_VIN2_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO94__VIN2_THR2_TD4P>;
+	};
+
+	/* GPIO95 / ATX5VSB / VIN3 */
+	gpio95__atx5vsb__vin3: pin_gpio95__atx5vsb__vin3 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT1_4_ATX5VVSB_SL
+				NPCM_PINCTRL_ALT1_3_VIN3_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIO95__ATX5VSB__VIN3>;
+	};
+
+	/* GPIO96 / I3C6_SCL / SCL6A */
+	gpio96__i3c6_scl__scl6a: pin_gpio96__i3c6_scl__scl6a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT7_3_GP96_SL
+				NPCM_PINCTRL_ALT7_2_I3C6_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0x8 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD1_1_SMB6A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIO96__I3C6_SCL__SCL6A>;
+	};
+
+	/* GPIO97 / PECI / I3C6_SDA / SDA6A */
+	gpio97__peci__i3c6_sda__sda6a: pin_gpio97__peci__i3c6_sda__sda6a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT7_4_GP97_SL
+				NPCM_PINCTRL_ALT5_4_PECI_EN
+				NPCM_PINCTRL_ALT7_2_I3C6_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0x10 0x8 0x4 0 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPD3_4_I3C6_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIO97__PECI__I3C6_SDA__SDA6A>;
+	};
+
+	/* GPIOA0 / PWM4 / IOX2_LDSH */
+	gpioa0__pwm4__iox2_ldsh: pin_gpioa0__pwm4__iox2_ldsh {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT4_6_PWM4_SL
+				NPCM_PINCTRL_ALT6A_1_SIOX2_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOA0__PWM4__IOX2_LDSH>;
+	};
+
+	/* GPIOA1 / TA4 / IOX2_DOUT */
+	gpioa1__ta4__iox2_dout: pin_gpioa1__ta4__iox2_dout {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT3_4_TA4_SL
+				NPCM_PINCTRL_ALT6A_1_SIOX2_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOA1__TA4__IOX2_DOUT>;
+	};
+
+	/* GPIOA2 / (SWDIO_2/CR_SOUT1) / SDA3A */
+	gpioa2__swdio_2_cr_sout1__sda3a: pin_gpioa2__swdio_2_cr_sout1__sda3a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTA_1_SMB3A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL0_1_SDA3A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x7>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_4_SMB3A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOA2__SWDIO_2_CR_SOUT1__SDA3A>;
+	};
+
+	/* GPIOA3 / PWM5 / IOX2_DIN */
+	gpioa3__pwm5__iox2_din: pin_gpioa3__pwm5__iox2_din {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT4_7_PWM5_SL
+				NPCM_PINCTRL_ALT6A_1_SIOX2_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOA3__PWM5__IOX2_DIN>;
+	};
+
+	/* GPIOA4 / TA5 / IOX2_SCLK */
+	gpioa4__ta5__iox2_sclk: pin_gpioa4__ta5__iox2_sclk {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT3_5_TA5_SL
+				NPCM_PINCTRL_ALT6A_1_SIOX2_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0x8 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOA4__TA5__IOX2_SCLK>;
+	};
+
+	/* GPIOA5 / PWM6 */
+	gpioa5__pwm6: pin_gpioa5__pwm6 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT5_0_PWM6_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOA5__PWM6>;
+	};
+
+	/* GPIOA6 / TA6 / USB20 */
+	gpioa6__ta6__usb20: pin_gpioa6__ta6__usb20 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALT3_6_TA6_SL
+				NPCM_PINCTRL_ALT2E_4_USBDPHY_EN
+				NPCM_PINCTRL_ALT2E_6_USBDPHY_CLKSEL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0x10 0xC NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <GPIOA6__TA6__USB20>;
+	};
+
+	/* GPIOA7 / (SWCLK_2/CR_SIN1) / SCL3A */
+	gpioa7__swclk_2_cr_sin1__scl3a: pin_gpioa7__swclk_2_cr_sin1__scl3a {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PINCTRL_ALTA_1_SMB3A_SL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <0 0 0x10 NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,low-voltage-reg = <NPCM_PINCTRL_LV_CTL1_1_SCL3A_LV>;
+		nuvoton,low-voltage-def-mv = <1800>;
+		nuvoton,low-voltage-sup = <0x7>;
+		nuvoton,pull-up-down-reg = <NPCM_PINCTRL_DEVPU0_4_SMB3A_PUE>;
+		bias-pull-up;
+		nuvoton,pull-up-down-sup = <0x4>;
+		nuvoton,id = <GPIOA7__SWCLK_2_CR_SIN1__SCL3A>;
+	};
+
+	/*
+	 * These are the internal pins for the NPCM4 series SoC.
+	 */
+	/* Internal: SPIM */
+
+
+	/*
+	 * These are the reserved pins for the NPCM4 series SoC.
+	 */
+	/* Reserved: GPIOE7, GPIO group_e only has 7 GPIOs */
+	res_gpioe7: pin_res_gpioe7 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <RES_GPIOE7>;
+	};
+
+	/* Reserved: GPIOF4-7, GPIO group_f only has 4 GPIOs */
+	res_gpiof4: pin_res_gpiof4 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <RES_GPIOF4>;
+	};
+	res_gpiof5: pin_res_gpiof5 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <RES_GPIOF5>;
+	};
+	res_gpiof6: pin_res_gpiof6 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <RES_GPIOF6>;
+	};
+	res_gpiof7: pin_res_gpiof7 {
+		nuvoton,pin-hw-def;
+		nuvoton,pin-reg = <NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL
+				NPCM_PIN_REG_NULL>;
+		nuvoton,alt = <NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL
+			NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL NPCM_PIN_CFG_NULL>;
+		nuvoton,id = <RES_GPIOF7>;
+	};
+};

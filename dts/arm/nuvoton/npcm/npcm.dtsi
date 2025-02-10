@@ -8,6 +8,7 @@
 
 /* Macros for device tree declarations of npcm soc family */
 #include <zephyr/dt-bindings/clock/npcm_clock.h>
+#include <zephyr/dt-bindings/pinctrl/npcm-pinctrl.h>
 #include <freq.h>
 
 / {
@@ -44,6 +45,15 @@
 			reg = <0x4000d000 0x2000
 				   0x400b5000 0x2000>;
 			reg-names = "pmc", "cdcg";
+		};
+
+		pinctrl: pinctrl@400c3000 {
+			compatible = "nuvoton,npcm-pinctrl";
+			/* First reg region is System Configuration Device */
+			/* Second reg region is System Glue Device */
+			reg = <0x400c3000 0x7C
+				   0x400a5000 0x2000>;
+			reg-names = "scfg", "glue";
 		};
 	};
 };
