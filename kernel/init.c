@@ -302,13 +302,12 @@ extern volatile uintptr_t __stack_chk_guard;
 __pinned_bss
 bool z_sys_post_kernel;
 
-static int do_device_init(const struct init_entry *entry)
+static int do_device_init(const struct device *dev)
 {
-	const struct device *dev = entry->dev;
 	int rc = 0;
 
-	if (entry->init_fn.dev != NULL) {
-		rc = entry->init_fn.dev(dev);
+	if (dev->ops != NULL) {
+		rc = dev->ops->init(dev);
 		/* Mark device initialized. If initialization
 		 * failed, record the error condition.
 		 */
@@ -365,40 +364,14 @@ static void z_sys_init_run_level(enum init_level level)
 		int result;
 
 		sys_trace_sys_init_enter(entry, level);
-		if (dev != NULL) {
-			result = do_device_init(entry);
+		if (dev != NULL && ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) == 0U)) {
+			result = do_device_init(dev);
 		} else {
-			result = entry->init_fn.sys();
+			result = entry->init_fn();
 		}
 		sys_trace_sys_init_exit(entry, level, result);
 	}
 }
-
-
-int z_impl_device_init(const struct device *dev)
-{
-	if (dev == NULL) {
-		return -ENOENT;
-	}
-
-	STRUCT_SECTION_FOREACH_ALTERNATE(_deferred_init, init_entry, entry) {
-		if (entry->dev == dev) {
-			return do_device_init(entry);
-		}
-	}
-
-	return -ENOENT;
-}
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_device_init(const struct device *dev)
-{
-	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
-
-	return z_impl_device_init(dev);
-}
-#include <zephyr/syscalls/device_init_mrsh.c>
-#endif
 
 extern void boot_banner(void);
 

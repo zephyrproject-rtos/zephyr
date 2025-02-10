@@ -227,8 +227,12 @@ static int stm32_exti_init(const struct device *dev)
 	return stm32_exti_enable_registers();
 }
 
+static const struct device_ops stm32_exti_ops = {
+	.init = stm32_exti_init,
+};
+
 static struct stm32_exti_data exti_data;
-DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
+DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_ops,
 		 NULL,
 		 &exti_data, NULL,
 		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,

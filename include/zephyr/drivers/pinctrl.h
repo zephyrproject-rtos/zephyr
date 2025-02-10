@@ -42,9 +42,11 @@ extern "C" {
 #define PINCTRL_STATE_DEFAULT 0U
 /** Sleep state (state used when the device is in low power mode). */
 #define PINCTRL_STATE_SLEEP 1U
+/** Reset state (state used when the device is not initialized). */
+#define PINCTRL_STATE_RESET 2U
 
 /** This and higher values refer to custom private states. */
-#define PINCTRL_STATE_PRIV_START 2U
+#define PINCTRL_STATE_PRIV_START 3U
 
 /** @} */
 

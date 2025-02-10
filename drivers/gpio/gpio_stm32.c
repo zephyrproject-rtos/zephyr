@@ -697,8 +697,9 @@ static int gpio_stm32_init(const struct device *dev)
 
 	data->dev = dev;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		return -ENODEV;
+	ret = device_get(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE));
+	if (ret < 0) {
+		return ret;
 	}
 
 #if (defined(PWR_CR2_IOSV) || defined(PWR_SVMCR_IO2SV)) && \
@@ -723,6 +724,10 @@ static int gpio_stm32_init(const struct device *dev)
 	return 0;
 }
 
+static const struct device_ops gpio_stm32_ops = {
+	.init = gpio_stm32_init,
+};
+
 #define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {   \
 		.common = {						       \
@@ -735,7 +740,7 @@ static int gpio_stm32_init(const struct device *dev)
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
 	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);		       \
 	DEVICE_DT_DEFINE(__node,					       \
-			    gpio_stm32_init,				       \
+			    &gpio_stm32_ops,				       \
 			    PM_DEVICE_DT_GET(__node),			       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \

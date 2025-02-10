@@ -605,8 +605,11 @@ static void uart_console_hook_install(void)
  */
 static int uart_console_init(void)
 {
-	if (!device_is_ready(uart_console_dev)) {
-		return -ENODEV;
+	int ret;
+
+	ret = device_get(uart_console_dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	uart_console_hook_install();

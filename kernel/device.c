@@ -38,7 +38,7 @@ const struct device *z_impl_device_get_binding(const char *name)
 	/* Return NULL if the device matching 'name' is not ready. */
 	STRUCT_SECTION_FOREACH(device, dev) {
 		if ((dev->name == name) || (strcmp(name, dev->name) == 0)) {
-			return z_impl_device_is_ready(dev) ? dev : NULL;
+			return z_impl_device_get(dev) >= 0 ? dev : NULL;
 		}
 	}
 
@@ -58,14 +58,6 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 	return z_impl_device_get_binding(name_copy);
 }
 #include <zephyr/syscalls/device_get_binding_mrsh.c>
-
-static inline bool z_vrfy_device_is_ready(const struct device *dev)
-{
-	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
-
-	return z_impl_device_is_ready(dev);
-}
-#include <zephyr/syscalls/device_is_ready_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_DEVICE_DT_METADATA
@@ -88,7 +80,7 @@ const struct device *z_impl_device_get_by_dt_nodelabel(const char *nodelabel)
 	STRUCT_SECTION_FOREACH(device, dev) {
 		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
 
-		if (!z_impl_device_is_ready(dev) || nl == NULL) {
+		if ((z_impl_device_get(dev) < 0) || nl == NULL) {
 			continue;
 		}
 
@@ -129,18 +121,102 @@ size_t z_device_get_all_static(struct device const **devices)
 	return cnt;
 }
 
-bool z_impl_device_is_ready(const struct device *dev)
+int z_impl_device_get(const struct device *dev)
 {
-	/*
-	 * if an invalid device pointer is passed as argument, this call
-	 * reports the `device` as not ready for usage.
-	 */
+	int ret = 0;
+
 	if (dev == NULL) {
-		return false;
+		return -ENODEV;
 	}
 
-	return dev->state->initialized && (dev->state->init_res == 0U);
+#ifdef CONFIG_MULTITHREADING
+	if (!k_is_pre_kernel()) {
+		(void)k_sem_take(&dev->state->usage_lock, K_FOREVER);
+	}
+#endif
+
+	if (dev->state->usage == UINT8_MAX) {
+		ret = -EPERM;
+		goto out;
+	}
+
+	if ((dev->state->usage == 0U) && (dev->ops != NULL) && (dev->ops->init != NULL)) {
+		if (dev->state->initialized) {
+			if (dev->state->init_res != 0U) {
+				ret = dev->ops->init(dev);
+			}
+			dev->state->initialized = false;
+		} else {
+			ret = dev->ops->init(dev);
+		}
+	}
+
+	if (ret == 0) {
+		dev->state->usage++;
+		ret = dev->state->usage;
+	}
+
+out:
+#ifdef CONFIG_MULTITHREADING
+	if (!k_is_pre_kernel()) {
+		(void)k_sem_give(&dev->state->usage_lock);
+	}
+#endif
+
+	return ret;
 }
+
+int z_impl_device_put(const struct device *dev)
+{
+	int ret = 0;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+#ifdef CONFIG_MULTITHREADING
+	if (!k_is_pre_kernel()) {
+		(void)k_sem_take(&dev->state->usage_lock, K_FOREVER);
+	}
+#endif
+
+	__ASSERT(dev->state->usage > 0U, "Unbalanced device get/put");
+
+	if ((dev->state->usage == 1U) && (dev->ops != NULL) && (dev->ops->deinit != NULL)) {
+		ret = dev->ops->deinit(dev);
+	}
+
+	if (ret == 0) {
+		dev->state->usage--;
+		ret = dev->state->usage;
+	}
+
+#ifdef CONFIG_MULTITHREADING
+	if (!k_is_pre_kernel()) {
+		(void)k_sem_give(&dev->state->usage_lock);
+	}
+#endif
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_device_get(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	return z_impl_device_get(dev);
+}
+#include <zephyr/syscalls/device_get_mrsh.c>
+
+static inline int z_vrfy_device_put(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	return z_impl_device_put(dev);
+}
+#include <zephyr/syscalls/device_put_mrsh.c>
+#endif
 
 #ifdef CONFIG_DEVICE_DEPS
 
