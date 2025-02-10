@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Kernel idle options"
+
+config IDLE_ENTER_HOOK
+	bool "Execute idle enter hook"
+	help
+	  Execute idle_exit_hook() when entering idle.
+
+config IDLE_DEFAULT_ROUTINE
+	bool "Execute idle default routine"
+	default y
+
+endmenu
