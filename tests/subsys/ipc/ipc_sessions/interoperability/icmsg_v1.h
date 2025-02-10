@@ -12,8 +12,40 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/ipc/ipc_service.h>
-#include <zephyr/ipc/pbuf.h>
+#include "pbuf_v1.h"
 #include <zephyr/sys/atomic.h>
+
+/* Config aliases that prevenets from config collisions: */
+#undef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC_V1
+#define CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC_V1
+#endif
+#undef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS_V1
+#define CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS_V1
+#endif
+#undef CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS
+#ifdef CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS_V1
+#define CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS \
+	CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS_V1
+#endif
+#undef CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
+#ifdef CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE_V1
+#define CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE_V1
+#endif
+#undef CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE
+#ifdef CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE_V1
+#define CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE \
+	CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE_V1
+#endif
+#undef CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY
+#ifdef CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY_V1
+#define CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY_V1
+#endif
+#undef CONFIG_PBUF_RX_READ_BUF_SIZE
+#ifdef CONFIG_PBUF_RX_READ_BUF_SIZE_V1
+#define CONFIG_PBUF_RX_READ_BUF_SIZE CONFIG_PBUF_RX_READ_BUF_SIZE_V1
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,58 +59,14 @@ extern "C" {
  */
 
 enum icmsg_state {
-	/** Instance is not initialized yet. In this state: sending will fail, opening allowed.
-	 */
 	ICMSG_STATE_OFF,
-
-	/** Instance is initializing without session handshake. In this state: sending will fail,
-	 * opening will fail.
-	 */
-	ICMSG_STATE_INITIALIZING_SID_DISABLED,
-
-	/** Instance is initializing with session handshake. It is waiting for remote to acknowledge
-	 * local session id. In this state: sending will fail, opening is allowed (local session id
-	 * will change, so the remote may get unbound() callback).
-	 */
-	ICMSG_STATE_INITIALIZING_SID_ENABLED,
-
-	/** Instance is initializing with detection of session handshake support on remote side.
-	 * It is waiting for remote to acknowledge local session id or to send magic bytes.
-	 * In this state: sending will fail, opening is allowed (local session id
-	 * will change, so the remote may get unbound() callback if it supports it).
-	 */
-	ICMSG_STATE_INITIALIZING_SID_DETECT,
-
-	/** Instance was closed on remote side. The unbound() callback was send on local side.
-	 * In this state: sending will be silently discarded (there may be outdated sends),
-	 * opening is allowed.
-	 */
-	ICMSG_STATE_DISCONNECTED,
-
-	/* Connected states must be at the end. */
-
-	/** Instance is connected without session handshake support. In this state: sending will be
-	 * successful, opening will fail.
-	 */
-	ICMSG_STATE_CONNECTED_SID_DISABLED,
-
-	/** Instance is connected with session handshake support. In this state: sending will be
-	 * successful, opening is allowed (session will change and remote will get unbound()
-	 * callback).
-	 */
-	ICMSG_STATE_CONNECTED_SID_ENABLED,
-};
-
-enum icmsg_unbound_mode {
-	ICMSG_UNBOUND_MODE_DISABLE = ICMSG_STATE_INITIALIZING_SID_DISABLED,
-	ICMSG_UNBOUND_MODE_ENABLE = ICMSG_STATE_INITIALIZING_SID_ENABLED,
-	ICMSG_UNBOUND_MODE_DETECT = ICMSG_STATE_INITIALIZING_SID_DETECT,
+	ICMSG_STATE_BUSY,
+	ICMSG_STATE_READY,
 };
 
 struct icmsg_config_t {
 	struct mbox_dt_spec mbox_tx;
 	struct mbox_dt_spec mbox_rx;
-	enum icmsg_unbound_mode unbound_mode;
 };
 
 struct icmsg_data_t {
@@ -96,10 +84,9 @@ struct icmsg_data_t {
 	/* General */
 	const struct icmsg_config_t *cfg;
 #ifdef CONFIG_MULTITHREADING
+	struct k_work_delayable notify_work;
 	struct k_work mbox_work;
 #endif
-	uint16_t remote_sid;
-	uint16_t local_sid;
 	atomic_t state;
 };
 
@@ -111,7 +98,7 @@ struct icmsg_data_t {
  *  completed.
  *  This function is intended to be called late in the initialization process,
  *  possibly from a thread which can be safely blocked while handshake with the
- *  remote instance is being performed.
+ *  remote instance is being pefromed.
  *
  *  @param[in] conf Structure containing configuration parameters for the icmsg
  *                  instance.
