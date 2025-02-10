@@ -139,7 +139,7 @@ Simulated nRF5x with BabbleSim
 The :ref:`nrf52_bsim <nrf52_bsim>` and :ref:`nrf5340bsim <nrf5340bsim>` boards,
 are simulated target boards
 which emulate the necessary peripherals of a nRF52/53 SOC to be able to develop
-and test BLE applications.
+and test Bluetooth LE applications.
 These boards, use:
 
    * `BabbleSim`_ to simulate the nRF5x modem and the radio environment.

@@ -19,7 +19,7 @@ The following management operations are available:
 
 over the following transports:
 
-* BLE (Bluetooth Low Energy)
+* Bluetooth Low Energy (LE)
 * Serial (UART)
 * UDP over IP
 
@@ -32,7 +32,7 @@ The management subsystem is located in :zephyr_file:`subsys/mgmt/` inside of
 the Zephyr tree.
 
 Additionally, there is a :zephyr:code-sample:`sample <smp-svr>` server that provides
-management functionality over BLE and serial.
+management functionality over Bluetooth LE and serial.
 
 .. _mcumgr_tools_libraries:
 
