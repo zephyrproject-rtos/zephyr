@@ -1,0 +1,22 @@
+identifier: w5500_evb_pico2/rp2350a/m33
+name: Wiznet W5500 Evaluation Board with RP2350
+type: mcu
+arch: arm
+flash: 16384
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - dma
+  - counter
+  - clock
+  - netif:eth
