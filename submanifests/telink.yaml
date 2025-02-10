@@ -5,5 +5,5 @@ manifest:
   projects:
     - name: lzma
       url: https://github.com/telink-semi/xz
-      revision: dcf34d7ced3a7fffb4ad4862881e0e92c62287d0
+      revision: 053c1629f452b43339e7cd5c66fc89a143f4827a
       path: modules/lib/lzma

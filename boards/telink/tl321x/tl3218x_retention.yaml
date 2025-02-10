@@ -1,5 +1,5 @@
-identifier: tl3218
-name: Telink TL3218
+identifier: tl3218x_retention
+name: Telink TL3218X_RETENTION
 type: mcu
 arch: riscv
 toolchain:

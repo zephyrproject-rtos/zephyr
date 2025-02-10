@@ -1,34 +1,34 @@
-.. _tl3218:
+.. _tl3218x:
 
-Telink TL3218
+Telink TL3218X
 #####################
 
 Overview
 ********
 
-The TL3218 Generic Starter Kit is a hardware platform which
+The TL3218X Generic Starter Kit is a hardware platform which
 can be used to verify the Telink TLx series chipset and develop applications
 for several 2.4 GHz air interface standards including Bluetooth LE, Zigbee, RF4CE,
 Thread, Matter, and 2.4GHz proprietary standard.
 
 .. figure:: img/tl3218x.jpg
      :align: center
-     :alt: TL3218
+     :alt: TL3218X
 
-.. More information about the board can be found at the `Telink B92 Generic Starter Kit Hardware Guide`_ website.
+More information about the board can be found at the `Telink B92 Generic Starter Kit Hardware Guide`_ website.
 
 Hardware
 ********
 
-The TL3218 SoC integrates a powerful 32-bit RISC-V MCU, DSP, 2.4 GHz ISM Radio, 128 KB SRAM
+The TL3218X SoC integrates a powerful 32-bit RISC-V MCU, DSP, 2.4 GHz ISM Radio, 128 KB SRAM
 including 96 KB retention feature SRAM, external Flash memory, 12-bit AUX ADC, PWM, flexible
 IO interfaces, and other peripheral blocks required for advanced IoTapplications.
 
 .. figure:: img/tl3218_block_diagram.png
      :align: center
-     :alt: TL3218_SOC
+     :alt: TL3218X_SOC
 
-The TL3218 default board configuration provides the following hardware components:
+The TL3218X default board configuration provides the following hardware components:
 
 - RF conducted antenna
 - 2 MB External SPI Flash memory with reset button. (Possible to mount 1/2/4 MB)
@@ -41,7 +41,7 @@ The TL3218 default board configuration provides the following hardware component
 Supported Features
 ==================
 
-The Zephyr TL3218 board configuration supports the following hardware features:
+The Zephyr TL3218X board configuration supports the following hardware features:
 
 +----------------+------------+------------------------------+
 | Interface      | Controller | Driver/Component             |
@@ -106,10 +106,10 @@ Default configuration and IOs
 System Clock
 ------------
 
-The TL3218 board is configured to use the 24 MHz external crystal oscillator
+The TL3218X board is configured to use the 24 MHz external crystal oscillator
 with the on-chip PLL/DIV generating the 96 MHz system clock.
 The following values also could be assigned to the system clock in the board DTS file
-(``boards/telink/tl3218/tl3218-common.dtsi``):
+(``boards/telink/tl321x/tl3218x-common.dtsi``):
 
 - 24000000
 - 48000000
@@ -124,14 +124,14 @@ The following values also could be assigned to the system clock in the board DTS
 PINs Configuration
 ------------------
 
-The TL3218 SoC has five GPIO controllers (PORT_A to PORT_F), and the next are
+The TL3218X SoC has five GPIO controllers (PORT_A to PORT_F), and the next are
 currently enabled:
 
 - LED0 (white): PD0, LED1 (green): PB0, LED2 (red): PB1, LED3 (blue): PB2
 - Key Matrix SW3: PB3_PB6, SW4: PB3_PB7, SW5: PB5_PB6, SW6: PB5_PB7
 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
-``boards/telink/tl3218/tl3218-common.dtsi`` file:
+``boards/telink/tl321x/tl3218x-common.dtsi`` file:
 
 - UART0 TX: PE0, RX: PE1
 - PWM Channel 0: PB2
@@ -141,7 +141,7 @@ Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 Serial Port
 -----------
 
-The TL3218 SoC has 1 UART. The Zephyr console output is assigned to UART0.
+The TL3218X SoC has 1 UART. The Zephyr console output is assigned to UART0.
 The default settings are 115200 8N1.
 
 USB COM Port (ACM) as Serial Port Configuration
@@ -201,7 +201,7 @@ Here is an example for the "hello_world" application.
 .. code-block:: console
 
    # From the root of the zephyr repository
-   west build -b tl3218 samples/hello_world
+   west build -b tl3218x samples/hello_world
 
 Open a serial terminal with the following settings:
 
@@ -216,13 +216,13 @@ serial port:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v3.3.0-xxxx-xxxxxxxxxxxxx  ***
-   Hello World! tl3218
+   Hello World! tl3218x
 
 
 Flashing
 ========
 
-To flash the TL3218 board see the sources below:
+To flash the TL3218X board see the sources below:
 
 - `Burning and Debugging Tools for all Series`_
 

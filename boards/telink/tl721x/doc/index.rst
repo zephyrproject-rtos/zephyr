@@ -1,36 +1,36 @@
-.. _tl7218:
+.. _tl7218x:
 
-Telink TL7218
+Telink TL7218X
 #####################
 
 Overview
 ********
 
-The TL7218 Generic Starter Kit is a hardware platform which
-can be used to verify the `Telink TLX series chipset`_ and develop applications
+The TL7218X Generic Starter Kit is a hardware platform which
+can be used to verify the Telink TLX series chipset and develop applications
 for several 2.4 GHz air interface standards including Bluetooth low energy,
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
 
 .. figure:: img/tl7218x.jpg
      :align: center
-     :alt: TL7218
+     :alt: TL7218X
 
-More information about the board can be found at the `Telink TL7218 Generic Starter Kit Hardware Guide`_ website.
+More information about the board can be found at the `Telink TL7218X Generic Starter Kit Hardware Guide`_ website.
 
 Hardware
 ********
 
-TL7218 is a single chip SoC for Bluetooth low energy and 802.15.4. The embedded 2.4GHz transceiver
+TL7218X is a single chip SoC for Bluetooth low energy and 802.15.4. The embedded 2.4GHz transceiver
 supports Bluetooth low energy, 802.15.4 as well as 2.4GHz proprietary operation.
-The TL7218 integrates a powerful 32-bit RISC-V MCU, 512 or 256 KB SRAM including up to 256 KB retention SRAM,
+The TL7218X integrates a powerful 32-bit RISC-V MCU, 512 or 256 KB SRAM including up to 256 KB retention SRAM,
 2 MB or 1 MB embedded flash, 12-bit ADC, PWM, flexible IO interfaces, and other peripheral blocks for IoT
 applications.
 
-.. figure:: img/tl7218_block_diagram.png
+.. figure:: img/tl7218x_block_diagram.png
      :align: center
-     :alt: TL7218_SOC
+     :alt: TL7218X_SOC
 
-The TL7218 default board configuration provides the following hardware components:
+The TL7218X default board configuration provides the following hardware components:
 
 - RF conducted antenna
 - 2 MB External SPI Flash memory with reset button. (Possible to mount 1/2/4 MB)
@@ -46,7 +46,7 @@ The TL7218 default board configuration provides the following hardware component
 Supported Features
 ==================
 
-The Zephyr TL7218 board configuration supports the following hardware features:
+The Zephyr TL7218X board configuration supports the following hardware features:
 
 +----------------+------------+------------------------------+
 | Interface      | Controller | Driver/Component             |
@@ -104,10 +104,10 @@ Default configuration and IOs
 System Clock
 ------------
 
-The TL7218 board is configured to use the 24 MHz external crystal oscillator
+The TL7218X board is configured to use the 24 MHz external crystal oscillator
 with the on-chip PLL/DIV generating the 60 MHz system clock.
 The following values also could be assigned to the system clock in the board DTS file
-(``boards/telink/tl7218/tl7218-common.dtsi``):
+(``boards/telink/tl721x/tl7218x-common.dtsi``):
 
 - 40000000
 - 48000000
@@ -124,14 +124,14 @@ The following values also could be assigned to the system clock in the board DTS
 PINs Configuration
 ------------------
 
-The TL7218 SoC has five GPIO controllers (PORT_A to PORT_F), and the next are
+The TL7218X SoC has five GPIO controllers (PORT_A to PORT_F), and the next are
 currently enabled:
 
 - LED0 (blue): PC0, LED1 (green): PC2, LED2 (white): PC3, LED3 (red): PC1
 - Key Matrix SW3: PD4_PD5, SW4: PD4_PD7, SW5: PD6_PD5, SW6: PD6_PD7
 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
-``boards/telink/tl7218/tl7218-common.dtsi`` file:
+``boards/telink/tl721x/tl7218x-common.dtsi`` file:
 
 - UART0 TX: PB2, RX: PB3
 - PWM Channel 0: PB7
@@ -202,7 +202,7 @@ Here is an example for the "hello_world" application.
 .. code-block:: console
 
    # From the root of the zephyr repository
-   west build -b tl7218 samples/hello_world
+   west build -b tl7218x samples/hello_world
 
 Open a serial terminal with the following settings:
 
@@ -217,13 +217,13 @@ serial port:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v3.3.0-xxxx-xxxxxxxxxxxxx  ***
-   Hello World! tl7218
+   Hello World! tl7218x
 
 
 Flashing
 ========
 
-To flash the TL7218 board see the sources below:
+To flash the TL7218X board see the sources below:
 
 - `Burning and Debugging Tools for all Series`_
 

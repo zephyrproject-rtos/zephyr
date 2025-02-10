@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "tl7218-common.dtsi"
+#include "tl7218x-common.dtsi"
 
 / {
 	soc {

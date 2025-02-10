@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-name: Telink TL321x build examples
+name: Telink TL321X build examples
 
 on: pull_request
 
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Telink build examples
     env:
-      ZEPHYR_SDK_VERSION: 0.16.8
+      ZEPHYR_SDK_VERSION: 0.17.0
     steps:
 
     - name: Install dependencies
@@ -42,104 +42,104 @@ jobs:
         west zephyr-export
         pip install -r zephyr/scripts/requirements.txt
 
-    - name: Build TL321x samples/basic/blinky
+    - name: Build TL321X samples/basic/blinky
       run: |
         cd ..
-        west build -b tl3218      -d build_blinky_tl3218                      zephyr/samples/basic/blinky                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_blinky_tl321x                      zephyr/samples/basic/blinky                    -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x samples/hello_world
+    - name: Build TL321X samples/hello_world
       run: |
         cd ..
-        west build -b tl3218      -d build_hello_tl3218                       zephyr/samples/hello_world                     -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_hello_tl321x                       zephyr/samples/hello_world                     -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x samples/basic/button
+    - name: Build TL321X samples/basic/button
       run: |
         cd ..
-        west build -b tl3218      -d build_button_tl3218                       zephyr/samples/basic/button                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_button_tl321x                      zephyr/samples/basic/button                    -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x samples/sensor/sht3xd
+    - name: Build TL321X samples/sensor/sht3xd
       run: |
         cd ..
-        west build -b tl3218      -d build_sht3xd_tl3218                      zephyr/samples/sensor/sht3xd                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_sht3xd_tl321x                      zephyr/samples/sensor/sht3xd                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x samples/drivers/adc
+    - name: Build TL321X samples/drivers/adc
       run: |
         cd ..
-        west build -b tl3218      -d build_adc_tl3218                         zephyr/samples/drivers/adc/adc_dt              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_adc_tl321x                         zephyr/samples/drivers/adc/adc_dt              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x samples/drivers/watchdog
+    - name: Build TL321X samples/drivers/watchdog
       run: |
         cd ..
-        west build -b tl3218      -d build_watchdog_tl3218                    zephyr/samples/drivers/watchdog                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_watchdog_tl321x                    zephyr/samples/drivers/watchdog                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x tests/drivers/flash/common
+    - name: Build TL321X tests/drivers/flash/common
       run: |
         cd ..
-        west build -b tl3218      -d build_tests_flash_tl3218                 zephyr/tests/drivers/flash/common              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_tests_flash_tl321x                 zephyr/tests/drivers/flash/common              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x samples/drivers/spi_flash
+    - name: Build TL321X samples/drivers/spi_flash
       run: |
         cd ..
-        west build -b tl3218      -d build_spi_flash_tl3218                   zephyr/samples/drivers/spi_flash               -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_spi_flash_tl321x                   zephyr/samples/drivers/spi_flash               -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x samples/basic/fade_led/
+    - name: Build TL321X samples/basic/fade_led/
       run: |
         cd ..
-        west build -b tl3218      -d build_fade_tl3218                        zephyr/samples/basic/fade_led                  -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_fade_tl321x                        zephyr/samples/basic/fade_led/                 -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x bluetooth/peripheral_ht
+    - name: Build TL321X bluetooth/peripheral_ht
       run: |
         cd ..
-        west build -b tl3218      -d build_peripheral_ht_tl3218               zephyr/samples/bluetooth/peripheral_ht         -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_peripheral_ht_tl321x               zephyr/samples/bluetooth/peripheral_ht         -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x net/openthread/cli
+    - name: Build TL321X net/openthread/cli
       run: |
         cd ..
-        west build -b tl3218      -d build_ot_cli_tl3218                      zephyr/samples/net/openthread/cli              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_ot_cli_tl321x                      zephyr/samples/net/openthread/cli              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
-    - name: Build TL321x net/openthread/coprocessor in RCP configuration with UART interface
+    - name: Build TL321X net/openthread/coprocessor in RCP configuration with UART interface
       run: |
         cd ..
-        west build -b tl3218      -d build_ot_coprocessor_rcp_uart_tl3218     zephyr/samples/net/openthread/coprocessor     -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-rcp.conf
+        west build -b tl3218x     -d build_ot_coprocessor_rcp_uart_tl321x     zephyr/samples/net/openthread/coprocessor      -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-rcp.conf
 
-    - name: Build TL321x subsys/usb/console for USB driver
+    - name: Build TL321X subsys/usb/console for USB driver
       run: |
         cd ..
-        west build -b tl3218      -d build_usb_console_tl3218                  zephyr/samples/subsys/usb/console            -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+        west build -b tl3218x     -d build_usb_console_tl321x                 zephyr/samples/subsys/usb/console              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
 
     - name: Build TL321X crypto/mbedtls
       run: |
         cd ..
-        west build -b tl3218      -d build_crypto_mbedtls_tl3218              zephyr/tests/crypto/mbedtls                    -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_MBEDTLS_ECP_C=y -DCONFIG_MBEDTLS_ECP_ALL_ENABLED=y
+        west build -b tl3218x     -d build_crypto_mbedtls_tl321x              zephyr/tests/crypto/mbedtls                    -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_MBEDTLS_ECP_C=y -DCONFIG_MBEDTLS_ECP_ALL_ENABLED=y
 
     - name: Build TL321X bootloader/mcuboot/boot for compressed LZMA image
       run: |
         cd ..
-        west build -b tl3218      -d build_mcuboot_tl3218_lzma                bootloader/mcuboot/boot/zephyr                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_COMPRESS_LZMA=y -DCONFIG_BOOT_UPGRADE_ONLY=y
+        west build -b tl3218x     -d build_mcuboot_tl321x_lzma                bootloader/mcuboot/boot/zephyr                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_COMPRESS_LZMA=y -DCONFIG_BOOT_UPGRADE_ONLY=y
 
     - name: Build TL321X bootloader/mcuboot/boot - chip id
       run: |
         cd ..
-        west build -b tl3218      -d build_mcuboot_chip_id_tl3218             bootloader/mcuboot/boot/zephyr                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_TELINK_TLX_MCUBOOT_STARTUP=y
+        west build -b tl3218x     -d build_mcuboot_chip_id_tl321x             bootloader/mcuboot/boot/zephyr                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_TELINK_TLX_MCUBOOT_STARTUP=y
 
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
-        cp ../build_blinky_tl3218/zephyr/zephyr.bin                     telink_build_artifacts/tl3218_blinky.bin
-        cp ../build_hello_tl3218/zephyr/zephyr.bin                      telink_build_artifacts/tl3218_hello_world.bin
-        cp ../build_button_tl3218/zephyr/zephyr.bin                     telink_build_artifacts/tl3218_button.bin
-        cp ../build_sht3xd_tl3218/zephyr/zephyr.bin                     telink_build_artifacts/tl3218_sht3xd.bin
-        cp ../build_adc_tl3218/zephyr/zephyr.bin                        telink_build_artifacts/tl3218_adc.bin
-        cp ../build_watchdog_tl3218/zephyr/zephyr.bin                   telink_build_artifacts/tl3218_watchdog.bin
-        cp ../build_tests_flash_tl3218/zephyr/zephyr.bin                telink_build_artifacts/tl3218_tests_flash.bin
-        cp ../build_spi_flash_tl3218/zephyr/zephyr.bin                  telink_build_artifacts/tl3218_spi_flash.bin
-        cp ../build_fade_tl3218/zephyr/zephyr.bin                       telink_build_artifacts/tl3218_tests_pwm.bin
-        cp ../build_peripheral_ht_tl3218/zephyr/zephyr.bin              telink_build_artifacts/tl3218_peripheral_ht.bin
-        cp ../build_ot_cli_tl3218/zephyr/zephyr.bin                     telink_build_artifacts/tl3218_ot_cli.bin
-        cp ../build_ot_coprocessor_rcp_uart_tl3218/zephyr/zephyr.bin    telink_build_artifacts/tl3218_ot_coprocessor_rcp_uart.bin
-        cp ../build_usb_console_tl3218/zephyr/zephyr.bin                telink_build_artifacts/tl3218_usb_console.bin
-        cp ../build_crypto_mbedtls_tl3218/zephyr/zephyr.bin             telink_build_artifacts/tl3218_mbedtls.bin
-        cp ../build_mcuboot_chip_id_tl3218/zephyr/zephyr.bin            telink_build_artifacts/tl3218_mcuboot_chip_id.bin
+        cp ../build_blinky_tl321x/zephyr/zephyr.bin                     telink_build_artifacts/tl321x_blinky.bin
+        cp ../build_hello_tl321x/zephyr/zephyr.bin                      telink_build_artifacts/tl321x_hello_world.bin
+        cp ../build_button_tl321x/zephyr/zephyr.bin                     telink_build_artifacts/tl321x_button.bin
+        cp ../build_sht3xd_tl321x/zephyr/zephyr.bin                     telink_build_artifacts/tl321x_sht3xd.bin
+        cp ../build_adc_tl321x/zephyr/zephyr.bin                        telink_build_artifacts/tl321x_adc.bin
+        cp ../build_watchdog_tl321x/zephyr/zephyr.bin                   telink_build_artifacts/tl321x_watchdog.bin
+        cp ../build_tests_flash_tl321x/zephyr/zephyr.bin                telink_build_artifacts/tl321x_tests_flash.bin
+        cp ../build_spi_flash_tl321x/zephyr/zephyr.bin                  telink_build_artifacts/tl321x_spi_flash.bin
+        cp ../build_fade_tl321x/zephyr/zephyr.bin                       telink_build_artifacts/tl321x_tests_pwm.bin
+        cp ../build_peripheral_ht_tl321x/zephyr/zephyr.bin              telink_build_artifacts/tl321x_peripheral_ht.bin
+        cp ../build_ot_cli_tl321x/zephyr/zephyr.bin                     telink_build_artifacts/tl321x_ot_cli.bin
+        cp ../build_ot_coprocessor_rcp_uart_tl321x/zephyr/zephyr.bin    telink_build_artifacts/tl321x_ot_coprocessor_rcp_uart.bin
+        cp ../build_usb_console_tl321x/zephyr/zephyr.bin                telink_build_artifacts/tl321x_usb_console.bin
+        cp ../build_crypto_mbedtls_tl321x/zephyr/zephyr.bin             telink_build_artifacts/tl321x_mbedtls.bin
+        cp ../build_mcuboot_chip_id_tl321x/zephyr/zephyr.bin            telink_build_artifacts/tl321x_mcuboot_chip_id.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v4

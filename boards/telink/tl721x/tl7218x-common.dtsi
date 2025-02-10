@@ -8,7 +8,7 @@
 
 #include <freq.h>
 #include <telink/telink_tl721x.dtsi>
-#include "tl7218-pinctrl.dtsi"
+#include "tl7218x-pinctrl.dtsi"
 
 / {
 	model = "telink,tl721x";

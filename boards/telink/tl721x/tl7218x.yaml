@@ -1,11 +1,11 @@
-identifier: tl7218_retention
-name: Telink TL7218_RETENTION
+identifier: tl7218x
+name: Telink TL7218X
 type: mcu
 arch: riscv32
 toolchain:
   - cross-compile
   - zephyr
-ram: 128
+ram: 512
 flash: 1024
 supported:
   - gpio

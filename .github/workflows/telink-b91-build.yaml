@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Telink build examples
     env:
-      ZEPHYR_SDK_VERSION: 0.16.8
+      ZEPHYR_SDK_VERSION: 0.17.0
     steps:
 
     - name: Install dependencies
