@@ -68,6 +68,8 @@
 	};
 
 	pllq {
+		div = <3>;
+		freq = <DT_FREQ_M(320)>;
 		status = "okay";
 	};
 
@@ -83,8 +85,8 @@
 };
 
 &canfdclk {
-	clocks = <&pll>;
-	div = <5>;
+	clocks = <&pllq>;
+	div = <4>;
 	status = "okay";
 };
 
