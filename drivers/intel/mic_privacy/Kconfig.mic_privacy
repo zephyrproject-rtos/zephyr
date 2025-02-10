@@ -1,0 +1,10 @@
+# SOF Microphone Privacy configuration options
+
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config INTEL_MIC_PRIVACY
+	bool "MIC PRIVACY device driver support"
+	default y
+	help
+	  Enable MIC PRIVACY device driver
