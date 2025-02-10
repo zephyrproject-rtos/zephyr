@@ -4,7 +4,7 @@
 
 # Extended advertising test:
 #
-# - Broadcasting Only: a BLE broadcaster advertises with extended
+# - Broadcasting Only: a Bluetooth LE broadcaster advertises with extended
 #   advertising, and a scanner scans the extended advertisement packets.
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source

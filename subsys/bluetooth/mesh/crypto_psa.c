@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(bt_mesh_crypto_psa);
 		CONFIG_BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET)
 
 BUILD_ASSERT(BT_MESH_PSA_KEY_ID_USER_MIN + BT_MESH_KEY_ID_RANGE_SIZE <= PSA_KEY_ID_USER_MAX,
-	"BLE Mesh PSA key id range overlaps maximum allowed boundary.");
+	     "Bluetooth Mesh PSA key id range overlaps maximum allowed boundary.");
 
 BUILD_ASSERT(PSA_MAC_LENGTH(PSA_KEY_TYPE_AES, 128, PSA_ALG_CMAC) == 16,
 	"MAC length should be 16 bytes for 128-bits key for CMAC-AES");
@@ -286,12 +286,12 @@ const uint8_t *bt_mesh_pub_key_get(void)
 	return dh_pair.is_ready ? dh_pair.public_key_be + 1 : NULL;
 }
 
-BUILD_ASSERT(PSA_RAW_KEY_AGREEMENT_OUTPUT_SIZE(
-	PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1), 256) == DH_KEY_SIZE,
-	"Diffie-Hellman shared secret size should be the same in PSA and BLE Mesh");
+BUILD_ASSERT(PSA_RAW_KEY_AGREEMENT_OUTPUT_SIZE(PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1),
+					       256) == DH_KEY_SIZE,
+	     "Diffie-Hellman shared secret size should be the same in PSA and Bluetooth Mesh");
 
 BUILD_ASSERT(PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(256) == PUB_KEY_SIZE + 1,
-	"Exported PSA public key should be 1 byte larger than BLE Mesh public key");
+	     "Exported PSA public key should be 1 byte larger than Bluetooth Mesh public key");
 
 int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key, uint8_t *dhkey)
 {

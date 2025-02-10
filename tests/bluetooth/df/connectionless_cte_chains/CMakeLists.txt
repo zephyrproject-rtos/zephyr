@@ -12,7 +12,7 @@ SET(common_sources ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/radio_df_stub.c)
 
 target_sources(app PRIVATE ${common_sources} ${app_sources})
 
-# Include paths to allow access to functions implemented in BLE controller
+# Include paths to allow access to functions implemented in Bluetooth LE controller
 target_include_directories(app PRIVATE
 			   ${CMAKE_CURRENT_SOURCE_DIR}/../common/include)
 target_include_directories(app PRIVATE

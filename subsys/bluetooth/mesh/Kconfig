@@ -1536,14 +1536,14 @@ endchoice
 if BT_MESH_USES_MBEDTLS_PSA || BT_MESH_USES_TFM_PSA
 
 config BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET
-	int "Offset of BLE Mesh key id range regarding PSA_KEY_ID_USER_MIN"
+	int "Offset of Bluetooth Mesh key id range regarding PSA_KEY_ID_USER_MIN"
 	default 0
 	help
 	  The PSA specification mandates to set key identifiers for keys
 	  with persistent lifetime. The users of the PSA API is responsible
-	  (BLE Mesh is user of PSA API) to provide correct and unique identifiers.
-	  The BLE Mesh identifier range should be between PSA_KEY_ID_USER_MIN and
-	  PSA_KEY_ID_USER_MAX. BLE Mesh requires two ids for each subnetwork, two ids
+	  (Bluetooth Mesh is user of PSA API) to provide correct and unique identifiers.
+	  The Bluetooth Mesh identifier range should be between PSA_KEY_ID_USER_MIN and
+	  PSA_KEY_ID_USER_MAX. Bluetooth Mesh requires two ids for each subnetwork, two ids
 	  for each application key, and two ids for the device key and device key candidate.
 	  It should consider the Mesh Configuration Database instances if database enabled.
 
