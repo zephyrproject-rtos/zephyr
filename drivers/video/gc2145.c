@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_AMODE1_WINDOW_MASK       0xFC
 #define GC2145_REG_AMODE1_DEF           0x14
 #define GC2145_REG_OUTPUT_FMT           0x84
+#define GC2145_REG_OUTPUT_FMT_MASK      0x1F
 #define GC2145_REG_OUTPUT_FMT_RGB565    0x06
 #define GC2145_REG_OUTPUT_FMT_YCBYCR    0x02
 #define GC2145_REG_SYNC_MODE            0x86
@@ -80,8 +81,8 @@ static const struct gc2145_reg default_regs[] = {
 	{0x9a, 0x0E}, /* Subsample mode */
 
 	{0x12, 0x2e},
-	{GC2145_REG_OUTPUT_FMT, 0x14}, /* Analog Mode 1 (vflip/mirror[1:0]) */
-	{0x18, 0x22},                  /* Analog Mode 2 */
+	{0x17, 0x14}, /* Analog Mode 1 (vflip/mirror[1:0]) */
+	{0x18, 0x22}, /* Analog Mode 2 */
 	{0x19, 0x0e},
 	{0x1a, 0x01},
 	{0x1b, 0x4b},
@@ -891,6 +892,7 @@ static int gc2145_set_window(const struct device *dev, uint16_t reg, uint16_t x,
 static int gc2145_set_output_format(const struct device *dev, int output_format)
 {
 	int ret;
+	uint8_t old_value;
 	const struct gc2145_config *cfg = dev->config;
 
 	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_SET_P0_REGS);
@@ -908,7 +910,13 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 		return -ENOTSUP;
 	}
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT, output_format);
+	ret = gc2145_read_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT, &old_value);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT,
+			(old_value & ~GC2145_REG_OUTPUT_FMT_MASK) | output_format);
 	if (ret < 0) {
 		return ret;
 	}
