@@ -9,9 +9,19 @@
 #ifndef ZEPHYR_DRIVERS_MISC_PIO_PICO_RPI_PIO_PICO_RPI_H_
 #define ZEPHYR_DRIVERS_MISC_PIO_PICO_RPI_PIO_PICO_RPI_H_
 
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/devicetree/gpio.h>
 
 #include <hardware/pio.h>
+
+struct pio_rpi_pico_config {
+	PIO pio;
+	const struct device *clk_dev;
+	clock_control_subsys_t clk_id;
+	const struct reset_dt_spec reset;
+};
 
 /**
  * @brief Utility macro to define a PIO program. The program is a list
@@ -134,7 +144,12 @@
  * @param dev Pointer to device structure for rpi_pio device instance
  * @return PIO object
  */
-PIO pio_rpi_pico_get_pio(const struct device *dev);
+static inline PIO pio_rpi_pico_get_pio(const struct device *dev)
+{
+	const struct pio_rpi_pico_config *config = dev->config;
+
+	return config->pio;
+}
 
 /**
  * Allocate a state machine.
