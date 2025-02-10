@@ -1132,7 +1132,7 @@ struct in6_pktinfo {
 /**
  * @brief Registration information for a given BSD socket family.
  */
-struct net_socket_register {
+__iterable_section_rom struct net_socket_register {
 	int family;
 	bool is_offloaded;
 	bool (*is_supported)(int family, int type, int proto);
