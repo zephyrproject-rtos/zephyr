@@ -437,17 +437,17 @@ int app_mqtt_init(struct mqtt_client *client)
 	int rc;
 	uint8_t broker_ip[NET_IPV4_ADDR_LEN];
 	struct sockaddr_in *broker4;
-	struct addrinfo *result;
-	const struct addrinfo hints = {
+	struct zsock_addrinfo *result;
+	const struct zsock_addrinfo hints = {
 		.ai_family = AF_INET,
 		.ai_socktype = SOCK_STREAM
 	};
 
 	/* Resolve IP address of MQTT broker */
-	rc = getaddrinfo(CONFIG_NET_SAMPLE_MQTT_BROKER_HOSTNAME,
+	rc = zsock_getaddrinfo(CONFIG_NET_SAMPLE_MQTT_BROKER_HOSTNAME,
 				CONFIG_NET_SAMPLE_MQTT_BROKER_PORT, &hints, &result);
 	if (rc != 0) {
-		LOG_ERR("Failed to resolve broker hostname [%s]", gai_strerror(rc));
+		LOG_ERR("Failed to resolve broker hostname [%s]", zsock_gai_strerror(rc));
 		return -EIO;
 	}
 	if (result == NULL) {
@@ -459,10 +459,10 @@ int app_mqtt_init(struct mqtt_client *client)
 	broker4->sin_addr.s_addr = ((struct sockaddr_in *)result->ai_addr)->sin_addr.s_addr;
 	broker4->sin_family = AF_INET;
 	broker4->sin_port = ((struct sockaddr_in *)result->ai_addr)->sin_port;
-	freeaddrinfo(result);
+	zsock_freeaddrinfo(result);
 
 	/* Log resolved IP address */
-	inet_ntop(AF_INET, &broker4->sin_addr.s_addr, broker_ip, sizeof(broker_ip));
+	zsock_inet_ntop(AF_INET, &broker4->sin_addr.s_addr, broker_ip, sizeof(broker_ip));
 	LOG_INF("Connecting to MQTT broker @ %s", broker_ip);
 
 	/* MQTT client configuration */
