@@ -3,6 +3,6 @@
 
 description: LiteOn F216A ambient light sensor
 
-compatible: "ltr,f216a"
+compatible: "liteon,ltrf216a"
 
 include: [sensor-device.yaml, i2c-device.yaml]
