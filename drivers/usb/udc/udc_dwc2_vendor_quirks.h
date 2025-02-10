@@ -415,6 +415,15 @@ static inline int esp32_usb_otg_enable_phy(struct phy_context_t *phy_ctx, bool e
 	return 0;
 }
 
+static inline int esp32_usb_otg_init_caps(const struct device *dev)
+{
+	struct udc_data *data = dev->data;
+
+	data->caps.mps = 64;
+
+	return 0;
+}
+
 #define QUIRK_ESP32_USB_OTG_DEFINE(n)						\
 										\
 	static struct phy_context_t phy_ctx_##n = {				\
@@ -458,7 +467,7 @@ static inline int esp32_usb_otg_enable_phy(struct phy_context_t *phy_ctx, bool e
 		.init = esp32_usb_otg_init_##n,					\
 		.post_enable = esp32_usb_otg_enable_phy_##n,			\
 		.disable = esp32_usb_otg_disable_phy_##n,			\
-		.irq_clear = NULL,						\
+		.caps = esp32_usb_otg_init_caps,				\
 	};									\
 
 #define UDC_DWC2_IRQ_DT_INST_DEFINE(n)						\
