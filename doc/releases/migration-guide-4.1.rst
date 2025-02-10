@@ -465,6 +465,10 @@ Video
   ``pitch = width * video_pix_fmt_bpp(pixfmt)`` needs to be replaced by an equivalent
   ``pitch = width * video_bits_per_pixel(pixfmt) / BITS_PER_BYTE``.
 
+* The :c:func:`video_stream_start` and :c:func:`video_stream_stop` driver APIs are now merged
+  into the new :c:func:`video_set_stream` driver API. The user APIs are however unchanged to
+  keep backward compatibility with downstream applications.
+
 Watchdog
 ========
 

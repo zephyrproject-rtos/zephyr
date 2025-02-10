@@ -77,6 +77,9 @@ Removed APIs and options
   and only supported 8-bit depth to :c:func:`video_bits_per_pixel()` returning
   the *bit* count and supporting any color depth.
 
+* The ``video_stream_start()`` and ``video_stream_stop()`` driver APIs have been
+  replaced by ``video_set_stream()``.
+
 * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO`
 
 * The :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` option has been removed
@@ -153,6 +156,11 @@ New APIs and options
 
     * Image management :c:macro:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` now has image data field
       :c:struct:`img_mgmt_image_confirmed`.
+
+* Video
+
+  * :c:func:`video_set_stream()` driver API has replaced :c:func:`video_stream_start()` and
+    :c:func:`video_stream_stop()` driver APIs.
 
 * Other
 

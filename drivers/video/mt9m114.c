@@ -451,14 +451,10 @@ static int mt9m114_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int mt9m114_stream_start(const struct device *dev)
+static int mt9m114_set_stream(const struct device *dev, bool enable)
 {
-	return mt9m114_set_state(dev, MT9M114_SYS_STATE_START_STREAMING);
-}
-
-static int mt9m114_stream_stop(const struct device *dev)
-{
-	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
+	return enable ? mt9m114_set_state(dev, MT9M114_SYS_STATE_START_STREAMING)
+		      : mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
 }
 
 static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
@@ -499,8 +495,7 @@ static DEVICE_API(video, mt9m114_driver_api) = {
 	.set_format = mt9m114_set_fmt,
 	.get_format = mt9m114_get_fmt,
 	.get_caps = mt9m114_get_caps,
-	.stream_start = mt9m114_stream_start,
-	.stream_stop = mt9m114_stream_stop,
+	.set_stream = mt9m114_set_stream,
 	.set_ctrl = mt9m114_set_ctrl,
 };
 

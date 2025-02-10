@@ -910,12 +910,7 @@ static int ov2640_get_fmt(const struct device *dev,
 	return 0;
 }
 
-static int ov2640_stream_start(const struct device *dev)
-{
-	return 0;
-}
-
-static int ov2640_stream_stop(const struct device *dev)
+static int ov2640_set_stream(const struct device *dev, bool enable)
 {
 	return 0;
 }
@@ -975,8 +970,7 @@ static DEVICE_API(video, ov2640_driver_api) = {
 	.set_format = ov2640_set_fmt,
 	.get_format = ov2640_get_fmt,
 	.get_caps = ov2640_get_caps,
-	.stream_start = ov2640_stream_start,
-	.stream_stop = ov2640_stream_stop,
+	.set_stream = ov2640_set_stream,
 	.set_ctrl = ov2640_set_ctrl,
 };
 
