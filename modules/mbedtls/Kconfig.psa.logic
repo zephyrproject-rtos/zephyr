@@ -1,8 +1,14 @@
 # Copyright (c) 2024 BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
-# This file extends Kconfig.psa (which is automatically generated) by adding
-# some logic between PSA_WANT symbols.
+# This file extends Kconfig.psa.auto (which is automatically generated) by
+# adding some logic around PSA_WANT symbols.
+
+# PSA_WANT_KEY_TYPE_xxx_KEY_PAIR_BASIC build symbols are automatically
+# enabled in Mbed TLS header files whenever any of the corresponding
+# key pair's IMPORT, EXPORT, GENERATE, or DERIVE is enabled
+# (see modules/crypto/mbedtls/include/psa/crypto_adjust_config_key_pair_types.h).
+# We mimic the same behavior with Kconfigs.
 
 config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 	bool
@@ -25,3 +31,99 @@ config PSA_WANT_KEY_TYPE_DH_KEY_PAIR_BASIC
 	depends on PSA_WANT_KEY_TYPE_DH_KEY_PAIR_IMPORT || \
 		   PSA_WANT_KEY_TYPE_DH_KEY_PAIR_EXPORT || \
 		   PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE
+
+# Internal symbols that can be used to check whether there is some kind of
+# support in the PSA Crypto API.
+
+config PSA_CAN_SOME_HASH
+	bool
+	default y if (PSA_WANT_ALG_MD5      || \
+		      PSA_WANT_ALG_SHA_1    || \
+		      PSA_WANT_ALG_SHA_224  || \
+		      PSA_WANT_ALG_SHA_256  || \
+		      PSA_WANT_ALG_SHA_384  || \
+		      PSA_WANT_ALG_SHA_512  || \
+		      PSA_WANT_ALG_SHA3_224 || \
+		      PSA_WANT_ALG_SHA3_256 || \
+		      PSA_WANT_ALG_SHA3_384 || \
+		      PSA_WANT_ALG_SHA3_512)
+	help
+	  Promptless symbol that can be used to check if there's some type of hash
+	  support enabled (no matter which algorithm) in the PSA Crypto API.
+
+config PSA_CAN_SOME_ECC
+	bool
+	default y if (PSA_WANT_ECC_BRAINPOOL_P_R1_256 || \
+		      PSA_WANT_ECC_BRAINPOOL_P_R1_384 || \
+		      PSA_WANT_ECC_BRAINPOOL_P_R1_512 || \
+		      PSA_WANT_ECC_MONTGOMERY_255 || \
+		      PSA_WANT_ECC_MONTGOMERY_448 || \
+		      PSA_WANT_ECC_SECP_K1_192 || \
+		      PSA_WANT_ECC_SECP_K1_256 || \
+		      PSA_WANT_ECC_SECP_R1_192 || \
+		      PSA_WANT_ECC_SECP_R1_224 || \
+		      PSA_WANT_ECC_SECP_R1_256 || \
+		      PSA_WANT_ECC_SECP_R1_384 || \
+		      PSA_WANT_ECC_SECP_R1_521)
+	help
+	  Promptless symbol that can be used to check if there's at least one family
+	  of elliptic curve enabled in the PSA Crypto API.
+
+config PSA_CAN_ECDSA
+	bool
+	default y if (PSA_WANT_ALG_ECDSA || PSA_WANT_ALG_DETERMINISTIC_ECDSA) && \
+		      PSA_CAN_SOME_ECC
+	help
+	  Promptless symbol that can be used to check if the PSA Crypto API support
+	  ECDSA (either deterministic or not) for at least one curve family.
+
+config PSA_CAN_ECDH
+	bool
+	default y if PSA_WANT_ALG_ECDH && PSA_CAN_SOME_ECC
+	help
+	  Promptless symbol that can be used to check if the PSA Crypto API support
+	  ECDH for at least one curve family.
+
+config PSA_CAN_ECJPAKE
+	bool
+	default y if PSA_WANT_ECC_SECP_R1_256 && PSA_WANT_ALG_SHA_256
+	help
+	  Promptless symbol that can be used to check if the PSA Crypto API support
+	  EC-JPAKE.
+
+# Dependencies for KDF (key derivation function) algorithms.
+
+config PSA_WANT_ALG_HKDF
+	depends on PSA_WANT_KEY_TYPE_HMAC
+	depends on PSA_WANT_ALG_HMAC
+	depends on PSA_CAN_SOME_HASH
+
+config PSA_WANT_ALG_HKDF_EXTRACT
+	depends on PSA_WANT_ALG_HKDF
+
+config PSA_WANT_ALG_HKDF_EXPAND
+	depends on PSA_WANT_ALG_HKDF
+
+config PSA_WANT_ALG_PBKDF2_HMAC
+	depends on PSA_WANT_KEY_TYPE_HMAC
+	depends on PSA_WANT_ALG_HMAC
+	depends on PSA_CAN_SOME_HASH
+
+config PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128
+	depends on PSA_WANT_KEY_TYPE_AES
+	depends on PSA_WANT_ALG_CMAC
+
+config PSA_WANT_ALG_TLS12_PRF
+	depends on PSA_WANT_KEY_TYPE_HMAC
+	depends on PSA_WANT_ALG_HMAC
+	depends on (PSA_WANT_ALG_SHA_256 || \
+		    PSA_WANT_ALG_SHA_384)
+
+config PSA_WANT_ALG_TLS12_PSK_TO_MS
+	depends on PSA_WANT_KEY_TYPE_HMAC
+	depends on PSA_WANT_ALG_HMAC
+	depends on (PSA_WANT_ALG_SHA_256 || \
+		    PSA_WANT_ALG_SHA_384)
+
+config PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
+	depends on PSA_WANT_ALG_SHA_256
