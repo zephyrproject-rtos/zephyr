@@ -61,6 +61,7 @@ struct pl011_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
 #endif
+	bool fifo_disable;
 	int (*clk_enable_func)(const struct device *dev, uint32_t clk);
 	int (*pwr_on_func)(void);
 };
@@ -205,6 +206,7 @@ static int pl011_runtime_configure_internal(const struct device *dev,
 					const struct uart_config *cfg,
 					bool disable)
 {
+	const struct pl011_config *config = dev->config;
 	struct pl011_data *data = dev->data;
 	uint32_t lcrh;
 	int ret = -ENOTSUP;
@@ -286,7 +288,9 @@ static int pl011_runtime_configure_internal(const struct device *dev,
 
 enable:
 	if (disable) {
-		pl011_enable_fifo(dev);
+		if (!config->fifo_disable) {
+			pl011_enable_fifo(dev);
+		}
 		pl011_enable(dev);
 	}
 
@@ -527,7 +531,9 @@ static int pl011_init(const struct device *dev)
 			| FIELD_PREP(PL011_IFLS_RXIFLSEL_M, RXIFLSEL_1_2_FULL);
 
 		/* Enabling the FIFOs */
-		pl011_enable_fifo(dev);
+		if (!config->fifo_disable) {
+			pl011_enable_fifo(dev);
+		}
 	}
 	/* initialize all IRQs as masked */
 	get_uart(dev)->imsc = 0U;
@@ -648,6 +654,7 @@ void pl011_isr(const struct device *dev)
 		CLOCK_INIT(n)                                                           \
 		PINCTRL_INIT(n)	                                                        \
 		.irq_config_func = pl011_irq_config_func_##n,				\
+		.fifo_disable = DT_INST_PROP(n, fifo_disable),                          \
 		.clk_enable_func = COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n),		        \
 		.pwr_on_func = COMPAT_SPECIFIC_PWR_ON_FUNC(n),			        \
 	};
