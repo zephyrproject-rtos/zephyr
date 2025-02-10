@@ -62,7 +62,7 @@ if(CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT)
       -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
       ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
 
-  endif()
+ endif()
 
 endif()
 
