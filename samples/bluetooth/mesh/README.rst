@@ -2,7 +2,7 @@
    :name: Mesh
    :relevant-api: bt_mesh bluetooth
 
-   Use basic Bluetooth LE Mesh functionality.
+   Use basic Bluetooth Mesh functionality.
 
 Overview
 ********

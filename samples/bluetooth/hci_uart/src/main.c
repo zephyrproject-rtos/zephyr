@@ -54,7 +54,7 @@ static K_FIFO_DEFINE(uart_tx_queue);
 #define ST_DISCARD 3	/* Dropping packet. */
 
 /* Length of a discard/flush buffer.
- * This is sized to align with a BLE HCI packet:
+ * This is sized to align with a Bluetooth HCI packet:
  * 1 byte H:4 header + 32 bytes ACL/event data
  * Bigger values might overflow the stack since this is declared as a local
  * variable, smaller ones will force the caller to call into discard more

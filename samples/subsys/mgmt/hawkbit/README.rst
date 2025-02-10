@@ -29,7 +29,7 @@ Caveats
   :zephyr:board:`Freedom-K64F <frdm_k64f>` MCU by default. The application should
   build and run for other platforms with support internet connection. Some
   platforms need some modification. Overlay files would be needed to support
-  BLE 6lowpan, 802.15.4 or OpenThread configurations as well as the
+  Bluetooth LE, 6lowpan, 802.15.4 or OpenThread configurations as well as the
   understanding that most other connectivity options would require an edge
   gateway of some sort (Border Router, etc).
 

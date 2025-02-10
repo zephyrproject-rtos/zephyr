@@ -36,7 +36,7 @@ in the Zephyr tree and is built as a standard Zephyr application.
 Using the controller with emulators and BlueZ
 *********************************************
 
-The instructions below show how to use a Nordic nRF5x device as a Zephyr BLE
+The instructions below show how to use a Nordic nRF5x device as a Zephyr Bluetooth
 controller and expose it to Linux's BlueZ.
 
 First, make sure you have a recent BlueZ version installed by following the
