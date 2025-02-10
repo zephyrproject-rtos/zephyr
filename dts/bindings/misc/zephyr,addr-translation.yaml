@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Address translation support for OpenAMP
+
+compatible: "zephyr,addr-translation"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
