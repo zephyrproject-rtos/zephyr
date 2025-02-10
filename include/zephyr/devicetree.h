@@ -2865,6 +2865,23 @@
 	DT_IRQN_LVL_INTERNAL(node_id, idx, DT_IRQ_LEVEL(node_id))
 
 /**
+ * DT helper macros to encode a node's interrupt number from its name according to the Zephyr's
+ * multi-level scheme
+ */
+#define DT_IRQN_L1_INTERNAL_FROM_NAME(node_id, name) DT_IRQ_BY_NAME(node_id, name, irq)
+#define DT_IRQN_L2_INTERNAL_FROM_NAME(node_id, name)                                               \
+	(IRQ_TO_L2(DT_IRQN_L1_INTERNAL_FROM_NAME(node_id, name)) |                                 \
+	 DT_IRQ(DT_IRQ_INTC_BY_NAME(node_id, name), irq))
+#define DT_IRQN_L3_INTERNAL_FROM_NAME(node_id, name)                                               \
+	(IRQ_TO_L3(DT_IRQN_L1_INTERNAL_FROM_NAME(node_id, name)) |                                 \
+	 IRQ_TO_L2(DT_IRQ(DT_IRQ_INTC_BY_NAME(node_id, name), irq)) |                              \
+	 DT_IRQ(DT_IRQ_INTC(DT_IRQ_INTC_BY_NAME(node_id, name)), irq))
+#define DT_IRQN_LVL_INTERNAL_FROM_NAME(node_id, name, level)                                       \
+	DT_CAT3(DT_IRQN_L, level, _INTERNAL_FROM_NAME)(node_id, name)
+#define DT_MULTI_LEVEL_IRQN_INTERNAL_FROM_NAME(node_id, name)                                      \
+	DT_IRQN_LVL_INTERNAL_FROM_NAME(node_id, name, DT_IRQ_LEVEL(node_id))
+
+/**
  * INTERNAL_HIDDEN @endcond
  */
 
@@ -2880,6 +2897,19 @@
 	COND_CODE_1(IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS),                                     \
 		    (DT_MULTI_LEVEL_IRQN_INTERNAL(node_id, idx)),                                  \
 		    (DT_IRQ_BY_IDX(node_id, idx, irq)))
+
+/**
+ * @brief Get the node's Zephyr interrupt number from name
+ * If @kconfig{CONFIG_MULTI_LEVEL_INTERRUPTS} is enabled, the interrupt number at index will be
+ * multi-level encoded
+ * @param node_id node identifier
+ * @param name lowercase-and-underscores interrupt specifier name
+ * @return the Zephyr interrupt number
+ */
+#define DT_IRQN_BY_NAME(node_id, name)                                                             \
+	COND_CODE_1(IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS),                                     \
+		    (DT_MULTI_LEVEL_IRQN_INTERNAL_FROM_NAME(node_id, name)),                       \
+		    (DT_IRQ_BY_NAME(node_id, name, irq)))
 
 /**
  * @brief Get a node's (only) irq number
@@ -4654,6 +4684,14 @@
  * @return the interrupt number for the node's idx-th interrupt
  */
 #define DT_INST_IRQN_BY_IDX(inst, idx) DT_IRQN_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Get a `DT_DRV_COMPAT`'s irq number from name
+ * @param inst instance number
+ * @param name lowercase-and-underscores interrupt specifier name
+ * @return the interrupt number for the node's idx-th interrupt
+ */
+#define DT_INST_IRQN_BY_NAME(inst, name) DT_IRQN_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
  * @brief Get a `DT_DRV_COMPAT`'s bus node identifier
