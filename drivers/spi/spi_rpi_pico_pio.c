@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(spi_pico_pio);
 
 struct spi_pico_pio_config {
 	const struct device *piodev;
+	const PIO pio;
 	const struct pinctrl_dev_config *pin_cfg;
 	struct gpio_dt_spec clk_gpio;
 	struct gpio_dt_spec mosi_gpio;
@@ -43,7 +44,6 @@ struct spi_pico_pio_data {
 	struct spi_context spi_ctx;
 	uint32_t tx_count;
 	uint32_t rx_count;
-	PIO pio;
 	size_t pio_sm;
 	uint32_t pio_tx_offset;
 	uint32_t pio_rx_offset;
@@ -65,7 +65,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_0_0, SPI_MODE_0_0_WRAP_TARGET, SPI_MODE_0_0
 			    /*     .wrap_target */
 			    0x6101, /*  0: out    pins, 1         side 0 [1] */
 			    0x5101, /*  1: in     pins, 1         side 1 [1] */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 
 /* ------------ */
@@ -81,7 +81,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_1_1, SPI_MODE_1_1_WRAP_TARGET, SPI_MODE_1_1
 			    0x7021, /*  0: out    x, 1            side 1 */
 			    0xa101, /*  1: mov    pins, x         side 0 [1] */
 			    0x5001, /*  2: in     pins, 1         side 1 */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 
 #if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
@@ -99,7 +99,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_tx, SPI_SIO_MODE_0_0_TX_WRAP_TARGET
 			    0x80a0, /*  0: pull   block           side 0  */
 			    0x6001, /*  1: out    pins, 1         side 0  */
 			    0x10e1, /*  2: jmp    !osre, 1        side 1  */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 
 /* ------------------------- */
@@ -117,7 +117,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_rx, SPI_SIO_MODE_0_0_RX_WRAP_TARGET
 			    0x6020, /*  1: out    x, 32           side 0 */
 			    0x5001, /*  2: in     pins, 1         side 1 */
 			    0x0042, /*  3: jmp    x--, 2          side 0 */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 
@@ -190,10 +190,11 @@ static inline uint32_t spi_pico_pio_sm_get32(PIO pio, uint sm)
 	return *rxfifo;
 }
 
-static inline int spi_pico_pio_sm_complete(struct spi_pico_pio_data *data)
+static inline int spi_pico_pio_sm_complete(const struct spi_pico_pio_config *dev_cfg,
+					   struct spi_pico_pio_data *data)
 {
-	return ((data->pio->sm[data->pio_sm].addr == data->pio_tx_offset) &&
-		pio_sm_is_tx_fifo_empty(data->pio, data->pio_sm));
+	return ((dev_cfg->pio->sm[data->pio_sm].addr == data->pio_tx_offset) &&
+		pio_sm_is_tx_fifo_empty(dev_cfg->pio, data->pio_sm));
 }
 
 static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
@@ -293,7 +294,6 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 
 	clk = &dev_cfg->clk_gpio;
-	data->pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
 	rc = pio_rpi_pico_allocate_sm(dev_cfg->piodev, &data->pio_sm);
 	if (rc < 0) {
 		return rc;
@@ -306,11 +306,11 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		float clock_div = spi_pico_pio_clock_divisor(clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES,
 							     spi_cfg->frequency);
 
-		data->pio_tx_offset =
-			pio_add_program(data->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_tx));
+		data->pio_tx_offset = pio_add_program(
+			dev_cfg->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_tx));
 
-		data->pio_rx_offset =
-			pio_add_program(data->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_rx));
+		data->pio_rx_offset = pio_add_program(
+			dev_cfg->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_rx));
 		data->pio_rx_wrap_target =
 			data->pio_rx_offset + RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_rx);
 		data->pio_rx_wrap =
@@ -332,16 +332,16 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 			data->pio_tx_offset + RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_tx),
 			data->pio_tx_offset + RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_tx));
 
-		pio_sm_set_pindirs_with_mask(data->pio, data->pio_sm,
+		pio_sm_set_pindirs_with_mask(dev_cfg->pio, data->pio_sm,
 					     (BIT(clk->pin) | BIT(sio->pin)),
 					     (BIT(clk->pin) | BIT(sio->pin)));
-		pio_sm_set_pins_with_mask(data->pio, data->pio_sm, 0,
+		pio_sm_set_pins_with_mask(dev_cfg->pio, data->pio_sm, 0,
 					  BIT(clk->pin) | BIT(sio->pin));
-		pio_gpio_init(data->pio, sio->pin);
-		pio_gpio_init(data->pio, clk->pin);
+		pio_gpio_init(dev_cfg->pio, sio->pin);
+		pio_gpio_init(dev_cfg->pio, clk->pin);
 
-		pio_sm_init(data->pio, data->pio_sm, data->pio_tx_offset, &sm_config);
-		pio_sm_set_enabled(data->pio, data->pio_sm, true);
+		pio_sm_init(dev_cfg->pio, data->pio_sm, data->pio_tx_offset, &sm_config);
+		pio_sm_set_enabled(dev_cfg->pio, data->pio_sm, true);
 #else
 		LOG_ERR("SIO pin requires half-duplex support");
 		return -EINVAL;
@@ -381,11 +381,11 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		float clock_div =
 			spi_pico_pio_clock_divisor(clock_freq, cycles, spi_cfg->frequency);
 
-		if (!pio_can_add_program(data->pio, program)) {
+		if (!pio_can_add_program(dev_cfg->pio, program)) {
 			return -EBUSY;
 		}
 
-		data->pio_tx_offset = pio_add_program(data->pio, program);
+		data->pio_tx_offset = pio_add_program(dev_cfg->pio, program);
 		sm_config = pio_get_default_sm_config();
 
 		sm_config_set_clkdiv(&sm_config, clock_div);
@@ -398,18 +398,18 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		sm_config_set_wrap(&sm_config, data->pio_tx_offset + wrap_target,
 				   data->pio_tx_offset + wrap);
 
-		pio_sm_set_consecutive_pindirs(data->pio, data->pio_sm, miso->pin, 1, false);
-		pio_sm_set_pindirs_with_mask(data->pio, data->pio_sm,
+		pio_sm_set_consecutive_pindirs(dev_cfg->pio, data->pio_sm, miso->pin, 1, false);
+		pio_sm_set_pindirs_with_mask(dev_cfg->pio, data->pio_sm,
 					     (BIT(clk->pin) | BIT(mosi->pin)),
 					     (BIT(clk->pin) | BIT(mosi->pin)));
-		pio_sm_set_pins_with_mask(data->pio, data->pio_sm, (cpol << clk->pin),
+		pio_sm_set_pins_with_mask(dev_cfg->pio, data->pio_sm, (cpol << clk->pin),
 					  BIT(clk->pin) | BIT(mosi->pin));
-		pio_gpio_init(data->pio, mosi->pin);
-		pio_gpio_init(data->pio, miso->pin);
-		pio_gpio_init(data->pio, clk->pin);
+		pio_gpio_init(dev_cfg->pio, mosi->pin);
+		pio_gpio_init(dev_cfg->pio, miso->pin);
+		pio_gpio_init(dev_cfg->pio, clk->pin);
 
-		pio_sm_init(data->pio, data->pio_sm, data->pio_tx_offset, &sm_config);
-		pio_sm_set_enabled(data->pio, data->pio_sm, true);
+		pio_sm_init(dev_cfg->pio, data->pio_sm, data->pio_tx_offset, &sm_config);
+		pio_sm_set_enabled(dev_cfg->pio, data->pio_sm, true);
 	}
 
 	data->spi_ctx.config = spi_cfg;
@@ -420,6 +420,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 {
 	struct spi_pico_pio_data *data = dev->data;
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
 	const size_t chunk_len = spi_context_max_continuous_chunk(&data->spi_ctx);
 	const uint8_t *txbuf = data->spi_ctx.tx_buf;
 	uint8_t *rxbuf = data->spi_ctx.rx_buf;
@@ -429,11 +430,11 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 	data->tx_count = 0;
 	data->rx_count = 0;
 
-	pio_sm_clear_fifos(data->pio, data->pio_sm);
+	pio_sm_clear_fifos(dev_cfg->pio, data->pio_sm);
 
 	while (data->rx_count < chunk_len || data->tx_count < chunk_len) {
 		/* Fill up fifo with available TX data */
-		while ((!pio_sm_is_tx_fifo_full(data->pio, data->pio_sm)) &&
+		while ((!pio_sm_is_tx_fifo_full(dev_cfg->pio, data->pio_sm)) &&
 		       data->tx_count < chunk_len && fifo_cnt < PIO_FIFO_DEPTH) {
 			/* Send 0 in the case of read only operation */
 			txrx = 0;
@@ -443,21 +444,21 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 				if (txbuf) {
 					txrx = sys_get_be32(txbuf + (data->tx_count * 4));
 				}
-				spi_pico_pio_sm_put32(data->pio, data->pio_sm, txrx);
+				spi_pico_pio_sm_put32(dev_cfg->pio, data->pio_sm, txrx);
 			} break;
 
 			case 2: {
 				if (txbuf) {
 					txrx = sys_get_be16(txbuf + (data->tx_count * 2));
 				}
-				spi_pico_pio_sm_put16(data->pio, data->pio_sm, txrx);
+				spi_pico_pio_sm_put16(dev_cfg->pio, data->pio_sm, txrx);
 			} break;
 
 			case 1: {
 				if (txbuf) {
 					txrx = ((uint8_t *)txbuf)[data->tx_count];
 				}
-				spi_pico_pio_sm_put8(data->pio, data->pio_sm, txrx);
+				spi_pico_pio_sm_put8(dev_cfg->pio, data->pio_sm, txrx);
 			} break;
 
 			default:
@@ -468,11 +469,11 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 			fifo_cnt++;
 		}
 
-		while ((!pio_sm_is_rx_fifo_empty(data->pio, data->pio_sm)) &&
+		while ((!pio_sm_is_rx_fifo_empty(dev_cfg->pio, data->pio_sm)) &&
 		       data->rx_count < chunk_len && fifo_cnt > 0) {
 			switch (data->dfs) {
 			case 4: {
-				txrx = spi_pico_pio_sm_get32(data->pio, data->pio_sm);
+				txrx = spi_pico_pio_sm_get32(dev_cfg->pio, data->pio_sm);
 
 				/* Discard received data if rx buffer not assigned */
 				if (rxbuf) {
@@ -481,7 +482,7 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 			} break;
 
 			case 2: {
-				txrx = spi_pico_pio_sm_get16(data->pio, data->pio_sm);
+				txrx = spi_pico_pio_sm_get16(dev_cfg->pio, data->pio_sm);
 
 				/* Discard received data if rx buffer not assigned */
 				if (rxbuf) {
@@ -490,7 +491,7 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 			} break;
 
 			case 1: {
-				txrx = spi_pico_pio_sm_get8(data->pio, data->pio_sm);
+				txrx = spi_pico_pio_sm_get8(dev_cfg->pio, data->pio_sm);
 
 				/* Discard received data if rx buffer not assigned */
 				if (rxbuf) {
@@ -524,37 +525,38 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 	data->rx_count = 0;
 
 	if (txbuf) {
-		pio_sm_set_enabled(data->pio, data->pio_sm, false);
-		pio_sm_set_wrap(data->pio, data->pio_sm,
+		pio_sm_set_enabled(dev_cfg->pio, data->pio_sm, false);
+		pio_sm_set_wrap(dev_cfg->pio, data->pio_sm,
 				data->pio_tx_offset +
 					RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_tx),
 				data->pio_tx_offset + RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_tx));
-		pio_sm_clear_fifos(data->pio, data->pio_sm);
-		pio_sm_set_pindirs_with_mask(data->pio, data->pio_sm, BIT(sio_pin), BIT(sio_pin));
-		pio_sm_restart(data->pio, data->pio_sm);
-		pio_sm_clkdiv_restart(data->pio, data->pio_sm);
-		pio_sm_exec(data->pio, data->pio_sm, pio_encode_jmp(data->pio_tx_offset));
-		pio_sm_set_enabled(data->pio, data->pio_sm, true);
+		pio_sm_clear_fifos(dev_cfg->pio, data->pio_sm);
+		pio_sm_set_pindirs_with_mask(dev_cfg->pio, data->pio_sm, BIT(sio_pin),
+					     BIT(sio_pin));
+		pio_sm_restart(dev_cfg->pio, data->pio_sm);
+		pio_sm_clkdiv_restart(dev_cfg->pio, data->pio_sm);
+		pio_sm_exec(dev_cfg->pio, data->pio_sm, pio_encode_jmp(data->pio_tx_offset));
+		pio_sm_set_enabled(dev_cfg->pio, data->pio_sm, true);
 
 		while (data->tx_count < tx_size) {
 			/* Fill up fifo with available TX data */
-			while ((!pio_sm_is_tx_fifo_full(data->pio, data->pio_sm)) &&
+			while ((!pio_sm_is_tx_fifo_full(dev_cfg->pio, data->pio_sm)) &&
 			       data->tx_count < tx_size) {
 
 				switch (data->dfs) {
 				case 4: {
 					txrx = sys_get_be32(txbuf + (data->tx_count * 4));
-					spi_pico_pio_sm_put32(data->pio, data->pio_sm, txrx);
+					spi_pico_pio_sm_put32(dev_cfg->pio, data->pio_sm, txrx);
 				} break;
 
 				case 2: {
 					txrx = sys_get_be16(txbuf + (data->tx_count * 2));
-					spi_pico_pio_sm_put16(data->pio, data->pio_sm, txrx);
+					spi_pico_pio_sm_put16(dev_cfg->pio, data->pio_sm, txrx);
 				} break;
 
 				case 1: {
 					txrx = ((uint8_t *)txbuf)[data->tx_count];
-					spi_pico_pio_sm_put8(data->pio, data->pio_sm, txrx);
+					spi_pico_pio_sm_put8(dev_cfg->pio, data->pio_sm, txrx);
 				} break;
 
 				default:
@@ -566,40 +568,41 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 		}
 		/* Wait for the state machine to complete the cycle */
 		/* before resetting the PIO for reading.            */
-		while ((!pio_sm_is_tx_fifo_empty(data->pio, data->pio_sm)) ||
-		       (!spi_pico_pio_sm_complete(data)))
+		while ((!pio_sm_is_tx_fifo_empty(dev_cfg->pio, data->pio_sm)) ||
+		       (!spi_pico_pio_sm_complete(dev_cfg, data))) {
 			;
+		}
 	}
 
 	if (rxbuf) {
-		pio_sm_set_enabled(data->pio, data->pio_sm, false);
-		pio_sm_set_wrap(data->pio, data->pio_sm, data->pio_rx_wrap_target,
+		pio_sm_set_enabled(dev_cfg->pio, data->pio_sm, false);
+		pio_sm_set_wrap(dev_cfg->pio, data->pio_sm, data->pio_rx_wrap_target,
 				data->pio_rx_wrap);
-		pio_sm_clear_fifos(data->pio, data->pio_sm);
-		pio_sm_set_pindirs_with_mask(data->pio, data->pio_sm, 0, BIT(sio_pin));
-		pio_sm_restart(data->pio, data->pio_sm);
-		pio_sm_clkdiv_restart(data->pio, data->pio_sm);
-		pio_sm_put(data->pio, data->pio_sm, (rx_size * data->bits) - 1);
-		pio_sm_exec(data->pio, data->pio_sm, pio_encode_jmp(data->pio_rx_offset));
-		pio_sm_set_enabled(data->pio, data->pio_sm, true);
+		pio_sm_clear_fifos(dev_cfg->pio, data->pio_sm);
+		pio_sm_set_pindirs_with_mask(dev_cfg->pio, data->pio_sm, 0, BIT(sio_pin));
+		pio_sm_restart(dev_cfg->pio, data->pio_sm);
+		pio_sm_clkdiv_restart(dev_cfg->pio, data->pio_sm);
+		pio_sm_put(dev_cfg->pio, data->pio_sm, (rx_size * data->bits) - 1);
+		pio_sm_exec(dev_cfg->pio, data->pio_sm, pio_encode_jmp(data->pio_rx_offset));
+		pio_sm_set_enabled(dev_cfg->pio, data->pio_sm, true);
 
 		while (data->rx_count < rx_size) {
-			while ((!pio_sm_is_rx_fifo_empty(data->pio, data->pio_sm)) &&
+			while ((!pio_sm_is_rx_fifo_empty(dev_cfg->pio, data->pio_sm)) &&
 			       data->rx_count < rx_size) {
 
 				switch (data->dfs) {
 				case 4: {
-					txrx = spi_pico_pio_sm_get32(data->pio, data->pio_sm);
+					txrx = spi_pico_pio_sm_get32(dev_cfg->pio, data->pio_sm);
 					sys_put_be32(txrx, rxbuf + (data->rx_count * 4));
 				} break;
 
 				case 2: {
-					txrx = spi_pico_pio_sm_get16(data->pio, data->pio_sm);
+					txrx = spi_pico_pio_sm_get16(dev_cfg->pio, data->pio_sm);
 					sys_put_be16(txrx, rxbuf + (data->rx_count * 2));
 				} break;
 
 				case 1: {
-					txrx = spi_pico_pio_sm_get8(data->pio, data->pio_sm);
+					txrx = spi_pico_pio_sm_get8(dev_cfg->pio, data->pio_sm);
 					rxbuf[data->rx_count] = (uint8_t)txrx;
 				} break;
 
@@ -747,6 +750,7 @@ int spi_pico_pio_init(const struct device *dev)
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	static struct spi_pico_pio_config spi_pico_pio_config_##inst = {                           \
 		.piodev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
+		.pio = PIO_OBJECT_FROM_DT_NODE(DT_INST_PARENT(inst)),                              \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                   \
 		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),                                \
 		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),                      \
@@ -760,8 +764,8 @@ int spi_pico_pio_init(const struct device *dev)
 		SPI_CONTEXT_INIT_SYNC(spi_pico_pio_data_##inst, spi_ctx),                          \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), spi_ctx)};                      \
 	SPI_DEVICE_DT_INST_DEFINE(inst, spi_pico_pio_init, NULL, &spi_pico_pio_data_##inst,        \
-			      &spi_pico_pio_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,  \
-			      &spi_pico_pio_api);                                                  \
+				  &spi_pico_pio_config_##inst, POST_KERNEL,                        \
+				  CONFIG_SPI_INIT_PRIORITY, &spi_pico_pio_api);                    \
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, clk_gpios), "Missing clock GPIO");                \
 	BUILD_ASSERT(((DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                                  \
 		       DT_INST_NODE_HAS_PROP(inst, miso_gpios)) &&                                 \
