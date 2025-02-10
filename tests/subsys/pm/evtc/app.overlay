@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	evtc: evtc {
+		compatible = "vnd,evtc";
+		evtc-request-latency-ns = <10000000>;
+		evtc-latencies-ns = <200 150 50 20>;
+	};
+};
