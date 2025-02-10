@@ -105,15 +105,6 @@ static int bmp180_attr_set(const struct device *dev, enum sensor_channel chan,
 {
 	int ret;
 
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif /* CONFIG_PM_DEVICE */
-
 	switch (attr) {
 #ifdef CONFIG_BMP180_OSR_RUNTIME
 	case SENSOR_ATTR_OVERSAMPLING:
@@ -250,15 +241,6 @@ static int bmp180_sample_fetch(const struct device *dev,
 	int ret = 0;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif /* CONFIG_PM_DEVICE */
 
 	pm_device_busy_set(dev);
 
