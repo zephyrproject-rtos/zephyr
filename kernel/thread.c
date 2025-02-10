@@ -1148,5 +1148,9 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->base.slice_ticks = 0;
 #endif /* CONFIG_TIMESLICE_PER_THREAD */
 
+#ifdef CONFIG_ZVM
+	dummy_thread->vcpu_struct = NULL;
+#endif
+
 	z_current_thread_set(dummy_thread);
 }
