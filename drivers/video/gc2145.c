@@ -1076,18 +1076,12 @@ static int gc2145_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int gc2145_stream_start(const struct device *dev)
+static int gc2145_set_stream(const struct device *dev, bool enable)
 {
 	const struct gc2145_config *cfg = dev->config;
 
-	return gc2145_write_reg(&cfg->i2c, 0xf2, 0x0f);
-}
-
-static int gc2145_stream_stop(const struct device *dev)
-{
-	const struct gc2145_config *cfg = dev->config;
-
-	return gc2145_write_reg(&cfg->i2c, 0xf2, 0x00);
+	return enable ? gc2145_write_reg(&cfg->i2c, 0xf2, 0x0f)
+		      : gc2145_write_reg(&cfg->i2c, 0xf2, 0x00);
 }
 
 static int gc2145_get_caps(const struct device *dev, enum video_endpoint_id ep,
@@ -1113,8 +1107,7 @@ static DEVICE_API(video, gc2145_driver_api) = {
 	.set_format = gc2145_set_fmt,
 	.get_format = gc2145_get_fmt,
 	.get_caps = gc2145_get_caps,
-	.stream_start = gc2145_stream_start,
-	.stream_stop = gc2145_stream_stop,
+	.set_stream = gc2145_set_stream,
 	.set_ctrl = gc2145_set_ctrl,
 };
 

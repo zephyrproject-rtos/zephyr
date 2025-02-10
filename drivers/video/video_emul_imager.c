@@ -423,14 +423,9 @@ static int emul_imager_get_caps(const struct device *dev, enum video_endpoint_id
 	return 0;
 }
 
-static int emul_imager_stream_start(const struct device *dev)
+static int emul_imager_set_stream(const struct device *dev, bool enable)
 {
-	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CTRL, 1);
-}
-
-static int emul_imager_stream_stop(const struct device *dev)
-{
-	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CTRL, 0);
+	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CTRL, enable ? 1 : 0);
 }
 
 static DEVICE_API(video, emul_imager_driver_api) = {
@@ -442,8 +437,7 @@ static DEVICE_API(video, emul_imager_driver_api) = {
 	.set_format = emul_imager_set_fmt,
 	.get_format = emul_imager_get_fmt,
 	.get_caps = emul_imager_get_caps,
-	.stream_start = emul_imager_stream_start,
-	.stream_stop = emul_imager_stream_stop,
+	.set_stream = emul_imager_set_stream,
 };
 
 int emul_imager_init(const struct device *dev)

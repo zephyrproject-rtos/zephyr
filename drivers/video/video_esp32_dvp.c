@@ -133,7 +133,7 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 	video_esp32_reload_dma(data);
 }
 
-static int video_esp32_stream_start(const struct device *dev)
+static int video_esp32_set_stream(const struct device *dev, bool enable)
 {
 	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;
@@ -142,6 +142,25 @@ static int video_esp32_stream_start(const struct device *dev)
 	struct dma_block_config *dma_block_iter = data->dma_blocks;
 	uint32_t buffer_size = 0;
 	int error = 0;
+
+	if (!enable) {
+		LOG_DBG("Stop streaming");
+
+		if (video_stream_stop(cfg->source_dev)) {
+			return -EIO;
+		}
+
+		data->is_streaming = false;
+		error = dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
+		if (error) {
+			LOG_ERR("Unable to stop DMA (%d)", ret);
+			return error;
+		}
+
+		cam_hal_stop_streaming(&data->hal);
+
+		return 0;
+	}
 
 	if (data->is_streaming) {
 		return -EBUSY;
@@ -216,29 +235,6 @@ static int video_esp32_stream_start(const struct device *dev)
 	}
 	data->is_streaming = true;
 
-	return 0;
-}
-
-static int video_esp32_stream_stop(const struct device *dev)
-{
-	const struct video_esp32_config *cfg = dev->config;
-	struct video_esp32_data *data = dev->data;
-	int ret = 0;
-
-	LOG_DBG("Stop streaming");
-
-	if (video_stream_stop(cfg->source_dev)) {
-		return -EIO;
-	}
-
-	data->is_streaming = false;
-	ret = dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
-	if (ret) {
-		LOG_ERR("Unable to stop DMA (%d)", ret);
-		return ret;
-	}
-
-	cam_hal_stop_streaming(&data->hal);
 	return 0;
 }
 
@@ -400,8 +396,7 @@ static DEVICE_API(video, esp32_driver_api) = {
 	/* mandatory callbacks */
 	.set_format = video_esp32_set_fmt,
 	.get_format = video_esp32_get_fmt,
-	.stream_start = video_esp32_stream_start,
-	.stream_stop = video_esp32_stream_stop,
+	.set_stream = video_esp32_set_stream,
 	.get_caps = video_esp32_get_caps,
 	/* optional callbacks */
 	.enqueue = video_esp32_enqueue,
