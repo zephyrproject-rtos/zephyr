@@ -876,6 +876,7 @@
 				status = "disabled";
 				#io-channel-cells = <1>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			comp: comparator@983000 {
