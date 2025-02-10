@@ -687,6 +687,7 @@
 				interrupts = <386 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				#io-channel-cells = <1>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			comp: comparator@983000 {
