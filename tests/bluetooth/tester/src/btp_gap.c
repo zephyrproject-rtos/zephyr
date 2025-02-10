@@ -264,9 +264,9 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 	}
 	tester_set_bit(rp->data, BTP_GAP_SET_MITM);
 	tester_set_bit(rp->data, BTP_GAP_SET_FILTER_LIST);
-#if defined(CONFIG_BT_EXT_ADV)
-	tester_set_bit(rp->data, BTP_GAP_SET_EXTENDED_ADVERTISING);
-#endif
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		tester_set_bit(rp->data, BTP_GAP_SET_EXTENDED_ADVERTISING);
+	}
 
 	*rsp_len = sizeof(*rp) + 4;
 
@@ -425,7 +425,7 @@ static void oob_data_request(struct bt_conn *conn,
 	}
 }
 
-# if !defined (CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
+#if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 static uint8_t get_oob_sc_local_data(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
@@ -516,16 +516,22 @@ static struct bt_data ad[10] = {
 };
 static struct bt_data sd[10];
 
-#if defined(CONFIG_BT_EXT_ADV)
 static struct bt_le_ext_adv *ext_adv;
 
 struct bt_le_ext_adv *tester_gap_ext_adv_get(void)
 {
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return NULL;
+	}
 	return ext_adv;
 }
 
 int tester_gap_start_ext_adv(void)
 {
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return -ENOTSUP;
+	}
+
 	int err;
 
 	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
@@ -542,6 +548,10 @@ int tester_gap_start_ext_adv(void)
 
 int tester_gap_stop_ext_adv(void)
 {
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return -ENOTSUP;
+	}
+
 	int err;
 
 	err = bt_le_ext_adv_stop(ext_adv);
@@ -555,7 +565,6 @@ int tester_gap_stop_ext_adv(void)
 
 	return 0;
 }
-#endif /* defined(CONFIG_BT_EXT_ADV) */
 
 static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
@@ -744,12 +753,9 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-#if defined(CONFIG_BT_EXT_ADV)
-	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
 		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-#else
-	if (0) {
-#endif
 	} else {
 		err = bt_le_adv_start(&param, ad, adv_len, sd_len ? sd : NULL, sd_len);
 	}
@@ -1370,8 +1376,9 @@ static uint8_t set_filter_list(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static uint8_t set_extended_advertising(const void *cmd, uint16_t cmd_len,
-					void *rsp, uint16_t *rsp_len)
+#if defined(CONFIG_BT_EXT_ADV)
+static uint8_t set_extended_advertising(const void *cmd, uint16_t cmd_len, void *rsp,
+					uint16_t *rsp_len)
 {
 	const struct btp_gap_set_extended_advertising_cmd *cp = cmd;
 	struct btp_gap_set_extended_advertising_rp *rp = rsp;
@@ -1379,11 +1386,9 @@ static uint8_t set_extended_advertising(const void *cmd, uint16_t cmd_len,
 	LOG_DBG("ext adv settings: %u", cp->settings);
 
 	if (cp->settings != 0) {
-		atomic_set_bit(&current_settings,
-			       BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
+		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
 	} else {
-		atomic_clear_bit(&current_settings,
-				 BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
+		atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
 	}
 
 	rp->current_settings = sys_cpu_to_le32(current_settings);
@@ -1391,6 +1396,7 @@ static uint8_t set_extended_advertising(const void *cmd, uint16_t cmd_len,
 	*rsp_len = sizeof(*rp);
 	return BTP_STATUS_SUCCESS;
 }
+#endif /* defined(CONFIG_BT_EXT_ADV) */
 
 #if defined(CONFIG_BT_PER_ADV)
 static struct bt_data padv[10];
