@@ -18,7 +18,8 @@ config DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
 	depends on DCACHE
 	default n
 	help
-		Disable dcache while operating on Scatter-Gather descriptors.
+		Controls whether to explicitly flush or invalidate the data cache when accessing
+		DMA descriptors or buffers.
 		This allows the DMA to be used on architectures that do not provide
 		coherency for DMA accesses. If you are unsure whether you need this feature,
 		you should select n here.
