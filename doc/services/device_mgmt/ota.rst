@@ -62,7 +62,7 @@ SMP Server
 ==========
 
 A Simple Management Protocol (SMP) server can be used to update firmware via
-Bluetooth Low Energy (BLE) or UDP. :ref:`mcu_mgr` is used to send a signed
+Bluetooth Low Energy (LE) or UDP. :ref:`mcu_mgr` is used to send a signed
 firmware binary to the remote device where it is verified by MCUboot before the
 upgrade occurs.
 
