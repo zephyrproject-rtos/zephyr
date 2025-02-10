@@ -287,7 +287,7 @@ config BT_FILTER_ACCEPT_LIST
 	bool "Filter accept list support"
 	help
 	  This option enables the filter accept list API. This takes advantage of the
-	  filtering feature of a BLE controller.
+	  filtering feature of a Bluetooth LE controller.
 	  The filter accept list is a global list and the same list is used
 	  by both scanner and advertiser. The filter accept list cannot be modified while
 	  it is in use.

@@ -1,5 +1,5 @@
 sample:
-  name: BLE ISO Broadcast
+  name: Bluetooth LE ISO Broadcast
   description: Bluetooth Low Energy ISO Broadcast Benchmark sample
 tests:
   sample.bluetooth.iso_broadcast_benchmark:

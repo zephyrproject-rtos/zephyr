@@ -8,7 +8,7 @@ Overview
 ********
 
 Application demonstrating Bluetooth LE Central role functionality by scanning for other
-BLE devices and establishing connection to up to 62 peripherals with a strong
+Bluetooth LE devices and establishing connection to up to 62 peripherals with a strong
 enough signal.
 
 Requirements

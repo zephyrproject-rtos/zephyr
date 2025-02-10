@@ -7,7 +7,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # The test checks that both advertisers, the legacy and the extended, behave identically.
 # In particular:
 # - `bt_mesh_send_cb.end` callback with error code `0` is called for the advertisement that the
-#   advertiser already pushed to the ble host (called `bt_mesh_send_cb.start`),
+#   advertiser already pushed to the Bluetooth Host (called `bt_mesh_send_cb.start`),
 # - `bt_mesh_send_cb.start` callback with error `-ENODEV` is called for every advertisement that
 #   was pushed to the mesh advertiser using `bt_mesh_adv_send` function,
 # - `bt_mesh_adv_create` returns NULL when attempting to create a new advertisement while the stack

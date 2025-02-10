@@ -143,12 +143,12 @@ config BT_CTLR
 	  the HAS_BT_CTLR option.
 
 config BT_LL_SW_SPLIT
-	bool "Software-based BLE Link Layer"
+	bool "Software-based Bluetooth LE Link Layer"
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
 	select HAS_BT_CTLR
 	help
-	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
+	  Use Zephyr software Bluetooth LE Link Layer ULL LLL split implementation.
 
 config BT_CTLR_HCI
 	bool "Host Controller Interface (HCI)"
@@ -161,7 +161,7 @@ config BT_CTLR_HCI
 
 if HAS_BT_CTLR
 
-comment "BLE Controller configuration"
+comment "Bluetooth Controller configuration"
 
 config BT_CTLR_ENTROPY
 	bool "Random number generation in Controller"
@@ -216,7 +216,7 @@ config BT_CTLR_DUP_FILTER_LEN
 	depends on BT_LL_SW_SPLIT
 	default 16
 	help
-	  Set the number of unique BLE addresses that can be filtered as
+	  Set the number of unique Bluetooth LE addresses that can be filtered as
 	  duplicates while scanning.
 
 config BT_CTLR_DUP_FILTER_ADV_SET_MAX
@@ -322,7 +322,7 @@ choice BT_CTLR_TX_PWR
 	default BT_CTLR_TX_PWR_0
 	depends on BT_CTLR_TX_PWR_ANTENNA = 0 || BT_LL_SW_SPLIT
 	help
-	  Select a supported BLE Radio transmit power level in dBm.
+	  Select a supported Bluetooth LE Radio transmit power level in dBm.
 	  Only values supported natively by the SoC are available.
 	  The value set here represents the actual default power level fed
 	  to the antenna.
@@ -539,7 +539,7 @@ config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 	  Provides HCI VS commands to set and get the current Tx
 	  power on an individual role/connection basis.
 
-comment "BLE Controller features"
+comment "Bluetooth Controller features"
 
 if BT_CONN
 
@@ -1164,6 +1164,6 @@ config BT_CTLR_DEBUG_PINS_CPUAPP
 	bool "Bluetooth Controller Debug Pins"
 	depends on BOARD_NRF5340DK_NRF5340_CPUAPP
 	help
-	  Route debug GPIO toggling for the BLE Controller. Enable this when
+	  Route debug GPIO toggling for the Bluetooth Controller. Enable this when
 	  using Bluetooth Controller Debug Pins in co-processor and the main
 	  processor needs to setup and/or route the signals.
