@@ -24,7 +24,9 @@ tests:
       regex:
         - "Display sample for (.*)"
   sample.display.g1120b0mipi:
-    platform_allow: mimxrt595_evk/mimxrt595s/cm33
+    platform_allow:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
     tags: display
     harness: console
     extra_args: SHIELD=g1120b0mipi

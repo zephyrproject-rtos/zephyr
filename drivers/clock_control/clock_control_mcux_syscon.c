@@ -389,7 +389,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetMipiDphyEscTxClkFreq();
 		break;
 	case MCUX_LCDIF_PIXEL_CLK:
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
+		*rate = CLOCK_GetLcdifClkFreq();
+#else
 		*rate = CLOCK_GetDcPixelClkFreq();
+#endif
 		break;
 #endif
 #if defined(CONFIG_AUDIO_DMIC_MCUX)

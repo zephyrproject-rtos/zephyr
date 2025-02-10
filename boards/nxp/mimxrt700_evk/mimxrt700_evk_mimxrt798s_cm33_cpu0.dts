@@ -28,6 +28,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0_lpuart0;
 		zephyr,shell-uart = &flexcomm0_lpuart0;
+		zephyr,display = &lcdif;
 	};
 
 	leds {
@@ -54,6 +55,35 @@
 			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	/*
+	 * This node describes the GPIO pins of the MIPI FPC interface,
+	 * J50 on the EVK. This interface is standard to several
+	 * NXP EVKs, and is used with several MIPI displays
+	 * (available as zephyr shields)
+	 */
+	nxp_mipi_connector: mipi-connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>; /* TODO */
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio1 14 0>,	/* Pin 1, LEDK */
+					<21 0 &gpio3 4 0>,	/* Pin 21, RESET */
+					<22 0 &gpio3 5 0>,	/* Pin 22, LPTE */
+					<26 0 &gpio0 6 0>,	/* Pin 26, CTP_I2C SDA */
+					<27 0 &gpio0 7 0>,	/* Pin 27, CTP_I2C SCL */
+					<28 0 &gpio3 8 0>,	/* Pin 28, CTP_RST */
+					<29 0 &gpio1 13 0>,	/* Pin 29, CTP_INT */
+					<32 0 &gpio1 10 0>,	/* Pin 32, PWR_EN */
+					<34 0 &gpio1 14 0>;	/* Pin 34, BL_PWM */
+	};
+
+	en_mipi_display: enable-mipi-display {
+		compatible = "regulator-fixed";
+		regulator-name = "en_mipi_display";
+		enable-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
 	};
 };
 
@@ -95,11 +125,25 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
+nxp_mipi_i2c: &flexcomm8_lpi2c8 {};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+zephyr_lcdif: &lcdif {};
+
 &gpio0 {
 	status = "okay";
 };
 
 &gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
 	status = "okay";
 };
 

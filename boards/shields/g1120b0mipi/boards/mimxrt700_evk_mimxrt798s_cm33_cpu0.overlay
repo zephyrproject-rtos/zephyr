@@ -1,0 +1,21 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/display/panel.h>
+
+&zephyr_lcdif {
+    status = "okay";
+    compatible = "nxp,dcnano-lcdif-dbi";
+    mipi-mode = <MIPI_DBI_MODE_8080_BUS_16_BIT>;
+    color-coding = "D16-RGB565";
+    clock-frequency = <279000000>;
+    wr-period = <14>;
+    wr-assert = <6>;
+    wr-deassert = <13>;
+    cs-assert = <1>;
+    cs-deassert = <4>;
+};
