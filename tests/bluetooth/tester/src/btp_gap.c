@@ -336,6 +336,7 @@ static const char *oob_config_str(int oob_config)
 	if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
 		return "no";
 	}
+
 	switch (oob_config) {
 	case BT_CONN_OOB_LOCAL_ONLY:
 		return "Local";
@@ -366,10 +367,11 @@ static void oob_data_request(struct bt_conn *conn,
 	switch (oob_info->type) {
 	case BT_CONN_OOB_LE_SC:
 	{
-		if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		if (!IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY)) {
 			LOG_ERR("OOB LE SC not supported");
 			break;
 		}
+
 		LOG_DBG("Set %s OOB SC data for %s, ",
 			oob_config_str(oob_info->lesc.oob_config),
 			addr);
@@ -408,8 +410,12 @@ static void oob_data_request(struct bt_conn *conn,
 		break;
 	}
 
-#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 	case BT_CONN_OOB_LE_LEGACY:
+		if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+			LOG_ERR("OOB LE Legacy not supported");
+			break;
+		}
+
 		LOG_DBG("Legacy OOB TK requested from remote %s", addr);
 
 		err = bt_le_oob_set_legacy_tk(conn, oob_legacy_tk);
@@ -418,7 +424,6 @@ static void oob_data_request(struct bt_conn *conn,
 		}
 
 		break;
-#endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
 	default:
 		LOG_ERR("Unhandled OOB type %d", oob_info->type);
 		break;
