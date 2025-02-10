@@ -28,6 +28,14 @@ config UART_NRFX_UARTE
 	imply NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
 	imply NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
 
+config UART_NRFX_UARTE_NO_IRQ
+	bool "Polling without interrupt"
+	depends on UART_NRFX_UARTE
+	depends on !UART_ASYNC_API && !UART_INTERRUPT_DRIVEN
+	help
+	  When enabled, then interrupt handler is not used at all and it is possible
+	  to get to the lowest power state after uart_poll_out if receiver is not used.
+
 config UART_NRFX_UARTE_LEGACY_SHIM
 	bool "Legacy UARTE shim"
 	depends on UART_NRFX_UARTE

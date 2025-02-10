@@ -373,6 +373,8 @@ static inline NRF_UARTE_Type *get_uarte_instance(const struct device *dev)
 	return config->uarte_regs;
 }
 
+#if !defined(CONFIG_UART_NRFX_UARTE_NO_IRQ)
+
 static void endtx_isr(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
@@ -387,6 +389,8 @@ static void endtx_isr(const struct device *dev)
 	irq_unlock(key);
 
 }
+
+#endif
 
 /** @brief Disable UARTE peripheral is not used by RX or TX.
  *
@@ -426,7 +430,7 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 	nrf_uarte_disable(get_uarte_instance(dev));
 }
 
-#ifdef UARTE_ANY_NONE_ASYNC
+#if defined(UARTE_ANY_NONE_ASYNC) && !defined(CONFIG_UART_NRFX_UARTE_NO_IRQ)
 /**
  * @brief Interrupt service routine.
  *
@@ -503,7 +507,7 @@ static void uarte_nrfx_isr_int(const void *arg)
 	}
 #endif /* UARTE_INTERRUPT_DRIVEN */
 }
-#endif /* UARTE_ANY_NONE_ASYNC */
+#endif /* UARTE_ANY_NONE_ASYNC && !CONFIG_UART_NRFX_UARTE_NO_IRQ */
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 /**
@@ -1978,7 +1982,8 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config)) {
+	if (!IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ) &&
+	    (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config))) {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 	}
 
@@ -1986,6 +1991,27 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	tx_start(dev, config->poll_out_byte, 1);
 
 	irq_unlock(key);
+
+	if (IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
+		key = wait_tx_ready(dev);
+		if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) &&
+		    !(config->flags & UARTE_CFG_FLAG_PPI_ENDTX)) {
+			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
+			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
+			while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			if (!(data->flags & UARTE_FLAG_POLL_OUT)) {
+				data->flags &= ~UARTE_FLAG_POLL_OUT;
+				pm_device_runtime_put(dev);
+			}
+		} else if (LOW_POWER_ENABLED(config)) {
+			uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
+		}
+		irq_unlock(key);
+	}
 }
 
 
@@ -2253,7 +2279,7 @@ static void wait_for_tx_stopped(const struct device *dev)
 	NRFX_WAIT_FOR(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED),
 		      1000, 1, res);
 
-	if (!ppi_endtx) {
+	if (!ppi_endtx && !IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
 	}
 }
@@ -2398,7 +2424,9 @@ static int uarte_tx_path_init(const struct device *dev)
 		}
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
 		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
-		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
+		if (!IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
+			nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
+		}
 	}
 	while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
 	}
@@ -2465,9 +2493,10 @@ static int uarte_instance_init(const struct device *dev,
 
 /* Depending on configuration standard or direct IRQ is connected. */
 #define UARTE_IRQ_CONNECT(idx, irqn, prio)							\
-	COND_CODE_1(CONFIG_UART_NRFX_UARTE_DIRECT_ISR,						\
-		(IRQ_DIRECT_CONNECT(irqn, prio, uarte_##idx##_direct_isr, 0)),			\
-		(IRQ_CONNECT(irqn, prio, UARTE_GET_ISR(idx), DEVICE_DT_GET(UARTE(idx)), 0)))
+	COND_CODE_1(CONFIG_UART_NRFX_UARTE_NO_IRQ, (), \
+		(COND_CODE_1(CONFIG_UART_NRFX_UARTE_DIRECT_ISR,					\
+		    (IRQ_DIRECT_CONNECT(irqn, prio, uarte_##idx##_direct_isr, 0)),		\
+		    (IRQ_CONNECT(irqn, prio, UARTE_GET_ISR(idx), DEVICE_DT_GET(UARTE(idx)), 0)))))
 
 #define UARTE_IRQ_CONFIGURE(idx)							   \
 	do {										   \
