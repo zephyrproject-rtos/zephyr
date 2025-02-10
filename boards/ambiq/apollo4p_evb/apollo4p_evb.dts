@@ -94,7 +94,7 @@
 	status = "okay";
 };
 
-&iom0_i2c {
+&i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -103,7 +103,7 @@
 	status = "okay";
 };
 
-&iom1_spi {
+&spi1 {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
