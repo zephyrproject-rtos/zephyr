@@ -51,6 +51,7 @@ jobs:
           tests/
           **/Kconfig*
           west.yml
+          submanifests/optional.yaml
           scripts/dts/
           doc/requirements.txt
           .github/workflows/doc-build.yml
@@ -255,6 +256,85 @@ jobs:
           doc/_build/latex/zephyr.pdf
           doc/_build/latex/zephyr.log
 
+  rust-doc-build-html:
+    name: "Rust Documentation Build (HTML)"
+    needs: [doc-file-check]
+    if: >
+      github.repository_owner == 'zephyrproject-rtos' &&
+        ( needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request' )
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: zephyr
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
+    - name: Setup Zephyr Project
+      uses: zephyrproject-rtos/action-zephyr-setup@v1
+      with:
+        app-path: zephyr
+        manifest-file-name: west.yml
+        toolchains: arm-zephyr-eabi
+
+    - name: Bring in docs
+      shell: bash
+      run: |
+        set -x
+        cd zephyr
+        # Show a git log to make sure we got the upstream version and west didn't "fix" it for us.
+        git log -3
+
+        # Add the rust module to the manifest.
+        west config manifest.project-filter +zephyr-lang-rust
+        west update zephyr-lang-rust
+
+        echo Rust support
+        ls -l ../modules/lang/rust
+
+    - name: Install Rust Target
+      shell: bash
+      run: |
+        rustup target add thumbv7em-none-eabi
+        rustup target add thumbv7m-none-eabi
+
+    - name: Build Rust docs
+      shell: bash
+      run: |
+        cargo --version
+        cd zephyr
+        west build -t rustdoc -b nrf52840dk/nrf52840 ../modules/lang/rust/docgen
+        cd ..
+        mkdir rustdocs
+        mv zephyr/build/rust/target/thumbv7em-none-eabi/doc rustdocs/nostd
+        cp modules/lang/rust/docs/top-index.html rustdocs/index.html
+
+    # TODO: Build the std-based docs as well
+    - name: Build Rust Build-time docs
+      shell: bash
+      run: |
+        cd modules/lang/rust/zephyr-build
+        cargo doc
+        mv target/doc ../../../../rustdocs/std
+
+        cd ../../../..
+        du -hs rustdocs
+        ls -l rustdocs
+
+    - name: compress-rust-docs
+      run: |
+        tar --use-compress-program="xz -T0" -cf rustdocs-output.tar.xz rustdocs
+
+    - name: Upload docs artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rustdocs
+        path: rustdocs-output.tar.xz
+
   doc-build-status-check:
     if: always()
     name: "Documentation Build Status"
@@ -262,6 +342,7 @@ jobs:
     - doc-build-pdf
     - doc-file-check
     - doc-build-html
+    - rust-doc-build-html
     uses: ./.github/workflows/ready-to-merge.yml
     with:
       needs_context: ${{ toJson(needs) }}
