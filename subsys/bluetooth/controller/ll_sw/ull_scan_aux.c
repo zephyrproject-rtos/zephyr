@@ -293,7 +293,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 			 */
 			sync_lll = ftr->param;
 
-			lll_aux = sync_lll->lll_aux;
+			/* We can not retrieve aux context that was stored in
+			 * lll_sync when superior PDU was handled, as it may be
+			 * reset to NULL before this node rx is processed here.
+			 * The reset happens when new Periodic Advertising chain
+			 * is being received before we process the node here.
+			 */
+			lll_aux =  ftr->lll_aux;
 			LL_ASSERT(lll_aux);
 
 			aux = HDR_LLL2ULL(lll_aux);
@@ -1098,7 +1104,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		lll = rx->rx_ftr.param;
-		lll_aux = lll->lll_aux;
+		lll_aux = rx->rx_ftr.lll_aux;
 
 	} else if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) ||
 		   ull_scan_aux_is_valid_get(param_ull)) {
@@ -1117,7 +1123,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx)
 		sync->data_len = 0U;
 
 		lll = rx->rx_ftr.param;
-		lll_aux = lll->lll_aux;
+		lll_aux = rx->rx_ftr.lll_aux;
 
 		/* Change node type so HCI can dispatch report for truncated
 		 * data properly.
