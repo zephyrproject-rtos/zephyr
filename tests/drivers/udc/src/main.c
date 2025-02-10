@@ -19,6 +19,13 @@ LOG_MODULE_REGISTER(udc_test, LOG_LEVEL_INF);
  */
 
 #define FALSE_EP_ADDR		0x0FU
+#if DT_NODE_HAS_COMPAT(DT_NODELABEL(zephyr_udc0), snps_dwc2)
+#define FALSE_EP_EXISTS                                                                            \
+	(MAX(DT_PROP(DT_NODELABEL(zephyr_udc0), num_in_eps),                                       \
+	     DT_PROP(DT_NODELABEL(zephyr_udc0), num_out_eps)) < FALSE_EP_ADDR)
+#else
+#define FALSE_EP_EXISTS (DT_PROP(DT_NODELABEL(zephyr_udc0), num_bidir_endpoints) < FALSE_EP_ADDR)
+#endif
 
 K_MSGQ_DEFINE(test_msgq, sizeof(struct udc_event), 8, sizeof(uint32_t));
 static K_KERNEL_STACK_DEFINE(test_udc_stack, 512);
@@ -145,17 +152,23 @@ static void test_udc_ep_enable(const struct device *dev,
 	if (!udc_is_initialized(dev) && !udc_is_enabled(dev)) {
 		zassert_equal(err1, -EPERM, "Not failed to enable endpoint");
 		zassert_equal(err2, -EPERM, "Not failed to enable endpoint");
-		zassert_equal(err3, -EPERM, "Not failed to enable endpoint");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err3, -EPERM, "Not failed to enable endpoint");
+		}
 		zassert_equal(err4, -EINVAL, "Not failed to enable endpoint");
 	} else if (udc_is_initialized(dev) && !udc_is_enabled(dev)) {
 		zassert_equal(err1, -EPERM, "Not failed to enable endpoint");
 		zassert_equal(err2, -EPERM, "Not failed to enable endpoint");
-		zassert_equal(err3, -EPERM, "Not failed to enable endpoint");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err3, -EPERM, "Not failed to enable endpoint");
+		}
 		zassert_equal(err4, -EINVAL, "Not failed to enable endpoint");
 	} else {
 		zassert_equal(err1, 0, "Failed to enable endpoint");
 		zassert_equal(err2, -EALREADY, "Not failed to enable endpoint");
-		zassert_equal(err3, -ENODEV, "Not failed to enable endpoint");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err3, -ENODEV, "Not failed to enable endpoint");
+		}
 		zassert_equal(err4, -EINVAL, "Not failed to enable endpoint");
 	}
 }
@@ -176,17 +189,23 @@ static void test_udc_ep_disable(const struct device *dev,
 	if (!udc_is_initialized(dev) && !udc_is_enabled(dev)) {
 		zassert_equal(err1, -EPERM, "Not failed to disable endpoint");
 		zassert_equal(err2, -EPERM, "Not failed to disable endpoint");
-		zassert_equal(err3, -EPERM, "Not failed to disable endpoint");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err3, -EPERM, "Not failed to disable endpoint");
+		}
 		zassert_equal(err4, -EINVAL, "Not failed to disable endpoint");
 	} else if (udc_is_initialized(dev) && !udc_is_enabled(dev)) {
 		zassert_equal(err1, -EALREADY, "Failed to disable endpoint");
 		zassert_equal(err2, -EALREADY, "Not failed to disable endpoint");
-		zassert_equal(err3, -ENODEV, "Not failed to disable endpoint");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err3, -ENODEV, "Not failed to disable endpoint");
+		}
 		zassert_equal(err4, -EINVAL, "Not failed to disable endpoint");
 	} else {
 		zassert_equal(err1, 0, "Failed to disable endpoint");
 		zassert_equal(err2, -EALREADY, "Not failed to disable endpoint");
-		zassert_equal(err3, -ENODEV, "Not failed to disable endpoint");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err3, -ENODEV, "Not failed to disable endpoint");
+		}
 		zassert_equal(err4, -EINVAL, "Not failed to disable endpoint");
 	}
 }
@@ -233,10 +252,14 @@ static void test_udc_ep_halt(const struct device *dev,
 			zassert_equal(err1, 0, "Failed to set halt");
 		}
 
-		zassert_equal(err2, -ENODEV, "Not failed to set halt");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err2, -ENODEV, "Not failed to set halt");
+		}
 	} else {
 		zassert_equal(err1, -EPERM, "Not failed to set halt");
-		zassert_equal(err2, -EPERM, "Not failed to set halt");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err2, -EPERM, "Not failed to set halt");
+		}
 	}
 
 	err1 = udc_ep_clear_halt(dev, ed->bEndpointAddress);
@@ -249,10 +272,14 @@ static void test_udc_ep_halt(const struct device *dev,
 			zassert_equal(err1, 0, "Failed to clear halt ");
 		}
 
-		zassert_equal(err2, -ENODEV, "Not failed to clear halt");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err2, -ENODEV, "Not failed to clear halt");
+		}
 	} else {
 		zassert_equal(err1, -EPERM, "Not failed to clear halt");
-		zassert_equal(err2, -EPERM, "Not failed to clear halt");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err2, -EPERM, "Not failed to clear halt");
+		}
 	}
 }
 
@@ -267,12 +294,16 @@ static void test_udc_ep_enqueue(const struct device *dev,
 	if (udc_is_enabled(dev)) {
 		false_buf = udc_ep_buf_alloc(dev, FALSE_EP_ADDR, 64);
 		zassert_not_null(false_buf, "Failed to allocate request");
-		err2 = udc_ep_enqueue(dev, false_buf);
+		if (FALSE_EP_EXISTS) {
+			err2 = udc_ep_enqueue(dev, false_buf);
+		}
 	}
 
 	if (udc_is_enabled(dev)) {
 		zassert_equal(err1, 0, "Failed to queue request");
-		zassert_equal(err2, -ENODEV, "Not failed to queue request");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err2, -ENODEV, "Not failed to queue request");
+		}
 	} else {
 		zassert_equal(err1, -EPERM, "Not failed to queue request");
 	}
@@ -291,10 +322,14 @@ static void test_udc_ep_dequeue(const struct device *dev,
 
 	if (!udc_is_initialized(dev)) {
 		zassert_equal(err1, -EPERM, "Not failed to dequeue");
-		zassert_equal(err2, -EPERM, "Not failed to dequeue");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err2, -EPERM, "Not failed to dequeue");
+		}
 	} else {
 		zassert_equal(err1, 0, "Failed to dequeue");
-		zassert_equal(err2, -ENODEV, "Not failed to dequeue");
+		if (FALSE_EP_EXISTS) {
+			zassert_equal(err2, -ENODEV, "Not failed to dequeue");
+		}
 	}
 }
 
