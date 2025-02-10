@@ -862,38 +862,21 @@ static int ov5640_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int ov5640_stream_start(const struct device *dev)
+static int ov5640_set_stream(const struct device *dev, bool enable)
 {
 	const struct ov5640_config *cfg = dev->config;
 
 	if (!ov5640_is_dvp(dev)) {
-		/* Power up MIPI PHY HS Tx & LP Rx in 2 data lanes mode */
-		int ret = ov5640_write_reg(&cfg->i2c, IO_MIPI_CTRL00_REG, 0x45);
-
+		/* Power up / down MIPI PHY HS Tx & LP Rx in 2 data lanes mode */
+		int ret = ov5640_write_reg(&cfg->i2c, IO_MIPI_CTRL00_REG, enable ? 0x45 : 0x40);
 		if (ret) {
-			LOG_ERR("Unable to power up MIPI PHY");
+			LOG_ERR("Unable to power up / down MIPI PHY");
 			return ret;
 		}
 	}
 
-	return ov5640_write_reg(&cfg->i2c, SYS_CTRL0_REG, SYS_CTRL0_SW_PWUP);
-}
-
-static int ov5640_stream_stop(const struct device *dev)
-{
-	const struct ov5640_config *cfg = dev->config;
-
-	if (!ov5640_is_dvp(dev)) {
-		/* Power down MIPI PHY HS Tx & LP Rx */
-		int ret = ov5640_write_reg(&cfg->i2c, IO_MIPI_CTRL00_REG, 0x40);
-
-		if (ret) {
-			LOG_ERR("Unable to power down MIPI PHY");
-			return ret;
-		}
-	}
-
-	return ov5640_write_reg(&cfg->i2c, SYS_CTRL0_REG, SYS_CTRL0_SW_PWDN);
+	return ov5640_write_reg(&cfg->i2c, SYS_CTRL0_REG,
+				enable ? SYS_CTRL0_SW_PWUP : SYS_CTRL0_SW_PWDN);
 }
 
 #define TEST_PATTERN_ENABLE  BIT(7)
@@ -1164,8 +1147,7 @@ static DEVICE_API(video, ov5640_driver_api) = {
 	.set_format = ov5640_set_fmt,
 	.get_format = ov5640_get_fmt,
 	.get_caps = ov5640_get_caps,
-	.stream_start = ov5640_stream_start,
-	.stream_stop = ov5640_stream_stop,
+	.set_stream = ov5640_set_stream,
 	.set_ctrl = ov5640_set_ctrl,
 	.get_ctrl = ov5640_get_ctrl,
 	.set_frmival = ov5640_set_frmival,
