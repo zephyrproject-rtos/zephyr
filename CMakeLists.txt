@@ -656,6 +656,7 @@ add_subdirectory(soc)
 add_subdirectory(boards)
 add_subdirectory(subsys)
 add_subdirectory(drivers)
+add_subdirectory(sip)
 
 # Include zephyr modules generated CMake file.
 foreach(module_name ${ZEPHYR_MODULE_NAMES})

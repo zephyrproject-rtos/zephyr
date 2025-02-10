@@ -52,7 +52,7 @@ family:
           - name: nrf9131
           - name: nrf9151
           - name: nrf9160
-          - name: nrf9161
+          - name: nrf9120
       - name: nrf92
         socs:
           - name: nrf9280
@@ -103,8 +103,8 @@ runners:
               - nrf9160
               - nrf9160/ns
           - qualifiers:
-              - nrf9161
-              - nrf9161/ns
+              - nrf9120
+              - nrf9120/ns
           - qualifiers:
               - nrf54l05/cpuapp
               - nrf54l05/cpuflpr
@@ -165,8 +165,8 @@ runners:
               - nrf9160
               - nrf9160/ns
           - qualifiers:
-              - nrf9161
-              - nrf9161/ns
+              - nrf9120
+              - nrf9120/ns
           - qualifiers:
               - nrf54l05/cpuapp
               - nrf54l05/cpuflpr
@@ -227,8 +227,8 @@ runners:
               - nrf9160
               - nrf9160/ns
           - qualifiers:
-              - nrf9161
-              - nrf9161/ns
+              - nrf9120
+              - nrf9120/ns
           - qualifiers:
               - nrf54l05/cpuapp
               - nrf54l05/cpuflpr
