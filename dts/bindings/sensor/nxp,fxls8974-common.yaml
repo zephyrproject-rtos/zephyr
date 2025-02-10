@@ -41,3 +41,14 @@ properties:
       - 8
       - 4
       - 2
+
+  whoami-value:
+    type: int
+    required: true
+    description: |
+      A value is read from the sensor address to determine
+      if the bus is talking to the correct sensor. This is the expected
+      value that to be read from the address.
+    enum:
+      - 0x84
+      - 0x86

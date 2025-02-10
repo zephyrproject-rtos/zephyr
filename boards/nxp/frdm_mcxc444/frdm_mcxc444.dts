@@ -134,6 +134,7 @@ i2c0: &i2c0 {
 		status = "okay";
 		compatible = "nxp,fxls8974";
 		reg = <0x18>;
+		whoami-value = <0x86>;
 		int1-gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
 	};
 };

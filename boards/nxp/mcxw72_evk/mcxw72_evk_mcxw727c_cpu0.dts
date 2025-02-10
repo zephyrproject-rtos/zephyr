@@ -54,6 +54,9 @@
 	status = "okay";
 };
 
+&gpiob {
+	status = "okay";
+};
 
 &gpioc {
 	status = "okay";
@@ -133,4 +136,11 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+
+	fxls8964: fxls8964@19 {
+		status = "okay";
+		compatible = "nxp,fxls8974";
+		reg = <0x19>;
+		whoami-value = <0x84>;
+	};
 };

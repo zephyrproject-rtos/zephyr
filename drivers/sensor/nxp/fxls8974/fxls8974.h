@@ -127,6 +127,7 @@ struct fxls8974_config {
 	const union fxls8974_bus_cfg bus_cfg;
 	const struct fxls8974_io_ops *ops;
 	struct gpio_dt_spec reset_gpio;
+	uint8_t expected_whoami_value;
 	uint8_t range;
 	uint8_t inst_on_bus;
 #ifdef CONFIG_FXLS8974_TRIGGER

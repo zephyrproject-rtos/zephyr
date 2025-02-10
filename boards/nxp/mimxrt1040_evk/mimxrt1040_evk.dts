@@ -210,6 +210,7 @@ lpi2c3: &lpi2c3 {
 		compatible = "nxp,fxls8974";
 		reg = <0x18>;
 		status = "okay";
+		whoami-value = <0x86>;
 
 		/* Two zero ohm resistors (R115 and R122) isolate sensor
 		 * interrupt gpios from the soc and are unpopulated by default.
