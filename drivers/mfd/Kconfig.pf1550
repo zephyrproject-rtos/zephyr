@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_PF1550
+	bool "PF1550 PMIC multi-function device driver"
+	default y
+	depends on DT_HAS_NXP_PF1550_ENABLED
+	select I2C
+	help
+	  Enable the NXP PF1550 PMIC multi-function device driver
