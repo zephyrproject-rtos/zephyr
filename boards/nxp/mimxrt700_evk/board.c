@@ -293,6 +293,11 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivLPFlexComm20Clk, 4U);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio), okay)
+	CLOCK_AttachClk(kFRO0_DIV1_to_FLEXIO);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1U);
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 	RESET_ClearPeripheralReset(kGPIO0_RST_SHIFT_RSTn);
