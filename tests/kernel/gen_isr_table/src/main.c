@@ -26,7 +26,7 @@ extern uint32_t _irq_vector_table[];
 #define ISR3_OFFSET	17
 #define ISR5_OFFSET	18
 #define TRIG_CHECK_SIZE	19
-#elif defined(CONFIG_SOC_NRF54H20_CPUPPR)
+#elif defined(CONFIG_SOC_NRF54H20_CPUPPR) || defined(CONFIG_SOC_NRF54H20_CPUFLPR)
 #define ISR1_OFFSET	14
 #define ISR3_OFFSET	15
 #define ISR5_OFFSET	16
