@@ -14,6 +14,8 @@
 #define ARCH_HDR_VER 2
 #endif
 
+uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf);
+
 struct riscv_arch_block {
 #ifdef CONFIG_64BIT
 	struct {
@@ -35,6 +37,7 @@ struct riscv_arch_block {
 		uint64_t t5;
 		uint64_t t6;
 		uint64_t pc;
+		uint64_t sp;
 	} r;
 #else /* !CONFIG_64BIT */
 	struct {
@@ -58,6 +61,7 @@ struct riscv_arch_block {
 		uint32_t t6;
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 		uint32_t pc;
+		uint32_t sp;
 	} r;
 #endif /* CONFIG_64BIT */
 } __packed;
@@ -107,6 +111,7 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	arch_blk.r.a7 = esf->a7;
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 	arch_blk.r.pc = esf->mepc;
+	arch_blk.r.sp = z_riscv_get_sp_before_exc(esf);
 
 	/* Send for output */
 	coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));
