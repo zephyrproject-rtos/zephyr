@@ -16,5 +16,8 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# enable GPIO
+# Enable GPIO
 CONFIG_GPIO=y
+
+# Enable Flash devices
+CONFIG_FLASH=y
