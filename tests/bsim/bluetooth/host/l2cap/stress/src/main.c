@@ -22,8 +22,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
-static DEFINE_FLAG(is_connected);
-static DEFINE_FLAG(flag_l2cap_connected);
+DEFINE_FLAG_STATIC(is_connected);
+DEFINE_FLAG_STATIC(flag_l2cap_connected);
 
 #define NUM_PERIPHERALS 6
 #define L2CAP_CHANS     NUM_PERIPHERALS

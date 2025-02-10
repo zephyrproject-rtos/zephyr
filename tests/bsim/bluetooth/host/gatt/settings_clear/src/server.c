@@ -27,9 +27,9 @@
 
 LOG_MODULE_REGISTER(server, LOG_LEVEL_DBG);
 
-static DEFINE_FLAG(ccc_cfg_changed_flag);
-static DEFINE_FLAG(disconnected_flag);
-static DEFINE_FLAG(security_changed_flag);
+DEFINE_FLAG_STATIC(ccc_cfg_changed_flag);
+DEFINE_FLAG_STATIC(disconnected_flag);
+DEFINE_FLAG_STATIC(security_changed_flag);
 
 static struct bt_conn_cb server_conn_cb;
 
