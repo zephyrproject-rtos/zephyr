@@ -12,5 +12,6 @@
 #define ZEPHYR_SOC_RENESAS_RA2A1_SOC_H_
 
 #include <bsp_api.h>
+#include <intc_soc.h>
 
 #endif /* ZEPHYR_SOC_RENESAS_RA2A1_SOC_H_ */

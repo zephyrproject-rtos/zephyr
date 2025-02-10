@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/ra/ra2/r7fa2a1xh.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/renesas-ra-icu-event.h>
+
+&icu {
+	sci0 {
+		interrupt-map = <
+			/* NVIC: IRQn = 0, IPL = 1 */
+			0 RA_ICU_EVENT_SCI0_RXI &nvic 0 0 1
+			/* NVIC: IRQn = 1, IPL = 1 */
+			0 RA_ICU_EVENT_SCI0_TXI &nvic 0 1 1
+			/* NVIC: IRQn = 2, IPL = 1 */
+			0 RA_ICU_EVENT_SCI0_TEI &nvic 0 2 1
+			/* NVIC: IRQn = 3, IPL = 1 */
+			0 RA_ICU_EVENT_SCI0_ERI &nvic 0 3 1
+		>;
+	};
+
+	spi1 {
+		interrupt-map = <
+			/* NVIC: IRQn = 4, IPL = 1 */
+			0 RA_ICU_EVENT_SPI1_RXI &nvic 0 4 1
+			/* NVIC: IRQn = 5, IPL = 1 */
+			0 RA_ICU_EVENT_SPI1_TXI &nvic 0 5 1
+			/* NVIC: IRQn = 6, IPL = 1 */
+			0 RA_ICU_EVENT_SPI1_TEI &nvic 0 6 1
+			/* NVIC: IRQn = 7, IPL = 1 */
+			0 RA_ICU_EVENT_SPI1_ERI &nvic 0 7 1
+		>;
+	};
+
+	port_irq6 {
+		interrupt-map = <
+			/* NVIC: IRQn = 8, IPL = 1 */
+			0 RA_ICU_EVENT_ICU_IRQ6 &nvic 0 8 1
+		>;
+	};
+
+	pwm0 {
+		interrupt-map = <
+			/* NVIC: IRQn = 9, IPL = 1 */
+			0 RA_ICU_EVENT_GPT0_CAPTURE_COMPARE_A &nvic 0 9 1
+			/* NVIC: IRQn = 10, IPL = 1 */
+			0 RA_ICU_EVENT_GPT0_COUNTER_OVERFLOW &nvic 0 10 1
+		>;
+	};
+
+	iic0 {
+		interrupt-map = <
+			/* NVIC: IRQn = 11, IPL = 1 */
+			0 RA_ICU_EVENT_IIC0_RXI &nvic 0 11 1
+			/* NVIC: IRQn = 12, IPL = 1 */
+			0 RA_ICU_EVENT_IIC0_TXI &nvic 0 12 1
+			/* NVIC: IRQn = 13, IPL = 1 */
+			0 RA_ICU_EVENT_IIC0_TEI &nvic 0 13 1
+			/* NVIC: IRQn = 14, IPL = 1 */
+			0 RA_ICU_EVENT_IIC0_ERI &nvic 0 14 1
+		>;
+	};
+};

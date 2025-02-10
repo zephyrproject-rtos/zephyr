@@ -7,9 +7,12 @@
 #include <arm/renesas/ra/ra2/ra2xx.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/interrupt-controller/renesas-ra-icu-event.h>
 
 /delete-node/ &sci2;
 /delete-node/ &sci3;
+/delete-node/ &{/interrupt-controller-unit/sci2};
+/delete-node/ &{/interrupt-controller-unit/sci3};
 /delete-node/ &ioport6;
 /delete-node/ &ioport7;
 /delete-node/ &ioport8;
@@ -21,14 +24,12 @@
 			reg = <0x20000000 DT_SIZE_K(32)>;
 		};
 
-		spi1: spi@40072100 {
-			compatible = "renesas,ra-spi";
-			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
-		};
-
-		pwm1: pwm1@40078100 {
+		pwm1: pwm@40078100 {
 			compatible = "renesas,ra-pwm";
+			interrupt-parent = <&{/interrupt-controller-unit/pwm1}>;
+			interrupts = <RA_ICU_EVENT_GPT1_CAPTURE_COMPARE_A>,
+				     <RA_ICU_EVENT_GPT1_COUNTER_OVERFLOW>;
+			interrupt-names = "gtioca", "overflow";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_1>;
 			clocks = <&pclkd MSTPD 6>;
@@ -37,8 +38,12 @@
 			status = "disabled";
 		};
 
-		pwm2: pwm2@40078200 {
+		pwm2: pwm@40078200 {
 			compatible = "renesas,ra-pwm";
+			interrupt-parent = <&{/interrupt-controller-unit/pwm2}>;
+			interrupts = <RA_ICU_EVENT_GPT2_CAPTURE_COMPARE_A>,
+				     <RA_ICU_EVENT_GPT2_COUNTER_OVERFLOW>;
+			interrupt-names = "gtioca", "overflow";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_2>;
 			clocks = <&pclkd MSTPD 6>;
@@ -47,8 +52,12 @@
 			status = "disabled";
 		};
 
-		pwm3: pwm3@40078300 {
+		pwm3: pwm@40078300 {
 			compatible = "renesas,ra-pwm";
+			interrupt-parent = <&{/interrupt-controller-unit/pwm3}>;
+			interrupts = <RA_ICU_EVENT_GPT3_CAPTURE_COMPARE_A>,
+				     <RA_ICU_EVENT_GPT3_COUNTER_OVERFLOW>;
+			interrupt-names = "gtioca", "overflow";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_3>;
 			clocks = <&pclkd MSTPD 6>;
@@ -57,8 +66,12 @@
 			status = "disabled";
 		};
 
-		pwm4: pwm4@40078400 {
+		pwm4: pwm@40078400 {
 			compatible = "renesas,ra-pwm";
+			interrupt-parent = <&{/interrupt-controller-unit/pwm4}>;
+			interrupts = <RA_ICU_EVENT_GPT4_CAPTURE_COMPARE_A>,
+				     <RA_ICU_EVENT_GPT4_COUNTER_OVERFLOW>;
+			interrupt-names = "gtioca", "overflow";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_4>;
 			clocks = <&pclkd MSTPD 6>;
@@ -67,8 +80,12 @@
 			status = "disabled";
 		};
 
-		pwm5: pwm5@40078500 {
+		pwm5: pwm@40078500 {
 			compatible = "renesas,ra-pwm";
+			interrupt-parent = <&{/interrupt-controller-unit/pwm5}>;
+			interrupts = <RA_ICU_EVENT_GPT5_CAPTURE_COMPARE_A>,
+				     <RA_ICU_EVENT_GPT5_COUNTER_OVERFLOW>;
+			interrupt-names = "gtioca", "overflow";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_5>;
 			clocks = <&pclkd MSTPD 6>;
@@ -77,8 +94,12 @@
 			status = "disabled";
 		};
 
-		pwm6: pwm6@40078600 {
+		pwm6: pwm@40078600 {
 			compatible = "renesas,ra-pwm";
+			interrupt-parent = <&{/interrupt-controller-unit/pwm6}>;
+			interrupts = <RA_ICU_EVENT_GPT6_CAPTURE_COMPARE_A>,
+				     <RA_ICU_EVENT_GPT6_COUNTER_OVERFLOW>;
+			interrupt-names = "gtioca", "overflow";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_6>;
 			clocks = <&pclkd MSTPD 6>;
@@ -180,6 +201,62 @@
 				status = "disabled";
 			};
 		};
+	};
+};
+
+&icu {
+	pwm1 {
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0xfff>;
+		interrupt-map = <
+			0 RA_ICU_EVENT_GPT1_CAPTURE_COMPARE_A &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			0 RA_ICU_EVENT_GPT1_COUNTER_OVERFLOW &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+		>;
+	};
+
+	pwm2 {
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0xfff>;
+		interrupt-map = <
+			0 RA_ICU_EVENT_GPT2_CAPTURE_COMPARE_A &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			0 RA_ICU_EVENT_GPT2_COUNTER_OVERFLOW &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+		>;
+	};
+
+	pwm3 {
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0xfff>;
+		interrupt-map = <
+			0 RA_ICU_EVENT_GPT3_CAPTURE_COMPARE_A &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			0 RA_ICU_EVENT_GPT3_COUNTER_OVERFLOW &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+		>;
+	};
+
+	pwm4 {
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0xfff>;
+		interrupt-map = <
+			0 RA_ICU_EVENT_GPT4_CAPTURE_COMPARE_A &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			0 RA_ICU_EVENT_GPT4_COUNTER_OVERFLOW &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+		>;
+	};
+
+	pwm5 {
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0xfff>;
+		interrupt-map = <
+			0 RA_ICU_EVENT_GPT5_CAPTURE_COMPARE_A &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			0 RA_ICU_EVENT_GPT5_COUNTER_OVERFLOW &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+		>;
+	};
+
+	pwm6 {
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0xfff>;
+		interrupt-map = <
+			0 RA_ICU_EVENT_GPT6_CAPTURE_COMPARE_A &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+			0 RA_ICU_EVENT_GPT6_COUNTER_OVERFLOW &nvic 0 RA_NVIC_IRQN_UNSPECIFIED 1
+		>;
 	};
 };
 
