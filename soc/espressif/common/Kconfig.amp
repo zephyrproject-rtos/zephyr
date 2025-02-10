@@ -23,4 +23,16 @@ config ESP_APPCPU_DRAM_SIZE
 	help
 	  Defines APPCPU DRAM area size in bytes.
 
+config ESP_APPCPU_IROM_SIZE
+	hex "ESP32* APPCPU IROM size"
+	default 0x100000
+	help
+	  Defines APPCPU IROM area size in bytes.
+
+config ESP_APPCPU_DROM_SIZE
+	hex "ESP32* APPCPU DRAM size"
+	default 0x100000
+	help
+	  Defines APPCPU DROM area size in bytes.
+
 endmenu # AMP config
