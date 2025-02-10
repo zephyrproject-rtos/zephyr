@@ -512,6 +512,7 @@ pervasive	Pervasive Displays, Inc.
 phicomm	PHICOMM Co., Ltd.
 phytec	PHYTEC
 picochip	Picochip Ltd
+pimoroni	Pimoroni Ltd.
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.
 pixart	PixArt Imaging Inc.
