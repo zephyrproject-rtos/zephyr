@@ -109,7 +109,7 @@ if NRF_802154_SER_RADIO
 
 config NRF_802154_SER_RADIO_INIT_PRIO
 	int "nRF52 IEEE 802.15.4 serialization initialization priority"
-	default 51
+	default 53
 	help
 	  Set the initialization priority number. Do not mess with it unless
 	  you know what you are doing.
