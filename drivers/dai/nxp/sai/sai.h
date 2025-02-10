@@ -44,6 +44,9 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 #define _SAI_GET_CLOCK_NAME(clock_idx, inst)\
 	DT_INST_PROP_BY_IDX(inst, clock_names, clock_idx)
 
+#define _SAI_GET_CLOCK_CTLR_DEV(clock_idx, inst)\
+	DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(inst, clock_idx))
+
 /* used to convert the clocks property into an array of clock IDs */
 #define _SAI_CLOCK_ID_ARRAY(inst)\
 	FOR_EACH_FIXED_ARG(_SAI_GET_CLOCK_ID, (,), inst, _SAI_CLOCK_INDEX_ARRAY(inst))
@@ -51,6 +54,9 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 /* used to convert the clock-names property into an array of clock names */
 #define _SAI_CLOCK_NAME_ARRAY(inst)\
 	FOR_EACH_FIXED_ARG(_SAI_GET_CLOCK_NAME, (,), inst, _SAI_CLOCK_INDEX_ARRAY(inst))
+
+#define _SAI_CLOCK_CTRL_ARRAY(inst)\
+	FOR_EACH_FIXED_ARG(_SAI_GET_CLOCK_CTLR_DEV, (,), inst, _SAI_CLOCK_INDEX_ARRAY(inst))
 
 /* used to convert a clocks property into an array of clock IDs. If the property
  * is not specified then this macro will return {}.
@@ -64,10 +70,10 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
  * It is assumed that all SAI clocks come from a single clock provider.
  * This macro returns a NULL if the clocks property doesn't exist.
  */
-#define _SAI_GET_CLOCK_CONTROLLER(inst)\
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_INST(inst, nxp_dai_sai), clocks),\
-		    (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))),\
-		    (NULL))
+#define _SAI_GET_CLOCK_CONTROLLERS(inst)					\
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_INST(inst, nxp_dai_sai), clocks),	\
+		    ({ _SAI_CLOCK_CTRL_ARRAY(inst) }),			\
+		    ({ }))
 
 /* used to convert a clock-names property into an array of clock names. If the
  * property is not specified then this macro will return {}.
@@ -78,12 +84,12 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 		    ({ }))
 
 /* used to declare a struct clock_data */
-#define SAI_CLOCK_DATA_DECLARE(inst)					\
-{									\
-	.clocks = (uint32_t [])_SAI_GET_CLOCK_ARRAY(inst),		\
-	.clock_num = DT_INST_PROP_LEN_OR(inst, clocks, 0),		\
-	.dev = _SAI_GET_CLOCK_CONTROLLER(inst),				\
-	.clock_names = (const char *[])_SAI_GET_CLOCK_NAMES(inst),	\
+#define SAI_CLOCK_DATA_DECLARE(inst)						\
+{										\
+	.clocks = (uint32_t [])_SAI_GET_CLOCK_ARRAY(inst),			\
+	.clock_num = DT_INST_PROP_LEN_OR(inst, clocks, 0),			\
+	.devs = (const struct device *[])_SAI_GET_CLOCK_CONTROLLERS(inst),	\
+	.clock_names = (const char *[])_SAI_GET_CLOCK_NAMES(inst),		\
 }
 
 /* used to parse the tx-fifo-watermark property. If said property is not
@@ -240,8 +246,7 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 struct sai_clock_data {
 	uint32_t *clocks;
 	uint32_t clock_num;
-	/* assumption: all clocks belong to the same producer */
-	const struct device *dev;
+	const struct device **devs;
 	const char **clock_names;
 };
 
@@ -369,7 +374,7 @@ static int get_mclk_rate(const struct sai_clock_data *clk_data,
 		return clk_idx;
 	}
 
-	return clock_control_get_rate(clk_data->dev,
+	return clock_control_get_rate(clk_data->devs[clk_idx],
 				      UINT_TO_POINTER(clk_data->clocks[clk_idx]),
 				      rate);
 }

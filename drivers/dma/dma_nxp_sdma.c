@@ -8,6 +8,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include "fsl_sdma.h"
 
 LOG_MODULE_REGISTER(nxp_sdma);
@@ -23,6 +26,8 @@ AT_NONCACHEABLE_SECTION_ALIGN(static sdma_context_data_t
 struct sdma_dev_cfg {
 	SDMAARM_Type *base;
 	void (*irq_config)(void);
+	const struct device *clk_dev;
+	uint32_t bus_clk_id;
 };
 
 struct sdma_channel_data {
@@ -422,7 +427,64 @@ static bool sdma_channel_filter(const struct device *dev, int chan_id, void *par
 	dev_data->chan[chan_id].event_source = *((int *)param);
 	dev_data->chan[chan_id].index = chan_id;
 
+	if (pm_device_runtime_get(dev) < 0) {
+		LOG_ERR("failed to runtime get");
+		return false;
+	}
+
 	return true;
+}
+
+static void sdma_channel_release(const struct device *dev, uint32_t chan_id)
+{
+	if (chan_id == 0) {
+		return;
+	}
+
+	if (chan_id >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
+		return;
+	}
+
+	if (pm_device_runtime_put(dev) < 0) {
+		LOG_ERR("failed to runtime put");
+		return;
+	}
+}
+
+static int sdma_bus_clk_enable_disable(const struct device *dev, bool enable)
+{
+	const struct sdma_dev_cfg *cfg = dev->config;
+
+	if (!cfg->clk_dev) {
+		return -ENODEV;
+	}
+
+	if (enable) {
+		return clock_control_on(cfg->clk_dev,
+					UINT_TO_POINTER(cfg->bus_clk_id));
+	} else {
+		return clock_control_off(cfg->clk_dev,
+					 UINT_TO_POINTER(cfg->bus_clk_id));
+	}
+}
+
+__maybe_unused static int sdma_pm_action(const struct device *dev,
+					 enum pm_device_action action)
+{
+	bool enable = true;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		enable = false;
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	}
+
+	return sdma_bus_clk_enable_disable(dev, enable);
 }
 
 static DEVICE_API(dma, sdma_api) = {
@@ -435,6 +497,7 @@ static DEVICE_API(dma, sdma_api) = {
 	.get_status = dma_nxp_sdma_get_status,
 	.get_attribute = dma_nxp_sdma_get_attribute,
 	.chan_filter = sdma_channel_filter,
+	.chan_release = sdma_channel_release,
 };
 
 static int dma_nxp_sdma_init(const struct device *dev)
@@ -450,12 +513,13 @@ static int dma_nxp_sdma_init(const struct device *dev)
 	SDMA_GetDefaultConfig(&defconfig);
 	defconfig.ratio = kSDMA_ARMClockFreq;
 
+	/* this also ungates the bus clock */
 	SDMA_Init(cfg->base, &defconfig);
 
 	/* configure interrupts */
 	cfg->irq_config();
 
-	return 0;
+	return pm_device_runtime_enable(dev);
 }
 
 #define DMA_NXP_SDMA_INIT(inst)						\
@@ -468,6 +532,8 @@ static int dma_nxp_sdma_init(const struct device *dev)
 	static const struct sdma_dev_cfg sdma_cfg_##inst = {		\
 		.base = (SDMAARM_Type *)DT_INST_REG_ADDR(inst),				\
 		.irq_config = dma_nxp_sdma_##inst_irq_config,		\
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),	\
+		.bus_clk_id = DT_INST_CLOCKS_CELL(inst, name),		\
 	};								\
 	static void dma_nxp_sdma_##inst_irq_config(void)		\
 	{								\
@@ -476,7 +542,11 @@ static int dma_nxp_sdma_init(const struct device *dev)
 			    dma_nxp_sdma_isr, DEVICE_DT_INST_GET(inst), 0);	\
 		irq_enable(DT_INST_IRQN(inst));				\
 	}								\
-	DEVICE_DT_INST_DEFINE(inst, &dma_nxp_sdma_init, NULL,		\
+									\
+	PM_DEVICE_DT_INST_DEFINE(inst, sdma_pm_action);			\
+									\
+	DEVICE_DT_INST_DEFINE(inst, &dma_nxp_sdma_init,			\
+			      PM_DEVICE_DT_INST_GET(inst),		\
 			      &sdma_data_##inst, &sdma_cfg_##inst,	\
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,	\
 			      &sdma_api);				\
