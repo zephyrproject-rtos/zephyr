@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_CS43L22
+	bool "Cirrus CS43L22 driver"
+	default y
+	select I2C
+	depends on GPIO
+	depends on DT_HAS_CIRRUS_CS43L22_ENABLED
+	help
+	  Enable the driver for the Cirrus CS43L22 low Power, stereo DAC
+	  with headphone & speaker amplifiers
