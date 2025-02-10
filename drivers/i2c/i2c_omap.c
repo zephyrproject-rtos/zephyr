@@ -314,7 +314,7 @@ static void i2c_omap_resize_fifo(const struct device *dev, uint8_t size)
 static int i2c_omap_get_sda(void *io_context)
 {
 	const struct i2c_omap_cfg *cfg = (const struct i2c_omap_cfg *)io_context;
-	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.addr;
+	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.phys_addr;
 
 	return (i2c_base_addr->SYSTEST & I2C_OMAP_SYSTEST_SDA_I_FUNC) ? 1 : 0;
 }
@@ -330,7 +330,7 @@ static int i2c_omap_get_sda(void *io_context)
 static void i2c_omap_set_sda(void *io_context, int state)
 {
 	const struct i2c_omap_cfg *cfg = (const struct i2c_omap_cfg *)io_context;
-	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.addr;
+	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.phys_addr;
 
 	if (state) {
 		i2c_base_addr->SYSTEST |= I2C_OMAP_SYSTEST_SDA_O;
@@ -350,7 +350,7 @@ static void i2c_omap_set_sda(void *io_context, int state)
 static void i2c_omap_set_scl(void *io_context, int state)
 {
 	const struct i2c_omap_cfg *cfg = (const struct i2c_omap_cfg *)io_context;
-	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.addr;
+	i2c_omap_regs_t *i2c_base_addr = (i2c_omap_regs_t *)cfg->base.phys_addr;
 
 	if (state) {
 		i2c_base_addr->SYSTEST |= I2C_OMAP_SYSTEST_SCL_O;
