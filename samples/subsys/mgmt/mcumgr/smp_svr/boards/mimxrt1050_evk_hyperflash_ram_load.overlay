@@ -1,14 +1,20 @@
-/delete-node/ &sram0;
+/*
+ * Copyright (c) 2025 Tenstorrent AI ULC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
- * Layout must match the nrf52840dk_nrf52840_ram_load overlay file within mcuboot
+ * Layout must match the hyperflash_ram_load overlay file within mcuboot
  * application configuration directory
  */
 
+/delete-node/ &sdram0;
+
 / {
-	sram@2003FF00 {
+	sram@80007F00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2003FF00 0x100>;
+		reg = <0x80007F00 0x100>;
 		zephyr,memory-region = "RetainedMem";
 		status = "okay";
 
@@ -28,19 +34,15 @@
 
 	chosen {
 		zephyr,bootloader-info = &boot_info0;
-	};
-};
-
-/ {
-	chosen {
-		zephyr,flash = &flash0;
-		/delete-property/ zephyr,code-partition;
+		zephyr,sram = &sdram_split;
 	};
 
-	soc {
-		sram0: memory@20006000 {
-			compatible = "mmio-sram";
-			reg = <0x20006000 DT_SIZE_K(200)>;
-		};
+	/*
+	 * Adjust sdram0 to reserve first 30KB for MCUBoot, and
+	 * remaining 2KB for retained memory
+	 */
+	sdram_split: sdram_split@80008000 {
+		reg = <0x80008000 (0x2000000 - DT_SIZE_K(32))>;
 	};
+
 };
