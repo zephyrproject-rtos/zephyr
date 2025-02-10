@@ -9,16 +9,9 @@
 
 #define NAME_DELETABLE "4/deletable"
 
-struct flash_sector fcb_small_sectors[2] = {
-	[0] = {
-		.fs_off = 0x00000000,
-		.fs_size = 4 * 1024
-	},
-	[1] = {
-		.fs_off = 0x00001000,
-		.fs_size = 4 * 1024
-	}
-};
+const struct flash_sector fcb_small_sectors[2] = {
+	[0] = {.fs_off = 0x00000000, .fs_size = 4 * 1024},
+	[1] = {.fs_off = 0x00001000, .fs_size = 4 * 1024}};
 
 struct deletable_s {
 	bool valid;
