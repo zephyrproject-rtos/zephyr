@@ -132,7 +132,10 @@ struct net_if_addr {
 	 */
 	uint8_t is_temporary : 1;
 
-	uint8_t _unused : 4;
+	/** Was this address added or not */
+	uint8_t is_added : 1;
+
+	uint8_t _unused : 3;
 };
 
 /**
@@ -1180,9 +1183,10 @@ int net_if_set_link_addr_locked(struct net_if *iface,
 extern int net_if_addr_unref_debug(struct net_if *iface,
 				   sa_family_t family,
 				   const void *addr,
+				   struct net_if_addr **ifaddr,
 				   const char *caller, int line);
-#define net_if_addr_unref(iface, family, addr) \
-	net_if_addr_unref_debug(iface, family, addr, __func__, __LINE__)
+#define net_if_addr_unref(iface, family, addr, ifaddr)			\
+	net_if_addr_unref_debug(iface, family, addr, ifaddr, __func__, __LINE__)
 
 extern struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
 						 sa_family_t family,
@@ -1194,7 +1198,8 @@ extern struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
 #else
 extern int net_if_addr_unref(struct net_if *iface,
 			     sa_family_t family,
-			     const void *addr);
+			     const void *addr,
+			     struct net_if_addr **ifaddr);
 extern struct net_if_addr *net_if_addr_ref(struct net_if *iface,
 					   sa_family_t family,
 					   const void *addr);
