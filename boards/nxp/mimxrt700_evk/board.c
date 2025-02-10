@@ -79,10 +79,6 @@ void board_early_init_hook(void)
 		.coarseTrimEn = true,
 	};
 
-#ifndef CONFIG_IMXRT7XX_CODE_CACHE
-	CACHE64_DisableCache(CACHE64_CTRL0);
-#endif
-
 	POWER_DisablePD(kPDRUNCFG_PD_LPOSC);
 
 	/* Power up OSC */
