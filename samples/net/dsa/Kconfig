@@ -1,0 +1,25 @@
+# Private config options for DSA
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DSA sample application"
+
+if NET_DSA
+
+config NET_SAMPLE_DSA_MAX_SLAVE_PORTS
+	int "DSA slave ports maximum number"
+	range 2 10
+	default 3
+	help
+	  DSA slave ports maximum number.
+
+config NET_SAMPLE_DSA_LLDP
+	bool "DSA LLDP example"
+	default y
+	help
+	  Enable DSA LLDP example.
+
+endif
+
+source "Kconfig.zephyr"
