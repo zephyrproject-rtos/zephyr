@@ -78,7 +78,7 @@ enum {
 /** Flag requests file system driver to use Disk Access API. When the flag is
  * set to the fs_mount_t.flags prior to fs_mount call, a file system
  * needs to use the Disk Access API, otherwise mount callback for the driver
- * should return -ENOSUP; when the flag is not set the file system driver
+ * should return -ENOTSUP; when the flag is not set the file system driver
  * should use Flash API by default, unless it only supports Disc Access API.
  * When file system will use Disk Access API and the flag is not set, the mount
  * callback for the file system should set the flag on success.
