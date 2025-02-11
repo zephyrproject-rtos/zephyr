@@ -23,19 +23,18 @@
 /* Loglevel of dsa_lldp function */
 LOG_MODULE_DECLARE(net_dsa_lldp_sample, CONFIG_NET_DSA_LOG_LEVEL);
 
-#define LLDP_SYSTEM_NAME_SIZE 24
-#define LLDP_ETHER_TYPE 0x88CC
+#define LLDP_SYSTEM_NAME_SIZE    24
+#define LLDP_ETHER_TYPE          0x88CC
 #define LLDP_INPUT_DATA_BUF_SIZE 512
-#define DSA_BUF_SIZ 128
-int dsa_lldp_send(struct net_if *iface, struct instance_data *pd,
-		  uint16_t lan, int src_port, int origin_port, int cmd,
-		  struct eth_addr *origin_addr)
+#define DSA_BUF_SIZ              128
+int dsa_lldp_send(struct net_if *iface, struct instance_data *pd, uint16_t lan, int src_port,
+		  int origin_port, int cmd, struct eth_addr *origin_addr)
 {
 	int ret, len;
 	char buffer[DSA_BUF_SIZ], sys_name[LLDP_SYSTEM_NAME_SIZE];
 	struct sockaddr_ll dst;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	struct net_eth_hdr *eth_hdr = (struct net_eth_hdr *) buffer;
+	struct net_eth_hdr *eth_hdr = (struct net_eth_hdr *)buffer;
 	uint8_t *p = &buffer[sizeof(struct net_eth_hdr)];
 	uint8_t *pb = p;
 
@@ -104,7 +103,7 @@ void dsa_lldp_print_info(uint8_t *lldp_p, uint8_t lanid)
 		/* In-buffer data is stored as big endian */
 		t1 = *lldp_p++;
 		t2 = *lldp_p++;
-		tl = (uint16_t) t1 << 8 | t2;
+		tl = (uint16_t)t1 << 8 | t2;
 
 		/* Get type and length */
 		type = tl >> 9;
@@ -125,16 +124,16 @@ void dsa_lldp_print_info(uint8_t *lldp_p, uint8_t lanid)
 		case LLDP_TLV_END_LLDPDU:
 			return;
 		case LLDP_TLV_CHASSIS_ID:
-			LOG_INF("\tCHASSIS ID:\t%02x:%02x:%02x:%02x:%02x:%02x",
-				p[0], p[1], p[2], p[3], p[4], p[5]);
+			LOG_INF("\tCHASSIS ID:\t%02x:%02x:%02x:%02x:%02x:%02x", p[0], p[1], p[2],
+				p[3], p[4], p[5]);
 			break;
 		case LLDP_TLV_PORT_ID:
-			LOG_INF("\tPORT ID:\t%02x:%02x:%02x:%02x:%02x:%02x",
-				p[0], p[1], p[2], p[3], p[4], p[5]);
+			LOG_INF("\tPORT ID:\t%02x:%02x:%02x:%02x:%02x:%02x", p[0], p[1], p[2], p[3],
+				p[4], p[5]);
 			break;
 		case LLDP_TLV_TTL:
 			/* TTL field has 2 bytes in BE */
-			LOG_INF("\tTTL:\t\t%ds", (uint16_t) p[0] << 8 | p[1]);
+			LOG_INF("\tTTL:\t\t%ds", (uint16_t)p[0] << 8 | p[1]);
 			break;
 		case LLDP_TLV_SYSTEM_NAME:
 			memset(t, 0, length + 1);
@@ -146,21 +145,18 @@ void dsa_lldp_print_info(uint8_t *lldp_p, uint8_t lanid)
 	} while (1);
 }
 
-int dsa_lldp_recv(struct net_if *iface, struct instance_data *pd,
-		  uint16_t *lan, int *origin_port,
+int dsa_lldp_recv(struct net_if *iface, struct instance_data *pd, uint16_t *lan, int *origin_port,
 		  struct eth_addr *origin_addr)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	struct net_eth_hdr *eth_hdr =
-		(struct net_eth_hdr *) pd->recv_buffer;
+	struct net_eth_hdr *eth_hdr = (struct net_eth_hdr *)pd->recv_buffer;
 	uint8_t *lldp_p = &pd->recv_buffer[sizeof(struct net_eth_hdr)];
 	int received;
 
 	*lan = ctx->dsa_port_idx;
 
 	/* Receive data */
-	received = recv(pd->sock, pd->recv_buffer,
-			sizeof(pd->recv_buffer), 0);
+	received = recv(pd->sock, pd->recv_buffer, sizeof(pd->recv_buffer), 0);
 	if (received < 0) {
 		LOG_ERR("RAW : recv error %d", errno);
 		return -1;
