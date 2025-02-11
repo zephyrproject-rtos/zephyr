@@ -1,4 +1,3 @@
-test_shell_harness:
 - command: "mpu mtest 1"
   expected: "The value is: 0x.*"
 - command: "mpu mtest 2"
