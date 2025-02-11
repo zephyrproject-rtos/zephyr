@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Ambiq Micro Inc.
+
+config SOC_SERIES_APOLLO5X
+	select ARM
+	select CPU_CORTEX_M55
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARMV8_1_M_MVEI
+	select ARMV8_1_M_MVEF
+	select ARMV8_1_M_PMU
+	select HAS_SWO
+	select AMBIQ_HAL
+	select HAS_PM
+	select SOC_EARLY_INIT_HOOK
+	select REQUIRES_FULL_LIBC
