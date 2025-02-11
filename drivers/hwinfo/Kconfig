@@ -273,4 +273,12 @@ config HWINFO_MAX32
 	help
 	  Enable MAX32 hwinfo driver.
 
+config HWINFO_RENESAS_RA
+	bool "Renesas RA device ID"
+	default y
+	depends on SOC_FAMILY_RENESAS_RA
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable RENESAS RA hwinfo driver
+
 endif
