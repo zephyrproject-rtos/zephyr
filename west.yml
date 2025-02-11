@@ -276,7 +276,7 @@ manifest:
       path: modules/lib/hostap
       revision: 4957416a01c86579aebb333b43f1c23da0375835
     - name: liblc3
-      revision: bb85f7dde4195bfc0fca9e9c7c2eed0f8694203c
+      revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
     - name: libmctp
       revision: b97860e78998551af99931ece149eeffc538bdb1
