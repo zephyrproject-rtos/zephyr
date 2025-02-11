@@ -78,7 +78,8 @@ struct address_trans_params {
 	struct address_trans_region_config *region_config;
 };
 
-void sys_mm_drv_ti_rat_init(void *region_config, uint64_t rat_base_addr, uint8_t translate_regions);
+void sys_mm_drv_ti_rat_init(struct address_trans_region_config *region_config,
+			    uint64_t rat_base_addr, uint8_t translate_regions);
 
 #ifdef __cplusplus
 }
