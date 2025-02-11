@@ -85,4 +85,9 @@ if(CONFIG_CMSIS_NN)
     zephyr_library_sources(${SRC})
   endif()
 
+  if(CONFIG_CMSIS_NN_TRANSPOSE)
+    file(GLOB SRC "${CMSIS_NN_DIR}/Source/TransposeFunctions/*_s8.c")
+    zephyr_library_sources(${SRC})
+  endif()
+
 endif()
