@@ -133,6 +133,15 @@ New APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * :c:func:`bt_bap_broadcast_source_register_cb`
+    * :c:func:`bt_bap_broadcast_source_unregister_cb`
+    * :c:func:`bt_cap_commander_distribute_broadcast_code`
+    * ``bt_ccp`` API (in progress)
+    * :c:func:`bt_pacs_register`
+    * :c:func:`bt_pacs_unregister`
+
   * Host
 
     * :c:func:`bt_conn_is_type`
