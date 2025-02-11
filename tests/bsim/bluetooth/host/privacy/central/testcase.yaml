@@ -1,11 +1,34 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpunet
+  harness: bsim
+  no_build: true
+  harness_config:
+    bsim_exe_name:
+      - tests_bsim_bluetooth_host_privacy_central_prj_conf
+    bsim_verbosity: 2
+    bsim_sim_length: 60e6
+    bsim_options:
+      - -RealEncryption=1
+
 tests:
-  bluetooth.host.privacy.central:
+  bluetooth.host.privacy.build_central:
     build_only: true
-    tags:
-      - bluetooth
-    platform_allow:
-      - nrf52_bsim/native
-      - nrf5340bsim/nrf5340/cpunet
-    harness: bsim
+    no_build: false
+  bluetooth.host.privacy.central:
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_privacy_central_prj_conf
+      bsim_test_ids:
+        - central
+        - peripheral
+  bluetooth.host.privacy.central_short_conn_timeout:
+    harness_config:
+      bsim_test_ids:
+        - central_connect_fails_with_short_rpa_timeout
+  bluetooth.host.privacy.central_short_rpa_timeout:
+    harness_config:
+      bsim_test_ids:
+        - central_connect_short_rpa_timeout
+        - periph_delayed_start_of_conn_adv
