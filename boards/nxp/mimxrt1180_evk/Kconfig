@@ -1,5 +1,5 @@
-# Copyright 2024-2025 NXP
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_FRDM_MCXN947
+config BOARD_MIMXRT1180_EVK
 	select BOARD_EARLY_INIT_HOOK
