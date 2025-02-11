@@ -67,7 +67,9 @@ struct flash_stm32_sector_t {
 	volatile uint32_t *sr;
 };
 
-static __unused int commit_optb(const struct device *dev)
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION) || defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+
+static int commit_optb(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int64_t timeout_time = k_uptime_get() + STM32H7_FLASH_OPT_TIMEOUT_MS;
@@ -87,8 +89,8 @@ static __unused int commit_optb(const struct device *dev)
 }
 
 /* Returns negative value on error, 0 if a change was not need, 1 if a change has been made. */
-static __unused int write_opt(const struct device *dev, uint32_t mask, uint32_t value,
-			      uintptr_t cur, bool commit)
+static int write_opt(const struct device *dev, uint32_t mask, uint32_t value, uintptr_t cur,
+		     bool commit)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	/* PRG register always follows CUR register. */
@@ -124,7 +126,10 @@ static __unused int write_opt(const struct device *dev, uint32_t mask, uint32_t 
 	return 1;
 }
 
-static __unused int write_optsr(const struct device *dev, uint32_t mask, uint32_t value)
+#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT || CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+static int write_optsr(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	uintptr_t cur = (uintptr_t)regs + offsetof(FLASH_TypeDef, OPTSR_CUR);
@@ -132,26 +137,6 @@ static __unused int write_optsr(const struct device *dev, uint32_t mask, uint32_
 	return write_opt(dev, mask, value, cur, true);
 }
 
-static __unused int write_optwp(const struct device *dev, uint32_t mask, uint32_t value,
-				 uint32_t bank)
-{
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	uintptr_t cur = (uintptr_t)regs + offsetof(FLASH_TypeDef, WPSN_CUR1);
-
-	if (bank >= NUMBER_OF_BANKS) {
-		return -EINVAL;
-	}
-
-#ifdef DUAL_BANK
-	if (bank == 1) {
-		cur = (uintptr_t)regs + offsetof(FLASH_TypeDef, WPSN_CUR2);
-	}
-#endif /* DUAL_BANK */
-
-	return write_opt(dev, mask, value, cur, false);
-}
-
-#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
 uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -169,6 +154,24 @@ void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 
 #define WP_MSK FLASH_WPSN_WRPSN_Msk
 #define WP_POS FLASH_WPSN_WRPSN_Pos
+
+static int write_optwp(const struct device *dev, uint32_t mask, uint32_t value, uint32_t bank)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	uintptr_t cur = (uintptr_t)regs + offsetof(FLASH_TypeDef, WPSN_CUR1);
+
+	if (bank >= NUMBER_OF_BANKS) {
+		return -EINVAL;
+	}
+
+#ifdef DUAL_BANK
+	if (bank == 1) {
+		cur = (uintptr_t)regs + offsetof(FLASH_TypeDef, WPSN_CUR2);
+	}
+#endif /* DUAL_BANK */
+
+	return write_opt(dev, mask, value, cur, false);
+}
 
 int flash_stm32_update_wp_sectors(const struct device *dev, uint64_t changed_sectors,
 				  uint64_t protected_sectors)
