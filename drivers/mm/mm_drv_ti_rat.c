@@ -24,7 +24,21 @@
 #include <zephyr/drivers/mm/system_mm.h>
 #include <zephyr/sys/__assert.h>
 
-static struct address_trans_params translate_config;
+#define ADDR_TRANSLATE_MAX_REGIONS (16u)
+#define RAT_CTRL(base_addr, i)     (base_addr + 0x20 + 0x10 * (i))
+#define RAT_BASE(base_addr, i)     (base_addr + 0x24 + 0x10 * (i))
+#define RAT_TRANS_L(base_addr, i)  (base_addr + 0x28 + 0x10 * (i))
+#define RAT_TRANS_H(base_addr, i)  (base_addr + 0x2C + 0x10 * (i))
+#define RAT_CTRL_W(enable, size)   (((enable & 0x1) << 31u) | (size & 0x3F))
+
+/**
+ * @brief Parameters for address_trans_init
+ */
+static struct address_trans_params {
+	uint32_t num_regions;
+	uint32_t rat_base_addr;
+	struct address_trans_region_config *region_config;
+} translate_config;
 
 /**
  * @brief Set registers for the address regions being used
