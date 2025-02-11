@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-wuc.h>
 #include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 #include <zephyr/dt-bindings/pwm/it8xxx2_pwm.h>
+#include <zephyr/dt-bindings/sensor/it8xxx2_tach.h>
 
 / {
 	#address-cells = <1>;
@@ -1239,6 +1240,24 @@
 			status = "disabled";
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
+		};
+
+		tach0: tach@f046c0 {
+			compatible = "ite,it51xxx-tach";
+			reg = <0x00f046c0 0xf>;
+			status = "disabled";
+		};
+
+		tach1: tach@f046d0 {
+			compatible = "ite,it51xxx-tach";
+			reg = <0x00f046d0 0xf>;
+			status = "disabled";
+		};
+
+		tach2: tach@f046e0 {
+			compatible = "ite,it51xxx-tach";
+			reg = <0x00f046e0 0xf>;
+			status = "disabled";
 		};
 	};
 };
