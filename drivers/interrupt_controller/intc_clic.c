@@ -1,55 +1,47 @@
 /*
  * Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+ * Copyright (c) 2025 Andes Technology Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
- * @brief Driver for Nuclie's Extended Core Interrupt Controller
+ * @brief Driver for Core Local Interrupt Controller
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/arch/riscv/csr.h>
 #include <zephyr/device.h>
-
-#include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include "intc_clic.h"
 
+#if DT_HAS_COMPAT_STATUS_OKAY(riscv_clic)
+#define DT_DRV_COMPAT riscv_clic
+#elif DT_HAS_COMPAT_STATUS_OKAY(nuclei_eclic)
 #define DT_DRV_COMPAT nuclei_eclic
+#else
+#error "Unknown CLIC controller compatible for this configuration"
+#endif
 
-/** CLIC INTATTR: TRIG Mask */
-#define CLIC_INTATTR_TRIG_Msk  0x3U
+struct clic_data {
+	uint8_t nlbits;
+	uint8_t intctlbits;
+};
 
-#define ECLIC_CFG       (*((volatile union CLICCFG  *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 0))))
-#define ECLIC_INFO      (*((volatile union CLICINFO *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 1))))
-#define ECLIC_MTH       (*((volatile union CLICMTH  *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 2))))
-#define ECLIC_CTRL      ((volatile  struct CLICCTRL *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 3)))
-#define ECLIC_CTRL_SIZE (DT_REG_SIZE_BY_IDX(DT_NODELABEL(eclic), 3))
-
-static uint8_t nlbits;
-static uint8_t intctlbits;
-static uint8_t max_prio;
-static uint8_t max_level;
-static uint8_t intctrl_mask;
-
-static inline uint8_t leftalign8(uint8_t val, uint8_t shift)
-{
-	return (val << (8U - shift));
-}
-
-static inline uint8_t mask8(uint8_t len)
-{
-	return ((1 << len) - 1) & 0xFFFFU;
-}
+struct clic_config {
+	mem_addr_t base;
+};
 
 /**
  * @brief Enable interrupt
  */
 void riscv_clic_irq_enable(uint32_t irq)
 {
-	ECLIC_CTRL[irq].INTIE.b.IE = 1;
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct clic_config *config = dev->config;
+	union CLICINTIE clicintie = {.b = {.IE = 0x1}};
+
+	sys_write8(clicintie.w, config->base + CLIC_INTIE(irq));
 }
 
 /**
@@ -57,7 +49,11 @@ void riscv_clic_irq_enable(uint32_t irq)
  */
 void riscv_clic_irq_disable(uint32_t irq)
 {
-	ECLIC_CTRL[irq].INTIE.b.IE = 0;
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct clic_config *config = dev->config;
+	union CLICINTIE clicintie = {.b = {.IE = 0x0}};
+
+	sys_write8(clicintie.w, config->base + CLIC_INTIE(irq));
 }
 
 /**
@@ -65,7 +61,11 @@ void riscv_clic_irq_disable(uint32_t irq)
  */
 int riscv_clic_irq_is_enabled(uint32_t irq)
 {
-	return ECLIC_CTRL[irq].INTIE.b.IE;
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct clic_config *config = dev->config;
+	union CLICINTIE clicintie = {.w = sys_read8(config->base + CLIC_INTIE(irq))};
+
+	return clicintie.b.IE;
 }
 
 /**
@@ -73,18 +73,35 @@ int riscv_clic_irq_is_enabled(uint32_t irq)
  */
 void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 {
-	const uint8_t prio = leftalign8(MIN(pri, max_prio), intctlbits);
-	const uint8_t level =  leftalign8(max_level, nlbits);
-	const uint8_t intctrl = (prio | level) | (~intctrl_mask);
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct clic_config *config = dev->config;
+	const struct clic_data *data = dev->data;
 
-	ECLIC_CTRL[irq].INTCTRL = intctrl;
+	/*
+	 * Set the interrupt level and the interrupt priority.
+	 * Examples of mcliccfg settings:
+	 * CLICINTCTLBITS mnlbits clicintctl[i] interrupt levels
+	 *       0         2      ........      255
+	 *       1         2      l.......      127,255
+	 *       2         2      ll......      63,127,191,255
+	 *       3         3      lll.....      31,63,95,127,159,191,223,255
+	 *       4         1      lppp....      127,255
+	 * "." bits are non-existent bits for level encoding, assumed to be 1
+	 * "l" bits are available variable bits in level specification
+	 * "p" bits are available variable bits in priority specification
+	 */
+	const uint8_t max_level = BIT_MASK(data->nlbits);
+	const uint8_t max_prio = BIT_MASK(data->intctlbits - data->nlbits);
+	uint8_t intctrl = (MIN(pri, max_prio) << (8U - data->intctlbits)) |
+			  (MIN(pri, max_level) << (8U - data->nlbits)) |
+			  BIT_MASK(8U - data->intctlbits);
 
-	union CLICINTATTR intattr = {.w = 0};
+	sys_write8(intctrl, config->base + CLIC_INTCTRL(irq));
 
-	/* Set non-vectoring as default. */
-	intattr.b.shv = 0;
-	intattr.b.trg = (uint8_t)(flags & CLIC_INTATTR_TRIG_Msk);
-	ECLIC_CTRL[irq].INTATTR = intattr;
+	/* Set the IRQ operates in machine mode, non-vectoring and the trigger type. */
+	union CLICINTATTR clicattr = {.b = {.mode = 0x3, .shv = 0x0, .trg = flags & BIT_MASK(3)}};
+
+	sys_write8(clicattr.w, config->base + CLIC_INTATTR(irq));
 }
 
 /**
@@ -92,11 +109,13 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
  */
 void riscv_clic_irq_vector_set(uint32_t irq)
 {
-	/* Set Selective Hardware Vectoring. */
-	union CLICINTATTR intattr = ECLIC_CTRL[irq].INTATTR;
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct clic_config *config = dev->config;
+	union CLICINTATTR clicattr = {.w = sys_read8(config->base + CLIC_INTATTR(irq))};
 
-	intattr.b.shv = 1;
-	ECLIC_CTRL[irq].INTATTR = intattr;
+	/* Set Selective Hardware Vectoring. */
+	clicattr.b.shv = 1;
+	sys_write8(clicattr.w, config->base + CLIC_INTATTR(irq));
 }
 
 /**
@@ -104,26 +123,64 @@ void riscv_clic_irq_vector_set(uint32_t irq)
  */
 void riscv_clic_irq_set_pending(uint32_t irq)
 {
-	ECLIC_CTRL[irq].INTIP.b.IP = 1;
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct clic_config *config = dev->config;
+	union CLICINTIP clicintip = {.b = {.IP = 0x1}};
+
+	sys_write8(clicintip.w, config->base + CLIC_INTIP(irq));
 }
 
-static int nuclei_eclic_init(const struct device *dev)
+static int clic_init(const struct device *dev)
 {
-	ECLIC_MTH.w = 0;
-	ECLIC_CFG.w = 0;
-	ECLIC_CFG.b.nlbits = 0;
-	for (int i = 0; i < ECLIC_CTRL_SIZE; i++) {
-		ECLIC_CTRL[i] = (struct CLICCTRL) { 0 };
+	const struct clic_config *config = dev->config;
+	struct clic_data *data = dev->data;
+
+	if (IS_ENABLED(CONFIG_NUCLEI_ECLIC)) {
+		/* Configure the interrupt level threshold. */
+		union CLICMTH clicmth = {.b = {.mth = 0x0}};
+
+		sys_write32(clicmth.qw, config->base + CLIC_MTH);
+
+		/* Detect the number of bits for the clicintctl register. */
+		union CLICINFO clicinfo = {.qw = sys_read32(config->base + CLIC_INFO)};
+
+		data->intctlbits = clicinfo.b.intctlbits;
+
+		if (data->nlbits > data->intctlbits) {
+			data->nlbits = data->intctlbits;
+		}
+
+		/* Configure the number of bits assigned to interrupt levels. */
+		union CLICCFG cliccfg = {.qw = sys_read32(config->base + CLIC_CFG)};
+
+		cliccfg.w.nlbits = data->nlbits;
+		sys_write32(cliccfg.qw, config->base + CLIC_CFG);
+	} else {
+		/* Configure the interrupt level threshold by CSR mintthresh. */
+		csr_write(CSR_MINTTHRESH, 0x0);
 	}
 
-	nlbits = ECLIC_CFG.b.nlbits;
-	intctlbits = ECLIC_INFO.b.intctlbits;
-	max_prio = mask8(intctlbits - nlbits);
-	max_level = mask8(nlbits);
-	intctrl_mask = leftalign8(mask8(intctlbits), intctlbits);
+	/* Reset all interrupt control register */
+	for (int i = 0; i < CONFIG_NUM_IRQS; i++) {
+		sys_write32(0, config->base + CLIC_CTRL(i));
+	}
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, nuclei_eclic_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+#define CLIC_INTC_DATA_INIT(n)                                                                     \
+	static struct clic_data clic_data_##n = {                                                  \
+		.nlbits = 0,                                                                       \
+		.intctlbits = 8,                                                                   \
+	};
+#define CLIC_INTC_CONFIG_INIT(n)                                                                   \
+	const static struct clic_config clic_config_##n = {                                        \
+		.base = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
+	};
+#define CLIC_INTC_DEVICE_INIT(n)                                                                   \
+	CLIC_INTC_DATA_INIT(n)                                                                     \
+	CLIC_INTC_CONFIG_INIT(n)                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &clic_init, NULL, &clic_data_##n, &clic_config_##n, PRE_KERNEL_1, \
+			      CONFIG_INTC_INIT_PRIORITY, NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(CLIC_INTC_DEVICE_INIT)
