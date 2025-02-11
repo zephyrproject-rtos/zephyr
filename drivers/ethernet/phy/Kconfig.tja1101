@@ -1,0 +1,12 @@
+# NXP PHY TJA1101 driver configuration options
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PHY_TJA1101
+	bool "TJA1101 PHY driver"
+	default y
+	depends on DT_HAS_NXP_TJA1101_ENABLED
+	depends on MDIO
+	help
+	  Enable TJA1101 PHY driver.
