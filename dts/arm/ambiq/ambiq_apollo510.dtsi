@@ -1,0 +1,564 @@
+/* Copyright (c) 2025 Ambiq Micro Inc. */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <arm/armv8.1-m.dtsi>
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	clocks {
+		uartclk: apb-pclk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
+			#clock-cells = <0>;
+		};
+
+		xo32m_xtal: xo32m_xtal {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			#clock-cells = <0>;
+		};
+
+		xo32m_ext: xo32m_ext {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			#clock-cells = <0>;
+		};
+
+		xo32k_xtal: xo32k_xtal {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+
+		xo32k_ext: xo32k_ext {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+
+		extrefclk: extrefclk {
+			compatible = "fixed-clock";
+			clock-frequency = <0>;
+			#clock-cells = <0>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m55";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <DT_FREQ_M(48)>;
+			};
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m.1-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <2000>;
+				exit-latency-us = <5>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <5000>;
+				exit-latency-us = <125>;
+			};
+		};
+	};
+
+	/* MRAM region */
+	flash0: flash@410000 {
+		compatible = "soc-nv-flash";
+		reg = <0x410000 0x3f0000>;
+	};
+
+	/* TCM */
+	itcm: itcm@0 {
+		compatible = "zephyr,memory-region";
+		reg = <0x00000000 0x40000>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	dtcm: dtcm@20000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x20000000 0x7c000>;
+		zephyr,memory-region = "DTCM";
+	};
+
+	/* SRAM */
+	sram0: memory@20080000 {
+		compatible = "mmio-sram";
+		reg = <0x20080000 0x200000>;
+	};
+
+	sram_no_cache: memory@20280000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20280000 0x100000>;
+		zephyr,memory-region = "SRAM_NO_CACHE";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+    };
+
+   	psram: memory@60000000 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	reg = <0x60000000 0x100000>;
+	zephyr,memory-region = "PSRAM";
+	zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM))>;
+	};
+
+	psram_no_cache: memory@60100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x60100000 0x100000>;
+		zephyr,memory-region = "PSRAM_NO_CACHE";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+		};
+
+	soc {
+		compatible = "ambiq,apollo510", "ambiq,apollo5x", "simple-bus";
+
+		pwrcfg: pwrcfg@40021000 {
+			compatible = "ambiq,pwrctrl";
+			reg = <0x40021000 0x250>;
+			#pwrcfg-cells = <2>;
+		};
+
+		stimer0: stimer@40008800 {
+			compatible = "ambiq,stimer";
+			reg = <0x40008800 0x110>;
+			interrupts = <32 0>;
+			status = "okay";
+		};
+
+		counter0: counter@40008200 {
+			compatible = "ambiq,counter";
+			reg = <0x40008200 0x20>;
+			interrupts = <67 0>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@40004800 {
+			compatible = "ambiq,rtc";
+			reg = <0x40004800 0x210>;
+			interrupts = <2 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		wdt0: watchdog@40024000 {
+			compatible = "ambiq,watchdog";
+			reg = <0x40024000 0x210>;
+			interrupts = <1 0>;
+			clock-frequency = <16>;
+			status = "disabled";
+		};
+
+		spid0: spi@40034100 {
+			compatible = "ambiq,spid";
+			reg = <0x40034100 0x120>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <4 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x1>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spi0: spi@40050000 {
+			compatible = "ambiq,spi";
+			reg = <0x40050000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <6 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spi1: spi@40051000 {
+			compatible = "ambiq,spi";
+			reg = <0x40051000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <7 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spi2: spi@40052000 {
+			compatible = "ambiq,spi";
+			reg = <0x40052000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <8 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spi3: spi@40053000 {
+			compatible = "ambiq,spi";
+			reg = <0x40053000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <9 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spi4: spi@40054000 {
+			compatible = "ambiq,spi";
+			reg = <0x40054000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <10 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spi5: spi@40055000 {
+			compatible = "ambiq,spi";
+			reg = <0x40055000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <11 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spi6: spi@40056000 {
+			compatible = "ambiq,spi";
+			reg = <0x40056000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <12 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spi7: spi@40057000 {
+			compatible = "ambiq,spi";
+			reg = <0x40057000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <13 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c0: i2c@40050000 {
+			compatible = "ambiq,i2c";
+			reg = <0x40050000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <6 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c1: i2c@40051000 {
+			compatible = "ambiq,i2c";
+			reg = <0x40051000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <7 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c2: i2c@40052000 {
+			compatible = "ambiq,i2c";
+			reg = <0x40052000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <8 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c3: i2c@40053000 {
+			compatible = "ambiq,i2c";
+			reg = <0x40053000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <9 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c4: i2c@40054000 {
+			compatible = "ambiq,i2c";
+			reg = <0x40054000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <10 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c5: i2c@40055000 {
+			compatible = "ambiq,i2c";
+			reg = <0x40055000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <11 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c6: i2c@40056000 {
+			compatible = "ambiq,i2c";
+			reg = <0x40056000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <12 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c7: i2c@40057000 {
+			compatible = "ambiq,i2c";
+			reg = <0x40057000 0x38c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <13 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart0: uart@40039000 {
+			compatible = "ambiq,uart", "arm,pl011";
+			reg = <0x40039000 0x54>;
+			interrupts = <15 0>;
+			interrupt-names = "UART0";
+			status = "disabled";
+			clocks = <&uartclk>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x200>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart1: uart@4003a000 {
+			compatible = "ambiq,uart", "arm,pl011";
+			reg = <0x4003a000 0x54>;
+			interrupts = <16 0>;
+			interrupt-names = "UART1";
+			status = "disabled";
+			clocks = <&uartclk>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x400>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart2: uart@4003b000 {
+			compatible = "ambiq,uart", "arm,pl011";
+			reg = <0x4003b000 0x54>;
+			interrupts = <17 0>;
+			interrupt-names = "UART2";
+			status = "disabled";
+			clocks = <&uartclk>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x800>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart3: uart@4003c000 {
+			compatible = "ambiq,uart", "arm,pl011";
+			reg = <0x4003c000 0x54>;
+			interrupts = <18 0>;
+			interrupt-names = "UART3";
+			status = "disabled";
+			clocks = <&uartclk>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x1000>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		adc0: adc@40038000 {
+			compatible = "ambiq,adc";
+			reg = <0x40038000 0x2a0>;
+			interrupts = <19 0>;
+			interrupt-names = "ADC";
+			channel-count = <10>;
+			internal-vref-mv = <1190>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x2000>;
+		};
+
+		mspi0: spi@40060000 {
+			compatible = "ambiq,mspi";
+			reg = <0x40060000 0x2c8>;
+			interrupts = <20 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x4000>;
+		};
+
+		mspi1: spi@40061000 {
+			compatible = "ambiq,mspi";
+			reg = <0x40061000 0x2c8>;
+			interrupts = <21 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x8000>;
+		};
+
+		mspi2: spi@40062000 {
+			compatible = "ambiq,mspi";
+			reg = <0x40062000 0x2c8>;
+			interrupts = <22 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x10000>;
+		};
+
+		mspi3: spi@40063000 {
+			compatible = "ambiq,mspi";
+			reg = <0x40063000 0x2c8>;
+			interrupts = <54 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x20000>;
+		};
+
+		usb: usb@400b0000 {
+			compatible = "ambiq,usb";
+			reg = <0x400b0000 0x2428>;
+			interrupts = <27 0>;
+			num-bidir-endpoints = <6>;
+			maximum-speed = "high-speed";
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x1000000>;
+		};
+
+		pinctrl: pin-controller@40010000 {
+			compatible = "ambiq,apollo5-pinctrl";
+			reg = <0x40010000 0x610>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio: gpio@40010000 {
+				compatible = "ambiq,gpio";
+				gpio-map-mask = <0xffffffe0 0xffffffc0>;
+				gpio-map-pass-thru = <0x1f 0x3f>;
+				gpio-map = <
+					0x00 0x0 &gpio0_31 0x0 0x0
+					0x20 0x0 &gpio32_63 0x0 0x0
+					0x40 0x0 &gpio64_95 0x0 0x0
+					0x60 0x0 &gpio96_127 0x0 0x0
+					0x80 0x0 &gpio128_159 0x0 0x0
+					0xA0 0x0 &gpio160_191 0x0 0x0
+					0xC0 0x0 &gpio192_223 0x0 0x0
+				>;
+				reg = <0x40010000>;
+				#gpio-cells = <2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				ranges;
+
+				gpio0_31: gpio0_31@0 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0>;
+					interrupts = <56 0>;
+					status = "disabled";
+				};
+
+				gpio32_63: gpio32_63@80 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0x80>;
+					interrupts = <57 0>;
+					status = "disabled";
+				};
+
+				gpio64_95: gpio64_95@100 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0x100>;
+					interrupts = <58 0>;
+					status = "disabled";
+				};
+
+				gpio96_127: gpio96_127@180 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0x180>;
+					interrupts = <59 0>;
+					status = "disabled";
+				};
+
+				gpio128_159: gpio128_159@200 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0x200>;
+					interrupts = <60 0>;
+					status = "disabled";
+				};
+
+				gpio160_191: gpio160_191@280 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0x280>;
+					interrupts = <61 0>;
+					status = "disabled";
+				};
+
+				gpio192_223: gpio192_223@300 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0x300>;
+					interrupts = <62 0>;
+					status = "disabled";
+				};
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

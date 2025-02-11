@@ -1,47 +1,45 @@
 /*
- * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2025 Ambiq Micro Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_ARM_AMBIQ_APOLLO4_PINCTRL_SOC_H_
-#define ZEPHYR_SOC_ARM_AMBIQ_APOLLO4_PINCTRL_SOC_H_
+#ifndef ZEPHYR_SOC_ARM_AMBIQ_APOLLO5_PINCTRL_SOC_H_
+#define ZEPHYR_SOC_ARM_AMBIQ_APOLLO5_PINCTRL_SOC_H_
 
-#include <zephyr/dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/ambiq-apollo5-pinctrl.h>
 
 /**
  * @brief Type to hold a pin's pinctrl configuration.
  */
-struct apollo4_pinctrl_soc_pin {
-	/** Pin number 0..128 */
-	uint32_t pin_num : 7;
+struct apollo5_pinctrl_soc_pin {
+	/** Pin number 0..223 */
+	uint32_t pin_num: 8;
 	/** Alternative function (UART, SPI, etc.) */
-	uint32_t alt_func : 4;
+	uint32_t alt_func: 4;
 	/** Enable the pin as an input */
-	uint32_t input_enable : 1;
+	uint32_t input_enable: 1;
 	/** Drive strength, relative to full-driver strength */
-	uint32_t drive_strength : 2;
-	/** Slew rate, may be either false (slow) or true (fast) */
-	uint32_t slew_rate : 1;
+	uint32_t drive_strength: 3;
 	/** Drive actively high or low */
-	uint32_t push_pull : 1;
+	uint32_t push_pull: 1;
 	/** Drive with open drain */
-	uint32_t open_drain : 1;
+	uint32_t open_drain: 1;
 	/** High impedance mode */
-	uint32_t tristate : 1;
+	uint32_t tristate: 1;
 	/** Enable the internal pull up resistor */
-	uint32_t bias_pull_up : 1;
+	uint32_t bias_pull_up: 1;
 	/** Enable the internal pull down resistor */
-	uint32_t bias_pull_down : 1;
+	uint32_t bias_pull_down: 1;
 	/** pullup resistor value */
-	uint32_t ambiq_pull_up_ohms : 3;
+	uint32_t ambiq_pull_up_ohms: 3;
 	/** nCE module select */
 	uint32_t nce: 6;
 	/** nCE module polarity */
 	uint32_t nce_pol: 1;
 };
 
-typedef struct apollo4_pinctrl_soc_pin pinctrl_soc_pin_t;
+typedef struct apollo5_pinctrl_soc_pin pinctrl_soc_pin_t;
 
 /**
  * @brief Utility macro to initialize each pin.
@@ -50,13 +48,12 @@ typedef struct apollo4_pinctrl_soc_pin pinctrl_soc_pin_t;
  * @param prop Property name.
  * @param idx Property entry index.
  */
-#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)                                               \
-	{                                                                                          \
-		APOLLO4_GET_PIN_NUM(DT_PROP_BY_IDX(node_id, prop, idx)),                           \
-		APOLLO4_GET_PIN_ALT_FUNC(DT_PROP_BY_IDX(node_id, prop, idx)),                      \
+#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)                                       \
+	{                                                                                      \
+		APOLLO5_GET_PIN_NUM(DT_PROP_BY_IDX(node_id, prop, idx)),                           \
+		APOLLO5_GET_PIN_ALT_FUNC(DT_PROP_BY_IDX(node_id, prop, idx)),                      \
 		DT_PROP(node_id, input_enable),                                                    \
 		DT_ENUM_IDX(node_id, drive_strength),                                              \
-		DT_ENUM_IDX(node_id, slew_rate),                                                   \
 		DT_PROP(node_id, drive_push_pull),                                                 \
 		DT_PROP(node_id, drive_open_drain),                                                \
 		DT_PROP(node_id, bias_high_impedance),                                             \
@@ -74,13 +71,14 @@ typedef struct apollo4_pinctrl_soc_pin pinctrl_soc_pin_t;
  * @param prop Property name describing state pins.
  */
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)				\
-	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop),			\
-				DT_FOREACH_PROP_ELEM, pinmux,			\
-				Z_PINCTRL_STATE_PIN_INIT)}
+        {DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop),          \
+                    DT_FOREACH_PROP_ELEM, pinmux,           \
+                    Z_PINCTRL_STATE_PIN_INIT)}
+    
+#define APOLLO5_GET_PIN_NUM(pinctrl) \
+        (((pinctrl) >> APOLLO5_PIN_NUM_POS) & APOLLO5_PIN_NUM_MASK)
+#define APOLLO5_GET_PIN_ALT_FUNC(pinctrl) \
+        (((pinctrl) >> APOLLO5_ALT_FUNC_POS) & APOLLO5_ALT_FUNC_MASK)
 
-#define APOLLO4_GET_PIN_NUM(pinctrl) \
-	(((pinctrl) >> APOLLO4_PIN_NUM_POS) & APOLLO4_PIN_NUM_MASK)
-#define APOLLO4_GET_PIN_ALT_FUNC(pinctrl) \
-	(((pinctrl) >> APOLLO4_ALT_FUNC_POS) & APOLLO4_ALT_FUNC_MASK)
 
-#endif /* ZEPHYR_SOC_ARM_AMBIQ_APOLLO4_PINCTRL_SOC_H_ */
+#endif /* ZEPHYR_SOC_ARM_AMBIQ_APOLLO5_PINCTRL_SOC_H_ */
