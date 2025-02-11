@@ -483,12 +483,8 @@
 #define I3C_CMDR_THR 1
 /* command tx fifo threshold - unused */
 #define I3C_CMDD_THR 1
-/* in-band-interrupt data fifo threshold - unused */
-#define I3C_IBID_THR 1
 /* in-band-interrupt response queue threshold */
 #define I3C_IBIR_THR 1
-/* tx data threshold - unused */
-#define I3C_TX_THR   1
 
 #define LOG_MODULE_NAME I3C_CADENCE
 LOG_MODULE_REGISTER(I3C_CADENCE, CONFIG_I3C_CADENCE_LOG_LEVEL);
@@ -531,8 +527,10 @@ struct cdns_i3c_i2c_dev_data {
 struct cdns_i3c_cmd {
 	uint32_t cmd0;
 	uint32_t cmd1;
-	uint32_t ddr_header;
-	uint32_t ddr_crc;
+	uint32_t ddr_header_word;
+	uint32_t ddr_crc_word;
+	uint8_t running_ddr_rx_crc;
+	/* If this is a DDR message, this will be in Words, else in Bytes */
 	uint32_t len;
 	uint32_t *num_xfer;
 	void *buf;
@@ -545,8 +543,14 @@ struct cdns_i3c_cmd {
 struct cdns_i3c_xfer {
 	struct k_sem complete;
 	int ret;
-	int num_cmds;
+	uint8_t num_cmds;
 	struct cdns_i3c_cmd cmds[I3C_MAX_MSGS];
+	/* current indexes within the messages */
+	uint8_t rx_cmd_idx;
+	uint8_t tx_cmd_idx;
+	/* If this is a DDR message, these will be in Words, else in Bytes */
+	uint32_t rx_buf_idx;
+	uint32_t tx_buf_idx;
 };
 
 #ifdef CONFIG_I3C_USE_IBI
@@ -568,6 +572,10 @@ struct cdns_i3c_config {
 	void (*irq_config_func)(const struct device *dev);
 	/** IBID Threshold value */
 	uint8_t ibid_thr;
+	/** TX Threshold value */
+	uint16_t tx_thr;
+	/** RX Threshold value */
+	uint16_t rx_thr;
 };
 
 /* Driver instance data */
@@ -749,8 +757,9 @@ static inline void cdns_i3c_interrupts_clear(const struct cdns_i3c_config *confi
 }
 
 /* FIFO mgmt */
-static void cdns_i3c_write_tx_fifo(const struct cdns_i3c_config *config, const void *buf,
-				   uint32_t len)
+/* Returns the total number of bytes that were written to the FIFO */
+static int cdns_i3c_write_tx_fifo(const struct cdns_i3c_config *config, const void *buf,
+				  uint32_t len)
 {
 	const uint32_t *ptr = buf;
 	uint32_t remain, val;
@@ -758,31 +767,20 @@ static void cdns_i3c_write_tx_fifo(const struct cdns_i3c_config *config, const v
 	for (remain = len; remain >= 4; remain -= 4) {
 		val = *ptr++;
 		sys_write32(val, config->base + TX_FIFO);
+		if (cdns_i3c_tx_fifo_full(config)) {
+			return len - remain;
+		}
 	}
 
+	/* last write to the fifo */
 	if (remain > 0) {
 		val = 0;
 		memcpy(&val, ptr, remain);
 		sys_write32(val, config->base + TX_FIFO);
 	}
-}
 
-static void cdns_i3c_write_ddr_tx_fifo(const struct cdns_i3c_config *config, const void *buf,
-				       uint32_t len)
-{
-	const uint32_t *ptr = buf;
-	uint32_t remain, val;
-
-	for (remain = len; remain >= 4; remain -= 4) {
-		val = *ptr++;
-		sys_write32(val, config->base + SLV_DDR_TX_FIFO);
-	}
-
-	if (remain > 0) {
-		val = 0;
-		memcpy(&val, ptr, remain);
-		sys_write32(val, config->base + SLV_DDR_TX_FIFO);
-	}
+	/* whole buffer has been written */
+	return len;
 }
 
 #ifdef CONFIG_I3C_USE_IBI
@@ -847,7 +845,7 @@ static int cdns_i3c_read_rx_fifo(const struct cdns_i3c_config *config, void *buf
 
 	for (remain = len; remain >= 4; remain -= 4) {
 		if (cdns_i3c_rx_fifo_empty(config)) {
-			return -EIO;
+			return len - remain;
 		}
 		val = sys_le32_to_cpu(sys_read32(config->base + RX_FIFO));
 		*ptr++ = val;
@@ -855,52 +853,49 @@ static int cdns_i3c_read_rx_fifo(const struct cdns_i3c_config *config, void *buf
 
 	if (remain > 0) {
 		if (cdns_i3c_rx_fifo_empty(config)) {
-			return -EIO;
+			return len - remain;
 		}
 		val = sys_le32_to_cpu(sys_read32(config->base + RX_FIFO));
 		memcpy(ptr, &val, remain);
 	}
 
-	return 0;
+	return len - remain;
 }
 
+/* Return the number of words read, len is in number of DDR words (not bytes!!) */
 static int cdns_i3c_read_rx_fifo_ddr_xfer(const struct cdns_i3c_config *config, void *buf,
-					  uint32_t len, uint32_t ddr_header)
+					  uint32_t len, uint8_t *crc5)
 {
 	uint16_t *ptr = buf;
 	uint32_t val;
 	uint32_t preamble;
-	uint8_t crc5 = 0x1F;
+	uint32_t remain;
 
-	/*
-	 * TODO: This function does not support threshold interrupts, it is expected that the
-	 * whole packet to be within the FIFO and not split across multiple calls to this function.
-	 */
-	crc5 = i3c_cdns_crc5(crc5, (uint16_t)DDR_DATA(ddr_header));
-
-	for (int i = 0; i < len; i++) {
+	for (remain = len; remain > 0; remain--) {
 		if (cdns_i3c_rx_fifo_empty(config)) {
-			return -EIO;
+			break;
 		}
+		/* Read the 20b DDR Word */
 		val = sys_read32(config->base + RX_FIFO);
 		preamble = (val & DDR_PREAMBLE_MASK);
 
 		if (preamble == DDR_PREAMBLE_DATA_ABORT ||
 		    preamble == DDR_PREAMBLE_DATA_ABORT_ALT) {
 			*ptr++ = sys_cpu_to_be16((uint16_t)DDR_DATA(val));
-			crc5 = i3c_cdns_crc5(crc5, (uint16_t)DDR_DATA(val));
+			*crc5 = i3c_cdns_crc5(*crc5, (uint16_t)DDR_DATA(val));
 		} else if ((preamble == DDR_PREAMBLE_CMD_CRC) &&
 			   ((val & DDR_CRC_TOKEN_MASK) == DDR_CRC_TOKEN)) {
+			/* Validate received CRC from target */
 			uint8_t crc = (uint8_t)DDR_CRC(val);
 
-			if (crc5 != crc) {
+			if (*crc5 != crc) {
 				LOG_ERR("DDR RX crc error");
 				return -EIO;
 			}
 		}
 	}
 
-	return 0;
+	return len - remain;
 }
 
 static inline int cdns_i3c_wait_for_idle(const struct device *dev)
@@ -1273,37 +1268,105 @@ static void cdns_i3c_start_transfer(const struct device *dev)
 		(void)sys_read32(config->base + CMDR);
 	}
 
+	/* The RX buffer that it shall read in to first shall be the first RX message */
+	bool rx_cmd_first = false;
+
 	/* Write all tx data to fifo */
 	for (unsigned int i = 0; i < xfer->num_cmds; i++) {
 		if (xfer->cmds[i].hdr == I3C_DATA_RATE_SDR) {
 			if (!(xfer->cmds[i].cmd0 & CMD0_FIFO_RNW)) {
-				cdns_i3c_write_tx_fifo(config, xfer->cmds[i].buf,
-						       xfer->cmds[i].len);
+				xfer->tx_cmd_idx = i;
+				xfer->tx_buf_idx = cdns_i3c_write_tx_fifo(config, xfer->cmds[i].buf,
+									  xfer->cmds[i].len);
+				if (xfer->tx_buf_idx < xfer->cmds[i].len) {
+					/*
+					 * FIFO is full, expect to use the threshold interrupts to
+					 * push data in to the fifo as data comes out
+					 */
+					break;
+				}
+			} else {
+				/* Receive Threshold will write data in to buffer */
+				if (!rx_cmd_first) {
+					rx_cmd_first = true;
+					xfer->rx_cmd_idx = i;
+				}
+				xfer->rx_buf_idx = 0;
 			}
 		} else if (xfer->cmds[i].hdr == I3C_DATA_RATE_HDR_DDR) {
+			uint32_t written;
 			/* DDR Xfer requires sending header block*/
-			cdns_i3c_write_tx_fifo(config, &xfer->cmds[i].ddr_header,
-					       DDR_CRC_AND_HEADER_SIZE);
+			xfer->tx_cmd_idx = i;
+			written = cdns_i3c_write_tx_fifo(config, &xfer->cmds[i].ddr_header_word,
+							 DDR_CRC_AND_HEADER_SIZE);
+			xfer->tx_buf_idx = written / DDR_CRC_AND_HEADER_SIZE;
+			if (written < DDR_CRC_AND_HEADER_SIZE) {
+				/*
+				 * FIFO is full, expect to use the threshold interrupts to
+				 * push data in to the fifo as data comes out
+				 */
+				break;
+			}
 			/* If not read operation need to send data + crc of data*/
-			if (!(DDR_DATA(xfer->cmds[i].ddr_header) & HDR_CMD_RD)) {
+			if (!(DDR_DATA(xfer->cmds[i].ddr_header_word) & HDR_CMD_RD)) {
 				uint8_t *buf = (uint8_t *)xfer->cmds[i].buf;
-				uint32_t ddr_message = 0;
+				uint32_t ddr_message;
 				uint16_t ddr_data_payload = sys_get_be16(&buf[0]);
 				/* HDR-DDR Data Words */
 				ddr_message = (DDR_PREAMBLE_DATA_ABORT |
 					       prepare_ddr_word(ddr_data_payload));
-				cdns_i3c_write_tx_fifo(config, &ddr_message,
-						       DDR_CRC_AND_HEADER_SIZE);
+				written = cdns_i3c_write_tx_fifo(config, &ddr_message,
+								 DDR_CRC_AND_HEADER_SIZE);
+				xfer->tx_buf_idx += written / 2;
+				if (written < DDR_CRC_AND_HEADER_SIZE) {
+					/*
+					 * FIFO is full, expect to use the threshold interrupts to
+					 * push data in to the fifo as data comes out
+					 */
+					break;
+				}
 				for (int j = 2; j < ((xfer->cmds[i].len - 2) * 2); j += 2) {
+					/*
+					 * Read 2 Bytes out at time as DDR sends data in 16b
+					 * packets
+					 */
 					ddr_data_payload = sys_get_be16(&buf[j]);
 					ddr_message = (DDR_PREAMBLE_DATA_ABORT_ALT |
 						       prepare_ddr_word(ddr_data_payload));
-					cdns_i3c_write_tx_fifo(config, &ddr_message,
-							       DDR_CRC_AND_HEADER_SIZE);
+					written = cdns_i3c_write_tx_fifo(config, &ddr_message,
+									 DDR_CRC_AND_HEADER_SIZE);
+					xfer->tx_buf_idx += written / 2;
+					if (written < DDR_CRC_AND_HEADER_SIZE) {
+						/*
+						 * FIFO is full, expect to use the threshold
+						 * interrupts to push data in to the fifo as data
+						 * comes out
+						 */
+						break;
+					}
 				}
 				/* HDR-DDR CRC Word */
-				cdns_i3c_write_tx_fifo(config, &xfer->cmds[i].ddr_crc,
-						       DDR_CRC_AND_HEADER_SIZE);
+				written =
+					cdns_i3c_write_tx_fifo(config, &xfer->cmds[i].ddr_crc_word,
+							       DDR_CRC_AND_HEADER_SIZE);
+				xfer->tx_buf_idx += written / DDR_CRC_AND_HEADER_SIZE;
+				if (written < DDR_CRC_AND_HEADER_SIZE) {
+					/*
+					 * FIFO is full, expect to use the threshold interrupts to
+					 * push data in to the fifo as data comes out
+					 */
+					break;
+				}
+			} else {
+				/* Receive Threshold will write data in to buffer */
+				if (!rx_cmd_first) {
+					rx_cmd_first = true;
+					xfer->rx_cmd_idx = i;
+				}
+				xfer->rx_buf_idx = 0;
+				/* initial seed for ddr crc5 is 0x1F */
+				xfer->cmds[i].running_ddr_rx_crc = i3c_cdns_crc5(
+					0x1F, (uint16_t)DDR_DATA(xfer->cmds[i].ddr_header_word));
 			}
 		} else {
 			xfer->ret = -ENOTSUP;
@@ -1320,7 +1383,7 @@ static void cdns_i3c_start_transfer(const struct device *dev)
 
 		if (xfer->cmds[i].hdr == I3C_DATA_RATE_HDR_DDR) {
 			sys_write32(0x00, config->base + CMD1_FIFO);
-			if ((DDR_DATA(xfer->cmds[i].ddr_header) & HDR_CMD_RD)) {
+			if ((DDR_DATA(xfer->cmds[i].ddr_header_word) & HDR_CMD_RD)) {
 				sys_write32(CMD0_FIFO_IS_DDR | CMD0_FIFO_PL_LEN(1),
 					    config->base + CMD0_FIFO);
 			} else {
@@ -1744,9 +1807,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 		}
 
 		if ((cmd->hdr == I3C_DATA_RATE_HDR_DDR) &&
-		    (DDR_DATA(cmd->ddr_header) & HDR_CMD_RD)) {
+		    (DDR_DATA(cmd->ddr_header_word) & HDR_CMD_RD)) {
 			ret = cdns_i3c_read_rx_fifo_ddr_xfer(config, cmd->buf, xfer,
-							     cmd->ddr_header);
+							     &cmd->running_ddr_rx_crc);
 		}
 
 		/* Record error */
@@ -1759,6 +1822,7 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 			if (data->xfer.cmds[i].sdr_err) {
 				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_NONE;
 			}
+			ret = 0;
 			break;
 
 		case CMDR_MST_ABORT:
@@ -1780,6 +1844,7 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 				LOG_DBG("%s: Controller Abort due to buffer length excedded with "
 					"no EoD from target",
 					dev->name);
+				ret = 0;
 			}
 			if (data->xfer.cmds[i].sdr_err) {
 				*data->xfer.cmds[i].sdr_err = I3C_ERROR_CE_NONE;
@@ -2184,41 +2249,13 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
-	int txsize = 0;
-	int rxsize = 0;
 	int ret;
+
+	__ASSERT_NO_MSG(num_msgs > 0);
 
 	/* make sure we are currently the active controller */
 	if (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE)) {
 		return -EACCES;
-	}
-
-	if (num_msgs == 0) {
-		return 0;
-	}
-
-	if (num_msgs > data->hw_cfg.cmd_mem_depth || num_msgs > data->hw_cfg.cmdr_mem_depth) {
-		LOG_ERR("%s: Too many messages", dev->name);
-		return -ENOMEM;
-	}
-
-	/*
-	 * Ensure data will fit within FIFOs.
-	 *
-	 * TODO: This limitation prevents burst transfers greater than the
-	 *       FIFO sizes and should be replaced with an implementation that
-	 *       utilizes the RX/TX data interrupts.
-	 */
-	for (int i = 0; i < num_msgs; i++) {
-		if ((msgs[i].flags & I3C_MSG_RW_MASK) == I3C_MSG_READ) {
-			rxsize += ROUND_UP(msgs[i].len, 4);
-		} else {
-			txsize += ROUND_UP(msgs[i].len, 4);
-		}
-	}
-	if ((rxsize > data->hw_cfg.rx_mem_depth) || (txsize > data->hw_cfg.tx_mem_depth)) {
-		LOG_ERR("%s: Total RX and/or TX transfer larger than FIFO", dev->name);
-		return -ENOMEM;
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
@@ -2240,6 +2277,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	for (int i = 0; i < num_msgs; i++) {
 		struct cdns_i3c_cmd *cmd = &data->xfer.cmds[i];
 		uint32_t pl = msgs[i].len;
+
 		/* check hdr mode */
 		if ((!(msgs[i].flags & I3C_MSG_HDR)) ||
 		    ((msgs[i].flags & I3C_MSG_HDR) && (msgs[i].hdr_mode == 0))) {
@@ -2252,14 +2290,8 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 			cmd->cmd0 |= CMD0_FIFO_DEV_ADDR(target->dynamic_addr);
 			if ((msgs[i].flags & I3C_MSG_RW_MASK) == I3C_MSG_READ) {
 				cmd->cmd0 |= CMD0_FIFO_RNW;
-				/*
-				 * For I3C_XMIT_MODE_NO_ADDR reads in SDN mode,
-				 * CMD0_FIFO_PL_LEN specifies the abort limit not bytes to read
-				 */
-				cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl + 1);
-			} else {
-				cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl);
 			}
+			cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl);
 
 			/* Send broadcast header on first transfer or after a STOP. */
 			if (!(msgs[i].flags & I3C_MSG_NBCH) && (send_broadcast)) {
@@ -2304,7 +2336,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 				ddr_header_payload =
 					prepare_ddr_cmd_parity_adjustment_bit(ddr_header_payload);
 				/* HDR-DDR Command Word */
-				cmd->ddr_header =
+				cmd->ddr_header_word =
 					DDR_PREAMBLE_CMD_CRC | prepare_ddr_word(ddr_header_payload);
 			} else {
 				uint8_t crc5 = 0x1F;
@@ -2312,7 +2344,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 				ddr_header_payload = HDR_CMD_CODE(msgs[i].hdr_cmd_code) |
 						     (target->dynamic_addr << 1);
 				/* HDR-DDR Command Word */
-				cmd->ddr_header =
+				cmd->ddr_header_word =
 					DDR_PREAMBLE_CMD_CRC | prepare_ddr_word(ddr_header_payload);
 				/* calculate crc5 */
 				crc5 = i3c_cdns_crc5(crc5, ddr_header_payload);
@@ -2321,8 +2353,8 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 						crc5,
 						sys_get_be16((void *)((uintptr_t)cmd->buf + j)));
 				}
-				cmd->ddr_crc = DDR_PREAMBLE_CMD_CRC | DDR_CRC_TOKEN | (crc5 << 9) |
-					       DDR_CRC_WR_SETUP;
+				cmd->ddr_crc_word = DDR_PREAMBLE_CMD_CRC | DDR_CRC_TOKEN |
+						    (crc5 << 9) | DDR_CRC_WR_SETUP;
 			}
 			/* Length of DDR Transfer is length of payload (in 16b) + header and CRC
 			 * blocks
@@ -2597,6 +2629,225 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 		if (int_st & MST_INT_RX_UNF) {
 			LOG_ERR("%s: controller rx buffer underflow,", dev->name);
 		}
+
+		/* RX threshold interrupt */
+		if (int_st & MST_INT_RX_THR) {
+			/*
+			 * What is going on here is that
+			 * rx_cmd_idx is the index that points to which command it is
+			 * current at for reading data from the rx fifo.  The rx_buf_idx
+			 * is the index that points to which byte in the buffer it is
+			 * currently at.  The len is the length of the buffer, which for DDR
+			 * messages will contain the header and crc word and will be in words.  So,
+			 * if the rx_buf_idx is less than the len, then we can read from the rx
+			 * fifo.  If the rx_buf_idx is equal to the len, then we need to move to the
+			 * next command in the queue.  If the rx_cmd_idx is equal to the number of
+			 * commands in the queue, then we are done with reads.
+			 *
+			 * For DDR transfers, the rx_buf_idx is incremented by the
+			 * number of words read from the rx fifo.  For SDR transfers,
+			 * the rx_buf_idx is incremented by the number of bytes read.
+			 */
+			while (!cdns_i3c_rx_fifo_empty(config)) {
+				if (!(data->xfer.cmds[data->xfer.rx_cmd_idx].cmd0 &
+				      CMD0_FIFO_IS_DDR)) {
+					/* if this is not a DDR message */
+					data->xfer.rx_buf_idx += cdns_i3c_read_rx_fifo(
+						config,
+						&((uint8_t *)(data->xfer.cmds[data->xfer.rx_cmd_idx]
+								      .buf))[data->xfer.rx_buf_idx],
+						data->xfer.cmds[data->xfer.rx_cmd_idx].len -
+							data->xfer.rx_buf_idx);
+					if ((data->xfer.rx_buf_idx ==
+					     data->xfer.cmds[data->xfer.rx_cmd_idx].len) &&
+					    (data->xfer.rx_cmd_idx < data->xfer.num_cmds)) {
+						/*
+						 * find next rx buffer in the command queue, which
+						 * could be a sdr or hdr ddr read command
+						 */
+						while ((!(data->xfer.cmds[data->xfer.rx_cmd_idx]
+								  .cmd0 &
+							  CMD0_FIFO_RNW) ||
+							(DDR_DATA(data->xfer
+									  .cmds[data->xfer
+											.rx_cmd_idx]
+									  .ddr_header_word) &
+							 HDR_CMD_RD)) &&
+						       (data->xfer.rx_cmd_idx <
+							data->xfer.num_cmds)) {
+							data->xfer.rx_cmd_idx++;
+						}
+						data->xfer.rx_buf_idx = 0;
+					}
+				} else {
+					/* if this is a DDR message, subtract 1 to len for the
+					 * header
+					 */
+					uint32_t words_read = cdns_i3c_read_rx_fifo_ddr_xfer(
+						config,
+						&((uint8_t *)(data->xfer.cmds[data->xfer.rx_cmd_idx]
+								      .buf))[data->xfer.rx_buf_idx],
+						data->xfer.cmds[data->xfer.rx_cmd_idx].len - 1 -
+							data->xfer.rx_buf_idx,
+						&data->xfer.cmds[data->xfer.rx_cmd_idx]
+							 .running_ddr_rx_crc);
+					if (words_read > 0) {
+						data->xfer.rx_buf_idx += words_read;
+					}
+					/*
+					 * subtract one to remove the header from the len which was
+					 * tx'ed as we are at the end of the message
+					 */
+					if ((data->xfer.rx_buf_idx ==
+					     data->xfer.cmds[data->xfer.rx_cmd_idx].len - 1) &&
+					    (data->xfer.rx_cmd_idx < data->xfer.num_cmds)) {
+						/* find next rx buffer in the command queue */
+						while ((!(data->xfer.cmds[data->xfer.rx_cmd_idx]
+								  .cmd0 &
+							  CMD0_FIFO_RNW) ||
+							(DDR_DATA(data->xfer
+									  .cmds[data->xfer
+											.rx_cmd_idx]
+									  .ddr_header_word) &
+							 HDR_CMD_RD)) &&
+						       (data->xfer.rx_cmd_idx <
+							data->xfer.num_cmds)) {
+							data->xfer.rx_cmd_idx++;
+						}
+						data->xfer.rx_buf_idx = 0;
+					}
+				}
+			}
+		}
+
+		/* TX threshold interrupt */
+		if (int_st & MST_INT_TX_THR) {
+			if (!(data->xfer.cmds[data->xfer.rx_cmd_idx].cmd0 & CMD0_FIFO_IS_DDR)) {
+				/* If this is not a DDR message */
+				while (!cdns_i3c_tx_fifo_full(config) &&
+				       ((data->xfer.tx_buf_idx !=
+					 data->xfer.cmds[data->xfer.tx_cmd_idx].len) &&
+					(data->xfer.tx_cmd_idx < data->xfer.num_cmds))) {
+					data->xfer.tx_buf_idx += cdns_i3c_write_tx_fifo(
+						config,
+						&((uint8_t *)(data->xfer.cmds[data->xfer.tx_cmd_idx]
+								      .buf))[data->xfer.tx_buf_idx],
+						data->xfer.cmds[data->xfer.tx_cmd_idx].len -
+							data->xfer.tx_buf_idx);
+					if ((data->xfer.tx_buf_idx ==
+					     data->xfer.cmds[data->xfer.tx_cmd_idx].len) &&
+					    (data->xfer.tx_cmd_idx < data->xfer.num_cmds)) {
+						/*
+						 * find next tx buffer in the command queue, all DDR
+						 * messages have 1 word of transfer (header)
+						 */
+						while (((data->xfer.cmds[data->xfer.tx_cmd_idx]
+								 .cmd0 &
+							 CMD0_FIFO_RNW) ||
+							(data->xfer.cmds[data->xfer.rx_cmd_idx]
+								 .cmd0 &
+							 CMD0_FIFO_IS_DDR)) &&
+						       (data->xfer.tx_cmd_idx <
+							data->xfer.num_cmds)) {
+							data->xfer.tx_cmd_idx++;
+						}
+						data->xfer.tx_buf_idx = 0;
+					}
+				}
+			} else {
+				/*
+				 * If this is a DDR message, then first verify that we our fifo is
+				 * not full, the transmit index is not at the end of the message,
+				 * and that we are not at the end of the command queue
+				 */
+				while (!cdns_i3c_tx_fifo_full(config) &&
+				       (((data->xfer.tx_buf_idx !=
+					  data->xfer.cmds[data->xfer.tx_cmd_idx].len + 1) ||
+					 (data->xfer.tx_buf_idx == 0)) &&
+					(data->xfer.tx_cmd_idx < data->xfer.num_cmds))) {
+					/* The first word is always the DDR Header */
+					if (data->xfer.tx_buf_idx == 0) {
+						/* write the DDR header */
+						uint32_t words_written = cdns_i3c_write_tx_fifo(
+							config,
+							&data->xfer.cmds[data->xfer.tx_cmd_idx]
+								 .ddr_header_word,
+							DDR_CRC_AND_HEADER_SIZE);
+
+						data->xfer.tx_buf_idx += words_written / 4;
+					}
+					/* If we sent out the header (1 word), and this is a read
+					 * command, then we have already transmitted the only word
+					 * needed for this command, move on to the next command.
+					 */
+					if ((data->xfer.tx_buf_idx == 1) &&
+					    (DDR_DATA(data->xfer.cmds[data->xfer.rx_cmd_idx]
+							      .ddr_header_word) &
+					     HDR_CMD_RD)) {
+						/*
+						 * find next tx buffer in the command queue, all DDR
+						 * messages have 1 word of transfer (header)
+						 */
+						while (((data->xfer.cmds[data->xfer.tx_cmd_idx]
+								 .cmd0 &
+							 CMD0_FIFO_RNW) ||
+							(data->xfer.cmds[data->xfer.rx_cmd_idx]
+								 .cmd0 &
+							 CMD0_FIFO_IS_DDR)) &&
+						       (data->xfer.tx_cmd_idx <
+							data->xfer.num_cmds)) {
+							data->xfer.tx_cmd_idx++;
+						}
+						data->xfer.tx_buf_idx = 0;
+					} else if (data->xfer.tx_buf_idx ==
+						   data->xfer.cmds[data->xfer.tx_cmd_idx].len - 1) {
+						/* write the crc */
+						uint32_t words_written = cdns_i3c_write_tx_fifo(
+							config,
+							&data->xfer.cmds[data->xfer.tx_cmd_idx]
+								 .ddr_crc_word,
+							DDR_CRC_AND_HEADER_SIZE);
+						data->xfer.tx_buf_idx += words_written / 4;
+					} else if (data->xfer.tx_buf_idx <
+						   data->xfer.cmds[data->xfer.tx_cmd_idx].len - 1) {
+						/* write the payload */
+						uint16_t ddr_data_payload = sys_get_be16(
+							&((uint8_t *)(data->xfer
+									      .cmds[data->xfer
+											    .tx_cmd_idx]
+									      .buf))
+								[(data->xfer.tx_buf_idx - 1) * 2]);
+						uint32_t ddr_message =
+							((data->xfer.tx_buf_idx == 1)
+								 ? DDR_PREAMBLE_DATA_ABORT
+								 : DDR_PREAMBLE_DATA_ABORT_ALT) |
+							prepare_ddr_word(ddr_data_payload);
+						uint32_t words_written = cdns_i3c_write_tx_fifo(
+							config, &ddr_message,
+							DDR_CRC_AND_HEADER_SIZE);
+						data->xfer.tx_buf_idx += words_written / 4;
+					} else {
+						/*
+						 * find next tx buffer in the command queue, which
+						 * could be a DDR or a SDR message
+						 */
+						while (((data->xfer.cmds[data->xfer.tx_cmd_idx]
+								 .cmd0 &
+							 CMD0_FIFO_RNW) ||
+							(DDR_DATA(data->xfer
+									  .cmds[data->xfer
+											.tx_cmd_idx]
+									  .ddr_header_word) &
+							 HDR_CMD_RD)) &&
+						       (data->xfer.tx_cmd_idx <
+							data->xfer.num_cmds)) {
+							data->xfer.tx_cmd_idx++;
+						}
+						data->xfer.tx_buf_idx = 0;
+					}
+				}
+			}
+		}
 	} else {
 		uint32_t int_sl = sys_read32(config->base + SLV_ISR);
 		const struct i3c_target_callbacks *target_cb =
@@ -2682,9 +2933,6 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 			LOG_ERR("%s: slave sdr tx buffer overflow,", dev->name);
 		}
 
-		if (int_sl & SLV_INT_DDR_RX_THR) {
-		}
-
 		/* SLV DDR WR COMPLETE */
 		if (int_sl & SLV_INT_DDR_WR_COMP) {
 			/* initial value of CRC5 for HDR-DDR is 0x1F */
@@ -2745,30 +2993,6 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 			/* call stop function pointer */
 			if (target_cb != NULL && target_cb->stop_cb) {
 				target_cb->stop_cb(data->target_config);
-			}
-		}
-
-		/*SLV DDR TX THR*/
-		if (int_sl & SLV_INT_DDR_TX_THR) {
-			int status = 0;
-
-			if (target_cb != NULL && target_cb->read_processed_cb) {
-
-				while ((!(sys_read32(config->base + SLV_STATUS1) &
-					  SLV_STATUS1_DDR_TX_FULL)) &&
-				       (status == 0)) {
-					/* call function pointer for read */
-					uint8_t byte;
-					/* will return negative if no data left to transmit
-					 * and 0 if data available
-					 */
-					status = target_cb->read_processed_cb(data->target_config,
-									      &byte);
-					if (status == 0) {
-						cdns_i3c_write_ddr_tx_fifo(config, &byte,
-									   sizeof(byte));
-					}
-				}
 			}
 		}
 	}
@@ -3277,17 +3501,14 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	/* enable Core */
 	sys_write32(CTRL_DEV_EN | ctrl, config->base + CTRL);
 
-	/* Set fifo thresholds. */
-	sys_write32(CMD_THR(I3C_CMDD_THR) | IBI_THR(I3C_IBID_THR) | CMDR_THR(I3C_CMDR_THR) |
-			    IBIR_THR(config->ibid_thr),
+	/* Set cmd fifo thresholds. */
+	sys_write32(CMD_THR(I3C_CMDD_THR) | IBI_THR(config->ibid_thr) | CMDR_THR(I3C_CMDR_THR) |
+			    IBIR_THR(I3C_IBIR_THR),
 		    config->base + CMD_IBI_THR_CTRL);
 
 	/* Set TX/RX interrupt thresholds. */
-	if (sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE) {
-		sys_write32(TX_THR(I3C_TX_THR) | RX_THR(data->hw_cfg.rx_mem_depth),
-			    config->base + TX_RX_THR_CTRL);
-	} else {
-		sys_write32(TX_THR(1) | RX_THR(1), config->base + TX_RX_THR_CTRL);
+	sys_write32(TX_THR(config->tx_thr) | RX_THR(config->rx_thr), config->base + TX_RX_THR_CTRL);
+	if (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE)) {
 		sys_write32(SLV_DDR_TX_THR(0) | SLV_DDR_RX_THR(1),
 			    config->base + SLV_DDR_TX_RX_THR_CTRL);
 	}
@@ -3299,9 +3520,9 @@ static int cdns_i3c_bus_init(const struct device *dev)
 			    SLV_INT_DDR_RD_COMP | SLV_INT_DDR_RX_THR | SLV_INT_DDR_TX_THR,
 		    config->base + SLV_IER);
 
-	/* Enable IBI interrupts. */
+	/* enable controller interrupts. */
 	sys_write32(MST_INT_IBIR_THR | MST_INT_RX_UNF | MST_INT_HALTED | MST_INT_TX_OVF |
-			    MST_INT_IBIR_OVF | MST_INT_IBID_THR,
+			    MST_INT_IBIR_OVF | MST_INT_IBID_THR | MST_INT_TX_THR | MST_INT_RX_THR,
 		    config->base + MST_IER);
 
 	int ret = i3c_addr_slots_init(dev);
@@ -3377,6 +3598,8 @@ static DEVICE_API(i3c, api) = {
 		.input_frequency = DT_INST_PROP(n, input_clock_frequency),                         \
 		.irq_config_func = cdns_i3c_config_func_##n,                                       \
 		.ibid_thr = DT_INST_PROP(n, ibid_thr),                                             \
+		.tx_thr = DT_INST_PROP(n, tx_thr),                                                 \
+		.rx_thr = DT_INST_PROP(n, rx_thr),                                                 \
 		.common.dev_list.i3c = cdns_i3c_device_array_##n,                                  \
 		.common.dev_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),                  \
 		.common.dev_list.i2c = cdns_i3c_i2c_device_array_##n,                              \
