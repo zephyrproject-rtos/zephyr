@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2025 Bootlin
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v303/ch32v303.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "ch32v303vct6_evt-pinctrl.dtsi"
+
+/ {
+	model = "ch32v303vct6_evt";
+	compatible = "wch,ch32v303";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(32)>;
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
