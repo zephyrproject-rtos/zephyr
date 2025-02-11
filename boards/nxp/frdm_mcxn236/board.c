@@ -57,7 +57,7 @@ void power_mode_od(void)
 	SPC_SetSRAMOperateVoltage(SPC0, &cfg);
 }
 
-static int frdm_mcxn236_init(void)
+void board_early_init_hook(void)
 {
 	enable_lpcac();
 
@@ -301,8 +301,4 @@ static int frdm_mcxn236_init(void)
 
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
-
-	return 0;
 }
-
-SYS_INIT(frdm_mcxn236_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);
