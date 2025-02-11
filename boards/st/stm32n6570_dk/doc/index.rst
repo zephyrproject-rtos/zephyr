@@ -69,6 +69,8 @@ The Zephyr ``stm32n6570_dk`` board supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
 | CAN/CANFD | on-chip    | canbus                              |
@@ -101,6 +103,8 @@ For more details please refer to `STM32N6570_DK User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- ADC1_INP10 : PA9
+- ADC1_INP11 : PA10
 - FDCAN1_TX : PH2
 - FDCAN1_RX : PD0
 - LD1 : PO1

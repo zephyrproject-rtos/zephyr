@@ -5,6 +5,7 @@ ram: 1024
 flash: 1024
 supported:
   - arduino_serial
+  - adc
   - can
   - dma
   - gpio
