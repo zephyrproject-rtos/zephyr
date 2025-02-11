@@ -8,9 +8,33 @@
 #ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_CLIC_H_
 #define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_CLIC_H_
 
+/* CLIC relative CSR number */
+#define CSR_MTVT       (0x307)
+#define CSR_MNXTI      (0x345)
+#define CSR_MINTTHRESH (0x347)
+
+#ifndef __ASSEMBLER__
+
+#include <stddef.h>
+
+/* CLIC Memory mapped register offset */
+#define CLIC_CFG          (0x0)
+#define CLIC_CTRL(irq)    (0x1000 + 4 * (irq))
+#define CLIC_INTIP(irq)   (CLIC_CTRL(irq) + offsetof(union CLICCTRL, w.INTIP))
+#define CLIC_INTIE(irq)   (CLIC_CTRL(irq) + offsetof(union CLICCTRL, w.INTIE))
+#define CLIC_INTATTR(irq) (CLIC_CTRL(irq) + offsetof(union CLICCTRL, w.INTATTR))
+#define CLIC_INTCTRL(irq) (CLIC_CTRL(irq) + offsetof(union CLICCTRL, w.INTCTRL))
+
+/* Nuclei ECLIC memory mapped register offset */
+#define CLIC_INFO (0x4)
+#define CLIC_MTH  (0x8)
+
+/* CLIC register structure */
 union CLICCFG {
 	struct {
+#ifdef CONFIG_NUCLEI_ECLIC
 		uint32_t _reserved0: 1;
+#endif /* CONFIG_NUCLEI_ECLIC */
 		/** number of interrupt level bits */
 		uint32_t nlbits: 4;
 		/** number of clicintattr[i].MODE bits */
@@ -60,6 +84,7 @@ union CLICCTRL {
 	uint32_t qw;
 };
 
+/* Nuclei ECLIC register structure */
 union CLICINFO {
 	struct {
 		/** number of max supported interrupts */
@@ -81,5 +106,7 @@ union CLICMTH {
 	} b;
 	uint32_t qw;
 };
+
+#endif /*__ASSEMBLER__*/
 
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_CLIC_H_ */
