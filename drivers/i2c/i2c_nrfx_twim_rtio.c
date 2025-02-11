@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <nrfx_twim.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #include "i2c_nrfx_twim_common.h"
 
@@ -175,6 +176,31 @@ int i2c_nrfx_twim_rtio_init(const struct device *dev)
 	COND_CODE_0(CONCAT_BUF_SIZE(idx), (COND_CODE_0(FLASH_BUF_MAX_SIZE(idx), (0), (1))), (1))
 #define MSG_BUF_SIZE(idx) MAX(CONCAT_BUF_SIZE(idx), FLASH_BUF_MAX_SIZE(idx))
 
+#define MSG_BUF_HAS_MEMORY_REGIONS(idx) \
+	DT_NODE_HAS_PROP(I2C(idx), memory_regions)
+
+#define MSG_BUF_LINKER_REGION_NAME(idx) \
+	LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(I2C(idx), memory_regions))
+
+#define MSG_BUF_ATTR_SECTION(idx) \
+	__attribute__((__section__(MSG_BUF_LINKER_REGION_NAME(idx))))
+
+#define MSG_BUF_ATTR(idx)                                                                          \
+	COND_CODE_1(                                                                               \
+		MSG_BUF_HAS_MEMORY_REGIONS(idx),                                                   \
+		(MSG_BUF_ATTR_SECTION(idx)),                                                       \
+		()                                                                                 \
+	)
+
+#define MSG_BUF_SYM(idx) \
+	_CONCAT_3(twim_, idx, _msg_buf)
+
+#define MSG_BUF_DEFINE(idx) \
+	static uint8_t MSG_BUF_SYM(idx)[MSG_BUF_SIZE(idx)] MSG_BUF_ATTR(idx)
+
+#define MAX_TRANSFER_SIZE(idx) \
+	BIT_MASK(DT_PROP(I2C(idx), easydma_maxcnt_bits))
+
 #define I2C_NRFX_TWIM_RTIO_DEVICE(idx)                                                             \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(I2C(idx));                                             \
 	BUILD_ASSERT(I2C_FREQUENCY(idx) != I2C_NRFX_TWIM_INVALID_FREQUENCY,                        \
@@ -184,9 +210,7 @@ int i2c_nrfx_twim_rtio_init(const struct device *dev)
 		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority), nrfx_isr,               \
 			    nrfx_twim_##idx##_irq_handler, 0);                                     \
 	}                                                                                          \
-	IF_ENABLED(                                                                                \
-		USES_MSG_BUF(idx),                                                                 \
-		(static uint8_t twim_##idx##_msg_buf[MSG_BUF_SIZE(idx)] I2C_MEMORY_SECTION(idx);)) \
+	IF_ENABLED(USES_MSG_BUF(idx), (MSG_BUF_DEFINE(idx);))                                      \
 	I2C_RTIO_DEFINE(_i2c##idx##_twim_rtio,                                                     \
 			DT_INST_PROP_OR(n, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),                      \
 			DT_INST_PROP_OR(n, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));                     \
@@ -205,22 +229,15 @@ int i2c_nrfx_twim_rtio_init(const struct device *dev)
 				.msg_buf_size = MSG_BUF_SIZE(idx),                                 \
 				.irq_connect = irq_connect##idx,                                   \
 				.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),                       \
-				IF_ENABLED(USES_MSG_BUF(idx), (.msg_buf = twim_##idx##_msg_buf,))  \
-					.max_transfer_size =                                       \
-					BIT_MASK(DT_PROP(I2C(idx), easydma_maxcnt_bits)),          \
+				IF_ENABLED(USES_MSG_BUF(idx), (.msg_buf = MSG_BUF_SYM(idx),))      \
+				.max_transfer_size = MAX_TRANSFER_SIZE(idx),                       \
 			},                                                                         \
 		.ctx = &_i2c##idx##_twim_rtio,                                                     \
 	};                                                                                         \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action, PM_DEVICE_ISR_SAFE);                    \
 	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_nrfx_twim_rtio_init, PM_DEVICE_DT_GET(I2C(idx)), NULL,  \
 			     &twim_##idx##z_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,         \
-			     &i2c_nrfx_twim_driver_api)
-
-#define I2C_MEMORY_SECTION(idx)                                                                    \
-	COND_CODE_1(I2C_HAS_PROP(idx, memory_regions),                                             \
-		    (__attribute__((__section__(                                                   \
-			    LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(I2C(idx), memory_regions)))))),  \
-		    ())
+			     &i2c_nrfx_twim_driver_api);
 
 #ifdef CONFIG_HAS_HW_NRF_TWIM0
 I2C_NRFX_TWIM_RTIO_DEVICE(0);
