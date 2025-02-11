@@ -25,7 +25,6 @@
 #include <zephyr/device.h>
 #include <stddef.h>
 #include <zephyr/kernel.h>
-
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -205,6 +204,71 @@ struct video_frmival_enum {
 	};
 };
 
+/** Custom statistics allowing applications to implement their own format. */
+#define VIDEO_STATS_CUSTOM BIT(0)
+
+/** Channel statistics for the Y (luma) channel. */
+#define VIDEO_STATS_CHANNELS_Y BIT(1)
+
+/** Channel statistics for the R, G, B channels. */
+#define VIDEO_STATS_CHANNELS_RGB BIT(2)
+
+/** Bitmap to ask for all statistics compatible with @struct video_stats_channels */
+#define VIDEO_STATS_CHANNELS (VIDEO_STATS_CHANNELS_RGB | VIDEO_STATS_CHANNELS_Y)
+
+/** Statistics in the form of an histogram with the Y (luma) channel present. */
+#define VIDEO_STATS_HISTOGRAM_Y BIT(3)
+
+/** Statistics in the form of an histogram with the R, G, B channels present. */
+#define VIDEO_STATS_HISTOGRAM_RGB BIT(4)
+
+/** Bitmap to ask for one of the statistics compatible with @struct video_stats_histogram */
+#define VIDEO_STATS_HISTOGRAM (VIDEO_STATS_HISTOGRAM_RGB | VIDEO_STATS_HISTOGRAM_Y)
+
+/**
+ * @brief Statistics base type, present as the first field of the other types.
+ *
+ * This type is to be casted to one of the other "video_..._stats" types. This permits to define
+ * new custom types in application and still use the upstream video API.
+ */
+struct video_stats {
+	/** Bitmak that describes the type of the stats filled */
+	uint16_t flags;
+	/** Frame counter to know if a frame elapsed since the last call. Quickly overflowing. */
+	uint16_t frame_counter;
+};
+
+/**
+ * @brief Per-channel average values.
+ *
+ * Each field represent 8-bit integer values that corresponds to the average value of a channel.
+ */
+struct video_stats_channels {
+	/** Base structure with fields common to all types of statistics. */
+	struct video_stats base;
+	/** The luma channel average. */
+	uint8_t y;
+	/** RGB24-formatted averages. */
+	uint8_t rgb[3];
+};
+
+/**
+ * @brief Statistics about the video image color content.
+ *
+ * Used by software algorithms to control the color balance such as White Balance (AWB),
+ * Black Level Correction (BLC), or control sensors such as Exposure/Gain Control (AEC/AGC).
+ */
+struct video_stats_histogram {
+	/** Base structure with fields common to all types of statistics. */
+	struct video_stats base;
+	/** The histogram content for the Y or the R, G, B channels as defined by @c base.flags. */
+	uint16_t *buckets;
+	/** Total number of values in @c buckets. */
+	size_t num_buckets;
+	/** Total number of values added to the historam. */
+	uint32_t num_values;
+};
+
 /**
  * @brief video_endpoint_id enum
  *
@@ -344,6 +408,19 @@ typedef int (*video_api_get_caps_t)(const struct device *dev, enum video_endpoin
 typedef int (*video_api_set_signal_t)(const struct device *dev, enum video_endpoint_id ep,
 				      struct k_poll_signal *signal);
 
+/**
+ * @typedef video_api_get_stats_t
+ * @brief Register/Unregister poll signal for buffer events.
+ *
+ * See video_set_signal() for argument descriptions.
+ * @param dev Pointer to the device structure.
+ * @param ep Endpoint ID.
+ * @param stats Pointer to the statistics structure, which must have enough storage for the
+		type of stats requested by the @p stats flags.
+ */
+typedef int (*video_api_get_stats_t)(const struct device *dev, enum video_endpoint_id ep,
+				     struct video_stats *stats);
+
 __subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_set_format_t set_format;
@@ -360,6 +437,7 @@ __subsystem struct video_driver_api {
 	video_api_set_frmival_t set_frmival;
 	video_api_get_frmival_t get_frmival;
 	video_api_enum_frmival_t enum_frmival;
+	video_api_get_stats_t get_stats;
 };
 
 /**
@@ -494,6 +572,39 @@ static inline int video_enum_frmival(const struct device *dev, enum video_endpoi
 	}
 
 	return api->enum_frmival(dev, ep, fie);
+}
+
+/**
+ * @brief Get image statistics out of the video devices.
+ *
+ * This permits to implement algorithms reacting to statistics about the images
+ * collected by the hadware. For instance, in order to implement an image signal
+ * processor with auto-controls (AEC, AGC, AWB...).
+ *
+ * The driver will read the @p stats flags fields to learn about what the caller wants for
+ * statistics, and update them with the statistics effectively added.
+ *
+ * All memory buffers of @p stats are to be provided by the caller, and the driver will update
+ * the @c size field with the size effectively filled with statistics data.
+ *
+ * @param dev Pointer to the device structure that collects the statistics.
+ * @param ep Endpoint ID from which collect the statistics.
+ * @param stats Pointer to a video statistic structure filled by this device.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If API is not implemented.
+ * @return other error number otherwise.
+ */
+static inline int video_get_stats(const struct device *dev, enum video_endpoint_id ep,
+				  struct video_stats *stats)
+{
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	if (api->get_stats == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_stats(dev, ep, stats);
 }
 
 /**
