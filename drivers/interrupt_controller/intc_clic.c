@@ -15,73 +15,9 @@
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
+#include "intc_clic.h"
 
 #define DT_DRV_COMPAT nuclei_eclic
-
-union CLICCFG {
-	struct {
-		uint8_t _reserved0 : 1;
-		/** number of interrupt level bits */
-		uint8_t nlbits : 4;
-		uint8_t _reserved1 : 2;
-		uint8_t _reserved2 : 1;
-	} b;
-	uint8_t w;
-};
-
-union CLICINFO {
-	struct {
-		/** number of max supported interrupts */
-		uint32_t numint : 13;
-		/** architecture version */
-		uint32_t version : 8;
-		/** supported bits in the clicintctl */
-		uint32_t intctlbits : 4;
-		uint32_t _reserved0 : 7;
-	} b;
-	uint32_t qw;
-};
-
-union CLICMTH {
-	uint8_t w;
-};
-
-union CLICINTIP {
-	struct {
-		/** Interrupt Pending */
-		uint8_t IP : 1;
-		uint8_t reserved0 : 7;
-	} b;
-	uint8_t w;
-};
-
-union CLICINTIE {
-	struct {
-		/** Interrupt Enabled */
-		uint8_t IE : 1;
-		uint8_t reserved0 : 7;
-	} b;
-	uint8_t w;
-};
-
-union CLICINTATTR {
-	struct {
-		/** 0: non-vectored 1:vectored */
-		uint8_t shv : 1;
-		/** 0: level 1: rising edge 2: falling edge */
-		uint8_t trg : 2;
-		uint8_t reserved0 : 3;
-		uint8_t reserved1 : 2;
-	} b;
-	uint8_t w;
-};
-
-struct CLICCTRL {
-	volatile union CLICINTIP INTIP;
-	volatile union CLICINTIE INTIE;
-	volatile union CLICINTATTR INTATTR;
-	volatile uint8_t INTCTRL;
-};
 
 /** CLIC INTATTR: TRIG Mask */
 #define CLIC_INTATTR_TRIG_Msk  0x3U
