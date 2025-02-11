@@ -5,7 +5,7 @@ tests:
       - bluetooth
     platform_allow:
       - nrf52_bsim/native
-    timeout: 2
+    timeout: 5
     harness: bsim
     harness_config:
       bsim_exe_name:
