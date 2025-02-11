@@ -284,7 +284,19 @@ static bool sc_oobd_present;
 static bool legacy_oobd_present;
 static bool sc_supported;
 static const uint8_t *sc_public_key;
-static K_SEM_DEFINE(sc_local_pkey_ready, 0, 1);
+
+static void bt_smp_pkey_ready(const uint8_t *pkey);
+static struct {
+	struct k_mutex lock;
+	struct k_condvar condvar;
+	struct bt_pub_key_cb cb;
+} pub_key_gen = {
+	.lock = Z_MUTEX_INITIALIZER(pub_key_gen.lock),
+	.condvar = Z_CONDVAR_INITIALIZER(pub_key_gen.condvar),
+	.cb = {
+		.func = bt_smp_pkey_ready,
+	},
+};
 
 /* Pointer to internal data is used to mark that callbacks of given SMP channel are not initialized.
  * Value of NULL represents no authentication capabilities and cannot be used for that purpose.
@@ -4627,6 +4639,21 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
+static void pub_key_ready_notify(void)
+{
+	int err;
+
+	ARG_UNUSED(err);
+
+	err = k_mutex_lock(&pub_key_gen.lock, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
+
+	(void)k_condvar_broadcast(&pub_key_gen.condvar);
+
+	err = k_mutex_unlock(&pub_key_gen.lock);
+	__ASSERT_NO_MSG(err == 0);
+}
+
 static void bt_smp_pkey_ready(const uint8_t *pkey)
 {
 	int i;
@@ -4635,12 +4662,12 @@ static void bt_smp_pkey_ready(const uint8_t *pkey)
 
 	sc_public_key = pkey;
 
+	pub_key_ready_notify();
+
 	if (!pkey) {
 		LOG_WRN("Public key not available");
 		return;
 	}
-
-	k_sem_give(&sc_local_pkey_ready);
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
 		struct bt_smp *smp = &bt_smp_pool[i];
@@ -5663,9 +5690,41 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 	}
 
 	if (!sc_public_key) {
-		err = k_sem_take(&sc_local_pkey_ready, K_FOREVER);
-		if (err) {
+		/* Public key request has not been finished yet, or finished, but generation failed.
+		 * Retrying.
+		 */
+		err = k_mutex_lock(&pub_key_gen.lock, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
+
+		err = bt_pub_key_gen(&pub_key_gen.cb);
+		if (err && err != -EALREADY) {
+			LOG_WRN("Public key re-generation request failed (%d)", err);
+
+			int mutex_err;
+
+			mutex_err = k_mutex_unlock(&pub_key_gen.lock);
+			__ASSERT_NO_MSG(mutex_err == 0);
+
 			return err;
+		}
+
+		/* 30 seconds is an arbitrary number. Increase if fails earlier on certain
+		 * platforms.
+		 */
+		err = k_condvar_wait(&pub_key_gen.condvar,
+				     &pub_key_gen.lock,
+				     K_SECONDS(30));
+		if (err) {
+			LOG_WRN("Public key generation timeout");
+			return err;
+		}
+
+		err = k_mutex_unlock(&pub_key_gen.lock);
+		__ASSERT_NO_MSG(err == 0);
+
+		/* Public key has been re-requested but generation failed. */
+		if (!sc_public_key) {
+			return -EAGAIN;
 		}
 	}
 
@@ -6077,10 +6136,6 @@ BT_L2CAP_BR_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
 
 int bt_smp_init(void)
 {
-	static struct bt_pub_key_cb pub_key_cb = {
-		.func           = bt_smp_pkey_ready,
-	};
-
 	sc_supported = le_sc_supported();
 	if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) && !sc_supported) {
 		LOG_ERR("SC Pair Only Mode selected but LE SC not supported");
@@ -6095,7 +6150,7 @@ int bt_smp_init(void)
 	LOG_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
 
 	if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
-		bt_pub_key_gen(&pub_key_cb);
+		bt_pub_key_gen(&pub_key_gen.cb);
 	}
 
 	return smp_self_test();
