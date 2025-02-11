@@ -1,5 +1,5 @@
 #
-# Copyright 2023 NXP
+# Copyright 2023, 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,8 +23,10 @@ supported:
   - hwinfo
   - i2c
   - mipi_dsi
+  - netif:eth
+  - pwm
   - spi
-  - usb_device
+  - usbd
   - video
   - watchdog
 vendor: nxp
