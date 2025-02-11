@@ -34,7 +34,6 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
-#include "../bluetooth/host/hci_core.h"
 #include "../bluetooth/host/settings.h"
 
 #include "audio_internal.h"
