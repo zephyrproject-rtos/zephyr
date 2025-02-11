@@ -747,6 +747,8 @@ endchoice
 
 config NRF_WIFI_MGMT_BUFF_OFFLOAD
 	bool "Management buffer offload"
+	# Raw scan results need host based refilling
+	depends on !WIFI_MGMT_RAW_SCAN_RESULTS
 	default y
 	help
 	  This option offloads the refilling of management buffers to the UMAC, saving the host
