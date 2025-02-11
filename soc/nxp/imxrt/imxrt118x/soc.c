@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
@@ -22,6 +23,8 @@
 #endif
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <cmsis_core.h>
+
+LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /*
  * Set ELE_STICK_FAILED_STS to 0 when ELE status check is not required,
@@ -521,34 +524,36 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 	status_t sts;
 	uint8_t i, j;
 
-    /* Get ELE FW status */
+	/* Get ELE FW status */
 	do {
 		uint32_t ele_fw_sts;
 
 		sts = ELE_BaseAPI_GetFwStatus(MU_RT_S3MUA, &ele_fw_sts);
 	} while (sts != kStatus_Success);
 
-	do {
 #if defined(CONFIG_SOC_MIMXRT1189_CM33)
-		/* Release TRDC A to CM33 core */
-		sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM33_ID);
+	/* Release TRDC AON to CM33 core */
+	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM33_ID);
 #elif defined(CONFIG_SOC_MIMXRT1189_CM7)
-		/* Release TRDC A to CM7 core */
-		sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM7_ID);
+	/* Release TRDC AON to CM7 core */
+	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM7_ID);
 #endif
-	} while (ELE_IS_FAILED(sts));
+	if (sts != kStatus_Success) {
+		LOG_WRN("warning: TRDC AON permission get failed. If core don't get TRDC "
+			"AON permission, AON domain permission can't be configured.");
+	}
 
-	/* Release TRDC W to CM33 core */
-	do {
 #if defined(CONFIG_SOC_MIMXRT1189_CM33)
-		/* Release TRDC A to CM33 core */
-		sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM33_ID);
+	/* Release TRDC Wakeup to CM33 core */
+	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM33_ID);
 #elif defined(CONFIG_SOC_MIMXRT1189_CM7)
-		/* Release TRDC A to CM7 core */
-		sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM7_ID);
+	/* Release TRDC Wakeup to CM7 core */
+	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM7_ID);
 #endif
-	} while (ELE_IS_FAILED(sts));
-
+	if (sts != kStatus_Success) {
+		LOG_WRN("warning: TRDC Wakeup permission get failed. If core don't get TRDC "
+			"Wakeup permission, Wakeup domain permission can't be configured.");
+	}
 
 	/* Set the master domain access configuration for eDMA3/eDMA4 */
 	trdc_non_processor_domain_assignment_t edmaAssignment;
