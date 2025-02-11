@@ -54,7 +54,7 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
-  samples.subsys.display.lvgl.rk043fn66hs_ctg:
+  sample.subsys.display.lvgl.rk043fn66hs_ctg:
     tags: shield
     platform_allow:
       - mimxrt1064_evk
@@ -67,7 +67,7 @@ tests:
     extra_args: SHIELD=rk043fn66hs_ctg
     harness_config:
       fixture: fixture_display_rk043fn66hs_ctg
-  samples.subsys.display.lvgl.rk043fn02h_ct:
+  sample.subsys.display.lvgl.rk043fn02h_ct:
     tags: shield
     platform_allow:
       - mimxrt1064_evk
@@ -80,7 +80,7 @@ tests:
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
       fixture: fixture_display_rk043fn02h_ct
-  samples.subsys.display.lvgl.rtkmipilcdb00000be:
+  sample.subsys.display.lvgl.rtkmipilcdb00000be:
     tags: shield
     platform_allow:
       - ek_ra8d1
