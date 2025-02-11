@@ -1009,11 +1009,14 @@ class Bsim(Harness):
             [os.path.join(self._bsim_out_path, exe_name) for exe_name in exe_names]
 
     def clean_exes(self):
+        self._set_start_time()
+
+        try:
         for exe_path in [self._get_exe_path(i) for i in range(len(self._exe_paths))]:
             if os.path.exists(exe_path):
                 os.remove(exe_path)
-
-        self._set_start_time()
+        except Exception as e:
+            logger.warning(f'Failed to clean up bsim exes: {e}')
 
     def wait_bsim_ready(self):
         start_time = time.time()
