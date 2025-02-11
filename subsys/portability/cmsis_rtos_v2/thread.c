@@ -38,6 +38,10 @@ static K_THREAD_STACK_ARRAY_DEFINE(cmsis_rtos_thread_stack_pool,
 				   CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE);
 #endif
 
+struct stack_usage_info {
+	bool is_in_use;
+} stack_status[CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT];
+
 static inline int _is_thread_cmsis_inactive(struct k_thread *thread)
 {
 	uint8_t state = thread->base.thread_state;
@@ -104,7 +108,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 	osPriority_t cv2_prio;
 	struct cmsis_rtos_thread_cb *tid;
 	static uint32_t one_time;
-	void *stack;
+	void *stack = NULL;
 	size_t stack_size;
 	uint32_t this_thread_num;
 	uint32_t this_dynamic_cb;
@@ -174,7 +178,14 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 			 "dynamic stack size must be configured to be non-zero\n");
 		this_dynamic_stack = atomic_inc(&num_dynamic_stack);
 		stack_size = CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE;
-		stack = cmsis_rtos_thread_stack_pool[this_dynamic_stack];
+
+		for (int stack_idx = this_dynamic_stack; stack_idx >= 0; stack_idx--) {
+			if (!stack_status[stack_idx].is_in_use) {
+				stack = cmsis_rtos_thread_stack_pool[stack_idx];
+				stack_status[stack_idx].is_in_use = true;
+				break;
+			}
+		}
 	} else
 #endif
 	{
@@ -478,6 +489,37 @@ osStatus_t osThreadJoin(osThreadId_t thread_id)
 }
 
 /**
+ * @brief Decrement the thread count based on thread type.
+ */
+int decrement_thread_counter(struct cmsis_rtos_thread_cb *tid)
+{
+	if (tid == NULL) {
+		return -EINVAL;
+	}
+
+#if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
+	for (int stack_idx = 0; stack_idx < CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT; stack_idx++) {
+		if (tid->z_thread.stack_info.start ==
+		    (uintptr_t)cmsis_rtos_thread_stack_pool[stack_idx]) {
+			atomic_dec(&num_dynamic_stack);
+			stack_status[stack_idx].is_in_use = false;
+			break;
+		}
+	}
+#endif
+
+	for (int cb_idx = 0; cb_idx < CONFIG_CMSIS_V2_THREAD_MAX_COUNT; cb_idx++) {
+		if (tid == &cmsis_rtos_thread_cb_pool[cb_idx]) {
+			atomic_dec(&num_dynamic_cb);
+			break;
+		}
+	}
+
+	atomic_dec((atomic_t *)&thread_num);
+	return 0;
+}
+
+/**
  * @brief Terminate execution of current running thread.
  */
 __NO_RETURN void osThreadExit(void)
@@ -487,6 +529,7 @@ __NO_RETURN void osThreadExit(void)
 	__ASSERT(!k_is_in_isr(), "");
 	tid = osThreadGetId();
 
+	decrement_thread_counter(tid);
 	k_thread_abort((k_tid_t)&tid->z_thread);
 
 	CODE_UNREACHABLE;
@@ -511,6 +554,7 @@ osStatus_t osThreadTerminate(osThreadId_t thread_id)
 		return osErrorResource;
 	}
 
+	decrement_thread_counter(tid);
 	k_thread_abort((k_tid_t)&tid->z_thread);
 	return osOK;
 }
