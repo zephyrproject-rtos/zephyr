@@ -1,6 +1,14 @@
 sample:
   description: LVGL sample application
   name: lvgl
+common:
+  tags:
+    - display
+    - gui
+    - lvgl
+    - samples
+  modules:
+    - lvgl
 tests:
   sample.display.lvgl.gui:
     filter: dt_chosen_enabled("zephyr,display")
@@ -11,16 +19,10 @@ tests:
     min_flash: 250
     min_ram: 32
     harness: none
-    tags:
-      - samples
-      - display
-      - gui
-      - lvgl
-    modules:
-      - lvgl
     integration_platforms:
       - native_sim/native/64
   sample.display.lvgl.rk055hdmipi4m:
+    tags: shield
     # This sample is intended to test the RT1170 and RT595, which require
     # a display shield to work with LVGL
     min_flash: 250
@@ -28,12 +30,6 @@ tests:
     # but the RT595 uses external PSRAM for the display buffer
     min_ram: 32
     harness: none
-    tags:
-      - samples
-      - display
-      - gui
-    modules:
-      - lvgl
     extra_args: SHIELD="rk055hdmipi4m"
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
@@ -43,36 +39,23 @@ tests:
     harness_config:
       fixture: fixture_display_rk055hdmipi4m
   sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166:
+    tags: shield
     filter: dt_compat_enabled("orisetech,otm8009a")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
     harness: console
     harness_config:
       fixture: fixture_display
-    modules:
-      - lvgl
-    tags:
-      - samples
-      - display
-      - shield
-      - lvgl
-      - gui
   sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166_a09:
+    tags: shield
     filter: dt_compat_enabled("frida,nt35510")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166_a09
     harness: console
     harness_config:
       fixture: fixture_display
-    modules:
-      - lvgl
-    tags:
-      - samples
-      - display
-      - shield
-      - lvgl
-      - gui
   samples.subsys.display.lvgl.rk043fn66hs_ctg:
+    tags: shield
     platform_allow:
       - mimxrt1064_evk
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -80,12 +63,12 @@ tests:
       - mimxrt1040_evk
     integration_platforms:
       - mimxrt1040_evk
-    tags: display
     harness: console
     extra_args: SHIELD=rk043fn66hs_ctg
     harness_config:
       fixture: fixture_display_rk043fn66hs_ctg
   samples.subsys.display.lvgl.rk043fn02h_ct:
+    tags: shield
     platform_allow:
       - mimxrt1064_evk
       - mimxrt1060_evk@C/mimxrt1062/qspi
@@ -93,17 +76,14 @@ tests:
       - mimxrt1040_evk
     integration_platforms:
       - mimxrt1040_evk
-    tags: display
     harness: console
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
       fixture: fixture_display_rk043fn02h_ct
   samples.subsys.display.lvgl.rtkmipilcdb00000be:
+    tags: shield
     platform_allow:
       - ek_ra8d1
-    tags:
-      - display
-      - shield
     harness: console
     extra_args: SHIELD=rtkmipilcdb00000be
     harness_config:
