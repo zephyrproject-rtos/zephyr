@@ -164,6 +164,11 @@ New APIs and options
     * Image management :c:macro:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` now has image data field
       :c:struct:`img_mgmt_image_confirmed`.
 
+* MCUboot
+
+  * Signed hex files where an encryption key Kconfig is set now have the encrypted flag set in
+    the image header.
+
 * Video
 
   * :c:func:`video_set_stream()` driver API has replaced :c:func:`video_stream_start()` and
