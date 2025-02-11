@@ -271,7 +271,7 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 					    enum bt_security_err err)
 {
 
-	if (err != 0 || level < BT_SECURITY_L2 || !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (err != 0 || level < BT_SECURITY_L2 || !bt_le_bond_exists(conn->id, &conn->le.dst)) {
 		return;
 	}
 

@@ -84,6 +84,7 @@ New APIs and options
   * Host
 
     * :c:func:`bt_le_get_local_features`
+    * :c:func:`bt_le_bond_exists`
 
 New Boards
 **********
