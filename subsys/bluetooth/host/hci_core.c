@@ -4541,7 +4541,7 @@ int bt_le_get_local_features(struct bt_le_local_features *remote_info)
 	return 0;
 }
 
-bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr)
+bool bt_le_bond_exists(uint8_t id, const bt_addr_le_t *addr)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		struct bt_keys *keys = bt_keys_find_addr(id, addr);

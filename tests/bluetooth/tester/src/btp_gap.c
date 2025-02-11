@@ -1162,7 +1162,7 @@ enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 	struct btp_gap_bond_lost_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
-	if (!bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
+	if (!bt_le_bond_exists(BT_ID_DEFAULT, addr)) {
 		return BT_SECURITY_ERR_SUCCESS;
 	}
 
