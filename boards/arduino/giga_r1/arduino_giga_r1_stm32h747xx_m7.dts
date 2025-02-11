@@ -252,3 +252,9 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 };
+
+/* alias used by display shields */
+zephyr_mipi_dsi: &mipi_dsi {};
+
+/* alias used by LCD display shields */
+zephyr_lcd_controller: &ltdc {};
