@@ -65,7 +65,8 @@ static void address_trans_set_region(struct address_trans_params *addr_translate
  * @param translate_regions Number of regions being initialised
  */
 
-void sys_mm_drv_ti_rat_init(void *region_config, uint64_t rat_base_addr, uint8_t translate_regions)
+void sys_mm_drv_ti_rat_init(struct address_trans_region_config *region_config,
+			    uint64_t rat_base_addr, uint8_t translate_regions)
 {
 	uint32_t i;
 
@@ -75,7 +76,7 @@ void sys_mm_drv_ti_rat_init(void *region_config, uint64_t rat_base_addr, uint8_t
 
 	translate_config.num_regions = translate_regions;
 	translate_config.rat_base_addr = rat_base_addr;
-	translate_config.region_config = (struct address_trans_region_config *)region_config;
+	translate_config.region_config = region_config;
 
 	/* enable regions setup by user */
 	for (i = 0; i < translate_config.num_regions; i++) {
