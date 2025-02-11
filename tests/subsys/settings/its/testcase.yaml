@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  settings.tfm_its:
+    filter: CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+    min_ram: 32
+    integration_platforms:
+      - max32657evkit/max32657/ns
+      - nrf5340dk/nrf5340/cpuapp/ns
+      - nrf54l15dk/nrf54l15/cpuapp/ns
