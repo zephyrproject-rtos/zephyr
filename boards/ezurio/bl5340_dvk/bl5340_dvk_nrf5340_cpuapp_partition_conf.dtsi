@@ -57,5 +57,5 @@
 	reg = <0x20040000 0x30000>;
 };
 
-/* Include default shared RAM configuration file */
-#include <common/nordic/nrf5340_shared_sram_partition.dtsi>
+/* Include shared RAM configuration file */
+#include "bl5340_dvk_nrf5340_shared_sram_planning_conf.dtsi"
