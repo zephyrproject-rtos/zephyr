@@ -1,11 +1,20 @@
 # Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
+config CLIC
+	bool "RISC-V Core Local Interrupt Controller (CLIC)"
+	default y
+	depends on DT_HAS_NUCLEI_ECLIC_ENABLED || DT_HAS_RISCV_CLIC_ENABLED
+	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	help
+	  Core Local Interrupt Controller provide low-latency, vectored,
+	  preemptive interrupts for RISC-V systems.
+
 config NUCLEI_ECLIC
 	bool "Enhanced Core Local Interrupt Controller (ECLIC)"
 	default y
 	depends on DT_HAS_NUCLEI_ECLIC_ENABLED
-	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	select CLIC
 	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
 	help
 	  Interrupt controller for Nuclei SoC core.
@@ -18,14 +27,14 @@ config NRFX_CLIC
 	help
 	  Interrupt controller for Nordic VPR cores.
 
+if CLIC
+
 config CLIC_SMCLICSHV_EXT
 	bool
 	help
 	  The selective hardware vectoring extension gives users the flexibility
 	  to select the behavior for each interrupt. The CLIC driver needs to
 	  implement the riscv_clic_irq_vector_set() function.
-
-if NUCLEI_ECLIC
 
 config LEGACY_CLIC
 	bool "Use the legacy clic specification"
@@ -34,4 +43,4 @@ config LEGACY_CLIC
 	  Enables legacy clic, where smclicshv extension is not supported and
 	  hardware vectoring is set via mode bits of mtvec.
 
-endif # NUCLEI_ECLIC
+endif # CLIC
