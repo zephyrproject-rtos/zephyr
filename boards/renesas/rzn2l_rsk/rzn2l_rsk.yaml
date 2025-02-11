@@ -1,0 +1,10 @@
+identifier: rzn2l_rsk
+name: Renesas Starter Kit+ for RZ/N2L
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - gpio
+vendor: renesas
