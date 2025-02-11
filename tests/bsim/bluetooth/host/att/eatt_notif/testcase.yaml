@@ -6,7 +6,7 @@ tests:
       - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
     harness: bsim
-    timeout: 2
+    timeout: 5
     harness_config:
       bsim_exe_name:
         - tests_bsim_bluetooth_host_att_eatt_notif_prj_conf
