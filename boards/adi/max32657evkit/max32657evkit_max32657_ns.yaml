@@ -14,5 +14,6 @@ supported:
   - counter
   - pwm
   - spi
+  - its
 ram: 192
 flash: 576
