@@ -26,6 +26,11 @@ struct i2c_nrfx_twim_rtio_config {
 	struct i2c_rtio *ctx;
 };
 
+struct i2c_nrfx_twim_rtio_data {
+	uint8_t *user_rx_buf;
+	uint16_t user_rx_buf_size;
+};
+
 static bool i2c_nrfx_twim_rtio_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf,
 					 size_t buf_len, uint16_t i2c_addr)
 {
@@ -44,12 +49,28 @@ static bool i2c_nrfx_twim_rtio_msg_start(const struct device *dev, uint8_t flags
 static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
 {
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
+	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 	struct i2c_rtio *ctx = config->ctx;
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
+		if (!nrf_dma_accessible_check(&config->common.twim, sqe->rx.buf)) {
+			if (sqe->rx.buf_len > config->common.msg_buf_size) {
+				return i2c_rtio_complete(ctx, -ENOSPC);
+			}
+
+			data->user_rx_buf = sqe->rx.buf;
+			data->user_rx_buf_size = sqe->rx.buf_len;
+			return i2c_nrfx_twim_rtio_msg_start(dev,
+							    I2C_MSG_READ | sqe->iodev_flags,
+							    config->common.msg_buf,
+							    data->user_rx_buf_size,
+							    dt_spec->addr);
+		}
+
+		data->user_rx_buf = NULL;
 		return i2c_nrfx_twim_rtio_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
 						    sqe->rx.buf, sqe->rx.buf_len, dt_spec->addr);
 	case RTIO_OP_TINY_TX:
@@ -145,7 +166,13 @@ static void i2c_nrfx_twim_rtio_submit(const struct device *dev, struct rtio_iode
 static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 {
 	const struct device *dev = p_context;
+	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
+	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 	int status = p_event->type == NRFX_TWIM_EVT_DONE ? 0 : -EIO;
+
+	if (data->user_rx_buf) {
+		memcpy(data->user_rx_buf, config->common.msg_buf, data->user_rx_buf_size);
+	}
 
 	i2c_nrfx_twim_rtio_complete(dev, status);
 }
@@ -215,6 +242,7 @@ int i2c_nrfx_twim_rtio_init(const struct device *dev)
 			DT_INST_PROP_OR(n, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),                      \
 			DT_INST_PROP_OR(n, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));                     \
 	PINCTRL_DT_DEFINE(I2C(idx));                                                               \
+	static struct i2c_nrfx_twim_rtio_data twim_##idx##z_data;                                  \
 	static const struct i2c_nrfx_twim_rtio_config twim_##idx##z_config = {                     \
 		.common =                                                                          \
 			{                                                                          \
@@ -235,9 +263,9 @@ int i2c_nrfx_twim_rtio_init(const struct device *dev)
 		.ctx = &_i2c##idx##_twim_rtio,                                                     \
 	};                                                                                         \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action, PM_DEVICE_ISR_SAFE);                    \
-	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_nrfx_twim_rtio_init, PM_DEVICE_DT_GET(I2C(idx)), NULL,  \
-			     &twim_##idx##z_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,         \
-			     &i2c_nrfx_twim_driver_api);
+	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_nrfx_twim_rtio_init, PM_DEVICE_DT_GET(I2C(idx)),        \
+			     &twim_##idx##z_data, &twim_##idx##z_config, POST_KERNEL,              \
+			     CONFIG_I2C_INIT_PRIORITY, &i2c_nrfx_twim_driver_api);
 
 #ifdef CONFIG_HAS_HW_NRF_TWIM0
 I2C_NRFX_TWIM_RTIO_DEVICE(0);
