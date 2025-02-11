@@ -153,7 +153,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable)
 		data->is_streaming = false;
 		error = dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
 		if (error) {
-			LOG_ERR("Unable to stop DMA (%d)", ret);
+			LOG_ERR("Unable to stop DMA (%d)", error);
 			return error;
 		}
 
