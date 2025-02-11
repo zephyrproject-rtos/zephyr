@@ -462,7 +462,6 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
  * e.g. as the handle since that's assigned to us by the controller.
  */
 #define BT_CONN_INDEX_INVALID 0xff
-struct bt_conn *bt_conn_lookup_index(uint8_t index);
 
 /* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state

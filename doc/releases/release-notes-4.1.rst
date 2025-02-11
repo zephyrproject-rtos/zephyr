@@ -136,6 +136,7 @@ New APIs and options
   * Host
 
     * :c:func:`bt_conn_is_type`
+    * :c:func:`bt_conn_lookup_index`
 
   * Mesh
 

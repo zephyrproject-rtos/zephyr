@@ -719,6 +719,19 @@ void bt_conn_foreach(enum bt_conn_type type,
  */
 struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer);
 
+/** @brief Look up an existing connection by index.
+ *
+ *  Look up an existing connection based on the connection index.
+ *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
+ *
+ *  @param index Connection index from bt_conn_index()
+ *
+ *  @return Connection object or NULL if not found.
+ */
+struct bt_conn *bt_conn_lookup_index(uint8_t index);
+
 /** @brief Get destination (peer) address of a connection.
  *
  *  @param conn Connection object.
