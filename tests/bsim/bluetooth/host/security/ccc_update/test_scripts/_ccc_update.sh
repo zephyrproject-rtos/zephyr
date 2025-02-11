@@ -5,29 +5,11 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 test_name='ccc_update'
-test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_security_${test_name}_overlay-no_lazy_load_conf"
+test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_security_${test_name}_prj_conf"
 simulation_id="${test_name}_no_lazy_load"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin
-
-if [ "${1}" != 'debug0' ]; then
-  Execute "./${test_exe}" \
-    -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central \
-    -flash="${simulation_id}_client.log.bin" -flash_rm -RealEncryption=1
-fi
-
-if [ "${1}" != 'debug1' ]; then
-  Execute "./${test_exe}" \
-    -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=bad_central \
-    -flash="${simulation_id}_bad_client.log.bin" -flash_rm -RealEncryption=1
-fi
-
-if [ "${1}" != 'debug2' ]; then
-  Execute "./${test_exe}" \
-    -v=${verbosity_level} -s=${simulation_id} -d=2 -testid=peripheral \
-    -flash="${simulation_id}_server.log.bin" -flash_rm -RealEncryption=1
-fi
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
   -D=3 -sim_length=60e6
