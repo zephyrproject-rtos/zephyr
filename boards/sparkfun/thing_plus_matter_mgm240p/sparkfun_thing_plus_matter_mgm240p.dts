@@ -39,7 +39,7 @@
 	};
 
 	wake_up_trigger: gpio-wake-up  {
-		compatible = "silabs,gecko-wake-up-trigger";
+		compatible = "zephyr,gpio-pin";
 		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
 	};
 
