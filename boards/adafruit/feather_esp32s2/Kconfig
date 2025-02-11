@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096
+
+config BOARD_LATE_INIT_HOOK=y
+	bool
+	default y
