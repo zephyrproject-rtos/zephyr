@@ -7,7 +7,7 @@
 #include <zephyr/devicetree.h>
 #include <fsl_device_registers.h>
 
-static int mimxrt685_evk_init(void)
+void board_early_init_hook(void)
 {
 
 /* flexcomm1 and flexcomm3 are configured to loopback the TX signal to RX */
@@ -54,8 +54,4 @@ static int mimxrt685_evk_init(void)
 	 */
 	 OCOTP->OTP_SHADOW[97] = 0x314000;
 #endif /* CONFIG_REBOOT */
-
-	return 0;
 }
-
-SYS_INIT(mimxrt685_evk_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);
