@@ -787,6 +787,7 @@ config BT_CTLR_ADV_PERIODIC_RSP
 config BT_CTLR_ADV_EXT_CODING_SELECTION
 	bool "Advertising Coding Selection support"
 	depends on BT_CTLR_PHY_CODED && BT_CTLR_ADV_EXT_CODING_SELECTION_SUPPORT
+	select BT_CTLR_SET_HOST_FEATURE if BT_OBSERVER
 	default y if BT_EXT_ADV_CODING_SELECTION
 	help
 	  Enable support for Bluetooth 6.0 Advertising Coding Selection
