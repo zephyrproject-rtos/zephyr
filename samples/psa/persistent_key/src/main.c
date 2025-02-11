@@ -3,10 +3,11 @@
  */
 #include <psa/crypto.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/psa/key_ids.h>
 
 LOG_MODULE_REGISTER(persistent_key);
 
-#define SAMPLE_KEY_ID   PSA_KEY_ID_USER_MIN
+#define SAMPLE_KEY_ID   ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_BEGIN
 #define SAMPLE_KEY_TYPE PSA_KEY_TYPE_AES
 #define SAMPLE_ALG      PSA_ALG_CTR
 #define SAMPLE_KEY_BITS 256
