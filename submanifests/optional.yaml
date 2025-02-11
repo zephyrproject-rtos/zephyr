@@ -47,7 +47,7 @@ manifest:
       groups:
         - optional
     - name: tflite-micro
-      revision: 48613f7ba1ffbda46ad771a77a35408f48f922e9
+      revision: 8d404de73acf7687831e16d88e86e4f73cfddf8e
       path: optional/modules/lib/tflite-micro
       repo-path: tflite-micro
       remote: upstream
