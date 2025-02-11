@@ -1,10 +1,104 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+  timeout: 2
+  no_build: true
+  harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_privacy_device_prj_conf
+      bsim_verbosity: 2
+      bsim_sim_length: 60e6
+      bsim_test_ids:
+        - central
+        - peripheral
+      bsim_options:
+        - -RealEncryption=1
+        - -argstest
+
 tests:
-  bluetooth.host.privacy.device:
+  bluetooth.host.privacy.build_device:
     build_only: true
-    tags:
-      - bluetooth
-    platform_allow:
-      - nrf52_bsim/native
-    harness: bsim
+    no_build: false
+  bluetooth.host.privacy.leg_conn_scan_active_identity:
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_privacy_device_prj_conf
+      bsim_options:
+        - sim-id=0
+        - addr-type=identity
+        - "['connection-test=1', '']"
+        - "['active-scan=1', '']"
+        - "['', 'use-ext-adv=0']"
+        - "['', 'scannable=1']"
+        - "['', 'connectable=1']"
+  bluetooth.host.privacy.leg_conn_scan_active_rpa:
+    harness_config:
+      bsim_options:
+        - sim-id=1
+        - addr-type=rpa
+        - "['connection-test=1', '']"
+        - "['active-scan=1', '']"
+        - "['', 'use-ext-adv=0']"
+        - "['', 'scannable=1']"
+        - "['', 'connectable=1']"
+  bluetooth.host.privacy.leg_conn_nscan_passive_identity:
+    harness_config:
+      bsim_options:
+        - sim-id=2
+        - addr-type=identity
+        - "['connection-test=1', '']"
+        - "['active-scan=0', '']"
+        - "['', 'use-ext-adv=0']"
+        - "['', 'scannable=0']"
+        - "['', 'connectable=1']"
+  bluetooth.host.privacy.leg_conn_nscan_passive_rpa:
+    harness_config:
+      bsim_options:
+        - sim-id=3
+        - addr-type=rpa
+        - "['connection-test=1', '']"
+        - "['active-scan=0', '']"
+        - "['', 'use-ext-adv=0']"
+        - "['', 'scannable=0']"
+        - "['', 'connectable=1']"
+  bluetooth.host.privacy.ext_nconn_scan_active_identity:
+    harness_config:
+      bsim_options:
+        - sim-id=4
+        - addr-type=identity
+        - "['connection-test=0', '']"
+        - "['active-scan=1', '']"
+        - "['', 'use-ext-adv=1']"
+        - "['', 'scannable=1']"
+        - "['', 'connectable=0']"
+  bluetooth.host.privacy.ext_nconn_scan_active_rpa:
+    harness_config:
+      bsim_options:
+        - sim-id=5
+        - addr-type=rpa
+        - "['connection-test=0', '']"
+        - "['active-scan=1', '']"
+        - "['', 'use-ext-adv=1']"
+        - "['', 'scannable=1']"
+        - "['', 'connectable=0']"
+  bluetooth.host.privacy.ext_conn_nscan_passive_identity:
+    harness_config:
+      bsim_options:
+        - sim-id=6
+        - addr-type=identity
+        - "['connection-test=1', '']"
+        - "['active-scan=0', '']"
+        - "['', 'use-ext-adv=1']"
+        - "['', 'scannable=0']"
+        - "['', 'connectable=1']"
+  bluetooth.host.privacy.ext_conn_nscan_passive_rpa:
+    harness_config:
+      bsim_options:
+        - sim-id=7
+        - addr-type=rpa
+        - "['connection-test=1', '']"
+        - "['active-scan=0', '']"
+        - "['', 'use-ext-adv=1']"
+        - "['', 'scannable=0']"
+        - "['', 'connectable=1']"

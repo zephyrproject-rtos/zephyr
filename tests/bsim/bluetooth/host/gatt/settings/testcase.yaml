@@ -1,17 +1,40 @@
 common:
-  build_only: true
   tags:
     - bluetooth
   platform_allow:
     - nrf52_bsim/native
   harness: bsim
+  timeout: 10
+  harness_config:
+    bsim_verbosity: 2
+    bsim_sim_length: 30e6
+    bsim_test_ids:
+      - client
+      - server
+      - server
+      - server
+      - server
+      - server
+      - server
+      - server
+    bsim_options:
+      - -RealEncryption=1
+      - -argstest
+      - '[0,0,1,2,3,4,5,6]'
+      - '[0] + [6]*7'
 
 tests:
   bluetooth.host.gatt.settings:
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_gatt_settings_prj_conf
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_gatt_settings_prj_conf
+      bsim_options:
+        - '["client"] + ["server"]*7'
   bluetooth.host.gatt.settings_priv:
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_gatt_settings_overlay-privacy_conf
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_gatt_settings_overlay-privacy_conf
+      bsim_options:
+        - '["client_priv"] + ["server_priv"]*7'
     extra_args:
       EXTRA_CONF_FILE=overlay-privacy.conf
