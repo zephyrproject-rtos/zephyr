@@ -44,10 +44,10 @@ enum dwc2_drv_event_type {
 };
 
 /* Minimum RX FIFO size in 32-bit words considering the largest used OUT packet
- * of 512 bytes. The value must be adjusted according to the number of OUT
- * endpoints.
+ * of 64 bytes (FS mode). The value must be adjusted according to the number
+ * of OUT endpoints.
  */
-#define UDC_DWC2_GRXFSIZ_FS_DEFAULT	(15U + 512U/4U)
+#define UDC_DWC2_GRXFSIZ_FS_DEFAULT (15U + 2 * (64U/4U + 1))
 /* Default Rx FIFO size in 32-bit words calculated to support High-Speed with:
  *   * 1 control endpoint in Completer/Buffer DMA mode: 13 locations
  *   * Global OUT NAK: 1 location
@@ -3116,6 +3116,25 @@ static const struct udc_api udc_dwc2_api = {
 	COND_CODE_1(DT_NUM_REGS(DT_DRV_INST(n)), (DT_INST_REG_ADDR(n)),		\
 		    (DT_INST_REG_ADDR_BY_NAME(n, core)))
 
+#if !defined(UDC_DWC2_IRQ_DT_INST_DEFINE)
+#define UDC_DWC2_IRQ_DT_INST_DEFINE(n)	\
+	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)	\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n),					\
+			    DT_INST_IRQ(n, priority),				\
+			    udc_dwc2_isr_handler,				\
+			    DEVICE_DT_INST_GET(n),				\
+			    DW_IRQ_FLAGS(n));					\
+										\
+		irq_enable(DT_INST_IRQN(n));					\
+	}									\
+										\
+	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)	\
+	{									\
+		irq_disable(DT_INST_IRQN(n));					\
+	}
+#endif
+
 #define UDC_DWC2_PINCTRL_DT_INST_DEFINE(n)					\
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    (PINCTRL_DT_INST_DEFINE(n)), ())
@@ -3160,21 +3179,7 @@ static const struct udc_api udc_dwc2_api = {
 		k_thread_name_set(&priv->thread_data, dev->name);		\
 	}									\
 										\
-	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    udc_dwc2_isr_handler,				\
-			    DEVICE_DT_INST_GET(n),				\
-			    DW_IRQ_FLAGS(n));					\
-										\
-		irq_enable(DT_INST_IRQN(n));					\
-	}									\
-										\
-	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)	\
-	{									\
-		irq_disable(DT_INST_IRQN(n));					\
-	}									\
+	UDC_DWC2_IRQ_DT_INST_DEFINE(n)						\
 										\
 	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_out_eps)];	\
 	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_in_eps)];	\
