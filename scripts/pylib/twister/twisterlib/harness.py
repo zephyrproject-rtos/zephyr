@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+import glob
 import json
 import logging
 import os
@@ -13,6 +14,7 @@ import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
+import random
 from collections import OrderedDict
 from enum import Enum
 
@@ -969,13 +971,15 @@ class Bsim(Harness):
     DEFAULT_VERBOSITY = 2
     DEFAULT_SIM_LENGTH = 60e6
 
-    BSIM_READY_TIMEOUT_S = 20
+    BSIM_READY_TIMEOUT_S = 60
 
     cacheable = True
 
     def __init__(self):
         super().__init__()
         self._bsim_out_path = os.getenv('BSIM_OUT_PATH', '')
+        if self._bsim_out_path:
+            self._bsim_out_path = os.path.join(self._bsim_out_path, 'bin')
         self._exe_paths = []
         self._tc_output = []
         self._start_time = 0
@@ -1002,7 +1006,7 @@ class Bsim(Harness):
             exe_names = [f'bs_{self.instance.name}']
 
         self._exe_paths = \
-            [os.path.join(self._bsim_out_path, 'bin', exe_name) for exe_name in exe_names]
+            [os.path.join(self._bsim_out_path, exe_name) for exe_name in exe_names]
 
     def clean_exes(self):
         for exe_path in [self._get_exe_path(i) for i in range(len(self._exe_paths))]:
@@ -1045,8 +1049,9 @@ class Bsim(Harness):
             self.instance.execution_time = time.time() - self._start_time
 
     def _run_cmd(self, cmd, timeout):
+        logger.debug(' '.join(cmd))
         with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              cwd=os.path.join(self._bsim_out_path, 'bin')) as proc:
+                              cwd=self._bsim_out_path) as proc:
             try:
                 reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
                 reader_t.start()
@@ -1061,8 +1066,11 @@ class Bsim(Harness):
                 self.status = TwisterStatus.ERROR
                 proc.kill()
 
-        if self.status == TwisterStatus.NONE:
-            self.status = TwisterStatus.FAIL if proc.returncode != 0 else TwisterStatus.PASS
+        if proc.returncode != 0:
+            self.status = TwisterStatus.ERROR
+            self.instance.reason = f'Bsim error - return code {proc.returncode}'
+        else:
+            self.status = TwisterStatus.PASS if self.status == TwisterStatus.NONE else self.status
 
     def _output_reader(self, proc):
         while proc.stdout.readable() and proc.poll() is None:
@@ -1074,24 +1082,47 @@ class Bsim(Harness):
         proc.communicate()
 
     def _generate_commands(self):
-        bsim_phy_path = os.path.join(self._bsim_out_path, 'bin', 'bs_2G4_phy_v1')
+        def rs():
+            return  f'-rs={random.randint(0, 2**10 - 1)}'
+
+        def expand_args(dev_id):
+            try:
+                args = [str(eval(v)[dev_id]) if v.startswith('[') else v for v in extra_args]
+                return [arg for arg in args if args if arg]
+            except Exception as e:
+                logger.warning(f'Unable to expand extra arguments set {extra_args}: {e}')
+                return extra_args
+
+        bsim_phy_path = os.path.join(self._bsim_out_path, 'bs_2G4_phy_v1')
         suite_id = f'-s={self.instance.name.split(os.path.sep)[-1].replace(".", "_")}'
 
         cfg = self.instance.testsuite.harness_config
         verbosity = f'-v={cfg.get("bsim_verbosity", self.DEFAULT_VERBOSITY)}'
         sim_length = f'-sim_length={cfg.get("bsim_sim_length", self.DEFAULT_SIM_LENGTH)}'
         extra_args = cfg.get('bsim_options', [])
+        phy_extra_args = cfg.get('bsim_phy_options', [])
         test_ids = cfg.get('bsim_test_ids', [])
         if not test_ids:
             logger.error('No test ids specified for bsim test')
             self.status = TwisterStatus.ERROR
             return []
 
-        cmds = [[self._get_exe_path(i), verbosity, suite_id, f'-d={i}', f'-testid={t_id}'] + extra_args
-                for i, t_id in enumerate(test_ids)]
-        cmds.append([bsim_phy_path, verbosity, suite_id, f'-D={len(test_ids)}', sim_length])
+        cmds = [[self._get_exe_path(i), verbosity, suite_id, f'-d={i}', f'-testid={t_id}', rs()]
+                 + expand_args(i) for i, t_id in enumerate(test_ids)]
+        cmds.append([bsim_phy_path, verbosity, suite_id, f'-D={len(test_ids)}', sim_length]
+                     + phy_extra_args)
 
         return cmds
+
+    def _clean_up_files(self):
+        # Clean-up any log files that the test may have generated
+        files = glob.glob(os.path.join(self._bsim_out_path, '*.log'))
+        # files += glob.glob(os.path.join(self._bsim_out_path, '*.bin'))
+        try:
+            for file in [f for f in files if os.path.getctime(f) > self._start_time]:
+                os.remove(file)
+        except Exception as e:
+            logger.warning(f'Failed to clean up bsim log files: {e}')
 
     def bsim_run(self, timeout):
         try:
@@ -1110,6 +1141,7 @@ class Bsim(Harness):
             self.status = TwisterStatus.ERROR
         finally:
             self._update_test_status()
+            self._clean_up_files()
 
     def _update_test_status(self):
         self.instance.execution_time += time.time() - self._start_time

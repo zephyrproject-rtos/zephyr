@@ -201,6 +201,11 @@ schema;scenario-schema:
           required: false
           sequence:
             - type: str
+        "bsim_phy_options":
+          type: seq
+          required: false
+          sequence:
+            - type: str
     "min_ram":
       type: int
       required: false
