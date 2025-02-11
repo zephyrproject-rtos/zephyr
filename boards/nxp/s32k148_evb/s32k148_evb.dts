@@ -178,3 +178,24 @@
 	vref-mv = <5000>;
 	status = "okay";
 };
+
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "nxp,tja1101";
+		reg = <0>;
+		status = "okay";
+		master-slave = "default";
+	};
+};

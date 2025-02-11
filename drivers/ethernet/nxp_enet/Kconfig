@@ -88,6 +88,12 @@ config ETH_NXP_ENET_RX_THREAD_PRIORITY
 	  ENET MAC Driver handles RX in cooperative workqueue thread.
 	  This options sets the priority of that thread.
 
+config ETH_NXP_ENET_IGNORE_RX_CRC_PHY_ERROR
+	bool "Enable ENET workaround for CRC Phy error"
+	default n
+	help
+	  Enable this option to apply workarounds for known ENET CRC issues on S32K148.
+
 endif # ETH_NXP_ENET
 
 if ETH_MCUX

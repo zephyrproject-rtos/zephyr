@@ -53,4 +53,34 @@
 			drive-strength = "low";
 		};
 	};
+
+	pinmux_enet: pinmux_enet {
+		group1 {
+			pinmux = <MII_RMII_RX_ER_PTC16>,
+				<MII_RMII_RXD1_PTC0>,
+				<MII_RMII_RXD0_PTC1>,
+				<MII_RMII_RX_DV_PTC17>,
+				<MII_RMII_TX_EN_PTD12>,
+				<MII_RMII_TXD0_PTC2>,
+				<MII_RMII_TXD1_PTD7>,
+				<MII_RMII_TX_CLK_PTD11>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_enet_mdio: pinmux_enet_mdio {
+		group0 {
+			pinmux = <MII_RMII_MDIO_PTB4>;
+			drive-strength = "low";
+			drive-open-drain;
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+		group1 {
+			pinmux = <MII_RMII_MDC_PTB5>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
 };
