@@ -1,0 +1,22 @@
+tests:
+  bluetooth.host.l2cap.reassembly.test:
+    no_build: true
+    tags:
+      - bluetooth
+    platform_allow:
+      - nrf52_bsim/native
+    timeout: 2
+    harness: bsim
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_l2cap_reassembly_dut_prj_conf
+        - tests_bsim_bluetooth_host_l2cap_reassembly_peer_prj_conf
+      bsim_verbosity: 2
+      bsim_sim_length: 10e6
+      bsim_test_ids:
+        - dut
+        - peer
+      bsim_options:
+        - "['-argstest', '']"
+        - "['log_level', '']"
+        - "['3', '']"

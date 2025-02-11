@@ -1,10 +1,100 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+  timeout: 2
+  no_build: true
+  harness_config:
+    bsim_exe_name:
+      - tests_bsim_bluetooth_host_gatt_notify_prj_conf
+    bsim_verbosity: 2
+    bsim_sim_length: 60e6
+    bsim_options:
+      - -RealEncryption=1
+
 tests:
-  bluetooth.host.gatt.notify:
+  bluetooth.host.gatt.build_notify:
     build_only: true
-    tags:
-      - bluetooth
-    platform_allow:
-      - nrf52_bsim/native
-    harness: bsim
+    no_build: false
+  bluetooth.host.gatt.notify_enhanced_enhanced:
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_gatt_notify_prj_conf
+      bsim_test_ids:
+        - gatt_client_enhanced
+        - gatt_server_enhanced
+  bluetooth.host.gatt.notify_enhanced_mixed:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_mixed
+        - gatt_server_enhanced
+  bluetooth.host.gatt.notify_enhanced_none:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_none
+        - gatt_server_enhanced
+  bluetooth.host.gatt.notify_enhanced_unenhanced:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_unenhanced
+        - gatt_server_enhanced
+  bluetooth.host.gatt.notify_mixed_enhanced:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_enhanced
+        - gatt_server_mixed
+  bluetooth.host.gatt.notify_mixed_mixed:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_mixed
+        - gatt_server_mixed
+  bluetooth.host.gatt.notify_mixed_none:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_none
+        - gatt_server_mixed
+  bluetooth.host.gatt.notify_mixed_unenhanced:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_unenhanced
+        - gatt_server_mixed
+  bluetooth.host.gatt.notify_none_enhanced:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_enhanced
+        - gatt_server_none
+  bluetooth.host.gatt.notify_none_mixed:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_mixed
+        - gatt_server_none
+  bluetooth.host.gatt.notify_none_none:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_none
+        - gatt_server_none
+  bluetooth.host.gatt.notify_none_unenhanced:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_unenhanced
+        - gatt_server_none
+  bluetooth.host.gatt.notify_unenhanced_enhanced:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_enhanced
+        - gatt_server_unenhanced
+  bluetooth.host.gatt.notify_unenhanced_mixed:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_mixed
+        - gatt_server_unenhanced
+  bluetooth.host.gatt.notify_unenhanced_none:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_none
+        - gatt_server_unenhanced
+  bluetooth.host.gatt.notify_unenhanced_unenhanced:
+    harness_config:
+      bsim_test_ids:
+        - gatt_client_unenhanced
+        - gatt_server_unenhanced

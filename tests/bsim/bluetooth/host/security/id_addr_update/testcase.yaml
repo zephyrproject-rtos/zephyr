@@ -1,14 +1,16 @@
 tests:
-  bluetooth.host.security.bond_overwrite_denied:
+  bluetooth.host.security.id_addr_update.test:
+    no_build: true
     tags:
       - bluetooth
     platform_allow:
       - nrf52_bsim/native
-    timeout: 5
     harness: bsim
+    timeout: 2
     harness_config:
       bsim_exe_name:
-        - tests_bsim_bluetooth_host_security_bond_overwrite_denied_prj_conf
+        - tests_bsim_bluetooth_host_security_id_addr_update_central_prj_conf
+        - tests_bsim_bluetooth_host_security_id_addr_update_peripheral_prj_conf
       bsim_test_ids:
         - central
         - peripheral
