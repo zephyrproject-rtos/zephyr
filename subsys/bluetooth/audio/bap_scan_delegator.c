@@ -411,18 +411,23 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 
 static bool supports_past(struct bt_conn *conn, uint8_t pa_sync_val)
 {
-	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)) {
-		LOG_DBG("%p remote %s PAST, local %s PAST (req %u)", (void *)conn,
-			BT_FEAT_LE_PAST_SEND(conn->le.features) ? "supports" : "does not support",
-			BT_FEAT_LE_PAST_RECV(bt_dev.le.features) ? "supports" : "does not support",
-			pa_sync_val);
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
+	struct bt_conn_info info;
+	int err;
 
-		return pa_sync_val == BT_BAP_BASS_PA_REQ_SYNC_PAST &&
-		       BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-		       BT_FEAT_LE_PAST_RECV(bt_dev.le.features);
-	} else {
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
 		return false;
 	}
+
+	LOG_DBG("%p PAST %ssupported (req %u)", (void *)conn,
+		info.le.per_adv_sync_transfer_receiver ? "" : "not ", pa_sync_val);
+
+	return pa_sync_val == BT_BAP_BASS_PA_REQ_SYNC_PAST &&
+	       info.le.per_adv_sync_transfer_receiver;
+#else
+	return false;
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 }
 
 static int pa_sync_request(struct bt_conn *conn,
@@ -652,8 +657,8 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 			(void)memset(state, 0, sizeof(*state));
 			internal_state->active = false;
 
-			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync, conn,
-				err);
+			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync,
+				(void *)conn, err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
@@ -859,8 +864,8 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			(void)memcpy(state, &backup_state,
 				     sizeof(backup_state));
 
-			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync, conn,
-				err);
+			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync,
+				(void *)conn, err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		} else if (pa_sync_state != state->pa_sync_state) {
@@ -877,7 +882,8 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		const int err = pa_sync_term_request(conn, &internal_state->state);
 
 		if (err != 0) {
-			LOG_DBG("PA sync term from %p was rejected with reason %d", conn, err);
+			LOG_DBG("PA sync term from %p was rejected with reason %d", (void *)conn,
+				err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
@@ -972,7 +978,8 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 		/* Terminate PA sync */
 		err = pa_sync_term_request(conn, &internal_state->state);
 		if (err != 0) {
-			LOG_DBG("PA sync term from %p was rejected with reason %d", conn, err);
+			LOG_DBG("PA sync term from %p was rejected with reason %d", (void *)conn,
+				err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}

@@ -49,8 +49,6 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 #include "common/bt_str.h"
 
 #include "bap_internal.h"
-#include "../host/conn_internal.h"
-#include "../host/hci_core.h"
 
 #define MINIMUM_RECV_STATE_LEN          15
 
@@ -208,17 +206,23 @@ static bool past_available(const struct bt_conn *conn,
 			   const bt_addr_le_t *adv_addr,
 			   uint8_t sid)
 {
-	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
-		LOG_DBG("%p remote %s PAST, local %s PAST", (void *)conn,
-			BT_FEAT_LE_PAST_RECV(conn->le.features) ? "supports" : "does not support",
-			BT_FEAT_LE_PAST_SEND(bt_dev.le.features) ? "supports" : "does not support");
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
+	struct bt_conn_info info;
+	int err;
 
-		return BT_FEAT_LE_PAST_RECV(conn->le.features) &&
-		       BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
-		       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
-	} else {
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
 		return false;
 	}
+
+	LOG_DBG("%p PAST %ssupported", (void *)conn,
+		info.le.per_adv_sync_transfer_sender ? "" : "not ");
+
+	return info.le.per_adv_sync_transfer_sender &&
+	       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
+#else
+	return false;
+#endif
 }
 
 static int parse_recv_state(const void *data, uint16_t length,
@@ -378,7 +382,7 @@ static uint8_t broadcast_assistant_bap_ntf_read_func(struct bt_conn *conn, uint8
 		return BT_GATT_ITER_STOP;
 	}
 
-	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
+	LOG_DBG("conn %p err 0x%02x len %u", (void *)conn, err, length);
 
 	if (err) {
 		LOG_DBG("Failed to read: %u", err);
@@ -427,7 +431,7 @@ static void long_bap_read(struct bt_conn *conn, uint16_t handle)
 	}
 
 	if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
-		LOG_DBG("conn %p", conn);
+		LOG_DBG("conn %p", (void *)conn);
 
 		/* If the client is busy reading reschedule the long read */
 		struct bt_conn_info conn_info;

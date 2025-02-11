@@ -37,9 +37,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "../host/conn_internal.h"
-#include "../host/iso_internal.h"
-
 #include "audio_internal.h"
 #include "bap_iso.h"
 #include "bap_endpoint.h"
