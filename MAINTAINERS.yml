@@ -1252,6 +1252,8 @@ Release Notes:
   status: maintained
   maintainers:
     - ceolin
+  collaborators:
+    - valeriosetti
   files:
     - drivers/crypto/
     - dts/bindings/crypto/
