@@ -125,15 +125,15 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return session->ops->recv(session, buf);
 }
 
+static const struct bt_l2cap_chan_ops ops = {
+	.connected = avctp_l2cap_connected,
+	.disconnected = avctp_l2cap_disconnected,
+	.encrypt_change = avctp_l2cap_encrypt_changed,
+	.recv = avctp_l2cap_recv,
+};
+
 int bt_avctp_connect(struct bt_conn *conn, struct bt_avctp *session)
 {
-	static const struct bt_l2cap_chan_ops ops = {
-		.connected = avctp_l2cap_connected,
-		.disconnected = avctp_l2cap_disconnected,
-		.encrypt_change = avctp_l2cap_encrypt_changed,
-		.recv = avctp_l2cap_recv,
-	};
-
 	if (!session) {
 		return -EINVAL;
 	}
@@ -217,9 +217,29 @@ int bt_avctp_register(const struct bt_avctp_event_cb *cb)
 static int avctp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 			      struct bt_l2cap_chan **chan)
 {
-	/* TODO */
+	struct bt_avctp *session = NULL;
+	int err;
 
-	return -ENOTSUP;
+	LOG_DBG("conn %p", conn);
+
+	if (!event_cb) {
+		LOG_WRN("AVCTP server is unsupported");
+		return -ENOTSUP;
+	}
+
+	/* Get the AVCTP session from upper layer */
+	err = event_cb->accept(conn, &session);
+	if (err < 0) {
+		LOG_ERR("Get the AVCTP session failed %d", err);
+		return err;
+	}
+
+	session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
+	session->br_chan.psm = BT_L2CAP_PSM_AVCTP;
+	session->br_chan.chan.ops = &ops;
+	*chan = &session->br_chan.chan;
+
+	return 0;
 }
 
 int bt_avctp_init(void)
