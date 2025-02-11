@@ -108,9 +108,6 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 
 	uint32_t found, regionId;
 
-	__ASSERT(translate_config.num_regions < ADDR_TRANSLATE_MAX_REGIONS,
-		 "Exceeding maximum number of regions");
-
 	found = 0;
 
 	for (regionId = 0; regionId < translate_config.num_regions; regionId++) {
