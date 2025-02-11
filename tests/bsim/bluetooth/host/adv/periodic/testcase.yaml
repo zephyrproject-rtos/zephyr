@@ -1,23 +1,82 @@
 common:
-  build_only: true
   tags:
     - bluetooth
   platform_allow:
     - nrf52_bsim/native
     - nrf5340bsim/nrf5340/cpunet
   harness: bsim
+  timeout: 2
+  harness_config:
+      bsim_verbosity: 2
+      bsim_sim_length: 15e6
+      bsim_options:
+        - -RealEncryption=0
 
 tests:
-  bluetooth.host.adv.periodic:
+  bluetooth.host.adv.periodic.build:
+    build_only: true
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_conf
-  bluetooth.host.adv.periodic.coded:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_periodic_prj_conf
+  bluetooth.host.adv.periodic.build_coded:
+    build_only: true
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_coded_conf
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_periodic_prj_coded_conf
     extra_args:
       EXTRA_CONF_FILE=prj_coded.conf
-  bluetooth.host.adv.periodic.long_data:
+  bluetooth.host.adv.periodic.build_long_data:
+    build_only: true
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_long_data_conf
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_periodic_prj_long_data_conf
     extra_args:
       EXTRA_CONF_FILE=prj_long_data.conf
+  bluetooth.host.adv.periodic.per_adv:
+    no_build: true
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_periodic_prj_conf
+      bsim_test_ids:
+        - per_adv_advertiser
+        - per_adv_sync
+  bluetooth.host.adv.periodic.per_adv_conn:
+    no_build: true
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_periodic_prj_conf
+      bsim_test_ids:
+        - per_adv_conn_advertiser
+        - per_adv_conn_sync
+  bluetooth.host.adv.periodic.per_adv_long_data:
+    no_build: true
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_periodic_prj_long_data_conf
+      bsim_test_ids:
+        - per_adv_long_data_advertiser
+        - per_adv_long_data_sync
+  bluetooth.host.adv.periodic.per_adv_conn_privacy:
+    no_build: true
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_periodic_prj_conf
+      bsim_test_ids:
+        - per_adv_conn_privacy_advertiser
+        - per_adv_conn_privacy_sync
+  bluetooth.host.adv.periodic.per_adv_not_scanning:
+    no_build: true
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_periodic_prj_conf
+      bsim_test_ids:
+        - per_adv_advertiser
+        - per_adv_sync_app_not_scanning
+  bluetooth.host.adv.periodic.per_adv_app_not_scanning_coded:
+    no_build: true
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_periodic_prj_coded_conf
+      bsim_test_ids:
+        - per_adv_advertiser_coded_phy
+        - per_adv_sync_app_not_scanning

@@ -1,0 +1,33 @@
+common:
+  no_build: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  timeout: 5
+  harness: bsim
+  harness_config:
+    bsim_verbosity: 2
+    bsim_sim_length: 100e6
+    bsim_options:
+      - -RealEncryption=1
+
+tests:
+  bluetooth.host.att.pipeline.shall_not_pipeline:
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf_rx_tx_prio_invert_extra_conf
+        - tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf
+      bsim_test_ids:
+        - dut_1
+        - tester_1
+  bluetooth.host.att.pipeline.tolerate_pipeline:
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf
+        - tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf
+        - tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf
+      bsim_test_ids:
+        - dut
+        - dut
+        - tester

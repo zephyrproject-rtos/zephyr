@@ -1,10 +1,28 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+  timeout: 2
+  harness_config:
+    bsim_verbosity: 2
+    bsim_sim_length: 30e6
+    bsim_exe_name:
+      - tests_bsim_bluetooth_host_iso_bis_prj_conf
+
 tests:
-  bluetooth.host.iso.bis:
+  bluetooth.host.iso.build_bis:
     build_only: true
-    tags:
-      - bluetooth
-    platform_allow:
-      - nrf52_bsim/native
-    harness: bsim
+  bluetooth.host.iso.bis:
+    no_build: true
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_iso_bis_prj_conf
+      bsim_test_ids:
+        - broadcaster
+        - receiver
+  bluetooth.host.iso.bis_disable:
+    no_build: true
+    harness_config:
+      bsim_test_ids:
+        - broadcaster_disable
+        - receiver

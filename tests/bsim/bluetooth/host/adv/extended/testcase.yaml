@@ -1,20 +1,56 @@
 common:
-  build_only: true
   tags:
     - bluetooth
   platform_allow:
     - nrf52_bsim/native
     - nrf5340bsim/nrf5340/cpunet
   harness: bsim
+  timeout: 2
+  harness_config:
+    bsim_verbosity: 2
+    bsim_sim_length: 10e6
+    bsim_options:
+      - -RealEncryption=0
 
 tests:
-  bluetooth.host.adv.extended.advertiser:
+  bluetooth.host.adv.extended.build_advertiser:
+    build_only: true
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf
     extra_args:
       CONF_FILE=prj_advertiser.conf
-  bluetooth.host.adv.extended.scanner:
+  bluetooth.host.adv.extended.build_scanner:
+    build_only: true
     harness_config:
-      bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf
     extra_args:
       CONF_FILE=prj_scanner.conf
+  bluetooth.host.adv.extended.ext_adv:
+    no_build: true
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf
+        - tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf
+      bsim_test_ids:
+        - ext_adv_advertiser
+        - ext_adv_scanner
+  bluetooth.host.adv.extended.ext_adv_conn:
+    no_build: true
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf
+        - tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf
+      bsim_test_ids:
+        - ext_adv_conn_advertiser
+        - ext_adv_conn_scanner
+  bluetooth.host.adv.extended.ext_adv_conn_x5:
+    no_build: true
+    harness_config:
+      bsim_exe_name:
+        - tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf
+        - tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf
+      bsim_test_ids:
+        - ext_adv_conn_advertiser_x5
+        - ext_adv_conn_scanner_x5
