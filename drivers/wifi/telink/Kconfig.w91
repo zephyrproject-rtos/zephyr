@@ -9,6 +9,8 @@ config WIFI_W91
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_L2_WIFI_MGMT
+	select NET_L2_ETHERNET
+	select WIFI_USE_NATIVE_NETWORKING
 	help
 		Enable Telink SoC WiFi support.
 

@@ -57,7 +57,7 @@ config TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS
 		This option sets Telink IPC dispatcher requests timeout in mS.
 
 config PBUF_RX_READ_BUF_SIZE
-	default 1504 if WIFI_W91
+	default 1522 if WIFI_W91
 	default 1024
 
 config IPC_SERVICE_ICMSG_WORK_QUEUE_STACK_SIZE

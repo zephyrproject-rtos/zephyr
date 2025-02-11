@@ -9,6 +9,7 @@
 #include "wifi_w91.h"
 
 #include <stdlib.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(w91_wifi, CONFIG_WIFI_LOG_LEVEL);
 
@@ -19,7 +20,6 @@ enum wifi_w91_state_flag {
 	WIFI_W91_STA_CONNECTED,
 	WIFI_W91_AP_STARTED,
 	WIFI_W91_AP_STOPPED,
-
 };
 
 enum wifi_w91_auth_mode {
@@ -129,24 +129,6 @@ struct wifi_w91_event {
 	union wifi_w91_event_param param;
 };
 
-struct ip_v4_data {
-	uint32_t ip;
-	uint32_t mask;
-	uint32_t gw;
-};
-
-struct ip_v6_data {
-	struct {
-		uint32_t ip[4];
-
-		__packed enum {
-			WIFI_W91_ADDR_TENTATIVE = 0,
-			WIFI_W91_ADDR_PREFERRED,
-			WIFI_W91_ADDR_DEPRECATED
-		} state;
-	} address[CONFIG_WIFI_TELINK_W91_IPV6_ADDR_CNT];
-};
-
 /* WiFi state utilities */
 static void wifi_w91_show_state(const struct wifi_iface_status *if_state)
 {
@@ -184,176 +166,6 @@ static void wifi_w91_reset_state(struct wifi_iface_status *if_state)
 	};
 }
 
-#if CONFIG_NET_IPV4
-/* APIs implementation: set ipv4 */
-static size_t pack_wifi_w91_set_ipv4(uint8_t inst, void *unpack_data, uint8_t *pack_data)
-{
-	struct ip_v4_data *p_ip_v4 = unpack_data;
-	size_t pack_data_len = sizeof(uint32_t) +
-		sizeof(p_ip_v4->ip) + sizeof(p_ip_v4->mask) + sizeof(p_ip_v4->gw);
-
-	if (pack_data != NULL) {
-		uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_IPV4_ADDR, inst);
-
-		IPC_DISPATCHER_PACK_FIELD(pack_data, id);
-		IPC_DISPATCHER_PACK_FIELD(pack_data, p_ip_v4->ip);
-		IPC_DISPATCHER_PACK_FIELD(pack_data, p_ip_v4->mask);
-		IPC_DISPATCHER_PACK_FIELD(pack_data, p_ip_v4->gw);
-	}
-
-	return pack_data_len;
-}
-
-IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(wifi_w91_set_ipv4);
-
-static int wifi_w91_set_ipv4(struct net_if *iface)
-{
-	struct wifi_w91_data *data = iface->if_dev->dev->data;
-	const struct wifi_w91_config *cfg = iface->if_dev->dev->config;
-	int err = 0;
-
-	if (data->base.state == WIFI_W91_STA_CONNECTED ||
-		data->base.state == WIFI_W91_AP_STARTED) {
-
-		struct ip_v4_data ipv4 = {
-			.ip = iface->config.ip.ipv4->unicast[0].ipv4.address.in_addr.s_addr,
-			.mask = iface->config.ip.ipv4->unicast[0].netmask.s_addr,
-			.gw = iface->config.ip.ipv4->gw.s_addr
-		};
-
-		err = -ETIMEDOUT;
-		IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
-			wifi_w91_set_ipv4, &ipv4, &err,
-			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
-	}
-
-	if (data->base.state == WIFI_W91_STA_CONNECTED) {
-		if (err) {
-			LOG_INF("set ip v4 error %d", err);
-		}
-		wifi_mgmt_raise_connect_result_event(data->base.iface, err);
-	}
-
-	return 0;
-}
-#endif /* CONFIG_NET_IPV4 */
-
-#if CONFIG_NET_IPV6
-/* APIs implementation: set ipv6 */
-static size_t pack_wifi_w91_set_ipv6(uint8_t inst, void *unpack_data, uint8_t *pack_data)
-{
-	struct ip_v6_data *p_ip_v6 = unpack_data;
-	size_t pack_data_len = sizeof(uint32_t);
-
-	for (size_t i = 0; i < CONFIG_WIFI_TELINK_W91_IPV6_ADDR_CNT; i++) {
-		pack_data_len += sizeof(p_ip_v6->address[i].ip);
-		pack_data_len += sizeof(p_ip_v6->address[i].state);
-	}
-
-	if (pack_data != NULL) {
-		uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_IPV6_ADDR, inst);
-
-		IPC_DISPATCHER_PACK_FIELD(pack_data, id);
-		for (size_t i = 0; i < CONFIG_WIFI_TELINK_W91_IPV6_ADDR_CNT; i++) {
-			IPC_DISPATCHER_PACK_ARRAY(pack_data, p_ip_v6->address[i].ip,
-				sizeof(p_ip_v6->address[i].ip));
-			IPC_DISPATCHER_PACK_FIELD(pack_data, p_ip_v6->address[i].state);
-		}
-	}
-
-	return pack_data_len;
-}
-
-IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(wifi_w91_set_ipv6);
-
-static int wifi_w91_set_ipv6(struct net_if *iface)
-{
-	const struct wifi_w91_config *cfg = iface->if_dev->dev->config;
-	struct wifi_w91_data *data = iface->if_dev->dev->data;
-	int err = 0;
-
-	if (data->base.state == WIFI_W91_STA_CONNECTED ||
-		data->base.state == WIFI_W91_AP_STARTED) {
-
-		struct ip_v6_data ipv6 = {0};
-		struct net_if_addr *if_addr = iface->config.ip.ipv6->unicast;
-		size_t idx = 1;
-
-		for (size_t i = 0; i < CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT; i++) {
-			if (if_addr[i].is_used && if_addr[i].addr_state != NET_ADDR_ANY_STATE) {
-				if (if_addr[i].addr_type == NET_ADDR_AUTOCONF &&
-					!memcmp(ipv6.address[0].ip, &(uint32_t [4]) {0},
-						sizeof(ipv6.address[0].ip))) {
-					for (size_t j = 0; j < 4; j++) {
-						ipv6.address[0].ip[j] =
-							if_addr[i].address.in6_addr.s6_addr32[j];
-					}
-					switch (if_addr[i].addr_state) {
-					case NET_ADDR_TENTATIVE:
-						ipv6.address[0].state = WIFI_W91_ADDR_TENTATIVE;
-						break;
-					case NET_ADDR_PREFERRED:
-						ipv6.address[0].state = WIFI_W91_ADDR_PREFERRED;
-						break;
-					case NET_ADDR_DEPRECATED:
-						ipv6.address[0].state = WIFI_W91_ADDR_DEPRECATED;
-						break;
-					default:
-						break;
-					}
-				} else if (idx < CONFIG_WIFI_TELINK_W91_IPV6_ADDR_CNT) {
-					for (size_t j = 0; j < 4; j++) {
-						ipv6.address[idx].ip[j] =
-							if_addr[i].address.in6_addr.s6_addr32[j];
-					}
-					switch (if_addr[i].addr_state) {
-					case NET_ADDR_TENTATIVE:
-						ipv6.address[idx].state = WIFI_W91_ADDR_TENTATIVE;
-						break;
-					case NET_ADDR_PREFERRED:
-						ipv6.address[idx].state = WIFI_W91_ADDR_PREFERRED;
-						break;
-					case NET_ADDR_DEPRECATED:
-						ipv6.address[idx].state = WIFI_W91_ADDR_DEPRECATED;
-						break;
-					default:
-						break;
-					}
-					idx++;
-				}
-			}
-		}
-
-		err = -ETIMEDOUT;
-		IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
-			wifi_w91_set_ipv6, &ipv6, &err,
-			CONFIG_TELINK_W91_IPC_DISPATCHER_TIMEOUT_MS);
-	}
-
-	if (data->base.state == WIFI_W91_STA_CONNECTED) {
-		if (err) {
-			LOG_INF("set ip v6 error %d", err);
-		}
-#if !CONFIG_NET_IPV4
-		wifi_mgmt_raise_connect_result_event(data->base.iface, err);
-#endif /* !CONFIG_NET_IPV4 */
-	}
-
-	return 0;
-}
-#endif /* CONFIG_NET_IPV6 */
-
-#if CONFIG_NET_DHCPV4
-static void wifi_w91_got_dhcp_ip(struct net_mgmt_event_callback *cb,
-	uint32_t mgmt_event, struct net_if *iface)
-{
-	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
-		return;
-	}
-	(void) wifi_w91_set_ipv4(iface);
-}
-#endif /* CONFIG_NET_DHCPV4 */
-
 /* APIs implementation: wifi init */
 IPC_DISPATCHER_PACK_FUNC_WITHOUT_PARAM(wifi_w91_init_if, IPC_DISPATCHER_WIFI_INIT);
 
@@ -382,7 +194,9 @@ static void wifi_w91_init_if(struct net_if *iface)
 	struct wifi_w91_init_resp init_resp = { .err = -ETIMEDOUT };
 	const struct wifi_w91_config *cfg = iface->if_dev->dev->config;
 	struct wifi_w91_data *data = iface->if_dev->dev->data;
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
+	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 	data->base.iface = iface;
 
 	net_if_carrier_off(data->base.iface);
@@ -407,11 +221,6 @@ static void wifi_w91_init_if(struct net_if *iface)
 	/* Assign link local address. */
 	net_if_set_link_addr(data->base.iface, data->base.mac,
 		WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
-#if CONFIG_NET_DHCPV4
-	net_mgmt_init_event_callback(&data->base.ev_dhcp,
-		wifi_w91_got_dhcp_ip, NET_EVENT_IPV4_ADDR_ADD);
-	net_mgmt_add_event_callback(&data->base.ev_dhcp);
-#endif /* CONFIG_NET_DHCPV4 */
 }
 
 /* APIs implementation: wifi scan */
@@ -627,11 +436,106 @@ static int wifi_w91_ap_disable(const struct device *dev)
 }
 
 /* APIs implementation: wifi interface status */
-int wifi_w91_iface_status(const struct device *dev, struct wifi_iface_status *status)
+static int wifi_w91_iface_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	struct wifi_w91_data *data = dev->data;
 
 	memcpy(status, &data->base.if_state, sizeof(struct wifi_iface_status));
+	return 0;
+}
+
+/* APIs implementation: wifi rx l2 data */
+static void wifi_w91_l2_rx_cb(const void *data, size_t len, void *param)
+{
+	int err;
+	struct wifi_w91_data *dev_data = ((struct device *)param)->data;
+	struct net_pkt *pkt;
+
+	if (len <= offsetof(struct ipc_msg, data)) {
+		LOG_ERR("Incorrectly formed rx packet");
+		return;
+	}
+
+	len -= offsetof(struct ipc_msg, data);
+
+	pkt = net_pkt_rx_alloc_with_buffer(dev_data->base.iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+	if (!pkt) {
+		LOG_ERR("Failed to allocate net buffer");
+		return;
+	}
+
+	err = net_pkt_write(pkt, ((struct ipc_msg *)data)->data, len);
+	if (err < 0) {
+		LOG_ERR("RX write to a packet failed (err = %d)", err);
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	err = net_recv_data(net_pkt_iface(pkt), pkt);
+	if (err < 0) {
+		LOG_ERR("RX data receive failed (err = %d)", err);
+		net_pkt_unref(pkt);
+	}
+}
+
+/* APIs implementation: wifi tx l2 data */
+static int wifi_w91_l2_tx(const struct device *dev, struct net_pkt *pkt)
+{
+	LOG_INF("%s", __func__);
+
+	int err;
+	struct wifi_w91_data *data = dev->data;
+	const struct wifi_w91_config *cfg = dev->config;
+	size_t len = net_pkt_get_len(pkt);
+
+	if (!len) {
+		LOG_ERR("zero net pkt packet length");
+		return -EIO;
+	}
+
+	err = net_pkt_read(pkt, data->l2.ipc_tx.data, len);
+	if (err < 0) {
+		LOG_ERR("Read net pkt failed (err = %d)", err);
+		return err;
+	}
+
+	data->l2.ipc_tx.id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_L2_DATA, cfg->instance_id);
+
+	err = ipc_dispatcher_send(&data->l2.ipc_tx, offsetof(struct ipc_msg, data) + len);
+	if (err < 0) {
+		LOG_ERR("IPC data send failed (err = %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+/* APIs implementation: wifi start tx/rx l2 data */
+static int wifi_w91_l2_start(const struct device *dev)
+{
+	LOG_INF("%s", __func__);
+
+	__ASSERT(sizeof(struct ipc_msg) <= CONFIG_PBUF_RX_READ_BUF_SIZE,
+		"IPC_SERVICE_ICMSG_CB_BUF_SIZE can't contain Ethernet MTU. %u (at least %u)",
+		CONFIG_PBUF_RX_READ_BUF_SIZE, sizeof(struct ipc_msg));
+
+	const struct wifi_w91_config *cfg = dev->config;
+
+	ipc_dispatcher_add(IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_L2_DATA, cfg->instance_id),
+		wifi_w91_l2_rx_cb, (void *)dev);
+
+	return 0;
+}
+
+/* APIs implementation: wifi stop tx/rx l2 data */
+static int wifi_w91_l2_stop(const struct device *dev)
+{
+	LOG_INF("%s", __func__);
+
+	const struct wifi_w91_config *cfg = dev->config;
+
+	ipc_dispatcher_rm(IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_L2_DATA, cfg->instance_id));
+
 	return 0;
 }
 
@@ -886,16 +790,8 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 		case WIFI_W91_EVENT_STA_CONNECTED:
 			data->base.state = WIFI_W91_STA_CONNECTED;
 			LOG_INF("The WiFi STA connected");
-#if CONFIG_NET_IPV6
-			(void) wifi_w91_set_ipv6(data->base.iface);
-#endif /* CONFIG_NET_IPV6 */
-#if CONFIG_NET_IPV4
-#if CONFIG_NET_DHCPV4
-			net_dhcpv4_restart(data->base.iface);
-#else
-			(void) wifi_w91_set_ipv4(data->base.iface);
-#endif /* CONFIG_NET_DHCPV4 */
-#endif /* CONFIG_NET_IPV4 */
+			wifi_mgmt_raise_connect_result_event(data->base.iface, 0);
+
 			data->base.if_state = (struct wifi_iface_status) {
 				.state = WIFI_STATE_COMPLETED,
 				.ssid_len = event.param.sta_connect_info.ssid_len,
@@ -932,10 +828,8 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 			break;
 		case WIFI_W91_EVENT_AP_START:
 			data->base.state = WIFI_W91_AP_STARTED;
-#if CONFIG_NET_IPV4
-			(void) wifi_w91_set_ipv4(data->base.iface);
-#endif /* CONFIG_NET_IPV4 */
 			LOG_INF("The WiFi Access Point is started");
+
 			data->base.if_state = (struct wifi_iface_status) {
 				.state = WIFI_STATE_INACTIVE,
 				.ssid_len = event.param.ap_start_info.ssid_len,
@@ -1004,6 +898,9 @@ static int wifi_w91_init(const struct device *dev)
 
 static const struct net_wifi_mgmt_offload wifi_w91_driver_api = {
 	.wifi_iface.iface_api.init  = wifi_w91_init_if,
+	.wifi_iface.start = wifi_w91_l2_start,
+	.wifi_iface.stop = wifi_w91_l2_stop,
+	.wifi_iface.send = wifi_w91_l2_tx,
 	.wifi_mgmt_api              = &(const struct wifi_mgmt_ops) {
 		.scan         = wifi_w91_scan,
 		.connect      = wifi_w91_connect,
@@ -1036,7 +933,7 @@ static const struct net_wifi_mgmt_offload wifi_w91_driver_api = {
 	NET_DEVICE_DT_INST_DEFINE(n, wifi_w91_init,                 \
 		NULL, &wifi_data_##n, &wifi_config_##n,                 \
 		CONFIG_TELINK_W91_IPC_DRIVERS_INIT_PRIORITY,            \
-		&wifi_w91_driver_api, W91_WIFI_L2,                      \
-		NET_L2_GET_CTX_TYPE(W91_WIFI_L2), NET_ETH_MTU);
+		&wifi_w91_driver_api, ETHERNET_L2,                      \
+		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(NET_W91_DEFINE)

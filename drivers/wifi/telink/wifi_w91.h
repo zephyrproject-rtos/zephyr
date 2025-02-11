@@ -25,24 +25,18 @@ enum {
 	IPC_DISPATCHER_WIFI_AP_DISABLE,
 	IPC_DISPATCHER_WIFI_L2_DATA,
 	IPC_DISPATCHER_WIFI_EVENT,
-	IPC_DISPATCHER_WIFI_IPV4_ADDR,
-	IPC_DISPATCHER_WIFI_IPV6_ADDR,
 };
 
-__packed struct ipc_msg {
+struct ipc_msg {
 	uint32_t id;
-	uint8_t data[NET_ETH_MTU];
-};
+	uint8_t data[NET_ETH_MAX_FRAME_SIZE];
+} __packed;
 
 struct wifi_w91_data_base {
 	uint8_t mac[WIFI_MAC_ADDR_LEN];
-	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
 	scan_result_cb_t scan_cb;
 	uint8_t state;
 	struct net_if *iface;
-#if CONFIG_NET_DHCPV4
-	struct net_mgmt_event_callback ev_dhcp;
-#endif /*CONFIG_NET_DHCPV4 */
 	struct wifi_iface_status if_state;
 };
 
@@ -62,7 +56,5 @@ struct wifi_w91_config {
 	k_thread_stack_t *thread_stack;
 	struct k_msgq *thread_msgq;
 };
-
-NET_L2_DECLARE_PUBLIC(W91_WIFI_L2);
 
 #endif /* ZEPHYR_DRIVERS_WIFI_WIFI_W91_H_ */
