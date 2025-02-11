@@ -57,27 +57,6 @@ static void address_trans_set_region(struct address_trans_params *addr_translate
 	sys_write32(RAT_CTRL_W(enable, size), RAT_CTRL(rat_base_addr, region_num));
 }
 
-static void address_trans_init(struct address_trans_params *params)
-{
-	uint32_t i;
-
-	if (params != NULL) {
-		translate_config = *params;
-	}
-
-	__ASSERT(translate_config.num_regions < ADDR_TRANSLATE_MAX_REGIONS,
-		 "Exceeding maximum number of regions");
-
-	for (i = 0; i < translate_config.num_regions; i++) {
-		__ASSERT(translate_config.rat_base_addr != 0, "RAT base address cannot be 0");
-		__ASSERT(translate_config.region_config != NULL,
-			 "RAT region config cannot be NULL");
-
-		/* enable regions setup by user */
-		address_trans_set_region(&translate_config, i, 1);
-	}
-}
-
 /**
  * @brief Initialise RAT module
  *
@@ -88,11 +67,20 @@ static void address_trans_init(struct address_trans_params *params)
 
 void sys_mm_drv_ti_rat_init(void *region_config, uint64_t rat_base_addr, uint8_t translate_regions)
 {
+	uint32_t i;
+
+	__ASSERT(translate_regions < ADDR_TRANSLATE_MAX_REGIONS, "Maximum regions exceeded");
+	__ASSERT(rat_base_addr != 0, "RAT base address cannot be 0");
+	__ASSERT(region_config != NULL, "RAT region config cannot be NULL");
+
 	translate_config.num_regions = translate_regions;
 	translate_config.rat_base_addr = rat_base_addr;
 	translate_config.region_config = (struct address_trans_region_config *)region_config;
 
-	address_trans_init(&translate_config);
+	/* enable regions setup by user */
+	for (i = 0; i < translate_config.num_regions; i++) {
+		address_trans_set_region(&translate_config, i, 1);
+	}
 }
 
 int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
