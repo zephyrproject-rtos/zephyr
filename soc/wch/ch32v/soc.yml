@@ -16,3 +16,6 @@ family:
   - name: qingke-v4b
     socs:
     - name: ch32v203
+  - name: qingke-v4f
+    socs:
+    - name: ch32v303
